@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
+  alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Mob.StealOps
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -386,28 +387,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     {:noreply, MobState.note_hit_type(state, attacker, bf)}
   end
 
-  # Unit: heal and SP drain. Heal broadcasts the new HP and is ungated (a
-  # corpse still heals, as before); SP drain publishes nothing (mobs have no
-  # client-visible SP) and no-ops on a dead mob. Neither touches the unit
-  # registry. Non-positive amounts are silent no-ops.
+  # Unit: heal and SP drain (vitals handled in CombatHandler).
   @impl GenServer
-  def handle_cast({:unit, {:heal, amount}}, state)
-      when is_integer(amount) and amount > 0 do
-    state = %{state | hp: min(state.hp + amount, state.max_hp)}
-    SpawnView.notify_hp_update(state)
-    {:noreply, state}
+  def handle_cast({:unit, {:heal, amount}}, state) do
+    CombatHandler.handle_heal(amount, state)
   end
 
-  def handle_cast({:unit, {:heal, _amount}}, state), do: {:noreply, state}
-
-  def handle_cast({:unit, {:drain_sp, _amount}}, %{is_dead: true} = state), do: {:noreply, state}
-
-  def handle_cast({:unit, {:drain_sp, amount}}, state)
-      when is_integer(amount) and amount > 0 do
-    {:noreply, %{state | sp: max(0, state.sp - amount)}}
+  def handle_cast({:unit, {:drain_sp, amount}}, state) do
+    CombatHandler.handle_drain_sp(amount, state)
   end
-
-  def handle_cast({:unit, {:drain_sp, _amount}}, state), do: {:noreply, state}
 
   # Steal: mark this mob as already stolen from (TF_STEAL success path).
   @impl GenServer
@@ -492,7 +480,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   # only broadcasts when the ceiling actually moved.
   defp maybe_recalculate_max_hp(status_id, state) do
     if max_hp_status?(status_id) do
-      updated = MobState.recalculate_max_hp(state)
+      updated = state |> MobState.recalculate_max_hp() |> StateCommit.commit()
       unless updated.max_hp == state.max_hp, do: SpawnView.notify_hp_update(updated)
       updated
     else

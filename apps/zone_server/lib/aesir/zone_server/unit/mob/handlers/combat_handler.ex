@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Mob.MvpReward
   alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
+  alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -60,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
     case status do
       :alive ->
-        {:noreply, updated_mob}
+        {:noreply, StateCommit.commit(updated_mob)}
 
       :dead ->
         handle_death(
@@ -86,7 +87,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
         do: handle_apply_damage(hp_damage, source, state),
         else: {:noreply, state}
 
-    if state.sp == 1, do: {:noreply, state}, else: {:noreply, %{state | sp: 1}}
+    if state.sp == 1,
+      do: {:noreply, state},
+      else: {:noreply, StateCommit.commit(%{state | sp: 1})}
   end
 
   @doc "Applies nonlethal equipment vanish from max-HP/SP percentages."
@@ -103,8 +106,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     {:noreply, state} =
       if hp_damage > 0, do: handle_apply_damage(hp_damage, source, state), else: {:noreply, state}
 
-    {:noreply, %{state | sp: max(0, state.sp - sp_amount)}}
+    {:noreply, StateCommit.commit(%{state | sp: max(0, state.sp - sp_amount)})}
   end
+
+  @doc """
+  Heals the mob by `amount`, clamped at max HP, and broadcasts the new HP.
+  Ungated: a corpse still heals. Non-positive amounts are silent no-ops.
+  """
+  @spec handle_heal(integer(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_heal(amount, state) when is_integer(amount) and amount > 0 do
+    state = StateCommit.commit(%{state | hp: min(state.hp + amount, state.max_hp)})
+    SpawnView.notify_hp_update(state)
+    {:noreply, state}
+  end
+
+  def handle_heal(_amount, state), do: {:noreply, state}
+
+  @doc """
+  Drains `amount` SP, floored at 0. Broadcasts nothing (mobs have no
+  client-visible SP) and no-ops on a dead mob or a non-positive amount.
+  """
+  @spec handle_drain_sp(integer(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_drain_sp(_amount, %{is_dead: true} = state), do: {:noreply, state}
+
+  def handle_drain_sp(amount, state) when is_integer(amount) and amount > 0 do
+    {:noreply, StateCommit.commit(%{state | sp: max(0, state.sp - amount)})}
+  end
+
+  def handle_drain_sp(_amount, state), do: {:noreply, state}
 
   defp maybe_add_aggro(state, _reward_owner_id, nil, _damage), do: state
 
@@ -205,8 +234,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   defp handle_death(state, attacker_ref, reward_owner_id, kill_bf, kill_credit) do
     exp_bonus = kill_exp_bonus(state.instance_id)
 
-    # Mark as dead
-    updated_state = state |> MobState.advance_deferred_epoch() |> MobState.set_dead()
+    # Mark as dead and publish before announcing, so observers reacting to
+    # the death already read a dead snapshot.
+    updated_state =
+      state
+      |> MobState.advance_deferred_epoch()
+      |> MobState.set_dead()
+      |> StateCommit.commit()
 
     # Notify nearby players of mob death
     SpawnView.notify_despawn(updated_state)
