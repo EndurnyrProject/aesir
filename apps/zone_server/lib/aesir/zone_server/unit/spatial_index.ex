@@ -13,80 +13,26 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   @doc """
   Adds a unit to the spatial index.
   """
+  @spec add_unit(atom(), integer(), integer(), integer(), String.t()) :: :ok
   def add_unit(unit_type, unit_id, x, y, map_name) do
-    key = {unit_type, unit_id}
-    :ets.insert(unit_positions_table(), {key, {map_name, x, y}})
+    :ets.insert(unit_positions_table(), {{unit_type, unit_id}, {map_name, x, y}})
     :ets.insert(map_units_table(), {{map_name, unit_type, unit_id}})
-
-    cell_key = cell_key(map_name, x, y)
-
-    units =
-      case :ets.lookup(spatial_index_table(), cell_key) do
-        [{^cell_key, existing}] -> existing
-        [] -> %{}
-      end
-
-    units_of_type = Map.get(units, unit_type, MapSet.new())
-    updated_units_of_type = MapSet.put(units_of_type, unit_id)
-    updated = Map.put(units, unit_type, updated_units_of_type)
-
-    :ets.insert(spatial_index_table(), {cell_key, updated})
-
-    :ok
+    cell_add(cell_key(map_name, x, y), unit_type, unit_id)
   end
 
   @doc """
   Updates a unit's position in the index.
   """
+  @spec update_unit_position(atom(), integer(), integer(), integer(), String.t()) :: :ok
   def update_unit_position(unit_type, unit_id, new_x, new_y, new_map) do
     key = {unit_type, unit_id}
 
     case :ets.lookup(unit_positions_table(), key) do
       [{^key, {old_map, old_x, old_y}}] ->
-        # Remove from old cell
-        old_cell = cell_key(old_map, old_x, old_y)
-
-        case :ets.lookup(spatial_index_table(), old_cell) do
-          [{^old_cell, units}] ->
-            units_of_type = Map.get(units, unit_type, MapSet.new())
-            updated_units_of_type = MapSet.delete(units_of_type, unit_id)
-
-            if MapSet.size(updated_units_of_type) == 0 do
-              updated = Map.delete(units, unit_type)
-
-              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-              if map_size(updated) == 0 do
-                :ets.delete(spatial_index_table(), old_cell)
-              else
-                :ets.insert(spatial_index_table(), {old_cell, updated})
-              end
-            else
-              updated = Map.put(units, unit_type, updated_units_of_type)
-              :ets.insert(spatial_index_table(), {old_cell, updated})
-            end
-
-          _ ->
-            :ok
-        end
-
-        # Add to new cell
-        new_cell = cell_key(new_map, new_x, new_y)
-
-        units =
-          case :ets.lookup(spatial_index_table(), new_cell) do
-            [{^new_cell, existing}] -> existing
-            [] -> %{}
-          end
-
-        units_of_type = Map.get(units, unit_type, MapSet.new())
-        updated_units_of_type = MapSet.put(units_of_type, unit_id)
-        updated = Map.put(units, unit_type, updated_units_of_type)
-
-        :ets.insert(spatial_index_table(), {new_cell, updated})
+        cell_remove(cell_key(old_map, old_x, old_y), unit_type, unit_id)
+        cell_add(cell_key(new_map, new_x, new_y), unit_type, unit_id)
         :ets.insert(unit_positions_table(), {key, {new_map, new_x, new_y}})
         move_map_membership(unit_type, unit_id, old_map, new_map)
-
-        :ok
 
       _ ->
         add_unit(unit_type, unit_id, new_x, new_y, new_map)
@@ -96,42 +42,53 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   @doc """
   Removes a unit from the spatial index.
   """
+  @spec remove_unit(atom(), integer()) :: :ok
   def remove_unit(unit_type, unit_id) do
     key = {unit_type, unit_id}
 
     case :ets.lookup(unit_positions_table(), key) do
       [{^key, {map_name, x, y}}] ->
-        cell = cell_key(map_name, x, y)
-
-        case :ets.lookup(spatial_index_table(), cell) do
-          [{^cell, units}] ->
-            units_of_type = Map.get(units, unit_type, MapSet.new())
-            updated_units_of_type = MapSet.delete(units_of_type, unit_id)
-
-            if MapSet.size(updated_units_of_type) == 0 do
-              updated = Map.delete(units, unit_type)
-
-              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-              if map_size(updated) == 0 do
-                :ets.delete(spatial_index_table(), cell)
-              else
-                :ets.insert(spatial_index_table(), {cell, updated})
-              end
-            else
-              updated = Map.put(units, unit_type, updated_units_of_type)
-              :ets.insert(spatial_index_table(), {cell, updated})
-            end
-
-          _ ->
-            :ok
-        end
-
+        cell_remove(cell_key(map_name, x, y), unit_type, unit_id)
         :ets.delete(unit_positions_table(), key)
         :ets.delete(map_units_table(), {map_name, unit_type, unit_id})
-
         :ok
 
       _ ->
+        :ok
+    end
+  end
+
+  # Grid cells hold `%{unit_type => MapSet.t(unit_id)}`; empty sets and empty
+  # cells are dropped so range scans never visit stale keys.
+  defp cell_add(cell, unit_type, unit_id) do
+    units =
+      case :ets.lookup(spatial_index_table(), cell) do
+        [{^cell, existing}] -> existing
+        [] -> %{}
+      end
+
+    updated = Map.update(units, unit_type, MapSet.new([unit_id]), &MapSet.put(&1, unit_id))
+    :ets.insert(spatial_index_table(), {cell, updated})
+    :ok
+  end
+
+  defp cell_remove(cell, unit_type, unit_id) do
+    case :ets.lookup(spatial_index_table(), cell) do
+      [{^cell, units}] ->
+        remaining = units |> Map.get(unit_type, MapSet.new()) |> MapSet.delete(unit_id)
+
+        updated =
+          if MapSet.size(remaining) == 0,
+            do: Map.delete(units, unit_type),
+            else: Map.put(units, unit_type, remaining)
+
+        if map_size(updated) == 0,
+          do: :ets.delete(spatial_index_table(), cell),
+          else: :ets.insert(spatial_index_table(), {cell, updated})
+
+        :ok
+
+      [] ->
         :ok
     end
   end
@@ -140,36 +97,14 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   Gets units of a specific type in range of a position.
   Returns list of unit IDs.
   """
+  @spec get_units_in_range(atom(), String.t(), integer(), integer(), integer()) :: [integer()]
   def get_units_in_range(unit_type, map_name, x, y, range) do
-    cells = cells_in_range(map_name, x, y, range)
-
-    units =
-      cells
-      |> Enum.flat_map(fn cell ->
-        case :ets.lookup(spatial_index_table(), cell) do
-          [{^cell, units_map}] ->
-            units_map
-            |> Map.get(unit_type, MapSet.new())
-            |> MapSet.to_list()
-
-          [] ->
-            []
-        end
-      end)
-      |> Enum.uniq()
-
-    units
-    |> Enum.filter(fn unit_id ->
-      key = {unit_type, unit_id}
-
-      case :ets.lookup(unit_positions_table(), key) do
-        [{^key, {^map_name, ux, uy}}] ->
-          distance(x, y, ux, uy) <= range
-
-        _ ->
-          false
-      end
-    end)
+    map_name
+    |> cells_in_range(x, y, range)
+    |> units_in_cells(unit_type)
+    |> Enum.filter(
+      &at?(unit_type, &1, map_name, fn ux, uy -> distance(x, y, ux, uy) <= range end)
+    )
   end
 
   @doc """
@@ -183,74 +118,56 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     x_max = max(x1, x2)
     y_min = min(y1, y2)
     y_max = max(y1, y2)
+    inside? = fn ux, uy -> ux >= x_min and ux <= x_max and uy >= y_min and uy <= y_max end
 
-    units =
-      map_name
-      |> cells_in_area(x_min, y_min, x_max, y_max)
-      |> Enum.flat_map(fn cell ->
-        case :ets.lookup(spatial_index_table(), cell) do
-          [{^cell, units_map}] ->
-            units_map
-            |> Map.get(unit_type, MapSet.new())
-            |> MapSet.to_list()
-
-          [] ->
-            []
-        end
-      end)
-      |> Enum.uniq()
-
-    units
-    |> Enum.filter(fn unit_id ->
-      key = {unit_type, unit_id}
-
-      case :ets.lookup(unit_positions_table(), key) do
-        [{^key, {^map_name, ux, uy}}] ->
-          ux >= x_min and ux <= x_max and uy >= y_min and uy <= y_max
-
-        _ ->
-          false
-      end
-    end)
+    map_name
+    |> cells_in_area(x_min, y_min, x_max, y_max)
+    |> units_in_cells(unit_type)
+    |> Enum.filter(&at?(unit_type, &1, map_name, inside?))
   end
 
   @doc """
   Gets all units (of any type) in range of a position.
   Returns list of {unit_type, unit_id} tuples.
   """
+  @spec get_all_units_in_range(String.t(), integer(), integer(), integer()) ::
+          [{atom(), integer()}]
   def get_all_units_in_range(map_name, x, y, range) do
-    cells = cells_in_range(map_name, x, y, range)
+    in_range? = fn ux, uy -> distance(x, y, ux, uy) <= range end
 
-    all_units =
-      cells
-      |> Enum.flat_map(fn cell ->
-        case :ets.lookup(spatial_index_table(), cell) do
-          [{^cell, units_map}] ->
-            Enum.flat_map(units_map, fn {unit_type, unit_set} ->
-              unit_set
-              |> MapSet.to_list()
-              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-              |> Enum.map(fn unit_id -> {unit_type, unit_id} end)
-            end)
+    map_name
+    |> cells_in_range(x, y, range)
+    |> Enum.flat_map(&cell_units/1)
+    |> Enum.flat_map(fn {unit_type, ids} -> Enum.map(ids, &{unit_type, &1}) end)
+    |> Enum.uniq()
+    |> Enum.filter(fn {unit_type, unit_id} -> at?(unit_type, unit_id, map_name, in_range?) end)
+  end
 
-          [] ->
-            []
-        end
-      end)
-      |> Enum.uniq()
-
-    all_units
-    |> Enum.filter(fn {unit_type, unit_id} ->
-      key = {unit_type, unit_id}
-
-      case :ets.lookup(unit_positions_table(), key) do
-        [{^key, {^map_name, ux, uy}}] ->
-          distance(x, y, ux, uy) <= range
-
-        _ ->
-          false
-      end
+  # Candidate ids of `unit_type` across `cells`; cells are coarse, so callers
+  # still confirm each unit's exact position with `at?/4`.
+  defp units_in_cells(cells, unit_type) do
+    cells
+    |> Enum.flat_map(fn cell ->
+      cell |> cell_units() |> Keyword.get(unit_type, [])
     end)
+    |> Enum.uniq()
+  end
+
+  defp cell_units(cell) do
+    case :ets.lookup(spatial_index_table(), cell) do
+      [{^cell, units_map}] ->
+        Enum.map(units_map, fn {type, set} -> {type, MapSet.to_list(set)} end)
+
+      [] ->
+        []
+    end
+  end
+
+  defp at?(unit_type, unit_id, map_name, pred) do
+    case :ets.lookup(unit_positions_table(), {unit_type, unit_id}) do
+      [{_key, {^map_name, ux, uy}}] -> pred.(ux, uy)
+      _ -> false
+    end
   end
 
   @doc """

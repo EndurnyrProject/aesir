@@ -51,14 +51,13 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     )
 
     UnitRegistry.update_unit_state(unit_type, unit_id, updated_state)
-    notify_homunculus_boundaries(unit_type, unit_id, previous, updated_state, map_name)
-    mark_dirty(map_name, unit_type, unit_id, move_state(updated_state.movement_state))
 
-    mover = {unit_type, unit_id}
-    fire_on_leave(mover, previous, map_name, updated_state.x, updated_state.y)
-    Trigger.on_enter_cell(mover, map_name, updated_state.x, updated_state.y)
-    Trigger.on_caster_moved(mover, map_name, updated_state.x, updated_state.y)
-    fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
+    finish_position_change(
+      {unit_type, unit_id, updated_state},
+      previous,
+      map_name,
+      move_state(updated_state.movement_state)
+    )
   end
 
   @spec fire_on_leave(
@@ -155,8 +154,8 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
       :ok = UnitRegistry.update_unit_state(first_type, first_id, first_updated)
       :ok = UnitRegistry.update_unit_state(second_type, second_id, second_updated)
-      finish_position_change(first, first_previous, map_name)
-      finish_position_change(second, second_previous, map_name)
+      finish_position_change(first, first_previous, map_name, @standing)
+      finish_position_change(second, second_previous, map_name, @standing)
     end
   end
 
@@ -170,9 +169,11 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     end
   end
 
-  defp finish_position_change({unit_type, unit_id, updated_state}, previous, map_name) do
+  # Everything after the spatial/registry writes: boundary notifications, the
+  # dirty mark, and the cell leave/enter/contact triggers.
+  defp finish_position_change({unit_type, unit_id, updated_state}, previous, map_name, move_state) do
     notify_homunculus_boundaries(unit_type, unit_id, previous, updated_state, map_name)
-    mark_dirty(map_name, unit_type, unit_id, @standing)
+    mark_dirty(map_name, unit_type, unit_id, move_state)
 
     mover = {unit_type, unit_id}
     fire_on_leave(mover, previous, map_name, updated_state.x, updated_state.y)

@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
@@ -649,7 +650,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   end
 
   defp push_added(connection_pid, inventory, change) do
-    Enum.each(affected_indices(change), fn index ->
+    Enum.each(ItemContainer.affected_indices(change), fn index ->
       item = PlayerState.get_by_index(inventory, index)
       MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
     end)
@@ -683,12 +684,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
         :ok
     end
   end
-
-  defp affected_indices({:added, index, _item}), do: [index]
-  defp affected_indices({:stacked, index, _total}), do: [index]
-
-  defp affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
-    do: [topped_index, new_index]
 
   # Scales script/quest EXP grants by the server quest-EXP rate before the
   # per-character status/equipment EXP bonuses are applied downstream.

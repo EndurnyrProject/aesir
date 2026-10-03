@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Cart
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
@@ -385,7 +386,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   defp notify_inventory_removed(connection_pid, change, amount) do
     MessageRouter.send_to(
       connection_pid,
-      InventoryView.item_removed(removal_index(change), amount)
+      InventoryView.item_removed(ItemContainer.removal_index(change), amount)
     )
   end
 
@@ -393,7 +394,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   defp notify_cart_removed(connection_pid, change, amount) do
     MessageRouter.send_to(
       connection_pid,
-      InventoryView.cart_item_removed(removal_index(change), amount)
+      InventoryView.cart_item_removed(ItemContainer.removal_index(change), amount)
     )
   end
 
@@ -404,8 +405,4 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
       MessageRouter.send_to(connection_pid, InventoryView.cart_item_added(item, index))
     end)
   end
-
-  @spec removal_index(CartOps.change()) :: non_neg_integer()
-  defp removal_index({:removed, index}), do: index
-  defp removal_index({:reduced, index, _left}), do: index
 end

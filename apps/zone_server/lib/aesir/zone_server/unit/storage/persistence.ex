@@ -1,10 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Storage.Persistence do
   @moduledoc """
-  Low-level Ecto access for an account's Kafra storage.
-
-  The storage analogue of `Aesir.ZoneServer.Unit.Cart.Persistence`: it owns
-  every database read and write for storage items against the `storage`
-  table, keyed by `account_id` rather than `char_id`. The domain core
+  Ecto access for an account's Kafra storage rows (`StorageItem`, keyed by
+  `account_id`), delegating to `ItemContainer.Persistence`. The domain core
   (`Aesir.ZoneServer.Unit.Storage`) stays pure and the orchestrator composes
   these write-through operations, optionally inside `transaction/1`, so
   inventory<->storage moves roll back atomically.
@@ -15,61 +12,32 @@ defmodule Aesir.ZoneServer.Unit.Storage.Persistence do
   and `to_storage_row/2`.
   """
 
-  import Ecto.Query
-
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.StorageItem
-  alias Aesir.Repo
+  alias Aesir.ZoneServer.Unit.ItemContainer.Persistence
 
   @type item_result :: {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
 
-  @doc """
-  Loads an account's complete storage ordered by row `id`.
-  """
+  @doc "Loads an account's complete storage ordered by row `id`."
   @spec load_storage(integer()) :: [StorageItem.t()]
-  def load_storage(account_id) do
-    StorageItem
-    |> where([i], i.account_id == ^account_id)
-    |> order_by([i], i.id)
-    |> Repo.all()
-  end
+  def load_storage(account_id), do: Persistence.load(StorageItem, :account_id, account_id)
 
-  @doc """
-  Inserts a new storage item for the given account.
-  """
+  @doc "Inserts a new storage item for the given account."
   @spec insert_item(integer(), map()) :: item_result()
-  def insert_item(account_id, attrs) do
-    %StorageItem{}
-    |> StorageItem.changeset(Map.put(attrs, :account_id, account_id))
-    |> Repo.insert()
-  end
+  def insert_item(account_id, attrs),
+    do: Persistence.insert(StorageItem, :account_id, account_id, attrs)
 
-  @doc """
-  Updates an existing storage item with the given attributes.
-  """
+  @doc "Updates an existing storage item with the given attributes."
   @spec update_item(StorageItem.t(), map()) :: item_result()
-  def update_item(%StorageItem{} = item, attrs) do
-    item
-    |> StorageItem.changeset(attrs)
-    |> Repo.update()
-  end
+  def update_item(%StorageItem{} = item, attrs), do: Persistence.update(item, attrs)
 
-  @doc """
-  Deletes a storage item.
-  """
+  @doc "Deletes a storage item."
   @spec delete_item(StorageItem.t()) :: item_result()
-  def delete_item(%StorageItem{} = item) do
-    Repo.delete(item)
-  end
+  def delete_item(%StorageItem{} = item), do: Persistence.delete(item)
 
-  @doc """
-  Runs `fun` inside a database transaction, rolling back when it returns an
-  `{:error, reason}` tuple and committing on `{:ok, result}`.
-  """
+  @doc "Runs `fun` inside a database transaction (see `ItemContainer.Persistence.transaction/1`)."
   @spec transaction((-> {:ok, term()} | {:error, term()})) :: {:ok, term()} | {:error, term()}
-  def transaction(fun) when is_function(fun, 0) do
-    Repo.transact(fun)
-  end
+  defdelegate transaction(fun), to: Persistence
 
   @doc """
   Converts a loaded `%StorageItem{}` row into the session `%InventoryItem{}`

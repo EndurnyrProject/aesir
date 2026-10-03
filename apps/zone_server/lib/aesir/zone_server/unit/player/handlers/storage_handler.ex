@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
@@ -224,7 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   defp notify_inventory_removed(connection_pid, change, amount) do
     MessageRouter.send_to(
       connection_pid,
-      InventoryView.item_removed(removal_index(change), amount)
+      InventoryView.item_removed(ItemContainer.removal_index(change), amount)
     )
   end
 
@@ -240,11 +241,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   defp notify_storage_removed(connection_pid, change, amount) do
     MessageRouter.send_to(
       connection_pid,
-      InventoryView.storage_item_removed(removal_index(change), amount)
+      InventoryView.storage_item_removed(ItemContainer.removal_index(change), amount)
     )
   end
-
-  @spec removal_index(StorageOps.change()) :: non_neg_integer()
-  defp removal_index({:removed, index}), do: index
-  defp removal_index({:reduced, index, _left}), do: index
 end

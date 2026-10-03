@@ -764,11 +764,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     {:noreply, QuestInfoView.refresh(state)}
   end
 
+  # Legacy spawn-settle tick; players already spawn standing, so nothing is
+  # left to do here.
   @impl true
-  def handle_info(:complete_spawn, %{game_state: game_state} = state) do
-    updated_game_state = PlayerState.mark_spawn_complete(game_state)
-    {:noreply, StateCommit.commit(state, updated_game_state)}
-  end
+  def handle_info(:complete_spawn, state), do: {:noreply, state}
 
   @impl true
   def handle_info(:natural_heal_tick, state) do

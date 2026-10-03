@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
@@ -275,18 +276,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     end)
   end
 
-  @doc """
-  Returns the session indices an add-type `change` touched.
-
-  Shared with the cart move flow, which stages the same change descriptors and
-  needs the affected destination slots to emit its `CartItemAdded` deltas.
-  """
+  @doc "Returns the session indices an add-type `change` touched."
   @spec affected_indices(Inventory.change()) :: [non_neg_integer()]
-  def affected_indices({:added, index, _item}), do: [index]
-  def affected_indices({:stacked, index, _total}), do: [index]
-
-  def affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
-    do: [topped_index, new_index]
+  defdelegate affected_indices(change), to: ItemContainer
 
   defp log_give_failure(character_id, item_id, amount, reason) do
     Logger.warning(

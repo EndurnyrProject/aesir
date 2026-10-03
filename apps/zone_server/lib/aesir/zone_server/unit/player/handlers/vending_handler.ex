@@ -629,19 +629,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   @spec notify_buyer_added(pid(), Inventory.t(), [Inventory.change()]) :: :ok
   defp notify_buyer_added(connection_pid, inventory, changes) do
     Enum.each(changes, fn change ->
-      Enum.each(affected_indices(change), fn index ->
+      Enum.each(ItemContainer.affected_indices(change), fn index ->
         item = PlayerState.get_by_index(inventory, index)
         MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
       end)
     end)
   end
-
-  @spec affected_indices(Inventory.change()) :: [non_neg_integer()]
-  defp affected_indices({:added, index, _item}), do: [index]
-  defp affected_indices({:stacked, index, _total}), do: [index]
-
-  defp affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
-    do: [topped_index, new_index]
 
   @spec ensure_cart_mounted(integer()) :: :ok | {:error, :no_cart}
   defp ensure_cart_mounted(char_id) do

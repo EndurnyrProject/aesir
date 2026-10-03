@@ -164,6 +164,19 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
     Map.delete(container, index)
   end
 
+  @doc "Returns the session indices an add-type `change` touched."
+  @spec affected_indices(change()) :: [non_neg_integer()]
+  def affected_indices({:added, index, _item}), do: [index]
+  def affected_indices({:stacked, index, _total}), do: [index]
+
+  def affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
+    do: [topped_index, new_index]
+
+  @doc "Returns the session index a remove-type `change` touched."
+  @spec removal_index(change()) :: non_neg_integer()
+  def removal_index({:removed, index}), do: index
+  def removal_index({:reduced, index, _left}), do: index
+
   @doc """
   Adds `source` to `container` (whose slot cap is `capacity`), preserving every
   attribute.

@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.ZoneServer.Npc.Shop, as: ShopData
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
@@ -279,19 +280,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   @spec notify_added(pid(), Inventory.t(), [Inventory.change()]) :: :ok
   defp notify_added(connection_pid, inventory, changes) do
     Enum.each(changes, fn change ->
-      Enum.each(affected_indices(change), fn index ->
+      Enum.each(ItemContainer.affected_indices(change), fn index ->
         item = PlayerState.get_by_index(inventory, index)
         MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
       end)
     end)
   end
-
-  @spec affected_indices(Inventory.change()) :: [non_neg_integer()]
-  defp affected_indices({:added, index, _item}), do: [index]
-  defp affected_indices({:stacked, index, _total}), do: [index]
-
-  defp affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
-    do: [topped_index, new_index]
 
   @spec buy_result_code(atom()) :: non_neg_integer()
   defp buy_result_code(:not_enough_zeny), do: @result_not_enough_zeny

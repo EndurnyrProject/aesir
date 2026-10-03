@@ -447,17 +447,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         action_state: :idle,
         casting: nil,
         pending_forced_movement: nil,
-        visible_players: MapSet.new(),
-        visible_mobs: MapSet.new(),
-        visible_homunculi: MapSet.new(),
-        visible_warps: MapSet.new(),
-        visible_npcs: MapSet.new(),
-        visible_shops: MapSet.new(),
-        visible_items: MapSet.new(),
-        visible_skill_units: MapSet.new(),
-        last_visibility_cell: nil,
         inside_npc_areas: MapSet.new()
     }
+    |> clear_visibility()
     |> advance_deferred_epoch()
     |> stop_walking()
     |> clear_combat_intent()
@@ -467,6 +459,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   defp advance_deferred_epoch(%__MODULE__{deferred_epoch: epoch} = state) do
     %{state | deferred_epoch: epoch + 1}
+  end
+
+  @doc "Forgets every visible entity set and the last visibility cell."
+  @spec clear_visibility(t()) :: t()
+  def clear_visibility(%__MODULE__{} = state) do
+    %{
+      state
+      | visible_players: MapSet.new(),
+        visible_mobs: MapSet.new(),
+        visible_homunculi: MapSet.new(),
+        visible_warps: MapSet.new(),
+        visible_npcs: MapSet.new(),
+        visible_shops: MapSet.new(),
+        visible_items: MapSet.new(),
+        visible_skill_units: MapSet.new(),
+        last_visibility_cell: nil
+    }
   end
 
   @doc """
@@ -576,11 +585,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp active_walk_delay(until, _now), do: until
 
   @doc """
-  Mark spawn as complete. No-op now that we start in :standing state.
-  """
-  def mark_spawn_complete(%__MODULE__{} = state), do: state
-
-  @doc """
   Updates direction based on movement.
   """
   def update_direction(%__MODULE__{} = state, new_dir) when new_dir in 0..7 do
@@ -663,7 +667,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
               :casting,
               :dead
             ],
-       do: Map.put(state, :pending_forced_movement, nil)
+       do: %{state | pending_forced_movement: nil}
 
   defp cancel_pending_for_transition(state, _new_state), do: state
 
@@ -734,15 +738,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def clear_combat_intent(%__MODULE__{} = state) do
     cancel_continuous_timer(state.continuous_attack_timer)
 
-    %{
+    reset_movement_intent(%{
       state
       | combat_target_id: nil,
         combat_action_type: nil,
         last_target_position: nil,
-        continuous_attack_timer: nil,
-        movement_intent: if(state.movement_state == :moving, do: :normal, else: :none)
-    }
+        continuous_attack_timer: nil
+    })
   end
+
+  # Walking continues as a plain walk; standing has no intent left.
+  defp reset_movement_intent(%__MODULE__{movement_state: :moving} = state),
+    do: %{state | movement_intent: :normal}
+
+  defp reset_movement_intent(%__MODULE__{} = state), do: %{state | movement_intent: :none}
 
   defp cancel_continuous_timer(nil), do: :ok
 
@@ -758,11 +767,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   @spec clear_skill_intent(t()) :: t()
   def clear_skill_intent(%__MODULE__{} = state) do
-    %{
-      state
-      | state_context: %{},
-        movement_intent: if(state.movement_state == :moving, do: :normal, else: :none)
-    }
+    reset_movement_intent(%{state | state_context: %{}})
   end
 
   @doc """
@@ -779,11 +784,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   """
   @spec clear_pickup_intent(t()) :: t()
   def clear_pickup_intent(%__MODULE__{} = state) do
-    %{
-      state
-      | pickup_target_id: nil,
-        movement_intent: if(state.movement_state == :moving, do: :normal, else: :none)
-    }
+    reset_movement_intent(%{state | pickup_target_id: nil})
   end
 
   @doc """
@@ -894,7 +895,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_from_vending?(to), do: to == :idle
 
   # Private helper to handle state entry logic
-  defp handle_state_entry(state, :idle), do: clear_combat_intent_for_transition(state)
+  defp handle_state_entry(state, :idle), do: clear_combat_intent(state)
 
   defp handle_state_entry(state, :moving) do
     # Set movement intent to normal if not combat
@@ -921,19 +922,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   defp handle_state_entry(state, _new_state), do: state
-
-  defp clear_combat_intent_for_transition(%__MODULE__{} = state) do
-    cancel_continuous_timer(state.continuous_attack_timer)
-
-    %{
-      state
-      | combat_target_id: nil,
-        combat_action_type: nil,
-        last_target_position: nil,
-        continuous_attack_timer: nil,
-        movement_intent: if(state.movement_state == :moving, do: :normal, else: :none)
-    }
-  end
 
   defp cancel_combo_on_entry(state, :idle), do: state
   defp cancel_combo_on_entry(state, _new_state), do: cancel_combo(state)

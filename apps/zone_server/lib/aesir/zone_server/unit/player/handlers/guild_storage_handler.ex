@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   alias Aesir.ZoneServer.Guild.Storage.Lock
   alias Aesir.ZoneServer.Guild.Storage.Persistence
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
@@ -279,7 +280,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   defp notify_inventory_removed(connection_pid, change, amount) do
     MessageRouter.send_to(
       connection_pid,
-      InventoryView.item_removed(removal_index(change), amount)
+      InventoryView.item_removed(ItemContainer.removal_index(change), amount)
     )
   end
 
@@ -300,15 +301,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
     MessageRouter.send_to(
       connection_pid,
       InventoryView.storage_item_removed(
-        removal_index(change),
+        ItemContainer.removal_index(change),
         amount,
         0,
         :STORAGE_KIND_GUILD
       )
     )
   end
-
-  @spec removal_index(term()) :: non_neg_integer()
-  defp removal_index({:removed, index}), do: index
-  defp removal_index({:reduced, index, _left}), do: index
 end

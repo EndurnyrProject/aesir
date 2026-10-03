@@ -277,7 +277,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
   @impl Aesir.ZoneServer.Unit
   def get_stats(%__MODULE__{mob_data: mob_data} = mob) do
-    # Return stats in the format expected by status effect formulas
+    # The status-effect view of a mob: primary stats, vitals, level and the
+    # database combat numbers. Derived combat stats live in `to_combatant/1`.
     %{
       str: mob_data.stats.str,
       agi: mob_data.stats.agi,
@@ -297,11 +298,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       atk: mob_data.atk,
       matk: mob_data.matk,
       def: mob_data.def,
-      mdef: mob_data.mdef,
-      hit: calculate_hit(mob_data),
-      flee: calculate_flee(mob_data),
-      crit: calculate_crit(mob_data),
-      aspd: calculate_aspd(mob_data)
+      mdef: mob_data.mdef
     }
   end
 
@@ -866,27 +863,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   # Private Helper Functions
-
-  defp calculate_hit(mob_data) do
-    # Basic hit calculation based on level and DEX
-    mob_data.level + mob_data.stats.dex
-  end
-
-  defp calculate_flee(mob_data) do
-    # Basic flee calculation based on level and AGI
-    mob_data.level + mob_data.stats.agi
-  end
-
-  defp calculate_crit(mob_data) do
-    # Basic crit calculation based on LUK
-    div(mob_data.stats.luk, 3)
-  end
-
-  defp calculate_aspd(mob_data) do
-    # Convert attack delay to ASPD format
-    # Lower attack_delay means faster attack speed
-    max(100, 200 - div(mob_data.attack_delay, 10))
-  end
 
   defp calculate_view_range(mob_data) do
     # Base view range, bosses have larger range
