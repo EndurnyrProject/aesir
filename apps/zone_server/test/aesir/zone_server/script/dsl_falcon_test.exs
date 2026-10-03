@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Script.DslFalconTest do
   use ExUnit.Case, async: true
 
+  import Bitwise
+
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
@@ -54,6 +56,19 @@ defmodule Aesir.ZoneServer.Script.DslFalconTest do
 
     test "returns 0 without an attached player" do
       assert Dsl.checkfalcon(%{ctx() | game_state: nil}) == 0
+    end
+  end
+
+  describe "checkoption/2" do
+    test "tests requested option bits against the player snapshot" do
+      wug = Option.id(:wug)
+      rider = Option.id(:wugrider)
+      player = ctx(option: wug ||| @falcon_bit)
+
+      assert Dsl.checkoption(player, wug) == 1
+      assert Dsl.checkoption(player, rider) == 0
+      assert Dsl.checkoption(player, wug ||| rider) == 1
+      assert Dsl.checkoption(ctx(), wug) == 0
     end
   end
 

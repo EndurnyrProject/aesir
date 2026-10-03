@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler do
 
     body =
       quote do
+        alias Aesir.ZoneServer.Script.Rathena
         import Aesir.ZoneServer.Script.Dsl
         unquote_splicing(clauses ++ [fallback_clause()])
       end

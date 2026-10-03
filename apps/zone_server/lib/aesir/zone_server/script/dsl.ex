@@ -236,6 +236,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   # -- Reads (Dsl.Reads) -------------------------------------------------------
 
   defdelegate checkfalcon(ctx), to: Reads
+  defdelegate checkoption(ctx, mask), to: Reads
   defdelegate ismounting(ctx), to: Reads
   defdelegate checkcart(ctx), to: Reads
   defdelegate base_level(ctx), to: Reads

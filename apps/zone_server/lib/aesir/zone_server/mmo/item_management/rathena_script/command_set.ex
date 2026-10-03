@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
 
   @commands %{
     "homevolution" => %{shape: :call, dsl: "homevolution", args: []},
+    "setfalcon" => %{shape: :call, dsl: "setfalcon", args: [:expr]},
     "itemheal" => %{shape: :heal, dsl: "heal"},
     "heal" => %{shape: :heal, dsl: "heal"},
     "percentheal" => %{shape: :heal, dsl: "percent_heal"},
@@ -83,6 +84,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
   }
 
   @call_reads %{
+    "getskilllv" => %{shape: :call, dsl: "getskilllv", args: [:skill]},
+    "checkoption" => %{shape: :call, dsl: "checkoption", args: [:option]},
+    "checkfalcon" => %{shape: :call, dsl: "checkfalcon", args: []},
     "groupranditem" => %{
       shape: :item_group_optional,
       dsl: "group_rand_item",

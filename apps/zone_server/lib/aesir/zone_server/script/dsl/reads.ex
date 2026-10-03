@@ -69,6 +69,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
     if (gs.option &&& Option.id(:riding)) != 0, do: 1, else: 0
   end
 
+  @doc "Returns `1` when any requested option bit is set, otherwise `0`."
+  @spec checkoption(Ctx.t(), non_neg_integer()) :: 0 | 1
+  def checkoption(%Ctx{game_state: nil}, _mask), do: 0
+
+  def checkoption(%Ctx{game_state: gs}, mask) when is_integer(mask) do
+    if (gs.option &&& mask) != 0, do: 1, else: 0
+  end
+
   @doc """
   Whether the player has a cart mounted (rAthena `checkcart`): `1` when
   `cart_type` is set, else `0`. Pure read over the ctx snapshot.

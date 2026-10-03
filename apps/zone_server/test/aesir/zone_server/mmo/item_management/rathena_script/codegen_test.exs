@@ -190,6 +190,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
                compile_with_source_catalogs("delitem 501,2;")
     end
 
+    test "Falcon Flute preserves skill, wug and falcon checks" do
+      script =
+        ~S|if (getskilllv("HT_FALCON")) { if (!checkoption(Option_Wug) && !checkoption(Option_Wugrider)) setfalcon (!checkfalcon()); }|
+
+      assert {:ok, source} = compile(script)
+      assert Code.string_to_quoted!(source)
+      assert source =~ "getskilllv(ctx, 127)"
+      assert source =~ "checkoption(ctx,"
+      assert source =~ "checkfalcon(ctx)"
+      assert source =~ "setfalcon(ctx,"
+    end
+
+    test "an unknown option constant remains unsupported" do
+      assert {:error, {:unsupported, {:unknown_const, "Option_NoSuchOption"}}} =
+               compile("if (checkoption(Option_NoSuchOption)) setfalcon 1;")
+    end
+
     test "warp emits literal coords" do
       assert {:ok, "warp(ctx, \"prontera\", 155, 183)"} =
                compile("warp \"prontera\",155,183;")

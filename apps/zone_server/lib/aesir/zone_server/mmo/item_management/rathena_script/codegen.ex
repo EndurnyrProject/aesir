@@ -71,12 +71,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
+  alias Aesir.ZoneServer.Mmo.Option
 
   @type ast_stmt :: tuple()
   @type detail :: term()
 
   @binary_ops [:+, :-, :*, :/, :>, :<, :>=, :<=, :==, :!=]
   @logic_ops [:&&, :||]
+  @comparison_ops [:>, :<, :>=, :<=, :==, :!=]
+  @option_names %{"Option_Wug" => :wug, "Option_Wugrider" => :wugrider}
 
   @spec generate([ast_stmt()]) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
   def generate(stmts) when is_list(stmts), do: render_stmts(stmts)
@@ -111,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   end
 
   defp render_stmt({:if, cond_expr, then_stmts, else_stmts}) do
-    with {:ok, cond_src} <- render_expr(cond_expr),
+    with {:ok, cond_src} <- render_condition(cond_expr),
          {:ok, then_src} <- render_stmts(then_stmts),
          {:ok, else_src} <- render_stmts(else_stmts) do
       {:ok, "if #{cond_src} do\n#{indent(then_src)}\nelse\n#{indent(else_src)}\nend"}
@@ -242,6 +245,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   defp heal_opt(_label, other), do: unsupported({:heal_amount, other})
 
   @spec render_arg(atom(), term()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
+  defp render_arg(:expr, expr), do: render_expr(expr)
+
+  defp render_arg(:option, {:name, name}) do
+    case Map.fetch(@option_names, name) do
+      {:ok, option} -> {:ok, Integer.to_string(Option.id(option))}
+      :error -> unsupported({:unknown_const, name})
+    end
+  end
+
   defp render_arg(:int, {:int, n}), do: {:ok, Integer.to_string(n)}
   defp render_arg(:int, {:neg, {:int, n}}), do: {:ok, Integer.to_string(-n)}
   defp render_arg(:int, other), do: unsupported({:expected_literal_int, other})
@@ -306,6 +318,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
 
   defp flag_value(other), do: unsupported({:expected_flag, other})
 
+  defp render_condition({:bin, op, _, _} = expr) when op in @comparison_ops,
+    do: render_expr(expr)
+
+  defp render_condition({:bin, op, lhs, rhs}) when op in @logic_ops do
+    with {:ok, l} <- render_condition(lhs), {:ok, r} <- render_condition(rhs) do
+      operator = if op == :&&, do: "and", else: "or"
+      {:ok, "(#{l} #{operator} #{r})"}
+    end
+  end
+
+  defp render_condition({:not, expr}) do
+    with {:ok, source} <- render_condition(expr), do: {:ok, "not (#{source})"}
+  end
+
+  defp render_condition(expr) do
+    with {:ok, source} <- render_expr(expr), do: {:ok, "Rathena.truthy?(#{source})"}
+  end
+
   @spec render_expr(term()) :: {:ok, String.t()} | {:error, {:unsupported, detail()}}
   defp render_expr({:int, n}), do: {:ok, Integer.to_string(n)}
   defp render_expr({:str, s}), do: {:ok, inspect(s)}
@@ -313,6 +343,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
 
   defp render_expr({:neg, expr}) do
     with {:ok, src} <- render_expr(expr), do: {:ok, "(0 - #{src})"}
+  end
+
+  defp render_expr({:not, _} = expr) do
+    with {:ok, condition} <- render_condition(expr), do: {:ok, "Rathena.bool_int(#{condition})"}
   end
 
   defp render_expr({:name, name}) do
@@ -342,6 +376,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
           {:ok, "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"}
         end
 
+      {:ok, %{shape: :call} = rule} ->
+        render_rule(rule, args)
+
       :error ->
         unsupported({:unknown_call, name})
     end
@@ -351,10 +388,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     with {:ok, l} <- render_expr(lhs), {:ok, r} <- render_expr(rhs), do: {:ok, binop(op, l, r)}
   end
 
-  defp render_expr({:bin, op, lhs, rhs}) when op in @logic_ops do
-    with {:ok, l} <- render_expr(lhs), {:ok, r} <- render_expr(rhs) do
-      {:ok, "(#{l} #{op} #{r})"}
-    end
+  defp render_expr({:bin, op, _, _} = expr) when op in @logic_ops do
+    with {:ok, condition} <- render_condition(expr), do: {:ok, "Rathena.bool_int(#{condition})"}
   end
 
   defp render_expr(other), do: unsupported({:expression, other})

@@ -6386,6 +6386,16 @@
 - aegis_name: Falcon_Flute
   id: 12848
   name: Falcon Flute
+  on_use: |-
+    if Rathena.truthy?(getskilllv(ctx, 127)) do
+      if (not (Rathena.truthy?(checkoption(ctx, 1048576))) and not (Rathena.truthy?(checkoption(ctx, 2097152)))) do
+        setfalcon(ctx, Rathena.bool_int(not (Rathena.truthy?(checkfalcon(ctx)))))
+      else
+        ctx
+      end
+    else
+      ctx
+    end
   type: delay_consume
   weight: 10
 - aegis_name: Battle_Manual_Box
