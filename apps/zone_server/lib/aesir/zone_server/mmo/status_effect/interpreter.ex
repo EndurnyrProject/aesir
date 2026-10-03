@@ -41,6 +41,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @type unit_type :: Unit.unit_type()
   @type remove_option :: {:owner_refresh, StatusEntry.owner_refresh()}
 
+  # Full-block statuses folded before every other absorb hook (see absorb_damage/4).
+  @absorb_first [:sc_basilica, :sc_basilica_caster]
+
   @doc """
   Initializes the status effect system by loading all definitions.
   """
@@ -472,12 +475,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   `:remove` passes the hit through and expires the status; `{:remove, damage}`
   expires it after setting the running damage. Updated state is persisted and
   removals run the expire path. Returns the final integer damage.
+
+  Full-block statuses (`@absorb_first`, the Basilica sanctuary) fold before
+  every other status; a hit they block to zero never reaches the rest, so a
+  blocked hit cannot spend a Kyrie hit, drain Energy Coat SP, or consume Lex
+  Aeterna.
   """
   @spec absorb_damage(unit_type(), integer(), integer(), map()) :: integer()
   def absorb_damage(unit_type, unit_id, damage, hit_info) do
-    unit_type
-    |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.reduce(damage, fn instance, acc ->
+    {first, rest} =
+      unit_type
+      |> StatusStorage.get_unit_statuses(unit_id)
+      |> Enum.split_with(&(&1.type in @absorb_first))
+
+    case fold_absorb(first, unit_type, unit_id, damage, hit_info) do
+      0 when first != [] -> 0
+      remaining -> fold_absorb(rest, unit_type, unit_id, remaining, hit_info)
+    end
+  end
+
+  defp fold_absorb(statuses, unit_type, unit_id, damage, hit_info) do
+    Enum.reduce(statuses, damage, fn instance, acc ->
       dispatch_absorb(unit_type, unit_id, instance, acc, hit_info)
     end)
   end

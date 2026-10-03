@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
@@ -57,16 +58,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
   @doc """
   Requests collision-aware movement away from `{from_x, from_y}`.
-  """
-  @spec knockback(atom(), integer(), integer(), integer(), non_neg_integer()) :: result()
-  def knockback(:skill_unit, _unit_id, _from_x, _from_y, _distance), do: :ok
 
-  def knockback(unit_type, unit_id, from_x, from_y, distance) do
+  `opts[:source_boss?]` marks the push as coming from a boss: a pre-renewal
+  Basilica caster resists every other source.
+  """
+  @spec knockback(atom(), integer(), integer(), integer(), non_neg_integer(), keyword()) ::
+          result()
+  def knockback(unit_type, unit_id, from_x, from_y, distance, opts \\ [])
+
+  def knockback(:skill_unit, _unit_id, _from_x, _from_y, _distance, _opts), do: :ok
+
+  def knockback(unit_type, unit_id, from_x, from_y, distance, opts) do
     with {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
          {:ok, {module, state, pid}} <- displacement_owner(unit_type, unit_id),
          :ok <- ensure_living(state),
          {:ok, _map} <- MapCache.get(map_name) do
-      if Rules.ground?(map_name) or module.is_boss?(state) or knockback_immune?(module, state) do
+      if Rules.ground?(map_name) or module.is_boss?(state) or knockback_immune?(module, state) or
+           anchored_by_basilica?(unit_type, unit_id, opts) do
         {:ok, {x, y}}
       else
         {dx, dy} = {sign(x - from_x), sign(y - from_y)}
@@ -124,6 +132,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
     function_exported?(module, :knockback_immune?, 1) and module.knockback_immune?(state)
   end
 
+  defp anchored_by_basilica?(unit_type, unit_id, opts) do
+    not Keyword.get(opts, :source_boss?, false) and
+      StatusStorage.has_status?(unit_type, unit_id, :sc_basilica_caster)
+  end
+
   defp displacement_owner(unit_type, unit_id) do
     case UnitRegistry.get_unit(unit_type, unit_id) do
       {:ok, {module, state, pid}} when is_pid(pid) ->
@@ -159,7 +172,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   defp request_skill_displacement(%{hit?: true}, attacker, target, distance, opts)
        when distance > 0 do
     {from_x, from_y} = displacement_origin(attacker, opts)
-    knockback(target.unit_type, target.unit_id, from_x, from_y, distance)
+
+    knockback(target.unit_type, target.unit_id, from_x, from_y, distance,
+      source_boss?: attacker.class == :boss
+    )
   end
 
   defp request_skill_displacement(_skill_result, _attacker, _target, _distance, _opts), do: :ok

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -161,6 +162,44 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
              Knockback.skill(attacker, target, 18, result, origin: {152, 150})
 
     assert_received {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 149, 150}}}
+  end
+
+  describe "a Basilica caster" do
+    setup do
+      stub_movable_mob()
+
+      :ok =
+        StatusStorage.apply_status(:mob, @mob_id, :sc_basilica_caster,
+          val1: 1,
+          duration: 20_000
+        )
+
+      :ok
+    end
+
+    test "holds its ground against a non-boss source" do
+      assert {:ok, {151, 150}} = Knockback.knockback(:mob, @mob_id, 150, 150, 2)
+      assert {:ok, {151, 150}} = Knockback.knockback(:mob, @mob_id, 150, 150, 2, [])
+      refute_received {:"$gen_cast", {:movement, {:knockback, _, _, _, _, _}}}
+    end
+
+    test "is moved by a boss source" do
+      assert {:ok, {153, 150}} =
+               Knockback.knockback(:mob, @mob_id, 150, 150, 2, source_boss?: true)
+
+      assert_received {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 153, 150}}}
+    end
+
+    test "a boss attacker's skill knockback moves it" do
+      attacker =
+        CombatTestHelper.create_mob_combatant(unit_id: 9_999, position: @from)
+        |> Map.put(:class, :boss)
+
+      target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+      result = %{hit?: true, target_survives?: true, coma?: false}
+
+      assert {:ok, {153, 150}} = Knockback.skill(attacker, target, 18, result, base_distance: 2)
+    end
   end
 
   test "skill keeps existing boss knockback immunity" do

@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
 
       :not_rerouted ->
-        {absorb_unit_damage(target_type, target_id, damage, hit_info),
+        {absorb_unit_damage(target_type, target_id, damage, hit_info, attacker_id),
          Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
@@ -98,7 +98,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     case Rules.validate_target(resolve_attacker(attacker), target, hit_info) do
       :ok ->
         equipment_basis = reduce_magic_damage(damage, target_type, target_id, hit_info)
-        absorbed = absorb_unit_damage(target_type, target_id, equipment_basis, hit_info)
+
+        absorbed =
+          absorb_unit_damage(target_type, target_id, equipment_basis, hit_info, attacker)
 
         {absorbed,
          Map.merge(hit_info, %{
@@ -207,7 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         {settle_components(swing, 0), delivery}
 
       :not_rerouted ->
-        final_damage = absorb_unit_damage(target_type, target_id, raw_total, hit_info)
+        final_damage = absorb_unit_damage(target_type, target_id, raw_total, hit_info, attacker)
         settled = settle_components(swing, final_damage)
         prepared_hit = Map.put(hit_info, :pre_delivery_prepared?, true)
 
@@ -497,13 +499,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp apply_ground_rate(damage, _rate), do: damage
 
-  defp absorb_unit_damage(:skill_unit, _target_id, damage, _hit_info), do: damage
+  # Status absorb hooks see the hit's source as `hit_info.attacker` (a typed
+  # unit ref, or nil when unknown), e.g. Basilica letting only bosses through.
+  defp absorb_unit_damage(:skill_unit, _target_id, damage, _hit_info, _attacker), do: damage
 
-  defp absorb_unit_damage(target_type, target_id, damage, hit_info) when damage > 0 do
+  defp absorb_unit_damage(target_type, target_id, damage, hit_info, attacker) when damage > 0 do
+    hit_info = Map.put(hit_info, :attacker, absorb_attacker(attacker))
     StatusInterpreter.absorb_damage(target_type, target_id, damage, hit_info)
   end
 
-  defp absorb_unit_damage(_target_type, _target_id, damage, _hit_info), do: damage
+  defp absorb_unit_damage(_target_type, _target_id, damage, _hit_info, _attacker), do: damage
+
+  defp absorb_attacker(attacker_id) when is_integer(attacker_id), do: {:player, attacker_id}
+
+  defp absorb_attacker({_unit_type, _unit_id} = ref),
+    do: if(Ref.valid?(ref), do: ref, else: nil)
+
+  defp absorb_attacker(_attacker), do: nil
 
   defp component_metadata(%HandedAttack{} = swing) do
     primary = {:primary, swing.primary.damage, swing.primary_element}
@@ -701,7 +713,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         prepare_ground_damage(target_type, target_id, damage, hit_info, attacker, target)
 
       :not_ground ->
-        {absorb_unit_damage(target_type, target_id, damage, hit_info),
+        {absorb_unit_damage(target_type, target_id, damage, hit_info, attacker),
          Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
