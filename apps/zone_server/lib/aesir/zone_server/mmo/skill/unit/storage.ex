@@ -233,6 +233,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
     map_name |> get_groups_at_cell(x, y) |> Enum.any?(&Group.land_protector?/1)
   end
 
+  @doc "Whether a Basilica sanctuary covers cell `(x, y)` on `map_name`."
+  @spec basilica?(String.t(), integer(), integer()) :: boolean()
+  def basilica?(map_name, x, y) do
+    map_name |> get_groups_at_cell(x, y) |> Enum.any?(&Group.basilica?/1)
+  end
+
   @doc "Returns every group owned by the given caster."
   @spec get_groups_by_caster(atom(), integer()) :: [Group.t()]
   def get_groups_by_caster(caster_type, caster_id) do

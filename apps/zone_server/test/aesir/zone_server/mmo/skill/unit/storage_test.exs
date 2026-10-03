@@ -86,6 +86,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
     end
   end
 
+  describe "basilica?/3" do
+    test "is true on every cell of a Basilica group, false elsewhere and once it is gone" do
+      basilica = group(7, cells: [{100, 100}, {101, 100}], state: %{basilica: true})
+      :ok = Storage.insert(basilica)
+      :ok = Storage.insert(group(8, cells: [{102, 100}]))
+
+      assert Group.basilica?(basilica)
+      refute Group.basilica?(group(8))
+      assert Storage.basilica?("prontera", 100, 100)
+      assert Storage.basilica?("prontera", 101, 100)
+      refute Storage.basilica?("prontera", 102, 100)
+      refute Storage.basilica?("geffen", 100, 100)
+
+      :ok = Storage.delete(7)
+
+      refute Storage.basilica?("prontera", 100, 100)
+    end
+  end
+
   describe "delete/1" do
     test "removes a stored group" do
       :ok = Storage.insert(group(1))

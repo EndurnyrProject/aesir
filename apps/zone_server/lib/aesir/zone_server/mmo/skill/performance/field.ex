@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit, as: GameUnit
@@ -142,7 +143,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
       target?: fn {type, id} = mover ->
         not (id in perf.performers and type == :player) and
           eligible?(perf.reach, group, mover) and
-          not dissonant_position?(group, mover)
+          not dissonant_position?(group, mover) and
+          not on_basilica?(group, mover)
       end
     }
   end
@@ -191,6 +193,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   end
 
   defp eligible_unit?(_reach, _group, _type, _target), do: false
+
+  # Song and ensemble statuses never take hold on a Basilica sanctuary cell.
+  defp on_basilica?(group, {type, id}) do
+    case SpatialIndex.get_unit_position(type, id) do
+      {:ok, {x, y, map_name}} when map_name == group.map_name -> Storage.basilica?(map_name, x, y)
+      _ -> false
+    end
+  end
 
   defp dissonant_position?(group, {type, id}) do
     case SpatialIndex.get_unit_position(type, id) do

@@ -115,6 +115,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   def land_protector?(%__MODULE__{state: %{land_protector: true}}), do: true
   def land_protector?(%__MODULE__{}), do: false
 
+  @doc "Whether this group is a pre-renewal Basilica sanctuary field."
+  @spec basilica?(t()) :: boolean()
+  def basilica?(%__MODULE__{state: %{basilica: true}}), do: true
+  def basilica?(%__MODULE__{}), do: false
+
   @doc """
   Whether this group is exempt from Land Protector destruction and suppression.
 

@@ -109,6 +109,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   @tag game_mode: :pre_renewal
+  test "a unit standing on a Basilica cell receives no song status" do
+    caster = player(17)
+    :ok = UnitRegistry.register_player(caster, self())
+    :ok = SpatialIndex.add_unit(:player, 17, 10, 10, "prontera")
+    :ok = UnitRegistry.register_player(player(18), self())
+    :ok = SpatialIndex.add_unit(:player, 18, 11, 10, "prontera")
+    :ok = UnitRegistry.register_player(player(19), self())
+    :ok = SpatialIndex.add_unit(:player, 19, 9, 10, "prontera")
+    {:ok, definition} = Catalog.by_name(:ba_whistle)
+    {:ok, _} = Field.start(caster, definition, 5, :sc_whistle, [], kind: :song, upkeep: 5)
+    [group] = Storage.get_groups_by_caster(:player, 17)
+
+    :ok =
+      Storage.insert(%Group{
+        group_id: 9_001,
+        skill_id: 362,
+        skill_name: :hp_basilica,
+        level: 1,
+        caster_id: 20,
+        caster_type: :player,
+        map_name: "prontera",
+        center: {11, 10},
+        cells: [{11, 10}],
+        next_tick_at: 0,
+        expires_at: 0,
+        interval: 300,
+        state: %{basilica: true}
+      })
+
+    support = Field.field_support(group)
+    refute support.target?.({:player, 18})
+    assert support.target?.({:player, 19})
+  end
+
+  @tag game_mode: :pre_renewal
   test "reach can select party members, enemies or mobs without selecting the performer" do
     caster = %{player(17) | party_id: 2}
     ally = %{player(18) | party_id: 2}
