@@ -272,7 +272,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
   # Expiration can change both stats and status-driven state such as walk speed.
   defp notify_player_status_expiration(player_id) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", :recalculate_stats)
+    PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", {:stats, :status_changed})
   end
 
   # Broadcast on the player's topic so this manager stays decoupled from

@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
   @doc "Sends one sphere-delivery request to the target's current session."
   @spec transfer(session_state(), non_neg_integer()) :: :ok
   def transfer(%{game_state: source}, target_id) do
-    dispatch(target_id, {:receive_spirit_sphere, request(source, target_id)})
+    dispatch(target_id, {:skill, {:receive_spirit_sphere, request(source, target_id)}})
   end
 
   @doc "Accepts a sphere from a still-current party member when the target has room."
@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
   def request_absorb(%{game_state: source}, target_id, token) do
     dispatch(
       target_id,
-      {:absorb_spirit_spheres, Map.put(request(source, target_id), :token, token)}
+      {:skill, {:absorb_spirit_spheres, Map.put(request(source, target_id), :token, token)}}
     )
   end
 
@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
 
       GenServer.cast(
         request.source_pid,
-        {:spirit_absorb_result, token, target.character_id, count}
+        {:skill, {:spirit_absorb_result, token, target.character_id, count}}
       )
 
       {:noreply, state}

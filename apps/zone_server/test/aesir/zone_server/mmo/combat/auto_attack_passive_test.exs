@@ -200,9 +200,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
       assert_received :attacker_pid_lookup
       refute_received :attacker_pid_lookup
 
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^matching_key, {:host, 1}}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_flag_key, _}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^matching_key, _}}
+      assert_received {:"$gen_cast",
+                       {:equipment, {:autobonus_activate, ^matching_key, {:host, 1}}}}
+
+      refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^wrong_flag_key, _}}}
+      refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^matching_key, _}}}
     end
 
     test "restores SP after a normal hit when the drain is non-zero",
@@ -302,7 +304,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
         assert :ok = Combat.execute_attack(attacker, player_state, 3001)
       end)
 
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, _}}
+      assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^defender_key, _}}}
     end
 
     test "a multi-hit swing still dispatches exactly once",

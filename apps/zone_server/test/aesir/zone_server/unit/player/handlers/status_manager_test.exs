@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       assert removed.game_state.walk_speed == 150
       assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 150}}}
       refute_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0}}}
-      refute_receive :recalculate_stats
+      refute_receive {:stats, :status_changed}
     end
 
     test "applying Increase AGI speeds the player up", %{state: state} do

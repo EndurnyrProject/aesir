@@ -81,7 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     assert settled.game_state.stats.current_state.sp == 60
     assert SpiritSpheres.count(settled.game_state.spirit_spheres) == 0
 
-    assert_receive {:"$gen_cast", {:receive_spirit_sphere, %{source_id: 1, target_id: 2}}}
+    assert_receive {:"$gen_cast",
+                    {:skill, {:receive_spirit_sphere, %{source_id: 1, target_id: 2}}}}
   end
 
   test "changed party, full targets, and coin-user jobs are rejected" do

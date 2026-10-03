@@ -23,8 +23,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandlerTest do
     assert :ok = SpiritExchangeHandler.transfer(%{game_state: source}, 2)
 
     assert_receive {:"$gen_cast",
-                    {:receive_spirit_sphere,
-                     %{source_id: 1, source_pid: source_pid, target_id: 2}}}
+                    {:skill,
+                     {:receive_spirit_sphere,
+                      %{source_id: 1, source_pid: source_pid, target_id: 2}}}}
 
     assert source_pid == self()
   end
@@ -96,7 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandlerTest do
              )
 
     assert SpiritSpheres.count(updated.game_state.spirit_spheres) == 0
-    assert_receive {:"$gen_cast", {:spirit_absorb_result, ^token, 2, 2}}
+    assert_receive {:"$gen_cast", {:skill, {:spirit_absorb_result, ^token, 2, 2}}}
   end
 
   test "player absorb is rejected when the current targeting policy disallows PvP" do
@@ -108,7 +109,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandlerTest do
     state = %{connection_pid: self(), game_state: target}
 
     assert {:noreply, ^state} = SpiritExchangeHandler.absorb_spheres(state, request)
-    refute_receive {:"$gen_cast", {:spirit_absorb_result, ^token, 2, _count}}
+    refute_receive {:"$gen_cast", {:skill, {:spirit_absorb_result, ^token, 2, _count}}}
   end
 
   test "player absorb rejects a current coin-user target before the PvP check" do
@@ -123,7 +124,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandlerTest do
     state = %{connection_pid: self(), game_state: target}
 
     assert {:noreply, ^state} = SpiritExchangeHandler.absorb_spheres(state, request)
-    refute_receive {:"$gen_cast", {:spirit_absorb_result, ^token, 2, _count}}
+    refute_receive {:"$gen_cast", {:skill, {:spirit_absorb_result, ^token, 2, _count}}}
   end
 
   defp player_state(id, opts \\ []) do

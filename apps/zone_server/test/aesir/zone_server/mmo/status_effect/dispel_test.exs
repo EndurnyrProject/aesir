@@ -98,8 +98,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
 
       refute StatusStorage.has_status?(:player, unit_id, :sc_poison)
       refute StatusStorage.has_status?(:player, unit_id, :sc_blind)
-      assert_receive :recalculate_stats
-      refute_receive :recalculate_stats
+      assert_receive {:stats, :status_changed}
+      refute_receive {:stats, :status_changed}
     end
 
     test "disarms Berserk's HP penalty before removing the status", %{unit_id: unit_id} do

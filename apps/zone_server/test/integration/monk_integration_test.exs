@@ -145,8 +145,9 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
       assert :ok = SpiritExchangeHandler.transfer(%{game_state: source}, 5_002)
 
       assert_receive {:"$gen_cast",
-                      {:receive_spirit_sphere,
-                       %{source_id: 5_001, source_pid: source_pid, target_id: 5_002} = request}}
+                      {:skill,
+                       {:receive_spirit_sphere,
+                        %{source_id: 5_001, source_pid: source_pid, target_id: 5_002} = request}}}
 
       assert source_pid == self()
 
@@ -184,12 +185,13 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
 
       GenServer.cast(
         victim.pid,
-        {:absorb_spirit_spheres, Map.put(delivery_request(source, victim), :token, token)}
+        {:skill,
+         {:absorb_spirit_spheres, Map.put(delivery_request(source, victim), :token, token)}}
       )
 
       Process.sleep(50)
       assert sphere_count(victim.pid) == 2
-      refute_receive {:"$gen_cast", {:spirit_absorb_result, ^token, _, _}}
+      refute_receive {:"$gen_cast", {:skill, {:spirit_absorb_result, ^token, _, _}}}
     end
   end
 

@@ -1499,7 +1499,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     with {:ok, pid} <- UnitRegistry.get_player_pid(unit_id) do
       Enum.each(keys, fn key ->
         source_identity = registrations |> Map.fetch!(key) |> Map.fetch!(:source_identity)
-        GenServer.cast(pid, {:equip_autobonus_activate, key, source_identity})
+        GenServer.cast(pid, {:equipment, {:autobonus_activate, key, source_identity}})
       end)
     end
 

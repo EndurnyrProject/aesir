@@ -1350,8 +1350,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
 
-      assert_receive :recalculate_stats
-      refute_receive :recalculate_stats
+      assert_receive {:stats, :status_changed}
+      refute_receive {:stats, :status_changed}
     end
 
     test "an application from the owning session defers the refresh by default" do
@@ -1368,7 +1368,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
 
-      refute_receive :recalculate_stats
+      refute_receive {:stats, :status_changed}
     end
 
     test "notifies the player owner asynchronously only after a successful application" do
@@ -1382,7 +1382,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
                  owner_refresh: :notify
                )
 
-      refute_receive :recalculate_stats
+      refute_receive {:stats, :status_changed}
 
       assert :ok =
                Interpreter.apply_status(:player, target_id, :sc_provoke,
@@ -1390,8 +1390,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
                  owner_refresh: :notify
                )
 
-      assert_receive :recalculate_stats
-      refute_receive :recalculate_stats
+      assert_receive {:stats, :status_changed}
+      refute_receive {:stats, :status_changed}
     end
 
     test "a rejected replacement leaves the existing status and owner untouched" do
@@ -1413,7 +1413,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert StatusStorage.has_status?(:player, target_id, :sc_provoke)
       refute StatusStorage.has_status?(:player, target_id, :sc_test_rejected_replacement)
-      refute_receive :recalculate_stats
+      refute_receive {:stats, :status_changed}
     end
 
     test "a successful replacement emits only its final owner refresh" do
@@ -1435,8 +1435,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       refute StatusStorage.has_status?(:player, target_id, :sc_provoke)
       assert StatusStorage.has_status?(:player, target_id, :sc_test_replacement)
-      assert_receive :recalculate_stats
-      refute_receive :recalculate_stats
+      assert_receive {:stats, :status_changed}
+      refute_receive {:stats, :status_changed}
     end
 
     test "death rollback leaves a newer same-type generation untouched" do
@@ -1479,7 +1479,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       assert StatusStorage.get_status(:player, target_id, :sc_test_generation) === newer
       refute_receive {:generation_expired, _generation}
       refute_receive {:status_display, _event, _generation}
-      refute_receive :recalculate_stats
+      refute_receive {:stats, :status_changed}
     end
 
     test "a superseded application is not displayed or refreshed as current" do
@@ -1522,7 +1522,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       assert newer.generation > first_generation
       refute_receive {:status_display, _event, _generation}
       refute_receive {:generation_expired, _generation}
-      refute_receive :recalculate_stats
+      refute_receive {:stats, :status_changed}
     end
 
     test "a mutually exclusive reapplication discarded by a newer status removes its displayed icon" do
@@ -1650,11 +1650,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert_receive {:self_replacement_expired, :first}
       assert_receive {:status_display, :applied, :second}
-      assert_receive :recalculate_stats
+      assert_receive {:stats, :status_changed}
 
       refute_receive {:self_replacement_expired, :first}
       refute_receive {:status_display, :removed, :first}
-      refute_receive :recalculate_stats
+      refute_receive {:stats, :status_changed}
 
       assert %StatusEntry{state: %{generation: :second}} =
                StatusStorage.get_status(:player, target_id, :sc_test_self_replacing)
@@ -1715,7 +1715,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       refute_receive {:self_replacement_expired, :a}
       refute_receive {:self_replacement_expired, :b}
       refute_receive {:status_display, :applied, :b}
-      refute_receive :recalculate_stats
+      refute_receive {:stats, :status_changed}
     end
   end
 

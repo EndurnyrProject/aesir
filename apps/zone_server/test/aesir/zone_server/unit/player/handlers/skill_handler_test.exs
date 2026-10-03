@@ -297,7 +297,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       expect(UnitRegistry, :get_player_pid, fn 1000 -> {:ok, self()} end)
 
       assert {:noreply, _state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^key, {:host, 501}}}
+      assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, {:host, 501}}}}
     end
 
     test "rejected named skill use does not dispatch an equipment autobonus" do
@@ -326,7 +326,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       reject(&UnitRegistry.get_player_pid/1)
 
       assert {:noreply, ^state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^key, _}}
+      refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, _}}}
     end
 
     test "proc-origin skill casts do not recursively dispatch named-skill autobonuses" do
@@ -354,7 +354,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       reject(&UnitRegistry.get_player_pid/1)
 
       assert {:noreply, _state} = SkillHandler.handle_proc_cast(state, 29, 1, :self)
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^key, _}}
+      refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, _}}}
     end
 
     test "publishes the final resource projection after consuming SP" do
@@ -634,7 +634,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert committed.game_state.stats.current_state.sp == 5
       assert SpiritSpheres.count(committed.game_state.spirit_spheres) == 0
 
-      assert_receive {:"$gen_cast", {:receive_spirit_sphere, %{source_id: 1000, target_id: 2000}}}
+      assert_receive {:"$gen_cast",
+                      {:skill, {:receive_spirit_sphere, %{source_id: 1000, target_id: 2000}}}}
     end
 
     test "a local absorb settles its cost before applying the capped reward" do

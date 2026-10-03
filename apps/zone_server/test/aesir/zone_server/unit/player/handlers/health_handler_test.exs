@@ -242,7 +242,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert is_integer(expires_at)
       assert_received :synchronous_status_refresh
       refute_received :synchronous_status_refresh
-      refute_received :recalculate_stats
+      refute_received {:stats, :status_changed}
     end
 
     test "death does not dismount: SC_RIDING and the option bit both survive status cleanup" do

@@ -157,11 +157,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                display_hit_count: 5
              )
 
-    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, {:host, 1}}}
-    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, {:host, 1}}}
-    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key, _}}
-    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
-    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, _}}
+    assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^attacker_key, {:host, 1}}}}
+    assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^defender_key, {:host, 1}}}}
+    refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^wrong_key, _}}}
+    refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^attacker_key, _}}}
+    refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^defender_key, _}}}
   end
 
   test "misc skill hit dispatches only misc attacker and defender procs" do
@@ -219,9 +219,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                base_damage: 40
              )
 
-    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, {:host, 1}}}
-    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, {:host, 1}}}
-    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key, _}}
+    assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^attacker_key, {:host, 1}}}}
+    assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^defender_key, {:host, 1}}}}
+    refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^wrong_key, _}}}
   end
 
   test "streams every multi-hit fragment through delivery before calculating the next" do

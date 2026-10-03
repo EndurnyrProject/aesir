@@ -269,7 +269,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
 
     GenServer.cast(
       session.pid,
-      {:equip_autobonus_activate, key, registration.source_identity}
+      {:equipment, {:autobonus_activate, key, registration.source_identity}}
     )
 
     assert eventually(fn -> active_generation(session.pid, key) != first_generation end)

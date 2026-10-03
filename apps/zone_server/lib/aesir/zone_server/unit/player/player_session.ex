@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @spec summon_spirit_sphere(pid(), pos_integer(), pos_integer()) :: :ok
   def summon_spirit_sphere(pid, duration, cap \\ 5) do
-    GenServer.cast(pid, {:summon_spirit_sphere, duration, cap})
+    GenServer.cast(pid, {:skill, {:summon_spirit_sphere, duration, cap}})
   end
 
   @doc """
@@ -910,17 +910,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     ProgressionHandler.info(msg, state)
   end
 
-  # Stats: recompute cached stats after a status change. `{:stats, :recalculate}`
-  # comes from StatusTickManager; the bare `:recalculate_stats` comes from the
-  # status-effect interpreter and runs the richer reconciliation that settles
-  # status-driven side effects (Fury / Mental Strength and friends).
+  # Stats: `{:stats, :recalculate}` is the plain cached-stats recompute;
+  # `{:stats, :status_changed}` (status interpreter and tick manager) runs the
+  # richer reconciliation that settles status-driven side effects (Fury /
+  # Mental Strength and friends).
   @impl true
   def handle_info({:stats, :recalculate}, state) do
     StatsManager.handle_recalculate_stats(state)
   end
 
   @impl true
-  def handle_info(:recalculate_stats, state) do
+  def handle_info({:stats, :status_changed}, state) do
     {:noreply, StatusManager.recalculate_after_status_change(state)}
   end
 
@@ -1139,7 +1139,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_cast({:equip_autobonus_activate, key, source_identity}, state) do
+  def handle_cast({:equipment, {:autobonus_activate, key, source_identity}}, state) do
     EquipProcHandler.activate(state, key, source_identity)
   end
 
@@ -1233,24 +1233,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # Skill: the spirit-sphere write path (Monk). Summon/consume timed spheres
   # route to SpiritSphereHandler, the single-writer handler for that state.
   @impl true
-  def handle_cast({:summon_spirit_sphere, duration, cap}, state) do
+  def handle_cast({:skill, {:summon_spirit_sphere, duration, cap}}, state) do
     SpiritSphereHandler.summon(state, duration, cap)
   end
 
   # Skill: the spirit-exchange write path (Monk). Receive/absorb spirit spheres
   # and the deferred absorb result route to their handlers.
   @impl true
-  def handle_cast({:receive_spirit_sphere, request}, state) do
+  def handle_cast({:skill, {:receive_spirit_sphere, request}}, state) do
     SpiritExchangeHandler.receive_sphere(state, request)
   end
 
   @impl true
-  def handle_cast({:absorb_spirit_spheres, request}, state) do
+  def handle_cast({:skill, {:absorb_spirit_spheres, request}}, state) do
     SpiritExchangeHandler.absorb_spheres(state, request)
   end
 
   @impl true
-  def handle_cast({:spirit_absorb_result, token, target_id, count}, state) do
+  def handle_cast({:skill, {:spirit_absorb_result, token, target_id, count}}, state) do
     SkillHandler.handle_spirit_absorb_result(state, token, target_id, count)
   end
 

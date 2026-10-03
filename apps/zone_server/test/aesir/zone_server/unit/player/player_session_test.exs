@@ -412,7 +412,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
       assert {:noreply, active} =
                PlayerSession.handle_cast(
-                 {:equip_autobonus_activate, key, registration.source_identity},
+                 {:equipment, {:autobonus_activate, key, registration.source_identity}},
                  state
                )
 

@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Integration.MonkStatusLifecycleIntegrationTest do
            end)
 
     assert_status_displays_removed(player.character.id)
-    refute_receive :recalculate_stats, 100
+    refute_receive {:stats, :status_changed}, 100
 
     simulate_incoming_message(player.pid, %Respawn{type: 0})
 
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Integration.MonkStatusLifecycleIntegrationTest do
              state.action_state == :idle and status_effects_reverted?(player, baseline)
            end)
 
-    refute_receive :recalculate_stats, 100
+    refute_receive {:stats, :status_changed}, 100
   end
 
   defp apply_monk_statuses(player) do

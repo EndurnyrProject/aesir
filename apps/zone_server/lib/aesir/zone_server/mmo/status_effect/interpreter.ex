@@ -644,7 +644,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp maybe_refresh_owner(:player, unit_id, true, opts) do
     case Keyword.get(opts, :owner_refresh, :auto) do
-      :notify -> PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", :recalculate_stats)
+      :notify -> PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", {:stats, :status_changed})
       :defer -> :ok
       :auto -> if owner_process?(unit_id), do: :ok, else: notify_player_owner(unit_id)
       policy -> raise ArgumentError, "invalid owner refresh policy: #{inspect(policy)}"
@@ -661,7 +661,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   defp notify_player_owner(unit_id) do
-    PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", :recalculate_stats)
+    PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", {:stats, :status_changed})
   end
 
   @doc """
