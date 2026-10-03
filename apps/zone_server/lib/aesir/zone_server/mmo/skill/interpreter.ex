@@ -53,6 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   # Vulture's Eye: the passive whose learned level widens a `vulture_range` skill.
   @vulture_skill_id 44
+  # Monk and Champion combo skills: delay reduced by AGI and DEX, floored at attack motion.
+  @combo_delay_skill_ids [272, 273, 371, 372]
 
   defmodule Deferred do
     @moduledoc "Deferred effect plus the owner-local resources settled on reply."
@@ -697,7 +699,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
        do: {:error, reason}
 
   defp put_resolved_combo_delay(%{id: skill_id} = definition, level, delay)
-       when skill_id in [272, 273] do
+       when skill_id in @combo_delay_skill_ids do
     %{
       definition
       | after_cast_delay: List.replace_at(definition.after_cast_delay, level - 1, delay)
@@ -1443,10 +1445,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     delay_rate = equip_modifier(game_state, :delay_rate)
     reduced = round(base * (100 - reduction) / 100 * max(0, 100 + delay_rate) / 100)
 
-    if skill_id in [272, 273], do: combo_delay_floor(game_state, reduced), else: max(0, reduced)
+    if skill_id in @combo_delay_skill_ids,
+      do: combo_delay_floor(game_state, reduced),
+      else: max(0, reduced)
   end
 
-  defp combo_base_delay(game_state, skill_id, base) when skill_id in [272, 273] do
+  defp combo_base_delay(game_state, skill_id, base) when skill_id in @combo_delay_skill_ids do
     stats = game_state.stats.base_stats
     max(0, base - 4 * stats.agi - 2 * stats.dex)
   end

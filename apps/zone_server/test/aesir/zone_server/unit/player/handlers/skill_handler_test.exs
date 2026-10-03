@@ -236,6 +236,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert returned.game_state.combo.stage == :idle
     end
 
+    test "Asura and the Champion combo skills keep the window on the retained target" do
+      stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
+
+      for skill_id <- [271, 371, 372] do
+        state = instant_state(100)
+        combo = Combo.open(Combo.new(), :extremity, {:mob, 2000}, 9_999_999_999)
+        state = %{state | game_state: %{state.game_state | combo: combo}}
+
+        expect(Interpreter, :begin_cast, fn game_state, ^skill_id, 1, {:unit, 2000} ->
+          assert game_state.combo.stage == :extremity
+          {:error, :invalid_target}
+        end)
+
+        SkillHandler.handle_use_skill(state, skill_id, 1, 2000)
+      end
+    end
+
+    test "Asura on another target cancels the open window" do
+      stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
+      state = instant_state(100)
+      combo = Combo.open(Combo.new(), :extremity, {:mob, 2000}, 9_999_999_999)
+      state = %{state | game_state: %{state.game_state | combo: combo}}
+
+      expect(Interpreter, :begin_cast, fn game_state, 271, 1, {:unit, 2001} ->
+        assert game_state.combo.stage == :idle
+        {:error, :invalid_target}
+      end)
+
+      SkillHandler.handle_use_skill(state, 271, 1, 2001)
+    end
+
     test "successful named skill use dispatches its equipment autobonus" do
       key = {10, 0}
       state = casting_state(45)

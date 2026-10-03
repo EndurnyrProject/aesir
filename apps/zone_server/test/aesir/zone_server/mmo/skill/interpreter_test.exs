@@ -2321,6 +2321,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.act_delay_until < before + 600
     end
 
+    test "Champion combo skills take the AGI and DEX reduced combo delay" do
+      gs = game_state(100, %{})
+      stats = gs.stats
+      stats = %{stats | base_stats: %{stats.base_stats | agi: 50, dex: 50}}
+      stats = %{stats | derived_stats: Map.put(stats.derived_stats, :aspd, 190)}
+      gs = %{gs | stats: stats}
+
+      for id <- [371, 372] do
+        definition = %Definition{
+          id: id,
+          name: :sm_provoke,
+          display_name: "Combo",
+          max_level: 1,
+          target_type: :self,
+          sp_cost: [0],
+          after_cast_delay: [1_000]
+        }
+
+        assert Interpreter.resolved_after_cast_delay(gs, definition, 1) == 700
+      end
+
+      assert Interpreter.resolved_after_cast_delay(
+               gs,
+               %Definition{
+                 id: 6,
+                 name: :sm_provoke,
+                 display_name: "Plain",
+                 max_level: 1,
+                 target_type: :self,
+                 sp_cost: [0],
+                 after_cast_delay: [1_000]
+               },
+               1
+             ) == 1_000
+    end
+
     test "complete_cast of a skill with no after_cast_delay leaves act_delay_until at 0" do
       stub(Catalog, :by_id, fn 6 -> {:ok, definition_with_act_delay([])} end)
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)

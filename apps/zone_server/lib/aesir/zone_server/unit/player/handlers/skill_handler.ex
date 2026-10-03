@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # `drive_cast/4` (and therefore ahead of `ensure_idle_for_cast/1`, which would
   # reject it) and never takes the ordinary cast path.
   @cast_cancel_id 275
-  @combo_followup_ids [272, 273]
+  @combo_followup_ids [271, 272, 273, 371, 372]
 
   @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer() | tuple()) ::
           {:noreply, SessionState.t()}
