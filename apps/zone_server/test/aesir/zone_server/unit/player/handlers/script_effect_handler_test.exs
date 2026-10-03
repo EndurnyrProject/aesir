@@ -187,6 +187,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  test "GM zeny grants commit through the player's session and use credit semantics" do
+    test_pid = self()
+
+    expect(CharacterPersistence, :update_character, fn 1000,
+                                                       %{zeny: 1_000_000_000},
+                                                       async: true ->
+      send(test_pid, :zeny_persisted)
+      {:ok, %Character{}}
+    end)
+
+    assert {:noreply, %{game_state: %{zeny: 1_000_000_000}}} =
+             ScriptEffectHandler.handle_gm_credit_zeny(500, base_state(zeny: 999_999_999))
+
+    assert_received :zeny_persisted
+
+    assert_received {:send, _ch,
+                     {:param_change, %ParamChange{var_id: @zeny_param, value: 1_000_000_000}}}
+  end
+
   describe "{:credit_zeny, amount}" do
     test "credits, pushes the zeny param, persists, returns the new game_state" do
       test_pid = self()

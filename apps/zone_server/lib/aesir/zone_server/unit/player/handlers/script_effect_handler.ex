@@ -117,6 +117,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
+  @doc "Credits GM-granted Zeny in the recipient's session using the script credit path."
+  @spec handle_gm_credit_zeny(pos_integer(), state()) :: {:noreply, state()}
+  def handle_gm_credit_zeny(amount, state) do
+    {{:ok, game_state}, new_state} = apply_op({:credit_zeny, amount}, state)
+    {:noreply, StateCommit.commit(new_state, game_state)}
+  end
+
   # Announce the domain fact a successful script op represents, so reactors
   # (quest-icon bubbles today) can respond without this handler naming them.
   # Ops with no bearing on observable player state emit nothing.

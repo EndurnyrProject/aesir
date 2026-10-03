@@ -537,6 +537,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:inventory, :repair_all})
   end
 
+  @doc "Credits Zeny through the recipient's session for the GM `@zeny` command."
+  @spec grant_zeny(pid(), pos_integer()) :: :ok
+  def grant_zeny(pid, amount) do
+    GenServer.cast(pid, {:npc, {:credit_zeny, amount}})
+  end
+
   @doc "Applies a script DSL state-mutating `op` through the single-writer session."
   @spec script_apply(pid(), ScriptEffectHandler.op()) :: ScriptEffectHandler.reply()
   def script_apply(pid, op) do
@@ -1293,8 +1299,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillHandler.handle_spirit_absorb_result(state, token, target_id, count)
   end
 
-  # NPC: the owner-event dispatch half of the two-message `:npc` domain (the
-  # other, `{:script_apply, op}`, is a call - see the handle_call clauses).
+  @impl true
+  def handle_cast({:npc, {:credit_zeny, amount}}, state) do
+    ScriptEffectHandler.handle_gm_credit_zeny(amount, state)
+  end
+
+  # NPC: owner-event dispatch; script_apply is a call (see handle_call clauses).
   @impl true
   def handle_cast({:npc, {:run_attached_event, module, gid, label}}, state) do
     {:noreply, NpcOwnerEventHandler.run(module, gid, label, state)}

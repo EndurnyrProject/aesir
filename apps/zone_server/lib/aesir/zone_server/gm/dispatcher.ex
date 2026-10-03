@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
     "agitend" => Aesir.ZoneServer.Gm.Commands.AgitEnd,
     "agitstart" => Aesir.ZoneServer.Gm.Commands.AgitStart,
     "item" => Aesir.ZoneServer.Gm.Commands.Item,
+    "zeny" => Aesir.ZoneServer.Gm.Commands.Zeny,
     "itembound" => Aesir.ZoneServer.Gm.Commands.ItemBound,
     "rentitem" => Aesir.ZoneServer.Gm.Commands.Rentitem,
     "warp" => Aesir.ZoneServer.Gm.Commands.Warp,

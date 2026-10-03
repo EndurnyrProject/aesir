@@ -112,6 +112,25 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
     assert %ChatMessage{gid: 1000, message: "boom"} = receive_chat_message()
   end
 
+  test "routes @zeny to the calling GM's session" do
+    ctx = ctx_for(seed_account(60))
+    ctx = put_in(ctx.game_state.character_name, "GmChar")
+
+    Dispatcher.dispatch("@zeny 500", ctx)
+
+    assert %ChatMessage{gid: 1000, message: "Gave 500 Zeny to GmChar"} = receive_chat_message()
+    assert_receive {:"$gen_cast", {:npc, {:credit_zeny, 500}}}
+  end
+
+  test "denies @zeny below GM level 60" do
+    ctx = ctx_for(seed_account(59))
+
+    Dispatcher.dispatch("@zeny 500", ctx)
+
+    assert %ChatMessage{message: "Insufficient permission"} = receive_chat_message()
+    refute_received {:"$gen_cast", {:npc, {:credit_zeny, _}}}
+  end
+
   test "routes @giveallskills to the calling GM's session" do
     ctx = ctx_for(seed_account(60))
     Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
