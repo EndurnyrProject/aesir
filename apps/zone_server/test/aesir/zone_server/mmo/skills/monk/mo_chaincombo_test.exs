@@ -106,8 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
     before = System.monotonic_time(:millisecond)
     assert {:ok, updated} = MoChaincombo.cast(caster, {:unit, @target_id}, 3, definition)
 
-    assert updated.combo.deadline >= before + 500
-    assert updated.combo.deadline < before + 550
+    assert updated.combo.deadline >= before + 800
+    assert updated.combo.deadline < before + 850
   end
 
   test "a failed hit does not advance the combo" do

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   skills the caster knows, the spirit spheres left after that skill's own cost,
   and whether Fury is active:
 
+    * after Raging Quadruple Blow: Raging Thrust (1+ sphere);
     * after Raging Thrust: Glacier Fist (1+ sphere), Chain Crush (2+), or Asura
       Strike (4+ and Fury);
     * after Glacier Fist: Chain Crush (2+);
@@ -22,6 +23,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
 
   Renewal and pre-renewal share these rules, except that in pre-renewal Chain
   Crush also opens toward Glacier Fist (1+ sphere), so the two can loop.
+
+  A window a combo skill opens lasts its after-cast delay plus a 300 ms grace,
+  so the follow-up can be cast once the delay has passed.
   """
 
   alias Aesir.Commons.GameMode
@@ -30,6 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   @asura 271
+  @thrust 273
+  @grace_ms 300
   @tiger_fist 371
   @chain_crush 372
 
@@ -115,7 +121,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   Returns the window a landed combo skill opens, or `:idle` when the chain
   closes. `spheres` must be the count left after the skill's own cost.
   """
-  @spec follow_up_stage(:thrust | :tiger_fist | :chain_crush, follow_up_ctx()) :: stage()
+  @spec follow_up_stage(:quadruple | :thrust | :tiger_fist | :chain_crush, follow_up_ctx()) ::
+          stage()
+  def follow_up_stage(:quadruple, ctx) do
+    if knows?(ctx, @thrust) and ctx.spheres >= 1, do: :thrust, else: :idle
+  end
+
   def follow_up_stage(:thrust, ctx) do
     if (knows?(ctx, @tiger_fist) and ctx.spheres >= 1) or
          (knows?(ctx, @chain_crush) and ctx.spheres >= 2) or asura?(ctx, 4),
@@ -136,19 +147,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   @doc """
   Opens the window a landed `opener` earns, advancing from any `expected`
   stage on `target`, or closes the chain. `own_cost` is the opener's sphere
-  cost, which the interpreter commits only after the skill returns. A new
-  window schedules `{:combo_timeout, generation}` to the calling session.
+  cost, which the interpreter commits only after the skill returns. The window
+  lasts `delay` plus the grace and schedules `{:combo_timeout, generation}` to
+  the calling session.
   """
   @spec open_follow_up(
           map(),
-          :thrust | :tiger_fist | :chain_crush,
+          :quadruple | :thrust | :tiger_fist | :chain_crush,
           stage() | [stage()],
           target(),
           integer(),
           non_neg_integer(),
           non_neg_integer()
         ) :: {:ok, t()} | {:error, :invalid_combo}
-  def open_follow_up(caster, opener, expected, target, now, duration, own_cost) do
+  def open_follow_up(caster, opener, expected, target, now, delay, own_cost) do
     ctx = %{
       learned: caster.stats.progression.learned_skills,
       spheres: max(SpiritSpheres.count(caster.spirit_spheres) - own_cost, 0),
@@ -160,8 +172,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
         {:ok, cancel(caster.combo)}
 
       stage ->
-        with {:ok, combo} <- advance(caster.combo, expected, stage, target, now + duration, now) do
-          Process.send_after(self(), {:combo_timeout, combo.generation}, duration)
+        window = delay + @grace_ms
+
+        with {:ok, combo} <- advance(caster.combo, expected, stage, target, now + window, now) do
+          Process.send_after(self(), {:combo_timeout, combo.generation}, window)
           {:ok, combo}
         end
     end

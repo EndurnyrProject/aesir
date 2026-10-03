@@ -26,7 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @behaviour Active
@@ -64,25 +63,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
          {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
          {:ok, ^target} <- Combo.validate(caster.combo, :quadruple, {target_type, target_id}, now),
          :ok <- Combat.execute_skill_attack(caster, target_id, opts),
-         duration <- Enum.at(definition.after_cast_delay, level - 1, 0),
-         {:ok, combo} <- maybe_open_thrust(caster, target, now, duration) do
-      if combo.stage == :thrust,
-        do: Process.send_after(self(), {:combo_timeout, combo.generation}, duration)
-
+         delay <- Enum.at(definition.after_cast_delay, level - 1, 0),
+         {:ok, combo} <-
+           Combo.open_follow_up(caster, :quadruple, :quadruple, target, now, delay, 0) do
       {:ok, %{caster | combo: combo}}
     end
   end
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_combo}
-
-  defp maybe_open_thrust(caster, target, now, duration) do
-    if Map.get(caster.stats.progression.learned_skills, 273, 0) >= 1 and
-         SpiritSpheres.count(caster.spirit_spheres) >= 1 do
-      Combo.advance(caster.combo, :quadruple, :thrust, target, now + duration, now)
-    else
-      {:ok, Combo.cancel(caster.combo)}
-    end
-  end
 
   defp now, do: System.monotonic_time(:millisecond)
 end

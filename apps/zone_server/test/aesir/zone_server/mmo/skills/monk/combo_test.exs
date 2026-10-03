@@ -96,6 +96,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
       assert Combo.follow_up_stage(:thrust, ctx([], 5, true)) == :idle
     end
 
+    test "Raging Quadruple Blow opens Thrust's window with a sphere and Thrust known" do
+      assert Combo.follow_up_stage(:quadruple, ctx([273], 1)) == :thrust
+      assert Combo.follow_up_stage(:quadruple, ctx([273], 0)) == :idle
+      assert Combo.follow_up_stage(:quadruple, ctx([], 5)) == :idle
+    end
+
     test "Glacier Fist opens its window only toward Chain Crush" do
       assert Combo.follow_up_stage(:tiger_fist, ctx([372], 2)) == :tiger_fist
       assert Combo.follow_up_stage(:tiger_fist, ctx([372], 1)) == :idle
