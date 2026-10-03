@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -23,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
     assert {:ok, definition} = Catalog.by_id(273)
     assert definition.target_type == :target_enemy
     assert definition.range == -2
-    assert definition.splash_radius == 0
+    assert definition.splash_radius == 2
     assert definition.sp_cost == [3, 4, 5, 6, 7]
     assert definition.after_cast_delay == [1_000, 1_000, 1_000, 1_000, 1_000]
   end
@@ -106,12 +107,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
     assert updated.combo.stage == :idle
   end
 
+  test "Thrust pays a sphere, so four held spheres leave too few for Asura" do
+    caster = asura_ready_caster(spheres: 4)
+
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {60, 50, "prontera"}} end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+
+    assert {:ok, updated} =
+             MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
+
+    assert updated.combo.stage == :idle
+    assert Cost.from_definition(caster, MoCombofinish.definition(), 3).spheres == 1
+  end
+
+  test "a Champion's Thrust opens the window toward Glacier Fist without Asura" do
+    caster = asura_ready_caster(spheres: 2, fury?: false, learned: %{273 => 5, 371 => 5})
+
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {60, 50, "prontera"}} end)
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)
+
+    assert {:ok, updated} =
+             MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
+
+    assert updated.combo.stage == :extremity
+    assert updated.combo.target == {:mob, @target_id}
+  end
+
   defp asura_ready_caster(opts \\ []) do
     base = caster(:thrust)
+    learned = Keyword.get(opts, :learned, %{273 => 5, 271 => 5})
 
     stats = %{
       base.stats
-      | progression: %{base.stats.progression | learned_skills: %{273 => 5, 271 => 5}}
+      | progression: %{base.stats.progression | learned_skills: learned}
     }
 
     spheres =

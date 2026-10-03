@@ -2,13 +2,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
   @moduledoc """
   Raging Thrust (MO_COMBOFINISH).
 
-  Landing a Thrust closes the ordinary combo chain, but when the caster can
-  immediately follow it with Asura Strike - knowing that skill, holding Fury,
-  and carrying at least four spirit spheres - it instead opens an `:extremity`
-  combo window so Asura can be cast as the chain's finisher.
+  A single-target strike that spends one spirit sphere. Landing it closes the
+  combo chain unless the caster can follow it up, counting the spheres left
+  after this one is paid: a Monk with Asura Strike, Fury, and four spheres left,
+  or a Champion with Glacier Fist and one sphere or Chain Crush Combo and two.
+  Any of those opens an `:extremity` window (see `Monk.Combo`).
+
+  The reference declares a 5x5 splash area, but the splash only applies while a
+  Soul Linker's Monk spirit is linked; Aesir has no Soul Linker, so the strike
+  stays single-target and the area is metadata only.
 
   Renewal: 550 plus 50 per level plus STR percent for 2 plus level SP.
-  Pre-renewal: 240 plus 60 per level percent for 10 plus level SP.
+  Pre-renewal: 240 plus 60 per level percent for 10 plus level SP. Both modes
+  spend one sphere.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -19,7 +25,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
     target_type: :target_enemy,
     damage_type: :damage,
     range: -2,
+    splash_radius: 2,
     sp_cost: [renewal: [3, 4, 5, 6, 7], pre_renewal: [11, 12, 13, 14, 15]],
+    sphere_cost: List.duplicate(1, 5),
     after_cast_delay: List.duplicate(1_000, 5)
 
   alias Aesir.ZoneServer.Mmo.Combat
@@ -27,15 +35,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
-  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Fury
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   @behaviour Active
 
-  @asura_skill_id 271
-  @asura_sphere_threshold 4
-  @fury :sc_explosionspirits
+  @own_sphere_cost 1
 
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -65,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
              skill_options(caster, level, definition)
            ),
          duration <- Enum.at(definition.after_cast_delay, level - 1, 0),
-         {:ok, combo} <- maybe_open_extremity(caster, target, now, duration) do
+         {:ok, combo} <- open_follow_up(caster, target, now, duration) do
       if combo.stage == :extremity,
         do: Process.send_after(self(), {:combo_timeout, combo.generation}, duration)
 
@@ -77,27 +83,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_combo}
 
-  # Opens the Asura follow-up window when the caster can immediately use it;
-  # otherwise the chain closes exactly as before.
-  defp maybe_open_extremity(caster, target, now, duration) do
-    if asura_follow_up_ready?(caster) do
-      Combo.advance(caster.combo, :thrust, :extremity, target, now + duration, now)
-    else
-      {:ok, Combo.cancel(caster.combo)}
-    end
-  end
+  # Opens the follow-up window when the caster can immediately use one; the
+  # interpreter commits this skill's sphere after we return, so count it here.
+  defp open_follow_up(caster, target, now, duration) do
+    ctx = %{
+      learned: caster.stats.progression.learned_skills,
+      spheres: max(SpiritSpheres.count(caster.spirit_spheres) - @own_sphere_cost, 0),
+      fury?: Fury.active?(caster.character_id)
+    }
 
-  defp asura_follow_up_ready?(caster) do
-    Map.get(caster.stats.progression.learned_skills, @asura_skill_id, 0) > 0 and
-      SpiritSpheres.count(caster.spirit_spheres) >= @asura_sphere_threshold and
-      fury_active?(caster.character_id)
-  end
-
-  defp fury_active?(character_id) do
-    case StatusStorage.get_status(:player, character_id, @fury) do
-      %{expires_at: nil} -> true
-      %{expires_at: expires_at} when is_integer(expires_at) -> expires_at > now()
-      _status -> false
+    case Combo.follow_up_stage(:thrust, ctx) do
+      :idle -> {:ok, Combo.cancel(caster.combo)}
+      stage -> Combo.advance(caster.combo, :thrust, stage, target, now + duration, now)
     end
   end
 

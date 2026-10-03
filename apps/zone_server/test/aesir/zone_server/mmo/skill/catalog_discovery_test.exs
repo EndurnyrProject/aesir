@@ -210,6 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Champion.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Monk.Combo,
       Aesir.ZoneServer.Mmo.Skills.Monk.Formulas,
+      Aesir.ZoneServer.Mmo.Skills.Monk.Fury,
       Aesir.ZoneServer.Mmo.Skills.Monk.Root,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementField,

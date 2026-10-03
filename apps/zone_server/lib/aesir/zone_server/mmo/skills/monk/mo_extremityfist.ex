@@ -67,9 +67,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Fury
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   def validate(%{character_id: caster_id} = caster, {:unit, _target_id}, _level, definition) do
     with :ok <- Root.check_cast(:player, caster_id, definition.id) do
       cond do
-        not fury_active?(caster_id) -> {:error, :requires_explosion_spirits}
+        not Fury.active?(caster_id) -> {:error, :requires_explosion_spirits}
         caster.stats.current_state.sp < Formulas.asura_sp_cost() -> {:error, :insufficient_sp}
         true -> :ok
       end
@@ -212,14 +212,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
 
       {:error, _reason} ->
         :normal
-    end
-  end
-
-  defp fury_active?(caster_id) do
-    case StatusStorage.get_status(:player, caster_id, @fury) do
-      %{expires_at: nil} -> true
-      %{expires_at: expires_at} when is_integer(expires_at) -> expires_at > now()
-      _status -> false
     end
   end
 
