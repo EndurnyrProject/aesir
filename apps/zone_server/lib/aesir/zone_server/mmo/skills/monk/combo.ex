@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   @moduledoc """
-  Pure, session-owned state for the Monk and Champion combo chain.
+  Session-owned state for the Monk and Champion combo chain. Everything is pure
+  except `open_follow_up/7`, which reads the caster's Fury and schedules the
+  window's timeout in the calling session.
 
   Generations make delayed timeout messages harmless after a window advances or
   is cancelled. Deadlines use monotonic milliseconds supplied by the caller.
@@ -24,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Fury
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   @asura 271
   @tiger_fist 371
@@ -127,6 +131,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
     if asura?(ctx, 1) or (pre_renewal?() and knows?(ctx, @tiger_fist) and ctx.spheres >= 1),
       do: :chain_crush,
       else: :idle
+  end
+
+  @doc """
+  Opens the window a landed `opener` earns, advancing from any `expected`
+  stage on `target`, or closes the chain. `own_cost` is the opener's sphere
+  cost, which the interpreter commits only after the skill returns. A new
+  window schedules `{:combo_timeout, generation}` to the calling session.
+  """
+  @spec open_follow_up(
+          map(),
+          :thrust | :tiger_fist | :chain_crush,
+          stage() | [stage()],
+          target(),
+          integer(),
+          non_neg_integer(),
+          non_neg_integer()
+        ) :: {:ok, t()} | {:error, :invalid_combo}
+  def open_follow_up(caster, opener, expected, target, now, duration, own_cost) do
+    ctx = %{
+      learned: caster.stats.progression.learned_skills,
+      spheres: max(SpiritSpheres.count(caster.spirit_spheres) - own_cost, 0),
+      fury?: Fury.active?(caster.character_id)
+    }
+
+    case follow_up_stage(opener, ctx) do
+      :idle ->
+        {:ok, cancel(caster.combo)}
+
+      stage ->
+        with {:ok, combo} <- advance(caster.combo, expected, stage, target, now + duration, now) do
+          Process.send_after(self(), {:combo_timeout, combo.generation}, duration)
+          {:ok, combo}
+        end
+    end
   end
 
   defp asura?(ctx, min_spheres),

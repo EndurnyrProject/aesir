@@ -35,13 +35,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
-  alias Aesir.ZoneServer.Mmo.Skills.Monk.Fury
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   @behaviour Active
-
-  @own_sphere_cost 1
 
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -71,10 +67,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
              skill_options(caster, level, definition)
            ),
          duration <- Enum.at(definition.after_cast_delay, level - 1, 0),
-         {:ok, combo} <- open_follow_up(caster, target, now, duration) do
-      if combo.stage == :extremity,
-        do: Process.send_after(self(), {:combo_timeout, combo.generation}, duration)
-
+         {:ok, combo} <-
+           Combo.open_follow_up(
+             caster,
+             :thrust,
+             :thrust,
+             target,
+             now,
+             duration,
+             Enum.at(definition.sphere_cost, level - 1, 0)
+           ) do
       {:ok, %{caster | combo: combo}}
     else
       {:error, _reason} = error -> error
@@ -82,21 +84,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
   end
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_combo}
-
-  # Opens the follow-up window when the caster can immediately use one; the
-  # interpreter commits this skill's sphere after we return, so count it here.
-  defp open_follow_up(caster, target, now, duration) do
-    ctx = %{
-      learned: caster.stats.progression.learned_skills,
-      spheres: max(SpiritSpheres.count(caster.spirit_spheres) - @own_sphere_cost, 0),
-      fury?: Fury.active?(caster.character_id)
-    }
-
-    case Combo.follow_up_stage(:thrust, ctx) do
-      :idle -> {:ok, Combo.cancel(caster.combo)}
-      stage -> Combo.advance(caster.combo, :thrust, stage, target, now + duration, now)
-    end
-  end
 
   defp skill_options(caster, level, definition) do
     [
