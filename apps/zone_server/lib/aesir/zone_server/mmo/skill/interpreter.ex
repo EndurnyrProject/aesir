@@ -361,9 +361,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          now,
          %CastContext{} = context
        ) do
-    apply_act_delay = Enum.at(context.definition.after_cast_delay, level - 1) not in [nil, 0]
-    after_cast_delay = resolved_after_cast_delay(game_state, context.definition, level)
-    definition = put_resolved_combo_delay(context.definition, level, after_cast_delay)
+    definition = delay_definition(game_state, context.module, target, level, context.definition)
+    apply_act_delay = Enum.at(definition.after_cast_delay, level - 1) not in [nil, 0]
+    after_cast_delay = resolved_after_cast_delay(game_state, definition, level)
+    definition = put_resolved_combo_delay(definition, level, after_cast_delay)
 
     complete_resolved_cast(
       game_state,
@@ -383,6 +384,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       }
     )
   end
+
+  # The optional `dynamic_after_cast_delay/4` replaces this level's table entry
+  # on a cast-local definition, so the ordinary delay pipeline still applies.
+  defp delay_definition(game_state, module, target, level, definition) do
+    if function_exported?(module, :dynamic_after_cast_delay, 4) do
+      base = module.dynamic_after_cast_delay(game_state, target, level, definition)
+      table = pad_levels(definition.after_cast_delay, level)
+      %{definition | after_cast_delay: List.replace_at(table, level - 1, base)}
+    else
+      definition
+    end
+  end
+
+  defp pad_levels(table, level) when length(table) >= level, do: table
+  defp pad_levels(table, level), do: table ++ List.duplicate(0, level - length(table))
 
   @doc "Settles a deferred cast against the caster's current resources."
   @spec settle_deferred(PlayerState.t(), Deferred.t()) ::

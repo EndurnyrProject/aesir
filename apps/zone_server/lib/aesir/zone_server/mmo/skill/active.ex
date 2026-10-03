@@ -147,6 +147,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @callback dynamic_cast_time(caster(), target(), pos_integer(), Definition.t()) ::
               %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
 
+  @doc """
+  Optionally resolves this cast's base after-cast delay from the caster's state
+  at cast completion, overriding the definition's per-level table entry.
+
+  The returned base still goes through the ordinary delay pipeline (status
+  reductions, equipment delay rate); `0` means no act delay for this cast. A
+  skill without it keeps its declared table.
+  """
+  @callback dynamic_after_cast_delay(caster(), target(), pos_integer(), Definition.t()) ::
+              non_neg_integer()
+
   @optional_callbacks cast_with_origin: 5,
                       cast_with_input: 5,
                       validate: 4,
@@ -154,7 +165,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
                       mob_cast: 5,
                       dynamic_cost: 4,
                       effective_range: 4,
-                      dynamic_cast_time: 4
+                      dynamic_cast_time: 4,
+                      dynamic_after_cast_delay: 4
 
   @doc "Returns a caster's unit id. Accepts bare `%{character_id: _}` maps from test fixtures."
   @spec caster_unit_id(

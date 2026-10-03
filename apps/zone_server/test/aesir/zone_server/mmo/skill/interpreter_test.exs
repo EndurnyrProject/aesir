@@ -185,6 +185,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  defmodule DynamicDelaySkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition), do: {:ok, game_state}
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+
+    @impl true
+    def dynamic_after_cast_delay(_game_state, _target, _level, _definition),
+      do: Process.get(:interpreter_test_delay)
+  end
+
   defmodule DynamicCastTimeSkill do
     @behaviour Aesir.ZoneServer.Mmo.Skill.Active
 
@@ -1349,6 +1363,47 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       cast_time: [0],
       cooldown: [5_000]
     }
+  end
+
+  describe "dynamic after-cast delay seam" do
+    @delay_definition %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      sp_cost: [0],
+      after_cast_delay: [1_000]
+    }
+
+    setup do
+      stub(Catalog, :by_id, fn 29 -> {:ok, @delay_definition} end)
+      stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicDelaySkill} end)
+      :ok
+    end
+
+    test "an implementing skill can drop its after-cast delay for this cast" do
+      Process.put(:interpreter_test_delay, 0)
+
+      assert {:ok, updated} = Interpreter.complete_cast(game_state(50, %{29 => 1}), 29, 1, :self)
+      assert updated.act_delay_until == 0
+    end
+
+    test "an implementing skill's delay goes through the ordinary delay pipeline" do
+      Process.put(:interpreter_test_delay, 4_000)
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} =
+               Interpreter.complete_cast(
+                 game_state(50, %{29 => 1}, %{delay_rate: -50}),
+                 29,
+                 1,
+                 :self
+               )
+
+      assert updated.act_delay_until >= before + 2_000
+      assert updated.act_delay_until < before + 2_100
+    end
   end
 
   describe "dynamic cast-time seam" do
