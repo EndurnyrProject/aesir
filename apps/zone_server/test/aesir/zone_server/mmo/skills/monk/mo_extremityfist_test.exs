@@ -170,6 +170,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
     end
   end
 
+  describe "after Chain Crush" do
+    setup do
+      stub(Combat, :resolve_target_position, fn @target_id ->
+        {:ok, :mob, {12, 10, "prontera"}}
+      end)
+
+      :ok
+    end
+
+    test "Asura casts instantly and spends every held sphere, at least one" do
+      held = window_caster(:chain_crush, sp: 250, spheres: 3)
+
+      assert %Cost{spheres: 3} =
+               MoExtremityfist.dynamic_cost(held, {:unit, @target_id}, 5, definition())
+
+      assert %{cast_time: 0, fixed_cast_time: 0} =
+               MoExtremityfist.dynamic_cast_time(held, {:unit, @target_id}, 5, definition())
+
+      empty = window_caster(:chain_crush, sp: 250, spheres: 0)
+
+      assert %Cost{spheres: 1} =
+               MoExtremityfist.dynamic_cost(empty, {:unit, @target_id}, 5, definition())
+    end
+
+    test "a Glacier Fist window is not an Asura window" do
+      caster = window_caster(:tiger_fist, sp: 250, spheres: 5)
+
+      assert %Cost{spheres: 5} =
+               MoExtremityfist.dynamic_cost(caster, {:unit, @target_id}, 5, definition())
+
+      refute MoExtremityfist.dynamic_cast_time(caster, {:unit, @target_id}, 5, definition()) ==
+               %{cast_time: 0, fixed_cast_time: 0}
+    end
+  end
+
   describe "cast/4" do
     @tag game_mode: :renewal
     test "deals pre-drain damage once, ends Fury/Root/combo, applies recovery, and stages the move" do
@@ -277,6 +312,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
       spirit_spheres: spheres(Keyword.get(opts, :spheres, 0)),
       combo: Combo.new()
     }
+  end
+
+  defp window_caster(stage, opts) do
+    caster = caster(opts)
+    %{caster | combo: Combo.open(Combo.new(), stage, {:mob, @target_id}, future())}
   end
 
   defp combo_caster(opts) do

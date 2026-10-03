@@ -129,11 +129,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
     end
   end
 
-  @type asura_context :: :normal | :root | :combo
+  @type asura_context :: :normal | :root | :combo | :chain_crush_combo
 
   @spec asura_sphere_cost(asura_context(), non_neg_integer()) :: pos_integer()
   def asura_sphere_cost(:normal, _held_spheres), do: 5
   def asura_sphere_cost(:root, _held_spheres), do: 4
+  def asura_sphere_cost(:chain_crush_combo, held_spheres), do: max(held_spheres, 1)
 
   def asura_sphere_cost(:combo, held_spheres) do
     case GameMode.mode() do

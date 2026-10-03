@@ -12,13 +12,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   ended, the recovery penalty applied, and the prevalidated relocation staged
   for the session to apply after commitment.
 
-  Three cast contexts change only the sphere requirement and how the cast is
+  Four cast contexts change only the sphere requirement and how the cast is
   reached; the caster must hold Fury in every one:
 
     * a normal cast spends five spheres;
     * a Root follow-up against the caught peer spends four;
-    * a combo follow-up off Raging Thrust's window spends every held sphere (at
-      least one) and casts instantly.
+    * a combo follow-up off Raging Thrust's window casts instantly and spends
+      every held sphere (at least one) in renewal, four in pre-renewal;
+    * a Champion follow-up off Chain Crush Combo's window casts instantly and
+      spends every held sphere (at least one) in both modes.
 
   The three-cell relocation is a rider on the strike, not a precondition: an
   unwalkable destination lands the blow and simply stages no movement.
@@ -115,7 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
           %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
   def dynamic_cast_time(caster, {:unit, target_id}, level, definition) do
     case context(caster, target_id) do
-      :combo ->
+      combo when combo in [:combo, :chain_crush_combo] ->
         %{cast_time: 0, fixed_cast_time: 0}
 
       _context ->
@@ -207,6 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
         cond do
           Root.follow_up_allowed?(:player, caster_id, @skill_id, target) -> :root
           Combo.current?(combo, :extremity, target, now()) -> :combo
+          Combo.current?(combo, :chain_crush, target, now()) -> :chain_crush_combo
           true -> :normal
         end
 

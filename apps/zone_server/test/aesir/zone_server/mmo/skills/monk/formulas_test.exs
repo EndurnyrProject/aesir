@@ -189,4 +189,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.ki_explosion_stun_duration() == 5_000
     assert Formulas.ki_explosion_stun_rate() == 70
   end
+
+  test "an Asura off Chain Crush spends every held sphere, at least one" do
+    assert Formulas.asura_sphere_cost(:chain_crush_combo, 0) == 1
+    assert Formulas.asura_sphere_cost(:chain_crush_combo, 3) == 3
+  end
 end
