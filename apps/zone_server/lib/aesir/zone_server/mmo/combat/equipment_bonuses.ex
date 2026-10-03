@@ -23,25 +23,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   (`race_class`). `bAddEle`
   keys on the defender's own defense element (`defender.element`), not the
   attack's element, so `attack_element` is accepted for call-site symmetry
-  with `damage_taken_rates/3` but is not read here.
+  with `damage_taken_rates/3` but is not read here. `attacker_modifiers` is
+  the attacker's folded status-effect map; its `{:addele, element}` entries sum
+  into the element family with equipment.
   """
-  @spec attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom()) :: %{
+  @spec attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom(), map()) :: %{
           race_class: rate(),
           element: rate(),
           size: rate(),
           skill: rate()
         }
-  def attack_rates(%Combatant{} = attacker, %Combatant{} = defender, skill_id, _attack_element) do
+  def attack_rates(
+        %Combatant{} = attacker,
+        %Combatant{} = defender,
+        skill_id,
+        _attack_element,
+        attacker_modifiers \\ %{}
+      ) do
+    defender_element = element_atom(defender.element)
+
     %{
       race_class:
         read(attacker, :addrace, defender.race) + read(attacker, :addclass, defender.class) +
           add_damage_class_rate(attacker, defender) +
           read_race2(attacker, :addrace2, defender.race2),
-      element: read(attacker, :addele, element_atom(defender.element)),
+      element:
+        read(attacker, :addele, defender_element) +
+          status_read(attacker_modifiers, :addele, defender_element),
       size: read(attacker, :addsize, defender.size),
       skill: skill_rate(attacker, :skill_atk, skill_id)
     }
   end
+
+  # Attacker status modifiers keyed like the equipment families (e.g. Basilica's
+  # `{:addele, :undead}`), summed with the equipment value into one family.
+  defp status_read(modifiers, family, param),
+    do: Map.get(modifiers, {family, param}, 0) + Map.get(modifiers, {family, :all}, 0)
 
   @doc """
   Damage-taken-side rate sums keyed on the attacker's traits, including

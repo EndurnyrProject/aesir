@@ -343,7 +343,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     defender_modifiers = ModifierCalculator.get_all_modifiers(defender_type, defender_id)
     element = Keyword.get(opts, :element) || resolve_attack_element(attacker, attacker_modifiers)
     skill_id = Keyword.get(opts, :skill_id)
-    attack_rates = EquipmentBonuses.attack_rates(attacker, defender, skill_id, element)
+
+    attack_rates =
+      EquipmentBonuses.attack_rates(attacker, defender, skill_id, element, attacker_modifiers)
+
     ranged? = ranged_hit?(attacker, opts)
     flag = BattleFlags.build(:weapon, if(ranged?, do: :long, else: :short), not is_nil(skill_id))
 
@@ -601,6 +604,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       )
       |> apply_equipment_attack_families(
         attacker,
+        attacker_modifiers,
         defender,
         skill_id,
         attack_element,
@@ -878,13 +882,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp apply_equipment_attack_families(
          damage,
          attacker,
+         attacker_modifiers,
          defender,
          skill_id,
          attack_element,
          attack_path
        ) do
     %{race_class: card_race_class, element: card_element, size: card_size, skill: skill} =
-      EquipmentBonuses.attack_rates(attacker, defender, skill_id, attack_element)
+      EquipmentBonuses.attack_rates(
+        attacker,
+        defender,
+        skill_id,
+        attack_element,
+        attacker_modifiers
+      )
 
     {card_race_class, card_element, card_size} =
       case attack_path do

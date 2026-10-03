@@ -1958,6 +1958,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert vs_fire == 1000.0
     end
 
+    test "an attacker status {:addele, e} joins the element family with equipment" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{{:addele, :undead} => 25}
+        _, _ -> %{}
+      end)
+
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | equip_modifiers: %{{:addele, :undead} => 10}
+      }
+
+      undead_mob = CombatTestHelper.create_mob_combatant(element: {:undead, 1})
+      fire_mob = CombatTestHelper.create_mob_combatant(element: {:fire, 1})
+
+      {:ok, vs_undead} = DamageCalculator.apply_modifier_pipeline(1000, attacker, undead_mob)
+      {:ok, vs_fire} = DamageCalculator.apply_modifier_pipeline(1000, attacker, fire_mob)
+
+      assert vs_undead == 1350
+      assert vs_fire == 1000.0
+    end
+
     test "{:subele, e} keys on the post-endow effective attack element, not the raw weapon" do
       # The attacker wields a neutral weapon but an :attack_element status endows
       # fire; the defender's {:subele, :fire} card must bite off the endowed

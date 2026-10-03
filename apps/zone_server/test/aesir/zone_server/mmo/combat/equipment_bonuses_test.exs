@@ -38,6 +38,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
              }
     end
 
+    test "attacker status addele sums with the equipment element rate" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:addele, :undead} => 10})
+
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> Map.put(:element, {:undead, 1})
+
+      statuses = %{{:addele, :undead} => 25, {:addele, :dark} => 25}
+
+      assert %{element: 35} =
+               EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral, statuses)
+
+      assert %{element: 10} = EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral)
+    end
+
     test "secondary monster groups add physical and magic attack bonuses" do
       attacker =
         CombatTestHelper.create_player_combatant()

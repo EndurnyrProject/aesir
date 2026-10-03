@@ -225,7 +225,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       element_target:
         equip.attack.element_target +
           status_rate(modifiers, :magic_addele, defender_element(defender)),
-      atk_ele: equip.attack.atk_ele,
+      atk_ele: equip.attack.atk_ele + status_rate(modifiers, :magic_atk_ele, element),
       race:
         equip.attack.race + status_rate(modifiers, :magic_addrace, Map.get(defender, :race)) +
           RaceModifiers.dragonology_matk_rate(attacker, Map.get(defender, :race)),

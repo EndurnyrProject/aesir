@@ -269,6 +269,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker(101), target)
     end
 
+    test "an attacker status magic_atk_ele boosts only spells of that element" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{{:magic_atk_ele, :holy} => 15}
+        _, _ -> %{}
+      end)
+
+      assert {:ok, %{damage: 115, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(0, 0),
+                 element: :holy
+               )
+
+      assert {:ok, %{damage: 100, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(0, 0),
+                 element: :fire
+               )
+    end
+
     test "race and size bonuses do not apply to a different target profile" do
       stub(ModifierCalculator, :get_all_modifiers, fn
         :player, 1001 ->
