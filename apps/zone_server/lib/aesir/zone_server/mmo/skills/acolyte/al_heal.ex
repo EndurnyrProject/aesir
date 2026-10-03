@@ -28,7 +28,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   player does; mobs simply have no equipment (heal power reads as 0) and no trait
   heal bonus.
 
-  Still deferred in both modes: Meditatio's caster-side heal-power bonus.
+  Heal bonuses: a caster with Meditatio adds 2 percent per learned level. In
+  renewal the target's Assumptio adds 2 percent per level as well, offensive
+  casts included, and both join equipment heal power in one additive
+  percentage; pre-renewal applies Meditatio as its own step before equipment
+  heal power and ignores Assumptio.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,
@@ -53,13 +57,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
+
+  @meditatio_id 363
 
   @impl Active
   def validate(
@@ -97,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     combatant = caster.__struct__.to_combatant(caster)
     target = Active.resolve_target_id(caster, target)
     offensive? = offensive_target?(combatant, target)
-    amount = compute_heal(combatant, level, offensive?, 28)
+    amount = compute_heal(combatant, level, offensive?, 28, heal_target_ref(target))
 
     if offensive? do
       attack_undead(caster, target, amount, level)
@@ -157,9 +165,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   The Heal amount for `combatant` at `level`; an offensive cast (undead target)
   halves the base. Shared with B.S. Sacramenti, whose strike uses the same formula;
   `skill_id` scopes the per-skill heal bonus from equipment to the casting skill.
+  `target` (a `{unit_type, unit_id}` ref, or `nil`) supplies the recipient's
+  renewal Assumptio bonus.
   """
-  @spec compute_heal(map(), pos_integer(), boolean(), pos_integer()) :: non_neg_integer()
-  def compute_heal(combatant, level, offensive?, skill_id) do
+  @spec compute_heal(map(), pos_integer(), boolean(), pos_integer(), {atom(), term()} | nil) ::
+          non_neg_integer()
+  def compute_heal(combatant, level, offensive?, skill_id, target \\ nil) do
     combat_stats = combatant.combat_stats
     matk_min = Map.get(combat_stats, :heal_matk_min, combat_stats.matk)
     matk_max = Map.get(combat_stats, :heal_matk_max, combat_stats.matk)
@@ -175,9 +186,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
       matk_roll: DamageShared.roll(matk_min, matk_max),
       heal_power: heal_power,
       hplus: Map.get(combat_stats, :hplus, 0),
-      offensive?: offensive?
+      offensive?: offensive?,
+      caster_heal_bonus: 2 * meditatio_level(combatant),
+      target_heal_bonus: assumptio_bonus(target)
     })
   end
+
+  defp meditatio_level(%{progression: %{learned_skills: learned}}) when is_map(learned),
+    do: Learned.learned_level(learned, @meditatio_id)
+
+  defp meditatio_level(_combatant), do: 0
+
+  defp assumptio_bonus({unit_type, unit_id}) do
+    case StatusStorage.get_status(unit_type, unit_id, :sc_assumptio) do
+      %{val1: level} when is_integer(level) -> 2 * level
+      _absent -> 0
+    end
+  end
+
+  defp assumptio_bonus(nil), do: 0
+
+  # A target the caller could not type stays without the Assumptio bonus
+  # rather than guessing its unit type.
+  defp heal_target_ref({unit_type, unit_id} = ref) when is_atom(unit_type) and unit_id != nil,
+    do: ref
+
+  defp heal_target_ref(unit_id) when is_integer(unit_id), do: target_ref(unit_id)
+  defp heal_target_ref(_target), do: nil
 
   defp target_ref({unit_type, unit_id} = ref) do
     if Ref.valid?(ref), do: {unit_type, unit_id}, else: raise(ArgumentError, "invalid target ref")

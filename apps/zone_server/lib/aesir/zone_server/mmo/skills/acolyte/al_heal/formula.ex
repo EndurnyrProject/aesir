@@ -14,7 +14,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula do
   Pre-renewal: the base is `(base level + INT) / 8 * (4 + skill level * 8)`,
   with no MATK term and no trait bonus at all. An offensive cast halves that
   base, equipment heal power is a percentage of it, and that is the whole
-  amount. The classic base is a coarser ladder that peaks higher at full skill
+  amount.
+
+  Heal bonuses: in renewal the caster's Meditatio bonus and the target's
+  Assumptio bonus join equipment heal power in one additive percentage. In
+  pre-renewal Meditatio is its own percentage step applied before equipment
+  heal power, and Assumptio adds nothing. Both bonuses default to zero.
+
+  The classic base is a coarser ladder that peaks higher at full skill
   level but ignores the caster's magic attack entirely, so Heal scales with the
   caster's gear in renewal and only with level and INT in pre-renewal.
   """
@@ -23,13 +30,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula do
 
   @typedoc "Caster-derived amounts, already read and rolled by the caller."
   @type inputs :: %{
-          base_level: pos_integer(),
-          int: non_neg_integer(),
-          level: pos_integer(),
-          matk_roll: non_neg_integer(),
-          heal_power: integer(),
-          hplus: integer(),
-          offensive?: boolean()
+          required(:base_level) => pos_integer(),
+          required(:int) => non_neg_integer(),
+          required(:level) => pos_integer(),
+          required(:matk_roll) => non_neg_integer(),
+          required(:heal_power) => integer(),
+          required(:hplus) => integer(),
+          required(:offensive?) => boolean(),
+          optional(:caster_heal_bonus) => integer(),
+          optional(:target_heal_bonus) => integer()
         }
 
   @doc "Returns the heal (or offensive holy hit) amount for the given mode."
@@ -38,7 +47,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula do
     base =
       div(div(inputs.base_level + inputs.int, 5) * 30 * inputs.level, 10)
       |> halve_when_offensive(inputs)
-      |> apply_percentage(inputs.heal_power)
+      |> apply_percentage(
+        inputs.heal_power + bonus(inputs, :caster_heal_bonus) +
+          bonus(inputs, :target_heal_bonus)
+      )
 
     total = base + inputs.matk_roll
     amount = total + div(total * inputs.hplus, 100)
@@ -49,8 +61,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula do
   def calculate(:pre_renewal, inputs) do
     (div(inputs.base_level + inputs.int, 8) * (4 + inputs.level * 8))
     |> halve_when_offensive(inputs)
+    |> apply_percentage(bonus(inputs, :caster_heal_bonus))
     |> apply_percentage(inputs.heal_power)
   end
+
+  defp bonus(inputs, key), do: Map.get(inputs, key, 0)
 
   @spec halve_when_offensive(non_neg_integer(), inputs()) :: non_neg_integer()
   defp halve_when_offensive(amount, %{offensive?: true}), do: div(amount, 2)

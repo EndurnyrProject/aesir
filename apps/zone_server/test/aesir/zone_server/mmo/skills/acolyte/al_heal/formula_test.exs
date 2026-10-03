@@ -51,6 +51,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.FormulaTest do
       assert Formula.calculate(:pre_renewal, inputs) == 1008
     end
 
+    test "renewal pools Meditatio, the target's Assumptio and heal power additively" do
+      inputs =
+        Map.merge(@inputs, %{heal_power: 15, caster_heal_bonus: 20, target_heal_bonus: 10})
+
+      # 600 * 145 / 100 = 870, plus the 150 roll.
+      assert Formula.calculate(:renewal, inputs) == 1020
+    end
+
+    test "renewal applies the target's Assumptio bonus to an offensive cast" do
+      inputs = Map.merge(@inputs, %{offensive?: true, target_heal_bonus: 10})
+
+      # 600 halved to 300, +10% = 330, plus the 150 roll.
+      assert Formula.calculate(:renewal, inputs) == 480
+    end
+
+    test "pre-renewal applies Meditatio as its own multiplier and ignores Assumptio" do
+      inputs =
+        Map.merge(@inputs, %{heal_power: 15, caster_heal_bonus: 20, target_heal_bonus: 10})
+
+      # 1008 + 20% = 1209, then + 15% = 1209 + 181 = 1390.
+      assert Formula.calculate(:pre_renewal, inputs) == 1390
+    end
+
     test "a renewal heal never lands below one point" do
       inputs = %{@inputs | base_level: 1, int: 0, level: 1, matk_roll: 0}
 

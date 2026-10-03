@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -429,6 +430,67 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
 
       expect(Combat, :apply_heal, fn :player, 1000, 528, 1000 -> :ok end)
       AlHeal.cast(@caster, :self, 5, definition)
+    end
+  end
+
+  describe "Meditatio and Assumptio heal bonuses" do
+    setup do
+      Aesir.TestEtsSetup.setup_ets_tables(%{})
+      stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :player_human}} end)
+
+      stub(PlayerState, :to_combatant, fn _ ->
+        %{
+          combatant(base_level: 50, int: 50, matk: 50)
+          | progression: %{base_level: 50, learned_skills: %{363 => 10}}
+        }
+      end)
+
+      :ok =
+        StatusStorage.apply_status(:player, @ally_id, :sc_assumptio, val1: 5, duration: 60_000)
+
+      {:ok, definition} = Catalog.by_id(28)
+      {:ok, definition: definition}
+    end
+
+    @tag game_mode: :renewal
+    test "renewal pools Meditatio 10 and the target's Assumptio 5 into one percentage",
+         %{definition: definition} do
+      # base 300 * (100 + 20 + 10) / 100 = 390, plus the 50-point MATK band.
+      expect(Combat, :apply_heal, fn :player, @ally_id, 440, 1000 -> :ok end)
+
+      assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal offensive Heal on an undead Assumptio holder gains the bonus",
+         %{definition: definition} do
+      stub(Combat, :resolve_combatant, fn _id ->
+        {:ok, enemy(%{race: :undead, element: {:undead, 1}})}
+      end)
+
+      # 300 halved to 150, * (100 + 20 + 10) / 100 = 195, plus 50.
+      expect(Combat, :execute_magic_damage, fn _caster, @ally_id, 245, _opts ->
+        {:ok, {:player, @ally_id}}
+      end)
+
+      assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal self-heal without Assumptio gets only Meditatio", %{definition: definition} do
+      # base 300 * 120 / 100 = 360, plus 50.
+      expect(Combat, :apply_heal, fn :player, 1000, 410, 1000 -> :ok end)
+
+      assert {:ok, @caster} = AlHeal.cast(@caster, :self, 5, definition)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal applies Meditatio and ignores the target's Assumptio",
+         %{definition: definition} do
+      # (50 + 50) / 8 * (4 + 5 * 8) = 528, + 20% = 633.
+      expect(Combat, :apply_heal, fn :player, @ally_id, 633, 1000 -> :ok end)
+
+      assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
     end
   end
 

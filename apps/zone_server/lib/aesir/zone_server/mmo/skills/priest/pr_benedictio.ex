@@ -152,15 +152,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     |> Enum.each(fn {unit_type, target_id} ->
       with {:ok, {module, state, _pid}} <- UnitRegistry.get_unit(unit_type, target_id),
            true <- undead_or_demon?(module, state) do
-        Combat.execute_magic_damage(caster, target_id, strike_damage(caster, level), opts)
+        Combat.execute_magic_damage(
+          caster,
+          target_id,
+          strike_damage(caster, level, {unit_type, target_id}),
+          opts
+        )
       else
         _other -> :ok
       end
     end)
   end
 
-  defp strike_damage(caster, level),
-    do: AlHeal.compute_heal(PlayerState.to_combatant(caster), level, true, definition().id)
+  defp strike_damage(caster, level, target),
+    do:
+      AlHeal.compute_heal(PlayerState.to_combatant(caster), level, true, definition().id, target)
 
   defp undead_or_demon?(module, state) do
     combatant = module.to_combatant(state)
