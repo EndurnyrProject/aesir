@@ -1,14 +1,40 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   @moduledoc """
-  Pure, session-owned state for the ordinary Monk combo chain.
+  Pure, session-owned state for the Monk and Champion combo chain.
 
   Generations make delayed timeout messages harmless after a window advances or
   is cancelled. Deadlines use monotonic milliseconds supplied by the caller.
 
-  The combo windows and chain rules are shared by both modes.
+  Stages: `:quadruple` and `:thrust` name the skill the window allows;
+  `:extremity` is the window after Raging Thrust; `:tiger_fist` and
+  `:chain_crush` are the windows after Glacier Fist and Chain Crush Combo.
+
+  `follow_up_stage/2` decides which window a landed combo skill opens, from the
+  skills the caster knows, the spirit spheres left after that skill's own cost,
+  and whether Fury is active:
+
+    * after Raging Thrust: Glacier Fist (1+ sphere), Chain Crush (2+), or Asura
+      Strike (4+ and Fury);
+    * after Glacier Fist: Chain Crush (2+);
+    * after Chain Crush: Asura Strike (1+ and Fury).
+
+  Renewal and pre-renewal share these rules, except that in pre-renewal Chain
+  Crush also opens toward Glacier Fist (1+ sphere), so the two can loop.
   """
 
-  @type stage :: :idle | :quadruple | :thrust | :extremity
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
+
+  @asura 271
+  @tiger_fist 371
+  @chain_crush 372
+
+  @type stage :: :idle | :quadruple | :thrust | :extremity | :tiger_fist | :chain_crush
+  @type follow_up_ctx :: %{
+          learned: map(),
+          spheres: non_neg_integer(),
+          fury?: boolean()
+        }
   @type target :: {:player | :mob | :skill_unit, non_neg_integer()}
 
   defstruct stage: :idle, target: nil, deadline: nil, generation: 0
@@ -35,8 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
     }
   end
 
-  @doc "Advances a current window for the retained target."
-  @spec advance(t(), stage(), stage(), target(), integer(), integer()) ::
+  @doc "Advances a current window (any of `expected`) for the retained target."
+  @spec advance(t(), stage() | [stage()], stage(), target(), integer(), integer()) ::
           {:ok, t()} | {:error, :invalid_combo}
   def advance(combo, expected, next, target, deadline, now) do
     if current?(combo, expected, target, now) do
@@ -46,15 +72,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
     end
   end
 
-  @doc "Whether the given stage and target own a still-open window."
-  @spec current?(t(), stage(), target(), integer()) :: boolean()
-  def current?(%__MODULE__{} = combo, stage, target, now) do
-    combo.stage == stage and combo.target == target and is_integer(combo.deadline) and
+  @doc "Whether the given stage (or any of a list) and target own a still-open window."
+  @spec current?(t(), stage() | [stage()], target(), integer()) :: boolean()
+  def current?(%__MODULE__{} = combo, stages, target, now) when is_list(stages) do
+    combo.stage in stages and combo.target == target and is_integer(combo.deadline) and
       now < combo.deadline
   end
 
-  @doc "Validates a stage and target id, returning the retained typed target."
-  @spec validate(t(), stage(), non_neg_integer() | target(), integer()) ::
+  def current?(combo, stage, target, now), do: current?(combo, [stage], target, now)
+
+  @doc "Validates a stage (or any of a list) and target id, returning the retained typed target."
+  @spec validate(t(), stage() | [stage()], non_neg_integer() | target(), integer()) ::
           {:ok, target()} | {:error, :invalid_combo}
   def validate(%__MODULE__{} = combo, stage, {target_type, target_id}, now)
       when stage != :idle and target_type in [:player, :mob, :skill_unit] and
@@ -78,6 +106,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   end
 
   def validate(_combo, _stage, _target_id, _now), do: {:error, :invalid_combo}
+
+  @doc """
+  Returns the window a landed combo skill opens, or `:idle` when the chain
+  closes. `spheres` must be the count left after the skill's own cost.
+  """
+  @spec follow_up_stage(:thrust | :tiger_fist | :chain_crush, follow_up_ctx()) :: stage()
+  def follow_up_stage(:thrust, ctx) do
+    if (knows?(ctx, @tiger_fist) and ctx.spheres >= 1) or
+         (knows?(ctx, @chain_crush) and ctx.spheres >= 2) or asura?(ctx, 4),
+       do: :extremity,
+       else: :idle
+  end
+
+  def follow_up_stage(:tiger_fist, ctx) do
+    if knows?(ctx, @chain_crush) and ctx.spheres >= 2, do: :tiger_fist, else: :idle
+  end
+
+  def follow_up_stage(:chain_crush, ctx) do
+    if asura?(ctx, 1) or (pre_renewal?() and knows?(ctx, @tiger_fist) and ctx.spheres >= 1),
+      do: :chain_crush,
+      else: :idle
+  end
+
+  defp asura?(ctx, min_spheres),
+    do: knows?(ctx, @asura) and ctx.fury? and ctx.spheres >= min_spheres
+
+  defp knows?(%{learned: learned}, skill_id), do: Learned.learned_level(learned, skill_id) > 0
+
+  defp pre_renewal?, do: GameMode.mode() == :pre_renewal
 
   @doc "Expires a matching generation once its deadline has elapsed."
   @spec expire(t(), non_neg_integer(), integer()) :: t()

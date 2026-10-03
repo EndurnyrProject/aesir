@@ -71,4 +71,56 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
     assert {:ok, {:mob, 42}} = Combo.validate(combo, :quadruple, {:mob, 42}, now)
     assert {:error, :invalid_combo} = Combo.validate(combo, :quadruple, {:player, 42}, now)
   end
+
+  test "validate and advance accept any stage from a list" do
+    now = 1_000
+    combo = Combo.open(Combo.new(), :chain_crush, {:mob, 42}, now + 500)
+
+    assert {:ok, {:mob, 42}} = Combo.validate(combo, [:extremity, :chain_crush], 42, now)
+    assert {:error, :invalid_combo} = Combo.validate(combo, [:extremity, :tiger_fist], 42, now)
+    assert Combo.current?(combo, [:extremity, :chain_crush], {:mob, 42}, now)
+
+    assert {:ok, %Combo{stage: :tiger_fist}} =
+             Combo.advance(combo, [:extremity, :chain_crush], :tiger_fist, {:mob, 42}, 2_000, now)
+  end
+
+  describe "follow_up_stage/2" do
+    test "Raging Thrust opens the extremity window for each Champion follow-up" do
+      assert Combo.follow_up_stage(:thrust, ctx([371], 1)) == :extremity
+      assert Combo.follow_up_stage(:thrust, ctx([371], 0)) == :idle
+      assert Combo.follow_up_stage(:thrust, ctx([372], 2)) == :extremity
+      assert Combo.follow_up_stage(:thrust, ctx([372], 1)) == :idle
+      assert Combo.follow_up_stage(:thrust, ctx([271], 4, true)) == :extremity
+      assert Combo.follow_up_stage(:thrust, ctx([271], 4, false)) == :idle
+      assert Combo.follow_up_stage(:thrust, ctx([271], 3, true)) == :idle
+      assert Combo.follow_up_stage(:thrust, ctx([], 5, true)) == :idle
+    end
+
+    test "Glacier Fist opens its window only toward Chain Crush" do
+      assert Combo.follow_up_stage(:tiger_fist, ctx([372], 2)) == :tiger_fist
+      assert Combo.follow_up_stage(:tiger_fist, ctx([372], 1)) == :idle
+      assert Combo.follow_up_stage(:tiger_fist, ctx([271, 371], 5, true)) == :idle
+    end
+
+    test "Chain Crush opens its window toward Asura in every mode" do
+      assert Combo.follow_up_stage(:chain_crush, ctx([271], 1, true)) == :chain_crush
+      assert Combo.follow_up_stage(:chain_crush, ctx([271], 0, true)) == :idle
+      assert Combo.follow_up_stage(:chain_crush, ctx([271], 1, false)) == :idle
+    end
+
+    @tag game_mode: :renewal
+    test "renewal Chain Crush never opens toward Glacier Fist" do
+      assert Combo.follow_up_stage(:chain_crush, ctx([371], 5)) == :idle
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal Chain Crush loops back into Glacier Fist" do
+      assert Combo.follow_up_stage(:chain_crush, ctx([371], 1)) == :chain_crush
+      assert Combo.follow_up_stage(:chain_crush, ctx([371], 0)) == :idle
+    end
+  end
+
+  defp ctx(known, spheres, fury? \\ false) do
+    %{learned: Map.new(known, &{&1, 5}), spheres: spheres, fury?: fury?}
+  end
 end
