@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -428,6 +429,60 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
       state = swordman_state(3, %{})
 
       assert SkillLearningHandler.grant_skill(9001, 1, state) == {:error, :not_grantable}
+    end
+  end
+
+  describe "give_all_skills/1" do
+    test "maxes the current job tree and lineage quest skills without spending points or replacing other skills" do
+      {:ok, knight_id} = AvailableJobs.job_name_to_id(:knight)
+      bash_id = catalog_id(:sm_bash)
+      charge_id = catalog_id(:kn_chargeatk)
+      fatal_blow_id = catalog_id(:sm_fatalblow)
+      unrelated_id = catalog_id(:mg_firebolt)
+      unrelated_quest_id = catalog_id(:mg_energycoat)
+      state = player_state(knight_id, 4, %{bash_id => 1, unrelated_id => 1})
+
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_params, fn _conn, _params -> :ok end)
+
+      expect(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+        assert attrs.skill_point == 4
+
+        assert attrs.learned_skills[Integer.to_string(bash_id)] ==
+                 SkillTree.tree_for(knight_id)[bash_id].max_level
+
+        assert attrs.learned_skills[Integer.to_string(charge_id)] ==
+                 elem(Catalog.by_id(charge_id), 1).max_level
+
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, new_state} = ProgressionHandler.info({:give_all_skills}, state)
+      progression = new_state.game_state.stats.progression
+      assert progression.skill_point == 4
+
+      assert progression.learned_skills[bash_id] ==
+               SkillTree.tree_for(knight_id)[bash_id].max_level
+
+      assert progression.learned_skills[charge_id] == elem(Catalog.by_id(charge_id), 1).max_level
+
+      assert progression.learned_skills[fatal_blow_id] ==
+               elem(Catalog.by_id(fatal_blow_id), 1).max_level
+
+      assert progression.learned_skills[unrelated_id] == 1
+      assert progression.learned_skills[unrelated_quest_id] == nil
+
+      assert Enum.all?(SkillTree.tree_for(knight_id), fn {id, entry} ->
+               progression.learned_skills[id] >= entry.max_level
+             end)
+
+      assert_received {:send, :bulk, {:skill_list, %SkillList{skills: skills}}}
+
+      assert Enum.any?(
+               skills,
+               &(&1.skill_id == charge_id and &1.level == progression.learned_skills[charge_id])
+             )
     end
   end
 

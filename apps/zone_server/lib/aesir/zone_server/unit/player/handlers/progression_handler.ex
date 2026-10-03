@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.SkillListView
@@ -125,6 +126,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   """
   @spec info(term(), map()) :: {:noreply, map()}
   def info({:change_job, job_id}, state), do: handle_change_job(job_id, state)
+  def info({:give_all_skills}, state), do: SkillLearningHandler.give_all_skills(state)
 
   def info({:reset_skills}, state) do
     case reset_skills(state) do

@@ -112,6 +112,26 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
     assert %ChatMessage{gid: 1000, message: "boom"} = receive_chat_message()
   end
 
+  test "routes @giveallskills to the calling GM's session" do
+    ctx = ctx_for(seed_account(60))
+    Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
+
+    Dispatcher.dispatch("@giveallskills", ctx)
+
+    assert %ChatMessage{gid: 1000, message: "Skills maximized"} = receive_chat_message()
+    assert_receive {:progression, {:give_all_skills}}
+  end
+
+  test "denies @giveallskills below GM level 60" do
+    ctx = ctx_for(seed_account(59))
+    Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
+
+    Dispatcher.dispatch("@giveallskills", ctx)
+
+    assert %ChatMessage{message: "Insufficient permission"} = receive_chat_message()
+    refute_receive {:progression, {:give_all_skills}}
+  end
+
   test "routes @agitstart to AgitStart, which starts WoE and replies" do
     ctx = ctx_for(seed_account(99))
     expect(Server, :start, fn -> :ok end)

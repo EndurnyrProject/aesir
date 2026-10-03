@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.LearnSkillResult
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnCavaliermastery
@@ -45,6 +47,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
       {:error, reason} ->
         reject(skill_id, reason, state)
     end
+  end
+
+  @doc "Maxes the current job's inherited skills and lineage quest skills without spending points."
+  @spec give_all_skills(map()) :: {:noreply, map()}
+  def give_all_skills(%{game_state: game_state} = state) do
+    progression = game_state.stats.progression
+    job_id = progression.job_id
+
+    tree_skills =
+      Map.new(SkillTree.tree_for(job_id), fn {skill_id, entry} ->
+        {skill_id, entry.max_level}
+      end)
+
+    quest_skills =
+      Catalog.all()
+      |> Enum.filter(fn
+        %Definition{quest_skill: true} = definition ->
+          SkillTree.quest_skill_available?(job_id, definition)
+
+        _ ->
+          false
+      end)
+      |> Map.new(&{&1.id, &1.max_level})
+
+    learned_skills =
+      progression.learned_skills
+      |> Map.merge(tree_skills, fn _id, old, cap -> max(old, cap) end)
+      |> Map.merge(quest_skills, fn _id, old, cap -> max(old, cap) end)
+
+    progression = %{progression | learned_skills: learned_skills}
+
+    stats =
+      %{game_state.stats | progression: progression}
+      |> Stats.calculate_stats(game_state.character_id)
+
+    new_state =
+      state
+      |> StateCommit.commit(%{game_state | stats: stats})
+      |> maybe_recompute_riding(KnCavaliermastery.definition().id)
+
+    persist(game_state.character_id, new_state.game_state.stats)
+    sync(state.connection_pid, progression)
+
+    {:noreply, new_state}
   end
 
   @doc "Refreshes skill eligibility after progression changes, preserving granted and copied skills."
