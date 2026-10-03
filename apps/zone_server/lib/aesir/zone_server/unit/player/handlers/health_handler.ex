@@ -42,13 +42,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Ref
@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
     game_state = %{state.game_state | stats: updated_stats}
-    state = StatsManager.update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
 
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
     CharacterPersistence.update_stats(char_id, %{hp: new_hp}, async: true)
@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
           {:noreply, SessionState.t()}
   def record_skill_hit(skill_id, skill_level, state) do
     {game_state, copied?} = maybe_record_plagiarism(state.game_state, skill_id, skill_level)
-    state = StatsManager.update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
 
     if copied? do
       MessageRouter.send_to(state.connection_pid, SkillListView.build(game_state))
@@ -222,7 +222,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     current_state = %{stats.current_state | hp: hp, sp: sp}
     game_state = %{state.game_state | stats: %{stats | current_state: current_state}}
-    state = StatsManager.update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
 
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), hp)
     StatusSync.send_param(state.connection_pid, StatusParams.sp(), sp)
@@ -303,7 +303,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
     game_state = %{state.game_state | stats: updated_stats}
-    state = StatsManager.update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
 
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
     CharacterPersistence.update_stats(char_id, %{hp: new_hp}, async: true)
@@ -440,7 +440,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
         |> Map.put(:stats, updated_stats)
         |> PlayerState.transition_to(:idle)
 
-      state = StatsManager.update_game_state(state, game_state)
+      state = StateCommit.commit(state, game_state)
       StatusSync.send_param(state.connection_pid, StatusParams.hp(), hp)
       CharacterPersistence.update_stats(game_state.character_id, %{hp: hp}, async: true)
 
@@ -533,7 +533,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     stats = state.game_state.stats
     updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
     game_state = %{state.game_state | stats: updated_stats}
-    state = StatsManager.update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
 
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
     CharacterPersistence.update_stats(game_state.character_id, %{hp: new_hp}, async: true)
@@ -546,7 +546,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     stats = state.game_state.stats
     updated_stats = %{stats | current_state: %{stats.current_state | sp: new_sp}}
     game_state = %{state.game_state | stats: updated_stats}
-    state = StatsManager.update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
 
     StatusSync.send_param(state.connection_pid, StatusParams.sp(), new_sp)
     CharacterPersistence.update_stats(game_state.character_id, %{sp: new_sp}, async: true)
@@ -588,7 +588,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       |> PlayerState.clear_pickup_intent()
 
     {:ok, dead_state} = PlayerState.transition_to(inactive_state, :dead)
-    state = StatsManager.update_game_state(state, dead_state)
+    state = StateCommit.commit(state, dead_state)
 
     :ok =
       StatusInterpreter.remove_on_death(:player, game_state.character_id, owner_refresh: :defer)
@@ -637,7 +637,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     async? = attacker != {:player, game_state.character_id}
 
     game_state = %{game_state | pvp_point: pvp_point, pvp_lost: pvp_lost}
-    state = StatsManager.update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
 
     result =
       CharacterPersistence.update_character(
@@ -712,7 +712,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
       stats = %{game_state.stats | progression: progression}
       game_state = %{game_state | stats: stats}
-      state = StatsManager.update_game_state(state, game_state)
+      state = StateCommit.commit(state, game_state)
 
       StatusSync.send_params(state.connection_pid, %{
         StatusParams.base_exp() => progression.base_exp,
@@ -738,7 +738,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     {:ok, idle_state} = PlayerState.transition_to(game_state, :idle)
     idle_state = %{idle_state | stats: revived_stats}
-    state = StatsManager.update_game_state(state, idle_state)
+    state = StateCommit.commit(state, idle_state)
 
     StatusSync.send_params(state.connection_pid, [
       {StatusParams.max_hp(), max_hp},
@@ -798,7 +798,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     )
 
     visible_state = MovementHandler.handle_visibility_update(idle_state)
-    state = StatsManager.update_game_state(state, visible_state)
+    state = StateCommit.commit(state, visible_state)
 
     resurrection = %Resurrect{gid: idle_state.character_id, type: 0}
     MessageRouter.send_to(state.connection_pid, resurrection)

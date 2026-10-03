@@ -243,12 +243,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   defp reject_self_purchase(char_id, char_id), do: {:error, :self_purchase}
   defp reject_self_purchase(_vendor_unit_id, _char_id), do: :ok
 
-  # Mirrors the session's registry sync: any wrapper that commits a new
-  # game_state must also publish it to the unit registry.
-  defp sync_game_state(%{game_state: gs} = state) do
-    UnitRegistry.update_unit_state(:player, gs.character_id, gs)
-    state
-  end
+  defp sync_game_state(%{game_state: gs} = state), do: StateCommit.commit(state, gs)
 
   @doc """
   Buys `buy_lines` from this seller's live shop, the sole transactional authority.

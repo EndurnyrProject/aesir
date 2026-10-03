@@ -11,9 +11,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandlerKillGainTest do
 
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.LootHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
@@ -22,13 +22,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandlerKillGainTest do
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(StatsManager)
+    Mimic.copy(StateCommit)
     Mimic.copy(MessageRouter)
     Mimic.copy(Aesir.ZoneServer.CharacterPersistence)
 
     # Keep the heal path isolated from registry/network side effects: threading
     # the new game_state back is all the assertions need.
-    stub(StatsManager, :update_game_state, fn state, game_state ->
+    stub(StateCommit, :commit, fn state, game_state ->
       %{state | game_state: game_state}
     end)
 

@@ -686,7 +686,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     # Publish our full state to the registry before visibility runs so players
     # we enter view of can read it to build our spawn packet.
-    state = update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
 
     # Show the map's quest-icon bubbles for this player after they load in.
     QuestInfoView.request_refresh()
@@ -704,7 +704,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
         Process.send_after(self(), :rental_expiry_tick, @rental_expiry_interval)
 
-        {:noreply, update_game_state(state, updated_game_state)}
+        {:noreply, StateCommit.commit(state, updated_game_state)}
 
       {:stop, reason, state} ->
         {:stop, reason, state}
@@ -723,9 +723,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       game_state.map_name
     )
 
-    state = update_game_state(state, game_state)
+    state = StateCommit.commit(state, game_state)
     updated_game_state = MovementHandler.handle_visibility_update(state.game_state)
-    state = update_game_state(state, updated_game_state)
+    state = StateCommit.commit(state, updated_game_state)
 
     # Re-evaluate quest-icon bubbles for the destination map.
     QuestInfoView.request_refresh()
@@ -767,7 +767,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info(:complete_spawn, %{game_state: game_state} = state) do
     updated_game_state = PlayerState.mark_spawn_complete(game_state)
-    {:noreply, update_game_state(state, updated_game_state)}
+    {:noreply, StateCommit.commit(state, updated_game_state)}
   end
 
   @impl true
@@ -821,7 +821,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         # Normal movement completed, transition to idle
         case PlayerState.transition_to(game_state, :idle) do
           {:ok, transitioned_state} ->
-            {:noreply, %{state | game_state: transitioned_state}}
+            {:noreply, StateCommit.commit(state, transitioned_state)}
 
           _ ->
             {:noreply, state}
@@ -875,7 +875,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         pvp_won: game_state.pvp_won + 1
     }
 
-    state = StatsManager.update_game_state(state, updated_game_state)
+    state = StateCommit.commit(state, updated_game_state)
 
     CharacterPersistence.update_character(
       game_state.character_id,
@@ -973,7 +973,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
       updated_game_state = PlayerState.clear_combat_intent(state.game_state)
       {:ok, idle_state} = PlayerState.transition_to(updated_game_state, :idle)
-      {:noreply, %{state | game_state: idle_state}}
+      {:noreply, StateCommit.commit(state, idle_state)}
     else
       {:noreply, state}
     end
@@ -1324,7 +1324,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     game_state = %{game_state | visible_items: MapSet.delete(game_state.visible_items, ground_id)}
 
-    {:noreply, %{state | game_state: game_state}}
+    {:noreply, StateCommit.commit(state, game_state)}
   end
 
   @impl true
@@ -1346,7 +1346,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         }
       end
 
-    {:noreply, update_game_state(state, game_state)}
+    {:noreply, StateCommit.commit(state, game_state)}
   end
 
   @impl true
@@ -1585,10 +1585,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp departure_reason(:normal), do: :disconnect
   defp departure_reason(_reason), do: :termination
-
-  defp update_game_state(state, new_game_state) do
-    StateCommit.commit(state, new_game_state)
-  end
 
   defp register_player(%PlayerState{} = game_state),
     do: UnitRegistry.register_player(game_state, self())

@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.EquipRegen
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @doc """
@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
           equip_regen_accumulators: accumulators
       }
 
-      state = StatsManager.update_game_state(state, game_state)
+      state = StateCommit.commit(state, game_state)
       apply_changes(state, current.hp, new_hp, current.sp, new_sp)
 
       {:noreply, state}

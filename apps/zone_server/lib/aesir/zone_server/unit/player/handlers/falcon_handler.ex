@@ -35,9 +35,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler do
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFalcon
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
 
   @status_id :sc_falcon
   @falcon_bit Option.id(:falcon)
@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler do
 
   @spec commit_option(map(), non_neg_integer()) :: map()
   defp commit_option(%{game_state: game_state} = state, option) do
-    StatsManager.update_game_state(state, %{game_state | option: option})
+    StateCommit.commit(state, %{game_state | option: option})
   end
 
   @spec persist_option(integer(), non_neg_integer()) :: :ok

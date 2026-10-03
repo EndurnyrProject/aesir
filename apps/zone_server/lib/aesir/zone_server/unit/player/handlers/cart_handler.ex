@@ -43,10 +43,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Rental
 
   @status_id :sc_push_cart
@@ -138,7 +138,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
              amount
            ) do
       committed =
-        StatsManager.update_game_state(state, %{game_state | inventory: inventory, cart: cart})
+        StateCommit.commit(state, %{game_state | inventory: inventory, cart: cart})
 
       notify_inventory_removed(committed.connection_pid, inv_change, amount)
       notify_cart_added(committed.connection_pid, cart, cart_change)
@@ -179,7 +179,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
              amount
            ) do
       committed =
-        StatsManager.update_game_state(state, %{game_state | inventory: inventory, cart: cart})
+        StateCommit.commit(state, %{game_state | inventory: inventory, cart: cart})
 
       notify_cart_removed(committed.connection_pid, cart_change, amount)
       InventoryManager.notify_added(committed.connection_pid, inventory, inv_change)
@@ -258,7 +258,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
         persist_cart_type(char_id, @first_tier)
 
         committed =
-          StatsManager.update_game_state(applied, %{applied.game_state | cart_type: @first_tier})
+          StateCommit.commit(applied, %{applied.game_state | cart_type: @first_tier})
 
         StatusDisplay.broadcast_state(:player, char_id)
 
@@ -284,7 +284,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
     {:reply, :ok, removed} = StatusManager.handle_remove_status(@status_id, state)
     persist_cart_type(char_id, 0)
 
-    committed = StatsManager.update_game_state(removed, %{removed.game_state | cart_type: 0})
+    committed = StateCommit.commit(removed, %{removed.game_state | cart_type: 0})
     StatusDisplay.broadcast_state(:player, char_id)
 
     {:noreply, committed}
@@ -298,7 +298,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
 
     case StatusManager.handle_apply_status(@status_id, params, loaded) do
       {:reply, :ok, applied} ->
-        StatsManager.update_game_state(applied, applied.game_state)
+        StateCommit.commit(applied, applied.game_state)
 
       {:reply, {:error, reason}, _unchanged} ->
         Logger.warning(

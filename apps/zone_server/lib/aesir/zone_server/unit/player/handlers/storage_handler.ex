@@ -19,10 +19,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Storage.Persistence, as: StoragePersistence
 
   @min_basic_skill_level 6
@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
              amount
            ) do
       committed =
-        StatsManager.update_game_state(state, %{
+        StateCommit.commit(state, %{
           game_state
           | inventory: new_inventory,
             storage: new_storage
@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
              amount
            ) do
       committed =
-        StatsManager.update_game_state(state, %{
+        StateCommit.commit(state, %{
           game_state
           | inventory: new_inventory,
             storage: new_storage
@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   def close(%{game_state: %{storage: nil}} = state), do: {:noreply, state}
 
   def close(%{game_state: game_state} = state) do
-    {:noreply, StatsManager.update_game_state(state, %{game_state | storage: nil})}
+    {:noreply, StateCommit.commit(state, %{game_state | storage: nil})}
   end
 
   @spec do_open(map()) :: {:noreply, map()}
@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
       |> Enum.map(&StoragePersistence.to_session_item/1)
       |> PlayerState.from_list()
 
-    committed = StatsManager.update_game_state(state, %{game_state | storage: storage})
+    committed = StateCommit.commit(state, %{game_state | storage: storage})
 
     MessageRouter.send_to(committed.connection_pid, InventoryView.storage_opened(storage))
     {:noreply, committed}

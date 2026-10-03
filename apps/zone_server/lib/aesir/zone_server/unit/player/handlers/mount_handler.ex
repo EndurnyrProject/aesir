@@ -40,9 +40,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnCavaliermastery
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnRiding
   alias Aesir.ZoneServer.Network.MessageRouter
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
 
   @status_id :sc_riding
   @riding_bit Option.id(:riding)
@@ -220,7 +220,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
 
   @spec commit_option(map(), non_neg_integer()) :: map()
   defp commit_option(%{game_state: game_state} = state, option) do
-    StatsManager.update_game_state(state, %{game_state | option: option})
+    StateCommit.commit(state, %{game_state | option: option})
   end
 
   @spec reject(map(), atom()) :: {:noreply, map()}

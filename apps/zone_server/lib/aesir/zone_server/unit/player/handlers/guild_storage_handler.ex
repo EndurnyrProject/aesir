@@ -18,10 +18,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
 
   @doc "Opens the player's guild storage window when every access gate passes."
   @spec open(SessionState.t()) :: {:noreply, SessionState.t()}
@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
              amount
            ) do
       committed =
-        StatsManager.update_game_state(state, %{
+        StateCommit.commit(state, %{
           game_state
           | inventory: inventory,
             guild_storage: storage
@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
              amount
            ) do
       committed =
-        StatsManager.update_game_state(state, %{
+        StateCommit.commit(state, %{
           game_state
           | inventory: inventory,
             guild_storage: storage
@@ -198,7 +198,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
         } = state
       ) do
     :ok = Lock.release(guild_id, session_pid)
-    committed = StatsManager.update_game_state(state, %{game_state | guild_storage: nil})
+    committed = StateCommit.commit(state, %{game_state | guild_storage: nil})
     %{committed | guild_storage_ctx: nil}
   end
 
@@ -235,7 +235,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
       capacity: capacity
     }
 
-    committed = StatsManager.update_game_state(state, %{game_state | guild_storage: storage})
+    committed = StateCommit.commit(state, %{game_state | guild_storage: storage})
     committed = %{committed | guild_storage_ctx: ctx}
 
     MessageRouter.send_to(

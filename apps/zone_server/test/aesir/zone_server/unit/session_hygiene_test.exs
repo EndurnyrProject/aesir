@@ -79,6 +79,18 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
       refute @player_session_source =~ "Mmo.Skills."
     end
 
+    test "player session returns new game state only through StateCommit" do
+      # Terminal `%{state | game_state: ...}` rebinds skip the registry and
+      # party/guild sync. The two tolerated forms are an intermediate handed to
+      # a handler (walk delay) and terminate/2, which has no observers left.
+      raw_rebinds =
+        ~r/%\{state \| game_state:/
+        |> Regex.scan(@player_session_source)
+        |> length()
+
+      assert raw_rebinds == 2
+    end
+
     test "player session contains no Homunculus species or skill IDs" do
       for id <- 6_001..6_016, do: refute(@player_session_source =~ Integer.to_string(id))
       for id <- 8_001..8_016, do: refute(@player_session_source =~ Integer.to_string(id))

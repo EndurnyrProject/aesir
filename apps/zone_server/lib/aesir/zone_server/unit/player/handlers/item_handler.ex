@@ -26,11 +26,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
 
   # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1, so
   # it has no source file at compile time; silence the undefined-module warning.
@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
         recalced =
           StatusManager.recalculate_after_status_change(%{state | game_state: final_gs})
 
-        committed = StatsManager.update_game_state(recalced, recalced.game_state)
+        committed = StateCommit.commit(recalced, recalced.game_state)
 
         MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(server_index, 1))
 

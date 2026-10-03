@@ -18,8 +18,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @doc """
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
           regen_accumulators: Map.delete(accumulators, :elapsed_ms)
       }
 
-      state = StatsManager.update_game_state(state, game_state)
+      state = StateCommit.commit(state, game_state)
 
       apply_regen(state, hp_delta, sp_delta, new_hp, new_sp)
 

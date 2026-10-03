@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
       updated_game_state = %{state.game_state | stats: updated_stats}
       StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
-      {:noreply, update_game_state(state, updated_game_state)}
+      {:noreply, StateCommit.commit(state, updated_game_state)}
     else
       # No changes, skip update
       {:noreply, state}
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
       Stats.calculate_stats(updated_stats, game_state.character_id, nil, game_state.map_name)
 
     updated_game_state = %{state.game_state | stats: updated_stats}
-    updated_state = update_game_state(state, updated_game_state)
+    updated_state = StateCommit.commit(state, updated_game_state)
 
     StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
@@ -106,7 +106,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
       Stats.calculate_stats(game_state.stats, game_state.character_id, nil, game_state.map_name)
 
     updated_game_state = %{state.game_state | stats: updated_stats}
-    updated_state = update_game_state(state, updated_game_state)
+    updated_state = StateCommit.commit(state, updated_game_state)
 
     StatusSync.send_stat_updates(state.connection_pid, updated_stats)
 
@@ -124,9 +124,5 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   """
   def handle_get_current_stats(state) do
     {:reply, state.game_state.stats, state}
-  end
-
-  def update_game_state(state, new_game_state) do
-    StateCommit.commit(state, new_game_state)
   end
 end

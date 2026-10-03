@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpawnView
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending.Registry, as: VendingRegistry
@@ -127,8 +128,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
 
   defp publish_homunculus_visibility(state, gid, visible?) do
     game_state = update_visible_homunculus(state.game_state, gid, visible?)
-    UnitRegistry.update_unit_state(:player, game_state.character_id, game_state)
-    {:noreply, %{state | game_state: game_state}}
+    {:noreply, StateCommit.commit(state, game_state)}
   end
 
   defp update_visible_homunculus(game_state, gid, true) do
