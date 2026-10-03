@@ -23,26 +23,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
   @knight_class 7
 
   describe "catalog registration" do
-    test "by_id(255) resolves cr_devotion with the declared metadata" do
-      assert {:ok, definition} = Catalog.by_id(255)
-      assert definition.name == :cr_devotion
-      assert definition.display_name == "Devotion"
-      assert definition.max_level == 5
-      assert definition.target_type == :target_ally
-      assert definition.sp_cost == [25, 25, 25, 25, 25]
-      assert definition.range == [7, 8, 9, 10, 11]
-      assert definition.duration == [30_000, 45_000, 60_000, 75_000, 90_000]
-    end
-
     test "casts in 1.5 seconds plus 1.5 fixed in renewal and a flat 3 seconds in classic" do
       assert CrDevotion.definition(:renewal).cast_time == List.duplicate(1_500, 5)
       assert CrDevotion.definition(:renewal).fixed_cast_time == List.duplicate(1_500, 5)
       assert CrDevotion.definition(:pre_renewal).cast_time == List.duplicate(3_000, 5)
       assert CrDevotion.definition(:pre_renewal).fixed_cast_time == []
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 255}} = Catalog.by_name(:cr_devotion)
     end
   end
 

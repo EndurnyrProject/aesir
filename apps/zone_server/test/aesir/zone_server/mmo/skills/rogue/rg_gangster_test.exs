@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGangsterTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ActionRequest
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skills.Rogue.RgGangster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -20,12 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGangsterTest do
     Catalog.reload()
   end
 
-  test "is discovered as an iconless passive with its Gangster Paradise marker" do
-    assert {:ok, definition} = Catalog.by_id(223)
-    assert definition.name == :rg_gangster
-    assert definition.display_name == "Slyness"
-    assert definition.max_level == 1
-    assert {:ok, RgGangster} = Catalog.passive_module_for(:rg_gangster)
+  test "Gangster Paradise is an iconless, unsaved status" do
     assert %{icon: nil, no_save: true} = Registry.get_definition(:sc_gangsterparadise)
   end
 

@@ -20,16 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispellTest do
     definition
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves id 289" do
-      assert {:ok, %{name: :sa_dispell}} = Catalog.by_id(289)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, SaDispell} = Catalog.active_module_for(:sa_dispell)
-    end
-  end
-
   describe "metadata" do
     @tag game_mode: :renewal
     test "matches the rAthena renewal table" do

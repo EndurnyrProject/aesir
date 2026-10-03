@@ -34,8 +34,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
   test "declares Asura's Renewal targeting, timing, and recovery" do
     {:ok, definition} = Catalog.by_id(271)
 
-    assert definition.name == :mo_extremityfist
-    assert definition.display_name == "Asura Strike"
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :damage
     assert definition.max_level == 5

@@ -69,20 +69,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
     }
   end
 
-  test "Catalog.by_id/1 resolves CR_SHIELDCHARGE" do
-    assert definition().name == :cr_shieldcharge
-    assert definition().max_level == 5
-    assert definition().target_type == :target_enemy
-    assert definition().damage_type == :damage
-    assert definition().range == 3
-    assert definition().damage_base == :shield
-    assert definition().sp_cost == [10, 10, 10, 10, 10]
-  end
-
-  test "Catalog.active_module_for/1 resolves cr_shieldcharge" do
-    assert {:ok, CrShieldcharge} = Catalog.active_module_for(:cr_shieldcharge)
-  end
-
   describe "validate/4" do
     test "ok with a shield equipped" do
       assert CrShieldcharge.validate(caster_with_shield(), {:unit, @target_id}, 1, definition()) ==

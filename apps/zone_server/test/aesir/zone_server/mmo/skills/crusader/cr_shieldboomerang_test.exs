@@ -27,23 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerangTest do
     definition
   end
 
-  test "Catalog.by_id(251) resolves to :cr_shieldboomerang with its declared Renewal shape" do
-    assert {:ok, definition} = Catalog.by_id(251)
-    assert definition.name == :cr_shieldboomerang
-    assert definition.display_name == "Shield Boomerang"
-    assert definition.max_level == 5
-    assert definition.target_type == :target_enemy
-    assert definition.damage_type == :damage
-    assert definition.damage_base == :shield
-    assert definition.range == [3, 5, 7, 9, 11]
-    assert definition.sp_cost == List.duplicate(12, 5)
-    assert definition.after_cast_delay == List.duplicate(700, 5)
-  end
-
-  test "Catalog.active_module_for/1 resolves cr_shieldboomerang" do
-    assert {:ok, CrShieldboomerang} = Catalog.active_module_for(:cr_shieldboomerang)
-  end
-
   describe "cast/4" do
     defp caster, do: %{character_id: @caster_id}
 

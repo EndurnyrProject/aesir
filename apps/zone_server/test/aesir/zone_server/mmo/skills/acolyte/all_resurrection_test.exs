@@ -41,7 +41,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
   test "exposes the exact Renewal definition" do
     assert {:ok, definition} = Catalog.by_id(54)
 
-    assert definition.name == :all_resurrection
     assert definition.max_level == 4
     assert definition.target_type == :target_resurrection
     assert definition.damage_type == :no_damage

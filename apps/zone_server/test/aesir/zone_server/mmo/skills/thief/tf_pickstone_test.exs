@@ -16,9 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstoneTest do
     pending_inventory_notify: []
   }
 
-  test "Catalog.by_id/1 resolves TF_PICKSTONE" do
+  test "SP cost and cast timing split by mode" do
     assert {:ok, definition} = Catalog.by_id(151)
-    assert definition.name == :tf_pickstone
     assert definition.max_level == 1
     assert definition.target_type == :self
     assert TfPickstone.definition(:renewal).sp_cost == [2]

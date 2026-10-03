@@ -29,7 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScreamTest do
 
   @tag game_mode: :renewal
   test "definition and cast capture the pinned delayed event" do
-    assert {:ok, DcScream} = Catalog.active_module_for(:dc_scream)
     assert {:ok, definition} = Catalog.by_id(326)
 
     assert definition.max_level == 5

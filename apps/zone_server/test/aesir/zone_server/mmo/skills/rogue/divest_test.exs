@@ -43,21 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.DivestTest do
     {RgStriphelm, 218, :rg_striphelm, "Divest Helm", :head_top, :sc_striphelm, 40}
   ]
 
-  test "all four skills are discovered with their Renewal definitions" do
-    Catalog.reload()
-
-    for {module, id, name, display_name, _slot, _status, _val2} <- @skills do
-      assert {:ok, ^module} = Catalog.active_module_for(name)
-      assert {:ok, definition} = Catalog.by_id(id)
-      assert definition.name == name
-      assert definition.display_name == display_name
-      assert definition.max_level == 5
-      assert definition.target_type == :target_enemy
-      assert definition.damage_type == :no_damage
-      assert definition.range == 1
-    end
-  end
-
   test "success rate uses the Renewal level and DEX formula within roll bounds" do
     assert StripCommon.strip_success_rate(1, 50, 50) == 100
     assert StripCommon.strip_success_rate(5, 90, 40) == 400

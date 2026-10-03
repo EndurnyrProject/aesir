@@ -18,16 +18,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelusTest do
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
-  test "Catalog.by_id/1 resolves al_angelus" do
-    assert {:ok, definition} = Catalog.by_id(33)
-    assert definition.name == :al_angelus
-  end
-
-  test "Catalog.by_name/1 resolves al_angelus" do
-    assert {:ok, definition} = Catalog.by_name(:al_angelus)
-    assert definition.id == 33
-  end
-
   test "definition cooldown is 30_000ms at every level" do
     assert {:ok, definition} = Catalog.by_id(33)
     assert Enum.all?(definition.cooldown, &(&1 == 30_000))

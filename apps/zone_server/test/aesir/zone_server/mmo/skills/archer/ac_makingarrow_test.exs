@@ -67,19 +67,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
     send(pid, {:npc_interact, %NpcInteract{npc_id: @dialog_gid, response: response}})
   end
 
-  describe "catalog registration & metadata" do
-    test "matches the rAthena table" do
-      assert {:ok, %{name: :ac_makingarrow}} = Catalog.by_id(147)
-      assert {:ok, AcMakingarrow} = Catalog.active_module_for(:ac_makingarrow)
-
-      d = AcMakingarrow.definition()
-      assert d.max_level == 1
-      assert d.target_type == :self
-      assert d.damage_type == :no_damage
-      assert d.sp_cost == [10]
-    end
-  end
-
   describe "cast/4" do
     test "stages the crafting dialog on pending_interaction" do
       caster = %PlayerState{character_id: 9001}

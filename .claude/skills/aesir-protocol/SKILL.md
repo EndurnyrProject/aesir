@@ -50,10 +50,11 @@ When a menu-like need recurs, prefer one generic message pair over per-feature o
      generated from the `s2c zone` annotations. Build the `Aesir.Net.*` struct and send via
      the broadcast layer (`Broadcast.to_player` for SELF-targeted, area broadcast
      otherwise). No-op gracefully when `char_id` is nil (detached script contexts).
-   - **Zone server, client→server**: handle the struct in the player-session packet
-     routing/handlers. Sessions have **no catch-all `handle_info`** — a missed sender after
-     a rename is a FunctionClauseError and a player disconnect; renames must be atomic with
-     grep-verified sender sweeps.
+   - **Zone server, client→server**: add a `handle_message/2` clause in
+     `unit/player/handlers/packet_handler.ex` (or a domain handler it delegates to). An
+     unmatched struct hits the catch-all and is **logged and dropped**, not crashed, so a
+     missed clause after a rename fails silently in play; grep-verify every sender and
+     handler when renaming a message.
    - **Account/char servers**: handle the new `{tag, msg}` body in that server's
      `handle_message/3` (the `Aesir.Commons.Network.QuicConnection` behaviour callback).
 6. Document field meanings on the proto message.

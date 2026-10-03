@@ -28,7 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjokerTest do
 
   @tag game_mode: :renewal
   test "definition and cast capture the pinned delayed event" do
-    assert {:ok, BaFrostjoker} = Catalog.active_module_for(:ba_frostjoker)
     assert {:ok, definition} = Catalog.by_id(318)
 
     assert definition.max_level == 5

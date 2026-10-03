@@ -19,9 +19,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfriedTest do
   test "declares the pinned Siegfried skill data" do
     definition = BdSiegfried.definition()
 
-    assert definition.id == 313
-    assert definition.name == :bd_siegfried
-    assert definition.display_name == "Acoustic Rhythm"
     assert definition.max_level == 5
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage
@@ -35,7 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfriedTest do
     assert definition.after_cast_delay == List.duplicate(300, 5)
     assert definition.cooldown == List.duplicate(20_000, 5)
     assert definition.require_weapon == [:musical, :whip]
-    assert BdSiegfried.__skill_capabilities__() == [:active, :ground, :ensemble]
   end
 
   test "delegates party application with effective-level magnitudes" do

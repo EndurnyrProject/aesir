@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Ring of Nibelungen data, including decreasing SP" do
-    assert {:ok, BdRingnibelungen} = Catalog.active_module_for(:bd_ringnibelungen)
     assert {:ok, definition} = Catalog.by_id(310)
 
     assert definition.max_level == 5
@@ -61,7 +60,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
     assert definition.range == 0
     assert definition.unit_duration == []
     assert Catalog.ensemble?(310)
-    refute function_exported?(BdRingnibelungen, :dynamic_cost, 4)
   end
 
   test "status stores and exposes each of exactly eleven uniformly selectable bonuses" do

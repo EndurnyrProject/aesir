@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencycall
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdItememergencycall
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -75,15 +74,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
     end)
 
     stub(MapCache, :walkable?, fn _map, _x, _y -> true end)
-  end
-
-  test "definitions carry the reference pacing" do
-    assert {:ok, emergency} = Catalog.by_id(10_013)
-    assert emergency.fixed_cast_time == [5_000]
-    assert emergency.cooldown == [300_000]
-
-    assert {:ok, item_variant} = Catalog.by_id(10_015)
-    assert item_variant.max_level == 3
   end
 
   test "EMERGENCYCALL warps every online member (not the caster) to cells around the master" do

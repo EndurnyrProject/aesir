@@ -17,24 +17,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaMagicrodTest do
   end
 
   describe "definition" do
-    test "mirrors rAthena skill_db 276: a self-cast level 5 magic buff costing 2 SP" do
-      assert %{
-               id: 276,
-               name: :sa_magicrod,
-               max_level: 5,
-               target_type: :self,
-               damage_type: :no_damage,
-               damage_kind: :magic,
-               status: :sc_magicrod,
-               sp_cost: [2, 2, 2, 2, 2]
-             } = definition()
-    end
-
     # rAthena skill_db.yml:7708-7718 Duration1 = 400/600/800/1000/1200, i.e.
     # 400 + 200 * (level - 1) — sub-second up to level 3.
     test "is sub-second at low levels: duration is 400 + 200 * (level - 1) ms" do
-      assert %{duration: [400, 600, 800, 1_000, 1_200]} = definition()
-
       for level <- 1..5 do
         assert Enum.at(definition().duration, level - 1) == 400 + 200 * (level - 1)
       end

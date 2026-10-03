@@ -24,22 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenalineTest do
     :ok = Catalog.reload()
   end
 
-  test "both Adrenaline Rush skills are active with their exact costs and durations" do
-    assert {:ok, BsAdrenaline} = Catalog.active_module_for(:bs_adrenaline)
-    assert {:ok, BsAdrenaline2} = Catalog.active_module_for(:bs_adrenaline2)
-
-    assert {:ok, adrenaline} = Catalog.by_id(111)
-    assert adrenaline.splash_radius == 14
-    assert adrenaline.sp_cost == [20, 23, 26, 29, 32]
-    assert adrenaline.duration == [30_000, 60_000, 90_000, 120_000, 150_000]
-    assert adrenaline.require_weapon == [:one_handed_axe, :two_handed_axe, :mace]
-
-    assert {:ok, adrenaline2} = Catalog.by_id(459)
-    assert adrenaline2.splash_radius == 14
-    assert adrenaline2.sp_cost == [64]
-    assert adrenaline2.duration == [150_000]
-  end
-
   test "a caster without an axe or mace fails before applying any status" do
     reject(&PartyBuff.apply/5)
 

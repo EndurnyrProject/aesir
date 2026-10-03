@@ -16,8 +16,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkParryingTest do
 
   test "requires a two-handed sword and applies Parrying at the cast level" do
     assert {:ok, definition} = Catalog.by_name(:lk_parrying)
-    assert definition.id == 356
-    assert definition.sp_cost == List.duplicate(50, 10)
     player = player()
 
     assert {:error, :wrong_weapon} = LkParrying.validate(player, :self, 7, definition)

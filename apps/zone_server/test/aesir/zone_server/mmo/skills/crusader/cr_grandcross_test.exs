@@ -75,19 +75,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   end
 
   describe "definition" do
-    test "Catalog.by_id/1 resolves CR_GRANDCROSS" do
-      assert definition().name == :cr_grandcross
-      assert definition().max_level == 10
-      assert definition().target_type == :self
-      assert definition().damage_type == :damage
-      assert definition().element == :holy
-      assert definition().range == 9
-      assert definition().hit_interval == 300
-      assert definition().unit_duration == List.duplicate(900, 10)
-      assert definition().hp_cost_rate == List.duplicate(20, 10)
-      assert definition().sp_cost == [37, 44, 51, 58, 65, 72, 79, 86, 93, 100]
-    end
-
     test "renewal adds a fixed cast, a short delay, and a cooldown; classic a long cast and delay" do
       renewal = CrGrandcross.definition(:renewal)
       classic = CrGrandcross.definition(:pre_renewal)
@@ -103,11 +90,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       assert classic.after_cast_delay == List.duplicate(1_500, 10)
       assert classic.cooldown == []
       assert classic.duration == List.duplicate(30_000, 10)
-    end
-
-    test "Catalog active and ground modules resolve cr_grandcross" do
-      assert {:ok, CrGrandcross} = Catalog.active_module_for(:cr_grandcross)
-      assert {:ok, CrGrandcross} = Catalog.ground_module_for(:cr_grandcross)
     end
 
     test "cast places the field at the caster cell" do

@@ -31,11 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Gypsy's Kiss table" do
-    assert {:ok, DcServiceForYou} = Catalog.active_module_for(:dc_serviceforyou)
     assert {:ok, definition} = Catalog.by_id(330)
 
-    assert definition.name == :dc_serviceforyou
-    assert definition.display_name == "Gypsy's Kiss"
     assert definition.max_level == 10
     assert definition.target_type == :self
     assert definition.require_weapon == [:musical, :whip]

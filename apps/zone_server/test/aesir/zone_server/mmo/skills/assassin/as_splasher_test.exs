@@ -33,8 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
   @tag game_mode: :renewal
   test "defines Venom Splasher's exact player and mob-safe contract" do
     assert {:ok, definition} = Catalog.by_id(141)
-    assert definition.name == :as_splasher
-    assert definition.display_name == "Venom Splasher"
     assert definition.max_level == 10
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :no_damage

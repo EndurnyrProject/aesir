@@ -14,23 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessingTest do
     Mimic.copy(TargetResolver)
   end
 
-  test "Catalog.by_id/1 resolves al_blessing" do
-    assert {:ok, definition} = Catalog.by_id(34)
-    assert definition.name == :al_blessing
-    assert definition.max_level == 10
-    assert definition.target_type == :target_ally
-    assert length(definition.sp_cost) == 10
-    assert length(definition.duration) == 10
-  end
-
-  test "Catalog.by_name/1 resolves al_blessing" do
-    assert {:ok, %{id: 34}} = Catalog.by_name(:al_blessing)
-  end
-
-  test "Catalog.active_module_for/1 resolves al_blessing" do
-    assert {:ok, AlBlessing} = Catalog.active_module_for(:al_blessing)
-  end
-
   test "cast/4 applies sc_blessing with val1=level, val2=level at level 1" do
     {:ok, definition} = Catalog.by_id(34)
     caster = %{character_id: 1000}

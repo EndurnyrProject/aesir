@@ -51,11 +51,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Dissonance table" do
-    assert {:ok, BaDissonance} = Catalog.active_module_for(:ba_dissonance)
     assert {:ok, definition} = Catalog.by_id(317)
 
-    assert definition.name == :ba_dissonance
-    assert definition.display_name == "Dissonance"
     assert definition.max_level == 5
     assert definition.target_type == :self
     assert definition.damage_type == :damage

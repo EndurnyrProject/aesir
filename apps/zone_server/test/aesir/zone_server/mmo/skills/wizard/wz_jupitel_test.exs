@@ -178,8 +178,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
   test "definition matches the Renewal level 1 and level 10 data" do
     definition = WzJupitel.definition()
 
-    assert definition.id == 84
-    assert definition.name == :wz_jupitel
     assert definition.max_level == 10
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :damage

@@ -50,9 +50,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
     test "matches the rAthena Renewal table" do
       definition = WzEarthspike.definition()
 
-      assert definition.id == 90
-      assert definition.name == :wz_earthspike
-      assert definition.display_name == "Earth Spike"
       assert definition.max_level == 5
       assert definition.target_type == :target_enemy
       assert definition.damage_type == :damage

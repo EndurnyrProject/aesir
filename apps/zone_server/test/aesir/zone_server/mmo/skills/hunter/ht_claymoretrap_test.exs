@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap
@@ -42,10 +41,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
 
   describe "registration & metadata" do
     @tag game_mode: :renewal
-    test "is a Fire ground misc skill with range 3 and splash 2, registered in the catalog" do
-      assert {:ok, HtClaymoretrap} = Catalog.ground_module_for(:ht_claymoretrap)
+    test "is a Fire ground misc skill with range 3 and splash 2" do
       d = HtClaymoretrap.definition()
-      assert d.id == 123
       assert d.element == :fire
       assert d.damage_kind == :misc
       assert d.splash_radius == 2

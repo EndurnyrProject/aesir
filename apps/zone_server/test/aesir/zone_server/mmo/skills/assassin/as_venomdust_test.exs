@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -45,18 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
     }
   end
 
-  test "defines levels, range, costs, timing, and five range-one cells" do
-    assert {:ok, definition} = Catalog.by_id(140)
-    assert definition.name == :as_venomdust
-    assert definition.max_level == 10
-    assert definition.target_type == :ground
-    assert definition.requires == []
-    assert definition.range == 2
-    assert definition.sp_cost == List.duplicate(20, 10)
-    assert definition.item_cost == [%{id: 716, amount: 1}]
-    assert definition.hit_interval == 1_000
-    assert definition.unit_duration == Enum.to_list(5_000..50_000//5_000)
-
+  test "places five range-one cells with the level duration" do
     assert {:ok, placement} = AsVenomdust.on_place(group(10))
 
     assert Enum.sort(placement.cells) ==

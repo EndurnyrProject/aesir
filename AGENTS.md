@@ -16,7 +16,7 @@ An Elixir umbrella (`apps/`) with four OTP applications:
 1. **commons** - Shared functionality used by every server
    - Network layer (QUIC transport + Protobuf protocol)
    - Authentication (`Aesir.Commons.Auth`, bcrypt)
-   - Database models and `Repo` (Ecto/Postgres)
+   - Database models and `Aesir.Repo` (Ecto/Postgres)
    - Distributed session management (`SessionManager`, via Horde)
    - Inter-server communication (`inter_server/`, via Phoenix.PubSub)
    - Cluster setup (`cluster/`, via libcluster)
@@ -164,14 +164,39 @@ running `mix aesir.import.npcs`.
 
 ## Testing Approach
 
-Tests follow standard Elixir patterns with some custom helpers:
+The suite is large (zone_server alone is over 1000 files). Every new test costs every future
+run, so test logic, not data or wiring.
 
-1. **Unit Tests**: Test modules in isolation; use `Mimic` for mocking; follow AAA (Arrange, Act, Assert).
-2. **Database Tests**: `Aesir.DataCase` provides transaction sandboxing and error-assertion helpers.
-3. **Cluster Tests**: `Aesir.Commons.ClusterTestHelper` clears Horde registry entries between tests.
-4. **ETS Tests**: `Aesir.TestEtsSetup` sets up ETS tables for tests.
-5. **End-to-end**: Zone features (warps, NPC interactions, quests) have integration tests driving the
-   real subsystems; mirror the existing ones when adding gameplay.
+### What to test
+
+- **Unit test**: formulas and mechanics (damage, stats, cast time, resistances), parsers,
+  transpilers and compilers, handlers with real branching, catalog and registry invariants (one
+  test over the whole catalog, not one per module), and regressions for fixed bugs.
+- **Do not unit test**: skill/status/item definition metadata (`id`, `name`, `max_level`,
+  `display_name`, flags; the catalog invariant tests cover them), one-line delegations, imported
+  or generated data, NPC content (see the aesir-npc skill), and Mimic `expect` tests that only
+  mirror the implementation's call sequence.
+- **Integration test**: one per feature path that crosses a session boundary or needs the real
+  routing (deadlocks, packet ingress, NPC interaction, warps, quests), driving the real subsystems
+  through `IntegrationCase`. Not one per skill or status.
+- A new skill or status module needs a test only for the logic it adds. A module whose behaviour is
+  entirely declarative needs none.
+
+### Gates
+
+- While iterating: the touched files, by `file` or `file:line`.
+- Before finishing: the test directories for the touched subsystems in the mode you changed, plus
+  `mix format` and `mix credo --strict`.
+- The full four-command matrix below is required only for changes to the mode seam
+  (`Mmo.Mechanics`, `GameMode`, `Db.Layout`), shared formulas and combat orchestration, test
+  support, or data layout. For everything else, do not run it.
+
+### Mechanics
+
+- `Aesir.DataCase` gives transaction sandboxing; `Aesir.Commons.ClusterTestHelper` clears Horde
+  entries; `Aesir.TestEtsSetup` seeds ETS for unit tests; `IntegrationCase` does all of that plus a
+  per-test world for integration tests.
+- Use `Mimic` for boundaries, not for the function under test. Follow AAA.
 
 Shared unit tests remain untagged and run in both modes. Tests requiring a particular boot mode use
 `@tag game_mode: :renewal` or `:pre_renewal`, with `@describetag`/`@moduletag` for suitable groups.
@@ -182,7 +207,8 @@ A mode-specific integration must also set its opposite integration tag to `false
 alone cannot override an ExUnit include filter. Keep paired cases in the same files. Explicit CLI
 integration selectors must include `:true` because a bare tag also matches a tag set to `false`.
 
-Mimic conventions, integration-test isolation, and known flaky tests are in the **aesir-workflow** skill.
+Integration-test isolation, the determinism checklist, and Mimic sharp edges are in the
+**aesir-workflow** skill.
 
 ## Build, Lint, and Test
 
@@ -199,7 +225,10 @@ Mimic conventions, integration-test isolation, and known flaky tests are in the 
 - **Run a single test file**: `mix test path/to/test_file.exs`
 - **Run a single test**: `mix test path/to/test_file.exs:line_number`
 
-Before considering cross-mode work done, run all four mode-specific unit/doctest and integration commands serially in separate Mix invocations. The explicit aliases override an inherited `AESIR_DB_MODE` before boot and forward normal test arguments. Plain `mix test` and `mix test.integration` retain environment-based selection (Renewal by default).
+The four mode aliases override an inherited `AESIR_DB_MODE` before boot and forward normal test
+arguments (paths, `--only`); run them serially in separate Mix invocations when the gate above
+requires the matrix. Plain `mix test` and `mix test.integration` retain environment-based selection
+(Renewal by default).
 
 ## Tool Preferences
 
@@ -207,9 +236,11 @@ Before considering cross-mode work done, run all four mode-specific unit/doctest
 
 ## Delegation
 
-- Use `Explore`, `Scout`, or `codebase-memory-scout` for read-only lookups, and pass
-  `model: "haiku"` for mechanical search or extraction work.
-- Reserve `general-purpose` and the default model for work that writes, edits, or needs judgment.
+- Use `Explore` or `scout` for read-only lookups, and pass `model: "haiku"` for mechanical search
+  or extraction work.
+- Reserve `engineer`/`senior_engineer` and the default model for work that writes, edits, or needs
+  judgment. Only the coordinating agent runs Mix commands, serially; never concurrent builds or
+  suites against the shared `aesir_test` database.
 
 ## Code Style
 
@@ -242,16 +273,12 @@ Before considering cross-mode work done, run all four mode-specific unit/doctest
    generated `Aesir.Net.*` structs; do not hand-roll binary packets.
 3. **Session Management**: Always validate sessions before processing user requests.
 4. **Error Handling**: Use the `{:ok, result}` / `{:error, reason}` pattern instead of raising.
-5. **Testing**: Write comprehensive tests for new functionality (happy path and error cases).
+5. **Testing**: Follow "What to test" above. Cover the logic you add, including its error paths;
+   do not add tests for data, wiring, or declarative modules.
 6. **Documentation**: Document modules and functions; for protocol messages document field meaning.
 7. **Renewal Mechanics**: Ragnarok has pre-re and renewal mechanics; we target renewal.
 8. **Never assume a function signature or return value**: Always check the definition.
-9. **No distributed transactions between sessions**: Never build an offer/claim or two-phase-commit
-   style protocol across PlayerSession/MobSession processes to coordinate a cross-unit effect (the
-   Monk Root skill shipped one and it was deleted as unnecessary complexity). The single-writer rule
-   covers a session's own state, but `StatusStorage` is deliberately not single-writer: writing
-   another unit's status rows cross-process is the norm, and movement/attack gating is pull-based
-   (`can_move?`/`can_attack?` checked per action/tick), so no session needs to be notified
-   synchronously. When an effect must be granted exactly once, use a synchronous atomic claim on the
-   shared store (`StatusStorage.take_status/3`) inside the acting process, then write both sides'
-   records directly; let ticks and finite durations self-heal a dead peer.
+9. **Single writer, no cross-session transactions**: a player or mob is mutated only through its
+   own session; never build offer/claim or two-phase-commit protocols between sessions.
+   `StatusStorage` is the deliberate exception. The full rule and the exactly-once pattern
+   (`StatusStorage.take_status/3`) are in the **aesir-units** skill.

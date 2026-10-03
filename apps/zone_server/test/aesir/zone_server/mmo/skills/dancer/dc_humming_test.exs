@@ -27,11 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Focus Ballet table" do
-    assert {:ok, DcHumming} = Catalog.active_module_for(:dc_humming)
     assert {:ok, definition} = Catalog.by_id(327)
 
-    assert definition.name == :dc_humming
-    assert definition.display_name == "Focus Ballet"
     assert definition.max_level == 10
     assert definition.target_type == :self
     assert definition.require_weapon == [:musical, :whip]

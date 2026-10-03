@@ -26,23 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
     :ok
   end
 
-  # rAthena db/re/skill_db.yml:3791-3850 and src/map/status.cpp:11643-11645.
-  describe "definition/0" do
-    test "matches the Renewal Quagmire level tables" do
-      definition = WzQuagmire.definition()
-
-      assert definition.id == 92
-      assert definition.max_level == 5
-      assert definition.target_type == :ground
-      assert definition.damage_type == :no_damage
-      assert definition.range == 9
-      assert definition.element == :earth
-      assert definition.sp_cost == [5, 10, 15, 20, 25]
-      assert definition.after_cast_delay == List.duplicate(1_000, 5)
-      assert definition.unit_duration == [5_000, 10_000, 15_000, 20_000, 25_000]
-    end
-  end
-
   describe "on_place/1" do
     test "creates the canonical 3x3 field and reconciliation cadence" do
       assert {:ok, placement} = WzQuagmire.on_place(group(level: 5))

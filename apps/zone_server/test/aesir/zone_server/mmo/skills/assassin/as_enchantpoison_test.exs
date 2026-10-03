@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
-  alias Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -18,19 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
   setup do
     Catalog.reload()
     :ok
-  end
-
-  test "defines Enchant Poison's complete static level formulas" do
-    definition = AsEnchantpoison.definition()
-
-    assert definition.id == 138
-    assert definition.name == :as_enchantpoison
-    assert definition.status == :sc_encpoison
-    assert definition.max_level == 10
-    assert definition.target_type == :target_ally
-    assert definition.range == 1
-    assert definition.sp_cost == List.duplicate(20, 10)
-    assert definition.duration == Enum.map(1..10, &(30_000 + 15_000 * (&1 - 1)))
   end
 
   test "self and a live same-party same-map ally are valid and receive the level duration" do

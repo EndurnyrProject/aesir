@@ -8,19 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCureTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.by_id/1 resolves AL_CURE" do
-    assert {:ok, def} = Catalog.by_id(35)
-    assert def.name == :al_cure
-    assert def.max_level == 1
-    assert def.target_type == :target_ally
-    assert def.sp_cost == [15]
-    assert def.after_cast_delay == [1_000]
-  end
-
-  test "Catalog.by_name/1 resolves :al_cure" do
-    assert {:ok, %{id: 35}} = Catalog.by_name(:al_cure)
-  end
-
   test "cast/4 removes rAthena's four curable statuses from a targeted ally" do
     {:ok, definition} = Catalog.by_id(35)
     caster = %{character_id: 1000}

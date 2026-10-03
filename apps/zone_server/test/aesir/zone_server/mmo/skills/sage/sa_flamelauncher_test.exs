@@ -64,20 +64,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
     stub(UnitRegistry, :get_unit_info, fn _unit_type, _unit_id -> {:ok, %{stats: %{}}} end)
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves id 280" do
-      assert {:ok, %{name: :sa_flamelauncher}} = Catalog.by_id(280)
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 280}} = Catalog.by_name(:sa_flamelauncher)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, SaFlamelauncher} = Catalog.active_module_for(:sa_flamelauncher)
-    end
-  end
-
   describe "metadata" do
     @tag game_mode: :renewal
     test "matches the rAthena renewal table (skill_db.yml:7777-7810)" do

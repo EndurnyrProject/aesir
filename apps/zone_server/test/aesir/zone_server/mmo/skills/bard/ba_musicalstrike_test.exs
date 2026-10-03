@@ -48,11 +48,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Musical Strike table" do
-    assert {:ok, BaMusicalstrike} = Catalog.active_module_for(:ba_musicalstrike)
     assert {:ok, definition} = Catalog.by_id(316)
 
-    assert definition.name == :ba_musicalstrike
-    assert definition.display_name == "Musical Strike"
     assert definition.max_level == 5
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :damage

@@ -23,15 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfStealTest do
     definition
   end
 
-  test "Catalog.by_id/1 resolves TF_STEAL" do
-    assert definition().name == :tf_steal
-    assert definition().max_level == 10
-    assert definition().target_type == :target_enemy
-    assert definition().damage_type == :no_damage
-    assert definition().range == 1
-    assert definition().sp_cost == List.duplicate(10, 10)
-  end
-
   test "cast/4 resolves the mob pid, calls attempt_steal with the caster's effective DEX, and grants the item" do
     caster = caster()
     mob_pid = self()

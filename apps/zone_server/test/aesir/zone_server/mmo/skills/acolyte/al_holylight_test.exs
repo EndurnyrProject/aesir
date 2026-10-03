@@ -20,14 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylightTest do
     definition
   end
 
-  describe "catalog registration" do
-    test "resolves by id, name, and active module" do
-      assert {:ok, %{name: :al_holylight}} = Catalog.by_id(156)
-      assert {:ok, %{id: 156}} = Catalog.by_name(:al_holylight)
-      assert {:ok, AlHolylight} = Catalog.active_module_for(:al_holylight)
-    end
-  end
-
   describe "metadata" do
     @tag game_mode: :renewal
     test "matches the rAthena renewal table" do

@@ -123,8 +123,8 @@ into a handler / behind the deferred seam", not "loosen the test".
 
 ## Related skills
 
-- `aesir-workflow` — the single-writer conventions in context, and how to test sessions
-  without flakes (integration isolation, `simulate_incoming_message`, determinism rules).
+- `aesir-workflow` — how to test sessions without flakes (integration isolation,
+  `simulate_incoming_message`, the determinism checklist, Mimic sharp edges).
 - `aesir-skills` — skills run inside these sessions (`on_place` self-call hazard, deferred).
 - `aesir-status-effects` — `StatusStorage` semantics and process placement of callbacks.
 - `aesir-mobs` — mob AI, mob cast state, and mob-skill execution.

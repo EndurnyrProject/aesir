@@ -2,7 +2,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwaveTest do
   use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave
@@ -47,23 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwaveTest do
     )
   end
 
-  test "defines the hidden two-catalyst trap" do
-    assert {:ok, HtShockwave} = Catalog.ground_module_for(:ht_shockwave)
-
-    assert %{
-             id: 118,
-             max_level: 5,
-             target_type: :ground,
-             damage_type: :no_damage,
-             damage_kind: :misc,
-             range: 3,
-             hit_interval: 1_000,
-             sp_cost: [45, 45, 45, 45, 45],
-             item_cost: [%{id: 1065, amount: 2}],
-             unit_duration: [200_000, 160_000, 120_000, 80_000, 40_000]
-           } =
-             HtShockwave.definition()
-
+  test "places a hidden armed trap that reclaims its catalyst" do
     assert {:ok, %{cells: [{50, 50}], visibility: :party_only, state: state}} =
              HtShockwave.on_place(group(1))
 

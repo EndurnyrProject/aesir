@@ -23,14 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
     Mimic.copy(StatusStorage)
   end
 
-  test "Slow Poison uses Renewal id, cost, range, and duration data" do
-    assert {:ok, definition} = Catalog.by_id(71)
-    assert definition.name == :pr_slowpoison
-    assert definition.range == 9
-    assert definition.sp_cost == [6, 8, 10, 12]
-    assert definition.duration == [10_000, 20_000, 30_000, 40_000]
-  end
-
   test "Slow Poison applies its status to the caster for the selected duration" do
     {:ok, definition} = Catalog.by_id(71)
     caster = %{character_id: 1_000}
@@ -58,7 +50,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
   @tag game_mode: :renewal
   test "Status Recovery uses Renewal id, cost, range, delay, and blind duration" do
     assert {:ok, definition} = Catalog.by_id(72)
-    assert definition.name == :pr_strecovery
     assert definition.range == 9
     assert definition.sp_cost == [5]
     assert definition.after_cast_delay == [2_000]

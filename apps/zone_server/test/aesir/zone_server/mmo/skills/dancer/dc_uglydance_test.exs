@@ -46,11 +46,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
 
   @tag game_mode: :renewal
   test "defines the pinned Hip Shaker table and is cataloged as a performance" do
-    assert {:ok, DcUglydance} = Catalog.active_module_for(:dc_uglydance)
     assert {:ok, definition} = Catalog.by_id(325)
 
-    assert definition.name == :dc_uglydance
-    assert definition.display_name == "Hip Shaker"
     assert definition.max_level == 5
     assert definition.target_type == :self
     assert definition.splash_radius == 4

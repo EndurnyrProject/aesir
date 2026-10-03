@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkTensionrelaxTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -36,11 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkTensionrelaxTest do
   end
 
   test "a cast from the owning session applies the buff and sits after mailbox processing" do
-    assert {:ok, definition} = Catalog.by_name(:lk_tensionrelax)
-    assert definition.id == 358
-    assert definition.sp_cost == [15]
-    assert definition.duration == [180_000]
-
     character = %Character{
       id: 5_114,
       account_id: 5_115,

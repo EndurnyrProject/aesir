@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -94,29 +93,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
         {:error, :not_found}
       end
     end)
-  end
-
-  describe "catalog registration" do
-    test "by_id(252) resolves cr_reflectshield" do
-      assert {:ok, definition} = Catalog.by_id(252)
-      assert definition.name == :cr_reflectshield
-      assert definition.display_name == "Reflect Shield"
-      assert definition.max_level == 10
-      assert definition.target_type == :self
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 252}} = Catalog.by_name(:cr_reflectshield)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, CrReflectshield} = Catalog.active_module_for(:cr_reflectshield)
-    end
-
-    test "sp_cost matches the per-level table" do
-      {:ok, definition} = Catalog.by_name(:cr_reflectshield)
-      assert definition.sp_cost == [35, 40, 45, 50, 55, 60, 65, 70, 75, 80]
-    end
   end
 
   describe "validate/4 (player shield gate)" do

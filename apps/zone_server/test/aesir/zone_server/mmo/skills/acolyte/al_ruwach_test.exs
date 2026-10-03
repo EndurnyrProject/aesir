@@ -8,16 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwachTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.by_id/1 resolves al_ruwach" do
-    assert {:ok, definition} = Catalog.by_id(24)
-    assert definition.name == :al_ruwach
-  end
-
-  test "Catalog.by_name/1 resolves al_ruwach" do
-    assert {:ok, definition} = Catalog.by_name(:al_ruwach)
-    assert definition.id == 24
-  end
-
   test "cast/4 applies SC_RUWACH to the caster" do
     {:ok, definition} = Catalog.by_id(24)
     caster = %{character_id: 100}

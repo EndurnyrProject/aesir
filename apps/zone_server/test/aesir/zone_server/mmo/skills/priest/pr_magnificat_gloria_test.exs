@@ -78,7 +78,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
   @tag game_mode: :renewal
   test "Magnificat exposes the exact Renewal definition" do
     assert {:ok, definition} = Catalog.by_id(74)
-    assert definition.name == :pr_magnificat
     assert definition.max_level == 5
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage
@@ -102,7 +101,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
   @tag game_mode: :renewal
   test "Gloria exposes the exact Renewal definition" do
     assert {:ok, definition} = Catalog.by_id(75)
-    assert definition.name == :pr_gloria
     assert definition.max_level == 5
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage
@@ -119,11 +117,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
     assert {:ok, definition} = Catalog.by_id(75)
     assert definition.splash_radius == 14
     assert definition.duration == [10_000, 15_000, 20_000, 25_000, 30_000]
-  end
-
-  test "both skills are runtime-discoverable active skills" do
-    assert {:ok, PrMagnificat} = Catalog.active_module_for(:pr_magnificat)
-    assert {:ok, PrGloria} = Catalog.active_module_for(:pr_gloria)
   end
 
   test "Magnificat applies its selected Renewal duration to the caster" do

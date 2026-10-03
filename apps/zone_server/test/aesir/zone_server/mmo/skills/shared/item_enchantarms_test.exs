@@ -29,10 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarmsTest do
     definition
   end
 
-  test "Catalog.active_module_for/1 resolves item_enchantarms" do
-    assert {:ok, ItemEnchantarms} = Catalog.active_module_for(:item_enchantarms)
-  end
-
   for {level, element} <- @elements do
     test "level #{level} endows the #{element} element" do
       caster = %{character_id: 42}

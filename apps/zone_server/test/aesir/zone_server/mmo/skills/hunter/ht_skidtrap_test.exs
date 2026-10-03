@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrap
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
@@ -50,16 +49,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
       },
       attrs
     )
-  end
-
-  test "registers the canonical placement costs and durations" do
-    assert {:ok, HtSkidtrap} = Catalog.ground_module_for(:ht_skidtrap)
-
-    assert %{id: 115, max_level: 5, range: 3, sp_cost: [10, 10, 10, 10, 10]} =
-             HtSkidtrap.definition()
-
-    assert [%{id: 1065, amount: 1}] = HtSkidtrap.definition().item_cost
-    assert [300_000, 240_000, 180_000, 120_000, 60_000] = HtSkidtrap.definition().unit_duration
   end
 
   test "places a hidden single-cell trap with typed lifecycle state" do

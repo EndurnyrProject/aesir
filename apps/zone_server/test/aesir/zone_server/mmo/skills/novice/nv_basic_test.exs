@@ -9,20 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvBasicTest do
     assert NvBasic.skill_name() == :nv_basic
   end
 
-  test "definition/0 carries the NV_BASIC skill_db record" do
-    defn = NvBasic.definition()
-
-    assert defn.id == @skill_id
-    assert defn.name == :nv_basic
-    assert defn.display_name == "Basic Skill"
-    assert defn.max_level == 9
-    assert defn.target_type == :passive
-  end
-
-  test "__skill_capabilities__/0 advertises only :passive" do
-    assert NvBasic.__skill_capabilities__() == [:passive]
-  end
-
   describe "passive channels are all no-ops (NV_BASIC contributes nothing)" do
     setup do
       ctx = %{

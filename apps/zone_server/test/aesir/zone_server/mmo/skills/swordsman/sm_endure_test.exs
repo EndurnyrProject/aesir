@@ -9,10 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndureTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.active_module_for/1 resolves sm_endure" do
-    assert {:ok, SmEndure} = Catalog.active_module_for(:sm_endure)
-  end
-
   test "cast/4 applies SC_ENDURE with val1=level and correct duration" do
     {:ok, definition} = Catalog.by_id(8)
     caster = %PlayerState{character_id: 2000}

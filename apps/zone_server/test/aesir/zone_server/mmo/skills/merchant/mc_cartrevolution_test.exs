@@ -28,34 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
     stub(ItemManagement, :get_item_by_id, fn _nameid -> {:ok, %{weight: @item_weight}} end)
   end
 
-  describe "catalog registration" do
-    test "Catalog.by_id(153) resolves to :mc_cartrevolution" do
-      assert {:ok, definition} = Catalog.by_id(153)
-      assert definition.name == :mc_cartrevolution
-    end
-
-    test "Catalog.by_name(:mc_cartrevolution) resolves" do
-      assert {:ok, definition} = Catalog.by_name(:mc_cartrevolution)
-      assert definition.id == 153
-    end
-
-    test "Catalog.active_module_for/1 resolves mc_cartrevolution" do
-      assert {:ok, McCartrevolution} = Catalog.active_module_for(:mc_cartrevolution)
-    end
-
-    test "definition carries the rAthena splash/knockback/element/sp values" do
-      definition = definition()
-      assert definition.max_level == 1
-      assert definition.target_type == :target_enemy
-      assert definition.damage_type == :damage
-      assert definition.splash_radius == 1
-      assert definition.knockback == 2
-      assert definition.element == :neutral
-      assert definition.range == 1
-      assert definition.sp_cost == [12]
-    end
-  end
-
   describe "skill_ratio/1 (scales with cart weight)" do
     test "an empty cart yields the 150% floor" do
       assert McCartrevolution.skill_ratio(%{}) == 150

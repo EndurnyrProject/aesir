@@ -31,7 +31,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchainTest do
   @tag game_mode: :renewal
   test "renewal definition: 7/7/9/9/11 range, 0.8 s cast + 0.2 s fixed" do
     definition = definition()
-    assert definition.id == 480
     assert definition.damage_base == :shield
     assert definition.range == [7, 7, 9, 9, 11]
     assert definition.cast_time == List.duplicate(800, 5)

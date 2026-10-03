@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.GraffitiTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
-  alias Aesir.ZoneServer.Mmo.Skills.Rogue.RgFlaggraffiti
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.RgGraffiti
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -35,14 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.GraffitiTest do
     :ok
   end
 
-  test "Scribble declares its Red Gemstone catalyst and places a 180-second unit" do
-    assert {:ok, definition} = Catalog.by_id(220)
-    assert definition.name == :rg_graffiti
-    assert definition.target_type == :ground
-    assert definition.max_level == 1
-    assert definition.item_cost == [%{id: 716, amount: 1}]
-    assert {:ok, RgGraffiti} = Catalog.ground_module_for(:rg_graffiti)
-
+  test "Scribble places a 180-second unit" do
     assert {:ok, group} = Unit.place(caster(), :rg_graffiti, 1, @center)
     assert group.skill_name == :rg_graffiti
     assert group.expires_at - group.created_at == 180_000
@@ -51,12 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.GraffitiTest do
   end
 
   test "Piece places a ground unit" do
-    assert {:ok, definition} = Catalog.by_id(221)
-    assert definition.name == :rg_flaggraffiti
-    assert definition.target_type == :ground
-    assert definition.max_level == 5
-    assert {:ok, RgFlaggraffiti} = Catalog.ground_module_for(:rg_flaggraffiti)
-
     assert {:ok, group} = Unit.place(caster(), :rg_flaggraffiti, 5, @center)
     assert group.skill_name == :rg_flaggraffiti
     assert [stored] = Storage.all()

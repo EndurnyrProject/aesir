@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkBerserkTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
@@ -37,11 +36,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkBerserkTest do
   end
 
   test "a session cast triples max HP, fully heals, empties SP, and blocks player actions" do
-    assert {:ok, definition} = Catalog.by_name(:lk_berserk)
-    assert definition.id == 359
-    assert definition.sp_cost == [200]
-    assert definition.duration == [300_000]
-
     character = %Character{
       id: 5_120,
       account_id: 5_121,

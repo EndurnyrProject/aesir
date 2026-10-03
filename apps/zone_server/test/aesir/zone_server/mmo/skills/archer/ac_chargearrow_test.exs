@@ -28,22 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrowTest do
   end
 
   describe "catalog registration & metadata" do
-    test "matches the rAthena table" do
-      assert {:ok, %{name: :ac_chargearrow}} = Catalog.by_id(148)
-      assert {:ok, AcChargearrow} = Catalog.active_module_for(:ac_chargearrow)
-
-      d = definition()
-      assert d.max_level == 1
-      assert d.target_type == :target_enemy
-      assert d.damage_type == :damage
-      assert d.damage_kind == :weapon
-      assert d.range == 9
-      assert d.vulture_range == true
-      assert d.knockback == 6
-      assert d.requires_ammo == true
-      assert d.sp_cost == [15]
-    end
-
     test "the cast is split renewal but a single long cast pre-renewal" do
       assert AcChargearrow.definition(:renewal).cast_time == [400]
       assert AcChargearrow.definition(:renewal).fixed_cast_time == [800]

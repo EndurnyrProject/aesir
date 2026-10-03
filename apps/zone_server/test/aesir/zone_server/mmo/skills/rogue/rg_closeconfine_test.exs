@@ -27,16 +27,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
     :ok
   end
 
-  test "is discovered and roots both caster and mob target" do
+  test "roots both caster and mob target" do
     caster = register_player(@caster_id)
     register_mob(@target_id)
 
     assert {:ok, definition} = Catalog.by_id(1005)
-    assert {:ok, RgCloseconfine} = Catalog.active_module_for(:rg_closeconfine)
-    assert definition.display_name == "Close Confine"
-    assert definition.max_level == 1
-    assert definition.target_type == :target_enemy
-    assert definition.range == 1
     assert %{icon: :rg_cconfine_m} = Registry.get_definition(:sc_closeconfine2)
     assert %{icon: :rg_cconfine_s} = Registry.get_definition(:sc_closeconfine)
 

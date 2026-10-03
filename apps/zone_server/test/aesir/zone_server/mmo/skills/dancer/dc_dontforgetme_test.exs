@@ -22,11 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDontforgetmeTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Slow Grace table" do
-    assert {:ok, DcDontforgetme} = Catalog.active_module_for(:dc_dontforgetme)
     assert {:ok, definition} = Catalog.by_id(328)
 
-    assert definition.name == :dc_dontforgetme
-    assert definition.display_name == "Slow Grace"
     assert definition.max_level == 10
     assert definition.target_type == :self
     assert definition.splash_radius == 4

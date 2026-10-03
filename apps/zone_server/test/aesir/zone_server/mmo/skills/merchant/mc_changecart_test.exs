@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecartTest do
 
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
 
@@ -15,23 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecartTest do
       cart_type: Keyword.get(opts, :cart_type, 1),
       stats: %{progression: %{base_level: Keyword.get(opts, :base_level, 50)}}
     }
-  end
-
-  describe "skill data" do
-    test "mc_changecart loads from the catalog as a self no-damage skill at id 154" do
-      assert {:ok, definition} = Catalog.by_id(154)
-      assert {:ok, ^definition} = Catalog.by_name(:mc_changecart)
-      assert definition.name == :mc_changecart
-      assert definition.display_name == "Change Cart"
-      assert definition.target_type == :self
-      assert definition.damage_type == :no_damage
-      assert definition.max_level == 1
-      assert definition.sp_cost == [40]
-    end
-
-    test "is registered as an active skill" do
-      assert {:ok, McChangecart} = Catalog.active_module_for(:mc_changecart)
-    end
   end
 
   describe "cast/4" do

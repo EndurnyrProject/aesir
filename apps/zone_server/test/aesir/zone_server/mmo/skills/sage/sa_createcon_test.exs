@@ -66,31 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreateconTest do
     ])
   end
 
-  describe "metadata" do
-    test "the catalog resolves id 1007 with the renewal skill_db values" do
-      assert {:ok, SaCreatecon} = Catalog.active_module_for(:sa_createcon)
-      assert {:ok, definition} = Catalog.by_id(1007)
-
-      assert definition.name == :sa_createcon
-      assert definition.max_level == 1
-      assert definition.target_type == :self
-      assert definition.damage_type == :no_damage
-      assert definition.sp_cost == [30]
-    end
-
-    test "publishes the menu capability so an accepted reply routes back here" do
-      assert {:ok, SaCreatecon} = Catalog.menu_module_for(:sa_createcon)
-    end
-
-    # Instant: skill_db gives SA_CREATECON no CastTime or FixedCastTime.
-    test "has no cast time" do
-      {:ok, definition} = Catalog.by_id(1007)
-
-      assert definition.cast_time == []
-      assert definition.fixed_cast_time == []
-    end
-  end
-
   describe "cast/4" do
     test "offers only the converters whose materials the caster holds" do
       assert {:ok, staged} = cast([{@blank_scroll, 2}, {@red_blood, 1}, {@wind_of_verdure, 1}])

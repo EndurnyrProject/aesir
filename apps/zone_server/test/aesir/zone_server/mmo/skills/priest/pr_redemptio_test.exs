@@ -83,7 +83,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
   test "exposes the declared definition and active timing" do
     assert {:ok, definition} = Catalog.by_id(1014)
 
-    assert definition.name == :pr_redemptio
     assert definition.max_level == 1
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage

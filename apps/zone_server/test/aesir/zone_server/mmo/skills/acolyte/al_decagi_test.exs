@@ -18,16 +18,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagiTest do
     definition
   end
 
-  describe "catalog registration" do
-    test "by_id(30) resolves al_decagi" do
-      assert {:ok, %{name: :al_decagi}} = Catalog.by_id(30)
-    end
-
-    test "by_name(:al_decagi) resolves" do
-      assert {:ok, %{id: 30}} = Catalog.by_name(:al_decagi)
-    end
-  end
-
   describe "cast/4 — landing roll hit" do
     # Seed {1,2,3} yields :rand.uniform(100) == 27, below any reasonable Decrease AGI rate.
     setup do

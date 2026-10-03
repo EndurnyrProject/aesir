@@ -10,17 +10,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCompulsionTest do
     Catalog.reload()
   end
 
-  test "is discovered as a passive and grants its shop discount" do
+  test "grants its shop discount through the passive" do
     player =
       PlayerStateFixture.build(%{
         stats: %{progression: %{learned_skills: %{224 => 5}}}
       })
 
-    assert {:ok, definition} = Catalog.by_id(224)
-    assert definition.name == :rg_compulsion
-    assert definition.display_name == "Haggle"
-    assert definition.max_level == 5
-    assert {:ok, RgCompulsion} = Catalog.passive_module_for(:rg_compulsion)
     assert Passives.shop_discount_pct(player) == 25
   end
 

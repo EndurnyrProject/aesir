@@ -1,23 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDoubleTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfDouble
-
-  test "Catalog.by_id/1 resolves TF_DOUBLE" do
-    assert {:ok, definition} = Catalog.by_id(48)
-    assert definition.name == :tf_double
-    assert definition.max_level == 10
-    assert definition.target_type == :passive
-  end
-
-  test "Catalog.passive_module_for/1 resolves tf_double" do
-    assert {:ok, TfDouble} = Catalog.passive_module_for(:tf_double)
-  end
-
-  test "the definition declares the two hits of a double attack" do
-    assert TfDouble.definition().hit_count == 2
-  end
 
   @tag game_mode: :pre_renewal
   test "classic double attack chance is 5 percent per level" do

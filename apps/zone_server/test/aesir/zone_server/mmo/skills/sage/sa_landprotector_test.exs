@@ -35,7 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
     test "matches the Renewal Land Protector tables" do
       definition = SaLandprotector.definition()
 
-      assert definition.id == 288
       assert definition.max_level == 5
       assert definition.target_type == :ground
       assert definition.damage_type == :no_damage
@@ -68,12 +67,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
       end
     end
 
-    test "marks the group as a land protector without field support" do
+    test "marks the group as a land protector with path checks" do
       assert {:ok, placement} = SaLandprotector.on_place(base_group(SaLandprotector, 1, 1))
 
       assert placement.state == %{land_protector: true}
       assert placement.path_check == true
-      refute function_exported?(SaLandprotector, :field_support, 1)
     end
   end
 

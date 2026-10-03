@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine
@@ -41,10 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
 
   describe "registration & metadata" do
     @tag game_mode: :renewal
-    test "is a Wind ground misc skill with range 3 and splash 1, registered in the catalog" do
-      assert {:ok, HtBlastmine} = Catalog.ground_module_for(:ht_blastmine)
+    test "is a Wind ground misc skill with range 3 and splash 1" do
       d = HtBlastmine.definition()
-      assert d.id == 122
       assert d.element == :wind
       assert d.damage_kind == :misc
       assert d.splash_radius == 1

@@ -14,10 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.active_module_for/1 resolves sm_magnum" do
-    assert {:ok, SmMagnum} = Catalog.active_module_for(:sm_magnum)
-  end
-
   @tag game_mode: :renewal
   test "cast/4 resolves caster-centered mob-native blow before raising the fire aura" do
     {:ok, definition} = Catalog.by_id(7)

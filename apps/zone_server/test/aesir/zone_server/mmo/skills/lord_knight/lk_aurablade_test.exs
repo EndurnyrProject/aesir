@@ -18,10 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurabladeTest do
     :ok
   end
 
-  test "catalog resolves Aura Blade and a sword caster applies its status" do
+  test "a sword caster applies Aura Blade" do
     assert {:ok, definition} = Catalog.by_name(:lk_aurablade)
-    assert definition.id == 355
-    assert definition.sp_cost == [18, 26, 34, 42, 50]
 
     player = player()
     assert {:error, :wrong_weapon} = LkAurablade.validate(player, :self, 3, definition)

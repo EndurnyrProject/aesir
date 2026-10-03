@@ -34,7 +34,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
   @tag game_mode: :renewal
   test "catalog exposes the declared definition" do
     assert {:ok, definition} = Catalog.by_id(262)
-    assert definition.name == :mo_absorbspirits
     assert definition.target_type == :target_any
     assert definition.range == 9
     assert definition.sp_cost == [5]

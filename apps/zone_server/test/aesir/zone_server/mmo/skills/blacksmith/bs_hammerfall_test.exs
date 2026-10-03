@@ -12,15 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
 
   setup :verify_on_exit!
 
-  test "defines the five-level no-damage 5x5 skill at a flat 10 SP" do
-    definition = BsHammerfall.definition()
-
-    assert definition.target_type == :ground
-    assert definition.damage_type == :no_damage
-    assert definition.splash_radius == 2
-    assert definition.sp_cost == List.duplicate(10, 5)
-  end
-
   test "stuns for 4.5 seconds in renewal and 5 seconds in classic" do
     assert BsHammerfall.definition(:renewal).duration == List.duplicate(4_500, 5)
     assert BsHammerfall.definition(:pre_renewal).duration == List.duplicate(5_000, 5)

@@ -38,7 +38,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
   test "renewal definition: 0.8-2.4 s cast, 0.2-0.6 s fixed, 0.5 s delay" do
     definition = definition()
 
-    assert definition.id == 361
     assert definition.target_type == :target_ally
     assert definition.range == 9
     assert definition.sp_cost == [20, 30, 40, 50, 60]

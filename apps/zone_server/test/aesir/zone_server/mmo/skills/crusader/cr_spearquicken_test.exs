@@ -81,46 +81,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
     MobState.new(9003, mob_data, spawn_ref, "prontera", 100, 100)
   end
 
-  describe "catalog registration" do
-    test "by_id(258) resolves cr_spearquicken" do
-      assert {:ok, definition} = Catalog.by_id(258)
-      assert definition.name == :cr_spearquicken
-      assert definition.display_name == "Spear Quicken"
-      assert definition.max_level == 10
-      assert definition.target_type == :self
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 258}} = Catalog.by_name(:cr_spearquicken)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, CrSpearquicken} = Catalog.active_module_for(:cr_spearquicken)
-    end
-  end
-
-  describe "metadata" do
-    test "sp_cost and duration match the per-level tables" do
-      {:ok, definition} = Catalog.by_name(:cr_spearquicken)
-
-      assert definition.sp_cost == [24, 28, 32, 36, 40, 44, 48, 52, 56, 60]
-
-      assert definition.duration ==
-               [
-                 30_000,
-                 60_000,
-                 90_000,
-                 120_000,
-                 150_000,
-                 180_000,
-                 210_000,
-                 240_000,
-                 270_000,
-                 300_000
-               ]
-    end
-  end
-
   describe "validate/4 (player weapon gate)" do
     test "rejects a cast without a spear equipped" do
       assert {:error, :requires_spear} =

@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
     test "matches the Renewal Volcano level tables" do
       definition = SaVolcano.definition()
 
-      assert definition.id == 285
       assert definition.max_level == 5
       assert definition.target_type == :ground
       assert definition.damage_type == :no_damage

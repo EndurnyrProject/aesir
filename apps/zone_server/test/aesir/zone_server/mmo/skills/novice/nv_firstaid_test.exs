@@ -14,16 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvFirstaidTest do
     }
   end
 
-  test "Catalog.active_module_for/1 resolves nv_firstaid" do
-    assert {:ok, NvFirstaid} = Catalog.active_module_for(:nv_firstaid)
-  end
-
-  test "definition charges 3 SP at level 1" do
-    {:ok, definition} = Catalog.by_id(142)
-    assert definition.sp_cost == [3]
-    assert definition.target_type == :self
-  end
-
   test "cast/4 heals a flat 5 HP" do
     {:ok, definition} = Catalog.by_id(142)
 

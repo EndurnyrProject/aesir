@@ -8,10 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagiTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.active_module_for/1 resolves al_incagi" do
-    assert {:ok, AlIncagi} = Catalog.active_module_for(:al_incagi)
-  end
-
   test "cast/4 applies SC_INCREASEAGI with val1=level, val2=2+level" do
     {:ok, definition} = Catalog.by_id(29)
     caster = %{character_id: 1000}

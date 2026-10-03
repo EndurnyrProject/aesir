@@ -32,10 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Wink of Charm data and platinum grant name" do
-    assert {:ok, DcWinkcharm} = Catalog.active_module_for(:dc_winkcharm)
     assert {:ok, definition} = Catalog.by_id(1011)
 
-    assert definition.name == :dc_winkcharm
     assert definition.max_level == 1
     assert definition.target_type == :target_any
     assert definition.damage_type == :no_damage

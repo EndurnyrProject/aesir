@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Option
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -66,11 +65,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
 
   describe "definition" do
     @tag game_mode: :renewal
-    test "publishes the canonical Blitz Beat metadata and both capabilities" do
+    test "publishes the canonical Blitz Beat metadata" do
       definition = HtBlitzbeat.definition()
 
-      assert definition.id == 129
-      assert definition.name == :ht_blitzbeat
       assert definition.max_level == 5
       assert definition.target_type == :target_enemy
       assert definition.damage_type == :damage
@@ -85,9 +82,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       assert definition.after_cast_delay == List.duplicate(1_000, 5)
       assert definition.hit_count == 1
       assert definition.splash_radius == 1
-      assert {:ok, HtBlitzbeat} = Catalog.active_module_for(:ht_blitzbeat)
-      assert {:ok, HtBlitzbeat} = Catalog.passive_module_for(:ht_blitzbeat)
-      assert {:ok, ^definition} = Catalog.by_id(129)
     end
 
     test "adds learned Vulture's Eye to the interpreter's base cast range" do

@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -67,14 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
     stub(UnitRegistry, :get_unit, fn :mob, 200 ->
       {:ok, {MobState, struct(MobState, %{hp: 1, is_dead: false}), self()}}
     end)
-  end
-
-  test "is registered as an active ground skill" do
-    assert {:ok, definition} = Catalog.by_name(:wz_waterball)
-    assert definition.id == 86
-    assert definition.target_type == :target_enemy
-    assert {:ok, WzWaterball} = Catalog.active_module_for(:wz_waterball)
-    assert {:ok, WzWaterball} = Catalog.ground_module_for(:wz_waterball)
   end
 
   test "applies one water magic hit for a manager-claimed source cell" do

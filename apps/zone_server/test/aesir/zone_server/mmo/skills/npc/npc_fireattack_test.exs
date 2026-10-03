@@ -58,10 +58,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcFireattackTest do
     definition
   end
 
-  test "Catalog.active_module_for/1 resolves npc_fireattack" do
-    assert {:ok, NpcFireattack} = Catalog.active_module_for(:npc_fireattack)
-  end
-
   test "cast/4 delivers a flat 100% fire weapon hit against the target" do
     caster = build_caster()
 

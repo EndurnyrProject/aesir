@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
   @tag game_mode: :renewal
   test "declares Throw Spirit Sphere's verified Renewal costs, range, and timing" do
     assert {:ok, definition} = Catalog.by_id(267)
-    assert definition.name == :mo_fingeroffensive
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :damage
     assert definition.range == 9

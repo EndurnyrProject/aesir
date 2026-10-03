@@ -53,10 +53,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
 
   @tag game_mode: :renewal
   test "definition and status pin the ensemble data" do
-    assert {:ok, BdRichmankim} = Catalog.active_module_for(:bd_richmankim)
-    assert [:active, :ground, :ensemble] = BdRichmankim.__skill_capabilities__()
-    refute function_exported?(BdRichmankim, :dynamic_cost, 4)
-
     assert %{
              id: 307,
              name: :bd_richmankim,

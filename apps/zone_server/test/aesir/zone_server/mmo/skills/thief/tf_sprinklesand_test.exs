@@ -19,16 +19,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
     definition
   end
 
-  test "Catalog.by_id/1 resolves TF_SPRINKLESAND" do
-    assert definition().name == :tf_sprinklesand
-    assert definition().max_level == 1
-    assert definition().target_type == :target_enemy
-    assert definition().damage_type == :damage
-    assert definition().element == :earth
-    assert definition().range == 1
-    assert definition().sp_cost == [9]
-  end
-
   test "cast/4 hits with a 130% ratio, earth element, no crit" do
     caster = caster()
 

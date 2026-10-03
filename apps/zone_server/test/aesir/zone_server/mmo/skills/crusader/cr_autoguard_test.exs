@@ -41,21 +41,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
   # Block chance percent by level, mirroring the status' own table.
   @block_chance {5, 10, 14, 18, 21, 24, 26, 28, 29, 30}
 
-  describe "catalog" do
-    test "resolves CR_AUTOGUARD as a self-target toggle" do
-      {:ok, definition} = Catalog.by_id(@skill_id)
-
-      assert definition.name == :cr_autoguard
-      assert definition.max_level == 10
-      assert definition.target_type == :self
-      assert definition.sp_cost == [12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
-    end
-
-    test "resolves the active module by name" do
-      assert {:ok, CrAutoguard} = Catalog.active_module_for(:cr_autoguard)
-    end
-  end
-
   describe "status block roll" do
     test "Venom Knife's exact metadata exemption always continues" do
       seed_for_roll(1)

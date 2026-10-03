@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
   import Mimic
 
   alias Aesir.Net.ChatMessage
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -50,22 +49,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
     }
 
     struct(base, attrs)
-  end
-
-  describe "registration & metadata" do
-    test "is a level-1 range-3 no-damage ground skill, registered in the catalog" do
-      assert {:ok, HtTalkiebox} = Catalog.ground_module_for(:ht_talkiebox)
-      d = HtTalkiebox.definition()
-      assert d.id == 125
-      assert d.max_level == 1
-      assert d.target_type == :ground
-      assert d.damage_type == :no_damage
-      assert d.range == 3
-      assert d.sp_cost == [1]
-      assert d.item_cost == [%{id: 1065, amount: 1}]
-      assert d.unit_duration == [600_000]
-      assert d.hit_interval == 1_000
-    end
   end
 
   describe "cast/4" do

@@ -10,17 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoatTest do
   setup :verify_on_exit!
 
   describe "metadata" do
-    test "Catalog resolves id 157 and the atom name" do
-      assert {:ok, MgEnergycoat} = Catalog.active_module_for(:mg_energycoat)
-      assert {:ok, definition} = Catalog.by_id(157)
-      assert definition.id == 157
-      assert definition.name == :mg_energycoat
-      assert definition.target_type == :self
-      assert definition.max_level == 1
-      assert definition.sp_cost == [30]
-      assert definition.fixed_cast_time == [5_000]
-    end
-
     test "classic spends the five seconds as an interruptible variable cast" do
       assert MgEnergycoat.definition(:renewal).cast_time == []
       assert MgEnergycoat.definition(:renewal).fixed_cast_time == [5_000]

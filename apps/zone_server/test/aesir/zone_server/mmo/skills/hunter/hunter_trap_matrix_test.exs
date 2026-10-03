@@ -212,16 +212,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
 
   for trap <- @traps do
     @trap trap
-    @natural_expiry_callback? trap.natural_expiry == :become_used
 
     describe "#{trap.name}" do
       @tag game_mode: :renewal
-      test "declares its canonical catalog row" do
+      test "declares its canonical renewal definition row" do
         assert {:ok, definition} = Catalog.by_name(@trap.name)
-        assert Catalog.ground_module_for(@trap.name) == {:ok, @trap.module}
-
-        assert definition.id == @trap.id
-        assert definition.name == @trap.name
         assert definition.max_level == @trap.max_level
         assert definition.target_type == :ground
         assert definition.range == 3
@@ -263,13 +258,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
 
         assert natural_expiry == @trap.natural_expiry
         assert claymore_spendable? == @trap.claymore_spendable?
-      end
-
-      test "only a natural become_used trap owns a natural-expiry callback" do
-        Code.ensure_loaded!(@trap.module)
-
-        assert function_exported?(@trap.module, :on_natural_expiry, 1) ==
-                 @natural_expiry_callback?
       end
     end
   end

@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -155,22 +154,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     west = register_player(player(1_001, 149, 150, job_id: 4, sp: 0, party_id: 41))
     east = register_player(player(1_002, 151, 150, job_id: 4_005, sp: 0, party_id: 42))
     {caster, west, east}
-  end
-
-  test "exposes the exact Renewal metadata without a ground-unit capability" do
-    assert {:ok, definition} = Catalog.by_id(69)
-    assert definition.name == :pr_benedictio
-    assert definition.status == :sc_benedictio
-    assert definition.max_level == 5
-    assert definition.target_type == :ground
-    assert definition.damage_type == :no_damage
-    assert definition.damage_kind == :magic
-    assert definition.range == 9
-    assert definition.element == :neutral
-    assert definition.splash_radius == 1
-    assert definition.sp_cost == List.duplicate(20, 5)
-    assert definition.duration == [40_000, 80_000, 120_000, 160_000, 200_000]
-    assert PrBenedictio.__skill_capabilities__() == [:active]
   end
 
   test "requires exactly two castable living Acolyte-family companions in the relative side cells" do

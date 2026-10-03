@@ -17,28 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcDoubleTest do
     definition
   end
 
-  test "Catalog.by_id(46) resolves to :ac_double" do
-    assert {:ok, definition} = Catalog.by_id(46)
-    assert definition.name == :ac_double
-  end
-
-  test "Catalog.by_name(:ac_double) resolves" do
-    assert {:ok, definition} = Catalog.by_name(:ac_double)
-    assert definition.id == 46
-  end
-
-  test "Catalog.active_module_for/1 resolves ac_double" do
-    assert {:ok, AcDouble} = Catalog.active_module_for(:ac_double)
-  end
-
-  test "definition has requires_ammo: true" do
-    assert definition().requires_ammo == true
-  end
-
-  test "definition has hit_count: 2" do
-    assert definition().hit_count == 2
-  end
-
   test "cast/4 calls execute_skill_attack with hit_count: 2 and the level-scaled ratio" do
     caster = caster()
 

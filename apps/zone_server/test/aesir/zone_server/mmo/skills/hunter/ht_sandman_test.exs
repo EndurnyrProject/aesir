@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman
@@ -49,21 +48,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
     }
 
     struct(base, attrs)
-  end
-
-  test "registers canonical Sandman placement metadata" do
-    assert {:ok, HtSandman} = Catalog.ground_module_for(:ht_sandman)
-
-    definition = HtSandman.definition()
-
-    assert definition.id == 119
-    assert definition.max_level == 5
-    assert definition.target_type == :ground
-    assert definition.sp_cost == List.duplicate(12, 5)
-    assert definition.item_cost == [%{id: 1065, amount: 1}]
-    assert definition.range == 3
-    assert definition.hit_interval == 1_000
-    assert definition.unit_duration == [150_000, 120_000, 90_000, 60_000, 30_000]
   end
 
   test "places a hidden typed trap with the level-scaled armed lifetime" do

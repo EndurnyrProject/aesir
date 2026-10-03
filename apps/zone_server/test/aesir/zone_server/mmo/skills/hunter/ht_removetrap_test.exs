@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrapTest do
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrap
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -42,20 +41,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrapTest do
         attrs
       )
     )
-  end
-
-  test "has the canonical active ground-target definition" do
-    assert {:ok, definition} = Catalog.by_id(124)
-    assert definition == HtRemovetrap.definition()
-    assert definition.name == :ht_removetrap
-    assert definition.display_name == "Remove Trap"
-    assert definition.max_level == 1
-    assert definition.target_type == :ground
-    assert definition.damage_type == :no_damage
-    assert definition.range == 2
-    assert definition.sp_cost == [5]
-    assert {:ok, HtRemovetrap} = Catalog.active_module_for(:ht_removetrap)
-    assert :ground not in HtRemovetrap.__skill_capabilities__()
   end
 
   test "preflights capacity for one trap item" do

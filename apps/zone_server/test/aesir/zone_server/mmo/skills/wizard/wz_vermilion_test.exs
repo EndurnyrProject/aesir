@@ -87,7 +87,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
     test "matches the Renewal level tables" do
       definition = WzVermilion.definition()
 
-      assert definition.id == 85
       assert definition.max_level == 10
       assert definition.target_type == :ground
       assert definition.damage_kind == :magic

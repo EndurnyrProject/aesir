@@ -49,33 +49,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
     %PlayerState{character_id: 1000, inventory: inventory, stats: stats}
   end
 
-  describe "catalog registration" do
-    test "Catalog.by_id(56) resolves to :kn_pierce" do
-      assert {:ok, definition} = Catalog.by_id(56)
-      assert definition.name == :kn_pierce
-    end
-
-    test "Catalog.by_name(:kn_pierce) resolves" do
-      assert {:ok, definition} = Catalog.by_name(:kn_pierce)
-      assert definition.id == 56
-    end
-
-    test "Catalog.active_module_for/1 resolves kn_pierce" do
-      assert {:ok, KnPierce} = Catalog.active_module_for(:kn_pierce)
-    end
-
-    test "definition carries max_level, target/damage type, range, and flat SP cost" do
-      definition = definition()
-      assert definition.max_level == 10
-      assert definition.target_type == :target_enemy
-      assert definition.damage_type == :damage
-      assert definition.range == 2
-      assert definition.hit_count == 3
-      assert definition.require_weapon == [:one_handed_spear, :two_handed_spear]
-      assert definition.sp_cost == List.duplicate(7, 10)
-    end
-  end
-
   describe "validate/4 (spear requirement)" do
     test "a one-handed spear passes" do
       caster = build_caster(@one_handed_spear)

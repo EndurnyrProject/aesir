@@ -24,22 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
     :ok
   end
 
-  test "Aspersio exposes its Renewal definition and Holy Water cost" do
-    assert {:ok, definition} = Catalog.by_id(68)
-
-    assert definition.name == :pr_aspersio
-    assert definition.max_level == 5
-    assert definition.target_type == :target_ally
-    assert definition.damage_type == :no_damage
-    assert definition.damage_kind == :magic
-    assert definition.element == :holy
-    assert definition.range == 9
-    assert definition.after_cast_delay == List.duplicate(2_000, 5)
-    assert definition.sp_cost == [14, 18, 22, 26, 30]
-    assert definition.item_cost == [%{id: 523, amount: 1}]
-    assert definition.duration == [60_000, 90_000, 120_000, 150_000, 180_000]
-  end
-
   test "Aspersio applies its status with the selected level and duration" do
     assert {:ok, definition} = Catalog.by_id(68)
     caster = %{character_id: 1_000}
@@ -79,7 +63,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
   test "Kyrie exposes its Renewal timing and SP tables" do
     assert {:ok, definition} = Catalog.by_id(73)
 
-    assert definition.name == :pr_kyrie
     assert definition.max_level == 10
     assert definition.target_type == :target_ally
     assert definition.damage_type == :no_damage

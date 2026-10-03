@@ -25,9 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
   describe "catalog registration & metadata" do
     @tag game_mode: :renewal
     test "publishes a grant-only Hunter quest skill matching the rAthena table" do
-      assert {:ok, %{name: :ht_phantasmic}} = Catalog.by_id(1009)
-      assert {:ok, HtPhantasmic} = Catalog.active_module_for(:ht_phantasmic)
-
       d = definition()
       assert d.max_level == 1
       assert d.target_type == :target_enemy
@@ -46,7 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
       assert d.requires_ammo == false
       assert d.quest_skill == true
       assert d.quest_owner_job == :hunter
-      assert {:ok, ^d} = Catalog.by_id(1009)
     end
   end
 

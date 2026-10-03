@@ -9,14 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHidingTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.by_id/1 resolves TF_HIDING" do
-    assert {:ok, definition} = Catalog.by_id(51)
-    assert definition.name == :tf_hiding
-    assert definition.max_level == 10
-    assert definition.target_type == :self
-    assert definition.sp_cost == List.duplicate(10, 10)
-  end
-
   test "cast/4 applies sc_hiding for 30000 * level ms on first cast" do
     {:ok, definition} = Catalog.by_id(51)
     caster = %PlayerState{character_id: 3000}

@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetectingTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Option
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetecting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
@@ -21,21 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetectingTest do
     Mimic.copy(UnitRegistry)
     Mimic.copy(Helpers)
     :ok
-  end
-
-  test "catalogs Detecting as an active ground utility with canonical data" do
-    assert {:ok, definition} = Catalog.by_id(130)
-    assert definition.name == :ht_detecting
-    assert definition.display_name == "Detecting"
-    assert definition.max_level == 4
-    assert definition.target_type == :ground
-    assert definition.damage_type == :no_damage
-    assert definition.range == [3, 5, 7, 9]
-    assert definition.sp_cost == [8, 8, 8, 8]
-    assert definition.cast_time == []
-    assert definition.after_cast_delay == []
-    assert definition.splash_radius == 3
-    assert {:ok, HtDetecting} = Catalog.active_module_for(:ht_detecting)
   end
 
   test "requires an equipped Falcon during active skill validation" do

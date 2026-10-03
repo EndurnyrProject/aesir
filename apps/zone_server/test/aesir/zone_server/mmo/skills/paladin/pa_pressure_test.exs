@@ -34,7 +34,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressureTest do
   @tag game_mode: :renewal
   test "renewal definition: holy magic, 1 s cast + 0.4 s fixed, 1 s delay" do
     definition = definition()
-    assert definition.id == 367
     assert definition.range == List.duplicate(9, 5)
     assert definition.sp_cost == [30, 35, 40, 45, 50]
     assert definition.element == :holy

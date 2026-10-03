@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentrationTest do
 
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentration
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -38,24 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentrationTest do
     character_id: 1000,
     stats: %Stats{modifiers: %Stats.Modifiers{equipment: %{agi: 5, dex: 3}}}
   }
-
-  describe "skill data" do
-    test "ac_concentration loads from the catalog as a self no-damage buff" do
-      assert {:ok, definition} = Catalog.by_id(45)
-      assert {:ok, ^definition} = Catalog.by_name(:ac_concentration)
-      assert definition.name == :ac_concentration
-      assert definition.display_name == "Improve Concentration"
-      assert definition.target_type == :self
-      assert definition.damage_type == :no_damage
-      assert definition.max_level == 10
-      assert definition.sp_cost == [25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
-      assert definition.splash_radius == 3
-    end
-
-    test "is registered as an active skill" do
-      assert {:ok, AcConcentration} = Catalog.active_module_for(:ac_concentration)
-    end
-  end
 
   describe "cast/4 status application" do
     setup do

@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneumaTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma
@@ -50,28 +49,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneumaTest do
   end
 
   describe "skill data" do
-    test "al_pneuma loads from the catalog as a no-damage ground skill" do
-      assert {:ok, definition} = Catalog.by_id(25)
-      assert definition.name == :al_pneuma
-      assert definition.target_type == :ground
-      assert definition.damage_type == :no_damage
-      assert definition.max_level == 1
-      assert definition.sp_cost == [10]
-      assert definition.unit_duration == [10_000]
-      assert definition.hit_interval == 1_000
-      # The 3x3 footprint comes from the skill unit's layout, not a splash area.
-      assert definition.splash_radius == 0
-    end
-
-    test "resolves by name" do
-      assert {:ok, %{id: 25}} = Catalog.by_name(:al_pneuma)
-    end
-
-    test "is registered as both an active and a ground skill" do
-      assert {:ok, AlPneuma} = Catalog.active_module_for(:al_pneuma)
-      assert {:ok, AlPneuma} = Catalog.ground_module_for(:al_pneuma)
-    end
-
     test "appears in the Acolyte skill tree" do
       {:ok, acolyte_id} = AvailableJobs.job_name_to_id(:acolyte)
       tree = SkillTree.tree_for(acolyte_id)

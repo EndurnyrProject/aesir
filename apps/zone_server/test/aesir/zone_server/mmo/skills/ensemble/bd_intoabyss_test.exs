@@ -2,7 +2,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdIntoabyssTest do
   use ExUnit.Case, async: false
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skills.Ensemble.BdIntoabyss
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.IntoAbyss
 
@@ -13,11 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdIntoabyssTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Into the Abyss data" do
-    assert {:ok, BdIntoabyss} = Catalog.active_module_for(:bd_intoabyss)
     assert {:ok, definition} = Catalog.by_id(312)
 
-    assert definition.name == :bd_intoabyss
-    assert definition.display_name == "Into the Abyss"
     assert definition.max_level == 1
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage
@@ -34,7 +30,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdIntoabyssTest do
     assert definition.item_cost == []
     assert definition.unit_duration == []
     assert Catalog.ensemble?(312)
-    refute function_exported?(BdIntoabyss, :dynamic_cost, 4)
   end
 
   test "status is registered as a finite, mutually-exclusive buff" do

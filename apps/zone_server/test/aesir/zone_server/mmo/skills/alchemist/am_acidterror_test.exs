@@ -61,7 +61,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
   test "definition carries cast costs and timings" do
     skill = definition()
 
-    assert skill.name == :am_acidterror
     assert skill.max_level == 5
     assert skill.target_type == :target_enemy
     assert skill.damage_kind == :weapon

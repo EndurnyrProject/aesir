@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommoveTest do
   import Mimic
 
   alias Aesir.ZoneServer.Map.Cell
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommove
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -38,12 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommoveTest do
 
     assert {:ok, ^caster} = NpcRandommove.cast(caster, {:unit, 20}, 1, definition())
     assert_received :movement_requested
-  end
-
-  test "is catalogued as a mob-cast active skill" do
-    assert {:ok, definition} = Catalog.by_name(:npc_randommove)
-    assert definition.id == 331
-    assert {:ok, NpcRandommove} = Catalog.active_module_for(:npc_randommove)
   end
 
   defp definition do

@@ -28,23 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerangTest do
     definition
   end
 
-  test "Catalog.by_id(59) resolves to :kn_spearboomerang with its declared Renewal shape" do
-    assert {:ok, definition} = Catalog.by_id(59)
-    assert definition.name == :kn_spearboomerang
-    assert definition.display_name == "Spear Boomerang"
-    assert definition.max_level == 5
-    assert definition.target_type == :target_enemy
-    assert definition.damage_type == :damage
-    assert definition.range == [3, 5, 7, 9, 11]
-    assert definition.after_cast_delay == List.duplicate(1000, 5)
-    assert definition.require_weapon == [:one_handed_spear, :two_handed_spear]
-    assert definition.sp_cost == List.duplicate(10, 5)
-  end
-
-  test "Catalog.active_module_for/1 resolves kn_spearboomerang" do
-    assert {:ok, KnSpearboomerang} = Catalog.active_module_for(:kn_spearboomerang)
-  end
-
   describe "cast/4" do
     defp caster, do: %{character_id: @caster_id}
 

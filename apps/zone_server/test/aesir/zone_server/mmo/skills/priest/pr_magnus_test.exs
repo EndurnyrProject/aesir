@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
     @tag game_mode: :renewal
     test "loads rAthena's cast, cost, catalyst, interval, duration, and hit tables" do
       assert {:ok, definition} = Catalog.by_name(:pr_magnus)
-      assert definition.id == 79
       assert definition.target_type == :ground
       assert definition.element == :holy
       assert definition.range == 9
@@ -56,11 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
       assert definition.after_cast_delay == List.duplicate(4_000, 10)
       assert definition.cooldown == []
       assert definition.item_cost == [%{id: 717, amount: 1}]
-    end
-
-    test "is registered as an active ground skill" do
-      assert {:ok, PrMagnus} = Catalog.active_module_for(:pr_magnus)
-      assert {:ok, PrMagnus} = Catalog.ground_module_for(:pr_magnus)
     end
   end
 

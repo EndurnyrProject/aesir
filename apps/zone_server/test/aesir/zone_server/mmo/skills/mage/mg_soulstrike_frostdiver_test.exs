@@ -48,23 +48,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
     Combatant.new!(Map.merge(base, attrs))
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves the skill ids" do
-      assert {:ok, %{name: :mg_soulstrike}} = Catalog.by_id(13)
-      assert {:ok, %{name: :mg_frostdiver}} = Catalog.by_id(15)
-    end
-
-    test "by_name/1 resolves the skill atoms" do
-      assert {:ok, %{id: 13}} = Catalog.by_name(:mg_soulstrike)
-      assert {:ok, %{id: 15}} = Catalog.by_name(:mg_frostdiver)
-    end
-
-    test "active_module_for/1 resolves the modules" do
-      assert {:ok, MgSoulstrike} = Catalog.active_module_for(:mg_soulstrike)
-      assert {:ok, MgFrostdiver} = Catalog.active_module_for(:mg_frostdiver)
-    end
-  end
-
   describe "soul strike metadata" do
     test "matches the rAthena renewal table" do
       definition = definition(:mg_soulstrike)

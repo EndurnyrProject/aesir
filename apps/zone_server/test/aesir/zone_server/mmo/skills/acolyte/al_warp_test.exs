@@ -2,7 +2,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -58,9 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
   describe "registration & metadata" do
     @tag game_mode: :renewal
     test "is a no-damage ground skill matching the rAthena table" do
-      assert {:ok, AlWarp} = Catalog.ground_module_for(:al_warp)
       d = AlWarp.definition()
-      assert d.id == 27
       assert d.max_level == 4
       assert d.target_type == :ground
       assert d.damage_type == :no_damage

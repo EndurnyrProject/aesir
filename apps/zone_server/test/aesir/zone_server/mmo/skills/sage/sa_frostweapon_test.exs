@@ -46,20 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
     |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves id 281" do
-      assert {:ok, %{name: :sa_frostweapon}} = Catalog.by_id(281)
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 281}} = Catalog.by_name(:sa_frostweapon)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, SaFrostweapon} = Catalog.active_module_for(:sa_frostweapon)
-    end
-  end
-
   describe "metadata" do
     @tag game_mode: :renewal
     test "matches the rAthena renewal table (skill_db.yml:7811-7844)" do

@@ -116,10 +116,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
   describe "metadata" do
     @tag game_mode: :renewal
     test "the catalog resolves id 279 with the renewal skill_db values" do
-      assert {:ok, SaAutospell} = Catalog.active_module_for(:sa_autospell)
       assert {:ok, definition} = Catalog.by_id(279)
 
-      assert definition.name == :sa_autospell
       assert definition.max_level == 10
       assert definition.target_type == :self
       assert definition.damage_type == :no_damage
@@ -133,10 +131,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
       assert {:ok, definition} = Catalog.by_id(279)
       assert definition.cast_time == List.duplicate(3_000, 10)
       assert definition.fixed_cast_time == []
-    end
-
-    test "publishes the menu capability so an accepted reply routes back here" do
-      assert {:ok, SaAutospell} = Catalog.menu_module_for(:sa_autospell)
     end
   end
 

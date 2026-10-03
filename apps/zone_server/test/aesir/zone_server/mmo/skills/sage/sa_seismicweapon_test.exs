@@ -46,20 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSeismicweaponTest do
     |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves id 283" do
-      assert {:ok, %{name: :sa_seismicweapon}} = Catalog.by_id(283)
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 283}} = Catalog.by_name(:sa_seismicweapon)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, SaSeismicweapon} = Catalog.active_module_for(:sa_seismicweapon)
-    end
-  end
-
   describe "metadata" do
     @tag game_mode: :renewal
     test "matches the rAthena renewal table (skill_db.yml:7879-7912)" do

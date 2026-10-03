@@ -37,29 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McMammoniteTest do
     definition
   end
 
-  test "Catalog.active_module_for/1 resolves mc_mammonite" do
-    assert {:ok, McMammonite} = Catalog.active_module_for(:mc_mammonite)
-  end
-
-  test "Catalog.by_id/1 resolves mc_mammonite with the correct zeny_cost" do
-    assert {:ok, definition} = Catalog.by_id(42)
-    assert definition.name == :mc_mammonite
-    assert definition.range == 1
-
-    assert definition.zeny_cost == [
-             100,
-             200,
-             300,
-             400,
-             500,
-             600,
-             700,
-             800,
-             900,
-             1000
-           ]
-  end
-
   test "cast/4 hits the target for 100% + 50% per level at level 1, without crit" do
     caster = build_caster()
 

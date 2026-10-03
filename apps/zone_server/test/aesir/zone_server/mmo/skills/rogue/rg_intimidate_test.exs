@@ -26,16 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
   @caster_id 1_000
   @target_id 2_000
 
-  test "is discovered and deals 100 plus 30 percent per level before deferring the warp" do
+  test "deals 100 plus 30 percent per level before deferring the warp" do
     Catalog.reload()
-    assert {:ok, RgIntimidate} = Catalog.active_module_for(:rg_intimidate)
     assert {:ok, definition} = Catalog.by_id(219)
-
-    assert definition.display_name == "Snatch"
-    assert definition.max_level == 5
-    assert definition.target_type == :target_enemy
-    assert definition.damage_type == :damage
-    assert definition.range == 1
 
     caster = player()
     target = mob()
@@ -197,10 +190,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
       spawned_at: 0,
       deferred_epoch: 3
     }
-  end
-
-  test "carries the source's SP table" do
-    assert {:ok, definition} = Catalog.by_id(219)
-    assert definition.sp_cost == [13, 16, 19, 22, 25]
   end
 end

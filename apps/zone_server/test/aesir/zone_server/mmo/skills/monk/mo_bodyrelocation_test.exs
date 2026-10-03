@@ -22,15 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocationTest do
     :ok
   end
 
-  test "declares Renewal Snap range and costs" do
-    {:ok, definition} = Catalog.by_id(264)
-
-    assert definition.range == 18
-    assert definition.sp_cost == [14]
-    assert definition.sphere_cost == [1]
-    assert definition.target_type == :ground
-  end
-
   test "stages a validated destination without moving before commitment" do
     stub(Cell, :traversable?, fn "prontera", 14, 17 -> true end)
     caster = %PlayerState{map_name: "prontera", x: 10, y: 13}

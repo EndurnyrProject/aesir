@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbindingTest do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline2
-  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbinding
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrust
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfect
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -33,7 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbindingTest do
   test "grants exactly one STR and four ATK without a HIT bonus" do
     player = player_state(1, %{105 => 1})
 
-    assert {:ok, BsHiltbinding} = Catalog.passive_module_for(:bs_hiltbinding)
     assert Passives.str_bonus(player) == 1
     assert Passives.atk_bonus(player) == 4
     assert Passives.hit_bonus(player) == 0

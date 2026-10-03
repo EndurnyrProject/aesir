@@ -38,7 +38,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
   @tag game_mode: :renewal
   test "Renewal level five uses spear weight, medium size, and base level" do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
-    assert definition.id == 397
     caster = caster(1401)
     stub_weapon(1401, :one_handed_spear)
     assert :ok = LkSpiralpierce.validate(caster, {:unit, 6_160}, 5, definition)

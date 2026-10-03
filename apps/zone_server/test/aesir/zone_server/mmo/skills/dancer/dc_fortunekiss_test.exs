@@ -28,11 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Lady Luck table" do
-    assert {:ok, DcFortunekiss} = Catalog.active_module_for(:dc_fortunekiss)
     assert {:ok, definition} = Catalog.by_id(329)
 
-    assert definition.name == :dc_fortunekiss
-    assert definition.display_name == "Lady Luck"
     assert definition.max_level == 10
     assert definition.target_type == :self
     assert definition.require_weapon == [:musical, :whip]

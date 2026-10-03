@@ -30,11 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
 
   @tag game_mode: :renewal
   test "definition matches the Throw Venom Knife quest skill" do
-    assert {:ok, AsVenomknife} = Catalog.active_module_for(:as_venomknife)
     assert {:ok, definition} = Catalog.by_id(1004)
 
-    assert definition.name == :as_venomknife
-    assert definition.display_name == "Throw Venom Knife"
     assert definition.max_level == 1
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :damage

@@ -8,10 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsMaximizeTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.active_module_for/1 resolves bs_maximize" do
-    assert {:ok, BsMaximize} = Catalog.active_module_for(:bs_maximize)
-  end
-
   test "cast/4 activates Maximize Power with its level-based tick interval" do
     {:ok, definition} = Catalog.by_id(114)
     caster = %{character_id: 3000}

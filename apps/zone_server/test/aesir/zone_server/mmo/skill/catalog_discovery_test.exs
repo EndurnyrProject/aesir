@@ -131,6 +131,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
            "duplicate skill ids #{inspect(ids -- Enum.uniq(ids))} - by_id/1 keeps only one of each"
   end
 
+  test "every skill has a lowercase name, a display name, and resolves by id and by name" do
+    bad =
+      Enum.reject(Catalog.all(), fn definition ->
+        name = Atom.to_string(definition.name)
+
+        name == String.downcase(name) and definition.display_name != "" and
+          Catalog.by_id(definition.id) == {:ok, definition} and
+          Catalog.by_name(definition.name) == {:ok, definition}
+      end)
+
+    assert bad == [], "skills failing catalog invariants: #{inspect(Enum.map(bad, & &1.name))}"
+  end
+
   describe "test module isolation" do
     test "Performance alone supports an Active cast implementation and both capabilities" do
       assert Code.ensure_loaded?(StubSkill)

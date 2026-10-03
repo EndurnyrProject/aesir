@@ -26,12 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfectTest do
     :ok = Catalog.reload()
   end
 
-  test "exposes the exact level-based duration and SP cost" do
-    assert {:ok, definition} = Catalog.by_id(112)
-    assert definition.duration == [10_000, 20_000, 30_000, 40_000, 50_000]
-    assert definition.sp_cost == [18, 16, 14, 12, 10]
-  end
-
   test "shares Weapon Perfection with nearby party members regardless of weapon" do
     assert {:ok, definition} = Catalog.by_id(112)
     caster = player_state(1, party_id: 10)

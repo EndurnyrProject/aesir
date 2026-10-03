@@ -71,17 +71,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     }
   end
 
-  test "definition is discovered by the skill catalog" do
-    skill = definition()
-
-    assert skill.name == :rg_backstap
-    assert skill.display_name == "Back Stab"
-    assert skill.max_level == 10
-    assert skill.target_type == :target_enemy
-    assert skill.damage_type == :damage
-    assert skill.range == 1
-  end
-
   test "ratio is 200 plus 40 per level and bows halve it" do
     assert RgBackstap.backstab_ratio(player(@katar_id, 10, 11), 1) == 240
     assert RgBackstap.backstab_ratio(player(@katar_id, 10, 11), 10) == 600

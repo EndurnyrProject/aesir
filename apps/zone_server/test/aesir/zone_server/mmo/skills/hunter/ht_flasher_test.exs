@@ -2,7 +2,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher
@@ -48,9 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
 
   @tag game_mode: :renewal
   test "registers canonical costs and armed durations" do
-    assert {:ok, HtFlasher} = Catalog.ground_module_for(:ht_flasher)
     definition = HtFlasher.definition()
-    assert definition.id == 120
     assert definition.sp_cost == [12, 12, 12, 12, 12]
     assert definition.item_cost == [%{id: 1065, amount: 2}]
     assert HtFlasher.definition(:pre_renewal).item_cost == [%{id: 1065, amount: 1}]

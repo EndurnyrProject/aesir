@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcGroundattackTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcGroundattack
@@ -45,24 +44,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcGroundattackTest do
     stub(Combat, :resolve_combatant, fn :mob, @caster_id ->
       {:ok, %{unit_id: @caster_id, unit_type: :mob}}
     end)
-  end
-
-  describe "skill data" do
-    test "npc_groundattack loads from the catalog as a ground skill" do
-      assert {:ok, definition} = Catalog.by_name(:npc_groundattack)
-      assert definition.id == 185
-      assert definition.target_type == :ground
-      assert definition.damage_kind == :magic
-      assert definition.element == :earth
-      assert definition.max_level == 9
-      assert definition.hit_interval == 450
-      assert definition.unit_duration == List.duplicate(4_500, 9)
-    end
-
-    test "npc_groundattack is registered as both an active and a ground skill" do
-      assert {:ok, NpcGroundattack} = Catalog.active_module_for(:npc_groundattack)
-      assert {:ok, NpcGroundattack} = Catalog.ground_module_for(:npc_groundattack)
-    end
   end
 
   describe "on_place/1" do

@@ -32,11 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Pang Voice table without a weapon requirement" do
-    assert {:ok, BaPangvoice} = Catalog.active_module_for(:ba_pangvoice)
     assert {:ok, definition} = Catalog.by_id(1010)
 
-    assert definition.name == :ba_pangvoice
-    assert definition.display_name == "Pang Voice"
     assert definition.max_level == 1
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :no_damage

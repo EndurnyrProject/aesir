@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -56,38 +55,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
   end
 
   describe "skill data" do
-    test "mg_safetywall loads from the catalog as a no-damage ground skill" do
-      assert {:ok, definition} = Catalog.by_id(12)
-      assert definition.name == :mg_safetywall
-      assert definition.target_type == :ground
-      assert definition.damage_type == :no_damage
-      assert definition.element == :ghost
-      assert definition.range == 9
-      assert definition.max_level == 10
-
-      assert definition.fixed_cast_time == [800, 720, 640, 560, 480, 400, 320, 240, 160, 80]
-
-      assert definition.unit_duration ==
-               [5000, 10_000, 15_000, 20_000, 25_000, 30_000, 35_000, 40_000, 45_000, 50_000]
-
-      assert definition.sp_cost == [30, 30, 30, 35, 35, 35, 40, 40, 40, 40]
-    end
-
     test "classic casts start slower and flatten out at the high levels" do
       assert MgSafetywall.definition(:renewal).cast_time ==
                [3200, 2880, 2560, 2240, 1920, 1600, 1280, 960, 640, 320]
 
       assert MgSafetywall.definition(:pre_renewal).cast_time ==
                [4000, 3500, 3500, 2500, 2000, 1500, 1000, 1000, 1000, 1000]
-    end
-
-    test "consumes one Blue Gemstone (item 717)" do
-      assert {:ok, %{item_cost: [%{id: 717, amount: 1}]}} = Catalog.by_id(12)
-    end
-
-    test "is registered as both an active and a ground skill" do
-      assert {:ok, MgSafetywall} = Catalog.active_module_for(:mg_safetywall)
-      assert {:ok, MgSafetywall} = Catalog.ground_module_for(:mg_safetywall)
     end
   end
 

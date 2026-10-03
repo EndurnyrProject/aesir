@@ -10,22 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcAgiupTest do
 
   @caster_id 9001
 
-  describe "Catalog lookups" do
-    test "by_id(350) resolves npc_agiup" do
-      assert {:ok, definition} = Catalog.by_id(350)
-      assert definition.name == :npc_agiup
-    end
-
-    test "by_name(:npc_agiup) resolves" do
-      assert {:ok, definition} = Catalog.by_name(:npc_agiup)
-      assert definition.id == 350
-    end
-
-    test "active_module_for/1 resolves npc_agiup" do
-      assert {:ok, NpcAgiup} = Catalog.active_module_for(:npc_agiup)
-    end
-  end
-
   describe "cast/4" do
     setup do
       {:ok, definition} = Catalog.by_id(350)

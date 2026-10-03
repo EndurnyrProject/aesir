@@ -32,7 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
   @tag game_mode: :renewal
   test "catalog exposes the verified quest-skill definition" do
     assert {:ok, definition} = Catalog.by_id(1_015)
-    assert definition.name == :mo_kitranslation
     assert definition.target_type == :target_ally
     assert definition.range == 9
     assert definition.sp_cost == [40]

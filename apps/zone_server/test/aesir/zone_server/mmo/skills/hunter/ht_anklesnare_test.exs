@@ -20,16 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
   @map "prontera"
 
   describe "definition and duration" do
-    test "uses canonical resources, armed lifetimes, and AGI/caster-level duration" do
-      definition = HtAnklesnare.definition()
-
-      assert definition.id == 117
-      assert definition.max_level == 5
-      assert definition.range == 3
-      assert definition.sp_cost == List.duplicate(12, 5)
-      assert definition.item_cost == [%{id: 1065, amount: 1}]
-      assert definition.unit_duration == [250_000, 200_000, 150_000, 100_000, 50_000]
-
+    test "capture duration scales with level, target AGI, and caster level" do
       assert Enum.map(1..5, &HtAnklesnare.capture_duration(&1, 0, 1)) ==
                [4_000, 8_000, 12_000, 16_000, 20_000]
 

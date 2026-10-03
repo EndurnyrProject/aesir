@@ -21,7 +21,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
   @tag game_mode: :renewal
   test "definition preserves Renewal cost and delay" do
     assert {:ok, definition} = Catalog.by_id(273)
-    assert definition.name == :mo_combofinish
     assert definition.target_type == :target_enemy
     assert definition.range == -2
     assert definition.splash_radius == 0

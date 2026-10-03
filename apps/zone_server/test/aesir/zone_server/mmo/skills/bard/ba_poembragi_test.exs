@@ -29,11 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Bragi table" do
-    assert {:ok, BaPoembragi} = Catalog.active_module_for(:ba_poembragi)
     assert {:ok, definition} = Catalog.by_id(321)
 
-    assert definition.name == :ba_poembragi
-    assert definition.display_name == "A Poem of Bragi"
     assert definition.max_level == 10
     assert definition.target_type == :self
     assert definition.require_weapon == [:musical, :whip]

@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusAttackFamilyTest do
   @moduledoc """
   Cross-module coverage for the eight weapon-class NPC status-attack skills:
-  each resolves from the skill catalog by its rAthena id, is a weapon-class
-  hit in the documented element, delegates to `StatusStrike` for its status
-  atom, and that status atom has a registered effect module.
+  each is a weapon-class hit in the documented element, delegates to
+  `StatusStrike` for its status atom, and that status atom has a registered
+  effect module.
   """
 
   use ExUnit.Case, async: true
@@ -44,17 +44,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusAttackFamilyTest do
 
   defp known_status_ids, do: Effects.all() |> Enum.map(& &1.id()) |> MapSet.new()
 
-  for {module, id, name, element, status} <- @family do
+  for {module, id, _name, element, status} <- @family do
     describe "#{inspect(module)}" do
-      test "resolves from the catalog by its rAthena skill id" do
-        assert {:ok, definition} = Catalog.by_id(unquote(id))
-        assert definition.name == unquote(name)
-        assert definition.damage_kind == :weapon
-        assert definition.damage_type == :damage
-        assert definition.element == unquote(element)
-        assert {:ok, unquote(module)} = Catalog.active_module_for(unquote(name))
-      end
-
       test "its status atom has a registered effect module" do
         assert unquote(status) in known_status_ids()
       end

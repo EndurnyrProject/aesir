@@ -43,6 +43,15 @@ A placement cannot activate an inactive body. `scope:` accepts only `:shared`, `
 - Warp portals are data, not modules: `apps/zone_server/priv/db/<mode>/warps/*.yml`
   (mode dir `re/` or `pre-re/` per `AESIR_DB_MODE`; see `aesir-game-modes`).
 
+## Testing: NPCs get no tests
+
+Do **not** write unit or integration tests for NPC modules, warps, or ported scripts. The
+corpus is thousands of modules; per-NPC tests cost far more suite time than they catch, and
+imported scripts are verified by the diff harness below, not by ExUnit. The engine seams
+(`Script.Dsl` ops, `Npc.Registry`, `Npc.Events`, the transpiler) are tested once in
+`test/aesir/zone_server/{script,npc}/`; add a test there only when you change engine behaviour.
+The existing `content/npc/woe/*` tests predate this rule; do not use them as a template.
+
 ## NPC module documentation
 
 Start with one sentence describing the NPC's purpose. Add a short `Behavior` section for
@@ -50,9 +59,8 @@ meaningful interactions, progression, rewards, or transfers; omit it for simple 
 Describe actual behavior, not implementation helpers. Keep maps and coordinates in `spawn`, rather
 than duplicating them in documentation.
 
-For imported NPCs, verify authors against the original script's author header and changelog.
-do not infer authorship from the latest Git
-committer. Preserve verified credits and accurately state the Elixir adaptation's provenance:
+For imported NPCs, verify authors against the original script's author header and changelog;
+do not infer authorship from the latest Git committer. Preserve verified credits and accurately state the Elixir adaptation's provenance:
 
 ```elixir
 @moduledoc """
@@ -78,9 +86,8 @@ ONE SENTENCE
 """
 ```
 
-The credits above are specific to the novice training script. Use each NPC's verified authors,
-and include the LLM note only when it describes the actual adaptation. Do not label original
-Aesir content as imported.
+Use each NPC's verified authors, and include the LLM note only when it describes the actual
+adaptation. Do not label original Aesir content as imported.
 
 ## Refactoring imported NPCs
 
@@ -109,11 +116,9 @@ Aesir content as imported.
    file would make it overwritable again. `--force` bypasses only the source-unchanged check;
    edited files still divert to `_conflicts/`. Do not regenerate the corpus as a refactoring step.
 6. **Verify proportionally.** Review dialogue/exit paths, reward and variable changes, and all
-   placement records against the pre-refactor version. Use the existing test coverage and follow
-   the validation gates in the `aesir-workflow` skill; respect requests not to add NPC tests.
-   If edits are delegated, only the coordinating agent runs Mix commands, serially, never
-   concurrent builds or test suites. For documentation-only edits, check formatting and confirm
-   runtime code is unchanged rather than rerunning gameplay suites.
+   placement records against the pre-refactor version, then run the harness in step 7. Do not
+   add tests (see "Testing" above). For documentation-only edits, `mix format` and confirm
+   runtime code is unchanged; do not run gameplay suites.
 7. **Diff behavior with the harness.** `scripts/npc_diff_harness.exs` (plain `elixir`, no Mix)
    runs the pre-refactor and refactored module against a recording fake DSL over thousands of
    seeded worlds and compares the ordered effect logs of `on_talk` and every event label:
@@ -207,9 +212,4 @@ Rules that repeatedly bite:
   params and `function/1` names are case-sensitive.
 - Global upstream functions map onto DSL primitives via `CommandMap.function/1`
   (`Job_Change` → `jobchange` is the template).
-
-## Testing
-
-- Do **NOT** create unit or integration tests for NPCs, its not needed and it slows down
-our suite a LOT.
 

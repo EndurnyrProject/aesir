@@ -19,17 +19,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     definition
   end
 
-  test "Catalog.by_id/1 resolves TF_THROWSTONE" do
-    assert definition().name == :tf_throwstone
-    assert definition().max_level == 1
-    assert definition().target_type == :target_enemy
-    assert definition().damage_type == :damage
-    assert definition().damage_kind == :misc
-    assert definition().element == :neutral
-    assert definition().range == 7
-    assert definition().sp_cost == [2]
-  end
-
   test "cast/4 deals a fixed 50 misc damage in neutral element" do
     caster = caster()
 
@@ -61,10 +50,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, ^caster} = TfThrowstone.cast(caster, {:unit, @target_id}, 1, definition())
-  end
-
-  test "the definition consumes one Stone per cast" do
-    assert definition().item_cost == [%{id: 7049, amount: 1}]
   end
 
   test "renewal has a 100 ms after-cast delay and classic none" do

@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemasteryTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemastery
 
   test "grants 3 ATK per level while wielding either mace type" do
@@ -32,11 +31,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemasteryTest do
   test "grants no bonuses with other weapons" do
     assert PrMacemastery.atk_bonus(10, %{weapon_type: :staff}) == 0
     assert PrMacemastery.critical_bonus(10, %{weapon_type: :staff}) == 0
-  end
-
-  test "is discovered as skill id 65 with maximum level 10" do
-    assert {:ok, definition} = Catalog.by_id(65)
-    assert definition.name == :pr_macemastery
-    assert definition.max_level == 10
   end
 end

@@ -42,15 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
   end
 
   describe "definition" do
-    test "is registered in the catalog with the Knight skill metadata" do
-      assert {:ok, definition} = Catalog.by_id(61)
-      assert definition.name == :kn_autocounter
-      assert definition.max_level == 5
-      assert Enum.all?(definition.sp_cost, &(&1 == 3))
-      assert definition.target_type == :self
-      assert definition.range == 0
-    end
-
     test "both modes allow unarmed and sword counters but not bows" do
       renewal = KnAutocounter.definition(:renewal)
       classic = KnAutocounter.definition(:pre_renewal)

@@ -58,7 +58,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
     test "definition: 3 s cast + 1 s fixed, 1 s delay, 30 s cooldown, no catalysts" do
       definition = definition()
 
-      assert definition.id == 362
       assert definition.target_type == :self
       assert definition.sp_cost == [40, 50, 60, 70, 80]
       assert definition.cast_time == List.duplicate(3_000, 5)

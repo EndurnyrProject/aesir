@@ -26,8 +26,8 @@ description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn dat
   payload}}` handling.
 - **Death path is deadlock-sensitive**: work that touches a player (e.g. MVP reward delivery,
   `unit/mob/mvp_reward.ex`) runs *outside* the dying mob's process to avoid a reciprocal
-  player↔mob deadlock. Delayed/deferred work advances a `deferred_epoch` on death/teleport so
-  stale effects no-op — stamp and re-check an epoch/token for anything that can outlive the mob.
+  player↔mob deadlock. Death/teleport advance the mob's `deferred_epoch`; the epoch/token rule
+  for delayed work is in `aesir-units`.
 
 ## Mob skills: one skill system, not two
 
@@ -61,9 +61,10 @@ Rules and gotchas:
 - Mob-originated statuses on players must pass `source_type: :mob` when applying (see
   `aesir-status-effects`).
 
-## Verification
+## Testing
 
-- Known flake: `mob_session_skill_cast_test.exs` cast-interruption case under full-suite
-  load (passes in isolation — ignorable when lone).
+- Mob skill rows and the denylist are data: test `Executor` dispatch and `mob_cast/5` logic,
+  not that a row exists. Cast lifecycle (interrupt, cooldown) is session behaviour and belongs
+  in one integration test per path, not per skill. See AGENTS.md "What to test".
 - Steal/loot: `MobSession.attempt_steal/3` with atomic `MobState.stolen_from`; `:boss`
   excluded.

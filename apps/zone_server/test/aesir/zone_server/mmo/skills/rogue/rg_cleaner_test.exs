@@ -35,11 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCleanerTest do
 
   test "Remover clears nearby Scribble and Piece units without persisting" do
     assert {:ok, definition} = Catalog.by_id(222)
-    assert definition.name == :rg_cleaner
-    assert definition.display_name == "Remover"
-    assert definition.max_level == 1
-    assert definition.target_type == :ground
-    assert {:ok, RgCleaner} = Catalog.active_module_for(:rg_cleaner)
 
     assert {:ok, scribble} = Unit.place(caster(), :rg_graffiti, 1, {155, 155})
     assert {:ok, piece} = Unit.place(caster(), :rg_flaggraffiti, 5, {145, 145})

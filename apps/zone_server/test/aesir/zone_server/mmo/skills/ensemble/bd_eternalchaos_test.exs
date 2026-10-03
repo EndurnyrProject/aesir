@@ -40,8 +40,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
 
   @tag game_mode: :renewal
   test "definition carries the pinned Eternal Chaos data" do
-    assert {:ok, BdEternalchaos} = Catalog.active_module_for(:bd_eternalchaos)
-
     assert %{
              id: 308,
              max_level: 1,
@@ -59,9 +57,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
              cooldown: [60_000],
              require_weapon: [:musical, :whip]
            } = BdEternalchaos.definition()
-
-    assert :ensemble in BdEternalchaos.__skill_capabilities__()
-    refute :performance in BdEternalchaos.__skill_capabilities__()
   end
 
   test "status lasts 60 seconds and declares the canonical mutual exclusion list" do

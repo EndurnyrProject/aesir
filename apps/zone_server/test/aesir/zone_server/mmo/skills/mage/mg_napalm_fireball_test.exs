@@ -47,23 +47,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmFireballTest do
     })
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves the skill ids" do
-      assert {:ok, %{name: :mg_napalmbeat}} = Catalog.by_id(11)
-      assert {:ok, %{name: :mg_fireball}} = Catalog.by_id(17)
-    end
-
-    test "by_name/1 resolves the skill atoms" do
-      assert {:ok, %{id: 11}} = Catalog.by_name(:mg_napalmbeat)
-      assert {:ok, %{id: 17}} = Catalog.by_name(:mg_fireball)
-    end
-
-    test "active_module_for/1 resolves the modules" do
-      assert {:ok, MgNapalmbeat} = Catalog.active_module_for(:mg_napalmbeat)
-      assert {:ok, MgFireball} = Catalog.active_module_for(:mg_fireball)
-    end
-  end
-
   describe "napalm beat metadata" do
     test "matches the rAthena renewal table" do
       definition = definition(:mg_napalmbeat)

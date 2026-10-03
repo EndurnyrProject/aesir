@@ -22,34 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurseTest do
     definition
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves id 16" do
-      assert {:ok, %{name: :mg_stonecurse}} = Catalog.by_id(16)
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 16}} = Catalog.by_name(:mg_stonecurse)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, MgStonecurse} = Catalog.active_module_for(:mg_stonecurse)
-    end
-  end
-
   describe "metadata" do
-    test "matches the rAthena renewal table" do
-      definition = definition()
-
-      assert definition.max_level == 10
-      assert definition.target_type == :target_enemy
-      assert definition.damage_type == :no_damage
-      assert definition.element == :earth
-      assert definition.range == 2
-      assert definition.fixed_cast_time == List.duplicate(200, 10)
-      assert definition.sp_cost == [25, 24, 23, 22, 21, 20, 19, 18, 17, 16]
-      assert definition.item_cost == [%{id: 716, amount: 1}]
-    end
-
     test "classic casts slower and petrifies for longer" do
       assert MgStonecurse.definition(:renewal).cast_time == List.duplicate(800, 10)
       assert MgStonecurse.definition(:pre_renewal).cast_time == List.duplicate(1000, 10)

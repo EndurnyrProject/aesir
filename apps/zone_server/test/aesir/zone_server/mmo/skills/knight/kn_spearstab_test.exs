@@ -65,22 +65,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
     definition
   end
 
-  test "Catalog.active_module_for/1 resolves kn_spearstab" do
-    assert {:ok, KnSpearstab} = Catalog.active_module_for(:kn_spearstab)
-  end
-
-  test "definition carries the flat SP cost, weapon range, and level cap" do
-    d = definition()
-
-    assert d.id == 58
-    assert d.display_name == "Spear Stab"
-    assert d.max_level == 10
-    assert d.range == 4
-    assert d.knockback == 6
-    assert d.require_weapon == [:one_handed_spear, :two_handed_spear]
-    assert d.sp_cost == List.duplicate(9, 10)
-  end
-
   describe "validate/4" do
     test "accepts a one-handed or two-handed spear" do
       for weapon_id <- [@spear, 1410] do

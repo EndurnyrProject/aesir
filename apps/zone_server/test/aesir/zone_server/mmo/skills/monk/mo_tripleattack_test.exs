@@ -10,13 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoTripleattackTest do
     :ok
   end
 
-  test "catalog exposes the verified passive definition" do
-    assert {:ok, definition} = Catalog.by_id(263)
-    assert definition.name == :mo_tripleattack
-    assert definition.max_level == 10
-    assert definition.target_type == :passive
-  end
-
   @tag game_mode: :renewal
   test "the Renewal thirty-percent roll returns the complete replacement directive" do
     :rand.seed(:exsss, {1, 2, 3})

@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -33,8 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
   test "definition matches Renewal data" do
     definition = WzSightblaster.definition()
 
-    assert definition.id == 1006
-    assert definition.name == :wz_sightblaster
     assert definition.max_level == 1
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage
@@ -51,10 +48,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     assert WzSightblaster.definition(:pre_renewal).duration == [120_000]
     assert WzSightblaster.definition(:pre_renewal).cast_time == [2000]
     assert WzSightblaster.definition(:pre_renewal).fixed_cast_time == []
-  end
-
-  test "is available to the active skill interpreter through the catalog" do
-    assert {:ok, WzSightblaster} = Catalog.active_module_for(:wz_sightblaster)
   end
 
   test "cast applies the self status" do

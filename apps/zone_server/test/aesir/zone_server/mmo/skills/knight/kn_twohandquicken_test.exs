@@ -51,47 +51,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquickenTest do
     MobState.new(9002, mob_data, spawn_ref, "prontera", 100, 100)
   end
 
-  describe "catalog registration" do
-    test "by_id(60) resolves kn_twohandquicken" do
-      assert {:ok, definition} = Catalog.by_id(60)
-      assert definition.name == :kn_twohandquicken
-      assert definition.display_name == "Two-Hand Quicken"
-      assert definition.max_level == 10
-      assert definition.target_type == :self
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 60}} = Catalog.by_name(:kn_twohandquicken)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, KnTwohandquicken} = Catalog.active_module_for(:kn_twohandquicken)
-    end
-  end
-
-  describe "metadata" do
-    test "sp_cost and duration match the per-level tables" do
-      {:ok, definition} = Catalog.by_name(:kn_twohandquicken)
-
-      assert definition.sp_cost == [14, 18, 22, 26, 30, 34, 38, 42, 46, 50]
-      assert definition.require_weapon == [:two_handed_sword]
-
-      assert definition.duration ==
-               [
-                 30_000,
-                 60_000,
-                 90_000,
-                 120_000,
-                 150_000,
-                 180_000,
-                 210_000,
-                 240_000,
-                 270_000,
-                 300_000
-               ]
-    end
-  end
-
   describe "validate/4 (player weapon gate)" do
     test "rejects a cast without a two-handed sword equipped" do
       assert {:error, :wrong_weapon} =

@@ -8,10 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvTrickdeadTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.active_module_for/1 resolves nv_trickdead" do
-    assert {:ok, NvTrickdead} = Catalog.active_module_for(:nv_trickdead)
-  end
-
   test "cast/4 applies SC_TRICKDEAD on first cast" do
     {:ok, definition} = Catalog.by_id(143)
     caster = %{character_id: 5000}

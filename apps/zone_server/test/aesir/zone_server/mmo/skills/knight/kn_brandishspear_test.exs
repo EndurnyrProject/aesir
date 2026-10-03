@@ -27,23 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
   @mob_caster_id 570_057
 
   describe "catalog registration" do
-    test "Catalog.by_id(57) resolves to :kn_brandishspear" do
-      assert {:ok, definition} = Catalog.by_id(57)
-      assert definition.name == :kn_brandishspear
-    end
-
-    test "Catalog.by_name(:kn_brandishspear) resolves" do
-      assert {:ok, definition} = Catalog.by_name(:kn_brandishspear)
-      assert definition.id == 57
-    end
-
-    test "Catalog.active_module_for/1 resolves kn_brandishspear" do
-      assert {:ok, KnBrandishspear} = Catalog.active_module_for(:kn_brandishspear)
-    end
-
     test "definition carries the Renewal splash/target/sp values" do
       definition = definition()
-      assert definition.display_name == "Brandish Spear"
       assert definition.max_level == 10
       assert definition.target_type == :target_enemy
       assert definition.damage_type == :damage

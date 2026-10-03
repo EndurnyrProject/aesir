@@ -65,7 +65,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
   test "matches Renewal data" do
     definition = WzMeteor.definition()
 
-    assert definition.id == 83
     assert definition.target_type == :ground
     assert definition.damage_kind == :magic
     assert definition.element == :fire

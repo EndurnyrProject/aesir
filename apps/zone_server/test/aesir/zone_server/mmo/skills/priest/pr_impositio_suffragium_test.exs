@@ -23,7 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
   test "Impositio Manus exposes its exact Renewal metadata" do
     assert {:ok, definition} = Catalog.by_id(66)
 
-    assert definition.name == :pr_impositio
     assert definition.max_level == 5
     assert definition.target_type == :self
     assert definition.splash_radius == 18
@@ -53,7 +52,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
   test "Suffragium exposes its exact Renewal metadata" do
     assert {:ok, definition} = Catalog.by_id(67)
 
-    assert definition.name == :pr_suffragium
     assert definition.max_level == 3
     assert definition.target_type == :self
     assert definition.splash_radius == 18

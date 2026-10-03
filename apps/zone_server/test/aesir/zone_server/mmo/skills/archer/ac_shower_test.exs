@@ -25,28 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShowerTest do
     definition
   end
 
-  test "Catalog.by_id(47) resolves to :ac_shower" do
-    assert {:ok, definition} = Catalog.by_id(47)
-    assert definition.name == :ac_shower
-  end
-
-  test "Catalog.by_name(:ac_shower) resolves" do
-    assert {:ok, definition} = Catalog.by_name(:ac_shower)
-    assert definition.id == 47
-  end
-
-  test "Catalog.active_module_for/1 resolves ac_shower" do
-    assert {:ok, AcShower} = Catalog.active_module_for(:ac_shower)
-  end
-
-  test "definition has requires_ammo: true" do
-    assert definition().requires_ammo == true
-  end
-
-  test "definition has knockback: 2" do
-    assert definition().knockback == 2
-  end
-
   test "skill_ratio/2 is stronger in renewal and weaker pre-renewal at every level" do
     assert AcShower.skill_ratio(:renewal, 1) == 160
     assert AcShower.skill_ratio(:renewal, 10) == 250

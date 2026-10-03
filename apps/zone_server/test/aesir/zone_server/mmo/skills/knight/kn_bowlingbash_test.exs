@@ -25,23 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
   @mob_caster_id 620_062
 
   describe "catalog registration" do
-    test "Catalog.by_id(62) resolves to :kn_bowlingbash" do
-      assert {:ok, definition} = Catalog.by_id(62)
-      assert definition.name == :kn_bowlingbash
-    end
-
-    test "Catalog.by_name(:kn_bowlingbash) resolves" do
-      assert {:ok, definition} = Catalog.by_name(:kn_bowlingbash)
-      assert definition.id == 62
-    end
-
-    test "Catalog.active_module_for/1 resolves kn_bowlingbash" do
-      assert {:ok, KnBowlingbash} = Catalog.active_module_for(:kn_bowlingbash)
-    end
-
     test "definition carries the Renewal splash/target/sp values" do
       definition = definition()
-      assert definition.display_name == "Bowling Bash"
       assert definition.max_level == 10
       assert definition.target_type == :target_enemy
       assert definition.damage_type == :damage

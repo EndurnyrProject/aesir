@@ -86,6 +86,10 @@ able to rebuild them. `source_type` is not persisted either.
 
 ## Testing
 
+- Test the logic an effect adds: `modifiers/2` values, `on_tick`/`on_damage` behaviour,
+  conflict pairs, persistence rebuild. Do not test metadata (`id`, `properties`, `icon`,
+  flags, "is registered"): `resolver_completeness_test`, `modifier_readers_test`, and the
+  registry tests already guard it. A purely declarative effect needs no test file.
 - Regression tests for apply-path bugs must run the **real** `apply_status` (no boundary
   stub on the function under suspicion) against real unit shapes.
 - Tests driving `PlayerSession.init`/`terminate` must stub `StatusPersistence`
@@ -97,6 +101,5 @@ able to rebuild them. `source_type` is not persisted either.
 
 Several SC_ behaviors diverge between renewal and pre-renewal (element-field skills like
 Volcano/Deluge/Violent Gale, Steel Body, Kyrie, Angelus scaling, endows — renewal applies
-element bonuses as ratio deltas, pre-re multiplies damage). Phase 1 ships renewal behavior
-in both modes; when implementing or touching an effect with a known divergence, document
-BOTH modes in the `@moduledoc` (the Phase-2 audit inventory). See `aesir-game-modes`.
+element bonuses as ratio deltas, pre-re multiplies damage). Pre-re currently runs renewal
+behavior for these; the both-modes `@moduledoc` rule is in `aesir-game-modes`.

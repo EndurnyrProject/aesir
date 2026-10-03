@@ -73,16 +73,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
     stub(StatusStorage, :has_status?, fn _type, _id, :sc_magicrod -> false end)
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves id 277" do
-      assert {:ok, %{name: :sa_spellbreaker}} = Catalog.by_id(277)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, SaSpellbreaker} = Catalog.active_module_for(:sa_spellbreaker)
-    end
-  end
-
   describe "metadata" do
     @tag game_mode: :renewal
     test "matches the rAthena renewal table" do

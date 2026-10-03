@@ -46,20 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLightningloaderTest do
     |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
-  describe "catalog registration" do
-    test "by_id/1 resolves id 282" do
-      assert {:ok, %{name: :sa_lightningloader}} = Catalog.by_id(282)
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 282}} = Catalog.by_name(:sa_lightningloader)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, SaLightningloader} = Catalog.active_module_for(:sa_lightningloader)
-    end
-  end
-
   describe "metadata" do
     @tag game_mode: :renewal
     test "matches the rAthena renewal table (skill_db.yml:7845-7878)" do

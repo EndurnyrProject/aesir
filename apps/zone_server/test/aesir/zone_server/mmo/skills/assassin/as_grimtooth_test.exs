@@ -33,22 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
     :ok
   end
 
-  test "defines Grimtooth's complete static formulas" do
-    definition = AsGrimtooth.definition()
-
-    assert definition.id == 137
-    assert definition.name == :as_grimtooth
-    assert definition.max_level == 5
-    assert definition.target_type == :target_enemy
-    assert definition.damage_type == :damage
-    assert definition.damage_kind == :weapon
-    assert definition.range == [3, 4, 5, 6, 7]
-    assert definition.splash_radius == 1
-    assert definition.sp_cost == List.duplicate(3, 5)
-    assert definition.require_weapon == [:katar]
-    assert definition.requires == []
-    assert {:ok, ^definition} = Catalog.by_id(137)
-
+  test "skill_ratio rises from 120 to 200 percent" do
     assert AsGrimtooth.skill_ratio(1) == 120
     assert AsGrimtooth.skill_ratio(5) == 200
   end

@@ -26,12 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
     :ok
   end
 
-  test "is discovered as skill id 248 with maximum level 10" do
-    assert {:ok, definition} = Catalog.by_id(248)
-    assert definition.name == :cr_trust
-    assert definition.max_level == 10
-  end
-
   test "is registered as a passive module" do
     assert CrTrust in Catalog.passive_modules()
   end

@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestructionTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -125,16 +124,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestructionTest do
 
     assert_received :damaged_player
     assert_received :killed_caster
-  end
-
-  test "is catalogued as a mob-cast self skill" do
-    assert {:ok, definition} = Catalog.by_name(:npc_selfdestruction)
-    assert definition.id == 173
-    assert definition.target_type == :self
-    assert definition.element == :fire
-    assert definition.splash_radius == 5
-    assert definition.knockback == 3
-    assert {:ok, NpcSelfdestruction} = Catalog.active_module_for(:npc_selfdestruction)
   end
 
   defp definition do

@@ -57,25 +57,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSummonslaveTest do
     end)
   end
 
-  describe "Catalog" do
-    test "by_id/1 resolves npc_summonslave with correct definition" do
-      assert {:ok, defn} = Catalog.by_id(196)
-      assert defn.name == :npc_summonslave
-      assert defn.display_name == "Summon Slave"
-      assert defn.max_level == 16
-      assert defn.target_type == :self
-      assert defn.damage_type == :no_damage
-    end
-
-    test "by_name/1 resolves :npc_summonslave" do
-      assert {:ok, %{id: 196}} = Catalog.by_name(:npc_summonslave)
-    end
-
-    test "the skill has an active module" do
-      assert {:ok, NpcSummonslave} = Catalog.active_module_for(:npc_summonslave)
-    end
-  end
-
   describe "cast/4" do
     test "is a mob-only stub" do
       {:ok, definition} = Catalog.by_id(196)

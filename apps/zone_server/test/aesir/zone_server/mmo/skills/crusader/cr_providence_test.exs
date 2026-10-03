@@ -23,24 +23,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidenceTest do
   end
 
   describe "catalog registration" do
-    test "Catalog.by_id/1 resolves cr_providence" do
-      assert {:ok, definition} = Catalog.by_id(256)
-      assert definition.name == :cr_providence
-      assert definition.max_level == 5
-      assert definition.target_type == :target_ally
-      assert definition.sp_cost == [30, 30, 30, 30, 30]
-      assert definition.duration == [180_000, 180_000, 180_000, 180_000, 180_000]
-    end
-
     test "casts in 1.5 seconds plus 1.5 fixed in renewal and a flat 3 seconds in classic" do
       assert CrProvidence.definition(:renewal).cast_time == List.duplicate(1_500, 5)
       assert CrProvidence.definition(:renewal).fixed_cast_time == List.duplicate(1_500, 5)
       assert CrProvidence.definition(:pre_renewal).cast_time == List.duplicate(3_000, 5)
       assert CrProvidence.definition(:pre_renewal).fixed_cast_time == []
-    end
-
-    test "Catalog.active_module_for/1 resolves cr_providence" do
-      assert {:ok, CrProvidence} = Catalog.active_module_for(:cr_providence)
     end
   end
 

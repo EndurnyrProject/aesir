@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaViolentgaleTest do
     test "matches the Renewal Violent Gale level tables" do
       definition = SaViolentgale.definition()
 
-      assert definition.id == 287
       assert definition.max_level == 5
       assert definition.target_type == :ground
       assert definition.damage_type == :no_damage

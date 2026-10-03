@@ -30,11 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Idun table" do
-    assert {:ok, BaAppleidun} = Catalog.active_module_for(:ba_appleidun)
     assert {:ok, definition} = Catalog.by_id(322)
 
-    assert definition.name == :ba_appleidun
-    assert definition.display_name == "The Apple of Idun"
     assert definition.max_level == 10
     assert definition.target_type == :self
     assert definition.require_weapon == [:musical, :whip]

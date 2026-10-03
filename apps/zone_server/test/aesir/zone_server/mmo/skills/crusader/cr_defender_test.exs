@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -58,32 +57,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
     }
 
     MobState.new(9003, mob_data, spawn_ref, "prontera", 100, 100)
-  end
-
-  describe "catalog registration" do
-    test "by_id(257) resolves cr_defender" do
-      assert {:ok, definition} = Catalog.by_id(257)
-      assert definition.name == :cr_defender
-      assert definition.display_name == "Defending Aura"
-      assert definition.max_level == 5
-      assert definition.target_type == :self
-    end
-
-    test "by_name/1 resolves the atom" do
-      assert {:ok, %{id: 257}} = Catalog.by_name(:cr_defender)
-    end
-
-    test "active_module_for/1 resolves the module" do
-      assert {:ok, CrDefender} = Catalog.active_module_for(:cr_defender)
-    end
-  end
-
-  describe "metadata" do
-    test "sp_cost is a flat 30 across all levels" do
-      {:ok, definition} = Catalog.by_name(:cr_defender)
-
-      assert definition.sp_cost == [30, 30, 30, 30, 30]
-    end
   end
 
   describe "validate/4 (player shield gate)" do
@@ -187,11 +160,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
                Defender.modifiers(entry(val1: 5), %{})
 
       refute Map.has_key?(Defender.modifiers(entry(val1: 1), %{}), :aspd)
-    end
-
-    test "has a 0.8 second delay after the cast" do
-      {:ok, definition} = Catalog.by_id(257)
-      assert definition.after_cast_delay == List.duplicate(800, 5)
     end
   end
 

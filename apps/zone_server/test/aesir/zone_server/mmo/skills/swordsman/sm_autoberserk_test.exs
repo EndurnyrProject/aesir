@@ -8,10 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmAutoberserkTest do
 
   setup :verify_on_exit!
 
-  test "Catalog.active_module_for/1 resolves sm_autoberserk" do
-    assert {:ok, SmAutoberserk} = Catalog.active_module_for(:sm_autoberserk)
-  end
-
   test "cast/4 applies SC_AUTOBERSERK on first cast" do
     {:ok, definition} = Catalog.by_id(146)
     caster = %{character_id: 3000}

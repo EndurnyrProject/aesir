@@ -16,22 +16,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcAllhealTest do
   @caster_id 9001
   @target_id 2000
 
-  describe "Catalog lookups" do
-    test "by_id(687) resolves npc_allheal" do
-      assert {:ok, definition} = Catalog.by_id(687)
-      assert definition.name == :npc_allheal
-    end
-
-    test "by_name(:npc_allheal) resolves" do
-      assert {:ok, definition} = Catalog.by_name(:npc_allheal)
-      assert definition.id == 687
-    end
-
-    test "active_module_for/1 resolves npc_allheal" do
-      assert {:ok, NpcAllheal} = Catalog.active_module_for(:npc_allheal)
-    end
-  end
-
   describe "cast/4" do
     setup do
       Aesir.TestEtsSetup.setup_ets_tables(%{})

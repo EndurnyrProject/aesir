@@ -69,9 +69,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrushTest do
 
   test "a level five strike deals 300 percent weapon damage with no criticals" do
     assert {:ok, definition} = Catalog.by_name(:lk_headcrush)
-    assert definition.id == 398
-    assert definition.range == 4
-    assert definition.sp_cost == List.duplicate(23, 5)
     caster = %PlayerState{character_id: 5_130}
 
     stub(Combat, :resolve_combatant, fn 6_130 ->

@@ -75,7 +75,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
   test "definition publishes one eight-display-hit Katar attack" do
     skill = definition()
 
-    assert skill.name == :as_sonicblow
     assert skill.max_level == 10
     assert skill.target_type == :target_enemy
     assert skill.range == 1

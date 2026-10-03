@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -36,21 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
 
   defp stub_caster do
     stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
-  end
-
-  describe "skill data" do
-    test "wz_stormgust loads from the catalog as a ground skill" do
-      assert {:ok, definition} = Catalog.by_name(:wz_stormgust)
-      assert definition.id == 89
-      assert definition.target_type == :ground
-      assert definition.range == 9
-      assert definition.max_level == 10
-    end
-
-    test "wz_stormgust is registered as both an active and a ground skill" do
-      assert {:ok, WzStormgust} = Catalog.active_module_for(:wz_stormgust)
-      assert {:ok, WzStormgust} = Catalog.ground_module_for(:wz_stormgust)
-    end
   end
 
   describe "on_place/1" do

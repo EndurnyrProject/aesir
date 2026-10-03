@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -58,22 +57,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
   end
 
   describe "skill data" do
-    test "mg_firewall loads from the catalog as a ground skill" do
-      assert {:ok, definition} = Catalog.by_id(18)
-      assert definition.name == :mg_firewall
-      assert definition.target_type == :ground
-      assert definition.element == :fire
-      assert definition.range == 9
-      assert definition.max_level == 10
-      assert definition.knockback == 2
-
-      assert definition.fixed_cast_time == [400, 360, 320, 280, 240, 220, 200, 180, 160, 140]
-      assert definition.sp_cost == List.duplicate(40, 10)
-
-      assert definition.unit_duration ==
-               [5000, 6000, 7000, 8000, 9000, 10_000, 11_000, 12_000, 13_000, 14_000]
-    end
-
     test "classic casts slower at every level and the wall lasts the same" do
       assert MgFirewall.definition(:renewal).cast_time ==
                [1600, 1440, 1280, 1120, 960, 880, 800, 720, 640, 560]
@@ -83,11 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
 
       assert MgFirewall.definition(:pre_renewal).unit_duration ==
                MgFirewall.definition(:renewal).unit_duration
-    end
-
-    test "mg_firewall is registered as both an active and a ground skill" do
-      assert {:ok, MgFirewall} = Catalog.active_module_for(:mg_firewall)
-      assert {:ok, MgFirewall} = Catalog.ground_module_for(:mg_firewall)
     end
   end
 

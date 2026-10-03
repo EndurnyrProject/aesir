@@ -66,7 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Encore table" do
-    assert {:ok, BdEncore} = Catalog.active_module_for(:bd_encore)
     assert {:ok, definition} = Catalog.by_id(@encore_id)
 
     assert definition.max_level == 1

@@ -23,18 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrustTest do
     :ok = Catalog.reload()
   end
 
-  test "exposes the Over Thrust definition as an active skill" do
-    assert {:ok, definition} = Catalog.by_id(113)
-    assert definition.name == :bs_overthrust
-    assert definition.max_level == 5
-    assert definition.target_type == :self
-    assert definition.status == :sc_overthrust
-    assert definition.splash_radius == 14
-    assert definition.duration == [20_000, 40_000, 60_000, 80_000, 100_000]
-    assert definition.sp_cost == [18, 16, 14, 12, 10]
-    assert {:ok, BsOverthrust} = Catalog.active_module_for(:bs_overthrust)
-  end
-
   @tag game_mode: :renewal
   test "applies the larger caster rate and coarser party rate at every level" do
     caster = player_state(1)
@@ -93,9 +81,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrustTest do
 
   test "requires a weapon for the cast and skips bare-handed party recipients" do
     assert {:ok, definition} = Catalog.by_id(113)
-    refute :fist in definition.require_weapon
-    assert :dagger in definition.require_weapon
-    assert :two_handed_staff in definition.require_weapon
 
     caster = player_state(1)
 

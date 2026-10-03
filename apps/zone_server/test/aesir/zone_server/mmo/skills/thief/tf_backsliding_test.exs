@@ -15,17 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfBackslidingTest do
     definition
   end
 
-  test "the definition declares the five-cell slide" do
-    assert TfBacksliding.definition().knockback == 5
-  end
-
-  test "Catalog.by_id/1 resolves TF_BACKSLIDING" do
-    assert definition().name == :tf_backsliding
-    assert definition().max_level == 1
-    assert definition().target_type == :self
-    assert definition().sp_cost == [7]
-  end
-
   # dir -> the cell one step ahead of {150, 150} in that facing direction,
   # inverse of Geometry.calculate_direction/4.
   @facing_cells %{

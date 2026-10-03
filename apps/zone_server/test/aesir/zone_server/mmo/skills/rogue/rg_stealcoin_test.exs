@@ -27,18 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
     :ok
   end
 
-  test "is discovered with Mug's static definition" do
-    assert {:ok, RgStealcoin} = Catalog.active_module_for(:rg_stealcoin)
-    assert {:ok, definition} = Catalog.by_id(211)
-
-    assert definition.name == :rg_stealcoin
-    assert definition.display_name == "Mug"
-    assert definition.max_level == 10
-    assert definition.target_type == :target_enemy
-    assert definition.damage_type == :no_damage
-    assert definition.range == 1
-  end
-
   test "mugs zeny from a monster only once" do
     caster = caster()
     mob_pid = self()

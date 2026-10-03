@@ -19,18 +19,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
   @caster %PlayerState{character_id: 1000}
   @ally_id 2000
 
-  describe "Catalog lookups" do
-    test "by_id(28) resolves al_heal" do
-      assert {:ok, def} = Catalog.by_id(28)
-      assert def.name == :al_heal
-    end
-
-    test "by_name(:al_heal) resolves" do
-      assert {:ok, def} = Catalog.by_name(:al_heal)
-      assert def.id == 28
-    end
-  end
-
   describe "cast/4 — player/ally target" do
     @describetag game_mode: :renewal
     setup do

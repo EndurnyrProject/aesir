@@ -69,23 +69,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
     end)
   end
 
-  describe "definitions" do
-    test "all four actives resolve through the catalog with reference metadata" do
-      assert {:ok, battleorder} = Catalog.by_id(10_010)
-      assert battleorder.splash_radius == 15
-      assert battleorder.cooldown == [180_000]
-
-      assert {:ok, regeneration} = Catalog.by_id(10_011)
-      assert regeneration.max_level == 3
-
-      assert {:ok, restore} = Catalog.by_id(10_012)
-      assert restore.fixed_cast_time == [1_000]
-
-      assert {:ok, emergency_move} = Catalog.by_id(10_019)
-      assert emergency_move.cooldown == [60_000]
-    end
-  end
-
   describe "validate/4" do
     test "rejects a non-master and a guildless caster on every entry point" do
       stub_guild_master(@master_id)

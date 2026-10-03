@@ -65,8 +65,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
   test "declares Charge Attack id, cost, range and knockback" do
     {:ok, definition} = Catalog.by_id(1001)
 
-    assert definition.name == :kn_chargeatk
-    assert definition.display_name == "Charge Attack"
     assert definition.max_level == 1
     assert definition.target_type == :target_enemy
     assert definition.range == 14

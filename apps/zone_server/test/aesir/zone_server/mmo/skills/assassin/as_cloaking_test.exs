@@ -16,18 +16,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloakingTest do
 
   setup :setup_ets_tables
 
-  test "defines Cloaking's static skill data" do
-    definition = AsCloaking.definition()
-
-    assert definition.id == 135
-    assert definition.name == :as_cloaking
-    assert definition.status == :sc_cloaking
-    assert definition.max_level == 10
-    assert definition.target_type == :self
-    assert definition.sp_cost == List.duplicate(15, 10)
-    assert definition.requires == []
-  end
-
   test "levels one and two require initial impassable adjacency while higher levels do not" do
     player = player_state(1)
     cache(MapData.new("open", 5, 5))

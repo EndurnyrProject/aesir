@@ -38,16 +38,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucisTest do
     end)
   end
 
-  describe "catalog registration" do
-    test "by_id(32) resolves al_crucis" do
-      assert {:ok, %{name: :al_crucis}} = Catalog.by_id(32)
-    end
-
-    test "by_name(:al_crucis) resolves" do
-      assert {:ok, %{id: 32}} = Catalog.by_name(:al_crucis)
-    end
-  end
-
   describe "cast/4 — no targets" do
     setup do
       stub_living_targets()

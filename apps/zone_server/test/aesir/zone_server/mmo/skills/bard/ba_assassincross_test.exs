@@ -29,11 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Sunset table" do
-    assert {:ok, BaAssassincross} = Catalog.active_module_for(:ba_assassincross)
     assert {:ok, definition} = Catalog.by_id(320)
 
-    assert definition.name == :ba_assassincross
-    assert definition.display_name == "Assassin Cross of Sunset"
     assert definition.max_level == 10
     assert definition.target_type == :self
     assert definition.require_weapon == [:musical, :whip]

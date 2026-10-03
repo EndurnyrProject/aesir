@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDelugeTest do
     test "matches the Renewal Deluge level tables" do
       definition = SaDeluge.definition()
 
-      assert definition.id == 286
       assert definition.max_level == 5
       assert definition.target_type == :ground
       assert definition.damage_type == :no_damage

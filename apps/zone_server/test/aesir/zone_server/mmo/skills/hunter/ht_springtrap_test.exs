@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrapTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Option
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrap
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -25,20 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrapTest do
       option: option,
       inventory: %{}
     }
-  end
-
-  test "has the canonical active ground-target definition" do
-    assert {:ok, definition} = Catalog.by_id(131)
-    assert definition == HtSpringtrap.definition()
-    assert definition.name == :ht_springtrap
-    assert definition.display_name == "Spring Trap"
-    assert definition.max_level == 5
-    assert definition.target_type == :ground
-    assert definition.damage_type == :no_damage
-    assert definition.range == [4, 5, 6, 7, 8]
-    assert definition.sp_cost == [10, 10, 10, 10, 10]
-    assert {:ok, HtSpringtrap} = Catalog.active_module_for(:ht_springtrap)
-    assert :ground not in HtSpringtrap.__skill_capabilities__()
   end
 
   test "requires an equipped Falcon before effects" do

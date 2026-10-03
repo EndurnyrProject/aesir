@@ -9,12 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.HomunculusLifecycleSkillsTest do
     :ok
   end
 
-  test "catalogues Bioethics as an Alchemist quest grant only" do
-    assert {:ok, definition} = Catalog.by_id(238)
-    assert definition.name == :am_bioethics
-    assert definition.max_level == 1
-    assert definition.quest_skill
-    assert definition.quest_owner_job == :alchemist
+  test "Bioethics can be granted at level 1" do
     assert {:ok, %{238 => 1}} = Grant.grant(%{}, 238, 1)
   end
 
@@ -30,7 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.HomunculusLifecycleSkillsTest do
 
     assert {:ok, resurrection} = Catalog.by_id(247)
 
-    assert resurrection.name == :am_resurrecthomun
     assert resurrection.max_level == 5
     assert resurrection.sp_cost == [74, 68, 62, 56, 50]
     assert resurrection.cast_time == List.duplicate(2_000, 5)

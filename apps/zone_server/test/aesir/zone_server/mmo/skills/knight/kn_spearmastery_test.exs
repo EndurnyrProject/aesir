@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearmasteryTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearmastery
 
   test "grants 4 ATK per level on foot with a one-handed spear" do
@@ -22,11 +21,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearmasteryTest do
   test "grants no bonus with other weapons, mounted or not" do
     assert KnSpearmastery.atk_bonus(10, %{weapon_type: :one_handed_sword, riding: false}) == 0
     assert KnSpearmastery.atk_bonus(10, %{weapon_type: :one_handed_sword, riding: true}) == 0
-  end
-
-  test "is discovered as skill id 55 with maximum level 10" do
-    assert {:ok, definition} = Catalog.by_id(55)
-    assert definition.name == :kn_spearmastery
-    assert definition.max_level == 10
   end
 end

@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBladestopTest do
   @tag game_mode: :renewal
   test "declares Root's verified costs, durations, and level data" do
     assert {:ok, definition} = Catalog.by_id(269)
-    assert definition.name == :mo_bladestop
     assert definition.status == :sc_bladestop_wait
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage

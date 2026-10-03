@@ -41,20 +41,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
     %PlayerState{character_id: 1000, stats: stats}
   end
 
-  test "Catalog.by_id/1 resolves CR_HOLYCROSS" do
-    assert definition().name == :cr_holycross
-    assert definition().max_level == 10
-    assert definition().target_type == :target_enemy
-    assert definition().damage_type == :damage
-    assert definition().element == :holy
-    assert definition().range == 2
-    assert definition().sp_cost == Enum.to_list(11..20)
-  end
-
-  test "Catalog.active_module_for/1 resolves cr_holycross" do
-    assert {:ok, CrHolycross} = Catalog.active_module_for(:cr_holycross)
-  end
-
   describe "cast/4 damage ratio and element" do
     test "level 1 without a two-handed spear uses ratio 135" do
       caster = build_caster(@sword)

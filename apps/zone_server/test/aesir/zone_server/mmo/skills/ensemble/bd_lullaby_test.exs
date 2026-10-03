@@ -25,9 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullabyTest do
   test "publishes A Lullaby's pinned ensemble definition" do
     definition = BdLullaby.definition()
 
-    assert definition.id == 306
-    assert definition.name == :bd_lullaby
-    assert definition.display_name == "Lullaby"
     assert definition.max_level == 1
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage
@@ -42,8 +39,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullabyTest do
     assert definition.require_weapon == [:musical, :whip]
     assert definition.range == 0
     assert definition.item_cost == []
-    assert BdLullaby.__skill_capabilities__() == [:active, :ground, :ensemble]
-    refute function_exported?(BdLullaby, :dynamic_cost, 4)
   end
 
   @tag game_mode: :renewal

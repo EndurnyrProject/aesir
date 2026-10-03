@@ -57,16 +57,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcherTest do
     }
   end
 
-  test "metadata is catalogued", %{definition: definition} do
-    assert definition.name == :am_potionpitcher
-    assert definition.max_level == 5
-    assert definition.target_type == :target_ally
-    assert definition.range == 9
-    assert definition.sp_cost == [1, 1, 1, 1, 1]
-    assert definition.after_cast_delay == [500, 500, 500, 500, 500]
-    assert definition.cast_time == []
-  end
-
   test "level selects one potion and stages one deferred delivery", %{definition: definition} do
     expected = [
       {1, 501, :hp, 45, 65},

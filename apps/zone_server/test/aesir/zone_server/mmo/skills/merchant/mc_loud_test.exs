@@ -10,16 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoudTest do
   setup :verify_on_exit!
 
   describe "metadata" do
-    test "Catalog resolves id 155 and the atom name" do
-      assert {:ok, McLoud} = Catalog.active_module_for(:mc_loud)
-      assert {:ok, definition} = Catalog.by_id(155)
-      assert definition.id == 155
-      assert definition.name == :mc_loud
-      assert definition.target_type == :self
-      assert definition.max_level == 1
-      assert definition.sp_cost == [8]
-    end
-
     test "renewal casts with a variable and fixed cast, a delay, and a cooldown" do
       definition = McLoud.definition(:renewal)
       assert definition.cast_time == [1000]

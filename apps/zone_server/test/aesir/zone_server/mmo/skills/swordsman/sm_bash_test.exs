@@ -47,10 +47,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
     definition
   end
 
-  test "Catalog.active_module_for/1 resolves sm_bash" do
-    assert {:ok, SmBash} = Catalog.active_module_for(:sm_bash)
-  end
-
   test "cast/4 hits the target for 100% + 30% per level, without crit" do
     caster = build_caster(%{})
 

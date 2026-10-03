@@ -28,7 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptationTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned instant timing and cooldown" do
-    assert {:ok, BdAdaptation} = Catalog.active_module_for(:bd_adaptation)
     assert {:ok, definition} = Catalog.by_id(304)
 
     assert definition.max_level == 1

@@ -36,16 +36,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
     test "resolves CR_SHRINK as a self-target quest toggle" do
       {:ok, definition} = Catalog.by_id(@skill_id)
 
-      assert definition.name == :cr_shrink
       assert definition.max_level == 1
       assert definition.target_type == :self
       assert definition.sp_cost == [100]
       assert definition.quest_skill == true
       assert definition.quest_owner_job == :crusader
-    end
-
-    test "resolves the active module by name" do
-      assert {:ok, CrShrink} = Catalog.active_module_for(:cr_shrink)
     end
   end
 

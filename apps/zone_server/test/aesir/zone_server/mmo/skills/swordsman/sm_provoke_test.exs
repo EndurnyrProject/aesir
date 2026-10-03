@@ -15,10 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvokeTest do
   setup :set_mimic_private
   setup :verify_on_exit!
 
-  test "Catalog.active_module_for/1 resolves sm_provoke" do
-    assert {:ok, SmProvoke} = Catalog.active_module_for(:sm_provoke)
-  end
-
   test "cast/4 applies SC_PROVOKE to mob with val2=2+3*level, val3=5+5*level" do
     {:ok, definition} = Catalog.by_id(6)
     caster = %PlayerState{character_id: 1}

@@ -53,10 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
 
   @tag game_mode: :renewal
   test "definition delegates the party snapshot at the effective level" do
-    assert {:ok, BdDrumbattlefield} = Catalog.active_module_for(:bd_drumbattlefield)
     definition = BdDrumbattlefield.definition()
 
-    assert definition.id == 309
     assert definition.max_level == 5
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage
@@ -73,8 +71,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
     assert definition.after_cast_delay == List.duplicate(300, 5)
     assert definition.cooldown == List.duplicate(20_000, 5)
     assert definition.require_weapon == [:musical, :whip]
-    assert BdDrumbattlefield.__skill_capabilities__() == [:active, :ground, :ensemble]
-    refute function_exported?(BdDrumbattlefield, :dynamic_cost, 4)
 
     caster = %{character_id: 1}
 

@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaidTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -16,17 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaidTest do
 
   setup :setup_ets_tables
   setup :verify_on_exit!
-
-  test "is discovered with Sightless Mind's static definition" do
-    Catalog.reload()
-
-    assert {:ok, definition} = Catalog.by_id(214)
-    assert definition.name == :rg_raid
-    assert definition.display_name == "Sightless Mind"
-    assert definition.max_level == 5
-    assert definition.target_type == :self
-    assert {:ok, RgRaid} = Catalog.active_module_for(:rg_raid)
-  end
 
   test "players require Hiding while mob casters bypass the requirement" do
     player = %PlayerState{character_id: 1_000}

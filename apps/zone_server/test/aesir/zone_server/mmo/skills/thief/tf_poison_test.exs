@@ -19,15 +19,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
     definition
   end
 
-  test "Catalog.by_id/1 resolves TF_POISON" do
-    assert definition().name == :tf_poison
-    assert definition().target_type == :target_enemy
-    assert definition().damage_type == :damage
-    assert definition().element == :poison
-    assert definition().range == 2
-    assert definition().sp_cost == List.duplicate(12, 10)
-  end
-
   test "cast/4 hits with 100% ratio, poison element, +15*level bonus_atk, no crit" do
     caster = caster()
 

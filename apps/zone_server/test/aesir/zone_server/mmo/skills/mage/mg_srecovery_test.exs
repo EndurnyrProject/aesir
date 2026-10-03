@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSrecoveryTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgSrecovery
 
   test "skill_name/0" do
@@ -15,9 +14,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSrecoveryTest do
 
   test "contributes no HP regeneration" do
     assert MgSrecovery.regen_contribution(5, %{max_sp: 1000}) == %{skill_sp_regen: 25}
-  end
-
-  test "catalog resolves id 9" do
-    assert {:ok, %{name: :mg_srecovery}} = Catalog.by_id(9)
   end
 end

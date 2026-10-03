@@ -24,7 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
   @tag game_mode: :renewal
   test "definition preserves Renewal cost, range, and base delay" do
     assert {:ok, definition} = Catalog.by_id(272)
-    assert definition.name == :mo_chaincombo
     assert definition.target_type == :target_enemy
     assert definition.range == -2
     assert definition.sp_cost == [5, 6, 7, 8, 9]

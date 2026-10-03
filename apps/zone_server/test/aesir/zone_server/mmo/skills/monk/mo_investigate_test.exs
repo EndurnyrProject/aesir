@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
   @tag game_mode: :renewal
   test "declares Occult's verified Renewal costs, range, and timing" do
     assert {:ok, definition} = Catalog.by_id(266)
-    assert definition.name == :mo_investigate
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :damage
     assert definition.range == 2

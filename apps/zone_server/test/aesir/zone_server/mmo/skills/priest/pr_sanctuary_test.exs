@@ -133,7 +133,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   @tag game_mode: :renewal
   test "loads the exact Renewal cast, cost, and timing data" do
     assert {:ok, definition} = Catalog.by_id(70)
-    assert definition.name == :pr_sanctuary
     assert definition.target_type == :ground
     assert definition.damage_type == :no_damage
     assert definition.element == :holy

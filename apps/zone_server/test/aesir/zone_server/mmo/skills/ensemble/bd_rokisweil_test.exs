@@ -41,7 +41,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
 
   @tag game_mode: :renewal
   test "definition matches the pinned Roki's Weil table" do
-    assert {:ok, BdRokisweil} = Catalog.active_module_for(:bd_rokisweil)
     assert {:ok, definition} = Catalog.by_id(311)
 
     assert definition.max_level == 1
@@ -59,8 +58,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
     assert definition.require_weapon == [:musical, :whip]
     assert definition.unit_duration == []
     assert definition.item_cost == []
-    assert BdRokisweil.__skill_capabilities__() == [:active, :ground, :ensemble]
-    refute function_exported?(BdRokisweil, :dynamic_cost, 4)
   end
 
   @tag game_mode: :renewal

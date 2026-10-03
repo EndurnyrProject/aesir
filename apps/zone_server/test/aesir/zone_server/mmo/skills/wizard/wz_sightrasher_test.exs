@@ -212,8 +212,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
   test "definition matches the declared level 1 and level 10 data" do
     definition = WzSightrasher.definition()
 
-    assert definition.id == 81
-    assert definition.name == :wz_sightrasher
     assert definition.max_level == 10
     assert definition.target_type == :self
     assert definition.damage_type == :damage

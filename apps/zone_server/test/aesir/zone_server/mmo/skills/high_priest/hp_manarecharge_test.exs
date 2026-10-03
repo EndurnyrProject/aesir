@@ -2,7 +2,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpManarechargeTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -16,10 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpManarechargeTest do
       derived_stats: %DerivedStats{max_hp: 1000, max_sp: 100},
       progression: %PlayerProgression{base_level: 99, job_level: 50, learned_skills: learned}
     }
-  end
-
-  test "the catalog resolves Mana Recharge by id" do
-    assert {:ok, %{name: :hp_manarecharge, max_level: 5}} = Catalog.by_id(481)
   end
 
   test "Mana Recharge 5 cuts skill SP cost by 20%" do

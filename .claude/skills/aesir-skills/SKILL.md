@@ -81,12 +81,9 @@ Effects that must run later in the caster's session go through the generic seam:
 `PlayerSession`/`MobSession` — `session_hygiene_test` forbids `Mmo.Skills` references in
 sessions. MobSession handles `{:skill, {:deferred, module, payload}}` too.
 
-Delayed work that can be invalidated before it fires must carry an **epoch or token** captured
-at schedule time and re-checked at run time (cast completion uses a cast token; combo/spirit
-timers use generation counters; mob death/teleport advances a `deferred_epoch`) so a stale
-deferred effect no-ops instead of acting on a vanished/moved target. See `aesir-units` for the
-session shell, `SessionState`/`StateCommit`, and the single-writer/no-deadlock rules that
-govern where skill code runs.
+Delayed work that can be invalidated must carry an epoch or token (cast token, combo/spirit
+generation counters, mob `deferred_epoch`); the rule, the session shell, and the
+single-writer/no-deadlock rules that govern where skill code runs are in `aesir-units`.
 
 ## Skill-staged dialogs (client menus without new proto messages)
 
@@ -104,6 +101,10 @@ trigger layer). When writing a skill, either keep `cast/4` caster-generic or add
 
 ## Testing conventions
 
+- Test the logic a skill adds (formula, branching, riders, `validate/4` rejections). Do not
+  write catalog-metadata tests (`id`, `name`, `max_level`, `display_name`, module resolves);
+  `catalog_discovery_test.exs` already guards every discovered skill. A skill whose behaviour
+  is fully declarative (`use` args plus a shared helper) needs no test file.
 - Bugs in the session-execution class (deadlocks, message routing) only reproduce when the
   cast goes through the real session: use `simulate_incoming_message` in integration tests,
   not direct `Skill.cast/4` from the test process.
@@ -111,10 +112,8 @@ trigger layer). When writing a skill, either keep `cast/4` caster-generic or add
   `attack_info`/entity fixtures have hidden wrong-field and boss-gate bugs.
 - Bare `%PlayerState{character_id: id}` fixtures have `stats: nil`; keep code nil-tolerant
   rather than inflating fixtures.
-- Mimic stubs: after changing a stubbed function's arity, sweep and update every stub
-  (old-arity stubs go silently inert).
+- Fixture shapes, the Mimic arity trap, and the determinism checklist are in `aesir-workflow`.
 - rAthena research: renewal skill logic is under `rathena/src/map/skills/<job>/`, not just
   `skill.cpp`. Always check for `#ifdef RENEWAL` branches — many skills behave differently
-  pre-renewal (see `aesir-game-modes`); document BOTH modes' behavior in the `@moduledoc`
-  even when only renewal is implemented (these notes are the Phase-2 audit inventory).
-  Keep rAthena pointers out of Aesir code/docs — describe the mechanic.
+  pre-renewal. The both-modes `@moduledoc` rule and the no-rAthena-citations rule are in
+  `aesir-game-modes`.

@@ -66,8 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
   test "definition and waiting placement match Renewal levels 1 and 10" do
     definition = WzFirepillar.definition()
 
-    assert definition.id == 80
-    assert definition.name == :wz_firepillar
     assert definition.max_level == 10
     assert definition.target_type == :ground
     assert definition.damage_kind == :magic

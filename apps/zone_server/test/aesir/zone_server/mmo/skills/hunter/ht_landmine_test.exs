@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine
@@ -42,10 +41,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
 
   describe "registration & metadata" do
     @tag game_mode: :renewal
-    test "is an Earth ground misc skill with range 3, registered in the catalog" do
-      assert {:ok, HtLandmine} = Catalog.ground_module_for(:ht_landmine)
+    test "is an Earth ground misc skill with range 3" do
       d = HtLandmine.definition()
-      assert d.id == 116
       assert d.element == :earth
       assert d.damage_kind == :misc
       assert d.target_type == :ground

@@ -64,7 +64,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
   describe "skill data and placement" do
     test "defines a five-level physical Fire ground skill that costs one Fire Bottle" do
       assert {:ok, definition} = Catalog.by_id(229)
-      assert definition.name == :am_demonstration
       assert definition.max_level == 5
       assert definition.target_type == :ground
       assert definition.damage_kind == :weapon

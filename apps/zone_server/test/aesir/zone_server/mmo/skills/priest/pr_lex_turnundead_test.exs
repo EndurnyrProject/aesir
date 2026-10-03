@@ -30,26 +30,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
     def get_stats(%__MODULE__{stats: stats}), do: stats
   end
 
-  test "Lex Divina uses the Renewal duration and SP tables" do
-    assert {:ok, definition} = Catalog.by_id(76)
-    assert definition.name == :pr_lexdivina
-    assert definition.range == 5
-    assert definition.sp_cost == [20, 20, 20, 20, 20, 18, 16, 14, 12, 10]
-
-    assert definition.duration == [
-             30_000,
-             35_000,
-             40_000,
-             45_000,
-             50_000,
-             60_000,
-             60_000,
-             60_000,
-             60_000,
-             60_000
-           ]
-  end
-
   test "Lex Divina removes existing Silence instead of refreshing it" do
     {:ok, definition} = Catalog.by_id(76)
     caster = %PlayerState{character_id: 1_000}
@@ -143,7 +123,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
   test "Turn Undead exposes its complete cast and targeting metadata" do
     assert {:ok, definition} = Catalog.by_id(77)
 
-    assert definition.name == :pr_turnundead
     assert definition.target_type == :target_enemy
     assert definition.damage_kind == :magic
     assert definition.element == :holy
@@ -211,15 +190,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
 
     assert {:ok, %{character_id: 1_000}} =
              PrTurnundead.cast(%{character_id: 1_000}, {:unit, target_id}, 1, definition)
-  end
-
-  test "Lex Aeterna uses the Renewal targeting, cost, duration, and delay data" do
-    assert {:ok, definition} = Catalog.by_id(78)
-    assert definition.name == :pr_lexaeterna
-    assert definition.range == 9
-    assert definition.sp_cost == [10]
-    assert definition.duration == [600_000]
-    assert definition.after_cast_delay == [3_000]
   end
 
   test "Lex Aeterna applies its status with the configured duration" do

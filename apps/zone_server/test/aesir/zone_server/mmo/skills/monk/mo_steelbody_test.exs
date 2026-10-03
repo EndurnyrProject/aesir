@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSteelbodyTest do
   @tag game_mode: :renewal
   test "declares Mental Strength's verified costs, cast time, and duration" do
     assert {:ok, definition} = Catalog.by_id(268)
-    assert definition.name == :mo_steelbody
     assert definition.status == :sc_steelbody
     assert definition.target_type == :self
     assert definition.damage_type == :no_damage

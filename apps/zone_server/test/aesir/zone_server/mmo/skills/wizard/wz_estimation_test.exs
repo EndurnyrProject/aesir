@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
   alias Aesir.Net.EstimationResult
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimation
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -21,23 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
 
   defp mode_value(renewal, pre_renewal) do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
-  end
-
-  describe "definition/0" do
-    test "matches the declared Estimation data" do
-      definition = WzEstimation.definition()
-
-      assert definition.id == 93
-      assert definition.max_level == 1
-      assert definition.target_type == :target_enemy
-      assert definition.damage_type == :no_damage
-      assert definition.range == 9
-      assert definition.sp_cost == [10]
-    end
-
-    test "is available to the active skill interpreter through the catalog" do
-      assert {:ok, WzEstimation} = Catalog.active_module_for(:wz_estimation)
-    end
   end
 
   describe "EstimationView.result/2" do

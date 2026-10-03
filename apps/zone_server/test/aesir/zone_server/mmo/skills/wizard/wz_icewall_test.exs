@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewallTest do
   import Aesir.TestEtsSetup
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewall
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -30,31 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewallTest do
       cells: [],
       state: %{}
     }
-  end
-
-  test "registers as a water ground skill with canonical costs" do
-    assert {:ok, definition} = Catalog.by_id(87)
-    assert definition.name == :wz_icewall
-    assert definition.target_type == :ground
-    assert definition.damage_type == :no_damage
-    assert definition.element == :water
-    assert definition.sp_cost == List.duplicate(20, 10)
-
-    assert definition.unit_duration == [
-             8_000,
-             12_000,
-             16_000,
-             20_000,
-             24_000,
-             28_000,
-             32_000,
-             36_000,
-             40_000,
-             44_000
-           ]
-
-    assert {:ok, WzIcewall} = Catalog.active_module_for(:wz_icewall)
-    assert {:ok, WzIcewall} = Catalog.ground_module_for(:wz_icewall)
   end
 
   test "places five directional targetable terrain cells with canonical HP and decay" do

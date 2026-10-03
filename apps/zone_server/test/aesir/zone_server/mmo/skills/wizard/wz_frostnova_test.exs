@@ -29,8 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
     test "matches the Renewal Frost Nova table at levels 1 and 10" do
       definition = WzFrostnova.definition()
 
-      assert definition.id == 88
-      assert definition.name == :wz_frostnova
       assert definition.max_level == 10
       assert definition.target_type == :self
       assert definition.damage_type == :damage

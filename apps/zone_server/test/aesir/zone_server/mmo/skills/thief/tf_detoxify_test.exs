@@ -8,19 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDetoxifyTest do
 
   setup :verify_on_exit!
 
-  test "the definition carries the poison property" do
-    assert TfDetoxify.definition().element == :poison
-  end
-
-  test "Catalog.by_id/1 resolves TF_DETOXIFY" do
-    assert {:ok, definition} = Catalog.by_id(53)
-    assert definition.name == :tf_detoxify
-    assert definition.max_level == 1
-    assert definition.target_type == :target_ally
-    assert definition.range == 9
-    assert definition.sp_cost == [10]
-  end
-
   test "cast/4 removes sc_poison and sc_dpoison from a targeted ally" do
     {:ok, definition} = Catalog.by_id(53)
     caster = %{character_id: 1000}

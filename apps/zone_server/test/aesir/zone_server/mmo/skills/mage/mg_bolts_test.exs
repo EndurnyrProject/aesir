@@ -27,26 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgBoltsTest do
   @classic_after_cast_delay [1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800]
   @sp_cost [12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
 
-  describe "catalog registration" do
-    test "by_id/1 resolves the bolt ids" do
-      assert {:ok, %{name: :mg_coldbolt}} = Catalog.by_id(14)
-      assert {:ok, %{name: :mg_firebolt}} = Catalog.by_id(19)
-      assert {:ok, %{name: :mg_lightningbolt}} = Catalog.by_id(20)
-    end
-
-    test "by_name/1 resolves the bolt atoms" do
-      assert {:ok, %{id: 14}} = Catalog.by_name(:mg_coldbolt)
-      assert {:ok, %{id: 19}} = Catalog.by_name(:mg_firebolt)
-      assert {:ok, %{id: 20}} = Catalog.by_name(:mg_lightningbolt)
-    end
-
-    test "active_module_for/1 resolves the bolt modules" do
-      assert {:ok, MgFirebolt} = Catalog.active_module_for(:mg_firebolt)
-      assert {:ok, MgColdbolt} = Catalog.active_module_for(:mg_coldbolt)
-      assert {:ok, MgLightningbolt} = Catalog.active_module_for(:mg_lightningbolt)
-    end
-  end
-
   describe "metadata" do
     for {name, element} <- [
           {:mg_firebolt, :fire},

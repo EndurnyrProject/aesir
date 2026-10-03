@@ -116,8 +116,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
 
   test "a one-handed sword cannot cast Vital Strike but a spear can" do
     assert {:ok, definition} = Catalog.by_name(:lk_jointbeat)
-    assert definition.id == 399
-    assert definition.require_weapon == [:one_handed_spear, :two_handed_spear]
 
     swordsman = %PlayerState{
       character_id: 5_150,

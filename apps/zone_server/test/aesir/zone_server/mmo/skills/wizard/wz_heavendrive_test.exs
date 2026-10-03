@@ -120,8 +120,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
     test "matches the Renewal Heaven's Drive table" do
       definition = WzHeavendrive.definition()
 
-      assert definition.id == 91
-      assert definition.name == :wz_heavendrive
       assert definition.max_level == 5
       assert definition.target_type == :ground
       assert definition.damage_type == :damage
@@ -154,11 +152,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
       assert {152, 152} in cells
       refute {147, 150} in cells
       refute {150, 153} in cells
-    end
-
-    test "is active without a persistent ground-unit capability" do
-      assert WzHeavendrive.__skill_capabilities__() == [:active]
-      refute function_exported?(WzHeavendrive, :on_place, 1)
     end
   end
 
