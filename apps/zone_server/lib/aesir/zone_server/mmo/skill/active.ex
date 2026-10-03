@@ -158,6 +158,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @callback dynamic_after_cast_delay(caster(), target(), pos_integer(), Definition.t()) ::
               non_neg_integer()
 
+  @doc """
+  Optionally resolves this cast's catalyst list from the caster's state,
+  overriding the definition's `item_cost`. The player cast path checks and
+  consumes the returned list instead (e.g. a recast that only ends an effect
+  needs no catalysts). A skill without it keeps its declared `item_cost`.
+  """
+  @callback dynamic_item_cost(caster(), target(), pos_integer(), Definition.t()) :: [
+              %{id: integer(), amount: pos_integer()}
+            ]
+
   @optional_callbacks cast_with_origin: 5,
                       cast_with_input: 5,
                       validate: 4,
@@ -166,7 +176,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
                       dynamic_cost: 4,
                       effective_range: 4,
                       dynamic_cast_time: 4,
-                      dynamic_after_cast_delay: 4
+                      dynamic_after_cast_delay: 4,
+                      dynamic_item_cost: 4
 
   @doc "Returns a caster's unit id. Accepts bare `%{character_id: _}` maps from test fixtures."
   @spec caster_unit_id(

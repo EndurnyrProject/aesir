@@ -160,6 +160,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   @impl true
   def cost(caster, module, target, definition, level) do
+    definition = item_cost_definition(caster, module, target, level, definition)
+
     with {:ok, cost} <- resolve_cost(caster, module, target, level, definition) do
       zeny = effective_zeny_cost(caster, Enum.at(definition.zeny_cost, level - 1, 0))
       prepare_cost(caster, module, definition, cost, zeny)
@@ -279,6 +281,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   defp quest_lineage?(_caster, _definition), do: true
+
+  # The optional `dynamic_item_cost/4` replaces the catalysts on a cast-local
+  # definition, which both the check here and the consumption at commit read.
+  defp item_cost_definition(caster, module, target, level, definition) do
+    if function_exported?(module, :dynamic_item_cost, 4),
+      do: %{definition | item_cost: module.dynamic_item_cost(caster, target, level, definition)},
+      else: definition
+  end
 
   defp resolve_cost(caster, module, target, level, definition) do
     cost =

@@ -37,6 +37,24 @@ defmodule Aesir.ZoneServer.Geometry do
     end
   end
 
+  @facing_delta %{
+    0 => {0, -1},
+    1 => {-1, -1},
+    2 => {-1, 0},
+    3 => {-1, 1},
+    4 => {0, 1},
+    5 => {1, 1},
+    6 => {1, 0},
+    7 => {1, -1}
+  }
+
+  @doc """
+  The unit `{dx, dy}` step a unit facing `dir` looks toward, the inverse of
+  `calculate_direction/4`.
+  """
+  @spec facing_delta(0..7) :: {-1..1, -1..1}
+  def facing_delta(dir), do: Map.fetch!(@facing_delta, dir)
+
   @doc """
   Circular distance, in 45-degree dir-steps, between two 8-way directions.
 
