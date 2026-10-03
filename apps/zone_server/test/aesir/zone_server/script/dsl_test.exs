@@ -705,14 +705,14 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   describe "getmapusers/2" do
     test "returns the connected-player count for a known map" do
       stub(MapCache, :exists?, fn "morocc" -> true end)
-      expect(UnitRegistry, :count_players_on_map, fn "morocc" -> 12 end)
+      expect(SpatialIndex, :count_players_on_map, fn "morocc" -> 12 end)
 
       assert Dsl.getmapusers(build_ctx(), "morocc") == 12
     end
 
     test "returns -1 for an unknown map" do
       stub(MapCache, :exists?, fn "nope" -> false end)
-      reject(&UnitRegistry.count_players_on_map/1)
+      reject(&SpatialIndex.count_players_on_map/1)
 
       assert Dsl.getmapusers(build_ctx(), "nope") == -1
     end

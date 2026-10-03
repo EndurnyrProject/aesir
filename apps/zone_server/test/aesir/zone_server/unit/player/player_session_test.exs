@@ -482,23 +482,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       {:noreply, new_state} = PlayerSession.handle_info(:spawn_player, state)
 
       assert new_state.character == character
-      assert_receive :complete_spawn, 200
-    end
-  end
-
-  describe "handle_info(:complete_spawn)" do
-    test "transitions from just_spawned to standing", %{character: character} do
-      game_state = PlayerState.new(character)
-
-      state = %{
-        character: character,
-        game_state: game_state,
-        connection_pid: self()
-      }
-
-      {:noreply, new_state} = PlayerSession.handle_info(:complete_spawn, state)
-
-      assert new_state.game_state.movement_state == :standing
     end
   end
 

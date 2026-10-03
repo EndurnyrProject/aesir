@@ -695,10 +695,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         # Check initial visibility for players and mobs
         updated_game_state = MovementHandler.handle_visibility_update(state.game_state)
 
-        # After initial spawn, transition to standing state
-        # This happens after a short delay to ensure spawn packets are processed
-        Process.send_after(self(), :complete_spawn, 100)
-
         # Start the recurring natural-heal regen tick.
         Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
         Process.send_after(self(), :rental_expiry_tick, @rental_expiry_interval)
@@ -762,11 +758,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     QuestInfoView.coalesce()
     {:noreply, QuestInfoView.refresh(state)}
   end
-
-  # Legacy spawn-settle tick; players already spawn standing, so nothing is
-  # left to do here.
-  @impl true
-  def handle_info(:complete_spawn, state), do: {:noreply, state}
 
   @impl true
   def handle_info(:natural_heal_tick, state) do

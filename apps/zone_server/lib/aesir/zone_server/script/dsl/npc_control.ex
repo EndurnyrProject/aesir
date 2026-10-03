@@ -202,7 +202,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   @spec getmapusers(Ctx.t(), String.t()) :: integer()
   def getmapusers(%Ctx{}, map_name) do
     if MapCache.exists?(map_name) do
-      UnitRegistry.count_players_on_map(map_name)
+      SpatialIndex.count_players_on_map(map_name)
     else
       -1
     end

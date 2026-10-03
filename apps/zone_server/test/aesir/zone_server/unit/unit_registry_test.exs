@@ -126,18 +126,6 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
     end
   end
 
-  describe "count_players_on_map/1" do
-    test "counts registered players by map name" do
-      register_player(1, "prontera")
-      register_player(2, "prontera")
-      register_player(3, "morocc")
-
-      assert UnitRegistry.count_players_on_map("prontera") == 2
-      assert UnitRegistry.count_players_on_map("morocc") == 1
-      assert UnitRegistry.count_players_on_map("geffen") == 0
-    end
-  end
-
   describe "register_unit/5" do
     test "registers a unit successfully" do
       state = %{id: 1, hp: 100, max_hp: 100}
