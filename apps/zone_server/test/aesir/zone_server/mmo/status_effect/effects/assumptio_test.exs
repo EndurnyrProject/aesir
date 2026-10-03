@@ -86,6 +86,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
       end
     end
 
+    test "leaves status-driven damage (poison ticks, HP costs) whole" do
+      assert {:ok, 900, _} = absorb(%{damage: 900, dmg_type: :magic, status_tick?: true})
+    end
+
     test "cuts damage to two thirds on a PvP map" do
       :ok = SpatialIndex.update_position(@player_id, 100, 100, @pvp_map)
       :ok = MapFlags.set_runtime(@pvp_map, :pvp, true)

@@ -47,7 +47,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   Deals damage to a target entity (used by status effects).
 
   This is a simplified version of the attack paths that bypasses validation and
-  is used by status effects and other systems.
+  is used by status effects and other systems. The hit carries
+  `status_tick?: true`, so status absorb hooks that only shield against attacks
+  (Basilica, pre-renewal Assumptio) let poison ticks and HP costs through.
   """
   @spec deal_damage(integer() | Ref.t(), integer(), atom(), atom()) :: :ok | {:error, atom()}
   def deal_damage(target, damage, element \\ :neutral, source_type \\ :status_effect) do
@@ -64,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         target_pid,
         target_id,
         damage,
-        magic_hit_info(element, []),
+        Map.put(magic_hit_info(element, []), :status_tick?, true),
         nil
       )
     end

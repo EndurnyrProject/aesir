@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
   import Mimic
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -100,6 +101,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
                  hit,
                  {:mob, @boss_id}
                )
+    end
+  end
+
+  describe "status-driven damage" do
+    test "poison ticks and self-inflicted status costs still reach a holder" do
+      :ok = apply_occupant(:player, @holder_id)
+
+      :ok = Combat.deal_damage({:player, @holder_id}, 40)
+
+      assert_receive {:"$gen_cast", {:unit, {:apply_damage, 40, nil}}}
     end
   end
 

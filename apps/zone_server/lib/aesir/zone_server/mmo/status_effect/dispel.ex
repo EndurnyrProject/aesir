@@ -16,21 +16,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
 
   Deviations from the reference, all deliberate:
 
-  * **No song-area special case.** `dispell.cpp:56-66` keeps the bard/dancer
-    songs alive while the target still stands in the song's area
-    (`val4 == 0`). The song branch is unreachable in renewal anyway -
-    `db/re/status.yml` flags every song in that list `NoDispell: true`, so the
-    preceding flag check already skips them, and Aesir's `sc_poembragi`
-    mirrors that.
-
-  Assumptio is spared on mobs (players lose it as usual).
+  * **No song-area special case.** The reference keeps the bard/dancer songs
+    alive while the target still stands in the song's area. The branch is
+    unreachable in renewal anyway: every song in that list is flagged
+    no-dispel, so the preceding flag check already skips them, and Aesir's
+    `sc_poembragi` mirrors that.
   * **No Saturday Night Fever HP-penalty guard.** That status is not implemented;
     Berserk's expiry penalty is disarmed before removal.
   * **No `bonus_script` clearing** (`BSF_REM_ON_DISPELL`): Aesir has no
     bonus-script system.
 
   Mob targets additionally drop their aggro target and fall back to idle,
-  rAthena's `mob_unlocktarget`.
+  rAthena's `mob_unlocktarget`. Assumptio is spared on mobs (players lose it as
+  usual).
 
   `dispel_debuffs/1` is the debuff-only variant used by Gospel's cleansing
   blessing: buffs and `no_dispel` debuffs stay.

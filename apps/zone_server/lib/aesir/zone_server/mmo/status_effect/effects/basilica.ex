@@ -47,9 +47,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
 
   @doc """
   Blocks the hit unless its source is a boss. A hit with no known source is
-  blocked: traps and ground fields belong to non-boss owners.
+  blocked: traps and ground fields belong to non-boss owners. Status-driven
+  damage (poison ticks, self-inflicted HP costs) is not an attack and passes.
   """
   @impl true
+  def absorb_damage(_target, instance, %{status_tick?: true, damage: damage}, _context),
+    do: {:ok, damage, instance}
+
   def absorb_damage(_target, instance, %{attacker: {unit_type, unit_id}} = hit_info, _context) do
     if boss?(unit_type, unit_id),
       do: {:ok, hit_info.damage, instance},
