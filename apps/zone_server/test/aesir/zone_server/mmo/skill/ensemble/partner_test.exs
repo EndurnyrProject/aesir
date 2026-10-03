@@ -98,6 +98,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     assert :none = Partner.find(caster, @skill_id, 7)
   end
 
+  test "rejects a caster or candidate with no job ID without raising" do
+    caster = player(1, :bard, 1, @violin)
+    candidate = player(2, :dancer, 1, @whip)
+    register(candidate)
+
+    assert :none = Partner.find(put_in(caster.stats.progression.job_id, nil), @skill_id, 1)
+
+    register(put_in(candidate.stats.progression.job_id, nil))
+    assert :none = Partner.find(caster, @skill_id, 1)
+  end
+
   test "returns at most one of several eligible partners" do
     caster = player(1, :bard, 7, @violin)
     first = player(2, :dancer, 4, @whip)

@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatHandlerRichmanExpTest do
       int: 1,
       dex: 1,
       luk: 1,
-      base_level: 1,
+      base_level: 25,
       job_level: 1,
       class: 0
     }

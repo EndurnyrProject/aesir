@@ -133,6 +133,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
     }
 
     stub(PartyManager, :get, fn 10 -> {:ok, party} end)
+    expect(LevelPenalty, :exp, 2, fn 100, 50 -> mode_value(40, 100) end)
     PubSub.subscribe(Aesir.PubSub, "player:1")
     PubSub.subscribe(Aesir.PubSub, "player:2")
 

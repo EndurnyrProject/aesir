@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -21,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule UnitStub do
@@ -155,7 +157,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   test "an encored ensemble receives no Adaptation discount" do
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
     assert EnsembleSkill.definition().sp_cost == [50]
-    caster = player(%{skill_id: EnsembleSkill.definition().id, level: 1})
+
+    caster =
+      player(%{skill_id: EnsembleSkill.definition().id, level: 1}) |> with_ensemble_partner()
 
     assert %Cost{sp_requirement: 25, sp: 25} =
              BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition())
@@ -165,7 +169,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   end
 
   test "an encored ensemble costs half its base without Adaptation" do
-    caster = player(%{skill_id: EnsembleSkill.definition().id, level: 1})
+    caster =
+      player(%{skill_id: EnsembleSkill.definition().id, level: 1}) |> with_ensemble_partner()
 
     assert {:ok, replayed} = Interpreter.cast(caster, @encore_id, 1, :self)
     assert replayed.stats.current_state.sp == 75
@@ -176,6 +181,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
     for skill_id <- [319, EnsembleSkill.definition().id] do
       caster = player(%{skill_id: skill_id, level: 1}, nil, 1, modifiers)
+
+      caster =
+        if skill_id == EnsembleSkill.definition().id,
+          do: with_ensemble_partner(caster),
+          else: caster
 
       assert %Cost{sp_requirement: 1, sp: 0} =
                BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition())
@@ -265,6 +275,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
         modifiers: %{equipment: modifiers}
       }
     }
+  end
+
+  defp with_ensemble_partner(caster) do
+    if GameMode.mode() == :pre_renewal do
+      {:ok, dancer_job_id} = AvailableJobs.job_name_to_id(:dancer)
+      partner = player(%{skill_id: EnsembleSkill.definition().id, level: 1})
+      partner = put_in(partner.stats.progression.job_id, dancer_job_id)
+
+      partner = %{
+        partner
+        | character_id: @caster_id + 1,
+          action_state: :idle,
+          party_id: 1,
+          x: caster.x + 1
+      }
+
+      :ok =
+        UnitRegistry.register_unit(:player, partner.character_id, PlayerState, partner, self())
+
+      :ok = SpatialIndex.add_player(partner.character_id, partner.x, partner.y, partner.map_name)
+      %{caster | party_id: 1}
+    else
+      caster
+    end
   end
 
   defp put_sp(caster, sp), do: put_in(caster.stats.current_state.sp, sp)

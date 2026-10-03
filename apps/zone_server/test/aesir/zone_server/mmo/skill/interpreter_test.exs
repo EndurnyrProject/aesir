@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
@@ -3004,10 +3005,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     test "preflight accepts a remembered ensemble" do
       skill_id = EnsembleSkill.definition().id
+      {:ok, bard_job_id} = AvailableJobs.job_name_to_id(:bard)
+      {:ok, dancer_job_id} = AvailableJobs.job_name_to_id(:dancer)
+
+      caster = game_state(100, %{skill_id => 1})
+      caster = put_in(caster.stats.progression.job_id, bard_job_id)
+      caster = %{caster | party_id: 1}
+
+      partner = game_state(100, %{skill_id => 1})
+      partner = put_in(partner.stats.progression.job_id, dancer_job_id)
+      partner = put_in(partner.stats.equipment.right_hand, 1960)
+      partner = %{partner | character_id: 1001, party_id: 1, x: 11}
+
+      :ok =
+        UnitRegistry.register_unit(:player, partner.character_id, PlayerState, partner, self())
+
+      :ok = SpatialIndex.add_player(partner.character_id, partner.x, partner.y, partner.map_name)
 
       assert :ok =
                Interpreter.encore_replay_preflight(
-                 game_state(100, %{skill_id => 1}),
+                 caster,
                  %{skill_id: skill_id, level: 1},
                  :self
                )

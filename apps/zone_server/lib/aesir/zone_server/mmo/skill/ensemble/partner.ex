@@ -86,7 +86,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
     end
   end
 
-  defp performer_job(%PlayerState{stats: %{progression: %{job_id: job_id}}}) do
+  defp performer_job(%PlayerState{stats: %{progression: %{job_id: job_id}}})
+       when is_integer(job_id) do
     with {:ok, job_name} <- AvailableJobs.job_id_to_name(job_id),
          base_job when base_job in [:bard, :dancer] <- JobLineage.base_job(job_name) do
       {:ok, base_job}
@@ -94,4 +95,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
       _ -> :error
     end
   end
+
+  defp performer_job(_caster), do: :error
 end

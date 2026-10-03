@@ -221,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @doc """
   Validates an Encore-remembered skill without mutating the caster.
 
-  This restricted entry point accepts only Dissonance and the four Bard songs.
+  This restricted entry point accepts performances and ensembles.
   It reuses the remembered skill's current catalog, level, learned, weapon,
   target, module-validation, and cooldown checks. Encore's own ordinary cast
   remains responsible for its learned state, cooldown, global act delay, and
@@ -239,7 +239,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   @doc """
-  Resolves cast timing for an allowlisted, fully validated Encore memory.
+  Resolves cast timing for a replayable, fully validated Encore memory.
 
   The returned values are the remembered skill's current base variable and
   fixed cast times at the remembered level. The outer Encore cast applies the
@@ -264,7 +264,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   @doc """
-  Completes one allowlisted Encore replay after revalidating mutable conditions.
+  Completes one replayable Encore memory after revalidating mutable conditions.
 
   This invokes the remembered behavior once and writes only the remembered
   skill's cooldown after success. It deliberately commits no resources, Encore
