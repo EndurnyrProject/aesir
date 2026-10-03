@@ -123,6 +123,22 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHealTest do
       assert boosted_sp > base_sp
     end
 
+    test "a passive sp_regen_rate multiplies the base SP amount per interval" do
+      # int 50, max SP 5000 -> base amount 1 + 8 + 50 = 59; +30% -> div(59 * 130, 100) = 76
+      s = stats(vit: 50, int: 50, max_hp: 4000, max_sp: 5000, hp: 100, sp: 1)
+      meditatio = put_in(s.modifiers.passive, %{sp_regen_rate: 30})
+
+      {_hp, base_sp, _acc} =
+        NaturalHeal.compute(s, :idle, :standing, %{}, @no_passive, acc(60_000))
+
+      {_hp2, boosted_sp, _acc2} =
+        NaturalHeal.compute(meditatio, :idle, :standing, %{}, @no_passive, acc(60_000))
+
+      assert base_sp > 0
+      assert rem(base_sp, 59) == 0
+      assert boosted_sp == div(base_sp, 59) * 76
+    end
+
     test "Fury's interval multiplier slows natural healing without changing its amount" do
       s = stats(vit: 50, int: 50, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
 

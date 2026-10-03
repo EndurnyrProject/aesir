@@ -142,12 +142,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   defp reduce_sp(game_state, skill_id, base) do
     rate =
       merged_modifier(game_state.character_id, :sp_cost_rate) +
+        passive_sp_cost_rate(game_state) +
         equipment_modifier(game_state, :sp_cost_rate) +
         equipment_modifier(game_state, {:skill_use_sp_rate, skill_id})
 
     reduced = div(base * max(0, 100 + rate), 100)
     max(0, reduced - equipment_modifier(game_state, {:skill_use_sp, skill_id}))
   end
+
+  # Precomputed into `modifiers.passive` at stat calculation, like max SP rate.
+  defp passive_sp_cost_rate(%{stats: %{modifiers: %{passive: passive}}}) when is_map(passive),
+    do: Map.get(passive, :sp_cost_rate, 0)
+
+  defp passive_sp_cost_rate(_game_state), do: 0
 
   defp merged_modifier(character_id, key) do
     :player

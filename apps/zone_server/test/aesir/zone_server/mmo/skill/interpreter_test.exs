@@ -1742,6 +1742,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.stats.current_state.sp == 100 - 9
     end
 
+    test "a learned passive SP cost rate sums with the status rate" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{sp_cost_rate: -10} end)
+      gs = game_state(100, %{6 => 1})
+      gs = put_in(gs.stats.modifiers.passive, %{sp_cost_rate: -40})
+
+      # base 9 at -50% -> div(9 * 50, 100) = 4
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
+      assert updated.stats.current_state.sp == 100 - 4
+    end
+
     test "status, global and per-skill rates all sum into one percent step" do
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{sp_cost_rate: -20} end)
 

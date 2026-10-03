@@ -424,7 +424,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @doc """
   Aggregates the STR/DEX/INT/HIT/range bonuses from learned passive skills into
-  `modifiers.passive`.
+  `modifiers.passive`, along with the passive skill SP cost rate and base SP
+  regen rate read at cast and regen time.
 
   Runs before `calculate_derived_stats/1` so the passive stat bonuses feed every
   stat derived from them (HIT, ASPD, ATK, MATK, max SP) just like a real stat
@@ -439,7 +440,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       hit: Passives.hit_bonus(stats),
       range: Passives.range_bonus(stats),
       max_weight_bonus: Passives.max_weight_bonus(stats),
-      max_sp_rate: Passives.max_sp_rate_bonus(stats)
+      max_sp_rate: Passives.max_sp_rate_bonus(stats),
+      sp_cost_rate: Passives.sp_cost_rate(stats),
+      sp_regen_rate: Passives.sp_regen_rate(stats)
     }
 
     %{stats | modifiers: Map.put(stats.modifiers, :passive, passive)}

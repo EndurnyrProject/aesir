@@ -249,6 +249,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
     {:int_bonus, 2, quote(do: def(int_bonus(_level, _ctx), do: 0))},
     {:max_hp_bonus, 2, quote(do: def(max_hp_bonus(_level, _ctx), do: 0))},
     {:max_sp_rate_bonus, 2, quote(do: def(max_sp_rate_bonus(_level, _ctx), do: 0))},
+    {:sp_cost_rate, 2, quote(do: def(sp_cost_rate(_level, _ctx), do: 0))},
+    {:sp_regen_rate, 2, quote(do: def(sp_regen_rate(_level, _ctx), do: 0))},
     {:zeny_cost_reduction, 2, quote(do: def(zeny_cost_reduction(_level, _ctx), do: 0))},
     {:steal_proc, 2, quote(do: def(steal_proc(_level, _ctx), do: %{}))},
     {:shop_discount_pct, 2, quote(do: def(shop_discount_pct(_level, _ctx), do: 0))},

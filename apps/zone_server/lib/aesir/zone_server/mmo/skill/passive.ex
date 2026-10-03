@@ -79,6 +79,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a MaxSP rate bonus contributed by this passive at the given level."
   @callback max_sp_rate_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @doc """
+  Returns a skill SP cost rate delta contributed by this passive at the given
+  level. Negative values make skills cheaper; it sums with the status and
+  equipment SP cost rates.
+  """
+  @callback sp_cost_rate(level :: pos_integer(), ctx()) :: integer()
+
+  @doc """
+  Returns a percent bonus applied to the base natural SP regen amount, as a
+  separate multiplier before the status and equipment SP regen rates.
+  """
+  @callback sp_regen_rate(level :: pos_integer(), ctx()) :: integer()
+
   @doc "Returns the zeny cost reduction percentage contributed by this passive."
   @callback zeny_cost_reduction(level :: pos_integer(), ctx()) :: non_neg_integer()
 
@@ -175,6 +188,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       int_bonus: 2,
                       max_hp_bonus: 2,
                       max_sp_rate_bonus: 2,
+                      sp_cost_rate: 2,
+                      sp_regen_rate: 2,
                       zeny_cost_reduction: 2,
                       steal_proc: 2,
                       shop_discount_pct: 2,

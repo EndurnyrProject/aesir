@@ -365,6 +365,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the skill SP cost rate delta contributed by every learned passive.
+  """
+  @spec sp_cost_rate(PlayerState.t() | PlayerStats.t()) :: integer()
+  def sp_cost_rate(%PlayerState{stats: stats}), do: sp_cost_rate(stats)
+
+  def sp_cost_rate(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.sp_cost_rate(level, ctx)
+    end)
+  end
+
+  @doc """
+  Sums the base natural SP regen percent bonus contributed by every learned
+  passive.
+  """
+  @spec sp_regen_rate(PlayerState.t() | PlayerStats.t()) :: integer()
+  def sp_regen_rate(%PlayerState{stats: stats}), do: sp_regen_rate(stats)
+
+  def sp_regen_rate(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.sp_regen_rate(level, ctx)
+    end)
+  end
+
+  @doc """
   Sums the zeny cost reduction percentage contributed by every learned passive.
   """
   @spec zeny_cost_reduction(PlayerState.t() | PlayerStats.t()) :: non_neg_integer()

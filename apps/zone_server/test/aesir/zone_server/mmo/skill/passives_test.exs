@@ -236,6 +236,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def aspd_bonus(_level, _ctx), do: 0
   end
 
+  defmodule SpEconomyPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_008,
+      name: :test_sp_economy_passive,
+      display_name: "Test SP Economy Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def sp_cost_rate(level, _ctx), do: -4 * level
+
+    @impl Passive
+    def sp_regen_rate(level, _ctx), do: 3 * level
+  end
+
   defp build_player(learned_skills, weapon_atom) do
     inventory =
       if weapon_atom == :bare_hands do
@@ -446,6 +466,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{9_900_004 => 5}, :one_handed_sword)
 
       assert Passives.max_weight_bonus(player) == 10_000
+    end
+  end
+
+  describe "sp_cost_rate/1 and sp_regen_rate/1" do
+    test "return 0 when no passive contributes the channel" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert Passives.sp_cost_rate(player) == 0
+      assert Passives.sp_regen_rate(player.stats) == 0
+    end
+
+    test "sum the channels of a learned passive" do
+      stub(Catalog, :by_id, fn 9_900_008 -> {:ok, SpEconomyPassive.definition()} end)
+
+      stub(Catalog, :passive_module_for, fn :test_sp_economy_passive ->
+        {:ok, SpEconomyPassive}
+      end)
+
+      player = build_player(%{9_900_008 => 5}, :one_handed_sword)
+
+      assert Passives.sp_cost_rate(player) == -20
+      assert Passives.sp_cost_rate(player.stats) == -20
+      assert Passives.sp_regen_rate(player) == 15
     end
   end
 

@@ -40,7 +40,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
       {:noreply, state}
     else
       regen_modifiers = regen_modifiers(game_state)
+
       passive_regen = Passives.regen(game_state)
+
       sitting_regen = Passives.sitting_regen(game_state)
 
       {regen_modifiers, passive_regen, sitting_regen} =
