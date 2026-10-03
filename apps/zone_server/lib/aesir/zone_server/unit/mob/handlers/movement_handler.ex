@@ -108,6 +108,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     end
   end
 
+  @doc """
+  Applies a post-hit walk delay and unconditionally resets the walk. Unlike
+  knockback this publishes nothing: the mob simply stops where it is.
+  """
+  @spec handle_apply_walk_delay(MobState.t(), non_neg_integer()) :: {:noreply, MobState.t()}
+  def handle_apply_walk_delay(%MobState{} = state, duration) do
+    now = System.monotonic_time(:millisecond)
+    {:noreply, state |> MobState.apply_walk_delay(duration, now) |> MobState.stop_movement()}
+  end
+
   @doc "Rejects offensive knockback on current castle ground before displacement commit."
   @spec handle_knockback(
           integer(),

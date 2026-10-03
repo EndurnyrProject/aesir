@@ -81,14 +81,14 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
 
     test "player session returns new game state only through StateCommit" do
       # Terminal `%{state | game_state: ...}` rebinds skip the registry and
-      # party/guild sync. The two tolerated forms are an intermediate handed to
-      # a handler (walk delay) and terminate/2, which has no observers left.
+      # party/guild sync. The one tolerated site is terminate/2, which has no
+      # observers left.
       raw_rebinds =
         ~r/%\{state \| game_state:/
         |> Regex.scan(@player_session_source)
         |> length()
 
-      assert raw_rebinds == 2
+      assert raw_rebinds == 1
     end
 
     test "player session contains no Homunculus species or skill IDs" do

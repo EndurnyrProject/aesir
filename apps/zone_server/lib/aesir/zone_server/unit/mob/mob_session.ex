@@ -10,17 +10,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   require Logger
 
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
-  alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
-  alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Mob.StealOps
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -327,14 +324,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_cast({:casting, {:status_changed, status_id, event}}, state) do
     {:noreply, state} = CastingHandler.handle_status_changed(status_id, event, state)
-    {:noreply, maybe_recalculate_max_hp(status_id, state)}
+    {:noreply, CombatHandler.handle_max_hp_status(status_id, state)}
   end
 
-  # Movement: pathing kickoff, the instant teleport reposition, and the
-  # knockback landing (stop + position-set, same shape as the player path) all
-  # delegate to MovementHandler. The walk-delay slow stays inline: it is not
-  # the same operation as knockback - a mob unconditionally resets its movement
-  # state with no publish, while knockback publishes the landing cell.
+  # Movement: pathing kickoff, teleport, knockback/displacement landings and
+  # the walk-delay slow all delegate to MovementHandler.
   @impl GenServer
   def handle_cast({:movement, {:move_to, x, y}}, state) do
     MovementHandler.handle_move_to(state, x, y)
@@ -349,8 +343,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   def handle_cast({:movement, {:apply_walk_delay, duration}}, state) do
-    now = System.monotonic_time(:millisecond)
-    {:noreply, state |> MobState.apply_walk_delay(duration, now) |> MobState.stop_movement()}
+    MovementHandler.handle_apply_walk_delay(state, duration)
   end
 
   def handle_cast({:movement, {:knockback, expected_x, expected_y, map_name, x, y}}, state) do
@@ -416,11 +409,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     AiHandler.handle_ai_tick(state)
   end
 
-  def handle_info({:attack_intent, _target_ref}, %{is_dead: true} = state),
-    do: {:noreply, state}
-
   def handle_info({:attack_intent, target_ref}, state) do
-    {:noreply, AIStateMachine.handle_damage_reaction(state, target_ref)}
+    AiHandler.handle_attack_intent(state, target_ref)
   end
 
   # Casting: the self-armed cast-timer resolution.
@@ -473,27 +463,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp schedule_despawn(nil), do: nil
-
-  # SC_DELUGE and any future `:max_hp_rate` status recomputes the mob's HP
-  # ceiling on apply/removal (rAthena's SCB_MAXHP recalc). Gated on the
-  # status's `calc_flags` so ordinary status ticks stay off this path, and
-  # only broadcasts when the ceiling actually moved.
-  defp maybe_recalculate_max_hp(status_id, state) do
-    if max_hp_status?(status_id) do
-      updated = state |> MobState.recalculate_max_hp() |> StateCommit.commit()
-      unless updated.max_hp == state.max_hp, do: SpawnView.notify_hp_update(updated)
-      updated
-    else
-      state
-    end
-  end
-
-  defp max_hp_status?(status_id) do
-    case Registry.get_definition(status_id) do
-      %{calc_flags: flags} -> :max_hp_rate in flags
-      _ -> false
-    end
-  end
 
   @impl GenServer
   def terminate(_reason, state) do

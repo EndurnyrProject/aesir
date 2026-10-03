@@ -544,6 +544,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   @doc """
+  Applies a post-hit walk delay then stops the walk through the same
+  conditional, client-visible stop as a skill or stun interrupt.
+  """
+  @spec handle_apply_walk_delay(non_neg_integer(), map()) :: {:noreply, map()}
+  def handle_apply_walk_delay(duration, %{game_state: game_state} = state) do
+    now = System.monotonic_time(:millisecond)
+    delayed = PlayerState.apply_walk_delay(game_state, duration, now)
+    handle_force_stop_movement(%{state | game_state: delayed})
+  end
+
+  @doc """
   Forces a player to stop moving immediately.
 
   ## Parameters

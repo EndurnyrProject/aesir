@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   require Logger
 
   alias Aesir.Net.MoveStop
+  alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
@@ -31,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -514,6 +516,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     combo = Combo.expire(game_state.combo, generation, AttackSpeed.current_timestamp())
     {:noreply, %{state | game_state: %{game_state | combo: combo}}}
   end
+
+  @doc "Credits a PvP kill: bumps the counters, publishes, and persists them."
+  @spec handle_pvp_kill_credit(map()) :: {:noreply, map()}
+  def handle_pvp_kill_credit(%{game_state: game_state} = state) do
+    updated = %{game_state | pvp_point: game_state.pvp_point + 1, pvp_won: game_state.pvp_won + 1}
+
+    CharacterPersistence.update_character(
+      game_state.character_id,
+      %{pvp_point: updated.pvp_point, pvp_won: updated.pvp_won},
+      async: true
+    )
+
+    {:noreply, StateCommit.commit(state, updated)}
+  end
+
+  @doc "Drops combat against a mob that despawned while this player was targeting it."
+  @spec handle_mob_despawned(integer(), map()) :: {:noreply, map()}
+  def handle_mob_despawned(
+        mob_id,
+        %{game_state: %{combat_target_id: mob_id} = game_state} = state
+      ) do
+    Logger.debug("Clearing combat target #{mob_id} for player #{game_state.character_id}")
+
+    {:ok, idle} =
+      game_state |> PlayerState.clear_combat_intent() |> PlayerState.transition_to(:idle)
+
+    {:noreply, StateCommit.commit(state, idle)}
+  end
+
+  def handle_mob_despawned(_mob_id, state), do: {:noreply, state}
 
   defp maybe_consume_ammo(state, game_state, weapon_type) do
     if WeaponTypes.requires_ammo?(weapon_type) do

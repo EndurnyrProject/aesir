@@ -141,6 +141,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
     if riding?(state), do: dismount_core(state), else: state
   end
 
+  @doc "GM `@mount` toggle: dismounts if mounted, otherwise force-mounts past the skill gate."
+  @spec gm_toggle(map()) :: {:noreply, map()}
+  def gm_toggle(state) do
+    if riding?(state), do: dismount(state), else: force_mount(state)
+  end
+
   @doc """
   Whether the player is currently mounted, read from the `:riding` bit of
   `game_state.option` (the single writer's authoritative in-memory copy).

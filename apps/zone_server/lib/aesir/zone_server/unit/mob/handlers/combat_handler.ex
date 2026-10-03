@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -134,6 +135,29 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   def handle_drain_sp(_amount, state), do: {:noreply, state}
+
+  @doc """
+  Recomputes the HP ceiling after a `:max_hp_rate` status (SC_DELUGE and kin)
+  is applied or removed, publishing and broadcasting only when it moved.
+  Ordinary status ticks are gated out by the status's `calc_flags`.
+  """
+  @spec handle_max_hp_status(atom(), MobState.t()) :: MobState.t()
+  def handle_max_hp_status(status_id, state) do
+    if max_hp_status?(status_id) do
+      updated = state |> MobState.recalculate_max_hp() |> StateCommit.commit()
+      unless updated.max_hp == state.max_hp, do: SpawnView.notify_hp_update(updated)
+      updated
+    else
+      state
+    end
+  end
+
+  defp max_hp_status?(status_id) do
+    case StatusRegistry.get_definition(status_id) do
+      %{calc_flags: flags} -> :max_hp_rate in flags
+      _ -> false
+    end
+  end
 
   defp maybe_add_aggro(state, _reward_owner_id, nil, _damage), do: state
 

@@ -7,11 +7,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   status icons, its board when it is running an open vending shop, and its chat
   room bubble when it owns one are pushed to this session's connection. On exit a `UnitDespawn` vanish packet
   is sent.
+
+  Also owns the Coordinator-broadcast vanish packets that double as visibility
+  bookkeeping (`ItemVanished`, `SkillUnitDespawn`): the packet is forwarded and
+  the id dropped from the matching visible set so re-entering range re-spawns it.
   """
 
+  alias Aesir.Net.ItemVanished
+  alias Aesir.Net.SkillUnitDespawn
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.VendingBoardShown
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -91,6 +98,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
       {:noreply, state}
     end
   end
+
+  @doc "Forwards a ground-item vanish and forgets the item."
+  @spec item_vanished(ItemVanished.t(), map()) :: {:noreply, map()}
+  def item_vanished(%ItemVanished{ground_id: ground_id} = packet, state) do
+    forward(state, packet)
+    game_state = state.game_state
+    visible_items = MapSet.delete(game_state.visible_items, ground_id)
+    {:noreply, StateCommit.commit(state, %{game_state | visible_items: visible_items})}
+  end
+
+  @doc """
+  Forwards a skill-unit despawn and forgets the group unless it is still alive
+  and merely left view, in which case walking back re-spawns it from the diff.
+  """
+  @spec skill_unit_despawned(SkillUnitDespawn.t(), map()) :: {:noreply, map()}
+  def skill_unit_despawned(%SkillUnitDespawn{group_id: group_id, reason: reason} = packet, state) do
+    forward(state, packet)
+    game_state = state.game_state
+
+    if reason != :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW and SkillUnitStorage.get(group_id) do
+      {:noreply, state}
+    else
+      visible = MapSet.delete(game_state.visible_skill_units, group_id)
+      {:noreply, StateCommit.commit(state, %{game_state | visible_skill_units: visible})}
+    end
+  end
+
+  defp forward(%{connection_pid: nil}, _packet), do: :ok
+  defp forward(%{connection_pid: pid}, packet), do: MessageRouter.send_to(pid, packet)
 
   defp reconcile_homunculus_visibility(gid, state) do
     visible? = MapSet.member?(state.game_state.visible_homunculi, gid)

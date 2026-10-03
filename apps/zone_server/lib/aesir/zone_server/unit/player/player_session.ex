@@ -18,7 +18,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -866,23 +865,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_info({:combat, {:pvp_kill_credit, _killer_id}}, state) do
-    game_state = state.game_state
-
-    updated_game_state = %{
-      game_state
-      | pvp_point: game_state.pvp_point + 1,
-        pvp_won: game_state.pvp_won + 1
-    }
-
-    state = StateCommit.commit(state, updated_game_state)
-
-    CharacterPersistence.update_character(
-      game_state.character_id,
-      %{pvp_point: updated_game_state.pvp_point, pvp_won: updated_game_state.pvp_won},
-      async: true
-    )
-
-    {:noreply, state}
+    CombatActionHandler.handle_pvp_kill_credit(state)
   end
 
   @impl true
@@ -964,18 +947,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_info({:mob_despawned, mob_instance_id}, state) do
-    # Only clear combat if this player was targeting this specific mob
-    if state.game_state.combat_target_id == mob_instance_id do
-      Logger.debug(
-        "Clearing combat target #{mob_instance_id} for player #{state.game_state.character_id}"
-      )
-
-      updated_game_state = PlayerState.clear_combat_intent(state.game_state)
-      {:ok, idle_state} = PlayerState.transition_to(updated_game_state, :idle)
-      {:noreply, StateCommit.commit(state, idle_state)}
-    else
-      {:noreply, state}
-    end
+    CombatActionHandler.handle_mob_despawned(mob_instance_id, state)
   end
 
   @impl true
@@ -1131,11 +1103,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_cast({:movement, {:apply_walk_delay, duration}}, %{game_state: game_state} = state) do
-    delayed =
-      PlayerState.apply_walk_delay(game_state, duration, System.monotonic_time(:millisecond))
-
-    MovementHandler.handle_force_stop_movement(%{state | game_state: delayed})
+  def handle_cast({:movement, {:apply_walk_delay, duration}}, state) do
+    MovementHandler.handle_apply_walk_delay(duration, state)
   end
 
   @impl true
@@ -1267,11 +1236,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # Mount: GM `@mount` toggle, bypassing the KN_RIDING learned gate.
   @impl true
   def handle_cast({:mount, :gm_toggle}, state) do
-    if MountHandler.riding?(state) do
-      MountHandler.dismount(state)
-    else
-      MountHandler.force_mount(state)
-    end
+    MountHandler.gm_toggle(state)
   end
 
   # Skill: the spirit-sphere write path (Monk). Summon/consume timed spheres
@@ -1313,39 +1278,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # but also drop the id from `visible_items` so re-entering the cell's range
   # later re-spawns the item via the walk-up diff.
   @impl true
-  def handle_cast(
-        {:send_packet, %ItemVanished{ground_id: ground_id} = packet},
-        %{game_state: game_state, connection_pid: connection_pid} = state
-      ) do
-    if connection_pid do
-      MessageRouter.send_to(connection_pid, packet)
-    end
-
-    game_state = %{game_state | visible_items: MapSet.delete(game_state.visible_items, ground_id)}
-
-    {:noreply, StateCommit.commit(state, game_state)}
+  def handle_cast({:send_packet, %ItemVanished{} = packet}, state) do
+    VisibilityHandler.item_vanished(packet, state)
   end
 
   @impl true
-  def handle_cast(
-        {:send_packet, %SkillUnitDespawn{group_id: group_id, reason: reason} = packet},
-        %{game_state: game_state, connection_pid: connection_pid} = state
-      ) do
-    if connection_pid do
-      MessageRouter.send_to(connection_pid, packet)
-    end
-
-    game_state =
-      if reason != :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW and SkillUnitStorage.get(group_id) do
-        game_state
-      else
-        %{
-          game_state
-          | visible_skill_units: MapSet.delete(game_state.visible_skill_units, group_id)
-        }
-      end
-
-    {:noreply, StateCommit.commit(state, game_state)}
+  def handle_cast({:send_packet, %SkillUnitDespawn{} = packet}, state) do
+    VisibilityHandler.skill_unit_despawned(packet, state)
   end
 
   @impl true

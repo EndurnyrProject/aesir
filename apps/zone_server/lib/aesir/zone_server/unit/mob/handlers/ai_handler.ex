@@ -128,6 +128,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     {:noreply, updated_state}
   end
 
+  @doc "Reacts to an `{:attack_intent, ref}` nudge as if hit by `target_ref`; dead mobs ignore it."
+  @spec handle_attack_intent(MobState.t(), tuple()) :: {:noreply, MobState.t()}
+  def handle_attack_intent(%MobState{is_dead: true} = state, _target_ref), do: {:noreply, state}
+
+  def handle_attack_intent(%MobState{} = state, target_ref),
+    do: {:noreply, AIStateMachine.handle_damage_reaction(state, target_ref)}
+
   @doc """
   Schedules the next `{:ai, :tick}` after `interval` milliseconds (defaults to
   the tick interval), stamping the new timer ref on the state.
