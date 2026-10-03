@@ -207,6 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skill.Performance.Cost,
       Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot,
       Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill,
+      Aesir.ZoneServer.Mmo.Skills.Champion.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Monk.Combo,
       Aesir.ZoneServer.Mmo.Skills.Monk.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Monk.Root,
