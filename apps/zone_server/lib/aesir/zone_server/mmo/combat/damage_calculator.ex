@@ -285,7 +285,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp ratio_scaled_mode(:soft_only, skill_ratio), do: {:soft_only, skill_ratio}
   defp ratio_scaled_mode(mode, _skill_ratio), do: mode
 
-  defp scalar_defense(damage, _defender, _attacker, _path, :ignore), do: {:ok, damage}
+  # The modifier pipeline yields a float; every defense path truncates it on the
+  # way out, so the DEF-ignoring path must too or a float reaches the HP pools.
+  defp scalar_defense(damage, _defender, _attacker, _path, :ignore),
+    do: {:ok, DamageShared.clamp_min_one(damage)}
 
   defp scalar_defense(damage, defender, attacker, _path, {:soft_only, ratio}),
     do:

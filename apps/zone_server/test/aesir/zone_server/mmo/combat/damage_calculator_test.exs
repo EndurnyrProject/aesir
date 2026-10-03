@@ -1092,6 +1092,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "calculate_damage_ignoring_defense/3" do
+    test "returns an integer even when the modifier pipeline yields a float" do
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 0.75 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      attacker = CombatTestHelper.create_player_combatant(flat_atk: 101)
+      defender = CombatTestHelper.create_mob_combatant(def: 50)
+
+      assert {:ok, %{damage: damage}} =
+               DamageCalculator.calculate_damage_ignoring_defense(attacker, defender,
+                 base_damage: 101,
+                 skip_crit: true
+               )
+
+      assert is_integer(damage)
+      assert damage > 1
+    end
+  end
+
   describe "mob status modifier lookup key" do
     setup do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
