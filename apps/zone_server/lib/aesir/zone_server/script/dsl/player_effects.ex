@@ -40,9 +40,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def add_homunculus_intimacy(%Ctx{} = ctx, amount) when is_integer(amount) and amount > 0,
     do: stage_homunculus_effect(ctx, {:homunculus_intimacy, amount})
 
-  defp stage_homunculus_effect(ctx, effect) do
-    Map.update!(ctx, :homunculus_effects, &(&1 ++ [effect]))
-  end
+  defp stage_homunculus_effect(ctx, effect),
+    do: stage_session_effect(ctx, {:homunculus, effect})
+
+  defp stage_session_effect(ctx, effect),
+    do: Map.update!(ctx, :session_effects, &(&1 ++ [effect]))
 
   @doc """
   Restores HP and/or SP by the given amounts, clamped to the player's maxima.
@@ -232,7 +234,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def setfalcon(%Ctx{status: {:error, _}} = ctx, _flag), do: ctx
 
   def setfalcon(%Ctx{source: {:item, _}} = ctx, flag),
-    do: %{ctx | falcon_effect: flag != 0}
+    do: stage_session_effect(ctx, {:falcon, flag != 0})
 
   def setfalcon(%Ctx{} = ctx, flag), do: apply_op(ctx, {:set_falcon, flag != 0})
 

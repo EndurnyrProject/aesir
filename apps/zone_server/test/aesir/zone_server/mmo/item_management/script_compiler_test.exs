@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
   test "a Homunculus item script stages its typed effect" do
     assert ScriptCompiler.compile_all!([item_def(12_040, "homevolution(ctx)")]) == :ok
 
-    assert %Ctx{homunculus_effects: [:homunculus_evolution]} =
+    assert %Ctx{session_effects: [{:homunculus, :homunculus_evolution}]} =
              CompiledItemScripts.on_use(12_040, build_ctx())
   end
 

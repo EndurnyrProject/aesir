@@ -309,7 +309,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
                ItemHandler.handle_use_item(@red_potion_client_index, state)
 
       refute_receive {:send, :gameplay, {:item_removed, _}}
-      refute_receive {:send, :gameplay, {:item_use_result, _}}
+      assert_receive {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
       refute_receive {:send, :bulk, {:homunculus_private_state, _}}
     end
 
@@ -326,6 +326,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert {:noreply, ^state} =
                ItemHandler.handle_use_item(@red_potion_client_index, state)
 
+      assert_receive {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
       refute_receive {:send, _, _}
     end
 
@@ -341,6 +342,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert {:noreply, ^state} =
                ItemHandler.handle_use_item(@red_potion_client_index, state)
 
+      assert_receive {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
       refute_receive {:send, _, _}
     end
   end

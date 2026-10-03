@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Script.DslHomunculusTest do
   test "homevolution stages evolution without changing player state" do
     ctx = ctx()
 
-    assert %Ctx{homunculus_effects: [:homunculus_evolution], game_state: game_state} =
+    assert %Ctx{session_effects: [{:homunculus, :homunculus_evolution}], game_state: game_state} =
              Dsl.homevolution(ctx)
 
     assert game_state == ctx.game_state
@@ -18,9 +18,9 @@ defmodule Aesir.ZoneServer.Script.DslHomunculusTest do
     ctx = ctx()
 
     assert %Ctx{
-             homunculus_effects: [
-               :homunculus_evolution,
-               {:homunculus_intimacy, 100}
+             session_effects: [
+               {:homunculus, :homunculus_evolution},
+               {:homunculus, {:homunculus_intimacy, 100}}
              ]
            } =
              ctx

@@ -114,10 +114,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
       assert CompiledItemScripts.on_use(12848, ctx) == ctx
 
       learned = put_in(ctx.game_state.stats.progression.learned_skills, %{127 => 1})
-      assert CompiledItemScripts.on_use(12848, learned).falcon_effect == true
+      assert CompiledItemScripts.on_use(12848, learned).session_effects == [{:falcon, true}]
 
       equipped = put_in(learned.game_state.option, Option.id(:falcon))
-      assert CompiledItemScripts.on_use(12848, equipped).falcon_effect == false
+      assert CompiledItemScripts.on_use(12848, equipped).session_effects == [{:falcon, false}]
 
       for option <- [:wug, :wugrider] do
         mounted = put_in(learned.game_state.option, Option.id(option))

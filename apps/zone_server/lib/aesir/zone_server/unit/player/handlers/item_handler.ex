@@ -75,36 +75,56 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     end
   end
 
+  # A Homunculus effect commits the inventory removal and the homunculus row in
+  # one DB transaction (Homunculus.Persistence.transition_with_item/5), so it
+  # bypasses consume/4 and must be the only thing the script did. Every other
+  # staged effect is applied to the session in script order, then consumed here.
   defp run_effect(client_index, server_index, item_id, state) do
     original = Ctx.from_session(state, {:item, item_id})
     ctx = CompiledItemScripts.on_use(item_id, original)
 
-    case {ctx.status, ctx.homunculus_effects, ctx.falcon_effect} do
-      {:ok, [], nil} ->
-        consume(client_index, server_index, ctx, state)
+    case ctx do
+      %Ctx{status: {:error, reason}} ->
+        reject(client_index, reason, state)
 
-      {:ok, [], enabled?} when is_boolean(enabled?) ->
-        case FalconHandler.set_falcon(%{state | game_state: ctx.game_state}, enabled?) do
+      %Ctx{session_effects: [{:homunculus, effect}]} ->
+        if %{ctx | session_effects: []} == original do
+          ItemEffectHandler.handle(client_index, server_index, effect, state)
+        else
+          reject_invalid_script(client_index, item_id, state)
+        end
+
+      %Ctx{session_effects: effects} ->
+        case apply_session_effects(effects, %{state | game_state: ctx.game_state}) do
           {:ok, updated} ->
             consume(client_index, server_index, %{ctx | game_state: updated.game_state}, updated)
+
+          {:error, :invalid_script} ->
+            reject_invalid_script(client_index, item_id, state)
 
           {:error, reason} ->
             reject(client_index, reason, state)
         end
+    end
+  end
 
-      {:ok, [effect], nil} ->
-        if %{ctx | homunculus_effects: []} == original do
-          ItemEffectHandler.handle(client_index, server_index, effect, state)
-        else
-          {:noreply, state}
+  @spec apply_session_effects([Ctx.session_effect()], map()) :: {:ok, map()} | {:error, term()}
+  defp apply_session_effects(effects, state) do
+    Enum.reduce_while(effects, {:ok, state}, fn
+      {:falcon, enabled?}, {:ok, acc} ->
+        case FalconHandler.set_falcon(acc, enabled?) do
+          {:ok, updated} -> {:cont, {:ok, updated}}
+          {:error, _reason} = error -> {:halt, error}
         end
 
-      {{:error, reason}, [], _} ->
-        reject(client_index, reason, state)
+      {:homunculus, _effect}, _acc ->
+        {:halt, {:error, :invalid_script}}
+    end)
+  end
 
-      _invalid_item_script ->
-        {:noreply, state}
-    end
+  defp reject_invalid_script(client_index, item_id, state) do
+    Logger.warning("use_item item #{item_id} staged an unsupported effect combination")
+    reject(client_index, :invalid_script, state)
   end
 
   defp consume(client_index, server_index, ctx, state) do
