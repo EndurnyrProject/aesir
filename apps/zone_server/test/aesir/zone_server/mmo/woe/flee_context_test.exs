@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FleeContextTest do
   alias Aesir.ZoneServer.Unit.Player.CombatCalculations
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
@@ -35,8 +36,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FleeContextTest do
     stats = Stats.from_character(character())
     :ok = MapFlags.set_runtime(@castle_map, :gvg, true)
 
-    baseline = Stats.calculate_stats(stats, nil, nil, nil).combat_stats.flee
-    active = Stats.calculate_stats(stats, nil, nil, @castle_map).combat_stats.flee
+    baseline = Calculator.calculate_stats(stats, nil, nil, nil).combat_stats.flee
+    active = Calculator.calculate_stats(stats, nil, nil, @castle_map).combat_stats.flee
 
     assert active == baseline - div(baseline * 20, 100)
   end

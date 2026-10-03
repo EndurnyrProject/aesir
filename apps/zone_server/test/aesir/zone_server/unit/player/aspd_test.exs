@@ -5,7 +5,9 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   setup :setup_ets_tables
 
@@ -26,7 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
   defp stats_with(character, equipped_items) do
     character
     |> Stats.from_character()
-    |> Stats.calculate_stats(nil, equipped_items)
+    |> Calculator.calculate_stats(nil, equipped_items)
   end
 
   describe "ASPD calculation" do
@@ -118,7 +120,7 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
       shielded =
         stats_with(character, [equipped(@knife, @right_hand), equipped(@guard, @left_hand)])
 
-      assert Stats.shield_view(shielded.equipment) == 1
+      assert Appearance.shield_view(shielded.equipment) == 1
       assert bare.derived_stats.aspd == 145
       assert shielded.derived_stats.aspd == 145
     end

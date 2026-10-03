@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   """
 
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @doc """
@@ -51,7 +51,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   def handle_recalculate_stats(%{game_state: game_state} = state) do
     # Recalculate stats with player ID for status effects
     updated_stats =
-      Stats.calculate_stats(game_state.stats, game_state.character_id, nil, game_state.map_name)
+      Calculator.calculate_stats(
+        game_state.stats,
+        game_state.character_id,
+        nil,
+        game_state.map_name
+      )
 
     # Only update and send changes if stats actually changed
     if updated_stats != state.game_state.stats do
@@ -82,7 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
     updated_stats = %{stats | base_stats: updated_base_stats}
 
     updated_stats =
-      Stats.calculate_stats(updated_stats, game_state.character_id, nil, game_state.map_name)
+      Calculator.calculate_stats(updated_stats, game_state.character_id, nil, game_state.map_name)
 
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = StateCommit.commit(state, updated_game_state)
@@ -103,7 +108,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManager do
   """
   def handle_sync_recalculate_stats(%{game_state: game_state} = state) do
     updated_stats =
-      Stats.calculate_stats(game_state.stats, game_state.character_id, nil, game_state.map_name)
+      Calculator.calculate_stats(
+        game_state.stats,
+        game_state.character_id,
+        nil,
+        game_state.map_name
+      )
 
     updated_game_state = %{state.game_state | stats: updated_stats}
     updated_state = StateCommit.commit(state, updated_game_state)

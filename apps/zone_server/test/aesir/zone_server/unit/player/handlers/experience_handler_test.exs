@@ -11,14 +11,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
   setup do
-    stub(Stats, :calculate_stats, fn stats, _char_id -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, _char_id -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, _id, _gs -> :ok end)
     stub(CharacterPersistence, :update_character, fn _id, _attrs, async: true -> {:ok, %{}} end)
     stub(StatusSync, :send_stat_updates, fn _pid, _stats -> :ok end)

@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
 
   setup do
     Catalog.reload()
-    stub(Stats, :calculate_stats, fn stats, _character_id -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, _character_id -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, @player_id, _game_state -> :ok end)
 
     stub(CharacterPersistence, :update_character, fn _character_id, _attrs, async: true ->

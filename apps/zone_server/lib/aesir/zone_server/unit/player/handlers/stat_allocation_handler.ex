@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   # status_id => {base-stat key, per-stat cost-indicator StatusParam id}
@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
 
     stats =
       %{game_state.stats | base_stats: base_stats, progression: progression}
-      |> Stats.calculate_stats(char_id)
+      |> Calculator.calculate_stats(char_id)
       |> clamp_resources()
 
     new_game_state = %{game_state | stats: stats}
@@ -127,7 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
 
     stats =
       %{game_state.stats | base_stats: base_stats, progression: progression}
-      |> Stats.calculate_stats(char_id)
+      |> Calculator.calculate_stats(char_id)
       |> clamp_resources()
 
     new_game_state = %{game_state | stats: stats}

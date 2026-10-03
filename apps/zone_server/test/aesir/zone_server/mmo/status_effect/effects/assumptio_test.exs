@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -47,11 +47,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
     @describetag game_mode: :renewal
 
     test "adds 50 hard DEF per level to a player", %{player: player} do
-      before = Stats.calculate_stats(player.stats, @player_id, []).combat_stats.def
+      before = Calculator.calculate_stats(player.stats, @player_id, []).combat_stats.def
 
       :ok = apply_assumptio(:player, @player_id, @player_id)
 
-      after_def = Stats.calculate_stats(player.stats, @player_id, []).combat_stats.def
+      after_def = Calculator.calculate_stats(player.stats, @player_id, []).combat_stats.def
       assert after_def - before == 250
     end
 
@@ -98,11 +98,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
     end
 
     test "adds no DEF", %{player: player} do
-      before = Stats.calculate_stats(player.stats, @player_id, []).combat_stats.def
+      before = Calculator.calculate_stats(player.stats, @player_id, []).combat_stats.def
 
       :ok = apply_assumptio(:player, @player_id, @player_id)
 
-      assert Stats.calculate_stats(player.stats, @player_id, []).combat_stats.def == before
+      assert Calculator.calculate_stats(player.stats, @player_id, []).combat_stats.def == before
     end
 
     test "Kyrie Eleison and Assumptio replace each other" do

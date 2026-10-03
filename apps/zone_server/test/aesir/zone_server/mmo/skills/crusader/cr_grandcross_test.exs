@@ -21,6 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
+  alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
@@ -163,7 +165,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       caster = %PlayerState{character_id: @caster_id, x: 100, y: 100}
 
       stub(Unit, :place, fn ^caster, :cr_grandcross, 1, {100, 100} -> {:ok, :group} end)
-      stub(Stats, :shield_defense_contribution, fn _stats -> %{def: 7, mdef: 3} end)
+      stub(EquipmentFold, :shield_defense_contribution, fn _stats -> %{def: 7, mdef: 3} end)
 
       expect(StatusInterpreter, :apply_status, fn :player,
                                                   @caster_id,

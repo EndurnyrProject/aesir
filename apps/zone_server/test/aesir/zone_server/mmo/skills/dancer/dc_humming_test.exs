@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -47,7 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
     for {level, hit_bonus} <- [{1, 4}, {10, 40}] do
       caster = player(level)
       register(caster)
-      baseline = Stats.calculate_stats(caster.stats, caster.character_id)
+      baseline = Calculator.calculate_stats(caster.stats, caster.character_id)
 
       assert {:ok, _result} = DcHumming.cast(caster, :self, level, DcHumming.definition())
 
@@ -56,7 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
 
       assert expires_at - started_at == 180_000
 
-      with_humming = Stats.calculate_stats(caster.stats, caster.character_id)
+      with_humming = Calculator.calculate_stats(caster.stats, caster.character_id)
       assert with_humming.combat_stats.hit == baseline.combat_stats.hit + hit_bonus
     end
   end

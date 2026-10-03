@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRefineTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Real item ids from priv/db/re/items (same fixtures as RefineOpsTest).
@@ -144,7 +145,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRefineTest do
       inventory = inv_map(char.id)
       index = index_of(inventory, @sword)
 
-      equipped_stats = Stats.calculate_stats(stats, char.id, [Map.get(inventory, index)])
+      equipped_stats = Calculator.calculate_stats(stats, char.id, [Map.get(inventory, index)])
       game_state = base_state(char, equipped_stats, inventory).game_state
       state = %{connection_pid: self(), game_state: game_state}
 

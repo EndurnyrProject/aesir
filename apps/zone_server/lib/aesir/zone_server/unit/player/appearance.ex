@@ -4,14 +4,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Appearance do
 
   Derives the equipment-driven look values from a `Stats.Equipment` struct, diffs
   two equipment states into `SpriteChange` packets, and builds the appearance
-  fields for a `UnitSpawn`. No DB, no sockets — view ids come from the `Stats`
-  view extractors and client look-type ids from `LookType`.
+  fields for a `UnitSpawn`. No DB, no sockets; view ids are read from the item
+  catalog and client look-type ids from `LookType`.
 
   Weapon and shield collapse into the single `weapon` look slot (`val` carries the
   weapon view, `val2` the shield view), matching the client convention.
   """
 
   alias Aesir.Net.SpriteChange
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.LookType
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -37,11 +40,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Appearance do
   @spec look_views(Equipment.t()) :: look_views()
   def look_views(%Equipment{} = equipment) do
     %{
-      weapon: {Stats.weapon_view(equipment), Stats.shield_view(equipment)},
-      head_bottom: {Stats.head_bottom_view(equipment), 0},
-      head_mid: {Stats.head_mid_view(equipment), 0},
-      head_top: {Stats.head_top_view(equipment), 0},
-      robe: {Stats.robe_view(equipment), 0}
+      weapon: {weapon_view(equipment), shield_view(equipment)},
+      head_bottom: {head_bottom_view(equipment), 0},
+      head_mid: {head_mid_view(equipment), 0},
+      head_top: {head_top_view(equipment), 0},
+      robe: {robe_view(equipment), 0}
     }
   end
 
@@ -73,12 +76,75 @@ defmodule Aesir.ZoneServer.Unit.Player.Appearance do
         }
   def spawn_fields(%Equipment{} = equipment) do
     %{
-      weapon: Stats.weapon_view(equipment),
-      shield: Stats.shield_view(equipment),
-      accessory: Stats.head_bottom_view(equipment),
-      accessory2: Stats.head_mid_view(equipment),
-      accessory3: Stats.head_top_view(equipment),
-      robe: Stats.robe_view(equipment)
+      weapon: weapon_view(equipment),
+      shield: shield_view(equipment),
+      accessory: head_bottom_view(equipment),
+      accessory2: head_mid_view(equipment),
+      accessory3: head_top_view(equipment),
+      robe: robe_view(equipment)
     }
+  end
+
+  @doc """
+  Returns the client view (sprite) id of the equipped weapon, or `0` when bare-handed.
+  """
+  @spec weapon_view(Equipment.t()) :: non_neg_integer()
+  def weapon_view(%Equipment{right_hand: nil}), do: 0
+
+  def weapon_view(%Equipment{right_hand: nameid} = equipment) do
+    # A weapon's sprite is its weapon-class view (dagger, one-handed sword, ...),
+    # derived from the item subtype. Item DBs only set an explicit `view` for
+    # weapons with a unique sprite (e.g. collection weapons); prefer that when
+    # present, otherwise fall back to the class so ordinary weapons still render.
+    case view_of(nameid) do
+      0 -> WeaponTypes.get_weapon_id(Stats.weapon_type(equipment))
+      view -> view
+    end
+  end
+
+  @doc """
+  Returns the client view (sprite) id of the equipped shield, or `0` when none
+  or when the left-hand item is itself a weapon (two-hander occupying both hands).
+  """
+  @spec shield_view(Equipment.t()) :: non_neg_integer()
+  def shield_view(%Equipment{left_hand: left_hand} = equipment) do
+    if Stats.shield?(equipment), do: view_of(left_hand), else: 0
+  end
+
+  @doc """
+  Returns the client view (sprite) id of the equipped head-top item, or `0` when none.
+  """
+  @spec head_top_view(Equipment.t()) :: non_neg_integer()
+  def head_top_view(%Equipment{head_top: nil}), do: 0
+  def head_top_view(%Equipment{head_top: nameid}), do: view_of(nameid)
+
+  @doc """
+  Returns the client view (sprite) id of the equipped head-mid item, or `0` when none.
+  """
+  @spec head_mid_view(Equipment.t()) :: non_neg_integer()
+  def head_mid_view(%Equipment{head_mid: nil}), do: 0
+  def head_mid_view(%Equipment{head_mid: nameid}), do: view_of(nameid)
+
+  @doc """
+  Returns the client view (sprite) id of the equipped head-low (head-bottom) item, or `0` when none.
+  """
+  @spec head_bottom_view(Equipment.t()) :: non_neg_integer()
+  def head_bottom_view(%Equipment{head_low: nil}), do: 0
+  def head_bottom_view(%Equipment{head_low: nameid}), do: view_of(nameid)
+
+  @doc """
+  Returns the client view (sprite) id of the equipped garment (robe), or `0` when none.
+  """
+  @spec robe_view(Equipment.t()) :: non_neg_integer()
+  def robe_view(%Equipment{garment: nil}), do: 0
+  def robe_view(%Equipment{garment: nameid}), do: view_of(nameid)
+
+  defp view_of(nil), do: 0
+
+  defp view_of(nameid) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %ItemDefinition{view: view}} -> view
+      _ -> 0
+    end
   end
 end

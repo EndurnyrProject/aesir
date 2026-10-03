@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
       state = swordman_state(3, %{sword_id => 2})
       test_pid = self()
 
-      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000 -> stats end)
 
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, game_state ->
         send(test_pid, {:registry_updated, game_state})
@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
       state = %{state | game_state: game_state}
       max_hp = game_state.stats.derived_stats.max_hp + 100
 
-      stub(PlayerStats, :calculate_stats, fn stats, 1000 ->
+      stub(Calculator, :calculate_stats, fn stats, 1000 ->
         derived = %{stats.derived_stats | max_hp: max_hp}
         %{stats | derived_stats: derived}
       end)
@@ -196,7 +196,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
       state = player_state(@wizard_id, 1, %{})
       skill_id = catalog_id(:wz_estimation)
 
-      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000 -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _game_state -> :ok end)
       stub(StatusSync, :send_params, fn _connection_pid, _params -> :ok end)
 
@@ -442,7 +442,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
       unrelated_quest_id = catalog_id(:mg_energycoat)
       state = player_state(knight_id, 4, %{bash_id => 1, unrelated_id => 1})
 
-      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000 -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(StatusSync, :send_params, fn _conn, _params -> :ok end)
 

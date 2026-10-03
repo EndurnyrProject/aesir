@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOps do
 
   Breaking an equipped item flags its row broken (`attribute = 1`) and unequips
   it (`equip = 0`) in the same transaction, then recalculates combat stats with
-  `Stats.calculate_stats/3` - exactly like `EquipmentHandler.advance/2` does
+  `Calculator.calculate_stats/3` - exactly like `EquipmentHandler.advance/2` does
   after an unequip - because the broken item no longer contributes. The broken
   row is handed back so the caller can name the item in a system message. This
   module does not message the client or emit inventory sync; those are the
@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOps do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   @typedoc "Why a break was rejected."
   @type reason :: :no_item | term()
@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOps do
       {:ok, broken_row} ->
         inventory = PlayerState.put_item(state.inventory, index, broken_row)
         equipped = Map.values(Inventory.equipped_items(inventory))
-        stats = Stats.calculate_stats(state.stats, state.character_id, equipped)
+        stats = Calculator.calculate_stats(state.stats, state.character_id, equipped)
         {:ok, %{state | inventory: inventory, stats: stats}, broken_row}
 
       {:error, reason} ->

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicallessonTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
   @player_id 31_500
@@ -105,7 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicallessonTest do
       current_state: %{hp: 1, sp: 1},
       equipment: %Equipment{}
     }
-    |> Stats.calculate_stats(@player_id, [weapon])
+    |> Calculator.calculate_stats(@player_id, [weapon])
   end
 
   defp equipped(nameid, equip) do

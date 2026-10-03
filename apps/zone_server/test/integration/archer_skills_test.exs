@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Integration.ArcherSkillsTest do
   alias Aesir.ZoneServer.Mmo.Skills.Archer.AcShower
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   # rAthena class id for the 1st-class Archer; PlayerState derives job_id from it.
   @archer_class 3
@@ -55,7 +56,7 @@ defmodule Aesir.ZoneServer.Integration.ArcherSkillsTest do
 
   defp recalc(player_pid) do
     state = get_player_state(player_pid)
-    Stats.calculate_stats(state.stats, state.character_id)
+    Calculator.calculate_stats(state.stats, state.character_id)
   end
 
   defp effective(player_pid, stat), do: Stats.get_effective_stat(recalc(player_pid), stat)

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DrumBattle
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
   Mimic.copy(Perform)
@@ -102,7 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
       equipment: %Equipment{},
       modifiers: %{equipment: %{}, status_effects: status_effects, job_bonuses: %{}}
     }
-    |> Stats.calculate_combat_stats()
+    |> Calculator.calculate_combat_stats()
     |> Map.fetch!(:combat_stats)
   end
 

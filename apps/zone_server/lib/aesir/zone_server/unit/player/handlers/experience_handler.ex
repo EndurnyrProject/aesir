@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @doc """
@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
 
     stats =
       %{game_state.stats | progression: progression}
-      |> Stats.calculate_stats(char_id)
+      |> Calculator.calculate_stats(char_id)
       |> maybe_full_heal(base_gained)
 
     game_state = %{game_state | stats: stats}

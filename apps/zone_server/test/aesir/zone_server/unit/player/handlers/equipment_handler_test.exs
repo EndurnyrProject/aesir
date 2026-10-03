@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     test_pid = self()
 
     stub(InventoryOps, :apply_change, fn 1000, _old, new, _change -> {:ok, new} end)
-    stub(Stats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
 
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _game_state ->
       send(test_pid, :equipment_committed)
@@ -122,7 +122,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
       {:ok, new}
     end)
 
-    expect(Stats, :calculate_stats, fn stats, 1000, [%InventoryItem{nameid: 1101, equip: 2}] ->
+    expect(Calculator, :calculate_stats, fn stats,
+                                            1000,
+                                            [%InventoryItem{nameid: 1101, equip: 2}] ->
       stats
     end)
 
@@ -178,7 +180,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
       {:ok, Map.put(inventory, 0, bound_item)}
     end)
 
-    expect(Stats, :calculate_stats, fn stats, 1000, [%InventoryItem{nameid: 1101, equip: 2}] ->
+    expect(Calculator, :calculate_stats, fn stats,
+                                            1000,
+                                            [%InventoryItem{nameid: 1101, equip: 2}] ->
       stats
     end)
 
@@ -210,7 +214,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
       {:error, :write_failed}
     end)
 
-    expect(Stats, :calculate_stats, fn stats, 1000, [%InventoryItem{nameid: 1101, equip: 2}] ->
+    expect(Calculator, :calculate_stats, fn stats,
+                                            1000,
+                                            [%InventoryItem{nameid: 1101, equip: 2}] ->
       stats
     end)
 
@@ -239,7 +245,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     end)
 
     reject(&InventoryOps.set_slot/4)
-    stub(Stats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
 
     for {nameid, bound} <- [{1101, 0}, {1102, 1}] do
       game_state = PlayerState.new(character())
@@ -269,7 +275,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
       {:ok, %{}}
     end)
 
-    expect(Stats, :calculate_stats, fn stats, 1000, [] -> stats end)
+    expect(Calculator, :calculate_stats, fn stats, 1000, [] -> stats end)
 
     state = %{connection_pid: self(), game_state: game_state}
     assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
@@ -305,7 +311,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
       {:ok, %{}}
     end)
 
-    expect(Stats, :calculate_stats, fn stats, 1000, [] -> stats end)
+    expect(Calculator, :calculate_stats, fn stats, 1000, [] -> stats end)
 
     state = %{connection_pid: self(), game_state: game_state}
     assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
@@ -335,7 +341,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
       {:ok, %{}}
     end)
 
-    expect(Stats, :calculate_stats, fn stats, 1000, [] -> stats end)
+    expect(Calculator, :calculate_stats, fn stats, 1000, [] -> stats end)
 
     assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
     assert StatusStorage.has_status?(:player, 1000, :sc_aspersio)
@@ -357,7 +363,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     expect(InventoryOps, :apply_change, fn 1000, _old, _new, {:unequipped, 0} -> {:ok, %{}} end)
     # The stubbed recalc keeps the default (shield-less) equipment, so no shield
     # remains after the takeoff.
-    expect(Stats, :calculate_stats, fn stats, 1000, [] -> stats end)
+    expect(Calculator, :calculate_stats, fn stats, 1000, [] -> stats end)
 
     state = %{connection_pid: self(), game_state: game_state}
     assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
@@ -385,7 +391,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     # check reports a shield is worn and the toggle must survive.
     swapped_equipment = %{game_state.stats.equipment | left_hand: 2101}
     swapped_stats = %{game_state.stats | equipment: swapped_equipment}
-    expect(Stats, :calculate_stats, fn _stats, 1000, _equipped -> swapped_stats end)
+    expect(Calculator, :calculate_stats, fn _stats, 1000, _equipped -> swapped_stats end)
 
     state = %{connection_pid: self(), game_state: game_state}
     assert {:noreply, _state} = EquipmentHandler.handle_equip(1, 32, state)
@@ -415,7 +421,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
       {:ok, %{}}
     end)
 
-    expect(Stats, :calculate_stats, fn _stats, 1000, [] -> recalculated end)
+    expect(Calculator, :calculate_stats, fn _stats, 1000, [] -> recalculated end)
 
     expect(Manager, :sync_member, fn 7, 1000, member ->
       assert member == %Member{
@@ -463,7 +469,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     end)
 
     expect(InventoryOps, :apply_change, fn 1000, _old, _new, {:unequipped, 0} -> {:ok, %{}} end)
-    expect(Stats, :calculate_stats, fn _stats, 1000, [] -> speeded end)
+    expect(Calculator, :calculate_stats, fn _stats, 1000, [] -> speeded end)
 
     state = %{connection_pid: self(), game_state: game_state}
 

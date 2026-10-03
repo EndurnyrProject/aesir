@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
   @player_id 32_300
@@ -103,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
       current_state: %{hp: 1, sp: 1},
       equipment: %Equipment{}
     }
-    |> Stats.calculate_stats(@player_id, [weapon])
+    |> Calculator.calculate_stats(@player_id, [weapon])
   end
 
   defp sp_regen(stats) do

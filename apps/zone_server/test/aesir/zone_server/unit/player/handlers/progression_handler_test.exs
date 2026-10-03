@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -296,7 +296,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       }
 
       state = put_in(state.game_state.stats.current_state, current)
-      stub(Stats, :calculate_stats, fn unchanged, 1000 -> unchanged end)
+      stub(Calculator, :calculate_stats, fn unchanged, 1000 -> unchanged end)
 
       expect(Manager, :sync_member, fn 7, 1000, %Member{job_id: @knight_id} ->
         {:ok, %{}}
@@ -724,7 +724,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       state =
         put_in(state.game_state.stats, %{stats | derived_stats: derived, current_state: current})
 
-      stub(Stats, :calculate_stats, fn recalculated, 1000 ->
+      stub(Calculator, :calculate_stats, fn recalculated, 1000 ->
         %{recalculated | derived_stats: %{recalculated.derived_stats | max_hp: 250}}
       end)
 

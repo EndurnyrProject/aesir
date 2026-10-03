@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -548,7 +549,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     test "a bow attack decrementing a stack strikes, consumes one, persists, syncs without recalc" do
       stub(Stats, :weapon_type, fn _equipment -> :bow end)
 
-      stub(Stats, :calculate_stats, fn _stats, _id, _equipped ->
+      stub(Calculator, :calculate_stats, fn _stats, _id, _equipped ->
         send(self(), :stats_recalced)
         :recalced
       end)
@@ -607,7 +608,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     test "a bow attack consuming the last arrow recalcs stats and clears the slot" do
       stub(Stats, :weapon_type, fn _equipment -> :bow end)
 
-      stub(Stats, :calculate_stats, fn _stats, _id, _equipped ->
+      stub(Calculator, :calculate_stats, fn _stats, _id, _equipped ->
         send(self(), :stats_recalced)
         :recalced
       end)

@@ -292,7 +292,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
     case ItemManagement.get_item_by_id(nameid) do
       # Weapons carry their sprite as the weapon class (derived from the subtype)
       # unless the item sets an explicit `view` for a unique sprite. Mirrors
-      # `Stats.weapon_view/1` so the inventory `look` matches the appearance view.
+      # `Appearance.weapon_view/1` so the inventory `look` matches the appearance view.
       {:ok, %{type: :weapon, view: 0, subtype: subtype}} -> WeaponTypes.get_weapon_id(subtype)
       {:ok, %{view: view}} -> view
       {:error, :item_not_found} -> 0

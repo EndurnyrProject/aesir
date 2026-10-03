@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -582,7 +583,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   # recalc is skipped on the attack hot path.
   defp recalc_after_consume(game_state, char_id, {:removed, _index}) do
     equipped = Map.values(Inventory.equipped_items(game_state.inventory))
-    %{game_state | stats: Stats.calculate_stats(game_state.stats, char_id, equipped)}
+    %{game_state | stats: Calculator.calculate_stats(game_state.stats, char_id, equipped)}
   end
 
   defp recalc_after_consume(game_state, _char_id, {:reduced, _index, _left}), do: game_state

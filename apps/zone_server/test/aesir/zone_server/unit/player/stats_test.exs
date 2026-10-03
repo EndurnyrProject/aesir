@@ -15,9 +15,12 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
@@ -133,7 +136,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         job_bonuses: %{}
       }
     }
-    |> Stats.calculate_combat_stats()
+    |> Calculator.calculate_combat_stats()
     |> Map.fetch!(:combat_stats)
   end
 
@@ -425,7 +428,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      updated_stats = Stats.calculate_stats(stats)
+      updated_stats = Calculator.calculate_stats(stats)
 
       # Should calculate HP based on JobData and VIT
       # JobData.get_base_hp(0, 40) = 235
@@ -456,7 +459,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      updated_stats = Stats.calculate_stats(stats)
+      updated_stats = Calculator.calculate_stats(stats)
 
       assert updated_stats.derived_stats.max_hp >= 1
       assert updated_stats.derived_stats.max_sp >= 1
@@ -594,7 +597,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      updated_stats = Stats.calculate_stats(stats)
+      updated_stats = Calculator.calculate_stats(stats)
 
       # Level 1: JobData.get_base_hp(0, 1) = 40, with VIT=1: 40 * (1.0 + 1*0.01) = 40.4 -> 40
       assert updated_stats.derived_stats.max_hp == 40
@@ -615,7 +618,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      updated_stats = Stats.calculate_stats(stats)
+      updated_stats = Calculator.calculate_stats(stats)
 
       # Level 75: JobData.get_base_hp(0, 75) = 410, with VIT=50: 410 * (1.0 + 50*0.01) = 410 * 1.5 = 615
       assert updated_stats.derived_stats.max_hp == 615
@@ -636,7 +639,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      updated_stats = Stats.calculate_stats(stats)
+      updated_stats = Calculator.calculate_stats(stats)
 
       # Level 99: JobData.get_base_hp(0, 99) = 530, with VIT=99: 530 * (1.0 + 99*0.01) = 530 * 1.99 = 1054.7 -> 1054
       assert updated_stats.derived_stats.max_hp == 1054
@@ -659,7 +662,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      updated_stats = Stats.calculate_stats(stats)
+      updated_stats = Calculator.calculate_stats(stats)
 
       # Level 1: JobData.get_base_sp(0, 1) = 11, with INT=1: 11 * (1.0 + 1*0.01) = 11.11 -> 11
       assert updated_stats.derived_stats.max_sp == 11
@@ -680,7 +683,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      updated_stats = Stats.calculate_stats(stats)
+      updated_stats = Calculator.calculate_stats(stats)
 
       # Level 60: JobData.get_base_sp(0, 60) = 70, with INT=80: 70 * (1.0 + 80*0.01) = 70 * 1.8 = 126
       assert updated_stats.derived_stats.max_sp == 126
@@ -701,7 +704,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      updated_stats = Stats.calculate_stats(stats)
+      updated_stats = Calculator.calculate_stats(stats)
 
       # Novice level 99: JobData.get_base_sp(0, 99) = 109
       # With INT=99: 109 * (1.0 + 99*0.01) = 109 * 1.99 = 216.91 -> 216
@@ -725,7 +728,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      result = Stats.apply_job_bonuses(stats)
+      result = Calculator.apply_job_bonuses(stats)
 
       assert result.modifiers.job_bonuses ==
                %{
@@ -751,7 +754,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      result = Stats.apply_equipment_modifiers(stats)
+      result = EquipmentFold.apply_equipment_modifiers(stats)
       assert result == stats
     end
 
@@ -765,7 +768,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         card_unequip_effects: %{{7, 0} => %{source_order: {0, 0}, effects: []}}
       }
 
-      result = Stats.apply_equipment_modifiers(stats, nil)
+      result = EquipmentFold.apply_equipment_modifiers(stats, nil)
 
       assert result.modifiers == stats.modifiers
       assert result.equip_autobonuses == %{}
@@ -781,7 +784,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      result = Stats.apply_status_effects(stats)
+      result = Calculator.apply_status_effects(stats)
       assert result == stats
     end
   end
@@ -796,7 +799,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.hit == mode_value(175, 1)
       assert result.combat_stats.flee == mode_value(100, 1)
@@ -843,7 +846,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         }
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.def == 131
       assert result.combat_stats.soft_def == mode_value(50, 40)
@@ -865,13 +868,13 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         }
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.def == 90
       assert result.combat_stats.mdef == 90
 
       without = put_in(stats.modifiers.status_effects, %{def: 11, mdef: 3})
-      assert Stats.calculate_combat_stats(without).combat_stats.def == 131
+      assert Calculator.calculate_combat_stats(without).combat_stats.def == 131
     end
 
     test "folds physical damage flags from status modifiers" do
@@ -887,7 +890,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         }
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.ignore_size_penalty
       assert result.combat_stats.max_weapon_damage
@@ -907,7 +910,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         }
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.hit == mode_value(185, 10)
       assert result.combat_stats.flee == mode_value(110, 11)
@@ -925,7 +928,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       # SM_SWORD (id 2) level 5 with a one-handed sword grants 4 * 5 = 20 ATK
       assert result.combat_stats.passive_atk == 20
@@ -941,7 +944,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.passive_atk == 0
       assert result.combat_stats.atk == 0
@@ -956,7 +959,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.critical == mode_value(6, 1)
     end
@@ -971,7 +974,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         riding: false
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.passive_atk == 40
       assert result.combat_stats.atk == 40
@@ -992,8 +995,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         | equipment: Stats.equipment_from_inventory([equipped(@lance, @both_hand)])
       }
 
-      assert Stats.calculate_combat_stats(one_handed).combat_stats.atk == 50
-      assert Stats.calculate_combat_stats(two_handed).combat_stats.atk == 50
+      assert Calculator.calculate_combat_stats(one_handed).combat_stats.atk == 50
+      assert Calculator.calculate_combat_stats(two_handed).combat_stats.atk == 50
     end
 
     test "Spear Mastery grants no bonus with a non-spear weapon, mounted or not" do
@@ -1006,7 +1009,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         riding: true
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.passive_atk == 0
       assert result.combat_stats.atk == 0
@@ -1028,7 +1031,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stats =
         caster(%{str: 0, agi: 0, vit: 0, int: 40, dex: 30, luk: 30}, 80)
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.matk == mode_value(96, 104)
     end
@@ -1036,7 +1039,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "without a MATK weapon the band contains only status MATK" do
       stats = caster(%{str: 0, agi: 0, vit: 0, int: 40, dex: 30, luk: 30}, 80)
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.matk_min == mode_value(96, 65)
       assert result.combat_stats.matk_max == mode_value(96, 104)
@@ -1052,7 +1055,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{matk: 30}, status_effects: %{matk: 20}, job_bonuses: %{}}
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.matk_min == mode_value(146, 115)
       assert result.combat_stats.matk_max == mode_value(146, 154)
@@ -1063,7 +1066,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stats =
         caster(%{str: 0, agi: 0, vit: 20, int: 40, dex: 30, luk: 0}, 80)
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.soft_mdef == mode_value(70, 50)
     end
@@ -1072,7 +1075,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stats =
         caster(%{str: 0, agi: 0, vit: 20, int: 40, dex: 30, luk: 0}, 80)
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.mdef == 0
     end
@@ -1086,7 +1089,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{mdef: 5}, status_effects: %{mdef: 3}, job_bonuses: %{}}
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.mdef == 8
     end
@@ -1107,7 +1110,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         }
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.patk == 50
       assert result.combat_stats.smatk == 50
@@ -1126,7 +1129,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.patk == 0
       assert result.combat_stats.smatk == 0
@@ -1150,7 +1153,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         }
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.patk == 32_767
       assert result.combat_stats.res == 32_767
@@ -1169,7 +1172,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         }
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.mres == 0
     end
@@ -1190,21 +1193,21 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     @zero %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0}
 
     test "row 1: POW 10 raises base ATK by 50 and P.Atk by 3" do
-      result = @zero |> Map.put(:pow, 10) |> trait_stats() |> Stats.calculate_combat_stats()
+      result = @zero |> Map.put(:pow, 10) |> trait_stats() |> Calculator.calculate_combat_stats()
 
       assert result.combat_stats.atk == 50
       assert result.combat_stats.patk == 3
     end
 
     test "row 2: SPL 7 raises base MATK by 35 and S.MAtk by 2" do
-      result = @zero |> Map.put(:spl, 7) |> trait_stats() |> Stats.calculate_combat_stats()
+      result = @zero |> Map.put(:spl, 7) |> trait_stats() |> Calculator.calculate_combat_stats()
 
       assert result.combat_stats.matk == 35
       assert result.combat_stats.smatk == 2
     end
 
     test "rows 3-6: CON 7 raises P.Atk/S.MAtk by 1 and HIT/FLEE by 14" do
-      result = @zero |> Map.put(:con, 7) |> trait_stats() |> Stats.calculate_combat_stats()
+      result = @zero |> Map.put(:con, 7) |> trait_stats() |> Calculator.calculate_combat_stats()
 
       assert result.combat_stats.patk == 1
       assert result.combat_stats.smatk == 1
@@ -1213,25 +1216,25 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
 
     test "row 7: STA 10 gives Res 25 (div truncates before *5)" do
-      result = @zero |> Map.put(:sta, 10) |> trait_stats() |> Stats.calculate_combat_stats()
+      result = @zero |> Map.put(:sta, 10) |> trait_stats() |> Calculator.calculate_combat_stats()
 
       assert result.combat_stats.res == 25
     end
 
     test "row 7: STA 12 gives Res 32" do
-      result = @zero |> Map.put(:sta, 12) |> trait_stats() |> Stats.calculate_combat_stats()
+      result = @zero |> Map.put(:sta, 12) |> trait_stats() |> Calculator.calculate_combat_stats()
 
       assert result.combat_stats.res == 32
     end
 
     test "row 8: WIS 10 gives MRes 25" do
-      result = @zero |> Map.put(:wis, 10) |> trait_stats() |> Stats.calculate_combat_stats()
+      result = @zero |> Map.put(:wis, 10) |> trait_stats() |> Calculator.calculate_combat_stats()
 
       assert result.combat_stats.mres == 25
     end
 
     test "rows 9-10: CRT 10 gives HPlus 10 and CRate 3" do
-      result = @zero |> Map.put(:crt, 10) |> trait_stats() |> Stats.calculate_combat_stats()
+      result = @zero |> Map.put(:crt, 10) |> trait_stats() |> Calculator.calculate_combat_stats()
 
       assert result.combat_stats.hplus == 10
       assert result.combat_stats.crate == 3
@@ -1244,7 +1247,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         |> trait_stats()
         |> Map.update!(:modifiers, &%{&1 | equipment: %{crit_rate: 20}})
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       assert result.combat_stats.crate == 23
       assert CriticalHits.apply_critical_damage(1_000, result) == 1_630
@@ -1254,8 +1257,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   describe "trait-independent critical" do
     test "row 11: CRT never feeds the ordinary critical stat" do
       base = %{@zero | luk: 30}
-      no_crt = base |> trait_stats() |> Stats.calculate_combat_stats()
-      high_crt = base |> Map.put(:crt, 100) |> trait_stats() |> Stats.calculate_combat_stats()
+      no_crt = base |> trait_stats() |> Calculator.calculate_combat_stats()
+
+      high_crt =
+        base |> Map.put(:crt, 100) |> trait_stats() |> Calculator.calculate_combat_stats()
 
       assert high_crt.combat_stats.critical_rate == no_crt.combat_stats.critical_rate
       assert high_crt.combat_stats.critical == no_crt.combat_stats.critical
@@ -1298,7 +1303,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       player = PlayerState.new(character)
-      stats = Stats.apply_equipment_modifiers(player.stats, [item])
+      stats = EquipmentFold.apply_equipment_modifiers(player.stats, [item])
 
       # Forged metadata lives on `worn_items`, the stat/bonus reduction. `equip`
       # is carried alongside so a consumer can tell which slot an entry came
@@ -1454,16 +1459,16 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       player = PlayerState.new(character)
 
       with_shield =
-        Stats.calculate_stats(
+        Calculator.calculate_stats(
           player.stats,
           nil,
           [equipped(@sword, @right_hand), equipped(@guard, @left_hand)]
         )
 
       without_shield =
-        Stats.calculate_stats(player.stats, nil, [equipped(@sword, @right_hand)])
+        Calculator.calculate_stats(player.stats, nil, [equipped(@sword, @right_hand)])
 
-      contribution = Stats.shield_defense_contribution(with_shield)
+      contribution = EquipmentFold.shield_defense_contribution(with_shield)
 
       # The marginal DEF the shield adds equals the difference in the caster's
       # computed hard DEF between wearing it and not (base/status DEF are equal).
@@ -1498,16 +1503,16 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       base = swordman(%Equipment{}, %{})
-      without_shield = Stats.calculate_stats(base, nil, [equipped(90_270, @armor_pos)])
+      without_shield = Calculator.calculate_stats(base, nil, [equipped(90_270, @armor_pos)])
 
       with_shield =
-        Stats.calculate_stats(
+        Calculator.calculate_stats(
           base,
           nil,
           [equipped(90_270, @armor_pos), equipped(90_271, @left_hand)]
         )
 
-      contribution = Stats.shield_defense_contribution(with_shield)
+      contribution = EquipmentFold.shield_defense_contribution(with_shield)
 
       assert with_shield.combat_stats.def == 150
       assert contribution == %{def: 70, mdef: 5}
@@ -1548,10 +1553,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         equipped_row(73, 90_273, @left_hand)
       ]
 
-      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+      folded = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
 
       active =
-        Stats.apply_equipment_modifiers(%{
+        EquipmentFold.apply_equipment_modifiers(%{
           folded
           | active_autobonuses: %{{72, 0} => 1, {73, 0} => 1}
         })
@@ -1559,7 +1564,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert active.modifiers.equipment.def == 110
       assert active.modifiers.equipment.def_rate == 50
       assert active.modifiers.equipment.mdef == 4
-      assert Stats.shield_defense_contribution(active) == %{def: 45, mdef: 4}
+      assert EquipmentFold.shield_defense_contribution(active) == %{def: 45, mdef: 4}
     end
 
     test "a left-hand weapon (not a shield) contributes nothing" do
@@ -1567,14 +1572,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       player = PlayerState.new(character)
 
       dual_wield =
-        Stats.calculate_stats(player.stats, nil, [equipped(@knife, @left_hand)])
+        Calculator.calculate_stats(player.stats, nil, [equipped(@knife, @left_hand)])
 
-      assert Stats.shield_defense_contribution(dual_wield) == %{def: 0, mdef: 0}
+      assert EquipmentFold.shield_defense_contribution(dual_wield) == %{def: 0, mdef: 0}
     end
 
     test "a bare caster contributes nothing" do
       player = PlayerState.new(base_character())
-      assert Stats.shield_defense_contribution(player.stats) == %{def: 0, mdef: 0}
+      assert EquipmentFold.shield_defense_contribution(player.stats) == %{def: 0, mdef: 0}
     end
   end
 
@@ -1599,8 +1604,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "equipping the Sword (atk 25) raises combat atk by 25 and publishes its right hand" do
       sword = equipped(@sword, @right_hand)
 
-      bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
-      armed = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [sword])
+      bare = Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
+      armed = Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [sword])
 
       assert armed.combat_stats.atk == bare.combat_stats.atk + 25
       assert Stats.weapon_type(armed.equipment) == :one_handed_sword
@@ -1621,7 +1626,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
     test "a left-only dagger publishes only its left hand without changing aggregate ATK" do
       armed =
-        Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [equipped(@knife, @left_hand)])
+        Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [
+          equipped(@knife, @left_hand)
+        ])
 
       assert armed.combat_stats.atk == 17
       assert armed.right_hand == nil
@@ -1669,11 +1676,11 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       armed =
         swordman(%Equipment{}, %{})
-        |> Stats.apply_equipment_modifiers([
+        |> EquipmentFold.apply_equipment_modifiers([
           refined(90_301, @right_hand, 7),
           refined(90_302, @left_hand, 8)
         ])
-        |> Stats.calculate_combat_stats()
+        |> Calculator.calculate_combat_stats()
 
       assert armed.combat_stats.atk == 71
 
@@ -1703,8 +1710,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "removing the weapon reverts the atk bonus and weapon type" do
       sword = equipped(@sword, @right_hand)
 
-      armed = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [sword])
-      reverted = Stats.calculate_stats(armed, nil, [])
+      armed = Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [sword])
+      reverted = Calculator.calculate_stats(armed, nil, [])
 
       assert reverted.combat_stats.atk == 0
       assert Stats.weapon_type(reverted.equipment) == :fist
@@ -1719,14 +1726,18 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           critical_rate: 50
         })
 
-      bare = base |> Stats.apply_equipment_modifiers([]) |> Stats.calculate_combat_stats()
+      bare =
+        base |> EquipmentFold.apply_equipment_modifiers([]) |> Calculator.calculate_combat_stats()
 
       armed =
         base
-        |> Stats.apply_equipment_modifiers([equipped(1250, @both_hand)])
-        |> Stats.calculate_combat_stats()
+        |> EquipmentFold.apply_equipment_modifiers([equipped(1250, @both_hand)])
+        |> Calculator.calculate_combat_stats()
 
-      reverted = armed |> Stats.apply_equipment_modifiers([]) |> Stats.calculate_combat_stats()
+      reverted =
+        armed
+        |> EquipmentFold.apply_equipment_modifiers([])
+        |> Calculator.calculate_combat_stats()
 
       assert bare.combat_stats.critical_rate == mode_value(180, 195)
       assert armed.combat_stats.critical_rate == mode_value(360, 390)
@@ -1741,15 +1752,15 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "a known armor's defense adds to combat def" do
       armor = equipped(@cotton_shirt, @armor_pos)
 
-      bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
-      armored = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [armor])
+      bare = Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
+      armored = Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [armor])
 
       assert armored.combat_stats.def == bare.combat_stats.def + mode_value(10, 1)
     end
 
     test "nil equipped_items leaves equipment and modifiers untouched" do
       preset = Stats.equipment_from_inventory([equipped(@sword, @right_hand)])
-      result = Stats.calculate_stats(swordman(preset, %{atk: 99}), nil, nil)
+      result = Calculator.calculate_stats(swordman(preset, %{atk: 99}), nil, nil)
 
       assert result.equipment == preset
       assert result.modifiers.equipment == %{atk: 99}
@@ -1769,14 +1780,16 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stub(ItemManagement, :get_item_by_id, fn 90_120 -> {:ok, gated} end)
 
       worn =
-        Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [equipped(90_120, @armor_pos)])
+        Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [
+          equipped(90_120, @armor_pos)
+        ])
 
       assert worn.modifiers.equipment.atk == 0
       refute Map.has_key?(worn.modifiers.equipment, :atk_rate)
 
       leveled =
         %{worn | progression: %{worn.progression | base_level: 100}}
-        |> Stats.calculate_stats()
+        |> Calculator.calculate_stats()
 
       assert leveled.modifiers.equipment.atk == 10
       assert leveled.modifiers.equipment.atk_rate == 10
@@ -1798,7 +1811,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       base = swordman(%Equipment{}, %{})
       base = %{base | progression: %{base.progression | learned_skills: %{5 => 2}}}
 
-      result = Stats.calculate_stats(base, nil, [equipped(90_121, @armor_pos)])
+      result = Calculator.calculate_stats(base, nil, [equipped(90_121, @armor_pos)])
 
       assert result.granted_skills == %{28 => 3}
       # getskilllv(5) reads the wearer's learned level (2) into the numeric bonus
@@ -1812,8 +1825,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       base = swordman(%Equipment{}, %{})
       mage = %{base | progression: %{base.progression | job_id: 2, base_level: 73}}
 
-      bare = Stats.calculate_stats(mage, nil, [])
-      staffed = Stats.calculate_stats(mage, nil, [staff])
+      bare = Calculator.calculate_stats(mage, nil, [])
+      staffed = Calculator.calculate_stats(mage, nil, [staff])
 
       assert bare.combat_stats.matk_min == bare.combat_stats.matk_max
 
@@ -1856,7 +1869,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       equipped_items = [equipped(90_001, @right_hand), equipped(90_002, @left_hand)]
 
-      result = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, equipped_items)
+      result = Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, equipped_items)
 
       assert result.modifiers.equipment.patk == 8
       assert result.modifiers.equipment.smatk == 8
@@ -1876,8 +1889,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     # ASPD table entry irrelevant to refine bonuses, e.g. novice+bow has none).
     defp with_equipped(item) do
       swordman(%Equipment{}, %{})
-      |> Stats.apply_equipment_modifiers([item])
-      |> Stats.calculate_combat_stats()
+      |> EquipmentFold.apply_equipment_modifiers([item])
+      |> Calculator.calculate_combat_stats()
     end
 
     test "a refined weapon adds bonus/100 atk and randombonus_max/100 overrefine band" do
@@ -2085,13 +2098,13 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       wearer = %{character_name: "Crusader", map_name: "prontera", party_id: 0, guild_id: 0}
 
       matching =
-        Stats.apply_equipment_modifiers(stats, [equipped(90_159, @armor_pos)], %{
+        EquipmentFold.apply_equipment_modifiers(stats, [equipped(90_159, @armor_pos)], %{
           local_time: ~N[2026-09-04 13:30:07],
           character_info: wearer
         })
 
       non_matching =
-        Stats.apply_equipment_modifiers(stats, [equipped(90_159, @armor_pos)], %{
+        EquipmentFold.apply_equipment_modifiers(stats, [equipped(90_159, @armor_pos)], %{
           local_time: ~N[2026-09-04 13:30:08],
           character_info: wearer
         })
@@ -2157,7 +2170,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       row = %{equipped_row(150, 90_150, @armor_pos) | card0: 90_151}
-      folded = Stats.apply_equipment_modifiers(stats, [row], inputs)
+      folded = EquipmentFold.apply_equipment_modifiers(stats, [row], inputs)
       registration = folded.equip_autobonuses[{150, 0}]
 
       assert folded.modifiers.equipment.atk == 3
@@ -2171,7 +2184,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       active =
         %{folded | active_autobonuses: %{{150, 0} => 1}}
-        |> Stats.apply_equipment_modifiers(nil, inputs)
+        |> EquipmentFold.apply_equipment_modifiers(nil, inputs)
 
       assert active.modifiers.equipment.atk == 7
     end
@@ -2209,7 +2222,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       row = %{equipped_row(40, 90_180, @right_hand, 7) | card0: 90_181}
-      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      result = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
 
       assert result.modifiers.equipment.atk == 22
       assert result.modifiers.equipment.def == 3
@@ -2242,7 +2255,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           card3: 90_173
       }
 
-      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      result = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
 
       assert result.modifiers.equipment.atk_ele == :holy
     end
@@ -2267,7 +2280,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           card3: 90_178
       }
 
-      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      result = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
 
       assert result.modifiers.equipment.atk == 0
       assert result.equip_autobonuses == %{}
@@ -2324,7 +2337,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           card3: 90_184
       }
 
-      result = Stats.apply_equipment_modifiers(base, [row])
+      result = EquipmentFold.apply_equipment_modifiers(base, [row])
 
       assert result.modifiers.equipment.atk == 296
     end
@@ -2375,7 +2388,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       row = %{equipped_row(38, 90_174, @armor_pos) | card0: 90_175, card1: 90_175}
-      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      result = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
 
       assert result.modifiers.equipment.atk == 5
       assert result.modifiers.equipment.atk_ele == :wind
@@ -2404,7 +2417,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       row = %{equipped_row(43, 90_184, @armor_pos, 7) | card0: 90_185, card1: 90_185}
-      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      result = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
 
       assert Map.keys(result.equip_autobonuses) |> Enum.sort() == [{43, 0}, {43, 1}, {43, 2}]
 
@@ -2424,11 +2437,11 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         | active_autobonuses: %{{43, 0} => 10, {43, 1} => 11, {43, 2} => 12}
       }
 
-      active = Stats.apply_equipment_modifiers(active)
+      active = EquipmentFold.apply_equipment_modifiers(active)
       assert active.modifiers.equipment.atk == 5
 
       without_last_card = %{row | card1: 0}
-      pruned = Stats.apply_equipment_modifiers(active, [without_last_card])
+      pruned = EquipmentFold.apply_equipment_modifiers(active, [without_last_card])
 
       assert Map.keys(pruned.equip_autobonuses) |> Enum.sort() == [{43, 0}, {43, 1}]
       assert pruned.active_autobonuses == %{{43, 0} => 10, {43, 1} => 11}
@@ -2453,18 +2466,18 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       row = %{equipped_row(46, 90_160, @armor_pos) | card0: 90_161, card1: 90_162}
-      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      folded = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
       old_generation = 77
 
       active =
-        Stats.apply_equipment_modifiers(%{
+        EquipmentFold.apply_equipment_modifiers(%{
           folded
           | active_autobonuses: %{{46, 0} => old_generation}
         })
 
       assert active.modifiers.equipment.atk == 10
 
-      shifted = Stats.apply_equipment_modifiers(active, [%{row | card0: 0}])
+      shifted = EquipmentFold.apply_equipment_modifiers(active, [%{row | card0: 0}])
 
       assert shifted.equip_autobonuses[{46, 0}].item_id == 90_162
       assert shifted.active_autobonuses == %{}
@@ -2503,7 +2516,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       second_row = %{equipped_row(45, 90_186, @garment_pos, 4) | card2: 90_187}
-      result = Stats.apply_equipment_modifiers(base, [row, second_row])
+      result = EquipmentFold.apply_equipment_modifiers(base, [row, second_row])
 
       expected = %{
         {44, 0} => %{
@@ -2521,8 +2534,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       assert result.card_unequip_effects == expected
-      assert Stats.apply_equipment_modifiers(result).card_unequip_effects == expected
-      assert Stats.apply_equipment_modifiers(result, []).card_unequip_effects == %{}
+      assert EquipmentFold.apply_equipment_modifiers(result).card_unequip_effects == expected
+      assert EquipmentFold.apply_equipment_modifiers(result, []).card_unequip_effects == %{}
     end
 
     test "rejects card cleanup without persistent host row identity" do
@@ -2537,7 +2550,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       row = %{equipped(90_167, @armor_pos) | card0: 90_168}
 
       assert_raise ArgumentError, ~r/card cleanup requires a persistent positive row id/, fn ->
-        Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+        EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
       end
     end
 
@@ -2589,7 +2602,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       rows = [equipped_row(41, 90_198, @right_hand, 6), equipped_row(73, 90_199, @left_hand)]
-      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+      result = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
 
       assert Map.keys(result.equip_autobonuses) |> Enum.sort() == [{41, 0}, {41, 1}, {73, 0}]
 
@@ -2614,12 +2627,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert Enum.map(result.worn_items, & &1.id) == [41, 73]
       assert result.equip_statuses == %{}
 
-      active = Stats.apply_equipment_modifiers(%{result | active_autobonuses: %{{41, 0} => 1}})
+      active =
+        EquipmentFold.apply_equipment_modifiers(%{result | active_autobonuses: %{{41, 0} => 1}})
+
       assert active.modifiers.equipment.atk == 6
       assert active.equip_statuses == %{}
       assert Map.keys(active.equip_autobonuses) |> Enum.sort() == [{41, 0}, {41, 1}, {73, 0}]
 
-      refolded = Stats.apply_equipment_modifiers(result)
+      refolded = EquipmentFold.apply_equipment_modifiers(result)
       assert refolded.equip_autobonuses == result.equip_autobonuses
     end
 
@@ -2646,7 +2661,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stub(ItemManagement, :get_item_by_id, fn 90_190 -> {:ok, item} end)
 
       row = equipped_row(19, 90_190, @armor_pos, 5)
-      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      folded = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
 
       assert Map.keys(folded.equip_autobonuses) == [{19, 2}]
       assert folded.equip_autobonuses[{19, 2}].primary == later_primary
@@ -2656,7 +2671,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         folded
         |> Map.put(:active_autobonuses, %{{19, 2} => 8})
         |> Map.update!(:progression, &%{&1 | base_level: 20, job_level: 10})
-        |> Stats.apply_equipment_modifiers([equipped_row(19, 90_190, @armor_pos, 6)])
+        |> EquipmentFold.apply_equipment_modifiers([equipped_row(19, 90_190, @armor_pos, 6)])
 
       assert Map.keys(toggled.equip_autobonuses) |> Enum.sort() == [{19, 0}, {19, 1}, {19, 2}]
       assert toggled.active_autobonuses == %{{19, 2} => 8}
@@ -2666,7 +2681,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       gated_again =
         toggled
         |> Map.update!(:progression, &%{&1 | base_level: 1, job_level: 1})
-        |> Stats.apply_equipment_modifiers([row])
+        |> EquipmentFold.apply_equipment_modifiers([row])
 
       assert Map.keys(gated_again.equip_autobonuses) == [{19, 2}]
       assert gated_again.active_autobonuses == %{{19, 2} => 8}
@@ -2693,10 +2708,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       rows = [equipped_row(90, 90_188, @armor_pos), equipped_row(10, 90_189, @garment_pos)]
-      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+      folded = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
 
       active =
-        Stats.apply_equipment_modifiers(%{
+        EquipmentFold.apply_equipment_modifiers(%{
           folded
           | active_autobonuses: %{{10, 0} => 2, {90, 0} => 1}
         })
@@ -2718,7 +2733,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stub(ItemManagement, :get_item_by_id, fn 90_191 -> {:ok, item} end)
 
       assert_raise ArgumentError, ~r/requires a persistent positive row id/, fn ->
-        Stats.apply_equipment_modifiers(
+        EquipmentFold.apply_equipment_modifiers(
           swordman(%Equipment{}, %{}),
           [equipped(90_191, @armor_pos)]
         )
@@ -2737,7 +2752,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       stub(ItemManagement, :get_item_by_id, fn 90_192 -> {:ok, item} end)
       row = equipped_row(88, 90_192, @armor_pos)
 
-      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), %{4 => row})
+      result = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), %{4 => row})
 
       assert [%{id: 88}] = result.worn_items
       assert Map.has_key?(result.equip_autobonuses, {88, 0})
@@ -2759,12 +2774,12 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       end)
 
       rows = [equipped_row(11, 90_196, @armor_pos), equipped_row(12, 90_197, @garment_pos)]
-      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+      folded = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
 
       active = %{{11, 0} => 4, {12, 0} => 9, {999, 0} => 2}
 
       refolded =
-        Stats.apply_equipment_modifiers(%{folded | active_autobonuses: active}, [hd(rows)])
+        EquipmentFold.apply_equipment_modifiers(%{folded | active_autobonuses: active}, [hd(rows)])
 
       assert Map.keys(refolded.equip_autobonuses) == [{11, 0}]
       assert refolded.active_autobonuses == %{{11, 0} => 4}
@@ -2799,7 +2814,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       row = equipped_row(31, 90_195, @armor_pos, 2)
-      folded = Stats.apply_equipment_modifiers(base, [row])
+      folded = EquipmentFold.apply_equipment_modifiers(base, [row])
       refute Map.has_key?(folded.modifiers.equipment, :critical)
       assert folded.granted_skills == %{28 => 3}
 
@@ -2815,7 +2830,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           }
       }
 
-      active = Stats.apply_equipment_modifiers(current)
+      active = EquipmentFold.apply_equipment_modifiers(current)
 
       assert active.active_autobonuses == %{{31, 0} => 7}
       assert active.modifiers.equipment.atk == 90
@@ -2825,7 +2840,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert active.modifiers.equipment.movement_speed == 10
       assert active.granted_skills == %{28 => 6}
 
-      refined = Stats.apply_equipment_modifiers(active, [equipped_row(31, 90_195, @armor_pos, 7)])
+      refined =
+        EquipmentFold.apply_equipment_modifiers(active, [equipped_row(31, 90_195, @armor_pos, 7)])
+
       assert refined.modifiers.equipment.critical == 7
       assert refined.active_autobonuses == %{{31, 0} => 7}
     end
@@ -2850,10 +2867,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       second_row = equipped_row(52, 90_194, @garment_pos)
       base = swordman(%Equipment{}, %{})
 
-      both = Stats.apply_equipment_modifiers(base, [first_row, second_row])
+      both = EquipmentFold.apply_equipment_modifiers(base, [first_row, second_row])
       assert both.equip_statuses == %{summer: {:infinite, 3}}
 
-      one = Stats.apply_equipment_modifiers(both, [first_row])
+      one = EquipmentFold.apply_equipment_modifiers(both, [first_row])
       assert one.equip_statuses == %{summer: {1_500, 2}}
 
       indexed_rows =
@@ -2862,12 +2879,12 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           {key, %{provider | id: key + 100}}
         end)
 
-      map_ordered = Stats.apply_equipment_modifiers(base, indexed_rows)
+      map_ordered = EquipmentFold.apply_equipment_modifiers(base, indexed_rows)
 
       assert Enum.map(map_ordered.worn_items, & &1.id) == Enum.to_list(101..140)
       assert map_ordered.equip_statuses == %{summer: {1_500, 2}}
 
-      none = Stats.apply_equipment_modifiers(one, [])
+      none = EquipmentFold.apply_equipment_modifiers(one, [])
       assert none.equip_statuses == %{}
     end
 
@@ -2934,8 +2951,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
     defp with_equipped_items(items) do
       swordman(%Equipment{}, %{})
-      |> Stats.apply_equipment_modifiers(items)
-      |> Stats.calculate_combat_stats()
+      |> EquipmentFold.apply_equipment_modifiers(items)
+      |> Calculator.calculate_combat_stats()
     end
 
     test "two items granting the same tuple bonus stack additively" do
@@ -3284,7 +3301,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           job_bonuses: %{}
         }
       }
-      |> Stats.calculate_stats()
+      |> Calculator.calculate_stats()
     end
 
     test "the level-75 baseline is unchanged with no capacity bonuses" do
@@ -3317,54 +3334,54 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   describe "view extractors" do
     test "head_top_view returns item view for equipped head-top" do
       equipment = Stats.equipment_from_inventory([equipped(@wedding_veil, @head_top_pos)])
-      assert Stats.head_top_view(equipment) == 44
+      assert Appearance.head_top_view(equipment) == 44
     end
 
     test "head_top_view returns 0 for empty slot" do
-      assert Stats.head_top_view(%Equipment{}) == 0
+      assert Appearance.head_top_view(%Equipment{}) == 0
     end
 
     test "head_mid_view returns item view for equipped head-mid" do
       equipment = Stats.equipment_from_inventory([equipped(@sunglasses, @head_mid_pos)])
-      assert Stats.head_mid_view(equipment) == 12
+      assert Appearance.head_mid_view(equipment) == 12
     end
 
     test "head_mid_view returns 0 for empty slot" do
-      assert Stats.head_mid_view(%Equipment{}) == 0
+      assert Appearance.head_mid_view(%Equipment{}) == 0
     end
 
     test "head_bottom_view returns item view for equipped head-low" do
       equipment = Stats.equipment_from_inventory([equipped(@flu_mask, @head_low_pos)])
-      assert Stats.head_bottom_view(equipment) == 8
+      assert Appearance.head_bottom_view(equipment) == 8
     end
 
     test "head_bottom_view returns 0 for empty slot" do
-      assert Stats.head_bottom_view(%Equipment{}) == 0
+      assert Appearance.head_bottom_view(%Equipment{}) == 0
     end
 
     test "robe_view returns item view for equipped garment" do
       {:ok, garment} = ItemManagement.get_item_by_id(@muffler)
       stub(ItemManagement, :get_item_by_id, fn @muffler -> {:ok, %{garment | view: 2}} end)
       equipment = Stats.equipment_from_inventory([equipped(@muffler, @garment_pos)])
-      assert Stats.robe_view(equipment) == 2
+      assert Appearance.robe_view(equipment) == 2
     end
 
     test "robe_view returns 0 for empty slot" do
-      assert Stats.robe_view(%Equipment{}) == 0
+      assert Appearance.robe_view(%Equipment{}) == 0
     end
 
     test "shield_view returns item view for a real shield" do
       equipment = Stats.equipment_from_inventory([equipped(@guard, @left_hand)])
-      assert Stats.shield_view(equipment) == 1
+      assert Appearance.shield_view(equipment) == 1
     end
 
     test "shield_view returns 0 for empty slot" do
-      assert Stats.shield_view(%Equipment{}) == 0
+      assert Appearance.shield_view(%Equipment{}) == 0
     end
 
     test "shield_view returns 0 when left_hand holds a two-handed weapon" do
       equipment = Stats.equipment_from_inventory([equipped(@ixion_wing, @both_hand)])
-      assert Stats.shield_view(equipment) == 0
+      assert Appearance.shield_view(equipment) == 0
     end
   end
 
@@ -3383,7 +3400,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       equipment: %Equipment{},
       modifiers: %{equipment: %{}, status_effects: status_effects, job_bonuses: %{}}
     }
-    |> Stats.calculate_stats()
+    |> Calculator.calculate_stats()
   end
 
   describe "status ASPD modifiers" do
@@ -3448,7 +3465,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
-      |> Stats.calculate_stats()
+      |> Calculator.calculate_stats()
     end
 
     test "a learned aspd_bonus/int_bonus/str_bonus passive reaches derived stats" do
@@ -3494,7 +3511,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
-      |> Stats.calculate_stats(nil, equipped_items)
+      |> Calculator.calculate_stats(nil, equipped_items)
     end
 
     @tag game_mode: :renewal
@@ -3566,7 +3583,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
       }
-      |> Stats.calculate_stats()
+      |> Calculator.calculate_stats()
     end
 
     test "raises effective INT by (level + 1) / 2, levels 1 and 5" do

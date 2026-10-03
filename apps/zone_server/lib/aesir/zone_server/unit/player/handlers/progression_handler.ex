@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
 
@@ -84,7 +85,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     stats =
       %{game_state.stats | progression: progression}
-      |> Stats.calculate_stats(game_state.character_id)
+      |> Calculator.calculate_stats(game_state.character_id)
       |> full_heal()
 
     commit(state, %{game_state | stats: stats}, progression)
@@ -109,7 +110,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     }
 
     stats =
-      Stats.calculate_stats(
+      Calculator.calculate_stats(
         %{game_state.stats | progression: progression},
         game_state.character_id
       )
@@ -289,7 +290,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     stats =
       %{game_state.stats | progression: new_progression, base_stats: base_stats}
-      |> Stats.calculate_stats(game_state.character_id)
+      |> Calculator.calculate_stats(game_state.character_id)
       |> clamp_vitals()
 
     {:noreply, new_state} = commit(state, %{game_state | stats: stats}, new_progression)
@@ -449,7 +450,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   defp finish_reset_level(%{game_state: game_state} = state, previous_game_state, type) do
     stats =
       game_state.stats
-      |> Stats.calculate_stats(game_state.character_id)
+      |> Calculator.calculate_stats(game_state.character_id)
       |> clamp_vitals()
 
     game_state = %{game_state | stats: stats}
@@ -479,7 +480,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     stats =
       %{game_state.stats | progression: new_progression}
-      |> Stats.calculate_stats(game_state.character_id)
+      |> Calculator.calculate_stats(game_state.character_id)
 
     %{dismissed_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
@@ -542,7 +543,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     base_stats = adjust_trait_base_stats(game_state.stats.base_stats, old_job_id, job_id)
 
     stats =
-      Stats.calculate_stats(
+      Calculator.calculate_stats(
         %{game_state.stats | progression: new_progression, base_stats: base_stats},
         game_state.character_id
       )
@@ -675,7 +676,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   defp finish_job_change(%{game_state: game_state} = state, job_id, previous_game_state) do
     stats =
       game_state.stats
-      |> Stats.calculate_stats(game_state.character_id)
+      |> Calculator.calculate_stats(game_state.character_id)
       |> full_heal()
       |> fill_ap()
 
@@ -704,7 +705,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   defp finish_reset_skills(%{game_state: game_state} = state, previous_game_state) do
     stats =
       game_state.stats
-      |> Stats.calculate_stats(game_state.character_id)
+      |> Calculator.calculate_stats(game_state.character_id)
       |> clamp_vitals()
 
     game_state = %{game_state | stats: stats}

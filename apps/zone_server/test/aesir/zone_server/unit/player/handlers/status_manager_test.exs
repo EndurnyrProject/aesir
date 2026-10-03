@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -216,7 +216,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       |> put_in([Access.key!(:derived_stats), Access.key!(:max_sp)], 250)
       |> put_in([Access.key!(:derived_stats), Access.key!(:max_ap)], 20)
 
-    expect(Stats, :calculate_stats, fn _stats, id when id == game_state.character_id ->
+    expect(Calculator, :calculate_stats, fn _stats, id when id == game_state.character_id ->
       recalculated
     end)
 

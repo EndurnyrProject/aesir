@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   @typedoc "Player stats structure used for calculations"
   @type player_stats :: Stats.t()
@@ -86,7 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
   @impl true
   @spec calculate_aspd(player_stats()) :: integer()
   def calculate_aspd(%Stats{} = stats) do
-    Stats.calculate_aspd(stats)
+    Calculator.calculate_aspd(stats)
   end
 
   @doc """

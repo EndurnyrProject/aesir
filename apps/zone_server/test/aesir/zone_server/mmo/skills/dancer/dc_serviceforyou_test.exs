@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   Mimic.copy(PartyManager)
@@ -121,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
   test "MaxSP increases by 10 percent at level 1 and 20 percent at level 10 through stats" do
     recipient = party_player(1, party_id: 0, class: 0, base_level: 50, job_level: 30)
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, recipient, self())
-    baseline = Stats.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
+    baseline = Calculator.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
     assert baseline == 66
 
     for {level, rate, expected_max_sp} <- [{1, 10, 72}, {10, 20, 79}] do
@@ -132,7 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
           duration: 180_000
         )
 
-      boosted = Stats.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
+      boosted = Calculator.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
       assert boosted == expected_max_sp
       assert boosted == trunc(baseline * (100 + rate) / 100)
 
@@ -268,7 +269,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
   test "classic MaxSP rises by the snapshotted percent through stats" do
     recipient = party_player(1, party_id: 0, class: 0, base_level: 50, job_level: 30)
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, recipient, self())
-    baseline = Stats.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
+    baseline = Calculator.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
     assert baseline == 66
 
     :ok =
@@ -280,7 +281,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
         duration: 180_000
       )
 
-    boosted = Stats.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
+    boosted = Calculator.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
     assert boosted == 77
   end
 

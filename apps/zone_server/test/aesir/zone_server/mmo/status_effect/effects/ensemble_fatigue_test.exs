@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnsembleFatigueTest do
   alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @player_id 86_001
@@ -35,10 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnsembleFatigueTest do
 
   test "measurably increases walk and attack intervals" do
     {:ok, {_module, player, _pid}} = UnitRegistry.get_unit(:player, @player_id)
-    baseline = Stats.calculate_stats(player.stats, @player_id)
+    baseline = Calculator.calculate_stats(player.stats, @player_id)
 
     assert :ok = apply_fatigue()
-    fatigued = Stats.calculate_stats(player.stats, @player_id)
+    fatigued = Calculator.calculate_stats(player.stats, @player_id)
 
     assert StatusManager.walk_speed_for(fatigued) > StatusManager.walk_speed_for(baseline)
 

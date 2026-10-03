@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
@@ -313,21 +314,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{226 => 10}, :one_handed_axe)
 
       assert Passives.atk_bonus(player) == 30
-      assert Stats.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
+      assert Calculator.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
     end
 
     test "AM_AXEMASTERY level 10 with a two-handed axe grants 30 ATK" do
       player = build_player(%{226 => 10}, :two_handed_axe)
 
       assert Passives.atk_bonus(player) == 30
-      assert Stats.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
+      assert Calculator.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
     end
 
     test "AM_AXEMASTERY level 10 with a one-handed sword grants 30 ATK" do
       player = build_player(%{226 => 10}, :one_handed_sword)
 
       assert Passives.atk_bonus(player) == 30
-      assert Stats.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
+      assert Calculator.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
     end
 
     test "AM_AXEMASTERY grants no ATK with another weapon or bare hands" do
@@ -339,7 +340,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   describe "BS_WEAPONRESEARCH" do
     test "contributes mastery ATK and multiplicative hit rate" do
       player = build_player(%{107 => 5}, :one_handed_sword)
-      calculated = Stats.calculate_combat_stats(player.stats)
+      calculated = Calculator.calculate_combat_stats(player.stats)
 
       assert Passives.atk_bonus(player) == 10
       assert Passives.hit_rate_bonus_pct(player) == 10

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfectTest do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -75,8 +76,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfectTest do
           job_bonuses: %{}
         }
       }
-      |> Stats.apply_status_effects(player_id)
-      |> Stats.calculate_combat_stats()
+      |> Calculator.apply_status_effects(player_id)
+      |> Calculator.calculate_combat_stats()
 
     %{
       CombatTestHelper.create_player_combatant(unit_id: player_id, weapon_type: :dagger)

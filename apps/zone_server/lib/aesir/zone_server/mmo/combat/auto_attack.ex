@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.Resource
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -141,7 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   end
 
   defp recalculate_player_state(%{character_id: character_id, stats: stats} = player_state) do
-    %{player_state | stats: PlayerStats.calculate_stats(stats, character_id)}
+    %{player_state | stats: Calculator.calculate_stats(stats, character_id)}
   end
 
   defp recalculate_player_state(player_state), do: player_state

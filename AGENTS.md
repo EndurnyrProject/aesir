@@ -230,6 +230,17 @@ arguments (paths, `--only`); run them serially in separate Mix invocations when 
 requires the matrix. Plain `mix test` and `mix test.integration` retain environment-based selection
 (Renewal by default).
 
+**Reading umbrella results.** The umbrella aliases run every app in sequence, so `tail` only shows
+the last app (`account_server`, 10 tests) and hides zone_server failures. Pipe through this filter
+once, never `tail` first:
+
+```sh
+mix test.re 2>&1 | rg '^(==> |Result:|Failed:|\s+\d+\) test)'
+```
+
+It prints one `==> app` header per app, each `Result:` line, and the `N) test ...` header of every
+failure. Re-run only the failing file to see the full output.
+
 ## Tool Preferences
 
 - For Elixir/Hex library documentation, prefer the docs MCP tooling over guessing from memory.

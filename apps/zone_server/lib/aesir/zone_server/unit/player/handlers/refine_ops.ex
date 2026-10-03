@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   separate "clear the bitmask" write because the row, bitmask included, ceases
   to exist. Whenever the touched item was equipped and the outcome changed its
   contribution to combat stats (success, downgrade, or break), stats are
-  recalculated in place with `Stats.calculate_stats/3`, exactly like
+  recalculated in place with `Calculator.calculate_stats/3`, exactly like
   `EquipmentHandler.advance/2` does after an equip/unequip. Broadcasting the
   result and re-sending the item view are the caller's job (DSL routing,
   `ScriptEffectHandler`), not this module's.
@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   @max_refine RefineDatabase.max_refine()
   @ore_amount 1
@@ -412,7 +412,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
 
     if item.equip != 0 and recalculates_stats?(outcome) do
       equipped = Map.values(Inventory.equipped_items(final_inventory))
-      %{state | stats: Stats.calculate_stats(state.stats, state.character_id, equipped)}
+      %{state | stats: Calculator.calculate_stats(state.stats, state.character_id, equipped)}
     else
       state
     end

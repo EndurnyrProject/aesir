@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -186,7 +187,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
       },
       current_state: %{hp: 1, sp: 1}
     }
-    |> Stats.calculate_stats(character_id, [])
+    |> Calculator.calculate_stats(character_id, [])
   end
 
   defp player(id, opts \\ []) do

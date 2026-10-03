@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -696,7 +697,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
       # Sword (1101) atk 25, view 0; equipped in right hand at login.
       seed_equipped(character.id, 1101, 2)
 
-      bare = Stats.calculate_stats(Stats.from_character(character), character.id, [])
+      bare = Calculator.calculate_stats(Stats.from_character(character), character.id, [])
 
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 

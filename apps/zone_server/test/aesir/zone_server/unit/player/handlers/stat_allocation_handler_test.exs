@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
     Mimic.copy(MessageRouter)
     test_pid = self()
 
-    stub(Stats, :calculate_stats, fn stats, _char_id -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, _char_id -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, _id, _gs -> :ok end)
     stub(CharacterPersistence, :update_character, fn _id, _attrs, async: true -> {:ok, %{}} end)
     stub(StatusSync, :send_stat_updates, fn _pid, _stats -> :ok end)
@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
       stats_binary = :erlang.term_to_binary(state.game_state.stats)
 
       reject(&Mechanics.stat_cost/0)
-      reject(&Stats.calculate_stats/2)
+      reject(&Calculator.calculate_stats/2)
       reject(&UnitRegistry.update_unit_state/3)
       reject(&CharacterPersistence.update_character/3)
       reject(&StatusSync.send_params/2)
@@ -237,7 +237,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
         state(@classic_job, [str: 5], status_point: 1)
       ]
 
-      reject(&Stats.calculate_stats/2)
+      reject(&Calculator.calculate_stats/2)
       reject(&UnitRegistry.update_unit_state/3)
       reject(&CharacterPersistence.update_character/3)
       reject(&StatusSync.send_params/2)
@@ -280,7 +280,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
       game_state = %{state.game_state | party_id: 7, stats: stats}
       state = %{state | game_state: game_state}
 
-      stub(Stats, :calculate_stats, fn recalculated, 1000 ->
+      stub(Calculator, :calculate_stats, fn recalculated, 1000 ->
         derived = struct(recalculated.derived_stats, max_hp: 250, max_sp: 200, max_ap: max_ap)
         %{recalculated | derived_stats: derived}
       end)

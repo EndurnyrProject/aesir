@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -160,11 +161,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
 
   @tag game_mode: :renewal
   test "Benedictio, Gloria, and Impositio reach the combat and stat readers", %{player: player} do
-    baseline = Stats.calculate_stats(player.stats, @player_id, [])
+    baseline = Calculator.calculate_stats(player.stats, @player_id, [])
 
     :ok = Interpreter.apply_status(:player, @player_id, :sc_benedictio, duration: 30_000)
     :ok = Interpreter.apply_status(:player, @player_id, :sc_gloria, duration: 30_000)
-    supported = Stats.calculate_stats(player.stats, @player_id, [])
+    supported = Calculator.calculate_stats(player.stats, @player_id, [])
 
     :ok =
       Interpreter.apply_status(:player, @player_id, :sc_impositio,
@@ -172,7 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
         val2: 25
       )
 
-    boosted = Stats.calculate_stats(player.stats, @player_id, [])
+    boosted = Calculator.calculate_stats(player.stats, @player_id, [])
     combatant = PlayerState.to_combatant(%{player | stats: boosted})
 
     assert combatant.element == {:holy, 1}
@@ -187,11 +188,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
 
   @tag game_mode: :pre_renewal
   test "classic Impositio raises weapon attack only", %{player: player} do
-    baseline = Stats.calculate_stats(player.stats, @player_id, [])
+    baseline = Calculator.calculate_stats(player.stats, @player_id, [])
 
     :ok = Interpreter.apply_status(:player, @player_id, :sc_impositio, duration: 30_000, val2: 25)
 
-    boosted = Stats.calculate_stats(player.stats, @player_id, [])
+    boosted = Calculator.calculate_stats(player.stats, @player_id, [])
 
     assert boosted.combat_stats.matk_min == baseline.combat_stats.matk_min
     assert boosted.combat_stats.matk_max == baseline.combat_stats.matk_max
@@ -199,7 +200,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
   end
 
   test "Magnificat doubles the natural SP regeneration rate", %{player: player} do
-    stats = Stats.calculate_stats(player.stats, @player_id, [])
+    stats = Calculator.calculate_stats(player.stats, @player_id, [])
     passive = %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: false}
     accumulators = %{elapsed_ms: 60_000, hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0}
 

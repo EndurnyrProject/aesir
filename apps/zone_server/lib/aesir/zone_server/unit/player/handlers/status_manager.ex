@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @base_walk_speed 150
@@ -94,7 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   """
   @spec recalculate_after_status_change(map()) :: map()
   def recalculate_after_status_change(%{game_state: game_state} = state) do
-    updated_stats = Stats.calculate_stats(game_state.stats, game_state.character_id)
+    updated_stats = Calculator.calculate_stats(game_state.stats, game_state.character_id)
     updated_walk_speed = walk_speed_for(updated_stats)
 
     if updated_stats != game_state.stats do

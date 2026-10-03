@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   # Engraved Orlean's Glove (accessory): bonus bSMatk,3; bonus bSpl,2; bonus bCrt,2
   @glove_id 490_160
@@ -253,6 +253,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
   # Simulates unequip via the recompute model: the same base stats recalculated
   # with no equipped items must return every combat stat to the bare baseline.
   defp unequipped(%{game_state: game_state}) do
-    Stats.calculate_stats(game_state.stats, nil, [])
+    Calculator.calculate_stats(game_state.stats, nil, [])
   end
 end

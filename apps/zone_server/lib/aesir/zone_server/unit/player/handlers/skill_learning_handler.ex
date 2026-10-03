@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @doc """
@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
 
     stats =
       %{game_state.stats | progression: progression}
-      |> Stats.calculate_stats(game_state.character_id)
+      |> Calculator.calculate_stats(game_state.character_id)
 
     new_state =
       state
@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
 
     stats =
       %{game_state.stats | progression: progression}
-      |> Stats.calculate_stats(char_id)
+      |> Calculator.calculate_stats(char_id)
 
     new_game_state = %{game_state | stats: stats}
 

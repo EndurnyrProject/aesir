@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Riding do
   (`status_manager.ex:walk_speed_for/1`): mounted movement is a flat `-25`
   (25% faster), independent of Cavalier Mastery.
 
-  ASPD uses the flat fixed-bonus bucket read by `Stats.calculate_aspd/1`
+  ASPD uses the flat fixed-bonus bucket read by `Stats.Calculator.calculate_aspd/1`
   (the `:aspd` status modifier folded into `flat_bonus * agi / 200`, the
   same bucket quicken-style buffs use), not the percent `aspd_rate` path.
   Riding is a penalty, so it emits a negative flat value that shrinks

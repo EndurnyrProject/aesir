@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -391,7 +392,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandlerTest do
           }
       }
 
-      put_in(base.game_state.stats, Stats.calculate_stats(armed_stats, @char_id))
+      put_in(base.game_state.stats, Calculator.calculate_stats(armed_stats, @char_id))
     end
 
     test "mounting raises the Spear Mastery ATK bonus from +40 to +50" do

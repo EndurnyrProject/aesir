@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOpsTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   # Real item ids from priv/db/re/items (loaded into :persistent_term at boot).
   # Sword: weapon_level 1, refineable, subtype one_handed_sword.
@@ -67,7 +68,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOpsTest do
       inventory = inv_map(char.id)
       index = index_of(inventory, @sword)
 
-      equipped_stats = Stats.calculate_stats(stats, char.id, [Map.get(inventory, index)])
+      equipped_stats = Calculator.calculate_stats(stats, char.id, [Map.get(inventory, index)])
       atk_equipped = equipped_stats.combat_stats.atk
       state = build_state(char, equipped_stats, inventory)
 

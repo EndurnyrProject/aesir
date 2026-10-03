@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -188,7 +188,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         {:instant, PlayerState.put_pending_forced_movement(game_state, directive)}
       end)
 
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
       stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
       stub(StatusSync, :send_param, fn _connection, _param, _value -> :ok end)
@@ -365,7 +365,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         :unchanged
       end)
 
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
@@ -416,7 +416,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       end)
 
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(Broadcast, :to_visible_players, fn _state, _packet, _opts -> :ok end)
@@ -450,7 +450,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       end)
 
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
 
       expect(UnitRegistry, :update_unit_state, fn :player, 1000, committed ->
         assert SpiritSpheres.count(committed.spirit_spheres) == 1
@@ -610,7 +610,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       expect(Interpreter, :settle_deferred, fn ^game_state, ^descriptor -> {:ok, charged} end)
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
@@ -714,7 +714,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
 
     test "a staged pending_interaction starts a dialog and takes the lock" do
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(Broadcast, :to_player, fn 1000, %SkillCastFailed{} -> :ok end)
@@ -776,7 +776,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         })
 
       stub(Catalog, :by_id, fn 279 -> {:ok, autospell} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -819,7 +819,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     test "applies the effect, recalculates stats, persists, syncs and broadcasts" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       expect(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -833,7 +833,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     test "a no-damage support skill broadcasts a SkillEffect" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
@@ -872,7 +872,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       expect(Interpreter, :begin_cast, fn _gs, 31, 1, :self -> {:instant, staged} end)
       stub(Catalog, :by_id, fn 31 -> {:ok, definition(id: 31, cooldown: [])} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -886,7 +886,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
     test "sends ZC_SKILL_POSTDELAY when the skill has a cooldown" do
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -901,7 +901,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
     test "sends no ZC_SKILL_POSTDELAY when the skill has no cooldown" do
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -917,7 +917,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         {:instant, %{gs | stats: %{gs.stats | current_state: %{gs.stats.current_state | sp: 12}}}}
       end)
 
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Catalog, :by_id, fn 89 -> {:ok, definition(id: 89, cooldown: [])} end)
       reject(&Broadcast.to_in_range/5)
@@ -1109,7 +1109,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       stub(InventoryOps, :apply_change, fn 1000, _old, _new, {:removed, 0} -> {:ok, new_inv} end)
 
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, equipped ->
+      stub(Calculator, :calculate_stats, fn stats, 1000, equipped ->
         send(test_pid, {:recalced, equipped})
         stats
       end)
@@ -1173,7 +1173,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
@@ -1668,7 +1668,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
     stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
     stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
-    stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
     stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
@@ -1718,7 +1718,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       expect(Interpreter, :begin_cast, fn _gs, 26, 1, :self -> {:instant, staged} end)
       stub(Catalog, :by_id, fn 26 -> {:ok, definition(id: 26, cooldown: [])} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -1739,7 +1739,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       expect(Interpreter, :begin_cast, fn _gs, 26, 1, :self -> {:instant, staged} end)
       stub(Catalog, :by_id, fn 26 -> {:ok, definition(id: 26, cooldown: [])} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -1756,7 +1756,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     test "WarpHandler is not called when pending_warp is nil" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -1773,7 +1773,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       expect(Interpreter, :begin_cast, fn _gs, 26, 1, :self -> {:instant, staged} end)
       stub(Catalog, :by_id, fn 26 -> {:ok, definition(id: 26, cooldown: [])} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
@@ -1807,7 +1807,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     test "AL_CURE broadcasts a SkillEffect on cast" do
       stub(Catalog, :by_id, fn 35 -> {:ok, definition(id: 35, cooldown: [])} end)
       stub(Interpreter, :begin_cast, fn gs, 35, 1, {:unit, 2000} -> {:instant, gs} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
@@ -1828,7 +1828,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     test "PR_STRECOVERY broadcasts a SkillEffect on cast" do
       stub(Catalog, :by_id, fn 72 -> {:ok, definition(id: 72, cooldown: [])} end)
       stub(Interpreter, :begin_cast, fn gs, 72, 1, {:unit, 2000} -> {:instant, gs} end)
-      stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)

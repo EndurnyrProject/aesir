@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpawnView
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -558,7 +558,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
   # skill hits deterministic (hit rate clamps to 100%).
   defp monk_fixture(id, opts) do
     base = PlayerState.new(monk_character(id, opts))
-    calculated = Stats.calculate_stats(base.stats, id, [])
+    calculated = Calculator.calculate_stats(base.stats, id, [])
 
     current = %{
       calculated.current_state
@@ -579,7 +579,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
   defp plain_player_fixture(id, {x, y}) do
     character = %{monk_character(id, position: {x, y}) | class: 0, learned_skills: %{}}
     base = PlayerState.new(character)
-    calculated = Stats.calculate_stats(base.stats, id, [])
+    calculated = Calculator.calculate_stats(base.stats, id, [])
     state = %{base | stats: calculated}
     register_player_fixture(state)
     state

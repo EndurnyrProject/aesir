@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   describe "new/1 char vars and zeny" do
@@ -529,7 +530,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
 
     test "exports the player's optional weapon hands", %{state: state} do
       worn = %InventoryItem{nameid: 1101, amount: 1, equip: 2, identify: 1}
-      state = put_in(state.stats, Stats.apply_equipment_modifiers(state.stats, [worn]))
+      state = put_in(state.stats, EquipmentFold.apply_equipment_modifiers(state.stats, [worn]))
 
       combatant = PlayerState.to_combatant(state)
 

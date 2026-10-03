@@ -21,8 +21,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
+  alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
 
@@ -41,9 +41,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
 
   def getlook(%Ctx{game_state: gs}, type) do
     case type do
-      2 -> PlayerStats.weapon_view(gs.stats.equipment)
-      4 -> PlayerStats.head_top_view(gs.stats.equipment)
-      8 -> PlayerStats.shield_view(gs.stats.equipment)
+      2 -> Appearance.weapon_view(gs.stats.equipment)
+      4 -> Appearance.head_top_view(gs.stats.equipment)
+      8 -> Appearance.shield_view(gs.stats.equipment)
       _ -> cosmetic_look(gs, type)
     end
   end

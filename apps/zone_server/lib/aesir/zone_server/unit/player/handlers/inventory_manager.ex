@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Rental
 
   @doc """
@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     with {:ok, indices} <- Inventory.ineligible_equipment(inventory, context, GameMode.mode()),
          {:ok, persisted} <- InventoryOps.unequip_many(character.id, inventory, indices) do
       equipped = Map.values(Inventory.equipped_items(persisted))
-      stats = Stats.calculate_stats(game_state.stats, character.id, equipped)
+      stats = Calculator.calculate_stats(game_state.stats, character.id, equipped)
 
       {:ok, %{game_state | inventory: persisted, stats: stats}}
     end

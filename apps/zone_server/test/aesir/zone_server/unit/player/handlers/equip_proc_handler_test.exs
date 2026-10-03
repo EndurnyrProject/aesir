@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     state = state_with_registration()
     test_pid = self()
 
-    expect(Stats, :calculate_stats, fn stats, 1 ->
+    expect(Calculator, :calculate_stats, fn stats, 1 ->
       send(test_pid, {:calculated, stats.active_autobonuses})
       put_in(stats.combat_stats.atk, stats.combat_stats.atk + 25)
     end)
@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     state = state_with_registration()
     test_pid = self()
 
-    stub(Stats, :calculate_stats, fn stats, 1 ->
+    stub(Calculator, :calculate_stats, fn stats, 1 ->
       send(test_pid, :calculated)
       put_in(stats.combat_stats.atk, stats.combat_stats.atk + 1)
     end)
@@ -118,7 +118,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
       :ok
     end)
 
-    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
@@ -149,7 +149,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     state = put_in(state.game_state.stats.derived_stats.max_sp, 100)
 
     stub(CharacterPersistence, :update_stats, fn _character_id, _attrs, _opts -> {:ok, nil} end)
-    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
@@ -169,7 +169,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
       {:error, :unknown_status}
     end)
 
-    expect(Stats, :calculate_stats, fn stats, 1 ->
+    expect(Calculator, :calculate_stats, fn stats, 1 ->
       put_in(stats.combat_stats.atk, stats.combat_stats.atk + 25)
     end)
 
@@ -197,7 +197,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
 
     test_pid = self()
 
-    stub(Stats, :calculate_stats, fn stats, 1 ->
+    stub(Calculator, :calculate_stats, fn stats, 1 ->
       send(test_pid, :status_recalculated)
       put_in(stats.combat_stats.atk, stats.combat_stats.atk + 1)
     end)
@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
       :ok
     end)
 
-    expect(Stats, :calculate_stats, fn stats, 1 ->
+    expect(Calculator, :calculate_stats, fn stats, 1 ->
       send(test_pid, :recalculated)
       stats
     end)
@@ -269,7 +269,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     state = put_in(state.game_state.stats.card_unequip_effects, cleanup)
 
     reject(&CharacterPersistence.update_stats/3)
-    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
@@ -305,7 +305,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
       :ok
     end)
 
-    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
@@ -331,7 +331,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
                owner_refresh: :defer
              )
 
-    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
     assert {:noreply, rebuilt} = EquipProcHandler.reconcile_statuses(state)
@@ -352,7 +352,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
                owner_refresh: :defer
              )
 
-    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
     assert {:noreply, rebuilt} = EquipProcHandler.reconcile_statuses(state)
@@ -364,7 +364,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     state = state_with_equip_statuses(%{})
     state = put_in(state.game_state.stats.granted_skills, %{28 => 3})
 
-    expect(Stats, :calculate_stats, fn stats, 1 -> %{stats | granted_skills: %{}} end)
+    expect(Calculator, :calculate_stats, fn stats, 1 -> %{stats | granted_skills: %{}} end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
@@ -380,7 +380,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
       :player, 1, :sc_unknown_equip_status, _params -> {:error, :unknown_status}
     end)
 
-    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
@@ -407,7 +407,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
                owner_refresh: :defer
              )
 
-    stub(Stats, :calculate_stats, fn stats, 1 ->
+    stub(Calculator, :calculate_stats, fn stats, 1 ->
       send(test_pid, :status_recalculated)
       stats
     end)
@@ -469,9 +469,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     }
 
     game_state = PlayerState.new(character())
-    initial_stats = Stats.calculate_stats(game_state.stats, 1, [row])
+    initial_stats = Calculator.calculate_stats(game_state.stats, 1, [row])
     queued_identity = initial_stats.equip_autobonuses[@key].source_identity
-    shifted_stats = Stats.calculate_stats(initial_stats, 1, [%{row | card0: 0}])
+    shifted_stats = Calculator.calculate_stats(initial_stats, 1, [%{row | card0: 0}])
 
     state = %SessionState{
       connection_pid: self(),
@@ -481,7 +481,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     assert shifted_stats.equip_autobonuses[@key].source_identity == {:card, 1, 90_102}
     assert queued_identity == {:card, 0, 90_101}
 
-    reject(&Stats.calculate_stats/2)
+    reject(&Calculator.calculate_stats/2)
     reject(&StatusSync.send_stat_updates/2)
     reject(&UnitRegistry.update_unit_state/3)
     reject(&Interpreter.apply_status/4)
@@ -493,7 +493,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
   test "missing registrations and source-removed expiries are exact no-ops" do
     state = state_with_equip_statuses(%{})
 
-    reject(&Stats.calculate_stats/2)
+    reject(&Calculator.calculate_stats/2)
     reject(&StatusSync.send_stat_updates/2)
     reject(&UnitRegistry.update_unit_state/3)
     reject(&Interpreter.apply_status/4)
@@ -515,7 +515,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     state = state_with_registration()
     base_atk = state.game_state.stats.combat_stats.atk
 
-    stub(Stats, :calculate_stats, fn stats, 1 ->
+    stub(Calculator, :calculate_stats, fn stats, 1 ->
       bonus = if Map.has_key?(stats.active_autobonuses, @key), do: 25, else: 0
       put_in(stats.combat_stats.atk, base_atk + bonus)
     end)
@@ -535,7 +535,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     registration = %{registration() | duration_ms: 1}
     state = state_with_registration(registration)
 
-    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
@@ -551,8 +551,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     {:noreply, first} = activate(state, @key)
     old_token = first.game_state.stats.active_autobonuses[@key]
 
-    pruned_stats = Stats.calculate_stats(first.game_state.stats, 1, [])
-    rederived_stats = Stats.calculate_stats(pruned_stats, 1, [row])
+    pruned_stats = Calculator.calculate_stats(first.game_state.stats, 1, [])
+    rederived_stats = Calculator.calculate_stats(pruned_stats, 1, [row])
     reequipped = %{first | game_state: %{first.game_state | stats: rederived_stats}}
 
     {:noreply, current} = activate(reequipped, @key)
@@ -640,7 +640,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
 
     row = %InventoryItem{id: 101, nameid: item_id, amount: 1, equip: 16, identify: 1}
     game_state = PlayerState.new(character())
-    stats = Stats.calculate_stats(game_state.stats, game_state.character_id, [row])
+    stats = Calculator.calculate_stats(game_state.stats, game_state.character_id, [row])
 
     {%SessionState{connection_pid: self(), game_state: %{game_state | stats: stats}}, row}
   end

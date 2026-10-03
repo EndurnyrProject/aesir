@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerFreecastTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerFreecastTest do
   describe "a cast overlaid on a walking Free Caster" do
     test "fires mid-walk against the target it was started with" do
       test_pid = self()
-      stub(PlayerStats, :calculate_stats, fn stats, _id, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, _id, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, _id, _ -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn _id, _attrs, _opts -> {:ok, %{}} end)
@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerFreecastTest do
     end
 
     test "leaves the player walking rather than dropping them to idle" do
-      stub(PlayerStats, :calculate_stats, fn stats, _id, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, _id, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, _id, _ -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn _id, _attrs, _opts -> {:ok, %{}} end)
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerFreecastTest do
     end
 
     test "a cast that resolves after the walk ended returns the player to idle" do
-      stub(PlayerStats, :calculate_stats, fn stats, _id, _equipped -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, _id, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, _id, _ -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn _id, _attrs, _opts -> {:ok, %{}} end)

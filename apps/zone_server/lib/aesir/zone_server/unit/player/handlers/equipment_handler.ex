@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @equip_result_ok 0
@@ -284,7 +285,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   # equipment can change through the `bSpeedRate` bonus.
   defp advance(game_state, persisted) do
     equipped = Map.values(Inventory.equipped_items(persisted))
-    stats = Stats.calculate_stats(game_state.stats, game_state.character_id, equipped)
+    stats = Calculator.calculate_stats(game_state.stats, game_state.character_id, equipped)
 
     %{
       game_state

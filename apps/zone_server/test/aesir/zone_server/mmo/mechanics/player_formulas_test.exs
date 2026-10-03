@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   alias Aesir.ZoneServer.Unit.Player.CombatCalculations
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
+  alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
@@ -67,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   end
 
   test "an unarmed real player uses status ATK once instead of rolling the display aggregate" do
-    stats = Stats.calculate_combat_stats(stats_fixture())
+    stats = Calculator.calculate_combat_stats(stats_fixture())
 
     attacker = %{
       CombatTestHelper.create_player_combatant()
@@ -83,8 +85,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   test "real equipment projects weapon level without leaving weapon ATK in the flat bucket" do
     stats =
       stats_fixture()
-      |> Stats.apply_equipment_modifiers([%InventoryItem{nameid: 1501, equip: 2, refine: 0}])
-      |> Stats.calculate_combat_stats()
+      |> EquipmentFold.apply_equipment_modifiers([
+        %InventoryItem{nameid: 1501, equip: 2, refine: 0}
+      ])
+      |> Calculator.calculate_combat_stats()
 
     assert Map.fetch!(stats.right_hand, :weapon_level) == 1
     assert stats.combat_stats.physical_attack.flat_atk == 0
@@ -95,8 +99,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     stats =
       %{stats_fixture() | modifiers: %Modifiers{status_effects: %{max_weapon_damage: true}}}
-      |> Stats.apply_equipment_modifiers([%InventoryItem{nameid: 1201, equip: 2, refine: 0}])
-      |> Stats.calculate_combat_stats()
+      |> EquipmentFold.apply_equipment_modifiers([
+        %InventoryItem{nameid: 1201, equip: 2, refine: 0}
+      ])
+      |> Calculator.calculate_combat_stats()
 
     attacker = %{
       CombatTestHelper.create_player_combatant(weapon_type: :dagger)
@@ -142,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
               status_effects: %{max_weapon_damage: true}
             }
         }
-        |> Stats.calculate_combat_stats()
+        |> Calculator.calculate_combat_stats()
 
       attacker =
         PlayerState.to_combatant(%PlayerState{
@@ -187,7 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
             status_effects: %{def: 5}
           }
       }
-      |> Stats.calculate_combat_stats()
+      |> Calculator.calculate_combat_stats()
 
     expected_soft = if GameMode.mode() == :renewal, do: 58, else: 40
     expected_damage = if GameMode.mode() == :renewal, do: 879, else: 660
@@ -366,7 +372,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         }
     }
 
-    result = Stats.calculate_combat_stats(stats)
+    result = Calculator.calculate_combat_stats(stats)
     zero_slots = Map.new([:patk, :smatk, :res, :mres, :hplus, :crate], &{&1, 0})
 
     assert Map.take(result.combat_stats, Map.keys(zero_slots)) === zero_slots
@@ -461,7 +467,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     ]
 
     for {modifiers, {max_hp, max_sp}} <- cases do
-      result = Stats.calculate_derived_stats(%{derived_fixture(1) | modifiers: modifiers})
+      result = Calculator.calculate_derived_stats(%{derived_fixture(1) | modifiers: modifiers})
       assert {result.derived_stats.max_hp, result.derived_stats.max_sp} === {max_hp, max_sp}
     end
   end
@@ -488,8 +494,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     }
 
     # rAthena src/map/status.cpp:2400-2414 and db/pre-re/job_aspd.yml:94-101.
-    assert Stats.calculate_aspd(dual) === 127
-    assert Stats.calculate_aspd(penalized) === 135
+    assert Calculator.calculate_aspd(dual) === 127
+    assert Calculator.calculate_aspd(penalized) === 135
   end
 
   test "classic hard DEF is zero and MATK bands reach combat and heal consumers" do
@@ -503,7 +509,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         }
     }
 
-    result = Stats.calculate_combat_stats(stats)
+    result = Calculator.calculate_combat_stats(stats)
 
     assert result.combat_stats.def === 0
     assert result.combat_stats.matk_min === 129
@@ -531,7 +537,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
           modifiers: %Modifiers{status_effects: status_effects}
       }
 
-      result = Stats.calculate_combat_stats(stats)
+      result = Calculator.calculate_combat_stats(stats)
 
       attacker = %{
         base_stats: result.base_stats,
@@ -563,7 +569,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         }
     }
 
-    result = Stats.calculate_combat_stats(stats)
+    result = Calculator.calculate_combat_stats(stats)
 
     assert {result.combat_stats.critical_rate, result.combat_stats.critical} === {308, 30}
   end
@@ -578,7 +584,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         modifiers: %Modifiers{equipment: %{luk: 1}}
     }
 
-    result = Stats.calculate_combat_stats(stats)
+    result = Calculator.calculate_combat_stats(stats)
 
     attacker = %{
       base_stats: result.base_stats,
@@ -606,7 +612,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         }
     }
 
-    result = Stats.calculate_combat_stats(stats)
+    result = Calculator.calculate_combat_stats(stats)
     assert {result.combat_stats.critical_rate, result.combat_stats.critical} == {318, 31}
     assert CriticalHits.calculate_critical_rate(result) == 318
 
@@ -633,7 +639,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     stub(JobManagement, :get_base_aspd, fn _job, :fist -> {:ok, 650} end)
 
     for {job_id, expected?} <- [{13, false}, {4036, false}, {4014, true}, {99_999, false}] do
-      Stats.calculate_derived_stats(derived_fixture(job_id))
+      Calculator.calculate_derived_stats(derived_fixture(job_id))
       assert_receive {:max_hp_inputs, %{transcendent?: ^expected?}}
       assert_receive {:max_sp_inputs, %{transcendent?: ^expected?}}
     end

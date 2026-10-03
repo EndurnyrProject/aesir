@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @behaviour Active
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   # as negative flat modifiers. Mob casters have no shield and are never rooted.
   @spec root_player_caster(struct()) :: :ok
   defp root_player_caster(%PlayerState{character_id: caster_id, stats: stats}) do
-    %{def: shield_def, mdef: shield_mdef} = Stats.shield_defense_contribution(stats)
+    %{def: shield_def, mdef: shield_mdef} = EquipmentFold.shield_defense_contribution(stats)
 
     StatusInterpreter.apply_status(:player, caster_id, :sc_grandcross_root,
       duration: @root_duration,

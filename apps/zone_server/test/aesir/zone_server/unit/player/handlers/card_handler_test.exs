@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_private
@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
     character_id = System.unique_integer([:positive])
     :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{character_id}")
     stub(Items, :by_id, &item_lookup/1)
-    reject(&Stats.calculate_stats/3)
+    reject(&Calculator.calculate_stats/3)
 
     card = %InventoryItem{id: 1, nameid: 4001, amount: 2}
 
@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
     character_id = System.unique_integer([:positive])
     :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{character_id}")
     stub(Items, :by_id, &item_lookup/1)
-    reject(&Stats.calculate_stats/3)
+    reject(&Calculator.calculate_stats/3)
     reject(&UnitRegistry.update_unit_state/3)
 
     card = %InventoryItem{id: 1, nameid: 4001, amount: 1}

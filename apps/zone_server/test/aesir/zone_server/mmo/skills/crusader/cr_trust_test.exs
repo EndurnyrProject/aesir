@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrust
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
   setup :set_mimic_from_context
@@ -53,15 +54,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
     end
 
     test "Faith lv 5 adds 1000 max HP over an unlearned baseline" do
-      without_faith = Stats.calculate_stats(base_stats(%{}))
-      with_faith = Stats.calculate_stats(base_stats(%{248 => 5}))
+      without_faith = Calculator.calculate_stats(base_stats(%{}))
+      with_faith = Calculator.calculate_stats(base_stats(%{248 => 5}))
 
       assert with_faith.derived_stats.max_hp - without_faith.derived_stats.max_hp == 1000
     end
 
     test "Faith lv 10 adds 2000 max HP over an unlearned baseline" do
-      without_faith = Stats.calculate_stats(base_stats(%{}))
-      with_faith = Stats.calculate_stats(base_stats(%{248 => 10}))
+      without_faith = Calculator.calculate_stats(base_stats(%{}))
+      with_faith = Calculator.calculate_stats(base_stats(%{248 => 10}))
 
       assert with_faith.derived_stats.max_hp - without_faith.derived_stats.max_hp == 2000
     end

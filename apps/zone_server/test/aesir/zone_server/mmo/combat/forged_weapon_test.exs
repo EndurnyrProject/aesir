@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
+  alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
@@ -131,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
 
     stats =
       state.stats
-      |> Stats.apply_equipment_modifiers([item])
+      |> EquipmentFold.apply_equipment_modifiers([item])
       |> update_in(
         [Access.key(:modifiers), Access.key(:equipment)],
         &Map.merge(&1, equipment_modifiers)
@@ -140,7 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
         [Access.key(:modifiers), Access.key(:status_effects)],
         &Map.merge(&1, status_modifiers)
       )
-      |> Stats.calculate_combat_stats()
+      |> Calculator.calculate_combat_stats()
 
     PlayerState.to_combatant(%{state | stats: stats})
   end

@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -225,7 +226,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "reconciles loaded equip statuses after registration and persisted-status restore", %{
       character: character
     } do
-      expect(Stats, :calculate_stats, fn stats, 1, [] ->
+      expect(Calculator, :calculate_stats, fn stats, 1, [] ->
         %{stats | equip_statuses: %{sc_summer: {:infinite, 1}}}
       end)
 
@@ -242,7 +243,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         state
       end)
 
-      expect(Stats, :calculate_stats, fn stats, 1 -> stats end)
+      expect(Calculator, :calculate_stats, fn stats, 1 -> stats end)
 
       assert {:ok, state} =
                PlayerSession.init(%{character: character, connection_pid: self()})
@@ -406,7 +407,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         game_state: %{game_state | stats: stats}
       }
 
-      stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
@@ -436,7 +437,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       }
 
       :ok = UnitRegistry.register_player(state.game_state, self())
-      stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
       stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
       assert {:noreply, reconciled} = PlayerSession.handle_info(:inventory_changed, state)
@@ -909,7 +910,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
   describe "stats management" do
     test "update_base_stat recalculates and sends updates", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats, player_id, nil, map_name ->
+      expect(Calculator, :calculate_stats, fn stats, player_id, nil, map_name ->
         assert player_id == character.id
         assert map_name == character.last_map
         %{stats | base_stats: %{stats.base_stats | str: 20}}
@@ -936,7 +937,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "sync recalculate_stats via call updates all stats", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats, player_id, nil, map_name ->
+      expect(Calculator, :calculate_stats, fn stats, player_id, nil, map_name ->
         assert player_id == character.id
         assert map_name == character.last_map
         stats
@@ -961,7 +962,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "async recalculate_stats via cast updates stats", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats, player_id, nil, map_name ->
+      expect(Calculator, :calculate_stats, fn stats, player_id, nil, map_name ->
         assert player_id == character.id
         assert map_name == character.last_map
 
@@ -994,7 +995,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "recalculate_stats via pubsub message updates stats", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats, player_id, nil, map_name ->
+      expect(Calculator, :calculate_stats, fn stats, player_id, nil, map_name ->
         assert player_id == character.id
         assert map_name == character.last_map
         %{stats | base_stats: %{stats.base_stats | str: 25}}
@@ -1059,7 +1060,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         :ok
       end)
 
-      stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+      stub(Calculator, :calculate_stats, fn stats, 1 -> stats end)
 
       token = make_ref()
       state = casting_state(character, token, sp: 40)

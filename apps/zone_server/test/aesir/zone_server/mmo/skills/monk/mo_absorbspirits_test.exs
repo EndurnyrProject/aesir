@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -205,7 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
     stub(Broadcast, :to_visible_players, fn _state, _packet, _opts -> :ok end)
-    stub(PlayerStats, :calculate_stats, fn stats, _id, _equipped -> stats end)
+    stub(Calculator, :calculate_stats, fn stats, _id, _equipped -> stats end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
     stub(CharacterPersistence, :update_character, fn 1, _attrs, _opts -> {:ok, %{}} end)

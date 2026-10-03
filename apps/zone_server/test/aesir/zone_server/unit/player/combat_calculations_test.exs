@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Player.CombatCalculations
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   setup :set_mimic_from_context
 
@@ -44,7 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
       0
     end)
 
-    stub(Stats, :calculate_aspd, fn _stats ->
+    stub(Calculator, :calculate_aspd, fn _stats ->
       # Default ASPD value
       150
     end)

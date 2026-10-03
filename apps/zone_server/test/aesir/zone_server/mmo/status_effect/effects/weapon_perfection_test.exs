@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponPerfectionTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -73,8 +74,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponPerfectionTest do
           job_bonuses: %{}
         }
       }
-      |> Stats.apply_status_effects(@player_id)
-      |> Stats.calculate_combat_stats()
+      |> Calculator.apply_status_effects(@player_id)
+      |> Calculator.calculate_combat_stats()
 
     %{
       CombatTestHelper.create_player_combatant(unit_id: @player_id, weapon_type: :dagger)

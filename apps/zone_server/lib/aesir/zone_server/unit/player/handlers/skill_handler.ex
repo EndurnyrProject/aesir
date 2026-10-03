@@ -55,6 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -1204,7 +1205,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     equipped = Map.values(Inventory.equipped_items(new_game_state.inventory))
 
     updated_stats =
-      Stats.calculate_stats(new_game_state.stats, new_game_state.character_id, equipped)
+      Calculator.calculate_stats(new_game_state.stats, new_game_state.character_id, equipped)
 
     new_game_state = %{new_game_state | stats: updated_stats}
 
