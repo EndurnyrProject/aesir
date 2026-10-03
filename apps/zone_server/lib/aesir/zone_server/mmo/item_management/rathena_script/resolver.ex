@@ -87,6 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_CONCENTRATE" => :sc_concentrate,
     "SC_GLORIA" => :sc_gloria,
     "SC_KYRIE" => :sc_kyrie,
+    "SC_ASSUMPTIO" => :sc_assumptio,
     "SC_MAGNIFICAT" => :sc_magnificat,
     "SC_IMPOSITIO" => :sc_impositio,
     "SC_SUFFRAGIUM" => :sc_suffragium,

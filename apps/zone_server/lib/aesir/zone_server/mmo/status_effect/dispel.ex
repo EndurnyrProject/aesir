@@ -16,12 +16,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
 
   Deviations from the reference, all deliberate:
 
-  * **No song-area or Assumptio special cases.** `dispell.cpp:56-66` keeps the
-    bard/dancer songs alive while the target still stands in the song's area
-    (`val4 == 0`) and spares Assumptio on mobs. The song branch is unreachable
-    in renewal anyway - `db/re/status.yml` flags every song in that list
-    `NoDispell: true`, so the preceding flag check already skips them, and
-    Aesir's `sc_poembragi` mirrors that. Assumptio is not implemented.
+  * **No song-area special case.** `dispell.cpp:56-66` keeps the bard/dancer
+    songs alive while the target still stands in the song's area
+    (`val4 == 0`). The song branch is unreachable in renewal anyway -
+    `db/re/status.yml` flags every song in that list `NoDispell: true`, so the
+    preceding flag check already skips them, and Aesir's `sc_poembragi`
+    mirrors that.
+
+  Assumptio is spared on mobs (players lose it as usual).
   * **No Saturday Night Fever HP-penalty guard.** That status is not implemented;
     Berserk's expiry penalty is disarmed before removal.
   * **No `bonus_script` clearing** (`BSF_REM_ON_DISPELL`): Aesir has no
@@ -63,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
         |> StatusStorage.get_unit_statuses(unit_id)
         |> Enum.reject(&no_dispel?/1)
         |> Enum.map(& &1.type)
+        |> spare_mob_assumptio(unit_type)
 
       disarm_penalties(unit_type, unit_id, status_ids)
       Interpreter.remove_statuses(unit_type, unit_id, status_ids, owner_refresh: :notify)
@@ -88,6 +91,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
 
     Interpreter.remove_statuses(unit_type, unit_id, status_ids, owner_refresh: :notify)
   end
+
+  defp spare_mob_assumptio(status_ids, :mob), do: List.delete(status_ids, :sc_assumptio)
+  defp spare_mob_assumptio(status_ids, _unit_type), do: status_ids
 
   defp disarm_penalties(unit_type, unit_id, status_ids) do
     Enum.each(status_ids, fn id ->

@@ -187,6 +187,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
       refute StatusStorage.has_status?(:mob, unit_id, :sc_blessing)
     end
 
+    test "spares Assumptio while removing the mob's other buffs", %{unit_id: unit_id} do
+      StatusStorage.apply_status(:mob, unit_id, :sc_assumptio, val1: 5, duration: 60_000)
+      StatusStorage.apply_status(:mob, unit_id, :sc_blessing, val1: 10, duration: 60_000)
+
+      Dispel.dispel({:mob, unit_id})
+
+      assert StatusStorage.has_status?(:mob, unit_id, :sc_assumptio)
+      refute StatusStorage.has_status?(:mob, unit_id, :sc_blessing)
+    end
+
     test "is a no-op for a mob that has already despawned", %{unit_id: unit_id} do
       stub(UnitRegistry, :get_unit, fn :mob, _id -> {:error, :not_found} end)
 
@@ -195,6 +205,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
   end
 
   describe "dispel/1 on a player" do
+    test "removes Assumptio", %{unit_id: unit_id} do
+      StatusStorage.apply_status(:player, unit_id, :sc_assumptio, val1: 5, duration: 60_000)
+
+      Dispel.dispel({:player, unit_id})
+
+      refute StatusStorage.has_status?(:player, unit_id, :sc_assumptio)
+    end
+
     test "never touches the mob aggro path", %{unit_id: unit_id} do
       reject(&UnitRegistry.get_unit/2)
 

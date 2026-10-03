@@ -6,12 +6,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Kyrie do
   runs out first. Physical hits are blocked via the pre-damage `absorb_damage`
   hook, decrementing the shield pool and hit count until either is exhausted.
   Magic and non-physical hits pass through unchanged.
+
+  Pre-renewal Kyrie and Assumptio end each other on application; renewal lets
+  them coexist.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_kyrie,
     no_dispel: false,
     properties: [:buff],
     prevented_by: [:sc_refresh, :sc_inspiration],
+    end_on_start: [renewal: [], pre_renewal: [:sc_assumptio]],
     icon: :kyrie
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
