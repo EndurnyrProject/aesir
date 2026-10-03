@@ -73,8 +73,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   requires a positive integer duration.
 
   `owner_refresh: :notify` publishes an asynchronous player stat refresh only
-  after the status is stored. Applications default to `:defer` because owning
-  session handlers already recalculate synchronously.
+  after the status is stored. Applications default to `:auto`: the owning
+  session's handlers recalculate synchronously, so an application made from
+  that session defers, while one made from any other process (another player's
+  cast, a mob, a manager) notifies the owner.
 
   A skill may pass `success_rate` and `resistance_roll` to combine its base
   application chance with status resistance in one injectable final roll.
@@ -1239,7 +1241,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           notify_unit_status_applied(unit_type, unit_id, status_id)
 
           maybe_refresh_owner(unit_type, unit_id, true,
-            owner_refresh: Keyword.get(status_params, :owner_refresh, :defer)
+            owner_refresh: Keyword.get(status_params, :owner_refresh, :auto)
           )
         else
           :ok

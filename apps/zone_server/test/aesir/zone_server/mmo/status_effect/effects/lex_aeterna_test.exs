@@ -25,6 +25,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeternaTest do
     assert {:ok, 1_234, @entry} = LexAeterna.absorb_damage(@target, @entry, hit, %{})
   end
 
+  test "does not double or consume status ticks and HP costs" do
+    hit = %{damage: 1_234, dmg_type: :magic, status_tick?: true}
+
+    assert {:ok, 1_234, @entry} = LexAeterna.absorb_damage(@target, @entry, hit, %{})
+  end
+
   test "keeps the status on non-damaging events" do
     hit = %{damage: 0, dmg_type: :physical, skill_id: :sm_bash}
 

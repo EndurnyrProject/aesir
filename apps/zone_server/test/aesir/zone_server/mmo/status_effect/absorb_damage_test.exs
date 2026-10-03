@@ -168,6 +168,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
     end
   end
 
+  describe "Lex Aeterna absorb_damage" do
+    test "a status tick passes through and leaves the mark for the next attack" do
+      target_id = 31
+      setup_player_mock(target_id)
+      :ok = Interpreter.apply_status(:player, target_id, :sc_aeterna)
+
+      assert 50 =
+               Interpreter.absorb_damage(:player, target_id, 50, %{
+                 dmg_type: :magic,
+                 status_tick?: true
+               })
+
+      assert StatusStorage.has_status?(:player, target_id, :sc_aeterna)
+      assert 200 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
+      refute StatusStorage.has_status?(:player, target_id, :sc_aeterna)
+    end
+  end
+
   describe "Kyrie absorb_damage" do
     test "blocks physical hits until hit budget exhausts, then expires" do
       target_id = 5

@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   - `owner_refresh`: Controls player stat reconciliation after a successful direct
     application. `:notify` publishes an asynchronous owner refresh, `:defer` leaves
     recalculation to the owning session, and `:auto` notifies only when called outside
-    that session. Applications default to `:defer`
+    that session. Applications default to `:auto`
   """
   @type owner_refresh :: :auto | :notify | :defer
 

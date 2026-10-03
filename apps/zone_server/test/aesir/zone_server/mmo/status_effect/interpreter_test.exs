@@ -1343,8 +1343,36 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   end
 
   describe "application owner refresh" do
+    test "an application from another process notifies the player owner by default" do
+      target_id = 9_400_021
+      setup_player_mock(target_id)
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      assert :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+
+      assert_receive :recalculate_stats
+      refute_receive :recalculate_stats
+    end
+
+    test "an application from the owning session defers the refresh by default" do
+      target_id = 9_400_022
+      setup_player_mock(target_id)
+      living = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 1}}}
+      owner_pid = self()
+
+      stub(UnitRegistry, :get_unit, fn :player, ^target_id ->
+        {:ok, {PlayerState, living, owner_pid}}
+      end)
+
+      PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
+
+      assert :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+
+      refute_receive :recalculate_stats
+    end
+
     test "notifies the player owner asynchronously only after a successful application" do
-      target_id = 23
+      target_id = 9_400_023
       setup_player_mock(target_id)
       Registry.register_module(RejectedStatus)
       PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
@@ -1367,12 +1395,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "a rejected replacement leaves the existing status and owner untouched" do
-      target_id = 24
+      target_id = 9_400_024
       setup_player_mock(target_id)
       Registry.register_module(RejectedReplacementStatus)
       PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
 
-      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+      :ok =
+        Interpreter.apply_status(:player, target_id, :sc_provoke,
+          val1: 10,
+          owner_refresh: :defer
+        )
 
       assert {:error, :rejected} =
                Interpreter.apply_status(:player, target_id, :sc_test_rejected_replacement,
@@ -1385,12 +1417,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "a successful replacement emits only its final owner refresh" do
-      target_id = 25
+      target_id = 9_400_025
       setup_player_mock(target_id)
       Registry.register_module(ReplacementStatus)
       PubSub.subscribe(Aesir.PubSub, "player:#{target_id}")
 
-      :ok = Interpreter.apply_status(:player, target_id, :sc_provoke, val1: 10)
+      :ok =
+        Interpreter.apply_status(:player, target_id, :sc_provoke,
+          val1: 10,
+          owner_refresh: :defer
+        )
 
       assert :ok =
                Interpreter.apply_status(:player, target_id, :sc_test_replacement,
@@ -1404,7 +1440,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "death rollback leaves a newer same-type generation untouched" do
-      target_id = 26
+      target_id = 9_400_026
       test_pid = self()
       setup_player_mock(target_id)
       Registry.register_module(GenerationStatus)
@@ -1447,7 +1483,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "a superseded application is not displayed or refreshed as current" do
-      target_id = 27
+      target_id = 9_400_027
       test_pid = self()
       setup_player_mock(target_id)
       Registry.register_module(GenerationStatus)
@@ -1490,7 +1526,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "a mutually exclusive reapplication discarded by a newer status removes its displayed icon" do
-      target_id = 28
+      target_id = 9_400_028
       test_pid = self()
       setup_player_mock(target_id)
       Registry.register_module(MutuallyExclusiveX)
@@ -1543,7 +1579,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "concurrent mutually exclusive applications leave only the highest generation" do
-      target_id = 28
+      target_id = 9_400_028
       test_pid = self()
       setup_player_mock(target_id)
       Registry.register_module(MutuallyExclusiveX)
@@ -1591,7 +1627,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "same-status end_on_start expires the exact prior generation without deleting the new one" do
-      target_id = 29
+      target_id = 9_400_029
       test_pid = self()
       setup_player_mock(target_id)
       Registry.register_module(SelfReplacingStatus)
@@ -1600,7 +1636,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert :ok =
                Interpreter.apply_status(:player, target_id, :sc_test_self_replacing,
-                 state: %{observer: test_pid, generation: :first}
+                 state: %{observer: test_pid, generation: :first},
+                 owner_refresh: :defer
                )
 
       assert_receive {:status_display, :applied, :first}
@@ -1624,7 +1661,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
 
     test "three same-status replacements do not finish a superseded middle generation" do
-      target_id = 30
+      target_id = 9_400_030
       test_pid = self()
       setup_player_mock(target_id)
       Registry.register_module(SelfReplacingStatus)
@@ -1637,7 +1674,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
                    observer: test_pid,
                    generation: :a,
                    barrier: {test_pid, :a}
-                 }
+                 },
+                 owner_refresh: :defer
                )
 
       assert_receive {:status_display, :applied, :a}
@@ -1659,7 +1697,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert :ok =
                Interpreter.apply_status(:player, target_id, :sc_test_self_replacing,
-                 state: %{observer: test_pid, generation: :c}
+                 state: %{observer: test_pid, generation: :c},
+                 owner_refresh: :defer
                )
 
       assert_receive {:self_replacement_expired, :b}

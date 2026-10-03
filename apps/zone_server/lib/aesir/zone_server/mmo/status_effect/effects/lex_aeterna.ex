@@ -4,7 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeterna do
 
   Marks the target so the next qualifying hit deals double damage, then fades.
   Freeze and Stone prevent the status, while Soul Breaker's physical part and
-  Soul Burn do not double or consume it (rAthena).
+  Soul Burn do not double or consume it (rAthena). Damage that is not an attack
+  (poison and bleeding ticks, HP costs such as Sacrifice or Berserk drain) never
+  doubles or consumes it either.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_aeterna,
@@ -23,5 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeterna do
   @spec qualifying_hit?(map()) :: boolean()
   def qualifying_hit?(%{skill_id: 379, dmg_type: :physical}), do: false
   def qualifying_hit?(%{skill_id: 375}), do: false
+  def qualifying_hit?(%{status_tick?: true}), do: false
   def qualifying_hit?(_hit), do: true
 end
