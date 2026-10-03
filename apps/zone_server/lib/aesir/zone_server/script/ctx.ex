@@ -36,6 +36,9 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   @typedoc "Pipeline status: `:ok` until `halt/2` is called."
   @type status :: :ok | {:error, term()}
 
+  @typedoc "A Falcon toggle staged by an item script for the owning player session."
+  @type falcon_effect :: boolean() | nil
+
   @typedoc "A Homunculus item effect staged for atomic validation and persistence."
   @type homunculus_effect ::
           :homunculus_evolution | {:homunculus_intimacy, pos_integer()}
@@ -53,7 +56,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
             page: [],
             session_ref: nil,
             vars: %{},
-            homunculus_effects: []
+            homunculus_effects: [],
+            falcon_effect: nil
 
   @type t() :: %__MODULE__{
           char_id: integer() | nil,
@@ -68,7 +72,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           page: [String.t()],
           session_ref: reference() | nil,
           vars: map(),
-          homunculus_effects: [homunculus_effect()]
+          homunculus_effects: [homunculus_effect()],
+          falcon_effect: falcon_effect()
         }
 
   @doc """

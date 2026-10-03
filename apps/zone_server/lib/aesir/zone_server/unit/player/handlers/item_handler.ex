@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
@@ -78,21 +79,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     original = Ctx.from_session(state, {:item, item_id})
     ctx = CompiledItemScripts.on_use(item_id, original)
 
-    case {ctx.status, ctx.homunculus_effects} do
-      {:ok, []} ->
+    case {ctx.status, ctx.homunculus_effects, ctx.falcon_effect} do
+      {:ok, [], nil} ->
         consume(client_index, server_index, ctx, state)
 
-      {:ok, [effect]} ->
+      {:ok, [], enabled?} when is_boolean(enabled?) ->
+        case FalconHandler.set_falcon(%{state | game_state: ctx.game_state}, enabled?) do
+          {:ok, updated} ->
+            consume(client_index, server_index, %{ctx | game_state: updated.game_state}, updated)
+
+          {:error, reason} ->
+            reject(client_index, reason, state)
+        end
+
+      {:ok, [effect], nil} ->
         if %{ctx | homunculus_effects: []} == original do
           ItemEffectHandler.handle(client_index, server_index, effect, state)
         else
           {:noreply, state}
         end
 
-      {{:error, reason}, []} ->
+      {{:error, reason}, [], _} ->
         reject(client_index, reason, state)
 
-      _invalid_homunculus_script ->
+      _invalid_item_script ->
         {:noreply, state}
     end
   end

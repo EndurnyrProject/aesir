@@ -224,11 +224,16 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def set_riding(%Ctx{} = ctx, riding?), do: apply_op(ctx, {:set_riding, riding?})
 
   @doc """
-  Equips or dismisses the Falcon through the session seam. A zero flag
-  dismisses; every non-zero integer equips, matching rAthena truthiness.
+  Equips or dismisses the Falcon. NPC scripts use the session seam; item scripts
+  stage the toggle for their owning session's item handler. A zero flag dismisses;
+  every non-zero integer equips, matching rAthena truthiness.
   """
   @spec setfalcon(Ctx.t(), integer()) :: Ctx.t()
   def setfalcon(%Ctx{status: {:error, _}} = ctx, _flag), do: ctx
+
+  def setfalcon(%Ctx{source: {:item, _}} = ctx, flag),
+    do: %{ctx | falcon_effect: flag != 0}
+
   def setfalcon(%Ctx{} = ctx, flag), do: apply_op(ctx, {:set_falcon, flag != 0})
 
   @doc """

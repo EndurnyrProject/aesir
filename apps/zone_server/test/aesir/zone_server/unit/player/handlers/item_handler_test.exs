@@ -14,9 +14,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
+  alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -43,6 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     Mimic.copy(InventoryOps)
     Mimic.copy(ItemEffectHandler)
     Mimic.copy(Cell)
+    Mimic.copy(FalconHandler)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
@@ -113,6 +116,51 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert committed.game_state.y == 77
       assert committed.game_state.pending_warp == nil
       assert committed.game_state.inventory[@red_potion_slot].amount == 4
+    end
+  end
+
+  describe "handle_use_item/2 with Falcon Flute" do
+    test "equips the falcon and consumes the item from the player session" do
+      {:ok, definition} = Items.by_id(12848)
+      ScriptCompiler.compile_all!([definition])
+      stub(Items, :by_id, fn 12848 -> {:ok, definition} end)
+
+      state = state_with_potion(12848)
+      state = put_in(state.game_state.stats.progression.learned_skills, %{127 => 1})
+
+      expect(FalconHandler, :set_falcon, fn session, true ->
+        {:ok, put_in(session.game_state.option, Option.id(:falcon))}
+      end)
+
+      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+        {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+         {:reduced, @red_potion_slot, 4}}
+      end)
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.option == Option.id(:falcon)
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: true}}}
+    end
+
+    test "does not consume the flute when equipping the falcon fails" do
+      {:ok, definition} = Items.by_id(12848)
+      ScriptCompiler.compile_all!([definition])
+      stub(Items, :by_id, fn 12848 -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+
+      state = state_with_potion(12848)
+      state = put_in(state.game_state.stats.progression.learned_skills, %{127 => 1})
+
+      expect(FalconHandler, :set_falcon, fn _session, true ->
+        {:error, :falcon_skill_not_learned}
+      end)
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
+      refute_received {:send, :gameplay, {:item_removed, _}}
     end
   end
 

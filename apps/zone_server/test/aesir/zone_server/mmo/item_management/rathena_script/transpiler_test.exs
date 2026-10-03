@@ -102,22 +102,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
     end
   end
 
-  defmodule FalconSession do
-    use GenServer
-
-    def start_link({owner, game_state}), do: GenServer.start_link(__MODULE__, {owner, game_state})
-
-    @impl true
-    def init(state), do: {:ok, state}
-
-    @impl true
-    def handle_call({:npc, {:script_apply, {:set_falcon, enabled?}}}, _from, {owner, gs} = state) do
-      send(owner, {:set_falcon, enabled?})
-      option = if enabled?, do: Bitwise.bor(gs.option, Option.id(:falcon)), else: 0
-      {:reply, {:ok, %{gs | option: option}}, state}
-    end
-  end
-
   describe "end-to-end through ScriptCompiler" do
     test "Falcon Flute toggles only with Falconry Mastery and no wug" do
       script =
@@ -127,24 +111,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
       assert :ok = ScriptCompiler.compile_all!([item_def(12848, on_use)])
 
       ctx = build_ctx([])
-      session = start_supervised!({FalconSession, {self(), ctx.game_state}})
-      ctx = %{ctx | session_pid: session}
-
       assert CompiledItemScripts.on_use(12848, ctx) == ctx
-      refute_received {:set_falcon, _}
 
       learned = put_in(ctx.game_state.stats.progression.learned_skills, %{127 => 1})
-      assert CompiledItemScripts.on_use(12848, learned).status == :ok
-      assert_received {:set_falcon, true}
+      assert CompiledItemScripts.on_use(12848, learned).falcon_effect == true
 
       equipped = put_in(learned.game_state.option, Option.id(:falcon))
-      assert CompiledItemScripts.on_use(12848, equipped).status == :ok
-      assert_received {:set_falcon, false}
+      assert CompiledItemScripts.on_use(12848, equipped).falcon_effect == false
 
       for option <- [:wug, :wugrider] do
         mounted = put_in(learned.game_state.option, Option.id(option))
         assert CompiledItemScripts.on_use(12848, mounted) == mounted
-        refute_received {:set_falcon, _}
       end
     end
 
