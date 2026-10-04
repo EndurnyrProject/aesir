@@ -162,6 +162,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def remove_cells(server, group_id, cells),
     do: GenServer.call(server, {:remove_cells, group_id, cells})
 
+  @doc """
+  Removes every skill-unit cell on `map_name` inside `cells` (Ganbantein),
+  Land Protector and traps included; a group left without cells is destroyed.
+
+  A caster-following group (a pre-renewal song or dance) is destroyed whole when
+  its centre lies inside `cells` and is otherwise left untouched.
+  """
+  @spec clear_area(String.t(), [Group.cell()]) :: :ok
+  def clear_area(map_name, cells), do: clear_area(default_server(), map_name, cells)
+
+  @doc false
+  @spec clear_area(server(), String.t(), [Group.cell()]) :: :ok
+  def clear_area(server, map_name, cells),
+    do: GenServer.call(server, {:clear_area, map_name, cells})
+
   @doc "Runs cleanup and destroys a live group."
   @spec destroy(non_neg_integer()) :: :ok
   def destroy(group_id), do: destroy(default_server(), group_id)
@@ -350,6 +365,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:remove_cells, group_id, cells}, _from, state) do
     if group = Storage.get(group_id), do: remove_group_cells(group, MapSet.new(cells))
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:clear_area, map_name, cells}, _from, state) do
+    area = MapSet.new(cells)
+
+    cells
+    |> Enum.flat_map(fn {x, y} -> Storage.get_groups_at_cell(map_name, x, y) end)
+    |> Enum.uniq_by(& &1.group_id)
+    |> Enum.each(fn group ->
+      cond do
+        not Group.follows_caster?(group) ->
+          remove_group_cells(group, area)
+
+        MapSet.member?(area, group.center) ->
+          cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+
+        true ->
+          :ok
+      end
+    end)
+
     {:reply, :ok, state}
   end
 

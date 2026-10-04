@@ -3200,6 +3200,65 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  describe "clear_area/3" do
+    @area for x <- 100..102, y <- 99..101, do: {x, y}
+
+    test "removes Land Protector and trap cells inside the area, destroying groups left empty" do
+      manager = start_manager(10_000)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1, cells: [{99, 100}, {100, 100}], state: %{land_protector: true})
+        )
+
+      :ok = Manager.register(manager, trap_group(2, cells: [{102, 100}], center: {102, 100}))
+      :ok = Manager.register(manager, group(3, cells: [{110, 100}], center: {110, 100}))
+      :ok = Manager.register(manager, group(4, map_name: "geffen", cells: [{101, 100}]))
+
+      assert :ok = Manager.clear_area(manager, "prontera", @area)
+
+      assert %Group{cells: [{99, 100}]} = Storage.get(1)
+      assert nil == Storage.get(2)
+      assert %Group{cells: [{110, 100}]} = Storage.get(3)
+      assert %Group{cells: [{101, 100}]} = Storage.get(4)
+    end
+
+    test "destroys a caster-following group only when its centre lies inside the area" do
+      manager = start_manager(10_000)
+      follows = %{follows_caster: true}
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            center: {98, 100},
+            cells: [{97, 100}, {98, 100}, {99, 100}, {100, 100}],
+            state: follows
+          )
+        )
+
+      :ok =
+        Manager.register(
+          manager,
+          group(2, center: {101, 101}, cells: [{101, 101}, {104, 101}], state: follows)
+        )
+
+      assert :ok = Manager.clear_area(manager, "prontera", @area)
+
+      assert %Group{cells: [{97, 100}, {98, 100}, {99, 100}, {100, 100}]} = Storage.get(1)
+      assert nil == Storage.get(2)
+    end
+
+    test "an empty area is a no-op" do
+      manager = start_manager(10_000)
+      :ok = Manager.register(manager, group(1, cells: [{100, 100}]))
+
+      assert :ok = Manager.clear_area(manager, "prontera", [])
+      assert %Group{cells: [{100, 100}]} = Storage.get(1)
+    end
+  end
+
   describe "follow_caster/4" do
     test "shifts the footprint, moves field support and publishes the move by observer" do
       test_pid = self()
