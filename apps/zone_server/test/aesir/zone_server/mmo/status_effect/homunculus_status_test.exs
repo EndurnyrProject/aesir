@@ -357,7 +357,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
     assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_speed, val2: 50)
 
     assert %{
-             movement_speed: -80,
+             haste_rate: 80,
              vit: 30,
              int: 20,
              def: 15,

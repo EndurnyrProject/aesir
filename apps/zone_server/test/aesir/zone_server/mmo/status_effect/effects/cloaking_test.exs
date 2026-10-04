@@ -23,7 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
 
     assert Interpreter.get_all_modifiers(:player, 1) == %{
              critical_rate: 100,
-             movement_speed: 15
+             movement_speed: 15,
+             haste_rate: 0
            }
 
     cache(MapData.new("cloaking", 5, 5) |> MapData.set_cell(2, 1, GatType.wall()))
@@ -33,7 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
 
     assert Interpreter.get_all_modifiers(:player, 1) == %{
              critical_rate: 100,
-             movement_speed: -12
+             movement_speed: 0,
+             haste_rate: 12
            }
 
     cache(MapData.new("cloaking", 5, 5))
@@ -43,7 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
 
     assert Interpreter.get_all_modifiers(:player, 1) == %{
              critical_rate: 100,
-             movement_speed: 15
+             movement_speed: 15,
+             haste_rate: 0
            }
   end
 
@@ -52,7 +55,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
     # FunctionClauseError and take the unit's whole stat recalculation down.
     entry = %StatusEntry{type: :sc_cloaking, val1: 0, state: %{}}
 
-    assert Cloaking.modifiers(entry, %{}) == %{critical_rate: 100, movement_speed: 0}
+    assert Cloaking.modifiers(entry, %{}) == %{
+             critical_rate: 100,
+             movement_speed: 0,
+             haste_rate: 0
+           }
   end
 
   test "low levels end on the next open-terrain movement command but higher levels remain" do

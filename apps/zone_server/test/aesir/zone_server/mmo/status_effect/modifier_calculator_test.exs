@@ -9,6 +9,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculatorTest do
                %{flee_bonus: 15}
     end
 
+    test "keeps the strongest haste while movement slows still sum" do
+      assert ModifierCalculator.merge_modifiers(%{haste_rate: 25}, %{haste_rate: 20}) ==
+               %{haste_rate: 25}
+
+      assert ModifierCalculator.merge_modifiers(%{movement_speed: 25}, %{movement_speed: 50}) ==
+               %{movement_speed: 75}
+    end
+
     test "keeps non-colliding keys from both maps" do
       assert ModifierCalculator.merge_modifiers(%{atk_bonus: 3}, %{def_bonus: 4}) ==
                %{atk_bonus: 3, def_bonus: 4}

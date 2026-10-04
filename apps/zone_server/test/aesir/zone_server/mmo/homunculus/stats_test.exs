@@ -103,7 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
 
   test "derives mode-specific combat bounds and all Homunculus status reader channels" do
     modifiers = %{
-      movement_speed: -80,
+      haste_rate: 80,
       vit: 30,
       int: 20,
       def: 15,
@@ -130,6 +130,8 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     assert effective.combat_stats.matk_max == mode_value(116, 126)
     assert effective.attack_delay_ms == 542
     assert Stats.movement_delay_ms(200, modifiers) == 80
+    assert Stats.movement_delay_ms(1000, %{haste_rate: 80}) == 400
+    assert Stats.movement_delay_ms(1000, %{haste_rate: 30, movement_speed: 30}) == 1000
   end
 
   test "preserves absolute resources and clamps only when an effective maximum shrinks" do

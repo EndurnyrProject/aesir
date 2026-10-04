@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
   @doc "Returns the current movement step delay after Homunculus movement-haste modifiers."
   @spec movement_delay_ms(pos_integer(), modifiers()) :: pos_integer()
   def movement_delay_ms(base_delay_ms, modifiers) when base_delay_ms > 0 and is_map(modifiers) do
-    haste = modifiers |> Map.get(:movement_speed, 0) |> Kernel.-() |> max(0)
+    haste = max(Map.get(modifiers, :haste_rate, 0) - Map.get(modifiers, :movement_speed, 0), 0)
     div(base_delay_ms * max(100 - haste, 40), 100)
   end
 

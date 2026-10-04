@@ -149,6 +149,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
     end
   end
 
+  describe "walk_speed_for/1 with status haste" do
+    test "haste speeds the player up and an equal slow cancels it", %{state: state} do
+      stats =
+        put_in(state.game_state.stats, [Access.key!(:modifiers), Access.key!(:status_effects)], %{
+          haste_rate: 25
+        })
+
+      assert StatusManager.walk_speed_for(stats) == 112
+
+      slowed =
+        put_in(
+          stats,
+          [Access.key!(:modifiers), Access.key!(:status_effects), :movement_speed],
+          25
+        )
+
+      assert StatusManager.walk_speed_for(slowed) == 150
+    end
+  end
+
   describe "walk_speed_for/1 with equipment movement speed" do
     test "an equipment bonus speeds the player up (positive = faster)", %{state: state} do
       stats = with_equipment_speed(state.game_state.stats, 25)

@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Berserk do
       mdef_override: 0,
       def2_rate: -100,
       mdef2_rate: -100,
-      movement_speed: -25,
+      haste_rate: 25,
       hp_regen: -100,
       sp_regen: -100,
       skill_hp_regen_rate: -100,

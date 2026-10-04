@@ -2,9 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Speedup1 do
   @moduledoc """
   Movement-speed potion, tier 1 (SC_SPEEDUP1).
 
-  Speeds the player for the duration (`db/re/status.yml` `Speedup1`; items pass
-  50). `movement_speed` is positive-is-slower (`status_manager.ex`), so a speed
-  buff emits the negated `val1`.
+  In renewal and pre-renewal, grants `val1` percent movement haste for the
+  duration (items pass 50). `haste_rate` keeps only the strongest haste buff.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_speedup1,
@@ -14,5 +13,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Speedup1 do
     icon: :movhaste_potion
 
   @impl true
-  def modifiers(instance, _context), do: %{movement_speed: -instance.val1}
+  def modifiers(instance, _context), do: %{haste_rate: instance.val1}
 end

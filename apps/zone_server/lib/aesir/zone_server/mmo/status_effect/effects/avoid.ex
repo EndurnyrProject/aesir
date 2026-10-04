@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Avoid do
-  @moduledoc "Lif's Avoid movement-haste status for its owner and itself."
+  @moduledoc "Lif's Avoid grants max-folded movement haste in renewal and pre-renewal."
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_avoid,
@@ -11,5 +11,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Avoid do
     icon: :hlif_avoid
 
   @impl true
-  def modifiers(instance, _context), do: %{movement_speed: -instance.val2}
+  def modifiers(instance, _context), do: %{haste_rate: instance.val2}
 end

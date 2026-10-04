@@ -2,9 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseAgi do
   @moduledoc """
   Increase AGI (SC_INCREASEAGI).
 
-  Raises AGI (val2) and attack speed by skill level (val1). rAthena's
-  `status_calc_speed` applies a flat `max(val, 25)` haste regardless of skill
-  level, modelled here as `movement_speed: -25` (negative = faster).
+  In both renewal and pre-renewal, raises AGI (val2) and attack speed by
+  skill level (val1), with a flat 25% movement haste regardless of level.
+  `haste_rate` keeps only the strongest active haste buff.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_increaseagi,
@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncreaseAgi do
   def modifiers(instance, _context) do
     %{
       agi: instance.val2,
-      movement_speed: -25,
+      haste_rate: 25,
       aspd: instance.val1
     }
   end

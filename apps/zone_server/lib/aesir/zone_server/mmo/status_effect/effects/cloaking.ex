@@ -2,8 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   @moduledoc """
   Cloaking (SC_CLOAKING).
 
-  Conceals its holder, doubles CRIT, and applies wall-sensitive movement speed.
-  Player movement commands refresh the stored adjacency branch.
+  In renewal and pre-renewal, conceals its holder, doubles CRIT, and applies
+  wall-sensitive movement speed. Wall-adjacent haste keeps only the strongest
+  haste buff; open-ground slows remain additive. Player movement commands
+  refresh the stored adjacency branch.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_cloaking,
@@ -26,11 +28,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   @impl true
   @spec modifiers(StatusEntry.t(), map()) :: %{
           critical_rate: 100,
-          movement_speed: integer()
+          movement_speed: integer(),
+          haste_rate: non_neg_integer()
         }
   def modifiers(%StatusEntry{val1: level, state: state}, _context) when level in 1..10 do
     adjacent? = Map.get(state, :adjacent_impassable?, false)
-    %{critical_rate: 100, movement_speed: movement_modifier(level, adjacent?)}
+
+    %{
+      critical_rate: 100,
+      movement_speed: if(adjacent?, do: 0, else: movement_modifier(level)),
+      haste_rate: if(adjacent?, do: min(25, 3 * level - 3), else: 0)
+    }
   end
 
   # A structurally-valid sc_cloaking entry whose level falls outside the
@@ -38,7 +46,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   # utility/test path) must not crash the modifier pipeline and take the unit's
   # whole stat recalculation down with it. Keep the concealment CRIT bonus and
   # contribute no speed delta, since no level-specific branch applies.
-  def modifiers(%StatusEntry{}, _context), do: %{critical_rate: 100, movement_speed: 0}
+  def modifiers(%StatusEntry{}, _context),
+    do: %{critical_rate: 100, movement_speed: 0, haste_rate: 0}
 
   @impl true
   @spec on_movement_intent(Definition.target(), StatusEntry.t(), map(), Definition.context()) ::
@@ -103,7 +112,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
 
   def after_damage_taken(_target, _instance, %{damage: 0}, _context), do: :ok
 
-  defp movement_modifier(level, false) when level in 1..2, do: 300
-  defp movement_modifier(level, false), do: 30 - 3 * level
-  defp movement_modifier(level, true), do: -min(25, 3 * level - 3)
+  defp movement_modifier(level) when level in 1..2, do: 300
+  defp movement_modifier(level), do: 30 - 3 * level
 end

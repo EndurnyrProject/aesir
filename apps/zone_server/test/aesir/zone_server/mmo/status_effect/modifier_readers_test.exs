@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :crit_atk_rate,
                :perfect_dodge,
                :movement_speed,
+               :haste_rate,
                :hiding,
                :walk_speed_override,
                :def_override,

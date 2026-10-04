@@ -165,7 +165,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
 
     test "emergency move grants +25% movement speed" do
       assert EmergencyMove.modifiers(%StatusEntry{type: :sc_emergency_move}, %{}) ==
-               %{movement_speed: -25}
+               %{haste_rate: 25}
     end
   end
 end
