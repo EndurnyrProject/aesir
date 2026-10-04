@@ -392,13 +392,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         element: taken_rates.element,
         size: taken_rates.size,
         long_def: EquipmentBonuses.long_range_defense_rate(defender, defender_modifiers, ranged?),
-        ranged:
-          EquipmentBonuses.ranged_damage_taken_rate(
-            defender,
-            defender_modifiers,
-            ranged?,
-            skill_id
-          )
+        ranged: EquipmentBonuses.ranged_damage_taken_rate(defender, defender_modifiers, ranged?)
       },
       defense:
         player_defense_context(defender, attacker, attack_path, defense_mode, defender_modifiers),
@@ -989,8 +983,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       EquipmentBonuses.ranged_damage_taken_rate(
         defender,
         status_modifiers,
-        ranged_hit?(attacker, opts),
-        skill_id
+        ranged_hit?(attacker, opts)
       )
 
     long_def =

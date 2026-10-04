@@ -72,10 +72,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   Invoked every `interval` ms while the group is alive.
 
   Runs the effect against units in the footprint and returns the updated group.
-  Returning `{:expire, group}` ends the group early.
+  Returning `{:expire, group}` ends the group early; `{:ok, group, {:remove_cells,
+  cells}}` also drops those cells (each cell's leavers are released, and the
+  group ends with its last cell).
   """
   @callback on_interval(Group.t(), now :: integer()) ::
-              {:ok, Group.t()} | {:expire, Group.t()}
+              {:ok, Group.t()}
+              | {:ok, Group.t(), {:remove_cells, [cell()]}}
+              | {:expire, Group.t()}
 
   @doc "Builds manager-owned schedule state with the injected zero-based RNG. Optional."
   @callback schedule(Group.t(), rng :: (pos_integer() -> non_neg_integer())) :: {:ok, Group.t()}

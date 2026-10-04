@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -195,7 +196,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   defp run(module, state, target, row, definition) do
     with :ok <- check_support_status(state, definition),
          {:ok, adapted_target} <- adapt_target(target, definition, state),
-         :ok <- module.validate(state, adapted_target, row.level, definition) do
+         :ok <- module.validate(state, adapted_target, row.level, definition),
+         :ok <- check_fog(target, definition) do
       module
       |> invoke(state, target, adapted_target, row, definition)
       |> collapse()
@@ -210,6 +212,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   defp check_support_status(_state, _definition), do: :ok
+
+  defp check_fog({:unit, type, id}, definition) do
+    if Targeting.fogged_out?({:unit, {type, id}}, definition),
+      do: {:error, :fogged_out},
+      else: :ok
+  end
+
+  defp check_fog(_target, _definition), do: :ok
 
   defp invoke(module, state, raw_target, adapted_target, row, definition) do
     Origin.with_skill(definition.name, {:mob, state.instance_id}, fn ->

@@ -686,6 +686,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
         update_after_interval(updated, now, module)
 
+      {:ok, {:ok, %Group{group_id: group_id} = updated, {:remove_cells, cells}}}
+      when group_id == group.group_id and is_list(cells) ->
+        update_and_drop_cells(updated, cells, now, module)
+
       {:ok, {:ok, %Group{group_id: group_id}}} ->
         callback_failed(group, :on_interval, {:foreign_group_id, group_id}, module)
 
@@ -2082,6 +2086,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp rollback_visible_cells(group_id) do
     group_id |> Storage.get_cells_by_group() |> Enum.each(&remove_cell_indexes/1)
     :ok = Storage.delete(group_id)
+  end
+
+  defp update_and_drop_cells(%Group{group_id: group_id} = updated, cells, now, module) do
+    update_after_interval(updated, now, module)
+    if live = Storage.get(group_id), do: remove_group_cells(live, MapSet.new(cells))
+    :ok
   end
 
   defp update_after_interval(%Group{} = updated, now, module) do

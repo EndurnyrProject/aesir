@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Deluge do
   Every occupant's water attack gains the tabulated element points. Max HP rises
   by 5, 9, 12, 14, or 15% by level: for everyone in renewal, for water-element
   holders only in pre-renewal. A mob recomputes its stored HP ceiling when the
-  status applies or ends.
+  status applies or ends. Gaining it while standing in Blinding Mist ends Blind.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_deluge,
@@ -16,8 +16,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Deluge do
     icon: :groundmagic
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.FieldElement
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @hp_rate {5, 9, 12, 14, 15}
+
+  @impl true
+  def on_apply({type, id}, instance, _context) do
+    if StatusStorage.has_status?(type, id, :sc_fogwall),
+      do: Interpreter.remove_status(type, id, :sc_blind)
+
+    {:ok, instance}
+  end
 
   @impl true
   def modifiers(instance, context) do

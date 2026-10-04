@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -105,6 +107,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   @doc "Returns whether an explicit ground selector chooses a typed unit reference."
   @spec ground_selected?(Relationship.ground_selector(), Ref.t()) :: boolean()
   defdelegate ground_selected?(selector, target_ref), to: Relationship
+
+  # Attack-type skills (the source's TargetType Attack) that Aesir models as
+  # `:target_any` because they also accept allies.
+  @attack_type_any [:pf_soulchange, :sa_dispell, :dc_winkcharm]
+
+  @doc """
+  Whether an attack-type skill aimed at a unit standing in Blinding Mist fails
+  at cast end: three times in four. Support, self and ground skills, and targets
+  outside the fog, never fail. `rng` is a `(100 -> 1..100)` roll.
+  """
+  @spec fogged_out?(term(), map(), (pos_integer() -> pos_integer())) :: boolean()
+  def fogged_out?(target, definition, rng \\ &:rand.uniform/1)
+
+  def fogged_out?({:unit, target_id}, %{target_type: type, name: name}, rng)
+      when type == :target_enemy or name in @attack_type_any do
+    case TargetResolver.resolve(target_id) do
+      {:ok, _pid, _state, unit_type} ->
+        StatusStorage.has_status?(unit_type, bare_id(target_id), :sc_fogwall) and rng.(100) <= 75
+
+      _unresolved ->
+        false
+    end
+  end
+
+  def fogged_out?(_target, _definition, _rng), do: false
+
+  defp bare_id({_type, id}), do: id
+  defp bare_id(id), do: id
 
   @doc "Returns whether `map` is a versus map."
   @spec versus_map?(term()) :: boolean()

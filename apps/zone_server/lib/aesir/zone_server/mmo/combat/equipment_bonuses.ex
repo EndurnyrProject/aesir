@@ -155,16 +155,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
           faith_resist_rate(defender, attack_element) +
           skin_temper_resist_rate(defender, attack_element),
       size: read(defender, :subsize, attacker.size, attack_flag),
-      skill: skill_rate(defender, :sub_skill, skill_id) - skill_taken(status_modifiers, skill_id)
+      skill: skill_rate(defender, :sub_skill, skill_id)
     }
   end
-
-  # `skill_damage_taken_rate` follows the taken convention (negative reduces
-  # damage), while the `skill` channel is a reduction, hence the sign flip.
-  defp skill_taken(_status_modifiers, nil), do: 0
-
-  defp skill_taken(status_modifiers, _skill_id),
-    do: Map.get(status_modifiers, :skill_damage_taken_rate, 0)
 
   @doc """
   Percent damage-taken rate the defender's equipment and statuses apply to
@@ -175,24 +168,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   attacker's attack range; against a melee hit it is zero. The rate is additive
   on damage taken (`bLongAtkRate` convention), so a negative value reduces
   incoming ranged damage. Equipment and status values for the key sum.
-
-  The status key `:normal_ranged_damage_taken_rate` joins the sum only for a
-  ranged hit with no skill (`skill_id` nil), i.e. a normal ranged attack.
   """
-  @spec ranged_damage_taken_rate(Combatant.t(), map(), boolean(), pos_integer() | nil) :: rate()
-  def ranged_damage_taken_rate(defender, status_modifiers, ranged?, skill_id \\ nil)
-
-  def ranged_damage_taken_rate(%Combatant{} = defender, status_modifiers, true, skill_id) do
-    normal =
-      if is_nil(skill_id),
-        do: Map.get(status_modifiers, :normal_ranged_damage_taken_rate, 0),
-        else: 0
-
+  @spec ranged_damage_taken_rate(Combatant.t(), map(), boolean()) :: rate()
+  def ranged_damage_taken_rate(%Combatant{} = defender, status_modifiers, true) do
     Map.get(defender.equip_modifiers, :ranged_damage_taken_rate, 0) +
-      Map.get(status_modifiers, :ranged_damage_taken_rate, 0) + normal
+      Map.get(status_modifiers, :ranged_damage_taken_rate, 0)
   end
 
-  def ranged_damage_taken_rate(%Combatant{}, _status_modifiers, false, _skill_id), do: 0
+  def ranged_damage_taken_rate(%Combatant{}, _status_modifiers, false), do: 0
 
   @doc """
   Percent reduction the defender's equipment and statuses apply to incoming

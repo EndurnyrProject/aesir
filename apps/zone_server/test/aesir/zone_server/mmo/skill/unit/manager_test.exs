@@ -43,10 +43,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     @impl Ground
     def on_interval(%Group{state: state} = group, _now) do
-      if Map.get(state, :expire_now) do
-        {:expire, group}
-      else
-        {:ok, %{group | state: Map.update(state, :ticks, 1, &(&1 + 1))}}
+      cond do
+        Map.get(state, :expire_now) ->
+          {:expire, group}
+
+        drop = Map.get(state, :drop_cells) ->
+          {:ok, %{group | state: Map.delete(state, :drop_cells)}, {:remove_cells, drop}}
+
+        true ->
+          {:ok, %{group | state: Map.update(state, :ticks, 1, &(&1 + 1))}}
       end
     end
 
@@ -2209,6 +2214,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       assert %Group{next_tick_at: 10_450, state: %{ticks: 1}} = Storage.get(1)
       assert %Group{next_tick_at: 10_500, state: %{}} = Storage.get(2)
+    end
+
+    test "an interval may drop some of its own cells and keeps running" do
+      now = 10_000
+      manager = start_manager(now)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            cells: [{100, 100}, {101, 100}],
+            next_tick_at: now,
+            interval: 450,
+            state: %{drop_cells: [{101, 100}]}
+          )
+        )
+
+      assert :ok = Manager.tick(manager)
+
+      assert %Group{cells: [{100, 100}], next_tick_at: 10_450, state: state} = Storage.get(1)
+      refute Map.has_key?(state, :drop_cells)
+      assert [] == Storage.get_groups_at_cell("prontera", 101, 100)
     end
 
     test "uses the reindexed deadline after an interval update" do

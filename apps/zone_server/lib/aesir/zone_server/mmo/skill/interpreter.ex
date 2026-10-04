@@ -777,6 +777,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
          :ok <- check_target(caster, target, definition),
          :ok <- check_range(caster, target, definition, level),
+         :ok <- check_fog(target, definition),
          {:ok, _module} <- fetch_active_module(definition),
          :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
          context = CastContext.build(caster, definition, level, target, :completion),
@@ -791,6 +792,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
          :ok <- check_target(caster, target, definition),
          :ok <- check_range(caster, target, definition, level),
+         :ok <- check_fog(target, definition),
          :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
          :ok <- check_context_cooldown(context, now) do
       validate_and_prepare(context)
@@ -804,6 +806,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp check_support_status(_caster, _definition), do: :ok
+
+  # Blinding Mist: attack-type skills aimed at a fog holder fail at cast end
+  # three times in four, before any requirement is spent.
+  defp check_fog(target, definition) do
+    if Targeting.fogged_out?(target, definition), do: {:error, :fogged_out}, else: :ok
+  end
 
   defp lifecycle_adapter(caster) do
     adapter = Caster.for(caster)

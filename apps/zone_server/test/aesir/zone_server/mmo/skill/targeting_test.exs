@@ -253,4 +253,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       assert :ok = Targeting.validate_enemy(party_member, companion)
     end
   end
+
+  describe "fogged_out?/3" do
+    alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
+    alias Aesir.ZoneServer.Mmo.Skills.Mage.MgColdbolt
+    alias Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
+    setup do
+      :ok = UnitRegistry.register_unit(:mob, 9_901, PlayerState, mob(9_901), self())
+      :ok = StatusStorage.apply_status(:mob, 9_901, :sc_fogwall)
+      :ok
+    end
+
+    test "an attack-type skill aimed at a fog holder fails three times in four" do
+      assert Targeting.fogged_out?({:unit, 9_901}, MgColdbolt.definition(), fn 100 -> 75 end)
+      refute Targeting.fogged_out?({:unit, 9_901}, MgColdbolt.definition(), fn 100 -> 76 end)
+      assert Targeting.fogged_out?({:unit, 9_901}, PfSoulchange.definition(), fn 100 -> 1 end)
+    end
+
+    test "support skills and targets outside the fog are unaffected" do
+      refute Targeting.fogged_out?({:unit, 9_901}, AlHeal.definition(), fn 100 -> 1 end)
+      refute Targeting.fogged_out?({:unit, 4_242}, MgColdbolt.definition(), fn 100 -> 1 end)
+      refute Targeting.fogged_out?(:self, MgColdbolt.definition(), fn 100 -> 1 end)
+    end
+  end
 end

@@ -1,14 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
   @moduledoc """
-  Blinding Mist (PF_FOGWALL). A 5x3 fog lasting 20 s (40 s over a Deluge), at
-  most two per caster, that cannot be raised over a Volcano or Violent Gale.
+  Blinding Mist (PF_FOGWALL). A 5x3 fog lasting 20 s, at most two per caster.
+  Cells that would fall on a Volcano or Violent Gale are not raised; cells over
+  a Deluge last 40 s while the rest end at 20 s. A fog with no cell left still
+  spends the cast.
 
-  Everyone inside holds `:sc_fogwall`: skill damage taken -25%, normal ranged
-  damage taken -75%, and normal ranged attacks against them lose 50 hit rate.
-  An enemy stepping in is blinded for 10 s unless it stands in a Deluge; a
-  player's Blind ends when they step out.
+  Everyone inside holds `:sc_fogwall`. An enemy entering the fog, or standing
+  in it when it is raised, is blinded for 10 s unless it stands in a Deluge;
+  that Blind does not run out while the unit stays in the fog (see
+  `Effects.FogWall`).
 
-  Identical in both modes: 25 SP, 9 cells.
+  Identical in both modes: 25 SP, range 9.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 404,
@@ -24,53 +26,87 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
     sp_cost: List.duplicate(25, 5),
     unit_duration: List.duplicate(20_000, 5)
 
+  alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
 
   @blind_ms 10_000
+  @blockers [:sa_volcano, :sa_violentgale]
+  @doublers [:sa_deluge]
 
-  @doc "Refuses a fog that would overlap a Volcano or Violent Gale."
-  @spec validate(map(), term(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :blocked_by_field}
-  def validate(%{map_name: map}, {:ground, x, y}, _level, _definition) do
-    if overlaps?(map, cells({x, y}), [:sa_volcano, :sa_violentgale]),
-      do: {:error, :blocked_by_field},
-      else: :ok
+  @doc """
+  Raises the fog and blinds the enemies already standing in it. A fog whose
+  every cell is blocked still completes the cast.
+  """
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, term()}
+  def cast(caster, {:ground, x, y}, level, _definition) do
+    case Unit.place(caster, :pf_fogwall, level, {x, y}) do
+      {:ok, group} ->
+        Enum.each(occupants(group), &blind_entrant(group, &1))
+        {:ok, caster}
+
+      {:error, :no_walkable_cells} ->
+        {:ok, caster}
+
+      {:error, _reason} = error ->
+        error
+    end
   end
-
-  def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
-  def on_place(%Group{center: center, map_name: map, level: level}) do
-    cells = cells(center)
+  def on_place(%Group{center: {cx, cy}, map_name: map, level: level}) do
     base = Enum.at(definition().unit_duration, level - 1)
 
+    cells =
+      for dx <- -2..2,
+          dy <- -1..1,
+          cell = {cx + dx, cy + dy},
+          not over?(map, cell, @blockers),
+          do: cell
+
+    {long, short} = Enum.split_with(cells, &over?(map, &1, @doublers))
+
+    timing =
+      if long == [] or short == [],
+        do: %{state: %{}, interval: base, duration: if(long == [], do: base, else: base * 2)},
+        else: %{
+          state: %{short_cells: short},
+          interval: base,
+          initial_delay: base,
+          duration: base * 2
+        }
+
     {:ok,
-     %{
+     Map.merge(timing, %{
        cells: cells,
-       state: %{},
-       interval: 1_000,
-       duration: if(overlaps?(map, cells, [:sa_deluge]), do: base * 2, else: base),
        lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 2}
-     }}
+     })}
   end
 
   @impl Ground
   @spec schedule(Group.t(), (pos_integer() -> non_neg_integer())) :: {:ok, Group.t()}
+  def schedule(%Group{state: %{short_cells: _}} = group, _rng), do: {:ok, group}
   def schedule(%Group{} = group, _rng), do: {:ok, %{group | next_tick_at: nil}}
 
   @impl Ground
-  @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
+  @spec on_interval(Group.t(), integer()) ::
+          {:ok, Group.t()} | {:ok, Group.t(), {:remove_cells, [Group.cell()]}}
+  def on_interval(%Group{state: %{short_cells: short} = state} = group, _now),
+    do: {:ok, %{group | state: Map.delete(state, :short_cells)}, {:remove_cells, short}}
+
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
@@ -80,33 +116,44 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
 
   @impl Ground
   @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()}
-  def on_touch(%Group{} = group, {type, id} = mover) do
-    if enemy?(group, mover) and not StatusStorage.has_status?(type, id, :sc_deluge) do
+  def on_touch(%Group{} = group, mover) do
+    blind_entrant(group, mover)
+    {:ok, group}
+  end
+
+  # A unit already holding the fog status came in from another fog cell and is
+  # not blinded again.
+  defp blind_entrant(group, {type, id} = mover) do
+    if not StatusStorage.has_status?(type, id, :sc_fogwall) and enemy?(group, mover) and
+         not StatusStorage.has_status?(type, id, :sc_deluge) do
       StatusInterpreter.apply_status(type, id, :sc_blind,
         duration: @blind_ms,
         caster_id: group.caster_id,
         source_type: group.caster_type
       )
     end
-
-    {:ok, group}
   end
 
-  @impl Ground
-  @spec on_out(Group.t(), {atom(), integer()}) :: {:ok, Group.t()}
-  def on_out(%Group{} = group, {:player, id}) do
-    StatusInterpreter.remove_status(:player, id, :sc_blind)
-    {:ok, group}
+  defp occupants(%Group{map_name: map, cells: cells}) do
+    {xs, ys} = Enum.unzip(cells)
+
+    for type <- [:player, :mob, :homunculus],
+        id <-
+          SpatialIndex.get_units_in_area(
+            type,
+            map,
+            Enum.min(xs),
+            Enum.min(ys),
+            Enum.max(xs),
+            Enum.max(ys)
+          ),
+        {:ok, {x, y, ^map}} = SpatialIndex.get_unit_position(type, id),
+        {x, y} in cells,
+        do: {type, id}
   end
 
-  def on_out(%Group{} = group, _mover), do: {:ok, group}
-
-  defp cells({cx, cy}), do: for(dx <- -2..2, dy <- -1..1, do: {cx + dx, cy + dy})
-
-  defp overlaps?(map, cells, skill_names) do
-    Enum.any?(cells, fn {x, y} ->
-      map |> Storage.get_groups_at_cell(x, y) |> Enum.any?(&(&1.skill_name in skill_names))
-    end)
+  defp over?(map, {x, y}, skill_names) do
+    map |> Storage.get_groups_at_cell(x, y) |> Enum.any?(&(&1.skill_name in skill_names))
   end
 
   defp enemy?(%Group{} = group, {target_type, target_id}) do
