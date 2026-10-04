@@ -86,7 +86,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
       %{
         flee: defender.combat_stats.flee,
         perfect_dodge: defender.combat_stats.perfect_dodge,
-        unit_id: defender.unit_id
+        unit_id: defender.unit_id,
+        hit_rate_taken_flat: HitCalculations.normal_attack_hit_taken_flat(attacker, defender)
       }
     )
   end

@@ -85,6 +85,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :watk,
                # EquipmentBonuses taken families (status → damage-taken/resist bridge)
                :ranged_damage_taken_rate,
+               :normal_ranged_damage_taken_rate,
+               :skill_damage_taken_rate,
+               # HitCalculations.normal_attack_hit_taken_flat/2
+               :normal_ranged_hit_taken_flat,
                :subele_water,
                :subele_earth,
                :subele_fire,

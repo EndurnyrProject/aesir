@@ -1,11 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -186,6 +188,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
 
     assert {:ok, %HandedAttack{outcome: :hit}} =
              HandedAttack.calculate(%PlayerState{}, melee, defender())
+  end
+
+  describe "normal_ranged_hit_taken_flat" do
+    setup :set_mimic_private
+
+    test "a ranged normal attack rolls against the defender's reduced hit rate" do
+      defender = defender()
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        type, id when type == defender.unit_type and id == defender.unit_id ->
+          %{normal_ranged_hit_taken_flat: 100}
+
+        _type, _id ->
+          %{}
+      end)
+
+      ranged = put_in(accurate_player(), [Access.key!(:weapon), Access.key!(:type)], :bow)
+
+      assert {:ok, %HandedAttack{outcome: :miss}} =
+               HandedAttack.calculate(%PlayerState{}, ranged, defender)
+
+      assert {:ok, %HandedAttack{outcome: :hit}} =
+               HandedAttack.calculate(%PlayerState{}, accurate_player(), defender)
+    end
   end
 
   test "minimal player context and mob combatants retain aggregate one-component behavior" do

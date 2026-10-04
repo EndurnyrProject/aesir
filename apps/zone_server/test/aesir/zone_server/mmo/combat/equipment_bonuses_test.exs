@@ -406,6 +406,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert %{skill: 0} =
                EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil)
     end
+
+    test "status skill_damage_taken_rate reduces any skill hit and ignores basic attacks" do
+      defender = CombatTestHelper.create_player_combatant()
+      attacker = CombatTestHelper.create_mob_combatant()
+      status = %{skill_damage_taken_rate: -25}
+
+      assert %{skill: 25} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, status, 14)
+
+      assert %{skill: 0} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, status, nil)
+
+      assert %{skill: 25} =
+               EquipmentBonuses.magic_defense_rates(defender, attacker, :fire, status, 14, 0)
+    end
+  end
+
+  describe "ranged_damage_taken_rate/4" do
+    test "normal_ranged_damage_taken_rate applies only to ranged hits without a skill" do
+      defender = CombatTestHelper.create_mob_combatant()
+      status = %{normal_ranged_damage_taken_rate: -75}
+
+      assert EquipmentBonuses.ranged_damage_taken_rate(defender, status, true, nil) == -75
+      assert EquipmentBonuses.ranged_damage_taken_rate(defender, status, true, 382) == 0
+      assert EquipmentBonuses.ranged_damage_taken_rate(defender, status, false, nil) == 0
+    end
   end
 
   describe "ranged_damage_taken_rate/3" do

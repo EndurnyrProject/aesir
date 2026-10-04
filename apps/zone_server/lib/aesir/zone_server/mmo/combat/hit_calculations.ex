@@ -14,7 +14,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
     accuracy bonus), and the result is clamped again
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   @typedoc """
   Result of a hit calculation.
@@ -43,9 +46,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   Target stats required for hit calculations.
   """
   @type target_stats :: %{
-          flee: non_neg_integer(),
-          perfect_dodge: non_neg_integer(),
-          unit_id: integer()
+          :flee => non_neg_integer(),
+          :perfect_dodge => non_neg_integer(),
+          :unit_id => integer(),
+          optional(:hit_rate_taken_flat) => integer()
         }
 
   @doc """
@@ -113,7 +117,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
       skill_hit_rate_bonus_pct, hit_rate_bonus_pct, and hit_rate_bonus_flat (a
       flat addition applied after the clamp and the relative bonuses, e.g.
       Rapid Smiting's +20)
-    - target_stats: Map containing target's flee stat
+    - target_stats: Map containing target's flee stat and the optional
+      hit_rate_taken_flat (a defender-side flat penalty subtracted inside the
+      final clamp, e.g. Blinding Mist against normal ranged attacks)
 
   ## Returns
     - Integer between 0 and 100 representing hit rate percentage
@@ -141,8 +147,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
       |> scale_by(Map.get(attacker_stats, :hit_rate_bonus_pct, 0))
 
     flat_bonus = Map.get(attacker_stats, :hit_rate_bonus_flat, 0)
+    taken_flat = Map.get(target_stats, :hit_rate_taken_flat, 0)
 
-    max(0, min(100, scaled_hit_rate + flat_bonus))
+    max(0, min(100, scaled_hit_rate + flat_bonus - taken_flat))
+  end
+
+  @doc """
+  Flat hit-rate penalty a defender's statuses impose on a normal (skill-less)
+  attack, read from `:normal_ranged_hit_taken_flat` when the swing is ranged
+  and zero for melee. Callers put it in `target_stats` as `:hit_rate_taken_flat`.
+  """
+  @spec normal_attack_hit_taken_flat(Combatant.t(), Combatant.t()) :: integer()
+  def normal_attack_hit_taken_flat(%Combatant{} = attacker, %Combatant{} = defender) do
+    if DamageCalculator.ranged_hit?(attacker, []) do
+      defender.unit_type
+      |> ModifierCalculator.get_all_modifiers(defender.unit_id)
+      |> Map.get(:normal_ranged_hit_taken_flat, 0)
+    else
+      0
+    end
   end
 
   defp scale_by(hit_rate, 0), do: hit_rate

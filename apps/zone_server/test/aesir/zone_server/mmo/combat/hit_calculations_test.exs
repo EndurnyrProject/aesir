@@ -114,6 +114,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
   end
 
   describe "calculate_hit_rate/2" do
+    test "hit_rate_taken_flat lowers the final rate inside the clamp" do
+      attacker = %{hit: 100}
+      base = HitCalculations.calculate_hit_rate(attacker, %{flee: 50})
+      reduced = HitCalculations.calculate_hit_rate(attacker, %{flee: 50, hit_rate_taken_flat: 50})
+
+      assert reduced == max(base - 50, 0)
+
+      assert HitCalculations.calculate_hit_rate(attacker, %{flee: 50, hit_rate_taken_flat: 500}) ==
+               0
+    end
+
     test "calculates basic hit rate formula" do
       attacker = %{hit: 200}
       target = %{flee: 100}

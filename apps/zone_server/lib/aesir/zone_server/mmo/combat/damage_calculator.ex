@@ -392,7 +392,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         element: taken_rates.element,
         size: taken_rates.size,
         long_def: EquipmentBonuses.long_range_defense_rate(defender, defender_modifiers, ranged?),
-        ranged: EquipmentBonuses.ranged_damage_taken_rate(defender, defender_modifiers, ranged?)
+        ranged:
+          EquipmentBonuses.ranged_damage_taken_rate(
+            defender,
+            defender_modifiers,
+            ranged?,
+            skill_id
+          )
       },
       defense:
         player_defense_context(defender, attacker, attack_path, defense_mode, defender_modifiers),
@@ -983,7 +989,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       EquipmentBonuses.ranged_damage_taken_rate(
         defender,
         status_modifiers,
-        ranged_hit?(attacker, opts)
+        ranged_hit?(attacker, opts),
+        skill_id
       )
 
     long_def =
@@ -1003,7 +1010,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     |> apply_taken_rate_step(ranged)
   end
 
-  defp ranged_hit?(attacker, opts) do
+  @doc """
+  Whether a physical hit is ranged: an explicit `ranged: true` option, a ranged
+  weapon class, or an attack range above 3 cells.
+  """
+  @spec ranged_hit?(map(), keyword()) :: boolean()
+  def ranged_hit?(attacker, opts) do
     Keyword.get(opts, :ranged, false) or
       attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() or
       Map.get(attacker, :attack_range, 1) > 3

@@ -1532,7 +1532,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     defender_stats = %{
       flee: defender_combatant.combat_stats.flee,
       perfect_dodge: defender_combatant.combat_stats.perfect_dodge,
-      unit_id: defender_combatant.unit_id
+      unit_id: defender_combatant.unit_id,
+      hit_rate_taken_flat:
+        HitCalculations.normal_attack_hit_taken_flat(attacker_combatant, defender_combatant)
     }
 
     case HitCalculations.calculate_hit_result(attacker_stats, defender_stats) do
