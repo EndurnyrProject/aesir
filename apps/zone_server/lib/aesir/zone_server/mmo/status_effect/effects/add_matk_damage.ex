@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AddMatkDamage do
   Added magic-damage buff (SC_ADD_MATK_DAMAGE).
 
   Adds `val1` percent to magic damage (`db/re/status.yml` `bonus bMatkRate`).
-  Modelled with the same `matk_rate` percent delta the magic damage calculator
-  consumes.
+  Modelled with the same `matk_rate` percent delta the stat calculators fold
+  into MATK.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_add_matk_damage,

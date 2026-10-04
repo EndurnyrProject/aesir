@@ -344,9 +344,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
 
     wmatk_min = Map.get(stats.modifiers.equipment, :wmatk_min, 0)
     wmatk_max = Map.get(stats.modifiers.equipment, :wmatk_max, 0)
-    matk_rate = Stats.get_equipment_modifier(stats, :matk_rate)
-    matk_min = apply_rate(base_matk_min + wmatk_min + flat_matk, matk_rate)
-    matk_max = apply_rate(base_matk_max + wmatk_max + flat_matk, matk_rate)
+    base_matk_rate = Stats.get_status_modifier(stats, :base_matk_rate)
+
+    matk_rate =
+      Stats.get_equipment_modifier(stats, :matk_rate) +
+        Stats.get_status_modifier(stats, :matk_rate)
+
+    matk_min =
+      apply_rate(apply_rate(base_matk_min + wmatk_min, base_matk_rate) + flat_matk, matk_rate)
+
+    matk_max =
+      apply_rate(apply_rate(base_matk_max + wmatk_max, base_matk_rate) + flat_matk, matk_rate)
 
     # Heal MATK excludes flat item and status MATK while retaining weapon variance.
     heal_matk_min = base_matk_min + wmatk_min
@@ -399,7 +407,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
           :mdef_override
         ),
       soft_def: formulas.soft_def(values),
-      soft_mdef: formulas.soft_mdef(values),
+      soft_mdef:
+        apply_rate(formulas.soft_mdef(values), Stats.get_status_modifier(stats, :mdef2_rate)),
       passive_atk: passive_atk,
       hit_rate_bonus_pct: Passives.hit_rate_bonus_pct(stats),
       patk: trait_slots.patk,

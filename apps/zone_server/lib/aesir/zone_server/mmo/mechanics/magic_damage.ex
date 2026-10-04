@@ -32,7 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage do
           bonus_matk: integer(),
           smatk: integer(),
           mres: integer(),
-          matk_rate: integer(),
           damage_multiplier: number(),
           skill_atk_rate: integer(),
           skill_taken_rate: integer(),
@@ -46,12 +45,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage do
   @doc "Applies only the mode's attacker card channels, without other damage stages."
   @callback attacker_cardfix(integer(), attack_rates()) :: integer()
 
-  @doc "Applies the skill ratio, post-ratio flat addition and shared status channels."
+  @doc """
+  Applies the skill ratio, post-ratio flat addition and the shared damage multiplier.
+
+  Status MATK rates are already folded into the rolled MATK by the stat calculators.
+  """
   @spec skill_damage(integer(), context()) :: integer()
   def skill_damage(matk, context) do
     skilled = div(matk * context.skill_ratio, 100) + context.bonus_matk
-    rated = div(skilled * (100 + context.matk_rate), 100)
-    trunc(rated * (1 + context.damage_multiplier))
+    trunc(skilled * (1 + context.damage_multiplier))
   end
 
   @doc "Adds a skill's percentage delta with truncation of the changed amount."

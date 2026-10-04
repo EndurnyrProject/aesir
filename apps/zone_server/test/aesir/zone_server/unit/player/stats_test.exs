@@ -124,15 +124,15 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     }
   end
 
-  defp combat_stats(equipment_modifiers) do
+  defp combat_stats(equipment_modifiers, status_modifiers \\ %{}, base_stats \\ %{}) do
     %Stats{
-      base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+      base_stats: Map.merge(%{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0}, base_stats),
       progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
       derived_stats: %{max_hp: 1, max_sp: 1},
       equipment: %Equipment{},
       modifiers: %{
         equipment: equipment_modifiers,
-        status_effects: %{},
+        status_effects: status_modifiers,
         job_bonuses: %{}
       }
     }
@@ -813,6 +813,35 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     test "bHitRate scales the computed Hit after flat contributions" do
       assert combat_stats(%{hit: 25, hit_rate: 20}).hit == mode_value(240, 30)
       assert combat_stats(%{hit: 25}).hit == mode_value(200, 25)
+    end
+
+    test "status base_matk_rate scales base plus weapon MATK before flat MATK" do
+      wmatk = %{wmatk_min: 40, wmatk_max: 60}
+      baseline = combat_stats(wmatk, %{}, %{int: 50})
+      result = combat_stats(Map.put(wmatk, :matk, 20), %{base_matk_rate: 50}, %{int: 50})
+
+      assert result.matk_min == div(baseline.matk_min * 150, 100) + 20
+      assert result.matk_max == div(baseline.matk_max * 150, 100) + 20
+      assert result.heal_matk_min == baseline.heal_matk_min
+      assert result.heal_matk_max == baseline.heal_matk_max
+    end
+
+    test "equipment and status matk_rate sum before scaling final MATK" do
+      base = %{wmatk_min: 40, wmatk_max: 60, matk: 20}
+      baseline = combat_stats(base, %{}, %{int: 50})
+      result = combat_stats(Map.put(base, :matk_rate, 10), %{matk_rate: 20}, %{int: 50})
+
+      assert result.matk_min == div(baseline.matk_min * 130, 100)
+      assert result.matk_max == div(baseline.matk_max * 130, 100)
+      assert result.heal_matk_min == baseline.heal_matk_min
+    end
+
+    test "status mdef2_rate scales soft MDEF" do
+      baseline = combat_stats(%{}, %{}, %{int: 50, vit: 30})
+      result = combat_stats(%{}, %{mdef2_rate: -60}, %{int: 50, vit: 30})
+
+      assert baseline.soft_mdef > 0
+      assert result.soft_mdef == div(baseline.soft_mdef * 40, 100)
     end
 
     test "positive equipment DEF rate scales only equipment hard DEF" do

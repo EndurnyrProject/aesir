@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -146,15 +145,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       # Renewal: trunc(100 * 1010 / 1100 - 5). Classic: 100 * 90% - 5.
       assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
-    end
-
-    test "mdef2_rate removes soft MDEF without changing hard MDEF" do
-      target = defender(30, 20)
-      baseline = DamageInputs.magic_context(attacker(100), target, [], %{}, %{})
-      reduced = DamageInputs.magic_context(attacker(100), target, [], %{}, %{mdef2_rate: -100})
-
-      assert {baseline.hard_mdef, baseline.soft_mdef} == {30, 20}
-      assert {reduced.hard_mdef, reduced.soft_mdef} == {30, 0}
     end
 
     test "SC_MDEFSET replaces both hard and soft MDEF" do
@@ -414,18 +404,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
   end
 
-  describe "status magic modifiers (matk_rate / mdef_rate / magic_damage_reduction)" do
-    test "matk_rate scales the skill-scaled MATK additively" do
-      # matk_rate 50: skilled 100 -> 150; 150 * 1010 / 1100 - 5 = 132.727... -> 132
-      stub(ModifierCalculator, :get_all_modifiers, fn
-        :player, 1001 -> %{matk_rate: 50}
-        _, _ -> %{}
-      end)
-
-      assert {:ok, %{damage: mode_value(132, 130), is_critical: false}} ==
-               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
-    end
-
+  describe "status magic modifiers (mdef_rate / magic_damage_reduction)" do
     test "mdef_rate raises the defender's hard MDEF and lowers damage" do
       # mdef_rate 100: hard 10 -> 20; 100 * 1020 / 1200 - 5 = 85 - 5 = 80
       stub(ModifierCalculator, :get_all_modifiers, fn
@@ -548,12 +527,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       attacker = c_attacker(101, %{{:skill_atk, 14} => 30})
       defender = c_defender(30, 7, equip_modifiers: %{{:sub_skill, 14} => 20})
 
-      stub(ModifierCalculator, :get_all_modifiers, fn
-        :player, 1001 -> %{matk_rate: 50}
-        _, _ -> %{}
-      end)
-
-      assert {:ok, %{damage: mode_value(256, 227), is_critical: false}} ==
+      assert {:ok, %{damage: mode_value(167, 149), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker, defender,
                  skill_id: 14,
                  skill_ratio: 200,

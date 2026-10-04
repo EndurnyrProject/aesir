@@ -48,13 +48,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamageTest do
         soft_mdef: 7,
         skill_ratio: 200,
         bonus_matk: 13,
-        matk_rate: 50,
         skill_atk_rate: 30,
         skill_taken_rate: 20
       })
 
-    assert Renewal.calculate(101, inputs) == 256
-    assert PreRenewal.calculate(101, inputs) == 227
+    assert Renewal.calculate(101, inputs) == 167
+    assert PreRenewal.calculate(101, inputs) == 149
 
     inputs = context(%{bonus_matk: 50, damage_multiplier: 0.5})
     assert Renewal.calculate(100, inputs) == 225
@@ -112,7 +111,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamageTest do
         bonus_matk: 0,
         smatk: 0,
         mres: 0,
-        matk_rate: 0,
         damage_multiplier: 0,
         skill_atk_rate: 0,
         skill_taken_rate: 0,

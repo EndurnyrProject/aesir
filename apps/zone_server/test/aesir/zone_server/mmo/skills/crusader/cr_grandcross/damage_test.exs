@@ -65,13 +65,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
   end
 
   test "magic card, skill, status and trait stages stay on their hybrid component" do
-    renewal = inputs(1.25)
+    renewal = %{inputs(1.25) | matk: 120}
 
     magic = %{
       renewal.magic
       | smatk: 50,
         mres: 400,
-        matk_rate: 20,
         skill_atk_rate: 20,
         skill_taken_rate: 10,
         attack: %{renewal.magic.attack | size: 20},
@@ -159,7 +158,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
         bonus_matk: 0,
         smatk: 0,
         mres: 0,
-        matk_rate: 0,
         damage_multiplier: 0,
         skill_atk_rate: 0,
         skill_taken_rate: 0,

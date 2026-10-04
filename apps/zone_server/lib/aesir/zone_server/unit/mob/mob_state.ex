@@ -368,8 +368,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   def to_combatant(%__MODULE__{} = mob_state) do
     mob_data = mob_state.mob_data
     formulas = Mechanics.mob_formulas()
-    mob_matk = formulas.calculate_magic_attack(mob_data)
     modifiers = Interpreter.get_all_modifiers(:mob, mob_state.instance_id)
+
+    mob_matk =
+      apply_rate(
+        formulas.calculate_magic_attack(mob_data) + modifier(modifiers, :matk),
+        modifier(modifiers, :matk_rate)
+      )
+
     stat_bonus = mob_state.stat_bonus
 
     Combatant.new!(%{
@@ -405,13 +411,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         atk:
           formulas.calculate_base_attack(mob_data) + modifier(modifiers, :atk) +
             Map.get(stat_bonus, :atk, 0),
-        matk: mob_matk + modifier(modifiers, :matk),
-        matk_min: mob_matk + modifier(modifiers, :matk),
-        matk_max: mob_matk + modifier(modifiers, :matk),
+        matk: mob_matk,
+        matk_min: mob_matk,
+        matk_max: mob_matk,
         mdef:
           formulas.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef) +
             Map.get(stat_bonus, :mdef, 0),
-        soft_mdef: formulas.calculate_soft_mdef(mob_data),
+        soft_mdef:
+          apply_rate(formulas.calculate_soft_mdef(mob_data), modifier(modifiers, :mdef2_rate)),
         ignore_size_penalty: false,
         max_weapon_damage: false
       },
@@ -874,4 +881,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   defp modifier(modifiers, key), do: Map.get(modifiers, key, 0)
+
+  defp apply_rate(value, rate), do: div(value * (100 + rate), 100)
 end

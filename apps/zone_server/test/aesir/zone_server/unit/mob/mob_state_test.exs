@@ -37,6 +37,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     def modifiers(_instance, _context), do: %{flee_rate: -50}
   end
 
+  defmodule TestMagicRates do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mob_magic_rates,
+      no_dispel: false,
+      properties: [:debuff]
+
+    @impl true
+    def modifiers(_instance, _context), do: %{matk_rate: 100, mdef2_rate: -60}
+  end
+
   defp build_mob_state do
     mob_data = %MobDefinition{
       id: 1001,
@@ -356,6 +367,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
       :ok = StatusStorage.apply_status(:mob, state.instance_id, TestFleeRate.id())
       assert MobState.to_combatant(state).combat_stats.flee == div(baseline, 2)
+    end
+
+    test "matk_rate scales MATK and mdef2_rate scales soft MDEF" do
+      state = build_mob_state()
+      Registry.register_module(TestMagicRates)
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+      baseline = MobState.to_combatant(state).combat_stats
+
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, TestMagicRates.id())
+      rated = MobState.to_combatant(state).combat_stats
+
+      assert rated.matk == 120
+      assert {rated.matk_min, rated.matk_max} == {120, 120}
+      assert rated.soft_mdef == div(baseline.soft_mdef * 40, 100)
     end
 
     test "an ATK-raising status on the mob raises combat_stats.atk" do

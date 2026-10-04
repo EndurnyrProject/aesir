@@ -250,7 +250,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       bonus_matk: Keyword.get(opts, :bonus_matk, 0),
       skill_atk_rate: equip.attack.skill,
       skill_taken_rate: equip.taken.skill,
-      matk_rate: Map.get(modifiers, :matk_rate, 0),
       damage_multiplier: Map.get(modifiers, :damage_multiplier, 0),
       smatk: Map.get(attacker.combat_stats, :smatk, 0),
       mres: Map.get(defender.combat_stats, :mres, 0),
@@ -292,9 +291,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       _missing ->
         mdef_rate = Map.get(modifiers, :mdef_rate, 0)
         hard = trunc(defender.combat_stats.mdef * (100 + mdef_rate) / 100)
-        soft_rate = Map.get(modifiers, :mdef2_rate, 0)
-        soft = trunc(defender.combat_stats.soft_mdef * (100 + soft_rate) / 100)
-        {hard, soft}
+        {hard, defender.combat_stats.soft_mdef}
     end
   end
 
