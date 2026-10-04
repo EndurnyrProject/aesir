@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
 
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @doc """
   Applies the defender's element resistance to `damage`.
@@ -30,7 +31,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   def apply_element(damage, attack_element, defender, attacker_modifiers \\ %{}) do
     case Map.get(defender, :element, {:neutral, 1}) do
       {defender_element, defender_level} ->
-        ratio_bonus = Map.get(attacker_modifiers, {:element_ratio, attack_element}, 0)
+        ratio_bonus =
+          Map.get(attacker_modifiers, {:element_ratio, attack_element}, 0) +
+            web_bonus(attack_element, defender)
 
         modifier =
           ElementModifiers.get_modifier(
@@ -46,6 +49,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
         damage
     end
   end
+
+  # Fiber Lock: fire against a webbed unit gains 100 element ratio points
+  # (renewal adds them to the row; pre-renewal's (100 + bonus) / 100 doubles).
+  defp web_bonus(:fire, %{unit_type: type, unit_id: id})
+       when type in [:player, :mob, :homunculus] do
+    if StatusStorage.has_status?(type, id, :sc_spiderweb), do: 100, else: 0
+  end
+
+  defp web_bonus(_element, _defender), do: 0
 
   @doc """
   Resolves an attacker combatant's aggregated status modifiers for the flat-

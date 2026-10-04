@@ -177,6 +177,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def clear_area(server, map_name, cells),
     do: GenServer.call(server, {:clear_area, map_name, cells})
 
+  @doc "Moves a live group's expiry to `expires_at` (monotonic ms). A no-op for a gone group."
+  @spec set_expires_at(non_neg_integer(), integer()) :: :ok
+  def set_expires_at(group_id, expires_at),
+    do: GenServer.call(default_server(), {:set_expires_at, group_id, expires_at})
+
   @doc "Runs cleanup and destroys a live group."
   @spec destroy(non_neg_integer()) :: :ok
   def destroy(group_id), do: destroy(default_server(), group_id)
@@ -387,6 +392,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       end
     end)
 
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:set_expires_at, group_id, expires_at}, _from, state) do
+    if group = Storage.get(group_id), do: Storage.update(%{group | expires_at: expires_at})
     {:reply, :ok, state}
   end
 
