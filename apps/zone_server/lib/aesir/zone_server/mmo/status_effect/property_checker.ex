@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
 
   This module contains functions to check if a status effect has specific
   properties like being a buff/debuff, preventing movement, etc.
+  `:prevents_support_skills` blocks casts targeting allies or any unit; it does
+  not block self-targeted skills. This property is checked through `has_property?/2`.
   """
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry

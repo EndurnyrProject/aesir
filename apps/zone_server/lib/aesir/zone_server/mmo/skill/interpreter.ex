@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Unit
@@ -723,6 +724,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, adapter} <- lifecycle_adapter(caster),
          :ok <- :erlang.apply(adapter, :castable_state, [caster, skill_id, :begin]),
          {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_support_status(caster, definition),
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
          :ok <- check_weapon(caster, definition),
@@ -743,7 +745,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     with {:ok, adapter} <- lifecycle_adapter(caster),
          :ok <- :erlang.apply(adapter, :castable_state, [caster, skill_id, :completion]),
-         {:ok, definition} <- fetch_definition(skill_id) do
+         {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_support_status(caster, definition) do
       if :erlang.apply(adapter, :completion_revalidates_definition?, []) do
         validate_revalidated_completion(
           caster,
@@ -793,6 +796,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       validate_and_prepare(context)
     end
   end
+
+  defp check_support_status(caster, %{target_type: target_type})
+       when target_type in [:target_ally, :target_any] do
+    {type, id} = caster_ref(caster)
+    if StatusInterpreter.support_blocked?(type, id), do: {:error, :status_blocked}, else: :ok
+  end
+
+  defp check_support_status(_caster, _definition), do: :ok
 
   defp lifecycle_adapter(caster) do
     adapter = Caster.for(caster)

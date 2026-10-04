@@ -739,8 +739,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Returns whether a unit may move, i.e. carries no `prevents_movement` status.
 
   Players have two entry-dependent rules: Hiding allows movement with Tunnel
-  Drive, and a performance lock roots only an ensemble performer (one with a
-  partner in `val4`).
+  Drive, and a performance lock's root is entry-dependent. Longing frees
+  ordinary ensemble performers, but not always-rooted Moonlit or Hermode.
   """
   @spec can_move?(unit_type(), integer()) :: boolean()
   def can_move?(:player, unit_id) do
@@ -753,9 +753,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     do: not restricted?(unit_type, unit_id, &prevents_movement?/1)
 
   @doc """
-  Returns whether a unit may attack, i.e. carries no `prevents_attack` status.
+  Returns whether a unit may attack. Longing relaxes an ensemble performing
+  lock, but other `prevents_attack` statuses still block attacks.
   """
   @spec can_attack?(unit_type(), integer()) :: boolean()
+  def can_attack?(:player, unit_id) do
+    :player
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.all?(&(not blocks_player_attack?(&1, unit_id)))
+  end
+
   def can_attack?(unit_type, unit_id),
     do: not restricted?(unit_type, unit_id, &prevents_attack?/1)
 
@@ -805,11 +812,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   def can_use_skill?(unit_type, unit_id, skill_id) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.all?(fn %StatusEntry{type: type} ->
+    |> Enum.all?(fn %StatusEntry{type: type} = entry ->
       skill_id not in PropertyChecker.blocked_skills(type) and
-        (not prevents_skills?(type) or skill_id in PropertyChecker.allowed_skills(type))
+        skill_allowed?(entry, unit_type, unit_id, skill_id)
     end)
   end
+
+  @doc "True when an active status prevents ally-targeted support skills."
+  @spec support_blocked?(unit_type(), integer()) :: boolean()
+  def support_blocked?(unit_type, unit_id),
+    do:
+      restricted?(
+        unit_type,
+        unit_id,
+        &PropertyChecker.has_property?(&1, :prevents_support_skills)
+      )
 
   @doc """
   Returns whether a unit may be targeted, i.e. carries no `untargetable` status.
@@ -843,10 +860,36 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp blocks_player_movement?(%StatusEntry{type: :sc_hiding}, unit_id),
     do: not tunnel_drive?(unit_id)
 
-  defp blocks_player_movement?(%StatusEntry{type: :sc_dancing, val4: partner_id}, _unit_id),
-    do: is_integer(partner_id) and partner_id > 0
+  defp blocks_player_movement?(%StatusEntry{type: :sc_dancing} = entry, unit_id) do
+    case root(entry) do
+      :always -> true
+      :ensemble -> not longing?(unit_id)
+      :none -> false
+    end
+  end
 
   defp blocks_player_movement?(%StatusEntry{type: type}, _unit_id), do: prevents_movement?(type)
+
+  defp blocks_player_attack?(%StatusEntry{type: :sc_dancing} = entry, unit_id),
+    do: root(entry) == :none or not longing?(unit_id)
+
+  defp blocks_player_attack?(%StatusEntry{type: type}, _unit_id), do: prevents_attack?(type)
+
+  defp root(%StatusEntry{state: state, val4: partner_id}),
+    do:
+      Map.get(state, :root) ||
+        if(is_integer(partner_id) and partner_id > 0, do: :ensemble, else: :none)
+
+  defp longing?(unit_id), do: StatusStorage.has_status?(:player, unit_id, :sc_longing)
+
+  defp skill_allowed?(%StatusEntry{type: :sc_dancing} = entry, :player, unit_id, skill_id) do
+    if root(entry) != :none and longing?(unit_id),
+      do: skill_id != 305 and not Catalog.replayable?(skill_id),
+      else: skill_id in PropertyChecker.allowed_skills(:sc_dancing)
+  end
+
+  defp skill_allowed?(%StatusEntry{type: type}, _unit_type, _unit_id, skill_id),
+    do: not prevents_skills?(type) or skill_id in PropertyChecker.allowed_skills(type)
 
   defp tunnel_drive?(unit_id) do
     case UnitRegistry.get_unit(:player, unit_id) do

@@ -1,14 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
   @moduledoc """
-  Pre-renewal performing lock. Renewal songs never apply this status.
+  Performing lock for pre-renewal fields and renewal Moonlit Water Mill.
 
-  The performer cannot attack, may use only the listed skills, and pays one SP
-  at the song's upkeep cadence. Ending the lock ends its field.
+  The performer cannot attack and may use only the listed skills unless Longing
+  relaxes an ensemble lock. Ending the lock ends its field. The state carries
+  `upkeep` in seconds and `upkeep_sp` (default one), tripled under Longing.
 
-  A solo performer may walk, and the field follows them. Walking is slowed by
-  `500 - 40 * Lesson` percent, where `val3` is the Musical or Dancing Lesson
-  level frozen at cast. An ensemble performer (`val4` holds the partner's
-  character id) is rooted; `Interpreter.can_move?/2` reads that.
+  `root` is `:none` for mobile solo songs, `:ensemble` for ensembles freed by
+  Longing, or `:always` for Moonlit and Hermode. Older entries infer the root
+  from a positive partner character id in `val4`. Walking without Longing is
+  slowed by `500 - 40 * Lesson` percent, with the lesson frozen in `val3`.
   """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -19,20 +20,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     remove_on_map_change: true,
     target_types: [:player],
     properties: [:prevents_attack, :prevents_skills],
-    allow_skills: [316, 324, 304],
+    allow_skills: [316, 324, 304, 487],
     tick_interval: 1_000,
     icon: :bdplaying
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
   @spec modifiers(StatusEntry.t(), Definition.context()) :: map()
-  def modifiers(%StatusEntry{val3: lesson}, _context),
-    do: %{sp_regen: -100, skill_sp_regen_rate: -100, movement_speed: 500 - 40 * (lesson || 0)}
+  def modifiers(%StatusEntry{val3: lesson}, context) do
+    slow =
+      if longing?(Map.get(context, :unit_type), Map.get(context, :target_id)),
+        do: 0,
+        else: 500 - 40 * (lesson || 0)
+
+    %{sp_regen: -100, skill_sp_regen_rate: -100, movement_speed: slow}
+  end
 
   @impl true
   @spec on_tick(Definition.target(), StatusEntry.t(), Definition.context()) ::
@@ -45,8 +53,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     updated = %{entry | state: %{entry.state | ticks: ticks + 1}}
 
     if rem(ticks + 1, upkeep) == 0 do
+      amount = Map.get(entry.state, :upkeep_sp, 1) * if(longing?(:player, id), do: 3, else: 1)
+
       with {:ok, {_module, _state, pid}} when is_pid(pid) <- UnitRegistry.get_unit(:player, id),
-           :ok <- PlayerSession.try_consume_sp(pid, 1) do
+           :ok <- PlayerSession.try_consume_sp(pid, amount) do
         {:ok, updated}
       else
         _ -> :remove
@@ -72,4 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     do: Unit.destroy_async(group_id)
 
   def on_expire(_target, _entry, _context), do: :ok
+
+  defp longing?(nil, _id), do: false
+  defp longing?(type, id), do: StatusStorage.has_status?(type, id, :sc_longing)
 end

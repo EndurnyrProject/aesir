@@ -297,6 +297,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :damage_over_time,
     :prevents_movement,
     :prevents_skills,
+    :prevents_support_skills,
     :prevents_items,
     :prevents_chat,
     :prevents_equip_change,
