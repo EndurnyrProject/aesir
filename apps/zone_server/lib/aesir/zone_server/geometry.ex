@@ -141,6 +141,53 @@ defmodule Aesir.ZoneServer.Geometry do
     line_cells({x1, y1}, {x2, y2}, {dx, dy}, {sx, sy}, dx - dy, [])
   end
 
+  @doc "Cells in an eight-direction lane of `length` cells and half-width `width`."
+  @spec path_cells(
+          {integer(), integer()},
+          {integer(), integer()},
+          pos_integer(),
+          non_neg_integer()
+        ) ::
+          MapSet.t({integer(), integer()})
+  def path_cells({ox, oy}, {tx, ty}, length, width) when length > 0 and width >= 0 do
+    step = lane_step(tx - ox, ty - oy)
+
+    step
+    |> lane_offsets(length, width)
+    |> MapSet.new(fn {x, y} -> {ox + x, oy + y} end)
+  end
+
+  defp lane_step(0, 0), do: {0, -1}
+
+  defp lane_step(dx, dy) do
+    cond do
+      abs(dx) >= 3 * abs(dy) -> {sign(dx), 0}
+      3 * abs(dx) < abs(dy) -> {0, sign(dy)}
+      true -> {sign(dx), sign(dy)}
+    end
+  end
+
+  defp sign(value) when value < 0, do: -1
+  defp sign(_value), do: 1
+
+  defp lane_offsets({sx, sy}, length, width) when sx == 0 or sy == 0 do
+    for along <- 0..(length - 1), across <- -width..width do
+      {along * sx - across * sy, along * sy + across * sx}
+    end
+  end
+
+  defp lane_offsets({sx, sy}, length, width) do
+    last = length - 1
+
+    for rx <- -width..(last + width),
+        ry <- -width..(last + width),
+        rx + ry >= 0,
+        rx + ry <= 2 * last,
+        abs(rx - ry) <= 2 * width do
+      {rx * sx, ry * sy}
+    end
+  end
+
   defp line_cells({x, y}, {x2, y2}, _delta, _step, _err, acc) when x == x2 and y == y2 do
     Enum.reverse([{x, y} | acc])
   end

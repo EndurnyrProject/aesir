@@ -106,6 +106,44 @@ defmodule Aesir.ZoneServer.GeometryTest do
     defp position({x, y}), do: %{x: x, y: y}
   end
 
+  describe "path_cells/4" do
+    test "cardinal lanes include their origin, width and last cell" do
+      cells = Geometry.path_cells({0, 0}, {9, 1}, 14, 1)
+
+      for cell <- [{0, 0}, {13, 1}, {0, -1}, {9, 1}], do: assert(MapSet.member?(cells, cell))
+      for cell <- [{14, 0}, {9, 2}], do: refute(MapSet.member?(cells, cell))
+
+      boundary = Geometry.path_cells({0, 0}, {9, 3}, 14, 1)
+      assert MapSet.member?(boundary, {9, 1})
+      refute MapSet.member?(boundary, {9, 3})
+    end
+
+    test "diagonal lanes use rotated length and width bounds" do
+      cells = Geometry.path_cells({0, 0}, {9, 4}, 14, 1)
+      for cell <- [{0, 0}, {5, 4}, {6, 7}, {13, 13}], do: assert(MapSet.member?(cells, cell))
+      for cell <- [{8, 1}, {14, 14}], do: refute(MapSet.member?(cells, cell))
+      assert cells == Geometry.path_cells({0, 0}, {5, 4}, 14, 1)
+    end
+
+    test "lanes reflect in every direction and same-cell aim faces north" do
+      east = Geometry.path_cells({0, 0}, {9, 1}, 14, 1)
+      northeast = Geometry.path_cells({0, 0}, {5, 4}, 14, 1)
+
+      for sx <- [-1, 1], sy <- [-1, 1] do
+        assert Geometry.path_cells({20, 20}, {20 + sx * 9, 20 + sy}, 14, 1) ==
+                 MapSet.new(east, fn {x, y} -> {20 + sx * x, 20 + sy * y} end)
+
+        assert Geometry.path_cells({20, 20}, {20 + sx * 5, 20 + sy * 4}, 14, 1) ==
+                 MapSet.new(northeast, fn {x, y} -> {20 + sx * x, 20 + sy * y} end)
+      end
+
+      north = Geometry.path_cells({0, 0}, {0, 0}, 14, 1)
+      assert north == Geometry.path_cells({0, 0}, {0, -9}, 14, 1)
+      assert MapSet.member?(north, {1, -13})
+      refute MapSet.member?(north, {0, 1})
+    end
+  end
+
   describe "line_cells/4" do
     test "walks a horizontal line inclusive of both endpoints" do
       assert Geometry.line_cells(0, 0, 4, 0) == [{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}]

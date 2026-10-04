@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
   @moduledoc """
-  Selects the valid offensive targets standing on the straight line of cells
-  between two points.
+  Selects living offensive targets on a Bresenham line between two points,
+  or an eight-direction lane with explicit length and half-width.
 
   Shared by line-attack skills (e.g. Spear Stab) so the target filter -
   cell membership, enemy relation, alive check - lives in one place, mirroring
@@ -21,16 +21,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
   `{sx, sy}` to `{tx, ty}` (inclusive of both ends) that are living enemies of
   `caster`.
 
-  The spatial index filters by Manhattan distance; since the line's cells
-  march monotonically toward `{tx, ty}`, none of them is farther from
-  `{sx, sy}` than the endpoint itself, so a single Manhattan-radius query from
-  the caster's cell covers the whole line.
+  With both `:length` and `:width`, selects an eight-direction lane from the
+  origin toward the endpoint instead. Without them, uses the original line.
+  The spatial query covers the greatest Manhattan distance of the chosen cells.
   """
-  @spec select(String.t(), {integer(), integer()}, {integer(), integer()}, map()) ::
+  @spec select(String.t(), {integer(), integer()}, {integer(), integer()}, map(), keyword()) ::
           [Ref.t()]
-  def select(map_name, {sx, sy}, {tx, ty}, caster) do
-    cell_set = sx |> Geometry.line_cells(sy, tx, ty) |> MapSet.new()
-    radius = Geometry.manhattan_distance(sx, sy, tx, ty)
+  def select(map_name, {sx, sy} = from, {tx, ty} = to, caster, opts \\ []) do
+    cell_set =
+      case {Keyword.fetch(opts, :length), Keyword.fetch(opts, :width)} do
+        {{:ok, length}, {:ok, width}} -> Geometry.path_cells(from, to, length, width)
+        _ -> sx |> Geometry.line_cells(sy, tx, ty) |> MapSet.new()
+      end
+
+    radius = Enum.max_by(cell_set, fn {x, y} -> Geometry.manhattan_distance(sx, sy, x, y) end)
+    {rx, ry} = radius
+    radius = Geometry.manhattan_distance(sx, sy, rx, ry)
 
     map_name
     |> SpatialIndex.get_all_units_in_range(sx, sy, radius)
