@@ -11,11 +11,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
   @range 1
 
   def handle_sit(%{game_state: game_state} = state) do
-    transition(state, game_state, :sitting)
+    if Interpreter.can_sit?(game_state.character_id),
+      do: transition(state, game_state, :sitting),
+      else: {:noreply, state}
   end
 
   def handle_stand(%{game_state: game_state} = state) do
-    transition(state, game_state, :idle)
+    if Interpreter.can_stand?(game_state.character_id),
+      do: transition(state, game_state, :idle),
+      else: {:noreply, state}
   end
 
   defp transition(state, game_state, action_state) do

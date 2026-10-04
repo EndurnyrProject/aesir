@@ -800,6 +800,37 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     )
   end
 
+  @doc """
+  Returns whether a player may sit down: no locking body state (see
+  `can_stand?/1`), no performance, and not channelling a Gravitation Field.
+  """
+  @spec can_sit?(integer()) :: boolean()
+  def can_sit?(unit_id) do
+    can_stand?(unit_id) and
+      not match?(%StatusEntry{}, StatusStorage.get_status(:player, unit_id, :sc_dancing)) and
+      not channeling_gravitation?(:player, unit_id)
+  end
+
+  @doc """
+  Returns whether a player may stand up: no body state (stone, freeze, stun,
+  sleep) holds them. The petrification wait phase does not.
+  """
+  @spec can_stand?(integer()) :: boolean()
+  def can_stand?(unit_id) do
+    :player
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.all?(&(not locking_body_state?(&1)))
+  end
+
+  defp locking_body_state?(%StatusEntry{type: :sc_stone, phase: :wait}), do: false
+
+  defp locking_body_state?(%StatusEntry{type: type}) do
+    case Registry.get_definition(type) do
+      nil -> false
+      definition -> definition[:opt1] not in [nil, :stonewait, :burning]
+    end
+  end
+
   @doc "Returns whether a unit may send area chat while status effects are active."
   @spec can_chat?(unit_type(), integer()) :: boolean()
   def can_chat?(unit_type, unit_id),
