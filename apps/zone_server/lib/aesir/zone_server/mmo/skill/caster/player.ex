@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   @waivable_gemstone_ids [715, 716, 717]
+  @gem_floor_skills [:hw_ganbantein, :sa_abracadabra]
 
   # Guild skills (GD_*) are learned by the guild, not the character: rank and
   # cooldowns resolve against the guild entry, never against the caster's
@@ -361,12 +362,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def effective_item_cost(_caster, %{item_cost: []}), do: []
 
   def effective_item_cost(caster, definition) do
-    if StatusStorage.has_status?(:player, caster.character_id, :sc_intoabyss) do
-      Enum.reject(definition.item_cost, &(&1.id in @waivable_gemstone_ids))
-    else
-      definition.item_cost
-    end
+    if StatusStorage.has_status?(:player, caster.character_id, :sc_intoabyss),
+      do: waive_gemstones(definition),
+      else: definition.item_cost
   end
+
+  # Hocus Pocus and Ganbantein only drop one of each gemstone, never below one.
+  defp waive_gemstones(%{name: name, item_cost: cost}) when name in @gem_floor_skills do
+    Enum.map(cost, fn
+      %{id: id, amount: amount} = entry when id in @waivable_gemstone_ids ->
+        %{entry | amount: max(amount - 1, 1)}
+
+      entry ->
+        entry
+    end)
+  end
+
+  defp waive_gemstones(%{item_cost: cost}),
+    do: Enum.reject(cost, &(&1.id in @waivable_gemstone_ids))
 
   defp check_ammo(caster, definition) do
     if definition.requires_ammo and Ammo.equipped_ammo_index(caster.inventory) == nil do

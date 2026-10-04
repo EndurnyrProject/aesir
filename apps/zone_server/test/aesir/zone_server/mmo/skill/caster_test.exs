@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Caster
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -125,6 +126,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
     foresight = Caster.Player.cast_stats(caster, 403)
     assert foresight.varcast_reductions == []
     assert foresight.varcast_rate == -25
+  end
+
+  test "Into the Abyss waives gemstones except for Ganbantein, which still needs one of each" do
+    caster = cast_player(%{})
+    :ok = StatusStorage.apply_status(:player, 101, :sc_intoabyss)
+    {:ok, ganbantein} = Catalog.by_name(:hw_ganbantein)
+    {:ok, gravitation} = Catalog.by_id(484)
+
+    assert Caster.Player.effective_item_cost(caster, ganbantein) == ganbantein.item_cost
+
+    assert Caster.Player.effective_item_cost(caster, %{
+             gravitation
+             | item_cost: [%{id: 717, amount: 1}]
+           }) == []
   end
 
   defp emitted_cast_modifiers(rate) do
