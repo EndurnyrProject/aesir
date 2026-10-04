@@ -87,6 +87,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:skill_id` / `:skill_level` — identify the skill for the damage packet (required).
     - `:element` — attack element applied against the target's element resistance
       (default `:neutral`).
+    - `:ignore_element` — deliver `amount` without the element table (Soul Siphon)
+      (default `false`).
     - `:skip_range` — skip only the distance check (which gates on the caster's
       *weapon* attack range) for a cast whose skill range the interpreter already
       validated; map, life, and enemy-relation checks still run (default `false`).
@@ -112,13 +114,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- Targeting.validate_enemy(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       damage =
-        amount
-        |> DamageShared.apply_element(
-          element,
-          target,
-          DamageShared.attacker_modifiers(attacker)
-        )
-        |> DamageShared.clamp_min_one()
+        if Keyword.get(opts, :ignore_element, false),
+          do: DamageShared.clamp_min_one(amount),
+          else:
+            amount
+            |> DamageShared.apply_element(
+              element,
+              target,
+              DamageShared.attacker_modifiers(attacker)
+            )
+            |> DamageShared.clamp_min_one()
 
       hit_info =
         magic_hit_info(element,

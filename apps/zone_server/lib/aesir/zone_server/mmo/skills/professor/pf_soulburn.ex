@@ -1,0 +1,132 @@
+defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
+  @moduledoc """
+  Soul Siphon (PF_SOULBURN). A `30 + 10 * level` percent chance (70% at most)
+  to empty the target's SP; at level 5 the target also takes magic damage equal
+  to twice the SP it had, ignoring element and cards. On a failed roll the same
+  happens to the Professor instead: their SP empties and, at level 5, they take
+  twice the SP they have left after paying the cost as damage, which can kill
+  them.
+
+  Identical in both modes: 80 to 120 SP, 9 cells, a 10 s cooldown (15 s at
+  level 5). Monsters cast it through `mob_cast/5`.
+  """
+  use Aesir.ZoneServer.Mmo.Skill,
+    id: 375,
+    name: :pf_soulburn,
+    requires: [],
+    display_name: "Soul Siphon",
+    max_level: 5,
+    target_type: :target_enemy,
+    damage_type: :damage,
+    damage_kind: :magic,
+    range: 9,
+    sp_cost: [80, 90, 100, 110, 120],
+    cooldown: [10_000, 10_000, 10_000, 10_000, 15_000]
+
+  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
+  alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Resource
+
+  @behaviour Active
+
+  @doc "Percent chance the siphon lands on the target: `30 + 10 * level`, at most 70."
+  @spec success_chance(pos_integer()) :: 40 | 50 | 60 | 70
+  def success_chance(level), do: min(30 + 10 * level, 70)
+
+  @doc """
+  Siphons the target or backfires. `opts` accepts `:rng`, a
+  `(pos_integer() -> pos_integer())` roll defaulting to `&:rand.uniform/1`.
+  """
+  @impl Active
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t(), keyword()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast(caster, {:unit, target_id}, level, definition, opts \\ []) do
+    with {:ok, %{unit_type: type}} <- Combat.resolve_combatant(target_id) do
+      caster
+      |> pay(definition, level)
+      |> siphon({type, target_id}, level, definition, Keyword.get(opts, :rng, &:rand.uniform/1))
+    end
+  end
+
+  @doc """
+  Requires the resolved SP to start but spends none up front: `cast/5` pays it
+  before the siphon, so a backfire burns the SP left after the cost.
+  """
+  @impl Active
+  @spec dynamic_cost(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
+  def dynamic_cost(caster, _target, level, definition) do
+    caster
+    |> Cost.from_definition(definition, level, sp: 0)
+    |> Map.put(:sp_requirement, Cost.resolve_sp(caster, definition, level))
+  end
+
+  defp pay(%PlayerState{} = caster, definition, level),
+    do: PlayerCaster.deduct_sp(caster, Cost.resolve_sp(caster, definition, level))
+
+  defp pay(caster, _definition, _level), do: caster
+
+  @impl Active
+  @spec mob_cast(MobState.t(), term(), pos_integer(), Definition.t(), map()) ::
+          :ok | {:error, atom()}
+  def mob_cast(%MobState{} = caster, {:unit, type, id}, level, definition, _row) do
+    with {:ok, _caster} <- siphon(caster, {type, id}, level, definition, &:rand.uniform/1),
+         do: :ok
+  end
+
+  defp siphon(caster, target, level, definition, rng) do
+    if rng.(100) <= success_chance(level),
+      do: drain(caster, target, level, definition),
+      else: backfire(caster, level)
+  end
+
+  defp drain(caster, target, level, definition) do
+    with {:ok, sp} <- Resource.read(target, :sp) do
+      if level == 5, do: burn(caster, target, sp * 2, definition)
+      Resource.drain_sp_percent(target, 100)
+      {:ok, caster}
+    end
+  end
+
+  defp burn(caster, target, damage, definition) do
+    MagicAttack.execute_magic_damage(caster, target, damage,
+      skill_id: definition.id,
+      skill_level: 5,
+      skip_range: true,
+      ignore_element: true
+    )
+  end
+
+  defp backfire(caster, level) do
+    if level == 5 do
+      type = caster.__struct__.get_unit_type(caster)
+
+      MagicAttack.deal_damage(
+        {type, caster.__struct__.get_unit_id(caster)},
+        own_sp(caster) * 2,
+        :neutral,
+        :skill
+      )
+    end
+
+    {:ok, empty_sp(caster)}
+  end
+
+  defp own_sp(%PlayerState{stats: %{current_state: %{sp: sp}}}), do: sp
+  defp own_sp(%MobState{sp: sp}), do: sp
+
+  defp empty_sp(%PlayerState{stats: %{current_state: current} = stats} = caster),
+    do: %{caster | stats: %{stats | current_state: %{current | sp: 0}}}
+
+  # A mob caster's state is not returned through `mob_cast/5`, so its own SP is
+  # emptied through its session like any other drain.
+  defp empty_sp(%MobState{instance_id: id} = caster) do
+    Resource.drain_sp_percent({:mob, id}, 100)
+    caster
+  end
+end
