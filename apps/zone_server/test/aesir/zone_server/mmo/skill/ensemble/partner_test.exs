@@ -149,6 +149,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     assert :none = Partner.find(caster, @skill_id, 1)
   end
 
+  test "an adjacent diagonal partner is within the square search area" do
+    caster = player(1, :bard, 1, @violin)
+    partner = %{player(2, :dancer, 1, @whip) | x: 51, y: 51}
+    register(partner)
+    assert {:ok, ^partner, 1} = Partner.find(caster, @skill_id, 1)
+  end
+
   defp player(id, job, skill_level, weapon) do
     {:ok, job_id} = AvailableJobs.job_name_to_id(job)
 

@@ -195,6 +195,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
     refute_received {:players_scope, 4}
   end
 
+  test "players scope includes the diagonal Chebyshev boundary" do
+    caster = player(1)
+    corner = player(2, x: 103, y: 103)
+    register(corner)
+    :ok = SpatialIndex.add_player(2, 103, 103, "prontera")
+    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_whistle, _ -> :ok end)
+    expect(StatusInterpreter, :apply_status, fn :player, 2, :sc_whistle, _ -> :ok end)
+
+    assert {:ok, _} =
+             Song.snapshot(caster, BaWhistle.definition(), 1, :sc_whistle, [],
+               scope: :players,
+               radius: 3
+             )
+  end
+
   defp player(id, opts \\ []) do
     %Character{
       id: id,

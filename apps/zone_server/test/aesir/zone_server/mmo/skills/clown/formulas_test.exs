@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Clown.FormulasTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.TestEtsSetup
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.GatType
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Skills.Clown.Formulas
 
   @tag game_mode: :renewal
@@ -13,6 +17,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.FormulasTest do
   test "classic Arrow Vulcan ignores base level" do
     assert Formulas.arrow_vulcan_ratio(10, 99) == 1200
     assert Formulas.arrow_vulcan_ratio(1, 50) == 300
+  end
+
+  test "a performance box must be wall-free on a known map" do
+    TestEtsSetup.setup_ets_tables(%{})
+    map = MapData.new("box_test", 20, 20)
+    :ets.insert(EtsTable.table_for(:map_cache), {"box_test", map})
+    assert Formulas.box_wall_free?("box_test", 10, 10, 4)
+    blocked = MapData.set_cell(map, 14, 14, GatType.wall())
+    :ets.insert(EtsTable.table_for(:map_cache), {"box_test", blocked})
+    refute Formulas.box_wall_free?("box_test", 10, 10, 4)
+    refute Formulas.box_wall_free?("unknown_box", 10, 10, 4)
   end
 
   test "Marionette freezes bounded primary-stat halves and caps gains at ninety-nine" do

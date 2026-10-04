@@ -33,7 +33,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
     case performer_job(caster) do
       {:ok, caster_job} ->
         caster.map_name
-        |> SpatialIndex.get_players_in_range(caster.x, caster.y, range)
+        |> SpatialIndex.get_players_in_area(
+          caster.x - range,
+          caster.y - range,
+          caster.x + range,
+          caster.y + range
+        )
         |> Enum.find_value(:none, &resolve_partner(&1, caster, caster_job, skill_id, level))
 
       :error ->

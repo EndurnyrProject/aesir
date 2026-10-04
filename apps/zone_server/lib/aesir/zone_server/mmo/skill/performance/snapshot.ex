@@ -74,7 +74,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
   defp recipients(%PlayerState{} = caster, :players, radius) do
     nearby =
       caster.map_name
-      |> SpatialIndex.get_players_in_range(caster.x, caster.y, radius)
+      |> SpatialIndex.get_players_in_area(
+        caster.x - radius,
+        caster.y - radius,
+        caster.x + radius,
+        caster.y + radius
+      )
       |> Enum.flat_map(fn id ->
         case UnitRegistry.get_unit(:player, id) do
           {:ok, {_module, %PlayerState{} = player, _pid}} -> [player]

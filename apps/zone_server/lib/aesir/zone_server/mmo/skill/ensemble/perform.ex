@@ -54,11 +54,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform do
     end
   end
 
-  @doc "Starts a field ensemble in either mode, with no ensemble fatigue."
+  @doc """
+  Starts a field ensemble in either mode, with no ensemble fatigue.
+
+  `:upkeep_sp` may be an amount or a function of the partner-averaged field level.
+  The resolved amount is passed to the field and shared by both performers.
+  """
   @spec perform_field(PlayerState.t(), Definition.t(), pos_integer(), keyword()) ::
           {:ok, PlayerState.t()} | {:error, term()}
   def perform_field(caster, definition, level, opts) do
     with {:ok, partners, effective_level} <- field_partner(caster, definition, level) do
+      upkeep = Keyword.get(opts, :upkeep_sp, 1)
+      amount = if is_function(upkeep, 1), do: upkeep.(effective_level), else: upkeep
+      opts = Keyword.put(opts, :upkeep_sp, amount)
+
       Field.start(
         caster,
         definition,
