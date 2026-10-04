@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdBattleorder do
     name: :gd_battleorder,
     display_name: "Battle Orders",
     max_level: 1,
+    ignore_dex: true,
+    ignore_status_cast: true,
     target_type: :self,
     splash_radius: 15,
     cooldown: [180_000]

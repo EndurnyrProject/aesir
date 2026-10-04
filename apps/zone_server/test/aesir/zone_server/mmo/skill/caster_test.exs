@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -107,6 +109,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
     assert results[25].renewal.total > baseline_renewal.total
     assert results[-25].pre_renewal.total < baseline_pre_renewal.total
     assert results[25].pre_renewal.total > baseline_pre_renewal.total
+  end
+
+  test "IgnoreItemBonus skills skip equipment cast rates and IgnoreStatus skills skip status reductions" do
+    caster = cast_player(%{varcast_rate: -25, fixcast_rate: -50, fixed_cast: -100})
+    Mimic.stub(ModifierCalculator, :get_all_modifiers, fn :player, 101 -> %{} end)
+
+    :ok =
+      StatusStorage.apply_status(:player, 101, :sc_suffragium, state: %{cast_time_reduction: 30})
+
+    amp = Caster.Player.cast_stats(caster, 366)
+    assert {amp.varcast_rate, amp.fixcast_rate, amp.fixed_cast} == {0, 0, 0}
+    assert amp.varcast_reductions == [30]
+
+    foresight = Caster.Player.cast_stats(caster, 403)
+    assert foresight.varcast_reductions == []
+    assert foresight.varcast_rate == -25
   end
 
   defp emitted_cast_modifiers(rate) do

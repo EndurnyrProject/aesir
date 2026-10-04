@@ -16,6 +16,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `require_weapon` restricts ordinary player casts to the listed equipped
   right-hand weapon subtypes. An empty list (the default) accepts any weapon.
 
+  `ignore_status_cast` and `ignore_item_cast` mirror the source's cast-time flags
+  IgnoreStatus and IgnoreItemBonus: the skill's cast time ignores status
+  reductions, or equipment cast-rate bonuses.
+
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
   declared range for a player caster. It is mode-invariant.
@@ -97,6 +101,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             cast_time: [],
             fixed_cast_time: [],
             ignore_dex: false,
+            ignore_status_cast: false,
+            ignore_item_cast: false,
             after_cast_delay: [],
             cooldown: [],
             damage_kind: :weapon,
@@ -138,6 +144,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           cast_time: [non_neg_integer()],
           fixed_cast_time: [non_neg_integer()],
           ignore_dex: boolean(),
+          ignore_status_cast: boolean(),
+          ignore_item_cast: boolean(),
           after_cast_delay: [non_neg_integer()],
           cooldown: [non_neg_integer()],
           damage_kind: damage_kind(),
@@ -187,6 +195,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     cast_time: {:list, :integer},
     fixed_cast_time: {:list, :integer},
     ignore_dex: :boolean,
+    ignore_status_cast: :boolean,
+    ignore_item_cast: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
@@ -220,6 +230,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     cast_time: [],
     fixed_cast_time: [],
     ignore_dex: false,
+    ignore_status_cast: false,
+    ignore_item_cast: false,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
@@ -252,6 +264,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :duration,
     :cast_time,
     :fixed_cast_time,
+    :ignore_item_cast,
     :after_cast_delay,
     :cooldown,
     :item_cost,

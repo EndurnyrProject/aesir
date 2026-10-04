@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -249,16 +250,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @impl true
   def cast_stats(caster, skill_id) do
     base_stats = caster.stats.base_stats
+    {ignore_status?, ignore_item?} = cast_flags(skill_id)
 
     {varcast_reductions, classic_status_early_rate, classic_late_reductions} =
-      cast_status_channels(caster.character_id)
+      if ignore_status?, do: {[], 0, []}, else: cast_status_channels(caster.character_id)
 
-    global_varcast_rate =
-      merged_modifier(caster.character_id, :varcast_rate) +
-        equip_modifier(caster, :varcast_rate)
+    status_varcast_rate =
+      if ignore_status?, do: 0, else: merged_modifier(caster.character_id, :varcast_rate)
 
+    item = fn key -> if ignore_item?, do: 0, else: equip_modifier(caster, key) end
+
+    global_varcast_rate = status_varcast_rate + item.(:varcast_rate)
     classic_early_rate = global_varcast_rate + classic_status_early_rate
-    classic_skill_rate = equip_modifier(caster, {:skill_varcast_rate, skill_id})
+    classic_skill_rate = item.({:skill_varcast_rate, skill_id})
     varcast_rate = global_varcast_rate + classic_skill_rate
 
     %{
@@ -266,14 +270,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       int: base_stats.int,
       varcast_reductions: varcast_reductions,
       varcast_rate: varcast_rate,
-      fixed_cast: equip_modifier(caster, :fixed_cast),
-      fixcast_rate:
-        equip_modifier(caster, :fixcast_rate) +
-          equip_modifier(caster, {:skill_fixcast_rate, skill_id}),
+      fixed_cast: item.(:fixed_cast),
+      fixcast_rate: item.(:fixcast_rate) + item.({:skill_fixcast_rate, skill_id}),
       classic_early_rate: classic_early_rate,
       classic_skill_rate: classic_skill_rate,
       classic_late_reductions: classic_late_reductions
     }
+  end
+
+  # The source's IgnoreStatus / IgnoreItemBonus cast-time flags.
+  defp cast_flags(skill_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> {definition.ignore_status_cast, definition.ignore_item_cast}
+      :error -> {false, false}
+    end
   end
 
   defp quest_lineage?(caster, %{quest_skill: true} = definition) do

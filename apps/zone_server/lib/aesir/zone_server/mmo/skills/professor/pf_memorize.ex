@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMemorize do
     status: :sc_memorize,
     display_name: "Foresight",
     max_level: 1,
+    ignore_dex: true,
+    ignore_status_cast: true,
     target_type: :self,
     damage_type: :no_damage,
     damage_kind: :magic,

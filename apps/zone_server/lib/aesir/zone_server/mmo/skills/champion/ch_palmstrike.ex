@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChPalmstrike do
     name: :ch_palmstrike,
     display_name: "Raging Palm Strike",
     max_level: 5,
+    ignore_dex: true,
     target_type: :target_enemy,
     damage_type: :damage,
     range: -2,

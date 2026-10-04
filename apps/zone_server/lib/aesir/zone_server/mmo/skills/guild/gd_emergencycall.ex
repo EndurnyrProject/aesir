@@ -10,6 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencycall do
     name: :gd_emergencycall,
     display_name: "Urgent Call",
     max_level: 1,
+    ignore_dex: true,
+    ignore_status_cast: true,
+    ignore_item_cast: [renewal: false, pre_renewal: true],
     target_type: :self,
     fixed_cast_time: [5_000],
     cooldown: [300_000]

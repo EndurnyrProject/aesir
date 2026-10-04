@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRestore do
     name: :gd_restore,
     display_name: "Restoration",
     max_level: 1,
+    ignore_status_cast: true,
+    ignore_item_cast: [renewal: false, pre_renewal: true],
     target_type: :self,
     splash_radius: 15,
     fixed_cast_time: [1_000],

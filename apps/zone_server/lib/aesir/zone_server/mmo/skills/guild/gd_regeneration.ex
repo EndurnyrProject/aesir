@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRegeneration do
     name: :gd_regeneration,
     display_name: "Regeneration",
     max_level: 3,
+    ignore_dex: true,
+    ignore_status_cast: true,
     target_type: :self,
     splash_radius: 15,
     cooldown: List.duplicate(180_000, 3)

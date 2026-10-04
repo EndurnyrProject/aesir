@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfDoublecasting do
     status: :sc_doublecast,
     display_name: "Double Casting",
     max_level: 5,
+    ignore_dex: true,
     target_type: :self,
     damage_type: :no_damage,
     damage_kind: :magic,

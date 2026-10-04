@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwMagicpower do
     status: :sc_magicpower,
     display_name: "Mystical Amplification",
     max_level: 10,
+    ignore_dex: true,
+    ignore_item_cast: true,
     target_type: :self,
     damage_type: :no_damage,
     damage_kind: :magic,
