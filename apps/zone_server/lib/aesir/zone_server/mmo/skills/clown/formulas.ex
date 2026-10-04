@@ -16,6 +16,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Formulas do
     end
   end
 
+  @doc "Tests Tarot's eight-percent-per-level success chance with an injectable roll, in both modes."
+  @spec tarot_success?(pos_integer(), (pos_integer() -> pos_integer())) :: boolean()
+  def tarot_success?(level, roll), do: roll.(100) <= 8 * level
+
   @doc "True when a known map's square box contains no wall cell, in either mode."
   @spec box_wall_free?(String.t(), integer(), integer(), pos_integer()) :: boolean()
   def box_wall_free?(map_name, x, y, radius) do

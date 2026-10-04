@@ -19,6 +19,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.FormulasTest do
     assert Formulas.arrow_vulcan_ratio(1, 50) == 300
   end
 
+  test "Tarot success includes the eight-percent-per-level boundary" do
+    assert Formulas.tarot_success?(5, fn 100 -> 40 end)
+    refute Formulas.tarot_success?(5, fn 100 -> 41 end)
+    assert Formulas.tarot_success?(1, fn 100 -> 8 end)
+    refute Formulas.tarot_success?(1, fn 100 -> 9 end)
+  end
+
   test "a performance box must be wall-free on a known map" do
     TestEtsSetup.setup_ets_tables(%{})
     map = MapData.new("box_test", 20, 20)

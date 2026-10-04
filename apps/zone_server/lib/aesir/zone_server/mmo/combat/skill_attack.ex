@@ -75,6 +75,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @typep calc_context :: keyword() | {keyword(), damage_calculator()}
   @typep coma_decision :: :unchecked | boolean()
 
+  @typedoc "A landed skill's settled damage and logical survival result."
+  @type hit_report() :: %{
+          hit?: boolean(),
+          damage: non_neg_integer(),
+          target_survives?: boolean(),
+          coma?: boolean()
+        }
+
   @doc """
   Executes a single-target offensive skill from a caster against a target.
 
@@ -859,11 +867,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:base_damage` - the skill's per-level base damage (required)
     - `:element` - the skill's attack element (default `:neutral`)
     - `:ignore_element` - bypass the element table (default `false`)
+    - `:report_hit` - return settled damage and logical target survival (default `false`),
+      without waiting for the target's asynchronous HP mutation
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
   """
-  @spec execute_misc_attack(struct(), integer() | Ref.t(), keyword()) :: :ok | {:error, atom()}
+  @spec execute_misc_attack(struct(), integer() | Ref.t(), keyword()) ::
+          :ok | {:ok, hit_report()} | {:error, atom()}
   def execute_misc_attack(caster_state, target_id, opts) do
     execute_misc_attack_with(caster_state, target_id, opts, &Targeting.validate_enemy/2)
   end
@@ -875,7 +886,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   hooks, packets, and settlement remain shared with `execute_misc_attack/3`.
   """
   @spec execute_field_misc_attack(struct(), Ref.t(), Group.t(), keyword()) ::
-          :ok | {:error, atom()}
+          :ok | {:ok, hit_report()} | {:error, atom()}
   def execute_field_misc_attack(caster_state, target_ref, %Group{} = group, opts) do
     with :ok <- validate_field_skill_opts(group, opts) do
       execute_misc_attack_with(
@@ -906,6 +917,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         authorize_target: authorize_target,
         ignore_element?: Keyword.get(opts, :ignore_element, false),
         owner_derived_trap?: false,
+        report_hit?: Keyword.get(opts, :report_hit, false),
         knockback_options: knockback_options(opts)
       }
     )
@@ -1142,7 +1154,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         dispatch_equip_autobonuses(attacker, target, attack_flag)
       end
 
-      delivery
+      if delivery == :ok and Map.get(misc_opts, :report_hit?, false),
+        do: {:ok, Map.put(result, :damage, damage)},
+        else: delivery
     end
   end
 
