@@ -815,6 +815,21 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert combat_stats(%{hit: 25}).hit == mode_value(200, 25)
     end
 
+    @tag game_mode: :pre_renewal
+    test "pre-renewal scales base and equipment MATK by the MATK rate, adds status MATK, then amplifies" do
+      baseline = combat_stats(%{matk: 20}, %{}, %{int: 50})
+
+      rated =
+        combat_stats(%{matk: 20, matk_rate: 10}, %{matk: 7, matk_rate: 20, base_matk_rate: 25}, %{
+          int: 50
+        })
+
+      expected = fn base -> div((div(base * 130, 100) + 7) * 125, 100) end
+      assert rated.matk_min == expected.(baseline.matk_min)
+      assert rated.matk_max == expected.(baseline.matk_max)
+    end
+
+    @tag game_mode: :renewal
     test "status base_matk_rate scales base plus weapon MATK before flat MATK" do
       wmatk = %{wmatk_min: 40, wmatk_max: 60}
       baseline = combat_stats(wmatk, %{}, %{int: 50})
@@ -826,6 +841,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.heal_matk_max == baseline.heal_matk_max
     end
 
+    @tag game_mode: :renewal
     test "equipment and status matk_rate sum before scaling final MATK" do
       base = %{wmatk_min: 40, wmatk_max: 60, matk: 20}
       baseline = combat_stats(base, %{}, %{int: 50})

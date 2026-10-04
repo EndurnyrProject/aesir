@@ -14,14 +14,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
   alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
 
   @waivable_gemstone_ids [715, 716, 717]
 
@@ -240,6 +243,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   def put_cooldown(%PlayerState{skill_cooldowns: cooldowns} = caster, skill_id, expires_at) do
     %{caster | skill_cooldowns: Cooldown.put(cooldowns, skill_id, expires_at)}
+  end
+
+  @doc """
+  Dispatches the cast start to the caster's statuses (Mystical Amplification,
+  Foresight, Suffragium, Cloaking) and recalculates stats when one changed, so
+  an instant cast's effect sees them.
+  """
+  @impl true
+  def on_cast_start(%PlayerState{character_id: id} = caster, skill_id) do
+    case StatusInterpreter.on_committed_action(:player, id, {:skill, skill_id}) do
+      :changed ->
+        stats = Calculator.calculate_stats(caster.stats, id)
+        %{caster | stats: stats, walk_speed: StatusManager.walk_speed_for(stats)}
+
+      :unchanged ->
+        caster
+    end
   end
 
   @impl true

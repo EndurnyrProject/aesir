@@ -61,10 +61,10 @@ defmodule Aesir.ZoneServer.HwProfessorFixture do
     {:ok, account} =
       %Account{}
       |> Account.changeset(%{
-        userid: "hp#{unique}",
-        username: "hp#{unique}",
+        userid: "hwpf#{unique}",
+        username: "hwpf#{unique}",
         user_pass: "password",
-        email: "hp#{unique}@aesir.test"
+        email: "hwpf#{unique}@aesir.test"
       })
       |> Repo.insert()
 

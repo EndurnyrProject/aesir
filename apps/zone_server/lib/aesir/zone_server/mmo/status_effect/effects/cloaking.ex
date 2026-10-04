@@ -90,9 +90,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   def on_committed_action({:mob, _unit_id}, instance, {:skill, _skill_id}, _context),
     do: {:ok, instance}
 
-  def on_committed_action(_target, instance, {:skill_resolved, _skill_id}, _context),
-    do: {:ok, instance}
-
   @impl true
   @spec on_tick(Definition.target(), StatusEntry.t(), Definition.context()) ::
           {:ok, StatusEntry.t()} | :remove

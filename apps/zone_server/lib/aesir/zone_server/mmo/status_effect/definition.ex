@@ -114,13 +114,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @typedoc "A typed aggregate-local heal emitted by an attacker-side status proc."
   @type local_heal :: {:local_heal, Ref.t(), pos_integer(), Ref.t()}
 
-  @typedoc """
-  A player action committed after validation and before execution, or
-  `{:skill_resolved, id}` once that skill's effects have run (never for a
-  cancelled cast).
-  """
-  @type committed_action ::
-          :normal_attack | {:skill, pos_integer()} | {:skill_resolved, pos_integer()}
+  @typedoc "A player action committed after validation and before execution."
+  @type committed_action :: :normal_attack | {:skill, pos_integer()}
 
   @typedoc "Bounded Poison metadata attached to one ordinary swing."
   @type poison_rider :: %{

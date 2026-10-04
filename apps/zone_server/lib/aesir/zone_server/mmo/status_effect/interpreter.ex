@@ -420,16 +420,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end)
   end
 
-  @doc """
-  Dispatches `{:skill_resolved, skill_id}` through `on_committed_action` once a
-  skill's effects have run (after an instant cast, or at a timed cast's
-  completion), so a status can be spent by the spell it boosted rather than when
-  its cast bar starts. Returns `:changed` when a current entry changed.
-  """
-  @spec on_skill_resolved(unit_type(), integer(), pos_integer()) :: :changed | :unchanged
-  def on_skill_resolved(unit_type, unit_id, skill_id),
-    do: on_committed_action(unit_type, unit_id, {:skill_resolved, skill_id})
-
   @doc "Returns whether the unit has an active status indexed for `flag`."
   @spec has_active_flag?(unit_type(), integer(), atom()) :: boolean()
   def has_active_flag?(unit_type, unit_id, flag) do

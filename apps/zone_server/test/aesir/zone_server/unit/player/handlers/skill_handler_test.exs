@@ -484,9 +484,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         {:deferred, game_state, descriptor}
       end)
 
-      expect(StatusInterpreter, :on_committed_action, fn :player, 1000, {:skill, 29} ->
-        :unchanged
-      end)
+      # An instant cast's start effects run inside the Interpreter, not here.
+      reject(&StatusInterpreter.on_committed_action/3)
 
       reject(&CharacterPersistence.update_character/3)
       reject(&StatusSync.send_stat_updates/2)
@@ -1187,29 +1186,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert gs.action_state == :idle
       assert gs.state_context == %{}
       assert gs.stats.current_state.sp == 45 - 18
-    end
-
-    test "skill resolution is dispatched at completion, not when the cast starts" do
-      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
-      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
-      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
-      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
-      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
-      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
-      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
-      test_pid = self()
-
-      stub(StatusInterpreter, :on_skill_resolved, fn :player, 1000, skill_id ->
-        send(test_pid, {:resolved, skill_id})
-        :unchanged
-      end)
-
-      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
-      refute_received {:resolved, _skill_id}
-
-      token = casting.game_state.state_context.token
-      assert {:noreply, _completed} = SkillHandler.handle_cast_complete(casting, token)
-      assert_received {:resolved, 29}
     end
 
     test "a stale token is ignored and the cast continues" do

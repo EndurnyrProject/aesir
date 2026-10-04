@@ -22,6 +22,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   @callback sp(state()) :: non_neg_integer()
   @callback deduct_sp(state(), non_neg_integer()) :: state()
 
+  @doc """
+  Runs the caster's cast-start effects (statuses reacting to the start of a
+  skill cast) for a cast resolving instantly, before its effect. Optional.
+  """
+  @callback on_cast_start(state(), integer()) :: state()
+
+  @optional_callbacks on_cast_start: 2
+
   @spec for(struct()) :: module()
   def for(%PlayerState{}), do: __MODULE__.Player
   def for(%HomunculusState{}), do: __MODULE__.Homunculus

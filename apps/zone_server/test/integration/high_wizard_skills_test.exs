@@ -10,10 +10,12 @@ defmodule Aesir.ZoneServer.Integration.HighWizardSkillsTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGanbantein
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @high_wizard 4010
   @cold_bolt 14
   @soul_drain 364
+  @magic_power 366
   @gravitation 484
   @ganbantein 483
 
@@ -65,6 +67,28 @@ defmodule Aesir.ZoneServer.Integration.HighWizardSkillsTest do
     assert SkillUnitStorage.get_groups_by_caster(:player, wizard.character.id) == []
   end
 
+  @tag game_mode: :pre_renewal, integration_re: false
+  test "pre-renewal Mystical Amplification amplifies exactly the next offensive spell" do
+    wizard = start_caster(@high_wizard, %{"#{@cold_bolt}" => 1, "#{@magic_power}" => 10})
+    mob = start_target({153, 150})
+    id = wizard.character.id
+    base = matk(wizard)
+
+    cast(wizard, @magic_power, 10)
+    assert eventually(fn -> StatusStorage.has_status?(:player, id, :sc_magicpower) end, 8_000)
+    assert matk(wizard) == base
+    await_act(wizard)
+
+    cast(wizard, @cold_bolt, 1, mob.unit_id)
+    assert eventually(fn -> matk(wizard) == div(base * 150, 100) end)
+    assert eventually(fn -> get_player_state(wizard.pid).casting == nil end, 8_000)
+    await_act(wizard)
+
+    cast(wizard, @cold_bolt, 1, mob.unit_id)
+    assert eventually(fn -> not StatusStorage.has_status?(:player, id, :sc_magicpower) end)
+    assert eventually(fn -> matk(wizard) == base end)
+  end
+
   test "Ganbantein clears a trap under its area" do
     Mimic.copy(HwGanbantein)
 
@@ -90,4 +114,17 @@ defmodule Aesir.ZoneServer.Integration.HighWizardSkillsTest do
 
   defp sp(session), do: get_player_state(session.pid).stats.current_state.sp
   defp hp(mob), do: get_mob_state(mob.pid).hp
+  defp matk(session), do: get_player_state(session.pid).stats.combat_stats.matk_max
+
+  defp await_act(session) do
+    assert eventually(
+             fn ->
+               PlayerState.act_ready?(
+                 get_player_state(session.pid),
+                 System.monotonic_time(:millisecond)
+               )
+             end,
+             8_000
+           )
+  end
 end

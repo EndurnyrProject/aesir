@@ -14,15 +14,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MemorizeTest do
   @target {:player, @id}
   @cold_bolt 14
   @heal 28
+  @foresight 403
 
-  setup do
+  defp register(dex) do
     state = %PlayerState{
       character_id: @id,
-      stats: %{progression: %{learned_skills: %{@cold_bolt => 10, 403 => 1}}}
+      stats: %{
+        base_stats: %{dex: dex},
+        progression: %{learned_skills: %{@cold_bolt => 10, @foresight => 1}}
+      }
     }
 
     :ok = UnitRegistry.register_unit(:player, @id, PlayerState, state, self())
-    :ok
   end
 
   defp applied do
@@ -32,37 +35,46 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MemorizeTest do
     instance
   end
 
-  test "halves variable cast time for five charges in both modes" do
+  defp cast(instance, skill_id),
+    do: Memorize.on_committed_action(@target, instance, {:skill, skill_id}, %{})
+
+  test "halves variable cast time for five charges" do
     assert %{cast_time_reduction: 50, charges: 5} = applied().state
   end
 
-  test "five resolved learned casts spend it" do
-    final =
-      Enum.reduce(1..4, applied(), fn _cast, instance ->
-        {:ok, next} =
-          Memorize.on_committed_action(@target, instance, {:skill_resolved, @cold_bolt}, %{})
+  test "each learned cast start spends a charge and the fifth ends it" do
+    register(50)
 
-        next
-      end)
+    final =
+      Enum.reduce(1..4, applied(), fn _cast, instance -> elem(cast(instance, @cold_bolt), 1) end)
 
     assert final.state.charges == 1
-
-    assert Memorize.on_committed_action(@target, final, {:skill_resolved, @cold_bolt}, %{}) ==
-             :remove
+    assert cast(final, @cold_bolt) == :remove
   end
 
-  test "Foresight's own resolution does not spend a charge" do
+  test "unlearned skills and normal attacks keep every charge" do
+    register(50)
     instance = applied()
 
-    assert Memorize.on_committed_action(@target, instance, {:skill_resolved, 403}, %{}) ==
-             {:ok, instance}
+    assert cast(instance, @heal) == {:ok, instance}
+    assert Memorize.on_committed_action(@target, instance, :normal_attack, %{}) == {:ok, instance}
   end
 
-  test "unlearned skills, cast starts and normal attacks keep every charge" do
-    instance = applied()
+  @tag game_mode: :renewal
+  test "renewal: Foresight itself ignores status cast effects and spends nothing" do
+    register(50)
+    assert cast(applied(), @foresight) == {:ok, applied()}
+  end
 
-    for action <- [{:skill_resolved, @heal}, {:skill, @cold_bolt}, :normal_attack] do
-      assert Memorize.on_committed_action(@target, instance, action, %{}) == {:ok, instance}
-    end
+  @tag game_mode: :pre_renewal
+  test "pre-renewal: Foresight itself spends a charge" do
+    register(50)
+    assert {:ok, %{state: %{charges: 4}}} = cast(applied(), @foresight)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "pre-renewal: a DEX-instant cast never reaches Foresight" do
+    register(150)
+    assert cast(applied(), @cold_bolt) == {:ok, applied()}
   end
 end

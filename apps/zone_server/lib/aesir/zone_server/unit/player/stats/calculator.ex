@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   active statuses.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
@@ -339,22 +340,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
 
     trait_slots = calculate_trait_slots(stats, formulas, values)
 
-    flat_matk =
-      Stats.get_status_modifier(stats, :matk) + Stats.get_equipment_modifier(stats, :matk)
-
     wmatk_min = Map.get(stats.modifiers.equipment, :wmatk_min, 0)
     wmatk_max = Map.get(stats.modifiers.equipment, :wmatk_max, 0)
-    base_matk_rate = Stats.get_status_modifier(stats, :base_matk_rate)
-
-    matk_rate =
-      Stats.get_equipment_modifier(stats, :matk_rate) +
-        Stats.get_status_modifier(stats, :matk_rate)
-
-    matk_min =
-      apply_rate(apply_rate(base_matk_min + wmatk_min, base_matk_rate) + flat_matk, matk_rate)
-
-    matk_max =
-      apply_rate(apply_rate(base_matk_max + wmatk_max, base_matk_rate) + flat_matk, matk_rate)
+    matk_min = compose_matk(base_matk_min + wmatk_min, stats)
+    matk_max = compose_matk(base_matk_max + wmatk_max, stats)
 
     # Heal MATK excludes flat item and status MATK while retaining weapon variance.
     heal_matk_min = base_matk_min + wmatk_min
@@ -423,6 +412,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     }
 
     %{stats | combat_stats: combat_stats}
+  end
+
+  # Renewal: (status + weapon MATK) x Mystical Amplification, plus flat
+  # equipment and status MATK, then x the MATK rate. Pre-renewal: (status +
+  # equipment MATK) x the MATK rate, plus flat status MATK, then x Mystical
+  # Amplification.
+  defp compose_matk(base, stats) do
+    equip_flat = Stats.get_equipment_modifier(stats, :matk)
+    status_flat = Stats.get_status_modifier(stats, :matk)
+    amp_rate = Stats.get_status_modifier(stats, :base_matk_rate)
+
+    matk_rate =
+      Stats.get_equipment_modifier(stats, :matk_rate) +
+        Stats.get_status_modifier(stats, :matk_rate)
+
+    case GameMode.mode() do
+      :renewal ->
+        apply_rate(apply_rate(base, amp_rate) + equip_flat + status_flat, matk_rate)
+
+      :pre_renewal ->
+        apply_rate(apply_rate(base + equip_flat, matk_rate) + status_flat, amp_rate)
+    end
   end
 
   defp override(value, stats, key), do: Map.get(stats.modifiers.status_effects, key, value)

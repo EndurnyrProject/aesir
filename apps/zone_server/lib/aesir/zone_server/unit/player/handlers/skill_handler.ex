@@ -102,7 +102,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp cast_cancel(%{game_state: game_state} = state, level) do
     case Interpreter.begin_cast(game_state, @cast_cancel_id, level, :self) do
       {:instant, charged_game_state} ->
-        charged_game_state = dispatch_committed_action(state, charged_game_state, @cast_cancel_id)
+        sync_cast_start_stats(state, game_state, charged_game_state)
         penalty = cast_cancel_penalty(game_state.casting, level)
 
         cancelled_state = cancel_cast(%{state | game_state: charged_game_state}, :castcancel)
@@ -188,7 +188,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     case Interpreter.complete_cast_with_input(state.game_state, skill_id, level, target, input) do
       {:ok, new_game_state} ->
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
-        new_game_state = dispatch_skill_resolved(state, new_game_state, skill_id)
         new_state = commit_cast(state, new_game_state, skill_id, level)
         broadcast_skill_use(new_state.game_state, skill_id, level, target)
         {:noreply, new_state}
@@ -238,15 +237,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp complete_preflighted_cast(state, game_state, ctx, expected_id) do
     case Interpreter.complete_cast(game_state, ctx.skill_id, ctx.skill_level, ctx.target) do
       {:ok, new_game_state} ->
-        new_game_state = dispatch_skill_resolved(state, new_game_state, ctx.skill_id)
         new_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
         broadcast_skill_use(new_state.game_state, ctx.skill_id, ctx.skill_level, ctx.target)
         resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
         {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
 
       {:local_effects, new_game_state, effects} ->
-        new_game_state = dispatch_skill_resolved(state, new_game_state, ctx.skill_id)
-
         new_state =
           state
           |> commit_cast(new_game_state, ctx.skill_id, ctx.skill_level)
@@ -412,8 +408,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp begin_preflighted_cast(state, game_state, skill_id, level, target, locked) do
     case Interpreter.begin_cast(game_state, skill_id, level, target) do
       {:instant, new_game_state} ->
-        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
-        new_game_state = dispatch_skill_resolved(state, new_game_state, skill_id)
+        sync_cast_start_stats(state, game_state, new_game_state)
         new_state = commit_cast(state, new_game_state, skill_id, level)
         # Keep the departure snapshot for this visual: commit_cast/5 may drain a
         # staged warp and move the player before the committed state returns.
@@ -421,8 +416,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, maybe_resume_lock(new_state, locked)}
 
       {:instant, new_game_state, effects} ->
-        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
-        new_game_state = dispatch_skill_resolved(state, new_game_state, skill_id)
+        sync_cast_start_stats(state, game_state, new_game_state)
 
         new_state =
           state
@@ -433,7 +427,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, maybe_resume_lock(new_state, locked)}
 
       {:deferred, new_game_state, descriptor} ->
-        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
+        sync_cast_start_stats(state, game_state, new_game_state)
 
         {:noreply,
          resolve_deferred(state, new_game_state, descriptor, locked, homunculus_id(state))}
@@ -455,24 +449,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  # An instant cast's start effects ran inside the Interpreter; push any stat
+  # change they made (Mystical Amplification arming, Cloaking ending) to the client.
+  defp sync_cast_start_stats(state, before, after_cast) do
+    if Map.delete(before.stats, :current_state) != Map.delete(after_cast.stats, :current_state),
+      do: StatusSync.send_stat_updates(state.connection_pid, after_cast.stats)
+
+    if before.walk_speed != after_cast.walk_speed,
+      do: StatusSync.send_param(state.connection_pid, StatusParams.speed(), after_cast.walk_speed)
+
+    :ok
+  end
+
   defp dispatch_committed_action(state, game_state, skill_id) do
     case StatusInterpreter.on_committed_action(
            :player,
            game_state.character_id,
            {:skill, skill_id}
          ) do
-      :changed ->
-        StatusManager.recalculate_after_status_change(%{state | game_state: game_state}).game_state
-
-      :unchanged ->
-        game_state
-    end
-  end
-
-  # Fires once a player skill's effects have run: right after an instant cast,
-  # at completion for a timed one. A cancelled cast never resolves.
-  defp dispatch_skill_resolved(state, game_state, skill_id) do
-    case StatusInterpreter.on_skill_resolved(:player, game_state.character_id, skill_id) do
       :changed ->
         StatusManager.recalculate_after_status_change(%{state | game_state: game_state}).game_state
 

@@ -928,19 +928,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared) do
     now = System.monotonic_time(:millisecond)
 
-    case complete_prepared_cast(
-           game_state,
-           skill_id,
-           level,
-           target,
-           :without_input,
-           now,
-           prepared
-         ) do
-      {:ok, game_state} -> instant_result(game_state, prepared.cost)
-      {:local_effects, game_state, effects} -> {:instant, game_state, effects}
-      {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
-      {:error, _reason} = error -> error
+    with :ok <- check_fog(target, prepared.definition) do
+      game_state
+      |> cast_start(prepared.adapter, skill_id)
+      |> complete_instant_cast(skill_id, level, target, now, prepared)
     end
   end
 
@@ -955,6 +946,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     }
 
     {:casting, game_state, info}
+  end
+
+  # The cast-start effects of an instant cast run before its effect, as a timed
+  # cast's run when its cast bar starts (the caller's job for timed casts).
+  defp cast_start(game_state, adapter, skill_id) do
+    if function_exported?(adapter, :on_cast_start, 2),
+      do: adapter.on_cast_start(game_state, skill_id),
+      else: game_state
+  end
+
+  defp complete_instant_cast(game_state, skill_id, level, target, now, prepared) do
+    case complete_prepared_cast(
+           game_state,
+           skill_id,
+           level,
+           target,
+           :without_input,
+           now,
+           prepared
+         ) do
+      {:ok, game_state} -> instant_result(game_state, prepared.cost)
+      {:local_effects, game_state, effects} -> {:instant, game_state, effects}
+      {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
+      {:error, _reason} = error -> error
+    end
   end
 
   defp instant_result(caster, %{instant_effects: effects}), do: {:instant, caster, effects}

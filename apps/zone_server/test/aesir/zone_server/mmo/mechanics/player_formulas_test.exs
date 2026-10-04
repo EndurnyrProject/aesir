@@ -498,6 +498,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert Calculator.calculate_aspd(penalized) === 135
   end
 
+  @tag game_mode: :pre_renewal
   test "classic hard DEF is zero and MATK bands reach combat and heal consumers" do
     stub(Mechanics, :player_formulas, fn -> PreRenewal end)
 
@@ -513,8 +514,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     assert result.combat_stats.def === 0
     assert result.combat_stats.matk_min === 129
-    assert result.combat_stats.matk_max === 176
-    assert result.combat_stats.matk === 176
+    # (150 + 7) * 110 / 100 = 172, plus status MATK 3 after the rate
+    assert result.combat_stats.matk_max === 175
+    assert result.combat_stats.matk === 175
     assert result.combat_stats.heal_matk_min === 108
     assert result.combat_stats.heal_matk_max === 150
   end
