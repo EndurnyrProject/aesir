@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
 
   defmodule FixtureUnit do
     def get_entity_info(state) do
-      %{stats: %{}, equip_modifiers: Map.get(state, :equip_modifiers, %{})}
+      %{stats: %{}, magic_reduction: Map.get(state, :magic_reduction, 0)}
     end
   end
 
@@ -180,7 +180,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
 
   test "a missed contact on a magic-immune player consumes the status without knockback" do
     caster = living_player(1001, 50, 50)
-    immune = Map.put(living_player(2001, 55, 50), :equip_modifiers, %{no_magic_damage: 100})
+    immune = Map.put(living_player(2001, 55, 50), :magic_reduction, 100)
     register(:player, 1001, caster)
     register(:player, 2001, immune)
 
@@ -199,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
 
   test "a partially magic-resistant player that takes the hit is still knocked back" do
     caster = living_player(1001, 50, 50)
-    resistant = Map.put(living_player(2001, 55, 50), :equip_modifiers, %{no_magic_damage: 99})
+    resistant = Map.put(living_player(2001, 55, 50), :magic_reduction, 99)
     register(:player, 1001, caster)
     register(:player, 2001, resistant)
 
