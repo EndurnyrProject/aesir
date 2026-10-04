@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion do
   @moduledoc """
-  Indulge (PF_HPCONVERSION). Pays a tenth of max HP to regain that amount of SP
-  per level, clamped at max SP. Refused when HP is not above the cost or SP is
-  already full.
+  Indulge (PF_HPCONVERSION). After its SP, pays a tenth of max HP to regain
+  that amount of SP per level, clamped at max SP. Refused when SP is already
+  full; with HP not above the charge the SP is spent and nothing else happens.
 
   Both modes: 1 to 5 SP, instant. Renewal: 0.5 s after-cast delay. Pre-renewal:
   1 to 1.8 s after-cast delay.
@@ -16,7 +16,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion do
     damage_type: :no_damage,
     damage_kind: :magic,
     sp_cost: [1, 2, 3, 4, 5],
-    hp_cost_rate: List.duplicate(10, 5),
     after_cast_delay: [
       renewal: List.duplicate(500, 5),
       pre_renewal: [1_000, 1_200, 1_400, 1_600, 1_800]
@@ -44,8 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion do
   def validate(_caster, _target, _level, _definition), do: :ok
 
   @doc """
-  Requires the resolved SP and charges the HP up front, but spends no SP there:
-  `cast/4` pays it before converting, so the SP cap applies after the cost.
+  Requires the resolved SP but spends none up front: `cast/4` pays it, then
+  charges the HP.
   """
   @impl Active
   @spec dynamic_cost(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
@@ -63,8 +62,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion do
       caster = PlayerCaster.deduct_sp(caster, Cost.resolve_sp(caster, definition, level))
 
     current = stats.current_state
-    gain = div(stats.derived_stats.max_hp, 10) * level
-    sp = min(current.sp + gain, stats.derived_stats.max_sp)
-    {:ok, %{caster | stats: %{stats | current_state: %{current | sp: sp}}}}
+    charge = div(stats.derived_stats.max_hp, 10)
+
+    if current.hp > charge do
+      sp = min(current.sp + charge * level, stats.derived_stats.max_sp)
+      current = %{current | hp: current.hp - charge, sp: sp}
+      {:ok, %{caster | stats: %{stats | current_state: current}}}
+    else
+      {:ok, caster}
+    end
   end
 end

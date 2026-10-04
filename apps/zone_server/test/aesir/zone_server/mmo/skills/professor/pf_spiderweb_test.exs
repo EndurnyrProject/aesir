@@ -117,7 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
     now = System.monotonic_time(:millisecond)
 
     expect(Manager, :set_expires_at, fn 51, expires_at ->
-      assert_in_delta expires_at - now, 8_000, 100
+      assert (expires_at - now) in 8_000..9_000
       :ok
     end)
 

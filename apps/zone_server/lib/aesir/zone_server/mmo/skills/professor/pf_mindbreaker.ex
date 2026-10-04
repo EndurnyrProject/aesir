@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreaker do
   Mind Breaker (PF_MINDBREAKER). A `55 + 5 * level` percent chance to inflict
   `:sc_mindbreaker` for 30 s (MATK +20% and soft MDEF -12% per level). A
   successful break cancels the target's cast in progress and turns a monster
-  on the caster. Undead and status-immune targets refuse it. Against a target
-  already affected, or on a missed roll, the SP is spent and nothing happens.
+  on the caster. Against an undead or status-immune target, a target already
+  affected, or on a missed roll, the SP is spent and nothing happens.
 
   Identical in both modes: 12 to 24 SP, 9 cells, a 0.8 to 1.2 s after-cast
   delay. Monsters cast it through `mob_cast/5`.
@@ -36,21 +36,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreaker do
 
   @behaviour Active
 
-  @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(_caster, {:unit, target_id}, _level, _definition) do
-    with {:ok, _pid, state, _type} <- TargetResolver.resolve(target_id) do
-      combatant = state.__struct__.to_combatant(state)
-
-      if combatant.status_immune or RaceModifiers.undead_target?(combatant),
-        do: {:error, :invalid_target},
-        else: :ok
-    end
-  end
-
-  def validate(_caster, _target, _level, _definition), do: :ok
-
   @doc """
   Breaks the target's mind on a successful roll. `opts` accepts `:rng`, a
   `(pos_integer() -> pos_integer())` roll defaulting to `&:rand.uniform/1`.
@@ -70,8 +55,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreaker do
              definition,
              Keyword.get(opts, :rng, &:rand.uniform/1)
            ) do
-        :already_affected -> {:ok, caster, :no_consume}
-        _landed_or_missed -> {:ok, caster}
+        :ok -> {:ok, caster}
+        _no_effect -> {:ok, caster, :no_consume}
       end
     end
   end
@@ -88,6 +73,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreaker do
 
   defp break(caster, {type, id} = target, pid, level, definition, rng) do
     cond do
+      refuses?(target) ->
+        :refused
+
       StatusStorage.has_status?(type, id, :sc_mindbreaker) ->
         :already_affected
 
@@ -107,6 +95,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreaker do
                ) do
           disrupt(target, pid, caster_ref)
         end
+    end
+  end
+
+  defp refuses?(target) do
+    case TargetResolver.resolve(target) do
+      {:ok, _pid, state, _type} ->
+        combatant = state.__struct__.to_combatant(state)
+        combatant.status_immune or RaceModifiers.undead_target?(combatant)
+
+      _gone ->
+        true
     end
   end
 

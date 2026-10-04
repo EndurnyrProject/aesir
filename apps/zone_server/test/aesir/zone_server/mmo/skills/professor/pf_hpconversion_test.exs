@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversionTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -16,21 +15,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversionTest do
   end
 
   defp definition, do: PfHpconversion.definition()
+  defp vitals(%PlayerState{stats: %{current_state: %{hp: hp, sp: sp}}}), do: {hp, sp}
 
-  test "costs a tenth of max HP and refuses when HP is not above it" do
+  test "requires only the SP up front and pays it itself" do
     cost = PfHpconversion.dynamic_cost(caster(500, 10), :self, 3, definition())
-
-    assert {cost.hp, cost.sp, cost.sp_requirement} == {100, 0, 3}
-    assert Cost.validate(caster(101, 10), cost) == :ok
-    assert Cost.validate(caster(100, 10), cost) == {:error, :insufficient_hp}
+    assert {cost.hp, cost.sp, cost.sp_requirement} == {0, 0, 3}
   end
 
-  test "converts a tenth of max HP per level into SP, clamped at max SP" do
+  test "after the SP, pays a tenth of max HP to regain that per level in SP, clamped at max SP" do
     assert {:ok, converted} = PfHpconversion.cast(caster(500, 10), :self, 3, definition())
-    assert converted.stats.current_state.sp == 10 - 3 + 300
+    assert vitals(converted) == {400, 10 - 3 + 300}
 
     assert {:ok, clamped} = PfHpconversion.cast(caster(500, 450), :self, 3, definition())
-    assert clamped.stats.current_state.sp == 500
+    assert vitals(clamped) == {400, 500}
+  end
+
+  test "with HP not above the charge the cast still spends its SP and does nothing else" do
+    assert {:ok, failed} = PfHpconversion.cast(caster(100, 10), :self, 3, definition())
+    assert vitals(failed) == {100, 7}
   end
 
   test "is unusable at full SP" do

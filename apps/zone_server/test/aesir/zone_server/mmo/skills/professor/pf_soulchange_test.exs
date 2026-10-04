@@ -107,13 +107,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchangeTest do
     assert sp(caster) == 40
   end
 
-  test "a monster yields 3% of the caster's max SP once, after the cost" do
+  test "a monster yields 3% of the caster's max SP once; a second cast still spends its SP" do
     register_mob()
 
     assert {:ok, gained} = cast(caster(100), @mob_id)
     assert sp(gained) == 101
 
-    assert {:error, :already_exchanged} = cast(gained, @mob_id)
+    assert {:ok, spent} = cast(gained, @mob_id)
+    assert sp(spent) == 101 - 5
   end
 
   test "the cost is required up front but paid by the cast itself" do

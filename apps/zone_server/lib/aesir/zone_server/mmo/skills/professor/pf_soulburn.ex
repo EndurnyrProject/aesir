@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   @moduledoc """
-  Soul Siphon (PF_SOULBURN). A `30 + 10 * level` percent chance (70% at most)
-  to empty the target's SP; at level 5 the target also takes magic damage equal
+  Soul Siphon (PF_SOULBURN). Targets players only. A `30 + 10 * level` percent
+  chance (70% at most) to empty the target's SP; at level 5 the target also takes magic damage equal
   to twice the SP it had, ignoring element and cards. On a failed roll the same
   happens to the Professor instead: their SP empties and, at level 5, they take
   twice the SP they have left after paying the cost as damage, which can kill
@@ -47,10 +47,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t(), keyword()) ::
           {:ok, Active.caster()} | {:error, atom()}
   def cast(caster, {:unit, target_id}, level, definition, opts \\ []) do
-    with {:ok, %{unit_type: type}} <- Combat.resolve_combatant(target_id) do
-      caster
-      |> pay(definition, level)
-      |> siphon({type, target_id}, level, definition, Keyword.get(opts, :rng, &:rand.uniform/1))
+    rng = Keyword.get(opts, :rng, &:rand.uniform/1)
+
+    case Combat.resolve_combatant(target_id) do
+      {:ok, %{unit_type: :player}} ->
+        caster |> pay(definition, level) |> siphon({:player, target_id}, level, definition, rng)
+
+      {:ok, _not_a_player} ->
+        {:error, :invalid_target}
+
+      error ->
+        error
     end
   end
 
@@ -74,6 +81,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   @impl Active
   @spec mob_cast(MobState.t(), term(), pos_integer(), Definition.t(), map()) ::
           :ok | {:error, atom()}
+  def mob_cast(%MobState{}, {:unit, type, _id}, _level, _definition, _row) when type != :player,
+    do: {:error, :invalid_target}
+
   def mob_cast(%MobState{} = caster, {:unit, type, id}, level, definition, _row) do
     with {:ok, _caster} <- siphon(caster, {type, id}, level, definition, &:rand.uniform/1),
          do: :ok

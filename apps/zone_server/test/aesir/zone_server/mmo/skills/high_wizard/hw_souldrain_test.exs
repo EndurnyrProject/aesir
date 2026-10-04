@@ -14,6 +14,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwSouldrainTest do
       assert HwSouldrain.kill_sp_gain(1, kill) == 55
     end
 
+    test "any magic skill that is neither ground nor self counts, Resurrection on undead included" do
+      assert HwSouldrain.kill_sp_gain(1, %{kill_bf: :magic, skill_id: 54, mob_level: 50}) == 55
+    end
+
     test "ground skills, weapon blows and basic attacks grant nothing" do
       assert HwSouldrain.kill_sp_gain(5, %{kill_bf: :magic, skill_id: @storm_gust, mob_level: 50}) ==
                0

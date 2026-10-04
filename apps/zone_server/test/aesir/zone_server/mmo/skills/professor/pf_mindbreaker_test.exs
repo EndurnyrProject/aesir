@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreakerTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreaker
@@ -50,14 +51,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreakerTest do
     end)
   end
 
-  test "an undead-element target is refused" do
+  test "an undead-element target fails at cast end, spending the SP" do
     register_mob(1015)
+    reject(&StatusInterpreter.apply_status/4)
 
-    assert PfMindbreaker.validate(@caster, {:unit, @mob_id}, 1, PfMindbreaker.definition()) ==
-             {:error, :invalid_target}
+    assert PfMindbreaker.validate(@caster, {:unit, @mob_id}, 1, PfMindbreaker.definition()) == :ok
+    assert cast(@mob_id, 1, 1) == {:ok, @caster, :no_consume}
   end
 
-  test "a target already holding the status is a free no-op" do
+  test "a target already holding the status makes the cast a no-op that still spends SP" do
     register_mob()
     :ok = StatusStorage.apply_status(:mob, @mob_id, :sc_mindbreaker, val1: 1)
     reject(&StatusInterpreter.apply_status/4)
@@ -76,7 +78,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreakerTest do
   end
 
   test "a landed roll on a player cancels their cast" do
-    player = %PlayerState{character_id: @player_id, map_name: "prontera", x: 101, y: 100}
+    player =
+      PlayerState.new(%Character{
+        id: @player_id,
+        account_id: @player_id,
+        name: "Victim",
+        last_map: "prontera",
+        last_x: 101,
+        last_y: 100,
+        sex: "M",
+        base_level: 50,
+        job_level: 10,
+        class: 0
+      })
+
     :ok = UnitRegistry.register_unit(:player, @player_id, PlayerState, player, self())
     pid = self()
     expect_applied(:player, @player_id)
@@ -90,6 +105,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreakerTest do
     reject(&StatusInterpreter.apply_status/4)
     reject(&MobSession.interrupt_cast/1)
 
-    assert cast(@mob_id, 1, 61) == {:ok, @caster}
+    assert cast(@mob_id, 1, 61) == {:ok, @caster, :no_consume}
   end
 end

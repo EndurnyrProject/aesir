@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
   instead. In both modes a target under a no-recovery state keeps its own SP.
   The 5 SP cost is paid before the exchange.
   On a monster, the Professor regains 3% of their max SP; each monster yields
-  this only once.
+  this only once; casting on it again spends the SP for nothing.
 
   Both modes: 5 SP, 9 cells. Renewal: 3 s fixed cast. Pre-renewal: 3 s cast and
   a 5 s after-cast delay.
@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
         {:ok, put_sp(caster, stats.current_state.sp + div(stats.derived_stats.max_sp * 3, 100))}
 
       _marked ->
-        {:error, :already_exchanged}
+        {:ok, caster}
     end
   end
 

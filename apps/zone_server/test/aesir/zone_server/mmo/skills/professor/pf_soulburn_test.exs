@@ -15,8 +15,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
     Mimic.copy(Resource)
 
     test_pid = self()
-    stub(Combat, :resolve_combatant, fn 3001 -> {:ok, %{unit_type: :mob, unit_id: 3001}} end)
-    stub(Resource, :read, fn {:mob, 3001}, :sp -> {:ok, 40} end)
+
+    stub(Combat, :resolve_combatant, fn
+      3001 -> {:ok, %{unit_type: :player, unit_id: 3001}}
+      4001 -> {:ok, %{unit_type: :mob, unit_id: 4001}}
+    end)
+
+    stub(Resource, :read, fn {:player, 3001}, :sp -> {:ok, 40} end)
 
     stub(Resource, :drain_sp_percent, fn ref, 100 ->
       send(test_pid, {:drained, ref})
@@ -37,6 +42,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
         rng: fn 100 -> roll end
       )
 
+  test "only players can be siphoned" do
+    reject(&Resource.drain_sp_percent/2)
+
+    assert PfSoulburn.cast(@caster, {:unit, 4001}, 3, PfSoulburn.definition(),
+             rng: fn 100 -> 1 end
+           ) ==
+             {:error, :invalid_target}
+  end
+
   test "succeeds 30% plus 10% per level, capped at 70%" do
     assert Enum.map(1..5, &PfSoulburn.success_chance/1) == [40, 50, 60, 70, 70]
   end
@@ -45,22 +59,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
     reject(&MagicAttack.execute_magic_damage/4)
 
     assert {:ok, _caster} = cast(3, 60)
-    assert_received {:drained, {:mob, 3001}}
+    assert_received {:drained, {:player, 3001}}
   end
 
   test "a successful level 5 roll also deals twice the target's SP, ignoring element" do
     test_pid = self()
 
-    expect(MagicAttack, :execute_magic_damage, fn _caster, {:mob, 3001}, 80, opts ->
+    expect(MagicAttack, :execute_magic_damage, fn _caster, {:player, 3001}, 80, opts ->
       assert opts[:ignore_element]
       assert opts[:skip_range]
       send(test_pid, :damaged)
-      {:ok, {:mob, 3001}}
+      {:ok, {:player, 3001}}
     end)
 
     assert {:ok, _caster} = cast(5, 70)
     assert_received :damaged
-    assert_received {:drained, {:mob, 3001}}
+    assert_received {:drained, {:player, 3001}}
   end
 
   test "a failed level 5 roll burns the caster for twice the SP left after the cost" do
@@ -79,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
 
   test "a successful roll pays the cost from the caster up front" do
     stub(MagicAttack, :execute_magic_damage, fn _caster, _target, _amount, _opts ->
-      {:ok, {:mob, 3001}}
+      {:ok, {:player, 3001}}
     end)
 
     caster = put_in(@caster.stats.current_state.sp, 150)

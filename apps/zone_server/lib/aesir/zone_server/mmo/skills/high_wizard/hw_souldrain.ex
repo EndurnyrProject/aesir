@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwSouldrain do
   def kill_sp_gain(level, %{kill_bf: :magic, skill_id: skill_id, mob_level: mob_level})
       when is_integer(skill_id) do
     case Catalog.by_id(skill_id) do
-      {:ok, %{target_type: type}} when type in [:target_enemy, :target_any] ->
+      {:ok, %{target_type: type}} when type not in [:ground, :self, :passive] ->
         div(mob_level * (95 + 15 * level), 100)
 
       _other ->
