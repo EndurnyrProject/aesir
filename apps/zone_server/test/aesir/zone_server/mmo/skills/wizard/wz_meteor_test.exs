@@ -70,7 +70,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     assert definition.element == :fire
     assert definition.range == 9
     assert definition.splash_radius == 3
-    assert definition.hit_count == 2
     assert definition.unit_duration == List.duplicate(4_500, 10)
 
     assert definition.duration == [
@@ -120,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     stub(Combat, :splash_targets, fn @map_name, {148, 148}, 3, @caster_id -> [{:mob, 2001}] end)
 
     expect(Combat, :apply_skill_unit_damage, fn
-      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125 -> :ok
+      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125, [hit_count: 2] -> :ok
     end)
 
     stub(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_stun, _params -> :ok end)
@@ -173,7 +172,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     stub(Combat, :splash_targets, fn @map_name, {151, 149}, 3, @caster_id -> [{:mob, 2001}] end)
 
     expect(Combat, :apply_skill_unit_damage, fn
-      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125 -> :ok
+      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125, [hit_count: 2] -> :ok
     end)
 
     expect(StatusInterpreter, :apply_status, fn
@@ -195,7 +194,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
                                               _skill,
                                               _level,
                                               _element,
-                                              _ratio ->
+                                              _ratio,
+                                              _opts ->
       :miss
     end)
 
@@ -215,7 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
 
     stub(Combat, :splash_targets, fn @map_name, _position, 3, @caster_id -> [{:mob, 2001}] end)
 
-    stub(Combat, :apply_skill_unit_damage, fn _caster, :mob, 2001, 83, 1, :fire, 125 ->
+    stub(Combat, :apply_skill_unit_damage, fn _caster, :mob, 2001, 83, 1, :fire, 125, _opts ->
       send(test_pid, :impact)
       :ok
     end)
@@ -258,7 +258,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
 
     reject(&Combat.resolve_combatant/1)
     reject(&Combat.splash_targets/4)
-    reject(&Combat.apply_skill_unit_damage/7)
+    reject(&Combat.apply_skill_unit_damage/8)
 
     assert :ok = Manager.tick(manager, 700)
 
@@ -291,12 +291,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
            ]
 
     assert WzMeteor.definition(:pre_renewal).cooldown == []
-    assert WzMeteor.definition(:pre_renewal).hit_count == 1
   end
 
   @tag game_mode: :renewal
-  test "renewal drops 2 to 7 meteors at 125 percent each" do
+  test "renewal drops 2 to 7 meteors at 125 percent, each striking 2 to 7 times" do
     assert Enum.map(1..10, &WzMeteor.meteor_count/1) == [2, 3, 3, 4, 4, 5, 5, 6, 6, 7]
+    assert Enum.map(1..10, &WzMeteor.hits_per_meteor/1) == [2, 3, 3, 4, 4, 5, 5, 6, 6, 7]
     assert WzMeteor.skill_ratio() == 125
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic meteors strike 1 to 5 times each" do
+    assert Enum.map(1..10, &WzMeteor.hits_per_meteor/1) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
   end
 end

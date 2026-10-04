@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
   enemy to enter its activation area, then bursts for one second over the splash area.
 
   The burst strikes level plus 2 times at 40% plus 20% per level MATK (a player's damage
-  is split across the hits) for 75 SP, needing a Blue Gemstone below level 6. The
+  is split across the hits) for 75 SP, needing a Blue Gemstone from level 6. The
   level-gated gemstone is checked locally because the item cost field cannot express a
   level threshold. Renewal casts in 0.19 to 1.92 s plus a fixed part; pre-renewal in
   0.3 to 3 s. The two modes otherwise agree.

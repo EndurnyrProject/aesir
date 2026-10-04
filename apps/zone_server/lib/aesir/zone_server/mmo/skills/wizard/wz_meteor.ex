@@ -1,11 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
   @moduledoc """
-  Meteor Storm (WZ_METEOR). Drops 2 to 7 meteors over a 3-cell area, one per second, each
-  a fire splash that stuns 3% per level.
+  Meteor Storm (WZ_METEOR). Drops 2 to 7 meteors over a 3-cell area, one per
+  second. Each meteor is a fire splash striking several times that stuns 3% per
+  level.
 
-  Renewal: 125% MATK per meteor, a 4.5 s stun, a 6.3 s cast plus 1.5 s fixed, a 1 s delay,
-  and a 2.5 to 7 s cooldown. Pre-renewal: 100% MATK per meteor, a 5 s stun, a 15 s variable
-  cast, a 2 to 7 s delay, and no cooldown; its data lists one hit per meteor.
+  Renewal: each meteor strikes 2 to 7 times by level at 125% MATK per hit, with
+  a 4.5 s stun, a 6.3 s cast plus 1.5 s fixed, a 1 s delay and a 2.5 to 7 s
+  cooldown. Pre-renewal: each meteor strikes 1 to 5 times at 100% MATK per hit,
+  with a 5 s stun, a 15 s variable cast, a 2 to 7 s delay and no cooldown.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 83,
@@ -19,7 +21,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
     range: 9,
     element: :fire,
     splash_radius: 3,
-    hit_count: [renewal: 2, pre_renewal: 1],
     hit_interval: 1_000,
     unit_duration: [renewal: List.duplicate(4_500, 10), pre_renewal: List.duplicate(5_000, 10)],
     duration: [2_000, 3_000, 3_000, 4_000, 4_000, 5_000, 5_000, 6_000, 6_000, 7_000],
@@ -48,6 +49,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
   @doc "The number of meteors dropped at `level` (clamped to the table), 2 to 7 in both modes."
   @spec meteor_count(pos_integer()) :: pos_integer()
   def meteor_count(level), do: Enum.at(@meteors, min(level, length(@meteors)) - 1)
+
+  @hits %{
+    renewal: [2, 3, 3, 4, 4, 5, 5, 6, 6, 7],
+    pre_renewal: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
+  }
+
+  @doc "Hits each meteor strikes at `level` (clamped): 2 to 7 in renewal, 1 to 5 in classic."
+  @spec hits_per_meteor(pos_integer()) :: pos_integer()
+  def hits_per_meteor(level) do
+    hits = Map.fetch!(@hits, GameMode.mode())
+    Enum.at(hits, min(level, length(hits)) - 1)
+  end
 
   @doc "Renewal deals 125% MATK per impact; classic 100%."
   @spec skill_ratio() :: pos_integer()
@@ -125,7 +138,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
            group.skill_id,
            group.level,
            definition.element,
-           skill_ratio()
+           skill_ratio(),
+           hit_count: hits_per_meteor(group.level)
          ) do
       :ok ->
         StatusInterpreter.apply_status(unit_type, target_id, :sc_stun,
