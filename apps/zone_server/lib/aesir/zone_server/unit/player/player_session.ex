@@ -199,6 +199,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec interrupt_cast(pid()) :: :ok
   def interrupt_cast(pid), do: GenServer.cast(pid, {:skill, :interrupt})
 
+  @doc """
+  Takes `amount` HP from this player without any source, damage reaction or
+  kill (the reference's `status_zap`): a no-op unless `amount` is below current
+  HP. Fire-and-forget.
+  """
+  @spec zap_hp(pid(), pos_integer()) :: :ok
+  def zap_hp(pid, amount), do: GenServer.cast(pid, {:unit, {:zap_hp, amount}})
+
   @doc "Sets this player's HP/SP to absolute values in the owning session."
   @spec set_vitals(pid(), keyword()) :: :ok
   def set_vitals(pid, opts), do: GenServer.cast(pid, {:unit, {:set_vitals, opts}})
@@ -1209,6 +1217,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:unit, {:drain_sp, amount}}, state) do
     HealthHandler.consume_sp(amount, state)
+  end
+
+  @impl true
+  def handle_cast({:unit, {:zap_hp, amount}}, state) do
+    HealthHandler.zap_hp(amount, state)
   end
 
   @impl true

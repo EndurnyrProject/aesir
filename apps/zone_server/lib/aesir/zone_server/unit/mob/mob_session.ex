@@ -91,6 +91,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Takes `amount` HP from the mob without any source, aggro, damage log or kill
+  (the reference's `status_zap`): a no-op unless `amount` is below current HP.
+  """
+  @spec zap_hp(pid(), pos_integer()) :: :ok
+  def zap_hp(pid, amount), do: GenServer.cast(pid, {:unit, {:zap_hp, amount}})
+
+  @doc """
   Notifies the mob that one of its statuses was applied, ticked, or expired.
 
   Status application and `StatusTickManager` send this asynchronously; any
@@ -390,6 +397,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   def handle_cast({:unit, {:drain_sp, amount}}, state) do
     CombatHandler.handle_drain_sp(amount, state)
+  end
+
+  @impl GenServer
+  def handle_cast({:unit, {:zap_hp, amount}}, state) do
+    CombatHandler.handle_zap_hp(amount, state)
   end
 
   # Steal: mark this mob as already stolen from (TF_STEAL success path).

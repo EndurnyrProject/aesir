@@ -71,9 +71,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
 
   defp stub_mob(state), do: stub_mob([state])
 
-  defp stub_player(casting) do
+  defp stub_player(casting, opts \\ []) do
     pid = self()
-    target = %PlayerState{character_id: @target_id, casting: casting}
+
+    target = %PlayerState{
+      character_id: @target_id,
+      casting: casting,
+      map_name: Keyword.get(opts, :map, "prontera"),
+      stats: %{
+        current_state: %{hp: Keyword.get(opts, :hp, 500), sp: 100},
+        derived_stats: %{max_hp: Keyword.get(opts, :max_hp, 1_000), max_sp: 100}
+      }
+    }
 
     stub(UnitRegistry, :get_unit, fn
       :mob, @target_id -> {:error, :not_found}
@@ -113,21 +122,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
   end
 
   describe "cast/5 - target not casting" do
-    test "fails with :not_casting and never interrupts" do
+    test "completes doing nothing, so the SP is still spent" do
       stub_mob(mob_state(casting: nil))
       no_magic_rod()
       reject(&MobSession.interrupt_cast/1)
 
-      assert {:error, :not_casting} =
-               SaSpellbreaker.cast(caster(100, 100), {:unit, @target_id}, 5, nil)
-    end
-
-    test "leaves the caster's SP untouched" do
-      stub_mob(mob_state(casting: nil))
-      no_magic_rod()
-
       caster = caster(100, 100)
-      assert {:error, :not_casting} = SaSpellbreaker.cast(caster, {:unit, @target_id}, 5, nil)
+      assert {:ok, ^caster} = SaSpellbreaker.cast(caster, {:unit, @target_id}, 5, nil)
     end
   end
 
@@ -146,8 +147,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
         :ok
       end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, source ->
-        send(test_pid, {:damaged, damage, source})
+      stub(MobSession, :zap_hp, fn _pid, damage ->
+        send(test_pid, {:damaged, damage})
         :ok
       end)
 
@@ -219,8 +220,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       stub(MobSession, :interrupt_cast, fn _pid -> {:ok, @firebolt} end)
       stub(MobSession, :zap_sp, fn _pid, _amount -> :ok end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, source ->
-        send(test_pid, {:damaged, damage, source})
+      stub(MobSession, :zap_hp, fn _pid, damage ->
+        send(test_pid, {:damaged, damage})
         :ok
       end)
 
@@ -232,7 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
 
       assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
 
-      assert_received {:damaged, 20, @caster_id}
+      assert_received {:damaged, 20}
       assert caster.stats.current_state.hp == 510
     end
 
@@ -241,7 +242,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
 
       assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 4, nil)
 
-      refute_received {:damaged, _damage, _source}
+      refute_received {:damaged, _damage}
       assert caster.stats.current_state.hp == 500
     end
 
@@ -252,7 +253,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
 
       assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
 
-      refute_received {:damaged, _damage, _source}
+      refute_received {:damaged, _damage}
       assert caster.stats.current_state.hp == 500
     end
 
@@ -260,21 +261,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       stub_mob(mob_state(casting: %{row: @firebolt}, hp: 19, max_hp: 1_000))
 
       assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
-      refute_received {:damaged, _damage, _source}
+      refute_received {:damaged, _damage}
     end
 
     test "deals the hit when it leaves the mob alive by one HP" do
       stub_mob(mob_state(casting: %{row: @firebolt}, hp: 21, max_hp: 1_000))
 
       assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
-      assert_received {:damaged, 20, @caster_id}
+      assert_received {:damaged, 20}
     end
 
     test "skips the hit when max_hp is too small to siphon" do
       stub_mob(mob_state(casting: %{row: @firebolt}, hp: 49, max_hp: 49))
 
       assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
-      refute_received {:damaged, _damage, _source}
+      refute_received {:damaged, _damage}
     end
 
     test "skips the hit when the mob died between the interrupt and the siphon" do
@@ -284,11 +285,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       ])
 
       assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
-      refute_received {:damaged, _damage, _source}
+      refute_received {:damaged, _damage}
     end
   end
 
-  describe "cast/5 - boss-moded target" do
+  describe "cast/5 - status-immune target" do
     setup do
       no_magic_rod()
       test_pid = self()
@@ -300,18 +301,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
 
       stub(MobSession, :zap_sp, fn _pid, _amount -> :ok end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, source ->
-        send(test_pid, {:damaged, damage, source})
+      stub(MobSession, :zap_hp, fn _pid, damage ->
+        send(test_pid, {:damaged, damage})
         :ok
       end)
 
       :ok
     end
 
-    test "fails on a roll inside the 90% window, leaving the cast running" do
-      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:boss]))
+    test "fails on a roll inside the 90% window, leaving the cast running and spending the SP" do
+      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:status_immune]))
 
-      assert {:error, :failed} =
+      assert {:ok, _caster} =
                SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil,
                  rng: fn 100 -> 90 end
                )
@@ -320,7 +321,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
     end
 
     test "succeeds on a roll above the 90% window" do
-      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:boss]))
+      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:status_immune]))
       pid = self()
 
       assert {:ok, _caster} =
@@ -332,37 +333,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
     end
 
     @tag game_mode: :renewal
-    test "never siphons HP from a boss, even at level 5" do
-      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:boss], hp: 1_000, max_hp: 1_000))
+    test "never siphons HP from a status-immune target, even at level 5" do
+      stub_mob(
+        mob_state(casting: %{row: @firebolt}, modes: [:status_immune], hp: 1_000, max_hp: 1_000)
+      )
 
       assert {:ok, caster} =
                SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil,
                  rng: fn 100 -> 91 end
                )
 
-      refute_received {:damaged, _damage, _source}
+      refute_received {:damaged, _damage}
       assert caster.stats.current_state.hp == 500
     end
 
     @tag game_mode: :pre_renewal
-    test "classic siphons a boss once the resistance roll has passed" do
-      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:boss], hp: 1_000, max_hp: 1_000))
+    test "classic siphons a status-immune target once the resistance roll has passed" do
+      stub_mob(
+        mob_state(casting: %{row: @firebolt}, modes: [:status_immune], hp: 1_000, max_hp: 1_000)
+      )
 
       assert {:ok, caster} =
                SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil,
                  rng: fn 100 -> 91 end
                )
 
-      assert_received {:damaged, 20, _source}
+      assert_received {:damaged, 20}
       assert caster.stats.current_state.hp == 510
     end
 
-    test "a non-boss target never rolls at all" do
-      stub_mob(mob_state(casting: %{row: @firebolt}))
+    test "a boss without status immunity never rolls at all" do
+      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:boss]))
 
       assert {:ok, _caster} =
                SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil,
-                 rng: fn _ -> flunk("a non-boss target must not roll") end
+                 rng: fn _ -> flunk("a target without status immunity must not roll") end
                )
     end
   end
@@ -370,12 +375,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
   describe "cast/5 - target under Magic Rod" do
     setup do
       test_pid = self()
-
-      # Bound to the status Task 20 actually declares, not a literal.
-      stub(StatusStorage, :has_status?, fn type, id, status ->
-        send(test_pid, {:queried, type, id, status})
-        status == MagicRod.id()
-      end)
 
       stub(Helpers, :restore_sp, fn target, amount ->
         send(test_pid, {:restored, target, amount})
@@ -385,33 +384,44 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       :ok
     end
 
-    test "transfers 20% of the caster's max SP to the target and does nothing else" do
-      stub_mob(mob_state(casting: %{row: @firebolt}))
-      reject(&MobSession.interrupt_cast/1)
-      reject(&MobSession.zap_sp/2)
-      reject(&MobSession.apply_damage/3)
+    defp rod_player(casting) do
+      pid = stub_player(casting)
+
+      stub(StatusStorage, :has_status?, fn :player, @target_id, status ->
+        status == MagicRod.id()
+      end)
+
+      pid
+    end
+
+    test "a player transfers 20% of the caster's max SP to itself and nothing else happens" do
+      rod_player(%{skill_id: 19, skill_level: 5})
+      reject(&PlayerSession.interrupt_cast/1)
+      reject(&PlayerSession.consume_sp/2)
 
       assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
 
-      assert_received {:queried, :mob, @target_id, :sc_magicrod}
-      assert_received {:restored, {:mob, @target_id}, 40}
+      assert_received {:restored, {:player, @target_id}, 40}
       assert caster.stats.current_state.sp == 60
     end
 
-    test "transfers no more SP than the caster has" do
-      stub_mob(mob_state(casting: %{row: @firebolt}))
+    test "transfers no more SP than the caster has, even when the player is not casting" do
+      rod_player(nil)
 
       assert {:ok, caster} = SaSpellbreaker.cast(caster(10, 200), {:unit, @target_id}, 5, nil)
 
-      assert_received {:restored, {:mob, @target_id}, 10}
+      assert_received {:restored, {:player, @target_id}, 10}
       assert caster.stats.current_state.sp == 0
     end
 
-    test "wins even when the target is not casting" do
-      stub_mob(mob_state(casting: nil))
+    test "a monster holding Magic Rod is broken as usual" do
+      stub_mob(mob_state(casting: %{row: @firebolt}))
+      stub(StatusStorage, :has_status?, fn _type, _id, status -> status == MagicRod.id() end)
+      stub(MobSession, :zap_sp, fn _pid, _amount -> :ok end)
+      expect(MobSession, :interrupt_cast, fn _pid -> {:ok, @firebolt} end)
+      reject(&Helpers.restore_sp/2)
 
-      assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
-      assert caster.stats.current_state.sp == 60
+      assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 1, nil)
     end
   end
 
@@ -434,13 +444,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       assert caster.stats.current_state.sp == 110
     end
 
-    test "a player who is not casting is not interrupted" do
+    test "a player who is not casting is not interrupted, and the SP is spent" do
       stub_player(nil)
       reject(&PlayerSession.interrupt_cast/1)
       reject(&PlayerSession.consume_sp/2)
 
-      assert {:error, :not_casting} =
-               SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
+      caster = caster(100, 200)
+      assert {:ok, ^caster} = SaSpellbreaker.cast(caster, {:unit, @target_id}, 5, nil)
+    end
+
+    test "level 5 siphons a casting player's HP on a versus map only" do
+      test_pid = self()
+      stub(PlayerSession, :interrupt_cast, fn _pid -> :ok end)
+      stub(PlayerSession, :consume_sp, fn _pid, _amount -> :ok end)
+
+      stub(PlayerSession, :zap_hp, fn _pid, damage ->
+        send(test_pid, {:zapped_hp, damage})
+        :ok
+      end)
+
+      stub_player(%{skill_id: 19, skill_level: 5}, map: "pvp_map", hp: 500, max_hp: 1_000)
+      stub(Targeting, :versus_map?, fn "pvp_map" -> true end)
+
+      assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
+      assert_received {:zapped_hp, 20}
+      assert caster.stats.current_state.hp == 510
+
+      stub(Targeting, :versus_map?, fn "pvp_map" -> false end)
+      assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
+      refute_received {:zapped_hp, _damage}
     end
 
     test "an absent target fails cleanly" do

@@ -769,6 +769,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "zap_hp/2" do
+    test "takes HP below the current amount and never kills" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.zap_hp(30, build_state(100, :idle))
+
+      assert game_state.stats.current_state.hp == 70
+
+      state = build_state(100, :idle)
+      assert {:noreply, ^state} = HealthHandler.zap_hp(100, state)
+    end
+  end
+
   describe "restore_sp/2" do
     test "ceils the restore at max_sp" do
       assert {:noreply, %{game_state: game_state}} =

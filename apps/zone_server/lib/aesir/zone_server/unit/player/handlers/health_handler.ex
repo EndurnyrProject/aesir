@@ -519,6 +519,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def gain_hp(_amount, state), do: {:noreply, state}
 
+  @doc """
+  Takes `amount` HP without source, reaction or kill: applied only while the
+  player is alive and `amount` is below current HP.
+  """
+  @spec zap_hp(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def zap_hp(_amount, %{game_state: %{action_state: :dead}} = state), do: {:noreply, state}
+
+  def zap_hp(amount, state) when is_integer(amount) and amount > 0 do
+    hp = current_hp(state)
+    if amount < hp, do: {:noreply, put_hp(state, hp - amount)}, else: {:noreply, state}
+  end
+
+  def zap_hp(_amount, state), do: {:noreply, state}
+
   defp recovery_blocked?(state) do
     StatusStorage.has_status?(
       :player,

@@ -137,6 +137,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   def handle_drain_sp(_amount, state), do: {:noreply, state}
 
   @doc """
+  Takes `amount` HP without source, aggro, damage log or kill: applied only
+  while the mob is alive and `amount` is below its current HP.
+  """
+  @spec handle_zap_hp(integer(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_zap_hp(amount, %{is_dead: false, hp: hp} = state)
+      when is_integer(amount) and amount > 0 and amount < hp do
+    state = StateCommit.commit(%{state | hp: hp - amount})
+    SpawnView.notify_hp_update(state)
+    {:noreply, state}
+  end
+
+  def handle_zap_hp(_amount, state), do: {:noreply, state}
+
+  @doc """
   Recomputes the HP ceiling after a `:max_hp_rate` status (SC_DELUGE and kin)
   is applied or removed, publishing and broadcasting only when it moved.
   Ordinary status ticks are gated out by the status's `calc_flags`.
