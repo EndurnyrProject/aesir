@@ -58,61 +58,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcFireattackTest do
     definition
   end
 
-  test "cast/4 delivers a flat 100% fire weapon hit against the target" do
-    caster = build_caster()
+  for {module, element} <- [
+        {NpcFireattack, :fire},
+        {Aesir.ZoneServer.Mmo.Skills.Npc.NpcWaterattack, :water},
+        {Aesir.ZoneServer.Mmo.Skills.Npc.NpcWindattack, :wind},
+        {Aesir.ZoneServer.Mmo.Skills.Npc.NpcGroundattack, :earth},
+        {Aesir.ZoneServer.Mmo.Skills.Npc.NpcPoisonattack, :poison},
+        {Aesir.ZoneServer.Mmo.Skills.Npc.NpcHolyattack, :holy},
+        {Aesir.ZoneServer.Mmo.Skills.Npc.NpcDarknessattack, :shadow},
+        {Aesir.ZoneServer.Mmo.Skills.Npc.NpcUndeadattack, :undead}
+      ] do
+    @module module
+    @element element
 
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:skill_id] == definition().id
-      assert opts[:skill_level] == 3
-      assert opts[:skill_ratio] == 100
-      assert opts[:element] == :fire
-      :ok
-    end)
+    test "#{inspect(module)} strikes for 100% ATK per level in its element with a 20% hit bonus" do
+      caster = build_caster()
+      definition = @module.definition()
 
-    assert {:ok, ^caster} = NpcFireattack.cast(caster, {:unit, @target_id}, 3, definition())
-  end
+      expect(Combat, :execute_skill_attack, fn passed, @target_id, opts ->
+        assert passed.mob_data.attack_range == 10
+        assert opts[:skill_id] == definition.id
+        assert opts[:skill_ratio] == 300
+        assert opts[:element] == @element
+        assert opts[:hit_rate_bonus_pct] == 20
+        :ok
+      end)
 
-  test "cast/4 keeps the ratio flat at 100% regardless of level" do
-    caster = build_caster()
-
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:skill_ratio] == 100
-      :ok
-    end)
-
-    assert {:ok, ^caster} = NpcFireattack.cast(caster, {:unit, @target_id}, 10, definition())
-  end
-
-  test "cast/4 propagates a combat error without altering the caster" do
-    caster = build_caster()
-
-    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
-      {:error, :target_out_of_range}
-    end)
-
-    assert {:error, :target_out_of_range} =
-             NpcFireattack.cast(caster, {:unit, @target_id}, 3, definition())
-  end
-
-  test "cast/4 widens a mob caster's attack range to skill_range for a chase/angry cast" do
-    caster = build_caster(%{attack_range: 1, skill_range: 10})
-
-    expect(Combat, :execute_skill_attack, fn combatant, @target_id, _opts ->
-      assert combatant.mob_data.attack_range == 10
-      :ok
-    end)
-
-    assert {:ok, ^caster} = NpcFireattack.cast(caster, {:unit, @target_id}, 3, definition())
-  end
-
-  test "cast/4 leaves attack_range alone when it already meets or exceeds skill_range" do
-    caster = build_caster(%{attack_range: 12, skill_range: 10})
-
-    expect(Combat, :execute_skill_attack, fn combatant, @target_id, _opts ->
-      assert combatant.mob_data.attack_range == 12
-      :ok
-    end)
-
-    assert {:ok, ^caster} = NpcFireattack.cast(caster, {:unit, @target_id}, 3, definition())
+      assert {:ok, ^caster} = @module.cast(caster, {:unit, @target_id}, 3, definition)
+    end
   end
 end

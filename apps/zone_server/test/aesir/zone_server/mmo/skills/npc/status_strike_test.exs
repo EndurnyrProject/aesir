@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrikeTest do
   @map "prontera"
 
   defp definition(element \\ :poison) do
-    %{id: 176, element: element}
+    %{id: 176, element: element, duration: List.duplicate(18_000, 10)}
   end
 
   defp mob_caster(attack_range \\ 1, skill_range \\ 9) do
@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrikeTest do
     MobState.new(@caster_id, mob_data, spawn_ref, @map, 100, 100)
   end
 
-  test "hits with 100% weapon ratio in the skill's element and applies the status" do
+  test "hits with 100% weapon ratio and a 20% hit bonus, then rolls 20% per level for the skill's duration" do
     caster = mob_caster()
 
     expect(Combat, :execute_skill_attack, fn passed_caster, @target_id, opts ->
@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrikeTest do
       assert opts[:skill_ratio] == 100
       assert opts[:element] == :poison
       assert opts[:skip_crit] == true
+      assert opts[:hit_rate_bonus_pct] == 20
       assert opts[:report_hit] == true
       {:ok, %{hit?: true}}
     end)
@@ -83,6 +84,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrikeTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_poison, opts ->
       assert opts[:val1] == 4
+      assert opts[:success_rate] == 80
+      assert opts[:duration] == 18_000
       assert opts[:caster_id] == @caster_id
       assert opts[:source_id] == @caster_id
       assert opts[:source_type] == :mob

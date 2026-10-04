@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusAttackFamilyTest do
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcBlindattack
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcCurseattack
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcPoison
-  alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcPoisonattack
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcSilenceattack
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcSleepattack
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcStunattack
@@ -31,7 +30,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusAttackFamilyTest do
 
   @family [
     {NpcStunattack, 179, :npc_stunattack, :neutral, :sc_stun},
-    {NpcPoisonattack, 188, :npc_poisonattack, :poison, :sc_poison},
     {NpcPoison, 176, :npc_poison, :neutral, :sc_poison},
     {NpcBlindattack, 177, :npc_blindattack, :neutral, :sc_blind},
     {NpcCurseattack, 181, :npc_curseattack, :shadow, :sc_curse},

@@ -1,14 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike do
   @moduledoc """
   Shared `cast/4` body for the weapon-class NPC skills that also inflict a
-  status on a connecting hit (`NPC_STUNATTACK`, `NPC_POISONATTACK`,
-  `NPC_POISON`, `NPC_BLINDATTACK`, `NPC_CURSEATTACK`, `NPC_SILENCEATTACK`,
+  status on a connecting hit (`NPC_STUNATTACK`, `NPC_POISON`, `NPC_BLINDATTACK`, `NPC_CURSEATTACK`, `NPC_SILENCEATTACK`,
   `NPC_SLEEPATTACK`, `NPC_BLEEDING`).
 
-  100% weapon-ratio hit in the skill's element; on a connecting hit it applies
-  the skill's status with no explicit duration, letting the interpreter fall
-  back to the status definition's own declared duration. A miss skips the
-  status entirely, and a `Combat` error propagates unchanged.
+  100% weapon-ratio hit in the skill's element with a 20% hit-rate bonus; a
+  connecting hit inflicts the skill's status with a `20 * level` percent chance
+  for the skill's own duration. A miss skips the status entirely, and a `Combat`
+  error propagates unchanged.
 
   A mob caster's effective range is widened to `max(attack_range,
   skill_range)` before the attack: these skills are cast at the mob's
@@ -31,12 +30,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike do
       skill_ratio: 100,
       element: definition.element,
       skip_crit: true,
+      hit_rate_bonus_pct: 20,
       report_hit: true
     ]
 
     case Combat.execute_skill_attack(combat_caster(caster), target_id, opts) do
       {:ok, %{hit?: true}} ->
-        apply_status(caster, target_id, level, status)
+        apply_status(caster, target_id, level, definition, status)
         {:ok, caster}
 
       {:ok, %{hit?: false}} ->
@@ -55,13 +55,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike do
 
   defp combat_caster(caster), do: caster
 
-  @spec apply_status(struct(), integer() | Ref.t(), pos_integer(), atom()) :: :ok
-  defp apply_status(caster, target, level, status) do
+  @spec apply_status(struct(), integer() | Ref.t(), pos_integer(), struct(), atom()) :: :ok
+  defp apply_status(caster, target, level, definition, status) do
     {caster_id, source_type} = caster_ref(caster)
     {unit_type, unit_id} = target_ref(target)
 
     StatusInterpreter.apply_status(unit_type, unit_id, status,
       val1: level,
+      success_rate: 20 * level,
+      duration: Enum.at(definition.duration, min(level, length(definition.duration)) - 1),
       caster_id: caster_id,
       source_id: caster_id,
       source_type: source_type

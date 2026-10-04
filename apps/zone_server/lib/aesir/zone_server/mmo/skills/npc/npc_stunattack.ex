@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcStunattack do
     requires: [],
     display_name: "Stun Attack",
     max_level: 10,
+    duration: [renewal: List.duplicate(4500, 10), pre_renewal: List.duplicate(5000, 10)],
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: :weapon,

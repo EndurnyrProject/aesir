@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcBleeding do
     requires: [],
     display_name: "Bleeding",
     max_level: 10,
+    duration: [renewal: List.duplicate(108_000, 10), pre_renewal: List.duplicate(120_000, 10)],
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: :weapon,

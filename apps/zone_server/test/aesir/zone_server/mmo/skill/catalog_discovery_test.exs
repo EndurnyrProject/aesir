@@ -229,6 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Tick,
       Aesir.ZoneServer.Mmo.Skills.Hunter.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Hunter.Trap,
+      Aesir.ZoneServer.Mmo.Skills.Npc.AttributeStrike,
       Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon,
       Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike,
       Aesir.ZoneServer.Mmo.Skills.Shared.BoltEcho,

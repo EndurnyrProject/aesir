@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCurseattack do
     requires: [],
     display_name: "Curse Attack",
     max_level: 10,
+    duration: [renewal: List.duplicate(28_000, 10), pre_renewal: List.duplicate(30_000, 10)],
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: :weapon,
