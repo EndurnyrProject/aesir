@@ -878,6 +878,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
+  defp blocks_player_movement?(%StatusEntry{type: :sc_gravitation, state: state}, _unit_id),
+    do: match?(%{self?: true}, state)
+
   defp blocks_player_movement?(%StatusEntry{type: type}, _unit_id), do: prevents_movement?(type)
 
   defp blocks_player_attack?(%StatusEntry{type: :sc_dancing} = entry, unit_id),
