@@ -66,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcFireattackTest do
         {Aesir.ZoneServer.Mmo.Skills.Npc.NpcPoisonattack, :poison},
         {Aesir.ZoneServer.Mmo.Skills.Npc.NpcHolyattack, :holy},
         {Aesir.ZoneServer.Mmo.Skills.Npc.NpcDarknessattack, :shadow},
+        {Aesir.ZoneServer.Mmo.Skills.Npc.NpcTelekinesisattack, :ghost},
         {Aesir.ZoneServer.Mmo.Skills.Npc.NpcUndeadattack, :undead}
       ] do
     @module module

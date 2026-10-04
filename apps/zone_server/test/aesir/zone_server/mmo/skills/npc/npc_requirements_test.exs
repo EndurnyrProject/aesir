@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRequirementsTest do
     Aesir.ZoneServer.Mmo.Skills.Npc.NpcSleepattack,
     Aesir.ZoneServer.Mmo.Skills.Npc.NpcStunattack,
     Aesir.ZoneServer.Mmo.Skills.Npc.NpcSummonslave,
+    Aesir.ZoneServer.Mmo.Skills.Npc.NpcTelekinesisattack,
     Aesir.ZoneServer.Mmo.Skills.Npc.NpcUndeadattack,
     Aesir.ZoneServer.Mmo.Skills.Npc.NpcWaterattack,
     Aesir.ZoneServer.Mmo.Skills.Npc.NpcWindattack

@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.AttributeStrike do
   @moduledoc """
   Shared `cast/4` body for the monster attribute attacks (`NPC_FIREATTACK`,
   `NPC_WATERATTACK`, `NPC_WINDATTACK`, `NPC_GROUNDATTACK`, `NPC_POISONATTACK`,
-  `NPC_HOLYATTACK`, `NPC_DARKNESSATTACK`, `NPC_UNDEADATTACK`): a single weapon
+  `NPC_HOLYATTACK`, `NPC_DARKNESSATTACK`, `NPC_TELEKINESISATTACK`,
+  `NPC_UNDEADATTACK`): a single weapon
   hit in the skill's element at `100 * level` percent ATK with a 20% hit-rate
   bonus. Identical in both modes.
 
