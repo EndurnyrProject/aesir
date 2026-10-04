@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -93,7 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
     with {:ok, target} <- Combat.resolve_combatant(target_id) do
       ratio =
         if GameMode.mode() == :renewal,
-          do: div((150 + 50 * level) * caster.mob_data.level, 100),
+          do: LevelModifier.skill_ratio(150 + 50 * level, caster.mob_data.level),
           else: 100 + 50 * level
 
       opts =
@@ -111,7 +112,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
       [
         weight_atk: div(weight, 10),
         base_atk_rate: div(70 * size_rate, 100),
-        skill_ratio: div((150 + 50 * level) * caster.stats.progression.base_level, 100)
+        skill_ratio:
+          LevelModifier.skill_ratio(150 + 50 * level, caster.stats.progression.base_level)
       ]
   end
 

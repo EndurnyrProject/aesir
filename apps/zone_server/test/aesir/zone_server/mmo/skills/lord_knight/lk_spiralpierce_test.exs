@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     expect(Combat, :execute_skill_attack, fn ^caster, 6_160, opts ->
       assert opts[:weight_atk] == 150
       assert opts[:base_atk_rate] == 80
-      assert opts[:skill_ratio] == 396
+      assert opts[:skill_ratio] == 400
       assert opts[:display_hit_count] == 5
       assert opts[:skip_crit] == true
       {:ok, %{hit?: false}}

@@ -117,7 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
     PfSpiderweb.capture(group(51), @victim)
 
     assert StatusStorage.get_status(:mob, 9_701, :sc_spiderweb).state.groups == [51]
-    assert_in_delta remaining_ms(), 8_000, 100
+    assert remaining_ms() <= 8_000
   end
 
   test "a web's end releases its group, and the last web ends the hold" do

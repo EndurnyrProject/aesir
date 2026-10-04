@@ -6,9 +6,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.FormulasTest do
   @stats %{agi: 100, dex: 100, int: 1}
 
   @tag game_mode: :renewal
-  test "renewal Sharpshooting scales players by base level but not mobs" do
-    assert Formulas.sharpshooting_ratio(5, 99) == 1782
-    assert Formulas.sharpshooting_ratio(1, 50) == 300
+  test "renewal Sharpshooting scales players above base level 99 but not mobs" do
+    assert Formulas.sharpshooting_ratio(5, 99) == 1800
+    assert Formulas.sharpshooting_ratio(5, 150) == 2700
+    assert Formulas.sharpshooting_ratio(1, 50) == 600
     assert Formulas.sharpshooting_mob_ratio(3, true) == 350
     assert Formulas.sharpshooting_mob_ratio(3, false) == 350
     assert Formulas.sharpshooting_crit_bonus() == 30

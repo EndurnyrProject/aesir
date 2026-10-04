@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -73,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
       skill_level: level,
       hit_count: 2 * level,
       element: definition.element,
-      skill_ratio: div(100 * level * caster.stats.progression.base_level, 100),
+      skill_ratio: LevelModifier.skill_ratio(100 * level, caster.stats.progression.base_level),
       line_of_sight: true
     )
 

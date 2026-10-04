@@ -2,13 +2,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.Formulas do
   @moduledoc "Deterministic calculations shared by renewal and pre-renewal Sniper skills."
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Formulas, as: HunterFormulas
 
   @doc "Player Sharpshooting ratio, base-level scaled in renewal and flat in pre-renewal."
   @spec sharpshooting_ratio(pos_integer(), pos_integer()) :: pos_integer()
   def sharpshooting_ratio(level, base_level) do
     case GameMode.mode() do
-      :renewal -> div((300 + 300 * level) * base_level, 100)
+      :renewal -> LevelModifier.skill_ratio(300 + 300 * level, base_level)
       :pre_renewal -> 200 + 50 * level
     end
   end

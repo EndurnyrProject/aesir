@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchain do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -79,7 +80,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchain do
     case GameMode.mode() do
       :renewal ->
         {weight, refine} = shield_stats(caster)
-        div((300 + 200 * level + div(weight, 10) + 4 * refine) * base_level(caster), 100)
+
+        LevelModifier.skill_ratio(
+          300 + 200 * level + div(weight, 10) + 4 * refine,
+          base_level(caster)
+        )
 
       :pre_renewal ->
         100 + 30 * level

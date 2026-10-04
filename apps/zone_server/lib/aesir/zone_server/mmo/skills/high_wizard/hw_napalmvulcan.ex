@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
   with a 5% per level chance.
 
   Renewal: each round deals `70 * level` percent MATK scaled by base level / 100
-  to every target; the curse lasts 18 s. 30 to 70 SP, 0.8 s cast plus 0.2 s
+  to every target (base level / 100 only above level 99); the curse lasts 18 s. 30 to 70 SP, 0.8 s cast plus 0.2 s
   fixed, 0.5 s after-cast delay and a 1 s cooldown.
 
   Pre-renewal: each round deals 125% MATK split evenly among the targets; the
@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -67,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
   @spec ratio(map(), pos_integer()) :: pos_integer()
   def ratio(%{progression: %{base_level: base_level}}, level) do
     case GameMode.mode() do
-      :renewal -> div(70 * level * base_level, 100)
+      :renewal -> LevelModifier.skill_ratio(70 * level, base_level)
       :pre_renewal -> 125
     end
   end

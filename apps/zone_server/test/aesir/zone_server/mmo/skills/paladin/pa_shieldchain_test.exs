@@ -50,8 +50,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchainTest do
   @tag game_mode: :renewal
   test "renewal ratio folds shield weight, refine and base level into the ratio" do
     stub_guard(300)
-    # (300 + 200 * 3 + 300 / 10 + 4 * 7) * 99 / 100 = 958 * 99 / 100
-    assert PaShieldchain.skill_ratio(shield_caster(refine: 7, base_level: 99), 3) == 948
+    # 300 + 200 * 3 + 300 / 10 + 4 * 7 = 958, unscaled at base level 99
+    assert PaShieldchain.skill_ratio(shield_caster(refine: 7, base_level: 99), 3) == 958
     # a level 120 mob has no shield: (300 + 200 * 3) * 120 / 100
     assert PaShieldchain.skill_ratio(mob_caster(), 3) == 1_080
   end

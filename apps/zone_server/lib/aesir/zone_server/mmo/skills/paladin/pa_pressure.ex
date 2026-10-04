@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
@@ -74,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
     Combat.execute_magic_attack(caster, target_id,
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: div((500 + 150 * level) * base_level(caster), 100),
+      skill_ratio: LevelModifier.skill_ratio(500 + 150 * level, base_level(caster)),
       element: :holy,
       hit_count: 1,
       display_hit_count: 3,

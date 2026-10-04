@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
 
     expect(Combat, :execute_magic_splash, fn ^caster, {110, 100}, 2, opts ->
       assert opts[:hit_count] == 6
-      assert opts[:skill_ratio] == div(300 * 99, 100)
+      assert opts[:skill_ratio] == 300
       assert opts[:element] == :neutral
       assert opts[:line_of_sight]
       []

@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Formulas do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
 
   @primary_stats [:str, :agi, :vit, :int, :dex, :luk]
 
@@ -11,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Formulas do
   @spec arrow_vulcan_ratio(pos_integer(), pos_integer()) :: pos_integer()
   def arrow_vulcan_ratio(level, base_level) do
     case GameMode.mode() do
-      :renewal -> div((500 + 100 * level) * base_level, 100)
+      :renewal -> LevelModifier.skill_ratio(500 + 100 * level, base_level)
       :pre_renewal -> 200 + 100 * level
     end
   end

@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.Formulas do
   Pure arithmetic for the Champion skills. Functions whose value differs between
   renewal and pre-renewal branch on the booted mode.
 
-  Renewal ratios scale with the caster's base level (`ratio * BaseLv / 100`):
+  Renewal ratios scale with the caster's base level above 99 (`ratio * BaseLv / 100`):
   Raging Palm Strike `200 + 100*lv + STR`, Glacier Fist `500 + 150*lv`, and Chain
   Crush Combo `200*lv`. Pre-renewal ratios are flat: Palm Strike `200 + 100*lv`,
   Glacier Fist `40 + 100*lv`, and Chain Crush `400 + 100*lv`.
@@ -13,12 +13,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.Formulas do
   """
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
 
   @doc "Raging Palm Strike skill ratio."
   @spec palm_ratio(pos_integer(), non_neg_integer(), pos_integer()) :: pos_integer()
   def palm_ratio(level, str, base_level) do
     case GameMode.mode() do
-      :renewal -> div((200 + 100 * level + str) * base_level, 100)
+      :renewal -> LevelModifier.skill_ratio(200 + 100 * level + str, base_level)
       :pre_renewal -> 200 + 100 * level
     end
   end
@@ -27,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.Formulas do
   @spec glacier_ratio(pos_integer(), pos_integer()) :: pos_integer()
   def glacier_ratio(level, base_level) do
     case GameMode.mode() do
-      :renewal -> div((500 + 150 * level) * base_level, 100)
+      :renewal -> LevelModifier.skill_ratio(500 + 150 * level, base_level)
       :pre_renewal -> 40 + 100 * level
     end
   end
@@ -36,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.Formulas do
   @spec chain_crush_ratio(pos_integer(), pos_integer()) :: pos_integer()
   def chain_crush_ratio(level, base_level) do
     case GameMode.mode() do
-      :renewal -> div(200 * level * base_level, 100)
+      :renewal -> LevelModifier.skill_ratio(200 * level, base_level)
       :pre_renewal -> 400 + 100 * level
     end
   end

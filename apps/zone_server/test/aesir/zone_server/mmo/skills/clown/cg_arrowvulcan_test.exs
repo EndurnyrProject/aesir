@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcanTest do
       PlayerStateFixture.build(%{character_id: 17, stats: %{progression: %{base_level: 99}}})
 
     expect(Combat, :execute_skill_attack, fn ^caster, 18, opts ->
-      assert opts[:skill_ratio] == if(GameMode.mode() == :renewal, do: 1485, else: 1200)
+      assert opts[:skill_ratio] == if(GameMode.mode() == :renewal, do: 1500, else: 1200)
       assert opts[:skill_id] == 394
       assert opts[:skill_level] == 10
       assert opts[:display_hit_count] == 9
@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcanTest do
     caster = MobState.new(19, %{definition | level: 50}, spawn, "prontera", 100, 100)
 
     expect(Combat, :execute_skill_attack, fn ^caster, {:player, 18}, opts ->
-      assert opts[:skill_ratio] == if(GameMode.mode() == :renewal, do: 750, else: 1200)
+      assert opts[:skill_ratio] == if(GameMode.mode() == :renewal, do: 1500, else: 1200)
       assert opts[:display_hit_count] == 9
       :ok
     end)

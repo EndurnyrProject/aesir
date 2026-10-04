@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSharpshootingTest do
     stub(Combat, :resolve_combatant, fn 3001 -> {:ok, %{position: {109, 100}}} end)
 
     expect(Combat, :execute_splash_attack, fn ^caster, {109, 100}, 2, opts ->
-      assert opts[:skill_ratio] == 1782
+      assert opts[:skill_ratio] == 1800
       assert opts[:critical]
       assert opts[:critical_rate_bonus] == 30
       assert opts[:critical_max_weapon] == false

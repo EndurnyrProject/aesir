@@ -52,12 +52,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
     do: HwNapalmvulcan.cast(caster, {:unit, 3001}, level, HwNapalmvulcan.definition())
 
   @tag game_mode: :renewal
-  test "renewal hits lv rounds at 70% per level scaled by base level, unsplit" do
+  test "renewal hits lv rounds at 70% per level, unscaled at base level 99, unsplit" do
     caster = player()
     stub(Resistance, :roll_success, fn _rate -> false end)
 
     expect(Combat, :execute_magic_splash, fn ^caster, {110, 100}, 1, opts ->
-      assert opts[:skill_ratio] == div(350 * 99, 100)
+      assert opts[:skill_ratio] == 350
       assert opts[:hit_count] == 5
       assert opts[:element] == :ghost
       refute opts[:split]

@@ -9,8 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.FormulasTest do
 
   @tag game_mode: :renewal
   test "Arrow Vulcan scales the renewal ratio by base level" do
-    assert Formulas.arrow_vulcan_ratio(10, 99) == 1485
-    assert Formulas.arrow_vulcan_ratio(1, 50) == 300
+    assert Formulas.arrow_vulcan_ratio(10, 99) == 1500
+    assert Formulas.arrow_vulcan_ratio(10, 150) == 2250
+    assert Formulas.arrow_vulcan_ratio(1, 50) == 600
   end
 
   @tag game_mode: :pre_renewal

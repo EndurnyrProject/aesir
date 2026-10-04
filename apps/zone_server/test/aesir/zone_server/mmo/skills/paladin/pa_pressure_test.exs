@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressureTest do
       assert opts[:skill_id] == 367
       assert opts[:skill_level] == 3
       # (500 + 150 * 3) * 99 / 100
-      assert opts[:skill_ratio] == 940
+      assert opts[:skill_ratio] == 950
       assert opts[:element] == :holy
       assert opts[:hit_count] == 1
       assert opts[:display_hit_count] == 3

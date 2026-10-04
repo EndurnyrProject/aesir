@@ -4,9 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.FormulasTest do
   alias Aesir.ZoneServer.Mmo.Skills.Champion.Formulas
 
   @tag game_mode: :renewal
-  test "renewal ratios scale with base level" do
-    assert Formulas.palm_ratio(5, 100, 99) == div(800 * 99, 100)
-    assert Formulas.glacier_ratio(5, 99) == div(1_250 * 99, 100)
+  test "renewal ratios scale with base level above 99 only" do
+    assert Formulas.palm_ratio(5, 100, 99) == 800
+    assert Formulas.palm_ratio(5, 100, 150) == div(800 * 150, 100)
+    assert Formulas.glacier_ratio(5, 99) == 1_250
     assert Formulas.chain_crush_ratio(10, 150) == 3_000
   end
 
