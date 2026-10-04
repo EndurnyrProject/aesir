@@ -355,7 +355,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     hit =
       stats
       |> PlayerCombatCalc.calculate_hit()
-      |> apply_rate(Stats.get_equipment_modifier(stats, :hit_rate))
+      |> apply_rate(
+        Stats.get_equipment_modifier(stats, :hit_rate) +
+          Stats.get_status_modifier(stats, :hit_rate)
+      )
       |> max(0)
 
     combat_stats = %UnitStats.CombatStats{
