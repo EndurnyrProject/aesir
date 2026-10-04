@@ -99,6 +99,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       A Bash at level 10 passes `400` for 400% weapon damage.
     - `:skip_crit` - when `true`, never rolls a critical (skills don't crit
       unless flagged). Default `false`.
+    - `:critical_max_weapon` - when `false`, a critical keeps normal weapon
+      variance instead of maximum weapon damage. Default `true`.
     - `:bonus_atk` - flat ATK added after the skill-ratio step and before the
       modifier/defense pipeline (e.g. Envenom's `+15×level` mastery). Default `0`.
     - `:fixed_damage` - when set to an integer, short-circuits the entire
@@ -315,7 +317,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode) do
     with {:ok, critical} <- finalize_damage(0, attacker, defender, opts) do
-      parts = DamageInputs.player_attack_parts(attacker, opts, attack_path, critical.is_critical)
+      parts =
+        DamageInputs.player_attack_parts(
+          attacker,
+          opts,
+          attack_path,
+          critical.is_critical and Keyword.get(opts, :critical_max_weapon, true)
+        )
 
       mastery =
         parts.mastery_atk + demon_bane_bonus(attacker, defender) +
@@ -744,7 +752,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   """
   @spec apply_critical_hit(integer(), combatant()) :: {:ok, CriticalHits.critical_result()}
   def apply_critical_hit(base_damage, attacker),
-    do: apply_critical_hit_with_rate(base_damage, attacker, 0)
+    do: apply_critical_hit_with_rate(base_damage, attacker, critical_rate(attacker, nil, 0))
 
   @doc """
   Applies critical hit calculation with equipment chance keyed on the defender's race.
@@ -758,13 +766,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @spec apply_critical_hit(integer(), combatant(), combatant(), integer()) ::
           {:ok, CriticalHits.critical_result()}
   def apply_critical_hit(base_damage, attacker, defender, additional_rate) do
-    rate =
-      (EquipmentBonuses.critical_add_race_rate(attacker, defender) + additional_rate) * 10
-
-    apply_critical_hit_with_rate(base_damage, attacker, rate)
+    apply_critical_hit_with_rate(
+      base_damage,
+      attacker,
+      critical_rate(attacker, defender, additional_rate)
+    )
   end
 
-  defp apply_critical_hit_with_rate(base_damage, attacker, race_rate) do
+  @doc "Rolls the attacker's critical against a defender using the damage calculator's rate."
+  @spec roll_critical?(combatant(), combatant(), integer()) :: boolean()
+  def roll_critical?(attacker, defender, additional_rate \\ 0) do
+    CriticalHits.is_critical_hit?(critical_rate(attacker, defender, additional_rate))
+  end
+
+  defp critical_rate(attacker, defender, additional_rate) do
     base_rate =
       computed_critical_rate(attacker) ||
         CriticalHits.calculate_critical_rate(%{
@@ -772,9 +787,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           base_level: Map.get(Map.get(attacker, :progression) || %{}, :base_level, 0)
         })
 
+    race_rate =
+      if is_nil(defender),
+        do: 0,
+        else: EquipmentBonuses.critical_add_race_rate(attacker, defender)
+
+    CriticalHits.calculate_critical_rate(%{
+      critical: base_rate + (race_rate + additional_rate) * 10
+    })
+  end
+
+  defp apply_critical_hit_with_rate(base_damage, attacker, rate) do
     attacker_for_crit = %{
       luk: attacker.base_stats.luk,
-      critical: base_rate + race_rate,
+      critical: rate,
       combat_stats: attacker.combat_stats,
       equip_modifiers: attacker.equip_modifiers
     }

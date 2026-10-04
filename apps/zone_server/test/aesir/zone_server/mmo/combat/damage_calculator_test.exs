@@ -70,6 +70,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     :ok
   end
 
+  test "critical pre-roll composes the computed rate with a flat bonus" do
+    attacker = CombatTestHelper.create_player_combatant()
+    attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical_rate, 0)}
+    defender = CombatTestHelper.create_mob_combatant()
+
+    assert DamageCalculator.roll_critical?(attacker, defender, 100)
+    refute DamageCalculator.roll_critical?(attacker, defender, 0)
+  end
+
+  test "forced critical can retain normal weapon variance" do
+    stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+    stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    attacker = player_with_weapon(200)
+    defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: :neutral)
+
+    :rand.seed(:exsss, {11, 12, 13})
+
+    assert {:ok, maximum} =
+             DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
+
+    :rand.seed(:exsss, {11, 12, 13})
+
+    assert {:ok, varied} =
+             DamageCalculator.calculate_damage(attacker, defender,
+               force_crit: true,
+               critical_max_weapon: false
+             )
+
+    assert maximum.is_critical
+    assert varied.is_critical
+    assert varied.damage < maximum.damage
+  end
+
   test "Homunculus normal weapon rolls exclude the upper endpoint and add status ATK once" do
     attacker = %{unit_type: :homunculus, combat_stats: %{atk: 111, atk_min: 14, atk_max: 15}}
     :rand.seed(:exsss, {17, 19, 23})

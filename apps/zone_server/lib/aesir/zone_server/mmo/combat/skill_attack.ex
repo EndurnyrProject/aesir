@@ -85,6 +85,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base attack the skill deals
     - `:skip_crit` - skip the critical roll (most skills don't crit)
+    - `:critical` - opt into a critical roll before flee; a critical bypasses
+      flee and forces the calculator, a failed roll prevents a second roll.
+      Wins over `:skip_crit` / `:force_crit`; callers should not mix them.
+    - `:critical_rate_bonus` - flat critical percentage points (default `0`)
+    - `:critical_max_weapon` - retain maximum weapon damage on criticals
+      (default `true`); `false` keeps normal weapon variance
     - `:force_crit` - guarantee a critical, applying the crit multiplier without
       rolling (Auto Counter's counter strike); wins over `:skip_crit`
     - `:bonus_atk` - flat ATK added after the skill ratio, before defense
@@ -493,6 +499,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       percent, for a skill whose ratio falls off with distance (Magnum Break's
       inner and outer rings)
     - `:element` - optional attack-element override
+    - `:critical`, `:critical_rate_bonus`, `:critical_max_weapon` - critical
+      pre-roll options documented by `execute_skill_attack/3`
     - `:skip_crit` - skip the critical roll
     - `:hit_rate_bonus_pct` - relative percent bonus applied to each target's
       already-clamped hit rate, as documented by `execute_skill_attack/3`
@@ -624,7 +632,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   target standing on the straight line of cells between the caster and it
   (inclusive of the target's own cell).
 
-  Selects targets via `LineTargets.select/4`, then runs each through the
+  Selects targets via `LineTargets.select/5`, then runs each through the
   shared single-target damage path **without** the per-target attack-range
   gate - the line already bounds the hit set. Each target rolls its own
   hit/flee check independently and resolves combined skill knockback once.
@@ -634,6 +642,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base attack the skill deals
     - `:skip_crit` - skip the critical roll
+    - `:critical`, `:critical_rate_bonus`, `:critical_max_weapon` - critical
+      pre-roll options documented by `execute_skill_attack/3`
+    - `:length` / `:width` - use an eight-direction lane with the supplied
+      length and half-width; without both, use the Bresenham line
+    - `:ranged` - classify each landed hit as ranged (default `false`)
+    - `:display_hit_count` - packet-only divisions for a total-damage hit
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
@@ -648,14 +662,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         {sx, sy} = attacker.position
 
         attacker.map_name
-        |> LineTargets.select({sx, sy}, {tx, ty}, attacker)
+        |> LineTargets.select({sx, sy}, {tx, ty}, attacker, Keyword.take(opts, [:length, :width]))
         |> hit_targets(attacker, skill_id, skill_level, calc_opts, 1, %{
-          ranged?: false,
+          ranged?: Keyword.get(opts, :ranged, false),
           ignore_flee?: false,
           typed_results?: false,
           knockback_options: knockback_options(opts),
           hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
-          hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0)
+          hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
+          display_hit_count: Keyword.get(opts, :display_hit_count)
         })
 
       {:error, _reason} ->
@@ -688,6 +703,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :skill_ratio,
       :skip_crit,
       :force_crit,
+      :critical,
+      :critical_rate_bonus,
+      :critical_max_weapon,
       :bonus_atk,
       :base_atk_rate,
       :weight_atk,
@@ -706,7 +724,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   defp multi_target_opts(opts) do
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
-    calc_opts = Keyword.take(opts, [:skill_ratio, :skip_crit, :skill_id, :element])
+
+    calc_opts =
+      Keyword.take(opts, [
+        :skill_ratio,
+        :skip_crit,
+        :force_crit,
+        :critical,
+        :critical_rate_bonus,
+        :critical_max_weapon,
+        :skill_id,
+        :element
+      ])
 
     {skill_id, skill_level, calc_opts}
   end
@@ -1308,8 +1337,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       ignore_flee: ignore_flee?
     } = hit_opts
 
+    {critical_hit, calc_context} = pre_roll_critical(attacker, target, calc_context)
+
     hit_result =
-      if ignore_flee? do
+      if critical_hit == :hit or ignore_flee? do
         :hit
       else
         HitCalculations.calculate_hit_result(
@@ -1345,6 +1376,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           hit_opts,
           coma_decision
         )
+    end
+  end
+
+  defp pre_roll_critical(attacker, target, {opts, calculator}) do
+    {hit, opts} = pre_roll_critical(attacker, target, opts)
+    {hit, {opts, calculator}}
+  end
+
+  defp pre_roll_critical(attacker, target, opts) do
+    case Keyword.pop(opts, :critical, false) do
+      {true, rest} ->
+        bonus = Keyword.get(rest, :critical_rate_bonus, 0)
+        rest = Keyword.drop(rest, [:force_crit, :skip_crit])
+
+        if DamageCalculator.roll_critical?(attacker, target, bonus),
+          do: {:hit, Keyword.put(rest, :force_crit, true)},
+          else: {nil, Keyword.put(rest, :skip_crit, true)}
+
+      _ ->
+        {nil, opts}
     end
   end
 

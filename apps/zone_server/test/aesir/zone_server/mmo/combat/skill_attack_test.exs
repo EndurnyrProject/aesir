@@ -5,11 +5,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.GameMode
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
@@ -20,12 +22,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -69,6 +75,133 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       source_order: source_order,
       source_identity: {:host, source_order + 1}
     }
+  end
+
+  describe "critical skill pre-roll" do
+    setup :set_mimic_private
+
+    setup do
+      Mimic.copy(HitCalculations)
+
+      caster =
+        PlayerState.new(%Character{
+          id: 1001,
+          account_id: 1001,
+          name: "Crit caster",
+          class: 0,
+          sex: "M",
+          last_map: "prontera",
+          last_x: 100,
+          last_y: 100,
+          base_level: 50,
+          str: 50,
+          dex: 1,
+          luk: 0,
+          hp: 100,
+          sp: 100
+        })
+
+      {:ok, definition} = Mobs.by_id(1002)
+      definition = %{definition | stats: %{definition.stats | agi: 9999, luk: 0}, def: 9999}
+
+      spawn = %MobSpawn{
+        mob: 1002,
+        amount: 1,
+        respawn_time: 5000,
+        spawn_area: %MobSpawn.SpawnArea{x: 101, y: 100, xs: 0, ys: 0}
+      }
+
+      mob = MobState.new(2001, definition, spawn, "prontera", 101, 100)
+      attacker = PlayerState.to_combatant(caster)
+      target = MobState.to_combatant(mob)
+
+      stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), mob, :mob} end)
+      stub(TargetResolver, :ensure_targetable, fn ^mob, :mob -> :ok end)
+      stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+      stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+      stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _info -> :continue end)
+      stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, _info -> damage end)
+      stub(StatusInterpreter, :after_damage_taken, fn :mob, 2001, _info -> 0 end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _radius, _packet -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, _damage, _source -> :ok end)
+      stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+      stub(OnHitEffects, :after_hit, fn _attacker, _target, _result, _opts -> :ok end)
+      stub(EquipVanish, :after_hit, fn _attacker, _target, _pid, _flag -> :ok end)
+      stub(Knockback, :skill, fn _attacker, _target, _skill, _result, _opts -> :ok end)
+
+      {:ok, caster: caster, attacker: attacker, target: target}
+    end
+
+    test "a successful critical bypasses flee and forces the calculator", %{caster: caster} do
+      stub(CriticalHits, :is_critical_hit?, fn _rate -> true end)
+      reject(&HitCalculations.calculate_hit_result/2)
+
+      expect(DamageCalculator, :calculate_damage, fn _attacker, _target, opts ->
+        assert opts[:force_crit]
+        refute opts[:skip_crit]
+        refute Keyword.has_key?(opts, :critical)
+        assert opts[:critical_max_weapon] == false
+        {:ok, %{damage: 40, is_critical: true}}
+      end)
+
+      assert {:ok, %{hit?: true, damage: 40}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 382,
+                 skill_level: 5,
+                 critical: true,
+                 critical_max_weapon: false,
+                 report_hit: true
+               )
+    end
+
+    test "a failed critical forwards skip_crit and still allows a flee miss", %{caster: caster} do
+      stub(CriticalHits, :is_critical_hit?, fn _rate -> false end)
+
+      expect(DamageCalculator, :calculate_damage, fn _attacker, _target, opts ->
+        assert opts[:skip_crit]
+        refute opts[:force_crit]
+        refute Keyword.has_key?(opts, :critical)
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      assert {:ok, %{hit?: true}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 382,
+                 skill_level: 5,
+                 critical: true,
+                 ignore_flee: true,
+                 report_hit: true
+               )
+
+      expect(HitCalculations, :calculate_hit_result, fn _hit, flee ->
+        assert flee.flee >= 9999
+        :miss
+      end)
+
+      assert {:ok, %{hit?: false, damage: 0}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 382,
+                 skill_level: 5,
+                 critical: true,
+                 report_hit: true
+               )
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic critical ignores high DEF", %{caster: caster} do
+      stub(CriticalHits, :is_critical_hit?, fn _rate -> true end)
+      reject(&HitCalculations.calculate_hit_result/2)
+
+      assert {:ok, %{hit?: true, damage: damage}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 382,
+                 skill_level: 5,
+                 critical: true,
+                 report_hit: true
+               )
+
+      assert damage > 1
+    end
   end
 
   test "hit_rate_bonus_flat reaches the single-target hit roll" do
