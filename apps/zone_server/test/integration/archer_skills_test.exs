@@ -260,7 +260,7 @@ defmodule Aesir.ZoneServer.Integration.ArcherSkillsTest do
       caster_state = get_player_state(caster.pid)
 
       assert {:ok, ^caster_state} =
-               AcShower.cast(caster_state, {:unit, center_id}, 1, skill_def(:ac_shower))
+               AcShower.cast(caster_state, {:ground, 150, 151}, 1, skill_def(:ac_shower))
 
       assert_receive {:packet_sent, %SkillDamage{skill_id: 47, target_id: ^center_id}, _}, 1_000
       assert_receive {:packet_sent, %SkillDamage{skill_id: 47, target_id: ^edge_id}, _}, 1_000

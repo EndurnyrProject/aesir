@@ -52,10 +52,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShowerTest do
   end
 
   @tag game_mode: :renewal
-  test "level five passes target-centered mob-native and equipment blow through one splash" do
+  test "level five rains on the chosen cell, hitting traps, with mob-native and equipment blow" do
     caster = caster(%{{:add_skill_blow, 47} => 3})
-
-    stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
 
     expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
       assert caster.stats.modifiers.equipment[{:add_skill_blow, 47}] == 3
@@ -66,19 +64,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShowerTest do
       assert opts[:base_distance] == 2
       assert opts[:origin] == {15, 25}
       assert opts[:native_target_types] == [:mob]
+      assert opts[:target_skill_units]
       [101, 102]
     end)
 
     reject(&Combat.knockback/5)
 
-    assert {:ok, ^caster} = AcShower.cast(caster, {:unit, @target_id}, 5, definition())
+    assert {:ok, ^caster} = AcShower.cast(caster, {:ground, 15, 25}, 5, definition())
   end
 
   @tag game_mode: :pre_renewal
   test "level five splashes the wide radius at the classic ratio" do
     caster = caster(%{{:add_skill_blow, 47} => 3})
-
-    stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
 
     expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
       assert opts[:skill_id] == definition().id
@@ -93,13 +90,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShowerTest do
 
     reject(&Combat.knockback/5)
 
-    assert {:ok, ^caster} = AcShower.cast(caster, {:unit, @target_id}, 5, definition())
+    assert {:ok, ^caster} = AcShower.cast(caster, {:ground, 15, 25}, 5, definition())
   end
 
   test "cast/4 at level >= 6 splashes radius 2" do
     caster = caster()
-
-    stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
 
     expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
       assert opts[:base_distance] == 2
@@ -108,17 +103,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShowerTest do
 
     reject(&Combat.knockback/5)
 
-    assert {:ok, ^caster} = AcShower.cast(caster, {:unit, @target_id}, 6, definition())
-  end
-
-  test "cast/4 propagates a target resolution error" do
-    caster = caster()
-
-    reject(&Combat.execute_splash_attack/4)
-    reject(&Combat.knockback/5)
-    stub(Combat, :resolve_combatant, fn @target_id -> {:error, :target_not_found} end)
-
-    assert {:error, :target_not_found} =
-             AcShower.cast(caster, {:unit, @target_id}, 5, definition())
+    assert {:ok, ^caster} = AcShower.cast(caster, {:ground, 15, 25}, 6, definition())
   end
 end

@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShower do
   @moduledoc """
-  Arrow Shower (AC_SHOWER, id 47). A rain of arrows centred on the target's
-  cell that hits every enemy standing in the square around it, knocks each one
+  Arrow Shower (AC_SHOWER, id 47). A rain of arrows on a chosen cell that hits every enemy standing in the square around it, knocks each one
   two cells straight away from the centre, and spends a single arrow for the
   whole volley. No hit can crit, and the volley carries the equipped arrow's
   element. It is aimed from nine cells away, widened by the caster's Vulture's
@@ -16,9 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShower do
   area never changes - it is the full 5x5 square from level 1 - and the cast
   carries no after-cast delay at all.
 
-  The client picks a cell for this skill in the original game; here it is aimed
-  at a unit and the blast is centred on that unit's cell, which reuses the
-  instantaneous splash path rather than a placed ground unit.
+  It is aimed at a cell, hits enemy traps in the area, and resolves at once on
+  the instantaneous splash path.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 47,
@@ -26,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShower do
     requires: [],
     display_name: "Arrow Shower",
     max_level: 10,
-    target_type: :target_enemy,
+    target_type: :ground,
     damage_type: :damage,
     range: 9,
     vulture_range: true,
@@ -60,22 +58,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShower do
   def splash_radius(:pre_renewal, _level), do: 2
 
   @impl Active
-  def cast(caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{position: {x, y}}} <- Combat.resolve_combatant(target_id) do
-      mode = GameMode.mode()
+  def cast(caster, {:ground, x, y}, level, definition) do
+    mode = GameMode.mode()
 
-      opts = [
-        skill_id: definition.id,
-        skill_level: level,
-        skill_ratio: skill_ratio(mode, level),
-        skip_crit: true,
-        base_distance: definition.knockback,
-        origin: {x, y},
-        native_target_types: [:mob]
-      ]
+    opts = [
+      skill_id: definition.id,
+      skill_level: level,
+      skill_ratio: skill_ratio(mode, level),
+      skip_crit: true,
+      base_distance: definition.knockback,
+      origin: {x, y},
+      native_target_types: [:mob],
+      target_skill_units: true
+    ]
 
-      _ = Combat.execute_splash_attack(caster, {x, y}, splash_radius(mode, level), opts)
-      {:ok, caster}
-    end
+    _ = Combat.execute_splash_attack(caster, {x, y}, splash_radius(mode, level), opts)
+    {:ok, caster}
   end
 end
