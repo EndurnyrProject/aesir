@@ -4,16 +4,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
 
   @moduletag game_mode: :renewal
 
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.TestSupport.EnsembleSkill
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -102,6 +110,61 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
     assert_partner_write_failure_is_survived(fn ->
       raise "Cannot apply status effect to non-existent player with ID: 2"
     end)
+  end
+
+  describe "maintained field ensembles" do
+    setup do
+      :ets.insert(EtsTable.table_for(:map_cache), {@map, MapData.new(@map, 100, 100)})
+      manager = start_supervised!({Manager, name: nil, schedule_tick: fn _, _ -> :ok end})
+      Process.put({Manager, :server}, manager)
+      :ok
+    end
+
+    test "renewal solo field locks only the caster without fatigue" do
+      caster = field_player(1, :bard, 5, @violin)
+      register(caster)
+      {:ok, definition} = Catalog.by_id(309)
+      assert {:ok, _} = Perform.perform_field(caster, definition, 5, upkeep: 10)
+      [group] = Storage.get_groups_by_caster(:player, 1)
+      assert group.level == 5
+      assert group.state.performance.performers == [1]
+      assert StatusStorage.has_status?(:player, 1, :sc_dancing)
+      refute StatusStorage.has_status?(:player, 1, :sc_ensemblefatigue)
+    end
+
+    test "renewal paired field uses the averaged level and locks both without fatigue" do
+      caster = field_player(1, :bard, 5, @violin)
+      register(caster)
+      register(field_player(2, :dancer, 1, @whip))
+      {:ok, definition} = Catalog.by_id(309)
+      assert {:ok, _} = Perform.perform_field(caster, definition, 5, upkeep: 10)
+      [group] = Storage.get_groups_by_caster(:player, 1)
+      assert group.level == 3
+      assert group.state.performance.performers == [1, 2]
+
+      for id <- [1, 2] do
+        assert StatusStorage.has_status?(:player, id, :sc_dancing)
+        refute StatusStorage.has_status?(:player, id, :sc_ensemblefatigue)
+      end
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic field refuses a solo cast" do
+      caster = field_player(1, :bard, 5, @violin)
+      register(caster)
+      {:ok, definition} = Catalog.by_id(309)
+
+      assert {:error, :ensemble_partner_required} =
+               Perform.perform_field(caster, definition, 5, upkeep: 10)
+
+      assert Storage.get_groups_by_caster(:player, 1) == []
+    end
+  end
+
+  defp field_player(id, job, level, weapon) do
+    state = PlayerStateFixture.build(player(id, job, level, weapon))
+    state = put_in(state.stats.combat_stats, %CombatStats{})
+    put_in(state.stats.progression.learned_skills, %{309 => level})
   end
 
   defp assert_partner_write_failure_is_survived(partner_result) do

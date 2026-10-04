@@ -15,10 +15,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  @typedoc "Options for a maintained pre-renewal performance field."
+  @typedoc "Options for a maintained performance field in either mode."
   @type field_opt ::
-          {:reach, :everyone | :all | :party | :enemy | :mobs}
+          {:reach, :everyone | :all | :party | :party_or_guild | :enemy | :mobs}
           | {:upkeep, pos_integer()}
+          | {:upkeep_sp, pos_integer()}
+          | {:root, :none | :ensemble | :always}
           | {:layout_radius, 3 | 4}
           | {:linger_ms, non_neg_integer()}
           | {:kind, :song | :dance | :ensemble}
@@ -36,6 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
   defaults to 3 (use 4 for ensembles); `:linger_ms` defaults to 20 seconds;
   `:tick` defaults to nil and `:tick_interval` to 3 seconds. `:partners`
   defaults to `[]`, and the frozen `:lesson_level` and `:caster_vit` to zero.
+  `:upkeep_sp` defaults to one; `:root` defaults to `:ensemble` for ensembles,
+  else `:none`. Use `:always` for an unrelaxable root. `:party_or_guild` reach
+  includes same-party, same-guild and allied-guild players.
   Renewal only forwards `:scope`, `:radius`, `:duration` and `:eligible?`.
   """
   @spec perform(

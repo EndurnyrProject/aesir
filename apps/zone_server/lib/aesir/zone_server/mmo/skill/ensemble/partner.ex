@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
   @moduledoc """
   Finds an eligible ensemble partner from shared in-memory snapshots.
+  Already-performing players are unavailable in renewal and pre-renewal.
   """
 
   alias Aesir.Commons.GameMode
@@ -70,8 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
   end
 
   defp available?(candidate) do
-    GameMode.mode() != :pre_renewal or
-      not StatusStorage.has_status?(:player, candidate.character_id, :sc_dancing)
+    not StatusStorage.has_status?(:player, candidate.character_id, :sc_dancing)
   end
 
   defp same_party?(%PlayerState{party_id: party_id}, %PlayerState{party_id: party_id}),

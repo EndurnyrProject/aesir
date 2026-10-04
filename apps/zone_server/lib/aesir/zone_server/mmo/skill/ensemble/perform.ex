@@ -5,6 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform do
   Classic ensembles require a partner, cover a stationary 9x9 square, and
   end their occupant effects on exit. Lullaby instead attempts sleep every
   six seconds; inflicted sleep survives the performance.
+
+  `perform_field/4` starts a maintained ensemble in either mode, with an
+  optional renewal partner and a required classic partner, without fatigue.
   """
 
   alias Aesir.Commons.GameMode
@@ -48,6 +51,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform do
     case GameMode.mode() do
       :renewal -> renewal(caster, definition, level, status_id, params_fun, opts)
       :pre_renewal -> classic(caster, definition, level, status_id, params_fun)
+    end
+  end
+
+  @doc "Starts a field ensemble in either mode, with no ensemble fatigue."
+  @spec perform_field(PlayerState.t(), Definition.t(), pos_integer(), keyword()) ::
+          {:ok, PlayerState.t()} | {:error, term()}
+  def perform_field(caster, definition, level, opts) do
+    with {:ok, partners, effective_level} <- field_partner(caster, definition, level) do
+      Field.start(
+        caster,
+        definition,
+        effective_level,
+        nil,
+        [],
+        [kind: :ensemble, layout_radius: 4, linger_ms: 0, partners: partners] ++ opts
+      )
+    end
+  end
+
+  defp field_partner(caster, definition, level) do
+    case GameMode.mode() do
+      :pre_renewal ->
+        with {:ok, partner, avg} <- classic_partner(caster, definition, level),
+             do: {:ok, [partner.character_id], avg}
+
+      :renewal ->
+        case Partner.find(caster, definition.id, level) do
+          :none -> {:ok, [], level}
+          {:ok, partner, avg} -> {:ok, [partner.character_id], avg}
+        end
     end
   end
 

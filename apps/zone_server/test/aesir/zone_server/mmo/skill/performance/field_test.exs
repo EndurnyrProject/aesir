@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Performance
@@ -15,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -210,6 +212,74 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
              )
 
     assert_received {:snapshot_opts, [scope: :party, radius: 15]}
+  end
+
+  test "field roots and upkeep amount are stored on every performer's lock" do
+    caster = player(17)
+    :ok = UnitRegistry.register_player(caster, self())
+    :ok = UnitRegistry.register_player(player(18), self())
+    {:ok, definition} = Catalog.by_name(:ba_whistle)
+
+    assert {:ok, _} =
+             Field.start(caster, definition, 5, nil, [],
+               kind: :ensemble,
+               upkeep: 10,
+               upkeep_sp: 8,
+               root: :always,
+               partners: [18]
+             )
+
+    for id <- [17, 18] do
+      assert %{state: %{root: :always, upkeep_sp: 8}} =
+               StatusStorage.get_status(:player, id, :sc_dancing)
+
+      refute StatusInterpreter.can_move?(:player, id)
+    end
+  end
+
+  test "default roots distinguish ensemble fields from solo songs" do
+    for {id, kind, root} <- [{17, :ensemble, :ensemble}, {18, :song, :none}] do
+      caster = player(id)
+      :ok = UnitRegistry.register_player(caster, self())
+      {:ok, definition} = Catalog.by_name(:ba_whistle)
+      assert {:ok, _} = Field.start(caster, definition, 5, nil, [], kind: kind, upkeep: 5)
+
+      assert %{state: %{root: ^root, upkeep_sp: 1}} =
+               StatusStorage.get_status(:player, id, :sc_dancing)
+    end
+  end
+
+  test "party-or-guild reach accepts a party member, guildmate and ally but not a stranger" do
+    Mimic.copy(Relations)
+    stub(Relations, :allied?, fn a, b -> {a, b} == {10, 20} end)
+    caster = %{player(17) | party_id: 2, guild_id: 10}
+
+    targets = [
+      %{player(18) | party_id: 2},
+      %{player(19) | guild_id: 10},
+      %{player(20) | guild_id: 20},
+      %{player(21) | guild_id: 30}
+    ]
+
+    for p <- [caster | targets] do
+      :ok = UnitRegistry.register_player(p, self())
+      :ok = SpatialIndex.add_unit(:player, p.character_id, p.x, p.y, p.map_name)
+    end
+
+    {:ok, definition} = Catalog.by_name(:ba_whistle)
+
+    assert {:ok, _} =
+             Field.start(caster, definition, 5, :sc_whistle, [],
+               kind: :ensemble,
+               upkeep: 5,
+               reach: :party_or_guild
+             )
+
+    [group] = Storage.get_groups_by_caster(:player, 17)
+    support = Field.field_support(group)
+    for id <- [18, 19, 20], do: assert(support.target?.({:player, id}))
+    refute support.target?.({:player, 21})
+    refute support.target?.({:player, 17})
   end
 
   defp player(id) do

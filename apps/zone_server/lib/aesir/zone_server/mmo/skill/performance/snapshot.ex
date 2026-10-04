@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @type recipient :: PlayerState.t() | {atom(), integer()}
@@ -66,6 +67,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
     caster
     |> party_recipients(radius)
     |> then(fn party -> [caster | party] end)
+    |> Enum.uniq_by(& &1.character_id)
+    |> Enum.filter(&Unit.living?/1)
+  end
+
+  defp recipients(%PlayerState{} = caster, :players, radius) do
+    nearby =
+      caster.map_name
+      |> SpatialIndex.get_players_in_range(caster.x, caster.y, radius)
+      |> Enum.flat_map(fn id ->
+        case UnitRegistry.get_unit(:player, id) do
+          {:ok, {_module, %PlayerState{} = player, _pid}} -> [player]
+          _ -> []
+        end
+      end)
+
+    [caster | nearby]
     |> Enum.uniq_by(& &1.character_id)
     |> Enum.filter(&Unit.living?/1)
   end

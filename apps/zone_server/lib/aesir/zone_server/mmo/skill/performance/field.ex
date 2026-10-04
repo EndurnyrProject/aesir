@@ -1,16 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   @moduledoc """
-  Maintains a pre-renewal performance as a ground group plus a performer lock.
+  Maintains a performance as a ground group plus a performer lock in either mode.
+  Pre-renewal songs and ensembles use fields; renewal Moonlit also uses this path.
 
   The group owns the footprint and occupant statuses. Its finite lock pays SP
   and asks for asynchronous group teardown whenever performing ends.
 
   A song or dance field follows its walking performer; an ensemble field stays
-  where it was cast because both performers are rooted.
+  where it was cast, even when Longing lets a performer walk. The per-entry
+  root and SP upkeep amount are configurable for Moonlit and Hermode.
   """
 
   require Logger
 
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -38,15 +41,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
       {:error, :already_performing}
     else
       partners = Keyword.get(opts, :partners, [])
+      kind = Keyword.fetch!(opts, :kind)
 
       perf = %{
         status_id: status_id,
         status_params: params,
         reach: Keyword.get(opts, :reach, :everyone),
         upkeep: Keyword.fetch!(opts, :upkeep),
+        upkeep_sp: Keyword.get(opts, :upkeep_sp, 1),
+        root: Keyword.get(opts, :root, if(kind == :ensemble, do: :ensemble, else: :none)),
         linger_ms: Keyword.get(opts, :linger_ms, 20_000),
         layout_radius: Keyword.get(opts, :layout_radius, 3),
-        kind: Keyword.fetch!(opts, :kind),
+        kind: kind,
         performers: [id | partners],
         tick: Keyword.get(opts, :tick),
         tick_interval: Keyword.get(opts, :tick_interval, 3_000),
@@ -165,7 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
       val3: perf.lesson_level,
       val4: partner_id,
       duration: group.expires_at - group.created_at + 1_000,
-      state: %{upkeep: perf.upkeep, ticks: 0},
+      state: %{upkeep: perf.upkeep, ticks: 0, upkeep_sp: perf.upkeep_sp, root: perf.root},
       owner_refresh: :notify
     )
   end
@@ -184,6 +190,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   defp eligible_unit?(:party, %{party_id: party_id}, :player, %{party_id: party_id})
        when is_integer(party_id) and party_id > 0,
        do: true
+
+  defp eligible_unit?(:party_or_guild, group, :player, target) do
+    case UnitRegistry.get_unit(group.caster_type, group.caster_id) do
+      {:ok, {_module, caster, _pid}} ->
+        (is_integer(caster.party_id) and caster.party_id > 0 and
+           caster.party_id == target.party_id) or
+          (is_integer(caster.guild_id) and caster.guild_id > 0 and
+             caster.guild_id == target.guild_id) or
+          Relations.allied?(caster.guild_id, target.guild_id)
+
+      _ ->
+        false
+    end
+  end
 
   defp eligible_unit?(:enemy, group, _type, target) do
     case UnitRegistry.get_unit(group.caster_type, group.caster_id) do

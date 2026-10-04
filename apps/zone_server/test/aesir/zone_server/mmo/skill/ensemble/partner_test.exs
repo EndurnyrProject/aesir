@@ -141,6 +141,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     assert {:ok, ^partner, 1} = Partner.find(caster, @skill_id, 1)
   end
 
+  @tag game_mode: :renewal
+  test "renewal skips an already-performing partner even when their lock permits movement" do
+    caster = player(1, :bard, 1, @violin)
+    register(player(2, :dancer, 1, @whip))
+    :ok = StatusStorage.apply_status(:player, 2, :sc_dancing, state: %{root: :none})
+    assert :none = Partner.find(caster, @skill_id, 1)
+  end
+
   defp player(id, job, skill_level, weapon) do
     {:ok, job_id} = AvailableJobs.job_name_to_id(job)
 

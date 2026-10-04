@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.TestSupport.EnsembleSkill
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   Mimic.copy(Combat)
@@ -165,6 +166,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
     assert_received {:attempted, 2}
     refute_received {:attempted, 3}
     assert result.last_song == %{skill_id: 320, level: 10}
+  end
+
+  test "players scope includes the caster and nearby strangers but skips far and dead players" do
+    caster = player(1)
+
+    for p <- [caster, player(2, x: 103), player(3, x: 104), dead_player(4, x: 101)] do
+      register(p)
+      :ok = SpatialIndex.add_player(p.character_id, p.x, p.y, p.map_name)
+    end
+
+    test_pid = self()
+
+    stub(StatusInterpreter, :apply_status, fn :player, id, :sc_whistle, _params ->
+      send(test_pid, {:players_scope, id})
+      :ok
+    end)
+
+    assert {:ok, _} =
+             Song.snapshot(caster, BaWhistle.definition(), 1, :sc_whistle, [],
+               scope: :players,
+               radius: 3
+             )
+
+    assert_received {:players_scope, 1}
+    assert_received {:players_scope, 2}
+    refute_received {:players_scope, 3}
+    refute_received {:players_scope, 4}
   end
 
   defp player(id, opts \\ []) do

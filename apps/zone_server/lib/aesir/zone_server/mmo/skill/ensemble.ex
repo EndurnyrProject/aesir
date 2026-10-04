@@ -23,6 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble do
       def validate(caster, _target, level, definition),
         do: unquote(Perform).validate(caster, definition, level)
 
+      defoverridable validate: 4
+
       @impl Aesir.ZoneServer.Mmo.Skill.Ground
       defdelegate on_place(group), to: unquote(Field)
 
@@ -34,6 +36,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble do
 
       @impl Aesir.ZoneServer.Mmo.Skill.Ground
       defdelegate on_expire(group), to: unquote(Field)
+
+      defoverridable on_interval: 2
 
       @doc false
       @impl Aesir.ZoneServer.Mmo.Skill.Ensemble
