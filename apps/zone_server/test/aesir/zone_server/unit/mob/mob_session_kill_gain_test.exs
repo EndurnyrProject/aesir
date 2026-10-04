@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionKillGainTest do
     state = build_mob_state(hp: 1, max_hp: 1000, drops: [])
 
     {:noreply, noted} =
-      MobSession.handle_cast({:combat, {:note_hit_type, 42, :melee}}, state)
+      MobSession.handle_cast({:combat, {:note_hit_type, 42, :melee, nil}}, state)
 
     {:noreply, _dead} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, noted)
 
@@ -57,11 +57,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionKillGainTest do
     state = build_mob_state(hp: 1, max_hp: 1000, drops: [])
 
     {:noreply, noted} =
-      MobSession.handle_cast({:combat, {:note_hit_type, 42, :magic}}, state)
+      MobSession.handle_cast({:combat, {:note_hit_type, 42, :magic, nil}}, state)
 
     {:noreply, _dead} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, noted)
 
     assert_receive {:loot, {:kill_gain, %{kill_bf: :magic, final_source: {:player, 42}}}}
+  end
+
+  test "the kill_gain payload carries the killing skill and the mob level" do
+    :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
+    state = build_mob_state(hp: 1, max_hp: 1000, drops: [])
+
+    {:noreply, noted} =
+      MobSession.handle_cast({:combat, {:note_hit_type, 42, :magic, 14}}, state)
+
+    {:noreply, _dead} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, noted)
+
+    assert_receive {:loot, {:kill_gain, %{kill_bf: :magic, skill_id: 14, mob_level: 25}}}
   end
 
   test "the kill_gain announcement fires even for a no-drop mob" do
@@ -72,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionKillGainTest do
       |> Map.put(:no_drops, true)
 
     {:noreply, noted} =
-      MobSession.handle_cast({:combat, {:note_hit_type, 42, :ranged}}, state)
+      MobSession.handle_cast({:combat, {:note_hit_type, 42, :ranged, nil}}, state)
 
     {:noreply, _dead} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, noted)
 
@@ -94,8 +106,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionKillGainTest do
     :ok = PubSub.subscribe(Aesir.PubSub, "player:99")
     state = build_mob_state(hp: 1, max_hp: 1000, drops: [])
 
-    {:noreply, s1} = MobSession.handle_cast({:combat, {:note_hit_type, 99, :magic}}, state)
-    {:noreply, s2} = MobSession.handle_cast({:combat, {:note_hit_type, 42, :melee}}, s1)
+    {:noreply, s1} = MobSession.handle_cast({:combat, {:note_hit_type, 99, :magic, nil}}, state)
+    {:noreply, s2} = MobSession.handle_cast({:combat, {:note_hit_type, 42, :melee, nil}}, s1)
 
     {:noreply, _dead} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, s2)
 

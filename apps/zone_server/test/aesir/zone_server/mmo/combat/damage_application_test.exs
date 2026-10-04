@@ -289,7 +289,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   test "positive mob coma delivery preserves typed source without stale kill classification" do
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
 
-    reject(&MobSession.note_hit_type/3)
+    reject(&MobSession.note_hit_type/4)
     reject(&MobSession.apply_damage/3)
     expect(MobSession, :apply_coma, fn ^target_pid, {:mob, 20} -> :ok end)
 

@@ -365,6 +365,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the flat SP every learned passive grants for a kill the player landed.
+  """
+  @spec kill_sp_gain(PlayerState.t() | PlayerStats.t(), Passive.kill_context()) ::
+          non_neg_integer()
+  def kill_sp_gain(%PlayerState{stats: stats}, kill), do: kill_sp_gain(stats, kill)
+
+  def kill_sp_gain(%PlayerStats{progression: %{learned_skills: _}} = stats, kill) do
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      if function_exported?(module, :kill_sp_gain, 2),
+        do: acc + module.kill_sp_gain(level, kill),
+        else: acc
+    end)
+  end
+
+  def kill_sp_gain(_stats, _kill), do: 0
+
+  @doc """
   Sums the skill SP cost rate delta contributed by every learned passive.
   """
   @spec sp_cost_rate(PlayerState.t() | PlayerStats.t()) :: integer()

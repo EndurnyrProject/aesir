@@ -443,7 +443,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     assert_received {:delivered_damage, 1}
 
     for _ <- 1..3 do
-      assert_receive {:"$gen_cast", {:combat, {:note_hit_type, 1_000, :magic}}}
+      assert_receive {:"$gen_cast", {:combat, {:note_hit_type, 1_000, :magic, 70}}}
 
       assert_receive {:"$gen_cast", {:movement, {:knockback, 151, 150, "prontera", 156, 150}}}
     end

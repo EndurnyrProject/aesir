@@ -136,6 +136,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "hit_type/2 and hit_skill/2" do
+    test "record the killing attack type and skill per attacker" do
+      state =
+        build_mob_state()
+        |> MobState.note_hit_type(42, :magic, 14)
+        |> MobState.note_hit_type(99, :melee, nil)
+
+      assert {MobState.hit_type(state, 42), MobState.hit_skill(state, 42)} == {:magic, 14}
+      assert {MobState.hit_type(state, 99), MobState.hit_skill(state, 99)} == {:melee, nil}
+      assert {MobState.hit_type(state, 7), MobState.hit_skill(state, 7)} == {:other, nil}
+    end
+  end
+
   describe "rude attacks" do
     test "a freshly built mob state has no rude attacks recorded" do
       state = build_mob_state()

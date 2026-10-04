@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
       :ok
     end)
 
-    stub(MobSession, :note_hit_type, fn _pid, _attacker, _bf -> :ok end)
+    stub(MobSession, :note_hit_type, fn _pid, _attacker, _bf, _skill_id -> :ok end)
 
     stub_unit_info()
 

@@ -422,7 +422,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
 
     :ok = StatusInterpreter.apply_status(:mob, 56, :sc_aeterna, loaded: true, duration: 60_000)
     reject(&MobSession.apply_damage/3)
-    reject(&MobSession.note_hit_type/3)
+    reject(&MobSession.note_hit_type/4)
 
     assert {0, hit_info} =
              DamageApplication.prepare_unit_damage(:mob, 56, 10, ordinary_hit(), {:player, 55})

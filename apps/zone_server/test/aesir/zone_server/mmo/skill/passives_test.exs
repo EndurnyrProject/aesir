@@ -257,6 +257,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def sp_regen_rate(level, _ctx), do: 3 * level
   end
 
+  defmodule KillSpPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_013,
+      name: :test_kill_sp_passive,
+      display_name: "Test Kill SP Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def kill_sp_gain(level, %{mob_level: mob_level}), do: level + mob_level
+  end
+
   defp build_player(learned_skills, weapon_atom) do
     inventory =
       if weapon_atom == :bare_hands do
@@ -401,6 +418,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     test "existing passives contribute zero to the optional critical channel" do
       player = build_player(%{2 => 5}, :one_handed_sword)
       assert Passives.critical_bonus(player) == 0
+    end
+  end
+
+  describe "kill_sp_gain/2" do
+    test "sums only learned passives exporting the callback" do
+      stub(Catalog, :by_id, fn
+        9_900_013 -> {:ok, KillSpPassive.definition()}
+        9_900_001 -> {:ok, FleePassive.definition()}
+      end)
+
+      stub(Catalog, :passive_module_for, fn
+        :test_kill_sp_passive -> {:ok, KillSpPassive}
+        :test_flee_passive -> {:ok, FleePassive}
+      end)
+
+      player = build_player(%{9_900_013 => 3, 9_900_001 => 5}, :one_handed_sword)
+      kill = %{kill_bf: :magic, skill_id: 14, mob_level: 40}
+
+      assert Passives.kill_sp_gain(player, kill) == 43
+      assert Passives.kill_sp_gain(build_player(%{}, :one_handed_sword), kill) == 0
     end
   end
 

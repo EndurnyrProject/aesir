@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandlerKillGainTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.LootHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -60,6 +61,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandlerKillGainTest do
 
   defp vitals(state),
     do: {state.game_state.stats.current_state.hp, state.game_state.stats.current_state.sp}
+
+  test "learned passive kill SP gain adds to the equipment gain" do
+    expect(Passives, :kill_sp_gain, fn _stats, %{kill_bf: :magic, skill_id: 14, mob_level: 50} ->
+      7
+    end)
+
+    payload = Map.merge(payload(:magic), %{skill_id: 14, mob_level: 50})
+
+    {:noreply, new_state} =
+      LootHandler.kill_gain_reward(payload, state(%{magic_sp_gain_value: 5}))
+
+    assert vitals(new_state) == {100, 62}
+  end
 
   test "melee kill grants hp_gain_value HP and sp_gain_value SP" do
     equipment = %{hp_gain_value: 30, sp_gain_value: 12}

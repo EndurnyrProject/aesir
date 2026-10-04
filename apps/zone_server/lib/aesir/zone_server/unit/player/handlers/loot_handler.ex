@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -79,14 +80,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
 
   Only the player's own killing blow counts — a homunculus/slave kill credits
   the owner's rewards but not their on-kill gain — and only weapon/magic blows
-  are eligible. The heal is a raw forced grant (no received-heal scaling).
+  are eligible. Learned passives add flat SP on top (`Passives.kill_sp_gain/2`,
+  Soul Drain). The heal is a raw forced grant (no received-heal scaling).
   """
   @spec kill_gain_reward(map(), map()) :: {:noreply, map()}
   def kill_gain_reward(%{final_source: {:player, char_id}, kill_bf: kill_bf} = payload, state)
       when kill_bf in [:melee, :ranged, :magic] do
     if char_id == state.game_state.character_id do
-      equipment = state.game_state.stats.modifiers.equipment
-      {hp, sp} = kill_gain(kill_bf, equipment, Map.get(payload, :mob_race))
+      stats = state.game_state.stats
+      {hp, sp} = kill_gain(kill_bf, stats.modifiers.equipment, Map.get(payload, :mob_race))
+
+      kill = %{
+        kill_bf: kill_bf,
+        skill_id: Map.get(payload, :skill_id),
+        mob_level: Map.get(payload, :mob_level, 0)
+      }
+
+      sp = sp + Passives.kill_sp_gain(stats, kill)
 
       {:noreply, state} = HealthHandler.gain_hp(hp, state)
       HealthHandler.restore_sp(sp, state)

@@ -770,7 +770,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp deliver_unit_damage(:mob, target_pid, _target_id, damage, hit_info, attacker) do
     mob_attacker = mob_attacker(attacker)
-    note_kill_attack_type(target_pid, mob_attacker, kill_attack_type(hit_info))
+
+    note_kill_attack_type(
+      target_pid,
+      mob_attacker,
+      kill_attack_type(hit_info),
+      Map.get(hit_info, :skill_id)
+    )
+
     MobSession.apply_damage(target_pid, damage, mob_attacker)
   end
 
@@ -831,11 +838,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   # Records the classification on the target just before the paired damage, so
   # a lethal blow grants the killer's on-kill gain. Only gain-eligible attacks
   # from a real attacker are worth a message.
-  defp note_kill_attack_type(_target_pid, nil, _bf), do: :ok
-  defp note_kill_attack_type(_target_pid, _attacker, :other), do: :ok
+  defp note_kill_attack_type(_target_pid, nil, _bf, _skill_id), do: :ok
+  defp note_kill_attack_type(_target_pid, _attacker, :other, _skill_id), do: :ok
 
-  defp note_kill_attack_type(target_pid, attacker, bf) do
-    MobSession.note_hit_type(target_pid, attacker, bf)
+  defp note_kill_attack_type(target_pid, attacker, bf, skill_id) do
+    MobSession.note_hit_type(target_pid, attacker, bf, skill_id)
   end
 
   defp merge_local_effects({:error, _reason} = error, :ok), do: error

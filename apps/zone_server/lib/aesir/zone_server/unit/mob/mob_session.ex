@@ -53,14 +53,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
-  Records the attack-type classification (`:melee | :ranged | :magic`) of the
-  hit `attacker` is about to land, so a lethal hit can grant the killer the
-  matching on-kill HP/SP gain equipment bonus. Sent just before the paired
-  `apply_damage/3`; per-sender message ordering guarantees it is stored first.
+  Records the attack-type classification (`:melee | :ranged | :magic`) and the
+  skill id (`nil` for a basic attack) of the hit `attacker` is about to land, so
+  a lethal hit can grant the killer the matching on-kill HP/SP gains. Sent just
+  before the paired `apply_damage/3`; per-sender message ordering guarantees it
+  is stored first.
   """
-  @spec note_hit_type(pid(), tuple() | integer(), :melee | :ranged | :magic) :: :ok
-  def note_hit_type(pid, attacker, bf) do
-    GenServer.cast(pid, {:combat, {:note_hit_type, attacker, bf}})
+  @spec note_hit_type(pid(), tuple() | integer(), :melee | :ranged | :magic, integer() | nil) ::
+          :ok
+  def note_hit_type(pid, attacker, bf, skill_id) do
+    GenServer.cast(pid, {:combat, {:note_hit_type, attacker, bf, skill_id}})
   end
 
   @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
@@ -376,8 +378,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     CombatHandler.handle_vanish(hp_percent, sp_percent, source, state)
   end
 
-  def handle_cast({:combat, {:note_hit_type, attacker, bf}}, state) do
-    {:noreply, MobState.note_hit_type(state, attacker, bf)}
+  def handle_cast({:combat, {:note_hit_type, attacker, bf, skill_id}}, state) do
+    {:noreply, MobState.note_hit_type(state, attacker, bf, skill_id)}
   end
 
   # Unit: heal and SP drain (vitals handled in CombatHandler).

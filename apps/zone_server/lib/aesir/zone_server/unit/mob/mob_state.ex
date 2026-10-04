@@ -211,7 +211,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           status_effects: map(),
           stolen_from: boolean(),
           coin_stolen: boolean(),
-          last_hit_types: %{optional(term()) => :melee | :ranged | :magic},
+          last_hit_types: %{optional(term()) => {:melee | :ranged | :magic, integer() | nil}},
           owner_event: String.t() | nil
         }
 
@@ -586,13 +586,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @doc """
-  Records the attack-type classification of an incoming hit, keyed by its
-  attacker, so the death path can grant the killer the matching on-kill HP/SP
-  gain equipment bonus. Overwrites any prior entry for the same attacker.
+  Records the attack-type classification and skill id (`nil` for a basic
+  attack) of an incoming hit, keyed by its attacker, so the death path can grant
+  the killer the matching on-kill HP/SP gains. Overwrites any prior entry for
+  the same attacker.
   """
-  @spec note_hit_type(t(), term(), :melee | :ranged | :magic) :: t()
-  def note_hit_type(%__MODULE__{last_hit_types: types} = state, attacker, bf) do
-    %{state | last_hit_types: Map.put(types, attacker, bf)}
+  @spec note_hit_type(t(), term(), :melee | :ranged | :magic, integer() | nil) :: t()
+  def note_hit_type(%__MODULE__{last_hit_types: types} = state, attacker, bf, skill_id) do
+    %{state | last_hit_types: Map.put(types, attacker, {bf, skill_id})}
   end
 
   @doc """
@@ -601,7 +602,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
   @spec hit_type(t(), term()) :: :melee | :ranged | :magic | :other
   def hit_type(%__MODULE__{last_hit_types: types}, attacker) do
-    Map.get(types, attacker, :other)
+    case Map.get(types, attacker) do
+      {bf, _skill_id} -> bf
+      nil -> :other
+    end
+  end
+
+  @doc """
+  Returns the skill id of `attacker`'s most recent recorded hit, or `nil` for a
+  basic attack or when none was recorded.
+  """
+  @spec hit_skill(t(), term()) :: integer() | nil
+  def hit_skill(%__MODULE__{last_hit_types: types}, attacker) do
+    case Map.get(types, attacker) do
+      {_bf, skill_id} -> skill_id
+      nil -> nil
+    end
   end
 
   @doc """

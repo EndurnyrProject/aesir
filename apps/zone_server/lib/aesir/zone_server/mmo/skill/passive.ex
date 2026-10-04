@@ -79,6 +79,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a MaxSP rate bonus contributed by this passive at the given level."
   @callback max_sp_rate_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @typedoc "A lethal blow the holder dealt, as announced by the dying mob."
+  @type kill_context :: %{
+          kill_bf: :melee | :ranged | :magic,
+          skill_id: integer() | nil,
+          mob_level: non_neg_integer()
+        }
+
+  @doc "Returns the flat SP granted to the holder for a kill it landed."
+  @callback kill_sp_gain(level :: pos_integer(), kill_context()) :: non_neg_integer()
+
   @doc """
   Returns a skill SP cost rate delta contributed by this passive at the given
   level. Negative values make skills cheaper; it sums with the status and
@@ -188,6 +198,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       int_bonus: 2,
                       max_hp_bonus: 2,
                       max_sp_rate_bonus: 2,
+                      kill_sp_gain: 2,
                       sp_cost_rate: 2,
                       sp_regen_rate: 2,
                       zeny_cost_reduction: 2,
