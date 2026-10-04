@@ -192,6 +192,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:unit, {:restore_sp, amount}})
   end
 
+  @doc """
+  Cancels the player's in-flight cast, if any. Fire-and-forget, so two players
+  interrupting each other can never deadlock; a player with no cast is unchanged.
+  """
+  @spec interrupt_cast(pid()) :: :ok
+  def interrupt_cast(pid), do: GenServer.cast(pid, {:skill, :interrupt})
+
   @doc "Sets this player's HP/SP to absolute values in the owning session."
   @spec set_vitals(pid(), keyword()) :: :ok
   def set_vitals(pid, opts), do: GenServer.cast(pid, {:unit, {:set_vitals, opts}})
@@ -1151,6 +1158,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:equipment, {:strip, slot, status_opts}}, state) do
     EquipmentHandler.handle_strip(slot, status_opts, state)
+  end
+
+  # Skill: another unit cancels this player's cast (Mind Breaker, Spell Breaker).
+  @impl true
+  def handle_cast({:skill, :interrupt}, state) do
+    SkillHandler.interrupt_cast(state)
   end
 
   # Skill: a bolt SA_AUTOSPELL armed, procced by one of this player's weapon

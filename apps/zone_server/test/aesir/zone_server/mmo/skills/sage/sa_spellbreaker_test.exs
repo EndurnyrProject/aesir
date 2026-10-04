@@ -3,12 +3,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
   use Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRod
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -68,6 +70,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
   end
 
   defp stub_mob(state), do: stub_mob([state])
+
+  defp stub_player(casting) do
+    pid = self()
+    target = %PlayerState{character_id: @target_id, casting: casting}
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, @target_id -> {:error, :not_found}
+      :player, @target_id -> {:ok, {PlayerState, target, pid}}
+    end)
+
+    stub(Targeting, :validate_enemy, fn _caster, ^target -> :ok end)
+    stub(StatusStorage, :has_status?, fn :player, @target_id, :sc_magicrod -> false end)
+    pid
+  end
 
   defp no_magic_rod do
     stub(StatusStorage, :has_status?, fn _type, _id, :sc_magicrod -> false end)
@@ -400,16 +416,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
   end
 
   describe "cast/5 - target resolution" do
-    test "a player target is PvP-blocked" do
-      stub(UnitRegistry, :get_unit, fn
-        :mob, @target_id ->
-          {:error, :not_found}
+    test "a casting player is interrupted and zapped by the snapshot's skill cost" do
+      pid = stub_player(%{skill_id: 19, skill_level: 5})
+      test_pid = self()
 
-        :player, @target_id ->
-          {:ok, {PlayerState, %PlayerState{character_id: @target_id}, self()}}
+      expect(PlayerSession, :interrupt_cast, fn ^pid -> :ok end)
+
+      expect(PlayerSession, :consume_sp, fn ^pid, amount ->
+        send(test_pid, {:zapped_sp, amount})
+        :ok
       end)
 
-      assert {:error, :invalid_target} =
+      # MG_FIREBOLT lv5 costs 20 SP; lv3 refunds 20 * 50 / 100 = 10.
+      assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 3, nil)
+
+      assert_received {:zapped_sp, 20}
+      assert caster.stats.current_state.sp == 110
+    end
+
+    test "a player who is not casting is not interrupted" do
+      stub_player(nil)
+      reject(&PlayerSession.interrupt_cast/1)
+      reject(&PlayerSession.consume_sp/2)
+
+      assert {:error, :not_casting} =
                SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
     end
 

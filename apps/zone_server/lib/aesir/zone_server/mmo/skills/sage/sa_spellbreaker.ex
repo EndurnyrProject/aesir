@@ -3,14 +3,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
   Spell Breaker (SA_SPELLBREAKER). Interrupts an enemy's cast at 9 cells for 10 SP:
   the target loses the interrupted skill's SP cost and the caster regains 25% per
   level above one of it. A target under Magic Rod absorbs the attempt instead and
-  drains 20% of the caster's max SP. A status-immune target resists nine times in
-  ten before anything happens. At level 5 the caster also siphons 2% of the target's
+  drains 20% of the caster's max SP. A status-immune mob resists nine times in
+  ten before anything happens; players are never status-immune. At level 5 the caster also siphons 2% of the target's
   max HP, healing half of it, never when the hit would be lethal.
 
   Renewal casts in 0.56 s plus 0.14 s fixed and never siphons HP from a
   status-immune target; pre-renewal casts in 0.7 s and siphons once the resistance
-  roll has passed. Only mob targets are supported until player casts can be
-  interrupted; a mob-only skill absent from the catalog costs 0 SP.
+  roll has passed. Player targets (versus maps only) are interrupted asynchronously
+  from their published cast and never siphoned; a mob-only skill absent from the
+  catalog costs 0 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 277,
@@ -35,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -60,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
       if StatusStorage.has_status?(unit_type, target_id, :sc_magicrod) do
         {:ok, feed_magic_rod(caster, unit_type, target_id)}
       else
-        break_cast(caster, unit_type, pid, level, rng)
+        break_cast(caster, unit_type, state, pid, level, rng)
       end
     end
   end
@@ -82,16 +84,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
     end
   end
 
-  # `Targeting.validate_enemy/2` rejects player targets until PvP lands, so this
-  # clause is unreachable today. It fails explicitly rather than crashing the
-  # caster's session, and marks the seam: giving players a spell-breakable cast
-  # needs a `PlayerSession` counterpart to `MobSession.interrupt_cast/1`.
-  @spec break_cast(PlayerState.t(), :mob | :player, pid(), pos_integer(), (pos_integer() ->
-                                                                             pos_integer())) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  defp break_cast(_caster, :player, _pid, _level, _rng), do: {:error, :invalid_target}
+  # A player target (reachable on versus maps) is read from its registry
+  # snapshot and interrupted asynchronously: a synchronous call could deadlock two
+  # players breaking each other's casts. A cast that completes between the read and
+  # the interrupt still costs the victim its SP (accepted race). Players are never
+  # boss-protected, and the level 5 HP siphon applies to mobs only.
+  @spec break_cast(
+          PlayerState.t(),
+          :mob | :player,
+          struct(),
+          pid(),
+          pos_integer(),
+          (pos_integer() -> pos_integer())
+        ) :: {:ok, PlayerState.t()} | {:error, atom()}
+  defp break_cast(caster, :player, %PlayerState{casting: casting}, pid, level, _rng) do
+    case casting do
+      %{skill_id: skill_id, skill_level: cast_level} ->
+        PlayerSession.interrupt_cast(pid)
+        sp = interrupted_sp_cost(skill_id, cast_level)
+        PlayerSession.consume_sp(pid, sp)
+        {:ok, adjust_sp(caster, div(sp * (25 * (level - 1)), 100))}
 
-  defp break_cast(caster, :mob, pid, level, rng) do
+      _not_casting ->
+        {:error, :not_casting}
+    end
+  end
+
+  defp break_cast(caster, :mob, _snapshot, pid, level, rng) do
     state = MobSession.get_state(pid)
     boss? = MobState.is_boss?(state)
 

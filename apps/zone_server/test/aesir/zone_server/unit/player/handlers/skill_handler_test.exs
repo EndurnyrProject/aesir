@@ -1303,6 +1303,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert SkillHandler.cancel_cast(state, :move) == state
     end
+
+    test "interrupt_cast cancels a cast in any phase and clears the descriptor" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      state = interrupting_state(45, fixed_offset: 60_000)
+      timer_ref = state.game_state.state_context.timer_ref
+
+      assert {:noreply, result} = SkillHandler.interrupt_cast(state)
+
+      assert result.game_state.casting == nil
+      assert result.game_state.action_state == :idle
+      assert_received {:to_player, %CastCancel{gid: 1000}}
+      assert Process.cancel_timer(timer_ref) == false
+    end
+
+    test "interrupt_cast on an idle player is a no-op" do
+      reject(&Broadcast.to_player/2)
+
+      state = casting_state(45, :idle)
+
+      assert {:noreply, ^state} = SkillHandler.interrupt_cast(state)
+    end
+
+    test "the registry snapshot carries the cast descriptor while casting" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, snapshot ->
+        send(test_pid, {:snapshot, snapshot.casting})
+        :ok
+      end)
+
+      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+      assert_received {:snapshot, %{skill_id: 29, skill_level: 1}}
+
+      SkillHandler.cancel_cast(casting, :move)
+      assert_received {:snapshot, nil}
+    end
   end
 
   describe "SA_CASTCANCEL" do

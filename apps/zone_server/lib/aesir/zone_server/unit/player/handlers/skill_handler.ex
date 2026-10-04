@@ -316,12 +316,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     Process.cancel_timer(ctx.timer_ref)
     broadcast_cast_cancel(game_state)
 
-    cancelled_state = %{state | game_state: end_cast(game_state)}
+    cancelled_state = StateCommit.commit(state, end_cast(game_state))
 
     maybe_resume_on_cancel(cancelled_state, reason, Map.get(ctx, :combat_target_id))
   end
 
   def cancel_cast(state, _reason), do: state
+
+  @doc """
+  Cancels the player's in-flight cast on another unit's request (Mind Breaker,
+  Spell Breaker), phase-agnostic and without resuming an auto-attack lock. A
+  player with no cast in flight is returned unchanged.
+  """
+  @spec interrupt_cast(SessionState.t()) :: {:noreply, SessionState.t()}
+  def interrupt_cast(state), do: {:noreply, cancel_cast(state, :interrupted)}
 
   # A damage interrupt does not disengage: keep the target locked and resume the
   # auto-attack loop. A manual-move cancel (any other reason) is a deliberate
@@ -1102,7 +1110,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     case PlayerState.transition_to(game_state, :casting, context) do
       {:ok, casting_state} ->
         broadcast_cast_bar(casting_state, info)
-        {:noreply, %{state | game_state: casting_state}}
+        {:noreply, StateCommit.commit(state, casting_state)}
 
       {:error, reason} ->
         Process.cancel_timer(timer_ref)
