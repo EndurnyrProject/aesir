@@ -15,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirebolt do
   longer, 700ms per level, and the aftercast lock grows with level too, from 1
   second at level 1 to 2.8 seconds at level 10. Classic bolt spam is therefore
   far slower at the high levels.
+
+  A caster under Double Casting may echo the bolt once (`Skills.Shared.BoltEcho`).
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 19,
@@ -40,14 +42,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirebolt do
 
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skills.Shared.BoltEcho
 
   @behaviour Active
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, _definition) do
-    case MagicAttack.execute_bolt(caster, target_id, 19, level, []) do
-      {:ok, _ref} -> {:ok, caster}
-      {:error, _reason} = error -> error
+    with {:ok, ref} <- MagicAttack.execute_bolt(caster, target_id, 19, level, []) do
+      BoltEcho.maybe_schedule(caster, ref, 19, level)
+      {:ok, caster}
     end
   end
 end
