@@ -1207,7 +1207,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     updated_stats =
       Calculator.calculate_stats(new_game_state.stats, new_game_state.character_id, equipped)
 
-    new_game_state = %{new_game_state | stats: updated_stats}
+    walk_speed = StatusManager.walk_speed_for(updated_stats)
+
+    if walk_speed != state.game_state.walk_speed,
+      do: StatusSync.send_param(connection_pid, StatusParams.speed(), walk_speed)
+
+    new_game_state = %{new_game_state | stats: updated_stats, walk_speed: walk_speed}
 
     {new_game_state, sphere_cost_plan} =
       SpiritSphereHandler.prepare_skill_cost(new_game_state, previous_spheres)
