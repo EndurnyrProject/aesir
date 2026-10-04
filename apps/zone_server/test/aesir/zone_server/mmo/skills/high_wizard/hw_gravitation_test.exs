@@ -7,8 +7,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -16,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
 
   setup do
     Mimic.copy(SkillAttack)
+    Mimic.copy(Storage)
     :ok
   end
 
@@ -72,6 +75,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
     assert {:ok, ^caster} = cast(caster, 3)
   end
 
+  @tag game_mode: :renewal
+  test "renewal bursts nothing when the target cell is under Land Protector" do
+    caster = player()
+    stub(Storage, :land_protected?, fn "prontera", 110, 100 -> true end)
+    reject(&Combat.execute_magic_splash/4)
+
+    assert {:ok, ^caster} = cast(caster, 3)
+  end
+
   @tag game_mode: :pre_renewal
   test "pre-renewal places the field and binds the caster's own status to it" do
     caster = player()
@@ -96,18 +108,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
     assert placement.duration == 8_000
   end
 
+  test "the Emperium takes a flat 400 per tick" do
+    emperium = struct(MobState, mob_id: 1288, instance_id: 77)
+    stub(UnitRegistry, :get_unit, fn :mob, 77 -> {:ok, {MobState, emperium, self()}} end)
+
+    assert HwGravitation.tick_damage({:mob, 77}, 5) == 400
+  end
+
   test "each interval deals 200 + 200 per level fixed misc damage to every enemy inside" do
     caster = player()
     test_pid = self()
 
-    stub(UnitRegistry, :get_unit, fn :player, 1001 -> {:ok, {PlayerState, caster, self()}} end)
+    stub(UnitRegistry, :get_unit, fn
+      :player, 1001 -> {:ok, {PlayerState, caster, self()}}
+      _type, _id -> {:error, :not_found}
+    end)
 
     stub(Combat, :splash_targets, fn "prontera", {110, 100}, 2, _caster ->
       [{:mob, 5}, {:player, 6}]
     end)
 
     stub(SkillAttack, :execute_misc_attack, fn ^caster, ref, opts ->
-      send(test_pid, {:hit, ref, opts[:base_damage], opts[:ignore_element]})
+      send(
+        test_pid,
+        {:hit, ref, opts[:base_damage], opts[:ignore_element] and opts[:bypass_reductions]}
+      )
+
       :ok
     end)
 

@@ -66,6 +66,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     end
   end
 
+  # A hit flagged `bypass_reductions` (pre-renewal Gravitation Field and Gloria
+  # Domini) keeps its full amount: no magic reduction, no absorbing status.
+  defp prepare_ordinary_damage(
+         target_type,
+         target_id,
+         damage,
+         %{bypass_reductions: true} = hit_info,
+         attacker_id
+       ) do
+    case reroute_to_crusader(target_type, target_id, damage, hit_info, attacker_id) do
+      {:rerouted, _delivery} -> {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
+      :not_rerouted -> {damage, Map.put(hit_info, :pre_delivery_prepared?, true)}
+    end
+  end
+
   defp prepare_ordinary_damage(target_type, target_id, damage, hit_info, attacker_id) do
     damage = reduce_magic_damage(damage, target_type, target_id, hit_info)
 

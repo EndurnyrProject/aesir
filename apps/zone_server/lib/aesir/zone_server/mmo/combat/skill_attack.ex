@@ -867,6 +867,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:base_damage` - the skill's per-level base damage (required)
     - `:element` - the skill's attack element (default `:neutral`)
     - `:ignore_element` - bypass the element table (default `false`)
+    - `:bypass_reductions` - deliver without magic reduction or absorbing
+      statuses (pre-renewal Gravitation Field, Gloria Domini) (default `false`)
     - `:report_hit` - return settled damage and logical target survival (default `false`),
       without waiting for the target's asynchronous HP mutation
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
@@ -918,6 +920,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         ignore_element?: Keyword.get(opts, :ignore_element, false),
         owner_derived_trap?: false,
         report_hit?: Keyword.get(opts, :report_hit, false),
+        bypass_reductions?: Keyword.get(opts, :bypass_reductions, false),
         knockback_options: knockback_options(opts)
       }
     )
@@ -1099,7 +1102,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         element: element,
         skill_id: skill_id,
         skill_level: skill_level,
-        coma?: coma?
+        coma?: coma?,
+        bypass_reductions: Map.get(misc_opts, :bypass_reductions?, false)
       }
 
       source = damage_source(attacker, target_type)

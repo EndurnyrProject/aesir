@@ -41,6 +41,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GravitationTest do
     assert Gravitation.on_expire(@target, %{instance(false) | state: %{}}, %{}) == :ok
   end
 
+  test "only the caster's own instance blocks item use" do
+    :ok =
+      StatusStorage.apply_status(:player, 9_001, :sc_gravitation, val1: 1, state: %{self?: false})
+
+    assert Interpreter.can_use_item?(:player, 9_001)
+
+    :ok = StatusStorage.remove_status(:player, 9_001, :sc_gravitation)
+
+    :ok =
+      StatusStorage.apply_status(:player, 9_001, :sc_gravitation, val1: 1, state: %{self?: true})
+
+    refute Interpreter.can_use_item?(:player, 9_001)
+  end
+
   test "only the caster's own instance roots the holder" do
     :ok =
       StatusStorage.apply_status(:player, 9_001, :sc_gravitation, val1: 1, state: %{self?: false})

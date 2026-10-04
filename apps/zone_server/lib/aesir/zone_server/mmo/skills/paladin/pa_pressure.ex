@@ -91,7 +91,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
              skill_id: definition.id,
              skill_level: level,
              base_damage: 500 + 300 * level,
-             ignore_element: true
+             ignore_element: true,
+             bypass_reductions: true
            ) do
       drain_sp(target, 15 + 5 * level)
     end

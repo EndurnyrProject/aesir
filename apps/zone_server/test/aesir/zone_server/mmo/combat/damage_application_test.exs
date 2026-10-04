@@ -76,6 +76,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
              )
   end
 
+  test "a hit that bypasses reductions skips magic reduction and absorb statuses" do
+    target_id = 32
+    register_player_with_magic_reduction(target_id, 40)
+    reject(&Interpreter.absorb_damage/4)
+
+    assert {100, %{pre_delivery_prepared?: true}} =
+             DamageApplication.prepare_unit_damage(
+               :player,
+               target_id,
+               100,
+               %{dmg_type: :magic, skill_id: 19, bypass_reductions: true},
+               20
+             )
+  end
+
   test "does not reduce magic damage without a skill id" do
     target_id = 30
     register_player_with_magic_reduction(target_id, 40)

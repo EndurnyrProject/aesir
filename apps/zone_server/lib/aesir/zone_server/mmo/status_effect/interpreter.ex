@@ -788,7 +788,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @doc "Returns whether a unit may use items while status effects are active."
   @spec can_use_item?(unit_type(), integer()) :: boolean()
   def can_use_item?(unit_type, unit_id),
-    do: not restricted?(unit_type, unit_id, &PropertyChecker.prevents_items?/1)
+    do:
+      not restricted?(unit_type, unit_id, &PropertyChecker.prevents_items?/1) and
+        not channeling_gravitation?(unit_type, unit_id)
+
+  # A pre-renewal Gravitation Field caster cannot use items; its field occupants can.
+  defp channeling_gravitation?(unit_type, unit_id) do
+    match?(
+      %StatusEntry{state: %{self?: true}},
+      StatusStorage.get_status(unit_type, unit_id, :sc_gravitation)
+    )
+  end
 
   @doc "Returns whether a unit may send area chat while status effects are active."
   @spec can_chat?(unit_type(), integer()) :: boolean()

@@ -4,14 +4,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
 
   Renewal: an instant neutral burst of `2 * level` magic hits at
   `100 * level` percent MATK scaled by base level / 100 on every enemy within two
-  cells of the target cell with line of sight. 60 to 100 SP, 5 s cast plus 1 s
+  cells of the target cell with line of sight; nothing when that cell is under
+  Land Protector. 60 to 100 SP, 5 s cast plus 1 s
   fixed, 1 s after-cast delay and a 5 s cooldown.
 
   Pre-renewal: a 5x5 field lasting `4 + level` seconds that deals a fixed
-  `200 + 200 * level` misc damage per second to every enemy inside (no FLEE,
-  DEF or element) and slows their attack speed by 5% per level through
+  `200 + 200 * level` misc damage per second to every enemy inside (400 to the
+  Emperium; no FLEE, DEF, element or damage-reducing status) and slows their attack speed by 5% per level through
   `:sc_gravitation`. The caster holds the same status bound to the field: they
-  cannot walk while it lasts, and taking damage collapses it. 20 to 100 SP, one
+  cannot walk or use items while it lasts, and taking damage collapses it. 20 to 100 SP, one
   Blue Gemstone, 5 s cast and a 5 to 9 s after-cast delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
@@ -49,14 +50,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
   @behaviour Ground
+
+  @emperium 1288
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -68,7 +73,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
     end
   end
 
-  defp burst(caster, center, level, definition) do
+  # The renewal field is one cell reaching two around; Land Protector on that
+  # cell keeps it from forming.
+  defp burst(%PlayerState{map_name: map} = caster, {x, y} = center, level, definition) do
+    if not Storage.land_protected?(map, x, y), do: hit_area(caster, center, level, definition)
+    {:ok, caster}
+  end
+
+  defp hit_area(caster, center, level, definition) do
     Combat.execute_magic_splash(caster, center, definition.splash_radius,
       skill_id: definition.id,
       skill_level: level,
@@ -77,8 +89,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
       skill_ratio: LevelModifier.skill_ratio(100 * level, caster.stats.progression.base_level),
       line_of_sight: true
     )
-
-    {:ok, caster}
   end
 
   defp channel(%PlayerState{character_id: id} = caster, center, level, definition) do
@@ -129,14 +139,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
         SkillAttack.execute_misc_attack(caster, target,
           skill_id: group.skill_id,
           skill_level: group.level,
-          base_damage: 200 + 200 * group.level,
-          ignore_element: true
+          base_damage: tick_damage(target, group.level),
+          ignore_element: true,
+          bypass_reductions: true
         )
       end)
     end
 
     {:ok, group}
   end
+
+  @doc "Pre-renewal tick damage: `200 + 200 * level`, a flat 400 against the Emperium."
+  @spec tick_damage({atom(), integer()}, pos_integer()) :: pos_integer()
+  def tick_damage({:mob, id}, level) do
+    case UnitRegistry.get_unit(:mob, id) do
+      {:ok, {_module, %MobState{mob_id: @emperium}, _pid}} -> 400
+      _other -> 200 + 200 * level
+    end
+  end
+
+  def tick_damage(_target, level), do: 200 + 200 * level
 
   @impl Ground
   @spec on_expire(Group.t()) :: :ok
