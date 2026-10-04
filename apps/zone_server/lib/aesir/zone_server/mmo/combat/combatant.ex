@@ -129,6 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # Folded equipment bonus map (players: `stats.modifiers.equipment`;
     # mobs: empty, since mobs carry no equipment).
     equip_modifiers: %{},
+    magic_reduction: 0,
 
     # Current derived equipment autobonus registrations. Non-player combatants
     # have no equipment, so they retain the safe empty default.
@@ -196,6 +197,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           monster_id: integer() | nil,
           riding: boolean(),
           equip_modifiers: map(),
+          magic_reduction: 0..100,
           equip_autobonuses: %{Stats.autobonus_key() => Stats.autobonus_registration()}
         }
 

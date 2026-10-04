@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefense do
   @moduledoc """
-  Resolves equipment-based magic reflection, reduction, and immunity.
+  Resolves equipment-based magic reflection and equipment/status-based magic
+  reduction and immunity in renewal and pre-renewal.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -31,21 +32,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefense do
     end
   end
 
-  @doc "Returns the incoming magic-damage reduction percentage, clamped to 0..100."
-  @spec reduction_percent(map()) :: 0..100
-  def reduction_percent(equip_modifiers) do
-    equip_modifiers
-    |> Map.get(:no_magic_damage, 0)
-    |> max(0)
-    |> min(100)
-  end
-
-  @doc "Applies a player's equipment reduction to incoming magic damage; non-players read zero."
+  @doc "Applies a player's resolved magic reduction to incoming damage; non-players read zero."
   @spec reduce(integer(), Unit.unit_type(), integer()) :: integer()
   def reduce(damage, :player, target_id) do
     case UnitRegistry.get_unit_info(:player, target_id) do
-      {:ok, %{equip_modifiers: equip_modifiers}} ->
-        damage - div(damage * reduction_percent(equip_modifiers), 100)
+      {:ok, %{magic_reduction: reduction}} ->
+        damage - div(damage * reduction, 100)
 
       _missing_or_non_equipped ->
         damage
@@ -58,8 +50,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefense do
   @spec immune?(Ref.t()) :: boolean()
   def immune?({:player, target_id}) do
     case UnitRegistry.get_unit_info(:player, target_id) do
-      {:ok, %{equip_modifiers: equip_modifiers}} ->
-        reduction_percent(equip_modifiers) >= @status_immunity_threshold
+      {:ok, %{magic_reduction: reduction}} ->
+        reduction >= @status_immunity_threshold
 
       _missing_or_non_equipped ->
         false
@@ -71,6 +63,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefense do
   @doc "Returns whether a combatant has complete magic immunity after clamping."
   @spec full_immunity?(Combatant.t()) :: boolean()
   def full_immunity?(%Combatant{} = combatant) do
-    reduction_percent(combatant.equip_modifiers) == 100
+    combatant.magic_reduction == 100
   end
 end

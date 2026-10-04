@@ -607,6 +607,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     Map.get(stats.modifiers.equipment, modifier_key, 0)
   end
 
+  @doc "Incoming magic damage reduction from equipment and statuses, clamped to 0..100 in both modes."
+  @spec magic_reduction_percent(t()) :: 0..100
+  def magic_reduction_percent(%__MODULE__{} = stats) do
+    (get_equipment_modifier(stats, :no_magic_damage) +
+       get_status_modifier(stats, :no_magic_damage))
+    |> max(0)
+    |> min(100)
+  end
+
   @doc """
   Gets the combined percentage bonus applied to HP recovery from consumable items.
   """

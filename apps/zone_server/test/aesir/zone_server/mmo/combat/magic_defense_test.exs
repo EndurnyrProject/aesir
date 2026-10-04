@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.PlayerStateFixture
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -14,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   test "reflected magic hits land without rolling again" do
     defender =
       CombatTestHelper.create_player_combatant()
-      |> Map.put(:equip_modifiers, %{no_magic_damage: 100, magic_damage_return: 100})
+      |> Map.put(:magic_reduction, 100)
+      |> Map.put(:equip_modifiers, %{magic_damage_return: 100})
 
     roll = fn _chance -> flunk("reflected hits must not roll") end
 
@@ -24,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   test "full immunity misses before the reflection roll" do
     defender =
       CombatTestHelper.create_player_combatant()
-      |> Map.put(:equip_modifiers, %{no_magic_damage: 120, magic_damage_return: 100})
+      |> Map.put(:magic_reduction, 100)
+      |> Map.put(:equip_modifiers, %{magic_damage_return: 100})
 
     roll = fn _chance -> flunk("full immunity must not roll") end
 
@@ -66,9 +70,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   end
 
   test "magic damage reduction clamps below zero and above one hundred" do
-    assert MagicDefense.reduction_percent(%{no_magic_damage: -20}) == 0
-    assert MagicDefense.reduction_percent(%{no_magic_damage: 120}) == 100
-    assert MagicDefense.reduction_percent(%{}) == 0
+    for {equipment, expected} <- [
+          {%{no_magic_damage: -20}, 0},
+          {%{no_magic_damage: 120}, 100},
+          {%{}, 0}
+        ] do
+      stats = PlayerStateFixture.build(%{stats: %{modifiers: %{equipment: equipment}}}).stats
+      assert PlayerStats.magic_reduction_percent(stats) == expected
+    end
   end
 
   test "subtracts the truncated reduction from uneven damage" do
@@ -121,9 +130,38 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
   test "full immunity is pure over the defender combatant" do
     defender = CombatTestHelper.create_player_combatant()
 
-    refute MagicDefense.full_immunity?(%{defender | equip_modifiers: %{no_magic_damage: 99}})
-    assert MagicDefense.full_immunity?(%{defender | equip_modifiers: %{no_magic_damage: 100}})
-    assert MagicDefense.full_immunity?(%{defender | equip_modifiers: %{no_magic_damage: 120}})
+    refute MagicDefense.full_immunity?(%{defender | magic_reduction: 99})
+    assert MagicDefense.full_immunity?(%{defender | magic_reduction: 100})
+
+    stats =
+      PlayerStateFixture.build(%{stats: %{modifiers: %{equipment: %{no_magic_damage: 120}}}}).stats
+
+    assert MagicDefense.full_immunity?(%{
+             defender
+             | magic_reduction: PlayerStats.magic_reduction_percent(stats)
+           })
+  end
+
+  test "status immunity alone and combined with equipment resolves to one hundred" do
+    for equipment <- [%{}, %{no_magic_damage: 100}] do
+      player =
+        PlayerStateFixture.build(%{
+          character_id: 1_300,
+          stats: %{
+            combat_stats: %CombatStats{},
+            modifiers: %{
+              equipment: equipment,
+              status_effects: %{no_magic_damage: 100}
+            }
+          }
+        })
+
+      assert PlayerStats.magic_reduction_percent(player.stats) == 100
+      assert MagicDefense.full_immunity?(PlayerState.to_combatant(player))
+      :ok = UnitRegistry.register_player(player, self())
+      assert MagicDefense.immune?({:player, 1_300})
+      assert MagicDefense.reduce(101, :player, 1_300) == 0
+    end
   end
 
   defp register_player(target_id, equip_modifiers) do

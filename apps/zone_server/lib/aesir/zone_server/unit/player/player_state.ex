@@ -971,6 +971,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     Unit.build_entity_info(__MODULE__, state)
     |> Map.put(:entity_type, :player)
     |> Map.put(:equip_modifiers, state.stats.modifiers.equipment)
+    |> Map.put(:magic_reduction, PlayerStats.magic_reduction_percent(state.stats))
   end
 
   @living_actions [
@@ -1037,6 +1038,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       class: :normal,
       riding: riding?(state.option),
       equip_modifiers: state.stats.modifiers.equipment,
+      magic_reduction: PlayerStats.magic_reduction_percent(state.stats),
       equip_autobonuses: state.stats.equip_autobonuses
     })
   end
