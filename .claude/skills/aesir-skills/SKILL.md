@@ -5,6 +5,32 @@ description: How to implement job/player skills in Aesir - the Skill behaviour a
 
 # Implementing skills in Aesir
 
+## Parity first
+
+A skill must behave exactly like rAthena in both modes (`AGENTS.md`, "Mechanics Parity").
+Before coding, read the skill's reference file under `rathena/src/map/skills/<job>/`, its
+cases in `battle.cpp` / `skill.cpp` / `status.cpp` / `unit.cpp`, and both modes' `skill_db.yml`
+rows (including `CastTimeFlags`, `DamageFlags`, `Flags`, `Unit`), and write the parity checklist
+described in `aesir-workflow`. The task brief's formulas are a summary, not the authority.
+
+Recurring traps, each a past bug:
+
+- **Cost timing.** SP is spent before the effect runs. A skill that fails after the
+  requirement step (missed roll, immune target, already affected, HP charge too high) still
+  spends SP; return `{:ok, caster, :no_consume}` only to spare items. When the effect reads
+  the caster's SP, use the `dynamic_cost/4` pattern (`sp: 0` + `sp_requirement`) and deduct
+  the resolved cost in `cast` first (`CgTarotcard`, `PfSoulchange`).
+- **Validate vs cast end.** Checks the reference makes at cast end (immunity, undead, target
+  state) belong in `cast`, not `validate/4`, or the SP and the cast bar behave differently.
+- **Cast start.** Statuses that react to a cast starting run through
+  `Caster.on_cast_start/2` (instant casts) and `SkillHandler` (timed casts at bar start).
+- **Level modifier and multi-hit.** Use `Combat.LevelModifier.skill_ratio/2` wherever the
+  reference uses `RE_LVL_DMOD`; a positive HitCount multiplies one roll.
+- **Targeting.** Match the reference `TargetType` (a ground skill is `:ground`, even if a unit
+  version would be easier) and its `Flags` (traps, hidden targets, Emperium).
+- **Mob casting.** If the reference lets monsters cast it, support it; never narrow targets
+  (players only, mobs only) unless the reference does.
+
 ## Where skills live
 
 - One module per skill under
@@ -113,7 +139,8 @@ trigger layer). When writing a skill, either keep `cast/4` caster-generic or add
 - Bare `%PlayerState{character_id: id}` fixtures have `stats: nil`; keep code nil-tolerant
   rather than inflating fixtures.
 - Fixture shapes, the Mimic arity trap, and the determinism checklist are in `aesir-workflow`.
-- rAthena research: renewal skill logic is under `rathena/src/map/skills/<job>/`, not just
+- rAthena research: skill logic is under `rathena/src/map/skills/<job>/`, not just
   `skill.cpp`. Always check for `#ifdef RENEWAL` branches — many skills behave differently
-  pre-renewal. The both-modes `@moduledoc` rule and the no-rAthena-citations rule are in
+  pre-renewal. Tests assert the reference's numbers; derive expected values from the
+  source, never from the implementation. The both-modes `@moduledoc` rule and the no-rAthena-citations rule are in
   `aesir-game-modes`.

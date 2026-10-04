@@ -5,6 +5,17 @@ description: How to implement status effects (SC_*) in Aesir - the Definition be
 
 # Implementing status effects in Aesir
 
+## Parity first
+
+A status must match rAthena in both modes (`AGENTS.md`, "Mechanics Parity"): read its
+`status_change_start` / `status_calc_*` / `status_change_end` cases in `status.cpp`, where
+`battle.cpp` applies it to damage, and both modes' `status.yml` (flags, `EndOnStart`,
+immunities). Put each effect at the step the reference applies it: a per-hit damage
+reduction belongs in `absorb_damage/4` (or the hit pipeline), not a stat modifier key, and a
+MATK/ATK rate applies where `status_calc_matk` applies it (mode order differs). Rolls, held
+durations (e.g. Blind held while in fog), and what ending the status does to other statuses
+are part of the mechanic.
+
 ## Where effects live and how they register
 
 - One module per effect:
@@ -101,5 +112,6 @@ able to rebuild them. `source_type` is not persisted either.
 
 Several SC_ behaviors diverge between renewal and pre-renewal (element-field skills like
 Volcano/Deluge/Violent Gale, Steel Body, Kyrie, Angelus scaling, endows — renewal applies
-element bonuses as ratio deltas, pre-re multiplies damage). Pre-re currently runs renewal
-behavior for these; the both-modes `@moduledoc` rule is in `aesir-game-modes`.
+element bonuses as ratio deltas, pre-re multiplies damage). Where pre-re still runs renewal
+behaviour for one of these, that is a parity bug: fix it when you touch the status. The
+both-modes `@moduledoc` rule is in `aesir-game-modes`.

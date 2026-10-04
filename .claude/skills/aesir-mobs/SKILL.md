@@ -5,6 +5,11 @@ description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn dat
 
 # Mobs and mob skills in Aesir
 
+Mob skills are real skills: an `NPC_*` module must match its rAthena implementation
+(`src/map/skills/npc/`, both modes' `skill_db.yml`) exactly, including the ratio per level,
+hit-rate bonuses, status chance and the skill's own duration (`AGENTS.md`, "Mechanics
+Parity"). A mob row naming a skill with no module is skipped, which is itself a gap to fill.
+
 ## Data and runtime
 
 - Mob DB: `apps/zone_server/priv/db/<mode>/mobs/mobs.yml` (`mix aesir.import.mobs`) — mode

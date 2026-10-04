@@ -6,8 +6,35 @@ This file provides guidelines for agentic coding agents operating in this reposi
 
 Aesir is a Ragnarok Online emulator written in Elixir. The objective is a stable, professional,
 well-implemented server that follows good Elixir practices and is correct with respect to the
-Ragnarok Online (Renewal) mechanics. The server talks to a custom Rust client over QUIC using a
-Protobuf wire protocol (it is not the legacy kRO TCP/packet protocol).
+Ragnarok Online mechanics, renewal and pre-renewal alike. The server talks to a custom Rust
+client over QUIC using a Protobuf wire protocol (it is not the legacy kRO TCP/packet protocol).
+
+## Mechanics Parity: rAthena Is the Reference
+
+Game mechanics must be **identical to rAthena** (`~/Development/personal/rathena`) in both
+modes. This is a hard requirement, not a goal to approximate. It covers formulas and their
+rounding, step order, chances and how they are rolled, durations, costs and when they are
+spent, targeting, failure behaviour, and interactions with other skills and statuses.
+
+- **The source decides, not the spec.** A design, task brief, review finding or existing Aesir
+  code is never evidence of how a mechanic works. Read the rAthena source for it: the skill's
+  file under `src/map/skills/`, its cases in `battle.cpp`, `skill.cpp`, `status.cpp`, `unit.cpp`,
+  and both modes' `db/{re,pre-re}/skill_db.yml` and `status.yml`. When a spec and the
+  reference disagree, the reference wins; tell the user and fix the spec.
+- **No accepted divergences.** Never record a mechanical difference as a ruling, a deferred
+  minor, or a "cost if wrong" note and move on. Fix it, or stop and ask the user. A divergence
+  written down is still a bug.
+- **Never simplify a mechanic.** "Simplest solution" (ponytail, YAGNI) applies to how the code
+  is written, never to what the game does. Edge cases in the reference (failure paths, SP spent
+  on a failed cast, per-cell lifetimes, caps, exceptions for specific skills) are requirements.
+- **Extend the engine, do not work around it.** When the engine cannot express the reference
+  behaviour (a callback that cannot fail, no per-cell lifetime, a missing hook), extend the
+  engine. Bending the skill to fit the engine changes the mechanic.
+- **Pre-existing divergences you touch are fixed too** (boy scout rule). Engine-wide ones are
+  raised with the user to scope.
+
+The working procedure (per-skill parity checklist, review lens, audit limits) is in the
+**aesir-workflow** skill; the mode-research method is in **aesir-game-modes**.
 
 ## Project Structure
 
@@ -287,7 +314,8 @@ failure. Re-run only the failing file to see the full output.
 5. **Testing**: Follow "What to test" above. Cover the logic you add, including its error paths;
    do not add tests for data, wiring, or declarative modules.
 6. **Documentation**: Document modules and functions; for protocol messages document field meaning.
-7. **Renewal Mechanics**: Ragnarok has pre-re and renewal mechanics; we target renewal.
+7. **Mechanics**: renewal and pre-renewal are both first-class and must match rAthena exactly;
+   see "Mechanics Parity" above.
 8. **Never assume a function signature or return value**: Always check the definition.
 9. **Single writer, no cross-session transactions**: a player or mob is mutated only through its
    own session; never build offer/claim or two-phase-commit protocols between sessions.

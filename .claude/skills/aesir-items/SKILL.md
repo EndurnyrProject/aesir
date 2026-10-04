@@ -5,6 +5,10 @@ description: How to work on items in Aesir - the YAML item DB and its importer, 
 
 # Items, scripts, and equip bonuses in Aesir
 
+Item scripts, bonuses and itemskill casts must behave exactly as in rAthena in both modes
+(`AGENTS.md`, "Mechanics Parity"); read the reference `pc_bonus` / script command handling
+before adding or changing a bonus key.
+
 ## The item database
 
 - The item DB is **mode-scoped**: `apps/zone_server/priv/db/<mode>/items/{equip,usable,etc}.yml`

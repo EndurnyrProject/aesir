@@ -14,8 +14,10 @@ compile-time mode switch (`Application.compile_env`) — the seam is runtime, by
 
 ## Identifying mode differences in rAthena (the research method)
 
-rAthena (checkout `~/Development/personal/rathena`) implements both modes with a
-compile-time split. When researching ANY mechanic, always check whether it is mode-gated:
+rAthena (checkout `~/Development/personal/rathena`) is the reference: Aesir mechanics must
+match it exactly in both modes (`AGENTS.md`, "Mechanics Parity"). It implements both modes
+with a compile-time split. When researching ANY mechanic, read the source (never recall it)
+and always check whether it is mode-gated:
 
 - **Code**: grep the mechanic for `#ifdef RENEWAL` / `#ifndef RENEWAL` /
   `#ifdef RENEWAL_<SUB>` in `src/map/` (densest: `battle.cpp`, `status.cpp`, `pc.cpp`,

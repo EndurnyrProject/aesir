@@ -42,6 +42,40 @@ corresponding skills). Documents live in the Obsidian vault at
 `architecture.md`). Deferred work is recorded in the spec folder (`deferred.md`); read
 existing specs before relitigating scope decisions.
 
+### Mechanics parity procedure
+
+The rule is in `AGENTS.md` ("Mechanics Parity"): mechanics are identical to rAthena, no
+accepted divergences. How to apply it:
+
+- **Designs quote the source.** A design's mechanics section is written from the rAthena code
+  and cites the exact files and cases, never from memory or wikis. Each per-skill task brief
+  lists those reference paths.
+- **Before coding a skill or status, write its parity checklist** from the source, both modes:
+  costs and timing per level, targeting, formula and rounding, every roll and what it is
+  rolled against, durations, cast-start vs cast-end effects, what happens on each failure path
+  (and whether SP or items are still spent), interactions with other statuses and skills, and
+  mob casting. Implement against the checklist, not against the brief's prose.
+- **Review against the source.** When dispatching a reviewer for mechanics work, include the
+  reference file paths and ask it to compare behaviour with them, not only the acceptance
+  criteria. A review finding about mechanics is resolved by reading the source, not by
+  reasoning about what the skill is meant to do.
+- **`mix aesir.audit.skills` is not a parity check.** It compares database fields only
+  (costs, hit counts, splash, element). Logic divergences pass it.
+- **Rulings record ambiguities, never divergences.** A `## Rulings` entry may explain how the
+  reference was mapped onto Aesir's structure; it may not accept behaving differently.
+
+Lessons from past divergences (all were real bugs):
+
+- SP is consumed **before** the skill's effect (`skill_consume_requirement` type 1), and
+  `SKILL_NOCONSUME_REQ` spares items only. A skill whose effect depends on the caster's SP, or
+  that fails after the requirement step, must still spend the SP.
+- Many statuses react at **cast start** (Foresight charges, pre-renewal Mystical
+  Amplification arming, Suffragium), not when the skill resolves.
+- `RE_LVL_DMOD` scales only above base level 99; positive HitCount multiplies one damage roll
+  (`DAMAGE_DIV_FIX`); cast-time flags (`IgnoreDex`, `IgnoreStatus`, `IgnoreItemBonus`) matter.
+- Ground units can have per-cell lifetimes and per-cell placement failures; units already
+  standing in a new group's cells are affected at placement.
+
 ### Proportionality stop
 
 - No cross-cutting correctness machinery (CAS, version counters, writer protocols,
