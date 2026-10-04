@@ -228,6 +228,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon,
       Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike,
       Aesir.ZoneServer.Mmo.Skills.Shared.Envenom,
+      Aesir.ZoneServer.Mmo.Skills.Shared.PartySplash,
+      Aesir.ZoneServer.Mmo.Skills.Sniper.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Rogue.PlagiarismCopyable,
       Aesir.ZoneServer.Mmo.Skills.Rogue.StripCommon
     ]
