@@ -28,9 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.EndOnStartTest do
     :sc_merc_quicken,
     :sc_onehand,
     :sc_offertorium,
-    :sc_shadowweapon,
-    :sc_truesight,
-    :sc_windwalk
+    :sc_shadowweapon
   ]
 
   @allowed @unimplemented
