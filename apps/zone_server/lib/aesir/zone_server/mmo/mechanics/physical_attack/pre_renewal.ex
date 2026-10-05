@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
   @moduledoc """
   Classic player weapon bounds and post-defense refine/mastery arithmetic.
+
+  A hit is split at its single post-defense attribute step, which the
+  coordinator owns: `pre_element/2` runs the base, skill ratio, defense, refine
+  and mastery stages; `post_element/2` runs the cards and final reduction.
   """
 
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense.PreRenewal, as: Defense
@@ -8,16 +12,17 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
 
   @behaviour PhysicalAttack
 
-  @impl true
-  @spec calculate(PhysicalAttack.parts(), PhysicalAttack.context()) :: integer()
-  def calculate(parts, context) do
-    weapon = div((parts.weapon_atk + Map.get(context, :weapon_bonus, 0)) * context.size_rate, 100)
+  @doc """
+  Returns the hand's normal-attack base damage with its refine bonus, the base of
+  Magnum Break's fire share (`wd->basedamage`).
+  """
+  @spec normal_base(PhysicalAttack.parts(), PhysicalAttack.context()) :: integer()
+  def normal_base(parts, context), do: base(parts, context) + parts.refine_atk
 
-    base =
-      parts.status_atk + parts.flat_atk + weapon + parts.overrefine_atk +
-        Map.get(context, :flat_bonus, 0)
-
-    base = critical_bonus(base, context)
+  @doc "Calculates one classic hit up to its post-defense attribute step."
+  @spec pre_element(PhysicalAttack.parts(), PhysicalAttack.context()) :: integer()
+  def pre_element(parts, context) do
+    base = critical_bonus(base(parts, context), context)
     base = if parts.source == :shield, do: defend(base, context), else: base
 
     skilled =
@@ -31,10 +36,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
 
     defended = if parts.source == :shield, do: skilled, else: defend(skilled, context)
 
-    mastered =
-      max(defended + parts.refine_atk, 1) + parts.mastery_atk +
-        Map.get(context, :post_defense_atk, 0)
+    max(trunc(defended) + parts.refine_atk, 1) + parts.mastery_atk +
+      Map.get(context, :post_defense_atk, 0)
+  end
 
+  @doc "Finishes one classic hit after its attribute step: cards and final reduction."
+  @spec post_element(integer(), PhysicalAttack.context()) :: integer()
+  def post_element(damage, context) do
     rates =
       Map.update!(
         context.attacker_rates,
@@ -42,13 +50,18 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
         &(&1 + Map.get(context, :global_race_rate, 0))
       )
 
-    mastered
-    |> Kernel.*(context.weapon_element)
-    |> trunc()
+    damage
     |> PhysicalAttack.attacker_cardfix(rates)
     |> PhysicalAttack.range_damage(context)
     |> PhysicalAttack.defender_cardfix(Map.get(context, :defender_rates), :weapon)
     |> PhysicalAttack.finish(context)
+  end
+
+  defp base(parts, context) do
+    weapon = div((parts.weapon_atk + Map.get(context, :weapon_bonus, 0)) * context.size_rate, 100)
+
+    parts.status_atk + parts.flat_atk + weapon + parts.overrefine_atk +
+      Map.get(context, :flat_bonus, 0)
   end
 
   defp critical_bonus(damage, %{critical?: true} = context) do

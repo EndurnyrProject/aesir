@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.Envenom do
       skill_id: 52,
       skill_level: level,
       skill_ratio: 100,
-      bonus_atk: 15 * level,
+      envenom_atk: 15 * level,
       element: :poison,
       skip_crit: true,
       skip_range: true,

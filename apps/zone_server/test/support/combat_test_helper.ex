@@ -7,8 +7,36 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+
+  @doc """
+  Stubs every attribute step to scale its damage by a coefficient.
+
+  `coefficient` receives the attack element, defense element, defense level and
+  the summed bonus points of the step and returns the multiplier; the step's
+  damage is truncated after scaling. Fields and webs are still captured by the
+  real boundary before the stub runs.
+  """
+  @spec stub_element_coefficient((atom(), atom(), integer(), integer() -> number())) :: :ok
+  def stub_element_coefficient(coefficient) do
+    Mimic.stub(ElementModifiers, :adjust_damage, fn damage, adjustment ->
+      bonus = adjustment.modifiers |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+
+      factor =
+        coefficient.(
+          adjustment.attack_element,
+          adjustment.defense_element,
+          adjustment.defense_level,
+          bonus
+        )
+
+      trunc(damage * factor)
+    end)
+
+    :ok
+  end
 
   @doc """
   Creates a basic player combatant with explicit physical attack components.

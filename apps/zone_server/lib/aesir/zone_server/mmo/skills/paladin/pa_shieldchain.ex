@@ -9,10 +9,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchain do
   Renewal: ratio `300 + 200 * level` plus the shield's weight/10 and 4 per
   refine, all scaled by the caster's base level over 100; reach 7/7/9/9/11
   cells; 0.8 s cast plus 0.2 s fixed. Pre-renewal: ratio `100 + 30 * level`;
-  reach 4; 1 s cast. Element handling follows Shield Boomerang: renewal's
-  forced-neutral step after the weapon element and pre-renewal's DEF applied
-  before the ratio are not modelled. Imperial Guard interactions are out of
-  scope.
+  reach 4; 1 s cast. Renewal strikes with the weapon element and then takes a
+  forced neutral attribute step after defense; pre-renewal is neutral element.
+  Pre-renewal's DEF applied before the ratio is not modelled. Imperial Guard
+  interactions are out of scope.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 480,
@@ -53,16 +53,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchain do
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, atom()}
   def cast(caster, {:unit, target_id}, level, definition) do
-    opts = [
-      skill_id: definition.id,
-      skill_level: level,
-      skill_ratio: skill_ratio(caster, level),
-      damage_base: :shield,
-      display_hit_count: 5,
-      hit_rate_bonus_flat: 20,
-      skip_crit: true,
-      skip_range: true
-    ]
+    opts =
+      [
+        skill_id: definition.id,
+        skill_level: level,
+        skill_ratio: skill_ratio(caster, level),
+        damage_base: :shield,
+        display_hit_count: 5,
+        hit_rate_bonus_flat: 20,
+        skip_crit: true,
+        skip_range: true
+      ] ++ if(GameMode.mode() == :pre_renewal, do: [element: :neutral], else: [])
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
       :ok -> {:ok, caster}

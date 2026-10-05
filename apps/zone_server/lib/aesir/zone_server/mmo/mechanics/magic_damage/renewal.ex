@@ -8,8 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage.Renewal do
   @behaviour MagicDamage
 
   @impl true
-  @spec calculate(integer(), MagicDamage.context()) :: pos_integer()
-  def calculate(matk, context) do
+  @spec pre_element(integer(), MagicDamage.context()) :: pos_integer()
+  def pre_element(matk, context) do
     matk
     |> attacker_cardfix(context.attack)
     |> MagicDamage.defender_cardfix(context.taken)
@@ -20,9 +20,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage.Renewal do
     |> apply_defense(context)
     |> trunc()
     |> MagicDamage.skill_rate(context.skill_atk_rate)
-    |> Kernel.*(context.element_modifier)
-    |> DamageShared.clamp_min_one()
+    |> max(1)
   end
+
+  @impl true
+  @spec post_element(integer(), MagicDamage.context()) :: integer()
+  def post_element(damage, _context), do: damage
 
   @impl true
   @spec attacker_cardfix(integer(), MagicDamage.attack_rates()) :: integer()

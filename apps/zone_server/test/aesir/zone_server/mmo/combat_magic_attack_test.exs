@@ -297,14 +297,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         assert {:ok, {:mob, @target_id}} =
                  MagicAttack.execute_bolt(caster, @target_id, bolt_id, 3)
 
-        for _hit <- 1..3 do
-          assert_received {:calculated, opts}
-          assert opts[:skill_ratio] == ratio
-          assert opts[:bonus_matk] == 0
-          assert opts[:element] == element
-          assert opts[:skill_id] == bolt_id
-          assert opts[:ignore_mdef] == false
-        end
+        # One calculation per cast, repeated for every hit.
+        assert_received {:calculated, opts}
+        refute_received {:calculated, _opts}
+        assert opts[:skill_ratio] == ratio
+        assert opts[:bonus_matk] == 0
+        assert opts[:element] == element
+        assert opts[:skill_id] == bolt_id
+        assert opts[:ignore_mdef] == false
 
         assert_received {:packet, %SkillDamage{skill_id: ^bolt_id, level: 3, div: 3, damage: 30}}
       end
@@ -701,7 +701,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = put_in(build_caster().stats.modifiers.equipment, %{{:add_skill_blow, 19} => 3})
       stub_single_target_mob()
 
-      expect(MagicDamageCalculator, :calculate_magic_damage, 3, fn _attacker, _target, _opts ->
+      expect(MagicDamageCalculator, :calculate_magic_damage, 1, fn _attacker, _target, _opts ->
         {:ok, %{damage: 40, is_critical: false}}
       end)
 
@@ -972,7 +972,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = build_caster()
       stub_single_target_mob()
 
-      expect(MagicDamageCalculator, :calculate_magic_damage, 2, fn _attacker, _target, _opts ->
+      expect(MagicDamageCalculator, :calculate_magic_damage, 1, fn _attacker, _target, _opts ->
         {:ok, %{damage: 80, is_critical: false}}
       end)
 

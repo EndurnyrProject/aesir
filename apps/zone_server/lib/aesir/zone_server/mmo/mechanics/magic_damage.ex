@@ -27,7 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage do
           soft_mdef: integer(),
           ignore_mdef_rate: integer(),
           ignore_mdef?: boolean(),
-          element_modifier: number(),
           skill_ratio: integer(),
           bonus_matk: integer(),
           smatk: integer(),
@@ -39,8 +38,17 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage do
           taken: defense_rates()
         }
 
-  @doc "Calculates an ordinary magic hit without lookups or random draws."
-  @callback calculate(integer(), context()) :: pos_integer()
+  @doc """
+  Calculates an ordinary magic hit up to its attribute step, without lookups or random
+  draws. The result is at least 1, the reference minimum before the attribute step.
+  """
+  @callback pre_element(integer(), context()) :: pos_integer()
+
+  @doc """
+  Finishes a magic hit after its attribute step. An immune or negative attribute
+  result stays as it is: there is no minimum after the attribute step.
+  """
+  @callback post_element(integer(), context()) :: integer()
 
   @doc "Applies only the mode's attacker card channels, without other damage stages."
   @callback attacker_cardfix(integer(), attack_rates()) :: integer()

@@ -401,8 +401,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     stub(MapCache, :get, fn "prontera" -> {:ok, :map} end)
     stub(Cell, :step_traversable?, fn "prontera", _from, _to -> true end)
 
-    expect(StatusInterpreter, :absorb_damage, 3, fn :mob, id, damage, hit_info ->
-      assert id in [2_001, 2_002, 2_003]
+    # Delivery skips absorption for the Holy target's 0 damage.
+    expect(StatusInterpreter, :absorb_damage, 2, fn :mob, id, damage, hit_info ->
+      assert id in [2_001, 2_002]
 
       assert %{
                dmg_type: :magic,
@@ -434,16 +435,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     water_damage = 777
     assert_received {:damage_packet, 2_001, 1_000, 971}
     assert_received {:damage_packet, 2_002, 1_000, ^water_damage}
-    assert_received {:damage_packet, 2_003, 1_000, 1}
+    assert_received {:damage_packet, 2_003, 1_000, 0}
     refute_received {:damage_packet, 2_004, _, _}
 
     assert_received {:delivered_damage, 971}
     assert_received {:delivered_damage, ^water_damage}
-    assert_received {:delivered_damage, 1}
+    assert_received {:delivered_damage, 0}
 
     for _ <- 1..3 do
       assert_receive {:"$gen_cast", {:combat, {:note_hit_type, 1_000, :magic, 70}}}
+    end
 
+    # The Holy target took 0 damage, so only the two damaged targets are pushed.
+    for _ <- 1..2 do
       assert_receive {:"$gen_cast", {:movement, {:knockback, 151, 150, "prontera", 156, 150}}}
     end
 

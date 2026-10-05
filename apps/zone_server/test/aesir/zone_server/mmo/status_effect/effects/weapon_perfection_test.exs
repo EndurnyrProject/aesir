@@ -49,14 +49,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponPerfectionTest do
     assert :ok =
              Interpreter.apply_status(:player, @player_id, :sc_weaponperfection, duration: 60_000)
 
-    assert {:ok, 1_200.0} =
+    assert {:ok, 1_200} =
              DamageCalculator.apply_modifier_pipeline(1_200, combatant(), large_target())
 
     entry = StatusStorage.get_status(:player, @player_id, :sc_weaponperfection)
 
     assert Interpreter.expire_status_if_current(:player, @player_id, :sc_weaponperfection, entry)
 
-    assert {:ok, 600.0} =
+    assert {:ok, 600} =
              DamageCalculator.apply_modifier_pipeline(1_200, combatant(), large_target())
   end
 

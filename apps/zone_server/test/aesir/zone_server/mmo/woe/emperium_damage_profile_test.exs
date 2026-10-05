@@ -145,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
 
       :pre_renewal ->
         assert primary.damage > secondary.damage
-        assert secondary.damage == 1
+        assert secondary.damage == 0
         assert status_element.damage > secondary.damage
         assert explicit_element.damage > secondary.damage
     end
@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
       :pre_renewal ->
         assert Enum.all?(resisted, fn {_element, damage} -> damage > 1 end)
         assert damages.shadow > Enum.max(Map.values(resisted))
-        assert damages.holy == 1
+        assert damages.holy == 0
     end
   end
 
@@ -243,7 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
         assert result.raw_total == 0
 
       :pre_renewal ->
-        assert result.raw_total > 0
+        assert result.raw_total == 0
     end
   end
 

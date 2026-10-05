@@ -169,7 +169,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
           ),
         physical_ignore_rate: EquipmentBonuses.ignore_def_rate(caster, target),
         size_rate: size_rate(caster, target),
-        neutral_modifier: DamageShared.apply_element(1, :neutral, target, modifiers),
+        element_step:
+          &DamageShared.apply_element_step(&1, &2, caster, target, attacker_modifiers: modifiers),
         equipment_atk_rate: Map.get(caster.equip_modifiers, :atk_rate, 0)
       }
 

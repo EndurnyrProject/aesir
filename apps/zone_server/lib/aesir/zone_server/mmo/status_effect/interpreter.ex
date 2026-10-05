@@ -570,6 +570,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Removes a status only while `instance` is still its current entry, through the
+  normal expiration lifecycle, then applies the owner-refresh policy. Returns
+  whether `instance` was removed.
+  """
+  @spec remove_status_if_current(unit_type(), integer(), atom(), StatusEntry.t(), [
+          remove_option()
+        ]) ::
+          boolean()
+  def remove_status_if_current(unit_type, unit_id, status_id, instance, opts \\ []) do
+    removed? = expire_status_if_current(unit_type, unit_id, status_id, instance)
+    maybe_refresh_owner(unit_type, unit_id, removed?, opts)
+    removed?
+  end
+
+  @doc """
   Removes the supplied statuses through the normal expiration lifecycle and
   applies the selected owner-refresh policy once after the batch.
   """

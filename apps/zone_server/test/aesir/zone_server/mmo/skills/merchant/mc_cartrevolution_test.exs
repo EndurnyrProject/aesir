@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
         assert opts[:skill_ratio] == 250
-        assert opts[:element] == :neutral
+        refute Keyword.has_key?(opts, :element)
         []
       end)
 
@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
         assert opts[:skill_level] == 1
         assert opts[:skill_ratio] == expected_ratio
         assert opts[:skip_crit] == true
-        assert opts[:element] == :neutral
+        refute Keyword.has_key?(opts, :element)
         assert opts[:base_distance] == 2
         assert opts[:origin] == {15, 25}
         assert opts[:native_target_types] == [:mob]

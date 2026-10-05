@@ -1,6 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   @moduledoc """
   Renewal player weapon bounds and component-based physical damage.
+
+  A hit runs in fixed stages so the coordinator can own every attribute step
+  between them: `prepare_components/2` sizes the weapon component, the
+  coordinator runs the component attribute steps (status, weapon and equipment
+  of both hands, in the reference order) and doubles right-hand status ATK,
+  `after_component_elements/2` derives the equipment percentage part,
+  `calculate_components/2` runs component cards, the skill ratio and defense, and
+  `finish_attack/2` runs the critical and final reduction tail after any
+  post-defense attribute step.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
@@ -10,23 +19,62 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
 
   @behaviour PhysicalAttack
 
-  @impl true
-  @spec calculate(PhysicalAttack.parts(), PhysicalAttack.context()) :: integer()
-  def calculate(parts, context) do
-    multiplier = if parts.hand == :right_hand and parts.source == :weapon, do: 2, else: 1
-    status = trunc(parts.status_atk * context.neutral_element) * multiplier
+  @typedoc "One hand's attack components between the renewal stages."
+  @type components :: %{
+          status_atk: integer(),
+          weapon_atk: integer(),
+          flat_atk: integer(),
+          mastery_atk: integer(),
+          percent_atk: integer(),
+          hand: :right_hand | :left_hand,
+          source: :weapon | :shield
+        }
+
+  @doc """
+  Prepares one hand's components before their attribute steps: the weapon
+  component is sized, and status, equipment and mastery ATK are raw.
+  """
+  @spec prepare_components(PhysicalAttack.parts(), PhysicalAttack.context()) :: components()
+  def prepare_components(parts, context) do
     weapon = parts.weapon_atk + parts.overrefine_atk + Map.get(context, :weapon_bonus, 0)
-    weapon = trunc(div(weapon * context.size_rate, 100) * context.weapon_element)
 
-    equipment =
-      trunc((parts.flat_atk + Map.get(context, :flat_bonus, 0)) * context.weapon_element)
+    %{
+      status_atk: parts.status_atk,
+      weapon_atk: div(weapon * context.size_rate, 100),
+      flat_atk: parts.flat_atk + Map.get(context, :flat_bonus, 0),
+      mastery_atk: parts.mastery_atk,
+      percent_atk: 0,
+      hand: parts.hand,
+      source: parts.source
+    }
+  end
 
-    percent_atk = div((weapon + equipment) * Map.get(context, :equipment_atk_rate, 0), 100)
-    status = modified_component(status, context, :status)
-    mastery = modified_component(parts.mastery_atk, context, :status)
-    weapon = modified_component(weapon, context, :weapon)
-    equipment = modified_component(equipment, context, :weapon)
-    percent_atk = PhysicalAttack.status_damage(percent_atk, context)
+  @doc """
+  Derives the equipment percentage part from the attribute-adjusted weapon and
+  equipment components.
+  """
+  @spec after_component_elements(components(), PhysicalAttack.context()) :: components()
+  def after_component_elements(components, context) do
+    percent =
+      div(
+        (components.weapon_atk + components.flat_atk) * Map.get(context, :equipment_atk_rate, 0),
+        100
+      )
+
+    %{components | percent_atk: percent}
+  end
+
+  @doc """
+  Runs component cards, the summation, the skill ratio and defense, ending at the
+  reference post-defense minimum of 1.
+  """
+  @spec calculate_components(components(), PhysicalAttack.context()) :: integer()
+  def calculate_components(components, context) do
+    status = modified_component(components.status_atk, context, :status)
+    mastery = modified_component(components.mastery_atk, context, :status)
+    weapon = modified_component(components.weapon_atk, context, :weapon)
+    equipment = modified_component(components.flat_atk, context, :weapon)
+    percent_atk = PhysicalAttack.status_damage(components.percent_atk, context)
 
     core =
       PhysicalAttack.rate(status + weapon + equipment + percent_atk, Map.get(context, :patk, 0))
@@ -48,6 +96,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     |> PhysicalAttack.rate(Map.get(context, :skill_atk_rate, 0))
     |> PhysicalAttack.rate(-Map.get(context, :skill_taken_rate, 0))
     |> max(1)
+  end
+
+  @doc "Runs the critical and final reduction tail after any post-defense attribute step."
+  @spec finish_attack(integer(), PhysicalAttack.context()) :: integer()
+  def finish_attack(damage, context) do
+    damage
     |> critical_damage(context)
     |> PhysicalAttack.finish(context)
   end

@@ -4,8 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
 
   Renewal averages attack contributions and subtracts flat physical and magic
   defense. Classic adds separately defended physical and magic contributions.
-  Enemy hits receive two truncated holy adjustments; player self-hits receive
-  one holy adjustment and one half-rate. Inputs are already captured and rolled.
+  Enemy hits receive two holy attribute steps; player self-hits receive one holy
+  step and one half-rate. Inputs are already captured and rolled, and every
+  attribute step runs through the coordinator's `element_step`, so an immune
+  target takes 0.
   """
 
   alias Aesir.Commons.GameMode
@@ -25,14 +27,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
           physical_defense: {integer(), integer()},
           physical_ignore_rate: integer(),
           size_rate: integer(),
-          neutral_modifier: number(),
+          element_step: (integer(), atom() -> integer()),
           equipment_atk_rate: integer(),
           matk: integer(),
           magic: MagicDamage.context()
         }
 
   @doc "Returns a formula-complete amount before recipient absorption and delivery."
-  @spec calculate(GameMode.t(), inputs()) :: non_neg_integer()
+  @spec calculate(GameMode.t(), inputs()) :: integer()
   def calculate(:renewal, %{magic: magic} = inputs) do
     {hard, soft} = physical_defense(inputs)
     physical = renewal_physical(inputs)
@@ -53,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
       div(combined * (100 + 40 * inputs.level), 100) - hard - soft - magic.hard_mdef -
         magic.soft_mdef
 
-    damage |> first_holy(magic.element_modifier) |> finish(inputs)
+    damage |> first_holy(inputs) |> finish(inputs)
   end
 
   def calculate(:pre_renewal, %{magic: magic} = inputs) do
@@ -69,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
     damage = div(max(physical + magical, 1) * (100 + 40 * inputs.level), 100)
 
     damage
-    |> first_holy(magic.element_modifier)
+    |> first_holy(inputs)
     |> ClassicMagic.attacker_cardfix(magic.attack)
     |> MagicDamage.defender_cardfix(magic.taken)
     |> finish(inputs)
@@ -79,15 +81,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
 
   defp renewal_physical(%{physical: {:player, parts}} = inputs) do
     multiplier = if parts.hand == :right_hand, do: 2, else: 1
-    status = trunc(parts.status_atk * inputs.neutral_modifier) * multiplier
+    status = inputs.element_step.(parts.status_atk, :neutral) * multiplier
 
     weapon =
-      trunc(
-        div((parts.weapon_atk + parts.overrefine_atk) * inputs.size_rate, 100) *
-          inputs.magic.element_modifier
+      inputs.element_step.(
+        div((parts.weapon_atk + parts.overrefine_atk) * inputs.size_rate, 100),
+        :holy
       )
 
-    equipment = trunc(parts.flat_atk * inputs.magic.element_modifier)
+    equipment = inputs.element_step.(parts.flat_atk, :holy)
     status + weapon + equipment + div((weapon + equipment) * inputs.equipment_atk_rate, 100)
   end
 
@@ -124,16 +126,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
     ClassicDefense.apply_mdef(damage, %{hard_mdef: hard, soft_mdef: magic.soft_mdef})
   end
 
-  defp first_holy(damage, modifier), do: trunc(max(damage, 1) * modifier)
+  defp first_holy(damage, inputs), do: inputs.element_step.(max(damage, 1), :holy)
 
   defp finish(_damage, %{caster_ref: {type, id}, target_ref: {type, id}}) when type != :player,
     do: 0
 
-  defp finish(holy, %{magic: magic} = inputs) do
-    if inputs.caster_ref == inputs.target_ref do
-      max(1, div(holy, 2))
-    else
-      max(1, trunc(holy * magic.element_modifier))
-    end
+  defp finish(holy, inputs) do
+    if inputs.caster_ref == inputs.target_ref,
+      do: div(holy, 2),
+      else: inputs.element_step.(holy, :holy)
   end
 end

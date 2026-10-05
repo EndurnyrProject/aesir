@@ -12,22 +12,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
-  describe "apply_element/3" do
-    test "neutral attack vs neutral defender is a 1.0 multiplier" do
-      assert DamageShared.apply_element(100, :neutral, %{element: {:neutral, 1}}) == 100.0
+  describe "apply_element_step/5" do
+    defp step(damage, element, defender, modifiers \\ %{}),
+      do:
+        DamageShared.apply_element_step(damage, element, nil, defender,
+          attacker_modifiers: modifiers
+        )
+
+    test "neutral attack vs neutral defender keeps the damage" do
+      assert step(100, :neutral, %{element: {:neutral, 1}}) == 100
     end
 
-    test "applies the active weakness multiplier" do
-      assert DamageShared.apply_element(100, :water, %{element: {:fire, 1}}) ==
-               mode_value(150.0, 150.0)
+    test "applies the active weakness ratio" do
+      assert step(100, :water, %{element: {:fire, 1}}) == mode_value(150, 150)
     end
 
     test "defaults to {:neutral, 1} when defender has no element" do
-      assert DamageShared.apply_element(100, :neutral, %{}) == 100.0
+      assert step(100, :neutral, %{}) == 100
     end
 
     test "passes damage through unchanged for a non-tuple element" do
-      assert DamageShared.apply_element(100, :water, %{element: :fire}) == 100
+      assert step(100, :water, %{element: :fire}) == 100
     end
   end
 
@@ -105,26 +110,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
     end
   end
 
-  describe "apply_element/4 field ratio bonus" do
+  describe "apply_element_step/5 field ratio bonus" do
     test "the attacker's matching element_ratio modifier raises the ratio" do
-      assert_in_delta(
-        DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{
-          {:element_ratio, :fire} => 20
-        }),
-        mode_value(170.0, 180.0),
-        0.0001
-      )
+      assert step(100, :fire, %{element: {:earth, 1}}, %{{:element_ratio, :fire} => 20}) ==
+               mode_value(170, 180)
     end
 
     test "an element_ratio for a different element is ignored" do
-      assert DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{
-               {:element_ratio, :water} => 20
-             }) == mode_value(150.0, 150.0)
+      assert step(100, :fire, %{element: {:earth, 1}}, %{{:element_ratio, :water} => 20}) ==
+               mode_value(150, 150)
     end
 
     test "no attacker modifiers leaves the ratio untouched" do
-      assert DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{}) ==
-               mode_value(150.0, 150.0)
+      assert step(100, :fire, %{element: {:earth, 1}}) == mode_value(150, 150)
     end
   end
 

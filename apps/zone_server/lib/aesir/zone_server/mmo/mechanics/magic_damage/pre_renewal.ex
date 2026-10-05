@@ -1,25 +1,29 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage.PreRenewal do
   @moduledoc "Classic ordinary magic damage arithmetic."
 
-  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense.PreRenewal, as: Defense
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage
 
   @behaviour MagicDamage
 
   @impl true
-  @spec calculate(integer(), MagicDamage.context()) :: pos_integer()
-  def calculate(matk, context) do
+  @spec pre_element(integer(), MagicDamage.context()) :: pos_integer()
+  def pre_element(matk, context) do
     matk
     |> MagicDamage.skill_damage(context)
     |> MagicDamage.skill_rate(context.skill_atk_rate)
     |> MagicDamage.skill_rate(-context.skill_taken_rate)
     |> apply_defense(context)
-    |> Kernel.*(context.element_modifier)
     |> trunc()
+    |> max(1)
+  end
+
+  @impl true
+  @spec post_element(integer(), MagicDamage.context()) :: integer()
+  def post_element(damage, context) do
+    damage
     |> attacker_cardfix(context.attack)
     |> MagicDamage.defender_cardfix(context.taken)
-    |> DamageShared.clamp_min_one()
   end
 
   @impl true

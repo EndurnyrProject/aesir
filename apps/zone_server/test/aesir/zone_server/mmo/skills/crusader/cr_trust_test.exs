@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrustTest do
     Mimic.copy(ElementModifiers)
     Mimic.copy(SizeModifiers)
     Mimic.copy(ModifierCalculator)
-    stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+    CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
     stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
     :ok

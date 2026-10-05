@@ -9,9 +9,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
   The strike always connects: a high-flee or perfect-dodge target cannot evade
   it.
 
-  Renewal: 100 per level percent, plus half again against a rooted target, forced
-  neutral, a 0.5 s cast plus 0.5 s fixed. Pre-renewal: 100 plus 75 per level
-  percent with no Root bonus, the weapon element, and a 1 s cast. Both ignore flee.
+  Renewal: 100 per level percent, plus half again against a rooted target, the
+  weapon element followed by a forced neutral attribute step, a 0.5 s cast plus
+  0.5 s fixed. Pre-renewal: 100 plus 75 per level percent with no Root bonus,
+  neutral element, and a 1 s cast. Both ignore flee.
   """
 
   @sp_costs Enum.map(1..5, &Aesir.ZoneServer.Mmo.Skills.Monk.Formulas.occult_sp_cost/1)
@@ -82,8 +83,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
 
   defp element_opts do
     case GameMode.mode() do
-      :renewal -> [element: :neutral]
-      :pre_renewal -> []
+      :renewal -> []
+      :pre_renewal -> [element: :neutral]
     end
   end
 end

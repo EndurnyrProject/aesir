@@ -38,21 +38,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
       %{damage: damage, is_critical: false}
     end)
 
-    # Reports the ratio the element table actually produced, bonus included.
-    stub(ElementModifiers, :get_modifier, fn attack_element,
-                                             defense_element,
-                                             defense_level,
-                                             ratio_bonus ->
-      ratio =
-        call_original(ElementModifiers, :get_modifier, [
-          attack_element,
-          defense_element,
-          defense_level,
-          ratio_bonus
-        ])
+    # Reports each attribute step's field bonus and the table ratio it composes into.
+    stub(ElementModifiers, :adjust_damage, fn damage, adjustment ->
+      bonus = adjustment.modifiers |> Keyword.take([:field]) |> Keyword.values() |> Enum.sum()
 
-      send(self(), {:element_ratio, attack_element, ratio_bonus, ratio})
-      ratio
+      ratio =
+        ElementModifiers.get_modifier(
+          adjustment.attack_element,
+          adjustment.defense_element,
+          adjustment.defense_level,
+          bonus
+        )
+
+      send(self(), {:element_ratio, adjustment.attack_element, bonus, ratio})
+      call_original(ElementModifiers, :adjust_damage, [damage, adjustment])
     end)
 
     stub(UnitRegistry, :get_unit_info, fn _, _ -> {:ok, %{stats: %{}}} end)

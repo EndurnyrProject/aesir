@@ -19,14 +19,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
     definition
   end
 
-  test "cast/4 hits with 100% ratio, poison element, +15*level bonus_atk, no crit" do
+  test "cast/4 hits with 100% ratio, poison element, +15*level Envenom ATK, no crit" do
     caster = caster()
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_id] == definition().id
       assert opts[:skill_level] == 6
       assert opts[:skill_ratio] == 100
-      assert opts[:bonus_atk] == 15 * 6
+      assert opts[:envenom_atk] == 15 * 6
       assert opts[:element] == :poison
       assert opts[:skip_crit] == true
       assert opts[:report_hit] == true

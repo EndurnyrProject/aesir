@@ -1,11 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
   @moduledoc """
-  Cart Revolution (MC_CARTREVOLUTION, id 153). Physical neutral splash attack with
+  Cart Revolution (MC_CARTREVOLUTION, id 153). Physical splash attack with
   knockback whose damage scales with the current cart weight; requires a mounted
   cart, else `{:error, :no_cart}`.
 
-  Max level 1, 1-cell splash, 2 cells of knockback, 12 SP, and the damage is
-  always resolved as neutral element whatever the weapon carries. Like Arrow
+  Max level 1, 1-cell splash, 2 cells of knockback, 12 SP. The hit takes the
+  weapon element and then a forced neutral attribute step after defense. Like Arrow
   Shower the splash is centred on the target's cell and its native displacement
   goes through `Combat.execute_splash_attack` for one combined knockback.
 
@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
   `Cart.Weight.max_weight/0` (`80_000`) use the one weight unit Aesir uses
   everywhere (item-db weight, e.g. Red Potion = 70).
 
-  Renewal and pre-renewal agree: 150% weapon damage plus 1% per 1% of cart load (250% at a full cart, and the flat 250% for a caster without a cart), always dealt as neutral element regardless of the weapon, a 1-cell splash around the target, 2 cells of knockback, 12 SP, one cell of reach, and a mounted cart to cast.
+  Renewal and pre-renewal agree: 150% weapon damage plus 1% per 1% of cart load (250% at a full cart, and the flat 250% for a caster without a cart), the weapon element followed by a forced neutral attribute step, a 1-cell splash around the target, 2 cells of knockback, 12 SP, one cell of reach, and a mounted cart to cast.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 153,
@@ -26,7 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
     target_type: :target_enemy,
     damage_type: :damage,
     range: 1,
-    element: :neutral,
     knockback: 2,
     splash_radius: 1,
     sp_cost: [12],
@@ -51,7 +50,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
         skill_level: level,
         skill_ratio: caster_ratio(caster),
         skip_crit: true,
-        element: :neutral,
         base_distance: definition.knockback,
         origin: {x, y},
         native_target_types: [:mob]

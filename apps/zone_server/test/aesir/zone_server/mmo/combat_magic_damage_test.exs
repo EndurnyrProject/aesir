@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
     test "final 1-point direct magic participates in coma" do
       caster = build_caster()
-      stub_mob_target(150, 150, {:poison, 1})
+      stub_mob_target(150, 150, {:neutral, 1})
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
 
@@ -262,10 +262,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
 
       assert {:ok, {:mob, @target_id}} =
-               Combat.execute_magic_damage(caster, @target_id, 100,
+               Combat.execute_magic_damage(caster, @target_id, 1,
                  skill_id: @skill_id,
                  skill_level: @skill_level,
-                 element: :poison
+                 element: :neutral
                )
     end
 

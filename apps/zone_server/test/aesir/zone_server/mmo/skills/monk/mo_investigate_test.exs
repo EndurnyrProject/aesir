@@ -222,12 +222,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
     do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 
   @tag game_mode: :renewal
-  test "renewal Occult is forced neutral" do
+  test "renewal Occult strikes with the weapon element" do
     caster = caster()
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:element] == :neutral
+      refute Keyword.has_key?(opts, :element)
       :ok
     end)
 
@@ -236,12 +236,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic Occult keeps the weapon element" do
+  test "classic Occult is neutral element" do
     caster = caster()
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      refute Keyword.has_key?(opts, :element)
+      assert opts[:element] == :neutral
       :ok
     end)
 

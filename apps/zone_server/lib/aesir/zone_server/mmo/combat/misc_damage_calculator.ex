@@ -13,10 +13,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
   ## Pipeline
 
   1. Base damage from `:base_damage`.
-  2. Element resistance (skill element vs defender element/level).
-  3. Min-1 clamp.
+  2. One attribute step (skill element vs defender element/level).
+  3. A negative result deals 0. There is no minimum of 1: an immune element deals 0.
 
-  Verified vs rAthena `battle_calc_misc_attack` (battle.cpp:6290): BF_MISC applies
+  Verified vs rAthena `battle_calc_misc_attack` (battle.cpp:6290, 6651-6655): BF_MISC applies
   **NO defense reduction** - it never calls `battle_calc_defense_reduction` (the
   eDEF/MDEF curve belongs to the weapon/magic paths). Element is applied; hard-DEF,
   soft-DEF, MDEF and the generic status `damage_multiplier` are all ignored.
@@ -59,22 +59,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
 
   @spec calculate_pipeline_damage(map(), map(), keyword()) :: {:ok, misc_damage_result()}
   defp calculate_pipeline_damage(attacker, defender, opts) do
-    base_damage = Keyword.get(opts, :base_damage, 0)
+    base_damage = trunc(Keyword.get(opts, :base_damage, 0))
     element = Keyword.get(opts, :element, :neutral)
 
     damage =
-      if Keyword.get(opts, :ignore_element, false) do
-        base_damage
-      else
-        DamageShared.apply_element(
-          base_damage,
-          element,
-          defender,
-          DamageShared.attacker_modifiers(attacker)
-        )
-      end
-      |> DamageShared.clamp_min_one()
+      if Keyword.get(opts, :ignore_element, false),
+        do: base_damage,
+        else: DamageShared.apply_element_step(base_damage, element, attacker, defender)
 
-    {:ok, %{damage: damage, is_critical: false}}
+    {:ok, %{damage: max(damage, 0), is_critical: false}}
   end
 end

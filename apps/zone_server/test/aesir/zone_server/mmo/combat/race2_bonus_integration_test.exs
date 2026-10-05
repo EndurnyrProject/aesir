@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
     Mimic.copy(SizeModifiers)
     Mimic.copy(ModifierCalculator)
 
-    stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+    CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
     stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
 
@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
 
     assert {:ok, 800} = DamageCalculator.apply_modifier_pipeline(1_000, in_group, defender)
 
-    assert {:ok, 1_000.0} =
+    assert {:ok, 1_000} =
              DamageCalculator.apply_modifier_pipeline(1_000, out_of_group, defender)
   end
 
@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Race2BonusIntegrationTest do
 
     assert {:ok, 1_200} = DamageCalculator.apply_modifier_pipeline(1_000, attacker, in_group)
 
-    assert {:ok, 1_000.0} =
+    assert {:ok, 1_000} =
              DamageCalculator.apply_modifier_pipeline(1_000, attacker, out_of_group)
   end
 

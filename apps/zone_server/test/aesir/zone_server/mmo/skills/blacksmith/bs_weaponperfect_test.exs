@@ -53,12 +53,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfectTest do
 
     expect(PartyManager, :get, fn 10 -> {:ok, party_state()} end)
 
-    assert {:ok, 600.0} =
+    assert {:ok, 600} =
              DamageCalculator.apply_modifier_pipeline(1_200, dagger_combatant(2), large_target())
 
     assert {:ok, ^caster} = BsWeaponperfect.cast(caster, :self, 4, definition)
 
-    assert {:ok, 1_200.0} =
+    assert {:ok, 1_200} =
              DamageCalculator.apply_modifier_pipeline(1_200, dagger_combatant(2), large_target())
   end
 

@@ -29,11 +29,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   it - and its DEF reduction is a flat hard+soft subtraction rather than the
   renewal DEF curve.
 
-  Renewal: a 2 s cast plus 2 s fixed shrinking 0.25 s per level, the strike is
-  forced neutral and subtracts the target's hard and soft DEF flat, a combo
-  follow-up spends every held sphere, and the caster cannot regain SP for 3 s.
-  Pre-renewal: a 4 s cast shrinking 0.5 s per level, the strike keeps the weapon
-  element and ignores DEF entirely, a follow-up after Raging Thrust spends four
+  The strike is neutral element. Renewal: a 2 s cast plus 2 s fixed shrinking
+  0.25 s per level, a second forced neutral attribute step after defense, a flat
+  hard and soft DEF subtraction, a combo follow-up spends every held sphere, and
+  the caster cannot regain SP for 3 s. Pre-renewal: a 4 s cast shrinking 0.5 s
+  per level, the strike ignores DEF entirely, a follow-up after Raging Thrust spends four
   spheres, and SP regeneration stops for 5 minutes. Both drain all SP and deal
   800 plus ten times the remaining SP percent plus 250 plus 150 per level ATK.
   """
@@ -169,7 +169,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   defp mode_opts do
     case GameMode.mode() do
       :renewal -> [element: :neutral, simple_defense: true]
-      :pre_renewal -> [ignore_defense: true]
+      :pre_renewal -> [element: :neutral, ignore_defense: true]
     end
   end
 

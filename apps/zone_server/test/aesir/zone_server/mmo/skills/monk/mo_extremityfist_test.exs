@@ -374,7 +374,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic strike keeps the weapon element and halts SP regeneration for five minutes" do
+  test "classic strike is neutral element and halts SP regeneration for five minutes" do
     stub(Cell, :traversable?, fn "prontera", 13, 10 -> true end)
 
     stub(Combat, :resolve_target_position, fn @target_id ->
@@ -384,7 +384,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
     expect(Combat, :execute_skill_attack, fn _caster, @target_id, opts ->
       assert opts[:skill_ratio] == 3_300
       assert opts[:bonus_atk] == 1_000
-      refute Keyword.has_key?(opts, :element)
+      assert opts[:element] == :neutral
       refute Keyword.has_key?(opts, :simple_defense)
       assert opts[:ignore_defense]
       :ok

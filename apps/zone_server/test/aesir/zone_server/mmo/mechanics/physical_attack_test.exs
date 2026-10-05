@@ -30,8 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
   test "element, size, cardfix and DEF act on the correct components and stages" do
     context = context()
 
-    assert Renewal.calculate(parts(), context) == 203
-    assert PreRenewal.calculate(parts(), context) == 230
+    assert renewal(parts(), context) == 203
+    assert classic(parts(), context) == 230
   end
 
   test "Renewal equipment ATK rate is separate from cardfix and PAtk excludes mastery" do
@@ -40,17 +40,17 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       |> Map.put(:attacker_rates, %{race_class: 100, element: 0, size: 0})
       |> Map.merge(%{patk: 100, equipment_atk_rate: 50})
 
-    assert Renewal.calculate(parts(), context) == 677
-    assert PreRenewal.calculate(parts(), context) == 308
+    assert renewal(parts(), context) == 677
+    assert classic(parts(), context) == 308
   end
 
   test "post-defense ATK adds exactly 100 before later scaling in both modes" do
     context = neutral_context()
 
-    for implementation <- [Renewal, PreRenewal] do
-      base = implementation.calculate(parts(), context)
+    for implementation <- [&renewal/2, &classic/2] do
+      base = implementation.(parts(), context)
 
-      assert implementation.calculate(parts(), Map.put(context, :post_defense_atk, 100)) ==
+      assert implementation.(parts(), Map.put(context, :post_defense_atk, 100)) ==
                base + 100
     end
   end
@@ -60,8 +60,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     with_mastery = parts()
     without_mastery = %{with_mastery | mastery_atk: 0}
 
-    assert Renewal.calculate(with_mastery, Map.put(context, :base_atk_rate, 70)) ==
-             div(Renewal.calculate(without_mastery, context) * 70, 100) +
+    assert renewal(with_mastery, Map.put(context, :base_atk_rate, 70)) ==
+             div(renewal(without_mastery, context) * 70, 100) +
                with_mastery.mastery_atk
   end
 
@@ -71,8 +71,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       |> put_in([:defense, :soft_def], 10)
       |> Map.merge(%{skill_ratio: 200, bonus_atk: 5, skill_atk_rate: 50, skill_taken_rate: 20})
 
-    assert Renewal.calculate(parts(), context) == 389
-    assert PreRenewal.calculate(parts(), context) == 343
+    assert renewal(parts(), context) == 389
+    assert classic(parts(), context) == 343
   end
 
   test "critical damage uses Renewal's final multiplier and classic DEF bypass" do
@@ -82,10 +82,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       |> put_in([:defense, :soft_def], 10)
       |> Map.put(:critical?, true)
 
-    assert Renewal.calculate(parts(), context) == 193
-    assert PreRenewal.calculate(parts(), context) == 155
-    assert Renewal.calculate(parts(), Map.put(context, :crit_atk_rate, 50)) == 296
-    assert PreRenewal.calculate(parts(), Map.put(context, :crit_atk_rate, 50)) == 224
+    assert renewal(parts(), context) == 193
+    assert classic(parts(), context) == 155
+    assert renewal(parts(), Map.put(context, :crit_atk_rate, 50)) == 296
+    assert classic(parts(), Map.put(context, :crit_atk_rate, 50)) == 224
   end
 
   test "defender element resistance excludes Renewal status/mastery without dropping other reductions" do
@@ -106,8 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
         physical_reduction: 25
       })
 
-    assert Renewal.calculate(parts(), context) == 57
-    assert PreRenewal.calculate(parts(), context) == 69
+    assert renewal(parts(), context) == 57
+    assert classic(parts(), context) == 69
   end
 
   test "global race, flat/status ATK and range channels survive component separation" do
@@ -122,8 +122,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
         long_atk_rate: 20
       })
 
-    assert Renewal.calculate(parts(), context) == 368
-    assert PreRenewal.calculate(parts(), context) == 357
+    assert renewal(parts(), context) == 368
+    assert classic(parts(), context) == 357
   end
 
   test "simple defense subtracts both DEF buckets and does not apply Renewal Res" do
@@ -133,8 +133,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       |> put_in([:defense, :soft_def], 10)
       |> Map.merge(%{defense_mode: :simple, res: 100})
 
-    assert Renewal.calculate(parts(), context) == 135
-    assert PreRenewal.calculate(parts(), context) == 125
+    assert renewal(parts(), context) == 135
+    assert classic(parts(), context) == 125
   end
 
   test "the shield replacement keeps one status contribution and classic DEF precedes its ratio" do
@@ -155,8 +155,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
 
     assert Renewal.base_attack(shield) == 120
     assert PreRenewal.base_attack(shield) == 120
-    assert Renewal.calculate(shield, context) == 334
-    assert PreRenewal.calculate(shield, context) == 258
+    assert renewal(shield, context) == 334
+    assert classic(shield, context) == 258
   end
 
   test "zero defender rates preserve signed flat equipment ATK instead of discarding its penalty" do
@@ -172,8 +172,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
         ranged: 0
       })
 
-    assert Renewal.calculate(penalized, context) == 135
-    assert PreRenewal.calculate(penalized, context) == 124
+    assert renewal(penalized, context) == 135
+    assert classic(penalized, context) == 124
   end
 
   defp neutral_context do
@@ -232,5 +232,32 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
 
     assert PhysicalAttack.apply_defense(1_000, context, nil) == 940
     assert PhysicalAttack.apply_defense(1_000, %{defense_mode: :ignore}, nil) == 1_000
+  end
+
+  # The stages composed as one hit, with `weapon_element` and `neutral_element`
+  # standing in for the coordinator's attribute steps (default 1.0).
+  defp renewal(parts, context) do
+    weapon = Map.get(context, :weapon_element, 1.0)
+    neutral = Map.get(context, :neutral_element, 1.0)
+    multiplier = if parts.hand == :right_hand and parts.source == :weapon, do: 2, else: 1
+    components = Renewal.prepare_components(parts, context)
+
+    %{
+      components
+      | status_atk: trunc(components.status_atk * neutral) * multiplier,
+        weapon_atk: trunc(components.weapon_atk * weapon),
+        flat_atk: trunc(components.flat_atk * weapon)
+    }
+    |> Renewal.after_component_elements(context)
+    |> Renewal.calculate_components(context)
+    |> Renewal.finish_attack(context)
+  end
+
+  defp classic(parts, context) do
+    parts
+    |> PreRenewal.pre_element(context)
+    |> Kernel.*(Map.get(context, :weapon_element, 1.0))
+    |> trunc()
+    |> PreRenewal.post_element(context)
   end
 end

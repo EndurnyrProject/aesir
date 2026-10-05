@@ -77,8 +77,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   bypassing MATK and MDEF.
 
   Intended for the Heal undead/demon branch: the already-computed heal value is
-  delivered as holy damage, so MATK and MDEF play no role — only the target's
-  element resistance modifies the amount. Resolves and range-checks the target
+  delivered as holy damage, so MATK and MDEF play no role. The amount is raised to
+  the magic minimum of 1 and then takes one attribute step, so an immune target
+  takes 0. Resolves and range-checks the target
   identically to `execute_magic_attack/3`, broadcasts a `SkillDamage` packet, and
   applies the final damage.
 
@@ -115,15 +116,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       damage =
         if Keyword.get(opts, :ignore_element, false),
-          do: DamageShared.clamp_min_one(amount),
-          else:
-            amount
-            |> DamageShared.apply_element(
-              element,
-              target,
-              DamageShared.attacker_modifiers(attacker)
-            )
-            |> DamageShared.clamp_min_one()
+          do: max(amount, 1),
+          else: DamageShared.apply_element_step(max(amount, 1), element, attacker, target)
 
       hit_info =
         magic_hit_info(element,
@@ -683,9 +677,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          fixed_damage
        )
        when is_integer(fixed_damage) and fixed_damage >= 0 do
-    fixed_damage
-    |> DamageShared.apply_element(element, target, DamageShared.attacker_modifiers(attacker))
-    |> DamageShared.clamp_min_one()
+    DamageShared.apply_element_step(max(fixed_damage, 1), element, attacker, target)
   end
 
   defp sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id) do
@@ -694,19 +686,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     |> Enum.sum()
   end
 
-  defp magic_hit_damages(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id, opts) do
-    Enum.map(1..hits//1, fn _hit ->
-      {:ok, %{damage: damage}} =
-        MagicDamageCalculator.calculate_magic_damage(attacker, target,
-          element: element,
-          skill_ratio: skill_ratio,
-          bonus_matk: bonus_matk,
-          skill_id: skill_id,
-          ignore_mdef: Keyword.get(opts, :ignore_mdef, false)
-        )
+  # One MATK roll and one attribute step per cast, repeated for every division
+  # (battle.cpp:6238 and battle_apply_div_fix): a fire bolt burns one web.
+  defp magic_hit_damages(
+         _attacker,
+         _target,
+         _element,
+         _skill_ratio,
+         hits,
+         _bonus_matk,
+         _skill_id,
+         _opts
+       )
+       when hits < 1,
+       do: []
 
-      damage
-    end)
+  defp magic_hit_damages(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id, opts) do
+    {:ok, %{damage: damage}} =
+      MagicDamageCalculator.calculate_magic_damage(attacker, target,
+        element: element,
+        skill_ratio: skill_ratio,
+        bonus_matk: bonus_matk,
+        skill_id: skill_id,
+        ignore_mdef: Keyword.get(opts, :ignore_mdef, false)
+      )
+
+    List.duplicate(damage, hits)
   end
 
   defp apply_magic_damage(:skill_unit, manager_pid, target_id, damage, _hit_info, attacker) do
@@ -1076,8 +1081,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     prepared_hits =
       Enum.map(damages, fn damage ->
         damage
-        |> DamageShared.apply_element(hit_info.element, attacker, attacker_modifiers)
-        |> DamageShared.clamp_min_one()
+        |> DamageShared.apply_element_step(hit_info.element, attacker, attacker,
+          attacker_modifiers: attacker_modifiers
+        )
         |> then(&prepare_magic_hit(attacker.unit_type, attacker.unit_id, &1, hit_info, source))
       end)
 

@@ -37,10 +37,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChangeTest do
       %{damage: damage, is_critical: false}
     end)
 
-    stub(ElementModifiers, :get_modifier, fn attack_element,
-                                             defense_element,
-                                             defense_level,
-                                             ratio_bonus ->
+    CombatTestHelper.stub_element_coefficient(fn attack_element,
+                                                 defense_element,
+                                                 defense_level,
+                                                 ratio_bonus ->
       send(self(), {:defense_element, defense_element, defense_level})
 
       call_original(ElementModifiers, :get_modifier, [

@@ -11,53 +11,66 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWeb
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @doc """
-  Applies the defender's element resistance to `damage`.
+  Runs one attribute step on an integer `damage`, the reference `battle_attr_fix`.
 
-  Reads the defender element (`{element, level}`, defaulting to `{:neutral, 1}`)
-  and multiplies `damage` by `ElementModifiers.get_modifier/4` for the given
-  `attack_element`. A defender whose `:element` is not an `{element, level}`
-  tuple passes through unchanged.
+  Reads the defender's `{element, level}` (default `{:neutral, 1}`); a defender
+  without an element tuple passes `damage` through. The step captures, in order,
+  the attacker's matching element field (`{:element_ratio, element}`: Volcano,
+  Deluge, Violent Gale) and, for fire against a webbed player, mob or Homunculus,
+  the web bonus. A webbed holder loses its shortest web in this step, so every
+  attribute step is an actual application: never call this to preview damage.
 
-  `attacker_modifiers` carries the attacker's status modifiers. An
-  `{:element_ratio, element}` entry matching `attack_element` is the seam through which the Sage
-  element fields (Volcano, Deluge, Violent Gale) reach the damage pipeline. Renewal adds those
-  points to the table ratio; classic multiplies the pre-table damage by the field percentage.
+  Options:
+
+    * `:attacker_modifiers` - the attacker's status modifiers when already resolved;
+      otherwise they are read for `attacker`.
+    * `:allow_negative` - lets a negative final ratio through (the weapon
+      post-defense step); otherwise a negative ratio deals 0.
   """
-  @spec apply_element(number(), ElementModifiers.element(), map(), map()) :: number()
-  def apply_element(damage, attack_element, defender, attacker_modifiers \\ %{}) do
+  @spec apply_element_step(
+          integer(),
+          ElementModifiers.element(),
+          map() | nil,
+          map(),
+          keyword()
+        ) :: integer()
+  def apply_element_step(damage, attack_element, attacker, defender, opts \\ []) do
     case Map.get(defender, :element, {:neutral, 1}) do
-      {defender_element, defender_level} ->
-        ratio_bonus =
-          Map.get(attacker_modifiers, {:element_ratio, attack_element}, 0) +
-            web_bonus(attack_element, defender)
+      {defense_element, defense_level} ->
+        modifiers =
+          Keyword.get_lazy(opts, :attacker_modifiers, fn -> attacker_modifiers(attacker) end)
 
-        modifier =
-          ElementModifiers.get_modifier(
-            attack_element,
-            defender_element,
-            defender_level,
-            ratio_bonus
-          )
+        ElementModifiers.adjust_damage(damage, %{
+          attack_element: attack_element,
+          defense_element: defense_element,
+          defense_level: defense_level,
+          modifiers:
+            field_modifier(modifiers, attack_element) ++ web_modifier(attack_element, defender),
+          allow_negative_ratio?: Keyword.get(opts, :allow_negative, false)
+        })
 
-        damage * modifier
-
-      _ ->
+      _no_element ->
         damage
     end
   end
 
-  # Fiber Lock: fire against a webbed unit gains 100 element ratio points
-  # (renewal adds them to the row; pre-renewal's (100 + bonus) / 100 doubles).
-  defp web_bonus(:fire, %{unit_type: type, unit_id: id})
-       when type in [:player, :mob, :homunculus] do
-    if StatusStorage.has_status?(type, id, :sc_spiderweb), do: 100, else: 0
+  defp field_modifier(modifiers, attack_element) do
+    case Map.get(modifiers, {:element_ratio, attack_element}, 0) do
+      0 -> []
+      points -> [{:field, points}]
+    end
   end
 
-  defp web_bonus(_element, _defender), do: 0
+  defp web_modifier(:fire, %{unit_type: type, unit_id: id})
+       when type in [:player, :mob, :homunculus] do
+    if SpiderWeb.consume(type, id), do: [{:spider_web, 100}], else: []
+  end
+
+  defp web_modifier(_element, _defender), do: []
 
   @doc """
   Resolves an attacker combatant's aggregated status modifiers for the flat-
@@ -68,10 +81,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   the full `DamageCalculator`/`MagicDamageCalculator` pipeline, so they never
   resolve the attacker's modifiers on their own. This is the seam that lets an
   `{:element_ratio, element}` bonus (the Sage element fields Volcano, Deluge and
-  Violent Gale) reach those paths through `apply_element/4`.
+  Violent Gale) reach those paths through `apply_element_step/5`.
 
   Returns `%{}` for an attacker without a resolvable unit (unowned traps,
-  environmental damage), so `apply_element/4` simply finds no bonus.
+  environmental damage), so `apply_element_step/5` simply finds no bonus.
   """
   @spec attacker_modifiers(map() | nil) :: map()
   def attacker_modifiers(%{unit_type: unit_type, unit_id: unit_id})

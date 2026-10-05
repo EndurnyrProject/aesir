@@ -256,8 +256,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       hard_mdef: hard,
       soft_mdef: soft,
       ignore_mdef_rate: equip.ignore_mdef,
-      ignore_mdef?: Keyword.get(opts, :ignore_mdef, false),
-      element_modifier: DamageShared.apply_element(1, element, defender, modifiers)
+      ignore_mdef?: Keyword.get(opts, :ignore_mdef, false)
     }
   end
 

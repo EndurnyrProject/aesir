@@ -7,13 +7,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
     renewal = inputs(1.25)
     classic = inputs(1.5)
 
-    assert Damage.calculate(:renewal, renewal) == 257
-    assert Damage.calculate(:pre_renewal, classic) == 487
-    assert Damage.calculate(:renewal, %{renewal | target_ref: {:player, 1}}) == 103
-    assert Damage.calculate(:pre_renewal, %{classic | target_ref: {:player, 1}}) == 162
+    assert calc(:renewal, renewal) == 257
+    assert calc(:pre_renewal, classic) == 487
+    assert calc(:renewal, %{renewal | target_ref: {:player, 1}}) == 103
+    assert calc(:pre_renewal, %{classic | target_ref: {:player, 1}}) == 162
 
-    assert Damage.calculate(:renewal, %{renewal | target_ref: {:mob, 1}}) == 257
-    assert Damage.calculate(:pre_renewal, %{classic | target_ref: {:mob, 1}}) == 487
+    assert calc(:renewal, %{renewal | target_ref: {:mob, 1}}) == 257
+    assert calc(:pre_renewal, %{classic | target_ref: {:mob, 1}}) == 487
   end
 
   test "weapon components retain size, element, refine and percentage stages without mastery" do
@@ -32,36 +32,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
     renewal = %{renewal | physical: {:player, parts}, size_rate: 75, equipment_atk_rate: 20}
     classic = %{renewal | magic: %{renewal.magic | element_modifier: 1.5}}
 
-    assert Damage.calculate(:renewal, renewal) == 390
-    assert Damage.calculate(:pre_renewal, classic) == 726
-    assert Damage.calculate(:renewal, %{renewal | neutral_modifier: 0.5}) == 281
+    assert calc(:renewal, renewal) == 390
+    assert calc(:pre_renewal, classic) == 726
+    assert calc(:renewal, %{renewal | neutral_modifier: 0.5}) == 281
 
-    assert Damage.calculate(:renewal, %{
+    assert calc(:renewal, %{
              renewal
              | physical: {:player, %{parts | hand: :left_hand}}
            }) == 281
 
-    assert Damage.calculate(:renewal, %{renewal | physical: {:player, %{parts | refine_atk: 999}}}) ==
+    assert calc(:renewal, %{renewal | physical: {:player, %{parts | refine_atk: 999}}}) ==
              390
 
-    assert Damage.calculate(:pre_renewal, %{
+    assert calc(:pre_renewal, %{
              classic
              | physical: {:player, %{parts | refine_atk: 11}}
            }) == 729
 
     for {mode, data} <- [renewal: renewal, pre_renewal: classic] do
-      assert Damage.calculate(mode, %{data | physical: {:player, %{parts | mastery_atk: 0}}}) ==
-               Damage.calculate(mode, data)
+      assert calc(mode, %{data | physical: {:player, %{parts | mastery_atk: 0}}}) ==
+               calc(mode, data)
     end
   end
 
   test "non-player rolls never acquire doubled player status or self damage" do
     renewal = %{inputs(1.25) | physical: {:non_player, 100}, caster_ref: {:mob, 1}}
     classic = %{inputs(1.5) | physical: {:non_player, 100}, caster_ref: {:mob, 1}}
-    assert Damage.calculate(:renewal, renewal) == 147
-    assert Damage.calculate(:pre_renewal, classic) == 487
-    assert Damage.calculate(:renewal, %{renewal | target_ref: {:mob, 1}}) == 0
-    assert Damage.calculate(:pre_renewal, %{classic | target_ref: {:mob, 1}}) == 0
+    assert calc(:renewal, renewal) == 147
+    assert calc(:pre_renewal, classic) == 487
+    assert calc(:renewal, %{renewal | target_ref: {:mob, 1}}) == 0
+    assert calc(:pre_renewal, %{classic | target_ref: {:mob, 1}}) == 0
   end
 
   test "magic card, skill, status and trait stages stay on their hybrid component" do
@@ -80,22 +80,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
     renewal = %{renewal | magic: magic}
     classic = %{renewal | magic: %{magic | element_modifier: 1.5}}
 
-    assert Damage.calculate(:renewal, renewal) == 260
-    assert Damage.calculate(:pre_renewal, classic) == 514
-    assert Damage.calculate(:renewal, %{renewal | magic: %{magic | ignore_mdef_rate: 50}}) == 260
+    assert calc(:renewal, renewal) == 260
+    assert calc(:pre_renewal, classic) == 514
+    assert calc(:renewal, %{renewal | magic: %{magic | ignore_mdef_rate: 50}}) == 260
 
-    assert Damage.calculate(:pre_renewal, %{
+    assert calc(:pre_renewal, %{
              classic
              | magic: %{classic.magic | ignore_mdef_rate: 50}
            }) == 531
 
-    assert Damage.calculate(:pre_renewal, %{
+    assert calc(:pre_renewal, %{
              classic
              | magic: %{classic.magic | ignore_mdef?: true}
            }) == 567
   end
 
-  test "odd hybrid sums round before the level ratio and immune hits keep their floor" do
+  test "odd hybrid sums round before the level ratio and immune hits deal 0" do
     data = inputs(1.0)
 
     data = %{
@@ -106,23 +106,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
         magic: %{data.magic | hard_mdef: 0, soft_mdef: 0}
     }
 
-    assert Damage.calculate(:renewal, data) == 330
-    assert Damage.calculate(:pre_renewal, data) == 440
+    assert calc(:renewal, data) == 330
+    assert calc(:pre_renewal, data) == 440
 
     for mode <- [:renewal, :pre_renewal] do
       immune = %{data | magic: %{data.magic | element_modifier: 0}}
-      assert Damage.calculate(mode, immune) == 1
-      assert Damage.calculate(mode, %{immune | target_ref: immune.caster_ref}) == 1
+      assert calc(mode, immune) == 0
+      assert calc(mode, %{immune | target_ref: immune.caster_ref}) == 0
     end
   end
 
   test "percentage physical DEF-ignore reduces both defense slots without bypassing magic defense" do
     renewal = inputs(1.25)
     classic = inputs(1.5)
-    assert Damage.calculate(:renewal, Map.put(renewal, :physical_ignore_rate, 50)) == 281
-    assert Damage.calculate(:pre_renewal, Map.put(classic, :physical_ignore_rate, 50)) == 535
-    assert Damage.calculate(:renewal, Map.put(renewal, :physical_ignore_rate, 100)) == 303
-    assert Damage.calculate(:pre_renewal, Map.put(classic, :physical_ignore_rate, 100)) == 577
+    assert calc(:renewal, Map.put(renewal, :physical_ignore_rate, 50)) == 281
+    assert calc(:pre_renewal, Map.put(classic, :physical_ignore_rate, 50)) == 535
+    assert calc(:renewal, Map.put(renewal, :physical_ignore_rate, 100)) == 303
+    assert calc(:pre_renewal, Map.put(classic, :physical_ignore_rate, 100)) == 577
   end
 
   defp inputs(element) do
@@ -165,5 +165,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
         taken: %{element: 0, size: 0, race2: 0, race: 0, class: 0, magic: 0}
       }
     }
+  end
+
+  # `neutral_modifier` and the magic `element_modifier` stand in for the
+  # coordinator's attribute steps.
+  defp calc(mode, inputs) do
+    step = fn
+      damage, :neutral -> trunc(damage * inputs.neutral_modifier)
+      damage, _holy -> trunc(damage * inputs.magic.element_modifier)
+    end
+
+    Damage.calculate(mode, Map.put(inputs, :element_step, step))
   end
 end

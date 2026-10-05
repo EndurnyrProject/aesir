@@ -479,7 +479,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
            ]
   end
 
-  test "equipment skill blow displaces a connected zero-damage skill and floors signed totals" do
+  test "equipment skill blow needs a damaging hit and floors signed totals" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
     target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
     target_state = %TestUnit{combatant: target, hp: 100}
@@ -494,14 +494,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(Targeting, :validate_enemy, fn _attacker, ^target -> :ok end)
     stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
 
-    stub(DamageCalculator, :calculate_damage, fn _attacker, ^target, _opts ->
-      {:ok, %{damage: 0, is_critical: false}}
-    end)
-
-    reject(&EquipComa.trigger?/2)
+    stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-    stub(MobSession, :apply_damage, fn _pid, 0, 1001 ->
+    stub(MobSession, :apply_damage, fn _pid, _damage, 1001 ->
       send(self(), :damage_delivered)
       :ok
     end)
@@ -517,13 +513,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(MapCache, :get, fn ^map_name -> {:ok, :map} end)
     stub(Cell, :step_traversable?, fn ^map_name, _from, _to -> true end)
 
+    # A hit below one damage per division pushes nothing (skill.cpp: "only
+    # pushback when it hit"), equipment blow included.
     cases = [
-      {%{{:add_skill_blow, 7} => 2}, [], {103, 100}},
-      {%{{:add_skill_blow, 7} => -2}, [base_distance: 1], nil},
-      {%{{:add_skill_blow, 7} => -1}, [base_distance: 1], nil}
+      {1, %{{:add_skill_blow, 7} => 2}, [], {103, 100}},
+      {0, %{{:add_skill_blow, 7} => 2}, [], nil},
+      {2, %{{:add_skill_blow, 7} => 2}, [display_hit_count: 5], nil},
+      {1, %{{:add_skill_blow, 7} => -2}, [base_distance: 1], nil},
+      {1, %{{:add_skill_blow, 7} => -1}, [base_distance: 1], nil}
     ]
 
-    for {equipment, knockback_options, destination} <- cases do
+    for {damage, equipment, knockback_options, destination} <- cases do
+      stub(DamageCalculator, :calculate_damage, fn _attacker, ^target, _opts ->
+        {:ok, %{damage: damage, is_critical: false}}
+      end)
+
       caster = %TestUnit{combatant: %{attacker | equip_modifiers: equipment}, hp: 100}
 
       assert :ok =

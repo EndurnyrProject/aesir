@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -195,7 +196,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
       _, _ -> %{}
     end)
 
-    stub(ElementModifiers, :get_modifier, fn attack_element, _, _, _ ->
+    CombatTestHelper.stub_element_coefficient(fn attack_element, _, _, _ ->
       send(self(), {:attack_element, attack_element})
       1.0
     end)

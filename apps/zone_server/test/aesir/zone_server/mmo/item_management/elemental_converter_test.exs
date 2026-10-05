@@ -49,10 +49,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
       %{damage: damage, is_critical: false}
     end)
 
-    stub(ElementModifiers, :get_modifier, fn attack_element,
-                                             defense_element,
-                                             defense_level,
-                                             ratio_bonus ->
+    CombatTestHelper.stub_element_coefficient(fn attack_element,
+                                                 defense_element,
+                                                 defense_level,
+                                                 ratio_bonus ->
       send(self(), {:attack_element, attack_element})
 
       call_original(ElementModifiers, :get_modifier, [

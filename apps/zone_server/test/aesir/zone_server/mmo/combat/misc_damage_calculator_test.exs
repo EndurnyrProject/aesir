@@ -88,8 +88,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                )
     end
 
-    test "floors damage at 1 when base is 0" do
-      assert {:ok, %{damage: 1, is_critical: false}} =
+    test "a zero base deals 0: misc damage has no minimum" do
+      assert {:ok, %{damage: 0, is_critical: false}} =
                MiscDamageCalculator.calculate_misc_damage(attacker(), defender(0), base_damage: 0)
     end
 
@@ -147,7 +147,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                  element: :poison
                )
 
-      assert damage == mode_value(20, 1)
+      assert damage == mode_value(20, 0)
     end
   end
 end

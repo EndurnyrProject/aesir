@@ -7,7 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerang do
   interpreter enforces the per-level reach and the attack skips the melee range
   check; the hit counts as ranged so Defending Aura reduces it.
 
-  Renewal: 80% per level. Pre-renewal: 100% plus 30% per level, with the target's
+  Renewal: 80% per level and a second, forced neutral attribute step after
+  defense. Pre-renewal: 100% plus 30% per level, with the target's
   DEF applied before the ratio in the source (not modelled here).
   """
   use Aesir.ZoneServer.Mmo.Skill,
@@ -46,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerang do
       skill_level: level,
       skill_ratio: skill_ratio(level),
       damage_base: :shield,
+      element: :neutral,
       skip_crit: true,
       skip_range: true,
       ranged: true

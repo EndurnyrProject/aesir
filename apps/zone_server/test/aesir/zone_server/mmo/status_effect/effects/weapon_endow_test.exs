@@ -38,18 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
       %{damage: damage, is_critical: false}
     end)
 
-    stub(ElementModifiers, :get_modifier, fn attack_element,
-                                             defense_element,
-                                             defense_level,
-                                             ratio_bonus ->
-      send(self(), {:attack_element, attack_element})
-
-      call_original(ElementModifiers, :get_modifier, [
-        attack_element,
-        defense_element,
-        defense_level,
-        ratio_bonus
-      ])
+    stub(ElementModifiers, :adjust_damage, fn damage, adjustment ->
+      send(self(), {:attack_element, adjustment.attack_element})
+      call_original(ElementModifiers, :adjust_damage, [damage, adjustment])
     end)
 
     # The endows read no context; the registry only has to answer the

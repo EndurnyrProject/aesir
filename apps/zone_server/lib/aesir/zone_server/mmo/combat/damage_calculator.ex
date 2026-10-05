@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   require Logger
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
@@ -37,9 +38,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal, as: PreRenewalAttack
+  alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal, as: RenewalAttack
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @emperium_mob_id 1288
 
@@ -254,6 +258,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     end
   end
 
+  # The scalar recipe of non-player hits and of player hits with a replaced base:
+  # modifiers and DEF, the post-defense minimum, the attribute step, the critical
+  # tail and then the target's cards (battle.cpp:5625-5758).
   defp calculate_ordinary_pipeline_damage(
          attacker,
          defender,
@@ -263,24 +270,66 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
        ) do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
+    modifiers = attacker_status_modifiers(attacker)
 
     with {:ok, base_atk} <- calculate_base_attack(attacker, opts),
          patk_atk = apply_patk_multiplier(base_atk, attacker),
          skilled_atk = div(patk_atk * skill_ratio, 100) + bonus_atk,
-         {:ok, modified_atk} <-
-           apply_modifier_pipeline(skilled_atk, attacker, defender, opts, attack_path),
+         modified_atk =
+           apply_attack_modifiers(skilled_atk, attacker, defender, opts, attack_path, modifiers),
          total_atk = modified_atk + demon_bane_bonus(attacker, defender),
          total_atk = total_atk + beast_bane_bonus(attacker, defender),
          total_atk = apply_res_reduction(total_atk, defender),
-         {:ok, final_damage} <-
+         {:ok, defended} <-
            scalar_defense(
              total_atk,
              defender,
              attacker,
              attack_path,
              ratio_scaled_mode(defense_mode, skill_ratio)
-           ) do
-      finalize_damage(final_damage, attacker, defender, opts)
+           ),
+         hit = %{
+           attacker: attacker,
+           defender: defender,
+           opts: opts,
+           modifiers: modifiers,
+           watk_base: modified_atk
+         },
+         elemental = scalar_element(max(defended, 1), hit),
+         {:ok, result} <- finalize_damage(elemental, attacker, defender, opts) do
+      taken =
+        apply_equipment_taken_families(
+          result.damage,
+          attacker,
+          defender,
+          Keyword.get(opts, :skill_id),
+          hit_element(attacker, modifiers, opts),
+          opts
+        )
+
+      {:ok, %{result | damage: taken}}
+    end
+  end
+
+  # Non-player basic attacks take no attribute step (`attack_attr_none`); renewal
+  # players take one only in the Sacrifice group; other hits take their element.
+  defp scalar_element(damage, %{attacker: attacker, opts: opts} = hit) do
+    player? = attacker.unit_type == :player
+
+    cond do
+      not player? and is_nil(Keyword.get(opts, :skill_id)) ->
+        damage
+
+      player? and GameMode.mode() == :renewal ->
+        post_defense_element(
+          damage,
+          hit,
+          hit_element(attacker, hit.modifiers, opts),
+          sacrifice_group?(opts)
+        )
+
+      true ->
+        post_defense_element(damage, hit, hit_element(attacker, hit.modifiers, opts), true)
     end
   end
 
@@ -317,34 +366,284 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode) do
     with {:ok, critical} <- finalize_damage(0, attacker, defender, opts) do
-      parts =
-        DamageInputs.player_attack_parts(
-          attacker,
-          opts,
-          attack_path,
-          critical.is_critical and Keyword.get(opts, :critical_max_weapon, true)
-        )
+      hit = %{
+        attacker: attacker,
+        defender: defender,
+        opts: opts,
+        attack_path: attack_path,
+        defense_mode: defense_mode,
+        critical: critical,
+        modifiers: attacker_status_modifiers(attacker)
+      }
 
-      mastery =
-        parts.mastery_atk + demon_bane_bonus(attacker, defender) +
-          beast_bane_bonus(attacker, defender)
+      case GameMode.mode() do
+        :renewal ->
+          hit
+          |> Map.put(:elements, hand_elements(attacker, hit.modifiers, opts))
+          |> renewal_player_damage()
 
-      parts = if parts.source == :shield, do: parts, else: %{parts | mastery_atk: mastery}
-
-      context =
-        player_damage_context(
-          attacker,
-          defender,
-          opts,
-          attack_path,
-          defense_mode,
-          parts,
-          critical
-        )
-
-      damage = Mechanics.physical_attack().calculate(parts, context)
-      {:ok, %{critical | damage: damage}}
+        :pre_renewal ->
+          classic_player_damage(hit)
+      end
     end
+  end
+
+  defp player_parts(hit, attacker, attack_path) do
+    parts =
+      DamageInputs.player_attack_parts(
+        attacker,
+        hit.opts,
+        attack_path,
+        hit.critical.is_critical and Keyword.get(hit.opts, :critical_max_weapon, true)
+      )
+
+    mastery =
+      parts.mastery_atk + demon_bane_bonus(attacker, hit.defender) +
+        beast_bane_bonus(attacker, hit.defender) + renewal_envenom_atk(hit.opts)
+
+    if parts.source == :shield, do: parts, else: %{parts | mastery_atk: mastery}
+  end
+
+  defp hand_context(hit, attacker, attack_path, parts) do
+    player_damage_context(
+      attacker,
+      hit.defender,
+      hit.opts,
+      attack_path,
+      hit.defense_mode,
+      parts,
+      hit.critical
+    )
+  end
+
+  # Classic runs one attribute step on each hand's post-defense damage.
+  defp classic_player_damage(hit) do
+    parts = player_parts(hit, hit.attacker, hit.attack_path)
+    context = hand_context(hit, hit.attacker, hit.attack_path, parts)
+    element = hit_element(hit.attacker, hit.modifiers, hit.opts)
+    # NOTE: Task 27 completes wd->basedamage (Star Crumb, Spirit Sphere).
+    hit = Map.put(hit, :watk_base, PreRenewalAttack.normal_base(parts, context))
+
+    damage =
+      parts
+      |> PreRenewalAttack.pre_element(context)
+      |> post_defense_element(hit, element, true)
+      |> PreRenewalAttack.post_element(context)
+
+    {:ok, %{hit.critical | damage: damage}}
+  end
+
+  # Renewal attributes each component of both hands before the ratio and defense,
+  # in the reference call order; the second hand of a dual-wield attack reuses
+  # the components its first hand's call already adjusted.
+  defp renewal_player_damage(%{attack_path: :secondary} = hit) do
+    parts = player_parts(hit, hit.attacker, :secondary)
+    context = hand_context(hit, hit.attacker, :secondary, parts)
+
+    components =
+      case Keyword.fetch(hit.opts, :left_components) do
+        {:ok, adjusted} ->
+          adjusted
+
+        :error ->
+          [left] =
+            component_elements(
+              [RenewalAttack.prepare_components(parts, context)],
+              [elem(hit.elements, 1)],
+              hit
+            )
+
+          left
+      end
+
+    {:ok, %{hit.critical | damage: renewal_hand_damage(components, context, hit)}}
+  end
+
+  defp renewal_player_damage(hit) do
+    parts = player_parts(hit, hit.attacker, hit.attack_path)
+    context = hand_context(hit, hit.attacker, hit.attack_path, parts)
+    {right_element, left_element} = hit.elements
+    right = RenewalAttack.prepare_components(parts, context)
+    left = left_components(hit, right)
+
+    [right, left] = component_elements([right, left], [right_element, left_element], hit)
+
+    result = %{hit.critical | damage: renewal_hand_damage(right, context, hit)}
+
+    {:ok,
+     if(dual_wield?(hit.attacker), do: Map.put(result, :left_components, left), else: result)}
+  end
+
+  # The left hand's components exist on every renewal attack. Without a second
+  # weapon its weapon ATK is 0 but its equipment ATK equals the right hand's
+  # (equipAtk2 takes the same equipment ATK), and its attribute steps still run.
+  defp left_components(hit, right) do
+    if dual_wield?(hit.attacker) do
+      secondary = select_weapon_hand(hit.attacker, :secondary)
+      parts = player_parts(hit, secondary, :secondary)
+      RenewalAttack.prepare_components(parts, hand_context(hit, secondary, :secondary, parts))
+    else
+      %{right | weapon_atk: 0, hand: :left_hand}
+    end
+  end
+
+  defp dual_wield?(%{right_hand: %WeaponHand{}, left_hand: %WeaponHand{}}), do: true
+  defp dual_wield?(_attacker), do: false
+
+  defp renewal_hand_damage(components, context, hit) do
+    element =
+      if components.hand == :left_hand, do: elem(hit.elements, 1), else: elem(hit.elements, 0)
+
+    components
+    |> RenewalAttack.after_component_elements(context)
+    |> RenewalAttack.calculate_components(context)
+    |> post_defense_element(hit, element, sacrifice_group?(hit.opts))
+    |> RenewalAttack.finish_attack(context)
+  end
+
+  # battle_calc_damage_parts: status ATK of every hand (neutral), the pseudo-element
+  # weapon share, weapon ATK, then equipment ATK, each step over all hands in turn.
+  # Right-hand weapon status ATK doubles after its step.
+  defp component_elements(hands, elements, hit) do
+    step = &element_step(&1, &2, hit)
+
+    hands
+    |> Enum.map(&%{&1 | status_atk: step.(&1.status_atk, :neutral)})
+    |> pseudo_element_shares(hit)
+    |> Enum.zip(elements)
+    |> Enum.map(fn {hand, element} -> %{hand | weapon_atk: step.(hand.weapon_atk, element)} end)
+    |> Enum.zip(elements)
+    |> Enum.map(fn {hand, element} -> %{hand | flat_atk: step.(hand.flat_atk, element)} end)
+    |> Enum.map(&double_right_status/1)
+  end
+
+  defp double_right_status(%{hand: :right_hand, source: :weapon} = hand),
+    do: %{hand | status_atk: hand.status_atk * 2}
+
+  defp double_right_status(hand), do: hand
+
+  # Renewal Magnum Break (SC_SUB_WEAPONPROPERTY): a share of each hand's weapon ATK
+  # takes the status element first and joins the weapon ATK before its own step.
+  defp pseudo_element_shares(hands, hit) do
+    Enum.reduce(hit.modifiers, hands, fn
+      {{:pseudo_element_atk, element}, percent}, hands when is_integer(percent) and percent > 0 ->
+        shares = Enum.map(hands, &div(&1.weapon_atk * percent, 100))
+        adjusted = Enum.map(shares, &element_step(&1, element, hit))
+
+        hands
+        |> Enum.zip(adjusted)
+        |> Enum.map(fn {hand, share} -> %{hand | weapon_atk: hand.weapon_atk + share} end)
+
+      _modifier, hands ->
+        hands
+    end)
+  end
+
+  defp element_step(damage, element, hit, opts \\ []) do
+    DamageShared.apply_element_step(
+      damage,
+      element,
+      hit.attacker,
+      hit.defender,
+      Keyword.put(opts, :attacker_modifiers, hit.modifiers)
+    )
+  end
+
+  # battle_calc_element_damage: the post-defense attribute recipe. `primary?` says
+  # whether the hit's own element applies here (classic and non-player hits, and
+  # the Sacrifice group); the forced-neutral skills then take a neutral step, and
+  # classic Envenom adds its flat ATK and takes its element again. Damage is then
+  # capped at 0 (`attribute_recover: no`).
+  defp post_defense_element(damage, hit, element, primary?) do
+    if Keyword.get(hit.opts, :ignore_element, false) or damage <= 0 do
+      max(damage, 0)
+    else
+      damage =
+        if primary?, do: element_step(damage, element, hit, allow_negative: true), else: damage
+
+      damage =
+        if Keyword.get(hit.opts, :skill_id) in forced_neutral_skills(),
+          do: element_step(damage, :neutral, hit, allow_negative: true),
+          else: damage
+
+      damage
+      |> classic_envenom(element, hit)
+      |> classic_pseudo_element(hit)
+      |> max(0)
+    end
+  end
+
+  # Classic Magnum Break (SC_WATK_ELEMENT): for players, a share of the normal-attack
+  # base takes the status element and joins the damage before the 0 cap.
+  defp classic_pseudo_element(damage, %{attacker: %{unit_type: :player}, watk_base: base} = hit) do
+    if GameMode.mode() == :pre_renewal do
+      Enum.reduce(hit.modifiers, damage, fn
+        {{:pseudo_element_atk, element}, percent}, acc when is_integer(percent) and percent > 0 ->
+          acc + div(element_step(base, element, hit, allow_negative: true) * percent, 100)
+
+        _modifier, acc ->
+          acc
+      end)
+    else
+      damage
+    end
+  end
+
+  defp classic_pseudo_element(damage, _hit), do: damage
+
+  # Cart Revolution and Stave Crasher in both modes; Investigate, Asura Strike,
+  # Shield Boomerang and Shield Chain in renewal.
+  defp forced_neutral_skills do
+    case GameMode.mode() do
+      :renewal -> [153, 365, 266, 271, 251, 480]
+      :pre_renewal -> [153, 365]
+    end
+  end
+
+  # PA_SACRIFICE, RK_DRAGONBREATH(_WATER), NC_SELFDESTRUCTION and HFLI_SBR44 re-take
+  # their element even for renewal players.
+  defp sacrifice_group?(opts), do: Keyword.get(opts, :skill_id) in [368, 2008, 5004, 2267, 8012]
+
+  # Renewal Envenom's flat ATK is player mastery ATK (battle.cpp:3811-3812); classic
+  # adds it after the attribute step and takes the element again (3719-3723).
+  defp renewal_envenom_atk(opts) do
+    if GameMode.mode() == :renewal, do: Keyword.get(opts, :envenom_atk, 0), else: 0
+  end
+
+  defp classic_envenom(damage, element, hit) do
+    case {GameMode.mode(), Keyword.get(hit.opts, :envenom_atk, 0)} do
+      {:pre_renewal, atk} when atk > 0 ->
+        element_step(damage + atk, element, hit, allow_negative: true)
+
+      _other ->
+        damage
+    end
+  end
+
+  # battle_get_weapon_element: a skill element applies to both hands; otherwise
+  # each hand takes its weapon element and an endow overrides both.
+  defp hand_elements(attacker, modifiers, opts) do
+    case Keyword.get(opts, :element) do
+      nil ->
+        endow = Map.get(modifiers, :attack_element)
+        {resolve_attack_element(attacker, modifiers), endow || left_weapon_element(attacker)}
+
+      forced ->
+        {forced, forced}
+    end
+  end
+
+  defp left_weapon_element(%{left_hand: %WeaponHand{element: element}}) when not is_nil(element),
+    do: element
+
+  defp left_weapon_element(_attacker), do: :neutral
+
+  defp hit_element(attacker, modifiers, opts),
+    do: Keyword.get(opts, :element) || resolve_attack_element(attacker, modifiers)
+
+  defp attacker_status_modifiers(attacker) do
+    {unit_type, unit_id} = get_unit_type_and_id(attacker)
+    ModifierCalculator.get_all_modifiers(unit_type, unit_id)
   end
 
   defp player_damage_context(attacker, defender, opts, attack_path, defense_mode, parts, critical) do
@@ -382,8 +681,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           do: 100,
           else: trunc(apply_size_modifier(100, attacker, defender, opts))
         ),
-      weapon_element: DamageShared.apply_element(1, element, defender, attacker_modifiers),
-      neutral_element: DamageShared.apply_element(1, :neutral, defender, attacker_modifiers),
       attacker_rates: card_rates,
       defender_rates: %{
         race_class:
@@ -449,16 +746,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     }
   end
 
+  # A plant-mode Emperium contact is 1 damage that takes the weapon's attribute
+  # step (battle.cpp:4980-4996).
   defp calculate_emperium_plant_contact(attacker, defender, opts) do
-    {unit_type, unit_id} = get_unit_type_and_id(attacker)
-    attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
-    forced_element = Keyword.get(opts, :element)
-    attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
+    modifiers = attacker_status_modifiers(attacker)
 
-    elemental_damage =
-      DamageShared.apply_element(1, attack_element, defender, attacker_modifiers)
-
-    damage = if elemental_damage > 0, do: 1, else: 0
+    damage =
+      DamageShared.apply_element_step(
+        1,
+        hit_element(attacker, modifiers, opts),
+        attacker,
+        defender,
+        attacker_modifiers: modifiers
+      )
 
     with {:ok, result} <- finalize_damage(1, attacker, defender, opts) do
       {:ok, %{result | damage: damage}}
@@ -568,62 +868,56 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     do: DamageInputs.non_player_base_attack(attacker)
 
   @doc """
-  Applies the composable modifier pipeline to damage.
+  Applies the scalar recipe's modifier stages to `base_damage`, without DEF.
 
-  Modifiers are applied in this order:
-  1. Size modifiers
-  2. Race modifiers
-  3. Element modifiers
-  4. Status effect modifiers
+  In reference order: size, status ATK channels and the attacker's equipment
+  families; then the hit's post-defense attribute step (none for a non-player
+  basic attack, the Sacrifice group only for a renewal player) and the target's
+  equipment damage-taken families. The attribute step is an actual application:
+  it can burn a web.
 
-  `opts` accepts `:element` to force the attack element for this call (see
-  `calculate_damage/3`), taking priority over both the weapon element and any
-  `attack_element` status modifier. `:skill_id` scopes the `{:skill_atk, id}`
-  equipment family to the current skill. The mounted-spear size-modifier
-  override is read from the attacker combatant's `:riding` flag.
-  `:skip_status_atk` leaves the attacker's status ATK bonuses and rate
-  unapplied while keeping the generic damage multiplier (Sacrifice, whose
-  damage is a share of max HP rather than ATK). Player hits without
-  `:base_damage` take the component pipeline instead and ignore the opt.
-
-  After the size/race/element/status steps, the attacker's equipment damage
-  families (race+class, element, size, skill) each apply as their own
-  sequential multiplicative step, then the defender's equipment damage-taken
-  families (race+class, element, size) apply as reductions.
+  `opts` accepts `:element` to force the attack element, `:skill_id` to scope the
+  skill families, and `:skip_status_atk` to leave status ATK channels unapplied.
   """
-  @spec apply_modifier_pipeline(integer(), combatant(), combatant(), keyword()) :: {:ok, number()}
+  @spec apply_modifier_pipeline(integer(), combatant(), combatant(), keyword()) ::
+          {:ok, integer()}
   def apply_modifier_pipeline(base_damage, attacker, defender, opts \\ []) do
-    apply_modifier_pipeline(base_damage, attacker, defender, opts, :primary)
+    modifiers = attacker_status_modifiers(attacker)
+    hit = %{attacker: attacker, defender: defender, opts: opts, modifiers: modifiers}
+
+    damage =
+      base_damage
+      |> apply_attack_modifiers(attacker, defender, opts, :primary, modifiers)
+      |> then(&scalar_element(&1, Map.put(hit, :watk_base, &1)))
+      |> apply_equipment_taken_families(
+        attacker,
+        defender,
+        Keyword.get(opts, :skill_id),
+        hit_element(attacker, modifiers, opts),
+        opts
+      )
+
+    {:ok, damage}
   end
 
-  defp apply_modifier_pipeline(base_damage, attacker, defender, opts, attack_path) do
-    {unit_type, unit_id} = get_unit_type_and_id(attacker)
-    attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
-    forced_element = Keyword.get(opts, :element)
+  # The scalar recipe's pre-defense modifiers: size, status ATK channels and the
+  # attacker's equipment families. Element and the target's cards follow DEF.
+  defp apply_attack_modifiers(base_damage, attacker, defender, opts, attack_path, modifiers) do
     skill_id = Keyword.get(opts, :skill_id)
-    attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
+    attack_element = hit_element(attacker, modifiers, opts)
 
-    sized_damage = apply_size_modifier(base_damage, attacker, defender, opts)
-
-    total_atk =
-      sized_damage
-      |> apply_element_modifier(attack_element, defender, attacker_modifiers)
-      |> add_pseudo_element_damage(sized_damage, defender, attacker_modifiers)
-      |> apply_status_effect_damage_modifiers(
-        attacker_modifiers,
-        Keyword.get(opts, :skip_status_atk, false)
-      )
-      |> apply_equipment_attack_families(
-        attacker,
-        attacker_modifiers,
-        defender,
-        skill_id,
-        attack_element,
-        attack_path
-      )
-      |> apply_equipment_taken_families(attacker, defender, skill_id, attack_element, opts)
-
-    {:ok, total_atk}
+    base_damage
+    |> apply_size_modifier(attacker, defender, opts)
+    |> apply_status_effect_damage_modifiers(modifiers, Keyword.get(opts, :skip_status_atk, false))
+    |> apply_equipment_attack_families(
+      attacker,
+      modifiers,
+      defender,
+      skill_id,
+      attack_element,
+      attack_path
+    )
+    |> trunc()
   end
 
   @doc """
@@ -873,33 +1167,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     %{weapon | type: hand.subtype, element: hand.element}
   end
 
-  # Modifier application functions (unified from original Combat module)
-
-  defp apply_element_modifier(damage, attack_element, defender, attacker_modifiers) do
-    DamageShared.apply_element(damage, attack_element, defender, attacker_modifiers)
-  end
-
-  # A weapon-property buff that turns part of the attack into a second element
-  # (Magnum Break's fire aura) contributes `{:pseudo_element_atk, element} =>
-  # percent`. That percentage of the attack is resolved against the defender
-  # with its own element and added on top of the ordinary elemental damage,
-  # rather than replacing the attack element.
-  defp add_pseudo_element_damage(damage, base_damage, defender, attacker_modifiers) do
-    Enum.reduce(attacker_modifiers, damage, fn
-      {{:pseudo_element_atk, element}, percent}, acc when is_integer(percent) and percent > 0 ->
-        acc +
-          DamageShared.apply_element(
-            base_damage * percent / 100,
-            element,
-            defender,
-            attacker_modifiers
-          )
-
-      _modifier, acc ->
-        acc
-    end)
-  end
-
   # Attacker percent damage families. Each family (race+class, element, size,
   # skill, long-attack, short-attack) is one sequential multiplicative step. The
   # two range families are mutually exclusive — the weapon is either ranged or
@@ -951,8 +1218,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # into the element/race families through EquipmentBonuses. The ranged family is
   # a taken-rate step gated on the hit being ranged — the per-hit `:ranged` opt
   # (thrown-weapon skills), a ranged weapon class, or a long attack range (ranged
-  # mobs) — matching the `is_short` determination used at hit delivery. Each
-  # reduction family is floored at the min-1 damage convention.
+  # mobs) — matching the `is_short` determination used at hit delivery. The
+  # families follow the attribute step, so an immune hit stays 0.
   defp apply_equipment_taken_families(damage, attacker, defender, skill_id, attack_element, opts) do
     {unit_type, unit_id} = get_unit_type_and_id(defender)
     status_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
@@ -1018,10 +1285,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp apply_family_step(damage, sum), do: div(trunc(damage) * (100 + sum), 100)
 
   defp apply_taken_step(damage, 0), do: damage
-  defp apply_taken_step(damage, sum), do: max(1, div(trunc(damage) * (100 - sum), 100))
+  defp apply_taken_step(damage, sum), do: div(trunc(damage) * (100 - sum), 100)
 
   defp apply_taken_rate_step(damage, 0), do: damage
-  defp apply_taken_rate_step(damage, sum), do: max(1, div(trunc(damage) * (100 + sum), 100))
+  defp apply_taken_rate_step(damage, sum), do: div(trunc(damage) * (100 + sum), 100)
 
   defp resolve_attack_element(attacker, attacker_modifiers) do
     Map.get_lazy(attacker_modifiers, :attack_element, fn ->

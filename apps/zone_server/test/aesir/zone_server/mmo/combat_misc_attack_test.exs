@@ -212,13 +212,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :ok
       end)
 
-      expect(Knockback, :skill, fn attacker, target, 122, result, [] ->
-        assert_received :zero_damage_delivered
-        assert attacker.unit_id == @caster_id
-        assert target.unit_id == @target_id
-        assert result == %{hit?: true, target_survives?: true, coma?: false}
-        :ok
-      end)
+      # A hit below one damage per division pushes nothing.
+      reject(&Knockback.skill/5)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
         assert packet.damage == 0

@@ -426,13 +426,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
-    test "magic_damage_reduction clamps at 100 and floors damage at 1" do
+    test "magic_damage_reduction clamps at 100; only renewal keeps the pre-attribute minimum" do
       stub(ModifierCalculator, :get_all_modifiers, fn
         :mob, 2001 -> %{magic_damage_reduction: 150}
         _, _ -> %{}
       end)
 
-      assert {:ok, %{damage: 1, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(1, 0), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
   end

@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrustTest do
   end
 
   test "increases physical damage by the stored rate" do
-    stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+    CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
     stub(RaceModifiers, :player_race, fn -> :human end)
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
 

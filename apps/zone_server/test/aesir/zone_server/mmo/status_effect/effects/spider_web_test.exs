@@ -4,19 +4,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWebTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
-  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWeb
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_private
   setup :setup_ets_tables
 
   setup do
     Mimic.copy(Manager)
+    Mimic.copy(UnitRegistry)
+    # Ending the hold builds the holder's status context.
+    stub(UnitRegistry, :get_unit_info, fn _, _ -> {:ok, %{stats: %{}}} end)
     :ok
   end
 
@@ -45,48 +49,70 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWebTest do
     assert SpiderWeb.modifiers(%{state: %{groups: [51]}}, %{}) == %{flee_rate: -50}
   end
 
-  test "fire against a webbed unit gains 100 element ratio points" do
-    defender = %{unit_type: :mob, unit_id: 9_701, element: {:earth, 1}}
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 
-    assert DamageShared.apply_element(100, :fire, defender) ==
-             100 * ElementModifiers.get_modifier(:fire, :earth, 1)
+  defp hold(groups),
+    do: :ok = StatusStorage.apply_status(:mob, 9_701, :sc_spiderweb, state: %{groups: groups})
 
-    :ok = StatusStorage.apply_status(:mob, 9_701, :sc_spiderweb, state: %{groups: [51]})
+  @defender %{unit_type: :mob, unit_id: 9_701, element: {:earth, 1}}
 
-    assert DamageShared.apply_element(100, :fire, defender) ==
-             100 * ElementModifiers.get_modifier(:fire, :earth, 1, 100)
+  test "a fire attribute step against a webbed unit gains 100 ratio points" do
+    assert DamageShared.apply_element_step(100, :fire, nil, @defender) == 150
 
-    assert DamageShared.apply_element(100, :water, defender) ==
-             100 * ElementModifiers.get_modifier(:water, :earth, 1)
+    hold([51])
+
+    assert DamageShared.apply_element_step(100, :fire, nil, @defender) == mode_value(250, 300)
   end
 
-  test "a fire hit burns the web closest to running out and keeps the hold" do
+  test "a fire step burns the web closest to running out and keeps the hold" do
     web(51, 9_000)
     web(52, 5_000)
-    instance = %{state: %{groups: [51, 52]}}
+    hold([51, 52])
     expect(Manager, :destroy_async, fn 52 -> :ok end)
 
-    assert {:ok, 300, %{state: %{groups: [51]}}} =
-             SpiderWeb.absorb_damage(@target, instance, %{element: :fire, damage: 300}, %{})
+    assert SpiderWeb.consume(:mob, 9_701)
+    assert %{state: %{groups: [51]}} = StatusStorage.get_status(:mob, 9_701, :sc_spiderweb)
   end
 
-  test "a fire hit on the last web ends the hold" do
+  test "a fire step on the last web ends the hold" do
     web(51, 9_000)
+    hold([51])
+    stub(Manager, :destroy_async, fn 51 -> :ok end)
 
-    assert SpiderWeb.absorb_damage(
-             @target,
-             %{state: %{groups: [51]}},
-             %{element: :fire, damage: 300},
-             %{}
-           ) ==
-             {:remove, 300}
+    assert SpiderWeb.consume(:mob, 9_701)
+    refute StatusStorage.has_status?(:mob, 9_701, :sc_spiderweb)
   end
 
-  test "other elements pass through" do
-    instance = %{state: %{groups: [51]}}
+  test "other elements neither gain the bonus nor burn a web" do
+    hold([51])
 
-    assert SpiderWeb.absorb_damage(@target, instance, %{element: :water, damage: 300}, %{}) ==
-             {:ok, 300, instance}
+    assert DamageShared.apply_element_step(100, :water, nil, @defender) == 100
+    assert %{state: %{groups: [51]}} = StatusStorage.get_status(:mob, 9_701, :sc_spiderweb)
+  end
+
+  test "a step that loses its claim to a concurrent burn reads the hold again" do
+    web(51, 9_000)
+    web(52, 5_000)
+    web(53, 7_000)
+    hold([51, 52, 53])
+    test_pid = self()
+    stub(Manager, :destroy_async, fn gid -> send(test_pid, {:destroyed, gid}) end)
+
+    # A concurrent step burns web 52 between this step's read and its claim.
+    expect(StatusStorage, :replace_status_if_current, fn type, id, status, _read, _replacement ->
+      StatusStorage.update_status(type, id, status, &put_in(&1.state.groups, [51, 53]))
+      false
+    end)
+
+    assert SpiderWeb.consume(:mob, 9_701)
+    assert_received {:destroyed, 53}
+    refute_received {:destroyed, 52}
+    assert %{state: %{groups: [51]}} = StatusStorage.get_status(:mob, 9_701, :sc_spiderweb)
+  end
+
+  test "an unwebbed unit has nothing to consume" do
+    refute SpiderWeb.consume(:mob, 9_701)
   end
 
   test "ending the hold tears down every web" do

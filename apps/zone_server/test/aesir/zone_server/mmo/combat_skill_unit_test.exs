@@ -445,7 +445,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   test "final 1-point fixed ground magic participates in coma" do
     test_pid = self()
     mob_state = build_mob_state(0)
-    mob_state = %{mob_state | mob_data: %{mob_state.mob_data | element: {:poison, 1}}}
+    mob_state = %{mob_state | mob_data: %{mob_state.mob_data | element: {:neutral, 1}}}
     attacker = caster(100)
 
     stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
@@ -468,8 +468,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id} -> :ok end)
 
     assert :ok =
-             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :poison, 0,
-               fixed_damage: 100
+             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :neutral, 0,
+               fixed_damage: 1
              )
   end
 

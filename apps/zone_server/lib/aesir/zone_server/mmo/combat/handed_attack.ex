@@ -121,6 +121,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
        ) do
     primary = scale(primary, Passives.right_hand_damage_rate(player))
     critical_opts = if primary.is_critical, do: [force_crit: true], else: [skip_crit: true]
+    # Renewal already ran the left hand's attribute steps within the first hand's call.
+    critical_opts =
+      case Map.fetch(primary, :left_components) do
+        {:ok, left} -> [{:left_components, left} | critical_opts]
+        :error -> critical_opts
+      end
 
     case DamageCalculator.calculate_secondary_hand_damage(attacker, defender, critical_opts) do
       {:ok, secondary} ->

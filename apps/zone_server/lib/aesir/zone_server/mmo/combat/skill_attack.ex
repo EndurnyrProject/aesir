@@ -65,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @max_uint32 0xFFFF_FFFF
+  @palm_strike_id 370
 
   @typep damage_calculator ::
            (struct(), struct(), keyword() -> {:ok, map()} | {:error, atom()})
@@ -384,8 +385,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           %{display_hits: display_hits, element: element, ranged?: ranged?, coma?: coma?}
         )
 
-      result = logical_skill_result([%{hit?: true, damage: damage}], target_state, coma?)
-      maybe_apply_skill_knockback(attacker, target, skill_id, result, knockback_options)
+      results = [%{hit?: true, damage: damage}]
+      result = logical_skill_result(results, target_state, coma?)
+
+      maybe_apply_skill_knockback(
+        attacker,
+        target,
+        skill_id,
+        {results, display_hits},
+        result,
+        knockback_options
+      )
     end
 
     :ok
@@ -484,7 +494,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         end)
 
       result = logical_skill_result(results, target_state, coma_decision)
-      maybe_apply_skill_knockback(attacker, target, skill_id, result, knockback_options(opts))
+
+      maybe_apply_skill_knockback(
+        attacker,
+        target,
+        skill_id,
+        {results, display_hits},
+        result,
+        knockback_options(opts)
+      )
 
       if report_hit?, do: {:ok, reported_hit(results, result)}, else: :ok
     end
@@ -715,6 +733,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :critical_rate_bonus,
       :critical_max_weapon,
       :bonus_atk,
+      :envenom_atk,
       :base_atk_rate,
       :weight_atk,
       :ignore_size,
@@ -825,7 +844,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         end)
 
       result = logical_skill_result(results, target_state, coma_decision)
-      maybe_apply_skill_knockback(attacker, target, skill_id, result, knockback_options)
+
+      maybe_apply_skill_knockback(
+        attacker,
+        target,
+        skill_id,
+        {results, hit_opts.display_hits || 1},
+        result,
+        knockback_options
+      )
+
       connected_target_result(result.hit?, target_ref, typed_results?)
     else
       _ -> []
@@ -1144,12 +1172,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           source
         )
 
-      result = logical_skill_result([%{hit?: true, damage: damage}], target_state, coma?)
+      results = [%{hit?: true, damage: damage}]
+      result = logical_skill_result(results, target_state, coma?)
 
       maybe_apply_skill_knockback(
         attacker,
         target,
         skill_id,
+        {results, 1},
         result,
         misc_opts.knockback_options
       )
@@ -1632,6 +1662,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp reported_hit(results, result),
     do: Map.put(result, :damage, Enum.sum_by(results, & &1.damage))
+
+  # A hit pushes only when it dealt at least one damage per division (calculated
+  # or packet-only), except Palm Strike (skill.cpp: "only pushback when it hit").
+  defp maybe_apply_skill_knockback(attacker, target, skill_id, {results, display}, result, opts) do
+    divisions = max(length(results), display)
+
+    if Enum.sum_by(results, & &1.damage) >= divisions or skill_id == @palm_strike_id,
+      do: maybe_apply_skill_knockback(attacker, target, skill_id, result, opts),
+      else: :ok
+  end
 
   defp maybe_apply_skill_knockback(attacker, target, skill_id, %{hit?: true} = result, opts) do
     _ = Knockback.skill(attacker, target, skill_id, result, opts)

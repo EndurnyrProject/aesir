@@ -80,14 +80,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:patk) => integer(),
           optional(:equipment_atk_rate) => integer(),
           size_rate: integer(),
-          weapon_element: number(),
-          neutral_element: number(),
           attacker_rates: attack_rates(),
           defense: Defense.physical_context()
         }
-
-  @doc "Calculates one physical hit from already rolled components and captured modifiers."
-  @callback calculate(parts(), context()) :: integer()
 
   @doc "Applies the three attacker cardfix families in their fixed order."
   @spec attacker_cardfix(integer(), attack_rates()) :: integer()
@@ -146,11 +141,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
     implementation.apply_def(damage, context.defense)
   end
 
-  @doc "Applies the final physical reduction and minimum-damage convention."
-  @spec finish(number(), context()) :: pos_integer()
+  @doc """
+  Applies the final physical reduction. There is no minimum here: an immune
+  attribute step deals 0.
+  """
+  @spec finish(number(), context()) :: integer()
   def finish(damage, context) do
     reduction = context |> Map.get(:physical_reduction, 0) |> max(0) |> min(100)
-    max(1, rate(damage, -reduction))
+    rate(damage, -reduction)
   end
 
   defp taken_rate(damage, reduction), do: div(damage * max(100 - reduction, 0), 100)
