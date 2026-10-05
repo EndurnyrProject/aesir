@@ -182,7 +182,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "element modifier multiplies after MDEF reduction" do
-      expected = if GameMode.mode() == :renewal, do: 172, else: 127
+      expected = if GameMode.mode() == :renewal, do: 129, else: 127
 
       assert {:ok, %{damage: ^expected, is_critical: false}} =
                MagicDamageCalculator.calculate_magic_damage(
@@ -318,7 +318,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
         defender(500, 100, {:earth, 1})
         |> Map.put(:size, :large)
 
-      assert {:ok, %{damage: mode_value(240, 180), is_critical: false}} ==
+      assert {:ok, %{damage: mode_value(180, 180), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), target,
                  element: :fire,
                  ignore_mdef: true

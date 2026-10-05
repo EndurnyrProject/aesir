@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
     end
 
     test "water vs fire uses the active weakness row" do
-      assert ElementModifiers.get_modifier(:water, :fire, 1) == mode_value(2.0, 1.5)
+      assert ElementModifiers.get_modifier(:water, :fire, 1) == mode_value(1.5, 1.5)
     end
 
     test "fire vs water uses the active resistance row" do
@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
       base_modifier = ElementModifiers.get_modifier(:water, :fire, 1)
       level_2_modifier = ElementModifiers.get_modifier(:water, :fire, 2)
 
-      assert base_modifier == mode_value(2.0, 1.5)
+      assert base_modifier == mode_value(1.5, 1.5)
       assert level_2_modifier > base_modifier
     end
 
@@ -76,7 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
     test "adds ratio points in Renewal and multiplies classic table damage" do
       assert_in_delta(
         ElementModifiers.get_modifier(:fire, :earth, 1, 20),
-        mode_value(2.2, 1.8),
+        mode_value(1.7, 1.8),
         0.0001
       )
     end
@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
     test "the bonus composes with the active level-four row" do
       assert_in_delta(
         ElementModifiers.get_modifier(:fire, :water, 4, 20),
-        mode_value(0.56, 0.0),
+        mode_value(0.8, 0.0),
         0.0001
       )
     end

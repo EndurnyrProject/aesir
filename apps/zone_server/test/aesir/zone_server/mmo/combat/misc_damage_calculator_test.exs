@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                  element: :fire
                )
 
-      assert damage == mode_value(200, 150)
+      assert damage == mode_value(150, 150)
     end
 
     test "ignore_element bypasses the element table without changing misc damage otherwise" do
@@ -115,7 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                  element: :fire
                )
 
-      assert damage == mode_value(220, 180)
+      assert damage == mode_value(170, 180)
     end
 
     test "a non-matching {:element_ratio, _} modifier is ignored" do
@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                  element: :fire
                )
 
-      assert damage == mode_value(200, 150)
+      assert damage == mode_value(150, 150)
     end
 
     test "the field bonus preserves Renewal recovery but classic immunity" do

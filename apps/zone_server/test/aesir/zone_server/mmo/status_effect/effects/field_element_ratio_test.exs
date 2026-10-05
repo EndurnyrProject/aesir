@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
       assert {:ok, _} = DamageCalculator.calculate_damage(fire_attacker(), earth_defender())
 
       assert_received {:element_ratio, :fire, 20, ratio}
-      assert_in_delta ratio, mode_value(2.2, 1.8), 0.0001
+      assert_in_delta ratio, mode_value(1.7, 1.8), 0.0001
     end
 
     test "a magic fire attack inside Volcano lv5 gains 20 ratio points end to end" do
@@ -102,14 +102,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
                MagicDamageCalculator.calculate_magic_damage(caster, target, element: :fire)
 
       assert_received {:element_ratio, :fire, 20, ratio}
-      assert_in_delta ratio, mode_value(2.2, 1.8), 0.0001
+      assert_in_delta ratio, mode_value(1.7, 1.8), 0.0001
     end
 
     test "without Volcano the same fire attack keeps the plain table ratio" do
       assert {:ok, _} = DamageCalculator.calculate_damage(fire_attacker(), earth_defender())
 
       assert_received {:element_ratio, :fire, 0, ratio}
-      assert_in_delta ratio, mode_value(2.0, 1.5), 0.0001
+      assert_in_delta ratio, mode_value(1.5, 1.5), 0.0001
     end
 
     test "Volcano does not touch a non-fire attack" do

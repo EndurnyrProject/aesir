@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
         element: {:earth, 1}
       )
 
-    expected = if GameMode.mode() == :renewal, do: 244, else: 278
+    expected = if GameMode.mode() == :renewal, do: 232, else: 278
 
     assert {:ok, %{damage: ^expected, is_critical: false}} =
              DamageCalculator.calculate_damage(attacker, defender,

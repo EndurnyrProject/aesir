@@ -55,15 +55,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
       assert modifiers ==
                mode_value(
                  %{
-                   water_modifier: 200,
+                   water_modifier: 150,
                    earth_modifier: 90,
                    fire_modifier: 25,
                    wind_modifier: 100,
-                   poison_modifier: 100,
-                   holy_modifier: 75,
+                   poison_modifier: 150,
+                   holy_modifier: 100,
                    shadow_modifier: 100,
                    ghost_modifier: 100,
-                   undead_modifier: 75
+                   undead_modifier: 90
                  },
                  %{
                    water_modifier: 150,

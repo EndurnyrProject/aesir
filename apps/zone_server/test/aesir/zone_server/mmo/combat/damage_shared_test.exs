@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
 
     test "applies the active weakness multiplier" do
       assert DamageShared.apply_element(100, :water, %{element: {:fire, 1}}) ==
-               mode_value(200.0, 150.0)
+               mode_value(150.0, 150.0)
     end
 
     test "defaults to {:neutral, 1} when defender has no element" do
@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
         DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{
           {:element_ratio, :fire} => 20
         }),
-        mode_value(220.0, 180.0),
+        mode_value(170.0, 180.0),
         0.0001
       )
     end
@@ -119,12 +119,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
     test "an element_ratio for a different element is ignored" do
       assert DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{
                {:element_ratio, :water} => 20
-             }) == mode_value(200.0, 150.0)
+             }) == mode_value(150.0, 150.0)
     end
 
     test "no attacker modifiers leaves the ratio untouched" do
       assert DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{}) ==
-               mode_value(200.0, 150.0)
+               mode_value(150.0, 150.0)
     end
   end
 

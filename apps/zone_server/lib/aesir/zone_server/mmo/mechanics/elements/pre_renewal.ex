@@ -2,16 +2,16 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Elements.PreRenewal do
   @moduledoc """
   Pre-renewal element damage modifiers.
 
-  Each defense level has its own attack-element rows and defense-element columns. Integer
-  percentages are divided by 100 at lookup; the canonical dark element is exposed as `:shadow`.
-  Element-field bonuses multiply damage before the table modifier, so the combined modifier is
-  the table value multiplied by the field's percentage factor.
+  Each defense level has its own attack-element rows and defense-element columns; the canonical
+  dark element is exposed as `:shadow`. Field and status bonuses each add their truncated
+  percentage to the running damage before the table step, which truncates
+  `damage * ratio / 100`.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.Elements
 
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
-  alias Aesir.ZoneServer.Mmo.Element
+  alias Aesir.ZoneServer.Mmo.Mechanics.Elements
 
   @tables {
     # Defense level 1
@@ -69,6 +69,43 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Elements.PreRenewal do
   }
 
   @impl true
+  @spec ratio(
+          ElementModifiers.element(),
+          ElementModifiers.element(),
+          ElementModifiers.element_level()
+        ) :: integer()
+  def ratio(attack_element, defense_element, defense_level) do
+    Elements.lookup(@tables, attack_element, defense_element, defense_level) || 100
+  end
+
+  @impl true
+  @spec adjust_damage(integer(), Elements.adjustment()) :: integer()
+  def adjust_damage(damage, adjustment) do
+    case Elements.lookup(
+           @tables,
+           adjustment.attack_element,
+           adjustment.defense_element,
+           adjustment.defense_level
+         ) do
+      nil ->
+        damage
+
+      table_ratio ->
+        damage =
+          Enum.reduce(adjustment.modifiers, damage, fn {_name, points}, acc ->
+            acc + div(acc * points, 100)
+          end)
+
+        div(damage * Elements.final_ratio(table_ratio, adjustment), 100)
+    end
+  end
+
+  @doc """
+  Returns the table ratio scaled by a `ratio_bonus` percentage as a coefficient.
+
+  A preview of the table for callers that do not adjust live damage.
+  """
+  @impl true
   @spec get_modifier(
           ElementModifiers.element(),
           ElementModifiers.element(),
@@ -76,26 +113,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Elements.PreRenewal do
           number()
         ) :: float()
   def get_modifier(attack_element, defense_element, defense_level, ratio_bonus) do
-    base_modifier(attack_element, defense_element, defense_level) * (100 + ratio_bonus) / 100
+    ratio(attack_element, defense_element, defense_level) * (100 + ratio_bonus) / 10_000
   end
-
-  defp base_modifier(attack_element, defense_element, defense_level)
-       when defense_level in 1..4 do
-    case {Element.id(attack_element, nil), Element.id(defense_element, nil)} do
-      {nil, _defense_index} ->
-        1.0
-
-      {_attack_index, nil} ->
-        1.0
-
-      {attack_index, defense_index} ->
-        @tables
-        |> elem(defense_level - 1)
-        |> elem(attack_index)
-        |> elem(defense_index)
-        |> Kernel./(100)
-    end
-  end
-
-  defp base_modifier(_attack_element, _defense_element, _defense_level), do: 1.0
 end

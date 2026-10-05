@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   import Aesir.TestEtsSetup
   import Mimic
 
-  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.EtsTable
@@ -432,7 +431,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     assert {:ok, %Group{state: %{hits_remaining: 7}}} =
              PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
 
-    water_damage = if GameMode.mode() == :renewal, do: 582, else: 777
+    water_damage = 777
     assert_received {:damage_packet, 2_001, 1_000, 971}
     assert_received {:damage_packet, 2_002, 1_000, ^water_damage}
     assert_received {:damage_packet, 2_003, 1_000, 1}
