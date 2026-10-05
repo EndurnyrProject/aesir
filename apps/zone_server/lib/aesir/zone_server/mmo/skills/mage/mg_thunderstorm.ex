@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstorm do
       level,
       definition.element,
       skill_ratio(GameMode.mode()),
-      hit_count: level
+      hit_divisions: level
     )
 
     :ok

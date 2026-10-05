@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcDarkstrike do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 100,
-      hit_count: div(level + 1, 2),
+      hit_divisions: div(level + 1, 2),
       element: definition.element,
       skip_range: true
     ]

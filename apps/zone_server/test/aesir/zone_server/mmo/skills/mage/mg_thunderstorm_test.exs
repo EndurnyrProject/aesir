@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstormTest do
                                                 @renewal_ratio,
                                                 opts ->
         assert caster.unit_id == @caster_id
-        send(test_pid, {:hit, unit_type, target_id, opts[:hit_count]})
+        send(test_pid, {:hit, unit_type, target_id, opts[:hit_divisions]})
         :ok
       end)
 
@@ -112,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstormTest do
                                                 :wind,
                                                 @pre_renewal_ratio,
                                                 opts ->
-        send(test_pid, {:hit, target_id, opts[:hit_count]})
+        send(test_pid, {:hit, target_id, opts[:hit_divisions]})
         :ok
       end)
 
@@ -136,7 +136,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstormTest do
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id -> [{:mob, 2001}] end)
 
       stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, 21, 1, :wind, _ratio, opts ->
-        send(test_pid, {:hits, opts[:hit_count]})
+        send(test_pid, {:hits, opts[:hit_divisions]})
         :ok
       end)
 

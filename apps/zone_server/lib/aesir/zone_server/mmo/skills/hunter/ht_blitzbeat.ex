@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
     element: :neutral,
     range: 5,
     vulture_range: true,
-    hit_count: 1,
+    hit_count: [1, 2, 3, 4, 5],
     splash_radius: 1,
     sp_cost: [10, 13, 16, 19, 22],
     cast_time: [renewal: List.duplicate(800, 5), pre_renewal: List.duplicate(1500, 5)],
@@ -114,16 +114,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
       int: Stats.get_effective_stat(stats, :int)
     }
 
-    per_hit_damage = Formulas.blitz_beat_base_damage(level, steel_crow_level, caster_stats)
-    total_damage = per_hit_damage * level
+    base_damage = Formulas.blitz_beat_base_damage(level, steel_crow_level, caster_stats)
     definition = definition()
 
     Combat.execute_misc_splash(caster, center, definition.splash_radius,
       skill_id: definition.id,
       skill_level: level,
-      base_damage: total_damage,
+      base_damage: base_damage,
       element: definition.element,
-      display_hit_count: level,
+      hit_divisions: level,
       split: split?
     )
 

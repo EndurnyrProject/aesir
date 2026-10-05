@@ -286,8 +286,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
              SkillAttack.execute_skill_attack(caster_state, {:player, 2001},
                skill_id: 7,
                skill_level: 1,
-               ignore_flee: true,
-               display_hit_count: 5
+               ignore_flee: true
              )
 
     assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^attacker_key, {:host, 1}}}}

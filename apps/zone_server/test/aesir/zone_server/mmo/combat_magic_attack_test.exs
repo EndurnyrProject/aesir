@@ -541,7 +541,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       end)
 
       stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
-      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, 40, _hit_info -> 40 end)
+      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, 80, _hit_info -> 80 end)
       stub(StatusInterpreter, :after_damage_taken, fn :player, @target_id, _hit_info -> 0 end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       stub(PlayerSession, :apply_damage, fn _pid, 80, {:player, @caster_id} -> :ok end)
@@ -554,7 +554,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                MagicAttack.execute_magic_attack(caster_state, {:player, @target_id},
                  skill_id: 19,
                  skill_level: 2,
-                 hit_count: 2
+                 hit_divisions: 2
                )
 
       assert_received {:"$gen_cast",
@@ -722,7 +722,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                Combat.execute_magic_attack(caster, @target_id,
                  skill_id: 19,
                  skill_level: 3,
-                 hit_count: 3,
+                 hit_divisions: 3,
                  base_distance: 2,
                  origin: @center
                )
@@ -968,7 +968,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                )
     end
 
-    test "one successful coma decision marks every prepared magic fragment" do
+    test "one successful coma decision settles a multi-division magic hit once" do
       caster = build_caster()
       stub_single_target_mob()
 
@@ -978,22 +978,20 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
 
-      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, @target_id, 80, hit_info ->
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 160, hit_info ->
         assert hit_info.coma?
-
-        (Process.get(:prepared_fragment, 79) + 1)
-        |> tap(&Process.put(:prepared_fragment, &1))
+        160
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} -> :ok end)
       reject(&MobSession.apply_damage/3)
-      expect(MobSession, :apply_coma, 2, fn _pid, {:player, @caster_id} -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
 
       assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_attack(caster, @target_id,
                  skill_id: 19,
                  skill_level: 2,
-                 hit_count: 2,
+                 hit_divisions: 2,
                  element: :fire
                )
     end
@@ -1028,14 +1026,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received {:damage, 30}
     end
 
-    test "each of a multi-hit cast rolls magic damage independently and sums" do
+    test "a multi-division cast calculates once and delivers the multiplied total" do
       caster = caster_with_band(10, 1000)
       test_pid = self()
       stub_single_target_mob()
 
-      # The MATK roll now lives inside the calculator (per call); a stubbed
-      # calculator just confirms each hit is a separate calculate call summed.
-      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
         assert opts[:skill_id] == 19
         {:ok, %{damage: 30, is_critical: false}}
       end)
@@ -1056,20 +1052,46 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  skill_level: 3,
                  skill_ratio: 100,
                  element: :fire,
-                 hit_count: 3
+                 hit_divisions: 3
                )
 
       assert_received {:packet, %SkillDamage{damage: 90, div: 3}}
       assert_received {:damage, 90}
     end
 
-    test "display_hit_count splits one hit's packet without changing the damage" do
+    test "negative magic divisions quantize before absorption and reflection" do
+      caster = build_caster()
+      stub_single_target_mob()
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 17, is_critical: false}}
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 15, _hit_info -> 15 end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        assert packet.damage == 15
+        assert packet.div == 5
+        :ok
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, 15, @caster_id -> :ok end)
+
+      assert {:ok, {:mob, @target_id}} =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 85,
+                 skill_level: 1,
+                 hit_divisions: -5
+               )
+    end
+
+    test "negative divisions quantize one hit's total and show the division count" do
       caster = caster_with_band(10, 1000)
       test_pid = self()
       stub_single_target_mob()
 
       stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
-        {:ok, %{damage: 90, is_critical: false}}
+        {:ok, %{damage: 91, is_critical: false}}
       end)
 
       stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
@@ -1088,8 +1110,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  skill_level: 1,
                  skill_ratio: 100,
                  element: :holy,
-                 hit_count: 1,
-                 display_hit_count: 3
+                 hit_divisions: -3
                )
 
       assert_received {:packet, %SkillDamage{damage: 90, div: 3}}
@@ -1163,7 +1184,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received {:damage, 60}
     end
 
-    test "equal modified magic multi-hits retain their combined packet" do
+    test "multi-division magic applies its pre-delivery modifier once to the total" do
       caster = build_caster()
       test_pid = self()
       stub_single_target_mob()
@@ -1172,7 +1193,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         {:ok, %{damage: 30, is_critical: false}}
       end)
 
-      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, @target_id, 30, _hit_info -> 60 end)
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 60, _hit_info -> 120 end)
 
       stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
         send(test_pid, {:packet, packet})
@@ -1190,7 +1211,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  skill_level: 2,
                  skill_ratio: 100,
                  element: :fire,
-                 hit_count: 2
+                 hit_divisions: 2
                )
 
       assert_received {:packet, %SkillDamage{damage: 120, div: 2}}
@@ -1240,7 +1261,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  skill_level: 1,
                  skill_ratio: 200,
                  element: :earth,
-                 hit_count: 1
+                 hit_divisions: 1
                )
     end
 
@@ -1322,7 +1343,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  skill_level: 1,
                  skill_ratio: 100,
                  element: :fire,
-                 hit_count: 1
+                 hit_divisions: 1
                )
     end
   end
@@ -1370,7 +1391,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       stub(EquipComa, :trigger?, fn ^caster, ^target -> false end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-      stub(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, 120, @caster_id -> :ok end)
 
       assert :ok =
                MagicAttack.apply_skill_unit_damage(
@@ -1389,6 +1410,46 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received {:source_session, {:equipment, {:autobonus_activate, ^attacker_key, _}}}
       refute_received {:source_session, {:equipment, {:autobonus_activate, ^attacker_key, _}}}
       refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^attacker_key, _}}}
+    end
+
+    test "Fire Pillar divides only when its caster is a player" do
+      stub_single_target_mob()
+      test_pid = self()
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 17, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:pillar_packet, packet.damage, packet.div})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, _source ->
+        send(test_pid, {:pillar_damage, damage})
+        :ok
+      end)
+
+      for {caster, expected} <- [
+            {PlayerState.to_combatant(build_caster()), 15},
+            {MobState.to_combatant(build_mob_state(@caster_id, 150, 150)), 51}
+          ] do
+        assert :ok =
+                 MagicAttack.apply_skill_unit_damage(
+                   caster,
+                   :mob,
+                   @target_id,
+                   80,
+                   1,
+                   :fire,
+                   100,
+                   hit_divisions: 3,
+                   divide_hits_for_player?: true
+                 )
+
+        assert_received {:pillar_packet, ^expected, 3}
+        assert_received {:pillar_damage, ^expected}
+      end
     end
 
     test "applies explicit fixed elemental damage without invoking the MATK calculator" do
@@ -1732,10 +1793,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received {:coma_decision, 2002}
     end
 
-    test "multi-round splash fixes one coma decision across the logical cast" do
+    test "splash divisions resolve once per target with one coma decision" do
       caster = put_in(build_caster().stats.modifiers.equipment, %{{:add_skill_blow, 91} => 4})
 
-      expect(SpatialIndex, :get_all_units_in_range, 2, fn @map_name, 150, 150, 4 ->
+      expect(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
         [{:mob, @target_id}]
       end)
 
@@ -1743,22 +1804,20 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         {:ok, {MobState, build_mob_state(@target_id, 150, 150), self()}}
       end)
 
-      expect(MagicDamageCalculator, :calculate_magic_damage, 2, fn _attacker, _target, _opts ->
-        round = Process.get(:splash_round, 0) + 1
-        Process.put(:splash_round, round)
-        {:ok, %{damage: if(round == 1, do: 40, else: 10_000), is_critical: false}}
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
       end)
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
 
-      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, @target_id, damage, hit_info ->
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
         assert hit_info.coma?
-        damage
+        80
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       reject(&MobSession.apply_damage/3)
-      expect(MobSession, :apply_coma, 2, fn _pid, {:player, @caster_id} -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
 
       expect(Knockback, :skill, fn attacker, target, 91, result, opts ->
         assert attacker.equip_modifiers[{:add_skill_blow, 91}] == 4
@@ -1768,13 +1827,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         :ok
       end)
 
-      assert [{:mob, @target_id}, {:mob, @target_id}] =
+      assert [{:mob, @target_id}] =
                Combat.execute_magic_splash(caster, @center, 2,
                  skill_id: 91,
                  skill_level: 2,
                  skill_ratio: 125,
                  element: :earth,
-                 hit_count: 2
+                 hit_divisions: 2
                )
     end
 
@@ -1828,8 +1887,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 151, 150), self()}}
       end)
 
-      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
-        {:ok, %{damage: 100, is_critical: false}}
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
+        assert opts[:matk_divisor] == 2
+        {:ok, %{damage: 50, is_critical: false}}
       end)
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)

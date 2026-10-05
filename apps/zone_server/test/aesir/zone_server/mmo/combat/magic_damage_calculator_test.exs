@@ -141,6 +141,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       end
     end
 
+    test "splash splits rolled MATK before MDEF and attribute arithmetic" do
+      assert {:ok, %{damage: 40}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5),
+                 matk_divisor: 2,
+                 skill_ratio: 100
+               )
+    end
+
     test "baseline single hit applies MDEF reduction and floors" do
       # Renewal: trunc(100 * 1010 / 1100 - 5). Classic: 100 * 90% - 5.
       assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==

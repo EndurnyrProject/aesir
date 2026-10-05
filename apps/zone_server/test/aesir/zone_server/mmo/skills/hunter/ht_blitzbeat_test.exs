@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       assert HtBlitzbeat.definition(:pre_renewal).fixed_cast_time == []
       assert definition.fixed_cast_time == List.duplicate(200, 5)
       assert definition.after_cast_delay == List.duplicate(1_000, 5)
-      assert definition.hit_count == 1
+      assert definition.hit_count == [1, 2, 3, 4, 5]
       assert definition.splash_radius == 1
     end
 
@@ -118,9 +118,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
         assert Keyword.delete(opts, :split) == [
                  skill_id: 129,
                  skill_level: 5,
-                 base_damage: 1_380,
+                 base_damage: 276,
                  element: :neutral,
-                 display_hit_count: 5
+                 hit_divisions: 5
                ]
 
         [2001, 2002]
@@ -199,8 +199,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       caster = player(sp: 3)
 
       expect(Combat, :execute_misc_splash, fn ^caster, {151, 150}, 1, opts ->
-        assert opts[:base_damage] == 1_380
-        assert opts[:display_hit_count] == 5
+        assert opts[:base_damage] == 276
+        assert opts[:hit_divisions] == 5
         refute opts[:split]
         [2002]
       end)
@@ -216,8 +216,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       caster = player(sp: 3)
 
       expect(Combat, :execute_misc_splash, fn ^caster, {151, 150}, 1, opts ->
-        assert opts[:base_damage] == 790
-        assert opts[:display_hit_count] == 5
+        assert opts[:base_damage] == 158
+        assert opts[:hit_divisions] == 5
         assert opts[:split]
         [2002, 2003]
       end)

@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
         stub(Combat, :resolve_combatant, fn @target_id -> {:ok, target} end)
 
         expect(Combat, :execute_magic_attack, fn ^caster, @target_id, opts ->
-          assert opts[:hit_count] == hits
+          assert opts[:hit_divisions] == hits
           assert opts[:element] == :ghost
           assert opts[:skill_ratio] == 100
           {:ok, {:mob, @target_id}}
@@ -182,7 +182,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
 
       expect(Combat, :execute_magic_attack, fn ^caster, @target_id, opts ->
         assert opts[:skill_ratio] == 100 + 10 * 6
-        assert opts[:hit_count] == 1
         assert opts[:element] == :water
         {:error, :target_out_of_range}
       end)

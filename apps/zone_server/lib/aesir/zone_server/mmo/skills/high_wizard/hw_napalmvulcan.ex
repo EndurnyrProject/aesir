@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
       |> Combat.execute_magic_splash(center, definition.splash_radius,
         skill_id: definition.id,
         skill_level: level,
-        hit_count: level,
+        hit_divisions: level,
         element: definition.element,
         skill_ratio: ratio(combatant, level),
         split: GameMode.mode() == :pre_renewal

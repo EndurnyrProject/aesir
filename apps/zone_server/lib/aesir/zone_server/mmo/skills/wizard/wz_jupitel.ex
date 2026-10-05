@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 100,
-      hit_count: level + 2,
+      hit_divisions: level + 2,
       element: definition.element,
       skip_range: true,
       base_distance: div(level, 2) + 2,

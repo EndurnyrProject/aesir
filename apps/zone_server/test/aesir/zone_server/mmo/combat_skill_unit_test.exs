@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
@@ -765,9 +766,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
                20
              )
 
-    assert_received {:broadcast, raw_damage, 20}
-    assert_received {:damage, ^raw_damage}
-    assert rem(raw_damage, 20) != 0
+    assert_received {:broadcast, multiplied_damage, 20}
+    assert_received {:damage, ^multiplied_damage}
+    single_roll = div(multiplied_damage, 20)
+    assert multiplied_damage == single_roll * 20
+    assert rem(single_roll, 20) != 0
 
     assert :ok =
              Combat.apply_skill_unit_damage(
@@ -783,8 +786,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     assert_received {:broadcast, rounded_damage, 20}
     assert_received {:damage, ^rounded_damage}
-    assert rounded_damage == div(raw_damage, 20) * 20
-    assert rounded_damage < raw_damage
+    assert rounded_damage == div(single_roll, 20) * 20
+    assert rounded_damage < single_roll
   end
 
   test "threads the skill id into the ground-unit magic calculation" do
@@ -869,13 +872,16 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     assert :ok =
              Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 80, 1, :fire, 60,
                bonus_matk: 150,
-               hit_count: 3,
+               hit_divisions: 3,
                dst_delay: 600,
                divide_hits_for_player?: true
              )
 
+    # One roll: 100 MATK at 60% plus the flat 150, against a Water 1 mob. Renewal
+    # takes Fire->Water 90 (189); classic takes soft MDEF 5 first, then 50 (102).
+    # A player's divisions are negative, so the total floors to a multiple of 3.
     assert_received {:broadcast, damage, 3, 600}
     assert_received :walk_delayed
-    assert damage > 150
+    assert damage == if(GameMode.mode() == :renewal, do: 189, else: 102)
   end
 end

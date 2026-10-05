@@ -245,7 +245,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
       assert opts[:skill_id] == 84
       assert opts[:skill_level] == 1
       assert opts[:skill_ratio] == 100
-      assert opts[:hit_count] == 3
+      assert opts[:hit_divisions] == 3
       assert opts[:element] == :wind
       assert opts[:skip_range] == true
       assert opts[:base_distance] == 2

@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     assert definition.damage_kind == :magic
     assert definition.element == :fire
     assert definition.range == 9
-    assert definition.hit_count == 3
+    assert definition.hit_count == Enum.to_list(3..12)
 
     assert WzFirepillar.definition(:pre_renewal).cast_time == [
              3000,
@@ -159,7 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
                                               :fire,
                                               60,
                                               bonus_matk: 150,
-                                              hit_count: 3,
+                                              hit_divisions: 3,
                                               dst_delay: 600,
                                               divide_hits_for_player?: true ->
       send(test_pid, :hit)
@@ -191,7 +191,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
                                               :fire,
                                               160,
                                               bonus_matk: 400,
-                                              hit_count: 8,
+                                              hit_divisions: 8,
                                               dst_delay: 1600,
                                               divide_hits_for_player?: true ->
       assert caster.unit_id == @caster_id

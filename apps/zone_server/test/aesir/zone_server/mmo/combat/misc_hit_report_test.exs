@@ -71,6 +71,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
     end
   end
 
+  test "signed misc divisions normalize before target preparation", %{caster: caster, mob: mob} do
+    target = %{mob | hp: 1000, max_hp: 2000}
+    :ok = UnitRegistry.register_unit(:mob, 42, MobState, target, self())
+    stub(TargetResolver, :resolve, fn {:mob, 42} -> {:ok, self(), target, :mob} end)
+
+    for {divisions, expected} <- [{3, 303}, {-3, 99}, {-5, 100}] do
+      expect(DamageApplication, :prepare_unit_damage, fn :mob, 42, ^expected, hit, _source ->
+        {expected, Map.put(hit, :pre_delivery_prepared?, true)}
+      end)
+
+      assert {:ok, %{damage: ^expected}} =
+               SkillAttack.execute_misc_attack(caster, {:mob, 42},
+                 skill_id: 489,
+                 skill_level: 5,
+                 base_damage: 101,
+                 ignore_element: true,
+                 hit_divisions: divisions,
+                 report_hit: true
+               )
+    end
+  end
+
   test "survival uses settled rather than raw damage", %{caster: caster, mob: mob} do
     target = %{mob | hp: 750, max_hp: 2000}
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, target, self())

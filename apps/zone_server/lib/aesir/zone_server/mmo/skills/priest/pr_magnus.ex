@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
         group.level,
         definition.element,
         ratio,
-        hit_count: group.level
+        hit_divisions: group.level
       )
     end
 

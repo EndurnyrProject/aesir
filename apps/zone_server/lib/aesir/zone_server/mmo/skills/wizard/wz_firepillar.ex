@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
     damage_kind: :magic,
     element: :fire,
     range: 9,
-    hit_count: 3,
+    hit_count: Enum.to_list(3..12),
     splash_radius: 2,
     hit_interval: 2_000,
     unit_duration: List.duplicate(30_000, 10),
@@ -150,7 +150,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
       definition.element,
       skill_ratio(group.level),
       bonus_matk: 100 + 50 * group.level,
-      hit_count: hits,
+      hit_divisions: hits,
       dst_delay: group.state.target_delay,
       divide_hits_for_player?: true
     )

@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
     element: [renewal: :neutral, pre_renewal: :earth],
     range: 18,
     splash_radius: 2,
+    hit_count: [renewal: [2, 4, 6, 8, 10], pre_renewal: 1],
     sp_cost: [renewal: [60, 70, 80, 90, 100], pre_renewal: [20, 40, 60, 80, 100]],
     cast_time: List.duplicate(5_000, 5),
     fixed_cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
@@ -84,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
     Combat.execute_magic_splash(caster, center, definition.splash_radius,
       skill_id: definition.id,
       skill_level: level,
-      hit_count: 2 * level,
+      hit_divisions: Definition.hit_count_at_level(definition, level),
       element: definition.element,
       skill_ratio: LevelModifier.skill_ratio(100 * level, caster.stats.progression.base_level),
       line_of_sight: true

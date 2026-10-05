@@ -77,8 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
       skill_level: level,
       skill_ratio: LevelModifier.skill_ratio(500 + 150 * level, base_level(caster)),
       element: :holy,
-      hit_count: 1,
-      display_hit_count: 3,
+      hit_divisions: 3,
       skip_range: true
     )
   end

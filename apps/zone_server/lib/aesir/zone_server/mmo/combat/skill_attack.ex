@@ -65,7 +65,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @max_uint32 0xFFFF_FFFF
   @palm_strike_id 370
 
   @typep damage_calculator ::
@@ -870,6 +869,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:base_damage` - the skill's per-level base damage (required)
     - `:element` - the skill's attack element (default `:neutral`)
+    - `:hit_divisions` - signed divisions of the one calculated hit (default `1`);
+      the packet shows the normalized count
     - `:ignore_element` - bypass the element table (default `false`)
     - `:bypass_reductions` - deliver without magic reduction or absorbing
       statuses (pre-renewal Gravitation Field, Gloria Domini) (default `false`)
@@ -918,7 +919,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       skill_level,
       element,
       base_damage,
-      1,
+      Keyword.get(opts, :hit_divisions, 1),
       %{
         authorize_target: authorize_target,
         ignore_element?: Keyword.get(opts, :ignore_element, false),
@@ -942,7 +943,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:base_damage` - the skill's per-level base damage (required)
     - `:element` - the skill's attack element (default `:neutral`)
-    - `:display_hit_count` - packet-only divisions for the total damage (default `1`)
+    - `:hit_divisions` - signed divisions of each target's one calculated hit
+      (default `1`); the packet shows the normalized count
     - `:split` - divide one supplied base by the selected living-enemy count
       before target-specific damage processing (default `false`)
     - `:ignore_element` - bypass the element table (default `false`)
@@ -960,8 +962,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     skill_level = Keyword.fetch!(opts, :skill_level)
     base_damage = Keyword.fetch!(opts, :base_damage)
     element = Keyword.get(opts, :element, :neutral)
-    display_hits = display_hit_count!(opts)
-
     target_skill_units? = Keyword.get(opts, :target_skill_units, false)
 
     targets =
@@ -981,7 +981,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              skill_level,
              element,
              base_damage,
-             display_hits,
+             Keyword.get(opts, :hit_divisions, 1),
              %{
                authorize_target: &Targeting.validate_enemy/2,
                ignore_element?: ignore_element?,
@@ -1036,7 +1036,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           skill_level,
           Keyword.get(opts, :element, :neutral),
           base_damage,
-          display_hit_count!(opts),
+          Keyword.get(opts, :hit_divisions, 1),
           %{
             authorize_target: authorize_target,
             ignore_element?: Keyword.get(opts, :ignore_element, false),
@@ -1068,13 +1068,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   defp split_base_damage(base_damage, targets, true), do: div(base_damage, length(targets))
   defp split_base_damage(base_damage, _targets, false), do: base_damage
 
-  defp display_hit_count!(opts) do
-    case Keyword.get(opts, :display_hit_count, 1) do
-      count when is_integer(count) and count > 0 and count <= @max_uint32 -> count
-      invalid -> raise ArgumentError, "invalid display hit count: #{inspect(invalid)}"
-    end
-  end
-
   defp apply_misc_hit(
          attacker,
          target_ref,
@@ -1082,7 +1075,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_level,
          element,
          base_damage,
-         display_hits,
+         hit_divisions,
          misc_opts
        ) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
@@ -1098,6 +1091,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              target,
              misc_damage_opts(base_damage, element, misc_opts.ignore_element?)
            ) do
+      {damage, divisions} = DamageShared.normalize_damage_divisions(damage, hit_divisions)
       coma? = decide_coma(attacker, target, damage)
 
       hit_info = %{
@@ -1133,7 +1127,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           skill_id,
           skill_level,
           damage,
-          div: display_hits
+          div: divisions
         )
 
       DamageApplication.broadcast_nearby(target, packet)
@@ -1148,7 +1142,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           source
         )
 
-      hit = %{hit?: true, damage: damage, divisions: 1}
+      hit = %{hit?: true, damage: damage, divisions: divisions}
       result = logical_skill_result(hit, target_state, coma?)
 
       maybe_apply_skill_knockback(

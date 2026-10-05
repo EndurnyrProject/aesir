@@ -61,7 +61,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylightTest do
         assert opts[:skill_id] == 156
         assert opts[:skill_level] == 1
         assert opts[:skill_ratio] == 125
-        assert opts[:hit_count] == 1
         assert opts[:element] == :holy
         {:ok, {:player, @target_id}}
       end)

@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       assert definition.range == 9
       assert definition.splash_radius == 6
       assert definition.hit_interval == 1_250
-      assert definition.hit_count == 20
+      assert definition.hit_count == -20
       assert definition.unit_duration == List.duplicate(1_000, 10)
       assert definition.duration == List.duplicate(18_000, 10)
       assert definition.sp_cost == [60, 64, 68, 72, 76, 80, 84, 88, 92, 96]
@@ -215,7 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
   end
 
   test "carries the classic data" do
-    assert WzVermilion.definition(:pre_renewal).hit_count == 10
+    assert WzVermilion.definition(:pre_renewal).hit_count == -10
     assert WzVermilion.definition(:pre_renewal).unit_duration == List.duplicate(4_000, 10)
     assert WzVermilion.definition(:pre_renewal).duration == List.duplicate(30_000, 10)
 

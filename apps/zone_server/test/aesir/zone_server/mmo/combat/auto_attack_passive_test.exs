@@ -347,8 +347,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
     test "an attack replacement never dispatches",
          %{attacker: attacker, player_state: player_state} do
       stub(Passives, :attack_replacement, fn _player ->
-        {:skill_attack,
-         [skill_id: 263, skill_level: 5, skill_ratio: 200, display_hit_count: 3, skip_crit: true],
+        {:skill_attack, [skill_id: 263, skill_level: 5, skill_ratio: 200, skip_crit: true],
          :quadruple}
       end)
 

@@ -491,16 +491,16 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
                  skill_level: 5,
                  base_damage: 201,
                  element: :wind,
-                 display_hit_count: 5,
+                 hit_divisions: 5,
                  split: true
                )
 
       assert_received {:calculated, [base_damage: 100, element: :wind]}
       assert_received {:calculated, [base_damage: 100, element: :wind]}
-      assert_received {:packet, %SkillDamage{damage: 100, div: 5}}
-      assert_received {:packet, %SkillDamage{damage: 100, div: 5}}
-      assert_received {:damage, 100}
-      assert_received {:damage, 100}
+      assert_received {:packet, %SkillDamage{damage: 500, div: 5}}
+      assert_received {:packet, %SkillDamage{damage: 500, div: 5}}
+      assert_received {:damage, 500}
+      assert_received {:damage, 500}
     end
 
     test "split damage returns cleanly when no living enemies are selected" do
@@ -518,7 +518,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
                )
     end
 
-    test "display_hit_count changes only packet divisions" do
+    test "negative divisions quantize each target's total and show the division count" do
       caster = build_caster()
       test_pid = self()
 
@@ -533,7 +533,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
       stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
         send(test_pid, {:calculated, opts})
-        {:ok, %{damage: 40, is_critical: false}}
+        {:ok, %{damage: 43, is_critical: false}}
       end)
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, %SkillDamage{} = packet ->
@@ -552,7 +552,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
           skill_level: 5,
           base_damage: 500,
           element: :neutral,
-          display_hit_count: 5
+          hit_divisions: -5
         )
 
       assert Enum.sort(hits) == [2001, 2002]
@@ -562,21 +562,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       assert_received {:packet, %SkillDamage{damage: 40, div: 5}}
       assert_received {:damage, 40}
       assert_received {:damage, 40}
-    end
-
-    test "rejects display hit counts that cannot be encoded as positive uint32 values" do
-      caster = build_caster()
-
-      for invalid <- [0, -1, 1.5, :many, 0x1_0000_0000] do
-        assert_raise ArgumentError, ~r/invalid display hit count/, fn ->
-          Combat.execute_misc_splash(caster, @center, 1,
-            skill_id: 129,
-            skill_level: 5,
-            base_damage: 500,
-            display_hit_count: invalid
-          )
-        end
-      end
     end
 
     test "revalidates selected recipients and skips one that died before delivery" do
@@ -610,7 +595,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
                  skill_id: 129,
                  skill_level: 5,
                  base_damage: 500,
-                 display_hit_count: 5
+                 hit_divisions: -5
                )
 
       assert_received {:packet, %SkillDamage{target_id: 2002, div: 5}}

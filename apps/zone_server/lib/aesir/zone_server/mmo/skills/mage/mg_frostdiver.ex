@@ -45,7 +45,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 100 + 10 * level,
-      hit_count: 1,
       element: definition.element,
       skip_range: true
     ]

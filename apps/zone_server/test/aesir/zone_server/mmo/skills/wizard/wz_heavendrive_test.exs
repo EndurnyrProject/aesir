@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
         assert opts[:skill_ratio] == 125
         assert opts[:element] == :earth
         assert opts[:split] == false
-        assert opts[:hit_count] == 1
+        assert opts[:hit_divisions] == 1
         [{:mob, 2_001}]
       end)
 
@@ -181,7 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
 
       expect(Combat, :execute_magic_splash, fn ^caster, {150, 150}, 2, opts ->
         assert opts[:skill_level] == 5
-        assert opts[:hit_count] == 5
+        assert opts[:hit_divisions] == 5
 
         List.duplicate([{:mob, 2_001}, {:mob, 2_002}], 5)
         |> List.flatten()

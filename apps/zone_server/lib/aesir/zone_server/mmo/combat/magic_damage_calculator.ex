@@ -32,6 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     * `:bonus_matk`: flat addition after the skill ratio, default `0`.
     * `:element`: spell element, default `:neutral`.
     * `:skill_id`: selects equipment skill rates, never an alternate formula.
+    * `:matk_divisor`: split a rolled MATK among splash recipients before the
+      skill ratio, defense and element steps. Default `1`.
     * `:fixed_damage`: returns this amount without rolls or modifier lookups.
     * `:ignore_mdef`: bypasses both MDEF components, not cardfix, element,
       skill/status channels or Renewal MRes. Default `false`.
@@ -53,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   defdelegate roll_matk(combat_stats), to: DamageInputs
 
   defp calculate_pipeline_damage(attacker, defender, opts) do
-    matk = roll_matk(attacker.combat_stats)
+    matk = div(roll_matk(attacker.combat_stats), Keyword.get(opts, :matk_divisor, 1))
     modifiers = combatant_modifiers(attacker)
     defender_modifiers = combatant_modifiers(defender)
     context = DamageInputs.magic_context(attacker, defender, opts, modifiers, defender_modifiers)

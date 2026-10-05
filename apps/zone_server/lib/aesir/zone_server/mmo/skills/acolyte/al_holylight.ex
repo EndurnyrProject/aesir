@@ -47,7 +47,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 125,
-      hit_count: 1,
       element: definition.element,
       skip_range: true
     ]

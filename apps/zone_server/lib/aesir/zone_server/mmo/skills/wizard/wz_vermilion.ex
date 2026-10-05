@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion do
     element: :wind,
     splash_radius: 6,
     hit_interval: 1_250,
-    hit_count: [renewal: 20, pre_renewal: 10],
+    hit_count: [renewal: -20, pre_renewal: -10],
     unit_duration: [renewal: List.duplicate(1_000, 10), pre_renewal: List.duplicate(4_000, 10)],
     duration: [renewal: List.duplicate(18_000, 10), pre_renewal: List.duplicate(30_000, 10)],
     sp_cost: [60, 64, 68, 72, 76, 80, 84, 88, 92, 96],
@@ -103,7 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion do
            group.level,
            definition.element,
            skill_ratio(group.level, group.caster_type == :player),
-           -definition.hit_count
+           definition.hit_count
          ) do
       :ok ->
         StatusInterpreter.apply_status(unit_type, target_id, definition.status,

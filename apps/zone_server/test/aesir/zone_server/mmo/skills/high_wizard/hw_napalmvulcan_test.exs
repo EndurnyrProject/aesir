@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
 
     expect(Combat, :execute_magic_splash, fn ^caster, {110, 100}, 1, opts ->
       assert opts[:skill_ratio] == 350
-      assert opts[:hit_count] == 5
+      assert opts[:hit_divisions] == 5
       assert opts[:element] == :ghost
       refute opts[:split]
       []

@@ -139,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
            group.level,
            definition.element,
            skill_ratio(),
-           hit_count: hits_per_meteor(group.level)
+           hit_divisions: hits_per_meteor(group.level)
          ) do
       :ok ->
         StatusInterpreter.apply_status(unit_type, target_id, :sc_stun,

@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
       end)
 
       stub(Combat, :apply_skill_unit_damage, fn
-        %{unit_id: @caster_id}, :mob, target_id, 79, 10, :holy, ratio, hit_count: 10 ->
+        %{unit_id: @caster_id}, :mob, target_id, 79, 10, :holy, ratio, hit_divisions: 10 ->
           send(test_pid, {:hit, target_id, ratio})
           :ok
       end)
@@ -163,7 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
       stub(SpatialIndex, :get_unit_position, fn :mob, _id -> {:ok, {150, 150, @map_name}} end)
 
       stub(Combat, :apply_skill_unit_damage, fn
-        %{unit_id: @caster_id}, :mob, target_id, 79, 10, :holy, ratio, hit_count: 10 ->
+        %{unit_id: @caster_id}, :mob, target_id, 79, 10, :holy, ratio, hit_divisions: 10 ->
           send(test_pid, {:hit, target_id, ratio})
           :ok
       end)

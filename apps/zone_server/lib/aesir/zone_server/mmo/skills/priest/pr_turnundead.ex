@@ -104,7 +104,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrTurnundead do
           skill_id: definition.id,
           skill_level: level,
           skill_ratio: fallback_skill_ratio(level),
-          hit_count: 1,
           element: definition.element,
           ignore_mdef: true,
           skip_range: true
