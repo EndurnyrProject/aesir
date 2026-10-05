@@ -176,8 +176,9 @@ boot. The mix tasks (in `apps/zone_server/lib/mix/tasks/`) are idempotent, deter
   and pre-renewal NPC graphs -> one scoped module corpus.
 - `mix aesir.import.mapcache [<gat_dir>] [<out>]` - `.gat` files -> `priv/maps.mcache` (zlib walkability).
 
-Zone DBs use `:commons, :game_mode`: renewal is the default (`re/`), and
-`AESIR_DB_MODE=pre_renewal` selects the shipped `pre-re/` corpus. Its pinned source,
+Zone DBs use `:commons, :game_mode`: `AESIR_DB_MODE=renewal` selects `re/` and
+`AESIR_DB_MODE=pre_renewal` the shipped `pre-re/` corpus. With the variable unset,
+`config/config.exs` boots pre-renewal, so set it explicitly whenever the mode matters. Its pinned source,
 complete regeneration sequence, and intentional exclusions are documented in
 `apps/zone_server/priv/db/pre-re/README.md`. Local `priv/db/import/` YAML is gitignored and loads
 after shipped data: keyed rows override, maps merge, and spawns append-only per map (base spawns
@@ -255,7 +256,8 @@ Integration-test isolation, the determinism checklist, and Mimic sharp edges are
 The four mode aliases override an inherited `AESIR_DB_MODE` before boot and forward normal test
 arguments (paths, `--only`); run them serially in separate Mix invocations when the gate above
 requires the matrix. Plain `mix test` and `mix test.integration` retain environment-based selection
-(Renewal by default).
+(pre-renewal when `AESIR_DB_MODE` is unset, per `config/config.exs`); run app-level test commands
+with `AESIR_DB_MODE=renewal` or `=pre_renewal` set explicitly.
 
 **Reading umbrella results.** The umbrella aliases run every app in sequence, so `tail` only shows
 the last app (`account_server`, 10 tests) and hides zone_server failures. Pipe through this filter
