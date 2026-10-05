@@ -1179,6 +1179,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       refute StatusStorage.has_status?(:player, target_id, :sc_stone)
     end
 
+    test "magic immunity refuses before a re-application can cure the petrification" do
+      target_id = 51
+      register_player_with_magic_reduction(target_id, 50)
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_stone, duration: 10_000)
+
+      result =
+        Origin.with_skill(:mg_stonecurse, {:player, 52}, fn ->
+          Interpreter.apply_status(:player, target_id, :sc_stonewait,
+            caster_id: 52,
+            source_type: :player,
+            bypass_resistance: true
+          )
+        end)
+
+      assert result == {:error, :magic_immune}
+      assert StatusStorage.has_status?(:player, target_id, :sc_stone)
+    end
+
     test "applies a magic status below fifty percent equipment immunity" do
       target_id = 42
       register_player_with_magic_reduction(target_id, 49)

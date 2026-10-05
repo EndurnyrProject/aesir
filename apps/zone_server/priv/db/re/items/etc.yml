@@ -2848,7 +2848,7 @@
     - left_hand
   name: Argos Card
   on_equip: |-
-    ctx = bonus(ctx, {:res_eff, :sc_stone}, 2000)
+    ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 2000)
     ctx = bonus(ctx, :def, 1)
     ctx
   type: card
@@ -3007,7 +3007,7 @@
     - left_hand
   name: Munak Card
   on_equip: |-
-    ctx = bonus(ctx, {:res_eff, :sc_stone}, 1500)
+    ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 1500)
     ctx = bonus(ctx, {:subele, :earth}, 5)
     ctx = bonus(ctx, :def, 1)
     ctx
@@ -3384,7 +3384,7 @@
   name: Medusa Card
   on_equip: |-
     ctx = bonus(ctx, {:subrace, :demon}, 15)
-    ctx = bonus(ctx, {:res_eff, :sc_stone}, 10000)
+    ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 10000)
     ctx
   type: card
   weight: 10
@@ -3908,7 +3908,7 @@
   locations:
     - armor
   name: Dark Frame Card
-  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_stone}, 600)
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_stonewait}, 600)
   type: card
   weight: 10
 - aegis_name: Dark_Priest_Card
@@ -5619,7 +5619,7 @@
   locations:
     - armor
   name: Pest Card
-  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_stone}, (300 + (600 * bool(ctx, (stat(ctx, :int) >= 77)))))
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_stonewait}, (300 + (600 * bool(ctx, (stat(ctx, :int) >= 77)))))
   type: card
   weight: 10
 - aegis_name: Fake_Angel_Card
@@ -6083,7 +6083,7 @@
       ctx
     end
     ctx = if (stat(ctx, :vit) >= 80) do
-      ctx = bonus(ctx, {:res_eff, :sc_stone}, 5000)
+      ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 5000)
       ctx = bonus(ctx, {:res_eff, :sc_sleep}, 5000)
       ctx
     else
@@ -6813,7 +6813,7 @@
   name: Seeker Card
   on_equip: |-
     ctx = grant_skill(ctx, 16, 1)
-    ctx = bonus(ctx, {:res_eff, :sc_stone}, 3000)
+    ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 3000)
     ctx = bonus(ctx, :mdef, 10)
     ctx
   type: card
@@ -7123,11 +7123,11 @@
     ctx = bonus(ctx, {:res_eff, :sc_blind}, 3000)
     ctx = bonus(ctx, {:res_eff, :sc_stun}, 3000)
     ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
-    ctx = bonus(ctx, {:res_eff, :sc_stone}, 3000)
+    ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 3000)
     ctx = bonus(ctx, {:add_eff_when_hit, :sc_blind}, 500)
     ctx = bonus(ctx, {:add_eff_when_hit, :sc_stun}, 500)
     ctx = bonus(ctx, {:add_eff_when_hit, :sc_curse}, 500)
-    ctx = bonus(ctx, {:add_eff_when_hit, :sc_stone}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_stonewait}, 500)
     ctx
   type: card
   weight: 10
@@ -29384,7 +29384,7 @@
   on_equip: |-
     ctx = bonus(ctx, :atk, (100 + (10 * refine(ctx))))
     ctx = bonus(ctx, {:res_eff, :sc_freeze}, 10000)
-    ctx = bonus(ctx, {:res_eff, :sc_stone}, 10000)
+    ctx = bonus(ctx, {:res_eff, :sc_stonewait}, 10000)
     ctx
   type: card
   weight: 10
@@ -44564,7 +44564,7 @@
 - aegis_name: UnPetrify_JP
   id: 310269
   name: Petrified Resistance
-  on_equip: bonus(ctx, {:res_eff, :sc_stone}, 10000)
+  on_equip: bonus(ctx, {:res_eff, :sc_stonewait}, 10000)
   subtype: enchant
   type: card
 - aegis_name: Improve_Orb_T_ATK

@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
     assert {:ok, :hanged_man} = Tarot.play(caster, {:player, 18}, 5)
 
     statuses =
-      for id <- [:sc_ankle, :sc_freeze, :sc_stone],
+      for id <- [:sc_ankle, :sc_freeze, :sc_stonewait],
           status = StatusStorage.get_status(:player, 18, id),
           status != nil,
           do: status

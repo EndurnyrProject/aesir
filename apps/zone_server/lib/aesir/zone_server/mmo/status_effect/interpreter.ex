@@ -82,6 +82,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   application chance with status resistance in one injectable final roll.
   `bypass_resistance: true` skips that roll and all chance/stat/duration
   resistance while retaining immunity, prevention, and conflict gates.
+  `no_avoid: true` additionally skips the immunity gates (race, element, boss and
+  magic immunity): the application cannot be avoided, only prevented.
+
+  When a status listed in the definition's `end_return` is active, the
+  application ends every such status instead and returns `:ok` without storing.
   """
   @spec apply_status(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
           :ok | {:error, atom()}
@@ -122,13 +127,40 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp ensure_status_allowed(_unit_type, _unit_id, _status_id), do: :ok
 
+  # Reference order (status_change_start): magic and boss immunity (BossResist),
+  # then EndReturn, then the Fail list and the race/element immunity before resistance.
   defp apply_new_status(unit_type, unit_id, status_id, status_params, definition) do
     entity_info = get_entity_info(unit_type, unit_id)
+
+    with :ok <- check_resisted(entity_info, unit_type, unit_id, status_params, definition) do
+      case Enum.filter(definition.end_return, &StatusStorage.has_status?(unit_type, unit_id, &1)) do
+        [] ->
+          apply_unreturned_status(
+            unit_type,
+            unit_id,
+            status_id,
+            status_params,
+            definition,
+            entity_info
+          )
+
+        active ->
+          remove_statuses(unit_type, unit_id, active)
+      end
+    end
+  end
+
+  defp apply_unreturned_status(
+         unit_type,
+         unit_id,
+         status_id,
+         status_params,
+         definition,
+         entity_info
+       ) do
     duration_override = Keyword.get(status_params, :duration)
 
-    with :ok <- check_immunity(entity_info, definition),
-         :ok <- check_magic_immunity(unit_type, unit_id),
-         :ok <- check_boss_immunity(entity_info, unit_type, unit_id, status_params, definition),
+    with :ok <- check_avoidable(entity_info, status_params, definition),
          :ok <- check_prevented(unit_type, unit_id, definition),
          :ok <- check_conflicts(unit_type, unit_id, definition),
          {:ok, duration} <-
@@ -144,6 +176,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
     end
   end
+
+  defp check_resisted(entity_info, unit_type, unit_id, status_params, definition) do
+    if Keyword.get(status_params, :no_avoid, false) do
+      :ok
+    else
+      with :ok <- check_magic_immunity(unit_type, unit_id),
+           :ok <- check_immunity(entity_info, immunities(definition, &(&1 == :boss))) do
+        check_boss_immunity(entity_info, unit_type, unit_id, status_params, definition)
+      end
+    end
+  end
+
+  defp check_avoidable(entity_info, status_params, definition) do
+    if Keyword.get(status_params, :no_avoid, false),
+      do: :ok,
+      else: check_immunity(entity_info, immunities(definition, &(&1 != :boss)))
+  end
+
+  defp immunities(definition, keep?),
+    do: %{definition | immunity: Enum.filter(definition.immunity, keep?)}
 
   defp apply_loaded_status(unit_type, unit_id, status_id, status_params, definition) do
     with {:ok, duration} <- loaded_duration(definition, status_params) do
@@ -822,8 +874,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     |> Enum.all?(&(not locking_body_state?(&1)))
   end
 
-  defp locking_body_state?(%StatusEntry{type: :sc_stone, phase: :wait}), do: false
-
   defp locking_body_state?(%StatusEntry{type: type}) do
     case Registry.get_definition(type) do
       nil -> false
@@ -1035,7 +1085,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          duration_override,
          status_params
        ) do
-    if Keyword.get(status_params, :bypass_resistance, false) do
+    if Keyword.get(status_params, :bypass_resistance, false) or
+         Keyword.get(status_params, :no_avoid, false) do
       {:ok, duration_override || definition.duration || 10_000}
     else
       roll_resistance_with_adjustment(
@@ -1224,6 +1275,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       expires_at: nil
     }
 
+    {duration, instance} = resolve_duration(definition, instance, duration, status_params)
     context = ContextBuilder.build_context(unit_type, unit_id, caster_id, instance)
 
     case definition.module.on_apply({unit_type, unit_id}, instance, context) do
@@ -1245,6 +1297,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  defp resolve_duration(_definition, instance, nil, _status_params), do: {nil, instance}
+
+  defp resolve_duration(definition, instance, duration, status_params) do
+    if Keyword.get(status_params, :loaded, false),
+      do: {duration, instance},
+      else: definition.module.resolve_duration(instance, duration)
   end
 
   defp store_applied_status(
@@ -1370,6 +1430,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       true
     else
       false
+    end
+  end
+
+  @doc """
+  Runs the timeout of a status that was just removed for running out its duration.
+
+  Calls the definition's `on_timeout` callback with the expired `instance` and
+  applies the `{status_id, params}` follow-ups it returns to the same holder.
+  Call it only after the expiry actually removed `instance`.
+  """
+  @spec run_timeout(unit_type(), integer(), atom(), StatusEntry.t()) :: :ok
+  def run_timeout(unit_type, unit_id, status_id, instance) do
+    if MapSet.member?(Registry.statuses_implementing(:on_timeout), status_id) do
+      %{module: module} = Registry.get_definition(status_id)
+      context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+      {unit_type, unit_id}
+      |> module.on_timeout(instance, context)
+      |> Enum.each(fn {follow_up_id, params} ->
+        apply_status(unit_type, unit_id, follow_up_id, params)
+      end)
+    else
+      :ok
     end
   end
 

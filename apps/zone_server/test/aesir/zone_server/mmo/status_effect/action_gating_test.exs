@@ -39,12 +39,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ActionGatingTest do
   end
 
   test "petrification locks sitting and standing only once its wait phase is over" do
-    :ok = StatusStorage.apply_status(:player, 1000, :sc_stone, duration: 30_000, phase: :wait)
+    :ok = StatusStorage.apply_status(:player, 1000, :sc_stonewait, duration: 30_000)
 
     assert Interpreter.can_sit?(1000)
     assert Interpreter.can_stand?(1000)
 
-    :ok = StatusStorage.apply_status(:player, 1000, :sc_stone, duration: 30_000, phase: :stone)
+    :ok = StatusStorage.apply_status(:player, 1000, :sc_stone, duration: 30_000)
 
     refute Interpreter.can_sit?(1000)
     refute Interpreter.can_stand?(1000)

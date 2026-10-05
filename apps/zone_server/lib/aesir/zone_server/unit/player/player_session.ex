@@ -94,6 +94,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:unit, {:apply_vanish, hp_percent, sp_percent, source}})
   end
 
+  @doc """
+  Applies passive, nonlethal HP loss: at most down to 1 HP, without the damage
+  notification, cast interruption or death an attack's damage triggers.
+  """
+  @spec apply_passive_hp_loss(pid(), pos_integer()) :: :ok
+  def apply_passive_hp_loss(pid, amount) do
+    GenServer.cast(pid, {:unit, {:apply_passive_hp_loss, amount}})
+  end
+
   @doc "Applies coma through this player's owning session."
   @spec apply_coma(pid(), Ref.t() | integer() | nil) :: :ok
   def apply_coma(pid, source) do
@@ -1202,6 +1211,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:unit, {:apply_vanish, hp_percent, sp_percent, source}}, state) do
     HealthHandler.apply_vanish(hp_percent, sp_percent, source, state)
+  end
+
+  @impl true
+  def handle_cast({:unit, {:apply_passive_hp_loss, amount}}, state) do
+    HealthHandler.apply_passive_hp_loss(amount, state)
   end
 
   @impl true

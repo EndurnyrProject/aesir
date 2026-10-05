@@ -106,7 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
     do: Enum.each(1..2, fn _ -> apply(TarotDeck.draw(), caster, target, level) end)
 
   def apply(:hanged_man, caster, target, _level) do
-    id = Enum.random([:sc_ankle, :sc_freeze, :sc_stone])
+    id = Enum.random([:sc_ankle, :sc_freeze, :sc_stonewait])
     params = if id == :sc_ankle, do: [duration: 30_000], else: []
     status(caster, target, id, params)
   end

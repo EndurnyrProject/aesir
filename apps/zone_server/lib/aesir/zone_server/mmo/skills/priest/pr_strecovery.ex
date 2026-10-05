@@ -33,10 +33,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
   @behaviour Active
 
   @undead_delay_ms 1_000
-  @supported_body_statuses [:sc_stone, :sc_freeze, :sc_stun, :sc_sleep]
+  @supported_body_statuses [:sc_stone, :sc_freeze, :sc_stun, :sc_sleep, :sc_stonewait]
 
-  # NOTE: StoneWait is Aesir's :wait phase of sc_stone and is cured above.
-  # Burning, White Imprison, Netherworld, and NoRecoverState have no status
+  # NOTE: Burning, White Imprison, Netherworld, and NoRecoverState have no status
   # modules. Add each here when its module exists, then remove this note.
 
   @impl Active

@@ -33,73 +33,64 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurseTest do
   end
 
   describe "cast/4" do
-    test "applies sc_stone and consumes the gem when the roll succeeds" do
-      # Seed {1,2,3} yields :rand.uniform(100) == 27, below every success chance.
-      :rand.seed(:exsss, {1, 2, 3})
-      caster = caster()
-      definition = definition()
-
+    setup do
       stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
+      :ok
+    end
 
-      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stone, params ->
+    test "starts the petrification wait with one combined chance and consumes the gem" do
+      caster = caster()
+
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stonewait, params ->
         assert params[:val1] == 4
+        assert params[:success_rate] == 36
+        assert params[:state] == %{delay: 5_000}
         :ok
       end)
 
-      assert {:ok, ^caster} = MgStonecurse.cast(caster, {:unit, @target_id}, 4, definition)
+      assert {:ok, ^caster} = MgStonecurse.cast(caster, {:unit, @target_id}, 4, definition())
     end
 
     @tag game_mode: :renewal
     test "the status lasts 17 seconds in renewal, wait phase included" do
-      :rand.seed(:exsss, {1, 2, 3})
-      definition = definition()
-
-      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
-
-      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stone, params ->
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stonewait, params ->
         assert params[:duration] == 17_000
         :ok
       end)
 
-      assert {:ok, _} = MgStonecurse.cast(caster(), {:unit, @target_id}, 4, definition)
+      assert {:ok, _} = MgStonecurse.cast(caster(), {:unit, @target_id}, 4, definition())
     end
 
     @tag game_mode: :pre_renewal
     test "the status lasts 20 seconds in classic, wait phase included" do
-      :rand.seed(:exsss, {1, 2, 3})
-      definition = definition()
-
-      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
-
-      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stone, params ->
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stonewait, params ->
         assert params[:duration] == 20_000
         :ok
       end)
 
-      assert {:ok, _} = MgStonecurse.cast(caster(), {:unit, @target_id}, 4, definition)
+      assert {:ok, _} = MgStonecurse.cast(caster(), {:unit, @target_id}, 4, definition())
     end
 
     test "consumes the gem on failure at level <= 5" do
-      # Seed {6,7,8} yields :rand.uniform(100) == 87, above the level-5 chance (40).
-      :rand.seed(:exsss, {6, 7, 8})
       caster = caster()
-      definition = definition()
 
-      reject(&StatusInterpreter.apply_status/4)
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stonewait, _params ->
+        {:error, :resisted}
+      end)
 
-      assert {:ok, ^caster} = MgStonecurse.cast(caster, {:unit, @target_id}, 5, definition)
+      assert {:ok, ^caster} = MgStonecurse.cast(caster, {:unit, @target_id}, 5, definition())
     end
 
     test "keeps the gem on failure at level >= 6" do
-      # Seed {6,7,8} yields :rand.uniform(100) == 87, above the level-6 chance (44).
-      :rand.seed(:exsss, {6, 7, 8})
       caster = caster()
-      definition = definition()
 
-      reject(&StatusInterpreter.apply_status/4)
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stonewait, _params ->
+        {:error, :resisted}
+      end)
 
       assert {:ok, ^caster, :no_consume} =
-               MgStonecurse.cast(caster, {:unit, @target_id}, 6, definition)
+               MgStonecurse.cast(caster, {:unit, @target_id}, 6, definition())
     end
   end
 
@@ -146,17 +137,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurseTest do
     end
 
     test "petrifies the mob without crashing on the player caster id" do
-      # Seed {1,2,3} yields :rand.uniform(100) == 27, below every success chance.
       # The caster's character_id is deliberately not registered as a mob:
       # ContextBuilder used to resolve the caster with the *target's* unit type
       # and raise on the missing unit.
-      :rand.seed(:exsss, {1, 2, 3})
       caster = caster()
 
       assert {:ok, ^caster} = MgStonecurse.cast(caster, {:unit, @target_id}, 4, definition())
 
       assert %{val1: 4, source_id: 1000, source_type: :player} =
-               StatusStorage.get_status(:mob, @target_id, :sc_stone)
+               StatusStorage.get_status(:mob, @target_id, :sc_stonewait)
     end
   end
 end

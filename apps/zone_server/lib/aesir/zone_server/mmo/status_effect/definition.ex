@@ -37,8 +37,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:flags` - behavior flags (`:no_move`, `:no_attack`, ...)
     - `:prevented_by` - statuses that prevent this one from being applied
     - `:conflicts_with` - statuses that cannot coexist with this one
-    - `:end_on_start` - statuses removed when this one is applied; accepts a plain
-      list or `[renewal: list, pre_renewal: list]`
+    - `:end_on_start` - statuses removed when this one is applied
+    - `:end_return` - statuses that end the application instead: when any of them is
+      active, they are all removed and the application reports success without
+      storing this status (re-applying Confusion cures it)
     - `:allow_skills` - skill ids exempt from this status' `:prevents_skills`, e.g.
       the skill that toggles the status off (Play Dead recasts NV_TRICKDEAD)
     - `:blocked_skills` - skill ids denied even when the status does not broadly
@@ -52,9 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:tick_interval` - default tick interval in milliseconds
     - `:duration` - base duration in milliseconds
     - `:permanent` - when true, the status never auto-expires (ignores duration)
-    - `:no_save` - when true, the status is not persisted across logout; accepts
-      a boolean or `[renewal: boolean, pre_renewal: boolean]` for mode-specific
-      session-bound statuses
+    - `:no_save` - when true, the status is not persisted across logout
     - `:remove_on_map_change` - when true, a cross-map warp ends the status through
       the ordinary removal path (mirrors rAthena's `SCF_REMOVEONCHGMAP`); use it for
       statuses tied to a specific location or a live pairing that cannot survive the
@@ -92,6 +92,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:option` - sprite effect state, e.g. `:hide | :cloak` (`Mmo.Option`, bitmask)
     - `:opt3` - sprite virtue state (`Mmo.Opt3`, bitmask)
     - `:on_apply_effect` - `:ef_*` one-shot effect fired on apply (`Mmo.EffectId`)
+
+  `:end_on_start`, `:end_return`, `:prevented_by`, `:no_save`, `:duration` and
+  `:duration_adjustment` also accept `[renewal: value, pre_renewal: value]` for
+  mode-specific values.
   """
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
@@ -168,6 +172,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   @doc "Invoked on every tick while the status is active."
   @callback on_tick(target(), StatusEntry.t(), context()) :: hook_result()
+
+  @doc """
+  Resolves the stored lifetime of a new application from its resistance-adjusted duration.
+
+  Runs once before `c:on_apply/3` and may also set the values the instance stores. Restores
+  of persisted statuses skip it. Defaults to the given duration, unchanged.
+  """
+  @callback resolve_duration(StatusEntry.t(), pos_integer()) :: {pos_integer(), StatusEntry.t()}
+
+  @doc """
+  Invoked only when the status runs out its duration naturally, after it was removed.
+
+  Cures, dispels, replacement and death do not call it. Returned `{status_id, params}`
+  follow-ups are applied to the same holder afterwards. Defaults to none.
+  """
+  @callback on_timeout(target(), StatusEntry.t(), context()) :: [{atom(), keyword()}]
 
   @doc "Invoked when the unit holding this status takes damage."
   @callback on_damage(target(), StatusEntry.t(), map(), context()) :: hook_result()
@@ -316,6 +336,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     prevented_by: [],
     conflicts_with: [],
     end_on_start: [],
+    end_return: [],
     allow_skills: [],
     blocked_skills: [],
     immunity: [],
@@ -354,6 +375,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     prevented_by: {:list, :atom},
     conflicts_with: {:list, :atom},
     end_on_start: {:list, :atom},
+    end_return: {:list, :atom},
     allow_skills: {:list, :integer},
     blocked_skills: {:list, {:integer, {:gt, 0}}},
     immunity: {:list, :atom},
@@ -393,6 +415,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
           | :after_damage_taken
           | :on_movement_intent
           | :on_committed_action
+          | :on_timeout
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
@@ -431,6 +454,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       def on_tick(_target, instance, _context), do: {:ok, instance}
 
       @impl true
+      def resolve_duration(instance, duration), do: {duration, instance}
+
+      @impl true
       def on_damage(_target, instance, _damage_info, _context), do: {:ok, instance}
 
       @impl true
@@ -447,6 +473,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
                      on_apply: 3,
                      on_expire: 3,
                      on_tick: 3,
+                     resolve_duration: 2,
                      on_damage: 4,
                      on_contact: 4,
                      absorb_damage: 4,
@@ -463,6 +490,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     after_damage_taken? = Module.defines?(env.module, {:after_damage_taken, 4})
     movement_intent? = Module.defines?(env.module, {:on_movement_intent, 4})
     committed_action? = Module.defines?(env.module, {:on_committed_action, 4})
+    timeout? = Module.defines?(env.module, {:on_timeout, 3})
 
     dealt_damage_default =
       unless dealt_damage? do
@@ -494,6 +522,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     movement_intent_default = movement_intent_default(movement_intent?)
     committed_action_default = committed_action_default(committed_action?)
 
+    timeout_default = timeout_default(timeout?)
+
     capabilities =
       []
       |> maybe_add_capability(before_weapon_hit?, :before_weapon_hit)
@@ -503,6 +533,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       |> maybe_add_capability(after_damage_taken?, :after_damage_taken)
       |> maybe_add_capability(movement_intent?, :on_movement_intent)
       |> maybe_add_capability(committed_action?, :on_committed_action)
+      |> maybe_add_capability(timeout?, :on_timeout)
 
     quote do
       unquote(dealt_damage_default)
@@ -512,6 +543,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       unquote(after_damage_taken_default)
       unquote(movement_intent_default)
       unquote(committed_action_default)
+      unquote(timeout_default)
 
       @doc false
       def __status_capabilities__, do: unquote(capabilities)
@@ -548,6 +580,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     end
   end
 
+  defp timeout_default(true), do: nil
+
+  defp timeout_default(false) do
+    quote do
+      @impl true
+      def on_timeout(_target, _instance, _context), do: []
+    end
+  end
+
   defp committed_action_default(true), do: nil
 
   defp committed_action_default(false) do
@@ -557,11 +598,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     end
   end
 
-  @doc "Resolves the two mode-keyable metadata options for the selected mode."
+  @mode_keyable [
+    :end_on_start,
+    :end_return,
+    :prevented_by,
+    :no_save,
+    :duration,
+    :duration_adjustment
+  ]
+
+  @doc "Resolves the mode-keyable metadata options for the selected mode."
   @spec resolve_mode(keyword(), :renewal | :pre_renewal) :: keyword()
   def resolve_mode(opts, mode) do
     Enum.map(opts, fn
-      {field, value} when field in [:end_on_start, :no_save] and is_list(value) ->
+      {field, value} when field in @mode_keyable and is_list(value) ->
         if Keyword.keyword?(value) and Enum.sort(Keyword.keys(value)) == [:pre_renewal, :renewal] do
           {field, Keyword.fetch!(value, mode)}
         else

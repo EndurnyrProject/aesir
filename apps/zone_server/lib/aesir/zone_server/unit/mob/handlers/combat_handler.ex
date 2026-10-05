@@ -93,6 +93,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       else: {:noreply, StateCommit.commit(%{state | sp: 1})}
   end
 
+  @doc """
+  Applies passive HP loss that never kills: the loss stops at 1 HP. No aggro,
+  AI reaction or rude-attack bookkeeping follows, since no attacker hit the mob.
+  """
+  @spec handle_passive_hp_loss(pos_integer(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_passive_hp_loss(_amount, %{is_dead: true} = state), do: {:noreply, state}
+
+  def handle_passive_hp_loss(amount, %{hp: hp} = state) do
+    case min(amount, hp - 1) do
+      loss when loss > 0 ->
+        {updated_mob, :alive} = MobState.apply_damage(state, loss)
+        SpawnView.notify_hp_update(updated_mob)
+        {:noreply, StateCommit.commit(updated_mob)}
+
+      _none ->
+        {:noreply, state}
+    end
+  end
+
   @doc "Applies nonlethal equipment vanish from max-HP/SP percentages."
   @spec handle_vanish(non_neg_integer(), non_neg_integer(), tuple(), MobState.t()) ::
           {:noreply, MobState.t()}

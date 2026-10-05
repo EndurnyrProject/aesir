@@ -118,7 +118,7 @@ defmodule Aesir.ZoneServer.Integration.MagicImmunityIntegrationTest do
         # The control proves a pinned Stone Curse from this caster reaches status
         # application; the wearer then receives the same pinned casts.
         stone_curse(caster, control_id)
-        assert_eventually(fn -> StatusStorage.has_status?(:player, control_id, :sc_stone) end)
+        assert_eventually(fn -> StatusStorage.has_status?(:player, control_id, :sc_stonewait) end)
 
         for _ <- 1..3 do
           stone_curse(caster, wearer_id)
@@ -126,7 +126,10 @@ defmodule Aesir.ZoneServer.Integration.MagicImmunityIntegrationTest do
         end
       end)
 
-      refute eventually(fn -> StatusStorage.has_status?(:player, wearer_id, :sc_stone) end, 500)
+      refute eventually(
+               fn -> StatusStorage.has_status?(:player, wearer_id, :sc_stonewait) end,
+               500
+             )
 
       cast(caster, @blessing, control_id)
       assert_eventually(fn -> StatusStorage.has_status?(:player, control_id, :sc_blessing) end)
@@ -334,7 +337,8 @@ defmodule Aesir.ZoneServer.Integration.MagicImmunityIntegrationTest do
   defp stone_curse(caster, target_id) do
     settle_cast(caster)
     refill(caster)
-    :sys.replace_state(caster.pid, fn state -> :rand.seed(:exsss, {1, 2, 3}) && state end)
+    # Seed {34, 35, 36} draws 217 of 10,000 for the combined chance and resistance roll.
+    :sys.replace_state(caster.pid, fn state -> :rand.seed(:exsss, {34, 35, 36}) && state end)
     cast(caster, @stonecurse, target_id)
   end
 

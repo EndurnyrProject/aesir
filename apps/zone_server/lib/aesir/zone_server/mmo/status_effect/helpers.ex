@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -48,6 +49,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   def deal_damage(target, amount, element \\ :neutral) do
     Combat.deal_damage(target, trunc(amount), element, :status_effect)
   end
+
+  @doc """
+  Applies passive, nonlethal HP loss to a player or mob through its owning session,
+  fire-and-forget. The loss stops at 1 HP and is not an attack: no damage
+  notification, cast interruption or death follows.
+
+  Homunculus HP lives in its owner's aggregate, which this seam does not reach.
+  """
+  @spec apply_passive_hp_loss(Definition.target(), pos_integer()) :: :ok
+  def apply_passive_hp_loss({unit_type, unit_id}, amount) when unit_type in [:player, :mob] do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) and unit_type == :player ->
+        PlayerSession.apply_passive_hp_loss(pid, amount)
+
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        MobSession.apply_passive_hp_loss(pid, amount)
+
+      _missing ->
+        :ok
+    end
+  end
+
+  def apply_passive_hp_loss(_target, _amount), do: :ok
 
   @doc """
   Drains SP from a player target, fire-and-forget.

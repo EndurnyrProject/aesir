@@ -83,15 +83,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
   end
 
   describe "apply_status/9" do
-    test "applies stone status with initial wait phase", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stone, val1: 1, tick: 10_000)
+    test "applying petrification starts its wait, not the petrified state", %{
+      player_id: player_id
+    } do
+      assert :ok =
+               Interpreter.apply_status(:player, player_id, :sc_stonewait,
+                 val1: 1,
+                 bypass_resistance: true
+               )
 
-      # Check status was stored
-      assert StatusStorage.has_status?(:player, player_id, :sc_stone)
-
-      # Check initial phase is wait
-      status = StatusStorage.get_status(:player, player_id, :sc_stone)
-      assert status.phase == :wait
+      assert StatusStorage.has_status?(:player, player_id, :sc_stonewait)
+      refute StatusStorage.has_status?(:player, player_id, :sc_stone)
     end
 
     test "applies freeze status with defense penalties", %{player_id: player_id} do
@@ -195,24 +197,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       assert StatusStorage.has_status?(:player, player_id, :sc_poison)
     end
 
-    test "handles phase transition for stone status", %{player_id: player_id} do
-      assert :ok = Interpreter.apply_status(:player, player_id, :sc_stone, val1: 1, tick: 10_000)
+    test "a petrification wait running out starts the petrified state with the rest", %{
+      player_id: player_id
+    } do
+      assert :ok =
+               Interpreter.apply_status(:player, player_id, :sc_stonewait,
+                 val1: 1,
+                 duration: 17_000,
+                 state: %{delay: 5_000},
+                 bypass_resistance: true
+               )
 
-      # Initial phase should be wait
-      status = StatusStorage.get_status(:player, player_id, :sc_stone)
-      assert status.phase == :wait
+      wait = StatusStorage.get_status(:player, player_id, :sc_stonewait)
+      assert wait.expires_at - wait.started_at == 5_000
 
-      # Manually update timestamp to simulate time passing
-      StatusStorage.update_status(:player, player_id, :sc_stone, fn s ->
-        # 6 seconds ago
-        %{s | started_at: s.started_at - 6000}
-      end)
+      assert Interpreter.expire_status_if_current(:player, player_id, :sc_stonewait, wait)
+      assert :ok = Interpreter.run_timeout(:player, player_id, :sc_stonewait, wait)
 
-      # Process tick should transition to stone phase
-      assert :ok = Interpreter.process_tick(:player, player_id, :sc_stone)
-
-      status = StatusStorage.get_status(:player, player_id, :sc_stone)
-      assert status.phase == :stone
+      stone = StatusStorage.get_status(:player, player_id, :sc_stone)
+      refute StatusStorage.has_status?(:player, player_id, :sc_stonewait)
+      assert stone.val3 == 12_000
+      assert stone.expires_at - stone.started_at == 12_000
     end
   end
 

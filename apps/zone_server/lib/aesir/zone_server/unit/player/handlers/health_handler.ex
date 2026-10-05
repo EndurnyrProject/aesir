@@ -107,6 +107,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def apply_damage(_damage, _attacker_id, state), do: {:noreply, state}
 
+  @doc """
+  Applies passive HP loss that never kills: the loss stops at 1 HP. Unlike
+  `apply_damage/3` it notifies no status, interrupts no cast and cannot kill.
+  """
+  @spec apply_passive_hp_loss(pos_integer(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def apply_passive_hp_loss(_amount, %{game_state: %{action_state: :dead}} = state),
+    do: {:noreply, state}
+
+  def apply_passive_hp_loss(amount, state) do
+    stats = state.game_state.stats
+
+    case min(amount, stats.current_state.hp - 1) do
+      loss when loss > 0 ->
+        new_hp = stats.current_state.hp - loss
+        updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
+        state = StateCommit.commit(state, %{state.game_state | stats: updated_stats})
+
+        StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
+
+        CharacterPersistence.update_stats(state.game_state.character_id, %{hp: new_hp},
+          async: true
+        )
+
+        {:noreply, state}
+
+      _none ->
+        {:noreply, state}
+    end
+  end
+
   @doc "Leaves a living player at exactly 1 HP and 1 SP."
   @spec apply_coma(Ref.t() | integer() | nil, SessionState.t()) ::
           {:noreply, SessionState.t()}

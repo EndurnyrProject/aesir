@@ -513,6 +513,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "apply_passive_hp_loss/2" do
+    test "stops at 1 HP without notifying statuses of damage" do
+      reject(&StatusInterpreter.on_damage/3)
+      state = build_state(20, :idle)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: current}}}} =
+               HealthHandler.apply_passive_hp_loss(50, state)
+
+      assert current.hp == 1
+    end
+
+    test "a player already at 1 HP loses nothing" do
+      state = build_state(1, :idle)
+      assert {:noreply, ^state} = HealthHandler.apply_passive_hp_loss(10, state)
+    end
+  end
+
   describe "SC_NORECOVER_STATE" do
     test "blocks HP healing and SP restoration" do
       :ok = StatusStorage.apply_status(:player, 1, :sc_norecover_state)

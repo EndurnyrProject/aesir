@@ -192,6 +192,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
       Enum.reduce(statuses, [], fn
         {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = entry}, removed ->
           if Interpreter.expire_status_if_current(unit_type, unit_id, status_type, entry) do
+            Interpreter.run_timeout(unit_type, unit_id, status_type, entry)
             [status_type | removed]
           else
             removed

@@ -120,6 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_SLEEP" => :sc_sleep,
     "SC_FREEZE" => :sc_freeze,
     "SC_STONE" => :sc_stone,
+    "SC_STONEWAIT" => :sc_stonewait,
     "SC_CONFUSION" => :sc_confusion,
     "SC_HALLUCINATION" => :sc_hallucination,
     "SC_BLEEDING" => :sc_bleeding,
@@ -392,7 +393,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Eff_Sleep" => :sc_sleep,
     "Eff_Bleeding" => :sc_bleeding,
     "Eff_Confusion" => :sc_confusion,
-    "Eff_Stone" => :sc_stone
+    "Eff_Stone" => :sc_stonewait
   }
 
   # Case-folded index of @statuses. rAthena treats script constants
