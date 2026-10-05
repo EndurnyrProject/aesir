@@ -3953,6 +3953,13 @@
 - aegis_name: Internet_Cafe2
   id: 12283
   name: Internet Cafe2
+  on_use: |-
+    ctx = sc_start(ctx, :sc_incstr, 5400000, 8)
+    ctx = sc_start(ctx, :sc_incdex, 5400000, 4)
+    ctx = sc_start(ctx, :sc_increaseagi, 5400000, 6)
+    ctx = sc_start(ctx, :sc_atkpotion, 5400000, 32)
+    ctx = sc_start(ctx, :sc_incflee, 5400000, 5)
+    ctx
   type: usable
   weight: 10
 - aegis_name: Internet_Cafe3
@@ -13399,6 +13406,7 @@
   name: Mystical Amplification Scroll
   no_guild_storage: true
   no_trade: true
+  on_use: 'itemskill(ctx, 366, level: 10)'
   type: delay_consume
   weight: 10
 - aegis_name: Quagmire_Scroll

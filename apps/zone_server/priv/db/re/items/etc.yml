@@ -6118,6 +6118,10 @@
     - head_mid
     - head_top
   name: Lord Knight Card
+  on_equip: |-
+    ctx = grant_skill(ctx, 359, 1)
+    ctx = bonus(ctx, :max_hp_rate, -50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Seyren_Card
@@ -6183,6 +6187,7 @@
   locations:
     - armor
   name: High Priest Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 851, trigger: :when_hit, skill_id: 361}, 5, 50)'
   type: card
   weight: 10
 - aegis_name: Magaleta_Card
@@ -6493,6 +6498,12 @@
   locations:
     - right_hand
   name: Death Word Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 11}, 5)
+    ctx = bonus(ctx, {:skill_atk, 13}, 5)
+    ctx = bonus(ctx, {:skill_atk, 400}, 5)
+    ctx
+  on_unequip: heal(ctx, 0, -50)
   type: card
   weight: 10
 - aegis_name: Plasma_Card
@@ -7111,6 +7122,17 @@
     - head_mid
     - head_top
   name: Banshee Card
+  on_equip: |-
+    if job_is(ctx, :base_class, :mage) do
+      ctx = bonus(ctx, :max_sp, 100)
+      ctx = bonus(ctx, :max_hp, -100)
+      ctx = bonus(ctx, {:skill_atk, 11}, 20)
+      ctx = bonus(ctx, {:skill_atk, 13}, 20)
+      ctx = bonus(ctx, {:skill_atk, 400}, 20)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Flame_Skull_Card
@@ -7838,6 +7860,7 @@
   locations:
     - armor
   name: Sealed High Priest Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 851, trigger: :when_hit, skill_id: 361}, 1, if((refine(ctx) > 14), do: 35, else: 25))'
   type: card
   weight: 10
 - aegis_name: Sealed_B_Harword_Card
@@ -28954,6 +28977,7 @@
   locations:
     - armor
   name: Angry Moonlight Flower Card
+  on_equip: grant_skill(ctx, 367, 4)
   type: card
   weight: 10
 - aegis_name: AngerNineTail_Card
@@ -29104,6 +29128,7 @@
   locations:
     - garment
   name: Furious Dracula Card
+  on_equip: grant_skill(ctx, 373, 1)
   type: card
   weight: 10
 - aegis_name: Bomi_Card
@@ -29112,6 +29137,7 @@
   locations:
     - right_accessory
   name: Bomi Card
+  on_equip: grant_skill(ctx, 400, 4)
   type: card
   weight: 10
 - aegis_name: Grand_Pere_Card
@@ -30426,6 +30452,10 @@
   locations:
     - shoes
   name: Faymont Card
+  on_equip: |-
+    ctx = bonus(ctx, :sp_regen, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 401}, 1, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ordre_Card
@@ -31782,6 +31812,10 @@
 - aegis_name: Offering_to_God
   id: 27399
   name: Divine Offering
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 15)
+    ctx = bonus(ctx, {:skill_atk, 368}, base_level(ctx))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Resistance_Long_Dis5
@@ -35037,6 +35071,7 @@
 - aegis_name: Runeknight_Middle
   id: 29461
   name: Lord Knight Stone (Middle)
+  on_equip: bonus(ctx, {:skill_atk, 397}, 15)
   subtype: enchant
   type: card
 - aegis_name: Runeknight_Bottom
@@ -35079,6 +35114,7 @@
 - aegis_name: Warlock_Top
   id: 29468
   name: High Wizard Stone (Top)
+  on_equip: bonus(ctx, :matk, (2 * skill_lv(ctx, 366)))
   subtype: enchant
   type: card
 - aegis_name: Warlock_Middle
@@ -35156,6 +35192,7 @@
 - aegis_name: WanderMinstrel_Bottom
   id: 29487
   name: Clown Gypsy Stone (Bottom)
+  on_equip: bonus(ctx, {:skill_atk, 394}, 20)
   subtype: enchant
   type: card
 - aegis_name: WanderMinstrel_Robe
@@ -35216,6 +35253,7 @@
 - aegis_name: Highpriest_Top
   id: 29513
   name: High Priest Stone (Upper)
+  on_equip: bonus(ctx, :heal_power, skill_lv(ctx, 363))
   subtype: enchant
   type: card
 - aegis_name: Highpriest_Middle
@@ -35833,6 +35871,7 @@
 - aegis_name: Sura_Top2
   id: 29613
   name: Sura Stone II (Upper)
+  on_equip: bonus(ctx, {:skill_atk, 372}, 15)
   subtype: enchant
   type: card
 - aegis_name: Sorcerer_Robe2
@@ -36537,6 +36576,15 @@
   locations:
     - garment
   name: LoVA Ragnarok Card
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 7)
+    ctx = bonus(ctx, :max_hp_rate, 6)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:skill_atk, 484}, 9)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: LoVA_R_Ragnarok_Card
@@ -36545,6 +36593,15 @@
   locations:
     - garment
   name: LoVA Realization Ragnarok Card
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:skill_atk, 484}, 769)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: XM_Tree_Card
@@ -37941,6 +37998,10 @@
   locations:
     - shoes
   name: Arena Faymont Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp_rate, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 401}, 1, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: MD_Geffen_Ordre_Card
@@ -38106,6 +38167,7 @@
   locations:
     - armor
   name: Sealed Angry Moonlight Flower Card
+  on_equip: 'grant_skill(ctx, 367, if((refine(ctx) > 14), do: 3, else: 2))'
   type: card
   weight: 10
 - aegis_name: SLD_Ill_Dracula_Card
@@ -38113,6 +38175,15 @@
   locations:
     - garment
   name: Sealed Furious Dracula Card
+  on_equip: |-
+    ctx = grant_skill(ctx, 373, 1)
+    ctx = bonus(ctx, :max_sp, -1500)
+    ctx = if (refine(ctx) >= 15) do
+      bonus(ctx, :max_sp, 1000)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: SLD_Gopinich_Card
@@ -40665,6 +40736,11 @@
   locations:
     - both_accessory
   name: Friedrich Stolz Heine (Sign Stamp) Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp_rate, 15)
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = grant_skill(ctx, 483, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: L_Kronecker_Card
@@ -42306,6 +42382,11 @@
   locations:
     - both_accessory
   name: Upgrade Osiris Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 20)
+    ctx = bonus(ctx, :max_sp_rate, 20)
+    ctx = grant_skill(ctx, 373, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: aegis_300620
@@ -42895,6 +42976,7 @@
 - aegis_name: Ranger_Top2
   id: 310000
   name: Sniper Stone II (Top)
+  on_equip: bonus(ctx, :aspd_rate, div(skill_lv(ctx, 383), 2))
   subtype: enchant
   type: card
 - aegis_name: Ranger_Middle2
@@ -42906,6 +42988,7 @@
 - aegis_name: Ranger_Bottom2
   id: 310002
   name: Sniper Stone II (Bottom)
+  on_equip: bonus(ctx, :atk, (2 * skill_lv(ctx, 380)))
   subtype: enchant
   type: card
 - aegis_name: Ranger_Robe2
@@ -42943,6 +43026,7 @@
 - aegis_name: Highpriest_Middle2
   id: 310009
   name: High Priest Stone II (Middle)
+  on_equip: bonus(ctx, {:magic_atk_ele, :holy}, skill_lv(ctx, 361))
   subtype: enchant
   type: card
 - aegis_name: Highpriest_Bottom2
@@ -43844,6 +43928,24 @@
 - aegis_name: Automatic_Orb75
   id: 310156
   name: Automatic Orb(Raging Combo)
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 273}, 15)
+    ctx = bonus(ctx, {:skill_atk, 372}, 15)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:skill_atk, 273}, 3)
+      ctx = bonus(ctx, {:skill_atk, 372}, 3)
+      ctx = if (refine(ctx) >= 11) do
+        ctx = bonus(ctx, {:skill_atk, 273}, 7)
+        ctx = bonus(ctx, {:skill_atk, 372}, 7)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Automatic_Orb76
@@ -43854,6 +43956,23 @@
 - aegis_name: Automatic_Orb77
   id: 310158
   name: Automatic Orb(Breeze Shooting)
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:skill_atk, 382}, 15)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:skill_atk, 382}, 3)
+      ctx = if (refine(ctx) >= 11) do
+        ctx = bonus(ctx, :crit_atk_rate, 5)
+        ctx = bonus(ctx, {:skill_atk, 382}, 7)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Automatic_Orb78
@@ -43975,11 +44094,13 @@
 - aegis_name: Warlock_Middle2
   id: 310182
   name: High Wizard Stone II (Middle)
+  on_equip: bonus(ctx, {:magic_atk_ele, :neutral}, (2 * skill_lv(ctx, 484)))
   subtype: enchant
   type: card
 - aegis_name: Warlock_Bottom2
   id: 310183
   name: High Wizard Stone II (Lower)
+  on_equip: bonus(ctx, :matk, (2 * skill_lv(ctx, 364)))
   subtype: enchant
   type: card
 - aegis_name: Royalguard_Robe2
@@ -43996,6 +44117,7 @@
 - aegis_name: Paladin_Middle2
   id: 310186
   name: Paladin Stone II (Middle)
+  on_equip: bonus(ctx, {:skill_atk, 367}, 20)
   subtype: enchant
   type: card
 - aegis_name: Paladin_Top2
@@ -44502,6 +44624,7 @@
 - aegis_name: Runeknight_Top2
   id: 310258
   name: Lord Knight Stone II (Top)
+  on_equip: bonus(ctx, :long_atk_rate, skill_lv(ctx, 397))
   subtype: enchant
   type: card
 - aegis_name: Runeknight_Middle2
@@ -44513,6 +44636,7 @@
 - aegis_name: Runeknight_Bottom2
   id: 310260
   name: Lord Knight Stone II (Bottom)
+  on_equip: bonus(ctx, {:skill_atk, 397}, 20)
   subtype: enchant
   type: card
 - aegis_name: Genetic_Robe2
@@ -44544,6 +44668,7 @@
 - aegis_name: WanderMins_Top2
   id: 310266
   name: Trentini Gypsy Stone II (Top)
+  on_equip: bonus(ctx, {:skill_atk, 394}, 15)
   subtype: enchant
   type: card
 - aegis_name: WanderMins_Middle2
@@ -46909,6 +47034,31 @@
 - aegis_name: Wolf_Orb_Skill_32
   id: 310547
   name: Wolf Orb (Breeze Shooting)
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:skill_atk, 382}, 15)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :crit_atk_rate, 10)
+      ctx = bonus(ctx, {:skill_atk, 382}, 15)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :crit_atk_rate, 15)
+        ctx = bonus(ctx, {:skill_atk, 382}, 15)
+        ctx = if (refine(ctx) >= 11) do
+          ctx = bonus(ctx, :crit_atk_rate, 15)
+          ctx = bonus(ctx, {:skill_atk, 382}, 15)
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Wolf_Orb_Skill_33
@@ -61537,6 +61687,10 @@
 - aegis_name: aegis_312799
   id: 312799
   name: Holy Protection
+  on_equip: |-
+    ctx = bonus(ctx, :def, 300)
+    ctx = autobonus(ctx, %{primary: [], trigger: :attack, secondary: [{:status_start, :sc_assumptio, 30000, 1}], battle_flag: 849}, 30, 30000)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Barmund_Poison3

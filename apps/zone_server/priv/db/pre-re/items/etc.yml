@@ -6050,6 +6050,10 @@
     - head_mid
     - head_top
   name: Lord Knight Card
+  on_equip: |-
+    ctx = grant_skill(ctx, 359, 1)
+    ctx = bonus(ctx, :max_hp_rate, -50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Seyren_Card
@@ -6115,6 +6119,7 @@
   locations:
     - armor
   name: High Priest Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 851, trigger: :when_hit, skill_id: 361}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Magaleta_Card
@@ -6431,6 +6436,12 @@
   locations:
     - right_hand
   name: Death Word Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 11}, 5)
+    ctx = bonus(ctx, {:skill_atk, 13}, 5)
+    ctx = bonus(ctx, {:skill_atk, 400}, 5)
+    ctx
+  on_unequip: heal(ctx, 0, -50)
   type: card
   weight: 10
 - aegis_name: Plasma_Card
@@ -7049,6 +7060,17 @@
     - head_mid
     - head_top
   name: Banshee Card
+  on_equip: |-
+    if job_is(ctx, :base_class, :mage) do
+      ctx = bonus(ctx, :max_sp, 100)
+      ctx = bonus(ctx, :max_hp, -100)
+      ctx = bonus(ctx, {:skill_atk, 11}, 20)
+      ctx = bonus(ctx, {:skill_atk, 13}, 20)
+      ctx = bonus(ctx, {:skill_atk, 400}, 20)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Flame_Skull_Card
