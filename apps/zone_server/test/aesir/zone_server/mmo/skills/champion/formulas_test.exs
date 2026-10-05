@@ -19,10 +19,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.FormulasTest do
     assert Formulas.chain_crush_ratio(10, 99) == 1_400
   end
 
-  test "Chain Crush shows one hit per two levels, rounded up" do
-    assert Enum.map(1..10, &Formulas.chain_crush_display_hits/1) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
-  end
-
   test "Glacier Fist immobilise chance and duration" do
     assert Formulas.glacier_ankle_chance(1) == 20
     assert Formulas.glacier_ankle_chance(5) == 60

@@ -128,7 +128,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
-    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res, _opts ->
+      :packet
+    end)
 
     test_pid = self()
 

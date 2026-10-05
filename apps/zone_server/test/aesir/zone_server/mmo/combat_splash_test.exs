@@ -124,7 +124,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
-    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res, _opts ->
+      :packet
+    end)
 
     test_pid = self()
 
@@ -187,7 +189,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
-    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res, _opts ->
+      :packet
+    end)
+
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, :packet -> :ok end)
     stub(MobSession, :apply_damage, fn _pid, 50, @caster_id -> :ok end)
 
@@ -224,7 +229,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
-    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _result -> :packet end)
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _result, _opts ->
+      :packet
+    end)
 
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
     stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
@@ -259,7 +266,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
-    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res, _opts ->
+      :packet
+    end)
+
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
     stub(MobSession, :apply_damage, fn _pid, 50, @caster_id -> :ok end)
 
@@ -347,7 +357,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
-    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res, _opts ->
+      :packet
+    end)
+
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
     stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
 
@@ -388,7 +401,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
-    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res, _opts ->
+      :packet
+    end)
+
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
     stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
 

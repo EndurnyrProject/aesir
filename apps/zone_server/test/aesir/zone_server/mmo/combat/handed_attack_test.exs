@@ -114,6 +114,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     assert damage > 0
   end
 
+  test "Double Attack repeats the one calculated primary damage over its two divisions" do
+    attacker = with_hands(hand(:right_hand, 100), nil) |> put_hit(20)
+    target = defender() |> put_flee(zero_rate_flee())
+    double_attack = player(%{48 => 10}, :dagger)
+
+    expect(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+      {:ok, %{damage: 37, is_critical: false}}
+    end)
+
+    :rand.seed(:exsss, {2, 3, 4})
+
+    assert {:ok, %HandedAttack{primary: %{damage: 74}, raw_total: 74, display_divisions: 2}} =
+             HandedAttack.calculate(double_attack, attacker, target, rng: fn 100 -> 1 end)
+  end
+
   test "failed Double Attack adds no HIT and leaves one display division" do
     attacker = with_hands(hand(:right_hand, 100), nil) |> put_hit(20)
     target = defender() |> put_flee(zero_rate_flee())

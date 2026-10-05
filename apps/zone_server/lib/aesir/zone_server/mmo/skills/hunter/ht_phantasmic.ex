@@ -52,7 +52,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmic do
       skill_ratio: skill_ratio(),
       skip_range: true,
       element: definition.element,
-      hit_count: 1,
       skip_crit: true,
       base_distance: definition.knockback,
       origin: {caster.x, caster.y},

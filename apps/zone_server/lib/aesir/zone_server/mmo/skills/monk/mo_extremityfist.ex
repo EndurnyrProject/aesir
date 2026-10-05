@@ -158,7 +158,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
       skill_level: level,
       skill_ratio: skill_ratio,
       bonus_atk: bonus_atk,
-      hit_count: 1,
       skip_crit: true,
       ignore_flee: true
     ]

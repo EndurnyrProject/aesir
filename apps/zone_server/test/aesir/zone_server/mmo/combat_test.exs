@@ -863,7 +863,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_received {:damage_applied, 50}
+      assert_received {:damage_applied, 100}
       refute_received {:damage_applied, _}
     end
 
@@ -885,7 +885,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       assert_received {:packet, %DamageDealt{} = packet}
       assert packet.div == 2
-      assert packet.damage == 50
+      assert packet.damage == 100
       assert packet.damage2 == 0
       assert packet.type == 4
     end
@@ -895,7 +895,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       test_pid = self()
 
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, _hit_info -> 100 end)
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 100, _hit_info -> 100 end)
 
       stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
         send(test_pid, {:damage_applied, damage})
@@ -922,7 +922,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       test_pid = self()
 
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, _hit_info -> 0 end)
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 100, _hit_info -> 0 end)
       stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
@@ -983,7 +983,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_received {:damage_applied, 50}
+      assert_received {:damage_applied, 100}
       refute_received {:damage_applied, _}
     end
 
@@ -1018,7 +1018,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
            skill_id: 263,
            skill_level: 5,
            skill_ratio: 200,
-           display_hit_count: 3,
+           hit_divisions: -3,
            skip_crit: true
          ], :quadruple}
       end)
@@ -1064,7 +1064,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
            skill_id: 263,
            skill_level: 5,
            skill_ratio: 200,
-           display_hit_count: 3,
+           hit_divisions: -3,
            skip_crit: true
          ], :quadruple}
       end)
@@ -1216,7 +1216,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_received {:damage_applied, 50}
+      assert_received {:damage_applied, 100}
       refute_received {:damage_applied, _}
       assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
       refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
@@ -1548,7 +1548,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
-  describe "execute_skill_attack/3 hit_count" do
+  describe "execute_skill_attack/3 hit_divisions" do
     setup do
       attacker = combatant(1001, :player)
       target = combatant(2001, :mob)
@@ -1568,19 +1568,24 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       %{player_state: player_state}
     end
 
-    test "delivers damage hit_count times against the target", %{player_state: player_state} do
-      expect(MobSession, :apply_damage, 2, fn _pid, _damage, _attacker_id -> :ok end)
+    test "repeats one calculation over positive divisions and delivers once",
+         %{player_state: player_state} do
+      expect(DamageCalculator, :calculate_damage, 1, fn _a, _d, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(MobSession, :apply_damage, 1, fn _pid, 100, _attacker_id -> :ok end)
 
       assert :ok =
                Combat.execute_skill_attack(player_state, 2001,
                  skill_id: 7,
                  skill_level: 1,
                  skill_ratio: 100,
-                 hit_count: 2
+                 hit_divisions: 2
                )
     end
 
-    test "defaults to a single hit when hit_count is absent", %{player_state: player_state} do
+    test "defaults to a single hit when hit_divisions is absent", %{player_state: player_state} do
       expect(MobSession, :apply_damage, 1, fn _pid, _damage, _attacker_id -> :ok end)
 
       assert :ok =
@@ -1591,7 +1596,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                )
     end
 
-    test "hit_count: 1 is identical to absent hit_count", %{player_state: player_state} do
+    test "hit_divisions: 1 is identical to absent hit_divisions", %{player_state: player_state} do
       expect(MobSession, :apply_damage, 1, fn _pid, _damage, _attacker_id -> :ok end)
 
       assert :ok =
@@ -1599,7 +1604,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                  skill_id: 7,
                  skill_level: 1,
                  skill_ratio: 100,
-                 hit_count: 1
+                 hit_divisions: 1
                )
     end
 

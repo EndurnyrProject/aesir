@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
       assert opts[:weight_atk] == 150
       assert opts[:base_atk_rate] == 80
       assert opts[:skill_ratio] == 400
-      assert opts[:display_hit_count] == 5
+      assert opts[:hit_divisions] == 5
       assert opts[:skip_crit] == true
       {:ok, %{hit?: false}}
     end)
@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
       assert opts[:ignore_defense] == true
       assert opts[:ignore_size] == true
       assert opts[:bonus_atk] == 7
-      assert opts[:display_hit_count] == 5
+      assert opts[:hit_divisions] == 5
       {:ok, %{hit?: false}}
     end)
 
@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     expect(Combat, :execute_skill_attack, fn ^caster, ^target_ref, opts ->
       assert opts[:skill_id] == 397
       assert opts[:skill_level] == 5
-      assert opts[:display_hit_count] == 5
+      assert opts[:hit_divisions] == 5
       assert opts[:element] == :neutral
       assert opts[:ranged] == true
       assert opts[:skip_crit] == true

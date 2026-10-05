@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     assert definition.range == 9
     assert definition.require_weapon == [:musical]
     assert definition.requires_ammo
-    assert definition.hit_count == 1
+    assert definition.hit_count == 2
     assert definition.sp_cost == List.duplicate(12, 5)
     assert definition.cast_time == List.duplicate(500, 5)
     assert definition.fixed_cast_time == List.duplicate(0, 5)
@@ -75,8 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
       level = opts[:skill_level]
       assert opts[:skill_id] == 316
       assert opts[:skill_ratio] == Enum.at(expected_ratios, level - 1)
-      assert opts[:hit_count] == 1
-      assert opts[:display_hit_count] == 2
+      assert opts[:hit_divisions] == 2
       assert opts[:ranged]
       assert opts[:skip_range]
       assert opts[:skip_crit]
@@ -95,8 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     stub_target_at(18, 10)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:hit_count] == 1
-      assert opts[:display_hit_count] == 2
+      assert opts[:hit_divisions] == 2
       :ok
     end)
 
@@ -210,8 +208,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     stub_target_at(18, 10)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:hit_count] == 1
-      assert opts[:display_hit_count] == 1
+      assert opts[:hit_divisions] == 1
       :ok
     end)
 
@@ -231,8 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
 
     expect(Combat, :execute_skill_attack, 5, fn ^caster, 2_000, opts ->
       assert opts[:skill_ratio] == 60 + 40 * opts[:skill_level]
-      assert opts[:hit_count] == 1
-      assert opts[:display_hit_count] == 1
+      assert opts[:hit_divisions] == 1
       :ok
     end)
 

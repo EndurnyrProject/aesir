@@ -71,12 +71,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     }
   end
 
-  test "ratio is 200 plus 40 per level and bows halve it" do
-    assert RgBackstap.backstab_ratio(player(@katar_id, 10, 11), 1) == 240
-    assert RgBackstap.backstab_ratio(player(@katar_id, 10, 11), 10) == 600
-    assert RgBackstap.backstab_ratio(player(@dagger_id, 10, 11), 1) == 240
-    assert RgBackstap.backstab_ratio(player(@bow_id, 10, 11), 1) == 120
-    assert RgBackstap.backstab_ratio(player(@bow_id, 10, 11), 10) == 300
+  test "ratio is 300 plus 40 per level and bows halve the part above the base 100" do
+    assert RgBackstap.backstab_ratio(player(@katar_id, 10, 11), 1) == 340
+    assert RgBackstap.backstab_ratio(player(@katar_id, 10, 11), 10) == 700
+    assert RgBackstap.backstab_ratio(player(@dagger_id, 10, 11), 1) == 340
+    assert RgBackstap.backstab_ratio(player(@bow_id, 10, 11), 1) == 220
+    assert RgBackstap.backstab_ratio(player(@bow_id, 10, 11), 10) == 400
   end
 
   @tag game_mode: :renewal
@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_id] == 212
       assert opts[:skill_level] == 3
-      assert opts[:skill_ratio] == 320
+      assert opts[:skill_ratio] == 420
       refute Keyword.has_key?(opts, :ignore_flee)
       assert opts[:skip_range] == true
       assert opts[:report_hit] == true
@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:skill_ratio] == 600
+      assert opts[:skill_ratio] == 700
       {:ok, %{hit?: true, damage: 0, target_survives?: true}}
     end)
 
@@ -147,8 +147,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     stub(Cell, :traversable?, fn "backstab", 10, 11 -> true end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:skill_ratio] == 240
-      assert opts[:display_hit_count] == 1
+      assert opts[:skill_ratio] == 340
+      assert opts[:hit_divisions] == 1
       {:ok, %{hit?: true, damage: 0, target_survives?: true}}
     end)
 
@@ -159,14 +159,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
   end
 
   @tag game_mode: :renewal
-  test "a dagger doubles the damage and shows two hits" do
+  test "a dagger repeats the one calculated damage over two hits without touching the ratio" do
     caster = player(@dagger_id, 10, 11)
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:display_hit_count] == 2
-      assert opts[:skill_ratio] == 480
+      assert opts[:hit_divisions] == 2
+      assert opts[:skill_ratio] == 340
       {:ok, %{hit?: false}}
     end)
 
@@ -181,9 +181,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     reject(&StatusInterpreter.apply_status/4)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:skill_ratio] == 320
+      assert opts[:skill_ratio] == 420
       assert opts[:ignore_flee] == true
-      assert opts[:display_hit_count] == 1
+      assert opts[:hit_divisions] == 1
       {:ok, %{hit?: true, damage: 0, target_survives?: true}}
     end)
 
@@ -198,7 +198,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     reject(&StatusInterpreter.apply_status/4)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:skill_ratio] == 600
+      assert opts[:skill_ratio] == 700
       {:ok, %{hit?: true, damage: 0, target_survives?: true}}
     end)
 

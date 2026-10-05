@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchain do
   @moduledoc """
-  Rapid Smiting (PA_SHIELDCHAIN). Five displayed hits on the shield base
-  (attack plus 4 per refine plus the shield's weight), with a flat +20 to the
+  Rapid Smiting (PA_SHIELDCHAIN). One calculation on the shield base (attack
+  plus 4 per refine plus the shield's weight) repeated over five hits, with a
+  flat +20 to the
   hit rate after the clamp. A player needs a shield; a mob caster falls back to
   the plain attack base. The interpreter enforces the per-level reach and the
   attack skips the melee range check. 28 to 40 SP, 1 s after-cast delay.
@@ -59,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchain do
         skill_level: level,
         skill_ratio: skill_ratio(caster, level),
         damage_base: :shield,
-        display_hit_count: 5,
+        hit_divisions: Definition.hit_count_at_level(definition, level),
         hit_rate_bonus_flat: 20,
         skip_crit: true,
         skip_range: true

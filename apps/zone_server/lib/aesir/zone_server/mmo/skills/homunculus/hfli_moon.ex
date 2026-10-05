@@ -1,5 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HfliMoon do
-  @moduledoc "Moonlight, Filir's ranked multi-hit physical attack."
+  @moduledoc """
+  Moonlight, Filir's ranked multi-hit physical attack: one damage calculation
+  split into the level's hit divisions.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 8009,
@@ -9,14 +12,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HfliMoon do
     target_type: :target_enemy,
     damage_type: :damage,
     range: 15,
+    hit_count: [-1, -2, -2, -2, -3],
     sp_cost: [4, 8, 12, 16, 20],
     cooldown: List.duplicate(2_000, 5)
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
 
   @behaviour Active
-  @hit_counts [1, 2, 2, 2, 3]
 
   @impl Active
   def cast(caster, {:unit, target}, level, definition) do
@@ -24,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HfliMoon do
            skill_id: definition.id,
            skill_level: level,
            skill_ratio: 100 + 10 + 110 * level,
-           display_hit_count: Enum.at(@hit_counts, level - 1),
+           hit_divisions: Definition.hit_count_at_level(definition, level),
            skip_range: true,
            skip_crit: true
          ) do

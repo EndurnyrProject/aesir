@@ -399,7 +399,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         assert opts[:skill_id] == 316
         assert opts[:skill_level] == 5
         assert opts[:skill_ratio] == 310
-        assert opts[:display_hit_count] == 2
+        assert opts[:hit_divisions] == 2
         :ok
       end)
 
@@ -416,7 +416,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       expect(Combat, :execute_skill_attack, fn _passed_caster, 42, opts ->
         assert opts[:skill_ratio] == 260
-        assert opts[:display_hit_count] == 1
+        assert opts[:hit_divisions] == 1
         :ok
       end)
 

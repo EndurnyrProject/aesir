@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
       assert opts[:skill_id] == 273
       assert opts[:skill_level] == 3
       assert opts[:skill_ratio] == 740
-      assert opts[:hit_count] == 1
+      assert opts[:hit_divisions] == 1
       assert opts[:skip_crit]
       :ok
     end)
@@ -200,7 +200,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_ratio] == 420
-      assert opts[:hit_count] == 1
+      assert opts[:hit_divisions] == 1
       :ok
     end)
 

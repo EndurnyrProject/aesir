@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Integration.ArcherSkillsTest do
        DEX and Vulture's Eye raises HIT.
     3. Improve Concentration applies `:sc_concentrate` and raises the caster's
        effective AGI/DEX.
-    4. Double Strafe deals two weapon hits in one cast; Arrow Shower splashes the
+    4. Double Strafe deals one weapon attack shown as two hits; Arrow Shower splashes the
        area and knocks targets back.
 
   The arrow ammunition mechanic (no-ammo gating, per-attack/per-cast consumption,
@@ -201,7 +201,7 @@ defmodule Aesir.ZoneServer.Integration.ArcherSkillsTest do
   end
 
   describe "Double Strafe" do
-    test "deals two weapon hits to one target in a single cast" do
+    test "deals one weapon attack shown as two hits to one target in a single cast" do
       caster =
         start_player_session(
           id: 9431,
@@ -225,8 +225,10 @@ defmodule Aesir.ZoneServer.Integration.ArcherSkillsTest do
       assert {:ok, ^caster_state} =
                AcDouble.cast(caster_state, {:unit, mob_id}, 10, skill_def(:ac_double))
 
-      assert_receive {:packet_sent, %SkillDamage{skill_id: 46, target_id: ^mob_id}, _}, 1_000
-      assert_receive {:packet_sent, %SkillDamage{skill_id: 46, target_id: ^mob_id}, _}, 1_000
+      assert_receive {:packet_sent, %SkillDamage{skill_id: 46, target_id: ^mob_id, div: 2}, _},
+                     1_000
+
+      refute_receive {:packet_sent, %SkillDamage{skill_id: 46, target_id: ^mob_id}, _}, 200
     end
   end
 

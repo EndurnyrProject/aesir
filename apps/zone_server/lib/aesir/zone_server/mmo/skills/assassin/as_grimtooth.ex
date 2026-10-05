@@ -62,7 +62,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth do
           skill_id: definition.id,
           skill_level: level,
           skill_ratio: skill_ratio(level),
-          hit_count: 1,
           skip_crit: true,
           ranged: true,
           typed_results: true,

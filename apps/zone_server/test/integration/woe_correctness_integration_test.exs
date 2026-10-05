@@ -267,7 +267,7 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
       skill_ratio: 120,
       ignore_flee: true,
       skip_crit: true,
-      display_hit_count: 3
+      hit_divisions: -3
     ]
 
     :rand.seed(:exsss, {17, 19, 23})

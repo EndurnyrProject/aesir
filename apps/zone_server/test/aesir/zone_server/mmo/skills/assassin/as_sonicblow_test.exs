@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     assert skill.range == 1
     assert skill.sp_cost == Enum.to_list(16..34//2)
     assert skill.cooldown == List.duplicate(1_000, 10)
-    assert skill.hit_count == 1
+    assert skill.hit_count == -8
     assert skill.require_weapon == [:katar]
     assert skill.requires == []
     assert AsSonicblow.__requires_declared__()
@@ -117,8 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     expect(Combat, :execute_sonic_blow_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_ratio] == 450
       assert opts[:accelerated] == false
-      assert opts[:display_hit_count] == 8
-      assert opts[:hit_count] == 1
+      assert opts[:hit_divisions] == -8
       assert opts[:skip_crit] == true
       assert opts[:report_hit] == true
       {:ok, %{hit?: true, damage: 0, target_survives?: true}}
@@ -230,7 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     assert {:ok, ^caster} = AsSonicblow.cast(caster, {:unit, @target_id}, 10, definition())
   end
 
-  test "real combat boundary accelerates HIT and final damage once while displaying eight" do
+  test "real combat boundary accelerates HIT and final damage once before the eight-way split" do
     Mimic.copy(DamageCalculator)
     Mimic.copy(HitCalculations)
     Mimic.copy(MobState)
@@ -277,23 +276,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn _, 191, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, fn _, 184, @caster_id -> :ok end)
 
-    assert {:ok, %{hit?: true, damage: 191}} =
+    assert {:ok, %{hit?: true, damage: 184}} =
              Combat.execute_sonic_blow_attack(caster, @target_id,
                skill_id: 136,
                skill_level: 1,
                skill_ratio: 300,
                accelerated: true,
-               display_hit_count: 8,
-               hit_count: 1,
+               hit_divisions: -8,
                skip_crit: true,
                report_hit: true,
                skip_range: true
              )
 
     assert_received {:accelerated_hit, 191}
-    assert_received {:packet, %SkillDamage{damage: 191, div: 8}}
+    assert_received {:packet, %SkillDamage{damage: 184, div: 8}}
   end
 
   test "a miss skips Stun while a fully absorbed connected hit still attempts it" do

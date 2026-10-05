@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
                skill_id: 5,
                skill_level: 1,
                ignore_flee: true,
-               display_hit_count: 5
+               hit_divisions: 5
              )
 
     assert eventually(fn -> active_keys(session.pid) == [physical_key] end)

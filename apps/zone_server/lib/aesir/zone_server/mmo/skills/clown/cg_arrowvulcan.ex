@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcan do
     damage_type: :damage,
     damage_kind: :weapon,
     range: 9,
-    hit_count: 1,
+    hit_count: -9,
     require_weapon: [:musical, :whip],
     requires_ammo: true,
     sp_cost: [12, 14, 16, 18, 20, 22, 24, 26, 28, 30],
@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcan do
       ranged: true,
       skip_range: true,
       skip_crit: true,
-      display_hit_count: 9
+      hit_divisions: Definition.hit_count_at_level(definition, level)
     )
   end
 

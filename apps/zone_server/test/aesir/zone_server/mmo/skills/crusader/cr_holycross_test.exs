@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
         assert opts[:skill_level] == 1
         assert opts[:skill_ratio] == 135
         assert opts[:element] == :holy
-        assert opts[:hit_count] == 2
+        assert opts[:hit_divisions] == -2
         assert opts[:skip_crit] == true
         {:ok, %{hit?: false}}
       end)

@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
         assert opts[:skill_ratio] == 220
-        assert opts[:hit_count] == 1
+        assert opts[:hit_divisions] == 1
         assert opts[:base_distance] == 1
         [101]
       end)
@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
         assert opts[:skill_id] == 62
         assert opts[:skill_level] == level
         assert opts[:skill_ratio] == 220
-        assert opts[:hit_count] == 2
+        assert opts[:hit_divisions] == 2
         assert opts[:skip_crit] == true
         assert opts[:base_distance] == 2
         assert opts[:origin] == {10, 20}
@@ -181,7 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
-        assert opts[:hit_count] == 3
+        assert opts[:hit_divisions] == 3
         assert opts[:base_distance] == 1
         []
       end)
@@ -203,7 +203,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
-        assert opts[:hit_count] == 4
+        assert opts[:hit_divisions] == 4
         assert opts[:base_distance] == 1
         []
       end)
@@ -253,7 +253,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant -> [{:mob, 1}] end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
-        assert opts[:hit_count] == 2
+        assert opts[:hit_divisions] == 2
         assert opts[:native_target_types] == [:mob]
         []
       end)

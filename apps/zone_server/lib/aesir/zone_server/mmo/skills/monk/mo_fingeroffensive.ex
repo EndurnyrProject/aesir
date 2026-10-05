@@ -9,9 +9,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
   level 1.
 
   Renewal: 600 plus 200 per level percent (half again against a rooted target)
-  over five hits for one sphere, 8 plus 4 per level SP, a 0.5 s cast plus 0.5 s
-  fixed, and a 1 s cooldown. Pre-renewal: 100 plus 50 per level percent over one
-  hit per level, spending one sphere per level, 10 SP, a 1 s cast, and no cooldown.
+  as one damage split into five hits for one sphere, 8 plus 4 per level SP, a
+  0.5 s cast plus 0.5 s fixed, and a 1 s cooldown. Pre-renewal: 100 plus 50 per
+  level percent repeated once per level, spending one sphere per level, 10 SP,
+  a 1 s cast, and no cooldown. A classic Monk holding fewer spheres than the
+  level still casts, spends every sphere held, and throws that many; a
+  restricted invocation (an item cast) spends none and throws the spheres
+  held, down to none at all.
   """
 
   @sp_costs Enum.map(
@@ -34,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
     target_type: :target_enemy,
     damage_type: :damage,
     range: 9,
-    hit_count: @hit_count,
+    hit_count: [renewal: @hit_count, pre_renewal: [1, 2, 3, 4, 5]],
     sp_cost: [renewal: @sp_costs, pre_renewal: List.duplicate(10, 5)],
     sphere_cost: [renewal: List.duplicate(@sphere_cost, 5), pre_renewal: [1, 2, 3, 4, 5]],
     cast_time: [
@@ -48,12 +52,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   @behaviour Active
+
+  @doc """
+  Resolves the cast's cost. A classic Monk holding at least one sphere but
+  fewer than the level spends only the spheres held; an empty hand keeps the
+  full requirement and fails validation.
+  """
+  @impl Active
+  @spec dynamic_cost(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
+  def dynamic_cost(caster, _target, level, definition) do
+    cost =
+      Cost.from_definition(caster, definition, level,
+        sp: Cost.resolve_sp(caster, definition, level)
+      )
+
+    held = held_spheres(caster)
+
+    if held > 0 and held < cost.spheres, do: %{cost | spheres: held}, else: cost
+  end
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -68,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
 
   defp attack(caster, caster_id, target_id, level, definition, target_type) do
     with :ok <- Root.check_cast(:player, caster_id, definition.id),
-         opts <- attack_opts(definition, level, target_type, target_id),
+         opts <- attack_opts(caster, definition, level, target_type, target_id),
          :ok <- Combat.execute_skill_attack(caster, target_id, opts) do
       if Root.rooted?(:player, caster_id), do: Root.close(:player, caster_id)
 
@@ -83,24 +107,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
     end
   end
 
-  defp attack_opts(definition, level, target_type, target_id) do
+  defp attack_opts(caster, definition, level, target_type, target_id) do
     [
       skill_id: definition.id,
       skill_level: level,
       skill_ratio:
         Formulas.throw_spirit_sphere_ratio(level, Root.rooted?(target_type, target_id)),
-      hit_count: hit_count(level, definition),
+      hit_divisions: hit_divisions(caster, definition, level),
       skip_crit: true,
       skip_range: true
     ]
   end
 
-  defp hit_count(level, definition) do
+  # Classic throws at most the spheres the Monk holds when the attack resolves,
+  # which the cost has not yet consumed: a restricted invocation may throw none.
+  defp hit_divisions(caster, definition, level) do
+    declared = Definition.hit_count_at_level(definition, level)
+
     case GameMode.mode() do
-      :renewal -> definition.hit_count
-      :pre_renewal -> level
+      :renewal -> declared
+      :pre_renewal -> min(declared, held_spheres(caster))
     end
   end
+
+  defp held_spheres(%{spirit_spheres: %SpiritSpheres{} = spheres}),
+    do: SpiritSpheres.count(spheres)
+
+  defp held_spheres(_caster), do: 0
 
   defp now, do: System.monotonic_time(:millisecond)
 end

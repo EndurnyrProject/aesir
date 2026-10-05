@@ -2,10 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
   @moduledoc """
   Back Stab (RG_BACKSTAP), a rear melee attack that breaks the caster's Hiding.
 
-  Both modes deal 200 plus 40 per level percent, halved with a bow, for 16 SP
-  with a 0.5 s delay. Renewal: no rear requirement, the caster slips to the cell
-  behind the target, the hit is rolled normally, a dagger doubles the damage and
-  shows two hits, a 5 plus 2 per level percent 4.5 s stun lands on hit, and a
+  Both modes deal 300 plus 40 per level percent (a bow halves the part above
+  the base 100) for 16 SP with a 0.5 s delay. Renewal: no rear requirement,
+  the caster slips to the cell behind the target, the hit is rolled normally, a
+  dagger repeats the one calculated damage over two hits, a 5 plus 2 per level
+  percent 4.5 s stun lands on hit, and a
   0.5 s cooldown applies. Pre-renewal: the caster must already stand behind the
   target, the hit never misses, and there is no stun or cooldown. Turning the
   target and the renewal flat HIT bonus are not modelled.
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -45,12 +47,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
       break_hiding(caster)
 
       opts =
-        mode_opts(caster) ++
+        mode_opts() ++
           [
             skill_id: definition.id,
             skill_level: level,
-            skill_ratio: strike_ratio(caster, level),
-            hit_count: 1,
+            skill_ratio: backstab_ratio(caster, level),
+            hit_divisions: hit_divisions(caster, definition, level),
             skip_range: true,
             report_hit: true
           ]
@@ -83,24 +85,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
     end
   end
 
-  defp mode_opts(caster) do
+  defp mode_opts do
     case GameMode.mode() do
-      :renewal ->
-        if weapon_type(caster) == :dagger,
-          do: [display_hit_count: 2],
-          else: [display_hit_count: 1]
-
-      :pre_renewal ->
-        [display_hit_count: 1, ignore_flee: true]
+      :renewal -> []
+      :pre_renewal -> [ignore_flee: true]
     end
   end
 
-  defp strike_ratio(caster, level) do
-    ratio = backstab_ratio(caster, level)
-
+  # A renewal dagger repeats the one calculated damage twice.
+  defp hit_divisions(caster, definition, level) do
     if GameMode.mode() == :renewal and weapon_type(caster) == :dagger,
-      do: ratio * 2,
-      else: ratio
+      do: 2,
+      else: Definition.hit_count_at_level(definition, level)
   end
 
   defp break_hiding(%PlayerState{character_id: caster_id}),
@@ -127,11 +123,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
 
   defp axis_step(delta), do: delta |> max(-1) |> min(1)
 
-  @doc "Returns Back Stab's weapon ratio: 200 plus 40 per level, halved with a bow."
+  @doc """
+  Returns Back Stab's weapon ratio: the base 100 plus 200 plus 40 per level,
+  with a bow halving the skill's own part.
+  """
   @spec backstab_ratio(PlayerState.t() | MobState.t(), pos_integer()) :: pos_integer()
   def backstab_ratio(caster, level) do
-    ratio = 200 + 40 * level
-    if weapon_type(caster) == :bow, do: div(ratio, 2), else: ratio
+    bonus = 200 + 40 * level
+    100 + if weapon_type(caster) == :bow, do: div(bonus, 2), else: bonus
   end
 
   defp weapon_type(%PlayerState{stats: %{equipment: equipment}}),

@@ -17,14 +17,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcDoubleTest do
     definition
   end
 
-  test "cast/4 calls execute_skill_attack with hit_count: 2 and the level-scaled ratio" do
+  test "cast/4 calls execute_skill_attack with hit_divisions: 2 and the level-scaled ratio" do
     caster = caster()
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_id] == definition().id
       assert opts[:skill_level] == 5
       assert opts[:skill_ratio] == 140
-      assert opts[:hit_count] == 2
+      assert opts[:hit_divisions] == 2
       assert opts[:skip_crit] == true
       :ok
     end)

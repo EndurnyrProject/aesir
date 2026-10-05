@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{size: :small}} end)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:hit_count] == 1
+        assert opts[:hit_divisions] == 1
         :ok
       end)
 
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{size: :medium}} end)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:hit_count] == 2
+        assert opts[:hit_divisions] == 2
         :ok
       end)
 
@@ -112,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{size: :large}} end)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:hit_count] == 3
+        assert opts[:hit_divisions] == 3
         :ok
       end)
 

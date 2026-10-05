@@ -105,6 +105,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
              )
   end
 
+  test "a normalized physical total reaches Energy Coat once with one SP charge" do
+    target_id = 33
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+    stub_unit_info(target_id)
+
+    player_state = %PlayerState{
+      character_id: target_id,
+      action_state: :idle,
+      stats: %{current_state: %{hp: 1_000}}
+    }
+
+    stub(UnitRegistry, :get_unit, fn :player, ^target_id ->
+      {:ok, {PlayerState, player_state, target_pid}}
+    end)
+
+    :ok = Interpreter.apply_status(:player, target_id, :sc_energycoat)
+
+    # Full SP is the top band: a 30% soak charging 3 SP. Three divisions of 19
+    # arrive as one 57 total, settling to 40 for one charge, not 3 x 14 = 42.
+    expect(PlayerSession, :consume_sp, fn ^target_pid, 3 -> :ok end)
+
+    assert {40, %{pre_delivery_prepared?: true}} =
+             DamageApplication.prepare_unit_damage(
+               :player,
+               target_id,
+               57,
+               %{dmg_type: :physical, is_short: true, skill_id: 7},
+               20
+             )
+  end
+
   test "does not reduce physical skill damage" do
     target_id = 31
     register_player_with_magic_reduction(target_id, 40)

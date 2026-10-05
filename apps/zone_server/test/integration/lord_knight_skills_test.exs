@@ -161,7 +161,7 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
 
   @tag game_mode: :pre_renewal, integration_re: false
   test "pre-renewal Spiral Pierce displays five hits and uses fixed weapon damage" do
-    assert assert_spiral_pierce() == 196
+    assert assert_spiral_pierce() == 980
   end
 
   test "Joint Beat amplifies the next live spear strike after a forced neck break" do

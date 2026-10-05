@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   @moduledoc """
-  Spiral Pierce (LK_SPIRALPIERCE) is a spear/sword weight strike displayed as
-  five hits, rooting a non-boss target for one second on a connecting hit.
+  Spiral Pierce (LK_SPIRALPIERCE) is a spear/sword weight strike whose one
+  calculated damage is repeated over five hits, rooting a non-boss target for
+  one second on a connecting hit.
 
   Renewal folds the 70% base and size adjustment into one integer rate, which
   can round by one point. Pre-renewal's refine bonus rides `bonus_atk` under
@@ -132,7 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
     [
       skill_id: definition.id,
       skill_level: level,
-      display_hit_count: 5,
+      hit_divisions: Definition.hit_count_at_level(definition, level),
       skip_crit: true,
       skip_range: true,
       report_hit: true

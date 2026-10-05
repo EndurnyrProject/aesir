@@ -184,7 +184,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
       assert opts[:skill_level] in [1, 10]
       assert opts[:skill_ratio] in mode_value([300, 1_200], [350, 385, 800, 880])
       assert opts[:accelerated]
-      assert opts[:display_hit_count] == 8
+      assert opts[:hit_divisions] == -8
       {:ok, %{hit?: false, damage: 0, target_survives?: true}}
     end)
 
@@ -441,6 +441,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          target_type: :target_enemy,
          damage_type: :damage,
          range: 1,
+         hit_count: -8,
          sp_cost: Enum.to_list(16..34//2),
          cooldown: mode_value(List.duplicate(1_000, 10), []),
          after_cast_delay: mode_value([], List.duplicate(2_000, 10)),

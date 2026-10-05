@@ -20,8 +20,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @spec trifecta_ratio(pos_integer()) :: pos_integer()
   def trifecta_ratio(level), do: 100 + 20 * level
 
-  @spec trifecta_hit_count() :: 3
-  def trifecta_hit_count, do: 3
+  @doc "Raging Trifecta Blow's signed hit divisions: one damage split three ways."
+  @spec trifecta_hit_count() :: -3
+  def trifecta_hit_count, do: -3
 
   @spec quadruple_ratio(pos_integer(), boolean()) :: pos_integer()
   def quadruple_ratio(level, knuckle?) do
@@ -35,9 +36,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
     end
   end
 
-  @spec quadruple_hit_count(boolean()) :: 4 | 6
-  def quadruple_hit_count(true), do: if(GameMode.mode() == :renewal, do: 6, else: 4)
-  def quadruple_hit_count(false), do: 4
+  @doc """
+  Raging Quadruple Blow's signed hit divisions: one damage split four ways,
+  six with a knuckle in renewal.
+  """
+  @spec quadruple_hit_count(boolean()) :: -4 | -6
+  def quadruple_hit_count(true), do: if(GameMode.mode() == :renewal, do: -6, else: -4)
+  def quadruple_hit_count(false), do: -4
 
   @spec thrust_ratio(pos_integer(), non_neg_integer()) :: pos_integer()
   def thrust_ratio(level, strength) do
@@ -77,8 +82,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @spec throw_spirit_sphere_cost() :: 1
   def throw_spirit_sphere_cost, do: 1
 
-  @spec throw_spirit_sphere_hit_count() :: 5
-  def throw_spirit_sphere_hit_count, do: 5
+  @doc "Renewal Throw Spirit Sphere's signed hit divisions: one damage split five ways."
+  @spec throw_spirit_sphere_hit_count() :: -5
+  def throw_spirit_sphere_hit_count, do: -5
 
   @spec iron_fists_attack_bonus(pos_integer()) :: pos_integer()
   def iron_fists_attack_bonus(level), do: 3 * level

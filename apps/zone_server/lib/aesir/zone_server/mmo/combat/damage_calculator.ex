@@ -765,15 +765,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     end
   end
 
-  defp emperium_plant_contact?(
-         %Combatant{unit_type: :mob, monster_id: @emperium_mob_id},
-         opts
-       ) do
+  @doc """
+  Whether an ordinary swing against `defender` is a plant-mode Emperium
+  contact: a fixed 1-damage hit that skips the rest of the weapon recipe,
+  including hit-division normalization.
+  """
+  @spec emperium_plant_contact?(Combatant.t() | map(), keyword()) :: boolean()
+  def emperium_plant_contact?(
+        %Combatant{unit_type: :mob, monster_id: @emperium_mob_id},
+        opts
+      ) do
     is_nil(Keyword.get(opts, :skill_id)) and
       Mechanics.mob_formulas().emperium_damage_mode() == :plant
   end
 
-  defp emperium_plant_contact?(_defender, _opts), do: false
+  def emperium_plant_contact?(_defender, _opts), do: false
 
   # P.Atk (renewal 4th-job attacker stat): a percentage multiplier on base ATK
   # applied before the skill ratio. rAthena battle.cpp:5532.

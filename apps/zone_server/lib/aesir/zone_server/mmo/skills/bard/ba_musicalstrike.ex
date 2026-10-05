@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
   Musical Strike (BA_MUSICALSTRIKE). A ranged instrument strike at 9 cells that
   spends one arrow.
 
-  Renewal: 110 plus 40 per level percent, a 0.5 s cast, a 0.3 s delay, and 12
-  SP, displayed as two hits. Pre-renewal: 60 plus 40 per level percent, a 1.5 s
+  Renewal: 110 plus 40 per level percent repeated over two hits, a 0.5 s cast,
+  a 0.3 s delay, and 12 SP. Pre-renewal: 60 plus 40 per level percent, a 1.5 s
   cast, no delay, and 2 per level minus 1 SP as one hit.
   """
 
@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
     damage_type: :damage,
     damage_kind: :weapon,
     range: 9,
-    hit_count: 1,
+    hit_count: [renewal: 2, pre_renewal: 1],
     requires_ammo: true,
     require_weapon: [:musical],
     sp_cost: [renewal: List.duplicate(12, 5), pre_renewal: [1, 3, 5, 7, 9]],
@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
 
   @behaviour Active
 
@@ -38,13 +39,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
     opts = [
       skill_id: definition.id,
       skill_level: level,
-      hit_count: 1,
+      skill_ratio: skill_ratio(level),
+      hit_divisions: Definition.hit_count_at_level(definition, level),
       ranged: true,
       skip_range: true,
       skip_crit: true
     ]
-
-    opts = mode_opts(level) ++ opts
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
       :ok -> {:ok, caster}
@@ -52,10 +52,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
     end
   end
 
-  defp mode_opts(level) do
+  defp skill_ratio(level) do
     case GameMode.mode() do
-      :renewal -> [skill_ratio: 110 + 40 * level, display_hit_count: 2]
-      :pre_renewal -> [skill_ratio: 60 + 40 * level, display_hit_count: 1]
+      :renewal -> 110 + 40 * level
+      :pre_renewal -> 60 + 40 * level
     end
   end
 end

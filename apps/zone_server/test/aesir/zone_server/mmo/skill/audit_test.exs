@@ -193,11 +193,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
       refute Enum.any?(Audit.compare(@definition, row, :renewal), &(&1.field == :hit_count))
     end
 
-    test "a negative source HitCount normalizes by magnitude and matches an equal Aesir value" do
-      definition = %{@definition | hit_count: 3}
+    test "a negative source HitCount matches only an equally signed Aesir value" do
       row = Map.put(@matching_row, "HitCount", -3)
 
-      refute Enum.any?(Audit.compare(definition, row, :renewal), &(&1.field == :hit_count))
+      refute Enum.any?(
+               Audit.compare(%{@definition | hit_count: -3}, row, :renewal),
+               &(&1.field == :hit_count)
+             )
+
+      assert [%{field: :hit_count, aesir: 3}] =
+               Enum.filter(
+                 Audit.compare(%{@definition | hit_count: 3}, row, :renewal),
+                 &(&1.field == :hit_count)
+               )
     end
 
     test "a source HitCount that differs in magnitude from Aesir is a finding" do

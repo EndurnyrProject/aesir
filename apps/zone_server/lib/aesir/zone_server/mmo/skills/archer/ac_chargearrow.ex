@@ -48,7 +48,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrow do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 150,
-      hit_count: 1,
       skip_crit: true,
       skip_range: true,
       base_distance: definition.knockback,

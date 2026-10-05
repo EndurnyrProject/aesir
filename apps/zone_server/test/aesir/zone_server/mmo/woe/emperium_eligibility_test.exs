@@ -135,9 +135,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
       :pre_renewal ->
         stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
 
-        expect(SkillAttack, :execute_skill_attack, fn ^caster_state,
-                                                      @emperium_unit_id,
-                                                      ^replacement_opts ->
+        expect(SkillAttack, :execute_skill_attack, fn ^caster_state, @emperium_unit_id, opts ->
+          assert Enum.sort(opts) == Enum.sort(replacement_opts)
           :ok
         end)
 

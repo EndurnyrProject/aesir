@@ -365,4 +365,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
       assert Definition.range_at_level(defn, 0) == 3
     end
   end
+
+  describe "hit_count_at_level/2" do
+    test "a signed scalar count resolves the same regardless of level" do
+      defn = Definition.build!(@required_opts ++ [hit_count: -8], __MODULE__)
+
+      assert Definition.hit_count_at_level(defn, 1) == -8
+      assert Definition.hit_count_at_level(defn, 5) == -8
+    end
+
+    test "a per-level signed list resolves the entry at level - 1" do
+      defn = Definition.build!(@required_opts ++ [hit_count: [-1, -2, -2, -2, -3]], __MODULE__)
+
+      assert Definition.hit_count_at_level(defn, 1) == -1
+      assert Definition.hit_count_at_level(defn, 5) == -3
+    end
+
+    test "defaults to one division" do
+      defn = Definition.build!(@required_opts, __MODULE__)
+      assert Definition.hit_count_at_level(defn, 3) == 1
+    end
+
+    test "rejects a zero scalar or per-level entry as malformed static metadata" do
+      assert_raise ArgumentError, ~r/hit_count/, fn ->
+        Definition.build!(@required_opts ++ [hit_count: 0], __MODULE__)
+      end
+
+      assert_raise ArgumentError, ~r/hit_count/, fn ->
+        Definition.build!(@required_opts ++ [hit_count: [1, 0, 2]], __MODULE__)
+      end
+    end
+  end
 end

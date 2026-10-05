@@ -357,7 +357,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^wrong_key, _}}}
   end
 
-  test "streams every multi-hit fragment through delivery before calculating the next" do
+  test "positive divisions normalize one calculation once before delivery" do
     attacker =
       CombatTestHelper.create_player_combatant(
         unit_id: 1001,
@@ -377,63 +377,61 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
     stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
-    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    expect(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
 
-    expect(DamageCalculator, :calculate_damage, 3, fn ^attacker, ^target, _opts ->
-      fragment = Process.get(:fragment, 0) + 1
-      Process.put(:fragment, fragment)
-      send(test_pid, {:event, {:calculate, fragment}})
+    expect(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+      send(test_pid, {:event, :calculate})
       {:ok, %{damage: 40, is_critical: false}}
     end)
 
     expect(EquipComa, :trigger?, fn ^attacker, ^target ->
-      send(test_pid, {:event, {:coma, Process.get(:fragment)}})
+      send(test_pid, {:event, :coma})
       false
     end)
 
-    stub(EquipVanish, :after_hit, fn ^attacker, ^target, _pid, _flag ->
-      send(test_pid, {:event, {:vanish, Process.get(:fragment)}})
+    expect(EquipVanish, :after_hit, fn ^attacker, ^target, _pid, _flag ->
+      send(test_pid, {:event, :vanish})
       :ok
     end)
 
-    stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, 40, _hit_info ->
-      send(test_pid, {:event, {:prepare, Process.get(:fragment)}})
-      40
+    expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 120, _hit_info ->
+      send(test_pid, {:event, :prepare})
+      120
     end)
 
-    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet ->
-      send(test_pid, {:event, {:packet, Process.get(:fragment)}})
+    expect(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      send(test_pid, {:event, {:packet, packet.damage, packet.div}})
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn _pid, 40, 1001 ->
-      send(test_pid, {:event, {:damage, Process.get(:fragment)}})
+    expect(MobSession, :apply_damage, fn _pid, 120, 1001 ->
+      send(test_pid, {:event, :damage})
       :ok
     end)
 
-    stub(StatusInterpreter, :after_damage_taken, fn :mob, 2001, _hit_info ->
-      send(test_pid, {:event, {:after_damage, Process.get(:fragment)}})
+    expect(StatusInterpreter, :after_damage_taken, fn :mob, 2001, _hit_info ->
+      send(test_pid, {:event, :after_damage})
       0
     end)
 
-    stub(OnHitEffects, :after_hit, fn ^attacker, ^target, _result, _opts ->
-      send(test_pid, {:event, {:on_hit, Process.get(:fragment)}})
+    expect(OnHitEffects, :after_hit, fn ^attacker, ^target, %{damage: 120}, _opts ->
+      send(test_pid, {:event, :on_hit})
       :ok
     end)
 
-    stub(EquipAutocast, :on_attack, fn ^attacker, ^target, _flag ->
-      send(test_pid, {:event, {:attacker_autocast, Process.get(:fragment)}})
+    expect(EquipAutocast, :on_attack, fn ^attacker, ^target, _flag ->
+      send(test_pid, {:event, :attacker_autocast})
       []
     end)
 
-    stub(EquipAutocast, :when_hit, fn ^target, ^attacker, _flag ->
-      send(test_pid, {:event, {:target_autocast, Process.get(:fragment)}})
+    expect(EquipAutocast, :when_hit, fn ^target, ^attacker, _flag ->
+      send(test_pid, {:event, :target_autocast})
       []
     end)
 
     expect(Knockback, :skill, fn ^attacker, ^target, 7, result, [] ->
       assert result == %{hit?: true, target_survives?: true, coma?: false}
-      send(test_pid, {:event, {:knockback, Process.get(:fragment)}})
+      send(test_pid, {:event, :knockback})
       :ok
     end)
 
@@ -441,42 +439,63 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
              SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
                skill_id: 7,
                skill_level: 1,
-               hit_count: 3,
+               hit_divisions: 3,
                ignore_flee: true,
                report_hit: true
              )
 
-    assert event_sequence(29) == [
-             {:calculate, 1},
-             {:coma, 1},
-             {:vanish, 1},
-             {:prepare, 1},
-             {:packet, 1},
-             {:damage, 1},
-             {:after_damage, 1},
-             {:on_hit, 1},
-             {:attacker_autocast, 1},
-             {:target_autocast, 1},
-             {:calculate, 2},
-             {:vanish, 2},
-             {:prepare, 2},
-             {:packet, 2},
-             {:damage, 2},
-             {:after_damage, 2},
-             {:on_hit, 2},
-             {:attacker_autocast, 2},
-             {:target_autocast, 2},
-             {:calculate, 3},
-             {:vanish, 3},
-             {:prepare, 3},
-             {:packet, 3},
-             {:damage, 3},
-             {:after_damage, 3},
-             {:on_hit, 3},
-             {:attacker_autocast, 3},
-             {:target_autocast, 3},
-             {:knockback, 3}
+    assert event_sequence(11) == [
+             :calculate,
+             :coma,
+             :vanish,
+             :prepare,
+             {:packet, 120, 3},
+             :damage,
+             :after_damage,
+             :on_hit,
+             :attacker_autocast,
+             :target_autocast,
+             :knockback
            ]
+  end
+
+  test "negative divisions floor the total to an equal split before the target sees it" do
+    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 1_000}
+    test_pid = self()
+
+    stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+
+    expect(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+      {:ok, %{damage: 101, is_critical: false}}
+    end)
+
+    expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 96, _hit_info -> 96 end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      send(test_pid, {:packet, packet.damage, packet.div})
+      :ok
+    end)
+
+    expect(MobSession, :apply_damage, fn _pid, 96, 1001 -> :ok end)
+
+    assert {:ok, %{hit?: true, damage: 96}} =
+             SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
+               skill_id: 7,
+               skill_level: 1,
+               hit_divisions: -8,
+               ignore_flee: true,
+               report_hit: true
+             )
+
+    assert_received {:packet, 96, 8}
   end
 
   test "equipment skill blow needs a damaging hit and floors signed totals" do
@@ -513,12 +532,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(MapCache, :get, fn ^map_name -> {:ok, :map} end)
     stub(Cell, :step_traversable?, fn ^map_name, _from, _to -> true end)
 
-    # A hit below one damage per division pushes nothing (skill.cpp: "only
-    # pushback when it hit"), equipment blow included.
+    # A hit below one damage per division pushes nothing, equipment blow
+    # included: a total quantized to zero by negative divisions stays put while
+    # a repeated positive one still pushes.
     cases = [
       {1, %{{:add_skill_blow, 7} => 2}, [], {103, 100}},
       {0, %{{:add_skill_blow, 7} => 2}, [], nil},
-      {2, %{{:add_skill_blow, 7} => 2}, [display_hit_count: 5], nil},
+      {2, %{{:add_skill_blow, 7} => 2}, [hit_divisions: -5], nil},
+      {1, %{{:add_skill_blow, 7} => 2}, [hit_divisions: 3], {103, 100}},
       {1, %{{:add_skill_blow, 7} => -2}, [base_distance: 1], nil},
       {1, %{{:add_skill_blow, 7} => -1}, [base_distance: 1], nil}
     ]
@@ -655,7 +676,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
              )
   end
 
-  test "one successful coma decision marks every fragment and guarantees aggregate survival" do
+  test "one coma decision marks the whole normalized attack and guarantees survival" do
     attacker =
       CombatTestHelper.create_player_combatant(
         unit_id: 1001,
@@ -676,20 +697,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
     stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
 
-    expect(DamageCalculator, :calculate_damage, 2, fn ^attacker, ^target, _opts ->
+    expect(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
       {:ok, %{damage: 80, is_critical: false}}
     end)
 
     expect(EquipComa, :trigger?, fn ^attacker, ^target -> true end)
 
-    expect(StatusInterpreter, :absorb_damage, 2, fn :mob, 2001, 80, hit_info ->
+    expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 160, hit_info ->
       assert hit_info.coma?
-      80
+      160
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     reject(&MobSession.apply_damage/3)
-    expect(MobSession, :apply_coma, 2, fn _pid, {:player, 1001} -> :ok end)
+    expect(MobSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
 
     expect(Knockback, :skill, fn ^attacker, ^target, 7, result, options ->
       assert result == %{hit?: true, target_survives?: true, coma?: true}
@@ -709,7 +730,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
              SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
                skill_id: 7,
                skill_level: 1,
-               hit_count: 2,
+               hit_divisions: 2,
                ignore_flee: true,
                report_hit: true,
                base_distance: 3,
@@ -856,77 +877,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     assert_received {:knockback, 2002}
   end
 
-  test "interception, failed calculation, and zero damage defer coma until a positive fragment" do
-    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
-    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
-    caster_state = %TestUnit{combatant: attacker, hp: 100}
-    target_state = %TestUnit{combatant: target, hp: 100}
-    test_pid = self()
-
-    stub(TargetResolver, :resolve, fn {:mob, 2001} ->
-      {:ok, self(), target_state, :mob}
-    end)
-
-    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
-    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
-    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
-
-    expect(StatusInterpreter, :before_weapon_hit, 4, fn :mob, 2001, _attack_info ->
-      call = Process.get(:interception_call, 0) + 1
-      Process.put(:interception_call, call)
-      if call == 1, do: {:intercept, :blocked}, else: :continue
-    end)
-
-    expect(DamageCalculator, :calculate_damage, 3, fn ^attacker, ^target, _opts ->
-      call = Process.get(:calculation_call, 0) + 1
-      Process.put(:calculation_call, call)
-
-      case call do
-        1 -> {:error, :failed}
-        2 -> {:ok, %{damage: 0, is_critical: false}}
-        3 -> {:ok, %{damage: 25, is_critical: false}}
-      end
-    end)
-
-    expect(EquipComa, :trigger?, fn ^attacker, ^target ->
-      send(test_pid, :coma_decided)
-      true
-    end)
-
-    stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, 25, hit_info ->
-      assert hit_info.coma?
-      25
-    end)
-
-    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-
-    expect(MobSession, :apply_damage, fn _pid, 0, 1001 ->
-      refute_received :coma_decided
-      :ok
-    end)
-
-    expect(MobSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
-
-    expect(Knockback, :skill, fn ^attacker, ^target, 7, result, [] ->
-      assert result == %{hit?: true, target_survives?: true, coma?: true}
-      send(test_pid, :knockback_requested)
-      :ok
-    end)
-
-    assert {:ok, %{hit?: true, damage: 25, target_survives?: true, coma?: true}} =
-             SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
-               skill_id: 7,
-               skill_level: 1,
-               hit_count: 4,
-               ignore_flee: true,
-               report_hit: true
-             )
-
-    assert_received :coma_decided
-    assert_received :knockback_requested
-  end
-
-  test "a missed fragment never decides or delivers coma" do
+  test "a missed attack never decides or delivers coma" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
 
     target =
@@ -955,6 +906,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
              SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
                skill_id: 7,
                skill_level: 1,
+               report_hit: true
+             )
+  end
+
+  test "a connected attack quantized to zero never decides coma" do
+    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 100}
+
+    stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 0, 1001 -> :ok end)
+
+    expect(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+      {:ok, %{damage: 7, is_critical: false}}
+    end)
+
+    reject(&EquipComa.trigger?/2)
+    reject(&MobSession.apply_coma/2)
+
+    assert {:ok, %{hit?: true, damage: 0, coma?: false}} =
+             SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
+               skill_id: 7,
+               skill_level: 1,
+               hit_divisions: -8,
+               ignore_flee: true,
                report_hit: true
              )
   end

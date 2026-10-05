@@ -18,13 +18,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
     damage_type: :damage,
     element: :holy,
     range: 2,
-    hit_count: 2,
+    hit_count: -2,
     sp_cost: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
     duration: [renewal: List.duplicate(18_000, 10), pre_renewal: List.duplicate(30_000, 10)]
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -38,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: skill_ratio(caster, level),
-      hit_count: definition.hit_count,
+      hit_divisions: Definition.hit_count_at_level(definition, level),
       element: definition.element,
       skip_crit: true,
       report_hit: true,

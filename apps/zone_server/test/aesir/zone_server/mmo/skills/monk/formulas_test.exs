@@ -35,13 +35,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
 
   @tag game_mode: :renewal
   test "hit-count helpers retain the local default one-sphere multi-hit throw" do
-    assert Formulas.trifecta_hit_count() == 3
-    assert Formulas.quadruple_hit_count(false) == 4
-    assert Formulas.quadruple_hit_count(true) == 6
+    assert Formulas.trifecta_hit_count() == -3
+    assert Formulas.quadruple_hit_count(false) == -4
+    assert Formulas.quadruple_hit_count(true) == -6
     assert Formulas.thrust_hit_count() == 1
 
     assert Formulas.throw_spirit_sphere_cost() == 1
-    assert Formulas.throw_spirit_sphere_hit_count() == 5
+    assert Formulas.throw_spirit_sphere_hit_count() == -5
   end
 
   test "passive and spirit helpers preserve Renewal integer arithmetic" do
@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.trifecta_ratio(5) == 200
     assert Formulas.quadruple_ratio(3, false) == 300
     assert Formulas.quadruple_ratio(3, true) == 300
-    assert Formulas.quadruple_hit_count(true) == 4
+    assert Formulas.quadruple_hit_count(true) == -4
     assert Formulas.thrust_ratio(3, 47) == 420
     assert Formulas.occult_ratio(3, true) == 325
     assert Formulas.occult_ratio(5, false) == 475

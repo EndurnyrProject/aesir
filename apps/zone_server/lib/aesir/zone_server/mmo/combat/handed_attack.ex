@@ -4,12 +4,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
 
   Resolves a chance-based attack proc before the shared hit roll, calculates
   damage components without applying them, and returns their immutable raw
-  result. The optional `:rng` function controls only the passive proc roll and
-  defaults to `&:rand.uniform/1`.
+  result. A multi-hit proc (Double Attack) is one logical swing: its single
+  calculated primary damage is repeated over the proc's divisions before the
+  hand components derive from it, so the katar off-hand follows the repeated
+  value while a dual-wield left hand keeps its own single calculation. The
+  optional `:rng` function controls only the passive proc roll and defaults to
+  `&:rand.uniform/1`.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Mechanics
@@ -99,8 +104,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
     ]
 
     with {:ok, primary} <- DamageCalculator.calculate_damage(attacker, defender, primary_opts),
+         {primary, divisions} <- repeat_primary(primary, divisions, defender),
          {:ok, primary, secondary} <- components(player, attacker, defender, primary) do
       {:ok, result(attacker, primary, secondary, divisions)}
+    end
+  end
+
+  # A plant-mode Emperium contact stays at its fixed 1 damage; the proc's
+  # divisions remain display metadata.
+  defp repeat_primary(primary, divisions, defender) do
+    if DamageCalculator.emperium_plant_contact?(defender, []) do
+      {primary, divisions}
+    else
+      {damage, divisions} = DamageShared.normalize_damage_divisions(primary.damage, divisions)
+      {%{primary | damage: damage}, divisions}
     end
   end
 

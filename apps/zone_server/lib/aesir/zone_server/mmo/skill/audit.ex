@@ -247,12 +247,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
     end
   end
 
-  # Both fields encode a flag in the sign and the value in the magnitude: a
-  # negative `HitCount` is still that many hits, and a negative `Range` is still
-  # that many cells (the sign only asks for the weapon's reach on a server
+  # A `HitCount` keeps its sign (positive repeats the damage, negative splits
+  # it) and an absent or zero count means one division. A negative `Range` is
+  # still that many cells (the sign only asks for the weapon's reach on a server
   # configured to use it, which is not the default Aesir follows).
   @spec normalize_source_value(atom(), integer()) :: integer()
-  defp normalize_source_value(:hit_count, value), do: max(abs(value), 1)
+  defp normalize_source_value(:hit_count, 0), do: 1
+  defp normalize_source_value(:hit_count, value), do: value
   defp normalize_source_value(:range, value), do: abs(value)
   defp normalize_source_value(_field, value), do: value
 

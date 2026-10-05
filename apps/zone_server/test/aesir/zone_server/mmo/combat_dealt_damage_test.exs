@@ -222,7 +222,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
       assert :ok = Combat.execute_attack(ctx.stats, ctx.player_state, @mob_id)
 
       assert [
-               {:damage_applied, 50},
+               {:damage_applied, 100},
                {:hook_ran, _pid, _target, _hit_info},
                {:"$gen_cast", {:skill, {:auto_cast, @bolt_id, 3, {:mob, @mob_id}}}}
              ] = mailbox()

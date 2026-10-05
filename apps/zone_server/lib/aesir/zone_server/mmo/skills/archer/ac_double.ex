@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcDouble do
   @moduledoc """
-  Double Strafe (AC_DOUBLE). Two ranged bow hits on a single enemy, fired from
-  nine cells away and consuming one arrow for the pair. Neither hit can crit,
+  Double Strafe (AC_DOUBLE). One ranged bow attack shown as two hits on a
+  single enemy, fired from nine cells away and consuming one arrow for the
+  pair. One hit roll and one damage calculation cover both; it cannot crit,
   and the arrow's element carries the damage exactly as an ordinary bow shot
   does. Vulture's Eye widens the shot: a player adds that skill's learned level
   to the nine cells.
@@ -33,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcDouble do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
 
   @behaviour Active
 
@@ -50,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcDouble do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: skill_ratio(level),
-      hit_count: 2,
+      hit_divisions: Definition.hit_count_at_level(definition, level),
       skip_crit: true,
       skip_range: true
     ]

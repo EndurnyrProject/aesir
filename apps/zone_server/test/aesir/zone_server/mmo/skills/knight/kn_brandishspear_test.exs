@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
       assert definition.knockback == 2
       assert definition.require_weapon == [:one_handed_spear, :two_handed_spear]
       assert KnBrandishspear.definition(:renewal).sp_cost == List.duplicate(24, 10)
-      assert KnBrandishspear.definition(:renewal).hit_count == 3
+      assert KnBrandishspear.definition(:renewal).hit_count == -3
       assert KnBrandishspear.definition(:renewal).fixed_cast_time == List.duplicate(350, 10)
       assert KnBrandishspear.definition(:renewal).after_cast_delay == List.duplicate(500, 10)
       assert KnBrandishspear.definition(:renewal).cooldown == List.duplicate(1000, 10)
@@ -106,8 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
         assert opts[:skill_id] == 57
         assert opts[:skill_level] == level
         assert opts[:skill_ratio] == 1_080
-        assert opts[:display_hit_count] == 3
-        refute Keyword.has_key?(opts, :hit_count)
+        assert opts[:hit_divisions] == -3
         assert opts[:skip_crit] == true
         assert opts[:ranged] == true
         assert opts[:base_distance] == 2

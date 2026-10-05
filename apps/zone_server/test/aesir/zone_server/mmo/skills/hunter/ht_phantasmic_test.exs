@@ -83,7 +83,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
         assert opts[:skill_ratio] == 500
         assert opts[:skip_range] == true
         assert opts[:element] == :wind
-        assert opts[:hit_count] == 1
         assert opts[:skip_crit] == true
         refute Keyword.has_key?(opts, :report_hit)
         assert opts[:base_distance] == 3

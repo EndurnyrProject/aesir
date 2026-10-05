@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
       assert opts[:skill_id] == 272
       assert opts[:skill_level] == 3
       assert opts[:skill_ratio] == 800
-      assert opts[:display_hit_count] == 6
+      assert opts[:hit_divisions] == -6
       assert opts[:skip_crit]
       :ok
     end)
@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_ratio] == 400
-      assert opts[:display_hit_count] == 4
+      assert opts[:hit_divisions] == -4
       :ok
     end)
 
@@ -264,7 +264,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_ratio] == 300
-      assert opts[:display_hit_count] == 4
+      assert opts[:hit_divisions] == -4
       :ok
     end)
 

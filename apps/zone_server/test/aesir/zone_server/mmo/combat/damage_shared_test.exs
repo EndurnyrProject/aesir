@@ -36,6 +36,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
     end
   end
 
+  describe "normalize_damage_divisions/2" do
+    test "positive divisions multiply the one calculated damage" do
+      assert DamageShared.normalize_damage_divisions(101, 3) == {303, 3}
+    end
+
+    test "negative divisions floor the total to an equal split and expose the count" do
+      assert DamageShared.normalize_damage_divisions(101, -8) == {96, 8}
+    end
+
+    test "a total below the negative division count quantizes to zero, not one" do
+      assert DamageShared.normalize_damage_divisions(7, -8) == {0, 8}
+    end
+
+    test "zero damage keeps its normalized division count" do
+      assert DamageShared.normalize_damage_divisions(0, -5) == {0, 5}
+      assert DamageShared.normalize_damage_divisions(0, 3) == {0, 3}
+    end
+
+    test "an effective runtime count of zero yields no damage and no divisions" do
+      assert DamageShared.normalize_damage_divisions(42, 0) == {0, 0}
+    end
+  end
+
   describe "apply_damage_multiplier/2" do
     test "0.5 bonus multiplies damage by 1.5" do
       assert DamageShared.apply_damage_multiplier(100, %{damage_multiplier: 0.5}) == 150.0

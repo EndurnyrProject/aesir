@@ -89,7 +89,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
       skill_id: 371,
       skill_level: level,
       skill_ratio: Formulas.glacier_ratio(level, caster.stats.progression.base_level),
-      hit_count: 1,
       skip_crit: true,
       report_hit: true
     ]

@@ -10,9 +10,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   attack, MATK build) stay in their respective calculators.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWeb
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+
+  @typedoc """
+  A skill's hit divisions as the source declares them: positive `n` repeats the
+  one calculated damage `n` times, negative `-n` splits it into `n` equal parts.
+  """
+  @type signed_divisions :: integer()
+
+  @typedoc """
+  One resolved attack as the target sees it: the normalized total, the
+  non-negative division count shown by the client, whether it connected, its
+  result class, and the battle flag classifying it for triggered bonuses.
+  """
+  @type logical_hit :: %{
+          damage: integer(),
+          divisions: non_neg_integer(),
+          hit?: boolean(),
+          hit_class: :miss | :block | :hit,
+          attack_flag: BattleFlags.flag()
+        }
+
+  @doc """
+  Normalizes one calculated damage into its logical total and division count.
+
+  Positive divisions multiply the damage; negative divisions floor it to an
+  equal split of that many parts, so a total below the count becomes zero. Zero
+  damage keeps the normalized count. An effective runtime count of zero (a
+  restricted invocation that found no spheres) yields no damage and no
+  divisions rather than a fabricated hit. Reference-specific minima are the
+  caller's branch, never this helper's.
+  """
+  @spec normalize_damage_divisions(integer(), signed_divisions()) ::
+          {integer(), non_neg_integer()}
+  def normalize_damage_divisions(damage, divisions) when divisions > 0,
+    do: {damage * divisions, divisions}
+
+  def normalize_damage_divisions(damage, divisions) when divisions < 0 do
+    count = -divisions
+    {div(damage, count) * count, count}
+  end
+
+  def normalize_damage_divisions(_damage, 0), do: {0, 0}
 
   @doc """
   Runs one attribute step on an integer `damage`, the reference `battle_attr_fix`.

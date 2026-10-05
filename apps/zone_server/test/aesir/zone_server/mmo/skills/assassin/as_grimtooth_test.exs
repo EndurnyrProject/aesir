@@ -145,7 +145,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
       assert opts[:skill_id] == 137
       assert opts[:skill_level] == 4
       assert opts[:skill_ratio] == 180
-      assert opts[:hit_count] == 1
       assert opts[:skip_crit]
       assert opts[:ranged]
       assert opts[:typed_results]

@@ -109,7 +109,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChPalmstrike do
       skill_id: 370,
       skill_level: level,
       skill_ratio: Formulas.palm_ratio(level, str, base_level),
-      hit_count: 1,
       skip_crit: true,
       skip_range: true,
       report_hit: true,

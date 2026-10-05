@@ -108,7 +108,9 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
       assert cast.homunculus.sp == 100 - cost
       assert cast.homunculus.cooldowns[@moon] > System.monotonic_time(:millisecond)
 
-      damage = %{renewal: ratio, pre_renewal: ratio - 1}[GameMode.mode()]
+      # One calculation floored to an equal split over the rank's divisions.
+      calculated = %{renewal: ratio, pre_renewal: ratio - 1}[GameMode.mode()]
+      damage = div(calculated, divisions) * divisions
       assert_receive {:"$gen_cast", {:combat, {:apply_damage, ^damage, {:homunculus, @gid}}}}
       assert_receive {:combat_packet, %SkillDamage{damage: ^damage, div: ^divisions}}
       refute_receive {:"$gen_cast", {:combat, {:apply_damage, _, _}}}

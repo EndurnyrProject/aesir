@@ -42,10 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.Formulas do
     end
   end
 
-  @doc "Hits Chain Crush Combo displays: one per two levels, rounded up."
-  @spec chain_crush_display_hits(pos_integer()) :: pos_integer()
-  def chain_crush_display_hits(level), do: div(level + 1, 2)
-
   @doc "Percent chance that Glacier Fist immobilises the target."
   @spec glacier_ankle_chance(pos_integer()) :: pos_integer()
   def glacier_ankle_chance(level), do: 10 + 10 * level

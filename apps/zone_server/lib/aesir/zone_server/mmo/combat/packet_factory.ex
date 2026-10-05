@@ -139,7 +139,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     - defender: Combatant struct for the target
     - skill_id: skill database id
     - skill_level: cast level
-    - damage_result: result from skill damage calculation
+    - damage_result: result from skill damage calculation, carrying the
+      attack's already normalized total
+
+  ## Options
+    - `:div` - the attack's normalized, non-negative division count (default
+      `1`); display metadata only, never multiplied back into the damage
 
   ## Returns
     - SkillDamage packet ready for broadcasting

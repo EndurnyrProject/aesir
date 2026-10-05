@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
     target_type: :target_enemy,
     damage_type: :damage,
     range: -2,
+    hit_count: [-1, -1, -2, -2, -3, -3, -4, -4, -5, -5],
     sp_cost: [4, 6, 8, 10, 12, 14, 16, 18, 20, 22],
     sphere_cost: [renewal: List.duplicate(1, 10), pre_renewal: List.duplicate(2, 10)],
     after_cast_delay: List.duplicate(1_000, 10)
@@ -63,7 +64,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
          {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
          {:ok, target} <-
            Combo.validate(caster.combo, @accepted_stages, {target_type, target_id}, now),
-         :ok <- Combat.execute_skill_attack(caster, target_id, attack_options(caster, level)),
+         :ok <-
+           Combat.execute_skill_attack(
+             caster,
+             target_id,
+             attack_options(caster, level, definition)
+           ),
          {:ok, combo} <-
            Combo.open_follow_up(
              caster,
@@ -80,12 +86,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_combo}
 
-  defp attack_options(caster, level) do
+  defp attack_options(caster, level, definition) do
     [
-      skill_id: 372,
+      skill_id: definition.id,
       skill_level: level,
       skill_ratio: Formulas.chain_crush_ratio(level, caster.stats.progression.base_level),
-      display_hit_count: Formulas.chain_crush_display_hits(level),
+      hit_divisions: Definition.hit_count_at_level(definition, level),
       skip_crit: true
     ]
   end

@@ -78,6 +78,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   """
   @type range :: integer() | [integer()]
 
+  @typedoc """
+  A skill's hit divisions (rAthena `HitCount`): a nonzero signed scalar, or a
+  per-level list of them (index 0 is level 1). Positive counts repeat the one
+  calculated damage, negative counts split it into equal parts. Read through
+  `hit_count_at_level/2`; runtime overrides (target size, weapon, spheres) are
+  the skill's own branch before normalization.
+  """
+  @type hit_count :: integer() | [integer()]
+
   @enforce_keys [:id, :name, :display_name, :max_level]
   defstruct id: nil,
             name: nil,
@@ -131,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           range: range(),
           element: element(),
           knockback: non_neg_integer() | [non_neg_integer()],
-          hit_count: pos_integer(),
+          hit_count: hit_count(),
           splash_radius: non_neg_integer(),
           hit_interval: non_neg_integer(),
           unit_duration: [non_neg_integer()],
@@ -182,7 +191,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     range: {:oneof, [:integer, {:list, :integer}]},
     element: :atom,
     knockback: {:oneof, [:integer, {:list, :integer}]},
-    hit_count: {:integer, {:gt, 0}},
+    hit_count: {:oneof, [{:integer, {:neq, 0}}, {:list, {:integer, {:neq, 0}}}]},
     splash_radius: :integer,
     hit_interval: :integer,
     unit_duration: {:list, :integer},
@@ -341,5 +350,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
 
   def range_at_level(%__MODULE__{range: range}, level) when is_list(range) do
     Enum.at(range, max(level - 1, 0), List.last(range))
+  end
+
+  @doc """
+  Resolves a skill's declared signed hit divisions for `level`.
+
+  A scalar count applies to every level; a per-level list is indexed at
+  `level - 1`, with level `0` reading the first entry.
+  """
+  @spec hit_count_at_level(t(), non_neg_integer()) :: integer()
+  def hit_count_at_level(%__MODULE__{hit_count: count}, _level) when is_integer(count),
+    do: count
+
+  def hit_count_at_level(%__MODULE__{hit_count: counts}, level) when is_list(counts) do
+    Enum.at(counts, max(level - 1, 0), List.last(counts))
   end
 end

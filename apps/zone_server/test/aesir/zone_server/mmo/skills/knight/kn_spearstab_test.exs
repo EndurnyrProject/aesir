@@ -195,7 +195,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
       end)
 
       stub(DamageCalculator, :calculate_damage, fn _a, _t, _o -> {:ok, %{damage: 50}} end)
-      stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+
+      stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res, _opts ->
+        :packet
+      end)
+
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
 
       test_pid = self()

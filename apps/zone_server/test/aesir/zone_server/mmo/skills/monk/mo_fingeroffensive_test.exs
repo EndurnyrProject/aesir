@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
   alias Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -26,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
     assert definition.damage_type == :damage
     assert definition.range == 9
     assert definition.max_level == 5
-    assert definition.hit_count == 5
+    assert definition.hit_count == -5
     assert definition.sp_cost == [12, 16, 20, 24, 28]
     assert definition.sphere_cost == List.duplicate(1, 5)
     assert definition.cast_time == List.duplicate(500, 5)
@@ -44,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
       assert opts[:skill_id] == 267
       assert opts[:skill_level] == 1
       assert opts[:skill_ratio] == 800
-      assert opts[:hit_count] == 5
+      assert opts[:hit_divisions] == -5
       assert opts[:skip_crit]
       assert opts[:skip_range]
       :ok
@@ -220,6 +221,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
     })
   end
 
+  defp with_spheres(caster, count) do
+    spheres =
+      Enum.reduce(1..count//1, SpiritSpheres.new(), fn _n, spheres ->
+        {spheres, _entry} = SpiritSpheres.summon(spheres, 600_000, 5)
+        spheres
+      end)
+
+    %{caster | spirit_spheres: spheres}
+  end
+
   defp place_blade_stop(unit_type, unit_id, state) do
     :ok = StatusStorage.apply_status(unit_type, unit_id, :sc_bladestop, state: state)
   end
@@ -258,12 +269,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
 
   @tag game_mode: :pre_renewal
   test "classic hit uses 100 plus 50 per level percent over one hit per level" do
-    caster = caster()
+    caster = caster() |> with_spheres(5)
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_ratio] == 250
-      assert opts[:hit_count] == 3
+      assert opts[:hit_divisions] == 3
       :ok
     end)
 
@@ -274,6 +285,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
                3,
                MoFingeroffensive.definition()
              )
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic throws only the spheres held when fewer than the level, and none when empty" do
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+    definition = MoFingeroffensive.definition()
+
+    for {held, divisions} <- [{2, 2}, {0, 0}] do
+      caster = caster() |> with_spheres(held)
+
+      expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+        assert opts[:hit_divisions] == divisions
+        :ok
+      end)
+
+      assert {:ok, _updated} = MoFingeroffensive.cast(caster, {:unit, @target_id}, 5, definition)
+    end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic cost spends only the spheres held, keeping the full requirement for an empty hand" do
+    definition = MoFingeroffensive.definition()
+
+    assert MoFingeroffensive.dynamic_cost(with_spheres(caster(), 2), {:unit, 1}, 5, definition).spheres ==
+             2
+
+    assert MoFingeroffensive.dynamic_cost(with_spheres(caster(), 5), {:unit, 1}, 3, definition).spheres ==
+             3
+
+    assert MoFingeroffensive.dynamic_cost(caster(), {:unit, 1}, 4, definition).spheres == 4
   end
 
   defp mode_value(renewal, pre_renewal),

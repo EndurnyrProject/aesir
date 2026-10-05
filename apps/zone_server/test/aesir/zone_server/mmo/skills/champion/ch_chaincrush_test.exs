@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrushTest do
       assert opts[:skill_id] == 372
       assert opts[:skill_level] == 7
       assert opts[:skill_ratio] == Formulas.chain_crush_ratio(7, 99)
-      assert opts[:display_hit_count] == 4
+      assert opts[:hit_divisions] == -4
       assert opts[:skip_crit]
       :ok
     end)

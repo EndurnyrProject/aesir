@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchainTest do
       assert opts[:skill_id] == 480
       assert opts[:skill_level] == 2
       assert opts[:damage_base] == :shield
-      assert opts[:display_hit_count] == 5
+      assert opts[:hit_divisions] == 5
       assert opts[:hit_rate_bonus_flat] == 20
       assert opts[:skip_crit] == true
       assert opts[:skip_range] == true

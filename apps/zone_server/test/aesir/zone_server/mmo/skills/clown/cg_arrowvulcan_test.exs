@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcanTest do
       assert opts[:skill_ratio] == if(GameMode.mode() == :renewal, do: 1500, else: 1200)
       assert opts[:skill_id] == 394
       assert opts[:skill_level] == 10
-      assert opts[:display_hit_count] == 9
+      assert opts[:hit_divisions] == -9
       assert opts[:skip_range]
       assert opts[:skip_crit]
       assert opts[:ranged]
@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcanTest do
 
     expect(Combat, :execute_skill_attack, fn ^caster, {:player, 18}, opts ->
       assert opts[:skill_ratio] == if(GameMode.mode() == :renewal, do: 1500, else: 1200)
-      assert opts[:display_hit_count] == 9
+      assert opts[:hit_divisions] == -9
       :ok
     end)
 

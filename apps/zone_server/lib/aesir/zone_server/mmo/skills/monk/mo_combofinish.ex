@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: Formulas.thrust_ratio(level, caster.stats.base_stats.str),
-      hit_count: Formulas.thrust_hit_count(),
+      hit_divisions: Formulas.thrust_hit_count(),
       skip_crit: true
     ]
   end

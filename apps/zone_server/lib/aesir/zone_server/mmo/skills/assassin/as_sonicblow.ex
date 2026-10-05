@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
   @moduledoc """
-  Sonic Blow (AS_SONICBLOW). One katar strike displayed as eight hits, stunning
+  Sonic Blow (AS_SONICBLOW). One katar strike split into eight equal hits
+  (the total is floored to a multiple of eight), stunning
   10 plus 2 per level percent of the time, for 16 to 34 SP at 1 cell.
 
   Renewal: 200% plus 100% per level, half again below half HP; Sonic Acceleration
@@ -18,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
     target_type: :target_enemy,
     damage_type: :damage,
     range: 1,
-    hit_count: 1,
+    hit_count: -8,
     sp_cost: Enum.to_list(16..34//2),
     after_cast_delay: [renewal: [], pre_renewal: List.duplicate(2_000, 10)],
     cooldown: [renewal: List.duplicate(1_000, 10), pre_renewal: []],
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicaccel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -56,8 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
         skill_ratio: skill_ratio(level, below_half?(target), accelerated?),
         accelerated: accelerated?,
         acceleration: acceleration(),
-        hit_count: 1,
-        display_hit_count: 8,
+        hit_divisions: Definition.hit_count_at_level(definition, level),
         skip_crit: true,
         report_hit: true,
         skip_range: true

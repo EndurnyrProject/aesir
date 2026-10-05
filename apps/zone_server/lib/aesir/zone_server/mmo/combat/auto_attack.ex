@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
@@ -298,15 +299,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     end
   end
 
+  # A replacement swing rolls its one hit/flee check here, so the connected
+  # skill attack is delivered without rolling it again.
   defp resolve_attack_replacement(player_state, attacker, target, target_id, opts) do
     with :ok <-
            Rules.validate_target(attacker, target, %{skill_id: Keyword.fetch!(opts, :skill_id)}) do
       case replacement_hit_result(attacker, target, opts) do
         :hit ->
-          SkillAttack.execute_skill_attack(player_state, target_id, opts)
+          SkillAttack.execute_skill_attack(
+            player_state,
+            target_id,
+            Keyword.put(opts, :ignore_flee, true)
+          )
 
         :miss ->
           damage_result = %{damage: 0, is_critical: false}
+
+          {0, divisions} =
+            DamageShared.normalize_damage_divisions(0, Keyword.get(opts, :hit_divisions, 1))
 
           packet =
             PacketFactory.build_skill_damage_packet(
@@ -315,7 +325,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
               Keyword.fetch!(opts, :skill_id),
               Keyword.fetch!(opts, :skill_level),
               damage_result,
-              div: Keyword.get(opts, :display_hit_count, 1)
+              div: divisions
             )
 
           DamageApplication.broadcast_nearby(target, packet)

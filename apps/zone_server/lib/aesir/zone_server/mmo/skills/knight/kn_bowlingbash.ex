@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
         skill_id: definition.id,
         skill_level: level,
         skill_ratio: skill_ratio(level),
-        hit_count: hit_count(caster, enemy_count),
+        hit_divisions: hit_count(caster, enemy_count),
         skip_crit: true,
         base_distance: knockback_distance(level),
         origin: {caster.x, caster.y},
@@ -85,9 +85,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
   end
 
   @doc """
-  The hit count for a cast: one hit in classic; in renewal 2 hits by default, raised to 3 with a
-  two-handed sword when 2 or more enemies (including the primary target) are
-  caught in the splash, and to 4 at 4 or more.
+  The hit divisions of one cast's attack on each target: one in classic; in
+  renewal 2 by default, raised to 3 with a two-handed sword when 2 or more
+  enemies (including the primary target) are caught in the splash, and to 4
+  at 4 or more. One damage calculation is repeated that many times.
   """
   @spec hit_count(struct(), non_neg_integer()) :: 1 | 2 | 3 | 4
   def hit_count(caster, enemy_count) do

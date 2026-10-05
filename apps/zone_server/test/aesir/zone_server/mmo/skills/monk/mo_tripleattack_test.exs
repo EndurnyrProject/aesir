@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoTripleattackTest do
     assert opts[:skill_id] == 263
     assert opts[:skill_level] == 5
     assert opts[:skill_ratio] == 200
-    assert opts[:display_hit_count] == 3
+    assert opts[:hit_divisions] == -3
     assert opts[:skip_crit]
   end
 

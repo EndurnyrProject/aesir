@@ -5,8 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
   base hit rate.
 
   Renewal: 100% + 10% per level weapon damage per hit, no crit. The hit count
-  is 1 against a small target, 2 against medium, 3 against large - each hit
-  rolls its own hit/flee check and deals its own damage, mirroring
+  is 1 against a small target, 2 against medium, 3 against large - one hit
+  roll and one damage calculation repeated that many times, like
   `AC_DOUBLE`'s multi-hit shape. The cast itself carries a +5% per level
   relative bonus to the already-clamped hit rate for that attack only (e.g. a
   30% base rate becomes 45% at level 10 - `30 * 150 / 100` - not a flat
@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -57,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
         skill_id: definition.id,
         skill_level: level,
         skill_ratio: 100 + 10 * level,
-        hit_count: hits_for_size(size),
+        hit_divisions: hit_divisions(definition, level, size),
         hit_rate_bonus_pct: 5 * level,
         skip_crit: true,
         skip_range: true
@@ -70,8 +71,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
     end
   end
 
-  @spec hits_for_size(:small | :medium | :large) :: pos_integer()
-  defp hits_for_size(:small), do: 1
-  defp hits_for_size(:medium), do: 2
-  defp hits_for_size(:large), do: 3
+  # The target's size plus one replaces the declared count, keeping its sign.
+  @spec hit_divisions(Definition.t(), pos_integer(), :small | :medium | :large) :: integer()
+  defp hit_divisions(definition, level, size) do
+    count = %{small: 1, medium: 2, large: 3}[size]
+
+    if Definition.hit_count_at_level(definition, level) > 0, do: count, else: -count
+  end
 end
