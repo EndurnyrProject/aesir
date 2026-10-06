@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
     element: :earth,
     range: 9,
     sp_cost: List.duplicate(25, 5),
-    unit_duration: List.duplicate(20_000, 5)
+    unit_duration: List.duplicate(20_000, 5),
+    target_hidden: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

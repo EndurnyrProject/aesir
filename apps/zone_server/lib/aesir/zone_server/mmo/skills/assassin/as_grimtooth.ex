@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth do
     range: [3, 4, 5, 6, 7],
     splash_radius: 1,
     sp_cost: List.duplicate(3, 5),
-    require_weapon: [:katar]
+    require_weapon: [:katar],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

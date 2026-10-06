@@ -27,6 +27,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   the skill's physical hits never receive the equipment non-critical damage
   rate. It is mode-keyable.
 
+  `target_hidden`, `is_npc` and `damage_splash` mirror the source's TargetHidden
+  and IsNpc flags and its Splash damage flag. TargetHidden lets the skill reach
+  a Hiding target; IsNpc and Splash change how a splash recipient's skill use is
+  checked. They are mode-keyable and never inferred from other fields.
+
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
   declared range for a player caster. It is mode-invariant.
@@ -120,6 +125,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             ignore_status_cast: false,
             ignore_item_cast: false,
             ignore_noncrit_atk_bonus: false,
+            target_hidden: false,
+            is_npc: false,
+            damage_splash: false,
             after_cast_delay: [],
             cooldown: [],
             damage_kind: :weapon,
@@ -164,6 +172,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           ignore_status_cast: boolean(),
           ignore_item_cast: boolean(),
           ignore_noncrit_atk_bonus: boolean(),
+          target_hidden: boolean(),
+          is_npc: boolean(),
+          damage_splash: boolean(),
           after_cast_delay: [non_neg_integer()],
           cooldown: [non_neg_integer()],
           damage_kind: damage_kind(),
@@ -216,6 +227,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_status_cast: :boolean,
     ignore_item_cast: :boolean,
     ignore_noncrit_atk_bonus: :boolean,
+    target_hidden: :boolean,
+    is_npc: :boolean,
+    damage_splash: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
@@ -252,6 +266,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_status_cast: false,
     ignore_item_cast: false,
     ignore_noncrit_atk_bonus: false,
+    target_hidden: false,
+    is_npc: false,
+    damage_splash: false,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
@@ -286,6 +303,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :fixed_cast_time,
     :ignore_item_cast,
     :ignore_noncrit_atk_bonus,
+    :target_hidden,
+    :is_npc,
+    :damage_splash,
     :after_cast_delay,
     :cooldown,
     :item_cost,

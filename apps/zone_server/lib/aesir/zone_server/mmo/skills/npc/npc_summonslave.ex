@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSummonslave do
     max_level: 16,
     target_type: :self,
     damage_kind: :magic,
-    damage_type: :no_damage
+    damage_type: :no_damage,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

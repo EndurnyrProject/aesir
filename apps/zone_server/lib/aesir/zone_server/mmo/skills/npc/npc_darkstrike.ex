@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcDarkstrike do
     damage_type: :damage,
     damage_kind: :magic,
     element: :shadow,
-    range: 9
+    range: 9,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

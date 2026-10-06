@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdItememergencycall do
     max_level: 3,
     target_type: :self,
     fixed_cast_time: List.duplicate(5_000, 3),
-    cooldown: List.duplicate(300_000, 3)
+    cooldown: List.duplicate(300_000, 3),
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Guild.Recall

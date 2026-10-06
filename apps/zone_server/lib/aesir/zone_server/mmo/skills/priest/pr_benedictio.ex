@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     element: :neutral,
     splash_radius: 1,
     sp_cost: List.duplicate(20, 5),
-    duration: [40_000, 80_000, 120_000, 160_000, 200_000]
+    duration: [40_000, 80_000, 120_000, 160_000, 200_000],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat

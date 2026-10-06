@@ -973,6 +973,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
   end
 
+  describe "target concealment" do
+    setup do
+      stub_provoke_target(9999)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 9999 -> {:error, :not_found}
+        :mob, 9999 -> {:ok, {14, 10, "prontera"}}
+      end)
+
+      stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
+      :ok
+    end
+
+    test "Cloaking fails the cast begin before any SP is spent" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
+      :ok = StatusStorage.apply_status(:mob, 9999, :sc_cloaking)
+
+      assert {:error, :target_concealed} =
+               Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 9999})
+    end
+
+    test "a TargetHidden skill begins on a hidden target" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, %{enemy_definition(5) | target_hidden: true}} end)
+      :ok = StatusStorage.apply_status(:mob, 9999, :sc_hiding)
+
+      assert {:ok, _} = Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 9999})
+    end
+
+    test "a finished cast bar fails on a target that hid, not on one that cloaked" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, %{enemy_definition(5) | cast_time: [1_000]}} end)
+      gs = game_state(100, %{6 => 1})
+
+      assert {:casting, started, _info} = Interpreter.begin_cast(gs, 6, 1, {:unit, 9999})
+
+      :ok = StatusStorage.apply_status(:mob, 9999, :sc_cloaking)
+      assert {:ok, _} = Interpreter.complete_cast(started, 6, 1, {:unit, 9999})
+
+      :ok = StatusStorage.apply_status(:mob, 9999, :sc_hiding)
+
+      assert {:error, :target_concealed} =
+               Interpreter.complete_cast(started, 6, 1, {:unit, 9999})
+    end
+  end
+
   test "a melee skill (range: -1) resolves to the weapon range: adjacent target is in range" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(-1)} end)
     stub_provoke_target(9999)

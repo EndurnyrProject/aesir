@@ -22,7 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
     cast_time: List.duplicate(0, 5),
     fixed_cast_time: List.duplicate(0, 5),
     after_cast_delay: [renewal: List.duplicate(300, 5), pre_renewal: List.duplicate(4_000, 5)],
-    cooldown: [renewal: List.duplicate(5_000, 5), pre_renewal: []]
+    cooldown: [renewal: List.duplicate(5_000, 5), pre_renewal: []],
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config

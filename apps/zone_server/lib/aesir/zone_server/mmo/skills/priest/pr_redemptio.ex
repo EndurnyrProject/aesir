@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
     ignore_dex: true,
     sp_cost: [renewal: [800], pre_renewal: [400]],
     quest_skill: true,
-    quest_owner_job: :priest
+    quest_owner_job: :priest,
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Geometry

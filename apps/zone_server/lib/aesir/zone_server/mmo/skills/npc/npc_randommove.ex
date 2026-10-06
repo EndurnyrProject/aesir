@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommove do
     max_level: 1,
     target_type: :self,
     damage_type: :no_damage,
-    range: 0
+    range: 0,
+    is_npc: true
 
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Active

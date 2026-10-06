@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressureTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -115,21 +114,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressureTest do
     reject(&Helpers.consume_sp/2)
 
     assert {:ok, ^caster} = PaPressure.cast(caster, {:unit, @target_id}, 1, definition())
-  end
-
-  @tag game_mode: :pre_renewal
-  test "classic refuses a hiding target without attacking" do
-    caster = player(99)
-
-    stub(Combat, :resolve_combatant, fn @target_id ->
-      {:ok, combatant(:player, @target_id, max_sp: 400)}
-    end)
-
-    :ok = StatusStorage.apply_status(:player, @target_id, :sc_hiding, val1: 1)
-    reject(&Combat.execute_misc_attack/3)
-
-    assert {:error, :target_hidden} =
-             PaPressure.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
   defp player(base_level) do

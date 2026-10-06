@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencycall do
     ignore_item_cast: [renewal: false, pre_renewal: true],
     target_type: :self,
     fixed_cast_time: [5_000],
-    cooldown: [300_000]
+    cooldown: [300_000],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Guild.Recall

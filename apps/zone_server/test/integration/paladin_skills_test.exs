@@ -236,9 +236,11 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
     :ok = StatusStorage.apply_status(:player, crusader.character.id, :sc_hiding, val1: 1)
     Process.sleep(2_100)
     flush_packets()
+    paladin_sp = get_player_state(paladin.pid).stats.current_state.sp
     cast(paladin, @pressure, 1, crusader.character.id)
-    assert_receive {:packet_sent, %SkillCastFailed{skill_id: @pressure}, _}, 6_000
-    assert get_player_state(crusader.pid).stats.current_state.hp == crusader_hp
+    refute_receive {:packet_sent, %SkillCastFailed{skill_id: @pressure}, _}, 2_500
+    assert get_player_state(crusader.pid).stats.current_state.hp >= crusader_hp
+    assert get_player_state(paladin.pid).stats.current_state.sp == paladin_sp
   end
 
   @tag game_mode: :renewal, integration_pre_re: false

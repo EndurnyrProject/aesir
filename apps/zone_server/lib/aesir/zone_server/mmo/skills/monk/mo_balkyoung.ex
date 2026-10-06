@@ -23,7 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
     duration: [renewal: [4_500], pre_renewal: [5_000]],
     after_cast_delay: [2_000],
     quest_skill: true,
-    quest_owner_job: :monk
+    quest_owner_job: :monk,
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver

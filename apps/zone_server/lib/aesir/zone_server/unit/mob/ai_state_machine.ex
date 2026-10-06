@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
@@ -382,7 +383,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
           not StatusStorage.has_status?(:player, target_id, :sc_gangsterparadise) and
           Interpreter.targetable?(:player, target_id) and
           not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
-          (MobState.is_boss?(state) or not Interpreter.concealed?(:player, target_id))
+          Targeting.attack_visible?(
+            %{
+              class: if(MobState.is_boss?(state), do: :boss, else: :normal),
+              detector: MobState.detector?(state)
+            },
+            %{unit_type: :player, unit_id: target_id}
+          )
 
       {:error, :not_found} ->
         false

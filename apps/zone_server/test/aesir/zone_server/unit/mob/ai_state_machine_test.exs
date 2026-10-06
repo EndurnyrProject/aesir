@@ -49,7 +49,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     stub(Interpreter, :can_attack?, fn _type, _id -> true end)
     stub(Interpreter, :targetable?, fn _type, _id -> true end)
     stub(Interpreter, :charmed_against?, fn _type, _id, _target_id -> false end)
-    stub(Interpreter, :concealed?, fn _type, _id -> false end)
     stub(StatusStorage, :has_status?, fn _type, _id, _status -> false end)
     stub(MapCache, :get, fn _map -> {:ok, :map_data} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
@@ -453,7 +452,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
   describe "find_nearby_targets/1 concealment filter" do
     test "a concealed player is not acquired by a normal mob" do
-      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+      :ok = StatusStorage.apply_status(:player, 2, :sc_cloaking)
 
       stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
         [2]
@@ -466,7 +465,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
 
     test "a concealed player is acquired by a boss mob, which acts as a detector" do
-      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+      :ok = StatusStorage.apply_status(:player, 2, :sc_cloaking)
 
       stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
         [2]
@@ -485,6 +484,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert result.ai_state == :alert
     end
 
+    test "a concealed player is acquired by a non-boss detector mob" do
+      :ok = StatusStorage.apply_status(:player, 2, :sc_cloaking)
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      base = base_mob_state(modes: [:aggressive, :detector])
+      state = %MobState{base | x: 100, y: 100, ai_state: :idle, target_ref: nil}
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.target_ref == {:player, 2}
+    end
+
     test "a player who un-conceals is acquirable again by a normal mob" do
       stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
         [2]
@@ -494,13 +512,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {101, 101, "prontera"}}
       end)
 
-      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+      :ok = StatusStorage.apply_status(:player, 2, :sc_hiding)
 
       concealed = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
       assert concealed.target_ref == nil
 
-      stub(Interpreter, :concealed?, fn :player, 2 -> false end)
+      :ok = StatusStorage.remove_status(:player, 2, :sc_hiding)
 
       revealed = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
@@ -568,7 +586,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   describe "concealment while already targeted" do
     test "a mob in combat drops a target that concealed itself" do
       test_pid = self()
-      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+      :ok = StatusStorage.apply_status(:player, 2, :sc_hiding)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
         {:ok, {100, 100, "prontera"}}
@@ -587,7 +605,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
 
     test "a mob in chase drops a target that concealed itself" do
-      stub(Interpreter, :concealed?, fn :player, 2 -> true end)
+      :ok = StatusStorage.apply_status(:player, 2, :sc_hiding)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
         {:ok, {105, 105, "prontera"}}

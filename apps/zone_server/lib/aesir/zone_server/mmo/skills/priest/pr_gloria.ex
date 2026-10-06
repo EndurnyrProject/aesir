@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrGloria do
     fixed_cast_time: List.duplicate(0, 5),
     after_cast_delay: List.duplicate(2_000, 5),
     duration: [10_000, 15_000, 20_000, 25_000, 30_000],
-    sp_cost: List.duplicate(20, 5)
+    sp_cost: List.duplicate(20, 5),
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

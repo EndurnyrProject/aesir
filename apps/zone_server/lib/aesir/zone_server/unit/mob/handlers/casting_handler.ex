@@ -17,13 +17,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
 
   @doc """
   Starts a cast for `row`, either firing instantly (0 cast time) or locking
-  the mob and scheduling `{:casting, :complete}`.
+  the mob and scheduling `{:casting, :complete}`. A status that denies the
+  skill or a unit target concealed from the mob rejects the cast.
   """
   @spec begin_cast(MobState.t(), map(), integer()) :: {:ok | :rejected, MobState.t()}
   def begin_cast(state, %{cast_time: 0} = row, now) do
     MobSkillExecutor.broadcast_casting(state, row)
 
-    if can_use_skill?(state, row) do
+    if can_use_skill?(state, row) and target_reachable?(state, row) do
       MobSkillExecutor.execute(state, row)
       {:ok, MobState.put_skill_cooldown(state, row.skill_id, now + row.delay)}
     else
@@ -35,7 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   def begin_cast(state, row, now) do
     MobSkillExecutor.broadcast_casting(state, row)
 
-    if can_use_skill?(state, row) do
+    if can_use_skill?(state, row) and target_reachable?(state, row) do
       timer_ref = Process.send_after(self(), {:casting, :complete}, row.cast_time)
 
       casting = %{
@@ -70,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     # re-rolled every tick.
     updated_state =
       if can_use_skill?(state, row) do
-        MobSkillExecutor.execute(state, row)
+        MobSkillExecutor.execute(state, row, :cast_end)
         now = System.system_time(:millisecond)
 
         state
@@ -132,6 +133,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   defp can_use_skill?(state, row) do
     StatusInterpreter.can_use_skill?(:mob, state.instance_id, row.skill_id)
   end
+
+  # A cast begins only against a unit target its caster can reach through the
+  # target's concealment.
+  defp target_reachable?(state, row),
+    do: MobSkillExecutor.check_target(state, row, :cast_begin) == :ok
 
   @doc """
   Aborts an in-flight cast cleanly: cancels the pending `{:casting, :complete}`

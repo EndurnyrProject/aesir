@@ -485,8 +485,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     validation =
       case input do
-        :without_input -> validate_completion(game_state, skill_id, level, target)
-        {:with_input, _value} -> validate_cast(game_state, skill_id, level, target, now)
+        :without_input ->
+          validate_completion(game_state, skill_id, level, target)
+
+        {:with_input, _value} ->
+          validate_cast(game_state, skill_id, level, target, now, :cast_end)
       end
 
     with {:ok, prepared} <- validation do
@@ -706,7 +709,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     do: {:error, :invalid_level}
 
   defp begin_item_target(caster, definition, level, target, early, on_ready, keep?) do
-    case validate_item_target(caster, target, level, definition, keep?) do
+    case validate_item_target(caster, target, level, definition, keep?, :cast_begin) do
       {:ok, module} ->
         claim_item_for_attempt(caster, module, definition, level, target, early, on_ready, keep?)
 
@@ -809,18 +812,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp validate_item_cast(caster, target, level, definition, keep?) do
-    with {:ok, module} <- validate_item_target(caster, target, level, definition, keep?),
+    with {:ok, module} <-
+           validate_item_target(caster, target, level, definition, keep?, :cast_end),
          :ok <- validate_item_range(caster, module, target, level, definition) do
       {:ok, module}
     end
   end
 
-  defp validate_item_target(caster, target, level, definition, keep?) do
+  defp validate_item_target(caster, target, level, definition, keep?, phase) do
     with :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
          :ok <- maybe_check_item_map(caster, definition.id, keep?),
          {:ok, module} <- fetch_active_module(definition),
-         :ok <- check_target(caster, target, definition) do
+         :ok <- check_target(caster, target, definition),
+         :ok <- check_concealment(caster, target, definition, phase) do
       {:ok, module}
     end
   end
@@ -1037,18 +1042,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp put_resolved_combo_delay(definition, _level, _delay), do: definition
 
-  defp validate_cast(caster, skill_id, level, target, now) when is_struct(caster),
-    do: validate_owned_cast(caster, skill_id, level, target, now)
+  defp validate_cast(caster, skill_id, level, target, now, phase \\ :cast_begin)
 
-  defp validate_cast(caster, skill_id, level, target, now) do
+  defp validate_cast(caster, skill_id, level, target, now, phase) when is_struct(caster),
+    do: validate_owned_cast(caster, skill_id, level, target, now, phase)
+
+  defp validate_cast(caster, skill_id, level, target, now, phase) do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition) do
-      validate_owned_cast(caster, skill_id, level, target, now)
+      validate_owned_cast(caster, skill_id, level, target, now, phase)
     end
   end
 
-  defp validate_owned_cast(caster, skill_id, level, target, now) do
+  defp validate_owned_cast(caster, skill_id, level, target, now, phase) do
     with {:ok, adapter} <- lifecycle_adapter(caster),
          :ok <- :erlang.apply(adapter, :castable_state, [caster, skill_id, :begin]),
          {:ok, definition} <- fetch_definition(skill_id),
@@ -1058,6 +1065,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_weapon(caster, definition),
          :ok <- check_learned(caster, adapter, definition, level, :begin),
          :ok <- check_target(caster, target, definition),
+         :ok <- check_concealment(caster, target, definition, phase),
          :ok <- check_range(caster, target, definition, level),
          {:ok, _module} <- fetch_active_module(definition),
          :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
@@ -1104,6 +1112,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_castable(definition),
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
          :ok <- check_target(caster, target, definition),
+         :ok <- check_concealment(caster, target, definition, :cast_end),
          :ok <- check_range(caster, target, definition, level),
          :ok <- check_fog(target, definition),
          {:ok, _module} <- fetch_active_module(definition),
@@ -1119,6 +1128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          context = CastContext.build(caster, definition, level, target, :completion),
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
          :ok <- check_target(caster, target, definition),
+         :ok <- check_concealment(caster, target, definition, :cast_end),
          :ok <- check_range(caster, target, definition, level),
          :ok <- check_fog(target, definition),
          :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
@@ -1394,6 +1404,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       result -> result
     end
   end
+
+  # A unit target concealed from the caster fails the attempt at its cast phase.
+  # Only monsters are bosses or detectors, so a player or homunculus caster is
+  # checked by identity alone. An unresolvable target falls through so
+  # `check_range` reports it.
+  defp check_concealment(caster, {:unit, target_ref}, definition, phase) do
+    case unit_type_of(target_ref) do
+      :not_found ->
+        :ok
+
+      target_type ->
+        {caster_type, caster_id} = caster_ref(caster)
+
+        Targeting.validate_skill_use(
+          %{unit_type: caster_type, unit_id: caster_id},
+          %{unit_type: target_type, unit_id: target_unit_id(target_ref)},
+          definition,
+          phase
+        )
+    end
+  end
+
+  defp check_concealment(_caster, _target, _definition, _phase), do: :ok
+
+  defp target_unit_id({_unit_type, unit_id}), do: unit_id
+  defp target_unit_id(unit_id), do: unit_id
 
   # A target that cannot be resolved falls through so `check_range` reports it
   # as `:target_not_found`. A skill-unit cell (Ice Wall, etc.) is accepted

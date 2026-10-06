@@ -118,6 +118,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # Existing status-immunity mode projected for pure combat policies.
     status_immune: false,
 
+    # Detector mode (insect/demon detectors and every boss-class monster), which
+    # sees through Hiding and Cloaking. Only monsters carry it.
+    detector: false,
+
     # Monster database id (mob class), set only for mob defenders. Keys the
     # per-monster physical damage bonus (add_damage_class); nil for players.
     monster_id: nil,
@@ -194,6 +198,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           skin_temper_level: integer(),
           class: :normal | :boss,
           status_immune: boolean(),
+          detector: boolean(),
           monster_id: integer() | nil,
           riding: boolean(),
           equip_modifiers: map(),

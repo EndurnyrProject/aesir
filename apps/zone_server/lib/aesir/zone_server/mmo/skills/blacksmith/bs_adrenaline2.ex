@@ -26,7 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline2 do
     status: :sc_adrenaline2,
     require_weapon: @accepted_weapons,
     quest_skill: true,
-    quest_owner_job: :blacksmith
+    quest_owner_job: :blacksmith,
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

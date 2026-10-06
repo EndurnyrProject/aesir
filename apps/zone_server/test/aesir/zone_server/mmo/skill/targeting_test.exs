@@ -278,4 +278,148 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       refute Targeting.fogged_out?(:self, MgColdbolt.definition(), fn 100 -> 1 end)
     end
   end
+
+  describe "validate_skill_use/4" do
+    import Bitwise
+
+    alias Aesir.ZoneServer.CombatTestHelper
+    alias Aesir.ZoneServer.Mmo.Option
+    alias Aesir.ZoneServer.Mmo.Skill.Definition
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
+    @phases [:cast_begin, :cast_end, :splash]
+
+    defp skill(attrs \\ []) do
+      [id: 5, name: :sm_bash, display_name: "Bash", max_level: 1]
+      |> Keyword.merge(attrs)
+      |> Definition.build!(__MODULE__)
+    end
+
+    defp player_target(id, option \\ 0) do
+      :ok =
+        UnitRegistry.register_unit(
+          :player,
+          id,
+          PlayerState,
+          %PlayerState{character_id: id, option: option},
+          self()
+        )
+
+      CombatTestHelper.create_player_combatant(unit_id: id)
+    end
+
+    defp caster(attrs \\ []) do
+      CombatTestHelper.create_mob_combatant(unit_id: 9_801)
+      |> Map.merge(Map.new(attrs))
+    end
+
+    defp check(caster, target, definition, phases \\ @phases),
+      do: Enum.map(phases, &Targeting.validate_skill_use(caster, target, definition, &1))
+
+    test "Hiding blocks every phase unless the skill reaches hidden targets" do
+      target = player_target(9_802)
+      :ok = StatusStorage.apply_status(:player, 9_802, :sc_hiding)
+
+      assert check(caster(), target, skill()) == List.duplicate({:error, :target_concealed}, 3)
+      assert check(nil, target, skill()) == List.duplicate({:error, :target_concealed}, 3)
+      assert check(caster(), target, skill(target_hidden: true)) == [:ok, :ok, :ok]
+    end
+
+    test "Cloaking blocks only the cast begin, even for a TargetHidden skill" do
+      target = player_target(9_803)
+      :ok = StatusStorage.apply_status(:player, 9_803, :sc_cloaking)
+
+      assert check(caster(), target, skill()) == [{:error, :target_concealed}, :ok, :ok]
+
+      assert check(caster(), target, skill(target_hidden: true)) ==
+               [{:error, :target_concealed}, :ok, :ok]
+    end
+
+    test "a boss or a detector sees a concealed player, but not a GM-invisible one" do
+      target = player_target(9_804)
+      :ok = StatusStorage.apply_status(:player, 9_804, :sc_hiding)
+
+      assert check(caster(class: :boss), target, skill()) == [:ok, :ok, :ok]
+      assert check(caster(detector: true), target, skill()) == [:ok, :ok, :ok]
+
+      invisible = player_target(9_805, Option.id(:invisible) ||| Option.id(:riding))
+
+      assert check(caster(class: :boss, detector: true), invisible, skill(target_hidden: true)) ==
+               List.duplicate({:error, :target_concealed}, 3)
+    end
+
+    test "a hidden non-player is seen only by a detector" do
+      target = CombatTestHelper.create_mob_combatant(unit_id: 9_806)
+      :ok = StatusStorage.apply_status(:mob, 9_806, :sc_hiding)
+
+      assert check(caster(class: :boss), target, skill()) ==
+               List.duplicate({:error, :target_concealed}, 3)
+
+      assert check(caster(detector: true), target, skill()) == [:ok, :ok, :ok]
+    end
+
+    test "unit placement checks only the target's Hiding against TargetHidden" do
+      hidden = player_target(9_807)
+      :ok = StatusStorage.apply_status(:player, 9_807, :sc_hiding)
+      cloaked = player_target(9_808)
+      :ok = StatusStorage.apply_status(:player, 9_808, :sc_cloaking)
+      boss = caster(class: :boss, detector: true)
+
+      assert Targeting.validate_skill_use(boss, hidden, skill(), :unit_place) ==
+               {:error, :target_concealed}
+
+      assert Targeting.validate_skill_use(nil, hidden, skill(target_hidden: true), :unit_place) ==
+               :ok
+
+      assert Targeting.validate_skill_use(nil, cloaked, skill(), :unit_place) == :ok
+    end
+
+    test "a caster targeting itself is never concealed from itself" do
+      target = player_target(9_809)
+      :ok = StatusStorage.apply_status(:player, 9_809, :sc_hiding)
+
+      assert check(target, target, skill()) == [:ok, :ok, :ok]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Pressure never reaches a hidden target after the cast begins" do
+      target = player_target(9_810)
+      :ok = StatusStorage.apply_status(:player, 9_810, :sc_hiding)
+      pressure = skill(id: 367, name: :pa_pressure)
+
+      assert check(caster(class: :boss), target, pressure) ==
+               [:ok, {:error, :target_concealed}, {:error, :target_concealed}]
+    end
+
+    @tag game_mode: :renewal
+    test "renewal Pressure follows the ordinary rule" do
+      target = player_target(9_811)
+      :ok = StatusStorage.apply_status(:player, 9_811, :sc_hiding)
+      pressure = skill(id: 367, name: :pa_pressure)
+
+      assert check(caster(class: :boss), target, pressure) == [:ok, :ok, :ok]
+    end
+  end
+
+  describe "attack_visible?/2" do
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
+    test "a normal attack sees through neither Hiding nor Cloaking without boss or detector" do
+      :ok =
+        UnitRegistry.register_unit(
+          :player,
+          9_820,
+          PlayerState,
+          %PlayerState{character_id: 9_820},
+          self()
+        )
+
+      :ok = StatusStorage.apply_status(:player, 9_820, :sc_cloaking)
+      target = %{unit_type: :player, unit_id: 9_820}
+
+      refute Targeting.attack_visible?(%{class: :normal, detector: false}, target)
+      assert Targeting.attack_visible?(%{class: :boss, detector: false}, target)
+      assert Targeting.attack_visible?(%{class: :normal, detector: true}, target)
+    end
+  end
 end

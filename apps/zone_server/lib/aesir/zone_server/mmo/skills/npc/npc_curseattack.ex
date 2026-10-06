@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCurseattack do
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: :weapon,
-    element: :shadow
+    element: :shadow,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike

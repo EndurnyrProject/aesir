@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
   Pre-renewal: fixed Misc damage of `500 + 300 * level` that ignores the
   target's DEF, FLEE, element and cards, cannot be redirected by Devotion, and
   drains `15 + 5 * level` percent of a player target's maximum SP (mobs keep
-  theirs). A hiding target is refused after the cast cost is paid. Cast and
+  theirs). A target that hides during the cast bar is out of reach when it
+  completes, before any cost is paid, even for a boss caster. Cast and
   after-cast delay both run 2 to 4 s by level. Not modelled: the strike
   counting as a weapon hit for autospell procs, and its immunity to siege and
   battleground damage rates.
@@ -48,7 +49,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -84,7 +84,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
 
   defp misc_strike(caster, target_id, level, definition) do
     with {:ok, target} <- Combat.resolve_combatant(target_id),
-         :ok <- refuse_hidden(target),
          :ok <-
            Combat.execute_misc_attack(caster, target_id,
              skill_id: definition.id,
@@ -95,12 +94,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
            ) do
       drain_sp(target, 15 + 5 * level)
     end
-  end
-
-  defp refuse_hidden(%Combatant{unit_type: unit_type, unit_id: unit_id}) do
-    if StatusStorage.has_status?(unit_type, unit_id, :sc_hiding),
-      do: {:error, :target_hidden},
-      else: :ok
   end
 
   defp drain_sp(%Combatant{unit_type: :player, unit_id: id, max_sp: max_sp}, percent)

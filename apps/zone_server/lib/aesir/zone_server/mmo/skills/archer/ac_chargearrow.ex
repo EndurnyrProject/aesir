@@ -35,7 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrow do
     fixed_cast_time: [800],
     sp_cost: [15],
     quest_skill: true,
-    quest_owner_job: :archer
+    quest_owner_job: :archer,
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

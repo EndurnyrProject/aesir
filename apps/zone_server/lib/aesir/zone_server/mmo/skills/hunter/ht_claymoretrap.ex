@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
     fixed_cast_time: [renewal: List.duplicate(300, 5), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
     sp_cost: List.duplicate(15, 5),
-    item_cost: [%{id: 1065, amount: 2}]
+    item_cost: [%{id: 1065, amount: 2}],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground

@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSight do
     element: :fire,
     range: 0,
     splash_radius: 3,
-    sp_cost: [10]
+    sp_cost: [10],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster

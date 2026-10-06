@@ -21,7 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfect do
     splash_radius: 14,
     sp_cost: [18, 16, 14, 12, 10],
     duration: [10_000, 20_000, 30_000, 40_000, 50_000],
-    status: :sc_weaponperfection
+    status: :sc_weaponperfection,
+    damage_splash: true
 
   @behaviour Active
 

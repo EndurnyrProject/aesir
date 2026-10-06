@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelus do
     cast_time: [renewal: List.duplicate(350, 10), pre_renewal: List.duplicate(500, 10)],
     fixed_cast_time: [renewal: List.duplicate(150, 10), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(500, 10), pre_renewal: List.duplicate(3_500, 10)],
-    cooldown: [renewal: List.duplicate(30_000, 10), pre_renewal: []]
+    cooldown: [renewal: List.duplicate(30_000, 10), pre_renewal: []],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Skill.Active

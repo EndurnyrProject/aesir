@@ -22,7 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwach do
     damage_kind: :magic,
     element: :holy,
     splash_radius: 2,
-    sp_cost: [10]
+    sp_cost: [10],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

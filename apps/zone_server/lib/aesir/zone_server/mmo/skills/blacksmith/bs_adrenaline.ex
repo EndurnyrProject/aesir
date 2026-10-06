@@ -22,7 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline do
     sp_cost: [20, 23, 26, 29, 32],
     duration: [30_000, 60_000, 90_000, 120_000, 150_000],
     status: :sc_adrenaline,
-    require_weapon: [:one_handed_axe, :two_handed_axe, :mace]
+    require_weapon: [:one_handed_axe, :two_handed_axe, :mace],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

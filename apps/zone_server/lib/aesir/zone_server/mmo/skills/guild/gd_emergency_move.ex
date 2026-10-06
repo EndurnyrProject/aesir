@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencyMove do
     max_level: 1,
     target_type: :self,
     splash_radius: 15,
-    cooldown: [60_000]
+    cooldown: [60_000],
+    damage_splash: [renewal: true, pre_renewal: false]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea

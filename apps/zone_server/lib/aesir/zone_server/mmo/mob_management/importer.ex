@@ -4,9 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   a `MobDefinition`. Used by the one-time `mix aesir.import.mobs` task; not on
   any runtime path.
 
-  Modes come from three sources, unioned and deduped: `Class: Boss` (`:boss`),
-  an explicit `Modes.Aggressive` flag (`:aggressive`), and the mode set derived
-  from the `Ai` value via `MobMode`. `MvpExp` and `MvpDrops` are parsed onto
+  Modes come from four sources, unioned and deduped: `Class: Boss` (`:boss`,
+  plus the `:detector` mode the boss class implies), an explicit
+  `Modes.Aggressive` flag (`:aggressive`), an explicit `Modes.Detector` flag
+  (`:detector`), and the mode set derived from the `Ai` value via `MobMode`. `MvpExp` and `MvpDrops` are parsed onto
   `mvp_exp`/`mvp_drops` and stay strictly separate from the normal `drops`
   list. `RaceGroups` is parsed into `race_groups`; resistances and `DamageTaken`
   are still dropped.
@@ -179,22 +180,24 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
 
   @spec parse_modes(map()) :: [atom()]
   defp parse_modes(entry) do
-    boss = if boss_class?(Map.get(entry, "Class")), do: [:boss], else: []
-    aggressive = if aggressive_mode?(Map.get(entry, "Modes")), do: [:aggressive], else: []
+    boss = if boss_class?(Map.get(entry, "Class")), do: [:boss, :detector], else: []
+    modes = Map.get(entry, "Modes")
+    aggressive = if explicit_mode?(modes, "aggressive"), do: [:aggressive], else: []
+    detector = if explicit_mode?(modes, "detector"), do: [:detector], else: []
     derived = MobMode.from_ai(Map.get(entry, "Ai"))
-    Enum.uniq(boss ++ aggressive ++ derived)
+    Enum.uniq(boss ++ aggressive ++ detector ++ derived)
   end
 
   @spec boss_class?(term()) :: boolean()
   defp boss_class?(class) when is_binary(class), do: String.downcase(class) == "boss"
   defp boss_class?(_), do: false
 
-  @spec aggressive_mode?(term()) :: boolean()
-  defp aggressive_mode?(modes) when is_map(modes) do
-    Enum.any?(modes, fn {k, v} -> v == true and String.downcase(k) == "aggressive" end)
+  @spec explicit_mode?(term(), String.t()) :: boolean()
+  defp explicit_mode?(modes, name) when is_map(modes) do
+    Enum.any?(modes, fn {k, v} -> v == true and String.downcase(k) == name end)
   end
 
-  defp aggressive_mode?(_), do: false
+  defp explicit_mode?(_modes, _name), do: false
 
   @spec parse_drops(term()) :: [MobDrop.t()]
   defp parse_drops(drops) when is_list(drops) do

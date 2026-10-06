@@ -459,6 +459,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          damage_type: :damage,
          range: [3, 4, 5, 6, 7],
          splash_radius: 1,
+         damage_splash: true,
          sp_cost: List.duplicate(3, 5),
          require_weapon: [:katar],
          requires: []

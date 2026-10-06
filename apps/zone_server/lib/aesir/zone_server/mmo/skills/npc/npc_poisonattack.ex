@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcPoisonattack do
     damage_type: :damage,
     damage_kind: :weapon,
     element: :poison,
-    range: 7
+    range: 7,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Npc.AttributeStrike

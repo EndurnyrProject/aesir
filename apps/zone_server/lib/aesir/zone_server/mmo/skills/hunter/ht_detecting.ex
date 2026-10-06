@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetecting do
     damage_type: :no_damage,
     range: [3, 5, 7, 9],
     splash_radius: 3,
-    sp_cost: [8, 8, 8, 8]
+    sp_cost: [8, 8, 8, 8],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget

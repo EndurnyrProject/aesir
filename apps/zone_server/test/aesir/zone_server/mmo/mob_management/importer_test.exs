@@ -23,6 +23,16 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
       assert :boss in definition.modes
     end
 
+    test "an explicit Detector mode and a boss class both yield :detector" do
+      {:ok, explicit} = Importer.to_definition(entry(%{"Modes" => %{"Detector" => true}}))
+      {:ok, boss} = Importer.to_definition(entry(%{"Class" => "Boss"}))
+      {:ok, cleared} = Importer.to_definition(entry(%{"Modes" => %{"Detector" => false}}))
+
+      assert :detector in explicit.modes
+      assert :detector in boss.modes
+      refute :detector in cleared.modes
+    end
+
     test "boss + aggressive-decoding Ai + explicit aggressive dedup" do
       {:ok, definition} =
         Importer.to_definition(

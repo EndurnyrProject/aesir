@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreed do
     sp_cost: [10],
     after_cast_delay: [renewal: [], pre_renewal: [1_000]],
     quest_skill: true,
-    quest_owner_job: :blacksmith
+    quest_owner_job: :blacksmith,
+    damage_splash: true
 
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem

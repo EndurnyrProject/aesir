@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRegeneration do
     ignore_status_cast: true,
     target_type: :self,
     splash_radius: 15,
-    cooldown: List.duplicate(180_000, 3)
+    cooldown: List.duplicate(180_000, 3),
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea

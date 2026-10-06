@@ -14,7 +14,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcGroundattack do
     damage_type: :damage,
     damage_kind: :weapon,
     element: :earth,
-    range: 7
+    range: 7,
+    target_hidden: true,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Npc.AttributeStrike

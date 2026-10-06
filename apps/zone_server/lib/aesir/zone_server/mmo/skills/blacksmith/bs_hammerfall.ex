@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
     splash_radius: 2,
     sp_cost: List.duplicate(10, 5),
     duration: [renewal: List.duplicate(4_500, 5), pre_renewal: List.duplicate(5_000, 5)],
-    require_weapon: [:dagger, :one_handed_sword, :one_handed_axe, :two_handed_axe, :mace]
+    require_weapon: [:dagger, :one_handed_sword, :one_handed_axe, :two_handed_axe, :mace],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill

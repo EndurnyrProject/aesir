@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat
@@ -13,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -350,6 +353,36 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     test ":around5 with no target errors" do
       assert Executor.resolve_target(mob(%{target_ref: nil}), row(%{target: :around5})) ==
                {:error, :no_target}
+    end
+  end
+
+  describe "target concealment" do
+    setup :setup_ets_tables
+
+    setup do
+      stub_living_player_target()
+      stub_skill(9001, :fake_skill, CastOnly)
+      :ok
+    end
+
+    test "a cloaked target rejects the cast begin, not the cast end" do
+      :ok = StatusStorage.apply_status(:player, 42, :sc_cloaking)
+      row = row(%{skill_id: 9001})
+
+      assert Executor.check_target(mob(), row, :cast_begin) == {:error, :target_concealed}
+      assert Executor.check_target(mob(), row, :cast_end) == :ok
+    end
+
+    test "a hidden target aborts the finished cast without casting, unless the mob detects it" do
+      :ok = StatusStorage.apply_status(:player, 42, :sc_hiding)
+      row = row(%{skill_id: 9001})
+
+      assert Executor.execute(mob(), row, :cast_end) == {:error, :target_concealed}
+      refute_received {:cast, _, _, _, _}
+
+      detector = mob(mob_data: mob_data(modes: [:detector]))
+      assert Executor.execute(detector, row, :cast_end) == :ok
+      assert_received {:cast, 5001, {:unit, 42}, 3, 9001}
     end
   end
 

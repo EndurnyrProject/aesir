@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
     sp_cost: [10, 13, 16, 19, 22],
     cast_time: [renewal: List.duplicate(800, 5), pre_renewal: List.duplicate(1500, 5)],
     fixed_cast_time: [renewal: List.duplicate(200, 5), pre_renewal: []],
-    after_cast_delay: List.duplicate(1_000, 5)
+    after_cast_delay: List.duplicate(1_000, 5),
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

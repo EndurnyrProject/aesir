@@ -28,7 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
     splash_radius: 2,
     sp_cost: [renewal: [3, 4, 5, 6, 7], pre_renewal: [11, 12, 13, 14, 15]],
     sphere_cost: List.duplicate(1, 5),
-    after_cast_delay: List.duplicate(1_000, 5)
+    after_cast_delay: List.duplicate(1_000, 5),
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

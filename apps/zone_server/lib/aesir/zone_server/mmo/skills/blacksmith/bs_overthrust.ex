@@ -44,7 +44,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrust do
       :two_handed_staff,
       :two_handed_sword,
       :whip
-    ]
+    ],
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active

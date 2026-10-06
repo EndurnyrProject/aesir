@@ -52,7 +52,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
       pre_renewal: List.duplicate(2_000, 10)
     ],
     cooldown: [renewal: List.duplicate(2_000, 10), pre_renewal: List.duplicate(0, 10)],
-    duration: List.duplicate(10_000, 10)
+    duration: List.duplicate(10_000, 10),
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

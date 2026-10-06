@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnWindwalk do
     ],
     fixed_cast_time: [renewal: Enum.map(1..10, &(400 + 100 * &1)), pre_renewal: []],
     after_cast_delay: List.duplicate(2000, 10),
-    duration: Enum.map(1..10, &(100_000 + 30_000 * &1))
+    duration: Enum.map(1..10, &(100_000 + 30_000 * &1)),
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
     hit_interval: 1_000,
     unit_duration: [150_000, 120_000, 90_000, 60_000, 30_000],
     sp_cost: [12, 12, 12, 12, 12],
-    item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]]
+    item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group

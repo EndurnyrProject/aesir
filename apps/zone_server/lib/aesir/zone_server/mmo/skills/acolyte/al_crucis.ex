@@ -34,7 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucis do
     sp_cost: List.duplicate(35, 10),
     cast_time: [renewal: List.duplicate(350, 10), pre_renewal: List.duplicate(500, 10)],
     fixed_cast_time: [renewal: List.duplicate(150, 10), pre_renewal: []],
-    after_cast_delay: List.duplicate(2_000, 10)
+    after_cast_delay: List.duplicate(2_000, 10),
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers

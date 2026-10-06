@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasher do
     fixed_cast_time: [renewal: List.duplicate(80, 10), pre_renewal: []],
     after_cast_delay: List.duplicate(2_000, 10),
     duration: List.duplicate(500, 10),
-    sp_cost: [35, 37, 39, 41, 43, 45, 47, 49, 51, 53]
+    sp_cost: [35, 37, 39, 41, 43, 45, 47, 49, 51, 53],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

@@ -10,15 +10,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   0) for that single check.
   """
 
+  import Bitwise
+
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
+  alias Aesir.ZoneServer.Unit.Concealment
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @typedoc """
+  Where a skill's use on a target is checked: when the cast begins, when its
+  cast bar completes, for a splash or ground-unit recipient after the skill went
+  off, and when a ground unit is placed over the target.
+  """
+  @type skill_use_phase :: :cast_begin | :cast_end | :splash | :unit_place
+
+  @typedoc """
+  A unit checked for concealment: a combatant, or just its identity plus, for a
+  caster, its boss `:class` and `:detector` mode (both default to neither).
+  """
+  @type concealment_unit ::
+          Combatant.t()
+          | %{
+              required(:unit_type) => atom(),
+              required(:unit_id) => term(),
+              optional(:class) => :normal | :boss,
+              optional(:detector) => boolean()
+            }
+
+  @pressure 367
 
   @field_skills %{
     92 => :wz_quagmire,
@@ -142,6 +172,106 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     do: MapFlags.get(map_name, :pvp) or MapFlags.get(map_name, :gvg)
 
   def versus_map?(_map_name), do: false
+
+  @doc """
+  Checks whether `caster`'s skill can reach `target` through its concealment.
+
+  At cast begin Hiding, Cloaking and Chase Walk all conceal; at cast end and for
+  a splash recipient only Hiding does. A TargetHidden skill reaches through
+  Hiding, never through the others. A GM-invisible player is never reached. A
+  boss or detector caster sees a concealed player; only a detector sees a
+  concealed non-player. A `nil` caster (a ground skill checked without its
+  caster) sees nothing concealed. Classic Pressure never reaches a hidden
+  target after its cast begins. Unit placement checks only the target's Hiding
+  against TargetHidden, whoever the caster is. A caster always reaches itself.
+
+  Relationship, life and range are other checks' concern.
+  """
+  @spec validate_skill_use(
+          concealment_unit() | nil,
+          concealment_unit(),
+          Definition.t(),
+          skill_use_phase()
+        ) :: :ok | {:error, :target_concealed}
+  def validate_skill_use(_caster, target, %Definition{} = definition, :unit_place) do
+    if hidden?(target_option(target)) and not definition.target_hidden,
+      do: {:error, :target_concealed},
+      else: :ok
+  end
+
+  def validate_skill_use(caster, target, %Definition{} = definition, phase) do
+    option = target_option(target)
+
+    cond do
+      classic_pressure?(definition) and phase != :cast_begin and hidden?(option) ->
+        {:error, :target_concealed}
+
+      same_unit?(caster, target) ->
+        :ok
+
+      concealed?(caster, target, option, skill_mask(phase, definition)) ->
+        {:error, :target_concealed}
+
+      true ->
+        :ok
+    end
+  end
+
+  @doc """
+  Whether an attacker's normal attack can see `target`: Hiding, Cloaking and
+  Chase Walk conceal it from anything but a boss or detector, and a GM-invisible
+  player from everything.
+  """
+  @spec attack_visible?(concealment_unit(), concealment_unit()) :: boolean()
+  def attack_visible?(attacker, target),
+    do: not concealed?(attacker, target, target_option(target), Concealment.conceal_mask())
+
+  defp skill_mask(:cast_begin, definition),
+    do: clear_hiding(Concealment.conceal_mask(), definition)
+
+  defp skill_mask(_phase, definition), do: clear_hiding(Option.id(:hide), definition)
+
+  defp clear_hiding(mask, %Definition{target_hidden: true}), do: mask &&& bnot(Option.id(:hide))
+  defp clear_hiding(mask, _definition), do: mask
+
+  # No equipment grants perfect hiding, so the source's
+  # `perfect_hiding || !detector` is `!detector` here.
+  defp concealed?(caster, %{unit_type: :player} = target, option, mask) do
+    invisible?(target, option) or
+      ((option &&& mask) != 0 and not boss?(caster) and not detector?(caster))
+  end
+
+  defp concealed?(caster, _target, option, mask),
+    do: (option &&& mask) != 0 and not detector?(caster)
+
+  defp hidden?(option), do: (option &&& Option.id(:hide)) != 0
+
+  defp invisible?(%{unit_id: unit_id}, option) do
+    base_option =
+      case UnitRegistry.get_unit(:player, unit_id) do
+        {:ok, {_module, %PlayerState{option: base}, _pid}} when is_integer(base) -> base
+        _missing -> 0
+      end
+
+    ((option ||| base_option) &&& Option.id(:invisible)) != 0
+  end
+
+  defp target_option(%{unit_type: type, unit_id: id}) when type in [:player, :mob, :homunculus],
+    do: StatusDisplay.spawn_state(type, id).effect_state
+
+  defp target_option(_target), do: 0
+
+  defp boss?(%{class: :boss}), do: true
+  defp boss?(_caster), do: false
+
+  defp detector?(%{detector: true}), do: true
+  defp detector?(_caster), do: false
+
+  defp same_unit?(%{unit_type: type, unit_id: id}, %{unit_type: type, unit_id: id}), do: true
+  defp same_unit?(_caster, _target), do: false
+
+  defp classic_pressure?(%Definition{id: @pressure}), do: GameMode.mode() == :pre_renewal
+  defp classic_pressure?(_definition), do: false
 
   defp validate_field_source(
          %Group{

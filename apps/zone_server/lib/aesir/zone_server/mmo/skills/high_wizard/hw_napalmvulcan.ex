@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
     cast_time: [renewal: List.duplicate(800, 5), pre_renewal: List.duplicate(1_000, 5)],
     fixed_cast_time: [renewal: List.duplicate(200, 5), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1_000, 5)],
-    cooldown: [renewal: List.duplicate(1_000, 5), pre_renewal: []]
+    cooldown: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

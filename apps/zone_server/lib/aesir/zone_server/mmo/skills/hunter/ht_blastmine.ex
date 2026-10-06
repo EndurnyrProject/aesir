@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
     fixed_cast_time: [renewal: List.duplicate(300, 5), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
     sp_cost: List.duplicate(10, 5),
-    item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]]
+    item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground

@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificat do
     fixed_cast_time: [renewal: List.duplicate(800, 5), pre_renewal: []],
     after_cast_delay: List.duplicate(2_000, 5),
     duration: [30_000, 45_000, 60_000, 75_000, 90_000],
-    sp_cost: List.duplicate(40, 5)
+    sp_cost: List.duplicate(40, 5),
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

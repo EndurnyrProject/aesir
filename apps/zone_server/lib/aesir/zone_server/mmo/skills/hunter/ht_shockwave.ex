@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
     hit_interval: 1_000,
     unit_duration: [200_000, 160_000, 120_000, 80_000, 40_000],
     sp_cost: [45, 45, 45, 45, 45],
-    item_cost: [%{id: 1065, amount: 2}]
+    item_cost: [%{id: 1065, amount: 2}],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group

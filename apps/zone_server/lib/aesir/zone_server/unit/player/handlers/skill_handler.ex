@@ -1619,6 +1619,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   @doc false
   @spec report_cast_failure(integer(), non_neg_integer(), atom()) :: :ok
+  def report_cast_failure(skill_id, character_id, :target_concealed) do
+    Logger.debug("Skill #{skill_id} cast by #{character_id} cannot reach a concealed target")
+  end
+
   def report_cast_failure(skill_id, character_id, reason) do
     Logger.debug("Skill #{skill_id} cast failed for #{character_id}: #{inspect(reason)}")
 

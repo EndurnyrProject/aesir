@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   Turns a selected mob-skill row into a concrete effect.
 
   `resolve_target/2` maps the row's rAthena `target` code onto a live target
-  (`{:unit, type, id}` or `{:ground, x, y, area}`); `execute/2` then dispatches
+  (`{:unit, type, id}` or `{:ground, x, y, area}`); `execute/3` then dispatches
   through the real skill catalog: `Skill.Catalog.by_id/1` resolves the row's
   `skill_id` to its `Definition`, `Skill.Catalog.active_module_for/1` resolves
   the definition's name to its `Skill.Active` module. A skill unresolvable at
@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   A resolved module runs its `validate/4` (auto-defaulted to `:ok` by `use
   Skill` when the skill does not define one) against the row's adapted target,
+  after a unit target passed the concealment check for the cast `phase`
+  (`:cast_begin` for an instant cast, `:cast_end` when a cast bar completes),
   then `mob_cast/5` when the module exports it, otherwise `cast/4`.
   `validate/4` and `cast/4` always see the same *adapted* target; `mob_cast/5`
   always sees the *raw*, unadapted one plus the full row — a skill exporting
@@ -127,11 +129,27 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   error surface as `{:error, reason}` — a clean abort, never a crash. A skill
   unresolvable in the catalog is a no-op `:ok`.
   """
-  @spec execute(MobState.t(), map()) :: :ok | {:error, term()}
-  def execute(%MobState{} = state, row) do
+  @spec execute(MobState.t(), map(), Targeting.skill_use_phase()) :: :ok | {:error, term()}
+  def execute(%MobState{} = state, row, phase \\ :cast_begin) do
     with {:ok, target} <- resolve_target(state, row) do
       maybe_emote(state, row)
-      dispatch(state, target, row)
+      dispatch(state, target, row, phase)
+    end
+  end
+
+  @doc """
+  Checks that the row's resolved unit target is not concealed from the mob at
+  `phase` (`Targeting.validate_skill_use/4`); a ground target, a target that
+  cannot be resolved or a skill missing from the catalog passes, since
+  `execute/3` reports those itself.
+  """
+  @spec check_target(MobState.t(), map(), Targeting.skill_use_phase()) :: :ok | {:error, term()}
+  def check_target(%MobState{} = state, row, phase) do
+    with {:ok, target} <- resolve_target(state, row),
+         {:ok, definition} <- SkillCatalog.by_id(row.skill_id) do
+      check_concealment(state, target, definition, phase)
+    else
+      _unresolved -> :ok
     end
   end
 
@@ -182,10 +200,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     end
   end
 
-  defp dispatch(state, target, row) do
+  defp dispatch(state, target, row, phase) do
     with {:ok, definition} <- SkillCatalog.by_id(row.skill_id),
          {:ok, module} <- SkillCatalog.active_module_for(definition.name) do
-      run(module, state, target, row, definition)
+      run(module, state, target, row, definition, phase)
     else
       :error ->
         Logger.debug("MobSkill: #{row.skill} (#{row.skill_id}) has no active module, skipping")
@@ -193,8 +211,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     end
   end
 
-  defp run(module, state, target, row, definition) do
+  defp run(module, state, target, row, definition, phase) do
     with :ok <- check_support_status(state, definition),
+         :ok <- check_concealment(state, target, definition, phase),
          {:ok, adapted_target} <- adapt_target(target, definition, state),
          :ok <- module.validate(state, adapted_target, row.level, definition),
          :ok <- check_fog(target, definition) do
@@ -212,6 +231,28 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   defp check_support_status(_state, _definition), do: :ok
+
+  defp check_concealment(state, {:unit, type, id}, definition, phase) do
+    Targeting.validate_skill_use(
+      concealment_caster(state),
+      %{unit_type: type, unit_id: id},
+      definition,
+      phase
+    )
+  end
+
+  defp check_concealment(_state, _target, _definition, _phase), do: :ok
+
+  defp concealment_caster(%MobState{instance_id: id, mob_data: mob_data}) do
+    modes = (mob_data && mob_data.modes) || []
+
+    %{
+      unit_type: :mob,
+      unit_id: id,
+      class: if(:boss in modes, do: :boss, else: :normal),
+      detector: :detector in modes
+    }
+  end
 
   defp check_fog({:unit, type, id}, definition) do
     if Targeting.fogged_out?({:unit, {type, id}}, definition),

@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShower do
     requires_ammo: true,
     require_weapon: [:bow],
     sp_cost: List.duplicate(15, 10),
-    after_cast_delay: [renewal: List.duplicate(100, 10), pre_renewal: []]
+    after_cast_delay: [renewal: List.duplicate(100, 10), pre_renewal: []],
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

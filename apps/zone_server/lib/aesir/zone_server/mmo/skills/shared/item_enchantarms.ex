@@ -21,7 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarms do
     target_type: :self,
     damage_type: :no_damage,
     sp_cost: List.duplicate(1, 10),
-    duration: List.duplicate(1_200_000, 10)
+    duration: List.duplicate(1_200_000, 10),
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

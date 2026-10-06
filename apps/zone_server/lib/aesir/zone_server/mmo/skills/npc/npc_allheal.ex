@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcAllheal do
     display_name: "Heal (NPC)",
     max_level: 50,
     target_type: :target_ally,
-    damage_type: :no_damage
+    damage_type: :no_damage,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

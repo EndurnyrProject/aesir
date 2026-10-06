@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstab do
     range: 4,
     knockback: 6,
     require_weapon: [:one_handed_spear, :two_handed_spear],
-    sp_cost: List.duplicate(9, 10)
+    sp_cost: List.duplicate(9, 10),
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

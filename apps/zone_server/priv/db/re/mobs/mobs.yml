@@ -36,6 +36,7 @@
   matk: 7
   mdef: 5
   modes:
+    - detector
     - can_move
     - can_attack
   name: Scorpion
@@ -137,6 +138,7 @@
   matk: 3
   mdef: 1
   modes:
+    - detector
     - can_move
     - can_attack
   name: Hornet
@@ -236,6 +238,7 @@
   level: 6
   matk: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Fabre
@@ -285,6 +288,8 @@
   level: 4
   matk: 3
   mdef: 2
+  modes:
+    - detector
   name: Pupa
   race: insect
   size: small
@@ -432,6 +437,7 @@
   level: 5
   matk: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Chonchon
@@ -736,6 +742,7 @@
   matk: 1
   mdef: 20
   modes:
+    - detector
     - can_move
     - can_attack
   name: Creamy
@@ -1150,6 +1157,7 @@
   matk: 37
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -1460,6 +1468,7 @@
   matk: 20
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -1623,6 +1632,7 @@
   mdef: 164
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -1688,6 +1698,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -1859,6 +1870,7 @@
   matk: 35
   mdef: 20
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -2019,6 +2031,7 @@
   mdef: 86
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -2126,6 +2139,8 @@
   level: 20
   matk: 1
   mdef: 10
+  modes:
+    - detector
   name: Thief Bug Egg
   race: insect
   size: small
@@ -2274,6 +2289,7 @@
   matk: 5
   mdef: 3
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -2325,6 +2341,7 @@
   matk: 5
   mdef: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Rocker
@@ -2375,6 +2392,7 @@
   matk: 16
   mdef: 7
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -2428,6 +2446,7 @@
   matk: 21
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -2633,6 +2652,7 @@
   matk: 41
   mdef: 12
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -2687,6 +2707,7 @@
   mdef: 192
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -2802,6 +2823,7 @@
   matk: 62
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -3371,6 +3393,7 @@
   matk: 224
   mdef: 55
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -3999,6 +4022,7 @@
   mdef: 81
   modes:
     - boss
+    - detector
     - can_move
     - looter
     - assist
@@ -4061,6 +4085,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4127,6 +4152,7 @@
   matk: 11
   mdef: 26
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4184,6 +4210,7 @@
   mdef: 6
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4241,6 +4268,7 @@
   mdef: 31
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4298,6 +4326,7 @@
   mdef: 28
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4355,6 +4384,7 @@
   mdef: 51
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4412,6 +4442,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4467,6 +4498,7 @@
   level: 19
   matk: 11
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -4518,6 +4550,7 @@
   matk: 21
   mdef: 16
   modes:
+    - detector
     - can_move
     - can_attack
   name: Andre
@@ -4567,6 +4600,7 @@
   mdef: 238
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4720,6 +4754,7 @@
   matk: 50
   mdef: 32
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4776,6 +4811,7 @@
   matk: 33
   mdef: 8
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4828,6 +4864,7 @@
   matk: 33
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5044,6 +5081,7 @@
   matk: 16
   mdef: 16
   modes:
+    - detector
     - can_move
     - can_attack
   name: Deniro
@@ -5249,6 +5287,7 @@
   matk: 182
   mdef: 16
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5307,6 +5346,7 @@
   matk: 30
   mdef: 20
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -5415,6 +5455,7 @@
   mdef: 135
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5527,6 +5568,7 @@
   matk: 31
   mdef: 50
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -5579,6 +5621,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5856,6 +5899,7 @@
   mdef: 72
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5912,6 +5956,7 @@
   matk: 15
   mdef: 16
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -6295,6 +6340,7 @@
   matk: 11
   mdef: 8
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -6737,6 +6783,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - assist
@@ -6789,6 +6836,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - assist
@@ -6843,6 +6891,7 @@
   matk: 165
   mdef: 8
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -6893,6 +6942,7 @@
   level: 65
   matk: 31
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7093,6 +7143,7 @@
   matk: 190
   mdef: 24
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7299,6 +7350,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7363,6 +7415,7 @@
   matk: 113
   mdef: 66
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7474,6 +7527,7 @@
   mdef: 81
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7860,6 +7914,7 @@
   mdef: 269
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7976,6 +8031,7 @@
   mdef: 98
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -8040,6 +8096,7 @@
   matk: 20
   mdef: 16
   modes:
+    - detector
     - can_move
     - can_attack
   name: Piere
@@ -8508,6 +8565,7 @@
   matk: 30
   mdef: 21
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -8559,6 +8617,7 @@
   matk: 9
   mdef: 25
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -8659,6 +8718,7 @@
   matk: 18
   mdef: 12
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -8809,6 +8869,7 @@
   matk: 55
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -8949,6 +9010,7 @@
   level: 5
   matk: 3
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -8997,6 +9059,7 @@
   level: 1
   matk: 3
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -9080,6 +9143,7 @@
   matk: 59
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9248,6 +9312,7 @@
   mdef: 92
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9478,6 +9543,7 @@
   matk: 40
   mdef: 36
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9698,6 +9764,7 @@
   matk: 259
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -9860,6 +9927,7 @@
   matk: 76
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -9970,6 +10038,7 @@
   mdef: 61
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10031,6 +10100,7 @@
   mdef: 69
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10091,6 +10161,7 @@
   mdef: 188
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10259,6 +10330,7 @@
   matk: 105
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10370,6 +10442,7 @@
   matk: 33
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10426,6 +10499,7 @@
   matk: 160
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10873,6 +10947,7 @@
   level: 2
   matk: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Fabre
@@ -10922,6 +10997,8 @@
   level: 2
   matk: 1
   mdef: 20
+  modes:
+    - detector
   name: Pupa
   race: insect
   size: small
@@ -10962,6 +11039,7 @@
   matk: 11
   mdef: 30
   modes:
+    - detector
     - can_move
     - can_attack
   name: Creamy
@@ -11204,6 +11282,7 @@
   level: 17
   matk: 11
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -11256,6 +11335,7 @@
   level: 18
   matk: 11
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -11308,6 +11388,7 @@
   level: 19
   matk: 11
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -11713,6 +11794,7 @@
   matk: 8
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Antonio
@@ -11923,6 +12005,7 @@
   mdef: 166
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -11988,6 +12071,7 @@
   mdef: 103
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12050,6 +12134,7 @@
   matk: 89
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -12380,6 +12465,7 @@
   mdef: 72
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12434,6 +12520,7 @@
   matk: 30
   mdef: 27
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12542,6 +12629,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12598,6 +12686,7 @@
   matk: 95
   mdef: 51
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12812,6 +12901,7 @@
   matk: 76
   mdef: 67
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13078,6 +13168,7 @@
   mdef: 168
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13297,6 +13388,7 @@
   matk: 18
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -13450,6 +13542,7 @@
   matk: 28
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13667,6 +13760,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13809,6 +13903,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
   name: Emperium
   race: angel
   race_groups:
@@ -13857,6 +13952,7 @@
   mdef: 40
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14026,6 +14122,7 @@
   matk: 114
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14082,6 +14179,7 @@
   matk: 110
   mdef: 37
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14138,6 +14236,7 @@
   matk: 1201
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14195,6 +14294,7 @@
   mdef: 25
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14480,6 +14580,7 @@
   matk: 125
   mdef: 42
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14537,6 +14638,7 @@
   matk: 1630
   mdef: 42
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14595,6 +14697,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14651,6 +14754,7 @@
   matk: 132
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14707,6 +14811,7 @@
   matk: 122
   mdef: 38
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14763,6 +14868,7 @@
   matk: 133
   mdef: 41
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14876,6 +14982,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15158,6 +15265,7 @@
   mdef: 123
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15607,6 +15715,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15659,6 +15768,7 @@
   matk: 35
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -17603,6 +17713,7 @@
   matk: 67
   mdef: 49
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -17760,6 +17871,7 @@
   matk: 94
   mdef: 60
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -17911,6 +18023,7 @@
   matk: 394
   mdef: 48
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18072,6 +18185,7 @@
   mdef: 73
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18136,6 +18250,7 @@
   matk: 375
   mdef: 46
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18240,6 +18355,7 @@
   matk: 41
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -18344,6 +18460,7 @@
   matk: 65
   mdef: 52
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -18400,6 +18517,7 @@
   matk: 226
   mdef: 37
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -18546,6 +18664,7 @@
   matk: 200
   mdef: 61
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -18860,6 +18979,7 @@
   mdef: 81
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18917,6 +19037,7 @@
   mdef: 146
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -19200,6 +19321,7 @@
   mdef: 160
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Wind Crystal
@@ -19244,6 +19366,7 @@
   mdef: 160
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Earth Crystal
@@ -19290,6 +19413,7 @@
   mdef: 160
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Fire Crystal
@@ -19334,6 +19458,7 @@
   mdef: 160
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Water Crystal
@@ -19386,6 +19511,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -19661,6 +19787,7 @@
   matk: 66
   mdef: 19
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -19713,6 +19840,7 @@
   matk: 83
   mdef: 46
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -19822,6 +19950,7 @@
   matk: 67
   mdef: 50
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -20133,6 +20262,7 @@
   matk: 128
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -20239,6 +20369,7 @@
   mdef: 185
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -20351,6 +20482,7 @@
   matk: 37
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -20385,6 +20517,7 @@
   matk: 20
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -20557,6 +20690,7 @@
   matk: 62
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -20625,6 +20759,7 @@
   matk: 50
   mdef: 32
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -20659,6 +20794,7 @@
   matk: 33
   mdef: 8
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -20693,6 +20829,7 @@
   matk: 33
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -20761,6 +20898,7 @@
   matk: 73
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21240,6 +21378,7 @@
   mdef: 72
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21274,6 +21413,7 @@
   matk: 30
   mdef: 27
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21309,6 +21449,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21343,6 +21484,7 @@
   matk: 95
   mdef: 51
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21445,6 +21587,7 @@
   matk: 18
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21479,6 +21622,7 @@
   matk: 28
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21548,6 +21692,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21581,6 +21726,7 @@
   level: 65
   matk: 31
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -21649,6 +21795,7 @@
   matk: 56
   mdef: 35
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -22261,6 +22408,7 @@
   matk: 40
   mdef: 36
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -22465,6 +22613,7 @@
   matk: 76
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -22534,6 +22683,7 @@
   mdef: 61
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -22569,6 +22719,7 @@
   mdef: 69
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -22604,6 +22755,7 @@
   mdef: 188
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -22706,6 +22858,7 @@
   matk: 105
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -22740,6 +22893,7 @@
   matk: 30
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -22795,6 +22949,7 @@
   mdef: 140
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -22909,6 +23064,7 @@
   matk: 52
   mdef: 8
   modes:
+    - detector
     - can_move
     - assist
     - can_attack
@@ -23227,6 +23383,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -23289,6 +23446,7 @@
   matk: 85
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -23395,6 +23553,7 @@
   matk: 280
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -23449,6 +23608,7 @@
   matk: 82
   mdef: 58
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -23661,6 +23821,7 @@
   matk: 81
   mdef: 68
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -23716,6 +23877,7 @@
   mdef: 123
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   mvp_drops:
@@ -24016,6 +24178,7 @@
   matk: 41
   mdef: 37
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -24071,6 +24234,7 @@
   mdef: 178
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -24380,6 +24544,7 @@
   matk: 67
   mdef: 50
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -24477,6 +24642,7 @@
   mdef: 185
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -24514,6 +24680,7 @@
   mdef: 146
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -24917,6 +25084,7 @@
   mdef: 140
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -25249,6 +25417,7 @@
   matk: 66
   mdef: 19
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -25316,6 +25485,7 @@
   matk: 226
   mdef: 37
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -25476,6 +25646,7 @@
   matk: 7
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -25612,6 +25783,7 @@
   matk: 83
   mdef: 46
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -25646,6 +25818,7 @@
   matk: 128
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -25749,6 +25922,7 @@
   matk: 35
   mdef: 41
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -25786,6 +25960,7 @@
   mdef: 238
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26048,6 +26223,7 @@
   mdef: 72
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26179,6 +26355,7 @@
   matk: 375
   mdef: 46
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26215,6 +26392,7 @@
   matk: 11
   mdef: 26
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26269,6 +26447,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26326,6 +26505,7 @@
   mdef: 143
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26389,6 +26569,7 @@
   matk: 37
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -26672,6 +26853,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -26714,6 +26896,7 @@
   mdef: 27
   modes:
     - boss
+    - detector
     - can_move
     - assist
     - can_attack
@@ -26750,6 +26933,7 @@
   mdef: 27
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -26850,6 +27034,7 @@
   matk: 37
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -26884,6 +27069,7 @@
   matk: 89
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -26916,6 +27102,7 @@
   matk: 94
   mdef: 60
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -26947,6 +27134,7 @@
   matk: 59
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27122,6 +27310,7 @@
   matk: 53
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27159,6 +27348,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27265,6 +27455,7 @@
   matk: 12
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -27314,6 +27505,7 @@
   mdef: 36
   modes:
     - boss
+    - detector
     - can_move
     - looter
     - can_attack
@@ -27352,6 +27544,7 @@
   matk: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -27395,6 +27588,7 @@
   mdef: 5
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27438,6 +27632,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -27751,6 +27946,7 @@
   matk: 144
   mdef: 28
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27806,6 +28002,7 @@
   matk: 53
   mdef: 37
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -28023,6 +28220,7 @@
   mdef: 96
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28103,6 +28301,7 @@
   matk: 53
   mdef: 37
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -28153,6 +28352,7 @@
   mdef: 46
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28197,6 +28397,7 @@
   matk: 18
   mdef: 10
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -28342,6 +28543,7 @@
   mdef: 178
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28459,6 +28661,7 @@
   matk: 138
   mdef: 25
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -28561,6 +28764,7 @@
   matk: 1317
   mdef: 12
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28617,6 +28821,7 @@
   matk: 1171
   mdef: 12
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28886,6 +29091,7 @@
   mdef: 155
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28932,6 +29138,7 @@
   mdef: 98
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28978,6 +29185,7 @@
   mdef: 106
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29024,6 +29232,7 @@
   mdef: 349
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29070,6 +29279,7 @@
   mdef: 135
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29116,6 +29326,7 @@
   mdef: 555
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29176,6 +29387,7 @@
   mdef: 155
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29243,6 +29455,7 @@
   mdef: 98
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29310,6 +29523,7 @@
   mdef: 106
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29377,6 +29591,7 @@
   mdef: 349
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29444,6 +29659,7 @@
   mdef: 135
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29511,6 +29727,7 @@
   mdef: 555
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29915,6 +30132,7 @@
   mdef: 175
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -30628,6 +30846,7 @@
   mdef: 25
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Monemus
@@ -30984,6 +31203,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -31161,6 +31381,7 @@
   mdef: 109
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31333,6 +31554,7 @@
   mdef: 104
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   mvp_drops:
@@ -31372,6 +31594,7 @@
   mdef: 178
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31410,6 +31633,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - looter
     - can_attack
@@ -31923,6 +32147,7 @@
   mdef: 55
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31977,6 +32202,7 @@
   mdef: 89
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32034,6 +32260,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32091,6 +32318,7 @@
   mdef: 96
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32145,6 +32373,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32202,6 +32431,7 @@
   mdef: 69
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32259,6 +32489,7 @@
   mdef: 90
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32316,6 +32547,7 @@
   mdef: 80
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32375,6 +32607,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32429,6 +32662,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32474,6 +32708,7 @@
   mdef: 69
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32519,6 +32754,7 @@
   mdef: 90
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32564,6 +32800,7 @@
   mdef: 80
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32930,6 +33167,7 @@
   mdef: 166
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32995,6 +33233,7 @@
   mdef: 58
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33316,6 +33555,7 @@
   matk: 103
   mdef: 25
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -33347,6 +33587,7 @@
   matk: 73
   mdef: 30
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -33382,6 +33623,7 @@
   mdef: 86
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33449,6 +33691,7 @@
   mdef: 32
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33506,6 +33749,7 @@
   mdef: 232
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33570,6 +33814,7 @@
   matk: 398
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -33625,6 +33870,7 @@
   matk: 89
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -33760,6 +34006,7 @@
   matk: 398
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -33797,6 +34044,7 @@
   matk: 89
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -33868,6 +34116,7 @@
   matk: 76
   mdef: 67
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -33976,6 +34225,7 @@
   matk: 144
   mdef: 82
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -34112,6 +34362,7 @@
   matk: 113
   mdef: 66
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -34195,6 +34446,7 @@
   mdef: 506
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34259,6 +34511,7 @@
   matk: 456
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34312,6 +34565,7 @@
   matk: 169
   mdef: 35
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34368,6 +34622,7 @@
   mdef: 92
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34425,6 +34680,7 @@
   mdef: 86
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34462,6 +34718,7 @@
   mdef: 95
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -34635,6 +34892,7 @@
   matk: 456
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -34672,6 +34930,7 @@
   matk: 169
   mdef: 35
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -34710,6 +34969,7 @@
   mdef: 92
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -34748,6 +35008,7 @@
   mdef: 86
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -34792,6 +35053,7 @@
   mdef: 506
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34829,6 +35091,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34873,6 +35136,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34937,6 +35201,7 @@
   mdef: 262
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35229,6 +35494,7 @@
   matk: 154
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -35497,6 +35763,7 @@
   matk: 68
   mdef: 21
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35553,6 +35820,7 @@
   mdef: 78
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35765,6 +36033,7 @@
   mdef: 62
   modes:
     - boss
+    - detector
     - can_move
     - looter
     - assist
@@ -35874,6 +36143,7 @@
   mdef: 176
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36124,6 +36394,7 @@
   mdef: 62
   modes:
     - boss
+    - detector
     - can_move
     - looter
     - assist
@@ -36286,6 +36557,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -36461,6 +36733,7 @@
   mdef: 37
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36503,6 +36776,7 @@
   mdef: 39
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36545,6 +36819,7 @@
   mdef: 36
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36587,6 +36862,7 @@
   mdef: 78
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36629,6 +36905,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36671,6 +36948,7 @@
   mdef: 88
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36713,6 +36991,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36755,6 +37034,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36797,6 +37077,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36839,6 +37120,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36881,6 +37163,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36922,6 +37205,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37053,6 +37337,7 @@
   mdef: 55
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37099,6 +37384,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37155,6 +37441,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
   name: Rice Cake
   race: formless
   size: medium
@@ -37188,6 +37475,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
   mvp_drops:
     - item: Fatty_Chubby_Earthworm
       rate: 5000
@@ -37240,6 +37528,7 @@
   mdef: 65
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37427,6 +37716,7 @@
   matk: 73
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37657,6 +37947,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -37711,6 +38002,7 @@
   mdef: 62
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37766,6 +38058,7 @@
   mdef: 62
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37825,6 +38118,7 @@
   mdef: 68
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37882,6 +38176,7 @@
   mdef: 218
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37947,6 +38242,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37984,6 +38280,7 @@
   mdef: 68
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38021,6 +38318,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38118,6 +38416,7 @@
   matk: 406
   mdef: 75
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38175,6 +38474,7 @@
   matk: 103
   mdef: 62
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -38228,6 +38528,7 @@
   mdef: 13
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38284,6 +38585,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Golden Savage
@@ -38322,6 +38624,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -38362,6 +38665,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -38402,6 +38706,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -38446,6 +38751,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -38525,6 +38831,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
   name: Dream Metal
   race: formless
   size: small
@@ -38555,6 +38862,7 @@
   mdef: 60
   modes:
     - boss
+    - detector
   name: Poring
   race: angel
   size: medium
@@ -38586,6 +38894,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38625,6 +38934,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38671,6 +38981,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38743,6 +39054,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
   name: Angeling
   race: angel
   size: small
@@ -38771,6 +39083,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
   name: Deviling
   race: angel
   size: small
@@ -38909,6 +39222,8 @@
   level: 26
   matk: 31
   mdef: 30
+  modes:
+    - detector
   name: Magnolia
   race: demon
   size: small
@@ -39369,6 +39684,7 @@
   matk: 145
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39421,6 +39737,7 @@
   matk: 703
   mdef: 96
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39456,6 +39773,7 @@
   matk: 703
   mdef: 96
   modes:
+    - detector
     - can_move
     - no_random_walk
     - can_attack
@@ -39501,6 +39819,7 @@
   matk: 135
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39555,6 +39874,7 @@
   mdef: 73
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39612,6 +39932,7 @@
   mdef: 382
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39657,6 +39978,7 @@
   mdef: 55
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39695,6 +40017,7 @@
   mdef: 265
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39752,6 +40075,7 @@
   mdef: 265
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39842,6 +40166,7 @@
   mdef: 73
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39887,6 +40212,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Crystal
@@ -39959,6 +40285,7 @@
   mdef: 40
   modes:
     - boss
+    - detector
   name: Eclipse
   race: brute
   size: medium
@@ -40272,6 +40599,7 @@
   mdef: 121
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40358,6 +40686,7 @@
   mdef: 38
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40400,6 +40729,7 @@
   mdef: 13
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -40442,6 +40772,7 @@
   mdef: 23
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40481,6 +40812,7 @@
   mdef: 42
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40518,6 +40850,7 @@
   mdef: 506
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40552,6 +40885,8 @@
   level: 109
   matk: 280
   mdef: 44
+  modes:
+    - detector
   name: Lolo Ruri
   race: demon
   size: large
@@ -40659,6 +40994,8 @@
   level: 91
   matk: 430
   mdef: 12
+  modes:
+    - detector
   name: Seyren Windsor
   race: demon
   size: medium
@@ -40713,6 +41050,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
   name: Baphomet
   race: demon
   size: large
@@ -40771,6 +41109,7 @@
   mdef: 33
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -40806,6 +41145,7 @@
   mdef: 62
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40882,6 +41222,7 @@
   level: 99
   modes:
     - boss
+    - detector
   name: Treasure Box
   race: formless
   size: small
@@ -40913,6 +41254,7 @@
   level: 99
   modes:
     - boss
+    - detector
   name: Treasure Box
   race: formless
   size: small
@@ -40950,6 +41292,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - looter
     - can_attack
@@ -41033,6 +41376,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
   name: Guardian Stone
   race: formless
   race_groups:
@@ -41066,6 +41410,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
   name: Guardian Stone
   race: formless
   race_groups:
@@ -41301,6 +41646,7 @@
   mdef: 65
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41355,6 +41701,7 @@
   mdef: 65
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41417,6 +41764,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41469,6 +41817,7 @@
   mdef: 5
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41523,6 +41872,7 @@
   mdef: 37
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41575,6 +41925,7 @@
   mdef: 54
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41612,6 +41963,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41649,6 +42001,7 @@
   mdef: 5
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41686,6 +42039,7 @@
   mdef: 37
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41723,6 +42077,7 @@
   mdef: 54
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41815,6 +42170,7 @@
   matk: 1
   mdef: 1
   modes:
+    - detector
     - can_move
     - can_attack
   name: Whisper
@@ -41850,6 +42206,7 @@
   matk: 5
   mdef: 25
   modes:
+    - detector
     - can_move
     - can_attack
   name: Deviruchi
@@ -41901,6 +42258,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41938,6 +42296,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41975,6 +42334,7 @@
   mdef: 42
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42015,6 +42375,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Garden Keeper
@@ -42046,6 +42407,7 @@
   mdef: 55
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - assist
@@ -42081,6 +42443,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
   name: Blue Flower
   race: plant
   size: medium
@@ -42110,6 +42473,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
   name: Red Flower
   race: plant
   size: medium
@@ -42139,6 +42503,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
   name: Yellow Flower
   race: plant
   size: medium
@@ -42607,6 +42972,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - no_random_walk
     - can_attack
@@ -42674,6 +43040,7 @@
   mdef: 33
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -42709,6 +43076,7 @@
   mdef: 62
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -42758,6 +43126,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Crystal
@@ -42805,6 +43174,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Crystal
@@ -42852,6 +43222,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Crystal
@@ -42899,6 +43270,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Crystal
@@ -42946,6 +43318,7 @@
   level: 1
   modes:
     - boss
+    - detector
   name: Treasure Chest
   race: formless
   size: small
@@ -42994,6 +43367,7 @@
   mdef: 40
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -43056,6 +43430,7 @@
   mdef: 66
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   mvp_drops:
@@ -43092,6 +43467,7 @@
   mdef: 66
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
     - random_target
@@ -43126,6 +43502,7 @@
   mdef: 66
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
     - random_target
@@ -43160,6 +43537,7 @@
   mdef: 66
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
     - random_target
@@ -43194,6 +43572,7 @@
   mdef: 66
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Thorn of Purification
@@ -43244,6 +43623,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Christmas Thief
@@ -43366,6 +43746,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
   name: Doppelganger
   race: demon
   size: medium
@@ -43395,6 +43776,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
   name: Egnigem Cenia
   race: demi_human
   size: medium
@@ -43739,6 +44121,7 @@
   matk: 298
   mdef: 94
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44066,6 +44449,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44356,6 +44740,7 @@
   matk: 112
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44523,6 +44908,7 @@
   mdef: 43
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44582,6 +44968,7 @@
   mdef: 123
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44753,6 +45140,7 @@
   matk: 111
   mdef: 55
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -44934,6 +45322,7 @@
   matk: 88
   mdef: 17
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44971,6 +45360,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
   name: Male Game Master
   race: demi_human
   size: medium
@@ -44999,6 +45389,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
   name: Female Game Master
   race: demi_human
   size: medium
@@ -45134,6 +45525,7 @@
   matk: 691
   mdef: 75
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45307,6 +45699,7 @@
   mdef: 40
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45349,6 +45742,7 @@
   mdef: 40
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45387,6 +45781,7 @@
   matk: 2000
   mdef: 15
   modes:
+    - detector
     - can_move
     - no_random_walk
     - can_attack
@@ -45982,6 +46377,7 @@
   mdef: 75
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -46265,6 +46661,7 @@
   matk: 683
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -46335,6 +46732,7 @@
   matk: 3000
   mdef: 99
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -46427,6 +46825,8 @@
   level: 90
   matk: 1
   mdef: 20
+  modes:
+    - detector
   name: Nihility Zem
   race: insect
   size: small
@@ -46559,6 +46959,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - assist
@@ -46594,6 +46995,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - assist
@@ -46632,6 +47034,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - assist
@@ -46981,6 +47384,7 @@
   mdef: 168
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   mvp_drops:
@@ -47106,6 +47510,7 @@
   matk: 167
   mdef: 29
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -47179,6 +47584,7 @@
   matk: 18
   mdef: 10
   modes:
+    - detector
     - can_move
     - can_attack
   mvp_drops:
@@ -47220,6 +47626,7 @@
   matk: 18
   mdef: 100
   modes:
+    - detector
     - can_move
     - can_attack
   name: Anopheles
@@ -47271,6 +47678,7 @@
   mdef: 66
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -47440,6 +47848,7 @@
   matk: 57
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -47635,6 +48044,7 @@
   mdef: 32
   modes:
     - boss
+    - detector
   mvp_drops:
     - item: Valhalla_Flower
       rate: 10000
@@ -47670,6 +48080,7 @@
   matk: 495
   mdef: 51
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -47704,6 +48115,7 @@
   matk: 256
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -47738,6 +48150,7 @@
   matk: 324
   mdef: 48
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -47776,6 +48189,7 @@
   mdef: 77
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -47827,6 +48241,7 @@
   mdef: 160
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -47943,6 +48358,7 @@
   matk: 91
   mdef: 20
   modes:
+    - detector
     - can_move
     - assist
     - can_attack
@@ -47995,6 +48411,7 @@
   matk: 105
   mdef: 38
   modes:
+    - detector
     - can_move
     - assist
     - can_attack
@@ -48049,6 +48466,7 @@
   matk: 410
   mdef: 102
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -48105,6 +48523,7 @@
   matk: 112
   mdef: 70
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -48160,6 +48579,7 @@
   mdef: 220
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48214,6 +48634,8 @@
   level: 125
   matk: 1
   mdef: 55
+  modes:
+    - detector
   name: Scaraba Egg
   race: insect
   race_groups:
@@ -48252,6 +48674,8 @@
   level: 126
   matk: 1
   mdef: 62
+  modes:
+    - detector
   name: Scaraba Egg
   race: insect
   race_groups:
@@ -48290,6 +48714,8 @@
   level: 127
   matk: 1
   mdef: 180
+  modes:
+    - detector
   name: Antler Scaraba Egg
   race: insect
   race_groups:
@@ -48330,6 +48756,8 @@
   level: 128
   matk: 1
   mdef: 44
+  modes:
+    - detector
   name: Rake Scaraba Egg
   race: insect
   race_groups:
@@ -48380,6 +48808,7 @@
   matk: 286
   mdef: 52
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -48485,6 +48914,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48550,6 +48980,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48615,6 +49046,7 @@
   mdef: 164
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48680,6 +49112,7 @@
   mdef: 146
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48745,6 +49178,7 @@
   mdef: 86
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48806,6 +49240,7 @@
   mdef: 192
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48869,6 +49304,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48934,6 +49370,7 @@
   mdef: 73
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48999,6 +49436,7 @@
   mdef: 168
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49063,6 +49501,7 @@
   mdef: 78
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49128,6 +49567,7 @@
   mdef: 185
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49193,6 +49633,7 @@
   mdef: 123
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49258,6 +49699,7 @@
   mdef: 109
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49323,6 +49765,7 @@
   mdef: 382
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49388,6 +49831,7 @@
   mdef: 262
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49453,6 +49897,7 @@
   mdef: 506
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49518,6 +49963,7 @@
   mdef: 218
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49583,6 +50029,7 @@
   mdef: 106
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49645,6 +50092,7 @@
   mdef: 155
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49710,6 +50158,7 @@
   mdef: 98
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49750,6 +50199,8 @@
   id: 2126
   level: 100
   matk: 100
+  modes:
+    - detector
   name: Anopheles
   race: insect
   size: small
@@ -49774,6 +50225,8 @@
   id: 2127
   level: 110
   matk: 100
+  modes:
+    - detector
   name: Hornet
   race: insect
   size: small
@@ -49798,6 +50251,8 @@
   id: 2128
   level: 120
   matk: 100
+  modes:
+    - detector
   name: Hornet
   race: insect
   size: small
@@ -49822,6 +50277,8 @@
   id: 2129
   level: 130
   matk: 200
+  modes:
+    - detector
   name: Luciola Vespa
   race: insect
   size: medium
@@ -49846,6 +50303,8 @@
   id: 2130
   level: 140
   matk: 200
+  modes:
+    - detector
   name: Luciola Vespa
   race: insect
   size: medium
@@ -49890,6 +50349,7 @@
   mdef: 51
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49950,6 +50410,7 @@
   matk: 215
   mdef: 115
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -49998,6 +50459,7 @@
   matk: 177
   mdef: 81
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -50210,6 +50672,7 @@
   level: 130
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -50239,6 +50702,7 @@
   level: 130
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -50268,6 +50732,7 @@
   level: 130
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -50297,6 +50762,7 @@
   level: 130
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -50326,6 +50792,7 @@
   level: 130
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -50355,6 +50822,7 @@
   level: 130
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -50386,6 +50854,7 @@
   matk: 410
   mdef: 102
   modes:
+    - detector
     - can_move
     - no_random_walk
     - can_attack
@@ -50419,6 +50888,7 @@
   matk: 112
   mdef: 70
   modes:
+    - detector
     - can_move
     - no_random_walk
     - can_attack
@@ -50453,6 +50923,7 @@
   mdef: 60
   modes:
     - boss
+    - detector
     - can_move
     - no_random_walk
     - can_attack
@@ -50557,6 +51028,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
   name: Ripe Watermelon
   race: plant
   size: medium
@@ -50794,6 +51266,7 @@
   matk: 102
   mdef: 12
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -50849,6 +51322,7 @@
   mdef: 128
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50925,6 +51399,8 @@
   level: 95
   matk: 113
   mdef: 1
+  modes:
+    - detector
   name: Hornet
   race: insect
   size: small
@@ -50951,6 +51427,8 @@
   level: 110
   matk: 123
   mdef: 43
+  modes:
+    - detector
   name: Giant Hornet
   race: insect
   size: small
@@ -50977,6 +51455,8 @@
   level: 130
   matk: 154
   mdef: 55
+  modes:
+    - detector
   name: Luciola Vespa
   race: insect
   size: medium
@@ -51026,6 +51506,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51084,6 +51565,7 @@
   mdef: 15
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51142,6 +51624,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51200,6 +51683,7 @@
   mdef: 25
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51256,6 +51740,7 @@
   mdef: 220
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51312,6 +51797,8 @@
   level: 125
   matk: 1
   mdef: 55
+  modes:
+    - detector
   name: Gold One-Horn Scaraba E
   race: insect
   race_groups:
@@ -51352,6 +51839,8 @@
   level: 126
   matk: 1
   mdef: 62
+  modes:
+    - detector
   name: Gold Two-Horn Scaraba Eg
   race: insect
   race_groups:
@@ -51392,6 +51881,8 @@
   level: 127
   matk: 1
   mdef: 180
+  modes:
+    - detector
   name: Gold Antler Scaraba Egg
   race: insect
   race_groups:
@@ -51434,6 +51925,8 @@
   level: 128
   matk: 1
   mdef: 44
+  modes:
+    - detector
   name: Gold Rake Scaraba Egg
   race: insect
   race_groups:
@@ -51465,6 +51958,7 @@
   mdef: 15
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51503,6 +51997,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51541,6 +52036,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51579,6 +52075,7 @@
   mdef: 15
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51635,6 +52132,7 @@
   mdef: 21
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51691,6 +52189,7 @@
   mdef: 218
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51745,6 +52244,7 @@
   mdef: 15
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51802,6 +52302,7 @@
   mdef: 48
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51858,6 +52359,7 @@
   mdef: 215
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51914,6 +52416,7 @@
   mdef: 33
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51970,6 +52473,7 @@
   mdef: 221
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52026,6 +52530,7 @@
   mdef: 17
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52082,6 +52587,7 @@
   mdef: 51
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52138,6 +52644,7 @@
   mdef: 22
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52194,6 +52701,7 @@
   mdef: 326
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52250,6 +52758,7 @@
   mdef: 58
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52308,6 +52817,7 @@
   mdef: 280
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52365,6 +52875,7 @@
   mdef: 280
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52427,6 +52938,7 @@
   mdef: 280
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52489,6 +53001,7 @@
   mdef: 280
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52551,6 +53064,7 @@
   mdef: 280
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52635,6 +53149,7 @@
   mdef: 21
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52685,6 +53200,7 @@
   mdef: 21
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Octopus Leg
@@ -52736,6 +53252,7 @@
   mdef: 21
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52777,6 +53294,7 @@
   matk: 118
   mdef: 33
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52813,6 +53331,7 @@
   mdef: 221
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52921,6 +53440,7 @@
   mdef: 22
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53112,6 +53632,7 @@
   mdef: 229
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53268,6 +53789,7 @@
   mdef: 158
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Kraken Tentacle
@@ -53317,6 +53839,7 @@
   mdef: 22
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -53369,6 +53892,7 @@
   matk: 1
   mdef: 1
   modes:
+    - detector
     - can_move
     - can_attack
   name: Thief Bug
@@ -53510,6 +54034,7 @@
   mdef: 166
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53553,6 +54078,7 @@
   matk: 200
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53590,6 +54116,7 @@
   matk: 200
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53628,6 +54155,7 @@
   mdef: 60
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53666,6 +54194,7 @@
   mdef: 68
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54046,6 +54575,7 @@
   matk: 1248
   mdef: 56
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54104,6 +54634,7 @@
   matk: 1207
   mdef: 10
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54259,6 +54790,7 @@
   mdef: 151
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54304,6 +54836,7 @@
   mdef: 113
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54349,6 +54882,7 @@
   mdef: 543
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54394,6 +54928,7 @@
   mdef: 134
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54440,6 +54975,7 @@
   mdef: 107
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54485,6 +55021,7 @@
   mdef: 109
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54530,6 +55067,7 @@
   mdef: 112
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54588,6 +55126,7 @@
   mdef: 151
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54655,6 +55194,7 @@
   mdef: 113
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54718,6 +55258,7 @@
   mdef: 543
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54783,6 +55324,7 @@
   mdef: 134
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54849,6 +55391,7 @@
   mdef: 107
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54912,6 +55455,7 @@
   mdef: 109
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54977,6 +55521,7 @@
   mdef: 112
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55023,6 +55568,7 @@
   matk: 59
   mdef: 39
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -55057,6 +55603,7 @@
   matk: 8
   mdef: 123
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -55318,6 +55865,7 @@
   mdef: 206
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55383,6 +55931,7 @@
   mdef: 58
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55440,6 +55989,7 @@
   mdef: 218
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55505,6 +56055,7 @@
   mdef: 68
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55562,6 +56113,7 @@
   mdef: 123
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55627,6 +56179,7 @@
   mdef: 178
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55684,6 +56237,7 @@
   mdef: 262
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55749,6 +56303,7 @@
   mdef: 96
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56406,6 +56961,7 @@
   mdef: 58
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56443,6 +56999,7 @@
   mdef: 68
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56480,6 +57037,7 @@
   mdef: 178
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56517,6 +57075,7 @@
   mdef: 96
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56621,6 +57180,7 @@
   matk: 1601
   mdef: 37
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56674,6 +57234,7 @@
   matk: 1651
   mdef: 41
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -56921,6 +57482,7 @@
   level: 140
   modes:
     - boss
+    - detector
   name: Treasure Chest
   race: formless
   size: small
@@ -57529,6 +58091,7 @@
   mdef: 81
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -57591,6 +58154,7 @@
   level: 140
   modes:
     - boss
+    - detector
   name: Zanzou
   race: formless
   size: small
@@ -57736,6 +58300,7 @@
   matk: 103
   mdef: 31
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -57788,6 +58353,7 @@
   matk: 196
   mdef: 75
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -57878,6 +58444,7 @@
   matk: 251
   mdef: 21
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -57924,6 +58491,7 @@
   matk: 301
   mdef: 71
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -58024,6 +58592,7 @@
   mdef: 95
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -58077,6 +58646,7 @@
   mdef: 95
   modes:
     - boss
+    - detector
   name: Bangungot
   race: demon
   size: medium
@@ -58124,6 +58694,7 @@
   mdef: 78
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -58168,6 +58739,7 @@
   matk: 2501
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Bakonawa
@@ -58202,6 +58774,7 @@
   matk: 2501
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Bakonawa
@@ -58238,6 +58811,7 @@
   matk: 2501
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   mvp_drops:
@@ -58281,6 +58855,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -58364,6 +58939,7 @@
   matk: 145
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -58457,6 +59033,7 @@
   mdef: 95
   modes:
     - boss
+    - detector
   mvp_drops:
     - item: Old_Violet_Box
       rate: 5500
@@ -58609,6 +59186,7 @@
   mdef: 78
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -58645,6 +59223,7 @@
   mdef: 78
   modes:
     - boss
+    - detector
   name: Weakpoint
   race: plant
   size: small
@@ -58673,6 +59252,7 @@
   matk: 3171
   mdef: 104
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -58723,6 +59303,7 @@
   level: 140
   modes:
     - boss
+    - detector
   name: Bakonawa's Treasure
   race: formless
   size: small
@@ -58777,6 +59358,7 @@
   matk: 1000
   mdef: 10
   modes:
+    - detector
     - aggressive
     - can_attack
   name: Monster
@@ -58811,6 +59393,7 @@
   matk: 103
   mdef: 31
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -58845,6 +59428,7 @@
   matk: 196
   mdef: 75
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -58879,6 +59463,7 @@
   matk: 251
   mdef: 21
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -58934,6 +59519,7 @@
   mdef: 506
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -58976,6 +59562,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Diabolic
   race: demon
   size: small
@@ -59004,6 +59592,7 @@
   matk: 1000
   mdef: 10
   modes:
+    - detector
     - aggressive
     - can_attack
   name: Hidden Mob
@@ -59036,6 +59625,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Wish Maiden
   race: demon
   size: small
@@ -59063,6 +59654,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Zealotus
   race: demon
   size: small
@@ -59090,6 +59683,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Ktullanux
   race: demon
   size: small
@@ -59117,6 +59712,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Eddga
   race: demon
   size: small
@@ -59144,6 +59741,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Mao Guai
   race: demon
   size: small
@@ -59171,6 +59770,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Loli Ruri
   race: demon
   size: small
@@ -59198,6 +59799,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Sedora
   race: demon
   size: small
@@ -59225,6 +59828,8 @@
   level: 83
   matk: 200
   mdef: 60
+  modes:
+    - detector
   name: Chepet
   race: demon
   size: small
@@ -59273,6 +59878,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -59595,6 +60201,7 @@
   matk: 341
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -59631,6 +60238,7 @@
   matk: 341
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -59780,6 +60388,7 @@
   mdef: 301
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   mvp_drops:
@@ -59833,6 +60442,7 @@
   matk: 201
   mdef: 50
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -60356,6 +60966,7 @@
   mdef: 6
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -60393,6 +61004,7 @@
   mdef: 5
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -60472,6 +61084,7 @@
   matk: 410
   mdef: 102
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -60912,6 +61525,7 @@
   level: 10
   modes:
     - boss
+    - detector
   name: Dummy 10
   race: formless
   size: medium
@@ -60941,6 +61555,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
   name: Dummy 50
   race: formless
   size: medium
@@ -60970,6 +61585,7 @@
   mdef: 90
   modes:
     - boss
+    - detector
   name: Dummy 100
   race: formless
   size: medium
@@ -60999,6 +61615,7 @@
   mdef: 120
   modes:
     - boss
+    - detector
   name: Dummy 150
   race: formless
   size: medium
@@ -61026,6 +61643,7 @@
   level: 10
   modes:
     - boss
+    - detector
   name: Dummy 10
   race: formless
   size: medium
@@ -62345,6 +62963,7 @@
   mdef: 139
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62401,6 +63020,7 @@
   mdef: 192
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62451,6 +63071,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62497,6 +63118,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62543,6 +63165,7 @@
   mdef: 9
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62589,6 +63212,7 @@
   mdef: 13
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62635,6 +63259,7 @@
   mdef: 66
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62681,6 +63306,7 @@
   mdef: 83
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62727,6 +63353,7 @@
   mdef: 8
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -63498,6 +64125,7 @@
   matk: 1257
   mdef: 36
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -63646,6 +64274,7 @@
   mdef: 50
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -63696,6 +64325,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -63746,6 +64376,7 @@
   mdef: 300
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -63799,6 +64430,7 @@
   mdef: 150
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -63853,6 +64485,7 @@
   mdef: 180
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -63909,6 +64542,7 @@
   mdef: 333
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   mvp_drops:
@@ -63963,6 +64597,7 @@
   mdef: 40
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64022,6 +64657,7 @@
   matk: 218
   mdef: 16
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -64279,6 +64915,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64324,6 +64961,7 @@
   matk: 206
   mdef: 62
   modes:
+    - detector
     - can_move
     - no_random_walk
     - can_attack
@@ -64376,6 +65014,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64429,6 +65068,7 @@
   matk: 1616
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -64478,6 +65118,7 @@
   mdef: 60
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64536,6 +65177,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64578,6 +65220,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Venom Bug
@@ -64624,6 +65267,7 @@
   mdef: 400
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64684,6 +65328,7 @@
   mdef: 60
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64744,6 +65389,7 @@
   mdef: 400
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64804,6 +65450,7 @@
   mdef: 60
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64851,6 +65498,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Monster 3
@@ -64884,6 +65532,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Monster 4
@@ -64917,6 +65566,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Monster 5
@@ -64957,6 +65607,8 @@
   job_exp: 13
   level: 140
   mdef: 10
+  modes:
+    - detector
   name: Faceworm Egg
   race: insect
   race_groups:
@@ -65001,6 +65653,7 @@
   matk: 1212
   mdef: 10
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -65833,6 +66486,7 @@
   mdef: 65
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -65874,6 +66528,7 @@
   mdef: 65
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -65929,6 +66584,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66110,6 +66766,7 @@
   matk: 18
   mdef: 10
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66178,6 +66835,7 @@
   matk: 102
   mdef: 12
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66244,6 +66902,7 @@
   level: 5
   matk: 3
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66345,6 +67004,7 @@
   matk: 1
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66378,6 +67038,7 @@
   level: 6
   matk: 3
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66412,6 +67073,7 @@
   matk: 11
   mdef: 8
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66446,6 +67108,7 @@
   matk: 81
   mdef: 68
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66480,6 +67143,7 @@
   matk: 224
   mdef: 55
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66819,6 +67483,7 @@
   matk: 5
   mdef: 3
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -66989,6 +67654,7 @@
   matk: 9
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -67057,6 +67723,7 @@
   matk: 35
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -67091,6 +67758,7 @@
   matk: 144
   mdef: 28
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -67126,6 +67794,7 @@
   mdef: 22
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -67865,6 +68534,7 @@
   matk: 95
   mdef: 51
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -68024,6 +68694,7 @@
   matk: 128
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -68076,6 +68747,7 @@
   matk: 55
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -68173,6 +68845,7 @@
   matk: 105
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -68657,6 +69330,7 @@
   matk: 144
   mdef: 28
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -68750,6 +69424,7 @@
   matk: 251
   mdef: 21
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -68804,6 +69479,7 @@
   matk: 5
   mdef: 3
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -68855,6 +69531,7 @@
   matk: 5
   mdef: 3
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -68906,6 +69583,7 @@
   matk: 5
   mdef: 3
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -69163,6 +69841,7 @@
   matk: 37
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -69328,6 +70007,7 @@
   matk: 35
   mdef: 20
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -69483,6 +70163,7 @@
   matk: 9
   mdef: 25
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -69800,6 +70481,7 @@
   matk: 30
   mdef: 21
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -70115,6 +70797,7 @@
   matk: 456
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -70817,6 +71500,7 @@
   matk: 7
   mdef: 5
   modes:
+    - detector
     - can_move
     - can_attack
   name: Elusive Scorpion
@@ -71318,6 +72002,7 @@
   matk: 5
   mdef: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Elusive Rocker
@@ -72015,6 +72700,7 @@
   matk: 112
   mdef: 70
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -72382,6 +73068,7 @@
   matk: 53
   mdef: 37
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -73480,6 +74167,7 @@
   matk: 300
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -74037,6 +74725,7 @@
   matk: 226
   mdef: 37
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -74137,6 +74826,7 @@
   matk: 218
   mdef: 16
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -74759,6 +75449,7 @@
   matk: 66
   mdef: 19
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -75175,6 +75866,7 @@
   matk: 41
   mdef: 12
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -75377,6 +76069,7 @@
   matk: 201
   mdef: 50
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -75433,6 +76126,7 @@
   matk: 113
   mdef: 66
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -75540,6 +76234,7 @@
   matk: 190
   mdef: 24
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -75698,6 +76393,7 @@
   level: 65
   matk: 31
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -75799,6 +76495,7 @@
   matk: 103
   mdef: 31
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -75910,6 +76607,7 @@
   matk: 165
   mdef: 8
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -76154,6 +76852,7 @@
   matk: 111
   mdef: 55
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -76208,6 +76907,7 @@
   matk: 280
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -76404,6 +77104,7 @@
   matk: 41
   mdef: 37
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -76825,6 +77526,7 @@
   matk: 103
   mdef: 62
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -76872,6 +77574,7 @@
   matk: 52
   mdef: 8
   modes:
+    - detector
     - can_move
     - assist
     - can_attack
@@ -77030,6 +77733,7 @@
   matk: 37
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -77398,6 +78102,7 @@
   matk: 20
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -77452,6 +78157,7 @@
   matk: 3
   mdef: 1
   modes:
+    - detector
     - can_move
     - can_attack
   name: Elusive Hornet
@@ -77500,6 +78206,7 @@
   matk: 91
   mdef: 20
   modes:
+    - detector
     - can_move
     - assist
     - can_attack
@@ -77554,6 +78261,7 @@
   matk: 11
   mdef: 8
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -77605,6 +78313,7 @@
   matk: 154
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -77865,6 +78574,7 @@
   matk: 41
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -77917,6 +78627,7 @@
   matk: 41
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -78631,6 +79342,7 @@
   matk: 132
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -78885,6 +79597,7 @@
   matk: 89
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -78935,6 +79648,7 @@
   matk: 89
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -79357,6 +80071,7 @@
   level: 6
   matk: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Solid Fabre
@@ -79406,6 +80121,7 @@
   level: 6
   matk: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Fabre Ringleader
@@ -79722,6 +80438,7 @@
   matk: 31
   mdef: 50
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -80023,6 +80740,7 @@
   matk: 35
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -80131,6 +80849,7 @@
   matk: 286
   mdef: 52
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -80185,6 +80904,7 @@
   matk: 30
   mdef: 20
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -80236,6 +80956,7 @@
   matk: 82
   mdef: 58
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -80344,6 +81065,7 @@
   matk: 182
   mdef: 16
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -80506,6 +81228,7 @@
   matk: 16
   mdef: 16
   modes:
+    - detector
     - can_move
     - can_attack
   name: Elusive Deniro
@@ -80724,6 +81447,7 @@
   matk: 259
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -80825,6 +81549,7 @@
   matk: 1
   mdef: 20
   modes:
+    - detector
     - can_move
     - can_attack
   name: Swift Creamy
@@ -81273,6 +81998,7 @@
   level: 5
   matk: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Elusive Chonchon
@@ -81323,6 +82049,7 @@
   matk: 112
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -81479,6 +82206,7 @@
   matk: 125
   mdef: 42
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -81535,6 +82263,7 @@
   matk: 76
   mdef: 67
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -81848,6 +82577,7 @@
   matk: 67
   mdef: 50
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -82009,6 +82739,7 @@
   matk: 298
   mdef: 94
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -82062,6 +82793,7 @@
   matk: 703
   mdef: 96
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -82223,6 +82955,7 @@
   matk: 33
   mdef: 8
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -82275,6 +83008,7 @@
   matk: 50
   mdef: 32
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -82329,6 +83063,7 @@
   matk: 50
   mdef: 32
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -82385,6 +83120,7 @@
   matk: 40
   mdef: 36
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -82439,6 +83175,7 @@
   matk: 40
   mdef: 36
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -82540,6 +83277,7 @@
   matk: 410
   mdef: 102
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -82740,6 +83478,7 @@
   matk: 177
   mdef: 81
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -82788,6 +83527,7 @@
   matk: 177
   mdef: 81
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -82842,6 +83582,7 @@
   matk: 21
   mdef: 16
   modes:
+    - detector
     - can_move
     - can_attack
   name: Solid Andre
@@ -82996,6 +83737,7 @@
   level: 19
   matk: 11
   modes:
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -83197,6 +83939,7 @@
   matk: 398
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - assist
@@ -83783,6 +84526,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -83822,6 +84566,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -83879,6 +84624,7 @@
   mdef: 25
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -83991,6 +84737,8 @@
   level: 83
   matk: 41
   mdef: 44
+  modes:
+    - detector
   name: Harpy
   race: demon
   size: medium
@@ -84057,6 +84805,8 @@
   level: 105
   matk: 85
   mdef: 45
+  modes:
+    - detector
   name: Gibbet
   race: demon
   size: large
@@ -84123,6 +84873,7 @@
   mdef: 96
   modes:
     - boss
+    - detector
   name: Solace
   race: angel
   size: medium
@@ -84220,6 +84971,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
   name: Deviling
   race: demon
   size: medium
@@ -84255,6 +85007,7 @@
   mdef: 81
   modes:
     - boss
+    - detector
   name: Arc Angeling
   race: angel
   size: medium
@@ -84426,6 +85179,7 @@
   matk: 666
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -84466,6 +85220,7 @@
   matk: 1257
   mdef: 36
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -84506,6 +85261,7 @@
   matk: 138
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -84547,6 +85303,7 @@
   mdef: 103
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -84587,6 +85344,8 @@
   level: 149
   matk: 1
   mdef: 10
+  modes:
+    - detector
   name: Icemine
   race: insect
   size: small
@@ -84710,6 +85469,7 @@
   matk: 1
   mdef: 27
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -84753,6 +85513,7 @@
   matk: 1
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -84794,6 +85555,7 @@
   matk: 1
   mdef: 51
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -85050,6 +85812,7 @@
   matk: 1
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -85128,6 +85891,8 @@
   level: 149
   matk: 1
   mdef: 10
+  modes:
+    - detector
   name: Flamecross
   race: insect
   size: small
@@ -85223,6 +85988,7 @@
   matk: 1444
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -85272,6 +86038,7 @@
   mdef: 44
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Wicked Vice Plant Manage
@@ -85316,6 +86083,7 @@
   matk: 1
   mdef: 44
   modes:
+    - detector
     - can_move
     - assist
     - can_attack
@@ -85348,6 +86116,7 @@
   matk: 1444
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -85394,6 +86163,7 @@
   matk: 1444
   mdef: 44
   modes:
+    - detector
     - can_move
     - assist
     - can_attack
@@ -85494,6 +86264,7 @@
   matk: 1666
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -85546,6 +86317,7 @@
   matk: 1444
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85597,6 +86369,7 @@
   matk: 1444
   mdef: 44
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -85650,6 +86423,7 @@
   mdef: 444
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85699,6 +86473,7 @@
   mdef: 444
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85739,6 +86514,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85785,6 +86561,7 @@
   mdef: 555
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85841,6 +86618,7 @@
   mdef: 1
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   mvp_drops:
@@ -85880,6 +86658,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85918,6 +86697,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85956,6 +86736,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -85992,6 +86773,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -86030,6 +86812,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -86068,6 +86851,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -86104,6 +86888,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
   name: Death Soul
   race: demon
   size: small
@@ -86134,6 +86919,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
   name: Morocc Hidden
   race: demon
   size: small
@@ -86933,6 +87719,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -86973,6 +87760,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Monster 7
@@ -87007,6 +87795,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87046,6 +87835,7 @@
   mdef: 5
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87085,6 +87875,7 @@
   mdef: 54
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87168,6 +87959,7 @@
   matk: 695
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -87218,6 +88010,7 @@
   matk: 218
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -87269,6 +88062,7 @@
   matk: 325
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -87320,6 +88114,7 @@
   matk: 158
   mdef: 45
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -87373,6 +88168,7 @@
   mdef: 68
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -87431,6 +88227,7 @@
   mdef: 265
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -87967,6 +88764,7 @@
   matk: 666
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88001,6 +88799,7 @@
   matk: 1257
   mdef: 36
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88040,6 +88839,7 @@
   mdef: 177
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -88081,6 +88881,7 @@
   mdef: 140
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -88118,6 +88919,7 @@
   mdef: 134
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -88159,6 +88961,7 @@
   mdef: 155
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -88201,6 +89004,7 @@
   mdef: 212
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -88238,6 +89042,7 @@
   mdef: 98
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -88360,6 +89165,7 @@
   mdef: 35
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88399,6 +89205,7 @@
   mdef: 54
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88451,6 +89258,7 @@
   mdef: 68
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88503,6 +89311,7 @@
   mdef: 68
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88539,6 +89348,7 @@
   matk: 695
   mdef: 68
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88575,6 +89385,7 @@
   matk: 695
   mdef: 68
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88630,6 +89441,7 @@
   mdef: 90
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88685,6 +89497,7 @@
   matk: 695
   mdef: 58
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -88732,6 +89545,7 @@
   matk: 325
   mdef: 59
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88782,6 +89596,7 @@
   matk: 218
   mdef: 50
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -88830,6 +89645,7 @@
   matk: 158
   mdef: 54
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -89317,6 +90133,7 @@
   matk: 138
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -89369,6 +90186,7 @@
   matk: 138
   mdef: 25
   modes:
+    - detector
     - can_move
     - can_attack
   name: Beholder
@@ -89554,6 +90372,7 @@
   mdef: 90
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   mvp_drops:
@@ -89596,6 +90415,7 @@
   mdef: 255
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   mvp_drops:
@@ -89639,6 +90459,7 @@
   mdef: 112
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -89680,6 +90501,7 @@
   mdef: 175
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -89719,6 +90541,7 @@
   mdef: 155
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -89758,6 +90581,7 @@
   mdef: 177
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -89797,6 +90621,7 @@
   mdef: 140
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -89838,6 +90663,7 @@
   mdef: 190
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -89885,6 +90711,7 @@
   matk: 89
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -90079,6 +90906,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Organic Pumpkin
@@ -90131,6 +90959,7 @@
   mdef: 99
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Inorganic Pumpkin
@@ -90183,6 +91012,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90238,6 +91068,7 @@
   mdef: 400
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90293,6 +91124,7 @@
   mdef: 400
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90350,6 +91182,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90407,6 +91240,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90462,6 +91296,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90499,6 +91334,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90538,6 +91374,7 @@
   mdef: 800
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90577,6 +91414,7 @@
   mdef: 800
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90616,6 +91454,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90655,6 +91494,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90694,6 +91534,7 @@
   mdef: 400
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90753,6 +91594,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90819,6 +91661,7 @@
   mdef: 800
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90885,6 +91728,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90951,6 +91795,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91017,6 +91862,7 @@
   mdef: 800
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91083,6 +91929,7 @@
   mdef: 400
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91149,6 +91996,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91204,6 +92052,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91259,6 +92108,7 @@
   mdef: 800
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91314,6 +92164,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91369,6 +92220,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91424,6 +92276,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91479,6 +92332,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91516,6 +92370,7 @@
   mdef: 400
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91555,6 +92410,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91594,6 +92450,7 @@
   mdef: 800
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91633,6 +92490,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91672,6 +92530,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91711,6 +92570,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91750,6 +92610,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91809,6 +92670,7 @@
   mdef: 400
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91875,6 +92737,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -91941,6 +92804,7 @@
   mdef: 800
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92007,6 +92871,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92073,6 +92938,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92139,6 +93005,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92205,6 +93072,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92566,6 +93434,7 @@
   matk: 1
   mdef: 99
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92614,6 +93483,7 @@
   mdef: 134
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92855,6 +93725,7 @@
   level: 100
   matk: 3
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -93232,6 +94103,7 @@
   matk: 30
   mdef: 20
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -93712,6 +94584,7 @@
   matk: 16
   mdef: 16
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -93766,6 +94639,7 @@
   matk: 20
   mdef: 16
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -93820,6 +94694,7 @@
   matk: 21
   mdef: 16
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -93930,6 +94805,7 @@
   matk: 7
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -93983,6 +94859,7 @@
   level: 105
   matk: 3
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94037,6 +94914,7 @@
   matk: 41
   mdef: 12
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94195,6 +95073,7 @@
   matk: 35
   mdef: 25
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94567,6 +95446,7 @@
   matk: 28
   mdef: 5
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94724,6 +95604,7 @@
   mdef: 6
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94779,6 +95660,7 @@
   mdef: 51
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94833,6 +95715,7 @@
   matk: 11
   mdef: 26
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94888,6 +95771,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94943,6 +95827,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -94998,6 +95883,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -95063,6 +95949,7 @@
   mdef: 164
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -95128,6 +96015,7 @@
   mdef: 98
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -95193,6 +96081,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -95260,6 +96149,7 @@
   mdef: 143
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -95372,6 +96262,7 @@
   matk: 5
   mdef: 3
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -95439,6 +96330,7 @@
   matk: 89
   mdef: 43
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -96039,6 +96931,7 @@
   mdef: 200
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -96105,6 +96998,7 @@
   matk: 890
   mdef: 83
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -96285,6 +97179,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -96349,6 +97244,7 @@
   mdef: 48
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -96404,6 +97300,7 @@
   mdef: 72
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -96492,6 +97389,7 @@
   matk: 1546
   mdef: 83
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -96533,6 +97431,7 @@
   mdef: 58
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -96698,6 +97597,7 @@
   matk: 498
   mdef: 34
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -96753,6 +97653,7 @@
   matk: 1033
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -96805,6 +97706,7 @@
   matk: 106
   mdef: 49
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -96841,6 +97743,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -96930,6 +97833,7 @@
   matk: 800
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -96984,6 +97888,7 @@
   matk: 600
   mdef: 60
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -97038,6 +97943,7 @@
   matk: 900
   mdef: 40
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -97094,6 +98000,7 @@
   matk: 200
   mdef: 120
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -97148,6 +98055,7 @@
   matk: 100
   modes:
     - boss
+    - detector
     - can_move
     - can_attack
   name: Shining Poring
@@ -97295,6 +98203,7 @@
   level: 7
   matk: 3
   modes:
+    - detector
     - can_move
     - can_attack
   name: Grass Fabre
@@ -97345,6 +98254,7 @@
   matk: 3
   mdef: 1
   modes:
+    - detector
     - can_move
     - can_attack
   name: Wild Hornet
@@ -97706,6 +98616,7 @@
   mdef: 4
   modes:
     - boss
+    - detector
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -97816,6 +98727,7 @@
   matk: 258
   mdef: 115
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -98101,6 +99013,7 @@
   mdef: 30
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -98194,6 +99107,7 @@
   mdef: 45
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -98483,6 +99397,7 @@
   mdef: 80
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -98662,6 +99577,7 @@
   mdef: 95
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -98833,6 +99749,7 @@
   mdef: 150
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -99147,6 +100064,7 @@
   mdef: 100
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -99230,6 +100148,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -99395,6 +100314,7 @@
   mdef: 150
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -99443,6 +100363,7 @@
   matk: 37
   mdef: 5
   modes:
+    - detector
     - can_move
     - can_attack
   name: Little Isis
@@ -100466,6 +101387,7 @@
   mdef: 168
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -100531,6 +101453,7 @@
   mdef: 168
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -100595,6 +101518,7 @@
   matk: 540
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -100649,6 +101573,7 @@
   matk: 3094
   mdef: 15
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -101009,6 +101934,7 @@
   matk: 200
   mdef: 61
   modes:
+    - detector
     - can_move
     - can_attack
   name: Diabolic2
@@ -101348,6 +102274,7 @@
   mdef: 123
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -101951,6 +102878,7 @@
   matk: 895
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -102054,6 +102982,7 @@
   mdef: 60
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -102113,6 +103042,7 @@
   mdef: 146
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -102176,6 +103106,7 @@
   mdef: 81
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -102406,6 +103337,7 @@
   matk: 115
   mdef: 84
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -102622,6 +103554,7 @@
   matk: 31
   mdef: 36
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -102766,6 +103699,7 @@
   matk: 256
   mdef: 42
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -102974,6 +103908,7 @@
   mdef: 78
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103093,6 +104028,7 @@
   matk: 408
   mdef: 82
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103384,6 +104320,7 @@
   mdef: 246
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103447,6 +104384,7 @@
   mdef: 20
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103503,6 +104441,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103551,6 +104490,7 @@
   mdef: 10
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103791,6 +104731,7 @@
   matk: 408
   mdef: 82
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -104467,6 +105408,7 @@
   matk: 498
   mdef: 5
   modes:
+    - detector
     - can_move
     - looter
     - assist
@@ -104629,6 +105571,7 @@
   mdef: 143
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -104861,6 +105804,7 @@
   mdef: 143
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -105022,6 +105966,7 @@
   mdef: 42
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -105277,6 +106222,7 @@
   mdef: 95
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -105319,6 +106265,7 @@
   mdef: 95
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -105502,6 +106449,7 @@
   matk: 1
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
   name: Manhole
@@ -105569,6 +106517,7 @@
   mdef: 65
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -106349,6 +107298,7 @@
   matk: 1203
   mdef: 105
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -106513,6 +107463,7 @@
   matk: 1555
   mdef: 56
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -106570,6 +107521,7 @@
   matk: 2220
   mdef: 60
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -106910,6 +107862,7 @@
   matk: 2104
   mdef: 115
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -106966,6 +107919,7 @@
   matk: 2356
   mdef: 118
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107021,6 +107975,7 @@
   mdef: 124
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107117,6 +108072,7 @@
   mdef: 331
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107176,6 +108132,7 @@
   matk: 835
   mdef: 102
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107233,6 +108190,7 @@
   mdef: 112
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107291,6 +108249,7 @@
   mdef: 134
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107759,6 +108718,7 @@
   matk: 1108
   mdef: 71
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107799,6 +108759,7 @@
   matk: 1108
   mdef: 71
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107910,6 +108871,7 @@
   mdef: 90
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107971,6 +108933,7 @@
   matk: 940
   mdef: 69
   modes:
+    - detector
     - can_move
     - looter
     - can_attack
@@ -108073,6 +109036,7 @@
   mdef: 77
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -108130,6 +109094,7 @@
   mdef: 113
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -108996,6 +109961,7 @@
   matk: 709
   mdef: 80
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -109201,6 +110167,7 @@
   mdef: 85
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -109476,6 +110443,7 @@
   mdef: 83
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -109527,6 +110495,7 @@
   mdef: 103
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -110023,6 +110992,7 @@
   mdef: 80
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -110434,6 +111404,7 @@
   mdef: 90
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -110490,6 +111461,7 @@
   mdef: 121
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -110547,6 +111519,7 @@
   matk: 948
   mdef: 82
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -110600,6 +111573,7 @@
   matk: 2043
   mdef: 114
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -110650,6 +111624,7 @@
   matk: 704
   mdef: 79
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -110703,6 +111678,7 @@
   matk: 2141
   mdef: 116
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -110736,6 +111712,8 @@
   level: 150
   matk: 700
   mdef: 32
+  modes:
+    - detector
   name: Papila Ruba
   race: insect
   size: medium
@@ -110781,6 +111759,7 @@
   matk: 895
   mdef: 81
   modes:
+    - detector
     - can_move
     - can_attack
   name: Papila Cae
@@ -110830,6 +111809,7 @@
   matk: 2094
   mdef: 115
   modes:
+    - detector
     - can_move
     - can_attack
   name: Senior Papila Cae
@@ -110859,6 +111839,8 @@
   level: 150
   matk: 700
   mdef: 84
+  modes:
+    - detector
   name: Papila Cae
   race: insect
   size: medium
@@ -111177,6 +112159,7 @@
   matk: 855
   mdef: 82
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -111277,6 +112260,7 @@
   matk: 719
   mdef: 81
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -111586,6 +112570,7 @@
   matk: 1958
   mdef: 115
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -112492,6 +113477,7 @@
   mdef: 271
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -112672,6 +113658,7 @@
   mdef: 81
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -112714,6 +113701,7 @@
   matk: 10000
   modes:
     - boss
+    - detector
     - aggressive
     - can_attack
     - random_target
@@ -112744,6 +113732,7 @@
   matk: 1
   modes:
     - boss
+    - detector
   name: Plague of Corruption
   race: formless
   size: small
@@ -113334,6 +114323,7 @@
   mdef: 114
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -113662,6 +114652,7 @@
   mdef: 140
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -113777,6 +114768,7 @@
   matk: 3282
   mdef: 146
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -113993,6 +114985,7 @@
   matk: 2795
   mdef: 172
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -114047,6 +115040,7 @@
   matk: 2896
   mdef: 232
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -114101,6 +115095,7 @@
   matk: 5182
   mdef: 293
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -114154,6 +115149,7 @@
   mdef: 210
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -114195,6 +115191,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Small)
   race: formless
   size: small
@@ -114222,6 +115219,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Medium)
   race: formless
   size: medium
@@ -114249,6 +115247,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Large)
   race: formless
   size: large
@@ -114276,6 +115275,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Neutral)
   race: formless
   size: medium
@@ -114303,6 +115303,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Dragon)
   race: dragon
   size: medium
@@ -114330,6 +115331,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Brute)
   race: brute
   size: medium
@@ -114357,6 +115359,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Human)
   race: demi_human
   size: medium
@@ -114384,6 +115387,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Insect)
   race: insect
   size: medium
@@ -114411,6 +115415,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Fish)
   race: fish
   size: medium
@@ -114438,6 +115443,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Demon)
   race: demon
   size: medium
@@ -114465,6 +115471,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Plant)
   race: plant
   size: medium
@@ -114492,6 +115499,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Angel)
   race: angel
   size: medium
@@ -114519,6 +115527,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Training Dummy (Undead)
   race: undead
   size: medium
@@ -114546,6 +115555,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Neutral Lv1)
   race: formless
   size: medium
@@ -114573,6 +115583,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Water Lv1)
   race: formless
   size: medium
@@ -114600,6 +115611,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Earth Lv1)
   race: formless
   size: medium
@@ -114627,6 +115639,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Fire Lv1)
   race: formless
   size: medium
@@ -114654,6 +115667,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Wind Lv1)
   race: formless
   size: medium
@@ -114681,6 +115695,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Poison Lv1)
   race: formless
   size: medium
@@ -114708,6 +115723,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Holy Lv1)
   race: formless
   size: medium
@@ -114735,6 +115751,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Dark Lv1)
   race: formless
   size: medium
@@ -114762,6 +115779,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Ghost Lv1)
   race: formless
   size: medium
@@ -114789,6 +115807,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Undead Lv1)
   race: formless
   size: medium
@@ -114815,6 +115834,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Human Player)
   race: player_human
   size: medium
@@ -114840,6 +115860,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Doram Player)
   race: player_doram
   size: small
@@ -115274,6 +116295,7 @@
   mdef: 149
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -115329,6 +116351,7 @@
   matk: 1727
   mdef: 110
   modes:
+    - detector
     - can_move
     - aggressive
     - can_attack
@@ -115816,6 +116839,7 @@
   mdef: 115
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -115857,6 +116881,7 @@
   mdef: 112
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -115898,6 +116923,7 @@
   mdef: 115
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -115944,6 +116970,7 @@
   mdef: 112
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116270,6 +117297,7 @@
   mdef: 70
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116316,6 +117344,7 @@
   mdef: 520
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116443,6 +117472,7 @@
   matk: 569
   mdef: 22
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116499,6 +117529,7 @@
   matk: 545
   mdef: 30
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116551,6 +117582,7 @@
   matk: 308
   mdef: 10
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116607,6 +117639,7 @@
   matk: 544
   mdef: 19
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116661,6 +117694,7 @@
   matk: 557
   mdef: 18
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116764,6 +117798,7 @@
   matk: 560
   mdef: 21
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116874,6 +117909,7 @@
   matk: 2984
   mdef: 166
   modes:
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116931,6 +117967,7 @@
   mdef: 184
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117259,6 +118296,7 @@
   mdef: 257
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117311,6 +118349,7 @@
   mdef: 260
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117363,6 +118402,7 @@
   mdef: 278
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117466,6 +118506,7 @@
   mdef: 220
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117518,6 +118559,7 @@
   mdef: 223
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117570,6 +118612,7 @@
   mdef: 259
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117673,6 +118716,7 @@
   mdef: 257
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117725,6 +118769,7 @@
   mdef: 260
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117777,6 +118822,7 @@
   mdef: 278
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117880,6 +118926,7 @@
   mdef: 241
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117932,6 +118979,7 @@
   mdef: 243
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -117984,6 +119032,7 @@
   mdef: 259
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118038,6 +119087,7 @@
   mdef: 251
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118092,6 +119142,7 @@
   mdef: 254
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118146,6 +119197,7 @@
   mdef: 257
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118200,6 +119252,7 @@
   mdef: 284
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118254,6 +119307,7 @@
   mdef: 251
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118308,6 +119362,7 @@
   mdef: 254
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118362,6 +119417,7 @@
   mdef: 257
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118416,6 +119472,7 @@
   mdef: 284
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118520,6 +119577,7 @@
   mdef: 246
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118572,6 +119630,7 @@
   mdef: 227
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118624,6 +119683,7 @@
   mdef: 265
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118727,6 +119787,7 @@
   mdef: 241
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118779,6 +119840,7 @@
   mdef: 243
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118831,6 +119893,7 @@
   mdef: 259
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118934,6 +119997,7 @@
   mdef: 246
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118986,6 +120050,7 @@
   mdef: 227
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119038,6 +120103,7 @@
   mdef: 265
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119141,6 +120207,7 @@
   mdef: 241
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119193,6 +120260,7 @@
   mdef: 243
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119245,6 +120313,7 @@
   mdef: 259
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119299,6 +120368,7 @@
   mdef: 251
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119353,6 +120423,7 @@
   mdef: 254
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119407,6 +120478,7 @@
   mdef: 257
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119461,6 +120533,7 @@
   mdef: 284
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119515,6 +120588,7 @@
   mdef: 251
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119569,6 +120643,7 @@
   mdef: 254
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119623,6 +120698,7 @@
   mdef: 257
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119677,6 +120753,7 @@
   mdef: 284
   modes:
     - boss
+    - detector
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119710,6 +120787,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -119735,6 +120813,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -119760,6 +120839,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -119785,6 +120865,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -119810,6 +120891,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -119835,6 +120917,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -119860,6 +120943,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -119885,6 +120969,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -119910,6 +120995,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -119935,6 +121021,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -119960,6 +121047,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -119985,6 +121073,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120010,6 +121099,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120035,6 +121125,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120060,6 +121151,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120085,6 +121177,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120110,6 +121203,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -120135,6 +121229,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120160,6 +121255,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120185,6 +121281,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120210,6 +121307,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -120235,6 +121333,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120260,6 +121359,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120285,6 +121385,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120310,6 +121411,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120335,6 +121437,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120360,6 +121463,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120385,6 +121489,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120410,6 +121515,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120435,6 +121541,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120460,6 +121567,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -120485,6 +121593,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120510,6 +121619,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120535,6 +121645,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120560,6 +121671,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -120585,6 +121697,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120610,6 +121723,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120635,6 +121749,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120660,6 +121775,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120685,6 +121801,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120710,6 +121827,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120735,6 +121853,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -120760,6 +121879,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120785,6 +121905,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120810,6 +121931,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120835,6 +121957,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -120860,6 +121983,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120885,6 +122009,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120910,6 +122035,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -120935,6 +122061,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -120960,6 +122087,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -120985,6 +122113,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -121010,6 +122139,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -121035,6 +122165,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -121060,6 +122191,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -121085,6 +122217,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -121110,6 +122243,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -121135,6 +122269,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -121160,6 +122295,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -121185,6 +122321,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -121210,6 +122347,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -121235,6 +122373,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -121260,6 +122399,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -121285,6 +122425,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -121310,6 +122451,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -121335,6 +122477,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -121360,6 +122503,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -121385,6 +122529,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -121410,6 +122555,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -121435,6 +122581,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -121460,6 +122607,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -121485,6 +122633,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -121510,6 +122659,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -121535,6 +122685,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -121560,6 +122711,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Small)
   race: formless
   size: small
@@ -121585,6 +122737,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -121610,6 +122763,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large
@@ -121635,6 +122789,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Formless Race)
   race: formless
   size: medium
@@ -121660,6 +122815,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Dragon Race)
   race: dragon
   size: medium
@@ -121685,6 +122841,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Brute Race)
   race: brute
   size: medium
@@ -121710,6 +122867,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Human Race)
   race: demi_human
   size: medium
@@ -121735,6 +122893,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Insect Race)
   race: insect
   size: medium
@@ -121760,6 +122919,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Fish Race)
   race: fish
   size: medium
@@ -121785,6 +122945,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Demon Race)
   race: demon
   size: medium
@@ -121810,6 +122971,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Plant Race)
   race: plant
   size: medium
@@ -121835,6 +122997,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Angel Race)
   race: angel
   size: medium
@@ -121860,6 +123023,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Undead Race)
   race: undead
   size: medium
@@ -121885,6 +123049,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Formless Race)
   race: formless
   size: medium
@@ -121910,6 +123075,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Dragon Race)
   race: dragon
   size: medium
@@ -121935,6 +123101,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Brute Race)
   race: brute
   size: medium
@@ -121960,6 +123127,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Human Race)
   race: demi_human
   size: medium
@@ -121985,6 +123153,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Insect Race)
   race: insect
   size: medium
@@ -122010,6 +123179,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Fish Race)
   race: fish
   size: medium
@@ -122035,6 +123205,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Demon Race)
   race: demon
   size: medium
@@ -122060,6 +123231,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Plant Race)
   race: plant
   size: medium
@@ -122085,6 +123257,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Angel Race)
   race: angel
   size: medium
@@ -122110,6 +123283,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Undead Race)
   race: undead
   size: medium
@@ -122135,6 +123309,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Neutral)
   race: formless
   size: medium
@@ -122160,6 +123335,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Water)
   race: formless
   size: medium
@@ -122185,6 +123361,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Earth)
   race: formless
   size: medium
@@ -122210,6 +123387,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Fire)
   race: formless
   size: medium
@@ -122235,6 +123413,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Wind)
   race: formless
   size: medium
@@ -122260,6 +123439,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Poison)
   race: formless
   size: medium
@@ -122285,6 +123465,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Holy)
   race: formless
   size: medium
@@ -122310,6 +123491,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Dark)
   race: formless
   size: medium
@@ -122335,6 +123517,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Ghost)
   race: formless
   size: medium
@@ -122360,6 +123543,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Undead)
   race: formless
   size: medium
@@ -122385,6 +123569,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Neutral)
   race: formless
   size: medium
@@ -122410,6 +123595,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Water)
   race: formless
   size: medium
@@ -122435,6 +123621,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Earth)
   race: formless
   size: medium
@@ -122460,6 +123647,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Fire)
   race: formless
   size: medium
@@ -122485,6 +123673,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Wind)
   race: formless
   size: medium
@@ -122510,6 +123699,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Poison)
   race: formless
   size: medium
@@ -122535,6 +123725,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Holy)
   race: formless
   size: medium
@@ -122560,6 +123751,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Dark)
   race: formless
   size: medium
@@ -122585,6 +123777,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Ghost)
   race: formless
   size: medium
@@ -122610,6 +123803,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Undead)
   race: formless
   size: medium
@@ -122635,6 +123829,7 @@
   level: 100
   modes:
     - boss
+    - detector
   name: Dummy (Large)
   race: formless
   size: large

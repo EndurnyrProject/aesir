@@ -23,7 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
     duration: [5_000, 10_000, 15_000, 20_000, 25_000],
     sp_cost: [5, 10, 15, 20, 25],
     after_cast_delay: List.duplicate(1_000, 5),
-    status: :sc_quagmire
+    status: :sc_quagmire,
+    target_hidden: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Targeting

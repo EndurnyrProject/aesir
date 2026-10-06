@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanExplosion do
     element: :neutral,
     splash_radius: 5,
     sp_cost: [1, 1, 1],
-    cooldown: [1_000, 1_000, 1_000]
+    cooldown: [1_000, 1_000, 1_000],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState

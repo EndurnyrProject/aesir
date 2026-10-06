@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentration do
       200_000,
       220_000,
       240_000
-    ]
+    ],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget

@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCallslave do
     display_name: "Call Slave",
     max_level: 1,
     target_type: :self,
-    damage_type: :no_damage
+    damage_type: :no_damage,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

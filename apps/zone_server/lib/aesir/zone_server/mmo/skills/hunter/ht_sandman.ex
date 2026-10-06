@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
     hit_interval: 1_000,
     unit_duration: [150_000, 120_000, 90_000, 60_000, 30_000],
     sp_cost: List.duplicate(12, 5),
-    item_cost: [%{id: 1065, amount: 1}]
+    item_cost: [%{id: 1065, amount: 1}],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets

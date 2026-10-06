@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
     fixed_cast_time: [renewal: [160, 160, 144, 144, 128, 128, 112, 112, 96, 96], pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(200, 10), pre_renewal: List.duplicate(1000, 10)],
     duration: [1_500, 3_000, 4_500, 6_000, 7_500, 9_000, 10_500, 12_000, 13_500, 15_000],
-    sp_cost: [45, 43, 41, 39, 37, 35, 33, 31, 29, 27]
+    sp_cost: [45, 43, 41, 39, 37, 35, 33, 31, 29, 27],
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

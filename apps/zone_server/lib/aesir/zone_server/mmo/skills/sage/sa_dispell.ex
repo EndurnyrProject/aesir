@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
     sp_cost: List.duplicate(1, 5),
     cast_time: [renewal: List.duplicate(1_600, 5), pre_renewal: List.duplicate(2_000, 5)],
     fixed_cast_time: [renewal: List.duplicate(400, 5), pre_renewal: []],
-    item_cost: [%{id: 715, amount: 1}]
+    item_cost: [%{id: 715, amount: 1}],
+    target_hidden: true
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active

@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcWaterattack do
     damage_type: :damage,
     damage_kind: :weapon,
     element: :water,
-    range: 7
+    range: 7,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Npc.AttributeStrike

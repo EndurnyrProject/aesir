@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     element: :fire,
     range: 0,
     knockback: 3,
-    splash_radius: 5
+    splash_radius: 5,
+    is_npc: true,
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication

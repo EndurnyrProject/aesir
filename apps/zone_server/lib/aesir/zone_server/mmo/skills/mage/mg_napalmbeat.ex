@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmbeat do
       renewal: List.duplicate(500, 10),
       pre_renewal: [1000, 1000, 1000, 900, 900, 800, 800, 700, 600, 500]
     ],
-    sp_cost: [9, 9, 9, 12, 12, 12, 15, 15, 15, 18]
+    sp_cost: [9, 9, 9, 12, 12, 12, 15, 15, 15, 18],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

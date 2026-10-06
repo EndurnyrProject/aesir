@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcBlindattack do
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: :weapon,
-    element: :neutral
+    element: :neutral,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike

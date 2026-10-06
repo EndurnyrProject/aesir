@@ -24,7 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
     element: :neutral,
     splash_radius: 2,
     hit_interval: 450,
-    unit_duration: List.duplicate(4_500, 10)
+    unit_duration: List.duplicate(4_500, 10),
+    is_npc: true,
+    damage_splash: true
 
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat

@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRestore do
     target_type: :self,
     splash_radius: 15,
     fixed_cast_time: [1_000],
-    cooldown: [180_000]
+    cooldown: [180_000],
+    damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea

@@ -32,7 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
     fixed_cast_time: [renewal: List.duplicate(350, 10), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(300, 10), pre_renewal: []],
     cooldown: [renewal: List.duplicate(1000, 10), pre_renewal: []],
-    sp_cost: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+    sp_cost: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+    damage_splash: [renewal: false, pre_renewal: true]
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

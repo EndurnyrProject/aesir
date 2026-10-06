@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSuffragium do
     fixed_cast_time: [renewal: List.duplicate(500, 3), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(1_000, 3), pre_renewal: List.duplicate(2_000, 3)],
     cooldown: [renewal: List.duplicate(30_000, 3), pre_renewal: []],
-    duration: [renewal: List.duplicate(60_000, 3), pre_renewal: [30_000, 20_000, 10_000]]
+    duration: [renewal: List.duplicate(60_000, 3), pre_renewal: [30_000, 20_000, 10_000]],
+    damage_splash: [renewal: true, pre_renewal: false]
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Skill.Active

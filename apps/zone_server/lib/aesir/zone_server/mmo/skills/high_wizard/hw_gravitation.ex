@@ -37,7 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
     cooldown: [renewal: List.duplicate(5_000, 5), pre_renewal: []],
     item_cost: [renewal: [], pre_renewal: [%{id: 717, amount: 1}]],
     unit_duration: [5_000, 6_000, 7_000, 8_000, 9_000],
-    hit_interval: 1_000
+    hit_interval: 1_000,
+    target_hidden: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

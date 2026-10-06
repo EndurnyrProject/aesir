@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoud do
     after_cast_delay: [renewal: [1000], pre_renewal: [0]],
     cooldown: [renewal: [30_000], pre_renewal: [0]],
     quest_skill: true,
-    quest_owner_job: :merchant
+    quest_owner_job: :merchant,
+    damage_splash: [renewal: true, pre_renewal: false]
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active

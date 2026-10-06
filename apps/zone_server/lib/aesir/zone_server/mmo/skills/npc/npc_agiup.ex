@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcAgiup do
     display_name: "Increase AGI (NPC)",
     max_level: 50,
     target_type: :self,
-    damage_type: :no_damage
+    damage_type: :no_damage,
+    is_npc: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

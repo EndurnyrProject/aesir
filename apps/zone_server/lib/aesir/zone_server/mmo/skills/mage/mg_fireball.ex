@@ -39,7 +39,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFireball do
       renewal: List.duplicate(700, 10),
       pre_renewal: [1500, 1500, 1500, 1500, 1500, 1000, 1000, 1000, 1000, 1000]
     ],
-    sp_cost: List.duplicate(25, 10)
+    sp_cost: List.duplicate(25, 10),
+    damage_splash: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
