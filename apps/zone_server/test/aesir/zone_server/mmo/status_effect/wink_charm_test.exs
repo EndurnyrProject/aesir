@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
   use ExUnit.Case, async: true
 
   import Aesir.TestEtsSetup
+  import Aesir.TestWait
   import Aesir.ZoneServer.SessionHelpers
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
@@ -52,7 +53,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
                300
              )
 
-    refute StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
+    assert_eventually(fn -> not StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm) end)
+  end
+
+  test "preparing a positive hit does not release charm before owning delivery" do
+    mob = start_mob_session()
+    assert :ok = apply_charm(mob.unit_id)
+
+    assert {1, _metadata} =
+             DamageApplication.prepare_unit_damage(
+               :mob,
+               mob.unit_id,
+               1,
+               %{dmg_type: :physical},
+               300
+             )
+
+    assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
   end
 
   test "status expiry restores targeting eligibility" do

@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
 
   defp session_loop(test_pid, label) do
     receive do
-      {:"$gen_cast", {:unit, {:apply_damage, damage, attacker_id}}} ->
+      {:"$gen_cast", {:unit, {:apply_damage, damage, attacker_id, _metadata}}} ->
         send(test_pid, {label, damage, attacker_id})
         session_loop(test_pid, label)
 

@@ -169,7 +169,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
-    stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
+    stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id, _metadata ->
       send(self(), {:damage_applied, damage})
       :ok
     end)

@@ -415,8 +415,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
                skip_range: true
              )
 
-    assert_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, {:homunculus, ^gid}}}}
-    assert_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, {:homunculus, ^gid}}}}
+    assert_receive {:"$gen_cast",
+                    {:combat, {:apply_damage, _damage, {:homunculus, ^gid}, _metadata}}}
+
+    assert_receive {:"$gen_cast",
+                    {:combat, {:apply_damage, _damage, {:homunculus, ^gid}, _metadata}}}
   end
 
   test "a reflected Homunculus bolt lands on the Homunculus through its owner session", %{
@@ -437,7 +440,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
                skip_range: true
              )
 
-    refute_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, _attacker}}}
+    refute_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, _attacker, _metadata}}}
     assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp == 770 end)
   end
 

@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
     stub(Passives, :steal_proc, fn _player -> 0 end)
     stub(Passives, :attack_procs, fn _player -> %{} end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id, _metadata -> :ok end)
 
     attacker = combatant(@attacker_id, :player)
     target = combatant(@target_id, :mob)
@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
          %{attacker: attacker, player_state: player_state} do
       hold_replacement(1)
       reject(&Passives.attack_replacement/1)
-      expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id, _metadata -> :ok end)
 
       capture_log(fn ->
         assert :ok = Combat.execute_attack(attacker, player_state, @target_id)
@@ -142,7 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
     test "ignore_flee skips the hit roll", %{attacker: attacker, player_state: player_state} do
       hold_replacement(1)
       reject(&HitCalculations.calculate_hit_result/2)
-      expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id, _metadata -> :ok end)
 
       capture_log(fn ->
         assert :ok = Combat.execute_attack(attacker, player_state, @target_id)

@@ -37,7 +37,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec apply_damage(pid(), integer(), tuple() | integer() | nil) :: :ok
   def apply_damage(pid, damage, attacker_id \\ nil) do
-    GenServer.cast(pid, {:combat, {:apply_damage, damage, attacker_id}})
+    apply_damage(pid, damage, attacker_id, %{})
+  end
+
+  @doc "Applies damage with prepared hit metadata in the mob's owning handler."
+  @spec apply_damage(pid(), integer(), tuple() | integer() | nil, map()) :: :ok
+  def apply_damage(pid, damage, attacker_id, metadata) do
+    GenServer.cast(pid, {:combat, {:apply_damage, damage, attacker_id, metadata}})
   end
 
   @doc "Applies equipment vanish as nonlethal max-HP/SP percentage loss."
@@ -382,6 +388,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   # Combat: damage application (death handling lives in CombatHandler).
   @impl GenServer
+  def handle_cast({:combat, {:apply_damage, damage, attacker_id, metadata}}, state) do
+    CombatHandler.handle_apply_damage(damage, attacker_id, metadata, state)
+  end
+
   def handle_cast({:combat, {:apply_damage, damage, attacker_id}}, state) do
     CombatHandler.handle_apply_damage(damage, attacker_id, state)
   end

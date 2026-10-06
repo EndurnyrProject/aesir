@@ -272,13 +272,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
                %{game_state: caster}
              )
 
-    assert_receive {:session_cast, {:combat, {:apply_damage, damage, 1000}}}
+    assert_receive {:session_cast, {:combat, {:apply_damage, damage, 1000, _metadata}}}
     assert damage > 0
 
     assert_receive {:session_cast,
                     {:movement, {:knockback, _expected_x, _expected_y, "prontera", 66, 60}}}
 
-    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
+    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id, _metadata}}},
+                   20
 
     refute_receive {:session_cast,
                     {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
@@ -292,7 +293,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert {:error, :target_dead} =
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
-    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
+    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id, _metadata}}},
+                   20
 
     refute_receive {:session_cast,
                     {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
@@ -324,7 +326,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert {:error, :blocked_line_of_sight} =
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
-    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
+    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id, _metadata}}},
+                   20
 
     refute_receive {:session_cast,
                     {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
@@ -339,7 +342,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert {:error, :blocked_line_of_sight} =
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
-    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
+    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id, _metadata}}},
+                   20
 
     refute_receive {:session_cast,
                     {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
@@ -354,7 +358,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert {:error, :blocked_line_of_sight} =
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
-    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
+    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id, _metadata}}},
+                   20
 
     refute_receive {:session_cast,
                     {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
@@ -369,7 +374,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert :ok =
              WzJupitel.deferred(%{target: {:mob, @target_id}, skill_level: 1}, caster())
 
-    assert_receive {:session_cast, {:combat, {:apply_damage, damage, 1000}}}
+    assert_receive {:session_cast, {:combat, {:apply_damage, damage, 1000, _metadata}}}
     assert damage > 0
 
     assert_receive {:session_cast,
@@ -383,7 +388,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert {:error, :invalid_target} =
              WzJupitel.deferred(%{target: {:player, @target_id}, skill_level: 1}, caster())
 
-    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
+    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id, _metadata}}},
+                   20
 
     refute_receive {:session_cast,
                     {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
@@ -400,7 +406,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
                caster(party_id: 10)
              )
 
-    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
+    refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id, _metadata}}},
+                   20
 
     refute_receive {:session_cast,
                     {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},

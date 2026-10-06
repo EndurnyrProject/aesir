@@ -453,7 +453,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
       call_original(StateCommit, :commit, [current, committed])
     end)
 
-    expect(MobSession, :apply_damage, fn pid, damage, attacker ->
+    expect(MobSession, :apply_damage, fn pid, damage, attacker, metadata ->
       assert pid == near.pid
       assert damage == 1_000
       assert attacker == {:homunculus, gid}
@@ -465,7 +465,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
       assert committed.sp == 99
       assert committed.intimacy_hundredths == 100
       send(test_pid, :bio_explosion_delivered)
-      call_original(MobSession, :apply_damage, [pid, damage, attacker])
+      call_original(MobSession, :apply_damage, [pid, damage, attacker, metadata])
     end)
 
     manager =
@@ -536,7 +536,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
 
     on_exit(fn -> end_mob_session(target) end)
     stub(HomunculusPersistence, :save_semantic, fn _row, _attrs -> {:error, :forced} end)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
 
     assert {:error, :bio_explosion_settlement_failed, ^session} =
              CastingHandler.begin(session, 8_016, 1, :self)

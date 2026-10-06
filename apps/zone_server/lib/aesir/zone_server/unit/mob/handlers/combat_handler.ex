@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -40,22 +41,45 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   """
   @spec handle_apply_damage(integer(), tuple() | integer() | nil, MobState.t()) ::
           {:noreply, MobState.t()}
-  def handle_apply_damage(_damage, _attacker_id, %{is_dead: true} = state) do
+  def handle_apply_damage(damage, attacker_id, state),
+    do: handle_apply_damage(damage, attacker_id, %{}, state)
+
+  @doc "Applies damage with active/passive notification metadata in the owning mob."
+  @spec handle_apply_damage(integer(), tuple() | integer() | nil, map(), MobState.t()) ::
+          {:noreply, MobState.t()}
+  def handle_apply_damage(_damage, _attacker_id, _metadata, %{is_dead: true} = state) do
     {:noreply, state}
   end
 
-  def handle_apply_damage(damage, attacker, state) do
+  def handle_apply_damage(damage, attacker, metadata, state) do
     {updated_mob, status} = MobState.apply_damage(state, damage)
     current_time = System.system_time(:second)
     attacker_ref = typed_attacker(attacker)
     reward_owner_id = reward_owner_id(attacker_ref)
 
+    updated_mob = maybe_add_aggro(updated_mob, reward_owner_id, attacker_ref, damage)
+
     updated_mob =
-      updated_mob
-      |> Map.put(:last_damage_time, current_time)
-      |> maybe_add_aggro(reward_owner_id, attacker_ref, damage)
-      |> AIStateMachine.handle_damage_reaction(attacker_ref)
-      |> maybe_note_rude_attack(attacker_ref)
+      if Map.get(metadata, :passive?, false) or Map.get(metadata, :status_tick?, false) do
+        updated_mob
+      else
+        updated_mob
+        |> Map.put(:last_damage_time, current_time)
+        |> AIStateMachine.handle_damage_reaction(attacker_ref)
+        |> maybe_note_rude_attack(attacker_ref)
+      end
+
+    StatusInterpreter.on_damage(
+      :mob,
+      state.instance_id,
+      metadata
+      |> Map.put_new(:element, :neutral)
+      |> Map.merge(%{
+        damage: min(damage, state.hp),
+        hp_after: updated_mob.hp,
+        max_hp: state.max_hp
+      })
+    )
 
     # Send HP update packet to nearby players
     SpawnView.notify_hp_update(updated_mob)
@@ -124,7 +148,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     hp_damage = min(hp_amount, max(state.hp - 1, 0))
 
     {:noreply, state} =
-      if hp_damage > 0, do: handle_apply_damage(hp_damage, source, state), else: {:noreply, state}
+      if hp_damage > 0,
+        do: handle_apply_damage(hp_damage, source, %{passive?: true}, state),
+        else: {:noreply, state}
 
     {:noreply, StateCommit.commit(%{state | sp: max(0, state.sp - sp_amount)})}
   end

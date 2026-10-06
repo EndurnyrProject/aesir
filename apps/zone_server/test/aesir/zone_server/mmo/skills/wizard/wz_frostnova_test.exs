@@ -268,13 +268,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-      stub(MobSession, :apply_damage, fn pid, 40, 1_000 ->
+      stub(MobSession, :apply_damage, fn pid, 40, 1_000, _metadata ->
         id = Map.fetch!(ids_by_pid, pid)
         send(test_pid, {:damage, {:mob, id}})
         :ok
       end)
 
-      stub(PlayerSession, :apply_damage, fn pid, 40, 1_000 ->
+      stub(PlayerSession, :apply_damage, fn pid, 40, 1_000, _metadata ->
         id = Map.fetch!(ids_by_pid, pid)
         send(test_pid, {:damage, {:player, id}})
         :ok

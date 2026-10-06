@@ -123,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, _info -> damage end)
       stub(StatusInterpreter, :after_damage_taken, fn :mob, 2001, _info -> 0 end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _radius, _packet -> :ok end)
-      stub(MobSession, :apply_damage, fn _pid, _damage, _source -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, _damage, _source, _metadata -> :ok end)
       stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
       stub(OnHitEffects, :after_hit, fn _attacker, _target, _result, _opts -> :ok end)
       stub(EquipVanish, :after_hit, fn _attacker, _target, _pid, _flag -> :ok end)
@@ -276,7 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
     stub(StatusInterpreter, :after_damage_taken, fn :player, 2001, _hit_info -> 0 end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, 1001} -> :ok end)
+    stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, 1001}, _metadata -> :ok end)
 
     expect(UnitRegistry, :get_player_pid, 2, fn id when id in [1001, 2001] ->
       {:ok, self()}
@@ -338,7 +338,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
     stub(StatusInterpreter, :after_damage_taken, fn :player, 2001, _hit_info -> 0 end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, 1001} -> :ok end)
+    stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, 1001}, _metadata -> :ok end)
 
     expect(UnitRegistry, :get_player_pid, 2, fn id when id in [1001, 2001] ->
       {:ok, self()}
@@ -403,7 +403,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn _pid, 120, 1001 ->
+    expect(MobSession, :apply_damage, fn _pid, 120, 1001, _metadata ->
       send(test_pid, {:event, :damage})
       :ok
     end)
@@ -483,7 +483,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn _pid, 96, 1001 -> :ok end)
+    expect(MobSession, :apply_damage, fn _pid, 96, 1001, _metadata -> :ok end)
 
     assert {:ok, %{hit?: true, damage: 96}} =
              SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
@@ -515,7 +515,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-    stub(MobSession, :apply_damage, fn _pid, _damage, 1001 ->
+    stub(MobSession, :apply_damage, fn _pid, _damage, 1001, _metadata ->
       send(self(), :damage_delivered)
       :ok
     end)
@@ -598,7 +598,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     expect(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-    expect(MobSession, :apply_damage, fn _pid, 40, 1001 ->
+    expect(MobSession, :apply_damage, fn _pid, 40, 1001, _metadata ->
       send(self(), :damage_delivered)
       :ok
     end)
@@ -659,7 +659,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
     reject(&EquipComa.trigger?/2)
     reject(&Knockback.skill/5)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
 
     assert {:ok, :miss} =
              SkillAttack.prepare_staged_skill_attack(caster_state, {:mob, 2001},
@@ -708,7 +708,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     expect(MobSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
 
     expect(Knockback, :skill, fn ^attacker, ^target, 7, result, options ->
@@ -772,7 +772,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
 
     expect(MobSession, :apply_coma, fn _pid, {:player, 1001} ->
       send(test_pid, :coma_delivered)
@@ -850,7 +850,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     expect(MobSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
-    expect(MobSession, :apply_damage, fn _pid, 40, 1001 -> :ok end)
+    expect(MobSession, :apply_damage, fn _pid, 40, 1001, _metadata -> :ok end)
 
     expect(Knockback, :skill, 2, fn ^attacker, target, 141, result, [] ->
       assert result == %{
@@ -897,7 +897,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     reject(&DamageCalculator.calculate_damage/3)
     reject(&EquipComa.trigger?/2)
     reject(&Knockback.skill/5)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     reject(&MobSession.apply_coma/2)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
@@ -921,7 +921,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
     stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, 0, 1001 -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 0, 1001, _metadata -> :ok end)
 
     expect(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
       {:ok, %{damage: 7, is_critical: false}}
@@ -971,7 +971,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       :ok
     end)
 
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     reject(&MobSession.apply_coma/2)
 
     assert {:ok, %{hit?: true, damage: 0, target_survives?: true, coma?: true}} =
@@ -1010,7 +1010,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    reject(&PlayerSession.apply_damage/3)
+    reject(&PlayerSession.apply_damage/4)
     expect(PlayerSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
 
     assert {:ok, %{coma?: true}} =
@@ -1169,7 +1169,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     reject(&MobSession.apply_coma/2)
 
-    stub(MobSession, :apply_damage, fn _pid, 30, source ->
+    stub(MobSession, :apply_damage, fn _pid, 30, source, _metadata ->
       send(test_pid, {:ordinary_damage, source})
       :ok
     end)
@@ -1241,7 +1241,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn _pid, 35, 1001 ->
+    expect(MobSession, :apply_damage, fn _pid, 35, 1001, _metadata ->
       send(test_pid, :delivered)
       :ok
     end)
@@ -1319,7 +1319,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn _pid, 1_900, 1001 -> :ok end)
+    expect(MobSession, :apply_damage, fn _pid, 1_900, 1001, _metadata -> :ok end)
 
     assert {:ok, %{hit?: true, damage: 1_900, target_survives?: true}} =
              SkillAttack.execute_forced_no_card_attack(caster_state, {:mob, 2001},
@@ -1378,7 +1378,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
     stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, _hit_info -> damage end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    expect(MobSession, :apply_damage, fn _pid, 60, 1001 -> :ok end)
+    expect(MobSession, :apply_damage, fn _pid, 60, 1001, _metadata -> :ok end)
 
     assert [{:mob, 2001}] =
              SkillAttack.execute_forced_no_card_splash(caster_state, {100, 100}, 2,

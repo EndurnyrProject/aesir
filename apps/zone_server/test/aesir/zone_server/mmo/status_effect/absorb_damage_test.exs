@@ -51,7 +51,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       target_pid = setup_player_mock(target_id)
       :ok = Interpreter.apply_status(:player, target_id, :sc_aeterna)
 
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 300, {:player, 99} -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 300, {:player, 99}, _metadata ->
+        :ok
+      end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
@@ -67,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       :ok =
         Interpreter.apply_status(:player, target_id, :sc_kyrie, val2: 1_000, val3: 5)
 
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 99} -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 99}, _metadata -> :ok end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
@@ -85,7 +87,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       # 80/100 SP is the 60-79 band once the boundary point is subtracted, so the
       # coat soaks 24% and drains 2, not the 30%/3 of the band above it.
       expect(PlayerSession, :consume_sp, fn ^target_pid, 2 -> :ok end)
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 114, {:player, 99} -> :ok end)
+
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 114, {:player, 99}, _metadata ->
+        :ok
+      end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
@@ -100,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       start_safetywall(%{hits_remaining: 6, shield_hp: 9_500})
 
       :ok = Interpreter.apply_status(:player, target_id, :sc_safetywall, val2: 42)
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 99} -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 99}, _metadata -> :ok end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 

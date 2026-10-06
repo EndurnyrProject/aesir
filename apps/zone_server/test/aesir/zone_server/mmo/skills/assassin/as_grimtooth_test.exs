@@ -245,7 +245,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
              AsGrimtooth.cast(caster, {:unit, target.instance_id}, 3, AsGrimtooth.definition())
 
     assert_received :quagmire_applied
-    assert_received {:"$gen_cast", {:combat, {:apply_damage, 0, 1}}}
+    assert_received {:"$gen_cast", {:combat, {:apply_damage, 0, 1, _metadata}}}
 
     assert %{val1: 3, val2: 30, expires_at: expires_at} =
              StatusStorage.get_status(:mob, target.instance_id, :sc_quagmire)

@@ -419,7 +419,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     reject(&EquipVanish.after_hit/4)
     reject(&MobSession.apply_coma/2)
 
-    expect(MobSession, :apply_damage, 3, fn _pid, damage, 1_000 ->
+    expect(MobSession, :apply_damage, 3, fn _pid, damage, 1_000, _metadata ->
       send(self(), {:delivered_damage, damage})
       :ok
     end)

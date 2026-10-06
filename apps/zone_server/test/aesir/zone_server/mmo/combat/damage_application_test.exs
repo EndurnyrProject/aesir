@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     :ok =
       Interpreter.apply_status(:player, target_id, :sc_kyrie, state: %{test_pid: self()})
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 75, {:player, 20} ->
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 75, {:player, 20}, _metadata ->
       send(test_pid, :delivered)
       :ok
     end)
@@ -202,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     :ok =
       Interpreter.apply_status(:player, target_id, :sc_pneuma, state: %{test_pid: self()})
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 20} -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 20}, _metadata -> :ok end)
 
     {settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -232,7 +232,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 150, {:player, 20} -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 150, {:player, 20}, _metadata -> :ok end)
 
     {_settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -261,7 +261,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, {:mob, 20} -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, {:mob, 20}, _metadata -> :ok end)
 
     assert :ok =
              DamageApplication.apply_unit_damage(
@@ -287,7 +287,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
     stub_unit_info(target_id)
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, {:player, 20} -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, {:player, 20}, _metadata -> :ok end)
     expect(PlayerSession, :record_skill_hit, fn ^target_pid, 21, 5 -> :ok end)
 
     assert :ok =
@@ -312,7 +312,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    reject(&PlayerSession.apply_damage/3)
+    reject(&PlayerSession.apply_damage/4)
     expect(PlayerSession, :apply_coma, fn ^target_pid, {:player, 20} -> :ok end)
     expect(PlayerSession, :record_skill_hit, fn ^target_pid, 21, 5 -> :ok end)
 
@@ -334,7 +334,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
 
     reject(&MobSession.note_hit_type/4)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     expect(MobSession, :apply_coma, fn ^target_pid, {:mob, 20} -> :ok end)
 
     assert :ok =
@@ -374,7 +374,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       )
 
     reject(&PlayerSession.apply_coma/2)
-    reject(&PlayerSession.apply_damage/3)
+    reject(&PlayerSession.apply_damage/4)
     reject(&PlayerSession.record_skill_hit/3)
 
     assert :ok =
@@ -411,7 +411,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{peer: {:player, crusader_id}, link_id: make_ref(), range: 7}
       )
 
-    reject(&PlayerSession.apply_damage/3)
+    reject(&PlayerSession.apply_damage/4)
     expect(PlayerSession, :apply_coma, fn ^crusader_pid, {:player, 20} -> :ok end)
 
     assert {0, prepared} =
@@ -461,7 +461,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     @tag game_mode: :pre_renewal
     test "pre-renewal Pressure lands on the devotee", %{devotee_id: devotee_id} do
       stub_unit_info(devotee_id)
-      reject(&PlayerSession.apply_damage/3)
+      reject(&PlayerSession.apply_damage/4)
 
       assert {40, prepared} =
                DamageApplication.prepare_unit_damage(
@@ -478,7 +478,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     @tag game_mode: :pre_renewal
     test "pre-renewal Gravitation Field lands on the devotee", %{devotee_id: devotee_id} do
       stub_unit_info(devotee_id)
-      reject(&PlayerSession.apply_damage/3)
+      reject(&PlayerSession.apply_damage/4)
 
       assert {400, prepared} =
                DamageApplication.prepare_unit_damage(
@@ -497,7 +497,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       devotee_id: devotee_id,
       crusader_pid: crusader_pid
     } do
-      expect(PlayerSession, :apply_damage, fn ^crusader_pid, 40, {:player, 20} -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^crusader_pid, 40, {:player, 20}, _metadata ->
+        :ok
+      end)
 
       assert {0, _prepared} =
                DamageApplication.prepare_unit_damage(
@@ -525,7 +527,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:mob, 20} -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:mob, 20}, _metadata -> :ok end)
 
     {_settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -590,7 +592,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     :ok =
       Interpreter.apply_status(:player, target_id, :sc_pneuma, state: %{test_pid: self()})
 
-    reject(&PlayerSession.apply_damage/3)
+    reject(&PlayerSession.apply_damage/4)
     miss = %{swing(0, nil) | outcome: :miss}
 
     assert {^miss, :ok} =
@@ -615,7 +617,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     :ok =
       Interpreter.apply_status(:player, target_id, :sc_kyrie, state: %{test_pid: self()})
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 50, {:player, 20} -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 50, {:player, 20}, _metadata -> :ok end)
 
     {settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -641,7 +643,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     :ok =
       Interpreter.apply_status(:player, target_id, :sc_kyrie, state: %{test_pid: self()})
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 2, {:player, 20} -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 2, {:player, 20}, _metadata -> :ok end)
 
     {settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -667,7 +669,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
   defp death_session_loop(test_pid, mob) do
     receive do
-      {:"$gen_cast", {:combat, {:apply_damage, damage, _attacker_id}}} ->
+      {:"$gen_cast", {:combat, {:apply_damage, damage, _attacker_id, _metadata}}} ->
         {mob, transition} = MobState.apply_damage(mob, damage)
         send(test_pid, {:transition, mob.hp, transition})
         death_session_loop(test_pid, mob)

@@ -3,7 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WinkCharm do
   Wink of Charm (SC_WINKCHARM).
 
   Prevents a monster from targeting the Dancer who charmed it until the
-  monster takes damage.
+  monster takes active HP damage. In both modes, active zero-damage
+  notifications also release players, but passive HP costs and ticks do not.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_winkcharm,
@@ -12,9 +13,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WinkCharm do
     icon: :dc_winkcharm
 
   @impl true
-  def absorb_damage(_target, _instance, %{damage: damage}, _context) when damage != 0,
+  def on_damage({:player, _id}, _instance, _damage_info, _context), do: :remove
+
+  def on_damage(_target, _instance, %{damage: damage}, _context) when damage > 0,
     do: :remove
 
-  def absorb_damage(_target, instance, %{damage: damage}, _context),
-    do: {:ok, damage, instance}
+  def on_damage(_target, instance, _damage_info, _context), do: {:ok, instance}
 end

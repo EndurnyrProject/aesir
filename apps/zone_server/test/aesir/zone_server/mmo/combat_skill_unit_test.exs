@@ -153,7 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn ^test_pid, 97, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, fn ^test_pid, 97, @caster_id, _metadata -> :ok end)
     expect(MobSession, :apply_walk_delay, fn ^test_pid, 60 -> :ok end)
 
     assert {:ok, prepared} = Combat.prepare_skill_unit_hit(attacker, {:mob, @target_id}, 85)
@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     stub(SpatialIndex, :get_unit_position, fn :mob, @target_id -> {:ok, {150, 150, @map_name}} end)
 
     reject(&MagicDamageCalculator.calculate_magic_damage/3)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     reject(&Broadcast.to_in_range/5)
 
     assert {:error, :target_dead} =
@@ -213,7 +213,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     expect(EquipComa, :trigger?, fn ^attacker, _target -> false end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-    expect(MobSession, :apply_damage, fn ^test_pid, 40, @caster_id ->
+    expect(MobSession, :apply_damage, fn ^test_pid, 40, @caster_id, _metadata ->
       send(test_pid, {:event, :damage})
       :ok
     end)
@@ -256,7 +256,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     expect(EquipComa, :trigger?, 2, fn _attacker, _target -> false end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    expect(MobSession, :apply_damage, 2, fn ^test_pid, 40, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, 2, fn ^test_pid, 40, @caster_id, _metadata -> :ok end)
 
     for {equipment, destination} <- [
           {%{{:add_skill_blow, 70} => 3}, {156, 150}},
@@ -325,7 +325,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn ^test_pid, 40, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, fn ^test_pid, 40, @caster_id, _metadata -> :ok end)
 
     assert :ok =
              Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 70, 7, :holy, 100,
@@ -359,7 +359,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id} -> :ok end)
 
     assert :ok =
@@ -390,7 +390,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn ^test_pid, 0, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, fn ^test_pid, 0, @caster_id, _metadata -> :ok end)
     reject(&MobSession.apply_coma/2)
 
     assert :ok =
@@ -432,7 +432,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     reject(&MobSession.apply_coma/2)
 
     assert :ok =
@@ -465,7 +465,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id} -> :ok end)
 
     assert :ok =
@@ -536,7 +536,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    reject(&PlayerSession.apply_damage/3)
+    reject(&PlayerSession.apply_damage/4)
     expect(PlayerSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
 
     assert :ok =
@@ -587,7 +587,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     reject(&MobSession.apply_coma/2)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, 40, source ->
+    stub(MobSession, :apply_damage, fn ^test_pid, 40, source, _metadata ->
       send(test_pid, {:ordinary_damage, source})
       :ok
     end)
@@ -678,7 +678,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id ->
+    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id, _metadata ->
       send(test_pid, {:damage, damage})
       :ok
     end)
@@ -709,7 +709,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id ->
+    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id, _metadata ->
       send(test_pid, {:damage, damage})
       :ok
     end)
@@ -749,7 +749,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id ->
+    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id, _metadata ->
       send(test_pid, {:damage, damage})
       :ok
     end)
@@ -804,7 +804,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, _packet -> :ok end)
-    stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id -> :ok end)
+    stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id, _metadata -> :ok end)
 
     stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
       send(test_pid, {:skill_id, opts[:skill_id]})
@@ -823,7 +823,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     reject(&EquipComa.trigger?/2)
     reject(&Broadcast.to_in_range/5)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
 
     assert {:error, :target_not_found} =
              Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 89, 10, :water, 600)
@@ -866,7 +866,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id -> :ok end)
+    stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id, _metadata -> :ok end)
     stub(MobSession, :apply_walk_delay, fn ^test_pid, 600 -> send(test_pid, :walk_delayed) end)
 
     assert :ok =

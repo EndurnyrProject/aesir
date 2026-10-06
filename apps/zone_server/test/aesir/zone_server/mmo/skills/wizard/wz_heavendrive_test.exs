@@ -246,8 +246,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
       stub(UnitRegistry, :get_player_pid, fn ^target_id -> {:ok, player_pid} end)
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)
-      reject(&PlayerSession.apply_damage/3)
-      reject(&MobSession.apply_damage/3)
+      reject(&PlayerSession.apply_damage/4)
+      reject(&MobSession.apply_damage/4)
       reject(&StatusInterpreter.remove_status/3)
 
       assert {:ok, ^caster} =
@@ -341,8 +341,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       stub(StatusInterpreter, :absorb_damage, fn _type, _id, damage, _hit_info -> damage end)
 
-      expect(MobSession, :apply_damage, 2, fn _pid, 40, 1_000 -> :ok end)
-      reject(&PlayerSession.apply_damage/3)
+      expect(MobSession, :apply_damage, 2, fn _pid, 40, 1_000, _metadata -> :ok end)
+      reject(&PlayerSession.apply_damage/4)
 
       test_pid = self()
 

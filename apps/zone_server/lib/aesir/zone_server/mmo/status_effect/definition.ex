@@ -418,6 +418,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
           | :before_normal_attack
           | :attack_replacement
           | :on_dealt_damage
+          | :on_damage
           | :after_damage_taken
           | :on_movement_intent
           | :on_committed_action
@@ -464,9 +465,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       def resolve_duration(instance, duration), do: {duration, instance}
 
       @impl true
-      def on_damage(_target, instance, _damage_info, _context), do: {:ok, instance}
-
-      @impl true
       def on_contact(_target, instance, _contact, _context), do: {:ok, instance}
 
       @impl true
@@ -477,7 +475,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
                      on_expire: 3,
                      on_tick: 3,
                      resolve_duration: 2,
-                     on_damage: 4,
                      on_contact: 4,
                      dynamic_option: 1
     end
@@ -485,6 +482,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   @doc false
   defmacro __before_compile__(env) do
+    damage? = Module.defines?(env.module, {:on_damage, 4})
     dealt_damage? = Module.defines?(env.module, {:on_dealt_damage, 4})
     before_weapon_hit? = Module.defines?(env.module, {:before_weapon_hit, 4})
     before_normal_attack? = Module.defines?(env.module, {:before_normal_attack, 4})
@@ -494,6 +492,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     committed_action? = Module.defines?(env.module, {:on_committed_action, 4})
     timeout? = Module.defines?(env.module, {:on_timeout, 3})
     absorb? = Module.defines?(env.module, {:absorb_damage, 4})
+
+    damage_default = damage_default(damage?)
 
     dealt_damage_default =
       unless dealt_damage? do
@@ -534,6 +534,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       |> maybe_add_capability(before_normal_attack?, :before_normal_attack)
       |> maybe_add_capability(attack_replacement?, :attack_replacement)
       |> maybe_add_capability(dealt_damage?, :on_dealt_damage)
+      |> maybe_add_capability(damage?, :on_damage)
       |> maybe_add_capability(after_damage_taken?, :after_damage_taken)
       |> maybe_add_capability(movement_intent?, :on_movement_intent)
       |> maybe_add_capability(committed_action?, :on_committed_action)
@@ -541,6 +542,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       |> maybe_add_capability(absorb?, :absorb_damage)
 
     quote do
+      unquote(damage_default)
       unquote(dealt_damage_default)
       unquote(before_weapon_hit_default)
       unquote(before_normal_attack_default)
@@ -558,6 +560,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   defp maybe_add_capability(capabilities, true, capability), do: [capability | capabilities]
   defp maybe_add_capability(capabilities, false, _capability), do: capabilities
+
+  defp damage_default(true), do: nil
+
+  defp damage_default(false) do
+    quote do
+      @impl true
+      def on_damage(_target, instance, _damage_info, _context), do: {:ok, instance}
+    end
+  end
 
   defp before_normal_attack_default(true), do: nil
 

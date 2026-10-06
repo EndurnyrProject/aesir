@@ -173,7 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
       {:ok, %{damage: 20, is_critical: false}}
     end)
 
-    expect(MobSession, :apply_damage, fn _, 20, 1000 -> :ok end)
+    expect(MobSession, :apply_damage, fn _, 20, 1000, _metadata -> :ok end)
 
     assert {:ok, %{hit?: true}} =
              Combat.execute_acid_terror_attack(caster_state, @target_id,
@@ -332,7 +332,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
       {:ok, %{damage: 20, is_critical: false}}
     end)
 
-    expect(MobSession, :apply_damage, fn _, 20, 1000 -> :ok end)
+    expect(MobSession, :apply_damage, fn _, 20, 1000, _metadata -> :ok end)
 
     assert {:ok, %{hit?: true}} =
              Combat.execute_acid_terror_attack(caster_state, @target_id,

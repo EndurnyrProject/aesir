@@ -130,7 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatHunterSkillAttackTest do
       {:ok, %{damage: 40, is_critical: false}}
     end)
 
-    expect(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, fn _pid, 40, @caster_id, _metadata -> :ok end)
 
     assert [@target_id] =
              Combat.execute_splash_attack(caster, {150, 150}, 1,
@@ -151,7 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatHunterSkillAttackTest do
     end)
 
     reject(&DamageCalculator.calculate_damage/3)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
 
     assert [] =
              Combat.execute_splash_attack(caster, {150, 150}, 1,
@@ -170,7 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatHunterSkillAttackTest do
       {:ok, %{damage: 40, is_critical: false}}
     end)
 
-    expect(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, fn _pid, 40, @caster_id, _metadata -> :ok end)
 
     assert {:ok, %{hit?: true, damage: 40, target_survives?: false}} =
              Combat.execute_skill_attack(caster, @target_id,
@@ -194,7 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatHunterSkillAttackTest do
       {10, hit_info}
     end)
 
-    expect(MobSession, :apply_damage, fn _pid, 10, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, fn _pid, 10, @caster_id, _metadata -> :ok end)
 
     assert {:ok, %{hit?: true, damage: 10, target_survives?: true}} =
              Combat.execute_skill_attack(caster, @target_id,

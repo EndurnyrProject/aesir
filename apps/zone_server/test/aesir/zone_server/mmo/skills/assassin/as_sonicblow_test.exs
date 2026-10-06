@@ -276,7 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
       :ok
     end)
 
-    expect(MobSession, :apply_damage, fn _, 184, @caster_id -> :ok end)
+    expect(MobSession, :apply_damage, fn _, 184, @caster_id, _metadata -> :ok end)
 
     assert {:ok, %{hit?: true, damage: 184}} =
              Combat.execute_sonic_blow_attack(caster, @target_id,

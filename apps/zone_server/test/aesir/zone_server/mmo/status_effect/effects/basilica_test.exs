@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
 
       :ok = Combat.deal_damage({:player, @holder_id}, 40)
 
-      assert_receive {:"$gen_cast", {:unit, {:apply_damage, 40, nil}}}
+      assert_receive {:"$gen_cast", {:unit, {:apply_damage, 40, nil, _metadata}}}
     end
   end
 

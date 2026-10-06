@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @map "wink_charm_live"
   @dancer_class 20
@@ -94,6 +95,107 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
     force_ticks(mob, 2)
 
     assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
+  end
+
+  test "blocked and passive damage retain a mob's charm until active HP delivery" do
+    source = start_player("NotifySource", {152, 150})
+    mob = start_charmable_mob(awake: false)
+
+    StatusStorage.apply_status(:mob, mob.unit_id, :sc_winkcharm,
+      caster_id: source.character.id,
+      duration: 30_000
+    )
+
+    StatusStorage.apply_status(:mob, mob.unit_id, :sc_pneuma, duration: 30_000)
+    hit = %{dmg_type: :physical, is_short: false}
+
+    assert {0, prepared} =
+             DamageApplication.prepare_unit_damage(
+               :mob,
+               mob.unit_id,
+               100,
+               hit,
+               source.character.id
+             )
+
+    assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
+
+    DamageApplication.apply_unit_damage(
+      :mob,
+      mob.pid,
+      mob.unit_id,
+      0,
+      prepared,
+      source.character.id
+    )
+
+    get_mob_state(mob.pid)
+    assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
+
+    DamageApplication.apply_unit_damage(
+      :mob,
+      mob.pid,
+      mob.unit_id,
+      1,
+      %{status_tick?: true},
+      nil
+    )
+
+    assert eventually(fn -> get_mob_state(mob.pid).hp == 49_999 end)
+    assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
+
+    MobSession.apply_damage(mob.pid, 1, {:player, source.character.id})
+    assert eventually(fn -> not StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm) end)
+  end
+
+  test "player active-zero notifications release charm but passive ticks and costs do not" do
+    player = start_player("ZeroNotify", {150, 150})
+    id = player.character.id
+
+    StatusStorage.apply_status(:player, id, :sc_winkcharm, duration: 30_000)
+    initial_hp = get_player_state(player.pid).stats.current_state.hp
+
+    DamageApplication.apply_unit_damage(:player, player.pid, id, 1, %{status_tick?: true}, nil)
+
+    assert eventually(fn ->
+             get_player_state(player.pid).stats.current_state.hp == initial_hp - 1
+           end)
+
+    assert StatusStorage.has_status?(:player, id, :sc_winkcharm)
+
+    PlayerSession.apply_vanish(player.pid, 1, 0, {:player, id})
+    get_player_state(player.pid)
+    assert StatusStorage.has_status?(:player, id, :sc_winkcharm)
+
+    PlayerSession.apply_damage(player.pid, 0, nil)
+    assert eventually(fn -> not StatusStorage.has_status?(:player, id, :sc_winkcharm) end)
+  end
+
+  test "passive HP damage still ends Berserk at the low-HP boundary" do
+    player = start_player("PassiveBerserk", {150, 150})
+    id = player.character.id
+    PlayerSession.set_vitals(player.pid, hp: 200)
+    get_player_state(player.pid)
+    StatusStorage.apply_status(:player, id, :sc_berserk, duration: 30_000)
+
+    PlayerSession.apply_damage(player.pid, 100, nil, %{status_tick?: true})
+
+    assert eventually(fn -> get_player_state(player.pid).stats.current_state.hp == 100 end)
+    refute StatusStorage.has_status?(:player, id, :sc_berserk)
+  end
+
+  test "passive sourced HP loss still credits mob damage without breaking charm" do
+    source = start_player("PassiveCredit", {152, 150})
+    mob = start_charmable_mob(awake: false)
+    id = source.character.id
+    StatusStorage.apply_status(:mob, mob.unit_id, :sc_winkcharm, duration: 30_000)
+
+    MobSession.apply_damage(mob.pid, 10, {:player, id}, %{passive?: true})
+    assert eventually(fn -> get_mob_state(mob.pid).hp == 49_990 end)
+    state = get_mob_state(mob.pid)
+    assert state.aggro_list[id] == 10
+    assert state.typed_aggro_list[{:player, id}].damage == 10
+    assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
   end
 
   test "expiry releases a held target without an explicit removal call" do

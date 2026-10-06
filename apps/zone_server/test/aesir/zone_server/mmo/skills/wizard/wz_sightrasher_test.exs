@@ -370,7 +370,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
     refute StatusStorage.has_status?(:player, caster.character_id, :sc_sight)
 
     assert_receive {:session_cast, {:mob, ^collision_id},
-                    {:combat, {:apply_damage, mob_damage, 1_000}}}
+                    {:combat, {:apply_damage, mob_damage, 1_000, _metadata}}}
 
     assert mob_damage > 0
 
@@ -387,7 +387,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
 
     Enum.each(excluded, fn target_ref ->
       refute_received {:session_cast, ^target_ref,
-                       {:combat, {:apply_damage, _damage, _attacker_id}}}
+                       {:combat, {:apply_damage, _damage, _attacker_id, _metadata}}}
 
       refute_received {:session_cast, ^target_ref,
                        {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}}

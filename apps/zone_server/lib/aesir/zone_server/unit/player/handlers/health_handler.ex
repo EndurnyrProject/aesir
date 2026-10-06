@@ -68,16 +68,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Applies combat damage to the player session state.
 
   Updates current HP, pushes an SP_HP update to the client, persists the new
-  HP and triggers death handling when HP reaches 0. Damage on an already-dead
-  player (or non-positive damage) is ignored.
+  HP and triggers death handling when HP reaches 0. Dead players ignore damage.
+  Active zero-damage notifications reach statuses without changing HP.
   """
   @spec apply_damage(integer(), Ref.t() | integer() | nil, SessionState.t()) ::
           {:noreply, SessionState.t()}
-  def apply_damage(_damage, _attacker_id, %{game_state: %{action_state: :dead}} = state) do
+  def apply_damage(damage, attacker_id, state),
+    do: apply_damage(damage, attacker_id, %{}, state)
+
+  @doc "Applies HP damage and active/passive notification semantics with prepared metadata."
+  @spec apply_damage(integer(), Ref.t() | integer() | nil, map(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def apply_damage(
+        _damage,
+        _attacker_id,
+        _metadata,
+        %{game_state: %{action_state: :dead}} = state
+      ) do
     {:noreply, state}
   end
 
-  def apply_damage(damage, attacker_id, state)
+  def apply_damage(damage, attacker_id, metadata, state)
       when is_integer(damage) and damage > 0 do
     stats = state.game_state.stats
     new_hp = damaged_hp(stats.current_state.hp, damage)
@@ -91,21 +102,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
     CharacterPersistence.update_stats(char_id, %{hp: new_hp}, async: true)
 
-    StatusInterpreter.on_damage(:player, char_id, %{
-      damage: damage,
-      element: :neutral,
-      hp_after: new_hp,
-      max_hp: max_hp
-    })
+    damage_info =
+      metadata
+      |> Map.put_new(:element, :neutral)
+      |> Map.merge(%{
+        damage: min(damage, stats.current_state.hp),
+        hp_after: new_hp,
+        max_hp: max_hp
+      })
+
+    StatusInterpreter.on_damage(:player, char_id, damage_info)
 
     if new_hp == 0 do
       handle_death(normalize_attacker(attacker_id), state)
     else
-      {:noreply, SkillHandler.interrupt_cast_on_damage(state)}
+      {:noreply, maybe_interrupt_cast(state, metadata)}
     end
   end
 
-  def apply_damage(_damage, _attacker_id, state), do: {:noreply, state}
+  def apply_damage(0, _attacker_id, metadata, state) do
+    stats = state.game_state.stats
+
+    StatusInterpreter.on_damage(
+      :player,
+      state.game_state.character_id,
+      metadata
+      |> Map.put_new(:element, :neutral)
+      |> Map.merge(%{
+        damage: 0,
+        hp_after: stats.current_state.hp,
+        max_hp: stats.derived_stats.max_hp
+      })
+    )
+
+    {:noreply, maybe_interrupt_cast(state, metadata)}
+  end
+
+  def apply_damage(_damage, _attacker_id, _metadata, state), do: {:noreply, state}
+
+  defp maybe_interrupt_cast(state, metadata) do
+    if Map.get(metadata, :passive?, false) or Map.get(metadata, :status_tick?, false),
+      do: state,
+      else: SkillHandler.interrupt_cast_on_damage(state)
+  end
 
   @doc """
   Applies passive HP loss that never kills: the loss stops at 1 HP. Unlike
@@ -169,7 +208,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     hp_damage = min(hp_amount, max(stats.current_state.hp - 1, 0))
 
     {:noreply, state} =
-      if hp_damage > 0, do: apply_damage(hp_damage, source, state), else: {:noreply, state}
+      if hp_damage > 0,
+        do: apply_damage(hp_damage, source, %{passive?: true}, state),
+        else: {:noreply, state}
 
     if sp_amount > 0, do: consume_sp(sp_amount, state), else: {:noreply, state}
   end

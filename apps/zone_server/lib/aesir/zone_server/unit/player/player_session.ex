@@ -121,7 +121,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   @spec apply_damage(pid(), integer(), Ref.t() | integer() | nil) :: :ok
   def apply_damage(pid, damage, attacker_id \\ nil) do
-    GenServer.cast(pid, {:unit, {:apply_damage, damage, attacker_id}})
+    apply_damage(pid, damage, attacker_id, %{})
+  end
+
+  @doc "Applies damage with prepared hit metadata in the player's owning handler."
+  @spec apply_damage(pid(), integer(), Ref.t() | integer() | nil, map()) :: :ok
+  def apply_damage(pid, damage, attacker_id, metadata) do
+    GenServer.cast(pid, {:unit, {:apply_damage, damage, attacker_id, metadata}})
   end
 
   @doc """
@@ -1204,6 +1210,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # HealthHandler. Heal stays under `:combat` - the player heal carries
   # received-heal-rate scaling that is genuinely player-only.
   @impl true
+  def handle_cast({:unit, {:apply_damage, damage, attacker_id, metadata}}, state) do
+    HealthHandler.apply_damage(damage, attacker_id, metadata, state)
+  end
+
   def handle_cast({:unit, {:apply_damage, damage, attacker_id}}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
   end

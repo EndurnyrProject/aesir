@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
 
       :ok = StatusInterpreter.apply_status(:mob, @mob_id, :sc_kyrie, val2: 10_000, val3: 2)
 
-      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id ->
+      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id, _metadata ->
         send(test_pid, :damage_applied)
         :ok
       end)
@@ -198,7 +198,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
 
       :ok = StatusInterpreter.apply_status(:mob, @mob_id, :sc_kyrie, val2: 10_000, val3: 2)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
+      stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id, _metadata ->
         send(test_pid, {:damage_applied, damage})
         :ok
       end)
@@ -221,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
 
       :ok = StatusInterpreter.apply_status(:player, @player_id, :sc_kyrie, val2: 10_000, val3: 2)
 
-      stub(PlayerSession, :apply_damage, fn ^target_pid, damage, {:mob, @caster_id} ->
+      stub(PlayerSession, :apply_damage, fn ^target_pid, damage, {:mob, @caster_id}, _metadata ->
         send(test_pid, {:damage_applied, damage})
         :ok
       end)
@@ -241,7 +241,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
 
       stub_mob_target(@mob_id)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
+      stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id, _metadata ->
         send(test_pid, {:damage_applied, damage})
         :ok
       end)

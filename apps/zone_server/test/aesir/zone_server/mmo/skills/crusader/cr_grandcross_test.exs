@@ -417,7 +417,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       :ok
     end)
 
-    stub(PlayerSession, :apply_damage, fn _, damage, {:player, @caster_id} ->
+    stub(PlayerSession, :apply_damage, fn _, damage, {:player, @caster_id}, _metadata ->
       send(self(), {:hp_damage, damage})
       :ok
     end)

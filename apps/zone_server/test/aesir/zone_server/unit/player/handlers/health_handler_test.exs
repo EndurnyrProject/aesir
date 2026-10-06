@@ -496,6 +496,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "prepared damage metadata" do
+    test "preserves source hit metadata while reporting actual HP lost" do
+      expect(StatusInterpreter, :on_damage, fn :player, 1, info ->
+        assert info.damage == 20
+        assert info.element == :fire
+        assert info.skill_id == 14
+        assert info.hp_after == 0
+        :ok
+      end)
+
+      HealthHandler.apply_damage(
+        30,
+        {:mob, 2},
+        %{element: :fire, skill_id: 14},
+        build_state(20, :idle)
+      )
+    end
+
+    test "active zero damage interrupts an eligible cast but passive ticks do not" do
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _, _ -> :ok end)
+      state = casting_state(-500)
+
+      assert {:noreply, passive_state} =
+               HealthHandler.apply_damage(1, nil, %{status_tick?: true}, state)
+
+      assert passive_state.game_state.casting == state.game_state.casting
+      assert passive_state.game_state.stats.current_state.hp == 99
+
+      assert {:noreply, %{game_state: %{casting: nil}}} =
+               HealthHandler.apply_damage(0, {:mob, 2}, %{}, state)
+    end
+  end
+
   describe "apply_vanish/4" do
     test "drains percentages of maxima while keeping HP nonlethal" do
       state = build_state(20, :idle)

@@ -139,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id ->
+    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id, _metadata ->
       send(test_pid, :apply_damage)
       :ok
     end)

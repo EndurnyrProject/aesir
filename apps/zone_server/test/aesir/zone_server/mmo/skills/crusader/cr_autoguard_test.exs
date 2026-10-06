@@ -225,7 +225,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-      stub(PlayerSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, _damage, _attacker_id, _metadata -> :ok end)
 
       reject(&StatusInterpreter.before_weapon_hit/3)
 

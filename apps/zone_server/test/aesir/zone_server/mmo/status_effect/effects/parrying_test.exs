@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ParryingTest do
     stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
     stub(SpecialEffect, :play, fn {:player, 3}, :guard, :area -> :ok end)
     reject(&DamageCalculator.calculate_damage/3)
-    reject(&PlayerSession.apply_damage/3)
+    reject(&PlayerSession.apply_damage/4)
 
     :rand.seed(:exsss, {14, 15, 16})
 
@@ -107,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ParryingTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(PlayerSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+    stub(PlayerSession, :apply_damage, fn _pid, _damage, _attacker_id, _metadata -> :ok end)
     reject(&Interpreter.before_weapon_hit/3)
 
     assert {:ok, {:player, 3}} =

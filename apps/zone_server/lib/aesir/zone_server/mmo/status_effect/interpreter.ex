@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
      instance. An `on_apply` returning `:remove` vetoes the
      application (e.g. Blessing being consumed as a cure).
   2. `process_tick/3` runs `on_tick` for periodic behavior.
-  3. `on_damage/3` notifies every active status that the unit took damage.
+  3. `on_damage/3` notifies eligible callbacks of the unit's delivered damage.
   4. `remove_status/3` runs `on_expire` and deletes the instance.
   """
   require Logger
@@ -54,8 +54,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     :sc_steelbody
   ]
   @block_stage [:sc_kyrie, :sc_safetywall, :sc_pneuma, :sc_basilica, :sc_basilica_caster]
-  # NOTE: Wink Charm moves to the damage notification in Task 8.
-  @after_stage [:sc_winkcharm]
 
   @doc """
   Initializes the status effect system by loading all definitions.
@@ -312,8 +310,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
-  Notifies all active statuses on a unit that it took damage.
+  Notifies player damage callbacks and non-player charm callbacks of delivered damage.
 
+  Passive notifications (`:passive?` or `:status_tick?`) do not run active-hit
+  cancellation callbacks. HP-dependent callbacks still see positive HP loss.
+  Active zero-damage notifications remain eligible for callback-specific rules.
   `damage_info` is a map with at least `:damage` and `:element`; the player
   damage path also populates `:hp_after` and `:max_hp`. An `on_damage` callback
   may request follow-up status applications; they are drained after every active
@@ -321,9 +322,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   @spec on_damage(unit_type(), integer(), map()) :: :ok
   def on_damage(unit_type, unit_id, damage_info) do
+    implementing = Registry.statuses_implementing(:on_damage)
+
     follow_ups =
       unit_type
       |> StatusStorage.get_unit_statuses(unit_id)
+      |> Enum.filter(fn instance ->
+        MapSet.member?(implementing, instance.type) and
+          damage_callback_eligible?(unit_type, instance.type, damage_info)
+      end)
       |> Enum.flat_map(fn instance ->
         dispatch_damage(unit_type, unit_id, instance, damage_info)
       end)
@@ -331,6 +338,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     Enum.each(follow_ups, fn {status_id, params} ->
       apply_status(unit_type, unit_id, status_id, params)
     end)
+  end
+
+  defp damage_callback_eligible?(:player, status, damage_info)
+       when status in [:sc_berserk, :sc_autoberserk],
+       do: Map.get(damage_info, :damage, 0) > 0 and Map.get(damage_info, :hp_after, 1) > 0
+
+  defp damage_callback_eligible?(unit_type, status, damage_info) do
+    supported? = unit_type == :player or status == :sc_winkcharm
+
+    passive? =
+      Map.get(damage_info, :passive?, false) or Map.get(damage_info, :status_tick?, false)
+
+    supported? and not passive?
   end
 
   @doc """
@@ -560,7 +580,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
     damage
     |> attack_stages(Map.get(hit_info, :status_tick?, false), run)
-    |> then(&Enum.reduce(@after_stage, &1, run))
   end
 
   @doc "Intercepts a same-source magic skill hit after ordinary reductions and blockers."
@@ -574,7 +593,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc "Every status id with a damage stage, in stage order."
   @spec absorb_stages() :: [atom()]
-  def absorb_stages, do: @common_stage ++ @block_stage ++ @after_stage
+  def absorb_stages, do: @common_stage ++ @block_stage
 
   defp attack_stages(damage, true, _run), do: damage
 

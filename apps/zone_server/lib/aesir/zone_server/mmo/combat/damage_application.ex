@@ -806,7 +806,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       Map.get(hit_info, :skill_id)
     )
 
-    MobSession.apply_damage(target_pid, damage, mob_attacker)
+    MobSession.apply_damage(target_pid, damage, mob_attacker, hit_info)
   end
 
   defp deliver_unit_damage(
@@ -814,16 +814,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
          target_pid,
          _target_id,
          damage,
-         %{skill_id: skill_id, skill_level: skill_level},
+         %{skill_id: skill_id, skill_level: skill_level} = hit_info,
          attacker
        )
        when is_integer(skill_id) and is_integer(skill_level) do
-    PlayerSession.apply_damage(target_pid, damage, typed_attacker(attacker))
+    PlayerSession.apply_damage(target_pid, damage, typed_attacker(attacker), hit_info)
     PlayerSession.record_skill_hit(target_pid, skill_id, skill_level)
   end
 
-  defp deliver_unit_damage(:player, target_pid, _target_id, damage, _hit_info, attacker) do
-    PlayerSession.apply_damage(target_pid, damage, typed_attacker(attacker))
+  defp deliver_unit_damage(:player, target_pid, _target_id, damage, hit_info, attacker) do
+    PlayerSession.apply_damage(target_pid, damage, typed_attacker(attacker), hit_info)
   end
 
   defp deliver_coma(

@@ -153,7 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :ok
       end)
 
-      reject(&MobSession.apply_damage/3)
+      reject(&MobSession.apply_damage/4)
 
       expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} ->
         send(test_pid, :coma_delivered)
@@ -207,7 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       reject(&EquipComa.trigger?/2)
       reject(&MobSession.apply_coma/2)
 
-      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id ->
+      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id, _metadata ->
         send(self(), :zero_damage_delivered)
         :ok
       end)
@@ -250,7 +250,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       stub(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, _hit_info -> 80 end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-      expect(MobSession, :apply_damage, fn _pid, 80, @caster_id ->
+      expect(MobSession, :apply_damage, fn _pid, 80, @caster_id, _metadata ->
         send(test_pid, :damage_delivered)
         :ok
       end)
@@ -280,7 +280,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       reject(&EquipComa.trigger?/2)
       reject(&Knockback.skill/5)
       reject(&MobSession.apply_coma/2)
-      reject(&MobSession.apply_damage/3)
+      reject(&MobSession.apply_damage/4)
       reject(&Broadcast.to_in_range/5)
 
       assert {:error, :failed} =
@@ -303,7 +303,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       reject(&EquipComa.trigger?/2)
       reject(&Knockback.skill/5)
       reject(&MobSession.apply_coma/2)
-      reject(&MobSession.apply_damage/3)
+      reject(&MobSession.apply_damage/4)
 
       assert {:error, :friendly_target} =
                Combat.execute_misc_attack(caster, @target_id,
@@ -334,7 +334,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       end)
 
       reject(&MobSession.apply_coma/2)
-      reject(&MobSession.apply_damage/3)
+      reject(&MobSession.apply_damage/4)
 
       assert :ok =
                Combat.execute_misc_attack(caster, @target_id,
@@ -367,7 +367,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       reject(&MobSession.apply_coma/2)
-      expect(MobSession, :apply_damage, fn _pid, 80, @caster_id -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 80, @caster_id, _metadata -> :ok end)
 
       assert :ok =
                Combat.execute_misc_attack(caster, @target_id,
@@ -393,7 +393,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :ok
       end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id, _metadata ->
         send(test_pid, {:damage, damage})
         :ok
       end)
@@ -436,7 +436,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :ok
       end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id, _metadata ->
         send(test_pid, {:damage, damage})
         :ok
       end)
@@ -480,7 +480,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :ok
       end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id, _metadata ->
         send(test_pid, {:damage, damage})
         :ok
       end)
@@ -541,7 +541,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :ok
       end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id, _metadata ->
         send(test_pid, {:damage, damage})
         :ok
       end)
@@ -588,7 +588,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :ok
       end)
 
-      expect(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 40, @caster_id, _metadata -> :ok end)
 
       assert [2002] =
                Combat.execute_misc_splash(caster, @center, 1,

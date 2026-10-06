@@ -141,7 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-      expect(MobSession, :apply_damage, fn _pid, 50, @caster_id -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 50, @caster_id, _metadata -> :ok end)
 
       expect(Knockback, :skill, fn attacker, target, @skill_id, result, [] ->
         assert attacker.equip_modifiers[{:add_skill_blow, @skill_id}] == 2
@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id, _metadata ->
         send(test_pid, {:damage, damage})
         :ok
       end)
@@ -206,7 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id, _metadata ->
         send(test_pid, {:damage, damage})
         :ok
       end)
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
 
-      stub(MobSession, :apply_damage, fn _pid, damage, _caster ->
+      stub(MobSession, :apply_damage, fn _pid, damage, _caster, _metadata ->
         send(test_pid, {:damage, damage})
         :ok
       end)
@@ -258,7 +258,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      reject(&MobSession.apply_damage/3)
+      reject(&MobSession.apply_damage/4)
       expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
 
       assert {:ok, {:mob, @target_id}} =
@@ -285,7 +285,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      reject(&MobSession.apply_damage/3)
+      reject(&MobSession.apply_damage/4)
       reject(&MobSession.apply_coma/2)
 
       assert {:ok, {:mob, @target_id}} =
@@ -327,7 +327,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
 
       reject(&Broadcast.to_in_range/5)
-      reject(&PlayerSession.apply_damage/3)
+      reject(&PlayerSession.apply_damage/4)
 
       assert {:error, :invalid_target} =
                Combat.execute_magic_damage(caster, @target_id, 100,
@@ -388,7 +388,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         damage
       end)
 
-      stub(PlayerSession, :apply_damage, fn ^target_player, damage, {:mob, @caster_id} ->
+      stub(PlayerSession, :apply_damage, fn ^target_player,
+                                            damage,
+                                            {:mob, @caster_id},
+                                            _metadata ->
         send(test_pid, {:damage, damage})
         :ok
       end)
@@ -420,7 +423,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
-      stub(PlayerSession, :apply_damage, fn ^target_player, _damage, _attacker -> :ok end)
+
+      stub(PlayerSession, :apply_damage, fn ^target_player, _damage, _attacker, _metadata ->
+        :ok
+      end)
 
       stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, damage, hit_info ->
         send(test_pid, {:hit_info, hit_info})

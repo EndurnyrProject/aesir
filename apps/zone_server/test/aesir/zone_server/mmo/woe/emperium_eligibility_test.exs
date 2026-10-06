@@ -209,7 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
 
     stub(EquipBreak, :resolve, fn _stats, _target -> [] end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, 40, {:player, 10_001} -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 40, {:player, 10_001}, _metadata -> :ok end)
 
     assert {:ok, ^caster_state} =
              AutoAttack.execute_attack(%{}, caster_state, @emperium_unit_id, &Function.identity/1)
@@ -252,7 +252,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-    stub(MobSession, :apply_damage, fn _pid, damage, {:homunculus, ^homunculus_id}
+    stub(MobSession, :apply_damage, fn _pid, damage, {:homunculus, ^homunculus_id}, _metadata
                                        when damage > 0 ->
       :ok
     end)
@@ -327,7 +327,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, 40, 10_001 -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 40, 10_001, _metadata -> :ok end)
 
     assert :ok =
              SkillAttack.execute_skill_attack(caster_state, {:mob, target_id},
@@ -369,7 +369,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, 40, 10_001 -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 40, 10_001, _metadata -> :ok end)
 
     assert :ok =
              SkillAttack.execute_skill_attack(caster_state, {:mob, target_id},

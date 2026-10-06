@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id ->
+    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id, _metadata ->
       send(test_pid, :apply_damage)
       :ok
     end)
@@ -194,7 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, :packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id, _metadata -> :ok end)
 
     Combat.execute_splash_attack(caster, @center, 2,
       skill_id: 7,
@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id, _metadata -> :ok end)
 
     opts = [skill_id: 121, skill_level: 5, skill_ratio: 100, skip_crit: true]
 
@@ -271,7 +271,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id, _metadata -> :ok end)
 
     hits =
       Combat.execute_splash_attack(caster, @center, 2,
@@ -362,7 +362,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id, _metadata -> :ok end)
 
     stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, hit_info ->
       send(test_pid, {:hit_info, hit_info})
@@ -406,7 +406,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     end)
 
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
-    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id, _metadata -> :ok end)
 
     stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, hit_info ->
       send(test_pid, {:hit_info, hit_info})

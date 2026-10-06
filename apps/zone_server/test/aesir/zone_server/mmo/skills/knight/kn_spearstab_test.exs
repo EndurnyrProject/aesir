@@ -204,7 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
 
       test_pid = self()
 
-      stub(MobSession, :apply_damage, fn _pid, 50, 1000 ->
+      stub(MobSession, :apply_damage, fn _pid, 50, 1000, _metadata ->
         send(test_pid, :apply_damage)
         :ok
       end)

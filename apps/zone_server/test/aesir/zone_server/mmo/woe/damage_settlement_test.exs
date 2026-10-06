@@ -420,7 +420,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
       )
 
     :ok = StatusInterpreter.apply_status(:mob, 56, :sc_aeterna, loaded: true, duration: 60_000)
-    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_damage/4)
     reject(&MobSession.note_hit_type/4)
 
     assert {0, hit_info} =
@@ -593,7 +593,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
   end
 
   defp expect_damage(target_pid, damage, attacker) do
-    expect(PlayerSession, :apply_damage, fn ^target_pid, ^damage, ^attacker -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, ^damage, ^attacker, _metadata -> :ok end)
   end
 
   defp register_player(id, map_name, equip_modifiers \\ %{}) do
