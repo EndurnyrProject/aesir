@@ -565,6 +565,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bCastrate,MG_FIREBOLT,-25;")
     end
 
+    test "cast-time flats retain global and per-skill destinations" do
+      assert {:ok, %{id: firebolt_id}} = Catalog.by_name(:mg_firebolt)
+
+      assert {:ok, [{:bonus, :variable_cast, -99}]} =
+               compile("bonus bVariableCast,-99;")
+
+      assert {:ok, [{:bonus, {:skill_variable_cast, ^firebolt_id}, 25}]} =
+               compile("bonus2 bSkillVariableCast,MG_FIREBOLT,25;")
+
+      assert {:ok, [{:bonus, {:skill_fixed_cast, ^firebolt_id}, -50}]} =
+               compile("bonus2 bSkillFixedCast,MG_FIREBOLT,-50;")
+    end
+
     test "delay and long-attack rate keys" do
       assert {:ok, [{:bonus, :delay_rate, -10}]} = compile("bonus bDelayrate,-10;")
       assert {:ok, [{:bonus, :long_atk_rate, 15}]} = compile("bonus bLongAtkRate,15;")

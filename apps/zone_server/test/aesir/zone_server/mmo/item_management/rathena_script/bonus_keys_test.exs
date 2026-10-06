@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :atk_rate,
     :matk_rate,
     :varcast_rate,
+    :variable_cast,
     :delay_rate,
     :long_atk_rate,
     :patk,
@@ -210,6 +211,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.destination("bCrt") == {:ok, :crt}
     end
 
+    test "cast-time flat and per-skill bonus keys retain separate destinations" do
+      assert BonusKeys.destination("bVariableCast") == {:ok, :variable_cast}
+      assert BonusKeys.destination("bFixedCast") == {:ok, :fixed_cast}
+      assert BonusKeys.min_destination?(:fixcast_rate)
+
+      assert BonusKeys.param_schema("bSkillVariableCast") ==
+               {:ok, %{family: :skill_variable_cast, param: :skill, unit: :ms}}
+
+      assert BonusKeys.param_schema("bSkillFixedCast") ==
+               {:ok, %{family: :skill_fixed_cast, param: :skill, unit: :ms}}
+    end
+
     test "bVariableCastrate resolves independently in the flat and bonus2 tables" do
       assert BonusKeys.destination("bVariableCastrate") == {:ok, :varcast_rate}
 
@@ -303,6 +316,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
     "bcastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
+    "bskillvariablecast" => %{family: :skill_variable_cast, param: :skill, unit: :ms},
+    "bskillfixedcast" => %{family: :skill_fixed_cast, param: :skill, unit: :ms},
     "bskillusesprate" => %{family: :skill_use_sp_rate, param: :skill, unit: :percent},
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
     "baddeff2" => %{family: :add_eff2, param: :status, unit: :per10k},

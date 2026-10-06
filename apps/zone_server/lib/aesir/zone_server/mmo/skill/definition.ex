@@ -16,6 +16,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `require_weapon` restricts ordinary player casts to the listed equipped
   right-hand weapon subtypes. An empty list (the default) accepts any weapon.
 
+  `fixed_cast_time` is additional to variable `cast_time`. An absent entry is
+  zero; a negative sentinel requests the configured fixed/variable split.
+
   `ignore_status_cast` and `ignore_item_cast` mirror the source's cast-time flags
   IgnoreStatus and IgnoreItemBonus: the skill's cast time ignores status
   reductions, or equipment cast-rate bonuses.
@@ -151,7 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           zeny_cost: [non_neg_integer()],
           duration: [non_neg_integer()],
           cast_time: [non_neg_integer()],
-          fixed_cast_time: [non_neg_integer()],
+          fixed_cast_time: [integer()],
           ignore_dex: boolean(),
           ignore_status_cast: boolean(),
           ignore_item_cast: boolean(),

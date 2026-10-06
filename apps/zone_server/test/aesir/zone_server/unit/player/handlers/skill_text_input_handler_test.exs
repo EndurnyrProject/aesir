@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   defmodule InputFixtureSkill do
     def cast_with_input(game_state, _target, _level, _definition, _input), do: {:ok, game_state}
@@ -358,11 +359,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
       inventory: %{},
       skill_cooldowns: %{},
       act_delay_until: 0,
-      stats: %{
+      stats: %Stats{
         base_stats: %{dex: 1, int: 1},
         current_state: %{hp: 100, sp: sp},
         derived_stats: %{max_hp: 100, max_sp: 100},
-        progression: %{learned_skills: %{9_001 => 1}}
+        progression: %Stats.PlayerProgression{learned_skills: %{9_001 => 1}},
+        equipment: %Stats.Equipment{}
       }
     }
 

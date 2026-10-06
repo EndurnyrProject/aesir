@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Mob do
 
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster
 
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @impl true
@@ -31,4 +33,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Mob do
 
   @impl true
   def deduct_sp(%MobState{} = caster, amount), do: %{caster | sp: caster.sp - amount}
+
+  @doc "Returns effective battle stats and held cast statuses for a monster cast."
+  @spec cast_stats(MobState.t(), integer()) :: CastTime.inputs()
+  def cast_stats(%MobState{} = caster, _skill_id) do
+    combatant = MobState.to_combatant(caster)
+
+    statuses =
+      :mob
+      |> StatusStorage.get_unit_statuses(caster.instance_id)
+      |> Enum.reduce(%{}, fn entry, acc ->
+        value = Map.get(entry.state || %{}, :cast_time_reduction, 0)
+
+        case entry.type do
+          :sc_memorize -> Map.put(acc, :memorize, true)
+          :sc_poembragi -> Map.put(acc, :bragi, value)
+          :sc_suffragium -> Map.put(acc, :suffragium, value)
+          _ -> acc
+        end
+      end)
+
+    %{
+      caster_kind: :mob,
+      dex: combatant.base_stats.dex,
+      int: combatant.base_stats.int,
+      base_level: caster.mob_data.level,
+      effective_skill?: true,
+      statuses: statuses
+    }
+  end
 end

@@ -362,7 +362,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         assert passed_caster.instance_id == caster.instance_id
         assert opts[:skill_id] == 19
         assert opts[:skill_level] == 3
-        assert opts[:hit_count] == 3
+        assert opts[:hit_divisions] == 3
         assert opts[:element] == :fire
         {:ok, {:player, 42}}
       end)

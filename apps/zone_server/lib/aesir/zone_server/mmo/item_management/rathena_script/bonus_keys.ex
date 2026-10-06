@@ -43,6 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   - `@max_destinations` — destinations that do NOT stack. Both fold points
     (`EquipScript.eval/2` within one item, `Stats` across items) keep the
     largest contribution instead of summing.
+  - `@min_destinations` — global fixed cast rate keeps the strongest negative
+    bonus across items, starting from zero.
   - `@destination_scales` — destinations whose consumer works in finer units
     than the script argument (`bFlee2` is written in percent but rolled against
     a per-mille random). The codegen scales the emitted **expression**, so a
@@ -112,6 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bmatkrate" => :matk_rate,
     "bvariablecastrate" => :varcast_rate,
     "bcastrate" => :varcast_rate,
+    "bvariablecast" => :variable_cast,
     "bdelayrate" => :delay_rate,
     "blongatkrate" => :long_atk_rate,
     "bpatk" => :patk,
@@ -163,6 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   }
 
   @max_destinations MapSet.new([:movement_speed, :perfect_hit_rate, :splash_range])
+  @min_destinations MapSet.new([:fixcast_rate])
 
   @destination_scales %{perfect_dodge: 10}
 
@@ -192,6 +196,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
     "bcastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
+    "bskillvariablecast" => %{family: :skill_variable_cast, param: :skill, unit: :ms},
+    "bskillfixedcast" => %{family: :skill_fixed_cast, param: :skill, unit: :ms},
     "bskillusesprate" => %{family: :skill_use_sp_rate, param: :skill, unit: :percent},
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
     "baddeff2" => %{family: :add_eff2, param: :status, unit: :per10k},
@@ -413,6 +419,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec max_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()
   def max_destination?(dest), do: MapSet.member?(@max_destinations, dest)
+
+  @doc "Whether the cast-rate destination retains its most reducing item bonus."
+  @spec min_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()
+  def min_destination?(dest), do: MapSet.member?(@min_destinations, dest)
 
   @doc "Whether a numeric destination combines contributions as a bit mask."
   @spec bitwise_destination?(destination()) :: boolean()

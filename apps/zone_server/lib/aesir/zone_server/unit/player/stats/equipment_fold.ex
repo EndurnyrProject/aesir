@@ -615,6 +615,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       BonusKeys.overwrite_destination?(key) -> Map.put(acc, key, value)
       BonusKeys.bitwise_destination?(key) -> Map.update(acc, key, value, &Bitwise.bor(&1, value))
       BonusKeys.max_destination?(key) -> Map.update(acc, key, value, &max(&1, value))
+      BonusKeys.min_destination?(key) -> Map.update(acc, key, min(0, value), &min(&1, value))
       true -> Map.update(acc, key, value, &(&1 + value))
     end
   end

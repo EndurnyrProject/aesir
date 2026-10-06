@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   use ExUnit.Case, async: true
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen
   alias Aesir.ZoneServer.Mmo.Mechanics.CastTime.PreRenewal
@@ -76,6 +77,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
     assert Caster.Mob.broadcast_source(state) == {:mob, 401}
   end
 
+  test "monster timing inputs use effective battle stats without item channels" do
+    inputs = Caster.Mob.cast_stats(mob(), 83)
+    assert %{caster_kind: :mob, effective_skill?: true, statuses: %{}} = inputs
+    assert inputs.dex == mob().mob_data.stats.dex
+  end
+
   test "emitted bCastRate modifiers affect renewal and pre-renewal casts" do
     definition = %Definition{
       id: 83,
@@ -96,8 +103,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
         assert modifiers == %{varcast_rate: rate}
 
         stats = Caster.Player.cast_stats(cast_player(modifiers), definition.id)
-        assert stats.varcast_rate == rate
-        assert stats.classic_early_rate == rate
+        assert stats.item_global_rate == -rate
+        assert stats.item_skill_rate == 0
 
         {rate,
          %{
@@ -120,12 +127,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
       StatusStorage.apply_status(:player, 101, :sc_suffragium, state: %{cast_time_reduction: 30})
 
     amp = Caster.Player.cast_stats(caster, 366)
-    assert {amp.varcast_rate, amp.fixcast_rate, amp.fixed_cast} == {0, 0, 0}
-    assert amp.varcast_reductions == [30]
+
+    assert %{
+             item_global_rate: 25,
+             item_global_fixed_rate: 50,
+             item_global_fixed_flat: -100,
+             statuses: %{suffragium: 30}
+           } = amp
 
     foresight = Caster.Player.cast_stats(caster, 403)
-    assert foresight.varcast_reductions == []
-    assert foresight.varcast_rate == -25
+    assert foresight.statuses == %{suffragium: 30}
+
+    {:ok, amp_definition} = Catalog.by_id(366)
+    {:ok, foresight_definition} = Catalog.by_id(403)
+    mode = if GameMode.mode() == :renewal, do: Renewal, else: PreRenewal
+
+    without_items =
+      %{amp | item_global_rate: 0, item_global_fixed_rate: 0, item_global_fixed_flat: 0}
+
+    assert mode.compute(amp_definition, 1, amp) == mode.compute(amp_definition, 1, without_items)
+
+    without_statuses = %{foresight | statuses: %{}}
+
+    assert mode.compute(foresight_definition, 1, foresight) ==
+             mode.compute(foresight_definition, 1, without_statuses)
   end
 
   test "Into the Abyss waives gemstones except for Ganbantein, which still needs one of each" do

@@ -5,6 +5,120 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.CastTime.Renewal
   alias Aesir.ZoneServer.Mmo.Skill.Definition
 
+  test "named stages preserve source binary32 conversions and reactions" do
+    classic = definition([1_000])
+    renewal = definition([1_000], [0])
+
+    assert %{time: 699, reactions: []} =
+             PreRenewal.early(classic, 1, %{dex: 0, int: 0, item_global_rate: 30})
+
+    assert %{timing: %{total: 899}, reactions: []} =
+             Renewal.late(renewal, 1, %{dex: 0, int: 0, statuses: %{suffragium: 10}}, 1_000)
+  end
+
+  test "classic late stage keeps Suffragium's truncation and reaction" do
+    assert %{timing: %{total: 550}, reactions: [:end_suffragium]} =
+             PreRenewal.late(
+               definition([1_001]),
+               1,
+               %{dex: 0, int: 0, statuses: %{suffragium: 45}},
+               1_001
+             )
+  end
+
+  test "renewal signed status accumulation cancels Slow Cast and Suffragium" do
+    assert %{timing: %{total: 1_000}} =
+             Renewal.late(
+               definition([1_000]),
+               1,
+               %{
+                 dex: 0,
+                 int: 0,
+                 statuses: %{slowcast: 20, suffragium: 20}
+               },
+               1_000
+             )
+  end
+
+  test "renewal explicit fixed time is additional and fallback requires a sentinel" do
+    assert %{total: 800, variable: 500, fixed: 300} =
+             Renewal.compute(definition([500], [300]), 1, %{dex: 0, int: 0})
+
+    assert %{total: 502, variable: 402, fixed: 100} =
+             Renewal.compute(definition([503], [-1]), 1, %{dex: 0, int: 0})
+
+    assert %{total: 450} =
+             Renewal.compute(definition([0], [1_000]), 1, %{
+               dex: 0,
+               int: 0,
+               item_global_fixed_flat: -99,
+               item_global_fixed_rate: 50
+             })
+  end
+
+  test "classic consumes eligible Foresight even when status reductions are ignored" do
+    definition = %{definition([1_000]) | ignore_status_cast: true}
+    inputs = %{dex: 0, int: 0, effective_skill?: true, statuses: %{memorize: true}}
+
+    assert %{time: 1_000, reactions: [:consume_memorize]} =
+             PreRenewal.early(definition, 1, inputs)
+
+    assert %{time: 0, reactions: []} =
+             PreRenewal.early(definition, 1, %{inputs | dex: 150})
+  end
+
+  test "classic per-skill items still apply when IgnoreItemBonus is set" do
+    definition = %{definition([1_000]) | ignore_item_cast: true}
+
+    assert %{time: 700} =
+             PreRenewal.early(definition, 1, %{
+               dex: 0,
+               int: 0,
+               item_global_rate: 80,
+               item_skill_rate: -30
+             })
+  end
+
+  test "renewal ignores status reactions with IgnoreStatus and includes the fifth charge" do
+    definition = definition([1_000])
+    inputs = %{dex: 0, int: 0, effective_skill?: true, statuses: %{memorize: true}}
+
+    assert %{timing: %{total: 500}, reactions: [:consume_memorize]} =
+             Renewal.late(definition, 1, inputs, 1_000)
+
+    assert %{timing: %{total: 1_000}, reactions: []} =
+             Renewal.late(%{definition | ignore_status_cast: true}, 1, inputs, 1_000)
+  end
+
+  test "renewal Radius overwrites the local level used by later fixed modifiers" do
+    definition = %{definition([0, 0], [1_000, 1_000]) | id: 2_201}
+
+    inputs = %{
+      dex: 0,
+      int: 30,
+      base_level: 120,
+      radius_level: 3,
+      statuses: %{gloomy_day: true}
+    }
+
+    assert %{fixed: 1_875, total: 1_875} = Renewal.compute(definition, 2, inputs)
+
+    assert %{fixed: 1_000, total: 1_000} =
+             Renewal.compute(definition, 2, %{inputs | statuses: %{}})
+  end
+
+  test "renewal schedules from the final double addition, not truncated component sums" do
+    result =
+      Renewal.compute(definition([2_000_000_000], [100]), 1, %{
+        dex: 0,
+        int: 0,
+        item_global_fixed_rate: 3,
+        statuses: %{freezing: true}
+      })
+
+    assert result == %{variable: 2_000_000_000, fixed: 146, total: 2_000_000_147}
+  end
+
   test "pre-renewal scales the single cast by DEX with integer truncation" do
     definition = definition([1_001])
 
@@ -30,13 +144,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
     stats = %{
       dex: 5,
       int: 0,
-      varcast_reductions: [20, 20],
-      varcast_rate: 0,
-      fixed_cast: -500,
-      fixcast_rate: -100,
-      classic_early_rate: -20,
-      classic_skill_rate: 0,
-      classic_late_reductions: [20]
+      item_global_rate: 20,
+      statuses: %{suffragium: 20}
     }
 
     # rAthena src/map/skill.cpp:10130-10254.
@@ -48,7 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
   end
 
   test "pre-renewal applies the equipment and Bragi rate before the first truncation" do
-    stats = %{dex: 1, int: 0, classic_early_rate: -20}
+    stats = %{dex: 1, int: 0, item_global_rate: 20}
 
     assert PreRenewal.compute(definition([501]), 1, stats) === %{
              fixed: 0,
@@ -61,8 +170,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
     stats = %{
       dex: 1,
       int: 0,
-      classic_skill_rate: -30,
-      classic_early_rate: -20
+      item_skill_rate: -30,
+      item_global_rate: 20
     }
 
     assert PreRenewal.compute(definition([501]), 1, stats) === %{
@@ -73,7 +182,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
   end
 
   test "pre-renewal applies Suffragium after the first truncation" do
-    stats = %{dex: 1, int: 0, classic_late_reductions: [20]}
+    stats = %{dex: 1, int: 0, statuses: %{suffragium: 20}}
 
     assert PreRenewal.compute(definition([501]), 1, stats) === %{
              fixed: 0,
@@ -82,27 +191,27 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
            }
   end
 
-  test "pre-renewal applies every late reduction and truncates at the end" do
-    stats = %{dex: 1, int: 0, classic_late_reductions: [20, 20]}
+  test "pre-renewal adds Slow Cast before subtracting Suffragium" do
+    stats = %{dex: 1, int: 0, statuses: %{slowcast: 20, suffragium: 20}}
 
     assert PreRenewal.compute(definition([501]), 1, stats) === %{
              fixed: 0,
-             variable: 318,
-             total: 318
+             variable: 477,
+             total: 477
            }
   end
 
   test "pre-renewal floors early reductions and caps late reductions" do
     for {stats, expected} <- [
-          {%{classic_skill_rate: -99}, 5},
-          {%{classic_skill_rate: -100}, 0},
-          {%{classic_skill_rate: -101}, 0},
-          {%{classic_early_rate: -99}, 5},
-          {%{classic_early_rate: -100}, 0},
-          {%{classic_early_rate: -101}, 0},
-          {%{classic_late_reductions: [99]}, 5},
-          {%{classic_late_reductions: [100]}, 0},
-          {%{classic_late_reductions: [101]}, 0}
+          {%{item_skill_rate: -99}, 5},
+          {%{item_skill_rate: -100}, 0},
+          {%{item_skill_rate: -101}, 0},
+          {%{item_global_rate: 99}, 5},
+          {%{item_global_rate: 100}, 0},
+          {%{item_global_rate: 101}, 0},
+          {%{statuses: %{suffragium: 99}}, 5},
+          {%{statuses: %{suffragium: 100}}, 0},
+          {%{statuses: %{suffragium: 101}}, 0}
         ] do
       assert PreRenewal.compute(definition([501]), 1, Map.merge(%{dex: 0, int: 0}, stats)) === %{
                fixed: 0,
@@ -122,10 +231,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
 
   test "renewal preserves the fixed and variable cast split" do
     cases = [
-      {definition([1_000]), %{dex: 0, int: 0}, %{fixed: 200, variable: 800, total: 1_000}},
-      {definition([1_000]), %{dex: 99, int: 99}, %{fixed: 200, variable: 201, total: 401}},
-      {definition([1_000], [350]), %{dex: 0, int: 0, fixed_cast: -100},
-       %{fixed: 250, variable: 650, total: 900}},
+      {definition([1_000]), %{dex: 0, int: 0}, %{fixed: 0, variable: 1_000, total: 1_000}},
+      {definition([1_000]), %{dex: 99, int: 99}, %{fixed: 0, variable: 251, total: 251}},
+      {definition([1_000], [350]), %{dex: 0, int: 0, item_global_fixed_flat: -100},
+       %{fixed: 250, variable: 1_000, total: 1_250}},
+      {definition([1_000], [-1]), %{dex: 0, int: 0}, %{fixed: 200, variable: 800, total: 1_000}},
       {definition([0]), %{dex: 50, int: 50}, %{fixed: 0, variable: 0, total: 0}}
     ]
 
@@ -141,21 +251,17 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTimeTest do
 
     # rAthena src/map/skill.cpp:10135-10145, 10374-10376.
     assert Renewal.compute(renewal_definition, 1, %{dex: 200, int: 200}) == %{
-             fixed: 200,
-             variable: 800,
+             fixed: 0,
+             variable: 1_000,
              total: 1_000
            }
 
     assert PreRenewal.compute(pre_renewal_definition, 1, %{
              dex: 200,
              int: 200,
-             varcast_reductions: [20, 20],
-             varcast_rate: -20,
-             fixed_cast: -500,
-             fixcast_rate: -100,
-             classic_early_rate: -20,
-             classic_skill_rate: -10,
-             classic_late_reductions: [20]
+             item_global_rate: 20,
+             item_skill_rate: -10,
+             statuses: %{suffragium: 20}
            }) === %{
              fixed: 0,
              variable: 576,

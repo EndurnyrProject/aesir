@@ -828,6 +828,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.eval(Enum.reverse(program), on(0)) == %{movement_speed: 25}
     end
 
+    test "global fixed-cast rate keeps the strongest reduction, not their sum" do
+      program = [{:bonus, :fixcast_rate, -20}, {:bonus, :fixcast_rate, -50}]
+
+      assert EquipScript.eval(program, on(0)) == %{fixcast_rate: -50}
+      assert EquipScript.eval(Enum.reverse(program), on(0)) == %{fixcast_rate: -50}
+      assert EquipScript.eval([{:bonus, :fixcast_rate, 20}], on(0)) == %{fixcast_rate: 0}
+    end
+
     test "perfect-hit rate keeps the largest value while additive rate sums" do
       program = [
         {:bonus, :perfect_hit_rate, 25},

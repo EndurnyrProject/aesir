@@ -96,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
 
     assert CastTime.compute(definition, 1, %{dex: 200, int: 200}) ==
              mode_value(
-               %{fixed: 800, variable: 2_400, total: 3_200},
+               %{fixed: 800, variable: 3_200, total: 4_000},
                %{fixed: 0, variable: 4_000, total: 4_000}
              )
   end

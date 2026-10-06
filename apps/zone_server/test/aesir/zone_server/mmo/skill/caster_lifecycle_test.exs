@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoemBragi
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
-  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -64,6 +63,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
                {:error, :skill_not_learned}
 
       assert Caster.Player.knows?(caster, definition, 3, :completion) == :ok
+    end
+
+    test "a temporary equipment grant is eligible for Foresight timing" do
+      caster =
+        player(learned_skills: %{})
+        |> put_in([Access.key!(:stats), Access.key!(:granted_skills)], %{28 => 3})
+
+      assert Caster.Player.cast_stats(caster, 28).effective_skill?
+      refute Caster.Player.cast_stats(caster, 29).effective_skill?
     end
 
     test "has no interpreter-level caster state or status gate" do
@@ -178,10 +186,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       refute Caster.Player.act_ready?(player(act_delay_until: now + 10_000), now)
     end
 
-    test "cast stats match the player interpreter inputs without modifiers" do
+    test "cast stats use effective player stats and source-named channels" do
       caster = player(base_stats: %{dex: 0, int: 0})
 
-      assert Caster.Player.cast_stats(caster, 29) == expected_player_cast_stats(caster, 29)
+      assert %{
+               caster_kind: :player,
+               dex: 0,
+               int: 0,
+               effective_skill?: true,
+               item_global_rate: 0,
+               statuses: %{}
+             } = Caster.Player.cast_stats(caster, 29)
     end
 
     test "cast stats match the player interpreter inputs with a per-skill equip modifier" do
@@ -196,8 +211,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
           }
         )
 
-      assert Caster.Player.cast_stats(caster, 29) == expected_player_cast_stats(caster, 29)
-      refute Caster.Player.cast_stats(caster, 29) == Caster.Player.cast_stats(caster, 30)
+      assert %{
+               item_global_rate: 10,
+               item_skill_rate: -30,
+               item_global_fixed_rate: 10,
+               item_skill_fixed_rate: 40,
+               item_global_fixed_flat: 25
+             } =
+               Caster.Player.cast_stats(caster, 29)
+
+      assert Caster.Player.cast_stats(caster, 30).item_skill_rate == 0
     end
 
     @tag game_mode: :renewal
@@ -213,13 +236,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       stub(UnitRegistry, :get_unit_info, fn :player, 101 -> {:ok, %{stats: %{}}} end)
       apply_classic_cast_statuses(:player, caster.character_id)
 
-      assert %{
-               varcast_reductions: [20, 20],
-               varcast_rate: -15,
-               classic_early_rate: -30,
-               classic_skill_rate: -5,
-               classic_late_reductions: [20]
-             } = Caster.Player.cast_stats(caster, 29)
+      assert %{item_global_rate: 10, item_skill_rate: -5, statuses: %{bragi: 20, suffragium: 20}} =
+               Caster.Player.cast_stats(caster, 29)
     end
 
     @tag game_mode: :pre_renewal
@@ -235,15 +253,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       stub(UnitRegistry, :get_unit_info, fn :player, 101 -> {:ok, %{stats: %{}}} end)
       apply_classic_cast_statuses(:player, caster.character_id)
 
-      assert %{
-               varcast_reductions: reductions,
-               varcast_rate: -15,
-               classic_early_rate: -30,
-               classic_skill_rate: -5,
-               classic_late_reductions: [45]
-             } = Caster.Player.cast_stats(caster, 29)
-
-      assert Enum.sort(reductions) == [20, 45]
+      assert %{item_global_rate: 10, item_skill_rate: -5, statuses: %{bragi: 20, suffragium: 45}} =
+               Caster.Player.cast_stats(caster, 29)
     end
   end
 
@@ -346,23 +357,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       refute Caster.Homunculus.act_ready?(homunculus(action_state: :attacking), now)
     end
 
-    test "cast stats match the homunculus interpreter inputs without modifiers" do
+    test "homunculus cast inputs clamp negative effective stats" do
       caster = homunculus(dex: -1, int: -2)
 
-      assert Caster.Homunculus.cast_stats(caster, 8_001) ==
-               expected_homunculus_cast_stats(caster)
+      assert %{caster_kind: :homunculus, dex: 0, int: 0, statuses: %{}} =
+               Caster.Homunculus.cast_stats(caster, 8_001)
     end
 
-    test "cast stats match the homunculus interpreter inputs with an active cast modifier" do
+    test "homunculus cast inputs identify Bragi by name" do
       caster = homunculus(dex: 20, int: 30)
 
       :ok =
-        StatusStorage.apply_status(:homunculus, caster.world_gid, :sc_test_cast_stats,
+        StatusStorage.apply_status(:homunculus, caster.world_gid, :sc_poembragi,
           state: %{cast_time_reduction: 35}
         )
 
-      assert Caster.Homunculus.cast_stats(caster, 8_001) ==
-               expected_homunculus_cast_stats(caster)
+      assert %{dex: 20, int: 30, statuses: %{bragi: 35}} =
+               Caster.Homunculus.cast_stats(caster, 8_001)
     end
 
     @tag game_mode: :renewal
@@ -372,13 +383,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       stub(UnitRegistry, :get_unit_info, fn :homunculus, 301 -> {:ok, %{stats: %{}}} end)
       apply_classic_cast_statuses(:homunculus, caster.world_gid)
 
-      assert %{
-               varcast_reductions: [20, 20],
-               varcast_rate: 0,
-               classic_early_rate: -20,
-               classic_skill_rate: 0,
-               classic_late_reductions: [20]
-             } = Caster.Homunculus.cast_stats(caster, 8_001)
+      assert %{caster_kind: :homunculus, statuses: %{bragi: 20, suffragium: 20}} =
+               Caster.Homunculus.cast_stats(caster, 8_001)
     end
 
     @tag game_mode: :pre_renewal
@@ -388,15 +394,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       stub(UnitRegistry, :get_unit_info, fn :homunculus, 301 -> {:ok, %{stats: %{}}} end)
       apply_classic_cast_statuses(:homunculus, caster.world_gid)
 
-      assert %{
-               varcast_reductions: reductions,
-               varcast_rate: 0,
-               classic_early_rate: -20,
-               classic_skill_rate: 0,
-               classic_late_reductions: [45]
-             } = Caster.Homunculus.cast_stats(caster, 8_001)
-
-      assert Enum.sort(reductions) == [20, 45]
+      assert %{caster_kind: :homunculus, statuses: %{bragi: 20, suffragium: 45}} =
+               Caster.Homunculus.cast_stats(caster, 8_001)
     end
   end
 
@@ -460,85 +459,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       [Access.key!(:stats), Access.key!(:progression), Access.key!(:learned_skills)],
       Keyword.get(overrides, :learned_skills, %{29 => 5})
     )
-  end
-
-  defp expected_player_cast_stats(caster, skill_id) do
-    base_stats = caster.stats.base_stats
-
-    {classic_status_early_rate, classic_late_reductions} =
-      classic_status_channels(:player, caster.character_id)
-
-    global_varcast_rate =
-      merged_modifier(:player, caster.character_id) + equip_modifier(caster, :varcast_rate)
-
-    classic_skill_rate = equip_modifier(caster, {:skill_varcast_rate, skill_id})
-    varcast_rate = global_varcast_rate + classic_skill_rate
-
-    %{
-      dex: base_stats.dex,
-      int: base_stats.int,
-      varcast_reductions: status_reductions(:player, caster.character_id),
-      varcast_rate: varcast_rate,
-      fixed_cast: equip_modifier(caster, :fixed_cast),
-      fixcast_rate:
-        equip_modifier(caster, :fixcast_rate) +
-          equip_modifier(caster, {:skill_fixcast_rate, skill_id}),
-      classic_early_rate: global_varcast_rate + classic_status_early_rate,
-      classic_skill_rate: classic_skill_rate,
-      classic_late_reductions: classic_late_reductions
-    }
-  end
-
-  defp expected_homunculus_cast_stats(caster) do
-    varcast_rate = merged_modifier(:homunculus, caster.world_gid)
-
-    {classic_status_early_rate, classic_late_reductions} =
-      classic_status_channels(:homunculus, caster.world_gid)
-
-    %{
-      dex: max(caster.dex, 0),
-      int: max(caster.int, 0),
-      varcast_reductions: status_reductions(:homunculus, caster.world_gid),
-      varcast_rate: varcast_rate,
-      fixed_cast: 0,
-      classic_early_rate: varcast_rate + classic_status_early_rate,
-      classic_skill_rate: 0,
-      classic_late_reductions: classic_late_reductions
-    }
-  end
-
-  defp status_reductions(unit_type, unit_id) do
-    unit_type
-    |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.flat_map(fn entry ->
-      case Map.get(entry.state || %{}, :cast_time_reduction) do
-        nil -> []
-        value -> [value]
-      end
-    end)
-  end
-
-  defp classic_status_channels(unit_type, unit_id) do
-    unit_type
-    |> StatusStorage.get_unit_statuses(unit_id)
-    |> Enum.reduce({0, []}, fn entry, {early_rate, late} ->
-      case {entry.type, Map.get(entry.state || %{}, :cast_time_reduction)} do
-        {_type, nil} -> {early_rate, late}
-        {:sc_poembragi, reduction} -> {early_rate - reduction, late}
-        {_type, reduction} -> {early_rate, late ++ [reduction]}
-      end
-    end)
-  end
-
-  defp merged_modifier(unit_type, unit_id) do
-    unit_type
-    |> ModifierCalculator.get_all_modifiers(unit_id)
-    |> Map.get(:varcast_rate, 0)
-  end
-
-  defp equip_modifier(caster, key) do
-    caster.stats.modifiers.equipment
-    |> Map.get(key, 0)
   end
 
   defp apply_classic_cast_statuses(unit_type, unit_id) do

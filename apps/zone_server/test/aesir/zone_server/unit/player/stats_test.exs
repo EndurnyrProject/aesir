@@ -3160,6 +3160,19 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert reversed.modifiers.equipment.movement_speed == 25
     end
 
+    test "global fixed cast rate keeps the strongest reduction across equipment" do
+      first = scripted_item(90_281, on_equip: [{:bonus, :fixcast_rate, -20}])
+      second = scripted_item(90_282, on_equip: [{:bonus, :fixcast_rate, -50}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_281 -> {:ok, first}
+        90_282 -> {:ok, second}
+      end)
+
+      stats = with_equipped_items([equipped(90_281, @right_hand), equipped(90_282, @left_hand)])
+      assert stats.modifiers.equipment.fixcast_rate == -50
+    end
+
     test "bSpeedAddRate stacks across items independently of bSpeedRate" do
       boots =
         scripted_item(90_264,

@@ -1496,23 +1496,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
                Interpreter.begin_cast(game_state(1, %{29 => 1}), 29, 1, :self)
     end
 
-    test "applies a status :cast_time_reduction to the variable cast, leaving fixed untouched" do
+    test "Suffragium reduces variable timing without changing fixed time" do
       reject(&StatusInterpreter.apply_status/4)
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
       gs = game_state(100, %{29 => 1})
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 -> [] end)
       assert {:casting, _gs, unreduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
-        [%StatusEntry{state: %{cast_time_reduction: 45}}]
+        [%StatusEntry{type: :sc_suffragium, state: %{cast_time_reduction: 45}}]
       end)
 
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == unreduced.fixed
-      # Renewal: (800 - 200 fixed) * (1 - sqrt(3/530)) = 555, then 45 percent off.
+      # Renewal keeps the explicit 200 fixed time additional to the 800 variable.
       # Classic: 1000 * (150 - 1) / 150 = 993, then 45 percent off.
-      assert reduced.total - reduced.fixed == mode_value(305, 546)
+      assert reduced.total - reduced.fixed == mode_value(406, 546)
       assert reduced.total < unreduced.total
     end
 
@@ -1575,8 +1576,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert reduced.total - reduced.fixed == round((unreduced.total - unreduced.fixed) * 0.55)
     end
 
-    test "composes multiple status cast reductions multiplicatively, not additively" do
+    test "Bragi and Suffragium apply at their distinct source stages" do
       reject(&StatusInterpreter.apply_status/4)
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
       gs = game_state(100, %{29 => 1})
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 -> [] end)
@@ -1584,22 +1586,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 ->
         [
-          %StatusEntry{state: %{cast_time_reduction: 30}},
-          %StatusEntry{state: %{cast_time_reduction: 15}}
+          %StatusEntry{type: :sc_suffragium, state: %{cast_time_reduction: 30}},
+          %StatusEntry{type: :sc_poembragi, state: %{cast_time_reduction: 15}}
         ]
       end)
 
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
-      unreduced_variable = unreduced.total - unreduced.fixed
-      reduced_variable = reduced.total - reduced.fixed
-
-      # multiplicative 0.70 * 0.85 = 0.595 keeps MORE cast than the additive
-      # 30 + 15 = 45% (0.55) would, and never more than either factor alone.
-      # Renewal truncates once (555 -> 330); classic truncates per stage
-      # (993 -> 695 -> 590), so each mode carries its own hand-derived value.
-      assert reduced_variable == mode_value(330, 590)
-      assert reduced_variable > round(unreduced_variable * 0.55)
+      assert reduced.fixed == unreduced.fixed
+      assert reduced.total - reduced.fixed == mode_value(440, 590)
+      assert reduced.total < unreduced.total
     end
   end
 
@@ -1664,9 +1660,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == baseline.fixed
-      # Renewal halves the DEX-reduced variable (555 -> 278); classic halves the
-      # declared cast before the DEX scaling (1000 -> 500 -> 496).
-      assert reduced.total - reduced.fixed == mode_value(278, 496)
+      # Renewal applies the item rate after the variable stat step; classic
+      # applies it before its late status step.
+      assert reduced.total - reduced.fixed == mode_value(369, 496)
       assert reduced.total < baseline.total
     end
   end
@@ -1910,7 +1906,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == baseline.fixed
-      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.6)
+      assert reduced.total - reduced.fixed == mode_value(443, 595)
     end
 
     test "composes additively with the per-skill rate" do
@@ -1928,7 +1924,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert reduced.fixed == baseline.fixed
       # Renewal adds the rates; classic applies the skill and global stages separately.
-      assert reduced.total - reduced.fixed == mode_value(278, 556)
+      assert reduced.total - reduced.fixed == mode_value(369, 556)
     end
 
     test "applies to a skill the per-skill rate does not name" do
@@ -1943,7 +1939,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
-      assert reduced.total - reduced.fixed == mode_value(278, 496)
+      assert reduced.total - reduced.fixed == mode_value(369, 496)
       assert reduced.total < baseline.total
     end
   end
@@ -1963,7 +1959,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == baseline.fixed
-      assert reduced.total - reduced.fixed == mode_value(278, 558)
+      assert reduced.total - reduced.fixed == mode_value(369, 558)
     end
 
     test "a positive equipment rate offsets a negative status rate additively" do
@@ -1980,7 +1976,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == baseline.fixed
-      assert reduced.total - reduced.fixed == mode_value(444, 645)
+      assert reduced.total - reduced.fixed == mode_value(591, 645)
     end
 
     test "a varcast rate keyed on another skill leaves this skill's cast untouched" do

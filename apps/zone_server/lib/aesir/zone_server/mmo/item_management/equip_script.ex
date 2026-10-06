@@ -736,6 +736,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
         BonusKeys.max_destination?(key) ->
           Map.update(modifiers, key, value, &max(&1, value))
 
+        BonusKeys.min_destination?(key) ->
+          Map.update(modifiers, key, min(0, value), &min(&1, value))
+
         true ->
           Map.update(modifiers, key, value, &(&1 + value))
       end

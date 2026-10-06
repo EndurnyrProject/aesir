@@ -6,5 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.CastTime do
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Definition
 
-  @callback compute(Definition.t(), pos_integer(), CastTime.stats()) :: CastTime.result()
+  @callback early(Definition.t(), pos_integer(), CastTime.inputs()) :: CastTime.stage_result()
+  @callback late(Definition.t(), pos_integer(), CastTime.inputs(), number()) ::
+              CastTime.resolved()
+  @callback compute(Definition.t(), pos_integer(), CastTime.inputs()) :: CastTime.result()
 end

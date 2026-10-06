@@ -33,17 +33,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
     assert context.phase == :begin
     assert context.cost == nil
 
-    assert context.stats == %{
+    assert %{
+             caster_kind: :player,
              dex: 20,
              int: 30,
-             varcast_reductions: [],
-             varcast_rate: 0,
-             fixed_cast: 0,
-             fixcast_rate: 0,
-             classic_early_rate: 0,
-             classic_skill_rate: 0,
-             classic_late_reductions: []
-           }
+             item_global_rate: 0,
+             item_global_fixed_flat: 0,
+             statuses: %{}
+           } = context.stats
   end
 
   test "rebuilds a completion context from a real homunculus state" do
@@ -65,16 +62,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
     assert completion_context.phase == :completion
     assert completion_context.cost == nil
 
-    assert completion_context.stats == %{
-             dex: 12,
-             int: 18,
-             varcast_reductions: [],
-             varcast_rate: 0,
-             fixed_cast: 0,
-             classic_early_rate: 0,
-             classic_skill_rate: 0,
-             classic_late_reductions: []
-           }
+    assert %{caster_kind: :homunculus, dex: 12, int: 18, base_level: 1, statuses: %{}} =
+             completion_context.stats
 
     assert Map.delete(begin_context, :phase) == Map.delete(completion_context, :phase)
   end

@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -95,8 +94,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       else: {:error, :skill_not_learned}
   end
 
-  defp learned_level(caster, skill_id),
-    do: Learned.learned_level(caster.stats.progression.learned_skills, skill_id)
+  defp learned_level(caster, skill_id) do
+    learned = caster.stats.progression && caster.stats.progression.learned_skills
+    Learned.learned_level(learned || %{}, skill_id)
+  end
 
   defp guild_knows?(%PlayerState{guild_id: guild_id}, _skill_id, _level)
        when guild_id in [nil, 0],
@@ -270,41 +271,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   @impl true
   def cast_stats(caster, skill_id) do
-    base_stats = caster.stats.base_stats
-    {ignore_status?, ignore_item?} = cast_flags(skill_id)
+    rate =
+      equip_modifier(caster, :varcast_rate) + merged_modifier(caster.character_id, :varcast_rate)
 
-    {varcast_reductions, classic_status_early_rate, classic_late_reductions} =
-      if ignore_status?, do: {[], 0, []}, else: cast_status_channels(caster.character_id)
-
-    status_varcast_rate =
-      if ignore_status?, do: 0, else: merged_modifier(caster.character_id, :varcast_rate)
-
-    item = fn key -> if ignore_item?, do: 0, else: equip_modifier(caster, key) end
-
-    global_varcast_rate = status_varcast_rate + item.(:varcast_rate)
-    classic_early_rate = global_varcast_rate + classic_status_early_rate
-    classic_skill_rate = item.({:skill_varcast_rate, skill_id})
-    varcast_rate = global_varcast_rate + classic_skill_rate
+    skill_rate = equip_modifier(caster, {:skill_varcast_rate, skill_id})
 
     %{
-      dex: base_stats.dex,
-      int: base_stats.int,
-      varcast_reductions: varcast_reductions,
-      varcast_rate: varcast_rate,
-      fixed_cast: item.(:fixed_cast),
-      fixcast_rate: item.(:fixcast_rate) + item.({:skill_fixcast_rate, skill_id}),
-      classic_early_rate: classic_early_rate,
-      classic_skill_rate: classic_skill_rate,
-      classic_late_reductions: classic_late_reductions
+      caster_kind: :player,
+      dex: PlayerStats.get_effective_stat(caster.stats, :dex),
+      int: PlayerStats.get_effective_stat(caster.stats, :int),
+      base_level: Map.get(caster.stats.progression || %{}, :base_level, 0),
+      effective_skill?: effective_skill?(caster, skill_id),
+      radius_level: effective_skill_level(caster, 2_208),
+      item_global_rate: -rate,
+      item_skill_rate: skill_rate,
+      item_global_var_flat: equip_modifier(caster, :variable_cast),
+      item_skill_var_flat: equip_modifier(caster, {:skill_variable_cast, skill_id}),
+      item_global_fixed_rate: -equip_modifier(caster, :fixcast_rate),
+      item_skill_fixed_rate: skill_fixed_rate(caster, skill_id),
+      item_global_fixed_flat: equip_modifier(caster, :fixed_cast),
+      item_skill_fixed_flat: equip_modifier(caster, {:skill_fixed_cast, skill_id}),
+      statuses: cast_statuses(caster.character_id)
     }
   end
 
-  # The source's IgnoreStatus / IgnoreItemBonus cast-time flags.
-  defp cast_flags(skill_id) do
-    case Catalog.by_id(skill_id) do
-      {:ok, definition} -> {definition.ignore_status_cast, definition.ignore_item_cast}
-      :error -> {false, false}
+  defp effective_skill?(caster, skill_id), do: effective_skill_level(caster, skill_id) > 0
+
+  defp effective_skill_level(caster, skill_id) when skill_id in @guild_skill_range do
+    with guild_id when guild_id not in [nil, 0] <- caster.guild_id,
+         {:ok, guild} <- GuildManager.get(guild_id) do
+      GuildState.skill_level(guild, skill_id)
+    else
+      _ -> 0
     end
+  end
+
+  defp effective_skill_level(caster, skill_id) do
+    max(learned_level(caster, skill_id), granted_level(caster, skill_id))
   end
 
   defp quest_lineage?(caster, %{quest_skill: true} = definition) do
@@ -435,27 +438,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     }
   end
 
-  defp cast_status_channels(character_id) do
-    {renewal, classic_early_rate, classic_late} =
-      :player
-      |> StatusStorage.get_unit_statuses(character_id)
-      |> Enum.reduce({[], 0, []}, fn entry, {renewal, early_rate, late} ->
-        case {entry.type, Map.get(entry.state || %{}, :cast_time_reduction)} do
-          {_type, nil} ->
-            {renewal, early_rate, late}
+  defp cast_statuses(character_id) do
+    :player
+    |> StatusStorage.get_unit_statuses(character_id)
+    |> Enum.reduce(%{}, fn entry, statuses ->
+      reduction = Map.get(entry.state || %{}, :cast_time_reduction, 0)
 
-          {:sc_poembragi, reduction} ->
-            {[reduction | renewal], early_rate - reduction, late}
+      case entry.type do
+        :sc_memorize -> Map.put(statuses, :memorize, true)
+        :sc_suffragium -> Map.put(statuses, :suffragium, reduction)
+        :sc_poembragi -> Map.put(statuses, :bragi, reduction)
+        _ -> statuses
+      end
+    end)
+  end
 
-          {:sc_suffragium, reduction} ->
-            {[reduction | renewal], early_rate, [reduction | late]}
+  defp skill_fixed_rate(caster, skill_id) do
+    equipment = caster.stats |> Map.get(:modifiers, %{}) |> Map.get(:equipment, %{})
 
-          {_type, reduction} ->
-            {[reduction | renewal], early_rate, [reduction | late]}
-        end
-      end)
-
-    {Enum.reverse(renewal), classic_early_rate, Enum.reverse(classic_late)}
+    case Map.fetch(equipment, {:skill_fixcast_rate, skill_id}) do
+      {:ok, value} -> -value
+      :error -> nil
+    end
   end
 
   defp merged_modifier(character_id, key) do

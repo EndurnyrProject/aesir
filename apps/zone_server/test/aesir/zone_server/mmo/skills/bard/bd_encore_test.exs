@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -271,7 +272,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
         derived_stats: %{max_hp: 100, max_sp: 100},
         progression: %PlayerProgression{job_id: 19, job_level: 50, learned_skills: learned},
         equipment: %Equipment{right_hand: @instrument_id},
-        modifiers: %{equipment: modifiers}
+        modifiers: %Modifiers{equipment: modifiers}
       }
     }
   end
