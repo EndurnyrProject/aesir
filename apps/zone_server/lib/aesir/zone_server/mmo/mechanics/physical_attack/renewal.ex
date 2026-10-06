@@ -8,8 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   of both hands, in the reference order) and doubles right-hand status ATK,
   `after_component_elements/2` derives the equipment percentage part,
   `calculate_components/2` runs component cards, the skill ratio and defense, and
-  `finish_attack/2` runs the critical and final reduction tail after any
-  post-defense attribute step.
+  `finish_attack/2` runs the critical tail after any post-defense attribute step.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
@@ -98,13 +97,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     |> max(1)
   end
 
-  @doc "Runs the critical and final reduction tail after any post-defense attribute step."
+  @doc "Runs the critical tail after any post-defense attribute step."
   @spec finish_attack(integer(), PhysicalAttack.context()) :: integer()
-  def finish_attack(damage, context) do
-    damage
-    |> critical_damage(context)
-    |> PhysicalAttack.finish(context)
-  end
+  def finish_attack(damage, context), do: critical_damage(damage, context)
 
   defp reduce_res(damage, %{defense_mode: :simple}), do: damage
 

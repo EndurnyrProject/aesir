@@ -689,7 +689,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         element: taken_rates.element,
         size: taken_rates.size,
         long_def: EquipmentBonuses.long_range_defense_rate(defender, defender_modifiers, ranged?),
-        ranged: EquipmentBonuses.ranged_damage_taken_rate(defender, defender_modifiers, ranged?)
+        def_rate: Map.get(defender_modifiers, :phys_damage_reduction, 0)
       },
       defense:
         player_defense_context(defender, attacker, attack_path, defense_mode, defender_modifiers),
@@ -721,8 +721,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       crate: Map.get(attacker.combat_stats, :crate, 0),
       crit_atk_rate:
         Map.get(attacker.equip_modifiers, :crit_atk_rate, 0) +
-          Map.get(attacker_modifiers, :crit_atk_rate, 0),
-      physical_reduction: Map.get(defender_modifiers, :phys_damage_reduction, 0)
+          Map.get(attacker_modifiers, :crit_atk_rate, 0)
     }
   end
 
@@ -1029,10 +1028,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           total_atk - div(modified_soft_def * ratio, 100)
       end
 
-    final_damage =
-      base_damage
-      |> apply_phys_damage_reduction(modifiers)
-      |> DamageShared.clamp_min_one()
+    final_damage = DamageShared.clamp_min_one(base_damage)
 
     Logger.debug(
       "Defense calculation: total_atk=#{trunc(total_atk)}, hard_def=#{modified_hard_def}, soft_def=#{modified_soft_def}, final_damage=#{final_damage}"
@@ -1221,11 +1217,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # equipment and status effects, keyed on the attacker's traits / the effective
   # attack element. Dragonology's resist rate sums into the race+class family like
   # any other contributor; the defender's status resist keys (subele/subrace) sum
-  # into the element/race families through EquipmentBonuses. The ranged family is
-  # a taken-rate step gated on the hit being ranged — the per-hit `:ranged` opt
+  # into the element/race families through EquipmentBonuses. The long-range
+  # family is gated on the hit being ranged: the per-hit `:ranged` opt
   # (thrown-weapon skills), a ranged weapon class, or a long attack range (ranged
-  # mobs) — matching the `is_short` determination used at hit delivery. The
-  # families follow the attribute step, so an immune hit stays 0.
+  # mobs). The DEF-rate status channel is the last step. The families follow the
+  # attribute step, so an immune hit stays 0.
   defp apply_equipment_taken_families(damage, attacker, defender, skill_id, attack_element, opts) do
     {unit_type, unit_id} = get_unit_type_and_id(defender)
     status_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
@@ -1252,13 +1248,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     race_class = race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race)
 
-    ranged =
-      EquipmentBonuses.ranged_damage_taken_rate(
-        defender,
-        status_modifiers,
-        ranged_hit?(attacker, opts)
-      )
-
     long_def =
       EquipmentBonuses.long_range_defense_rate(
         defender,
@@ -1273,7 +1262,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     |> apply_taken_step(size)
     |> apply_taken_step(skill)
     |> apply_taken_step(long_def)
-    |> apply_taken_rate_step(ranged)
+    |> apply_def_rate_step(Map.get(status_modifiers, :phys_damage_reduction, 0))
   end
 
   @doc """
@@ -1293,8 +1282,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp apply_taken_step(damage, 0), do: damage
   defp apply_taken_step(damage, sum), do: div(trunc(damage) * (100 - sum), 100)
 
-  defp apply_taken_rate_step(damage, 0), do: damage
-  defp apply_taken_rate_step(damage, sum), do: div(trunc(damage) * (100 + sum), 100)
+  defp apply_def_rate_step(damage, 0), do: damage
+  defp apply_def_rate_step(damage, rate), do: div(trunc(damage) * max(100 - rate, 0), 100)
 
   defp resolve_attack_element(attacker, attacker_modifiers) do
     Map.get_lazy(attacker_modifiers, :attack_element, fn ->
@@ -1333,16 +1322,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     DamageShared.apply_damage_multiplier(scaled_atk, modifiers)
   end
-
-  # :phys_damage_reduction is the percent of final physical damage the defender
-  # shrugs off (SC_DEF_RATE consumable family, rAthena battle.cpp:1151). Clamped
-  # to 0..100 before applying.
-  defp apply_phys_damage_reduction(damage, modifiers) do
-    reduction = clamp_reduction(Map.get(modifiers, :phys_damage_reduction, 0))
-    damage * (100 - reduction) / 100
-  end
-
-  defp clamp_reduction(value), do: value |> max(0) |> min(100)
 
   defp get_unit_type_and_id(combatant) do
     case combatant.unit_type do

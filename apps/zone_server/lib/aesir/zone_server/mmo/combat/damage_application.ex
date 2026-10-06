@@ -29,10 +29,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   @doc """
   Resolves pre-delivery equipment and status damage modifiers for one hit.
 
-  Skill magic damage is reduced by the target's equipment first. On siege
-  ground, eligibility precedes mutable hooks, absorption precedes the map rate,
-  and Devotion forwards the settled amount. Elsewhere, Devotion still precedes
-  absorption. Raw costs and status ticks do not acquire an attack's map rate.
+  Skill magic damage is reduced by the target's equipment first, then the
+  target's damage statuses run in their fixed stage order. On siege ground,
+  eligibility precedes mutable hooks and absorption precedes the map rate.
+  Devotion then forwards the settled amount when it is above zero. Raw costs
+  and status ticks do not acquire an attack's map rate.
 
   Attack paths that render damage must call this before constructing their
   packet, then pass the returned hit information to `apply_unit_damage/6`.
@@ -40,13 +41,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   pre-status basis and settled status-return basis. This keeps visible damage
   and HP loss identical without consuming modifiers such as Lex Aeterna twice.
 
-  A valid Devotion link delivers to the Crusader with `redirected: true`,
-  bypassing recipient absorption, map rates and return damage, and returns `0`
-  for the devotee. A stale link is torn down and the hit lands normally.
-  Pre-renewal Gloria Domini (skill 367) is never rerouted: it strikes the
-  devotee directly. Reflected spells retain their metadata and settle at their
-  actual recipient; unlike prepared weapon returns, they still receive
-  equipment and status modifiers there. Reflected hits and self-damage are
+  A valid Devotion link delivers the devotee's settled damage to the Crusader
+  with `redirected: true`, bypassing the Crusader's own statuses, map rates and
+  return damage, and returns `0` for the devotee. A stale link is torn down and
+  the hit lands normally. Pre-renewal Gloria Domini (skill 367) and Gravitation
+  Field (skill 484) are never rerouted: they strike the devotee directly.
+  Reflected spells retain their metadata and settle at their actual recipient;
+  unlike prepared weapon returns, they still receive equipment and status
+  modifiers there. Reflected hits and self-damage are
   never rerouted.
   """
   @spec prepare_unit_damage(
@@ -82,15 +84,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp prepare_ordinary_damage(target_type, target_id, damage, hit_info, attacker_id) do
-    damage = reduce_magic_damage(damage, target_type, target_id, hit_info)
+    settled =
+      damage
+      |> reduce_magic_damage(target_type, target_id, hit_info)
+      |> then(&absorb_unit_damage(target_type, target_id, &1, hit_info, attacker_id))
 
-    case reroute_to_crusader(target_type, target_id, damage, hit_info, attacker_id) do
-      {:rerouted, _delivery} ->
-        {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
-
-      :not_rerouted ->
-        {absorb_unit_damage(target_type, target_id, damage, hit_info, attacker_id),
-         Map.put(hit_info, :pre_delivery_prepared?, true)}
+    case reroute_to_crusader(target_type, target_id, settled, hit_info, attacker_id) do
+      {:rerouted, _delivery} -> {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
+      :not_rerouted -> {settled, Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
 
@@ -152,9 +153,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   Settles and delivers one already-calculated ordinary weapon swing.
 
   Mutating status absorption sees the raw aggregate once. On siege ground,
-  each resulting positive component receives its own map rate and minimum;
-  Devotion forwards their sum. Outside ground, Devotion still sees the raw
-  aggregate first. The returned swing retains its raw total and its settled
+  each resulting positive component receives its own map rate and minimum.
+  Devotion then forwards the settled sum when it is above zero. The returned swing retains its raw total and its settled
   components sum to the one delivered HP mutation (zero for a devotee).
   """
   @spec apply_weapon_swing(
@@ -217,14 +217,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp apply_ordinary_swing(target_type, target_pid, target_id, swing, hit_info, attacker) do
-    raw_total = swing.raw_total
+    final_damage = absorb_unit_damage(target_type, target_id, swing.raw_total, hit_info, attacker)
 
-    case reroute_to_crusader(target_type, target_id, raw_total, hit_info, attacker) do
+    case reroute_to_crusader(target_type, target_id, final_damage, hit_info, attacker) do
       {:rerouted, delivery} ->
         {settle_components(swing, 0), delivery}
 
       :not_rerouted ->
-        final_damage = absorb_unit_damage(target_type, target_id, raw_total, hit_info, attacker)
         settled = settle_components(swing, final_damage)
         prepared_hit = Map.put(hit_info, :pre_delivery_prepared?, true)
 
@@ -437,7 +436,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp devotion_bypass_skill_ids do
     case GameMode.mode() do
-      :pre_renewal -> [367]
+      :pre_renewal -> [367, 484]
       :renewal -> []
     end
   end

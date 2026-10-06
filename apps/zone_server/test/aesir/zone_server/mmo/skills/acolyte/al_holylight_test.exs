@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylightTest do
       assert {:ok, ^caster} = AlHolylight.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
-    test "ends P. Alter and Kyrie on a player target after the holy hit connects" do
+    test "ends P. Alter on a player target after the holy hit connects" do
       caster = caster()
 
       stub(UnitRegistry, :unit_exists?, fn
@@ -81,7 +81,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylightTest do
       end)
 
       expect(StatusInterpreter, :remove_status, fn :player, @target_id, :sc_p_alter -> :ok end)
-      expect(StatusInterpreter, :remove_status, fn :player, @target_id, :sc_kyrie -> :ok end)
 
       assert {:ok, ^caster} = AlHolylight.cast(caster, {:unit, @target_id}, 1, definition())
     end

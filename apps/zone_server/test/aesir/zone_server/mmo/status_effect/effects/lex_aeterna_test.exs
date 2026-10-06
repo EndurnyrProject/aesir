@@ -13,20 +13,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeternaTest do
     assert {:remove, 2_468} = LexAeterna.absorb_damage(@target, @entry, hit, %{})
   end
 
-  test "does not double or consume Soul Breaker's physical part" do
+  @tag game_mode: :renewal
+  test "renewal doubles and consumes on Soul Breaker's physical part" do
     hit = %{damage: 1_234, dmg_type: :physical, skill_id: 379}
 
-    assert {:ok, 1_234, @entry} = LexAeterna.absorb_damage(@target, @entry, hit, %{})
+    assert {:remove, 2_468} = LexAeterna.absorb_damage(@target, @entry, hit, %{})
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic doubles Soul Breaker's physical part but keeps the mark" do
+    hit = %{damage: 1_234, dmg_type: :physical, skill_id: 379}
+
+    assert {:ok, 2_468, @entry} = LexAeterna.absorb_damage(@target, @entry, hit, %{})
   end
 
   test "does not double or consume Soul Burn" do
     hit = %{damage: 1_234, dmg_type: :magic, skill_id: 375}
-
-    assert {:ok, 1_234, @entry} = LexAeterna.absorb_damage(@target, @entry, hit, %{})
-  end
-
-  test "does not double or consume status ticks and HP costs" do
-    hit = %{damage: 1_234, dmg_type: :magic, status_tick?: true}
 
     assert {:ok, 1_234, @entry} = LexAeterna.absorb_damage(@target, @entry, hit, %{})
   end

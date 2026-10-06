@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           element: integer(),
           size: integer(),
           long_def: integer(),
-          ranged: integer()
+          def_rate: integer()
         }
 
   @typedoc "Captured modifier and defense values; implementations perform no lookups."
@@ -68,7 +68,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:short_atk_rate) => integer(),
           optional(:defender_rates) => defender_rates(),
           optional(:res) => integer(),
-          optional(:physical_reduction) => integer(),
           optional(:critical?) => boolean(),
           optional(:crit_atk_rate) => integer(),
           optional(:crate) => integer(),
@@ -93,7 +92,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
     |> rate(rates.size)
   end
 
-  @doc "Applies defender families without creating damage from an empty component."
+  @doc """
+  Applies the target's card families, ending with the DEF-rate status channel,
+  without creating damage from an empty component.
+  """
   @spec defender_cardfix(integer(), defender_rates() | nil, :weapon | :status) :: integer()
   def defender_cardfix(damage, nil, _channel), do: damage
 
@@ -106,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
     |> taken_rate(element_rate)
     |> taken_rate(rates.size)
     |> taken_rate(rates.long_def)
-    |> rate(max(rates.ranged, -100))
+    |> taken_rate(rates.def_rate)
   end
 
   @doc "Applies shared status attack-rate and generic damage-multiplier channels."
@@ -139,16 +141,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
 
   def apply_defense(damage, context, implementation) do
     implementation.apply_def(damage, context.defense)
-  end
-
-  @doc """
-  Applies the final physical reduction. There is no minimum here: an immune
-  attribute step deals 0.
-  """
-  @spec finish(number(), context()) :: integer()
-  def finish(damage, context) do
-    reduction = context |> Map.get(:physical_reduction, 0) |> max(0) |> min(100)
-    rate(damage, -reduction)
   end
 
   defp taken_rate(damage, reduction), do: div(damage * max(100 - reduction, 0), 100)

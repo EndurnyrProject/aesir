@@ -370,19 +370,18 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
              StatusStorage.get_status(:player, 48, :sc_kyrie)
   end
 
-  test "non-ground Devotion still forwards before the devotee's shield" do
+  test "non-ground Devotion forwards what the devotee's shield leaves" do
     _attacker = register_player(50, "prontera")
     target = register_player(51, "prontera")
     crusader = register_player(52, "prontera")
     link_devotion(51, 52, "prontera")
     :ok = StatusInterpreter.apply_status(:player, 51, :sc_kyrie, val2: 30, val3: 5)
-    expect_damage(crusader.pid, 100, {:player, 50})
+    expect_damage(crusader.pid, 70, {:player, 50})
     expect_damage(target.pid, 0, {:player, 50})
     assert {0, hit_info} = prepare(51, 100, ordinary_hit(), {:player, 50})
     assert :ok = deliver(target, 0, hit_info, {:player, 50})
 
-    assert %{state: %{shield_hp: 30, hits_remaining: 5}} =
-             StatusStorage.get_status(:player, 51, :sc_kyrie)
+    refute StatusStorage.has_status?(:player, 51, :sc_kyrie)
   end
 
   test "non-ground returns retain delivered basis and source absorption" do
@@ -478,7 +477,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     assert :ok = deliver(caster, 60, prepared, {:player, 57})
     refute StatusStorage.has_status?(:player, 58, :sc_aeterna)
 
-    assert %{state: %{shield_hp: 1_000, hits_remaining: 5}} =
+    assert %{state: %{shield_hp: 900, hits_remaining: 4}} =
              StatusStorage.get_status(:player, 58, :sc_kyrie)
 
     assert Process.alive?(reflector.pid)

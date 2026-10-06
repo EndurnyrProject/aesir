@@ -771,19 +771,40 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     refute StatusStorage.has_status?(:mob, target_id, :sc_aeterna)
   end
 
-  test "Lex Aeterna keeps its mark for real excluded skill IDs" do
-    target_id = 9_002
+  describe "Lex Aeterna exceptions" do
+    @soul_breaker_physical %{
+      dmg_type: :physical,
+      is_short: true,
+      element: :neutral,
+      skill_id: 379
+    }
 
-    stub(UnitRegistry, :get_unit_info, fn :mob, ^target_id -> {:ok, %{stats: %{}}} end)
-
-    for hit <- [
-          %{dmg_type: :physical, is_short: true, element: :neutral, skill_id: 379},
-          %{dmg_type: :magic, is_short: false, element: :neutral, skill_id: 375}
-        ] do
+    setup do
+      target_id = 9_002
+      stub(UnitRegistry, :get_unit_info, fn :mob, ^target_id -> {:ok, %{stats: %{}}} end)
       :ok = StatusStorage.apply_status(:mob, target_id, :sc_aeterna)
+      %{target_id: target_id}
+    end
+
+    test "Soul Burn neither doubles nor consumes the mark", %{target_id: target_id} do
+      hit = %{dmg_type: :magic, is_short: false, element: :neutral, skill_id: 375}
+
       assert Interpreter.absorb_damage(:mob, target_id, 50, hit) == 50
       assert StatusStorage.has_status?(:mob, target_id, :sc_aeterna)
-      :ok = StatusStorage.remove_status(:mob, target_id, :sc_aeterna)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Soul Breaker's physical part doubles and keeps the mark", %{
+      target_id: target_id
+    } do
+      assert Interpreter.absorb_damage(:mob, target_id, 50, @soul_breaker_physical) == 100
+      assert StatusStorage.has_status?(:mob, target_id, :sc_aeterna)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal Soul Breaker doubles and consumes the mark", %{target_id: target_id} do
+      assert Interpreter.absorb_damage(:mob, target_id, 50, @soul_breaker_physical) == 100
+      refute StatusStorage.has_status?(:mob, target_id, :sc_aeterna)
     end
   end
 

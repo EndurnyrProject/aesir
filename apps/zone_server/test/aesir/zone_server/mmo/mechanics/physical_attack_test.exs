@@ -100,13 +100,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
           element: 50,
           size: 0,
           long_def: 20,
-          ranged: 0
+          def_rate: 25
         },
-        res: 100,
-        physical_reduction: 25
+        res: 100
       })
 
-    assert renewal(parts(), context) == 57
+    assert renewal(parts(), context) == 56
     assert classic(parts(), context) == 69
   end
 
@@ -169,7 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
         element: 0,
         size: 0,
         long_def: 0,
-        ranged: 0
+        def_rate: 0
       })
 
     assert renewal(penalized, context) == 135

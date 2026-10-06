@@ -4,9 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
   skill level.
 
   Granted by the Basilica sanctuary field to every unit standing in it except
-  its caster, bosses included. The holder takes no damage from any source that
-  is not a boss, of any damage type, and cannot attack or cast; it may still
-  walk out. The field removes the status when the holder leaves, and the
+  its caster, bosses included. As the last blocker, after Kyrie Eleison and
+  Safety Wall, it blocks every attack still carrying damage unless the attacker
+  is status-immune (a boss-class monster or one with the status-immune mode).
+  The holder cannot attack or cast; it may still walk out. The field removes the status when the holder leaves, and the
   holder's own one-second tick drops it if the holder is no longer on any
   Basilica cell (a teleport or relocation emits no leave event). It ends on map
   change and is never saved or dispelled.
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -46,26 +48,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
   end
 
   @doc """
-  Blocks the hit unless its source is a boss. A hit with no known source is
-  blocked: traps and ground fields belong to non-boss owners. Status-driven
-  damage (poison ticks, self-inflicted HP costs) is not an attack and passes.
+  Blocks the hit unless its source is status-immune. A hit with no known source
+  is blocked: traps and ground fields belong to ordinary owners.
   """
   @impl true
-  def absorb_damage(_target, instance, %{status_tick?: true, damage: damage}, _context),
-    do: {:ok, damage, instance}
-
   def absorb_damage(_target, instance, %{attacker: {unit_type, unit_id}} = hit_info, _context) do
-    if boss?(unit_type, unit_id),
+    if status_immune?(unit_type, unit_id),
       do: {:ok, hit_info.damage, instance},
       else: {:ok, 0, instance}
   end
 
   def absorb_damage(_target, instance, _hit_info, _context), do: {:ok, 0, instance}
 
-  defp boss?(unit_type, unit_id) do
+  defp status_immune?(unit_type, unit_id) do
     case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {module, state, _pid}} -> module.is_boss?(state)
-      _gone -> false
+      {:ok, {MobState, %MobState{mob_data: %{modes: modes}}, _pid}} ->
+        Enum.any?(modes, &(&1 in [:boss, :status_immune]))
+
+      _not_a_mob ->
+        false
     end
   end
 end

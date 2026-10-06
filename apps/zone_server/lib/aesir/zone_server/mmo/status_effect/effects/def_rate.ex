@@ -2,11 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DefRate do
   @moduledoc """
   Physical damage-taken reduction buff (SC_DEF_RATE).
 
-  This consumable-family status is **not** a DEF buff: rAthena multiplies
-  incoming weapon damage on the target by `(100 - val1) / 100`
-  (`battle.cpp:1151-1152`). It is therefore modelled as `phys_damage_reduction`
-  (percent of final physical damage the defender shrugs off), consumed in
-  `combat/damage_calculator.ex`, not as `def`/`def_rate`. val1-driven.
+  This consumable-family status is **not** a DEF buff: it scales incoming weapon
+  damage by `(100 - val1) / 100` as the last of the target's card families
+  (after the long-range defense family), per renewal component or on the
+  finished classic and non-player hit. It is therefore emitted as
+  `phys_damage_reduction`, not as `def`/`def_rate`. val1-driven.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_def_rate,

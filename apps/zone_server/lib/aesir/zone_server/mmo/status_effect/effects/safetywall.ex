@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Safetywall do
   Safety Wall (SC_SAFETYWALL).
 
   A marker granted to whoever stands on a Safety Wall ground unit. While active it
-  fully blocks short-range physical hits via the pre-damage `absorb_damage` hook;
-  magic and ranged hits pass through unchanged.
+  fully blocks short-range non-magic hits (weapon or misc) that still carry
+  damage after Kyrie Eleison; magic and ranged hits pass through unchanged.
 
   The budget is **shared by the wall**, not the defender: it lives on the owning
   ground unit's `state` and is set when the wall is placed (see `MgSafetywall`).
@@ -40,10 +40,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Safetywall do
   def absorb_damage(
         _target,
         instance,
-        %{damage: damage, is_short: true, dmg_type: :physical},
+        %{damage: damage, is_short: true, dmg_type: dmg_type},
         _context
       )
-      when damage > 0 do
+      when damage > 0 and dmg_type != :magic do
     group_id = instance.state.group_id
 
     case Unit.absorb_safetywall_hit(group_id, damage) do

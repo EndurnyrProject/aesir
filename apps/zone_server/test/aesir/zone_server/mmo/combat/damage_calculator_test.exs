@@ -1786,8 +1786,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert halved.damage < base.damage
 
-      # A reduction over 100 clamps to 100, so all damage is shrugged off; a
-      # target card reduction has no minimum (battle.cpp:1151-1152).
+      # A reduction over 100 removes the whole card-fixed amount. Renewal player
+      # hits apply it per component before defense, whose minimum leaves 1;
+      # classic applies it to the finished hit, with no minimum.
       stub(ModifierCalculator, :get_all_modifiers, fn
         :mob, 2001 -> %{phys_damage_reduction: 150}
         _, _ -> %{}
@@ -1798,7 +1799,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       {:ok, fully_reduced} =
         DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
 
-      assert fully_reduced.damage == 0
+      assert fully_reduced.damage == if(GameMode.mode() == :renewal, do: 1, else: 0)
     end
   end
 
@@ -2441,18 +2442,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       result.damage
     end
 
-    test "ranged_damage_taken_rate: -20 reduces long-range weapon damage ~20%" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
-
-      baseline = damage_with_defender_modifiers(attacker, defender, %{})
-
-      reduced =
-        damage_with_defender_modifiers(attacker, defender, %{ranged_damage_taken_rate: -20})
-
-      assert_in_delta reduced / baseline, 0.80, 0.02
-    end
-
     test "long_atk_def combines equipment and status reductions on ranged damage" do
       attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
       defender = CombatTestHelper.create_mob_combatant(def: 0)
@@ -2504,7 +2493,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
 
       stub(ModifierCalculator, :get_all_modifiers, fn
-        _, unit_id when unit_id == defender.unit_id -> %{ranged_damage_taken_rate: -20}
+        _, unit_id when unit_id == defender.unit_id -> %{long_atk_def: 20}
         _, _ -> %{}
       end)
 
@@ -2522,22 +2511,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
 
-      reduced =
-        damage_with_defender_modifiers(attacker, defender, %{ranged_damage_taken_rate: -20})
+      reduced = damage_with_defender_modifiers(attacker, defender, %{long_atk_def: 20})
 
       assert_in_delta reduced / baseline, 0.80, 0.02
-    end
-
-    test "ranged_damage_taken_rate leaves melee weapon damage untouched" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
-
-      baseline = damage_with_defender_modifiers(attacker, defender, %{})
-
-      melee =
-        damage_with_defender_modifiers(attacker, defender, %{ranged_damage_taken_rate: -20})
-
-      assert melee == baseline
     end
 
     test "each elemental status key reduces matching physical damage for a mob defender" do

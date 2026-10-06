@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoatTest do
 
   defp entry, do: %StatusEntry{type: :sc_energycoat, state: %{}}
 
-  # SP% = 100 * sp / max_sp. per = clamp(div(SP%, 20), 0, 4).
+  # per = (100 * sp / max_sp - 1) / 20, truncated toward zero.
   defp context(sp, max_sp), do: %{target: %{sp: sp, max_sp: max_sp}}
 
   describe "metadata" do
@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoatTest do
       reject(&Helpers.consume_sp/2)
       hit = %{damage: 1_000, is_short: true, dmg_type: :physical, element: :neutral}
 
-      assert :remove = EnergyCoat.absorb_damage(@target, entry(), hit, context(1, 200))
+      assert {:remove, 940} = EnergyCoat.absorb_damage(@target, entry(), hit, context(1, 200))
     end
   end
 

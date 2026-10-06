@@ -19,9 +19,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  # The absorbers take staged status ids so the ordered damage fold dispatches
+  # them; each registration shadows the real status for this test only.
   defmodule HalfDamage do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_weapon_swing_half,
+      id: :sc_kyrie,
       no_dispel: false,
       properties: [:buff]
 
@@ -34,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
   defmodule FullAbsorb do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_weapon_swing_full,
+      id: :sc_pneuma,
       no_dispel: false,
       properties: [:buff]
 
@@ -158,9 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     Registry.register_module(HalfDamage)
 
     :ok =
-      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_half,
-        state: %{test_pid: self()}
-      )
+      Interpreter.apply_status(:player, target_id, :sc_kyrie, state: %{test_pid: self()})
 
     expect(PlayerSession, :apply_damage, fn ^target_pid, 75, {:player, 20} ->
       send(test_pid, :delivered)
@@ -200,9 +200,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     Registry.register_module(FullAbsorb)
 
     :ok =
-      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_full,
-        state: %{test_pid: self()}
-      )
+      Interpreter.apply_status(:player, target_id, :sc_pneuma, state: %{test_pid: self()})
 
     expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 20} -> :ok end)
 
@@ -477,6 +475,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       refute Map.get(prepared, :redirected, false)
     end
 
+    @tag game_mode: :pre_renewal
+    test "pre-renewal Gravitation Field lands on the devotee", %{devotee_id: devotee_id} do
+      stub_unit_info(devotee_id)
+      reject(&PlayerSession.apply_damage/3)
+
+      assert {400, prepared} =
+               DamageApplication.prepare_unit_damage(
+                 :player,
+                 devotee_id,
+                 400,
+                 %{skill_id: 484, dmg_type: :misc, bypass_reductions: true},
+                 20
+               )
+
+      refute Map.get(prepared, :redirected, false)
+    end
+
     @tag game_mode: :renewal
     test "renewal Pressure is rerouted like any other hit", %{
       devotee_id: devotee_id,
@@ -503,9 +518,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     Registry.register_module(AfterDamage)
 
     :ok =
-      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_full,
-        state: %{test_pid: self()}
-      )
+      Interpreter.apply_status(:player, target_id, :sc_pneuma, state: %{test_pid: self()})
 
     :ok =
       Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_after_damage,
@@ -575,9 +588,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     Registry.register_module(FullAbsorb)
 
     :ok =
-      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_full,
-        state: %{test_pid: self()}
-      )
+      Interpreter.apply_status(:player, target_id, :sc_pneuma, state: %{test_pid: self()})
 
     reject(&PlayerSession.apply_damage/3)
     miss = %{swing(0, nil) | outcome: :miss}
@@ -602,9 +613,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     Registry.register_module(HalfDamage)
 
     :ok =
-      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_half,
-        state: %{test_pid: self()}
-      )
+      Interpreter.apply_status(:player, target_id, :sc_kyrie, state: %{test_pid: self()})
 
     expect(PlayerSession, :apply_damage, fn ^target_pid, 50, {:player, 20} -> :ok end)
 
@@ -630,9 +639,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     Registry.register_module(HalfDamage)
 
     :ok =
-      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_half,
-        state: %{test_pid: self()}
-      )
+      Interpreter.apply_status(:player, target_id, :sc_kyrie, state: %{test_pid: self()})
 
     expect(PlayerSession, :apply_damage, fn ^target_pid, 2, {:player, 20} -> :ok end)
 

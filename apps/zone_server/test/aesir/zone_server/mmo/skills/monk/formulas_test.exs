@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.fury_critical_bonus(5) == 200
     assert Formulas.fury_regeneration_tick_multiplier() == 2
 
-    assert Formulas.mental_strength_damage(0) == 0
+    assert Formulas.mental_strength_damage(0) == 1
     assert Formulas.mental_strength_damage(9) == 1
     assert Formulas.mental_strength_damage(20) == 2
     assert Formulas.mental_strength_damage(99) == 9

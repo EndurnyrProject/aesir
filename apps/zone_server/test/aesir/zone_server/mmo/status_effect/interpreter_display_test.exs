@@ -23,9 +23,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
     def on_tick(_target, _instance, _context), do: :remove
   end
 
+  # A staged id, so the ordered damage fold dispatches it; the registration
+  # shadows the real status for this test only.
   defmodule AbsorbExpiringStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_absorb_expiring,
+      id: :sc_kyrie,
       no_dispel: false,
       properties: [:buff],
       icon: :provoke
@@ -174,10 +176,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
         :ok
       end)
 
-      :ok = Interpreter.apply_status(:player, target_id, :sc_test_absorb_expiring)
+      :ok = Interpreter.apply_status(:player, target_id, :sc_kyrie)
       Interpreter.absorb_damage(:player, target_id, 100, %{element: :neutral})
 
-      assert_received {:on_removed, :sc_test_absorb_expiring}
+      assert_received {:on_removed, :sc_kyrie}
     end
   end
 

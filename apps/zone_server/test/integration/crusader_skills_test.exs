@@ -3,15 +3,15 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   End-to-end acceptance coverage for the Crusader kit against the real
   subsystems: live `PlayerSession`/`MobSession`, the ETS-backed `StatusStorage`
   and tick manager, the real combat path (`Combat.execute_mob_attack`,
-  `DamageCalculator`), the real `Party.Manager`, and the real skill/ground-unit
+  `DamageApplication`), the real `Party.Manager`, and the real skill/ground-unit
   machinery. Only the network transport is faked (via `IntegrationCase`).
 
   The four engine seams the kit adds each get exercised through a real hit:
 
     * `before_weapon_hit` — Guard (`sc_autoguard`) intercepts a live mob swing
       before any damage, with a seeded RNG so the per-level block roll lands.
-    * damage-taken families — Defender (`sc_defender`) cuts a long-range hit
-      through the real `DamageCalculator` while a melee hit is untouched.
+    * damage stages — Defender (`sc_defender`) cuts a long-range hit at its
+      status stage in `DamageApplication` while a melee hit is untouched.
     * `after_damage_taken` — Reflect Shield (`sc_reflectshield`) returns part of a
       melee mob's damage to it through the async reflect path, no loop.
     * Devotion redirection — a mob hit on a devoted party member lands on the
@@ -46,9 +46,8 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   alias Aesir.Net.GroundSkill
   alias Aesir.Net.SkillCast
   alias Aesir.Repo
-  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguard
@@ -217,23 +216,19 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   end
 
   describe "Defender" do
-    test "reduces a long-range hit through the real damage calculator but not a melee one" do
+    test "reduces a long-range weapon hit at its damage stage but not a melee one" do
       crusader = start_solo_crusader(9_630, {150, 150})
-
-      defender = PlayerState.to_combatant(get_player_state(crusader.pid))
-      ranged = CombatTestHelper.create_mob_combatant(unit_id: 96_301, attack_range: 5, atk: 500)
-      melee = CombatTestHelper.create_mob_combatant(unit_id: 96_302, attack_range: 1, atk: 500)
-
-      ranged_before = seeded_damage(ranged, defender)
-      melee_before = seeded_damage(melee, defender)
+      crusader_id = crusader.character.id
+      ranged = %{dmg_type: :physical, is_short: false, element: :neutral, skill_id: nil}
+      melee = %{ranged | is_short: true}
 
       toggle_defensive(CrDefender, crusader.pid, 5)
 
-      ranged_after = seeded_damage(ranged, defender)
-      melee_after = seeded_damage(melee, defender)
+      assert {21, _ranged} =
+               DamageApplication.prepare_unit_damage(:player, crusader_id, 101, ranged, nil)
 
-      assert ranged_after < ranged_before
-      assert melee_after == melee_before
+      assert {101, _melee} =
+               DamageApplication.prepare_unit_damage(:player, crusader_id, 101, melee, nil)
     end
   end
 
@@ -426,15 +421,6 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   defp toggle_defensive(module, crusader_pid, level) do
     state = get_player_state(crusader_pid)
     assert {:ok, _caster} = module.cast(state, :self, level, module.definition())
-  end
-
-  defp seeded_damage(attacker, defender) do
-    :rand.seed(:exsss, {7, 11, 13})
-
-    {:ok, %{damage: damage}} =
-      DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
-
-    damage
   end
 
   defp start_session(character, {x, y}) do

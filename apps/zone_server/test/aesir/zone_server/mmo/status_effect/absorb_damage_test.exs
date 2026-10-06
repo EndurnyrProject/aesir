@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
   use Mimic
 
   import Aesir.TestEtsSetup
-  import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
@@ -24,40 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       properties: [:buff]
   end
 
-  defmodule HalfStatus do
-    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_half,
-      no_dispel: false,
-      properties: [:buff]
-
-    @impl true
-    def absorb_damage(_target, instance, %{damage: damage}, _context) do
-      {:ok, div(damage, 2), instance}
-    end
-  end
-
-  defmodule BlockOnceStatus do
-    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_block_once,
-      no_dispel: false,
-      properties: [:buff]
-
-    import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
-
-    @impl true
-    def on_apply(_target, instance, _context) do
-      {:ok, put_state(instance, :hits_remaining, 2)}
-    end
-
-    @impl true
-    def absorb_damage(_target, instance, _hit_info, _context) do
-      case instance.state.hits_remaining - 1 do
-        n when n <= 0 -> {:remove, 0}
-        n -> {:ok, 0, put_state(instance, :hits_remaining, n)}
-      end
-    end
-  end
-
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
@@ -70,28 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       :ok = Interpreter.apply_status(:player, target_id, :sc_test_passthrough)
 
       assert 100 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
-    end
-
-    test "a reducing status lowers the damage" do
-      target_id = 2
-      setup_player_mock(target_id)
-      Registry.register_module(HalfStatus)
-      :ok = Interpreter.apply_status(:player, target_id, :sc_test_half)
-
-      assert 50 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
-    end
-
-    test "a blocking status removes itself after exhausting its budget" do
-      target_id = 3
-      setup_player_mock(target_id)
-      Registry.register_module(BlockOnceStatus)
-      :ok = Interpreter.apply_status(:player, target_id, :sc_test_block_once)
-
-      assert 0 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
-      assert StatusStorage.has_status?(:player, target_id, :sc_test_block_once)
-
-      assert 0 = Interpreter.absorb_damage(:player, target_id, 100, %{dmg_type: :physical})
-      refute StatusStorage.has_status?(:player, target_id, :sc_test_block_once)
     end
 
     test "no active statuses returns the damage unchanged" do

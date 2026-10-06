@@ -24,7 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeterna
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -41,8 +40,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @type unit_type :: Unit.unit_type()
   @type remove_option :: {:owner_refresh, StatusEntry.owner_refresh()}
 
-  # Full-block statuses folded before every other absorb hook (see absorb_damage/4).
-  @absorb_first [:sc_basilica, :sc_basilica_caster]
+  # Damage stages, each status at the step the reference applies it (see
+  # absorb_damage/4). Common arithmetic runs every listed step; blocking stops at
+  # the first step that leaves no damage.
+  @common_stage [
+    :sc_aeterna,
+    :sc_raid,
+    :sc_assumptio,
+    :sc_defender,
+    :sc_fogwall,
+    :sc_energycoat,
+    :sc_steelbody
+  ]
+  @block_stage [:sc_kyrie, :sc_safetywall, :sc_pneuma, :sc_basilica, :sc_basilica_caster]
+  # NOTE: interim placement after every reduction and block. Magic Rod moves to
+  # same-source magic interception and Wink Charm to the damage notification.
+  @after_stage [:sc_magicrod, :sc_winkcharm]
 
   @doc """
   Initializes the status effect system by loading all definitions.
@@ -522,36 +535,52 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
-  Folds the target's active statuses over an incoming hit before HP is reduced.
+  Runs the target's damage statuses over one prepared logical hit, in the fixed
+  reference order, before HP is reduced. Returns the final integer damage; a
+  hit of zero damage stays zero and touches no status.
 
-  Each status' `absorb_damage` callback sees the running `damage` (already reduced
-  by statuses folded before it) inside `hit_info` and may lower it. Returning
-  `:remove` passes the hit through and expires the status; `{:remove, damage}`
-  expires it after setting the running damage. Updated state is persisted and
-  removals run the expire path. Returns the final integer damage.
+  The stages are, in order: the common damage arithmetic (Lex Aeterna, Raid,
+  Assumptio, Defending Aura, Blinding Mist, Energy Coat, Mental Strength), each
+  step running even when an earlier one left nothing; then, only for damage left
+  above zero, the blockers (Kyrie Eleison, Safety Wall, Pneuma, Basilica),
+  stopping at the first that leaves nothing. Storage order never matters.
 
-  Full-block statuses (`@absorb_first`, the Basilica sanctuary) fold before
-  every other status; a hit they block to zero never reaches the rest, so a
-  blocked hit cannot spend a Kyrie hit, drain Energy Coat SP, or consume Lex
-  Aeterna.
+  Status ticks and HP costs (`status_tick?: true`) are not attacks and skip both
+  stages. Each callback sees the running `damage` in `hit_info`; returning
+  `:remove` passes the hit through and expires the status, `{:remove, damage}`
+  expires it after setting the running damage. Lex Aeterna is consumed through
+  an exactly-once claim, so concurrent hits double at most once.
   """
   @spec absorb_damage(unit_type(), integer(), integer(), map()) :: integer()
-  def absorb_damage(unit_type, unit_id, damage, hit_info) do
-    {first, rest} =
-      unit_type
-      |> StatusStorage.get_unit_statuses(unit_id)
-      |> Enum.split_with(&(&1.type in @absorb_first))
+  def absorb_damage(_unit_type, _unit_id, 0, _hit_info), do: 0
 
-    case fold_absorb(first, unit_type, unit_id, damage, hit_info) do
-      0 when first != [] -> 0
-      remaining -> fold_absorb(rest, unit_type, unit_id, remaining, hit_info)
+  def absorb_damage(unit_type, unit_id, damage, hit_info) do
+    held = Map.new(StatusStorage.get_unit_statuses(unit_type, unit_id), &{&1.type, &1})
+    run = &dispatch_absorb(unit_type, unit_id, Map.get(held, &1), &2, hit_info)
+
+    damage
+    |> attack_stages(Map.get(hit_info, :status_tick?, false), run)
+    |> then(&Enum.reduce(@after_stage, &1, run))
+  end
+
+  @doc "Every status id with a damage stage, in stage order."
+  @spec absorb_stages() :: [atom()]
+  def absorb_stages, do: @common_stage ++ @block_stage ++ @after_stage
+
+  defp attack_stages(damage, true, _run), do: damage
+
+  defp attack_stages(damage, false, run) do
+    case Enum.reduce(@common_stage, damage, run) do
+      0 -> 0
+      remaining -> Enum.reduce_while(@block_stage, remaining, &block_step(&1, &2, run))
     end
   end
 
-  defp fold_absorb(statuses, unit_type, unit_id, damage, hit_info) do
-    Enum.reduce(statuses, damage, fn instance, acc ->
-      dispatch_absorb(unit_type, unit_id, instance, acc, hit_info)
-    end)
+  defp block_step(status_id, damage, run) do
+    case run.(status_id, damage) do
+      0 -> {:halt, 0}
+      left -> {:cont, left}
+    end
   end
 
   @doc """
@@ -1846,34 +1875,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp dispatch_absorb(
-         unit_type,
-         unit_id,
-         %{type: :sc_aeterna} = instance,
-         damage,
-         hit_info
-       )
-       when damage > 0 do
-    hit = Map.put(hit_info, :damage, damage)
-
-    if LexAeterna.qualifying_hit?(hit) do
-      case StatusStorage.take_status(unit_type, unit_id, :sc_aeterna) do
-        nil ->
-          damage
-
-        claimed_instance ->
-          dispatch_claimed_lex_aeterna(unit_type, unit_id, claimed_instance, hit)
-      end
-    else
-      dispatch_absorb_ordinary(unit_type, unit_id, instance, damage, hit_info)
-    end
-  end
+  defp dispatch_absorb(_unit_type, _unit_id, nil, damage, _hit_info), do: damage
 
   defp dispatch_absorb(unit_type, unit_id, instance, damage, hit_info) do
-    dispatch_absorb_ordinary(unit_type, unit_id, instance, damage, hit_info)
-  end
-
-  defp dispatch_absorb_ordinary(unit_type, unit_id, instance, damage, hit_info) do
     case Registry.get_definition(instance.type) do
       nil ->
         damage
@@ -1882,32 +1886,44 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
         hit_info = Map.put(hit_info, :damage, damage)
 
-        case definition.module.absorb_damage({unit_type, unit_id}, instance, hit_info, context) do
-          {:ok, new_damage, new_instance} ->
-            store_instance_changes(unit_type, unit_id, instance.type, new_instance)
-            new_damage
-
-          :remove ->
-            remove_status(unit_type, unit_id, instance.type)
-            damage
-
-          {:remove, new_damage} ->
-            remove_status(unit_type, unit_id, instance.type)
-            new_damage
-        end
+        definition.module.absorb_damage({unit_type, unit_id}, instance, hit_info, context)
+        |> settle_absorb(unit_type, unit_id, instance, damage, {definition, context})
     end
   end
 
-  defp dispatch_claimed_lex_aeterna(unit_type, unit_id, instance, hit) do
-    definition = Registry.get_definition(:sc_aeterna)
-    context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+  defp settle_absorb({:ok, new_damage, new_instance}, unit_type, unit_id, instance, _, _) do
+    store_instance_changes(unit_type, unit_id, instance.type, new_instance)
+    new_damage
+  end
 
-    {:remove, damage} =
-      definition.module.absorb_damage({unit_type, unit_id}, instance, hit, context)
-
-    definition.module.on_expire({unit_type, unit_id}, instance, context)
-    StatusDisplay.on_removed(unit_type, unit_id, :sc_aeterna, instance)
+  defp settle_absorb(:remove, unit_type, unit_id, instance, damage, _hooks) do
+    remove_status(unit_type, unit_id, instance.type)
     damage
+  end
+
+  defp settle_absorb(
+         {:remove, new_damage},
+         unit_type,
+         unit_id,
+         %{type: :sc_aeterna},
+         damage,
+         hooks
+       ) do
+    case StatusStorage.take_status(unit_type, unit_id, :sc_aeterna) do
+      nil ->
+        damage
+
+      claimed ->
+        {definition, context} = hooks
+        definition.module.on_expire({unit_type, unit_id}, claimed, context)
+        StatusDisplay.on_removed(unit_type, unit_id, :sc_aeterna, claimed)
+        new_damage
+    end
+  end
+
+  defp settle_absorb({:remove, new_damage}, unit_type, unit_id, instance, _damage, _hooks) do
+    remove_status(unit_type, unit_id, instance.type)
+    new_damage
   end
 
   defp store_instance_changes(unit_type, unit_id, status_id, new_instance) do

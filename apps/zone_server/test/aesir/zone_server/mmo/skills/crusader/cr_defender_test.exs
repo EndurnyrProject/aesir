@@ -2,19 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.CombatTestHelper
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
-  alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
-  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
-  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
-  alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -141,88 +134,44 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
     defp entry(overrides), do: struct(%StatusEntry{type: :sc_defender, state: %{}}, overrides)
 
     @tag game_mode: :renewal
-    test "lv1 reduces ranged damage taken by 20%, ASPD by 20, and floors the walk delay" do
-      assert %{ranged_damage_taken_rate: -20, aspd: -20, walk_speed_floor: 200} =
-               Defender.modifiers(entry(val1: 1), %{})
+    test "lv1 reduces ASPD by 20 and floors the walk delay" do
+      assert Defender.modifiers(entry(val1: 1), %{}) == %{aspd: -20, walk_speed_floor: 200}
     end
 
     @tag game_mode: :renewal
-    test "lv5 reduces ranged damage taken by 80% and costs no ASPD" do
-      assert %{ranged_damage_taken_rate: -80, aspd: 0} = Defender.modifiers(entry(val1: 5), %{})
+    test "lv5 costs no ASPD" do
+      assert %{aspd: 0} = Defender.modifiers(entry(val1: 5), %{})
     end
 
     @tag game_mode: :pre_renewal
     test "classic takes the ASPD loss as a rate: 20% at lv1, none at lv5" do
-      assert %{ranged_damage_taken_rate: -20, aspd_rate: -20, walk_speed_floor: 200} =
-               Defender.modifiers(entry(val1: 1), %{})
-
-      assert %{ranged_damage_taken_rate: -80, aspd_rate: 0} =
-               Defender.modifiers(entry(val1: 5), %{})
+      assert Defender.modifiers(entry(val1: 1), %{}) == %{aspd_rate: -20, walk_speed_floor: 200}
+      assert %{aspd_rate: 0} = Defender.modifiers(entry(val1: 5), %{})
 
       refute Map.has_key?(Defender.modifiers(entry(val1: 1), %{}), :aspd)
     end
   end
 
-  describe "combat: ranged damage reduction, melee/magic untouched" do
-    setup do
-      Mimic.copy(ElementModifiers)
-      Mimic.copy(SizeModifiers)
-      Mimic.copy(RaceModifiers)
-      Mimic.copy(CriticalHits)
-      Mimic.copy(ModifierCalculator)
+  describe "sc_defender absorb_damage/4" do
+    alias Aesir.ZoneServer.Mmo.StatusEntry
 
-      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
-      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-      stub(RaceModifiers, :player_race, fn -> :human end)
+    @long_weapon %{damage: 101, dmg_type: :physical, is_short: false}
 
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage, is_critical: false}
-      end)
+    test "removes 5 + 15 per level percent of a long-range weapon hit, truncating the cut" do
+      entry = %StatusEntry{type: :sc_defender, val1: 5}
+      assert {:ok, 21, ^entry} = Defender.absorb_damage({:player, 1}, entry, @long_weapon, %{})
 
-      :ok
+      entry = %StatusEntry{type: :sc_defender, val1: 1}
+      assert {:ok, 81, ^entry} = Defender.absorb_damage({:player, 1}, entry, @long_weapon, %{})
     end
 
-    defp damage_with_defender(attacker, defender, level) do
-      defender_id = defender.unit_id
-      modifiers = Defender.modifiers(%Aesir.ZoneServer.Mmo.StatusEntry{val1: level}, %{})
+    test "leaves melee weapon and long-range magic hits untouched" do
+      entry = %StatusEntry{type: :sc_defender, val1: 5}
+      melee = %{@long_weapon | is_short: true}
+      magic = %{@long_weapon | dmg_type: :magic}
 
-      stub(ModifierCalculator, :get_all_modifiers, fn
-        _, ^defender_id -> modifiers
-        _, _ -> %{}
-      end)
-
-      :rand.seed(:exsss, {11, 22, 33})
-      {:ok, result} = DamageCalculator.calculate_damage(attacker, defender)
-      result.damage
-    end
-
-    test "lv5 defender reduces long-range weapon hits by 80%" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow, flat_atk: 1_000)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
-
-      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
-      :rand.seed(:exsss, {11, 22, 33})
-      {:ok, baseline_result} = DamageCalculator.calculate_damage(attacker, defender)
-      baseline = baseline_result.damage
-
-      reduced = damage_with_defender(attacker, defender, 5)
-
-      assert baseline > 1_000
-      assert reduced == div(baseline * 20, 100)
-    end
-
-    test "lv5 defender leaves melee weapon hits untouched" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
-
-      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
-      :rand.seed(:exsss, {11, 22, 33})
-      {:ok, baseline_result} = DamageCalculator.calculate_damage(attacker, defender)
-      baseline = baseline_result.damage
-
-      melee = damage_with_defender(attacker, defender, 5)
-
-      assert melee == baseline
+      assert {:ok, 101, ^entry} = Defender.absorb_damage({:player, 1}, entry, melee, %{})
+      assert {:ok, 101, ^entry} = Defender.absorb_damage({:player, 1}, entry, magic, %{})
     end
   end
 end

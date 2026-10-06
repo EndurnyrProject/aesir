@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
   @moduledoc """
   Holy Light (AL_HOLYLIGHT). Acolyte quest skill: a single-target holy magic
-  attack at 125 percent MATK that also strips the target's Kyrie Eleison barrier
-  and its Praefatio-style variant.
+  attack at 125 percent MATK. A hit still carrying damage when it reaches the
+  target's Kyrie Eleison spends the barrier and ends it (see `Kyrie`).
 
   The 125 percent ratio carries no base-level scaling term in either mode: Holy
   Light is one of the damaging skills whose renewal ratio is flat.
@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
   fixed 200ms, no after-cast delay.
 
   Pre-renewal: a flat two-second cast with no fixed component. Element, ratio,
-  range, cost and the barrier strip are identical in both modes.
+  range, cost and the barrier ending are identical in both modes.
   """
   # NOTE: Aesir has no SC_SPIRIT/SL_PRIEST. When it exists, make the linked-caster
   # Holy Light SP cost five times normal and remove this note.
@@ -55,7 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
       {:ok, _ref} ->
         unit_type = target_unit_type(target_id)
         StatusInterpreter.remove_status(unit_type, target_id, :sc_p_alter)
-        StatusInterpreter.remove_status(unit_type, target_id, :sc_kyrie)
         {:ok, caster}
 
       {:error, _reason} = error ->

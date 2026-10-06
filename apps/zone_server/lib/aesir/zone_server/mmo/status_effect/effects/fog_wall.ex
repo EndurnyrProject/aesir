@@ -2,8 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FogWall do
   @moduledoc """
   Blinding Mist (SC_FOGWALL), held by every unit standing in the fog.
 
-  Skill hits on the holder lose a quarter of their damage, normal ranged weapon
-  hits three quarters, and normal ranged attacks against it lose 50 hit rate.
+  In the common damage stage, after Defending Aura, skill hits on the holder lose
+  a quarter of their damage (the removed amount truncated) and normal ranged
+  weapon hits keep a truncated quarter; the Dragon Breath skills are exempt.
+  Normal ranged attacks against the holder lose 50 hit rate.
   The holder's Blind does not run out while it stays in the fog. Leaving the fog
   ends a player's Blind and leaves anyone else blinded for 30 s more. Identical
   in both modes.
@@ -22,28 +24,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FogWall do
 
   @blind_hold_ms 5_000
   @blind_after_ms 30_000
+  # NPC_DRAGONBREATH, RK_DRAGONBREATH, RK_DRAGONBREATH_WATER
+  @dragon_breaths [731, 2008, 5004]
 
   @impl true
   def modifiers(_instance, _context), do: %{normal_ranged_hit_taken_flat: 50}
 
   @impl true
-  def absorb_damage(_target, instance, %{damage: damage, skill_id: skill_id} = hit, _context)
-      when is_integer(skill_id) and damage > 0 do
-    if Map.get(hit, :status_tick?, false),
-      do: {:ok, damage, instance},
-      else: {:ok, damage - div(damage * 25, 100), instance}
+  def absorb_damage(_target, instance, %{damage: damage} = hit, _context) do
+    skill_id = Map.get(hit, :skill_id)
+
+    cond do
+      skill_id in @dragon_breaths -> {:ok, damage, instance}
+      is_integer(skill_id) -> {:ok, damage - div(damage * 25, 100), instance}
+      long_weapon?(hit) -> {:ok, div(damage, 4), instance}
+      true -> {:ok, damage, instance}
+    end
   end
 
-  def absorb_damage(
-        _target,
-        instance,
-        %{damage: damage, dmg_type: :physical, is_short: false},
-        _context
-      )
-      when damage > 0,
-      do: {:ok, div(damage, 4), instance}
-
-  def absorb_damage(_target, instance, %{damage: damage}, _context), do: {:ok, damage, instance}
+  defp long_weapon?(%{dmg_type: :physical, is_short: false}), do: true
+  defp long_weapon?(_hit), do: false
 
   @impl true
   def on_tick({type, id}, instance, _context) do

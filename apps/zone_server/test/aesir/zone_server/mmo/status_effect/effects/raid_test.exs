@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RaidTest do
 
   setup :setup_ets_tables
 
+  @moduletag game_mode: :renewal
+
   test "applies for ten seconds and amplifies all incoming damage" do
     assert %{icon: :raid} = Raid.metadata()
     %{unit_id: target_id} = start_mob_session()

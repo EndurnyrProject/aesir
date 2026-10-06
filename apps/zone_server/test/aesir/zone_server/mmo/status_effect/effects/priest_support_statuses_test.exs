@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
 
     assert Interpreter.absorb_damage(:player, @player_id, 20, %{dmg_type: :magic}) == 20
     kyrie = StatusStorage.get_status(:player, @player_id, :sc_kyrie)
-    assert kyrie.state == %{shield_hp: 50, hits_remaining: 5}
+    assert kyrie.state == %{shield_hp: 30, hits_remaining: 4}
   end
 
   @tag game_mode: :renewal

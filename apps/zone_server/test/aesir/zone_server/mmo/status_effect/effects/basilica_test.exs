@@ -115,11 +115,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
   end
 
   describe "absorb order" do
-    test "a blocked hit never reaches the holder's Kyrie barrier" do
+    test "Kyrie Eleison spends each hit before Basilica blocks what it leaves" do
       :ok =
         Interpreter.apply_status(:player, @holder_id, :sc_kyrie,
           val1: 10,
-          val2: 1_000,
+          val2: 500,
           val3: 10,
           duration: 120_000,
           caster_id: @holder_id
@@ -139,8 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
                  )
       end
 
-      assert %{state: %{shield_hp: 1_000, hits_remaining: 10}} =
-               StatusStorage.get_status(:player, @holder_id, :sc_kyrie)
+      refute StatusStorage.has_status?(:player, @holder_id, :sc_kyrie)
     end
   end
 

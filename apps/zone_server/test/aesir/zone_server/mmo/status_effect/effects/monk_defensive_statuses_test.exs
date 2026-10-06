@@ -48,12 +48,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
   end
 
   @tag game_mode: :renewal
-  test "Mental Strength reduces positive incoming damage and preserves non-positive values" do
+  test "Mental Strength keeps a tenth of a hit above 10 damage and 1 of any other" do
     entry = %StatusEntry{type: :sc_steelbody, state: %{}}
 
     assert {:ok, 1, ^entry} = SteelBody.absorb_damage({:player, 1}, entry, %{damage: 9}, %{})
     assert {:ok, 10, ^entry} = SteelBody.absorb_damage({:player, 1}, entry, %{damage: 100}, %{})
-    assert {:ok, 0, ^entry} = SteelBody.absorb_damage({:player, 1}, entry, %{damage: 0}, %{})
+    assert {:ok, 1, ^entry} = SteelBody.absorb_damage({:player, 1}, entry, %{damage: 0}, %{})
   end
 
   @tag game_mode: :renewal

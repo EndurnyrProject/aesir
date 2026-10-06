@@ -116,9 +116,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @spec fury_regeneration_tick_multiplier() :: 2
   def fury_regeneration_tick_multiplier, do: 2
 
-  @spec mental_strength_damage(non_neg_integer()) :: non_neg_integer()
-  def mental_strength_damage(0), do: 0
-  def mental_strength_damage(damage), do: max(1, div(damage, 10))
+  @spec mental_strength_damage(integer()) :: pos_integer()
+  def mental_strength_damage(damage) when damage > 10, do: div(damage, 10)
+  def mental_strength_damage(_damage), do: 1
 
   @spec mental_strength_walk_speed() :: 200
   def mental_strength_walk_speed, do: 200

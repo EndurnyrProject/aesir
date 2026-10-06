@@ -7,9 +7,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Assumptio do
   formula, not here). Incoming damage is otherwise untouched, and Kyrie Eleison
   coexists with it.
 
-  Pre-renewal: every incoming hit (physical, magic, or misc) is halved, or cut
-  to two thirds on a PvP or GvG map. Status-driven damage (poison ticks, HP
-  costs) is not an attack and stays whole. No DEF is granted. Kyrie Eleison and
+  Pre-renewal: in the common damage stage, after Lex Aeterna and before
+  Defending Aura, every incoming attack (physical, magic, or misc) is halved,
+  or cut to a truncated two thirds on a PvP or GvG map. Status-driven damage
+  (poison ticks, HP costs) is not an attack and never reaches it. No DEF is
+  granted. Kyrie Eleison and
   Assumptio end each other on application.
 
   In both modes it is dispellable on players, while Dispel spares it on mobs,
@@ -40,9 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Assumptio do
   end
 
   @impl true
-  def absorb_damage(_target, instance, %{status_tick?: true, damage: damage}, _context),
-    do: {:ok, damage, instance}
-
   def absorb_damage(target, instance, %{damage: damage}, _context) do
     case GameMode.mode() do
       :renewal -> {:ok, damage, instance}

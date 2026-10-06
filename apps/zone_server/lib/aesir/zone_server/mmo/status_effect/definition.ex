@@ -275,9 +275,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc """
   Pre-damage hook that may reduce or block an incoming hit before HP is applied.
 
-  Receives the running `damage` (already reduced by statuses folded before it) in
-  `hit_info` and returns the (possibly lowered) damage plus an updated instance, or
-  `:remove` to both pass the hit through unchanged and expire the status.
+  Only statuses the interpreter places at a fixed damage stage are dispatched, in
+  that stage order (see `Interpreter.absorb_damage/4`); the registry indexes the
+  implementers, and an implementer without a stage is rejected by the catalog
+  tests. Status ticks and HP costs never reach the attack stages.
+
+  Receives the running `damage` (already changed by the stages before it) in
+  `hit_info` and returns the (possibly changed) damage plus an updated instance,
+  `{:remove, damage}` to set the damage and expire the status, or `:remove` to
+  pass the hit through unchanged and expire the status.
 
   `hit_info` describes the hit:
 
@@ -416,6 +422,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
           | :on_movement_intent
           | :on_committed_action
           | :on_timeout
+          | :absorb_damage
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
@@ -463,10 +470,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       def on_contact(_target, instance, _contact, _context), do: {:ok, instance}
 
       @impl true
-      def absorb_damage(_target, instance, %{damage: damage}, _context),
-        do: {:ok, damage, instance}
-
-      @impl true
       def dynamic_option(_instance), do: nil
 
       defoverridable modifiers: 2,
@@ -476,7 +479,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
                      resolve_duration: 2,
                      on_damage: 4,
                      on_contact: 4,
-                     absorb_damage: 4,
                      dynamic_option: 1
     end
   end
@@ -491,6 +493,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     movement_intent? = Module.defines?(env.module, {:on_movement_intent, 4})
     committed_action? = Module.defines?(env.module, {:on_committed_action, 4})
     timeout? = Module.defines?(env.module, {:on_timeout, 3})
+    absorb? = Module.defines?(env.module, {:absorb_damage, 4})
 
     dealt_damage_default =
       unless dealt_damage? do
@@ -523,6 +526,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     committed_action_default = committed_action_default(committed_action?)
 
     timeout_default = timeout_default(timeout?)
+    absorb_default = absorb_default(absorb?)
 
     capabilities =
       []
@@ -534,6 +538,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       |> maybe_add_capability(movement_intent?, :on_movement_intent)
       |> maybe_add_capability(committed_action?, :on_committed_action)
       |> maybe_add_capability(timeout?, :on_timeout)
+      |> maybe_add_capability(absorb?, :absorb_damage)
 
     quote do
       unquote(dealt_damage_default)
@@ -544,6 +549,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       unquote(movement_intent_default)
       unquote(committed_action_default)
       unquote(timeout_default)
+      unquote(absorb_default)
 
       @doc false
       def __status_capabilities__, do: unquote(capabilities)
@@ -577,6 +583,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     quote do
       @impl true
       def on_movement_intent(_target, instance, _position, _context), do: {:ok, instance}
+    end
+  end
+
+  defp absorb_default(true), do: nil
+
+  defp absorb_default(false) do
+    quote do
+      @impl true
+      def absorb_damage(_target, instance, %{damage: damage}, _context),
+        do: {:ok, damage, instance}
     end
   end
 

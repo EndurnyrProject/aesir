@@ -2,12 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SteelBody do
   @moduledoc """
   Mental Strength (SC_STEELBODY).
 
-  Reduces every positive incoming damage instance to one tenth, with a minimum
-  of one damage, while applying its fixed movement and attack-delay penalties.
-
-  Renewal divides every positive incoming damage by ten. Pre-renewal sets hard DEF
-  and MDEF to 90 instead. Both lock the walk to 200 ms per cell, cut attack speed
-  by 25%, and block skill use.
+  Renewal: at the end of the common damage stage, after Energy Coat, a hit above
+  10 damage keeps a truncated tenth and any other hit keeps exactly 1, even one
+  an earlier step left at 0. Pre-renewal sets hard DEF and MDEF to 90 instead.
+  Both lock the walk to 200 ms per cell, cut attack speed by 25%, and block
+  skill use.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_steelbody,
@@ -35,11 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SteelBody do
   end
 
   @impl true
-  def absorb_damage(_target, instance, %{damage: damage}, _context) when damage > 0 do
+  def absorb_damage(_target, instance, %{damage: damage}, _context) do
     if GameMode.mode() == :renewal,
       do: {:ok, Formulas.mental_strength_damage(damage), instance},
       else: {:ok, damage, instance}
   end
-
-  def absorb_damage(_target, instance, %{damage: damage}, _context), do: {:ok, damage, instance}
 end

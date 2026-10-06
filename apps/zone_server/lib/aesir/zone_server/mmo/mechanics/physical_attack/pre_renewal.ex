@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
       Map.get(context, :post_defense_atk, 0)
   end
 
-  @doc "Finishes one classic hit after its attribute step: cards and final reduction."
+  @doc "Finishes one classic hit after its attribute step: the attacker and target cards."
   @spec post_element(integer(), PhysicalAttack.context()) :: integer()
   def post_element(damage, context) do
     rates =
@@ -54,7 +54,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
     |> PhysicalAttack.attacker_cardfix(rates)
     |> PhysicalAttack.range_damage(context)
     |> PhysicalAttack.defender_cardfix(Map.get(context, :defender_rates), :weapon)
-    |> PhysicalAttack.finish(context)
   end
 
   defp base(parts, context) do
