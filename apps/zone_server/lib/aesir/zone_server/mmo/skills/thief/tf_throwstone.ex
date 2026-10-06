@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
     requires: [],
     display_name: "Stone Fling",
     max_level: 1,
+    ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: :misc,

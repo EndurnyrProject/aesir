@@ -175,6 +175,36 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     assert classic(penalized, context) == 124
   end
 
+  test "non-critical rate adds its truncated share before the ratio, signed only in Renewal" do
+    plain = %{parts() | status_atk: 0, flat_atk: 0, weapon_atk: 101, refine_atk: 0}
+    plain = %{plain | overrefine_atk: 0, mastery_atk: 0}
+    neutral = Map.put(neutral_context(), :defense_mode, :ignore)
+    penalty = Map.put(neutral, :non_crit_atk_rate, -15)
+    bonus = Map.merge(neutral, %{non_crit_atk_rate: 15, skill_ratio: 175})
+
+    assert renewal(plain, penalty) == 86
+    assert classic(plain, penalty) == 101
+    assert renewal(plain, bonus) == 203
+    assert classic(plain, bonus) == 203
+  end
+
+  test "critical hits, the ignore flag and the classic shield base exclude the non-critical rate" do
+    plain = %{parts() | status_atk: 0, flat_atk: 0, weapon_atk: 101, refine_atk: 0}
+    plain = %{plain | overrefine_atk: 0, mastery_atk: 0}
+    neutral = Map.put(neutral_context(), :defense_mode, :ignore)
+    rated = Map.put(neutral, :non_crit_atk_rate, 15)
+    critical = Map.put(rated, :critical?, true)
+    unrated_critical = Map.put(neutral, :critical?, true)
+    ignored = Map.put(rated, :ignore_noncrit_atk_bonus, true)
+
+    assert renewal(plain, critical) == renewal(plain, unrated_critical)
+    assert classic(plain, critical) == 101
+    assert renewal(plain, ignored) == 101
+    assert classic(plain, ignored) == 101
+    assert classic(%{plain | source: :shield}, rated) == 101
+    assert renewal(%{plain | source: :shield}, rated) == 116
+  end
+
   defp neutral_context do
     %{
       context()

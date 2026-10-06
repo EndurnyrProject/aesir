@@ -67,6 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :heal_power,
     :crit_atk_rate,
     :short_atk_rate,
+    :non_crit_atk_rate,
     :perfect_hit_rate,
     :perfect_hit,
     :splash_range,
@@ -280,6 +281,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.destination_scale(:splash_range) == 1
       assert BonusKeys.destination_scale(:hp_drain_rate) == 1
       assert BonusKeys.destination_scale(:hp_drain_percent) == 1
+    end
+  end
+
+  describe "bNonCritAtkRate" do
+    test "resolves to its own destination, excluded only for ammunition scripts" do
+      assert BonusKeys.destination("bNonCritAtkRate") == {:ok, :non_crit_atk_rate}
+      assert BonusKeys.ammunition_excluded?(:non_crit_atk_rate)
+      refute BonusKeys.ammunition_excluded?(:short_atk_rate)
+      refute BonusKeys.ammunition_excluded?(:crit_atk_rate)
     end
   end
 

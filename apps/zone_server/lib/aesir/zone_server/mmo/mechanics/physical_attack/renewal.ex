@@ -7,7 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   coordinator runs the component attribute steps (status, weapon and equipment
   of both hands, in the reference order) and doubles right-hand status ATK,
   `after_component_elements/2` derives the equipment percentage part,
-  `calculate_components/2` runs component cards, the skill ratio and defense, and
+  `calculate_components/2` runs component cards, the critical or signed
+  non-critical equipment bonus, the skill ratio and defense, and
   `finish_attack/2` runs the critical tail after any post-defense attribute step.
   """
 
@@ -133,7 +134,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     damage + div(damage * Map.get(context, :crit_atk_rate, 0), divisor)
   end
 
-  defp critical_equipment_bonus(damage, _context), do: damage
+  defp critical_equipment_bonus(damage, %{ignore_noncrit_atk_bonus: true}), do: damage
+
+  defp critical_equipment_bonus(damage, context),
+    do: damage + div(damage * Map.get(context, :non_crit_atk_rate, 0), 100)
 
   defp critical_damage(damage, %{critical?: true} = context) do
     CriticalHits.apply_critical_damage(damage, %{

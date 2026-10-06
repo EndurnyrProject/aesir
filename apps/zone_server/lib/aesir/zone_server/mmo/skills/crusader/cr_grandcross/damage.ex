@@ -3,7 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
   Grand Cross's pure hybrid recipe, including its self-damage rule.
 
   Renewal averages attack contributions and subtracts flat physical and magic
-  defense. Classic adds separately defended physical and magic contributions.
+  defense. Classic adds separately defended physical and magic contributions;
+  a player's physical base takes the positive equipment non-critical rate
+  before its DEF.
   Enemy hits receive two holy attribute steps; player self-hits receive one holy
   step and one half-rate. Inputs are already captured and rolled, and every
   attribute step runs through the coordinator's `element_step`, so an immune
@@ -17,9 +19,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage.PreRenewal, as: ClassicMagic
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage.Renewal, as: RenewalMagic
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
+  alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal, as: ClassicAttack
 
-  @typedoc "Skill-owned numeric inputs; non-player attack is not a synthetic player snapshot."
+  @typedoc """
+  Skill-owned numeric inputs; non-player attack is not a synthetic player
+  snapshot. `:non_crit_atk_rate` is the caster's equipment non-critical rate,
+  read only by the classic player physical base (absent reads 0).
+  """
   @type inputs :: %{
+          optional(:non_crit_atk_rate) => integer(),
           caster_ref: {atom(), integer()},
           target_ref: {atom(), integer()},
           level: pos_integer(),
@@ -95,8 +103,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
 
   defp classic_physical(%{physical: {:player, parts}} = inputs) do
     base =
-      parts.status_atk + parts.flat_atk + div(parts.weapon_atk * inputs.size_rate, 100) +
-        parts.overrefine_atk
+      (parts.status_atk + parts.flat_atk + div(parts.weapon_atk * inputs.size_rate, 100) +
+         parts.overrefine_atk)
+      |> ClassicAttack.non_crit_bonus(Map.get(inputs, :non_crit_atk_rate, 0))
 
     classic_defense(base, physical_defense(inputs)) + parts.refine_atk
   end

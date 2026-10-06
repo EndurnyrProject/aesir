@@ -125,6 +125,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
     assert calc(:pre_renewal, Map.put(classic, :physical_ignore_rate, 100)) == 577
   end
 
+  test "classic player physical base takes the positive non-critical rate before DEF" do
+    data = %{
+      inputs(1.0)
+      | matk: 0,
+        magic: %{inputs(1.0).magic | hard_mdef: 0, soft_mdef: 0}
+    }
+
+    assert calc(:pre_renewal, data) == 98
+    assert calc(:pre_renewal, Map.put(data, :non_crit_atk_rate, 50)) == 154
+    assert calc(:pre_renewal, Map.put(data, :non_crit_atk_rate, -50)) == 98
+
+    non_player = %{data | physical: {:non_player, 100}, caster_ref: {:mob, 1}}
+
+    assert calc(:pre_renewal, Map.put(non_player, :non_crit_atk_rate, 50)) ==
+             calc(:pre_renewal, non_player)
+
+    assert calc(:renewal, Map.put(data, :non_crit_atk_rate, 50)) == calc(:renewal, data)
+  end
+
   defp inputs(element) do
     %{
       caster_ref: {:player, 1},

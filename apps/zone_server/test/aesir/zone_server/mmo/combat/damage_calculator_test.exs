@@ -2588,6 +2588,60 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "equipment non-critical rate" do
+    setup do
+      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "reaches the live player recipe, signed in Renewal and positive-only in classic" do
+      attacker = player_with_weapon(100)
+
+      attacker = %{
+        attacker
+        | combat_stats:
+            Map.merge(attacker.combat_stats, %{
+              max_weapon_damage: true,
+              physical_attack: %{status_atk: 20, flat_atk: 15, mastery_atk: 0, str: 0, dex: 0}
+            })
+      }
+
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+
+      damage = fn rate ->
+        rated = %{attacker | equip_modifiers: %{non_crit_atk_rate: rate}}
+        {:ok, result} = DamageCalculator.calculate_damage(rated, defender, skip_crit: true)
+        result.damage
+      end
+
+      assert damage.(0) == mode_value(175, 134)
+      assert damage.(100) == mode_value(350, 269)
+      assert damage.(-50) == mode_value(88, 134)
+    end
+
+    test "a skill declaring the ignore flag skips it only in Renewal" do
+      attacker = player_with_weapon(100)
+
+      attacker = %{
+        attacker
+        | equip_modifiers: %{non_crit_atk_rate: 100},
+          combat_stats:
+            Map.merge(attacker.combat_stats, %{
+              max_weapon_damage: true,
+              physical_attack: %{status_atk: 20, flat_atk: 15, mastery_atk: 0, str: 0, dex: 0}
+            })
+      }
+
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      opts = [skill_id: 365, skip_crit: true, ignore_element: true]
+
+      assert {:ok, result} = DamageCalculator.calculate_damage(attacker, defender, opts)
+      assert result.damage == mode_value(175, 269)
+    end
+  end
+
   defp mode_value(renewal, classic),
     do: if(GameMode.mode() == :renewal, do: renewal, else: classic)
 

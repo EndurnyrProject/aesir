@@ -42959,6 +42959,10 @@
   locations:
     - garment
   name: Rekenber Tatio Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, -10)
+    ctx = bonus(ctx, :non_crit_atk_rate, (5 + (4 * div(refine(ctx), 2))))
+    ctx
   type: card
   weight: 10
 - aegis_name: aegis_300722
@@ -66767,6 +66771,20 @@
 - aegis_name: Ch01_1_Fighter
   id: 314230
   name: Frontier Spell (Fighter)
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 30)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :non_crit_atk_rate, 3)
+      ctx = if (refine(ctx) >= 9) do
+        bonus(ctx, :non_crit_atk_rate, 4)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Ch01_2_Fighter2
@@ -66787,156 +66805,279 @@
 - aegis_name: T_D_Jewel_POW_1
   id: 314243
   name: Time Dimension Jewel (Strength) 1Lv
+  on_equip: |-
+    ctx = bonus(ctx, :hit, div(refine(ctx), 2))
+    ctx = bonus(ctx, :non_crit_atk_rate, div(refine(ctx), 3))
+    ctx = bonus(ctx, :short_atk_rate, div(refine(ctx), 3))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: T_D_Jewel_POW_2
   id: 314244
   name: Time Dimension Jewel (Strength) 2Lv
+  on_equip: |-
+    ctx = bonus(ctx, :atk, div(refine(ctx), 2))
+    ctx = bonus(ctx, :hit, (3 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :non_crit_atk_rate, (2 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, :short_atk_rate, (div(refine(ctx), 3) + div(refine(ctx), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: T_D_Jewel_POW_3
   id: 314245
   name: Time Dimension Jewel (Strength) 3Lv
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (3 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :hit, (5 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :non_crit_atk_rate, (3 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, :short_atk_rate, (div(refine(ctx), 3) + div(refine(ctx), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: T_D_Jewel_CON_1
   id: 314246
   name: Lv1 Time-Space Jewel (Concentration)
+  on_equip: |-
+    ctx = bonus(ctx, :hit, div(refine(ctx), 2))
+    ctx = bonus(ctx, :non_crit_atk_rate, div(refine(ctx), 3))
+    ctx = bonus(ctx, :long_atk_rate, div(refine(ctx), 3))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: T_D_Jewel_CON_2
   id: 314247
   name: Lv2 Time-Space Jewel (Concentration)
+  on_equip: |-
+    ctx = bonus(ctx, :atk, div(refine(ctx), 2))
+    ctx = bonus(ctx, :hit, (3 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :non_crit_atk_rate, (2 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, :long_atk_rate, (div(refine(ctx), 3) + div(refine(ctx), 5)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: T_D_Jewel_CON_3
   id: 314248
   name: Lv3 Time-Space Jewel (Concentration)
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (3 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :hit, (5 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :non_crit_atk_rate, (3 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, :long_atk_rate, (div(refine(ctx), 3) + div(refine(ctx), 4)))
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_1
   id: 314249
   name: Fierce Attack Jewel 1Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 25)
+    ctx = bonus(ctx, :short_atk_rate, 1)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_2
   id: 314250
   name: Fierce Attack Jewel 2Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 40)
+    ctx = bonus(ctx, :short_atk_rate, 3)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_3
   id: 314251
   name: Fierce Attack Jewel 3Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 55)
+    ctx = bonus(ctx, :short_atk_rate, 4)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_4
   id: 314252
   name: Fierce Attack Jewel 4Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 70)
+    ctx = bonus(ctx, :short_atk_rate, 6)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_5
   id: 314253
   name: Fierce Attack Jewel 5Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 85)
+    ctx = bonus(ctx, :short_atk_rate, 7)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_6
   id: 314254
   name: Fierce Attack Jewel 6Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 100)
+    ctx = bonus(ctx, :short_atk_rate, 9)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_7
   id: 314255
   name: Fierce Attack Jewel 7Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 115)
+    ctx = bonus(ctx, :short_atk_rate, 10)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_8
   id: 314256
   name: Fierce Attack Jewel 8Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 130)
+    ctx = bonus(ctx, :short_atk_rate, 12)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_9
   id: 314257
   name: Fierce Attack Jewel 9Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 145)
+    ctx = bonus(ctx, :short_atk_rate, 13)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Fierce_A_Jewel_10
   id: 314258
   name: Fierce Attack Jewel 10Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 160)
+    ctx = bonus(ctx, :short_atk_rate, 15)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_1
   id: 314259
   name: Great Craftsman Jewel 1Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 25)
+    ctx = bonus(ctx, :long_atk_rate, 1)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_2
   id: 314260
   name: Great Craftsman Jewel 2Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 40)
+    ctx = bonus(ctx, :long_atk_rate, 3)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_3
   id: 314261
   name: Great Craftsman Jewel 3Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 55)
+    ctx = bonus(ctx, :long_atk_rate, 4)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_4
   id: 314262
   name: Great Craftsman Jewel 4Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 70)
+    ctx = bonus(ctx, :long_atk_rate, 6)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_5
   id: 314263
   name: Great Craftsman Jewel 5Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 85)
+    ctx = bonus(ctx, :long_atk_rate, 7)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_6
   id: 314264
   name: Great Craftsman Jewel 6Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 100)
+    ctx = bonus(ctx, :long_atk_rate, 9)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_7
   id: 314265
   name: Great Craftsman Jewel 7Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 115)
+    ctx = bonus(ctx, :long_atk_rate, 10)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_8
   id: 314266
   name: Great Craftsman Jewel 8Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 130)
+    ctx = bonus(ctx, :long_atk_rate, 12)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_9
   id: 314267
   name: Great Craftsman Jewel 9Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 145)
+    ctx = bonus(ctx, :long_atk_rate, 13)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: Great_C_Jewel_10
   id: 314268
   name: Great Craftsman Jewel 10Lv
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 160)
+    ctx = bonus(ctx, :long_atk_rate, 15)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: aegis_314661
   id: 314661
   name: Hit Physical Stone (Dual)
+  on_equip: |-
+    ctx = bonus(ctx, :non_crit_atk_rate, 10)
+    ctx = bonus(ctx, :perfect_hit, 5)
+    ctx = bonus(ctx, :atk_rate, 5)
+    ctx
   subtype: enchant
   type: card
 - aegis_name: aegis_314662
   id: 314662
   name: Hit Physical Stone (Upper)
+  on_equip: bonus(ctx, :non_crit_atk_rate, 3)
   subtype: enchant
   type: card
 - aegis_name: aegis_314663
   id: 314663
   name: Hit Physical Stone (Middle)
+  on_equip: bonus(ctx, :non_crit_atk_rate, 3)
   subtype: enchant
   type: card
 - aegis_name: aegis_314664
   id: 314664
   name: Hit Physical Stone (Lower)
+  on_equip: bonus(ctx, :non_crit_atk_rate, 3)
   subtype: enchant
   type: card
 - aegis_name: aegis_314665
   id: 314665
   name: Hit Physical Stone (Garment)
+  on_equip: bonus(ctx, :non_crit_atk_rate, 20)
   subtype: enchant
   type: card
 - aegis_name: aegis_314666

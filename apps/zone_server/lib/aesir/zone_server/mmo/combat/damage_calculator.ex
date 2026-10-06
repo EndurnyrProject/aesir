@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal, as: PreRenewalAttack
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal, as: RenewalAttack
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -721,8 +722,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       crate: Map.get(attacker.combat_stats, :crate, 0),
       crit_atk_rate:
         Map.get(attacker.equip_modifiers, :crit_atk_rate, 0) +
-          Map.get(attacker_modifiers, :crit_atk_rate, 0)
+          Map.get(attacker_modifiers, :crit_atk_rate, 0),
+      non_crit_atk_rate: EquipmentBonuses.non_crit_atk_rate(attacker),
+      ignore_noncrit_atk_bonus: ignore_noncrit_atk_bonus?(skill_id)
     }
+  end
+
+  # A skill absent from the catalog cannot carry the flag, so its hit stays
+  # eligible, as does an ordinary swing.
+  defp ignore_noncrit_atk_bonus?(nil), do: false
+
+  defp ignore_noncrit_atk_bonus?(skill_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> definition.ignore_noncrit_atk_bonus
+      :error -> false
+    end
   end
 
   defp player_defense_context(defender, attacker, attack_path, defense_mode, modifiers) do

@@ -101,7 +101,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @typedoc """
   The evaluation inputs: the item's refine and the wearer's levels, plus
   optional wearer learned skills, base stats, job, equipped-item multiset,
-  fixed local timestamp, and attached-character information.
+  fixed local timestamp, and attached-character information. `:ammunition`
+  marks the equipped ammunition's script, whose ammunition-excluded bonus
+  destinations do not accumulate.
   """
   @type inputs :: %{
           :refine => integer(),
@@ -112,7 +114,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:job_id) => integer(),
           optional(:equipped_item_counts) => %{pos_integer() => pos_integer()},
           optional(:local_time) => NaiveDateTime.t(),
-          optional(:character_info) => Rathena.character_info() | nil
+          optional(:character_info) => Rathena.character_info() | nil,
+          optional(:ammunition) => boolean()
         }
 
   @typedoc """
@@ -722,28 +725,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     Enum.reduce(instrs, acc, &eval_instr(&1, inputs, &2))
   end
 
-  defp eval_instr({:bonus, key, expr}, inputs, %Result{modifiers: modifiers} = result) do
+  defp eval_instr({:bonus, key, expr}, inputs, %Result{} = result) do
     value = eval_expr(expr, inputs)
 
-    modifiers =
-      cond do
-        BonusKeys.overwrite_destination?(key) ->
-          Map.put(modifiers, key, value)
-
-        BonusKeys.bitwise_destination?(key) ->
-          Map.update(modifiers, key, value, &Bitwise.bor(&1, value))
-
-        BonusKeys.max_destination?(key) ->
-          Map.update(modifiers, key, value, &max(&1, value))
-
-        BonusKeys.min_destination?(key) ->
-          Map.update(modifiers, key, min(0, value), &min(&1, value))
-
-        true ->
-          Map.update(modifiers, key, value, &(&1 + value))
-      end
-
-    %{result | modifiers: modifiers}
+    if ammunition_excluded?(key, inputs),
+      do: result,
+      else: accumulate_bonus(key, value, result)
   end
 
   defp eval_instr(
@@ -834,6 +821,32 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp eval_instr(other, _inputs, _acc), do: malformed!("instruction", other)
+
+  defp ammunition_excluded?(key, %{ammunition: true}), do: BonusKeys.ammunition_excluded?(key)
+  defp ammunition_excluded?(_key, _inputs), do: false
+
+  defp accumulate_bonus(key, value, %Result{modifiers: modifiers} = result) do
+    modifiers =
+      cond do
+        BonusKeys.overwrite_destination?(key) ->
+          Map.put(modifiers, key, value)
+
+        BonusKeys.bitwise_destination?(key) ->
+          Map.update(modifiers, key, value, &Bitwise.bor(&1, value))
+
+        BonusKeys.max_destination?(key) ->
+          Map.update(modifiers, key, value, &max(&1, value))
+
+        BonusKeys.min_destination?(key) ->
+          Map.update(modifiers, key, min(0, value), &min(&1, value))
+
+        true ->
+          Map.update(modifiers, key, value, &(&1 + value))
+      end
+
+    %{result | modifiers: modifiers}
+  end
+
   # An on-skill proc is keyed by the skill that fires it instead of by the kinds
   # of attack that do, so the two live in separate key families.
   defp auto_cast_key(%{trigger: :on_skill} = spec, level) do

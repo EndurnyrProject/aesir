@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaSacrifice do
     status: :sc_sacrifice,
     display_name: "Martyr's Reckoning",
     max_level: 5,
+    ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :self,
     sp_cost: List.duplicate(100, 5),
     after_cast_delay: [renewal: List.duplicate(0, 5), pre_renewal: List.duplicate(2_000, 5)]

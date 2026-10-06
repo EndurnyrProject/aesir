@@ -6,7 +6,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   the flat item-DB and refine bonuses, each host and in-range card `on_equip`
   program, the autobonus proc registrations, the direct statuses worn items
   desire, the card cleanup effects retained for unequip, and the resolved
-  weapon hands. Pure: it reads the item and refine catalogs and writes only to
+  weapon hands. The item worn in the ammunition slot evaluates its program with
+  the `:ammunition` input set, so ammunition-excluded destinations ignore it.
+  Pure: it reads the item and refine catalogs and writes only to
   the struct it is given.
   """
 
@@ -323,7 +325,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   defp fold_worn_item(item, worn_ordinal, fold, inputs) do
     case ItemManagement.get_item_by_id(item.nameid) do
       {:ok, %ItemDefinition{} = item_def} ->
-        item_inputs = %{inputs | refine: item.refine}
+        item_inputs = Map.merge(inputs, %{refine: item.refine, ammunition: ammunition?(item)})
         fold = %{fold | bonuses: accumulate_item_bonus(fold.bonuses, item_def, item.refine)}
 
         [{item_def, nil} | card_sources(item, item_def)]
@@ -336,6 +338,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         fold
     end
   end
+
+  defp ammunition?(item), do: :ammo in EquipLocation.bitmask_to_location_atoms(item.equip)
 
   defp apply_equipment_source(
          {%ItemDefinition{} = source_def, card_slot},

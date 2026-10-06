@@ -1865,6 +1865,36 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       refute Map.has_key?(result.modifiers.equipment, {:granted_skill, 28})
     end
 
+    test "the ammunition slot's script adds no non-critical rate while other sources still do" do
+      ammunition = %ItemDefinition{
+        id: 90_122,
+        aegis_name: "test_noncrit_arrow",
+        name: "Non-Critical Arrow",
+        on_equip: [{:bonus, :non_crit_atk_rate, 10}, {:bonus, :short_atk_rate, 5}]
+      }
+
+      armor = %ItemDefinition{
+        id: 90_123,
+        aegis_name: "test_noncrit_armor",
+        name: "Non-Critical Armor",
+        on_equip: [{:bonus, :non_crit_atk_rate, 15}]
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_122 -> {:ok, ammunition}
+        90_123 -> {:ok, armor}
+      end)
+
+      result =
+        Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [
+          equipped(90_122, 0x008000),
+          equipped(90_123, @armor_pos)
+        ])
+
+      assert result.modifiers.equipment.non_crit_atk_rate == 15
+      assert result.modifiers.equipment.short_atk_rate == 5
+    end
+
     test "Soul Staff contributes its mode-specific MATK band" do
       staff = equipped(@soul_staff, @both_hand)
       base = swordman(%Equipment{}, %{})

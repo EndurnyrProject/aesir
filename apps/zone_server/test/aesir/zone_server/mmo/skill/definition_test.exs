@@ -2,6 +2,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross
+  alias Aesir.ZoneServer.Mmo.Skills.HighWizard.HwMagiccrasher
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine
+  alias Aesir.ZoneServer.Mmo.Skills.Paladin.PaSacrifice
+  alias Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault
+  alias Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone
 
   @required_opts [
     id: 1,
@@ -394,6 +402,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
       assert_raise ArgumentError, ~r/hit_count/, fn ->
         Definition.build!(@required_opts ++ [hit_count: [1, 0, 2]], __MODULE__)
       end
+    end
+  end
+
+  describe "ignore_noncrit_atk_bonus" do
+    test "is true in Renewal and false in classic for every declaring skill" do
+      modules = [
+        CrGrandcross,
+        HtBlastmine,
+        HtClaymoretrap,
+        HtLandmine,
+        HwMagiccrasher,
+        PaSacrifice,
+        SnFalconassault,
+        TfThrowstone
+      ]
+
+      for module <- modules do
+        assert module.definition(:renewal).ignore_noncrit_atk_bonus, inspect(module)
+        refute module.definition(:pre_renewal).ignore_noncrit_atk_bonus, inspect(module)
+      end
+
+      refute Definition.build!(@required_opts, __MODULE__).ignore_noncrit_atk_bonus
     end
   end
 end

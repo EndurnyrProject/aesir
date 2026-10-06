@@ -45,6 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     largest contribution instead of summing.
   - `@min_destinations` — global fixed cast rate keeps the strongest negative
     bonus across items, starting from zero.
+  - `@ammunition_excluded_destinations` — destinations that do not accumulate
+    while the equipped ammunition's script runs.
   - `@destination_scales` — destinations whose consumer works in finer units
     than the script argument (`bFlee2` is written in percent but rolled against
     a per-mille random). The codegen scales the emitted **expression**, so a
@@ -144,6 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bhealpower2" => :heal_power2,
     "bcritatkrate" => :crit_atk_rate,
     "bshortatkrate" => :short_atk_rate,
+    "bnoncritatkrate" => :non_crit_atk_rate,
     "bperfecthitrate" => :perfect_hit_rate,
     "bperfecthitaddrate" => :perfect_hit,
     "bsplashrange" => :splash_range,
@@ -167,6 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   @max_destinations MapSet.new([:movement_speed, :perfect_hit_rate, :splash_range])
   @min_destinations MapSet.new([:fixcast_rate])
+  @ammunition_excluded_destinations MapSet.new([:non_crit_atk_rate])
 
   @destination_scales %{perfect_dodge: 10}
 
@@ -419,6 +423,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec max_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()
   def max_destination?(dest), do: MapSet.member?(@max_destinations, dest)
+
+  @doc "Whether a destination ignores contributions from the equipped ammunition's script."
+  @spec ammunition_excluded?(destination() | tuple()) :: boolean()
+  def ammunition_excluded?(dest), do: MapSet.member?(@ammunition_excluded_destinations, dest)
 
   @doc "Whether the cast-rate destination retains its most reducing item bonus."
   @spec min_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()

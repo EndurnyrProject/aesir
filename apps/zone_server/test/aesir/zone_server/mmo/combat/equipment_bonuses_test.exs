@@ -645,6 +645,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
+  describe "non_crit_atk_rate/1" do
+    test "reads the signed equipment rate for any weapon and zero for mobs" do
+      for weapon_type <- [:bow, :sword] do
+        attacker =
+          [weapon_type: weapon_type]
+          |> CombatTestHelper.create_player_combatant()
+          |> with_equip_modifiers(%{non_crit_atk_rate: -15})
+
+        assert EquipmentBonuses.non_crit_atk_rate(attacker) == -15
+      end
+
+      assert EquipmentBonuses.non_crit_atk_rate(CombatTestHelper.create_mob_combatant()) == 0
+    end
+  end
+
   describe "short_atk_rate/1" do
     test "reads :short_atk_rate when the attacker wields a melee weapon" do
       attacker =

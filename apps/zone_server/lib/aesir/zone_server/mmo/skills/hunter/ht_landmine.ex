@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
     requires: [],
     display_name: "Land Mine",
     max_level: 5,
+    ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :ground,
     damage_type: :damage,
     damage_kind: :misc,

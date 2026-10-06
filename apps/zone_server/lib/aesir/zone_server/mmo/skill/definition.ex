@@ -23,6 +23,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   IgnoreStatus and IgnoreItemBonus: the skill's cast time ignores status
   reductions, or equipment cast-rate bonuses.
 
+  `ignore_noncrit_atk_bonus` mirrors the source's IgnoreNonCritAtkBonus flag:
+  the skill's physical hits never receive the equipment non-critical damage
+  rate. It is mode-keyable.
+
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
   declared range for a player caster. It is mode-invariant.
@@ -115,6 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             ignore_dex: false,
             ignore_status_cast: false,
             ignore_item_cast: false,
+            ignore_noncrit_atk_bonus: false,
             after_cast_delay: [],
             cooldown: [],
             damage_kind: :weapon,
@@ -158,6 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           ignore_dex: boolean(),
           ignore_status_cast: boolean(),
           ignore_item_cast: boolean(),
+          ignore_noncrit_atk_bonus: boolean(),
           after_cast_delay: [non_neg_integer()],
           cooldown: [non_neg_integer()],
           damage_kind: damage_kind(),
@@ -209,6 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_dex: :boolean,
     ignore_status_cast: :boolean,
     ignore_item_cast: :boolean,
+    ignore_noncrit_atk_bonus: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
@@ -244,6 +251,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_dex: false,
     ignore_status_cast: false,
     ignore_item_cast: false,
+    ignore_noncrit_atk_bonus: false,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
@@ -277,6 +285,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :cast_time,
     :fixed_cast_time,
     :ignore_item_cast,
+    :ignore_noncrit_atk_bonus,
     :after_cast_delay,
     :cooldown,
     :item_cost,

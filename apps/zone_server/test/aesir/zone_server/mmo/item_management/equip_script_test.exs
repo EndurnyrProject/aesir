@@ -781,6 +781,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert result == %EquipScript.Result{modifiers: %{str: 2}, autobonuses: [], effects: []}
     end
+
+    test "an ammunition script drops only the non-critical rate" do
+      program =
+        EquipScript.parse!("""
+        ctx = bonus(ctx, :non_crit_atk_rate, 15)
+        ctx = bonus(ctx, :short_atk_rate, 10)
+        ctx
+        """)
+
+      assert EquipScript.eval(program, on(0)) == %{non_crit_atk_rate: 15, short_atk_rate: 10}
+
+      assert EquipScript.eval(program, Map.put(on(0), :ammunition, true)) ==
+               %{short_atk_rate: 10}
+
+      assert EquipScript.eval(program, Map.put(on(0), :ammunition, false)) ==
+               %{non_crit_atk_rate: 15, short_atk_rate: 10}
+    end
   end
 
   describe "eval/2" do

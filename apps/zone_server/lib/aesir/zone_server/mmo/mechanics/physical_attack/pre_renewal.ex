@@ -3,8 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
   Classic player weapon bounds and post-defense refine/mastery arithmetic.
 
   A hit is split at its single post-defense attribute step, which the
-  coordinator owns: `pre_element/2` runs the base, skill ratio, defense, refine
-  and mastery stages; `post_element/2` runs the cards and final reduction.
+  coordinator owns: `pre_element/2` runs the base, its critical or positive
+  non-critical equipment bonus, skill ratio, defense, refine and mastery stages;
+  `post_element/2` runs the cards and final reduction. The non-critical bonus
+  belongs to the weapon base only, never to the shield replacement.
   """
 
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense.PreRenewal, as: Defense
@@ -22,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
   @doc "Calculates one classic hit up to its post-defense attribute step."
   @spec pre_element(PhysicalAttack.parts(), PhysicalAttack.context()) :: integer()
   def pre_element(parts, context) do
-    base = critical_bonus(base(parts, context), context)
+    base = attack_bonus(base(parts, context), parts, context)
     base = if parts.source == :shield, do: defend(base, context), else: base
 
     skilled =
@@ -63,11 +65,25 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
       Map.get(context, :flat_bonus, 0)
   end
 
-  defp critical_bonus(damage, %{critical?: true} = context) do
+  defp attack_bonus(damage, _parts, %{critical?: true} = context) do
     PhysicalAttack.rate(damage, max(Map.get(context, :crit_atk_rate, 0), 0))
   end
 
-  defp critical_bonus(damage, _context), do: damage
+  defp attack_bonus(damage, %{source: :weapon}, context) do
+    if Map.get(context, :ignore_noncrit_atk_bonus, false),
+      do: damage,
+      else: non_crit_bonus(damage, Map.get(context, :non_crit_atk_rate, 0))
+  end
+
+  defp attack_bonus(damage, _parts, _context), do: damage
+
+  @doc """
+  Adds a positive non-critical equipment rate's truncated share; a zero or
+  negative rate leaves the damage unchanged.
+  """
+  @spec non_crit_bonus(integer(), integer()) :: integer()
+  def non_crit_bonus(damage, rate) when rate > 0, do: damage + div(damage * rate, 100)
+  def non_crit_bonus(damage, _rate), do: damage
 
   defp defend(damage, %{critical?: true}), do: damage
   defp defend(damage, context), do: PhysicalAttack.apply_defense(damage, context, Defense)

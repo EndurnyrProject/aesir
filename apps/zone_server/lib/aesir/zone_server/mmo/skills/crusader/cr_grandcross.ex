@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     requires: [],
     display_name: "Grand Cross",
     max_level: 10,
+    ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :self,
     damage_type: :damage,
     damage_kind: :magic,
@@ -171,7 +172,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
         size_rate: size_rate(caster, target),
         element_step:
           &DamageShared.apply_element_step(&1, &2, caster, target, attacker_modifiers: modifiers),
-        equipment_atk_rate: Map.get(caster.equip_modifiers, :atk_rate, 0)
+        equipment_atk_rate: Map.get(caster.equip_modifiers, :atk_rate, 0),
+        non_crit_atk_rate: EquipmentBonuses.non_crit_atk_rate(caster)
       }
 
       amount = Damage.calculate(GameMode.mode(), inputs)

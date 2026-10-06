@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwMagiccrasher do
     requires: [],
     display_name: "Stave Crasher",
     max_level: 1,
+    ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: :weapon,

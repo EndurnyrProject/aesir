@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
     name: :sn_falconassault,
     display_name: "Falcon Assault",
     max_level: 5,
+    ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: :misc,

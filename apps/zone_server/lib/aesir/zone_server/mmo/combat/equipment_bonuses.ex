@@ -221,6 +221,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
+  Signed percent bonus the attacker's equipment grants to non-critical physical
+  damage (`bNonCritAtkRate`). Each mode's physical recipe decides where, and
+  whether, a negative value applies. Mobs carry no equipment and read zero.
+  """
+  @spec non_crit_atk_rate(Combatant.t()) :: rate()
+  def non_crit_atk_rate(%Combatant{} = attacker),
+    do: Map.get(attacker.equip_modifiers, :non_crit_atk_rate, 0)
+
+  @doc """
   Percent damage bonus the attacker's equipment grants to close-range physical
   attacks (`bShortAtkRate`).
 
