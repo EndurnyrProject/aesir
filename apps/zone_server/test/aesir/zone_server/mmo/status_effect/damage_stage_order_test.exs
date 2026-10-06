@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DamageStageOrderTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
@@ -31,6 +32,44 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DamageStageOrderTest do
             do: module.id()
 
       assert unstaged == []
+      refute :sc_magicrod in staged
+    end
+
+    test "direct magic is missed after common reductions, while unit-origin magic passes" do
+      pid = player(sp: 10, max_sp: 100)
+      apply!(:sc_magicrod, val1: 5, val2: 100)
+      apply!(:sc_energycoat)
+      test_pid = self()
+
+      stub(PlayerSession, :restore_sp, fn ^pid, amount ->
+        send(test_pid, {:sp_refund, amount})
+        :ok
+      end)
+
+      hit = %{
+        dmg_type: :magic,
+        is_short: false,
+        skill_id: 19,
+        skill_level: 10,
+        from_caster?: true
+      }
+
+      {damage, info} = DamageApplication.prepare_unit_damage(:player, @target, 100, hit, 111)
+      assert damage == 0
+      assert info.magic_rod_miss?
+      assert_received {:sp_refund, 30}
+
+      {damage, info} =
+        DamageApplication.prepare_unit_damage(
+          :player,
+          @target,
+          100,
+          %{hit | from_caster?: false},
+          111
+        )
+
+      assert damage > 0
+      refute info[:magic_rod_miss?]
     end
   end
 

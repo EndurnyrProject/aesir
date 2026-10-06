@@ -398,7 +398,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
     delivery = apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
 
-    if delivery == :ok do
+    if delivery == :ok and damage > 0 and hit_info[:magic_rod_miss?] != true do
       dispatch_equip_autobonuses(caster, target, magic_attack_flag())
     end
 
@@ -786,13 +786,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     end
   end
 
-  # The `hit_info` a defending status' `absorb_damage/4` hook receives. `skill_id`
-  # / `skill_level` identify the incoming skill (nil for a basic attack), and
-  # `from_caster?` marks a hit whose damage source is the caster themselves —
-  # rAthena's `src == dsrc`. It is true for a direct cast including its splash,
-  # and false for a placed skill unit's tick or a status DoT. Statuses that must
-  # not over-absorb (Magic Rod) match on it positively, so a caller that cannot
-  # assert the origin should leave it false.
+  # The hit's skill and origin are retained through preparation. A direct cast,
+  # including its splash, originates at the caster; a placed skill unit or status
+  # tick does not. Unknown origins remain false so they cannot be intercepted.
   defp magic_hit_info(element, opts) do
     %{
       dmg_type: :magic,
@@ -978,12 +974,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     hit_info = Map.put(hit_info, :coma?, coma_decision == true)
     source = damage_source(attacker, target_type)
 
-    if damage > 1 do
-      EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
-    end
-
     {damage, hit_info} =
       prepare_magic_hit(target_type, target_id, damage, hit_info, source)
+
+    hit_info =
+      if hit_info[:magic_rod_miss?], do: Map.put(hit_info, :coma?, false), else: hit_info
+
+    if damage > 1, do: EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
 
     packet =
       PacketFactory.build_splash_damage_packet(
@@ -1008,7 +1005,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         source
       )
 
-    if delivery == :ok do
+    if delivery == :ok and hit_info[:magic_rod_miss?] != true do
       dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
     end
 
@@ -1129,10 +1126,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     source = damage_source(attacker, target_type)
     coma_decision = decide_coma(attacker, target, damages)
     hit_info = Map.put(hit_info, :coma?, coma_decision == true)
-    apply_vanish_hits(attacker, target, target_pid, damages)
 
     [{damage, prepared_hit_info}] =
       Enum.map(damages, &prepare_magic_hit(target_type, target_id, &1, hit_info, source))
+
+    prepared_hit_info =
+      if prepared_hit_info[:magic_rod_miss?],
+        do: Map.put(prepared_hit_info, :coma?, false),
+        else: prepared_hit_info
+
+    apply_vanish_hits(attacker, target, target_pid, [damage])
 
     packet =
       PacketFactory.build_splash_damage_packet(
@@ -1168,7 +1171,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       opts
     )
 
-    if delivery == :ok do
+    if delivery == :ok and prepared_hit_info[:magic_rod_miss?] != true do
       dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
     end
 

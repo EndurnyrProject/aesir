@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRod
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -53,9 +54,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     :sc_steelbody
   ]
   @block_stage [:sc_kyrie, :sc_safetywall, :sc_pneuma, :sc_basilica, :sc_basilica_caster]
-  # NOTE: interim placement after every reduction and block. Magic Rod moves to
-  # same-source magic interception and Wink Charm to the damage notification.
-  @after_stage [:sc_magicrod, :sc_winkcharm]
+  # NOTE: Wink Charm moves to the damage notification in Task 8.
+  @after_stage [:sc_winkcharm]
 
   @doc """
   Initializes the status effect system by loading all definitions.
@@ -561,6 +561,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     damage
     |> attack_stages(Map.get(hit_info, :status_tick?, false), run)
     |> then(&Enum.reduce(@after_stage, &1, run))
+  end
+
+  @doc "Intercepts a same-source magic skill hit after ordinary reductions and blockers."
+  @spec intercept_magic(unit_type(), integer(), map()) :: :miss | :continue
+  def intercept_magic(unit_type, unit_id, hit_info) do
+    case StatusStorage.get_status(unit_type, unit_id, :sc_magicrod) do
+      nil -> :continue
+      instance -> MagicRod.intercept({unit_type, unit_id}, instance, hit_info)
+    end
   end
 
   @doc "Every status id with a damage stage, in stage order."

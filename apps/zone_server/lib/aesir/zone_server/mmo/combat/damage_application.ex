@@ -89,6 +89,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       |> reduce_magic_damage(target_type, target_id, hit_info)
       |> then(&absorb_unit_damage(target_type, target_id, &1, hit_info, attacker_id))
 
+    {settled, hit_info} = intercept_magic(target_type, target_id, settled, hit_info)
+
     case reroute_to_crusader(target_type, target_id, settled, hit_info, attacker_id) do
       {:rerouted, _delivery} -> {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
       :not_rerouted -> {settled, Map.put(hit_info, :pre_delivery_prepared?, true)}
@@ -105,6 +107,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
        ) do
     {absorbed, prepared_hit} =
       absorb_ground_hit(target_type, target_id, damage, hit_info, attacker, target)
+
+    {absorbed, prepared_hit} =
+      if Map.has_key?(prepared_hit, :settlement_error),
+        do: {absorbed, prepared_hit},
+        else: intercept_magic(target_type, target_id, absorbed, prepared_hit)
 
     settled = apply_ground_rate(absorbed, Rules.damage_rate(hit_info))
     finish_ground_hit(target_type, target_id, settled, prepared_hit, attacker)
@@ -140,6 +147,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     case reroute_to_crusader(target_type, target_id, settled, prepared_hit, attacker) do
       {:rerouted, _delivery} -> {0, prepared_hit}
       :not_rerouted -> {settled, prepared_hit}
+    end
+  end
+
+  defp intercept_magic(target_type, target_id, damage, hit_info) do
+    case StatusInterpreter.intercept_magic(target_type, target_id, hit_info) do
+      :miss -> {0, Map.put(hit_info, :magic_rod_miss?, true)}
+      :continue -> {damage, hit_info}
     end
   end
 
