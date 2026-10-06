@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Integration.DancerEncoreIntegrationTest do
     wait_for_act_ready(dancer.pid)
     before_sp = player_sp(dancer.pid)
     cast(dancer, @encore, 1)
-    assert wait_for_cast(dancer.pid, @encore)
+    assert wait_for_cast(dancer.pid, @gypsy_kiss)
     assert eventually(fn -> get_player_state(dancer.pid).casting == nil end)
 
     replayed = get_player_state(dancer.pid)

@@ -277,6 +277,7 @@ message Envelope {
     WaitingRoomRoleChanged waiting_room_role_changed = 217;  // s2c zone world
     // 218: a live skill-unit group moved with its caster
     SkillUnitMove skill_unit_move = 218;  // s2c zone world
+    ItemSkillReady item_skill_ready = 219;  // s2c zone gameplay
   }
 }
 
@@ -869,6 +870,21 @@ message Knockback {
 }
 
 // Client -> server, cast a skill at a target (replaces RO CZ_USE_SKILL 0x0113).
+// Server -> client, an item has granted one pending skill cast. The client
+// selects a target and sends SkillCast or GroundSkillCast with this id and level;
+// SELF skills send SkillCast with the owner's unit id. This is not a learned
+// skill and must not be added to the skill window.
+message ItemSkillReady {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  enum TargetKind {
+    SELF = 0;
+    UNIT = 1;
+    GROUND = 2;
+  }
+  TargetKind target_kind = 3;
+}
+
 message SkillCast {
   uint32 skill_id = 1;
   uint32 level = 2;
@@ -935,6 +951,9 @@ message SkillDamage {
   uint32 type = 8;
   uint32 src_delay = 9;
   uint32 dst_delay = 10;
+  // True for a missed skill hit (including Magic Rod interception), not merely
+  // for any zero-damage result. Render a miss instead of a numeric zero.
+  bool missed = 11;
 }
 
 // Server -> client, no-damage skill effect (replaces RO ZC_USE_SKILL 0x011A).

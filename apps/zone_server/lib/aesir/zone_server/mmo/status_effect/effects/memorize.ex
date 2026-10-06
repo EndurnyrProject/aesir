@@ -1,15 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Memorize do
   @moduledoc """
-  Foresight (SC_MEMORIZE). Halves the variable cast time of the holder's casts
-  of skills they have learned, for five casts. A charge is spent at the start
-  of every such cast, instant ones included and even when the cast time is not
-  reduced; the fifth ends the status. Item-granted and automatic casts never
-  start a cast here and are not counted.
-
-  Renewal adds the reduction to the other variable-cast reductions; a skill that
-  ignores status cast effects (Foresight itself) is neither reduced nor counted.
-  Pre-renewal applies it as its own multiplier and counts every learned cast,
-  Foresight included, unless the caster's DEX already makes the cast instant.
+  Foresight (SC_MEMORIZE) grants five eligible timing computations. Classic
+  consumes a charge during early timing, even for a failed cast attempt or a
+  skill that ignores status cast reductions, unless DEX has already made the
+  cast instant. Renewal consumes it during late timing, after validation and
+  only when status cast reductions apply. The fifth computation receives the
+  reduction before the status ends. Effective learned, equipment-granted, and
+  guild skills count; pure preflights and restricted proc casts do not.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_memorize,
@@ -21,50 +18,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Memorize do
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
-  alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
-  alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @charges 5
-  @dex_scale 150
 
   @impl true
   def on_apply(_target, instance, _context) do
-    {:ok, instance |> put_state(:cast_time_reduction, 50) |> put_state(:charges, @charges)}
+    {:ok,
+     %{instance | val2: @charges}
+     |> put_state(:cast_time_reduction, 50)
+     |> put_state(:charges, @charges)}
   end
 
-  @impl true
-  def on_committed_action({type, id}, instance, {:skill, skill_id}, _context) do
-    with {:ok, stats} <- caster_stats(type, id),
-         true <- Learned.learned_level(stats.progression.learned_skills, skill_id) > 0,
-         {:ok, definition} <- Catalog.by_id(skill_id),
-         true <- counted?(definition, stats) do
-      spend(instance)
-    else
-      _not_counted -> {:ok, instance}
-    end
-  end
+  @doc "Spends one timing charge and ends Foresight after the fifth."
+  @spec consume_charge(atom(), integer()) :: :ok
+  def consume_charge(type, id) do
+    case StatusStorage.get_status(type, id, :sc_memorize) do
+      %{state: %{charges: charges}} when charges > 1 ->
+        StatusStorage.update_status(type, id, :sc_memorize, fn entry ->
+          %{entry | val2: entry.val2 - 1} |> put_state(:charges, entry.state.charges - 1)
+        end)
 
-  def on_committed_action(_target, instance, _action, _context), do: {:ok, instance}
+      %{state: %{charges: 1}} ->
+        remove_status({type, id}, :sc_memorize)
 
-  defp spend(%{state: %{charges: charges}}) when charges <= 1, do: :remove
-  defp spend(instance), do: {:ok, put_state(instance, :charges, instance.state.charges - 1)}
-
-  defp counted?(definition, stats) do
-    case GameMode.mode() do
-      :renewal -> not definition.ignore_status_cast
-      :pre_renewal -> definition.ignore_dex or stats.base_stats.dex < @dex_scale
-    end
-  end
-
-  defp caster_stats(type, id) do
-    case UnitRegistry.get_unit(type, id) do
-      {:ok, {_module, %{stats: %{progression: %{learned_skills: _}} = stats}, _pid}} ->
-        {:ok, stats}
-
-      _unavailable ->
-        :error
+      _missing ->
+        :ok
     end
   end
 end

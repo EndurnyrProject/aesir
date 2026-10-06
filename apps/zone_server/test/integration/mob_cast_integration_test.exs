@@ -494,6 +494,9 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     end
 
     test "a normal-flee target takes damage and sc_stun applies on connect" do
+      Mimic.copy(Resistance)
+      stub(Resistance, :roll_success, fn success_rate -> success_rate > 0 end)
+
       player =
         start_player_session(id: 9_812, name: "Rooted", base_level: 1, agi: 1, luk: 0, vit: 0)
 

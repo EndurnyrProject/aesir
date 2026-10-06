@@ -76,6 +76,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
       assert {:ok, ^expected} = Transpiler.transpile(script)
     end
 
+    test "the optional itemskill requirement flag survives transpilation" do
+      assert {:ok, "itemskill(ctx, 19, level: 1, keep_requirement: true)"} =
+               Transpiler.transpile(~s(itemskill "MG_FIREBOLT",1,true;))
+
+      assert {:ok, "itemskill(ctx, 19, level: 1, keep_requirement: true)"} =
+               Transpiler.transpile(~s(itemskill "MG_FIREBOLT",1,2;))
+
+      assert {:ok, "itemskill(ctx, 19, level: 1, keep_requirement: false)"} =
+               Transpiler.transpile(~s(itemskill "MG_FIREBOLT",1,0;))
+    end
+
     test "an SKF food passes a negative val1 through unchanged" do
       assert {:ok, "sc_start(ctx, :sc_skf_cast, 600000, -5)"} =
                Transpiler.transpile("sc_start SC_SKF_CAST,600000,-5;")

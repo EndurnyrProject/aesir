@@ -44,7 +44,10 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   An effect an item script cannot apply to `game_state` itself and stages for the
   owning player session to apply after the script finishes, in script order.
   """
-  @type session_effect :: {:falcon, boolean()} | {:homunculus, homunculus_effect()}
+  @type session_effect ::
+          {:falcon, boolean()}
+          | {:homunculus, homunculus_effect()}
+          | {:item_skill, integer(), pos_integer(), boolean()}
 
   @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]
   defstruct char_id: nil,

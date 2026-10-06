@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -65,10 +66,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # `drive_cast/4` (and therefore ahead of `ensure_idle_for_cast/1`, which would
   # reject it) and never takes the ordinary cast path.
   @cast_cancel_id 275
+  @encore_id 305
   @combo_followup_ids [271, 272, 273, 371, 372]
 
   @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer() | tuple()) ::
           {:noreply, SessionState.t()}
+  def handle_use_skill(
+        %{pending_item_skill: %{skill_id: skill_id, level: level}} = state,
+        skill_id,
+        level,
+        target_id
+      ) do
+    target = resolve_target(state.game_state, target_id)
+    drive_item_cast(state, skill_id, level, target)
+  end
+
   def handle_use_skill(state, skill_id, level, target_id) do
     state = maybe_cancel_combo(state, skill_id, target_id)
     dispatch_use_skill(state, skill_id, level, target_id)
@@ -112,6 +124,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         broadcast_skill_use(new_state.game_state, @cast_cancel_id, level, :self)
         {:noreply, new_state}
 
+      {:error, reason, refreshed} ->
+        {:noreply, commit_failed_attempt(state, game_state, refreshed, @cast_cancel_id, reason)}
+
       {:error, reason} ->
         report_cast_failure(@cast_cancel_id, game_state.character_id, reason)
         {:noreply, state}
@@ -139,6 +154,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   @spec handle_use_skill_ground(SessionState.t(), integer(), pos_integer(), integer(), integer()) ::
           {:noreply, SessionState.t()}
+  def handle_use_skill_ground(
+        %{pending_item_skill: %{skill_id: skill_id, level: level}} = state,
+        skill_id,
+        level,
+        x,
+        y
+      ) do
+    drive_item_cast(state, skill_id, level, {:ground, x, y})
+  end
+
   def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
     target = {:ground, x, y}
     locked = game_state.combat_target_id
@@ -235,7 +260,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp complete_preflighted_cast(state, game_state, ctx, expected_id) do
-    case Interpreter.complete_cast(game_state, ctx.skill_id, ctx.skill_level, ctx.target) do
+    result =
+      case Map.get(ctx, :origin) do
+        :item ->
+          Interpreter.complete_item_cast(
+            game_state,
+            ctx.skill_id,
+            ctx.skill_level,
+            ctx.target,
+            Map.get(ctx, :keep_requirement?, false)
+          )
+
+        :encore ->
+          Interpreter.complete_encore_replay(game_state, ctx.memory, ctx.target)
+
+        _ ->
+          Interpreter.complete_cast(game_state, ctx.skill_id, ctx.skill_level, ctx.target)
+      end
+
+    case result do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
         broadcast_skill_use(new_state.game_state, ctx.skill_id, ctx.skill_level, ctx.target)
@@ -405,15 +448,121 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  defp drive_item_cast(%{game_state: game_state} = state, skill_id, level, target) do
+    locked = game_state.combat_target_id
+
+    with {:ok, state} <- cast_gate(state, skill_id),
+         {:ok, state} <- ensure_idle_for_cast(state) do
+      begin_ready_item_cast(state, skill_id, level, target, locked)
+    else
+      {:error, reason} -> reject_cast_gate(state, skill_id, reason)
+      :busy -> reject_cast_gate(state, skill_id, :busy)
+    end
+  end
+
+  defp begin_ready_item_cast(state, skill_id, level, target, locked) do
+    game_state = state.game_state
+    on_ready = &consume_pending_item(state, &1)
+    keep? = Map.get(state.pending_item_skill, :keep_requirement?, false)
+
+    case Interpreter.begin_item_cast(game_state, skill_id, level, target, on_ready, keep?) do
+      {:error, reason, refreshed, :before_start} ->
+        state = if reason == :missing_item, do: %{state | pending_item_skill: nil}, else: state
+
+        handle_begin_result(
+          state,
+          game_state,
+          skill_id,
+          level,
+          target,
+          locked,
+          {:error, reason, refreshed}
+        )
+
+      {:error, :out_of_range, refreshed, :after_start} ->
+        pending = Map.take(state.pending_item_skill, [:skill_id, :level, :keep_requirement?])
+
+        handle_begin_result(
+          %{state | pending_item_skill: pending},
+          game_state,
+          skill_id,
+          level,
+          target,
+          locked,
+          {:error, :out_of_range, refreshed}
+        )
+
+      {:error, reason, refreshed, :after_start} ->
+        handle_begin_result(
+          %{state | pending_item_skill: nil},
+          game_state,
+          skill_id,
+          level,
+          target,
+          locked,
+          {:error, reason, refreshed}
+        )
+
+      {:error, reason} ->
+        handle_begin_result(
+          state,
+          game_state,
+          skill_id,
+          level,
+          target,
+          locked,
+          {:error, reason}
+        )
+
+      result ->
+        handle_begin_result(
+          %{state | pending_item_skill: nil},
+          game_state,
+          skill_id,
+          level,
+          target,
+          locked,
+          result
+        )
+    end
+  end
+
+  defp consume_pending_item(
+         %{pending_item_skill: %{item_index: index, item_nameid: nameid}} = state,
+         caster
+       ) do
+    case PlayerState.get_by_index(caster.inventory, index) do
+      %{nameid: ^nameid, amount: amount} when amount > 0 ->
+        with {:ok, inventory, _change} <-
+               InventoryOps.remove(caster.character_id, caster.inventory, index, 1) do
+          refreshed = %{caster | inventory: inventory}
+          StateCommit.commit(state, refreshed)
+          MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, 1))
+          PlayerEvents.inventory_changed(caster.character_id)
+          {:ok, refreshed}
+        end
+
+      _missing ->
+        {:error, :missing_item}
+    end
+  end
+
+  defp consume_pending_item(_state, caster), do: {:ok, caster}
+
   defp begin_preflighted_cast(state, game_state, skill_id, level, target, locked) do
-    case Interpreter.begin_cast(game_state, skill_id, level, target) do
+    result = Interpreter.begin_cast(game_state, skill_id, level, target)
+    handle_begin_result(state, game_state, skill_id, level, target, locked, result)
+  end
+
+  defp handle_begin_result(state, game_state, skill_id, level, target, locked, result) do
+    case result do
       {:instant, new_game_state} ->
         sync_cast_start_stats(state, game_state, new_game_state)
         new_state = commit_cast(state, new_game_state, skill_id, level)
         # Keep the departure snapshot for this visual: commit_cast/5 may drain a
         # staged warp and move the player before the committed state returns.
         broadcast_skill_use(new_game_state, skill_id, level, target)
-        {:noreply, maybe_resume_lock(new_state, locked)}
+        maybe_replay_encore(new_state, skill_id, locked)
 
       {:instant, new_game_state, effects} ->
         sync_cast_start_stats(state, game_state, new_game_state)
@@ -424,7 +573,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           |> settle_local_effects(effects)
 
         broadcast_skill_use(new_game_state, skill_id, level, target)
-        {:noreply, maybe_resume_lock(new_state, locked)}
+        maybe_replay_encore(new_state, skill_id, locked)
 
       {:deferred, new_game_state, descriptor} ->
         sync_cast_start_stats(state, game_state, new_game_state)
@@ -434,7 +583,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       {:casting, new_game_state, info} ->
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
+        sync_cast_start_stats(state, game_state, new_game_state)
         schedule_cast(%{state | game_state: new_game_state}, info, locked)
+
+      {:error, :out_of_range, refreshed} ->
+        committed = commit_failed_attempt(state, game_state, refreshed, skill_id, :out_of_range)
+        initiate_skill_movement(committed, skill_id, level, target, locked)
+
+      {:error, reason, refreshed} ->
+        {:noreply, commit_failed_attempt(state, game_state, refreshed, skill_id, reason)}
 
       # Out of range: walk into range instead of fizzling (mirrors attack-move).
       # The approach re-dispatches this same cast on arrival, so a moving target
@@ -447,6 +604,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         report_cast_failure(skill_id, game_state.character_id, reason)
         {:noreply, state}
     end
+  end
+
+  defp maybe_replay_encore(
+         %{game_state: %{last_song: memory} = caster} = state,
+         @encore_id,
+         locked
+       )
+       when is_map(memory) do
+    result = Interpreter.begin_encore_replay(caster, memory, :self)
+    handle_begin_result(state, caster, memory.skill_id, memory.level, :self, locked, result)
+  end
+
+  defp maybe_replay_encore(state, _skill_id, locked),
+    do: {:noreply, maybe_resume_lock(state, locked)}
+
+  defp commit_failed_attempt(state, before, refreshed, skill_id, reason) do
+    sync_cast_start_stats(state, before, refreshed)
+    committed = StateCommit.commit(state, refreshed)
+
+    if reason != :out_of_range,
+      do: report_cast_failure(skill_id, refreshed.character_id, reason)
+
+    committed
   end
 
   # An instant cast's start effects ran inside the Interpreter; push any stat
@@ -709,10 +889,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       {:ok, maybe_resume_lock(settled, locked)}
     else
-      :busy -> {:error, :busy, state}
-      {:error, reason, _unchanged} -> {:error, reason, state}
-      {:error, reason} -> {:error, reason, state}
-      _unexpected -> {:error, :invalid_lifecycle_skill, state}
+      :busy ->
+        {:error, :busy, state}
+
+      {:error, reason, refreshed} ->
+        {:error, reason, StateCommit.commit(state, refreshed)}
+
+      {:error, reason} ->
+        {:error, reason, state}
+
+      _unexpected ->
+        {:error, :invalid_lifecycle_skill, state}
     end
   end
 
@@ -1116,7 +1303,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       token: token,
       interruptible: true,
       combat_target_id: locked,
-      homunculus_id: lifecycle_homunculus_id(state, info.skill_id, info.level)
+      homunculus_id: lifecycle_homunculus_id(state, info.skill_id, info.level),
+      origin: Map.get(info, :origin, :normal),
+      memory: Map.get(info, :memory),
+      keep_requirement?: Map.get(info, :keep_requirement?, false)
     }
 
     case PlayerState.transition_to(game_state, :casting, context) do
@@ -1127,7 +1317,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:error, reason} ->
         Process.cancel_timer(timer_ref)
         report_cast_failure(info.skill_id, game_state.character_id, reason)
-        {:noreply, state}
+        {:noreply, StateCommit.commit(state, game_state)}
     end
   end
 

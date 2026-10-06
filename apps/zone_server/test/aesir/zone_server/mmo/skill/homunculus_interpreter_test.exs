@@ -287,6 +287,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
              Interpreter.begin_cast(%{caster | sp: 0}, 8_005, 1, :self)
   end
 
+  test "CastingHandler commits the refreshed homunculus on a failed attempt" do
+    session = session()
+    register_active(session.homunculus, session.game_state)
+    original = session.homunculus
+    refreshed = %{original | dex: 2}
+
+    expect(Interpreter, :begin_cast, fn ^original, 8_002, 1, :self ->
+      {:error, :invalid_target, refreshed}
+    end)
+
+    assert {:error, :invalid_target, committed} = CastingHandler.begin(session, 8_002, 1, :self)
+    assert committed.homunculus.dex == 2
+    assert committed.homunculus.sp == 100
+    assert committed.homunculus.cooldowns == %{}
+  end
+
   test "CastingHandler applies Avoid to exactly owner and Lif" do
     session = session()
     register_active(session.homunculus, session.game_state)

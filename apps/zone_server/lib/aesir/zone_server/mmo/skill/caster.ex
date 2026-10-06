@@ -3,6 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   Identity and geometry interface shared by skill casters.
   """
 
+  alias Aesir.ZoneServer.Mmo.Skill.CastTime
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Memorize
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -29,6 +32,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   @callback on_cast_start(state(), integer()) :: state()
 
   @optional_callbacks on_cast_start: 2
+
+  @doc "Applies the returned cast-time reactions to the caster's own statuses once."
+  @spec apply_cast_reactions(state(), [CastTime.reaction()]) :: state()
+  def apply_cast_reactions(caster, []), do: caster
+
+  def apply_cast_reactions(caster, reactions) do
+    adapter = __MODULE__.for(caster)
+    type = adapter.unit_type(caster)
+    id = adapter.id(caster)
+
+    Enum.each(reactions, fn
+      :consume_memorize -> Memorize.consume_charge(type, id)
+      :end_suffragium -> StatusInterpreter.remove_status(type, id, :sc_suffragium)
+    end)
+
+    case caster do
+      %PlayerState{} -> __MODULE__.Player.refresh_after_cast_reactions(caster)
+      _other -> caster
+    end
+  end
 
   @spec for(struct()) :: module()
   def for(%PlayerState{}), do: __MODULE__.Player

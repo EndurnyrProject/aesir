@@ -810,7 +810,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         skill_id,
         skill_level,
         0,
-        div: 1
+        div: 1,
+        missed: true
       )
 
     DamageApplication.broadcast_nearby(target, packet)
@@ -989,7 +990,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         skill_id,
         skill_level,
         damage,
-        div: packet_divisions
+        div: packet_divisions,
+        missed: hit_info[:magic_rod_miss?] == true
       )
 
     packet = Hallucination.maybe_garble(packet, target_type)
@@ -1081,7 +1083,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           skill_id,
           skill_level,
           damage,
-          div: divisions
+          div: divisions,
+          missed: prepared_hit_info[:magic_rod_miss?] == true
         )
 
       DamageApplication.broadcast_nearby(attacker, packet)
@@ -1144,7 +1147,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         skill_id,
         skill_level,
         damage,
-        div: Keyword.get(opts, :packet_divisions, 1)
+        div: Keyword.get(opts, :packet_divisions, 1),
+        missed: prepared_hit_info[:magic_rod_miss?] == true
       )
 
     delivery =

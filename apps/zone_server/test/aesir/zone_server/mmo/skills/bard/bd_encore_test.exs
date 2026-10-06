@@ -79,6 +79,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert definition.cooldown == [10_000]
   end
 
+  test "Encore completes its own instant attempt before the remembered skill begins" do
+    caster = player(%{skill_id: 319, level: 1})
+    before = System.monotonic_time(:millisecond)
+
+    assert {:instant, finished} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+    assert finished.stats.current_state.sp == 100
+
+    if GameMode.mode() == :renewal,
+      do: assert(finished.skill_cooldowns[@encore_id] >= before + 10_000),
+      else: assert(finished.skill_cooldowns == %{})
+
+    case Interpreter.begin_encore_replay(finished, finished.last_song, :self) do
+      {:casting, ^finished, info} -> assert info.skill_id == 319
+      {:instant, replayed} -> assert replayed.stats.current_state.sp < 100
+    end
+  end
+
   test "only the four songs and Dissonance pass replay preflight" do
     for skill_id <- @eligible_ids do
       caster = player(%{skill_id: skill_id, level: 1})
@@ -100,10 +117,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert caster.act_delay_until == 0
   end
 
-  test "replay requires the remembered level to remain learned" do
+  test "the remembered level stays castable while any rank remains learned" do
     caster = player(%{skill_id: 319, level: 3}, %{319 => 2, @encore_id => 1})
 
-    assert {:error, :skill_not_learned} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+
+    case Interpreter.begin_encore_replay(encore, encore.last_song, :self) do
+      {:casting, ^encore, %{skill_id: 319, level: 3}} -> :ok
+      {:instant, replayed} -> assert replayed.character_id == caster.character_id
+    end
   end
 
   test "replay revalidates the current weapon" do
@@ -113,12 +135,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert {:error, :wrong_weapon} = Interpreter.cast(caster, @encore_id, 1, :self)
   end
 
-  test "original and Encore cooldowns and the global act delay gate replay independently" do
+  test "the original cooldown gates only the second attempt, while Encore has its own gate" do
     future = System.monotonic_time(:millisecond) + 10_000
     caster = player(%{skill_id: 319, level: 1})
 
-    assert {:error, :on_cooldown} =
+    assert {:ok, encore} =
              Interpreter.cast(%{caster | skill_cooldowns: %{319 => future}}, @encore_id, 1, :self)
+
+    assert {:error, :on_cooldown} =
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
 
     assert {:error, :on_cooldown} =
              Interpreter.cast(
@@ -144,14 +169,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
     caster = player(%{skill_id: 317, level: 5}, nil, 100, modifiers)
 
-    assert %Cost{sp_requirement: 14, sp: 14} =
+    assert %Cost{sp_requirement: 1, sp: 0} =
              BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition())
 
+    assert {:instant, encore} = Interpreter.begin_cast(put_sp(caster, 13), @encore_id, 1, :self)
+
     assert {:error, :insufficient_sp} =
-             Interpreter.begin_cast(put_sp(caster, 13), @encore_id, 1, :self)
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
+
+    assert {:instant, encore} = Interpreter.begin_cast(put_sp(caster, 14), @encore_id, 1, :self)
 
     assert {:casting, _caster, _info} =
-             Interpreter.begin_cast(put_sp(caster, 14), @encore_id, 1, :self)
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
   end
 
   test "an encored ensemble receives no Adaptation discount" do
@@ -161,10 +190,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     caster =
       player(%{skill_id: EnsembleSkill.definition().id, level: 1}) |> with_ensemble_partner()
 
-    assert %Cost{sp_requirement: 25, sp: 25} =
+    assert %Cost{sp_requirement: 1, sp: 0} =
              BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition())
 
-    assert {:ok, replayed} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert encore.stats.current_state.sp == 100
+    assert {:ok, replayed} = Interpreter.complete_encore_replay(encore, encore.last_song, :self)
     assert replayed.stats.current_state.sp == 75
   end
 
@@ -172,7 +203,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     caster =
       player(%{skill_id: EnsembleSkill.definition().id, level: 1}) |> with_ensemble_partner()
 
-    assert {:ok, replayed} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert encore.stats.current_state.sp == 100
+    assert {:ok, replayed} = Interpreter.complete_encore_replay(encore, encore.last_song, :self)
     assert replayed.stats.current_state.sp == 75
   end
 
@@ -193,34 +226,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
       assert {:error, :insufficient_sp} =
                Interpreter.begin_cast(put_sp(caster, 0), @encore_id, 1, :self)
 
-      result = Interpreter.begin_cast(caster, @encore_id, 1, :self)
-      assert elem(result, 0) in [:casting, :instant]
+      assert {:instant, finished} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+      assert finished.stats.current_state.sp == 1
     end
   end
 
   @tag game_mode: :renewal
-  test "all five remembered skills supply their own timing and keep one outer 300 ms delay" do
+  test "all five remembered skills begin a separate cast after instant Encore" do
     for skill_id <- @eligible_ids do
       caster = player(%{skill_id: skill_id, level: 1})
-      assert {:casting, ^caster, info} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+      before = System.monotonic_time(:millisecond)
+      assert {:instant, encore} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+      assert encore.act_delay_until >= before + 300
+
+      assert {:casting, ^encore, info} =
+               Interpreter.begin_encore_replay(encore, encore.last_song, :self)
+
+      assert info.skill_id == skill_id
+      assert info.origin == :encore
       assert info.fixed == 300
       assert info.total > info.fixed
-
-      assert {:ok, definition} = Catalog.by_id(skill_id)
-      assert definition.after_cast_delay == List.duplicate(300, definition.max_level)
     end
 
     assert BdEncore.definition().after_cast_delay == [300]
   end
 
   @tag game_mode: :renewal
-  test "successful replay runs one effect and commits transformed SP and both cooldowns" do
+  test "successful remembered attempt runs once and commits its cost and both cooldowns" do
     caster = player(%{skill_id: 317, level: 5})
 
     expect(Combat, :execute_magic_splash, 1, fn _caster, {10, 20}, 4, _opts -> [] end)
     before = System.monotonic_time(:millisecond)
 
-    assert {:ok, updated} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert encore.stats.current_state.sp == 100
+    assert {:ok, updated} = Interpreter.complete_encore_replay(encore, encore.last_song, :self)
     assert updated.stats.current_state.sp == 77
     assert updated.skill_cooldowns[317] >= before + 5_000
     assert updated.skill_cooldowns[@encore_id] >= before + 10_000
@@ -229,31 +269,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   end
 
   @tag game_mode: :renewal
-  test "completion revalidates the original cooldown before effect or commitment" do
+  test "remembered completion revalidates its own cooldown without spending SP" do
     caster = player(%{skill_id: 319, level: 1})
-    assert {:casting, ^caster, _info} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+
+    assert {:casting, ^encore, _info} =
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
 
     reject(&Song.snapshot/6)
-    blocked = %{caster | skill_cooldowns: %{319 => System.monotonic_time(:millisecond) + 10_000}}
 
-    assert {:error, :on_cooldown} = Interpreter.complete_cast(blocked, @encore_id, 1, :self)
+    blocked =
+      put_in(encore.skill_cooldowns[319], System.monotonic_time(:millisecond) + 10_000)
+
+    assert {:error, :on_cooldown} =
+             Interpreter.complete_encore_replay(blocked, blocked.last_song, :self)
+
     assert blocked.stats.current_state.sp == 100
-    assert blocked.skill_cooldowns |> Map.keys() == [319]
-    assert blocked.act_delay_until == 0
+    assert Map.has_key?(blocked.skill_cooldowns, @encore_id)
   end
 
   @tag game_mode: :renewal
-  test "a failed remembered effect commits no SP, cooldown, or act delay" do
+  test "a failed remembered effect keeps Encore's committed pacing but spends no replay SP" do
     caster = player(%{skill_id: 319, level: 1})
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
 
-    expect(Song, :snapshot, fn ^caster, _definition, 1, :sc_whistle, _params, [] ->
+    expect(Song, :snapshot, fn performer, _definition, 1, :sc_whistle, _params, [] ->
+      assert performer.character_id == caster.character_id
       {:error, :failed}
     end)
 
-    assert {:error, :failed} = Interpreter.cast(caster, @encore_id, 1, :self)
-    assert caster.stats.current_state.sp == 100
-    assert caster.skill_cooldowns == %{}
-    assert caster.act_delay_until == 0
+    assert {:error, :failed} =
+             Interpreter.complete_encore_replay(encore, encore.last_song, :self)
+
+    assert encore.stats.current_state.sp == 100
+    assert Map.has_key?(encore.skill_cooldowns, @encore_id)
+    refute Map.has_key?(encore.skill_cooldowns, 319)
   end
 
   defp player(memory, learned \\ nil, sp \\ 100, modifiers \\ %{}) do
@@ -320,9 +370,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   @tag game_mode: :pre_renewal
   test "Encore replays Whistle as a field for half its classic SP cost" do
     caster = player(%{skill_id: 319, level: 5})
-    assert BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition()).sp == 20
+    assert BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition()).sp == 0
 
-    expect(Performance, :perform, fn ^caster, definition, 5, :sc_whistle, params, opts ->
+    expect(Performance, :perform, fn performer, definition, 5, :sc_whistle, params, opts ->
+      assert performer.character_id == caster.character_id
       assert definition.id == 319
       assert params[:val2] > 0
       assert opts[:kind] == :song
@@ -330,7 +381,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
       {:ok, Song.remember(caster, 319, 5)}
     end)
 
-    assert {:ok, updated} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert encore.stats.current_state.sp == 100
+
+    assert {:instant, updated} =
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
+
     assert updated.stats.current_state.sp == 80
     assert updated.last_song == %{skill_id: 319, level: 5}
     assert updated.skill_cooldowns == %{}
@@ -358,16 +414,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
     caster = player(%{skill_id: 317, level: 5}, nil, 100, modifiers)
 
-    assert %Cost{sp_requirement: 10, sp: 10} =
+    assert %Cost{sp_requirement: 1, sp: 0} =
              BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition())
 
+    assert {:instant, encore} = Interpreter.begin_cast(put_sp(caster, 9), @encore_id, 1, :self)
+
     assert {:error, :insufficient_sp} =
-             Interpreter.begin_cast(put_sp(caster, 9), @encore_id, 1, :self)
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
 
     stub(Combat, :execute_magic_splash, fn _caster, _center, _radius, _opts -> [] end)
 
-    assert {:instant, _caster} =
-             Interpreter.begin_cast(put_sp(caster, 10), @encore_id, 1, :self)
+    assert {:instant, encore} = Interpreter.begin_cast(put_sp(caster, 10), @encore_id, 1, :self)
+
+    assert {:instant, replayed} =
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
+
+    assert replayed.stats.current_state.sp == 0
   end
 
   @tag game_mode: :pre_renewal
@@ -376,7 +438,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
     for skill_id <- @eligible_ids do
       caster = player(%{skill_id: skill_id, level: 1})
-      assert {:instant, _caster} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+      assert {:instant, encore} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+
+      assert {:instant, _replayed} =
+               Interpreter.begin_encore_replay(encore, encore.last_song, :self)
 
       assert {:ok, definition} = Catalog.by_id(skill_id)
       assert definition.after_cast_delay == []
@@ -396,7 +461,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
       {:ok, Song.remember(caster, 317, 5)}
     end)
 
-    assert {:ok, updated} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert encore.stats.current_state.sp == 100
+
+    assert {:instant, updated} =
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
+
     assert updated.stats.current_state.sp == 85
     assert updated.skill_cooldowns == %{}
     assert updated.act_delay_until == 0
@@ -404,22 +474,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic completion revalidates the original cooldown before effect or commitment" do
+  test "classic remembered attempt checks its cooldown after Encore commits" do
     caster = player(%{skill_id: 319, level: 1})
-
-    expect(Performance, :perform, fn ^caster, _definition, 1, :sc_whistle, _params, opts ->
-      assert opts[:kind] == :song
-      {:ok, caster}
-    end)
-
-    assert {:instant, _caster} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
-
     reject(&Performance.perform/6)
-    blocked = %{caster | skill_cooldowns: %{319 => System.monotonic_time(:millisecond) + 10_000}}
 
-    assert {:error, :on_cooldown} = Interpreter.complete_cast(blocked, @encore_id, 1, :self)
+    assert {:instant, encore} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+
+    blocked =
+      put_in(encore.skill_cooldowns[319], System.monotonic_time(:millisecond) + 10_000)
+
+    assert {:error, :on_cooldown} =
+             Interpreter.begin_encore_replay(blocked, blocked.last_song, :self)
+
     assert blocked.stats.current_state.sp == 100
-    assert blocked.skill_cooldowns |> Map.keys() == [319]
+    assert Map.keys(blocked.skill_cooldowns) == [319]
     assert blocked.act_delay_until == 0
   end
 end

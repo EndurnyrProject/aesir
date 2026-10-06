@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.StatusChange
   alias Aesir.ZoneServer.Mmo.Efst
+  alias Aesir.ZoneServer.Mmo.Mechanics.CastTime.PreRenewal
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Aspersio
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Benedictio
@@ -16,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
@@ -292,15 +296,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic Suffragium cuts cast by 15 per level and is consumed by the next skill cast" do
+  test "classic Suffragium cuts 45 percent at late timing and ends once", %{player: player} do
     assert Suffragium.reduction(3) == 45
 
-    instance = %{val1: 3, state: %{}}
+    assert {:ok, %StatusEntry{val2: 45}} =
+             Suffragium.on_apply({:player, @player_id}, %StatusEntry{val1: 3, state: %{}}, %{})
 
-    assert Suffragium.on_committed_action({:player, @player_id}, instance, {:skill, 28}, %{}) ==
-             :remove
+    {:ok, definition} = Catalog.by_id(28)
 
-    assert Suffragium.on_committed_action({:player, @player_id}, instance, :normal_attack, %{}) ==
-             {:ok, instance}
+    :ok =
+      StatusStorage.apply_status(:player, @player_id, :sc_suffragium,
+        state: %{cast_time_reduction: 45}
+      )
+
+    assert :unchanged = Interpreter.on_committed_action(:player, @player_id, :normal_attack)
+    assert StatusStorage.has_status?(:player, @player_id, :sc_suffragium)
+
+    assert %{timing: %{total: 550}, reactions: [:end_suffragium]} =
+             PreRenewal.late(definition, 1, %{dex: 0, int: 0, statuses: %{suffragium: 45}}, 1_000)
+
+    Caster.apply_cast_reactions(player, [:end_suffragium])
+    refute StatusStorage.has_status?(:player, @player_id, :sc_suffragium)
   end
 end

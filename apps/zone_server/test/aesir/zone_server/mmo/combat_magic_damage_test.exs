@@ -337,6 +337,37 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
                )
     end
 
+    test "Magic Rod publishes a missed skill hit rather than a numeric zero" do
+      mob_caster = build_mob_state(@caster_id, 150, 150, {:neutral, 1})
+      target_player = spawn(fn -> Process.sleep(:infinity) end)
+      on_exit(fn -> Process.exit(target_player, :kill) end)
+      test_pid = self()
+      target_state = %{build_caster() | character_id: @target_id, x: 150, y: 150}
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:error, :not_found}
+        :player, @target_id -> {:ok, {PlayerState, target_state, target_player}}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
+      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, damage, _hit -> damage end)
+      stub(StatusInterpreter, :intercept_magic, fn :player, @target_id, _hit -> :miss end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      assert {:ok, {:player, @target_id}} =
+               Combat.execute_magic_damage(mob_caster, @target_id, 100,
+                 skill_id: @skill_id,
+                 skill_level: @skill_level,
+                 element: :fire
+               )
+
+      assert_received {:packet, %SkillDamage{damage: 0, missed: true}}
+    end
+
     test "allows a mob caster to damage a player target (mob skills are not PvP)" do
       mob_caster = build_mob_state(@caster_id, 150, 150, {:neutral, 1})
       target_player = spawn(fn -> Process.sleep(:infinity) end)

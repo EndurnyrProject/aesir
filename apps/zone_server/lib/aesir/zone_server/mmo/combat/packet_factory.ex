@@ -196,6 +196,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   ## Options
     - `:div` - client-visible hit divisions (default `1`)
     - `:dst_delay` - target animation delay in ms (default `0`)
+    - `:missed` - missed-hit result class, distinct from ordinary zero damage (default `false`)
   """
   @spec build_splash_damage_packet(
           integer(),
@@ -217,7 +218,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       dst_delay: Keyword.get(opts, :dst_delay, 0),
       damage: damage,
       div: Keyword.get(opts, :div, 1),
-      type: @dmg_splash
+      type: @dmg_splash,
+      missed: Keyword.get(opts, :missed, false)
     }
   end
 

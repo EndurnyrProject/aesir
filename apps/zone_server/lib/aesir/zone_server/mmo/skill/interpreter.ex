@@ -42,8 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Cost, as: PerformanceCost
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
-  alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.SkillCaster
@@ -82,6 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   `total` the full duration, both in milliseconds.
   """
   @type cast_info :: %{
+          optional(:reactions_consumed?) => boolean(),
           skill_id: integer(),
           level: pos_integer(),
           target: Active.target(),
@@ -95,38 +96,53 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:error, atom()}
+          | {:error, atom(), PlayerState.t()}
   def cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     case begin_cast(game_state, skill_id, level, target) do
-      {:instant, game_state} -> {:ok, game_state}
-      {:instant, game_state, effects} -> {:local_effects, game_state, effects}
-      {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
-      {:casting, game_state, _info} -> complete_cast(game_state, skill_id, level, target)
-      {:error, _reason} = error -> error
+      {:instant, game_state} ->
+        {:ok, game_state}
+
+      {:instant, game_state, effects} ->
+        {:local_effects, game_state, effects}
+
+      {:deferred, game_state, descriptor} ->
+        {:deferred, game_state, descriptor}
+
+      {:casting, refreshed, info} ->
+        finish_synchronous_cast(game_state, refreshed, info, skill_id, level, target)
+
+      {:error, _reason} = error ->
+        error
+
+      {:error, _reason, _refreshed} = error ->
+        error
     end
   end
 
   def cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
 
+  defp finish_synchronous_cast(original, refreshed, info, skill_id, level, target) do
+    case complete_cast(refreshed, skill_id, level, target) do
+      {:error, reason} ->
+        if info[:reactions_consumed?] or refreshed != original,
+          do: {:error, reason, refreshed},
+          else: {:error, reason}
+
+      result ->
+        result
+    end
+  end
+
   @doc """
-  Validates a cast and resolves its timing.
+  Validates a real cast attempt and resolves its timing. Classic early timing
+  runs before target/range/cost checks and can consume Foresight even when those
+  checks reject the attempt. Late timing runs only after validation. On failure
+  after a reaction, returns the refreshed caster so its owner can commit it;
+  pure `preflight_cast/4` never runs either reaction.
 
-  Runs the full validation chain (without deducting SP or running the behavior)
-  and computes the cast time from the caster's base DEX/INT. A zero cast time
-  resolves immediately through `complete_cast/4` and returns `{:instant, gs}`;
-  otherwise returns `{:casting, gs, cast_info}` with `gs` unchanged so the
-  caller can schedule the cast.
-
-  Caster adapters pass plain cast inputs so `CastTime` never reads state. They
-  preserve Renewal's status-sourced `varcast_reductions` and additive
-  `varcast_rate` channels while also carrying classic source-aware channels:
-  equipment/global rates combine with Bragi, the per-skill rate remains a
-  separate early modifier, and both apply before classic's first integer
-  truncation. Suffragium remains a late status reduction. The
-  caster's equipment `fixed_cast` bonus remains a flat millisecond delta on
-  Renewal's fixed portion.
-
-  NOTE: cast-time reduction uses base DEX/INT only; effective/buffed DEX/INT is a
-  documented later refinement.
+  Instant casts complete immediately, while timed casts return their total
+  scheduling time and the already-refreshed caster. Completion does not
+  compute cast time or consume timing reactions again.
   """
   @spec begin_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
           {:instant, Active.caster()}
@@ -134,26 +150,61 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:deferred, Active.caster(), term()}
           | {:casting, Active.caster(), cast_info()}
           | {:error, atom()}
+          | {:error, atom(), Active.caster()}
   def begin_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, context} <- validate_cast(game_state, skill_id, level, target, now) do
-      timing_definition =
-        cast_timing_definition(
-          context.caster,
-          context.module,
-          context.target,
-          context.level,
-          context.definition
-        )
-
-      timing = CastTime.compute(timing_definition, context.level, context.stats)
-
-      schedule(timing, game_state, skill_id, level, target, context)
+    with {:ok, definition} <- fetch_definition(skill_id),
+         {:ok, adapter} <- lifecycle_adapter(game_state) do
+      begin_real_attempt(game_state, skill_id, level, target, definition, adapter, now)
     end
   end
 
   def begin_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  defp begin_real_attempt(caster, skill_id, level, target, definition, adapter, now) do
+    inputs = :erlang.apply(adapter, :cast_stats, [caster, skill_id])
+    early = CastTime.early(definition, level, inputs)
+    refreshed = Caster.apply_cast_reactions(caster, early.reactions)
+
+    case validate_cast(refreshed, skill_id, level, target, now) do
+      {:ok, context} ->
+        finish_attempt(refreshed, skill_id, level, target, context, early)
+
+      {:error, reason} ->
+        if early.reactions == [],
+          do: {:error, reason},
+          else: {:error, reason, refreshed}
+    end
+  end
+
+  defp finish_attempt(caster, skill_id, level, target, context, early) do
+    timing_definition =
+      cast_timing_definition(caster, context.module, target, level, context.definition)
+
+    time =
+      if timing_definition.cast_time == context.definition.cast_time,
+        do: early.time,
+        else: Enum.at(timing_definition.cast_time, level - 1, 0)
+
+    %{timing: timing, reactions: reactions} =
+      CastTime.late(timing_definition, level, context.stats, time)
+
+    refreshed = Caster.apply_cast_reactions(caster, reactions)
+    context = %{context | caster: refreshed}
+
+    case schedule(timing, refreshed, skill_id, level, target, context) do
+      {:error, reason} when early.reactions != [] or reactions != [] ->
+        {:error, reason, refreshed}
+
+      {:casting, caster, info} ->
+        {:casting, caster,
+         Map.put(info, :reactions_consumed?, early.reactions != [] or reactions != [])}
+
+      outcome ->
+        outcome
+    end
+  end
 
   # Sums a stored reduction percentage (`:delay_reduction`) across the caster's
   # active statuses, for the after-cast delay path (additive sum, one multiply -
@@ -267,29 +318,117 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   @doc """
-  Completes one replayable Encore memory after revalidating mutable conditions.
+  Starts the remembered skill as a second, ordinary timed attempt after Encore.
 
-  This invokes the remembered behavior once and writes only the remembered
-  skill's cooldown after success. It deliberately commits no resources, Encore
-  cooldown, or act delay; the already-prepared outer Encore cast owns those.
+  The remembered skill keeps its own cast bar, cooldown and resource recipe;
+  its raw SP cost is halved before ordinary performance and equipment bonuses.
+  Encore's own (instant) attempt already committed separately.
+  """
+  @spec begin_encore_replay(PlayerState.t(), map(), Active.target()) ::
+          {:instant, PlayerState.t()}
+          | {:casting, PlayerState.t(), cast_info()}
+          | {:error, atom()}
+          | {:error, atom(), PlayerState.t()}
+  def begin_encore_replay(caster, %{skill_id: skill_id, level: level} = memory, target) do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, definition} <- fetch_definition(skill_id) do
+      early = CastTime.early(definition, level, Caster.Player.cast_stats(caster, skill_id))
+      caster = Caster.apply_cast_reactions(caster, early.reactions)
+      prepare_encore_attempt(caster, memory, target, definition, early, now)
+    end
+  end
+
+  defp prepare_encore_attempt(caster, memory, target, definition, early, now) do
+    with {:ok, prepared} <- validate_encore_replay(caster, memory, target, now),
+         {:ok, _cost} <- encore_prepared_cost(caster, prepared) do
+      finish_encore_timing(caster, memory, target, definition, early)
+    else
+      {:error, reason} ->
+        if early.reactions == [],
+          do: {:error, reason},
+          else: {:error, reason, caster}
+    end
+  end
+
+  defp finish_encore_timing(
+         caster,
+         %{skill_id: skill_id, level: level} = memory,
+         target,
+         definition,
+         early
+       ) do
+    %{timing: timing, reactions: reactions} =
+      CastTime.late(definition, level, Caster.Player.cast_stats(caster, skill_id), early.time)
+
+    caster = Caster.apply_cast_reactions(caster, reactions)
+
+    if timing.total == 0 do
+      caster = cast_start(caster, Caster.Player, skill_id)
+
+      case complete_encore_replay(caster, memory, target) do
+        {:ok, caster} -> {:instant, caster}
+        {:error, reason} -> {:error, reason, caster}
+      end
+    else
+      {:casting, caster,
+       %{
+         skill_id: skill_id,
+         level: level,
+         target: target,
+         element: definition.element,
+         fixed: timing.fixed,
+         total: timing.total,
+         origin: :encore,
+         memory: memory
+       }}
+    end
+  end
+
+  @doc """
+  Completes the remembered Encore skill, charging its halved raw SP at cast end.
   """
   @spec complete_encore_replay(PlayerState.t(), map(), Active.target()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def complete_encore_replay(game_state, memory, target) do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, %{definition: definition, module: module, skill_id: skill_id, level: level}} <-
-           validate_encore_replay(game_state, memory, target, now) do
-      case run_unconditional(module, game_state, target, level, definition, :normal) do
-        {:ok, game_state} ->
-          {:ok, put_cooldown(game_state, skill_id, definition, level, now)}
+    with {:ok, %{definition: definition, skill_id: skill_id, level: level} = prepared} <-
+           validate_encore_replay(game_state, memory, target, now),
+         {:ok, cost} <- encore_prepared_cost(game_state, prepared) do
+      complete_resolved_cast(
+        game_state,
+        prepared.module,
+        target,
+        level,
+        definition,
+        %{
+          adapter: Caster.Player,
+          prepared_cost: cost,
+          skill_id: skill_id,
+          level: level,
+          apply_act_delay: Enum.at(definition.after_cast_delay, level - 1, 0) > 0,
+          after_cast_delay: resolved_after_cast_delay(game_state, definition, level),
+          now: now,
+          input: :without_input
+        }
+      )
+    end
+  end
 
-        {:deferred, _game_state, _descriptor} ->
-          {:error, :unsupported_encore_replay}
+  defp encore_prepared_cost(caster, %{definition: definition, module: module, level: level}) do
+    raw_half = definition.sp_cost |> Enum.at(level - 1, 0) |> div(2)
 
-        {:error, _reason} = error ->
-          error
+    cost =
+      if Catalog.performance?(definition.id) do
+        PerformanceCost.resolve(caster, definition, level, raw_half)
+      else
+        sp = Cost.resolve_sp(caster, definition, level, raw_half)
+        Cost.from_definition(caster, definition, level, sp: sp)
       end
+
+    with {:ok, cost} <- Cost.validate_resolved(cost) do
+      Caster.Player.prepare_cost(caster, module, definition, cost, 0)
     end
   end
 
@@ -506,6 +645,206 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def proc_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
 
   @doc """
+  Begins a client-selected item skill without learned or resource requirements.
+
+  Immediate-consume items were spent at staging; delayed-consume items pass a
+  single owner-local consumption callback that runs after target validation,
+  before late timing and the skill effect. A timed cast retains its origin so
+  completion keeps this restricted requirement contract.
+  """
+  @spec begin_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          {:instant, PlayerState.t()}
+          | {:casting, PlayerState.t(), cast_info()}
+          | {:error, atom()}
+          | {:error, atom(), PlayerState.t()}
+  def begin_item_cast(caster, skill_id, level, target) do
+    case begin_item_cast(caster, skill_id, level, target, &{:ok, &1}) do
+      {:error, reason, refreshed, _stage} when refreshed == caster -> {:error, reason}
+      {:error, reason, refreshed, _stage} -> {:error, reason, refreshed}
+      outcome -> outcome
+    end
+  end
+
+  @doc "Begins a staged item cast, claiming a delayed item after target and map checks but before range/path checks."
+  @spec begin_item_cast(
+          PlayerState.t(),
+          integer(),
+          pos_integer(),
+          Active.target(),
+          (PlayerState.t() -> {:ok, PlayerState.t()} | {:error, atom()})
+        ) ::
+          {:instant, PlayerState.t()}
+          | {:casting, PlayerState.t(), cast_info()}
+          | {:error, atom()}
+          | {:error, atom(), PlayerState.t(), :before_start | :after_start}
+  def begin_item_cast(caster, skill_id, level, target, on_ready),
+    do: begin_item_cast(caster, skill_id, level, target, on_ready, false)
+
+  @doc "Begins an item cast with the source's optional requirement-retention recipe."
+  @spec begin_item_cast(
+          PlayerState.t(),
+          integer(),
+          pos_integer(),
+          Active.target(),
+          (PlayerState.t() -> {:ok, PlayerState.t()} | {:error, atom()}),
+          boolean()
+        ) ::
+          {:instant, PlayerState.t()}
+          | {:casting, PlayerState.t(), cast_info()}
+          | {:error, atom()}
+          | {:error, atom(), PlayerState.t(), :before_start | :after_start}
+  def begin_item_cast(%PlayerState{} = caster, skill_id, level, target, on_ready, keep?)
+      when is_integer(level) and level > 0 and is_function(on_ready, 1) and is_boolean(keep?) do
+    with {:ok, definition} <- fetch_definition(skill_id) do
+      early = CastTime.early(definition, level, Caster.Player.cast_stats(caster, skill_id))
+      caster = Caster.apply_cast_reactions(caster, early.reactions)
+      begin_item_target(caster, definition, level, target, early, on_ready, keep?)
+    end
+  end
+
+  def begin_item_cast(_caster, _skill_id, _level, _target, _on_ready, _keep?),
+    do: {:error, :invalid_level}
+
+  defp begin_item_target(caster, definition, level, target, early, on_ready, keep?) do
+    case validate_item_target(caster, target, level, definition, keep?) do
+      {:ok, module} ->
+        claim_item_for_attempt(caster, module, definition, level, target, early, on_ready, keep?)
+
+      {:error, reason} ->
+        if early.reactions == [],
+          do: {:error, reason},
+          else: {:error, reason, caster, :before_start}
+    end
+  end
+
+  defp claim_item_for_attempt(caster, module, definition, level, target, early, on_ready, keep?) do
+    case on_ready.(caster) do
+      {:ok, ready} ->
+        with :ok <- item_requirement_ready(ready, module, target, level, definition, keep?),
+             :ok <- validate_item_range(ready, module, target, level, definition) do
+          finish_item_attempt(ready, definition, level, target, early, keep?)
+        else
+          {:error, reason} -> {:error, reason, ready, :after_start}
+        end
+
+      {:error, reason} ->
+        {:error, reason, caster, :before_start}
+    end
+  end
+
+  defp finish_item_attempt(caster, definition, level, target, early, keep?) do
+    skill_id = definition.id
+
+    %{timing: timing, reactions: reactions} =
+      CastTime.late(definition, level, Caster.Player.cast_stats(caster, skill_id), early.time)
+
+    refreshed = Caster.apply_cast_reactions(caster, reactions)
+
+    if timing.total == 0 do
+      started = cast_start(refreshed, Caster.Player, skill_id)
+
+      case complete_item_cast(started, skill_id, level, target, keep?) do
+        {:ok, finished} -> {:instant, finished}
+        {:error, reason} -> {:error, reason, started, :after_start}
+      end
+    else
+      {:casting, refreshed,
+       %{
+         skill_id: skill_id,
+         level: level,
+         target: target,
+         element: definition.element,
+         fixed: timing.fixed,
+         total: timing.total,
+         origin: :item,
+         keep_requirement?: keep?
+       }}
+    end
+  end
+
+  @doc """
+  Completes an item skill against the current target without learned or resource checks.
+  """
+  @spec complete_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def complete_item_cast(caster, skill_id, level, target),
+    do: complete_item_cast(caster, skill_id, level, target, false)
+
+  @doc "Completes an item cast, charging the skill's own requirements when retained."
+  @spec complete_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target(), boolean()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def complete_item_cast(%PlayerState{} = caster, skill_id, level, target, true) do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, definition} <- fetch_definition(skill_id),
+         {:ok, module} <- validate_item_cast(caster, target, level, definition, true),
+         :ok <- check_fog(target, definition),
+         {:ok, cost} <- Caster.Player.cost(caster, module, target, definition, level) do
+      complete_resolved_cast(caster, module, target, level, definition, %{
+        adapter: Caster.Player,
+        prepared_cost: cost,
+        skill_id: skill_id,
+        level: level,
+        apply_act_delay: Enum.at(definition.after_cast_delay, level - 1, 0) > 0,
+        after_cast_delay: resolved_after_cast_delay(caster, definition, level),
+        now: now,
+        input: :without_input,
+        origin: :item
+      })
+    end
+  end
+
+  def complete_item_cast(%PlayerState{} = caster, skill_id, level, target, false) do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, definition} <- fetch_definition(skill_id),
+         {:ok, module} <- validate_item_cast(caster, target, level, definition, false),
+         :ok <- check_fog(target, definition),
+         {:ok, caster} <- run_unconditional(module, caster, target, level, definition, :item) do
+      {:ok,
+       caster
+       |> put_cooldown(skill_id, definition, level, now)
+       |> put_act_delay(definition, level, now)}
+    end
+  end
+
+  defp validate_item_cast(caster, target, level, definition, keep?) do
+    with {:ok, module} <- validate_item_target(caster, target, level, definition, keep?),
+         :ok <- validate_item_range(caster, module, target, level, definition) do
+      {:ok, module}
+    end
+  end
+
+  defp validate_item_target(caster, target, level, definition, keep?) do
+    with :ok <- check_max_level(definition, level),
+         :ok <- check_castable(definition),
+         :ok <- maybe_check_item_map(caster, definition.id, keep?),
+         {:ok, module} <- fetch_active_module(definition),
+         :ok <- check_target(caster, target, definition) do
+      {:ok, module}
+    end
+  end
+
+  defp maybe_check_item_map(caster, skill_id, true),
+    do: Caster.Player.castable_state(caster, skill_id, :begin)
+
+  defp maybe_check_item_map(_caster, _skill_id, false), do: :ok
+
+  defp item_requirement_ready(caster, module, target, level, definition, true) do
+    with {:ok, _prepared} <- Caster.Player.cost(caster, module, target, definition, level) do
+      check_weapon(caster, definition)
+    end
+  end
+
+  defp item_requirement_ready(_caster, _module, _target, _level, _definition, false), do: :ok
+
+  defp validate_item_range(caster, module, target, level, definition) do
+    with :ok <- check_range(caster, target, definition, level) do
+      module.validate(caster, target, level, definition)
+    end
+  end
+
+  @doc """
   Runs an item-triggered cast: the restricted entry `itemskill` uses.
 
   This entry point is player-only because item scripts execute against a player
@@ -527,21 +866,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           {:ok, PlayerState.t()} | {:error, atom()}
   def item_cast(%PlayerState{} = game_state, skill_id, level, target)
       when is_integer(level) and level > 0 do
-    now = System.monotonic_time(:millisecond)
-
-    with {:ok, definition} <- fetch_definition(skill_id),
-         :ok <- check_max_level(definition, level),
-         :ok <- check_castable(definition),
-         {:ok, module} <- fetch_active_module(definition),
-         :ok <- check_target(game_state, target, definition),
-         :ok <- check_range(game_state, target, definition, level),
-         :ok <- module.validate(game_state, target, level, definition),
-         {:ok, game_state} <-
-           run_unconditional(module, game_state, target, level, definition, :item) do
-      {:ok,
-       game_state
-       |> put_cooldown(skill_id, definition, level, now)
-       |> put_act_delay(definition, level, now)}
+    case begin_item_cast(game_state, skill_id, level, target) do
+      {:instant, caster} -> {:ok, caster}
+      {:casting, caster, _info} -> complete_item_cast(caster, skill_id, level, target)
+      error -> error
     end
   end
 
@@ -643,9 +971,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
            after_cast_delay: after_cast_delay,
            now: now,
            input: input
-         }
+         } = opts
        ) do
-    origin = adapter.cast_origin(game_state)
+    origin = Map.get(opts, :origin, adapter.cast_origin(game_state))
 
     case run_cast(module, game_state, target, level, definition, origin, input, adapter) do
       {:deferred, game_state, descriptor} ->
@@ -836,8 +1164,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
              :ok <- check_max_level(definition, level),
              :ok <- check_castable(definition),
              :ok <- check_weapon(game_state, definition),
-             :ok <- check_learned(game_state, skill_id, level),
-             :ok <- check_quest_lineage(game_state, definition),
+             :ok <- Caster.Player.knows?(game_state, definition, 1, :begin),
              :ok <- check_target(game_state, target, definition),
              :ok <- check_range(game_state, target, definition, level),
              {:ok, module} <- fetch_active_module(definition),
@@ -929,9 +1256,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     now = System.monotonic_time(:millisecond)
 
     with :ok <- check_fog(target, prepared.definition) do
-      game_state
-      |> cast_start(prepared.adapter, skill_id)
-      |> complete_instant_cast(skill_id, level, target, now, prepared)
+      started = cast_start(game_state, prepared.adapter, skill_id)
+
+      case complete_instant_cast(started, skill_id, level, target, now, prepared) do
+        {:error, reason} when started != game_state -> {:error, reason, started}
+        outcome -> outcome
+      end
     end
   end
 
@@ -969,7 +1299,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:ok, game_state} -> instant_result(game_state, prepared.cost)
       {:local_effects, game_state, effects} -> {:instant, game_state, effects}
       {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
-      {:error, _reason} = error -> error
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -1056,26 +1386,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_learned(caster, adapter, definition, level, phase),
     do: :erlang.apply(adapter, :knows?, [caster, definition, level, phase])
 
-  defp check_learned(game_state, skill_id, level) do
-    learned = game_state.stats.progression.learned_skills
-
-    if Learned.learned_level(learned, skill_id) >= level do
-      :ok
-    else
-      {:error, :skill_not_learned}
-    end
-  end
-
-  defp check_quest_lineage(game_state, %{quest_skill: true} = definition) do
-    if SkillTree.quest_skill_available?(game_state.stats.progression.job_id, definition) do
-      :ok
-    else
-      {:error, :skill_not_learned}
-    end
-  end
-
-  defp check_quest_lineage(_game_state, _definition), do: :ok
-
   defp check_target(caster, target, definition) do
     adapter = Caster.for(caster)
 
@@ -1112,6 +1422,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
        do: ensure_resurrection_target(target_id)
 
   defp check_default_target(_game_state, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
+
+  defp check_default_target(_game_state, :self, %{target_type: :ground}),
+    do: {:error, :invalid_target}
+
+  defp check_default_target(_game_state, {:unit, _id}, %{target_type: :ground}),
+    do: {:error, :invalid_target}
 
   defp check_default_target(_game_state, :self, _definition), do: :ok
   defp check_default_target(%{character_id: caster_id}, {:unit, caster_id}, _definition), do: :ok

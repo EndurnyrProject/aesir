@@ -65,11 +65,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
     assert Rules.skill_allowed?(1013, "prontera")
   end
 
-  test "castle-ground item and status restrictions hold while siege is inactive" do
-    refute Rules.item_allowed?(14_529, "aldeg_cas01")
-
-    assert Rules.item_allowed?(605, "aldeg_cas01") ==
-             (GameMode.mode() == :pre_renewal)
+  test "unrestricted items remain usable while Endure status is blocked on castle ground" do
+    assert Rules.item_allowed?(14_529, "aldeg_cas01")
+    assert Rules.item_allowed?(605, "aldeg_cas01")
 
     refute Rules.status_allowed?(:sc_endure, "aldeg_cas01")
     assert Rules.item_allowed?(501, "aldeg_cas01")

@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
   import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -63,6 +65,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
                {:error, :skill_not_learned}
 
       assert Caster.Player.knows?(caster, definition, 3, :completion) == :ok
+    end
+
+    test "guild skill lookup contributes to effective Foresight eligibility" do
+      guild = %GuildState{
+        guild_id: 500,
+        name: "Cast Guild",
+        master_char_id: 101,
+        learned_skills: %{10_004 => 1}
+      }
+
+      stub(GuildManager, :get, fn 500 -> {:ok, guild} end)
+      assert Caster.Player.cast_stats(player(guild_id: 500), 10_004).effective_skill?
+      refute Caster.Player.cast_stats(player(), 10_004).effective_skill?
     end
 
     test "a temporary equipment grant is eligible for Foresight timing" do

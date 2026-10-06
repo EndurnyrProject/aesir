@@ -103,6 +103,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
       {:instant, updated} -> finish(session, updated, [])
       {:instant, updated, effects} -> finish(session, updated, effects)
       {:casting, updated, info} -> schedule(session, updated, info)
+      {:error, reason, refreshed} -> {:error, reason, StateCommit.commit(session, refreshed)}
       {:error, reason} -> {:error, reason, session}
     end
   end

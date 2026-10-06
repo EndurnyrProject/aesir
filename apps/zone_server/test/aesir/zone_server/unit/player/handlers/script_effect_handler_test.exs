@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemRemoved
+  alias Aesir.Net.ItemSkillReady
   alias Aesir.Net.ParamChange
   alias Aesir.Net.QuestAdded
   alias Aesir.Net.QuestRemoved
@@ -652,6 +653,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
 
       assert reply == {:error, :unknown_job}
       assert new_state == state
+    end
+  end
+
+  describe "{:stage_item_skill, skill_id, level}" do
+    test "offers an item skill without casting and stores one pending request" do
+      state = Map.put(base_state(), :pending_item_skill, nil)
+      char_id = state.game_state.character_id
+
+      expect(Broadcast, :to_player, fn ^char_id,
+                                       %ItemSkillReady{skill_id: 19, level: 3, target_kind: :UNIT} ->
+        :ok
+      end)
+
+      assert {{:ok, game_state}, staged} =
+               ScriptEffectHandler.apply_op({:stage_item_skill, 19, 3}, state)
+
+      assert game_state == state.game_state
+      assert staged.pending_item_skill == %{skill_id: 19, level: 3, keep_requirement?: false}
     end
   end
 

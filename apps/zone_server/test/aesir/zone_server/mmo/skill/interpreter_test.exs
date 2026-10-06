@@ -242,6 +242,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     }
   end
 
+  defp cast_ready_state(sp, learned) do
+    gs = game_state(sp, learned)
+    put_in(gs.stats.progression, %{gs.stats.progression | job_id: 0, job_level: 1, base_level: 1})
+  end
+
   defp game_state(sp, learned, equipment) do
     gs = game_state(sp, learned)
     %{gs | stats: %{gs.stats | modifiers: %Modifiers{equipment: equipment}}}
@@ -1456,6 +1461,58 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  describe "real cast attempts" do
+    @tag game_mode: :pre_renewal
+    test "classic failed target still consumes early Foresight but preflight does not" do
+      gs = game_state(100, %{14 => 1})
+
+      gs =
+        put_in(gs.stats.progression, %{
+          gs.stats.progression
+          | job_id: 0,
+            job_level: 1,
+            base_level: 1
+        })
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      :ok =
+        StatusStorage.apply_status(:player, 1000, :sc_memorize,
+          val2: 5,
+          state: %{charges: 5, cast_time_reduction: 50}
+        )
+
+      :ok =
+        StatusStorage.apply_status(:player, 1000, :sc_suffragium,
+          state: %{cast_time_reduction: 45}
+        )
+
+      assert {:error, _reason} = Interpreter.preflight_cast(gs, 14, 1, {:unit, 99_999})
+      assert StatusStorage.get_status(:player, 1000, :sc_memorize).state.charges == 5
+
+      assert {:error, _reason, %PlayerState{}} =
+               Interpreter.begin_cast(gs, 14, 1, {:unit, 99_999})
+
+      assert StatusStorage.get_status(:player, 1000, :sc_memorize).state.charges == 4
+      assert StatusStorage.has_status?(:player, 1000, :sc_suffragium)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal failed target leaves Foresight unconsumed" do
+      gs = game_state(100, %{14 => 1})
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
+
+      :ok =
+        StatusStorage.apply_status(:player, 1000, :sc_memorize,
+          val2: 5,
+          state: %{charges: 5, cast_time_reduction: 50}
+        )
+
+      assert {:error, _reason} = Interpreter.begin_cast(gs, 14, 1, {:unit, 99_999})
+      assert StatusStorage.get_status(:player, 1000, :sc_memorize).state.charges == 5
+    end
+  end
+
   describe "begin_cast/4" do
     test "instant skill runs the behavior, deducts SP, and sets the cooldown" do
       stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
@@ -1499,7 +1556,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "Suffragium reduces variable timing without changing fixed time" do
       reject(&StatusInterpreter.apply_status/4)
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
-      gs = game_state(100, %{29 => 1})
+      gs = cast_ready_state(100, %{29 => 1})
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 -> [] end)
       assert {:casting, _gs, unreduced} = Interpreter.begin_cast(gs, 29, 1, :self)
@@ -1551,7 +1608,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     @tag game_mode: :pre_renewal
     test "classic Suffragium level 3 cuts the cast by 45 percent" do
-      gs = game_state(100, %{29 => 1})
+      gs = cast_ready_state(100, %{29 => 1})
 
       stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: gs.stats}} end)
 
@@ -1574,12 +1631,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
       assert reduced.fixed == unreduced.fixed
       assert reduced.total - reduced.fixed == round((unreduced.total - unreduced.fixed) * 0.55)
+      refute StatusStorage.has_status?(:player, 1000, :sc_suffragium)
     end
 
     test "Bragi and Suffragium apply at their distinct source stages" do
       reject(&StatusInterpreter.apply_status/4)
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{} end)
-      gs = game_state(100, %{29 => 1})
+      gs = cast_ready_state(100, %{29 => 1})
 
       stub(StatusStorage, :get_unit_statuses, fn :player, 1000 -> [] end)
       assert {:casting, _gs, unreduced} = Interpreter.begin_cast(gs, 29, 1, :self)
@@ -2917,6 +2975,53 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:ok, _updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
     end
 
+    test "a delayed item is claimed after target validation but before range failure" do
+      definition = item_definition(%{target_type: :ground, range: 3})
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      caster = item_game_state()
+      test_pid = self()
+
+      claim = fn state ->
+        send(test_pid, :claimed)
+        {:ok, state}
+      end
+
+      assert {:error, :invalid_target} =
+               Interpreter.begin_item_cast(caster, 6, 1, :self, claim, false)
+
+      refute_received :claimed
+
+      assert {:error, :out_of_range, _refreshed, :after_start} =
+               Interpreter.begin_item_cast(caster, 6, 1, {:ground, 50, 50}, claim, false)
+
+      assert_received :claimed
+      refute_received :claimed
+    end
+
+    test "keep_requirement charges the skill's own SP after the delayed item claim" do
+      definition = item_definition(%{zeny_cost: [], item_cost: [], requires_ammo: false})
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      test_pid = self()
+
+      claim = fn caster ->
+        send(test_pid, :item_claimed)
+        {:ok, caster}
+      end
+
+      low = put_in(item_game_state().stats.current_state.sp, 8)
+
+      assert {:error, :insufficient_sp, _state, :after_start} =
+               Interpreter.begin_item_cast(low, 6, 1, :self, claim, true)
+
+      assert_received :item_claimed
+
+      assert {:instant, charged} =
+               Interpreter.begin_item_cast(item_game_state(), 6, 1, :self, claim, true)
+
+      assert_received :item_claimed
+      assert charged.stats.current_state.sp == 91
+    end
+
     test "charges no SP" do
       assert {:ok, updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
       assert updated.stats.current_state.sp == 100
@@ -2969,15 +3074,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.act_delay_until >= before + 700
     end
 
-    test "a cooldown-free skill writes no cooldown and reads no equipment" do
+    test "a cooldown-free item skill reads effective stats without charging resources" do
       stub(Catalog, :by_id, fn 6 ->
         {:ok, item_definition(%{cooldown: [], after_cast_delay: []})}
       end)
 
-      gs = %{item_game_state() | stats: Map.delete(item_game_state().stats, :modifiers)}
+      gs = item_game_state()
 
       assert {:ok, updated} = Interpreter.item_cast(gs, 6, 1, :self)
       assert updated.skill_cooldowns == %{}
+      assert updated.stats.current_state.sp == gs.stats.current_state.sp
+      assert updated.act_delay_until == gs.act_delay_until
     end
 
     test "still refuses an unknown skill" do

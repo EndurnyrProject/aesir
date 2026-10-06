@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.SkillCast
@@ -14,6 +15,8 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -99,9 +102,9 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
 
     before_encore = get_player_state(bard.pid)
     cast(bard, @encore, 1)
-    encore_cast = wait_for_cast(bard.pid, @encore)
+    encore_cast = wait_for_cast(bard.pid, @dissonance)
 
-    assert encore_cast.skill_level == 1
+    assert encore_cast.skill_level == 5
     assert encore_cast.total_until - encore_cast.started_at == original_duration
     assert get_player_state(bard.pid).last_song == %{skill_id: @dissonance, level: 5}
 
@@ -113,9 +116,47 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
     assert before_encore.stats.current_state.sp - replayed.stats.current_state.sp == 14
     assert replayed.skill_cooldowns[@dissonance] > System.monotonic_time(:millisecond)
     assert replayed.skill_cooldowns[@encore] > System.monotonic_time(:millisecond)
-    assert replayed.skill_cooldowns[@encore] - replayed.act_delay_until == 9_700
+
+    assert_in_delta replayed.skill_cooldowns[@encore] - replayed.act_delay_until,
+                    9_700 - original_duration,
+                    150
+
     assert replayed.last_song == %{skill_id: @dissonance, level: 5}
     assert mob_hp(target) < 50_000
+  end
+
+  test "Foresight reacts once to Encore and once to its separate remembered attempt" do
+    bard = start_bard([@encore, @dissonance], name: "Foresight")
+    start_target({151, 150})
+    cast(bard, @dissonance, 1)
+
+    assert eventually(fn ->
+             get_player_state(bard.pid).last_song == %{skill_id: @dissonance, level: 1}
+           end)
+
+    :ok = StatusInterpreter.remove_status(:player, bard.character.id, :sc_dancing)
+
+    if GameMode.mode() == :renewal do
+      wait_for_skill_ready(bard.pid, @dissonance)
+      wait_for_act_ready(bard.pid)
+    end
+
+    char_id = bard.character.id
+    :ok = StatusInterpreter.apply_status(:player, char_id, :sc_memorize, caster_id: char_id)
+    assert StatusStorage.get_status(:player, char_id, :sc_memorize).state.charges == 5
+
+    snapshot = get_player_state(bard.pid)
+    assert :ok = SkillInterpreter.encore_replay_preflight(snapshot, snapshot.last_song, :self)
+    assert StatusStorage.get_status(:player, char_id, :sc_memorize).state.charges == 5
+
+    cast(bard, @encore, 1)
+
+    assert eventually(fn ->
+             StatusStorage.get_status(:player, char_id, :sc_memorize).state.charges == 3
+           end)
+
+    assert eventually(fn -> get_player_state(bard.pid).casting == nil end)
+    assert StatusStorage.get_status(:player, char_id, :sc_memorize).state.charges == 3
   end
 
   @tag integration_pre_re: false
@@ -166,7 +207,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
     assert player_sp(funded.pid) == 1
 
     cast(funded, @encore, 1)
-    assert wait_for_cast(funded.pid, @encore)
+    assert wait_for_cast(funded.pid, @dissonance)
     assert eventually(fn -> get_player_state(funded.pid).casting == nil end)
 
     funded_state = get_player_state(funded.pid)
@@ -192,7 +233,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
     before = get_player_state(bard.pid)
     hp_before = mob_hp(target)
     cast(bard, @encore, 1)
-    assert wait_for_cast(bard.pid, @encore)
+    assert wait_for_cast(bard.pid, @dissonance)
 
     simulate_incoming_message(bard.pid, %UnequipItem{
       index: PlayerState.client_index(instrument_index(bard.pid))
@@ -202,7 +243,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
 
     assert_receive {:packet_sent,
                     %SkillCastFailed{
-                      skill_id: @encore,
+                      skill_id: @dissonance,
                       reason: :SKILL_CAST_FAILURE_REASON_WRONG_WEAPON
                     }, _},
                    2_000
@@ -212,8 +253,9 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
 
     failed = get_player_state(bard.pid)
     assert failed.stats.current_state.sp == before.stats.current_state.sp
-    assert failed.skill_cooldowns == %{}
-    assert failed.act_delay_until == before.act_delay_until
+    assert Map.has_key?(failed.skill_cooldowns, @encore)
+    refute Map.has_key?(failed.skill_cooldowns, @dissonance)
+    assert failed.act_delay_until > before.act_delay_until
     assert mob_hp(target) == hp_before
   end
 

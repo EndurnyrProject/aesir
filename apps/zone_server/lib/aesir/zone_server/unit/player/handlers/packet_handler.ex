@@ -266,6 +266,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     {:noreply, state}
   end
 
+  # A pending item skill uses the exact client-selected target and its restricted
+  # requirement recipe, even when the id has an ordinary skill-specific route.
+  def handle_message(
+        %SkillCast{skill_id: skill_id, level: level, target_id: target_id},
+        %{pending_item_skill: %{skill_id: skill_id, level: level}} = state
+      ) do
+    SkillHandler.handle_use_skill(state, skill_id, level, target_id)
+  end
+
   # SkillCast - Player casts a targeted skill (protobuf analogue of CZ_USE_SKILL 0x0113)
   def handle_message(%SkillCast{skill_id: 231, level: level, target_id: target_id}, state) do
     target = potion_pitcher_target(target_id)

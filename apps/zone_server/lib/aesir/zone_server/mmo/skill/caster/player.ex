@@ -264,6 +264,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     end
   end
 
+  @doc "Refreshes the owning player's snapshot after cast-time status consumption."
+  @spec refresh_after_cast_reactions(PlayerState.t()) :: PlayerState.t()
+  def refresh_after_cast_reactions(%PlayerState{stats: %PlayerStats{}} = caster) do
+    stats = Calculator.calculate_stats(caster.stats, caster.character_id)
+    %{caster | stats: stats, walk_speed: StatusManager.walk_speed_for(stats)}
+  end
+
+  def refresh_after_cast_reactions(caster), do: caster
+
   @impl true
   def act_ready?(caster, now) do
     PlayerState.act_ready?(caster, now)

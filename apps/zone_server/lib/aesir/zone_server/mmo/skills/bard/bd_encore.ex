@@ -1,9 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
   @moduledoc """
-  Encore (BD_ENCORE). Replays the performer's last song or ensemble for half its
-  SP cost (1 SP for the cast itself), needing an instrument or whip.
+  Encore (BD_ENCORE) starts instantly without spending its own SP. Its skill
+  request starts the remembered performance as a separate attempt, with its
+  own cast time and half of its raw SP cost, needing an instrument or whip.
 
-  Renewal adds a 0.3 s delay and a 10 s cooldown; pre-renewal has neither.
+  Renewal adds a 0.3 s delay and a 10 s cooldown to Encore; pre-renewal has
+  neither. The remembered cast keeps its own timing, cost and cooldown.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -22,51 +24,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
     require_weapon: [:musical, :whip]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
-  alias Aesir.ZoneServer.Mmo.Skill.Interpreter
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Cost, as: PerformanceCost
 
   @behaviour Active
 
   @impl Active
   def validate(caster, :self, _level, _definition) do
-    with {:ok, memory} <- replay_memory(caster) do
-      Interpreter.encore_replay_preflight(caster, memory, :self)
+    with {:ok, %{skill_id: skill_id}} <- replay_memory(caster),
+         true <- Catalog.replayable?(skill_id),
+         {:ok, remembered} <- Catalog.by_id(skill_id),
+         :ok <- Caster.Player.knows?(caster, remembered, 1, :begin) do
+      :ok
+    else
+      false -> {:error, :skill_not_replayable}
+      :error -> {:error, :unknown_skill}
+      error -> error
     end
   end
 
   @impl Active
-  def dynamic_cast_time(caster, :self, _level, _definition) do
-    {:ok, memory} = replay_memory(caster)
-    {:ok, timing} = Interpreter.encore_replay_timing(caster, memory, :self)
-    timing
-  end
+  def dynamic_cost(_caster, :self, _level, _definition),
+    do: %Cost{sp_requirement: 1, sp: 0}
 
   @impl Active
-  def dynamic_cost(caster, :self, _level, _definition) do
-    {:ok, %{skill_id: skill_id, level: level}} = replay_memory(caster)
-    {:ok, remembered_definition} = Catalog.by_id(skill_id)
-    raw_base = remembered_definition.sp_cost |> Enum.fetch!(level - 1) |> div(2)
-
-    cost =
-      if Catalog.performance?(skill_id) do
-        PerformanceCost.resolve(caster, remembered_definition, level, raw_base)
-      else
-        sp = Cost.resolve_sp(caster, remembered_definition, level, raw_base)
-        Cost.from_definition(caster, remembered_definition, level, sp: sp)
-      end
-
-    %Cost{sp_requirement: requirement, sp: sp} = cost
-    %{cost | sp_requirement: max(1, max(requirement, sp))}
-  end
-
-  @impl Active
-  def cast(caster, :self, _level, _definition) do
-    with {:ok, memory} <- replay_memory(caster) do
-      Interpreter.complete_encore_replay(caster, memory, :self)
-    end
-  end
+  def cast(caster, :self, _level, _definition), do: {:ok, caster}
 
   defp replay_memory(%{last_song: nil}), do: {:error, :no_song_to_replay}
   defp replay_memory(%{last_song: memory}) when is_map(memory), do: {:ok, memory}

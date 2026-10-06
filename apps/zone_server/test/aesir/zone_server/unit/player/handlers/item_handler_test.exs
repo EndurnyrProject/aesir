@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.CardTargetList
   alias Aesir.Net.ItemRemoved
+  alias Aesir.Net.ItemSkillReady
   alias Aesir.Net.ItemUseResult
   alias Aesir.Net.UseItem
   alias Aesir.StatusActionFixture
@@ -15,13 +16,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -86,12 +90,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
                         %ItemUseResult{index: @red_potion_client_index, ok: true, reason: 0}}}
     end
 
-    test "Fly Wing consumes once and returns the relocated session state" do
+    test "Fly Wing consumes once, stages Teleport, then relocates on client cast" do
       source = "itemskill(ctx, 26, level: 1)"
       ScriptCompiler.compile_all!([item_def(@fly_wing_id, source)])
 
-      state = state_with_potion(@fly_wing_id)
-      definition = usable_definition(@fly_wing_id, source)
+      state = Map.put(state_with_potion(@fly_wing_id), :pending_item_skill, nil)
+      definition = %{usable_definition(@fly_wing_id, source) | type: :delay_consume}
 
       stub(Items, :by_id, fn @fly_wing_id -> {:ok, definition} end)
       stub(Cell, :random_traversable, fn "prontera" -> {:ok, {42, 77}} end)
@@ -99,6 +103,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
         {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
          {:reduced, @red_potion_slot, 4}}
+      end)
+
+      expect(Broadcast, :to_player, fn 1000,
+                                       %ItemSkillReady{skill_id: 26, level: 1, target_kind: :SELF} ->
+        :ok
       end)
 
       expect(WarpHandler, :warp, fn session, "prontera", 42, 77 ->
@@ -112,10 +121,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert {:noreply, committed} =
                ItemHandler.handle_use_item(@red_potion_client_index, state)
 
-      assert committed.game_state.x == 42
-      assert committed.game_state.y == 77
-      assert committed.game_state.pending_warp == nil
-      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+      assert committed.game_state.x == 50
+      assert committed.game_state.y == 50
+
+      assert committed.pending_item_skill == %{
+               skill_id: 26,
+               level: 1,
+               item_index: @red_potion_slot,
+               item_nameid: @fly_wing_id,
+               keep_requirement?: false
+             }
+
+      assert committed.game_state.inventory[@red_potion_slot].amount == 5
+
+      assert {:instant, casted} =
+               SkillInterpreter.begin_item_cast(committed.game_state, 26, 1, :self, fn gs ->
+                 {:ok, inventory, _change} =
+                   InventoryOps.remove(gs.character_id, gs.inventory, @red_potion_slot, 1)
+
+                 {:ok, %{gs | inventory: inventory}}
+               end)
+
+      relocated = SkillHandler.drain_warp(%{committed | game_state: casted})
+      assert relocated.game_state.x == 42
+      assert relocated.game_state.y == 77
+      assert relocated.game_state.pending_warp == nil
+      assert relocated.game_state.inventory[@red_potion_slot].amount == 4
     end
   end
 

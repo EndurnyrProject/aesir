@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
     `:item`, `:skill`, `:effect` resolver lookups).
   - `%{shape: :heal, dsl: name}` — the `itemheal`/`heal`/`percentheal` shape:
     `name(ctx, hp: …, sp: …)`, zero amounts omitted, `rand` rendered as a range.
-  - `%{shape: :itemskill, dsl: name}` — `itemskill(ctx, skill, level: lv)`.
+  - `%{shape: :itemskill, dsl: name}` — `itemskill(ctx, skill, level: lv)`, with optional `keep_requirement: true`.
   - `%{shape: :item_group_optional, dsl: name, args: types}` — an item-group
     command/read with one optional trailing subgroup; omitted subgroups emit
     the runtime default `0`.

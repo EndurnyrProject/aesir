@@ -172,6 +172,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     end
   end
 
+  defp render_rule(%{shape: :itemskill, dsl: dsl}, [skill_expr, level_expr, flag_expr]) do
+    with {:ok, skill} <- render_arg(:skill, skill_expr),
+         {:ok, level} <- render_arg(:int, level_expr),
+         {:ok, flag} <- itemskill_requirement(flag_expr) do
+      {:ok, "#{dsl}(ctx, #{skill}, level: #{level}, keep_requirement: #{flag})"}
+    end
+  end
+
   defp render_rule(%{shape: :itemskill, dsl: dsl}, [skill_expr, level_expr]) do
     with {:ok, skill} <- render_arg(:skill, skill_expr),
          {:ok, level} <- render_arg(:int, level_expr) do
@@ -294,6 +302,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     do: resolved(Resolver.resolve_skill(id), &Integer.to_string/1)
 
   defp render_arg(type, other), do: unsupported({type, other})
+
+  defp itemskill_requirement({:name, value}) when value in ["true", "false"],
+    do: {:ok, value}
+
+  defp itemskill_requirement({:int, value}),
+    do: {:ok, if(value != 0, do: "true", else: "false")}
+
+  defp itemskill_requirement({:neg, {:int, value}}), do: itemskill_requirement({:int, -value})
+
+  defp itemskill_requirement(other), do: unsupported({:invalid_itemskill_requirement, other})
 
   @spec flag_value(term()) :: {:ok, integer()} | {:error, {:unsupported, detail()}}
   defp flag_value({:int, n}), do: {:ok, n}

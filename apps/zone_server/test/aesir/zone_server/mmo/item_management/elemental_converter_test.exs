@@ -18,9 +18,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
+  alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @char_id 1002
@@ -64,6 +67,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
     end)
 
     stub(UnitRegistry, :get_unit_info, fn _, _ -> {:ok, %{stats: %{}}} end)
+    test_pid = self()
+
+    stub(PlayerSession, :script_apply, fn _pid, {:stage_item_skill, skill_id, level, false} ->
+      send(test_pid, {:pending_item_skill, skill_id, level})
+      {:ok, ctx().game_state}
+    end)
 
     # A sibling async: false test may have swapped the boot-compiled catalog for
     # a single-item set; recompile the real one so the converters' on_use is the
@@ -80,9 +89,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
       char_id: @char_id,
       account_id: 100,
       connection_pid: self(),
-      game_state: %PlayerState{character_id: @char_id},
+      game_state: %PlayerState{
+        character_id: @char_id,
+        stats: %Stats{
+          base_stats: %{dex: 5, int: 5},
+          current_state: %{hp: 100, sp: 100},
+          progression: %Stats.PlayerProgression{base_level: 1, job_level: 1, job_id: 0}
+        }
+      },
+      session_pid: self(),
       source: {:item, 0}
     }
+  end
+
+  defp cast_converter(item_id) do
+    context = ctx()
+    assert %Ctx{status: :ok} = CompiledItemScripts.on_use(item_id, context)
+    assert_received {:pending_item_skill, skill_id, level}
+    assert {:ok, _} = SkillInterpreter.item_cast(context.game_state, skill_id, level, :self)
   end
 
   defp attack_undead do
@@ -94,15 +118,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
 
   for {item_id, element} <- @converters do
     test "converter #{item_id} endows the weapon with the #{element} element" do
-      assert %Ctx{status: :ok} = CompiledItemScripts.on_use(unquote(item_id), ctx())
-
+      cast_converter(unquote(item_id))
       attack_undead()
-
       assert_received {:attack_element, unquote(element)}
     end
 
     test "converter #{item_id} endows for ITEM_ENCHANTARMS's Duration1 of 20 minutes" do
-      CompiledItemScripts.on_use(unquote(item_id), ctx())
+      cast_converter(unquote(item_id))
 
       instance = StatusStorage.get_status(:player, @char_id, :sc_watk_element)
 

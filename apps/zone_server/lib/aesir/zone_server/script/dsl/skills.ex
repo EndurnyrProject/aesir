@@ -159,15 +159,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   defp clamp_npcskill_stat(value), do: value |> max(@npcskill_min_stat) |> min(@npcskill_max_stat)
 
   @doc """
-  Casts a skill programmatically on the player.
-
-  `skill_id_or_name` is a skill id or its catalog name atom. `opts` accepts
-  `:level` (default 1) and `:target` (default `:self`). Halts on a cast error or
-  an unknown skill name. Halts `:no_player` on a detached ctx.
-
-  The item is the cost, so this runs through `SkillInterpreter.item_cast/4`: the
-  player need not have learned the skill and no SP, zeny, catalyst or ammo is
-  required or charged.
+  Stages one item-granted skill in the owning player session. The client chooses
+  its target using the ordinary skill intent; no cast or skill requirement is
+  consumed while the script runs. `skill_id_or_name` is a catalog id or name;
+  `:level` defaults to 1. Unknown skills and detached contexts halt the script.
   """
   @spec itemskill(Ctx.t(), integer() | atom(), keyword()) :: Ctx.t()
   def itemskill(%Ctx{status: {:error, _}} = ctx, _skill, _opts), do: ctx
@@ -175,16 +170,20 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
 
   def itemskill(%Ctx{} = ctx, skill_id_or_name, opts) do
     level = Keyword.get(opts, :level, 1)
-    target = Keyword.get(opts, :target, :self)
+    keep_requirement? = Keyword.get(opts, :keep_requirement, false)
 
-    with {:ok, skill_id} <- resolve_skill_id(skill_id_or_name),
-         {:ok, new_game_state} <-
-           SkillInterpreter.item_cast(ctx.game_state, skill_id, level, target) do
-      %{ctx | game_state: new_game_state}
-    else
+    case resolve_skill_id(skill_id_or_name) do
+      {:ok, skill_id} -> stage_item_skill(ctx, skill_id, level, keep_requirement?)
       {:error, reason} -> Ctx.halt(ctx, reason)
     end
   end
+
+  defp stage_item_skill(%Ctx{session_pid: nil, source: {:item, _}} = ctx, skill_id, level, keep?) do
+    %{ctx | session_effects: ctx.session_effects ++ [{:item_skill, skill_id, level, keep?}]}
+  end
+
+  defp stage_item_skill(ctx, skill_id, level, keep?),
+    do: apply_op(ctx, {:stage_item_skill, skill_id, level, keep?})
 
   @doc """
   Refunds the player's learned skills into skill points through the session seam

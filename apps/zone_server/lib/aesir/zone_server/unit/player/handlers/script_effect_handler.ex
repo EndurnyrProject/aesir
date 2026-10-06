@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.ItemSkillReady
   alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
@@ -24,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
@@ -74,6 +76,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:reset_skills}
           | {:reset_level, integer()}
           | {:grant_skill, integer() | atom(), integer()}
+          | {:stage_item_skill, integer(), pos_integer()}
+          | {:stage_item_skill, integer(), pos_integer(), boolean()}
+          | {:stage_item_skill, integer(), pos_integer(), {non_neg_integer(), integer()}}
+          | {:stage_item_skill, integer(), pos_integer(), {non_neg_integer(), integer()},
+             boolean()}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:warp, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
@@ -442,6 +449,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
+  def apply_op({:stage_item_skill, skill_id, level}, state),
+    do: stage_item_skill(skill_id, level, nil, false, state)
+
+  def apply_op({:stage_item_skill, skill_id, level, keep?}, state) when is_boolean(keep?),
+    do: stage_item_skill(skill_id, level, nil, keep?, state)
+
+  def apply_op({:stage_item_skill, skill_id, level, {index, nameid}}, state),
+    do: stage_item_skill(skill_id, level, %{item_index: index, item_nameid: nameid}, false, state)
+
+  def apply_op({:stage_item_skill, skill_id, level, {index, nameid}, keep?}, state)
+      when is_boolean(keep?),
+      do:
+        stage_item_skill(skill_id, level, %{item_index: index, item_nameid: nameid}, keep?, state)
+
   def apply_op({:grant_skill, skill_id_or_name, level}, state) do
     case SkillLearningHandler.grant_skill(skill_id_or_name, level, state) do
       {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
@@ -626,6 +647,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
         {{:error, reason}, state}
     end
   end
+
+  defp stage_item_skill(skill_id, level, item, keep?, %{game_state: gs} = state) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} when is_integer(level) and level > 0 and level <= definition.max_level ->
+        Broadcast.to_player(gs.character_id, %ItemSkillReady{
+          skill_id: skill_id,
+          level: level,
+          target_kind: item_skill_target_kind(definition.target_type)
+        })
+
+        pending =
+          Map.merge(%{skill_id: skill_id, level: level, keep_requirement?: keep?}, item || %{})
+
+        {{:ok, gs}, %{state | pending_item_skill: pending}}
+
+      {:ok, _definition} ->
+        {{:error, :invalid_level}, state}
+
+      :error ->
+        {{:error, :unknown_skill}, state}
+    end
+  end
+
+  defp item_skill_target_kind(:self), do: :SELF
+  defp item_skill_target_kind(:ground), do: :GROUND
+  defp item_skill_target_kind(_unit), do: :UNIT
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}

@@ -5,7 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium do
 
   Renewal: 5 plus 5 per level percent (10, 15, 20%), kept for the whole duration and
   not consumed by casting. Pre-renewal: 15 per level percent (15, 30, 45%), removed
-  once the holder commits a skill cast.
+  at the late timing computation after a valid cast attempt, even if the skill
+  ignores status cast-time reductions.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_suffragium,
@@ -20,7 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium do
 
   @impl true
   def on_apply(_target, instance, _context) do
-    {:ok, put_state(instance, :cast_time_reduction, reduction(instance.val1))}
+    value = reduction(instance.val1)
+    {:ok, %{instance | val2: value} |> put_state(:cast_time_reduction, value)}
   end
 
   @doc "Variable cast reduction in percent: 5 plus 5 per level in renewal, 15 per level in classic."
@@ -31,11 +33,4 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium do
       :pre_renewal -> 15 * level
     end
   end
-
-  @impl true
-  def on_committed_action(_target, instance, {:skill, _skill_id}, _context) do
-    if GameMode.mode() == :pre_renewal, do: :remove, else: {:ok, instance}
-  end
-
-  def on_committed_action(_target, instance, _action, _context), do: {:ok, instance}
 end

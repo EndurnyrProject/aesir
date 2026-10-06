@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LongingTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule SupportBlock do
@@ -39,7 +40,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LongingTest do
     player =
       PlayerStateFixture.build(%{
         character_id: 17,
-        stats: %{progression: %{learned_skills: %{28 => 1}}}
+        stats: %{
+          progression: %{learned_skills: %{28 => 1}, base_level: 1, job_level: 1},
+          combat_stats: %CombatStats{}
+        }
       })
 
     :ok = UnitRegistry.register_player(player, self())

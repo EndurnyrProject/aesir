@@ -80,11 +80,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
     not ground?(map_name) or skill_id not in skill_bans(GameMode.mode())
   end
 
-  @doc "Returns whether an item may be used on the map under siege-ground rules."
+  @doc "Returns whether a usable item has a modeled siege-ground use restriction."
   @spec item_allowed?(pos_integer(), String.t()) :: boolean()
-  def item_allowed?(item_id, map_name) do
-    not ground?(map_name) or item_id not in item_bans(GameMode.mode())
-  end
+  def item_allowed?(_item_id, _map_name), do: true
 
   @doc "Returns whether a status may be applied on the map under siege-ground rules."
   @spec status_allowed?(atom(), String.t()) :: boolean()
@@ -157,7 +155,4 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
 
   defp skill_bans(:renewal), do: @shared_skill_bans
   defp skill_bans(:pre_renewal), do: [1013 | @shared_skill_bans]
-
-  defp item_bans(:renewal), do: [605, 14_529]
-  defp item_bans(:pre_renewal), do: [14_529]
 end

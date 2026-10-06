@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             interaction_lock: nil,
             pending_skill_text_input: nil,
             pending_skill_menu: nil,
+            pending_item_skill: nil,
             deferred_skill_result: nil,
             pending_party_invite: nil,
             pending_trade_invite: nil,
@@ -71,6 +72,15 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           interaction_lock: interaction_lock() | nil,
           pending_skill_text_input: PendingSkillTextInput.t() | nil,
           pending_skill_menu: map() | nil,
+          pending_item_skill:
+            %{
+              required(:skill_id) => integer(),
+              required(:level) => pos_integer(),
+              required(:keep_requirement?) => boolean(),
+              optional(:item_index) => non_neg_integer(),
+              optional(:item_nameid) => pos_integer()
+            }
+            | nil,
           deferred_skill_result: map() | nil,
           pending_party_invite: map() | nil,
           pending_trade_invite:

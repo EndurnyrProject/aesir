@@ -84,26 +84,27 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastItemRestrictionsTest do
     end
   end
 
-  test "mode-restricted items run no effect and consume nothing on inactive castle ground" do
-    denied_ids =
-      if GameMode.mode() == :renewal,
-        do: [@greed_scroll, @anodyne],
-        else: [@greed_scroll]
+  test "delay-consume scrolls stage item skills on castle ground without early loss" do
+    definitions = [
+      %{
+        item_definition(@greed_scroll)
+        | type: :delay_consume,
+          on_use: "itemskill(ctx, 1013, level: 1)"
+      },
+      %{item_definition(@anodyne) | type: :delay_consume, on_use: "itemskill(ctx, 8, level: 1)"}
+    ]
 
-    definitions = Enum.map(denied_ids, &item_definition/1)
     ScriptCompiler.compile_all!(definitions)
-
     stub(Items, :by_id, fn id -> {:ok, Enum.find(definitions, &(&1.id == id))} end)
     reject(&InventoryOps.remove/4)
 
-    for item_id <- denied_ids do
-      state = item_state(item_id, @castle)
-
-      assert {:noreply, ^state} = ItemHandler.handle_use_item(2, state)
-      assert state.game_state.stats.current_state.hp == 100
-
-      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false, reason: 3}}}
-
+    for {item_id, skill_id} <- [{@greed_scroll, 1013}, {@anodyne, 8}] do
+      state = Map.put(item_state(item_id, @castle), :pending_item_skill, nil)
+      assert {:noreply, staged} = ItemHandler.handle_use_item(2, state)
+      assert staged.pending_item_skill.skill_id == skill_id
+      assert staged.game_state.inventory[0].amount == 2
+      assert staged.game_state.stats.current_state.hp == 100
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: true}}}
       refute_received {:send, :gameplay, {:item_removed, _}}
     end
   end
@@ -174,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastItemRestrictionsTest do
       act_delay_until: 0,
       skill_cooldowns: %{},
       stats: %Stats{
-        base_stats: %BaseStats{vit: 0, int: 0},
+        base_stats: %BaseStats{vit: 0, int: 0, dex: 0},
         current_state: %CurrentState{hp: 100, sp: 100},
         derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
         progression: %PlayerProgression{

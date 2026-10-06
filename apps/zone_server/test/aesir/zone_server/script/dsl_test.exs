@@ -1171,34 +1171,50 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   describe "itemskill/3" do
-    test "casts a skill by id and folds the returned game_state" do
-      cast_state = %{build_game_state() | action_state: :casting}
+    test "stages a skill by id and folds the owner's current state" do
+      staged_state = %{build_game_state() | action_state: :moving}
+      ctx = %{build_ctx() | session_pid: self()}
 
-      expect(SkillInterpreter, :item_cast, fn _gs, 14, 5, :self -> {:ok, cast_state} end)
-
-      ctx = Dsl.itemskill(build_ctx(), 14, level: 5)
-
-      assert ctx.status == :ok
-      assert ctx.game_state.action_state == :casting
-    end
-
-    test "halts on a cast error" do
-      stub(SkillInterpreter, :item_cast, fn _gs, _id, _lvl, _target ->
-        {:error, :not_enough_sp}
+      expect(PlayerSession, :script_apply, fn pid, {:stage_item_skill, 14, 5, false} ->
+        assert pid == self()
+        {:ok, staged_state}
       end)
 
-      ctx = Dsl.itemskill(build_ctx(), 14, [])
-
-      assert ctx.status == {:error, :not_enough_sp}
+      result = Dsl.itemskill(ctx, 14, level: 5)
+      assert result.status == :ok
+      assert result.game_state == staged_state
     end
 
-    # The item is the cost: an item-cast never goes through the requirement
-    # chain a player cast pays, so a skill the player never learned still runs.
-    test "routes through item_cast/4 and never through the player-cast entry" do
-      reject(&SkillInterpreter.cast/4)
-      stub(SkillInterpreter, :item_cast, fn gs, _id, _lvl, _target -> {:ok, gs} end)
+    test "halts when the owner rejects staging" do
+      ctx = %{build_ctx() | session_pid: self()}
 
-      assert %{status: :ok} = Dsl.itemskill(build_ctx(), 14, [])
+      stub(PlayerSession, :script_apply, fn _pid, {:stage_item_skill, 14, 1, false} ->
+        {:error, :invalid_level}
+      end)
+
+      assert Dsl.itemskill(ctx, 14, []).status == {:error, :invalid_level}
+    end
+
+    test "the third itemskill argument retains the skill's requirement recipe" do
+      ctx = %{build_ctx() | session_pid: self()}
+
+      expect(PlayerSession, :script_apply, fn _pid, {:stage_item_skill, 14, 1, true} ->
+        {:ok, ctx.game_state}
+      end)
+
+      assert %{status: :ok} = Dsl.itemskill(ctx, 14, keep_requirement: true)
+    end
+
+    test "staging does not execute a player or restricted cast" do
+      ctx = %{build_ctx() | session_pid: self()}
+      reject(&SkillInterpreter.cast/4)
+      reject(&SkillInterpreter.item_cast/4)
+
+      expect(PlayerSession, :script_apply, fn _pid, {:stage_item_skill, 14, 1, false} ->
+        {:ok, ctx.game_state}
+      end)
+
+      assert %{status: :ok} = Dsl.itemskill(ctx, 14, [])
     end
   end
 

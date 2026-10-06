@@ -4,11 +4,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
   Cards open stateless target discovery without running or consuming anything.
   The existing consumable path validates other items, runs the effect
-  synchronously inside the player session, commits the resulting state and (only
-  on success) consumes exactly one unit of the item. The client is told the
-  outcome with an `ItemUseResult` and, on success, an `ItemRemoved` delta for the
-  consumed unit. A failure (missing slot, non-usable or restricted item, or a
-  halted script) consumes nothing and leaves state unchanged.
+  synchronously inside the player session and commits the resulting state.
+  Ordinary items consume one unit on success; a `delay_consume` item that grants
+  a skill waits until the client selects a valid cast before consuming it.
+  `ItemUseResult` acknowledges the item use and `ItemRemoved` reports the actual
+  consumption. A failed item-use check leaves inventory unchanged.
   """
 
   require Logger
@@ -17,14 +17,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
@@ -48,8 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     with {:ok, item} <- fetch_item(game_state.inventory, server_index),
          {:ok, definition} <- fetch_definition(item.nameid),
          :ok <- item_use_enabled?(state),
-         :ok <- item_use_allowed?(game_state),
-         :ok <- item_allowed?(item.nameid, game_state.map_name) do
+         :ok <- item_use_allowed?(game_state) do
       use_definition(definition, client_index, server_index, state)
     else
       {:error, reason} -> reject(client_index, reason, state)
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
     with :ok <- usable?(definition),
          :ok <- Eligibility.check(definition, context) do
-      run_effect(client_index, server_index, definition.id, state)
+      run_effect(client_index, server_index, definition, state)
     else
       {:error, reason} -> reject(client_index, reason, state)
     end
@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   # one DB transaction (Homunculus.Persistence.transition_with_item/5), so it
   # bypasses consume/4 and must be the only thing the script did. Every other
   # staged effect is applied to the session in script order, then consumed here.
-  defp run_effect(client_index, server_index, item_id, state) do
+  defp run_effect(client_index, server_index, %{id: item_id} = definition, state) do
     original = Ctx.from_session(state, {:item, item_id})
     ctx = CompiledItemScripts.on_use(item_id, original)
 
@@ -95,16 +95,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
         end
 
       %Ctx{session_effects: effects} ->
-        case apply_session_effects(effects, %{state | game_state: ctx.game_state}) do
-          {:ok, updated} ->
-            consume(client_index, server_index, %{ctx | game_state: updated.game_state}, updated)
+        apply_item_effects(ctx, effects, definition, client_index, server_index, state)
+    end
+  end
 
-          {:error, :invalid_script} ->
-            reject_invalid_script(client_index, item_id, state)
+  defp apply_item_effects(
+         ctx,
+         effects,
+         %{id: item_id, type: type},
+         client_index,
+         server_index,
+         state
+       ) do
+    pending = List.last(for {:item_skill, id, level, keep?} <- effects, do: {id, level, keep?})
+    effects = Enum.reject(effects, &match?({:item_skill, _, _, _}, &1))
 
-          {:error, reason} ->
-            reject(client_index, reason, state)
-        end
+    with :ok <- validate_item_skill(pending),
+         {:ok, updated} <- apply_session_effects(effects, %{state | game_state: ctx.game_state}) do
+      if type == :delay_consume and pending do
+        stage_delayed_item_skill(client_index, server_index, item_id, pending, updated)
+      else
+        consume(
+          client_index,
+          server_index,
+          %{ctx | game_state: updated.game_state},
+          updated,
+          pending
+        )
+      end
+    else
+      {:error, :invalid_script} -> reject_invalid_script(client_index, item_id, state)
+      {:error, reason} -> reject(client_index, reason, state)
     end
   end
 
@@ -127,7 +148,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     reject(client_index, :invalid_script, state)
   end
 
-  defp consume(client_index, server_index, ctx, state) do
+  defp validate_item_skill(nil), do: :ok
+
+  defp validate_item_skill({id, level, keep?}) when is_boolean(keep?) do
+    case Catalog.by_id(id) do
+      {:ok, definition} when is_integer(level) and level > 0 and level <= definition.max_level ->
+        :ok
+
+      {:ok, _definition} ->
+        {:error, :invalid_level}
+
+      :error ->
+        {:error, :unknown_skill}
+    end
+  end
+
+  defp validate_item_skill({_id, _level, _invalid_flag}), do: {:error, :invalid_requirement}
+
+  defp stage_delayed_item_skill(
+         client_index,
+         server_index,
+         item_id,
+         {skill_id, level, keep?},
+         state
+       ) do
+    state = StateCommit.commit(state, state.game_state)
+
+    MessageRouter.send_to(state.connection_pid, %ItemUseResult{
+      index: client_index,
+      ok: true,
+      reason: 0
+    })
+
+    {{:ok, _gs}, staged} =
+      ScriptEffectHandler.apply_op(
+        {:stage_item_skill, skill_id, level, {server_index, item_id}, keep?},
+        state
+      )
+
+    {:noreply, staged}
+  end
+
+  defp consume(client_index, server_index, ctx, state, pending) do
     char_id = state.game_state.character_id
 
     case InventoryOps.remove(char_id, ctx.game_state.inventory, server_index, 1) do
@@ -149,7 +211,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
         PlayerEvents.inventory_changed(char_id)
 
-        {:noreply, SkillHandler.drain_warp(committed)}
+        committed = SkillHandler.drain_warp(committed)
+        {:noreply, stage_consumed_item_skill(committed, pending)}
 
       {:error, reason} ->
         Logger.warning(
@@ -158,6 +221,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
         reject(client_index, reason, state)
     end
+  end
+
+  defp stage_consumed_item_skill(state, nil), do: state
+
+  defp stage_consumed_item_skill(state, {skill_id, level, keep?}) do
+    {{:ok, _gs}, staged} =
+      ScriptEffectHandler.apply_op({:stage_item_skill, skill_id, level, keep?}, state)
+
+    staged
   end
 
   defp reject(client_index, reason, %{connection_pid: connection_pid} = state) do
@@ -203,13 +275,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     if Interpreter.can_use_item?(:player, character_id),
       do: :ok,
       else: {:error, :status_blocked}
-  end
-
-  @spec item_allowed?(pos_integer(), String.t()) :: :ok | {:error, :item_not_allowed}
-  defp item_allowed?(item_id, map_name) do
-    if Rules.item_allowed?(item_id, map_name),
-      do: :ok,
-      else: {:error, :item_not_allowed}
   end
 
   # Stable uint32 reject codes mirrored by the Lifthrasir client (0 reserved for
