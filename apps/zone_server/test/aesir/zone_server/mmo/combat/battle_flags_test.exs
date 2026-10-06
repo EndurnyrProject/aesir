@@ -156,4 +156,60 @@ defmodule Aesir.ZoneServer.Mmo.Combat.BattleFlagsTest do
       assert BattleFlags.self_victim?(both)
     end
   end
+
+  describe "skill_range/4" do
+    defp unit(type, position), do: %{unit_type: type, position: position}
+
+    test "a player skill keeps its declared classification" do
+      player = unit(:player, {100, 100})
+      target = unit(:mob, {101, 100})
+
+      assert BattleFlags.skill_range(player, target, 365, :long) == :long
+      assert BattleFlags.skill_range(player, target, 5, :short) == :short
+    end
+
+    test "monster and homunculus skills are short within 3 cells and long beyond" do
+      target = unit(:player, {100, 100})
+
+      for type <- [:mob, :homunculus] do
+        assert BattleFlags.skill_range(unit(type, {103, 97}), target, 365, :long) == :short
+        assert BattleFlags.skill_range(unit(type, {104, 100}), target, 5, :short) == :long
+      end
+    end
+
+    test "traps are short for every caster at any distance" do
+      target = unit(:mob, {120, 100})
+
+      assert BattleFlags.skill_range(unit(:player, {100, 100}), target, 121, :long) == :short
+      assert BattleFlags.skill_range(unit(:mob, {100, 100}), target, 121, :long) == :short
+    end
+
+    test "monster Arrow Shower and Bomb are short, a homunculus's follow distance" do
+      target = unit(:player, {110, 100})
+
+      assert BattleFlags.skill_range(unit(:mob, {100, 100}), target, 47, :long) == :short
+      assert BattleFlags.skill_range(unit(:mob, {100, 100}), target, 229, :long) == :short
+      assert BattleFlags.skill_range(unit(:homunculus, {100, 100}), target, 47, :short) == :long
+    end
+
+    @tag game_mode: :renewal
+    test "renewal Brandish Spear is long even at monster melee distance" do
+      target = unit(:player, {101, 100})
+
+      assert BattleFlags.skill_range(unit(:mob, {100, 100}), target, 57, :short) == :long
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Brandish Spear follows the ordinary rules and Fire Pillar is a trap" do
+      assert BattleFlags.skill_range(unit(:mob, {100, 100}), unit(:player, {101, 100}), 57, :long) ==
+               :short
+
+      assert BattleFlags.skill_range(unit(:mob, {100, 100}), unit(:player, {110, 100}), 80, :long) ==
+               :short
+    end
+
+    test "a monster without a known position falls back to the declared classification" do
+      assert BattleFlags.skill_range(unit(:mob, nil), unit(:player, {1, 1}), 5, :long) == :long
+    end
+  end
 end

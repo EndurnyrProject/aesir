@@ -497,6 +497,92 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     assert_received {:packet, 96, 8}
   end
 
+  test "Stave Crasher hands one half-open MATK roll and its range class to the calculator" do
+    attacker =
+      CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+      |> Map.update!(:combat_stats, &Map.merge(&1, %{matk: 101, matk_min: 100, matk_max: 101}))
+
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 1_000}
+
+    stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+    expect(DamageCalculator, :calculate_stave_crasher_damage, fn ^attacker, ^target, opts ->
+      assert opts[:matk] == 100
+      assert opts[:ranged] == true
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 40, hit_info ->
+      refute hit_info.is_short
+      40
+    end)
+
+    expect(MobSession, :apply_damage, fn _pid, 40, 1001, _metadata -> :ok end)
+
+    assert {:ok, %{hit?: true, damage: 40}} =
+             SkillAttack.execute_stave_crasher_attack(caster_state, {:mob, 2001},
+               skill_id: 365,
+               skill_level: 1,
+               ranged: true,
+               skip_crit: true,
+               ignore_flee: true,
+               report_hit: true
+             )
+  end
+
+  test "a monster's skill hit is short within 3 cells and long beyond, whatever it declares" do
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {100, 100})
+    target_state = %TestUnit{combatant: target, hp: 1_000}
+    test_pid = self()
+
+    stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+    stub(AttackValidator, :validate, fn _attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn _attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, 2002, _metadata -> :ok end)
+
+    stub(DamageCalculator, :calculate_damage, fn _attacker, ^target, opts ->
+      send(test_pid, {:calculated_ranged, opts[:ranged]})
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, 40, hit_info ->
+      send(test_pid, {:delivered_short, hit_info.is_short})
+      40
+    end)
+
+    for {position, ranged?, short?} <- [{{103, 97}, true, true}, {{104, 100}, false, false}] do
+      attacker =
+        CombatTestHelper.create_mob_combatant(unit_id: 2002, position: position)
+        |> Map.put(:attack_range, 1)
+
+      assert {:ok, %{hit?: true}} =
+               SkillAttack.execute_skill_attack(
+                 %TestUnit{combatant: attacker, hp: 100},
+                 {:mob, 2001},
+                 skill_id: 5,
+                 skill_level: 1,
+                 ranged: ranged?,
+                 ignore_flee: true,
+                 report_hit: true
+               )
+
+      assert_received {:calculated_ranged, ranged_result}
+      assert_received {:delivered_short, ^short?}
+      assert ranged_result == not short?
+    end
+  end
+
   test "equipment skill blow needs a damaging hit and floors signed totals" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
     target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})

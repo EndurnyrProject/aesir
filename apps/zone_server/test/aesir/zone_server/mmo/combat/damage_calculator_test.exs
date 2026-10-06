@@ -2642,6 +2642,129 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "calculate_stave_crasher_damage/3" do
+    setup do
+      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "inserts MATK into the player weapon component or replaces the classic weapon base" do
+      attacker = stave_caster(non_crit_atk_rate: 0)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      opts = [skill_id: 365, skip_crit: true]
+
+      assert {:ok, plain} = DamageCalculator.calculate_damage(attacker, defender, opts)
+
+      assert {:ok, stave} =
+               DamageCalculator.calculate_stave_crasher_damage(
+                 attacker,
+                 defender,
+                 [matk: 200] ++ opts
+               )
+
+      assert plain.damage == mode_value(187, 146)
+      assert stave.damage == mode_value(387, 211)
+    end
+
+    test "the non-critical rate scales the classic MATK base but not the renewal recipe" do
+      attacker = stave_caster(non_crit_atk_rate: 100)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+
+      assert {:ok, %{damage: damage}} =
+               DamageCalculator.calculate_stave_crasher_damage(attacker, defender,
+                 matk: 200,
+                 skill_id: 365,
+                 skip_crit: true
+               )
+
+      assert damage == mode_value(387, 411)
+    end
+
+    test "classic Maximize Power takes the MATK maximum while renewal keeps the roll" do
+      attacker = stave_caster(non_crit_atk_rate: 0)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+
+      assert {:ok, %{damage: damage}} =
+               DamageCalculator.calculate_stave_crasher_damage(attacker, defender,
+                 matk: 150,
+                 skill_id: 365,
+                 skip_crit: true
+               )
+
+      assert damage == mode_value(337, 211)
+    end
+
+    @tag game_mode: :renewal
+    test "an ordinary renewal monster hit gains nothing from the MATK insertion" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 100)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+      opts = [skill_id: 365, skip_crit: true]
+
+      :rand.seed(:exsss, {11, 12, 13})
+      assert {:ok, plain} = DamageCalculator.calculate_damage(attacker, defender, opts)
+      :rand.seed(:exsss, {11, 12, 13})
+
+      assert {:ok, stave} =
+               DamageCalculator.calculate_stave_crasher_damage(
+                 attacker,
+                 defender,
+                 [matk: 200] ++ opts
+               )
+
+      assert stave.damage == plain.damage
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a classic monster's base is the MATK roll without its base ATK" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 100)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+
+      assert {:ok, %{damage: damage}} =
+               DamageCalculator.calculate_stave_crasher_damage(attacker, defender,
+                 matk: 200,
+                 skill_id: 365,
+                 skip_crit: true
+               )
+
+      # 200 MATK base, minus the classic minimum soft DEF of 1.
+      assert damage == 199
+    end
+
+    test "rejects a missing or negative MATK value" do
+      attacker = stave_caster(non_crit_atk_rate: 0)
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert {:error, :invalid_matk} =
+               DamageCalculator.calculate_stave_crasher_damage(attacker, defender, skill_id: 365)
+
+      assert {:error, :invalid_matk} =
+               DamageCalculator.calculate_stave_crasher_damage(attacker, defender,
+                 matk: -1,
+                 skill_id: 365
+               )
+    end
+  end
+
+  defp stave_caster(non_crit_atk_rate: rate) do
+    attacker = player_with_weapon(100)
+
+    %{
+      attacker
+      | right_hand: %{attacker.right_hand | refine_atk: 7},
+        equip_modifiers: %{non_crit_atk_rate: rate},
+        combat_stats:
+          Map.merge(attacker.combat_stats, %{
+            max_weapon_damage: true,
+            matk: 200,
+            matk_min: 100,
+            matk_max: 200,
+            physical_attack: %{status_atk: 20, flat_atk: 15, mastery_atk: 5, str: 0, dex: 0}
+          })
+    }
+  end
+
   defp mode_value(renewal, classic),
     do: if(GameMode.mode() == :renewal, do: renewal, else: classic)
 

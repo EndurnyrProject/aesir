@@ -205,6 +205,44 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     assert renewal(%{plain | source: :shield}, rated) == 116
   end
 
+  describe "Renewal Stave Crasher MATK insertion" do
+    test "joins weapon ATK after the equipment percentage part and before weapon cards" do
+      weapon_only = %{
+        parts()
+        | status_atk: 0,
+          flat_atk: 0,
+          refine_atk: 0,
+          overrefine_atk: 0,
+          mastery_atk: 0
+      }
+
+      context =
+        neutral_context()
+        |> Map.put(:defense_mode, :ignore)
+        |> Map.put(:attacker_rates, %{race_class: 50, element: 0, size: 0})
+        |> Map.merge(%{equipment_atk_rate: 20, stave_matk: 200})
+
+      assert renewal(weapon_only, context) == 470
+    end
+
+    test "is not scaled by the weapon's preceding attribute step" do
+      weapon_only = %{
+        parts()
+        | status_atk: 0,
+          flat_atk: 0,
+          refine_atk: 0,
+          overrefine_atk: 0,
+          mastery_atk: 0
+      }
+
+      context =
+        neutral_context()
+        |> Map.merge(%{defense_mode: :ignore, weapon_element: 1.5, stave_matk: 200})
+
+      assert renewal(weapon_only, context) == 350
+    end
+  end
+
   defp neutral_context do
     %{
       context()

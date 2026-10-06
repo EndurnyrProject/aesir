@@ -6,7 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   between them: `prepare_components/2` sizes the weapon component, the
   coordinator runs the component attribute steps (status, weapon and equipment
   of both hands, in the reference order) and doubles right-hand status ATK,
-  `after_component_elements/2` derives the equipment percentage part,
+  `after_component_elements/2` derives the equipment percentage part and then
+  adds Stave Crasher's rolled MATK (`:stave_matk`) to the weapon component,
   `calculate_components/2` runs component cards, the critical or signed
   non-critical equipment bonus, the skill ratio and defense, and
   `finish_attack/2` runs the critical tail after any post-defense attribute step.
@@ -51,7 +52,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
 
   @doc """
   Derives the equipment percentage part from the attribute-adjusted weapon and
-  equipment components.
+  equipment components, then adds Stave Crasher's rolled MATK to the weapon
+  component. The MATK takes neither the weapon's size and attribute steps nor a
+  share of the percentage part, but does take the later weapon cards.
   """
   @spec after_component_elements(components(), PhysicalAttack.context()) :: components()
   def after_component_elements(components, context) do
@@ -61,7 +64,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
         100
       )
 
-    %{components | percent_atk: percent}
+    %{
+      components
+      | percent_atk: percent,
+        weapon_atk: components.weapon_atk + Map.get(context, :stave_matk, 0)
+    }
   end
 
   @doc """

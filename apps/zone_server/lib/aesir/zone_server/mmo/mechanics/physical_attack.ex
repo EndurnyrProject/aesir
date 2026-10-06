@@ -80,6 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:skill_taken_rate) => integer(),
           optional(:patk) => integer(),
           optional(:equipment_atk_rate) => integer(),
+          optional(:stave_matk) => non_neg_integer(),
           size_rate: integer(),
           attacker_rates: attack_rates(),
           defense: Defense.physical_context()

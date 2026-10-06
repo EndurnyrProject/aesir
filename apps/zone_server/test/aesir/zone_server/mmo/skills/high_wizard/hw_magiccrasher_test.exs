@@ -12,11 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwMagiccrasherTest do
 
   setup :set_mimic_private
 
-  @lowest_roll [rng: &__MODULE__.lowest/1]
-
-  @doc false
-  def lowest(_range), do: 1
-
   defp player do
     PlayerState.new(%Character{
       id: 1001,
@@ -47,59 +42,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwMagiccrasherTest do
     MobState.new(2001, definition, spawn, "prontera", 100, 100)
   end
 
-  defp matk_min(caster), do: caster.__struct__.to_combatant(caster).combat_stats.matk_min
-
-  @tag game_mode: :renewal
-  test "renewal adds the rolled MATK to a neutral ranged weapon strike" do
+  test "a player strikes through the Stave Crasher path with the weapon element and no crit" do
     caster = player()
-    rolled = matk_min(caster)
 
-    expect(Combat, :execute_skill_attack, fn ^caster, 3001, opts ->
-      assert opts[:bonus_atk] == rolled
-      refute Keyword.has_key?(opts, :base_damage)
-      assert opts[:element] == :neutral
+    expect(Combat, :execute_stave_crasher_attack, fn ^caster, 3001, opts ->
+      assert opts[:skill_id] == 365
+      assert opts[:skip_crit]
+      assert opts[:ranged]
       assert opts[:skip_range]
+      refute Keyword.has_key?(opts, :element)
       :ok
     end)
 
     assert {:ok, ^caster} =
-             HwMagiccrasher.cast(
-               caster,
-               {:unit, 3001},
-               1,
-               HwMagiccrasher.definition(),
-               @lowest_roll
-             )
-  end
-
-  @tag game_mode: :pre_renewal
-  test "pre-renewal replaces the weapon base with the rolled MATK and skips status ATK" do
-    caster = player()
-    rolled = matk_min(caster)
-
-    expect(Combat, :execute_skill_attack, fn ^caster, 3001, opts ->
-      assert opts[:base_damage] == rolled
-      assert opts[:skip_status_atk]
-      refute Keyword.has_key?(opts, :bonus_atk)
-      :ok
-    end)
-
-    assert {:ok, ^caster} =
-             HwMagiccrasher.cast(
-               caster,
-               {:unit, 3001},
-               1,
-               HwMagiccrasher.definition(),
-               @lowest_roll
-             )
+             HwMagiccrasher.cast(caster, {:unit, 3001}, 1, HwMagiccrasher.definition())
   end
 
   test "mob casters strike through the same path" do
     caster = mob()
 
-    expect(Combat, :execute_skill_attack, fn ^caster, {:player, 3001}, opts ->
+    expect(Combat, :execute_stave_crasher_attack, fn ^caster, {:player, 3001}, opts ->
       assert opts[:skill_id] == 365
-      assert opts[:element] == :neutral
+      refute Keyword.has_key?(opts, :element)
       :ok
     end)
 
@@ -111,21 +75,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwMagiccrasherTest do
                HwMagiccrasher.definition(),
                %{}
              )
-  end
-
-  describe "rolled_matk/2" do
-    test "rolls within [matk_min, matk_max)" do
-      combatant = %{combat_stats: %{matk_min: 100, matk_max: 150}}
-
-      assert HwMagiccrasher.rolled_matk(combatant, fn 50 -> 1 end) == 100
-      assert HwMagiccrasher.rolled_matk(combatant, fn 50 -> 50 end) == 149
-    end
-
-    test "a flat band rolls its single value" do
-      assert HwMagiccrasher.rolled_matk(%{combat_stats: %{matk_min: 60, matk_max: 60}}, fn 1 ->
-               1
-             end) ==
-               60
-    end
   end
 end

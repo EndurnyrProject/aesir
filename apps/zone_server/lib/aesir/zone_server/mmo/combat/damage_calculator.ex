@@ -237,6 +237,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     calculate_damage_with(attacker, defender, opts, :primary, :soft_only)
   end
 
+  @doc """
+  Calculates Stave Crasher's hit from the coordinator's single MATK roll.
+
+  `opts` must carry that roll as `:matk`, a non-negative integer, and otherwise
+  takes the `calculate_damage/3` options. A renewal player adds it to the weapon
+  component after the equipment percentage part and before the weapon cards; an
+  ordinary renewal non-player hit does not use it. In classic it replaces the
+  weapon roll: base ATK, overrefine, status weapon ATK and status ATK rate drop
+  out, while size, the non-critical rate, refine, mastery, defense, cards and
+  both attribute steps remain, and Maximize Power raises the roll to the band's
+  maximum. Returns `{:error, :invalid_matk}` without a valid roll.
+  """
+  @spec calculate_stave_crasher_damage(combatant(), combatant(), keyword()) ::
+          {:ok, damage_result()} | {:error, atom()}
+  def calculate_stave_crasher_damage(attacker, defender, opts) do
+    case Keyword.pop(opts, :matk) do
+      {matk, opts} when is_integer(matk) and matk >= 0 ->
+        stave_crasher_damage(attacker, defender, opts, maximized_matk(attacker, matk))
+
+      _invalid ->
+        {:error, :invalid_matk}
+    end
+  end
+
+  # Classic Maximize Power raises the MATK band's minimum to its maximum, as it
+  # does the weapon band; renewal's insertion rolls the band regardless.
+  defp maximized_matk(%{combat_stats: %{max_weapon_damage: true, matk_max: max}}, matk) do
+    if GameMode.mode() == :pre_renewal, do: max, else: matk
+  end
+
+  defp maximized_matk(_attacker, matk), do: matk
+
+  defp stave_crasher_damage(%{unit_type: :player} = attacker, defender, opts, matk) do
+    opts = Keyword.put(opts, :stave_matk, matk)
+    calculate_damage_with(attacker, defender, opts, :primary, :normal)
+  end
+
+  defp stave_crasher_damage(attacker, defender, opts, matk) do
+    case GameMode.mode() do
+      :renewal ->
+        calculate_damage(attacker, defender, opts)
+
+      :pre_renewal ->
+        calculate_damage(attacker, defender, opts ++ [base_damage: matk, skip_status_atk: true])
+    end
+  end
+
   defp calculate_damage_with(attacker, defender, opts, attack_path, defense_mode) do
     case Keyword.get(opts, :fixed_damage) do
       nil -> calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
@@ -424,6 +471,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     element = hit_element(hit.attacker, hit.modifiers, hit.opts)
     # NOTE: Task 27 completes wd->basedamage (Star Crumb, Spirit Sphere).
     hit = Map.put(hit, :watk_base, PreRenewalAttack.normal_base(parts, context))
+    {parts, context} = classic_stave_base(parts, context, Keyword.get(hit.opts, :stave_matk))
 
     damage =
       parts
@@ -432,6 +480,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       |> PreRenewalAttack.post_element(context)
 
     {:ok, %{hit.critical | damage: damage}}
+  end
+
+  # Classic Stave Crasher's base is the MATK roll in place of the weapon roll,
+  # sized like it; base ATK, overrefine and the status weapon ATK and ATK rate
+  # (which only scale base and weapon ATK) do not apply to it.
+  defp classic_stave_base(parts, context, nil), do: {parts, context}
+
+  defp classic_stave_base(parts, context, matk) do
+    {%{parts | weapon_atk: matk, status_atk: 0, flat_atk: 0, overrefine_atk: 0},
+     %{context | weapon_bonus: 0, flat_bonus: 0, atk_rate: 0}}
   end
 
   # Renewal attributes each component of both hands before the ratio and defense,
@@ -714,6 +772,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       atk_rate: Map.get(attacker_modifiers, :atk_rate, 0),
       damage_multiplier: Map.get(attacker_modifiers, :damage_multiplier, 0),
       equipment_atk_rate: Map.get(attacker.equip_modifiers, :atk_rate, 0),
+      stave_matk: Keyword.get(opts, :stave_matk, 0),
       long_atk_rate: EquipmentBonuses.long_atk_rate(attacker),
       short_atk_rate: EquipmentBonuses.short_atk_rate(attacker),
       patk: Map.get(attacker.combat_stats, :patk, 0),
@@ -1280,14 +1339,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   @doc """
-  Whether a physical hit is ranged: an explicit `ranged: true` option, a ranged
-  weapon class, or an attack range above 3 cells.
+  Whether a physical hit is ranged: the hit's explicit `:ranged` classification
+  when given, otherwise a ranged weapon class or an attack range above 3 cells.
   """
   @spec ranged_hit?(map(), keyword()) :: boolean()
   def ranged_hit?(attacker, opts) do
-    Keyword.get(opts, :ranged, false) or
-      attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() or
-      Map.get(attacker, :attack_range, 1) > 3
+    case Keyword.fetch(opts, :ranged) do
+      {:ok, ranged?} when is_boolean(ranged?) ->
+        ranged?
+
+      _unclassified ->
+        attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?() or
+          Map.get(attacker, :attack_range, 1) > 3
+    end
   end
 
   defp apply_family_step(damage, 0), do: damage
