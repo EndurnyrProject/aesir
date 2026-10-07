@@ -285,6 +285,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     alias Aesir.ZoneServer.CombatTestHelper
     alias Aesir.ZoneServer.Mmo.Option
     alias Aesir.ZoneServer.Mmo.Skill.Definition
+    alias Aesir.ZoneServer.Mmo.Skill.Origin
     alias Aesir.ZoneServer.Mmo.StatusStorage
 
     @phases [:cast_begin, :cast_end, :splash]
@@ -413,6 +414,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       end
 
       assert check(caster(), target, skill()) == [:ok, :ok, :ok]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Roki's Weil locks a splash except for the skill the caster is item-casting" do
+      caster = player_target(9_816)
+      :ok = StatusStorage.apply_status(:player, 9_816, :sc_rokisweil)
+      target = CombatTestHelper.create_mob_combatant(unit_id: 9_817)
+      item = %{invocation: :item, autocast_flag?: false}
+      splash = fn -> Targeting.validate_skill_use(caster, target, skill(), :splash) end
+
+      assert splash.() == {:error, :caster_restricted}
+
+      assert Origin.with_skill(:sm_bash, {:player, 9_816}, item, splash) == :ok
+
+      assert Origin.with_skill(:mg_firebolt, {:player, 9_816}, item, splash) ==
+               {:error, :caster_restricted}
+
+      assert Origin.with_skill(:sm_bash, {:player, 9_818}, item, splash) ==
+               {:error, :caster_restricted}
+
+      assert Origin.with_skill(:sm_bash, {:player, 9_816}, %{item | invocation: :normal}, splash) ==
+               {:error, :caster_restricted}
+
+      assert Origin.with_skill(:sm_bash, {:player, 9_816}, splash) == {:error, :caster_restricted}
+    end
+
+    @tag game_mode: :renewal
+    test "renewal has no Roki's Weil lock" do
+      caster = player_target(9_819)
+      :ok = StatusStorage.apply_status(:player, 9_819, :sc_rokisweil)
+      target = CombatTestHelper.create_mob_combatant(unit_id: 9_820)
+
+      assert Targeting.validate_skill_use(caster, target, skill(), :splash) == :ok
     end
 
     @tag game_mode: :pre_renewal

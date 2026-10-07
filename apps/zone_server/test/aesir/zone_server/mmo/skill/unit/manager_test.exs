@@ -2202,7 +2202,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   end
 
   describe "tick/1" do
-    test "runs a ground callback with the origin stored on its group" do
+    test "runs a ground callback with the origin stored on its group as an unflagged timer invocation" do
       now = 10_000
       manager = start_manager(now)
 
@@ -2220,7 +2220,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       assert :ok = Manager.tick(manager)
 
-      assert_receive {:ground_origin, %{skill: :origin_unit, caster: {:homunculus, 1_500_001}}}
+      assert_receive {:ground_origin,
+                      %{
+                        skill: :origin_unit,
+                        caster: {:homunculus, 1_500_001},
+                        invocation: :direct,
+                        autocast_flag?: false
+                      }}
     end
 
     test "runs only due groups, re-arms their deadline, and uses the injected clock" do

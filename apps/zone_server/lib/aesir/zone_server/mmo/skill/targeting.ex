@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -217,7 +218,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   At `:splash` the check is the full one the source runs for a recipient after
   the skill went off: the caster must still be able to act (see
   `validate_delivery/4`) and a frozen recipient is out of Storm Gust's and Frost
-  Nova's reach, as a frozen or petrified one is out of Lex Aeterna's.
+  Nova's reach, as a frozen or petrified one is out of Lex Aeterna's. The
+  classic Roki's Weil lock does not block the skill a player is casting from an
+  item: that exemption holds only while the item cast itself executes, so a
+  later timer delivery of the same skill is locked again.
 
   Relationship, life and range are other checks' concern.
   """
@@ -350,17 +354,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     %{body_state: body_state, effect_state: option} = caster_display(type, id)
 
     dead_non_player?(type, id) or body_state not in @free_body_states or
-      status_locked?(type, id, definition.id) or option_locked?(type, option, definition)
+      status_locked?(type, id, definition) or option_locked?(type, option, definition)
   end
 
   defp caster_restricted?(_caster, _definition), do: false
 
-  defp status_locked?(type, id, skill_id) do
+  defp status_locked?(type, id, %Definition{id: skill_id} = definition) do
     locked_by?(type, id, :sc_trickdead, skill_id, @trick_dead) or
       locked_by?(type, id, :sc_gospel, skill_id, @gospel) or
       not Root.skill_allowed?(type, id, skill_id) or
-      (GameMode.mode() == :pre_renewal and
+      (GameMode.mode() == :pre_renewal and not item_cast?(type, id, definition) and
          locked_by?(type, id, :sc_rokisweil, skill_id, @adaptation))
+  end
+
+  defp item_cast?(type, id, %Definition{name: skill_name}) do
+    match?(
+      %{invocation: :item, skill: ^skill_name, caster: {^type, ^id}},
+      Origin.current()
+    )
   end
 
   defp locked_by?(type, id, status, skill_id, exempt_skill),

@@ -2223,6 +2223,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     )
   end
 
+  # A manager callback is a direct timer-driven invocation of the group's skill
+  # and caster; the autocast flag of the cast that placed the group stays in
+  # that cast's process.
   defp invoke(module, callback, args) do
     group = hd(args)
 

@@ -342,7 +342,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "normal casts expose the player skill origin only during the callback" do
       assert {:ok, _} = Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, :self)
       assert_received {:cast_origin, :normal}
-      assert_received {:skill_origin, %{skill: :origin_aware, caster: {:player, 1000}}}
+
+      assert_received {:skill_origin,
+                       %{
+                         skill: :origin_aware,
+                         caster: {:player, 1000},
+                         invocation: :normal,
+                         autocast_flag?: false
+                       }}
+
       assert Origin.current() == nil
     end
 
@@ -375,11 +383,57 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "item casts dispatch item origin" do
       assert {:ok, _} = Interpreter.item_cast(game_state(100, %{}), 29, 1, :self)
       assert_received {:cast_origin, :item}
+      assert_received {:skill_origin, %{invocation: :item, autocast_flag?: false}}
     end
 
     test "auto casts dispatch auto origin" do
       assert {:ok, _} = Interpreter.auto_cast(game_state(100, %{}), 29, 1, :self)
       assert_received {:cast_origin, :auto}
+    end
+
+    test "a status auto cast is an unflagged auto invocation" do
+      assert {:ok, _} = Interpreter.auto_cast(game_state(100, %{}), 29, 1, :self)
+
+      assert_received {:skill_origin,
+                       %{caster: {:player, 1000}, invocation: :auto, autocast_flag?: false}}
+
+      refute Origin.autocast?({:player, 1000})
+    end
+
+    test "an equipment proc cast sets the wearer's autocast flag only while it runs" do
+      assert {:ok, _} = Interpreter.proc_cast(game_state(100, %{}), 29, 1, :self)
+      assert_received {:cast_origin, :auto}
+
+      assert_received {:skill_origin,
+                       %{caster: {:player, 1000}, invocation: :auto, autocast_flag?: true}}
+
+      refute Origin.autocast?({:player, 1000})
+      assert Origin.current() == nil
+    end
+
+    test "a status auto cast inside a flagged invocation keeps the enclosing flag" do
+      Origin.with_skill(
+        :sm_bash,
+        {:player, 1000},
+        %{invocation: :auto, autocast_flag?: true},
+        fn ->
+          assert {:ok, _} = Interpreter.auto_cast(game_state(100, %{}), 29, 1, :self)
+          assert_received {:skill_origin, %{invocation: :auto, autocast_flag?: true}}
+          assert Origin.autocast?({:player, 1000})
+        end
+      )
+    end
+
+    test "an equipment proc inside a flagged invocation resets the flag on return" do
+      Origin.with_skill(
+        :sm_bash,
+        {:player, 1000},
+        %{invocation: :auto, autocast_flag?: true},
+        fn ->
+          assert {:ok, _} = Interpreter.proc_cast(game_state(100, %{}), 29, 1, :self)
+          refute Origin.autocast?({:player, 1000})
+        end
+      )
     end
   end
 

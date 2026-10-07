@@ -584,6 +584,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   A ground bolt (Thunderstorm, Heaven's Drive) is cast at the victim's cell,
   mirroring rAthena's `skill_get_casttype` switch to `skill_castend_pos2`.
+
+  The skill runs as an `:auto` invocation without the caster's autocast flag:
+  a status proc is automatic but never sets the runtime exemption an equipment
+  proc does, so it only keeps a flag already set by an enclosing invocation.
   """
   @spec auto_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
           {:ok, Active.caster()} | {:error, atom()}
@@ -598,7 +602,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          cost = auto_cast_sp_cost(definition, level),
          :ok <- check_sp(adapter, game_state, cost),
          {:ok, game_state} <-
-           run_unconditional(module, game_state, resolved, level, definition, :auto) do
+           run_unconditional(module, game_state, resolved, level, definition, :auto, false) do
       {:ok,
        game_state
        |> adapter.deduct_sp(cost)
@@ -621,6 +625,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   Insufficient SP or a skill still on cooldown returns an error and runs
   nothing; the caller drops it silently, since a proc that cannot pay is simply
   a proc that did not happen.
+
+  The skill runs as an `:auto` invocation with the wearer's autocast flag set
+  for exactly the effect's execution; the flag is reset when it returns, even
+  when an enclosing invocation had set it.
   """
   @spec proc_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
           {:ok, Active.caster()} | {:error, atom()}
@@ -636,7 +644,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          cost = proc_cast_sp_cost(definition, level),
          :ok <- check_sp(adapter, game_state, cost),
          {:ok, game_state} <-
-           run_unconditional(module, game_state, resolved, level, definition, :auto) do
+           run_unconditional(module, game_state, resolved, level, definition, :auto, true) do
       {:ok,
        game_state
        |> adapter.deduct_sp(cost)
@@ -803,7 +811,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, definition} <- fetch_definition(skill_id),
          {:ok, module} <- validate_item_cast(caster, target, level, definition, false),
          :ok <- check_fog(target, definition),
-         {:ok, caster} <- run_unconditional(module, caster, target, level, definition, :item) do
+         {:ok, caster} <-
+           run_unconditional(module, caster, target, level, definition, :item, false) do
       {:ok,
        caster
        |> put_cooldown(skill_id, definition, level, now)
@@ -942,9 +951,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # Runs a behavior without `run_cast/5`'s catalyst consumption, shared by the
   # auto-cast and item-cast entry points: both are free of the skill's declared
   # requirements by construction, not by their skills happening to declare none
-  # today.
-  defp run_unconditional(module, game_state, target, level, definition, origin) do
-    case invoke_cast(module, game_state, target, level, definition, origin) do
+  # today. `autocast_flag?` is set only by the equipment proc entry.
+  defp run_unconditional(module, game_state, target, level, definition, origin, autocast_flag?) do
+    scope = %{invocation: origin, autocast_flag?: autocast_flag?}
+
+    case invoke_cast(module, game_state, target, level, definition, scope) do
       {:ok, game_state} ->
         announce_ground_cast(module, game_state, target, level, definition)
         {:ok, game_state}
@@ -1676,13 +1687,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       case input do
         {:with_input, value} ->
           if function_exported?(module, :cast_with_input, 5) do
-            invoke_cast_with_input(module, caster, target, level, definition, value)
+            invoke_cast_with_input(module, caster, target, level, definition, value, origin)
           else
-            invoke_cast(module, caster, target, level, definition, origin)
+            invoke_cast(module, caster, target, level, definition, unflagged_scope(origin))
           end
 
         :without_input ->
-          invoke_cast(module, caster, target, level, definition, origin)
+          invoke_cast(module, caster, target, level, definition, unflagged_scope(origin))
       end
 
     case result do
@@ -1715,14 +1726,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       else: {:error, :invalid_caster_result}
   end
 
-  defp invoke_cast_with_input(module, caster, target, level, definition, value) do
-    Origin.with_skill(definition.name, caster_ref(caster), fn ->
+  defp invoke_cast_with_input(module, caster, target, level, definition, value, origin) do
+    Origin.with_skill(definition.name, caster_ref(caster), unflagged_scope(origin), fn ->
       module.cast_with_input(caster, target, level, definition, value)
     end)
   end
 
-  defp invoke_cast(module, game_state, target, level, definition, origin) do
-    Origin.with_skill(definition.name, caster_ref(game_state), fn ->
+  # The skill sees the scope's invocation as its origin; only
+  # `run_unconditional/7` builds a flagged scope.
+  defp invoke_cast(module, game_state, target, level, definition, %{invocation: origin} = scope) do
+    Origin.with_skill(definition.name, caster_ref(game_state), scope, fn ->
       if function_exported?(module, :cast_with_origin, 5) do
         module.cast_with_origin(game_state, target, level, definition, origin)
       else
@@ -1735,6 +1748,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     adapter = Caster.for(caster)
     {adapter.unit_type(caster), adapter.id(caster)}
   end
+
+  defp unflagged_scope(origin), do: %{invocation: origin, autocast_flag?: false}
 
   # A ground-targeted skill without the `Skill.Ground` capability (e.g.
   # Heaven's Drive) creates no unit group, so `Unit.place/4` never broadcasts

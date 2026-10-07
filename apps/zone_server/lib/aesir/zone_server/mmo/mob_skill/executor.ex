@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   @around_self [:around, :around1, :around2, :around3, :around4]
   @around_target [:around5, :around6, :around7, :around8]
+  @mob_scope %{invocation: :mob, autocast_flag?: false}
 
   @typedoc "A resolved cast target: a concrete unit or a ground cell."
   @type target ::
@@ -263,7 +264,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   defp check_fog(_target, _definition), do: :ok
 
   defp invoke(module, state, raw_target, adapted_target, row, definition) do
-    Origin.with_skill(definition.name, {:mob, state.instance_id}, fn ->
+    Origin.with_skill(definition.name, {:mob, state.instance_id}, @mob_scope, fn ->
       cond do
         function_exported?(module, :mob_cast, 5) ->
           module.mob_cast(state, raw_target, row.level, definition, row)

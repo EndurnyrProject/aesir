@@ -529,7 +529,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       assert Executor.execute(mob(), row(%{skill_id: 9001, target: :target})) == :ok
       assert_received {:cast, 5001, {:unit, 42}, 3, 9001}
-      assert_received {:skill_origin, %{skill: :fake_skill, caster: {:mob, 5001}}}
+
+      assert_received {:skill_origin,
+                       %{
+                         skill: :fake_skill,
+                         caster: {:mob, 5001},
+                         invocation: :mob,
+                         autocast_flag?: false
+                       }}
+
       assert Origin.current() == nil
     end
 
