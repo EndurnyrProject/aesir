@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounterTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -19,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounterTest do
   setup :setup_ets_tables
 
   describe "before_weapon_hit interception" do
-    test "a melee swing from the front arc within range is countered with a forced crit" do
+    test "a monster holder's counter strike cannot crit: monsters have no critical rate" do
       test_pid = self()
       defender_id = 8001
       defender = build_defender(defender_id, 150, 150, 6)
@@ -41,9 +42,42 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounterTest do
       refute StatusStorage.has_status?(:mob, defender_id, :sc_auto_counter)
 
       assert_received {:counter, ^defender, 9001, opts}
-      assert Keyword.fetch!(opts, :force_crit) == true
+      assert Keyword.fetch!(opts, :skip_crit) == true
+      refute Keyword.has_key?(opts, :force_crit)
       assert Keyword.fetch!(opts, :skill_ratio) == 100 + 10 * 3
       assert Keyword.fetch!(opts, :skill_level) == 3
+    end
+
+    test "a player holder's counter strike is a forced critical" do
+      test_pid = self()
+      defender_id = 8010
+
+      defender =
+        PlayerStateFixture.build(%{
+          character_id: defender_id,
+          x: 150,
+          y: 150,
+          dir: 6,
+          stats: %{combat_stats: %{critical_rate: 13}}
+        })
+
+      :ok = StatusStorage.apply_status(:player, defender_id, :sc_auto_counter, val1: 2)
+
+      stub(TargetResolver, :resolve, fn ^defender_id -> {:ok, self(), defender, :player} end)
+      stub_entity_info()
+
+      stub(Combat, :execute_skill_attack, fn _state, target_id, opts ->
+        send(test_pid, {:counter, target_id, opts})
+        :ok
+      end)
+
+      info = attack_info({:mob, 9010}, defender_id, attacker_position: {151, 150}, distance: 1)
+
+      assert {:intercept, :auto_counter} =
+               Interpreter.before_weapon_hit(:player, defender_id, info)
+
+      assert_received {:counter, 9010, opts}
+      assert Keyword.fetch!(opts, :force_crit) == true
     end
 
     test "a swing from behind the defender resolves normally and the stance survives" do

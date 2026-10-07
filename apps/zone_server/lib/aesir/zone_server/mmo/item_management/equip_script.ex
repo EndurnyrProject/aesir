@@ -730,7 +730,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
     if ammunition_excluded?(key, inputs),
       do: result,
-      else: accumulate_bonus(key, value, result)
+      else: accumulate_bonus(ammunition_destination(key, inputs), value, result)
   end
 
   defp eval_instr(
@@ -824,6 +824,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp ammunition_excluded?(key, %{ammunition: true}), do: BonusKeys.ammunition_excluded?(key)
   defp ammunition_excluded?(_key, _inputs), do: false
+
+  defp ammunition_destination(key, %{ammunition: true}), do: BonusKeys.ammunition_destination(key)
+  defp ammunition_destination(key, _inputs), do: key
 
   defp accumulate_bonus(key, value, %Result{modifiers: modifiers} = result) do
     modifiers =

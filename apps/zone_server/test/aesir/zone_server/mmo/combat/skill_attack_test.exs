@@ -136,7 +136,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
     test "a successful critical bypasses flee and forces the calculator", %{caster: caster} do
       stub(CriticalHits, :is_critical_hit?, fn _rate -> true end)
-      reject(&HitCalculations.calculate_hit_result/2)
 
       expect(DamageCalculator, :calculate_damage, fn _attacker, _target, opts ->
         assert opts[:force_crit]
@@ -192,7 +191,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     @tag game_mode: :pre_renewal
     test "classic critical ignores high DEF", %{caster: caster} do
       stub(CriticalHits, :is_critical_hit?, fn _rate -> true end)
-      reject(&HitCalculations.calculate_hit_result/2)
 
       assert {:ok, %{hit?: true, damage: damage}} =
                SkillAttack.execute_skill_attack(caster, {:mob, 2001},
@@ -726,12 +724,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   test "staged HP-less misses and calculation errors return before delivery" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
 
-    target =
-      CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
-      |> Map.update!(:combat_stats, &Map.put(&1, :perfect_dodge, 1_000))
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %HpLessUnit{combatant: target}
+    Mimic.copy(HitCalculations)
+    stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
 
     stub(TargetResolver, :resolve, fn {:mob, 2001} ->
       {:ok, self(), target_state, :mob}
@@ -969,12 +967,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   test "a missed attack never decides or delivers coma" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
 
-    target =
-      CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
-      |> Map.update!(:combat_stats, &Map.put(&1, :perfect_dodge, 1_000))
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
 
     caster_state = %TestUnit{combatant: attacker, hp: 100}
     target_state = %TestUnit{combatant: target, hp: 100}
+    Mimic.copy(HitCalculations)
+    stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
 
     stub(TargetResolver, :resolve, fn {:mob, 2001} ->
       {:ok, self(), target_state, :mob}

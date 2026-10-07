@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
@@ -1532,12 +1533,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         HitCalculations.normal_attack_hit_taken_flat(attacker_combatant, defender_combatant)
     }
 
+    attacker_stats =
+      Map.put(attacker_stats, :critical, fn ->
+        Critical.normal_attack?(attacker_combatant, defender_combatant, [])
+      end)
+
     case HitCalculations.calculate_hit_result(attacker_stats, defender_stats) do
+      :critical ->
+        attacker_combatant
+        |> DamageCalculator.calculate_damage(defender_combatant, force_crit: true)
+        |> landed_swing()
+
       :hit ->
-        case DamageCalculator.calculate_damage(attacker_combatant, defender_combatant) do
-          {:ok, damage_result} -> {:ok, {:hit, damage_result}}
-          {:error, reason} -> {:error, reason}
-        end
+        attacker_combatant
+        |> DamageCalculator.calculate_damage(defender_combatant)
+        |> landed_swing()
 
       :miss ->
         {:ok, {:miss}}
@@ -1546,4 +1556,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         {:ok, {:perfect_dodge}}
     end
   end
+
+  defp landed_swing({:ok, damage_result}), do: {:ok, {:hit, damage_result}}
+  defp landed_swing({:error, reason}), do: {:error, reason}
 end

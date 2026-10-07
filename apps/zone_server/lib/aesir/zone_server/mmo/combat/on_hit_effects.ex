@@ -20,10 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
 
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @roll_ceiling 10_000
   @normal_short BattleFlags.build(:weapon, :short, false)
@@ -244,26 +242,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   defp adjust_defender_proc(:sc_norecover_state, rate, duration, victim) do
     tolerance = Map.get(victim.equip_modifiers, {:res_eff, :sc_norecover_state}, 0)
     rate = max(0, rate - div(rate * tolerance, 10_000))
-    {rate, duration - effective_luk(victim) * 100}
+    {rate, duration - DamageInputs.effective_luk(victim) * 100}
   end
 
   defp adjust_defender_proc(_status, rate, duration, _victim), do: {rate, duration}
-
-  defp effective_luk(victim) do
-    case UnitRegistry.get_unit(:player, victim.unit_id) do
-      {:ok, {_module, %{stats: stats}, _pid}} -> PlayerStats.get_effective_stat(stats, :luk)
-      _missing -> fallback_luk(victim)
-    end
-  end
-
-  defp fallback_luk(victim) do
-    status_luk =
-      victim.unit_type
-      |> ModifierCalculator.get_all_modifiers(victim.unit_id)
-      |> Map.get(:luk, 0)
-
-    Map.get(victim.base_stats, :luk, 0) + Map.get(victim.equip_modifiers, :luk, 0) + status_luk
-  end
 
   defp maybe_proc_value(params, %{value: value_family}, modifiers, race) do
     Keyword.put(params, :val1, Map.get(modifiers, {value_family, race}, 0))

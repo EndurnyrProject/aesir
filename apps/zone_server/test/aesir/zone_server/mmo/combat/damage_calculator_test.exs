@@ -253,15 +253,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
-      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
-        %{damage: damage * 2, is_critical: true}
-      end)
-
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
 
       {attacker, defender} = CombatTestHelper.create_combat_scenario()
 
-      assert {:ok, result} = DamageCalculator.calculate_damage(attacker, defender)
+      assert {:ok, result} =
+               DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
+
       assert result.is_critical == true
       assert result.damage > 0
     end
@@ -274,17 +272,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       defender = CombatTestHelper.create_mob_combatant()
 
-      # LUK 400 caps critical rate in both modes, so both attackers always crit
-      # regardless of the RNG seed, isolating the crate factor (1.4 vs 1.4+0.01*50).
+      # Both hits are forced criticals, isolating the crate factor (1.4 vs 1.4+0.01*50).
       base = CombatTestHelper.create_player_combatant(luk: 400, str: 60, base_level: 90)
       no_crate = %{base | combat_stats: Map.put(base.combat_stats, :crate, 0)}
       high_crate = %{base | combat_stats: Map.put(base.combat_stats, :crate, 50)}
 
       :rand.seed(:exsss, {7, 8, 9})
-      {:ok, low} = DamageCalculator.calculate_damage(no_crate, defender)
+      {:ok, low} = DamageCalculator.calculate_damage(no_crate, defender, force_crit: true)
 
       :rand.seed(:exsss, {7, 8, 9})
-      {:ok, high} = DamageCalculator.calculate_damage(high_crate, defender)
+      {:ok, high} = DamageCalculator.calculate_damage(high_crate, defender, force_crit: true)
 
       assert low.is_critical
       assert high.is_critical
@@ -1034,7 +1031,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       {attacker, defender} = CombatTestHelper.create_combat_scenario()
 
-      assert {:ok, %{is_critical: true, critical_rate: 1_000}} =
+      assert {:ok, %{is_critical: true}} =
                DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
     end
 
@@ -1480,15 +1477,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       :ok
     end
 
-    for unit_type <- [:player, :mob],
-        weapon_type <- @weapon_types,
-        size <- [:small, :medium, :large] do
-      test "#{unit_type} #{weapon_type} against #{size} retains the size modifier by default" do
+    for weapon_type <- @weapon_types, size <- [:small, :medium, :large] do
+      test "player #{weapon_type} against #{size} retains the size modifier by default" do
         attacker =
-          case unquote(unit_type) do
-            :player -> CombatTestHelper.create_player_combatant()
-            :mob -> CombatTestHelper.create_mob_combatant()
-          end
+          CombatTestHelper.create_player_combatant()
           |> Map.put(:weapon, %{type: unquote(weapon_type), element: :neutral, size: :all})
 
         defender = CombatTestHelper.create_mob_combatant(size: unquote(size))
@@ -1502,6 +1494,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
             100
 
         assert damage == expected
+      end
+
+      test "a monster with #{weapon_type} against #{size} takes no size modifier" do
+        attacker =
+          CombatTestHelper.create_mob_combatant()
+          |> Map.put(:weapon, %{type: unquote(weapon_type), element: :neutral, size: :all})
+
+        defender = CombatTestHelper.create_mob_combatant(size: unquote(size))
+
+        assert {:ok, 1_200} = DamageCalculator.apply_modifier_pipeline(1_200, attacker, defender)
       end
     end
 
@@ -2639,6 +2641,64 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:ok, result} = DamageCalculator.calculate_damage(attacker, defender, opts)
       assert result.damage == mode_value(175, 269)
+    end
+  end
+
+  describe "scalar critical recipe" do
+    setup do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    test "a monster never crits, whatever its critical rate" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
+      attacker = put_in(attacker.combat_stats[:critical_rate], 2_000)
+      defender = CombatTestHelper.create_mob_combatant(luk: 0)
+
+      assert {:ok, %{is_critical: false}} = DamageCalculator.calculate_damage(attacker, defender)
+    end
+
+    test "a skill without a critical flag never crits" do
+      attacker = CombatTestHelper.create_player_combatant()
+      attacker = put_in(attacker.combat_stats[:critical_rate], 2_000)
+      defender = CombatTestHelper.create_mob_combatant(luk: 0)
+      opts = [skill_id: 5, base_damage: 100]
+
+      assert {:ok, %{is_critical: false}} =
+               DamageCalculator.calculate_damage(attacker, defender, opts)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal: a non-player critical uses max ATK times 14/10, then the critical multiplier" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 50, str: 10)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, vit: 0)
+
+      # max ATK 60 + batk 15 = 75; x14/10 = 105; x1.4 in single precision = 147.
+      assert {:ok, %{damage: 147, is_critical: true}} =
+               DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic: a non-player critical uses max ATK, ignores DEF and has no multiplier" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 50, str: 10)
+      defender = CombatTestHelper.create_mob_combatant(def: 60, soft_def: 30, vit: 80)
+
+      assert {:ok, %{damage: 75, is_critical: true}} =
+               DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
+    end
+
+    test "a non-player hit takes no weapon size modifier" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
+      attacker = put_in(attacker.weapon.type, :dagger)
+      opts = [base_damage: 100, skip_crit: true, ignore_defense: true]
+
+      damage = fn size ->
+        defender = CombatTestHelper.create_mob_combatant(size: size, def: 0, soft_def: 0, vit: 0)
+        {:ok, %{damage: damage}} = DamageCalculator.calculate_damage(attacker, defender, opts)
+        damage
+      end
+
+      assert damage.(:large) == damage.(:small)
     end
   end
 

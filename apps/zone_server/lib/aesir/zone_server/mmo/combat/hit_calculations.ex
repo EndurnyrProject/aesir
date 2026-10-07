@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   @typedoc """
   Result of a hit calculation.
   """
-  @type hit_result :: :hit | :miss | :perfect_dodge
+  @type hit_result :: :hit | :critical | :miss | :perfect_dodge
 
   @typedoc """
   Attacker stats required for hit calculations.
@@ -33,10 +33,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   bonuses applied in that order to the already-clamped base hit rate: the first
   is the cast skill's own accuracy bonus, the second the attacker's standing
   bonus from passives and gear. They compound; omitted call sites read as 0.
+  `critical` decides the attack's critical; it runs only after the perfect
+  dodge check fails, and omitted call sites never crit.
   """
   @type attacker_stats :: %{
           :hit => non_neg_integer(),
           :char_id => integer(),
+          optional(:critical) => (-> boolean()),
           optional(:perfect_hit) => non_neg_integer(),
           optional(:skill_hit_rate_bonus_pct) => integer(),
           optional(:hit_rate_bonus_pct) => integer()
@@ -60,9 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
 
   ## Priority Order
   1. Perfect dodge check (highest priority) — the defender's evasion takes
-     precedence over the attacker's perfect hit
-  2. Perfect hit check — bypasses the accuracy roll entirely
-  3. Regular hit/miss calculation
+     precedence over everything else
+  2. Critical — the attacker's `critical` decision; a critical always hits
+  3. Perfect hit check — bypasses the accuracy roll entirely
+  4. Regular hit/miss calculation
 
   ## Parameters
     - attacker_stats: Map containing attacker's hit stat, char_id and optional
@@ -70,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
     - target_stats: Map containing target's flee and perfect_dodge stats
 
   ## Returns
+    - :critical - Attack is a critical, which always hits
     - :hit - Attack hits normally, or lands through a perfect hit
     - :miss - Attack misses due to insufficient hit rate
     - :perfect_dodge - Attack dodged perfectly (highest priority)
@@ -89,6 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   def calculate_hit_result(attacker_stats, target_stats) do
     cond do
       perfect_dodge_triggered?(target_stats) -> :perfect_dodge
+      Map.get(attacker_stats, :critical, fn -> false end).() -> :critical
       perfect_hit_triggered?(attacker_stats) -> :hit
       hit_successful?(calculate_hit_rate(attacker_stats, target_stats)) -> :hit
       true -> :miss

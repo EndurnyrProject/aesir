@@ -171,6 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @max_destinations MapSet.new([:movement_speed, :perfect_hit_rate, :splash_range])
   @min_destinations MapSet.new([:fixcast_rate])
   @ammunition_excluded_destinations MapSet.new([:non_crit_atk_rate])
+  @ammunition_redirects %{critical: :arrow_critical, critical_long: :arrow_critical}
 
   @destination_scales %{perfect_dodge: 10}
 
@@ -427,6 +428,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @doc "Whether a destination ignores contributions from the equipped ammunition's script."
   @spec ammunition_excluded?(destination() | tuple()) :: boolean()
   def ammunition_excluded?(dest), do: MapSet.member?(@ammunition_excluded_destinations, dest)
+
+  @doc """
+  Where the equipped ammunition's script stores a destination: its critical
+  bonuses feed only the critical of normal arrow attacks (`:arrow_critical`);
+  every other destination is unchanged.
+  """
+  @spec ammunition_destination(destination() | tuple()) :: destination() | tuple()
+  def ammunition_destination(dest), do: Map.get(@ammunition_redirects, dest, dest)
 
   @doc "Whether the cast-rate destination retains its most reducing item bonus."
   @spec min_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()

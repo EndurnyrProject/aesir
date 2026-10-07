@@ -34,10 +34,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounter do
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.SpecialEffect
 
   # KN_AUTOCOUNTER skill id, used only to tag the counter strike's damage packet.
   @skill_id 61
@@ -57,11 +60,39 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounter do
     with true <- melee_basic_attack?(attack_info),
          {:ok, defender_state} <- resolve_defender(unit_id),
          true <- within_counter_arc?(defender_state, attack_info),
-         %StatusEntry{val1: level} <-
-           StatusStorage.take_status(unit_type, unit_id, :sc_auto_counter) do
+         %StatusEntry{val1: level} <- claim(unit_type, unit_id) do
       counter(defender_state, attack_info, level)
     else
       _ -> :continue
+    end
+  end
+
+  @doc """
+  Ends the holder's own stance when it swings a normal attack, playing the Auto
+  Counter effect. Returns whether a stance was claimed; that swing is then a
+  certain critical.
+  """
+  @spec claim_by_swing(Unit.unit_type(), integer()) :: boolean()
+  def claim_by_swing(unit_type, unit_id) do
+    case claim(unit_type, unit_id) do
+      nil ->
+        false
+
+      %StatusEntry{} ->
+        SpecialEffect.play({unit_type, unit_id}, :autocounter)
+        true
+    end
+  end
+
+  # The single-use claim: whoever takes the row ends the stance.
+  defp claim(unit_type, unit_id) do
+    case StatusStorage.take_status(unit_type, unit_id, :sc_auto_counter) do
+      nil ->
+        nil
+
+      entry ->
+        StatusDisplay.on_removed(unit_type, unit_id, :sc_auto_counter, entry)
+        entry
     end
   end
 
@@ -97,13 +128,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounter do
     defender_state.__struct__.to_combatant(defender_state).attack_range
   end
 
+  # The strike is a certain critical, but only from a holder that can crit at all.
   defp counter(defender_state, %{attacker: {_type, attacker_id}}, level) do
-    Combat.execute_skill_attack(defender_state, attacker_id,
-      skill_id: @skill_id,
-      skill_level: level,
-      skill_ratio: 100 + 10 * level,
-      force_crit: true,
-      skip_range: true
+    holder = defender_state.__struct__.to_combatant(defender_state)
+    critical = if Critical.capable?(holder), do: :force_crit, else: :skip_crit
+
+    Combat.execute_skill_attack(
+      defender_state,
+      attacker_id,
+      [
+        {:skill_id, @skill_id},
+        {:skill_level, level},
+        {:skill_ratio, 100 + 10 * level},
+        {critical, true},
+        {:skip_range, true}
+      ]
     )
 
     {:intercept, :auto_counter}

@@ -91,6 +91,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
             }} = HandedAttack.calculate(player(%{}, :dagger), attacker, defender())
   end
 
+  test "a critical is decided before the hit roll and always hits" do
+    attacker = accurate_player() |> put_hit(0) |> put_critical(1_000)
+    target = defender() |> put_flee(10_000)
+
+    assert {:ok, %HandedAttack{outcome: :critical, primary: %{is_critical: true}}} =
+             HandedAttack.calculate(%PlayerState{}, attacker, target)
+  end
+
   test "successful Double Attack adds HIT before the shared roll and disables criticals" do
     attacker =
       with_hands(hand(:right_hand, 100), nil)
@@ -189,20 +197,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   test "bCriticalLong applies only to ordinary ammunition-based ranged attacks" do
     ranged =
       accurate_player()
-      |> put_critical(0)
+      |> put_critical_rate(1)
       |> put_in([Access.key!(:weapon), Access.key!(:type)], :bow)
-      |> Map.put(:equip_modifiers, %{critical_long: 100})
+      |> Map.put(:equip_modifiers, %{critical_long: 101})
 
     melee =
       accurate_player()
-      |> put_critical(0)
-      |> Map.put(:equip_modifiers, %{critical_long: 100})
+      |> put_critical_rate(1)
+      |> Map.put(:equip_modifiers, %{critical_long: 101})
+
+    target = put_in(defender().base_stats.luk, 1)
 
     assert {:ok, %HandedAttack{outcome: :critical}} =
-             HandedAttack.calculate(%PlayerState{}, ranged, defender())
+             HandedAttack.calculate(%PlayerState{}, ranged, target)
 
     assert {:ok, %HandedAttack{outcome: :hit}} =
-             HandedAttack.calculate(%PlayerState{}, melee, defender())
+             HandedAttack.calculate(%PlayerState{}, melee, target)
   end
 
   describe "normal_ranged_hit_taken_flat" do
@@ -329,6 +339,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
 
   defp put_perfect_dodge(combatant, perfect_dodge),
     do: put_in(combatant.combat_stats.perfect_dodge, perfect_dodge)
+
+  defp put_critical_rate(combatant, rate),
+    do: %{combatant | combat_stats: Map.put(combatant.combat_stats, :critical_rate, rate)}
 
   defp put_critical(combatant, critical),
     do: %{combatant | combat_stats: Map.put(combatant.combat_stats, :critical, critical)}

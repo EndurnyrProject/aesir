@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   Resolves existing snapshot components, rolls and defense channels without
   selecting skill recipes or delivering damage.
   """
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
@@ -13,8 +14,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @magic_attack_flag BattleFlags.build(:magic, :long, true)
   @zero_equip_rates %{
@@ -22,6 +26,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     taken: %{race: 0, race2: 0, class: 0, element: 0, size: 0, skill: 0},
     ignore_mdef: 0
   }
+
+  @doc """
+  A unit's effective LUK, with equipment and status contributions.
+
+  A live player reads its own stats. A monster's combatant LUK already carries
+  its status changes. Any other unit, or a player no longer in the registry,
+  sums its base LUK, its equipment LUK and its status LUK.
+  """
+  @spec effective_luk(Combatant.t()) :: integer()
+  def effective_luk(%Combatant{unit_type: :player, unit_id: unit_id} = unit) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, %{stats: %PlayerStats{} = stats}, _pid}} ->
+        PlayerStats.get_effective_stat(stats, :luk)
+
+      _missing ->
+        summed_luk(unit)
+    end
+  end
+
+  def effective_luk(%Combatant{unit_type: :mob, base_stats: stats}), do: stats.luk
+  def effective_luk(%Combatant{} = unit), do: summed_luk(unit)
+
+  defp summed_luk(unit) do
+    status_luk =
+      unit.unit_type
+      |> ModifierCalculator.get_all_modifiers(unit.unit_id)
+      |> Map.get(:luk, 0)
+
+    Map.get(unit.base_stats, :luk, 0) + Map.get(unit.equip_modifiers, :luk, 0) + status_luk
+  end
 
   @doc "Rolls selected player components without reconstructing display ATK."
   @spec player_attack_parts(map(), keyword(), atom(), boolean()) :: PhysicalAttack.parts()
@@ -74,35 +108,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     }
   end
 
-  @doc "Rolls the existing non-player base attack representation."
-  @spec non_player_base_attack(map()) :: {:ok, integer()} | {:error, atom()}
-  def non_player_base_attack(%{unit_type: :homunculus} = attacker) do
+  @doc """
+  Rolls the existing non-player base attack representation.
+
+  A critical takes the maximum weapon attack instead of a roll; in renewal the
+  critical base is then multiplied by 14/10.
+  """
+  @spec non_player_base_attack(map(), boolean()) :: {:ok, integer()} | {:error, atom()}
+  def non_player_base_attack(attacker, critical? \\ false)
+
+  def non_player_base_attack(%{unit_type: :homunculus} = attacker, critical?) do
     min_atk = attacker.combat_stats.atk_min
     max_atk = attacker.combat_stats.atk_max
 
-    weapon_atk = DamageShared.roll(min_atk, max_atk)
+    weapon_atk = weapon_attack(min_atk, max_atk, critical?)
 
-    {:ok, attacker.combat_stats.atk + weapon_atk}
+    {:ok, critical_base(attacker.combat_stats.atk + weapon_atk, critical?)}
   end
 
-  def non_player_base_attack(%{unit_type: :mob} = attacker) do
+  def non_player_base_attack(%{unit_type: :mob} = attacker, critical?) do
     atk = attacker.combat_stats.atk
     atk_min = div(atk * 80, 100)
     atk_max = div(atk * 120, 100)
 
-    weapon_atk =
-      if atk_max > atk_min do
-        atk_min + :rand.uniform(atk_max - atk_min) - 1
-      else
-        atk_min
-      end
-
+    weapon_atk = weapon_attack(atk_min, atk_max, critical?)
     batk = attacker.base_stats.str + attacker.progression.base_level
 
-    {:ok, weapon_atk + batk}
+    {:ok, critical_base(weapon_atk + batk, critical?)}
   end
 
-  def non_player_base_attack(_attacker), do: {:error, :unknown_unit_type}
+  def non_player_base_attack(_attacker, _critical?), do: {:error, :unknown_unit_type}
+
+  defp weapon_attack(min_atk, max_atk, false),
+    do: DamageShared.roll(min(min_atk, max_atk), max_atk)
+
+  defp weapon_attack(_min_atk, max_atk, true), do: max_atk
+
+  defp critical_base(base, true) do
+    if GameMode.mode() == :renewal, do: div(base * 14, 10), else: base
+  end
+
+  defp critical_base(base, false), do: base
 
   @doc "Resolves physical DEF using the existing status and equipment omission modes."
   @spec physical_defense(map(), map() | nil, atom(), atom(), map()) :: {integer(), integer()}

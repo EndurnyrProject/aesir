@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   `finish_attack/2` runs the critical tail after any post-defense attribute step.
   """
 
-  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
+  alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense.Renewal, as: Defense
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
@@ -146,11 +146,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   defp critical_equipment_bonus(damage, context),
     do: damage + div(damage * Map.get(context, :non_crit_atk_rate, 0), 100)
 
-  defp critical_damage(damage, %{critical?: true} = context) do
-    CriticalHits.apply_critical_damage(damage, %{
-      combat_stats: %{crate: Map.get(context, :crate, 0)}
-    })
-  end
+  defp critical_damage(damage, %{critical?: true} = context),
+    do: Critical.multiply(damage, Map.get(context, :crate, 0))
 
   defp critical_damage(damage, _context), do: damage
 

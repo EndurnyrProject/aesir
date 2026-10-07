@@ -1,25 +1,29 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   @moduledoc """
-  Pure calculation of one hand-aware ordinary weapon swing.
+  Calculation of one hand-aware ordinary weapon swing.
 
-  Resolves a chance-based attack proc before the shared hit roll, calculates
-  damage components without applying them, and returns their immutable raw
-  result. A multi-hit proc (Double Attack) is one logical swing: its single
-  calculated primary damage is repeated over the proc's divisions before the
-  hand components derive from it, so the katar off-hand follows the repeated
-  value while a dual-wield left hand keeps its own single calculation. The
-  optional `:rng` function controls only the passive proc roll and defaults to
+  Resolves a chance-based attack proc, then the target's perfect dodge, then the
+  critical, which always hits, and only then the accuracy roll. It calculates
+  damage components without applying them and returns their immutable raw
+  result. Its one side effect is the attacker's own Auto Counter stance, which a
+  swing ends when it turns the swing critical.
+
+  A multi-hit proc (Double Attack) is one logical swing: its single calculated
+  primary damage is repeated over the proc's divisions before the hand
+  components derive from it, so the katar off-hand follows the repeated value
+  while a dual-wield left hand keeps its own single calculation. The optional
+  `:rng` function controls only the passive proc roll and defaults to
   `&:rand.uniform/1`.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Passives
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
@@ -53,8 +57,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   def calculate(player_state, %Combatant{} = attacker, %Combatant{} = defender, opts \\ []) do
     {attacker, divisions, double_attack?} = resolve_attack_proc(player_state, attacker, opts)
 
-    case hit_result(attacker, defender) do
-      :hit -> calculate_hit(player_state, attacker, defender, divisions, double_attack?)
+    case swing_result(attacker, defender, double_attack?) do
+      :critical -> calculate_hit(player_state, attacker, defender, divisions, true)
+      :hit -> calculate_hit(player_state, attacker, defender, divisions, false)
       outcome -> {:ok, empty_result(attacker, divisions, outcome)}
     end
   end
@@ -80,11 +85,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
 
   defp resolve_attack_proc(_player_state, attacker, _opts), do: {attacker, 1, false}
 
-  defp hit_result(attacker, defender) do
+  defp swing_result(attacker, defender, multi_hit?) do
     HitCalculations.calculate_hit_result(
       %{
         hit: attacker.combat_stats.hit,
         char_id: attacker.unit_id,
+        critical: fn -> Critical.normal_attack?(attacker, defender, multi_hit: multi_hit?) end,
         perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker),
         hit_rate_bonus_pct: Map.get(attacker.combat_stats, :hit_rate_bonus_pct, 0)
       },
@@ -97,11 +103,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
     )
   end
 
-  defp calculate_hit(player, attacker, defender, divisions, double_attack?) do
-    primary_opts = [
-      skip_crit: double_attack?,
-      critical_rate_bonus: ranged_critical_rate(attacker)
-    ]
+  defp calculate_hit(player, attacker, defender, divisions, critical?) do
+    primary_opts = if critical?, do: [force_crit: true], else: [skip_crit: true]
 
     with {:ok, primary} <- DamageCalculator.calculate_damage(attacker, defender, primary_opts),
          {primary, divisions} <- repeat_primary(primary, divisions, defender),
@@ -119,12 +122,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
       {damage, divisions} = DamageShared.normalize_damage_divisions(primary.damage, divisions)
       {%{primary | damage: damage}, divisions}
     end
-  end
-
-  defp ranged_critical_rate(%Combatant{weapon: %{type: weapon_type}} = attacker) do
-    if WeaponTypes.requires_ammo?(weapon_type),
-      do: EquipmentBonuses.critical_long_rate(attacker),
-      else: 0
   end
 
   defp components(

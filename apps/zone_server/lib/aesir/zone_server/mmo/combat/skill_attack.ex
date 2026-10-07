@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
@@ -65,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Unit.Ref
 
   @palm_strike_id 370
+  @sacrifice 368
 
   @typep damage_calculator ::
            (struct(), struct(), keyword() -> {:ok, map()} | {:error, atom()})
@@ -1310,22 +1312,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
        ) do
     %{
       hit_divisions: hit_divisions,
-      hit_rate_bonus_pct: hit_rate_bonus_pct,
-      hit_rate_bonus_flat: hit_rate_bonus_flat,
-      ignore_flee: ignore_flee?,
       ranged: ranged?,
       knockback_options: knockback_options
     } = hit_opts
 
-    hit_result =
-      if ignore_flee? do
-        :hit
-      else
-        HitCalculations.calculate_hit_result(
-          hit_stats(attacker, hit_rate_bonus_pct, hit_rate_bonus_flat),
-          flee_stats(target)
-        )
-      end
+    {hit_result, calc_opts} = skill_hit_result(attacker, target, skill_id, calc_opts, hit_opts)
 
     case hit_result do
       :miss ->
@@ -1493,23 +1484,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_context,
          hit_opts
        ) do
-    %{
-      hit_rate_bonus_pct: hit_rate_bonus_pct,
-      hit_rate_bonus_flat: hit_rate_bonus_flat,
-      ignore_flee: ignore_flee?
-    } = hit_opts
-
-    {critical_hit, calc_context} = pre_roll_critical(attacker, target, calc_context)
-
-    hit_result =
-      if critical_hit == :hit or ignore_flee? do
-        :hit
-      else
-        HitCalculations.calculate_hit_result(
-          hit_stats(attacker, hit_rate_bonus_pct, hit_rate_bonus_flat),
-          flee_stats(target)
-        )
-      end
+    {hit_result, calc_context} =
+      skill_hit_result(attacker, target, skill_id, calc_context, hit_opts)
 
     case hit_result do
       :miss ->
@@ -1540,24 +1516,60 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     end
   end
 
-  defp pre_roll_critical(attacker, target, {opts, calculator}) do
-    {hit, opts} = pre_roll_critical(attacker, target, opts)
-    {hit, {opts, calculator}}
+  # Of all skills only Sacrifice can be perfect-dodged, before anything else.
+  # The critical is decided next and always hits; only a non-critical hit that
+  # does not ignore flee rolls its accuracy. Returns the calculation context
+  # with the critical decided.
+  defp skill_hit_result(attacker, target, skill_id, calc_context, hit_opts) do
+    critical = fn -> skill_critical?(attacker, target, calc_opts(calc_context)) end
+    target_stats = skill_flee_stats(target, skill_id)
+
+    result =
+      if hit_opts.ignore_flee do
+        cond do
+          HitCalculations.perfect_dodge_triggered?(target_stats) -> :perfect_dodge
+          critical.() -> :critical
+          true -> :hit
+        end
+      else
+        attacker
+        |> hit_stats(hit_opts.hit_rate_bonus_pct, hit_opts.hit_rate_bonus_flat)
+        |> Map.put(:critical, critical)
+        |> HitCalculations.calculate_hit_result(target_stats)
+      end
+
+    case result do
+      :critical -> {:hit, decided_critical(calc_context, true)}
+      other -> {other, decided_critical(calc_context, false)}
+    end
   end
 
-  defp pre_roll_critical(attacker, target, opts) do
-    case Keyword.pop(opts, :critical, false) do
-      {true, rest} ->
-        bonus = Keyword.get(rest, :critical_rate_bonus, 0)
-        rest = Keyword.drop(rest, [:force_crit, :skip_crit])
+  # A critical skill (`critical: true`) rolls its chance with its own bonus; a
+  # forced critical (Auto Counter's strike) stays; any other skill never crits.
+  defp skill_critical?(attacker, target, opts) do
+    cond do
+      Keyword.get(opts, :critical, false) ->
+        bonus = Keyword.get(opts, :critical_rate_bonus, 0) * 10
+        Critical.roll?(attacker, target, skill_bonus: bonus)
 
-        if DamageCalculator.roll_critical?(attacker, target, bonus),
-          do: {:hit, Keyword.put(rest, :force_crit, true)},
-          else: {nil, Keyword.put(rest, :skip_crit, true)}
+      Keyword.get(opts, :force_crit, false) ->
+        true
 
-      _ ->
-        {nil, opts}
+      true ->
+        false
     end
+  end
+
+  defp calc_opts({opts, _calculator}), do: opts
+  defp calc_opts(opts), do: opts
+
+  defp decided_critical({opts, calculator}, critical?),
+    do: {decided_critical(opts, critical?), calculator}
+
+  defp decided_critical(opts, critical?) do
+    opts
+    |> Keyword.drop([:critical, :force_crit, :skip_crit])
+    |> Keyword.put(if(critical?, do: :force_crit, else: :skip_crit), true)
   end
 
   defp deliver_skill_hit(
@@ -1791,10 +1803,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     }
   end
 
-  defp flee_stats(target) do
+  defp skill_flee_stats(target, skill_id) do
     %{
       flee: target.combat_stats.flee,
-      perfect_dodge: target.combat_stats.perfect_dodge,
+      perfect_dodge: if(skill_id == @sacrifice, do: target.combat_stats.perfect_dodge, else: 0),
       unit_id: target.unit_id
     }
   end

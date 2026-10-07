@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.Critical
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
@@ -102,8 +103,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   Options:
     - `:skill_ratio` - percent of base attack the skill deals (default `100`).
       A Bash at level 10 passes `400` for 400% weapon damage.
-    - `:skip_crit` - when `true`, never rolls a critical (skills don't crit
-      unless flagged). Default `false`.
+    - `:force_crit` - the hit is a critical. The critical is decided by the
+      attack before its hit roll (it always hits), so the calculator never
+      rolls one; without `:force_crit` the hit is not critical.
     - `:critical_max_weapon` - when `false`, a critical keeps normal weapon
       variance instead of maximum weapon damage. Default `true`.
     - `:bonus_atk` - flat ATK added after the skill-ratio step and before the
@@ -308,7 +310,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   # The scalar recipe of non-player hits and of player hits with a replaced base:
   # modifiers and DEF, the post-defense minimum, the attribute step, the critical
-  # tail and then the target's cards (battle.cpp:5625-5758).
+  # tail and then the target's cards (battle.cpp:5625-5758). The critical is
+  # decided first: it sets a non-player's base to its maximum and, in classic,
+  # skips DEF.
   defp calculate_ordinary_pipeline_damage(
          attacker,
          defender,
@@ -316,6 +320,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          attack_path,
          defense_mode
        ) do
+    critical? = critical_decision(opts)
+    defense_mode = if critical? and classic?(), do: :ignore, else: defense_mode
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
     modifiers = attacker_status_modifiers(attacker)
@@ -335,19 +341,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
              attacker,
              attack_path,
              ratio_scaled_mode(defense_mode, skill_ratio)
-           ),
-         hit = %{
-           attacker: attacker,
-           defender: defender,
-           opts: opts,
-           modifiers: modifiers,
-           watk_base: modified_atk
-         },
-         elemental = scalar_element(max(defended, 1), hit),
-         {:ok, result} <- finalize_damage(elemental, attacker, defender, opts) do
+           ) do
+      hit = %{
+        attacker: attacker,
+        defender: defender,
+        opts: opts,
+        modifiers: modifiers,
+        watk_base: modified_atk
+      }
+
       taken =
-        apply_equipment_taken_families(
-          result.damage,
+        defended
+        |> max(1)
+        |> scalar_element(hit)
+        |> scalar_critical(attacker, critical?)
+        |> apply_equipment_taken_families(
           attacker,
           defender,
           Keyword.get(opts, :skill_id),
@@ -355,9 +363,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           opts
         )
 
-      {:ok, %{result | damage: taken}}
+      {:ok, %{damage: taken, is_critical: critical?}}
     end
   end
+
+  # Renewal multiplies a critical after the attribute step; classic has no
+  # critical multiplier on this recipe.
+  defp scalar_critical(damage, attacker, true) do
+    if classic?(),
+      do: damage,
+      else: Critical.multiply(damage, Map.get(attacker.combat_stats, :crate, 0))
+  end
+
+  defp scalar_critical(damage, _attacker, false), do: damage
+
+  defp classic?, do: GameMode.mode() == :pre_renewal
+
+  # The attack decides its critical before the hit roll and passes it as
+  # `:force_crit`.
+  defp critical_decision(opts), do: Keyword.get(opts, :force_crit, false)
 
   # Non-player basic attacks take no attribute step (`attack_attr_none`); renewal
   # players take one only in the Sacrifice group; other hits take their element.
@@ -413,26 +437,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     do: apply_defense_formula(damage, defender, attacker)
 
   defp calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode) do
-    with {:ok, critical} <- finalize_damage(0, attacker, defender, opts) do
-      hit = %{
-        attacker: attacker,
-        defender: defender,
-        opts: opts,
-        attack_path: attack_path,
-        defense_mode: defense_mode,
-        critical: critical,
-        modifiers: attacker_status_modifiers(attacker)
-      }
+    hit = %{
+      attacker: attacker,
+      defender: defender,
+      opts: opts,
+      attack_path: attack_path,
+      defense_mode: defense_mode,
+      critical: %{damage: 0, is_critical: critical_decision(opts)},
+      modifiers: attacker_status_modifiers(attacker)
+    }
 
-      case GameMode.mode() do
-        :renewal ->
-          hit
-          |> Map.put(:elements, hand_elements(attacker, hit.modifiers, opts))
-          |> renewal_player_damage()
+    case GameMode.mode() do
+      :renewal ->
+        hit
+        |> Map.put(:elements, hand_elements(attacker, hit.modifiers, opts))
+        |> renewal_player_damage()
 
-        :pre_renewal ->
-          classic_player_damage(hit)
-      end
+      :pre_renewal ->
+        classic_player_damage(hit)
     end
   end
 
@@ -832,9 +854,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         attacker_modifiers: modifiers
       )
 
-    with {:ok, result} <- finalize_damage(1, attacker, defender, opts) do
-      {:ok, %{result | damage: damage}}
-    end
+    {:ok, %{damage: damage, is_critical: critical_decision(opts)}}
   end
 
   @doc """
@@ -875,26 +895,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp beast_bane_bonus(attacker, defender) do
     RaceModifiers.beast_bane_atk(attacker, defender.race)
-  end
-
-  # `:force_crit` guarantees the critical (Auto Counter's counter strike) and
-  # wins over `:skip_crit`; otherwise the roll is skipped or rolled per opts.
-  defp finalize_damage(damage, attacker, defender, opts) do
-    cond do
-      Keyword.get(opts, :force_crit, false) ->
-        apply_forced_critical_hit(damage, attacker)
-
-      Keyword.get(opts, :skip_crit, false) ->
-        {:ok, %{damage: damage, is_critical: false}}
-
-      true ->
-        apply_critical_hit(
-          damage,
-          attacker,
-          defender,
-          Keyword.get(opts, :critical_rate_bonus, 0)
-        )
-    end
   end
 
   @doc """
@@ -942,8 +942,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, Mechanics.physical_attack().base_attack(parts)}
   end
 
-  defp calculate_unit_base_attack(attacker, _opts),
-    do: DamageInputs.non_player_base_attack(attacker)
+  defp calculate_unit_base_attack(attacker, opts),
+    do: DamageInputs.non_player_base_attack(attacker, Keyword.get(opts, :force_crit, false))
 
   @doc """
   Applies the scalar recipe's modifier stages to `base_damage`, without DEF.
@@ -1372,7 +1372,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp apply_size_modifier(damage, attacker, defender, opts) do
     # `bNoSizeFix` on the attacker's equipment ignores the size modifier entirely,
     # like the status-driven `ignore_size_penalty` above.
-    if Keyword.get(opts, :ignore_size, false) or
+    if attacker.unit_type != :player or Keyword.get(opts, :ignore_size, false) or
          Map.get(attacker.combat_stats, :ignore_size_penalty, false) or
          Map.get(Map.get(attacker, :equip_modifiers, %{}), :no_size_fix, 0) > 0 do
       damage

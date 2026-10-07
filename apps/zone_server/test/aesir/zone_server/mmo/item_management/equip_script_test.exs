@@ -798,6 +798,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.eval(program, Map.put(on(0), :ammunition, false)) ==
                %{non_crit_atk_rate: 15, short_atk_rate: 10}
     end
+
+    test "an ammunition script's critical bonuses feed only the arrow critical" do
+      program =
+        EquipScript.parse!("""
+        ctx = bonus(ctx, :critical, 20)
+        ctx = bonus(ctx, :critical_long, 5)
+        ctx
+        """)
+
+      assert EquipScript.eval(program, Map.put(on(0), :ammunition, true)) ==
+               %{arrow_critical: 25}
+
+      assert EquipScript.eval(program, on(0)) == %{critical: 20, critical_long: 5}
+    end
   end
 
   describe "eval/2" do
