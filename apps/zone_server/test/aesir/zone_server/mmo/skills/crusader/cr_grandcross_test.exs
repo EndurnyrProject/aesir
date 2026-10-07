@@ -114,20 +114,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       }
     end
 
-    test "costs exactly 20% of max HP at cast" do
+    test "costs exactly 20% of current HP at cast" do
       cost = Cost.from_definition(game_state(1000, 1000), definition(), 1)
       assert cost.hp == 200
       assert cost.sp == 37
+
+      assert Cost.from_definition(game_state(500, 1000), definition(), 1).hp == 100
     end
 
-    test "cast refused when current HP is not strictly above the cost" do
+    test "a share of current HP always leaves HP above the cost" do
       cost = Cost.from_definition(game_state(200, 1000), definition(), 1)
-      assert {:error, :insufficient_hp} = Cost.validate(game_state(200, 1000), cost)
+      assert cost.hp == 40
+      assert :ok = Cost.validate(game_state(200, 1000), cost)
     end
 
-    test "cast allowed one HP above the cost" do
-      cost = Cost.from_definition(game_state(201, 1000), definition(), 1)
-      assert :ok = Cost.validate(game_state(201, 1000), cost)
+    test "a cast at 1 HP costs no HP" do
+      cost = Cost.from_definition(game_state(1, 1000), definition(), 1)
+      assert cost.hp == 0
+      assert :ok = Cost.validate(game_state(1, 1000), cost)
     end
   end
 

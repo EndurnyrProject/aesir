@@ -74,11 +74,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchangeTest do
   defp sp(%PlayerState{stats: stats}), do: stats.current_state.sp
 
   @tag game_mode: :renewal
-  test "renewal pays the cost, then halves both SP pools before swapping them" do
+  test "renewal halves both SP pools before swapping them" do
     register_ally(40)
     expect_set_sp()
 
-    assert {:ok, caster} = cast(caster(100), @ally_id)
+    assert {:ok, caster} = cast(caster(95), @ally_id)
 
     assert_received {:set_sp, _pid, 47}
     assert sp(caster) == 20
@@ -90,43 +90,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchangeTest do
     :ok = StatusStorage.apply_status(:player, @ally_id, :sc_extremityfist)
     expect_set_sp()
 
-    assert {:ok, caster} = cast(caster(100), @ally_id)
+    assert {:ok, caster} = cast(caster(95), @ally_id)
 
     assert_received {:set_sp, _pid, 40}
     assert sp(caster) == 20
   end
 
   @tag game_mode: :pre_renewal
-  test "pre-renewal pays the cost, then swaps the two SP pools whole" do
+  test "pre-renewal swaps the two SP pools whole" do
     register_ally(40)
     expect_set_sp()
 
-    assert {:ok, caster} = cast(caster(100), @ally_id)
+    assert {:ok, caster} = cast(caster(95), @ally_id)
 
     assert_received {:set_sp, _pid, 95}
     assert sp(caster) == 40
   end
 
-  test "a monster yields 3% of the caster's max SP once; a second cast still spends its SP" do
+  test "a monster yields 3% of the caster's max SP once; a second cast yields nothing" do
     register_mob()
 
-    assert {:ok, gained} = cast(caster(100), @mob_id)
+    assert {:ok, gained} = cast(caster(95), @mob_id)
     assert sp(gained) == 101
 
-    assert {:ok, spent} = cast(gained, @mob_id)
-    assert sp(spent) == 101 - 5
+    assert {:ok, again} = cast(gained, @mob_id)
+    assert sp(again) == 101
   end
 
-  test "the cost is required up front but paid by the cast itself" do
-    cost = PfSoulchange.dynamic_cost(caster(100), {:unit, @ally_id}, 1, PfSoulchange.definition())
-    assert {cost.sp, cost.sp_requirement} == {0, 5}
+  test "spends its SP before the effect so the exchange works on the paid pool" do
+    assert PfSoulchange.definition().cost_before_effect
   end
 
-  test "a swap never leaves the caster below zero after the cost" do
+  test "a swap with an empty ally leaves the caster at zero" do
     register_ally(0)
     expect_set_sp()
 
-    {:ok, caster} = cast(caster(5), @ally_id)
+    {:ok, caster} = cast(caster(0), @ally_id)
     assert sp(caster) == 0
   end
 

@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   @waivable_gemstone_ids [715, 716, 717]
   @gem_floor_skills [:hw_ganbantein, :sa_abracadabra]
+  @holy_light 156
 
   # Guild skills (GD_*) are learned by the guild, not the character: rank and
   # cooldowns resolve against the guild entry, never against the caster's
@@ -174,6 +175,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     end
   end
 
+  @doc """
+  Consumes a skill's requirement for an equipment proc, before its effect.
+
+  The proc's autocast flag waives the SP; Holy Light's explicit requirement
+  branch keeps its SP instead. The HP, spheres and zeny the skill owes are
+  spent up to what the caster has, with no affordability check and no item
+  consumption. A zero-HP result is the owner's to settle.
+  """
+  @spec charge_proc_requirement(PlayerState.t(), module(), term(), map(), pos_integer()) ::
+          {:ok, PlayerState.t()} | {:error, :invalid_cost}
+  def charge_proc_requirement(caster, module, target, definition, level) do
+    with {:ok, cost} <- resolve_cost(caster, module, target, level, definition) do
+      cost = waive_proc_sp(cost, definition)
+
+      zeny =
+        min(effective_zeny_cost(caster, Enum.at(definition.zeny_cost, level - 1, 0)), caster.zeny)
+
+      {:ok,
+       caster
+       |> Cost.apply_commitment(Cost.prepare_clamped(caster, cost))
+       |> deduct_zeny(zeny)}
+    end
+  end
+
+  defp waive_proc_sp(cost, %{id: @holy_light}), do: cost
+  defp waive_proc_sp(cost, _definition), do: %{cost | sp: 0, sp_requirement: 0}
+
   @doc false
   @spec prepare_cost(PlayerState.t(), module(), map(), Cost.t(), non_neg_integer()) ::
           {:ok, map()} | {:error, atom()}
@@ -192,6 +220,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
          consume_catalysts?: true
        }}
     end
+  end
+
+  @doc """
+  Spends a prepared cost's HP, SP and spheres ahead of the effect and returns
+  the caster with the prepared cost left to settle only its zeny, catalysts
+  and ammo.
+  """
+  @spec spend_before_effect(PlayerState.t(), map()) :: {PlayerState.t(), map()}
+  def spend_before_effect(caster, %{commitment: commitment} = prepared) do
+    spent = Cost.apply_commitment(caster, commitment)
+    settled = %Cost.Commitment{hp: 0, sp: 0, spheres: commitment.spheres, write_spheres?: false}
+    {spent, %{prepared | commitment: settled}}
   end
 
   @impl true

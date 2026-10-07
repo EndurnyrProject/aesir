@@ -71,19 +71,47 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
              Cost.validate(game_state(10, 40, 3), %Cost{hp: 10, sp_requirement: 0})
   end
 
-  test "resolves a percent-max-HP cost next to the flat HP cost" do
+  test "a positive HP rate is a share of current HP next to the flat HP cost" do
     definition = definition(hp_cost: [5], hp_cost_rate: [20])
     game_state = game_state(50, 40, 0, 100)
 
-    assert %Cost{hp: 25} = Cost.from_definition(game_state, definition, 1)
+    assert %Cost{hp: 15} = Cost.from_definition(game_state, definition, 1)
   end
 
   test "refuses a cast whose HP-rate cost would reduce HP to zero" do
-    definition = definition(hp_cost_rate: [20])
+    definition = definition(hp_cost: [16], hp_cost_rate: [20])
     game_state = game_state(20, 40, 0, 100)
     cost = Cost.from_definition(game_state, definition, 1)
 
+    assert %Cost{hp: 20} = cost
     assert {:error, :insufficient_hp} = Cost.validate(game_state, cost)
+  end
+
+  describe "prepare_clamped/2" do
+    test "caps every resource at what the caster has instead of failing" do
+      game_state = game_state(10, 4, 1)
+      cost = %Cost{hp: 25, sp_requirement: 9, sp: 9, spheres: 3}
+
+      commitment = Cost.prepare_clamped(game_state, cost)
+      assert %Cost.Commitment{hp: 10, sp: 4, write_spheres?: true} = commitment
+
+      applied = Cost.apply_commitment(game_state, commitment)
+      assert applied.stats.current_state == %{hp: 0, sp: 0}
+      assert SpiritSpheres.count(applied.spirit_spheres) == 0
+    end
+
+    test "spends the affordable amounts in full and leaves untouched spheres unwritten" do
+      game_state = game_state(50, 40, 2)
+      cost = %Cost{hp: 5, sp_requirement: 0, sp: 12, spheres: 0}
+
+      commitment = Cost.prepare_clamped(game_state, cost)
+      assert %Cost.Commitment{hp: 5, sp: 12, write_spheres?: false} = commitment
+
+      assert Cost.apply_commitment(game_state, commitment).stats.current_state == %{
+               hp: 45,
+               sp: 28
+             }
+    end
   end
 
   test "accepts an all-zero cost" do

@@ -173,6 +173,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       refute_receive {:unit_lifecycle, ^event}
     end
 
+    test "a committed zero-HP state from a skill cost dies without an attacker, others pass" do
+      :ok = Lifecycle.subscribe()
+      alive = build_state(100, :idle)
+
+      assert {:noreply, ^alive} = HealthHandler.settle_lethal_cost(alive)
+      refute_receive {:unit_lifecycle, %Event{reason: :death}}
+
+      drained = put_in(alive.game_state.stats.current_state.hp, 0)
+      {:noreply, %{game_state: game_state}} = HealthHandler.settle_lethal_cost(drained)
+
+      assert game_state.action_state == :dead
+      assert_receive {:unit_lifecycle, %Event{unit_type: :player, unit_id: 1, reason: :death}}
+
+      dead = %{drained | game_state: game_state}
+      assert {:noreply, ^dead} = HealthHandler.settle_lethal_cost(dead)
+    end
+
     test "normalizes a legacy integer attacker id to a typed player ref for death" do
       previous_level = :logger.get_primary_config().level
       :ok = :logger.set_primary_config(:level, :info)

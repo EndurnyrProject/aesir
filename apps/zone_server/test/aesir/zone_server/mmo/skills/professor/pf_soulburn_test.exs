@@ -77,11 +77,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
     assert_received {:drained, {:player, 3001}}
   end
 
-  test "a failed level 5 roll burns the caster for twice the SP left after the cost" do
+  test "a failed level 5 roll burns the caster for twice the SP left on the paid pool" do
     reject(&Resource.drain_sp_percent/2)
     expect(MagicAttack, :deal_damage, fn {:player, 1001}, 60, :neutral, :skill -> :ok end)
 
-    caster = put_in(@caster.stats.current_state.sp, 150)
+    caster = put_in(@caster.stats.current_state.sp, 30)
 
     assert {:ok, burnt} =
              PfSoulburn.cast(caster, {:unit, 3001}, 5, PfSoulburn.definition(),
@@ -91,24 +91,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
     assert burnt.stats.current_state.sp == 0
   end
 
-  test "a successful roll pays the cost from the caster up front" do
+  test "a successful roll leaves the caster's own SP alone" do
     stub(MagicAttack, :execute_magic_damage, fn _caster, _target, _amount, _opts ->
       {:ok, {:player, 3001}}
     end)
 
-    caster = put_in(@caster.stats.current_state.sp, 150)
+    caster = put_in(@caster.stats.current_state.sp, 50)
 
-    assert {:ok, paid} =
+    assert {:ok, untouched} =
              PfSoulburn.cast(caster, {:unit, 3001}, 3, PfSoulburn.definition(),
                rng: fn 100 -> 60 end
              )
 
-    assert paid.stats.current_state.sp == 50
+    assert untouched.stats.current_state.sp == 50
   end
 
-  test "the cost is required up front but committed by the cast itself" do
-    cost = PfSoulburn.dynamic_cost(@caster, {:unit, 3001}, 2, PfSoulburn.definition())
-    assert {cost.sp, cost.sp_requirement} == {0, 90}
+  test "spends its SP before the effect so a backfire burns the paid pool" do
+    assert PfSoulburn.definition().cost_before_effect
   end
 
   test "a failed level 5 roll empties the caster" do

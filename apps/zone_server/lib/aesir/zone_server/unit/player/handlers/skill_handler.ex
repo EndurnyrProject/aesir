@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -1543,8 +1544,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   Runs an equipment-granted proc cast for this player.
 
   The equipment sibling of `handle_auto_cast/4`: it routes to the interpreter's
-  proc entry, which charges the skill's full SP cost and honors its cooldown. A
-  proc that cannot pay or is still cooling down is dropped silently.
+  proc entry, which consumes the skill's requirement with the SP waived and
+  honors its cooldown without arming it. A proc that is cooling down is dropped
+  silently; an effect that fails after the requirement was spent commits the
+  spent resources just as silently. A requirement that took the player's last
+  HP kills them.
   """
   @spec handle_proc_cast(map(), integer(), pos_integer(), term()) :: {:noreply, map()}
   def handle_proc_cast(%{game_state: game_state} = state, skill_id, level, target) do
@@ -1552,7 +1556,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, skill_id, level, false)
         broadcast_skill_effect(new_state.game_state, skill_id, level, target)
-        {:noreply, new_state}
+        HealthHandler.settle_lethal_cost(new_state)
+
+      {:error, _reason, charged} ->
+        HealthHandler.settle_lethal_cost(commit_cast(state, charged, skill_id, level, false))
 
       {:error, _reason} ->
         {:noreply, state}

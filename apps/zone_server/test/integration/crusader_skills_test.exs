@@ -283,7 +283,7 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
         )
 
       max_hp = max_hp(crusader.pid)
-      cost = div(max_hp * 20, 100)
+      cost = div(current_hp(crusader.pid) * 20, 100)
       mob_hp = current_mob_hp(undead.pid)
 
       flush_packets()

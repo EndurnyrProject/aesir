@@ -122,6 +122,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
     end
   end
 
+  @doc """
+  Prepares a commitment that spends what the caster has rather than failing:
+  HP, SP and spheres are each capped at the current amount. The restricted
+  entries that consume a requirement without a prior affordability check (an
+  equipment proc) use it; an HP charge reaching current HP is lethal and left
+  to the owner.
+  """
+  @spec prepare_clamped(map(), t()) :: Commitment.t()
+  def prepare_clamped(game_state, %__MODULE__{} = cost) do
+    current = game_state.stats.current_state
+    held = spheres(game_state)
+    count = min(cost.spheres, SpiritSpheres.count(held))
+    {:ok, spheres} = consume_spheres(held, count)
+
+    %Commitment{
+      hp: min(cost.hp, Map.get(current, :hp, 0)),
+      sp: min(cost.sp, Map.get(current, :sp, 0)),
+      spheres: spheres,
+      write_spheres?: count > 0
+    }
+  end
+
   @spec apply_commitment(map(), Commitment.t()) :: map()
   def apply_commitment(game_state, %Commitment{} = commitment) do
     current_state =
@@ -175,10 +197,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
     end
   end
 
+  # The rate is a share of current HP (definitions only carry non-negative
+  # rates; a max-HP share would be the negative form).
   defp hp_rate_cost(game_state, definition, level) do
     case Enum.at(definition.hp_cost_rate, level - 1, 0) do
       0 -> 0
-      rate -> div(game_state.stats.derived_stats.max_hp * rate, 100)
+      rate -> div(game_state.stats.current_state.hp * rate, 100)
     end
   end
 

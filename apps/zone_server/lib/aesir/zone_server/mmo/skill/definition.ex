@@ -36,6 +36,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   player may use the skill, and its splash or ground hits still land while the
   caster stays hidden. It is mode-keyable.
 
+  `cost_before_effect` makes the interpreter spend the prepared HP, SP and
+  sphere cost before the effect runs instead of after it, for a skill whose
+  effect reads or sets the caster's own pool (Indulge, Soul Exhale, Soul
+  Siphon). The effect then works on the paid pool. Such a skill must not
+  return a deferred result, whose settlement would spend the cost again. It is
+  mode-invariant.
+
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
   declared range for a player caster. It is mode-invariant.
@@ -133,6 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             is_npc: false,
             damage_splash: false,
             allow_when_hidden: false,
+            cost_before_effect: false,
             after_cast_delay: [],
             cooldown: [],
             damage_kind: :weapon,
@@ -181,6 +189,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           is_npc: boolean(),
           damage_splash: boolean(),
           allow_when_hidden: boolean(),
+          cost_before_effect: boolean(),
           after_cast_delay: [non_neg_integer()],
           cooldown: [non_neg_integer()],
           damage_kind: damage_kind(),
@@ -237,6 +246,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     is_npc: :boolean,
     damage_splash: :boolean,
     allow_when_hidden: :boolean,
+    cost_before_effect: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
@@ -277,6 +287,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     is_npc: false,
     damage_splash: false,
     allow_when_hidden: false,
+    cost_before_effect: false,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,

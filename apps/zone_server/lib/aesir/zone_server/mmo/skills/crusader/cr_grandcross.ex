@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   @moduledoc """
   Grand Cross (CR_GRANDCROSS). Plants a 9-cell holy cross on the caster's cell that
-  ticks every 300 ms for about 900 ms, costing 20% of max HP plus 37 to 100 SP and
-  refusing a cast the HP cost would not survive. A player caster is rooted for the
-  field's life and loses the shield's DEF and MDEF while it lasts; every tick hits
+  ticks every 300 ms for about 900 ms, costing 20% of current HP plus 37 to 100 SP
+  (a share of current HP always leaves the caster alive). A player caster is rooted
+  for the field's life and loses the shield's DEF and MDEF while it lasts; every tick hits
   each offensive target on the cross, the player caster included, through the
   skill-owned hybrid recipe (renewal averages raw attack contributions before flat
   defences; classic sums separately defended contributions). Enemy damage takes two

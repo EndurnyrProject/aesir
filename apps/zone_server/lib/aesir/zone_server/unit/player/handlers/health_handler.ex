@@ -591,6 +591,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def gain_hp(_amount, state), do: {:noreply, state}
 
   @doc """
+  Kills a living player whose own skill requirement took their last HP (a
+  committed state at 0 HP); any other state passes through unchanged. There is
+  no attacker, so no kill credit and the map's ordinary death rules apply.
+  """
+  @spec settle_lethal_cost(SessionState.t()) :: {:noreply, SessionState.t()}
+  def settle_lethal_cost(%{game_state: %{action_state: :dead}} = state), do: {:noreply, state}
+
+  def settle_lethal_cost(%{game_state: %{stats: %{current_state: %{hp: 0}}}} = state),
+    do: handle_death(nil, state)
+
+  def settle_lethal_cost(state), do: {:noreply, state}
+
+  @doc """
   Takes `amount` HP without source, reaction or kill: applied only while the
   player is alive and `amount` is below current HP.
   """

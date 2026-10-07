@@ -357,6 +357,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, _}}}
     end
 
+    test "a proc whose effect failed after its requirement commits the charged caster silently" do
+      state = casting_state(45)
+      game_state = state.game_state
+      charged = put_in(game_state.stats.current_state.hp, 1)
+
+      stub(Interpreter, :proc_cast, fn ^game_state, 29, 1, :self ->
+        {:error, :no_effect, charged}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub_commit()
+      expect(UnitRegistry, :update_unit_state, fn :player, 1000, ^charged -> :ok end)
+      reject(&Broadcast.to_player/2)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 1}}}}} =
+               SkillHandler.handle_proc_cast(state, 29, 1, :self)
+    end
+
     test "publishes the final resource projection after consuming SP" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)

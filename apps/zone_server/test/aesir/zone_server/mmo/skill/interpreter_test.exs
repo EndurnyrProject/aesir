@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
+  alias Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -50,6 +51,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   defp mode_value(renewal, pre_renewal) do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
+
+  defmodule FailingSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(_game_state, _target, _level, _definition), do: {:error, :no_effect}
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
   end
 
   defmodule OriginAwareSkill do
@@ -2918,30 +2929,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       :ok
     end
 
-    test "charges the skill's full SP cost, unlike a status proc" do
+    test "waives the skill's SP at every level, unlike a status proc" do
       gs = game_state(100, %{})
 
       assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
-      assert updated.stats.current_state.sp == 88
-    end
-
-    test "the SP cost tracks the proc level" do
-      gs = game_state(100, %{})
+      assert updated.stats.current_state.sp == 100
 
       assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 10, {:unit, 2001})
-      assert updated.stats.current_state.sp == 70
+      assert updated.stats.current_state.sp == 100
+    end
+
+    test "fires with no SP at all: the waived requirement is not an affordability check" do
+      gs = game_state(0, %{})
+
+      assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.stats.current_state.sp == 0
     end
 
     # WZ_METEOR carries a real cooldown, unlike the single-target bolts above.
     @tag game_mode: :renewal
-    test "arms the skill's cooldown, so procs cannot outpace the skill itself" do
+    test "never arms the skill's cooldown, which only an ordinary cast's completion does" do
       stub(Combat, :resolve_target_position, fn 2001 -> {:ok, :mob, {14, 12, "prontera"}} end)
       stub(Combat, :execute_magic_splash, fn _caster, _center, _radius, _opts -> [] end)
 
       gs = game_state(100, %{})
 
       assert {:ok, updated} = Interpreter.proc_cast(gs, 83, 1, {:unit, 2001})
-      assert Map.has_key?(updated.skill_cooldowns, 83)
+      assert updated.skill_cooldowns == %{}
     end
 
     test "refuses to fire while the skill is still cooling down" do
@@ -2955,11 +2969,68 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:error, :on_cooldown} = Interpreter.proc_cast(cooling, 19, 1, {:unit, 2001})
     end
 
-    test "fizzles silently when SP is short, spending nothing and casting nothing" do
+    test "refuses a skill banned on the wearer's map" do
       reject(&Combat.execute_magic_attack/3)
-      gs = game_state(11, %{})
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+      on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :gvg) end)
 
-      assert {:error, :insufficient_sp} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+      assert {:error, :skill_not_allowed} =
+               Interpreter.proc_cast(game_state(100, %{}), 87, 1, {:unit, 2001})
+    end
+
+    test "Holy Light keeps its explicit SP requirement, spent up to the SP held" do
+      assert {:ok, paid} = Interpreter.proc_cast(game_state(100, %{}), 156, 1, {:unit, 2001})
+      assert paid.stats.current_state.sp == 85
+
+      assert {:ok, drained} = Interpreter.proc_cast(game_state(9, %{}), 156, 1, {:unit, 2001})
+      assert drained.stats.current_state.sp == 0
+    end
+
+    test "spends the skill's HP cost before the effect, up to the HP held" do
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+
+      assert {:ok, charged} = Interpreter.proc_cast(game_state(100, %{}), 29, 1, :self)
+      assert charged.stats.current_state == %CurrentState{hp: 85, sp: 100}
+
+      low = put_in(game_state(100, %{}).stats.current_state.hp, 10)
+      assert {:ok, lethal} = Interpreter.proc_cast(low, 29, 1, :self)
+      assert lethal.stats.current_state.hp == 0
+    end
+
+    test "an effect failing after the requirement was spent returns the charged caster" do
+      definition = %Definition{
+        id: 29,
+        name: :paid_failure,
+        display_name: "Paid Failure",
+        max_level: 1,
+        target_type: :self,
+        sp_cost: [10],
+        hp_cost: [15]
+      }
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :paid_failure -> {:ok, FailingSkill} end)
+
+      assert {:error, :no_effect, charged} =
+               Interpreter.proc_cast(game_state(100, %{}), 29, 1, :self)
+
+      assert charged.stats.current_state == %CurrentState{hp: 85, sp: 100}
+    end
+
+    test "a failing effect that spent nothing is a plain error" do
+      definition = %Definition{
+        id: 29,
+        name: :paid_failure,
+        display_name: "Paid Failure",
+        max_level: 1,
+        target_type: :self,
+        sp_cost: [10]
+      }
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :paid_failure -> {:ok, FailingSkill} end)
+
+      assert {:error, :no_effect} = Interpreter.proc_cast(game_state(100, %{}), 29, 1, :self)
     end
 
     @tag game_mode: :renewal
@@ -2986,12 +3057,93 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:ok, _} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
     end
 
+    test "never shortens an act delay already armed" do
+      until = System.monotonic_time(:millisecond) + 10_000
+      gs = %{game_state(100, %{}) | act_delay_until: until}
+
+      assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.act_delay_until == until
+    end
+
+    @tag game_mode: :renewal
+    test "a failing effect still arms the after-cast delay and returns the changed caster" do
+      stub(Combat, :execute_magic_attack, fn _caster, _target_id, _opts ->
+        {:error, :target_not_found}
+      end)
+
+      before = System.monotonic_time(:millisecond)
+      gs = game_state(100, %{})
+
+      assert {:error, :target_not_found, delayed} =
+               Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+
+      assert delayed.act_delay_until >= before + 1400
+    end
+
     test "an unknown skill id and a zero level are both refused" do
       assert {:error, :unknown_skill} =
                Interpreter.proc_cast(game_state(100, %{}), 999_999, 1, {:unit, 2001})
 
       assert {:error, :invalid_level} =
                Interpreter.proc_cast(game_state(100, %{}), 19, 0, {:unit, 2001})
+    end
+  end
+
+  describe "cost_before_effect" do
+    setup do
+      definition = PfHpconversion.definition()
+      stub(Catalog, :by_id, fn 373 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :pf_hpconversion -> {:ok, PfHpconversion} end)
+      :ok
+    end
+
+    # Indulge: 10% of max HP (100) is 10 HP, regained as 10 SP per level.
+    test "an ordinary cast spends the SP before the effect, which works on the paid pool" do
+      assert {:ok, cast} = Interpreter.cast(game_state(10, %{373 => 3}), 373, 3, :self)
+      assert cast.stats.current_state == %CurrentState{hp: 90, sp: 37}
+    end
+
+    test "a kept-requirement item cast spends the SP the same way" do
+      assert {:ok, cast} =
+               Interpreter.complete_item_cast(game_state(10, %{}), 373, 3, :self, true)
+
+      assert cast.stats.current_state == %CurrentState{hp: 90, sp: 37}
+    end
+
+    test "an unconditional item cast and an equipment proc spend no SP" do
+      assert {:ok, item} = Interpreter.item_cast(game_state(10, %{}), 373, 3, :self)
+      assert item.stats.current_state == %CurrentState{hp: 90, sp: 40}
+
+      assert {:ok, proc} = Interpreter.proc_cast(game_state(10, %{}), 373, 3, :self)
+      assert proc.stats.current_state == %CurrentState{hp: 90, sp: 40}
+    end
+  end
+
+  describe "check_proc_usable/2" do
+    test "passes an off-cooldown skill on an ordinary map without charging or casting" do
+      reject(&Combat.execute_magic_attack/3)
+      assert :ok = Interpreter.check_proc_usable(game_state(0, %{}), 19)
+    end
+
+    test "refuses an unknown or cooling skill" do
+      assert {:error, :unknown_skill} =
+               Interpreter.check_proc_usable(game_state(100, %{}), 999_999)
+
+      cooling = %{
+        game_state(100, %{})
+        | skill_cooldowns: %{19 => System.monotonic_time(:millisecond) + 10_000}
+      }
+
+      assert {:error, :on_cooldown} = Interpreter.check_proc_usable(cooling, 19)
+    end
+
+    test "sets and resets the wearer's autocast flag, clearing an enclosing one" do
+      scope = %{invocation: :auto, autocast_flag?: true}
+
+      Origin.with_skill(:sm_bash, {:player, 1000}, scope, fn ->
+        assert :ok = Interpreter.check_proc_usable(game_state(100, %{}), 19)
+        refute Origin.autocast?({:player, 1000})
+      end)
     end
   end
 

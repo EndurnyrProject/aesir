@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
              state = get_player_state(session.pid)
 
              state.stats.current_state.hp > before_hp and
-               state.stats.current_state.sp == before_sp - 13 and
+               state.stats.current_state.sp == before_sp and
                Map.fetch!(state.stats.active_autobonuses, key) == generation
            end)
   end

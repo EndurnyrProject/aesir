@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
   On a player, the Professor and the target swap their SP. Renewal halves both
   pools first, and a target readied for Asura Strike receives its own SP back
   instead. In both modes a target under a no-recovery state keeps its own SP.
-  The 5 SP cost is paid before the exchange.
+  The 5 SP cost is spent before the exchange.
   On a monster, the Professor regains 3% of their max SP; each monster yields
   this only once; casting on it again spends the SP for nothing.
 
@@ -22,14 +22,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
     damage_type: :no_damage,
     range: 9,
     sp_cost: [5],
+    cost_before_effect: true,
     cast_time: [renewal: [], pre_renewal: [3_000]],
     fixed_cast_time: [renewal: [3_000], pre_renewal: []],
     after_cast_delay: [renewal: [], pre_renewal: [5_000]]
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -61,24 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
 
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
-  @doc """
-  Requires the resolved SP to start but spends none up front: `cast/4` pays it
-  before the exchange, so the swapped amount is the SP left after the cost.
-  """
-  @impl Active
-  @spec dynamic_cost(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
-  def dynamic_cost(caster, _target, level, definition) do
-    caster
-    |> Cost.from_definition(definition, level, sp: 0)
-    |> Map.put(:sp_requirement, Cost.resolve_sp(caster, definition, level))
-  end
-
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%PlayerState{} = caster, {:unit, target_id}, level, definition) do
-    caster = PlayerCaster.deduct_sp(caster, Cost.resolve_sp(caster, definition, level))
-
+  def cast(%PlayerState{} = caster, {:unit, target_id}, _level, _definition) do
     case resolve(target_id) do
       {:ok, :mob, _mob, _pid} -> drain_monster(caster, target_id)
       {:ok, :player, target, pid} -> {:ok, swap(caster, target, pid)}

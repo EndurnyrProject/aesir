@@ -56,6 +56,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @vulture_skill_id 44
   # Monk and Champion combo skills: delay reduced by AGI and DEX, floored at attack motion.
   @combo_delay_skill_ids [272, 273, 371, 372]
+  # How much an ordinary or item cast may shorten an act delay already armed.
+  @act_delay_slack 100
 
   defmodule Deferred do
     @moduledoc "Deferred effect plus the owner-local resources settled on reply."
@@ -606,54 +608,92 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:ok,
        game_state
        |> adapter.deduct_sp(cost)
-       |> put_act_delay(definition, level, now)}
+       |> put_act_delay(definition, level, now, 0)}
     end
   end
 
   def auto_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
 
   @doc """
+  Checks whether an equipment proc may fire `skill_id` for the wearer.
+
+  The proc's usability check: the skill must exist, be off cooldown and be
+  allowed on the wearer's map. The learned level, range, resources and the
+  attack-motion gate are not checked. The wearer's autocast flag is set for the
+  check and reset afterwards, which also clears a flag an enclosing invocation
+  had set. Nothing is charged or cast.
+  """
+  @spec check_proc_usable(Active.caster(), integer()) :: :ok | {:error, atom()}
+  def check_proc_usable(game_state, skill_id) do
+    ref = caster_ref(game_state)
+    Origin.set_autocast_flag(ref, true)
+
+    try do
+      with {:ok, _definition} <- fetch_definition(skill_id),
+           {:ok, adapter} <- lifecycle_adapter(game_state),
+           :ok <- check_cooldown_ready(game_state, adapter, skill_id) do
+        :erlang.apply(adapter, :castable_state, [game_state, skill_id, :begin])
+      end
+    after
+      Origin.set_autocast_flag(ref, false)
+    end
+  end
+
+  @doc """
   Runs an equipment-granted proc cast: the entry the autocast bonuses use.
 
-  Deliberately neither `complete_cast/4` nor `auto_cast/4`. A worn item casting
-  by itself skips what the wearer cannot be asked for - cast time, the learned
-  requirement, range and the act-delay gate - but it is not free the way a
-  status proc is: it pays the skill's full SP cost and it respects the skill's
-  own pacing, so a proc cannot fire while its skill is still cooling down and
-  it arms that cooldown when it does.
+  Deliberately neither `complete_cast/4` nor `auto_cast/4`. After
+  `check_proc_usable/2`, the skill's requirement is consumed before its effect
+  the way an ordinary cast's is, except that the proc's autocast flag waives
+  the SP (Holy Light keeps its explicit SP); the HP, spheres and zeny it owes
+  are spent up to what the wearer has, with no affordability check, no cast
+  time, no learned or range check and no item consumption. A skill that
+  charges itself on success (Tarot Card of Fate) still does. The proc never
+  arms the skill's cooldown, only its after-cast delay.
 
-  Insufficient SP or a skill still on cooldown returns an error and runs
-  nothing; the caller drops it silently, since a proc that cannot pay is simply
-  a proc that did not happen.
-
-  The skill runs as an `:auto` invocation with the wearer's autocast flag set
-  for exactly the effect's execution; the flag is reset when it returns, even
-  when an enclosing invocation had set it.
+  A skill on cooldown or banned on the map returns `{:error, reason}` and runs
+  nothing. An effect that fails after the requirement was spent returns
+  `{:error, reason, charged}` so the owner commits the spent resources; both
+  are dropped silently. The effect runs as an `:auto` invocation with the
+  wearer's autocast flag set for exactly its execution.
   """
   @spec proc_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
-          {:ok, Active.caster()} | {:error, atom()}
-  def proc_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+          {:ok, Active.caster()} | {:error, atom()} | {:error, atom(), Active.caster()}
+  def proc_cast(%PlayerState{} = game_state, skill_id, level, target)
+      when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
-    adapter = Caster.for(game_state)
 
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          {:ok, module} <- fetch_active_module(definition),
+         :ok <- check_proc_usable(game_state, skill_id),
          {:ok, resolved} <- resolve_auto_cast_target(definition, target),
-         :ok <- check_cooldown(game_state, skill_id, now),
-         cost = proc_cast_sp_cost(definition, level),
-         :ok <- check_sp(adapter, game_state, cost),
-         {:ok, game_state} <-
-           run_unconditional(module, game_state, resolved, level, definition, :auto, true) do
-      {:ok,
-       game_state
-       |> adapter.deduct_sp(cost)
-       |> put_cooldown(skill_id, definition, level, now)
-       |> put_act_delay(definition, level, now)}
+         {:ok, charged} <-
+           Caster.Player.charge_proc_requirement(game_state, module, resolved, definition, level) do
+      case run_unconditional(module, charged, resolved, level, definition, :auto, true) do
+        {:ok, game_state} ->
+          {:ok, put_act_delay(game_state, definition, level, now, 0)}
+
+        {:error, reason} ->
+          proc_failure(reason, game_state, charged, definition, level, now)
+
+        {:deferred, _, _} ->
+          proc_failure(:unsupported_skill, game_state, charged, definition, level, now)
+      end
     end
   end
 
-  def proc_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+  def proc_cast(%PlayerState{}, _skill_id, _level, _target), do: {:error, :invalid_level}
+  def proc_cast(_game_state, _skill_id, _level, _target), do: {:error, :unsupported_caster}
+
+  # The effect ran and failed: the requirement stays spent and the after-cast
+  # delay still arms, so the owner commits the changed state silently.
+  defp proc_failure(reason, game_state, charged, definition, level, now) do
+    case put_act_delay(charged, definition, level, now, 0) do
+      ^game_state -> {:error, reason}
+      changed -> {:error, reason, changed}
+    end
+  end
 
   @doc """
   Begins a client-selected item skill without learned or resource requirements.
@@ -926,12 +966,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  # An equipment proc pays the skill's declared SP cost in full, unlike the
-  # status-driven proc's reduced charge. Caster `sp_cost_rate` sources stay out
-  # of it: the item pays what the skill lists.
-  @spec proc_cast_sp_cost(Definition.t(), pos_integer()) :: non_neg_integer()
-  defp proc_cast_sp_cost(definition, level), do: Enum.at(definition.sp_cost, level - 1)
-
   # A status-driven proc charges two thirds of the skill's SP cost, in C integer
   # division.
   @spec auto_cast_sp_cost(Definition.t(), pos_integer()) :: non_neg_integer()
@@ -990,6 +1024,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          } = opts
        ) do
     origin = Map.get(opts, :origin, adapter.cast_origin(game_state))
+
+    {game_state, prepared_cost} =
+      spend_before_effect(game_state, adapter, definition, prepared_cost)
 
     case run_cast(module, game_state, target, level, definition, origin, input, adapter) do
       {:deferred, game_state, descriptor} ->
@@ -1649,6 +1686,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     :exit, _reason -> {:error, :target_not_found}
   end
 
+  defp check_cooldown_ready(game_state, adapter, skill_id) do
+    now = System.monotonic_time(:millisecond)
+
+    if :erlang.apply(adapter, :cooldown_ready?, [game_state, skill_id, now, :begin]),
+      do: :ok,
+      else: {:error, :on_cooldown}
+  end
+
   defp check_cooldown(game_state, skill_id, now) do
     if Cooldown.ready?(game_state.skill_cooldowns, skill_id, now) do
       :ok
@@ -1719,6 +1764,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         error
     end
   end
+
+  # A `cost_before_effect` skill spends its prepared resources before the
+  # effect, which then works on the paid pool; the settlement after the effect
+  # finds nothing left to spend. Only player skills carry the flag.
+  defp spend_before_effect(game_state, Caster.Player, %{cost_before_effect: true}, prepared),
+    do: Caster.Player.spend_before_effect(game_state, prepared)
+
+  defp spend_before_effect(game_state, _adapter, _definition, prepared_cost),
+    do: {game_state, prepared_cost}
 
   defp valid_cast_result(adapter, caster, success) do
     if :erlang.apply(adapter, :valid_caster_result?, [caster]),
@@ -1821,9 +1875,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp put_resolved_act_delay(game_state, false, _delay, _now), do: game_state
 
   defp put_resolved_act_delay(game_state, true, delay, now),
-    do: %{game_state | act_delay_until: now + delay}
+    do: arm_act_delay(game_state, now + delay, @act_delay_slack)
 
-  defp put_act_delay(%PlayerState{} = game_state, definition, level, now) do
+  # A new act delay never ends before the one already armed (0 is none),
+  # except that an ordinary or item cast may shorten it by a small fixed
+  # slack; a proc or status cast may not shorten it at all.
+  defp arm_act_delay(%{act_delay_until: until} = game_state, deadline, slack)
+       when is_integer(until) and until != 0,
+       do: %{game_state | act_delay_until: max(deadline, until - slack)}
+
+  defp arm_act_delay(game_state, deadline, _slack), do: %{game_state | act_delay_until: deadline}
+
+  defp put_act_delay(game_state, definition, level, now, slack \\ @act_delay_slack)
+
+  defp put_act_delay(%PlayerState{} = game_state, definition, level, now, slack) do
     case Enum.at(definition.after_cast_delay, level - 1) do
       nil ->
         game_state
@@ -1832,14 +1897,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         game_state
 
       _base ->
-        %{
-          game_state
-          | act_delay_until: now + resolved_after_cast_delay(game_state, definition, level)
-        }
+        delay = resolved_after_cast_delay(game_state, definition, level)
+        arm_act_delay(game_state, now + delay, slack)
     end
   end
 
-  defp put_act_delay(game_state, _definition, _level, _now), do: game_state
+  defp put_act_delay(game_state, _definition, _level, _now, _slack), do: game_state
 
   defp resolve_delay(game_state, skill_id, base) do
     base = combo_base_delay(game_state, skill_id, base)

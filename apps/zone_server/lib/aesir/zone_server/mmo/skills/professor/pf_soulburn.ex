@@ -21,13 +21,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
     damage_kind: :magic,
     range: 9,
     sp_cost: [80, 90, 100, 110, 120],
+    cost_before_effect: true,
     cooldown: [10_000, 10_000, 10_000, 10_000, 15_000]
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -50,33 +49,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
     rng = Keyword.get(opts, :rng, &:rand.uniform/1)
 
     case Combat.resolve_combatant(target_id) do
-      {:ok, %{unit_type: :player}} ->
-        caster |> pay(definition, level) |> siphon({:player, target_id}, level, definition, rng)
-
-      {:ok, _not_a_player} ->
-        {:error, :invalid_target}
-
-      error ->
-        error
+      {:ok, %{unit_type: :player}} -> siphon(caster, {:player, target_id}, level, definition, rng)
+      {:ok, _not_a_player} -> {:error, :invalid_target}
+      error -> error
     end
   end
-
-  @doc """
-  Requires the resolved SP to start but spends none up front: `cast/5` pays it
-  before the siphon, so a backfire burns the SP left after the cost.
-  """
-  @impl Active
-  @spec dynamic_cost(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
-  def dynamic_cost(caster, _target, level, definition) do
-    caster
-    |> Cost.from_definition(definition, level, sp: 0)
-    |> Map.put(:sp_requirement, Cost.resolve_sp(caster, definition, level))
-  end
-
-  defp pay(%PlayerState{} = caster, definition, level),
-    do: PlayerCaster.deduct_sp(caster, Cost.resolve_sp(caster, definition, level))
-
-  defp pay(caster, _definition, _level), do: caster
 
   @impl Active
   @spec mob_cast(MobState.t(), term(), pos_integer(), Definition.t(), map()) ::
