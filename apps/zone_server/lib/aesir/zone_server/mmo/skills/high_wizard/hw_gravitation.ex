@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
   `200 + 200 * level` misc damage per second to every enemy inside (400 to the
   Emperium; no FLEE, DEF, element or damage-reducing status) and slows their attack speed by 5% per level through
   `:sc_gravitation`. The caster holds the same status bound to the field: they
-  cannot walk or use items while it lasts, and taking damage collapses it. 20 to 100 SP, one
+  cannot walk or use items while it lasts, taking damage collapses it, and no
+  other skill of theirs deals damage (`StatusInterpreter.can_deal_skill_damage?/4`;
+  the field's own ticks and equipment procs still do). 20 to 100 SP, one
   Blue Gemstone, 5 s cast and a 5 to 9 s after-cast delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,

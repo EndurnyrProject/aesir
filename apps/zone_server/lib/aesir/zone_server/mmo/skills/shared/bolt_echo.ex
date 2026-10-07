@@ -8,6 +8,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.BoltEcho do
   never through the bolt's own `cast/4`, so it cannot echo again. A caster that
   died or warped since (a newer deferred epoch) or a target that is gone simply
   loses the echo. Identical in both modes.
+
+  A bolt the caster's own Gravitation Field suppressed rolls no echo, and an
+  echo is a fresh calculation when it fires: a classic High Wizard whose field
+  started in between loses it, even when the first bolt was an exempt equipment
+  proc.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
@@ -24,12 +29,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.BoltEcho do
   """
   @spec maybe_schedule(
           PlayerState.t() | MobState.t(),
-          Ref.t(),
+          Ref.t() | :suppressed,
           14 | 19 | 20,
           pos_integer(),
           (pos_integer() -> pos_integer())
         ) :: :ok
-  def maybe_schedule(caster, target, bolt_id, level, rng \\ &:rand.uniform/1) do
+  def maybe_schedule(caster, target, bolt_id, level, rng \\ &:rand.uniform/1)
+
+  def maybe_schedule(_caster, :suppressed, _bolt_id, _level, _rng), do: :ok
+
+  def maybe_schedule(caster, target, bolt_id, level, rng) do
     type = caster.__struct__.get_unit_type(caster)
     id = caster.__struct__.get_unit_id(caster)
 

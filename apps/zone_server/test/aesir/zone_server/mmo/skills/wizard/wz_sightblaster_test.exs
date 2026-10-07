@@ -236,6 +236,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
+  test "a contact the caster's own Gravitation Field suppressed keeps the status armed" do
+    caster = living_player(1001, 50, 50)
+    target = %{instance_id: 2001, x: 55, y: 50, map_name: "prontera", movement_state: :moving}
+    register(:player, 1001, caster)
+    register(:mob, 2001, target)
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster,
+        caster_id: 1001,
+        val1: 1
+      )
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> {:ok, :suppressed} end)
+
+    reject(&Combat.knockback/5)
+
+    assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
   defp register(unit_type, unit_id, state) do
     :ok = UnitRegistry.register_unit(unit_type, unit_id, FixtureUnit, state, nil)
     :ok = SpatialIndex.add_unit(unit_type, unit_id, state.x, state.y, state.map_name)

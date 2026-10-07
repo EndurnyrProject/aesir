@@ -24,9 +24,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -1475,5 +1477,224 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                skill_ratio: 1_400,
                typed_results: true
              )
+  end
+
+  describe "classic Gravitation Field suppression" do
+    @describetag game_mode: :pre_renewal
+
+    @gravitation 484
+
+    setup do
+      Mimic.copy(HitCalculations)
+      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+      target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+      caster_state = %TestUnit{combatant: attacker, hp: 100, x: 100, y: 100}
+      target_state = %TestUnit{combatant: target, hp: 100, x: 101, y: 100}
+
+      # The held status is read by the gate only; its ASPD modifier is not under test.
+      stub(ModifierCalculator, :get_all_modifiers, fn _unit_type, _unit_id -> %{} end)
+
+      stub(TargetResolver, :resolve, fn
+        {:mob, 2001} -> {:ok, self(), target_state, :mob}
+        {:player, 1001} -> {:ok, self(), caster_state, :player}
+      end)
+
+      stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+      stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+      stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "test_map", 100, 100, _r ->
+        [{:mob, 2001}]
+      end)
+
+      {:ok, caster_state: caster_state, attacker: attacker, target: target}
+    end
+
+    defp channel_gravitation(unit_id) do
+      :ok =
+        StatusStorage.apply_status(:player, unit_id, :sc_gravitation,
+          val1: 1,
+          state: %{self?: true}
+        )
+    end
+
+    # A suppressed hit performs no roll, calculation, packet, mutation or rider.
+    defp reject_attack_work do
+      reject(&HitCalculations.calculate_hit_result/2)
+      reject(&DamageCalculator.calculate_damage/3)
+      reject(&MiscDamageCalculator.calculate_misc_damage/3)
+      reject(&StatusInterpreter.before_weapon_hit/3)
+      reject(&StatusInterpreter.absorb_hit/4)
+      reject(&Broadcast.to_in_range/5)
+      reject(&MobSession.apply_damage/4)
+      reject(&Knockback.skill/5)
+      reject(&EquipProcDispatch.dispatch_hit/2)
+    end
+
+    test "a direct hit reports no hit with the target untouched", %{caster_state: caster} do
+      channel_gravitation(1001)
+      reject_attack_work()
+
+      assert {:ok, %{hit?: false, damage: 0, target_survives?: true, coma?: false}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 14,
+                 skill_level: 1,
+                 report_hit: true
+               )
+
+      assert :ok =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 14,
+                 skill_level: 1
+               )
+    end
+
+    test "a splash recipient and a misc target are absent or unhit", %{caster_state: caster} do
+      channel_gravitation(1001)
+      reject_attack_work()
+
+      assert [] =
+               SkillAttack.execute_splash_attack(caster, {100, 100}, 2,
+                 skill_id: 141,
+                 skill_level: 1
+               )
+
+      assert [] =
+               SkillAttack.execute_misc_splash(caster, {100, 100}, 2,
+                 skill_id: 489,
+                 skill_level: 1,
+                 base_damage: 100
+               )
+
+      assert {:ok, %{hit?: false, damage: 0, target_survives?: true}} =
+               SkillAttack.execute_misc_attack(caster, {:mob, 2001},
+                 skill_id: 489,
+                 skill_level: 1,
+                 base_damage: 100,
+                 report_hit: true
+               )
+    end
+
+    test "a staged hit is suppressed explicitly and its delivery does nothing", %{
+      caster_state: caster
+    } do
+      channel_gravitation(1001)
+      reject_attack_work()
+
+      assert {:ok, :suppressed} =
+               SkillAttack.prepare_staged_skill_attack(caster, {:mob, 2001},
+                 skill_id: 8_001,
+                 skill_level: 1,
+                 ignore_flee: true
+               )
+
+      assert :ok = SkillAttack.deliver_prepared_skill_hit(:suppressed)
+    end
+
+    test "a field occupant's instance, Gravitation's own tick and the autocast flag pass", %{
+      caster_state: caster,
+      attacker: attacker,
+      target: target
+    } do
+      stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _info -> :continue end)
+      stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, damage, _info -> {damage, :hit} end)
+      stub(StatusInterpreter, :after_damage_taken, fn :mob, 2001, _info -> 0 end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, _damage, _source, _metadata -> :ok end)
+      stub(Knockback, :skill, fn _attacker, _target, _skill, _result, _opts -> :ok end)
+      stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+      stub(EquipVanish, :after_hit, fn _attacker, _target, _pid, _flag -> :ok end)
+      stub(OnHitEffects, :after_hit, fn _attacker, _target, _result, _opts -> :ok end)
+
+      stub(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn ^attacker, ^target, _opts ->
+        {:ok, %{damage: 400}}
+      end)
+
+      :ok =
+        StatusStorage.apply_status(:player, 1001, :sc_gravitation,
+          val1: 1,
+          state: %{self?: false}
+        )
+
+      assert {:ok, %{hit?: true, damage: 40}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 14,
+                 skill_level: 1,
+                 ignore_flee: true,
+                 report_hit: true
+               )
+
+      :ok = StatusStorage.remove_status(:player, 1001, :sc_gravitation)
+      channel_gravitation(1001)
+
+      assert {:ok, %{hit?: true, damage: 400}} =
+               SkillAttack.execute_misc_attack(caster, {:mob, 2001},
+                 skill_id: @gravitation,
+                 skill_level: 1,
+                 base_damage: 400,
+                 report_hit: true
+               )
+
+      Origin.set_autocast_flag({:player, 1001}, true)
+
+      assert {:ok, %{hit?: true, damage: 40}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 14,
+                 skill_level: 1,
+                 ignore_flee: true,
+                 report_hit: true
+               )
+
+      Origin.set_autocast_flag({:player, 1001}, false)
+
+      assert {:ok, %{hit?: false}} =
+               SkillAttack.execute_skill_attack(caster, {:mob, 2001},
+                 skill_id: 14,
+                 skill_level: 1,
+                 ignore_flee: true,
+                 report_hit: true
+               )
+    end
+
+    test "a hit prepared before the field started still lands when delivered", %{
+      caster_state: caster,
+      attacker: attacker,
+      target: target
+    } do
+      test_pid = self()
+      stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _info -> :continue end)
+      stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+
+      expect(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+        {:ok, %{damage: 60, is_critical: false}}
+      end)
+
+      assert {:ok, prepared} =
+               SkillAttack.prepare_staged_skill_attack(caster, {:mob, 2001},
+                 skill_id: 8_001,
+                 skill_level: 1,
+                 ignore_flee: true
+               )
+
+      channel_gravitation(1001)
+      stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, 60, _info -> {60, :hit} end)
+      stub(StatusInterpreter, :after_damage_taken, fn :mob, 2001, _info -> 0 end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(Knockback, :skill, fn ^attacker, ^target, 8_001, _result, [] -> :ok end)
+      stub(EquipVanish, :after_hit, fn _attacker, _target, _pid, _flag -> :ok end)
+      stub(OnHitEffects, :after_hit, fn _attacker, _target, _result, _opts -> :ok end)
+
+      expect(MobSession, :apply_damage, fn _pid, 60, 1001, _metadata ->
+        send(test_pid, :delivered)
+        :ok
+      end)
+
+      assert :ok = SkillAttack.deliver_prepared_skill_hit(prepared)
+      assert_received :delivered
+    end
   end
 end

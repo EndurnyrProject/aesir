@@ -2,7 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
   @moduledoc """
   Stone Fling (TF_THROWSTONE). Fixed-damage misc attack that can stun or blind.
 
-  Misc damage ignores flee and cannot miss, so the status rolls always run.
+  Misc damage ignores flee and cannot miss, so the status rolls run on every
+  hit that was dealt; a hit the caster's own Gravitation Field suppressed
+  (Stapo Card grants the skill to any wearer) rolls nothing.
 
   Renewal and pre-renewal agree on the hit: 50 fixed neutral damage from a player
   (30 from a monster) at seven cells, consuming one Stone. A player caster rolls a
@@ -48,12 +50,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
       skill_id: definition.id,
       skill_level: level,
       base_damage: base_damage(caster),
-      element: :neutral
+      element: :neutral,
+      report_hit: true
     ]
 
     case Combat.execute_misc_attack(caster, target, opts) do
-      :ok ->
+      {:ok, %{hit?: true}} ->
         maybe_stun_or_blind(caster, target)
+        {:ok, caster}
+
+      {:ok, %{hit?: false}} ->
         {:ok, caster}
 
       {:error, _reason} = error ->

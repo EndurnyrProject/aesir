@@ -84,12 +84,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
     assert {:ok, ^caster} = cast(caster, 5)
   end
 
+  # The splash runs the skill's on-hit effect once per connected hit, with the
+  # hit's effective source.
+  defp run_effect_per_hit(opts, source, refs) do
+    effect = Keyword.fetch!(opts, :additional_effect)
+    Enum.each(refs, &effect.(source, &1))
+    refs
+  end
+
   test "each struck target is cursed on a successful 5% per level roll" do
     caster = mob()
+    source = MobState.to_combatant(caster)
     test_pid = self()
 
-    stub(Combat, :execute_magic_splash, fn ^caster, _center, 1, _opts ->
-      [{:player, 7}, {:mob, 8}]
+    stub(Combat, :execute_magic_splash, fn ^caster, _center, 1, opts ->
+      run_effect_per_hit(opts, source, [{:player, 7}, {:mob, 8}])
     end)
 
     expect(Resistance, :roll_success, 2, fn 15 -> true end)
@@ -107,10 +116,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
   end
 
   test "a failed roll curses nobody" do
-    stub(Combat, :execute_magic_splash, fn _caster, _center, 1, _opts -> [{:mob, 8}] end)
+    caster = player()
+    source = PlayerState.to_combatant(caster)
+
+    stub(Combat, :execute_magic_splash, fn ^caster, _center, 1, opts ->
+      run_effect_per_hit(opts, source, [{:mob, 8}])
+    end)
+
     stub(Resistance, :roll_success, fn _rate -> false end)
     reject(&StatusInterpreter.apply_status/4)
 
-    assert {:ok, _caster} = cast(player(), 3)
+    assert {:ok, ^caster} = cast(caster, 3)
+  end
+
+  test "a reflected round curses the caster with the reflector as its source" do
+    caster = player()
+    test_pid = self()
+    reflector = %{unit_type: :mob, unit_id: 8}
+
+    stub(Combat, :execute_magic_splash, fn ^caster, _center, 1, opts ->
+      run_effect_per_hit(opts, reflector, [{:player, 1001}])
+    end)
+
+    stub(Resistance, :roll_success, fn 15 -> true end)
+
+    stub(StatusInterpreter, :apply_status, fn type, id, :sc_curse, params ->
+      send(test_pid, {:cursed, type, id, params[:caster_id], params[:source_type]})
+      :ok
+    end)
+
+    assert {:ok, ^caster} = cast(caster, 3)
+    assert_received {:cursed, :player, 1001, 8, :mob}
   end
 end

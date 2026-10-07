@@ -59,6 +59,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
     end
   end
 
+  # A hit the caster's own Gravitation Field suppressed never ran its effects.
+  defp maybe_freeze(_caster, :suppressed, _level), do: :ok
+
   defp maybe_freeze(caster, {unit_type, unit_id}, level) do
     if :rand.uniform(100) <= freeze_chance(level) do
       {source_type, source_id} = source_ref(caster)

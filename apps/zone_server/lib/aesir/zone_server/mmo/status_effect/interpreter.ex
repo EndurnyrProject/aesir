@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   require Logger
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
@@ -924,6 +925,40 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     do:
       not restricted?(unit_type, unit_id, &PropertyChecker.prevents_items?/1) and
         not channeling_gravitation?(unit_type, unit_id)
+
+  @gravitation_skill 484
+
+  @doc """
+  Whether a skill hit by `unit_type`/`unit_id` may be calculated at all.
+
+  A pre-renewal player channelling their own Gravitation Field deals no other
+  skill damage while the field lasts: only Gravitation Field itself and a skill
+  running with the caster's autocast flag set (`autocast?`, an equipment proc)
+  get through. Field occupants, monsters, renewal casters and ordinary attacks
+  are never gated. The check belongs before any damage calculation; a refused
+  hit is not a cast failure, so its costs stay spent.
+  """
+  @spec can_deal_skill_damage?(unit_type(), integer(), integer(), boolean()) :: boolean()
+  def can_deal_skill_damage?(:player, unit_id, skill_id, autocast?) do
+    autocast? or skill_id == @gravitation_skill or GameMode.mode() != :pre_renewal or
+      not channeling_gravitation?(:player, unit_id)
+  end
+
+  def can_deal_skill_damage?(_unit_type, _unit_id, _skill_id, _autocast?), do: true
+
+  @doc """
+  `can_deal_skill_damage?/4` for an attacking combatant, read with its live
+  autocast flag in the calling process: `:ok` to calculate the hit, `:suppressed`
+  to skip it entirely. Every attack calculation entry calls it right after the
+  delivery check.
+  """
+  @spec authorize_skill_damage(%{unit_type: unit_type(), unit_id: integer()}, integer()) ::
+          :ok | :suppressed
+  def authorize_skill_damage(%{unit_type: type, unit_id: id}, skill_id) do
+    if can_deal_skill_damage?(type, id, skill_id, Origin.autocast?({type, id})),
+      do: :ok,
+      else: :suppressed
+  end
 
   # A pre-renewal Gravitation Field caster cannot use items; its field occupants can.
   defp channeling_gravitation?(unit_type, unit_id) do

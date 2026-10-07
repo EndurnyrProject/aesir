@@ -11,6 +11,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
   Pre-renewal: each round deals 125% MATK split evenly among the targets; the
   curse lasts 30 s. 10 to 70 SP, 1 s cast, 1 s after-cast delay, no cooldown.
 
+  The curse is the skill's on-hit effect: it rolls only for a hit that dealt
+  damage to a surviving target, and a reflected round curses the caster instead.
+  A pre-renewal caster channelling their own Gravitation Field strikes nobody.
+
   Monsters cast it through `cast/4`, which is caster-generic.
   """
   use Aesir.ZoneServer.Mmo.Skill,
@@ -49,18 +53,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
     with {:ok, %{position: center} = primary} <- Combat.resolve_combatant(target_id) do
       combatant = caster.__struct__.to_combatant(caster)
 
-      caster
-      |> Combat.execute_magic_splash(center, definition.splash_radius,
+      Combat.execute_magic_splash(caster, center, definition.splash_radius,
         skill_id: definition.id,
         skill_level: level,
         hit_divisions: level,
         element: definition.element,
         skill_ratio: ratio(combatant, level),
         split: GameMode.mode() == :pre_renewal,
-        delivery: {:splash, {primary.unit_type, primary.unit_id}}
+        delivery: {:splash, {primary.unit_type, primary.unit_id}},
+        additional_effect: &maybe_curse(&2, &1, level)
       )
-      |> Enum.uniq()
-      |> Enum.each(&maybe_curse(&1, combatant, level))
 
       {:ok, caster}
     end

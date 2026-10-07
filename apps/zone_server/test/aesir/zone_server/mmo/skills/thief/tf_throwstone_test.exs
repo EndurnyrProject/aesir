@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
       assert opts[:skill_level] == 1
       assert opts[:base_damage] == 50
       assert opts[:element] == :neutral
-      :ok
+      assert opts[:report_hit]
+      {:ok, %{hit?: true}}
     end)
 
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
@@ -44,7 +45,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
 
     expect(Combat, :execute_misc_attack, fn ^caster, @target_id, opts ->
       assert opts[:base_damage] == 30
-      :ok
+      {:ok, %{hit?: true}}
+    end)
+
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, ^caster} = TfThrowstone.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  test "a hit the caster's own Gravitation Field suppressed rolls no status" do
+    caster = caster()
+
+    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts ->
+      {:ok, %{hit?: false, damage: 0, target_survives?: true, coma?: false}}
     end)
 
     reject(&StatusInterpreter.apply_status/4)
@@ -63,7 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     :rand.seed(:exsss, {1, 1, 185})
     caster = caster()
 
-    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
@@ -80,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     :rand.seed(:exsss, {1, 1, 185})
     caster = caster()
 
-    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
@@ -97,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     :rand.seed(:exsss, {1, 1, 20})
     caster = caster()
 
-    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
@@ -114,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     :rand.seed(:exsss, {1, 1, 20})
     caster = caster()
 
-    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
@@ -130,7 +143,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     :rand.seed(:exsss, {1, 1, 1})
     caster = caster()
 
-    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
     reject(&StatusInterpreter.apply_status/4)
 

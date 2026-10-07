@@ -4,9 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gravitation do
 
   Every unit held by the field attacks 5% slower per level. The High Wizard's
   own instance (`state.self?`) is bound to the field group (`state.group_id`):
-  it roots the caster, ends when the caster takes damage, and tears the field
-  down when it ends. Field occupants' instances are owned by the field and end
-  when they leave it.
+  it roots the caster, blocks their items, lets none of their other skills deal
+  damage (`Interpreter.can_deal_skill_damage?/4`), ends when the caster takes
+  damage, and tears the field down when it ends. Field occupants' instances are
+  owned by the field and end when they leave it.
 
   Renewal casts Gravitation Field as an instant burst and never applies this
   status.

@@ -24,10 +24,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgColdbolt
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgFirebolt
+  alias Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgLightningbolt
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -1492,6 +1494,94 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  0,
                  fixed_damage: 777
                )
+    end
+  end
+
+  describe "classic Gravitation Field suppression" do
+    @describetag game_mode: :pre_renewal
+
+    setup do
+      stub_single_target_mob()
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, _radius ->
+        [{:mob, @target_id}]
+      end)
+
+      :ok =
+        StatusStorage.apply_status(:player, @caster_id, :sc_gravitation,
+          val1: 1,
+          state: %{self?: true}
+        )
+
+      # A suppressed hit performs no calculation, packet, mutation or rider.
+      reject(&MagicDamageCalculator.calculate_magic_damage/3)
+      reject(&EquipComa.trigger?/2)
+      reject(&Broadcast.to_in_range/5)
+      reject(&MobSession.apply_damage/4)
+      reject(&StatusInterpreter.apply_status/4)
+
+      {:ok, caster: build_caster()}
+    end
+
+    test "a direct nuke and an explicit amount report suppression", %{caster: caster} do
+      assert {:ok, :suppressed} =
+               MagicAttack.execute_magic_attack(caster, @target_id,
+                 skill_id: 14,
+                 skill_level: 3,
+                 skip_range: true
+               )
+
+      assert {:ok, :suppressed} =
+               MagicAttack.execute_magic_damage(caster, @target_id, 500,
+                 skill_id: 28,
+                 skill_level: 1,
+                 skip_range: true
+               )
+    end
+
+    test "Frost Diver's freeze and Double Casting's echo follow the suppressed hit", %{
+      caster: caster
+    } do
+      :ok =
+        StatusStorage.apply_status(:player, @caster_id, :sc_doublecast,
+          val1: 7,
+          state: %{chance: 100}
+        )
+
+      assert {:ok, ^caster} =
+               MgFrostdiver.cast(caster, {:unit, @target_id}, 1, MgFrostdiver.definition())
+
+      assert {:ok, ^caster} =
+               MgColdbolt.cast(caster, {:unit, @target_id}, 1, MgColdbolt.definition())
+
+      refute_receive {:skill, {:deferred, _module, _payload}}, 50
+    end
+
+    test "a splash recipient is absent and a ground hit is refused", %{caster: caster} do
+      assert [] =
+               MagicAttack.execute_magic_splash(caster, @center, 2,
+                 skill_id: 17,
+                 skill_level: 1,
+                 element: :neutral
+               )
+
+      combatant = PlayerState.to_combatant(caster)
+
+      assert {:error, :damage_suppressed} =
+               MagicAttack.apply_skill_unit_damage(
+                 combatant,
+                 :mob,
+                 @target_id,
+                 89,
+                 1,
+                 :water,
+                 100,
+                 report_hit: true
+               )
+
+      assert {:error, :damage_suppressed} =
+               MagicAttack.prepare_skill_unit_hit(combatant, {:mob, @target_id}, 254)
     end
   end
 

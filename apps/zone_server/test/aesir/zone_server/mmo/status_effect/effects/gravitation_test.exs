@@ -69,6 +69,39 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GravitationTest do
     refute Interpreter.can_sit?(9_001)
   end
 
+  describe "can_deal_skill_damage?/4" do
+    @cold_bolt 14
+    @gravitation 484
+
+    defp hold(self?) do
+      :ok =
+        StatusStorage.apply_status(:player, 9_001, :sc_gravitation,
+          val1: 1,
+          state: %{self?: self?}
+        )
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic: only the channelling caster's other skills are gated" do
+      hold(false)
+      assert Interpreter.can_deal_skill_damage?(:player, 9_001, @cold_bolt, false)
+
+      :ok = StatusStorage.remove_status(:player, 9_001, :sc_gravitation)
+      hold(true)
+      refute Interpreter.can_deal_skill_damage?(:player, 9_001, @cold_bolt, false)
+      assert Interpreter.can_deal_skill_damage?(:player, 9_001, @gravitation, false)
+      assert Interpreter.can_deal_skill_damage?(:player, 9_001, @cold_bolt, true)
+      assert Interpreter.can_deal_skill_damage?(:player, 9_002, @cold_bolt, false)
+      assert Interpreter.can_deal_skill_damage?(:mob, 9_001, @cold_bolt, false)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal never gates" do
+      hold(true)
+      assert Interpreter.can_deal_skill_damage?(:player, 9_001, @cold_bolt, false)
+    end
+  end
+
   test "only the caster's own instance roots the holder" do
     :ok =
       StatusStorage.apply_status(:player, 9_001, :sc_gravitation, val1: 1, state: %{self?: false})

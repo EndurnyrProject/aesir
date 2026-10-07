@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -97,10 +98,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   ## Returns
 
     - `{:ok, hit_ref}` on success.
+    - `{:ok, :suppressed}` when the caster's own Gravitation Field suppresses
+      the hit (`StatusInterpreter.can_deal_skill_damage?/4`): nothing is
+      calculated, sent or applied, and no rider should follow.
     - `{:error, reason}` when the target is invalid, friendly, dead, or out of range.
   """
   @spec execute_magic_damage(struct(), integer() | Ref.t(), non_neg_integer(), keyword()) ::
-          {:ok, Ref.t()} | {:error, atom()}
+          {:ok, Ref.t() | :suppressed} | {:error, atom()}
   def execute_magic_damage(caster_state, target_ref, amount, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -113,7 +117,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target_id <- target.unit_id,
          :ok <- AttackValidator.validate(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target),
-         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
+         :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       damage =
         if Keyword.get(opts, :ignore_element, false),
           do: max(amount, 1),
@@ -143,6 +148,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           |> deliver_magic_hits([damage], hit_info, attacker, {skill_id, skill_level}, opts)
           |> magic_delivery_result({target_type, target_id})
       end
+    else
+      :suppressed -> {:ok, :suppressed}
+      error -> error
     end
   end
 
@@ -248,7 +256,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   reached the target: a placed unit is the hit's actual source, so the target
   is re-checked with `Targeting.validate_delivery/4` before any calculation.
   A caster-timed hit that only reuses this path (Water Ball, Ruwach) passes
-  `:direct`.
+  `:direct`. Every hit is a fresh calculation, so the caster's own Gravitation
+  Field suppresses it (`{:error, :damage_suppressed}`, nothing sent or applied)
+  even when the field was placed before the status started.
 
   `:additional_effect` (see `t:additional_effect/0`) runs the skill's on-hit
   effect, after the damage and before any knockback, only for a hit that
@@ -346,7 +356,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   Resolves and validates a ground target without rolling damage or delivering effects.
 
   `delivery` (default `:unit`) re-checks the target as `apply_skill_unit_damage/8`
-  documents.
+  documents. A hit the caster's own Gravitation Field suppresses is refused with
+  `{:error, :damage_suppressed}` like a delivery refusal, so nothing is prepared.
   """
   @spec prepare_skill_unit_hit(struct(), Ref.t(), integer(), Targeting.delivery()) ::
           {:ok, prepared_ground_hit()} | {:error, atom()}
@@ -358,6 +369,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- Rules.validate_target(caster, target, %{skill_id: skill_id}),
          :ok <- Targeting.validate_delivery(caster, target, skill_id, delivery),
+         :ok <- StatusInterpreter.authorize_skill_damage(caster, skill_id),
          {:ok, position} <- SpatialIndex.get_unit_position(unit_type, target_id) do
       {:ok,
        %{
@@ -370,6 +382,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          position: position,
          skill_id: skill_id
        }}
+    else
+      :suppressed -> {:error, :damage_suppressed}
+      error -> error
     end
   end
 
@@ -486,10 +501,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   The selected bolt id is the damage and packet skill id. Canonical element and
   divisions cannot be overridden; callers may override the default per-hit ratio
-  for effects attached to the selected bolt. Returns the ref of the unit hit.
+  for effects attached to the selected bolt. Returns the ref of the unit hit, or
+  `:suppressed` as `execute_magic_attack/3` documents.
   """
   @spec execute_bolt(struct(), integer() | Ref.t(), integer(), pos_integer(), keyword()) ::
-          {:ok, Ref.t()} | {:error, atom()}
+          {:ok, Ref.t() | :suppressed} | {:error, atom()}
   def execute_bolt(caster, target_ref, bolt_id, level, opts \\ [])
 
   def execute_bolt(caster, target_ref, bolt_id, level, opts)
@@ -539,10 +555,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   ## Returns
     - `{:ok, hit_ref}` if the skill connected
+    - `{:ok, :suppressed}` if the caster's own Gravitation Field suppressed the
+      hit before calculation (`StatusInterpreter.can_deal_skill_damage?/4`):
+      no packet, damage, rider or proc, and the cast's costs stay spent
     - `{:error, reason}` if the target was invalid, friendly, dead, or out of range
   """
   @spec execute_magic_attack(struct(), integer() | Ref.t(), keyword()) ::
-          {:ok, Ref.t()} | {:error, atom()}
+          {:ok, Ref.t() | :suppressed} | {:error, atom()}
   def execute_magic_attack(caster_state, target_ref, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -558,7 +577,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target_id <- target.unit_id,
          :ok <- AttackValidator.validate(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target),
-         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
+         :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       {:ok, %{damage: damage}} =
         MagicDamageCalculator.calculate_magic_damage(attacker, target,
           element: element,
@@ -604,6 +624,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           |> deliver_magic_hits(damages, hit_info, attacker, {skill_id, skill_level}, opts)
           |> magic_delivery_result({target_type, target_id})
       end
+    else
+      :suppressed -> {:ok, :suppressed}
+      error -> error
     end
   end
 
@@ -628,8 +651,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:line_of_sight` - require an unobstructed projectile path (default `false`)
     - `:hit_divisions` - signed divisions of each target's one attack (default `1`)
     - `:delivery` - how the splash reached each target (`t:Targeting.delivery/0`,
-      default `:direct`); a target refused by `Targeting.validate_delivery/4` is
-      neither calculated nor struck, but still counts toward `:split`
+      default `:direct`); a target refused by `Targeting.validate_delivery/4`, or
+      suppressed by the caster's own Gravitation Field, is neither calculated
+      nor struck, but still counts toward `:split`
     - `:target_filter` - a one-arity predicate on each selected `{unit_type,
       unit_id}`; a rejected unit is not struck and does not count toward `:split`
     - `:additional_effect` - the skill's on-hit effect (`t:additional_effect/0`),
@@ -1007,6 +1031,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
              skill_id,
              Map.get(splash, :delivery, :direct)
            ),
+         :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id),
          {:ok, %{damage: damage}} <-
            MagicDamageCalculator.calculate_magic_damage(attacker, target,
              element: element,

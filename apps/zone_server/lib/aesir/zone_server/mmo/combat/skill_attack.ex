@@ -171,6 +171,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       default `:direct`); a recipient refused by
       `Targeting.validate_delivery/4` is neither calculated nor struck
 
+  A hit the caster's own Gravitation Field suppresses
+  (`StatusInterpreter.can_deal_skill_damage?/4`) is not calculated either: it
+  reports `hit?: false` with no packet, rider, knockback or proc, and the
+  caller's costs stay spent.
+
   ## Returns
     - :ok if the skill was dispatched (regardless of whether any hit
       connected), when `:report_hit` is not set
@@ -355,9 +360,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   pre-delivery status hook, damage packet, target damage, or on-hit effect runs
   until `deliver_prepared_skill_hit/1` is called. Combined knockback options from
   `execute_skill_attack/3` are retained until that delivery completes.
+
+  A hit the caster's own Gravitation Field suppresses returns `{:ok, :suppressed}`
+  before any roll; `deliver_prepared_skill_hit/1` accepts it and does nothing.
   """
   @spec prepare_staged_skill_attack(struct(), integer() | Ref.t(), keyword()) ::
-          {:ok, :miss | PreparedHit.t()} | {:error, atom()}
+          {:ok, :miss | :suppressed | PreparedHit.t()} | {:error, atom()}
   def prepare_staged_skill_attack(caster_state, target_id, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -372,7 +380,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
          :ok <- Targeting.validate_enemy(attacker, target),
-         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
+         :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       if weapon_hit_intercepted?(attacker, target_type, target, %{}) do
         {:ok, :miss}
       else
@@ -391,11 +400,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           }
         )
       end
+    else
+      :suppressed -> {:ok, :suppressed}
+      error -> error
     end
   end
 
-  @doc "Delivers one opaque hit returned by `prepare_staged_skill_attack/3`."
-  @spec deliver_prepared_skill_hit(PreparedHit.t()) :: :ok
+  @doc """
+  Delivers one opaque hit returned by `prepare_staged_skill_attack/3`.
+
+  The hit was calculated when it was prepared, so it is not gated again: a
+  caster whose Gravitation Field started since still lands it. A `:suppressed`
+  preparation delivers nothing.
+  """
+  @spec deliver_prepared_skill_hit(PreparedHit.t() | :suppressed) :: :ok
+  def deliver_prepared_skill_hit(:suppressed), do: :ok
+
   def deliver_prepared_skill_hit(%PreparedHit{} = prepared) do
     %PreparedHit{
       attacker: prepared_attacker,
@@ -519,7 +539,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              target,
              skill_id,
              Keyword.get(opts, :delivery, :direct)
-           ) do
+           ),
+         :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       hit_opts = %{
         hit_divisions: Keyword.get(opts, :hit_divisions, 1),
         hit_rate_bonus_pct: hit_rate_bonus_pct,
@@ -553,8 +574,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       )
 
       if report_hit?, do: {:ok, Map.put(result, :damage, hit.damage)}, else: :ok
+    else
+      :suppressed -> suppressed_result(report_hit?)
+      error -> error
     end
   end
+
+  # A suppressed hit never reached the target, which therefore survives it.
+  defp suppressed_result(false), do: :ok
+
+  defp suppressed_result(true),
+    do: {:ok, %{hit?: false, damage: 0, target_survives?: true, coma?: false}}
 
   @doc """
   Executes a self/ground-centered splash skill against every offensive target in
@@ -882,7 +912,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              target,
              skill_id,
              Map.get(result_opts, :delivery, :direct)
-           ) do
+           ),
+         :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       hit_opts = %{
         hit_divisions: Map.get(result_opts, :hit_divisions, 1),
         hit_rate_bonus_pct: hit_rate_bonus_pct,
@@ -961,6 +992,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
+
+  A hit the caster's own Gravitation Field suppresses reports `hit?: false`
+  like `execute_skill_attack/3`; Gravitation Field's own ticks are exempt.
   """
   @spec execute_misc_attack(struct(), integer() | Ref.t(), keyword()) ::
           :ok | {:ok, hit_report()} | {:error, atom()}
@@ -995,24 +1029,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     base_damage = Keyword.fetch!(opts, :base_damage)
     element = Keyword.get(opts, :element, :neutral)
 
-    apply_misc_hit(
-      attacker,
-      target_ref,
-      skill_id,
-      skill_level,
-      element,
-      base_damage,
-      Keyword.get(opts, :hit_divisions, 1),
-      %{
-        authorize_target: authorize_target,
-        ignore_element?: Keyword.get(opts, :ignore_element, false),
-        owner_derived_trap?: false,
-        report_hit?: Keyword.get(opts, :report_hit, false),
-        bypass_reductions?: Keyword.get(opts, :bypass_reductions, false),
-        knockback_options: knockback_options(opts),
-        delivery: Keyword.get(opts, :delivery, :direct)
-      }
-    )
+    report_hit? = Keyword.get(opts, :report_hit, false)
+
+    case apply_misc_hit(
+           attacker,
+           target_ref,
+           skill_id,
+           skill_level,
+           element,
+           base_damage,
+           Keyword.get(opts, :hit_divisions, 1),
+           %{
+             authorize_target: authorize_target,
+             ignore_element?: Keyword.get(opts, :ignore_element, false),
+             owner_derived_trap?: false,
+             report_hit?: report_hit?,
+             bypass_reductions?: Keyword.get(opts, :bypass_reductions, false),
+             knockback_options: knockback_options(opts),
+             delivery: Keyword.get(opts, :delivery, :direct)
+           }
+         ) do
+      :suppressed -> suppressed_result(report_hit?)
+      result -> result
+    end
   end
 
   @doc """
@@ -1177,6 +1216,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- misc_opts.authorize_target.(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- Targeting.validate_delivery(attacker, target, skill_id, misc_opts.delivery),
+         :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(
              attacker,

@@ -5,7 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
   The caster is armed until an enemy is within one cell. It checks immediately
   and on 20ms status ticks, while movement contact uses the same trigger path.
   The first successful hit deals 600% Fire magic damage, knocks the target
-  back, and consumes the status.
+  back, and consumes the status. A contact the caster's own Gravitation Field
+  suppresses is no hit: the status stays armed.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sightblaster,
@@ -43,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
     if living_contact?(contact) and hostile_contact?(caster_id, contact) do
       with {:ok, {_module, caster, _pid}} <- UnitRegistry.get_unit(:player, caster_id),
            {:ok, {x, y, _map_name}} <- SpatialIndex.get_unit_position(:player, caster_id),
-           {:ok, hit_ref} <-
+           {:ok, {_hit_type, _hit_id} = hit_ref} <-
              Combat.execute_magic_attack(caster, target_id,
                skill_id: @skill_id,
                skill_level: instance.val1,
@@ -53,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
         knockback_contact(hit_ref, contact, x, y)
         :remove
       else
+        {:ok, :suppressed} -> {:ok, instance}
         {:error, _reason} -> {:ok, instance}
       end
     else
