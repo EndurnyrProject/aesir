@@ -78,6 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   @head_mid_pos 512
   @head_low_pos 1
   @garment_pos 4
+  @ammo_pos 32_768
 
   defp mode_value(renewal, pre_renewal) do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
@@ -2471,9 +2472,86 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.modifiers.equipment.movement_speed == 10
       assert result.modifiers.equipment.no_regen == 3
       assert result.modifiers.equipment.get_zeny == {20, 100}
-      assert result.modifiers.equipment[{:auto_cast, {:attack, 28, 1, 3, 0}}] == 500
+
+      assert result.modifiers.equipment[{:auto_cast, :attack}] == [
+               %{skill_id: 28, level: 1, rate: 100, flag: 3, force: 0, card_id: 0},
+               %{skill_id: 28, level: 1, rate: 200, flag: 3, force: 0, card_id: 90_175}
+             ]
+
       assert result.granted_skills == %{28 => 3}
       assert result.equip_statuses == %{summer: {:infinite, 2}}
+    end
+
+    test "registers autocasts in script order: active autobonuses, hosts by slot, then cards" do
+      auto_cast = fn level ->
+        {:auto_cast, %{trigger: :attack, skill_id: 28, flag: 3, force: 0}, level, 100}
+      end
+
+      autobonus =
+        {:autobonus, %{trigger: :attack, battle_flag: 0, primary: [auto_cast.(1)], secondary: []},
+         1_000, 10_000}
+
+      armor = scripted_item(90_210, type: :armor, slots: 2, on_equip: [autobonus, auto_cast.(3)])
+      garment = scripted_item(90_211, type: :armor, slots: 1, on_equip: [auto_cast.(2)])
+
+      two_hander =
+        scripted_item(90_212,
+          type: :weapon,
+          subtype: :two_handed_sword,
+          weapon_level: 1,
+          on_equip: [auto_cast.(4)]
+        )
+
+      garment_card = scripted_item(90_213, type: :card, on_equip: [auto_cast.(5)])
+      later_id_card = scripted_item(90_215, type: :card, on_equip: [auto_cast.(6)])
+      earlier_id_card = scripted_item(90_214, type: :card, on_equip: [auto_cast.(7)])
+
+      definitions =
+        Map.new(
+          [armor, garment, two_hander, garment_card, later_id_card, earlier_id_card],
+          &{&1.id, &1}
+        )
+
+      stub(ItemManagement, :get_item_by_id, &Map.fetch(definitions, &1))
+
+      rows = [
+        equipped_row(63, 90_212, @both_hand),
+        %{equipped_row(61, 90_210, @armor_pos) | card0: 90_215, card1: 90_214},
+        %{equipped_row(62, 90_211, @garment_pos) | card0: 90_213}
+      ]
+
+      folded = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+
+      active =
+        EquipmentFold.apply_equipment_modifiers(%{
+          folded
+          | active_autobonuses: %{{61, 0} => 1}
+        })
+
+      assert Enum.map(active.modifiers.equipment[{:auto_cast, :attack}], &{&1.level, &1.card_id}) ==
+               [{1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 90_213}, {6, 90_215}, {7, 90_214}]
+    end
+
+    test "the worn ammunition registers no autocast" do
+      arrow =
+        scripted_item(90_216,
+          type: :ammo,
+          on_equip: [
+            {:auto_cast, %{trigger: :attack, skill_id: 28, flag: 3, force: 0}, 1, 100},
+            {:auto_cast, %{trigger: :when_hit, skill_id: 28, flag: 3, force: 0}, 1, 100},
+            {:auto_cast, %{trigger: :on_skill, trigger_skill: 5, skill_id: 28, flag: 0, force: 0},
+             1, 100}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn 90_216 -> {:ok, arrow} end)
+
+      result =
+        EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [
+          equipped_row(64, 90_216, @ammo_pos)
+        ])
+
+      refute Enum.any?(Map.keys(result.modifiers.equipment), &match?({:auto_cast, _trigger}, &1))
     end
 
     test "flattens host and duplicate-card autobonus slots under the host row identity" do

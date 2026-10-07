@@ -34,14 +34,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   raises on any construct outside the vocabulary, any unknown bonus
   destination, or malformed shape.
 
-  ## Effects and autobonuses
+  ## Effects, autocasts and autobonuses
 
   Status lifecycle and forced-heal instructions evaluate their arguments from the
-  same pure inputs as modifiers. Autobonus instructions keep their trigger,
-  battle flag, and nested programs as validated data while evaluating rate and
-  duration into ordered registrations. `:infinite` is reserved for status
-  duration; non-positive finite status durations and autobonus rates or
-  durations are omitted.
+  same pure inputs as modifiers. Autocast instructions evaluate their level and
+  chance into ordered registrations, none for the equipped ammunition. Autobonus
+  instructions keep their trigger, battle flag, and nested programs as validated
+  data while evaluating rate and duration into ordered registrations.
+  `:infinite` is reserved for status duration; non-positive finite status
+  durations and autobonus rates or durations are omitted.
 
   ## Skill-aware constructs
 
@@ -189,6 +190,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:trigger_skill) => pos_integer()
         }
 
+  @typedoc """
+  An evaluated autocast registration: its constant spec with the level and
+  per-mille chance the program computed, unclamped. The equipment fold decides
+  whether it becomes its own entry or merges into an earlier one.
+  """
+  @type auto_cast :: %{
+          :trigger => :attack | :when_hit | :on_skill,
+          :skill_id => pos_integer(),
+          :flag => non_neg_integer(),
+          :force => non_neg_integer(),
+          :level => integer(),
+          :rate => integer(),
+          optional(:trigger_skill) => pos_integer()
+        }
+
   @typedoc "The constant trigger and nested programs of an autobonus instruction."
   @type autobonus_spec :: %{
           trigger: :attack | :when_hit | {:on_skill, pos_integer()},
@@ -263,18 +279,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   @doc """
-  Evaluates a program against its `t:inputs/0` into modifiers, autobonus
-  registrations, and ordered status effects. Pure and deterministic in
+  Evaluates a program against its `t:inputs/0` into modifiers, autocast and
+  autobonus registrations, and ordered status effects. Pure and deterministic in
   `(program, inputs)`; an input the program reads but the map lacks raises.
   """
   @spec evaluate(program(), inputs()) :: Result.t()
   def evaluate(program, inputs) when is_list(program) and is_map(inputs) do
     result =
-      eval_instrs(program, inputs, %Result{modifiers: %{}, autobonuses: [], effects: []})
+      eval_instrs(
+        program,
+        inputs,
+        %Result{modifiers: %{}, auto_casts: [], autobonuses: [], effects: []}
+      )
 
     %{
       result
-      | autobonuses: Enum.reverse(result.autobonuses),
+      | auto_casts: Enum.reverse(result.auto_casts),
+        autobonuses: Enum.reverse(result.autobonuses),
         effects: Enum.reverse(result.effects)
     }
   end
@@ -754,22 +775,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     %{result | modifiers: Map.put(result.modifiers, key, value)}
   end
 
-  # An autocast folds into an entry keyed by everything that makes two procs the
-  # same arming - trigger, skill, level, attack kinds and force bits - with the
-  # per-mille chance as its value. Two items arming the identical proc therefore
-  # stack their chances, while the same skill at a different level stays its own
-  # entry.
-  defp eval_instr({:auto_cast, spec, level_expr, rate_expr}, inputs, %Result{} = result) do
-    level = eval_expr(level_expr, inputs)
-    rate = eval_expr(rate_expr, inputs)
+  # An autocast is emitted as an ordered registration rather than folded here:
+  # whether two identical procs merge depends on which card registered each, so
+  # the equipment fold registers them. The equipped ammunition arms none.
+  defp eval_instr({:auto_cast, _spec, _level, _rate}, %{ammunition: true}, %Result{} = result),
+    do: result
 
-    if level > 0 and rate != 0 do
-      key = auto_cast_key(spec, level)
-      modifiers = Map.update(result.modifiers, key, rate, &(&1 + rate))
-      %{result | modifiers: modifiers}
-    else
-      result
-    end
+  defp eval_instr({:auto_cast, spec, level_expr, rate_expr}, inputs, %Result{} = result) do
+    registration =
+      spec
+      |> Map.put(:level, eval_expr(level_expr, inputs))
+      |> Map.put(:rate, eval_expr(rate_expr, inputs))
+
+    %{result | auto_casts: [registration | result.auto_casts]}
   end
 
   defp eval_instr({:grant_skill, skill_id, expr}, inputs, %Result{} = result) do
@@ -848,16 +866,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
       end
 
     %{result | modifiers: modifiers}
-  end
-
-  # An on-skill proc is keyed by the skill that fires it instead of by the kinds
-  # of attack that do, so the two live in separate key families.
-  defp auto_cast_key(%{trigger: :on_skill} = spec, level) do
-    {:auto_cast_on_skill, {spec.trigger_skill, spec.skill_id, level, spec.force}}
-  end
-
-  defp auto_cast_key(spec, level) do
-    {:auto_cast, {spec.trigger, spec.skill_id, level, spec.flag, spec.force}}
   end
 
   defp eval_expr(int, _inputs) when is_integer(int), do: int

@@ -330,6 +330,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.evaluate(program, on(2, job_level: 5)) ==
                %EquipScript.Result{
+                 auto_casts: [],
                  modifiers: %{str: 6},
                  autobonuses: [],
                  effects: [
@@ -429,6 +430,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.evaluate(program, on(4, base_level: 20, job_level: 7)) ==
                %EquipScript.Result{
+                 auto_casts: [],
                  modifiers: %{vit: 3},
                  effects: [{:status_end, :sc_stun}],
                  autobonuses: [
@@ -779,7 +781,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     test "returns modifiers in a structured result" do
       result = EquipScript.evaluate([{:bonus, :str, 2}], on(0))
 
-      assert result == %EquipScript.Result{modifiers: %{str: 2}, autobonuses: [], effects: []}
+      assert result == %EquipScript.Result{
+               modifiers: %{str: 2},
+               auto_casts: [],
+               autobonuses: [],
+               effects: []
+             }
     end
 
     test "an ammunition script drops only the non-critical rate" do

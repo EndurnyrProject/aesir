@@ -459,7 +459,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   describe "when-hit equipment procs" do
     alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
 
-    @when_hit_heal {{:auto_cast, {:when_hit, 28, 1, BattleFlags.fill_battle(0), 0}}, 1_000}
+    @when_hit_heal %{
+      {:auto_cast, :when_hit} => [
+        %{
+          skill_id: 28,
+          level: 1,
+          rate: 1_000,
+          flag: BattleFlags.fill_battle(0),
+          force: 0,
+          card_id: 0
+        }
+      ]
+    }
 
     defp proc_event(overrides \\ []) do
       Map.merge(
@@ -480,7 +491,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     defp wearing_state(hp) do
       put_in(
         build_state(hp, :idle).game_state.stats.modifiers.equipment,
-        Map.new([@when_hit_heal])
+        @when_hit_heal
       )
     end
 

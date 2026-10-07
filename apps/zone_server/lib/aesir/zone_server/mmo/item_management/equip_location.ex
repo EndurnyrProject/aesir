@@ -42,6 +42,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation do
 
   @atom_to_bitmask Map.merge(@single, @composite)
 
+  @equip_index_order [
+    :left_accessory,
+    :right_accessory,
+    :shoes,
+    :garment,
+    :head_low,
+    :head_mid,
+    :head_top,
+    :armor,
+    :left_hand,
+    :right_hand,
+    :costume_head_top,
+    :costume_head_mid,
+    :costume_head_low,
+    :costume_garment,
+    :ammo,
+    :shadow_armor,
+    :shadow_weapon,
+    :shadow_shield,
+    :shadow_shoes,
+    :shadow_right_accessory,
+    :shadow_left_accessory
+  ]
+
+  @shared_slots %{
+    right_hand: [:left_hand],
+    head_mid: [:head_low],
+    head_top: [:head_mid, :head_low],
+    costume_head_mid: [:costume_head_low],
+    costume_head_top: [:costume_head_mid, :costume_head_low]
+  }
+
   @decode_order @single
                 |> Enum.sort_by(fn {_atom, bit} -> bit end)
                 |> Enum.map(fn {atom, bit} -> {bit, atom} end)
@@ -70,4 +102,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation do
   """
   @spec location_bit(atom()) :: non_neg_integer()
   def location_bit(atom) when is_atom(atom), do: Map.get(@atom_to_bitmask, atom, 0)
+
+  @doc """
+  The equipment slots in the order a character's worn items run their scripts,
+  which is also the slot numbering item scripts use to name a slot.
+  """
+  @spec equip_index_order() :: [atom()]
+  def equip_index_order, do: @equip_index_order
+
+  @doc """
+  The position in `equip_index_order/0` at which an item worn at `bitmask` runs
+  its scripts, `nil` when it occupies none of those slots.
+
+  An item spanning several slots runs once: a two-handed weapon at the left
+  hand, a multi-slot headgear (costume or not) at its lowest head slot.
+  """
+  @spec equip_index(non_neg_integer()) :: non_neg_integer() | nil
+  def equip_index(bitmask) when is_integer(bitmask) and bitmask >= 0 do
+    locations = bitmask_to_location_atoms(bitmask)
+
+    Enum.find_index(@equip_index_order, fn slot ->
+      slot in locations and not Enum.any?(Map.get(@shared_slots, slot, []), &(&1 in locations))
+    end)
+  end
 end

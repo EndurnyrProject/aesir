@@ -71,36 +71,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
     end
   end
 
-  # rAthena `enum equip_index` ordinal -> Aesir equip location. The transpiler
-  # resolves `EQI_*` constants to these indices; variables/ints pass through as
-  # the same index at runtime.
-  @equip_slot_locations %{
-    0 => :left_accessory,
-    1 => :right_accessory,
-    2 => :shoes,
-    3 => :garment,
-    4 => :head_low,
-    5 => :head_mid,
-    6 => :head_top,
-    7 => :armor,
-    8 => :left_hand,
-    9 => :right_hand,
-    10 => :costume_head_top,
-    11 => :costume_head_mid,
-    12 => :costume_head_low,
-    13 => :costume_garment,
-    14 => :ammo,
-    15 => :shadow_armor,
-    16 => :shadow_weapon,
-    17 => :shadow_shield,
-    18 => :shadow_shoes,
-    19 => :shadow_right_accessory,
-    20 => :shadow_left_accessory
-  }
-
   @doc "The Aesir equip location for an rAthena `equip_index` ordinal, or `nil`."
   @spec equip_slot_location(integer()) :: atom() | nil
-  def equip_slot_location(slot), do: Map.get(@equip_slot_locations, slot)
+  def equip_slot_location(slot) when is_integer(slot) and slot >= 0,
+    do: Enum.at(EquipLocation.equip_index_order(), slot)
+
+  def equip_slot_location(_slot), do: nil
 
   @doc "The item worn at `location`, or `nil`."
   @spec equipped_in_slot(Inventory.t(), atom()) :: InventoryItem.t() | nil

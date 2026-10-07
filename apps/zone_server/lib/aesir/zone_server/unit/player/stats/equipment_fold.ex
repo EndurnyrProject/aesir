@@ -7,12 +7,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   program, the autobonus proc registrations, the direct statuses worn items
   desire, the card cleanup effects retained for unequip, and the resolved
   weapon hands. The item worn in the ammunition slot evaluates its program with
-  the `:ammunition` input set, so ammunition-excluded destinations ignore it.
+  the `:ammunition` input set, so ammunition-excluded destinations ignore it and
+  it arms no autocast. Autocasts register into the per-trigger lists of
+  `EquipAutocast.register/3` in the order the worn scripts run, each carrying
+  the id of the card that armed it.
   Pure: it reads the item and refine catalogs and writes only to
   the struct it is given.
   """
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
@@ -128,18 +132,87 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         fold.registrations
       )
 
-    bonuses =
+    active_results =
       active
       |> Enum.sort_by(fn {key, _generation} -> fold.registrations[key].source_order end)
-      |> Enum.reduce(fold.bonuses, fn {key, _generation}, acc ->
+      |> Enum.map(fn {key, _generation} ->
         registration = Map.fetch!(fold.registrations, key)
         active_inputs = %{inputs | refine: registration.refine}
-        result = EquipScript.evaluate(registration.primary, active_inputs)
+        {registration, EquipScript.evaluate(registration.primary, active_inputs)}
+      end)
+
+    auto_casts = active_auto_casts(active_results, worn_items) ++ fold.auto_casts
+
+    bonuses =
+      active_results
+      |> Enum.reduce(fold.bonuses, fn {_registration, result}, acc ->
         merge_equip_modifiers(acc, result.modifiers)
       end)
+      |> register_auto_casts(auto_casts)
       |> finalize_equipment_bonuses()
 
     Map.put(fold, :active, active) |> Map.put(:bonuses, bonuses)
+  end
+
+  # Autocasts register in the order the worn scripts run: the active autobonus
+  # programs first (attack, then when-hit, then on-skill autobonuses), then each
+  # worn item's own script by equipment slot, then every worn item's cards by
+  # equipment slot and card slot. That order decides which entry a duplicate
+  # merges into and which proc resolves first.
+  defp register_auto_casts(bonuses, auto_casts) do
+    auto_casts
+    |> Enum.sort_by(fn {order, _registration, _card_id} -> order end)
+    |> Enum.reduce(bonuses, fn {_order, registration, card_id}, acc ->
+      EquipAutocast.register(acc, registration, card_id)
+    end)
+  end
+
+  defp active_auto_casts(active_results, worn_items) do
+    Enum.flat_map(active_results, fn
+      {_registration, %{auto_casts: []}} -> []
+      {registration, result} -> active_auto_casts(registration, result, worn_items)
+    end)
+  end
+
+  defp active_auto_casts(registration, result, worn_items) do
+    {worn_ordinal, lexical_slot} = registration.source_order
+    list = autobonus_list(registration.trigger)
+    phase = source_phase(registration.source_identity)
+    slot = equip_index!(Enum.at(worn_items, worn_ordinal))
+    order = {0, {list, phase, slot, lexical_slot}}
+
+    Enum.map(result.auto_casts, &{order, &1, 0})
+  end
+
+  defp autobonus_list(:attack), do: 0
+  defp autobonus_list(:when_hit), do: 1
+  defp autobonus_list({:on_skill, _skill_id}), do: 2
+
+  defp source_phase({:host, _item_id}), do: 1
+  defp source_phase({:card, _slot, _item_id}), do: 3
+
+  defp source_auto_casts([], _item, _card_slot, _source_id), do: []
+
+  defp source_auto_casts(auto_casts, item, nil, _source_id) do
+    order = {1, {equip_index!(item), -1}}
+    Enum.map(auto_casts, &{order, &1, 0})
+  end
+
+  defp source_auto_casts(auto_casts, item, card_slot, card_id) do
+    order = {3, {equip_index!(item), card_slot}}
+    Enum.map(auto_casts, &{order, &1, card_id})
+  end
+
+  defp equip_index!(item) do
+    case EquipLocation.equip_index(item.equip) do
+      nil ->
+        raise ArgumentError,
+              "worn item #{inspect(item.nameid)} at position #{inspect(item.equip)} " <>
+                "occupies no equipment slot"
+
+      index ->
+        index
+    end
   end
 
   defp put_weapon_hands(stats, worn_items) do
@@ -314,6 +387,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     |> Enum.reduce(
       %{
         bonuses: empty_equipment_bonuses(),
+        auto_casts: [],
         registrations: %{},
         statuses: %{},
         card_cleanups: %{}
@@ -373,9 +447,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         worn_ordinal
       )
 
+    auto_casts = source_auto_casts(result.auto_casts, item, card_slot, source_def.id)
+
     {%{
        fold
        | bonuses: merge_equip_modifiers(fold.bonuses, result.modifiers),
+         auto_casts: fold.auto_casts ++ auto_casts,
          registrations: registrations,
          statuses: install_equip_statuses(fold.statuses, result.effects),
          card_cleanups: card_cleanups

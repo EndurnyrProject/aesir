@@ -381,12 +381,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
 
     test "an on-skill proc casts without an after-cast delay and cannot re-trigger itself" do
-      entry = {:auto_cast_on_skill, {29, 29, 1, 1}}
-      other = {:auto_cast_on_skill, {29, 30, 1, 1}}
       state = casting_state(45)
 
+      on_skill =
+        for skill_id <- [29, 30] do
+          %{
+            trigger_skill: 29,
+            skill_id: skill_id,
+            level: 1,
+            rate: 1_000,
+            flag: 0,
+            force: 1,
+            card_id: 0
+          }
+        end
+
+      [entry, other] = Enum.with_index(on_skill, fn proc, index -> {:on_skill, index, proc} end)
+
       state =
-        put_in(state.game_state.stats.modifiers.equipment, %{entry => 1_000, other => 1_000})
+        put_in(state.game_state.stats.modifiers.equipment, %{{:auto_cast, :on_skill} => on_skill})
 
       game_state = state.game_state
 
@@ -405,6 +418,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^other}}}}
       refute_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^entry}}}}
+    end
+
+    test "an on-skill proc whose entry moved since it was selected still locks its own entry" do
+      state = casting_state(45)
+
+      proc = %{
+        trigger_skill: 29,
+        skill_id: 29,
+        level: 1,
+        rate: 1_000,
+        flag: 0,
+        force: 1,
+        card_id: 0
+      }
+
+      # Selected at index 1; a refold since left it the only entry, at index 0.
+      stale = {:on_skill, 1, proc}
+
+      state =
+        put_in(state.game_state.stats.modifiers.equipment, %{{:auto_cast, :on_skill} => [proc]})
+
+      game_state = state.game_state
+
+      stub(Interpreter, :check_proc_usable, fn ^game_state, 29 -> :ok end)
+
+      expect(Interpreter, :proc_cast, fn ^game_state, 29, 1, :self, [act_delay?: false] ->
+        {:ok, game_state}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub_commit()
+      stub(UnitRegistry, :get_player_pid, fn 1000 -> {:ok, self()} end)
+
+      assert {:noreply, _state} =
+               SkillHandler.handle_equip_proc(state, equip_proc(:skill, entry: stale))
+
+      refute_received {:"$gen_cast", {:skill, {:equip_proc, _candidate}}}
     end
 
     test "a proc whose effect failed after its requirement commits the charged caster silently" do

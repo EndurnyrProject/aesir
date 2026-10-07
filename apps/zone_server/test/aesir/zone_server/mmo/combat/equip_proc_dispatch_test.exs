@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.AutospellForceFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -26,7 +27,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   defp magic_skill, do: BattleFlags.build(:magic, :long, true)
 
   defp autocast(trigger, flag),
-    do: {{:auto_cast, {trigger, @cold_bolt, 3, flag, @target_force}}, 1_000}
+    do: %{
+      trigger: trigger,
+      skill_id: @cold_bolt,
+      level: 3,
+      rate: 1_000,
+      flag: flag,
+      force: @target_force
+    }
+
+  defp on_skill_autocast(trigger_skill, skill_id, force) do
+    %{
+      trigger: :on_skill,
+      trigger_skill: trigger_skill,
+      skill_id: skill_id,
+      level: 1,
+      rate: 1_000,
+      flag: 0,
+      force: force
+    }
+  end
 
   defp autobonus(trigger, flag),
     do: %{
@@ -40,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   defp player(id, mods, autobonuses \\ %{}) do
     %{
       CombatTestHelper.create_player_combatant(unit_id: id)
-      | equip_modifiers: Map.new(mods),
+      | equip_modifiers: Enum.reduce(mods, %{}, &EquipAutocast.register(&2, &1, 0)),
         equip_autobonuses: autobonuses
     }
   end
@@ -155,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
     end
 
     test "a damaging skill hit arms the caster's on-skill procs at the struck target" do
-      on_skill = {{:auto_cast_on_skill, {@cold_bolt, @heal, 1, 0}}, 1_000}
+      on_skill = on_skill_autocast(@cold_bolt, @heal, 0)
       attacker = player(1001, [on_skill])
 
       EquipProcDispatch.dispatch(
@@ -276,9 +296,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
 
   describe "on_skill/3" do
     test "a locked entry does not re-trigger itself while its proc executes" do
-      entry = {:auto_cast_on_skill, {@heal, @heal, 1, AutospellForceFlag.id(:target)}}
-      other = {:auto_cast_on_skill, {@heal, @cold_bolt, 1, 0}}
-      wearer = player(1001, [{entry, 1_000}, {other, 1_000}])
+      wearer =
+        player(1001, [
+          on_skill_autocast(@heal, @heal, AutospellForceFlag.id(:target)),
+          on_skill_autocast(@heal, @cold_bolt, 0)
+        ])
+
+      [%{entry: entry}, %{entry: other}] = on_skill_candidates(wearer)
 
       EquipProcDispatch.with_on_skill_lock(1001, entry, fn ->
         EquipProcDispatch.on_skill(wearer, @heal, {:unit, 2001})
@@ -290,5 +314,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
       EquipProcDispatch.on_skill(wearer, @heal, {:unit, 2001})
       assert_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^entry}}}}
     end
+
+    test "two identical entries each dispatch, and locking one leaves the other" do
+      proc = on_skill_autocast(@heal, @cold_bolt, 0)
+      wearer = player(1001, [proc, proc])
+
+      [%{entry: first}, %{entry: second}] = on_skill_candidates(wearer)
+      assert first != second
+
+      EquipProcDispatch.on_skill(wearer, @heal, {:unit, 2001})
+      assert_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^first}}}}
+      assert_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^second}}}}
+
+      EquipProcDispatch.with_on_skill_lock(1001, first, fn ->
+        EquipProcDispatch.on_skill(wearer, @heal, {:unit, 2001})
+      end)
+
+      assert_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^second}}}}
+      refute_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^first}}}}
+    end
   end
+
+  defp on_skill_candidates(wearer),
+    do: EquipAutocast.on_skill(wearer.equip_modifiers, @heal, {:unit, 2001})
 end
