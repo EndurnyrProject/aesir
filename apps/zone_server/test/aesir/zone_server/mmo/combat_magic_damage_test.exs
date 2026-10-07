@@ -135,9 +135,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 50, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 50, hit_info ->
         assert hit_info.dmg_type == :magic
-        50
+        {50, :hit}
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
@@ -166,9 +166,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       expected_damage = if GameMode.mode() == :renewal, do: 125, else: 150
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, ^expected_damage, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, ^expected_damage, hit_info ->
         refute hit_info.coma?
-        expected_damage
+        {expected_damage, :hit}
       end)
 
       stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
@@ -248,9 +248,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 1, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 1, hit_info ->
         assert hit_info.coma?
-        1
+        {1, :hit}
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
@@ -275,9 +275,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 100, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 100, hit_info ->
         assert hit_info.coma?
-        0
+        {0, :hit}
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
@@ -350,7 +350,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       end)
 
       stub(UnitRegistry, :get_player_pid, fn @target_id -> {:ok, target_player} end)
-      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, damage, _hit -> damage end)
+
+      stub(StatusInterpreter, :absorb_hit, fn :player, @target_id, damage, _hit ->
+        {damage, :hit}
+      end)
+
       stub(StatusInterpreter, :intercept_magic, fn :player, @target_id, _hit -> :miss end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
@@ -384,8 +388,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
 
-      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, damage, _hit_info ->
-        damage
+      stub(StatusInterpreter, :absorb_hit, fn :player, @target_id, damage, _hit_info ->
+        {damage, :hit}
       end)
 
       stub(PlayerSession, :apply_damage, fn ^target_player,
@@ -428,9 +432,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, damage, hit_info ->
+      stub(StatusInterpreter, :absorb_hit, fn :player, @target_id, damage, hit_info ->
         send(test_pid, {:hit_info, hit_info})
-        damage
+        {damage, :hit}
       end)
     end
 

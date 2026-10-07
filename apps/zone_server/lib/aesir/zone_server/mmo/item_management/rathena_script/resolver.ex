@@ -36,21 +36,66 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   @type source_catalogs :: %{
           required(:items_by_id) => %{integer() => integer()},
           required(:items_by_aegis) => %{String.t() => integer()},
-          required(:item_groups) => MapSet.t(String.t())
+          required(:item_groups) => MapSet.t(String.t()),
+          optional(:self_cast_skills) => MapSet.t(integer())
         }
 
   @source_catalogs_key {__MODULE__, :source_catalogs}
 
-  @doc "Builds source indexes from selected item and item-group database rows."
-  @spec source_catalogs([map()], [map()]) :: source_catalogs()
-  def source_catalogs(item_rows, item_group_rows) do
-    %{
+  @doc """
+  Builds source indexes from selected item, item-group and, optionally, skill
+  database rows. Skill rows index which skills an implicit autocast casts on
+  its own wearer (see `self_cast_skill?/1`).
+  """
+  @spec source_catalogs([map()], [map()], [map()]) :: source_catalogs()
+  def source_catalogs(item_rows, item_group_rows, skill_rows \\ []) do
+    catalogs = %{
       items_by_id:
         Map.new(item_rows, fn row -> {Map.fetch!(row, "Id"), Map.fetch!(row, "Id")} end),
       items_by_aegis:
         Map.new(item_rows, fn row -> {Map.fetch!(row, "AegisName"), Map.fetch!(row, "Id")} end),
       item_groups: MapSet.new(item_group_rows, &source_group_key/1)
     }
+
+    case skill_rows do
+      [] -> catalogs
+      rows -> Map.put(catalogs, :self_cast_skills, self_cast_skill_ids(rows))
+    end
+  end
+
+  defp self_cast_skill_ids(rows) do
+    for row <- rows, self_cast_row?(row), into: MapSet.new(), do: Map.fetch!(row, "Id")
+  end
+
+  defp self_cast_row?(%{"TargetType" => "Support"}), do: true
+
+  defp self_cast_row?(%{"TargetType" => "Self"} = row),
+    do: get_in(row, ["Flags", "NoTargetSelf"]) != true
+
+  defp self_cast_row?(_row), do: false
+
+  @self_cast_target_types [:self, :target_ally, :target_any, :target_resurrection]
+
+  @doc """
+  Whether an autocast whose script names no target casts `skill_id` on its own
+  wearer: support skills, and self skills that may target their caster. Any
+  other skill casts at the other party.
+
+  Reads the source skill database when a source context carries skill rows,
+  otherwise the runtime catalog's target type.
+  """
+  @spec self_cast_skill?(integer()) :: boolean()
+  def self_cast_skill?(skill_id) when is_integer(skill_id) do
+    case Process.get(@source_catalogs_key) do
+      %{self_cast_skills: skills} ->
+        MapSet.member?(skills, skill_id)
+
+      _no_skill_rows ->
+        match?(
+          {:ok, %{target_type: type}} when type in @self_cast_target_types,
+          Catalog.by_id(skill_id)
+        )
+    end
   end
 
   @doc """

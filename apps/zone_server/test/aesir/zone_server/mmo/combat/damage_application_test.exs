@@ -313,7 +313,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       )
 
     reject(&PlayerSession.apply_damage/4)
-    expect(PlayerSession, :apply_coma, fn ^target_pid, {:player, 20} -> :ok end)
+    expect(PlayerSession, :apply_coma, fn ^target_pid, {:player, 20}, _metadata -> :ok end)
     expect(PlayerSession, :record_skill_hit, fn ^target_pid, 21, 5 -> :ok end)
 
     assert :ok =
@@ -412,7 +412,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       )
 
     reject(&PlayerSession.apply_damage/4)
-    expect(PlayerSession, :apply_coma, fn ^crusader_pid, {:player, 20} -> :ok end)
+    expect(PlayerSession, :apply_coma, fn ^crusader_pid, {:player, 20}, _metadata -> :ok end)
 
     assert {0, prepared} =
              DamageApplication.prepare_unit_damage(

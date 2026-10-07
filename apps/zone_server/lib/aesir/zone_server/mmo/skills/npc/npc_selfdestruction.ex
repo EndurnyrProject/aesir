@@ -24,7 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -89,7 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
       from_caster?: true
     }
 
-    with {:ok, target_pid, _target_state, ^unit_type} <-
+    with {:ok, target_pid, target_state, ^unit_type} <-
            TargetResolver.resolve(unit_type, target_id),
          :ok <-
            DamageApplication.apply_unit_damage(
@@ -97,11 +99,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
              target_pid,
              target_id,
              caster.hp,
-             hit_info,
+             Map.put(
+               hit_info,
+               :proc,
+               proc_spec(caster, {unit_type, target_id}, target_state, definition.id)
+             ),
              damage_source(caster, unit_type)
            ) do
       Combat.knockback(unit_type, target_id, caster.x, caster.y, definition.knockback)
     end
+  end
+
+  # Self Destruction is a misc skill: its victims' when-hit procs see a misc hit.
+  # A monster wears nothing, so the hit's parties are needed only by identity.
+  defp proc_spec(caster, {unit_type, target_id}, target_state, skill_id) do
+    EquipProcDispatch.spec(
+      %{unit_type: :mob, unit_id: caster.instance_id},
+      %{unit_type: unit_type, unit_id: target_id},
+      target_state,
+      BattleFlags.build(:misc, :long, true),
+      skill_id: skill_id
+    )
   end
 
   defp kill_caster(caster) do

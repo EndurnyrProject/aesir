@@ -18,8 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
-  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
+  alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
@@ -132,7 +132,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           {:ok, {target_type, target_id}}
 
         :reflect ->
-          deliver_reflected_hits(attacker, target, [damage], hit_info, {skill_id, skill_level}, 1)
+          attacker
+          |> deliver_reflected_hits(target, [damage], hit_info, {skill_id, skill_level}, 1)
+          |> dispatch_reflected_procs()
+
           {:ok, {attacker.unit_type, attacker.unit_id}}
 
         :hit ->
@@ -403,11 +406,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     coma_decision = decide_coma(caster, target, [damage])
 
     hit_info =
-      magic_hit_info(element,
+      element
+      |> magic_hit_info(
         skill_id: skill_id,
         skill_level: skill_level,
         from_caster?: false,
         coma?: coma_decision == true
+      )
+      |> Map.put(
+        :proc,
+        EquipProcDispatch.spec(caster, target, target_state, magic_attack_flag(),
+          divisions: packet_divisions,
+          skill_id: skill_id,
+          immediate?: EquipProcDispatch.immediate?(skill_id, Keyword.get(opts, :delivery, :unit))
+        )
       )
 
     {damage, hit_info} =
@@ -433,10 +445,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     packet = Hallucination.maybe_garble(packet, target_type)
     Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
     delivery = apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
-
-    if delivery == :ok and damage > 0 and hit_info[:magic_rod_miss?] != true do
-      dispatch_equip_autobonuses(caster, target, magic_attack_flag())
-    end
 
     if delivery == :ok do
       run_additional_effect(
@@ -465,6 +473,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       result,
       opts
     )
+
+    EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
 
     if Keyword.get(opts, :report_hit, false),
       do: {:ok, %{hit?: damage > 0 or hit_info[:devotion_rerouted?] == true}},
@@ -577,14 +587,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           {:ok, {target_type, target_id}}
 
         :reflect ->
-          deliver_reflected_hits(
-            attacker,
+          attacker
+          |> deliver_reflected_hits(
             target,
             damages,
             hit_info,
             {skill_id, skill_level},
             packet_divisions
           )
+          |> dispatch_reflected_procs()
 
           {:ok, {attacker.unit_type, attacker.unit_id}}
 
@@ -839,7 +850,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   # A reflected spell's on-hit effect lands on the caster, sourced from the reflector.
-  defp run_reflected_effect({settled, settled_info}, splash, reflector, caster_ref) do
+  defp run_reflected_effect(
+         {settled, settled_info} = reflected_hit,
+         splash,
+         reflector,
+         caster_ref
+       ) do
     run_additional_effect(
       splash.additional_effect,
       reflector,
@@ -849,6 +865,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       settled_info,
       false
     )
+
+    reflected_hit
   end
 
   defp additional_effect?(_state, _damage, %{magic_rod_miss?: true}, _coma?), do: false
@@ -1033,7 +1051,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
             {skill_id, skill_level},
             packet_divisions
           )
-          |> Enum.each(&run_reflected_effect(&1, splash, target, caster_ref))
+          |> Enum.map(&run_reflected_effect(&1, splash, target, caster_ref))
+          |> dispatch_reflected_procs()
 
           result = %{
             target_ref: caster_ref,
@@ -1055,7 +1074,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
             hit_info,
             {skill_id, skill_level},
             coma_decision,
-            {packet_divisions, splash.additional_effect}
+            {packet_divisions, splash.additional_effect, Map.get(splash, :delivery, :direct)}
           )
       end
     else
@@ -1070,13 +1089,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          hit_info,
          {skill_id, skill_level},
          coma_decision,
-         {packet_divisions, additional_effect}
+         {packet_divisions, additional_effect, delivery}
        ) do
     target_id = target.unit_id
     {tx, ty} = target.position
     coma_decision = decide_coma_once(coma_decision, attacker, target, damage)
-    hit_info = Map.put(hit_info, :coma?, coma_decision == true)
     source = damage_source(attacker, target_type)
+
+    hit_info =
+      hit_info
+      |> Map.put(:coma?, coma_decision == true)
+      |> Map.put(
+        :proc,
+        EquipProcDispatch.spec(attacker, target, target_state, magic_attack_flag(),
+          divisions: packet_divisions,
+          skill_id: skill_id,
+          immediate?: EquipProcDispatch.immediate?(skill_id, delivery)
+        )
+      )
 
     {damage, hit_info} =
       prepare_magic_hit(target_type, target_id, damage, hit_info, source)
@@ -1110,10 +1140,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         source
       )
 
-    if delivery == :ok and hit_info[:magic_rod_miss?] != true do
-      dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
-    end
-
     if delivery == :ok or match?({:local_effects, _effects}, delivery) do
       run_additional_effect(
         additional_effect,
@@ -1125,6 +1151,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         hit_info[:coma?] == true
       )
     end
+
+    EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
 
     result = %{
       target_ref: target_ref,
@@ -1191,7 +1219,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         |> then(&prepare_magic_hit(attacker.unit_type, attacker.unit_id, &1, hit_info, source))
       end)
 
-    Enum.each(prepared_hits, fn {damage, prepared_hit_info} ->
+    Enum.map(prepared_hits, fn {damage, prepared_hit_info} ->
       packet =
         PacketFactory.build_splash_damage_packet(
           reflector.unit_id,
@@ -1204,34 +1232,76 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         )
 
       DamageApplication.broadcast_nearby(attacker, packet)
-      queue_reflected_damage(attacker, damage, prepared_hit_info, source)
-    end)
 
-    prepared_hits
+      proc_opts = [
+        divisions: divisions,
+        skill_id: skill_id,
+        immediate?: EquipProcDispatch.immediate?(skill_id, :direct)
+      ]
+
+      {damage,
+       queue_reflected_damage(attacker, damage, prepared_hit_info, source, {reflector, proc_opts})}
+    end)
+  end
+
+  # The reflector's side of each reflected hit, after the hit's effects.
+  defp dispatch_reflected_procs(reflected_hits) do
+    Enum.each(reflected_hits, fn {damage, hit_info} ->
+      EquipProcDispatch.dispatch_hit(hit_info, damage)
+    end)
+  end
+
+  # The reflector is the hit's attacker for equipment procs and the caster its
+  # target. Returns the hit information carrying that `:proc` spec, so the
+  # reflector's side is dispatched after the hit's effects; a caster that is
+  # gone returns it without one.
+  defp queue_reflected_damage(
+         %{unit_type: :homunculus, unit_id: unit_id} = caster,
+         damage,
+         hit_info,
+         source,
+         {reflector, proc_opts}
+       ) do
+    case UnitRegistry.get_unit(:homunculus, unit_id) do
+      {:ok, {_module, state, owner_pid}} ->
+        effect =
+          DamageApplication.local_damage_effect({:homunculus, unit_id}, damage, hit_info, source)
+
+        GenServer.cast(owner_pid, effect)
+        proc = EquipProcDispatch.spec(reflector, caster, state, magic_attack_flag(), proc_opts)
+        Map.put(hit_info, :proc, proc)
+
+      {:error, _reason} ->
+        hit_info
+    end
   end
 
   defp queue_reflected_damage(
-         %{unit_type: :homunculus, unit_id: unit_id},
+         %{unit_type: unit_type, unit_id: unit_id} = caster,
          damage,
          hit_info,
-         source
+         source,
+         {reflector, proc_opts}
        ) do
-    with {:ok, {_module, _state, owner_pid}} <- UnitRegistry.get_unit(:homunculus, unit_id) do
-      effect =
-        DamageApplication.local_damage_effect({:homunculus, unit_id}, damage, hit_info, source)
+    case TargetResolver.resolve(unit_type, unit_id) do
+      {:ok, owner_pid, state, ^unit_type} ->
+        proc = EquipProcDispatch.spec(reflector, caster, state, magic_attack_flag(), proc_opts)
+        hit_info = Map.put(hit_info, :proc, proc)
 
-      GenServer.cast(owner_pid, effect)
+        DamageApplication.apply_unit_damage(
+          unit_type,
+          owner_pid,
+          unit_id,
+          damage,
+          hit_info,
+          source
+        )
+
+        hit_info
+
+      _gone ->
+        hit_info
     end
-
-    :ok
-  end
-
-  defp queue_reflected_damage(%{unit_type: unit_type, unit_id: unit_id}, damage, hit_info, source) do
-    with {:ok, owner_pid, _state, ^unit_type} <- TargetResolver.resolve(unit_type, unit_id) do
-      DamageApplication.apply_unit_damage(unit_type, owner_pid, unit_id, damage, hit_info, source)
-    end
-
-    :ok
   end
 
   defp deliver_magic_hits(
@@ -1244,7 +1314,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
        ) do
     source = damage_source(attacker, target_type)
     coma_decision = decide_coma(attacker, target, damages)
-    hit_info = Map.put(hit_info, :coma?, coma_decision == true)
+
+    hit_info =
+      hit_info
+      |> Map.put(:coma?, coma_decision == true)
+      |> Map.put(
+        :proc,
+        EquipProcDispatch.spec(attacker, target, target_state, magic_attack_flag(),
+          divisions: Keyword.get(opts, :packet_divisions, 1),
+          skill_id: skill_id,
+          immediate?:
+            EquipProcDispatch.immediate?(skill_id, Keyword.get(opts, :delivery, :direct))
+        )
+      )
 
     [{damage, prepared_hit_info}] =
       Enum.map(damages, &prepare_magic_hit(target_type, target_id, &1, hit_info, source))
@@ -1291,10 +1373,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       opts
     )
 
-    if delivery == :ok and prepared_hit_info[:magic_rod_miss?] != true do
-      dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
-    end
-
+    EquipProcDispatch.dispatch_delivered(delivery, prepared_hit_info, damage)
     delivery
   end
 
@@ -1304,34 +1383,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp apply_vanish_hits(_attacker, _target, _target_pid, _damages), do: :ok
 
   defp magic_attack_flag, do: BattleFlags.build(:magic, :long, true)
-
-  defp dispatch_equip_autobonuses(attacker, target, attack_flag) do
-    send_equip_autobonuses(
-      attacker,
-      EquipAutobonus.on_attack(attacker.equip_autobonuses, attack_flag)
-    )
-
-    send_equip_autobonuses(
-      target,
-      EquipAutobonus.when_hit(target.equip_autobonuses, attack_flag)
-    )
-  end
-
-  defp send_equip_autobonuses(
-         %{unit_type: :player, unit_id: unit_id, equip_autobonuses: registrations},
-         [_ | _] = keys
-       ) do
-    with {:ok, pid} <- UnitRegistry.get_player_pid(unit_id) do
-      Enum.each(keys, fn key ->
-        source_identity = registrations |> Map.fetch!(key) |> Map.fetch!(:source_identity)
-        GenServer.cast(pid, {:equipment, {:autobonus_activate, key, source_identity}})
-      end)
-    end
-
-    :ok
-  end
-
-  defp send_equip_autobonuses(_combatant, _keys), do: :ok
 
   defp decide_coma(attacker, target, damages) do
     case Enum.find(damages, &(&1 > 0)) do

@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutobonusTest do
     refute_received {:rolled, _rate}
   end
 
-  test "clamps rate boundaries and honors independent roll outcomes" do
+  test "rolls the uncapped rate and honors independent roll outcomes" do
     battle_flag = BattleFlags.build(:weapon, :short, false)
     parent = self()
 
@@ -132,7 +132,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutobonusTest do
 
     assert_received {:rolled, 1}
     assert_received {:rolled, 1_000}
-    assert_received {:rolled, 1_000}
+    assert_received {:rolled, 2_000}
+  end
+
+  test "the default roll draws from 0 to 1000, so a rate above 1000 always activates" do
+    battle_flag = BattleFlags.build(:weapon, :short, false)
+
+    registrations = %{
+      {11, 0} => %{trigger: :attack, battle_flag: battle_flag, rate: 1_001, source_order: {0, 0}}
+    }
+
+    for _attempt <- 1..200 do
+      assert [{11, 0}] = EquipAutobonus.on_attack(registrations, battle_flag)
+    end
   end
 
   test "returns keys in explicit source order rather than key order" do

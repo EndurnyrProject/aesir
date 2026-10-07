@@ -105,8 +105,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @doc "Applies coma through this player's owning session."
   @spec apply_coma(pid(), Ref.t() | integer() | nil) :: :ok
-  def apply_coma(pid, source) do
-    GenServer.cast(pid, {:unit, {:apply_coma, source}})
+  def apply_coma(pid, source), do: apply_coma(pid, source, %{})
+
+  @doc "Applies a coma hit with its prepared hit metadata through the owning session."
+  @spec apply_coma(pid(), Ref.t() | integer() | nil, map()) :: :ok
+  def apply_coma(pid, source, metadata) do
+    GenServer.cast(pid, {:unit, {:apply_coma, source, metadata}})
   end
 
   @doc """
@@ -1198,12 +1202,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillHandler.handle_auto_cast(state, skill_id, level, target)
   end
 
-  # Skill: a proc from this player's own equipment - either armed on their hits
-  # or on hits they took. Cast into this session (by it, or by the attacker's
-  # session for a when-hit proc) so the skill runs on the wearer's own state.
+  # Skill: an already resolved proc cast from this player's own equipment.
   @impl true
   def handle_cast({:skill, {:proc_cast, skill_id, level, target}}, state) do
     SkillHandler.handle_proc_cast(state, skill_id, level, target)
+  end
+
+  # Skill: an equipment proc selected for this player by a hit they dealt or
+  # took, or a skill they used. Its usability check and rolls run here, on the
+  # wearer's own state.
+  @impl true
+  def handle_cast({:skill, {:equip_proc, candidate}}, state) do
+    SkillHandler.handle_equip_proc(state, candidate)
   end
 
   # Unit: vitals casts (damage, SP drain/restore), all handled in
@@ -1229,8 +1239,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_cast({:unit, {:apply_coma, source}}, state) do
-    HealthHandler.apply_coma(source, state)
+  def handle_cast({:unit, {:apply_coma, source, metadata}}, state) do
+    HealthHandler.apply_coma(source, metadata, state)
   end
 
   @impl true

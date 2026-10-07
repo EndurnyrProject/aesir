@@ -2,195 +2,183 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocast do
   @moduledoc """
   Equipment-granted autocasts: a worn item casting a skill by itself.
 
-  Two triggers arm from item scripts. An `:attack` proc rolls on the wearer's
-  own landed hits, an `:when_hit` proc on hits the wearer takes. Both are
-  stored as `{:auto_cast, {trigger, skill_id, level, flag, force}}` entries in
-  the wearer's equipment modifiers, valued by their per-mille chance, so two
-  items arming the identical proc stack their chances.
+  Three triggers arm from item scripts. An `:attack` proc fires on the wearer's
+  own hits, a `:when_hit` proc on hits the wearer takes, and an on-skill proc on
+  the wearer using a named skill. Attack and when-hit procs are stored as
+  `{:auto_cast, {trigger, skill_id, level, flag, force}}` entries in the
+  wearer's equipment modifiers, valued by their per-mille chance.
 
-  This module only decides *what* procs: it rolls the matching entries and
-  returns the casts to run, leaving delivery to the caller. That keeps the
-  single-writer rule intact - an attack-side proc is cast by the attacker's own
-  session, a when-hit proc is handed to the defender's session, and neither
-  side ever writes the other's state. It mirrors how the `SC_AUTOSPELL` bolt
-  reaches its caster.
+  Selection (`on_attack/4`, `when_hit/3`, `on_skill/3`) is pure: it returns the
+  entries whose trigger matches as candidates, with the chance already capped
+  and halved where the hit halves it. The wearer's own session then resolves
+  each candidate with `resolve/2`, which runs the usability check and the level
+  and chance draws in the order of its branch.
 
-  A ranged weapon swing rolls its attack-side procs at half chance, and a proc
-  armed against long-range weapon damage likewise halves when hit by one.
+  An attack proc's chance halves while the wearer is in the arrow-attack state;
+  a when-hit proc's halves against long-range weapon damage.
   """
 
   alias Aesir.ZoneServer.Mmo.AutospellForceFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @roll_ceiling 1_000
   @rate_cap 1_000
 
-  @typedoc "A per-mille chance predicate: given an effective chance, did the proc land."
-  @type roll_fun :: (non_neg_integer() -> boolean())
+  @typedoc "Which proc family a candidate belongs to; each resolves in its own order."
+  @type branch :: :attack | :counter | :skill
 
-  @typedoc "A proc to run: the skill, the level it casts at, and its target."
-  @type proc :: {:auto_cast, pos_integer(), pos_integer(), :self | {:unit, integer()}}
-
-  @doc """
-  Rolls the attacker's `:attack` procs for one landed hit.
-
-  The chance halves for a ranged weapon swing, matching how a bow attack arms
-  these procs at half strength.
-
-  ## Options
-    - `:roll` - a `t:roll_fun/0` used for every per-mille roll (default `:rand`).
-    - `:level_roll` - a `(pos_integer() -> pos_integer())` picking the level of a
-      random-level proc (default `:rand`).
+  @typedoc """
+  A selected proc: the skill and armed level, whether the level is drawn at
+  random up to it, the effective per-mille chance, the cast target (nil when an
+  on-skill proc has none) and the modifier entry that armed it.
   """
-  @spec on_attack(Combatant.t(), Combatant.t(), BattleFlags.flag(), keyword()) :: [proc()]
-  def on_attack(%Combatant{} = attacker, %Combatant{} = defender, attack_flag, opts \\ []) do
-    procs(attacker, defender, :attack, attack_flag, ranged_weapon?(attacker), opts)
-  end
-
-  @doc """
-  Rolls the defender's `:when_hit` procs for one hit taken.
-
-  The chance halves against long-range weapon damage. The returned casts belong
-  to the defender and must be delivered to the defender's own session.
-  """
-  @spec when_hit(Combatant.t(), Combatant.t(), BattleFlags.flag(), keyword()) :: [proc()]
-  def when_hit(%Combatant{} = defender, %Combatant{} = attacker, attack_flag, opts \\ []) do
-    procs(defender, attacker, :when_hit, attack_flag, long_weapon_hit?(attack_flag), opts)
-  end
-
-  @doc """
-  Rolls the caster's `:on_skill` procs for one successful use of `trigger_skill`.
-
-  These carry no attack kinds - what fires them is the skill use itself - and
-  their target bit reads inverted: setting it keeps the proc on the caster,
-  while its absence sends it at whatever the triggering skill targeted.
-
-  ## Options
-    - `:roll` - a `t:roll_fun/0` used for every per-mille roll (default `:rand`).
-    - `:level_roll` - picks the level of a random-level proc (default `:rand`).
-  """
-  @spec on_skill(map(), pos_integer(), :self | {:unit, integer()} | nil, keyword()) :: [proc()]
-  def on_skill(equip_modifiers, trigger_skill, skill_target, opts \\ [])
-      when is_map(equip_modifiers) do
-    roll = Keyword.get(opts, :roll, &default_roll/1)
-    level_roll = Keyword.get(opts, :level_roll, &default_level_roll/1)
-
-    Enum.flat_map(equip_modifiers, fn
-      {{:auto_cast_on_skill, {^trigger_skill, skill_id, level, force}}, rate} ->
-        on_skill_proc(skill_id, level, force, rate, skill_target, roll, level_roll)
-
-      _entry ->
-        []
-    end)
-  end
-
-  @spec on_skill_proc(
-          pos_integer(),
-          pos_integer(),
-          non_neg_integer(),
-          integer(),
-          :self | {:unit, integer()} | nil,
-          roll_fun(),
-          (pos_integer() -> pos_integer())
-        ) :: [proc()]
-  defp on_skill_proc(skill_id, level, force, rate, skill_target, roll, level_roll) do
-    effective = min(rate, @rate_cap)
-    target = if force_target?(force), do: :self, else: skill_target
-
-    if not is_nil(target) and effective > 0 and roll.(effective) do
-      [{:auto_cast, skill_id, cast_level(level, force, level_roll), target}]
-    else
-      []
-    end
-  end
-
-  @spec procs(
-          Combatant.t(),
-          Combatant.t(),
-          :attack | :when_hit,
-          BattleFlags.flag(),
-          boolean(),
-          keyword()
-        ) :: [proc()]
-  defp procs(wearer, other, trigger, attack_flag, halved?, opts) do
-    roll = Keyword.get(opts, :roll, &default_roll/1)
-    level_roll = Keyword.get(opts, :level_roll, &default_level_roll/1)
-
-    context = %{
-      other: other,
-      attack_flag: attack_flag,
-      halved?: halved?,
-      roll: roll,
-      level_roll: level_roll
-    }
-
-    Enum.flat_map(wearer.equip_modifiers, fn
-      {{:auto_cast, {^trigger, skill_id, level, flag, force}}, rate} ->
-        proc({skill_id, level, flag, force, rate}, context)
-
-      _entry ->
-        []
-    end)
-  end
-
-  @typedoc "Everything about the hit a single armed entry is rolled against."
-  @type context :: %{
-          other: Combatant.t(),
-          attack_flag: BattleFlags.flag(),
-          halved?: boolean(),
-          roll: roll_fun(),
-          level_roll: (pos_integer() -> pos_integer())
+  @type candidate :: %{
+          branch: branch(),
+          skill_id: pos_integer(),
+          level: pos_integer(),
+          random_level?: boolean(),
+          rate: integer(),
+          target: :self | {:unit, integer()} | nil,
+          entry: term()
         }
 
-  @spec proc(
-          {pos_integer(), pos_integer(), BattleFlags.flag(), non_neg_integer(), integer()},
-          context()
-        ) :: [proc()]
-  defp proc({skill_id, level, flag, force, rate}, context) do
-    effective = effective_rate(rate, context.halved?)
+  @typedoc "How `resolve/2` ended: cast at a level, dropped, or refused by usability."
+  @type resolution :: {:cast, pos_integer()} | :skip | {:unusable, atom()}
 
-    if BattleFlags.matches_battle?(flag, context.attack_flag) and effective > 0 and
-         context.roll.(effective) do
-      [
-        {:auto_cast, skill_id, cast_level(level, force, context.level_roll),
-         cast_target(force, context.other)}
-      ]
-    else
-      []
+  @doc """
+  Selects the attacker's `:attack` procs whose battle flag matches the hit.
+
+  `arrow_attack?` is the attacker's arrow-attack state when the hit resolves; it
+  halves the chance.
+  """
+  @spec on_attack(Combatant.t(), Combatant.t(), BattleFlags.flag(), boolean()) :: [candidate()]
+  def on_attack(%Combatant{} = attacker, %Combatant{} = defender, attack_flag, arrow_attack?) do
+    attacker.equip_modifiers
+    |> battle_entries(:attack, attack_flag)
+    |> Enum.map(fn {entry, {skill_id, level, force}, rate} ->
+      target = if force_target?(force), do: {:unit, defender.unit_id}, else: :self
+      candidate(:attack, entry, skill_id, level, force, halve(rate, arrow_attack?), target)
+    end)
+  end
+
+  @doc """
+  Selects the defender's `:when_hit` procs whose battle flag matches the hit.
+
+  The chance halves against long-range weapon damage. The target bit sends the
+  proc at the attacker (`attacker_id`); otherwise it stays on the defender.
+  """
+  @spec when_hit(%{equip_modifiers: map()}, integer(), BattleFlags.flag()) :: [candidate()]
+  def when_hit(%{equip_modifiers: modifiers}, attacker_id, attack_flag) do
+    halved? = long_weapon_hit?(attack_flag)
+
+    modifiers
+    |> battle_entries(:when_hit, attack_flag)
+    |> Enum.map(fn {entry, {skill_id, level, force}, rate} ->
+      target = if force_target?(force), do: {:unit, attacker_id}, else: :self
+      candidate(:counter, entry, skill_id, level, force, halve(rate, halved?), target)
+    end)
+  end
+
+  # The `trigger` entries whose battle flag matches the hit, in modifier order.
+  defp battle_entries(modifiers, trigger, attack_flag) do
+    for {{:auto_cast, {^trigger, skill_id, level, flag, force}} = entry, rate} <- modifiers,
+        BattleFlags.matches_battle?(flag, attack_flag),
+        do: {entry, {skill_id, level, force}, rate}
+  end
+
+  @doc """
+  Selects the caster's on-skill procs for one use of `trigger_skill`.
+
+  These carry no attack kinds, and their target bit reads inverted: setting it
+  keeps the proc on the caster, while its absence sends it at whatever the
+  triggering skill targeted (`nil` when it targeted no unit).
+  """
+  @spec on_skill(map(), pos_integer(), :self | {:unit, integer()} | nil) :: [candidate()]
+  def on_skill(equip_modifiers, trigger_skill, skill_target) when is_map(equip_modifiers) do
+    Enum.flat_map(equip_modifiers, fn
+      {{:auto_cast_on_skill, {^trigger_skill, skill_id, level, force}} = entry, rate} ->
+        target = if force_target?(force), do: :self, else: skill_target
+        [candidate(:skill, entry, skill_id, level, force, min(rate, @rate_cap), target)]
+
+      _entry ->
+        []
+    end)
+  end
+
+  @doc """
+  Resolves one candidate in its wearer's session, in its branch's order.
+
+  An attack proc checks usability, draws its level, then rolls its chance. A
+  counter proc draws its level before the usability check. An on-skill proc
+  checks usability, drops a candidate without a target, rolls, then draws its
+  level. A failed usability check returns its reason and stops before the roll.
+
+  ## Options
+    - `:usable` - `(skill_id -> :ok | {:error, atom()})`, the usability check (required).
+    - `:roll` - a per-mille chance predicate (default `:rand`).
+    - `:level_roll` - picks a level from 1 up to the armed one (default `:rand`).
+  """
+  @spec resolve(candidate(), keyword()) :: resolution()
+  def resolve(%{branch: :attack} = candidate, opts) do
+    with :ok <- usable(candidate, opts) do
+      level = draw_level(candidate, opts)
+      if roll(candidate, opts), do: {:cast, level}, else: :skip
     end
   end
 
-  @spec effective_rate(integer(), boolean()) :: integer()
-  defp effective_rate(rate, true), do: div(min(rate, @rate_cap), 2)
-  defp effective_rate(rate, false), do: min(rate, @rate_cap)
+  def resolve(%{branch: :counter} = candidate, opts) do
+    level = draw_level(candidate, opts)
 
-  # The random-level bit makes the proc pick any level up to the armed one.
-  @spec cast_level(pos_integer(), non_neg_integer(), (pos_integer() -> pos_integer())) ::
-          pos_integer()
-  defp cast_level(level, force, level_roll) do
-    if random_level?(force), do: level_roll.(level), else: level
+    with :ok <- usable(candidate, opts) do
+      if roll(candidate, opts), do: {:cast, level}, else: :skip
+    end
   end
 
-  # Without the target bit the proc casts on its own wearer, which is how the
-  # self-buff procs (Concentration, Aura Blade) are armed.
-  @spec cast_target(non_neg_integer(), Combatant.t()) :: :self | {:unit, integer()}
-  defp cast_target(force, other) do
-    if force_target?(force), do: {:unit, other.unit_id}, else: :self
+  def resolve(%{branch: :skill} = candidate, opts) do
+    with :ok <- usable(candidate, opts) do
+      cond do
+        is_nil(candidate.target) -> :skip
+        roll(candidate, opts) -> {:cast, draw_level(candidate, opts)}
+        true -> :skip
+      end
+    end
   end
+
+  defp usable(candidate, opts) do
+    case Keyword.fetch!(opts, :usable).(candidate.skill_id) do
+      :ok -> :ok
+      {:error, reason} -> {:unusable, reason}
+    end
+  end
+
+  defp roll(%{rate: rate}, opts) do
+    rate > 0 and Keyword.get(opts, :roll, &default_roll/1).(rate)
+  end
+
+  defp draw_level(%{random_level?: true, level: level}, opts),
+    do: Keyword.get(opts, :level_roll, &:rand.uniform/1).(level)
+
+  defp draw_level(%{level: level}, _opts), do: level
+
+  defp candidate(branch, entry, skill_id, level, force, rate, target) do
+    %{
+      branch: branch,
+      skill_id: skill_id,
+      level: level,
+      random_level?: Bitwise.band(force, AutospellForceFlag.id(:random_level)) != 0,
+      rate: rate,
+      target: target,
+      entry: entry
+    }
+  end
+
+  @spec halve(integer(), boolean()) :: integer()
+  defp halve(rate, true), do: div(min(rate, @rate_cap), 2)
+  defp halve(rate, false), do: min(rate, @rate_cap)
 
   @spec force_target?(non_neg_integer()) :: boolean()
   defp force_target?(force), do: Bitwise.band(force, AutospellForceFlag.id(:target)) != 0
-
-  @spec random_level?(non_neg_integer()) :: boolean()
-  defp random_level?(force),
-    do: Bitwise.band(force, AutospellForceFlag.id(:random_level)) != 0
-
-  @spec ranged_weapon?(Combatant.t()) :: boolean()
-  defp ranged_weapon?(attacker) do
-    attacker.weapon |> Map.get(:type) |> WeaponTypes.is_ranged?()
-  end
 
   # Only long-range *weapon* damage halves a when-hit proc; magic and misc hits
   # roll at full chance whatever their range.
@@ -201,9 +189,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocast do
     Bitwise.band(attack_flag, weapon_long) == weapon_long
   end
 
-  @spec default_roll(non_neg_integer()) :: boolean()
-  defp default_roll(effective), do: :rand.uniform(@roll_ceiling) <= effective
-
-  @spec default_level_roll(pos_integer()) :: pos_integer()
-  defp default_level_roll(level), do: :rand.uniform(level)
+  @spec default_roll(integer()) :: boolean()
+  defp default_roll(rate), do: :rand.uniform(@roll_ceiling) <= rate
 end

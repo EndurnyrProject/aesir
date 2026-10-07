@@ -144,6 +144,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.BattleFlags do
   end
 
   @doc """
+  Fills the axes an autocast registration left unspecified.
+
+  Like `fill_battle/1`, except that an unnamed origin makes a weapon autocast
+  fire on normal swings only, never on weapon skills. Magic and misc still
+  imply skill.
+  """
+  @spec fill_autospell(flag()) :: flag()
+  def fill_autospell(flag) when is_integer(flag) and flag >= 0 do
+    flag
+    |> fill_axis(@range_mask, @range_mask)
+    |> fill_axis(@type_mask, @weapon)
+    |> fill_autospell_origin()
+  end
+
+  @doc """
   Fills the axes a trigger-flag script argument left unspecified: both ranges,
   the enemy as victim, and weapon as damage type.
   """
@@ -218,6 +233,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.BattleFlags do
   @spec fill_axis(flag(), flag(), flag()) :: flag()
   defp fill_axis(flag, axis_mask, default) do
     if (flag &&& axis_mask) == 0, do: flag ||| default, else: flag
+  end
+
+  @spec fill_autospell_origin(flag()) :: flag()
+  defp fill_autospell_origin(flag) when (flag &&& @origin_mask) != 0, do: flag
+
+  defp fill_autospell_origin(flag) do
+    flag
+    |> then(fn f -> if (f &&& (@magic ||| @misc)) != 0, do: f ||| @skill, else: f end)
+    |> then(fn f -> if (f &&& @weapon) != 0, do: f ||| @normal, else: f end)
   end
 
   @spec fill_origin(flag()) :: flag()

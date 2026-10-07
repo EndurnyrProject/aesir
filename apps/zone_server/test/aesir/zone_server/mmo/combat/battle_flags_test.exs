@@ -50,6 +50,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.BattleFlagsTest do
     end
   end
 
+  describe "fill_autospell/1" do
+    test "a weapon autospell with no named origin fires on normal swings only" do
+      assert BattleFlags.fill_autospell(0) == battle([:weapon, :short, :long, :normal])
+
+      assert BattleFlags.fill_autospell(battle([:weapon])) ==
+               battle([:weapon, :short, :long, :normal])
+    end
+
+    test "magic and misc autospells with no named origin are skill-only" do
+      assert BattleFlags.fill_autospell(battle([:magic])) ==
+               battle([:magic, :short, :long, :skill])
+
+      assert BattleFlags.fill_autospell(battle([:weapon, :magic])) ==
+               battle([:weapon, :magic, :short, :long, :skill, :normal])
+    end
+
+    test "a named origin is left alone" do
+      assert BattleFlags.fill_autospell(battle([:normal, :skill])) ==
+               battle([:normal, :skill, :weapon, :short, :long])
+    end
+  end
+
   describe "fill_trigger/1" do
     test "fills range, victim and damage type" do
       assert BattleFlags.fill_trigger(trigger([:target])) ==

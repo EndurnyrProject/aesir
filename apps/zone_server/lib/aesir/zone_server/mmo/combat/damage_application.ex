@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
@@ -79,29 +80,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
          attacker_id
        ) do
     case reroute_to_crusader(target_type, target_id, damage, hit_info, attacker_id) do
-      {:rerouted, _delivery} -> {0, rerouted(hit_info)}
+      {:rerouted, _delivery} -> {0, rerouted(hit_info, damage)}
       :not_rerouted -> {damage, Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
 
   defp prepare_ordinary_damage(target_type, target_id, damage, hit_info, attacker_id) do
-    settled =
+    {settled, hit_info} =
       damage
       |> reduce_magic_damage(target_type, target_id, hit_info)
-      |> then(&absorb_unit_damage(target_type, target_id, &1, hit_info, attacker_id))
+      |> absorb_unit_damage(target_type, target_id, hit_info, attacker_id)
 
     {settled, hit_info} = intercept_magic(target_type, target_id, settled, hit_info)
 
     case reroute_to_crusader(target_type, target_id, settled, hit_info, attacker_id) do
-      {:rerouted, _delivery} -> {0, rerouted(hit_info)}
+      {:rerouted, _delivery} -> {0, rerouted(hit_info, settled)}
       :not_rerouted -> {settled, Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
 
   # The devotee takes nothing, but the hit still connected: its additional
-  # effects apply to the devotee as if the damage had landed.
-  defp rerouted(hit_info),
-    do: Map.merge(hit_info, %{pre_delivery_prepared?: true, devotion_rerouted?: true})
+  # effects apply to the devotee as if the damage had landed. The forwarded
+  # amount is kept for the counter stage of an immediate hit.
+  defp rerouted(hit_info, forwarded),
+    do:
+      Map.merge(hit_info, %{
+        pre_delivery_prepared?: true,
+        devotion_rerouted?: true,
+        devotion_damage: forwarded
+      })
 
   defp prepare_ground_damage(
          target_type,
@@ -128,8 +135,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       :ok ->
         equipment_basis = reduce_magic_damage(damage, target_type, target_id, hit_info)
 
-        absorbed =
-          absorb_unit_damage(target_type, target_id, equipment_basis, hit_info, attacker)
+        {absorbed, hit_info} =
+          absorb_unit_damage(equipment_basis, target_type, target_id, hit_info, attacker)
 
         {absorbed,
          Map.merge(hit_info, %{
@@ -151,7 +158,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     prepared_hit = Map.put(hit_info, :status_return_basis, settled)
 
     case reroute_to_crusader(target_type, target_id, settled, prepared_hit, attacker) do
-      {:rerouted, _delivery} -> {0, rerouted(prepared_hit)}
+      {:rerouted, _delivery} -> {0, rerouted(prepared_hit, settled)}
       :not_rerouted -> {settled, prepared_hit}
     end
   end
@@ -174,8 +181,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   Mutating status absorption sees the raw aggregate once. On siege ground,
   each resulting positive component receives its own map rate and minimum.
-  Devotion then forwards the settled sum when it is above zero. The returned swing retains its raw total and its settled
-  components sum to the one delivered HP mutation (zero for a devotee).
+  Devotion then forwards the settled sum when it is above zero. The returned
+  swing retains its raw total and its settled components sum to the one
+  delivered HP mutation (zero for a devotee).
   """
   @spec apply_weapon_swing(
           :player | :mob | :homunculus | :skill_unit,
@@ -218,6 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         delivery =
           apply_unit_damage(target_type, target_pid, target_id, damage, prepared_hit, attacker)
 
+        dispatch_swing_procs(delivery, prepared_hit, damage)
         {if(damage == 0, do: settle_components(swing, 0), else: settled), delivery}
 
       :not_ground ->
@@ -237,10 +246,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp apply_ordinary_swing(target_type, target_pid, target_id, swing, hit_info, attacker) do
-    final_damage = absorb_unit_damage(target_type, target_id, swing.raw_total, hit_info, attacker)
+    {final_damage, hit_info} =
+      absorb_unit_damage(swing.raw_total, target_type, target_id, hit_info, attacker)
 
     case reroute_to_crusader(target_type, target_id, final_damage, hit_info, attacker) do
       {:rerouted, delivery} ->
+        dispatch_swing_procs(delivery, rerouted(hit_info, final_damage), 0)
         {settle_components(swing, 0), delivery}
 
       :not_rerouted ->
@@ -257,9 +268,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
             attacker
           )
 
+        dispatch_swing_procs(delivery, prepared_hit, final_damage)
         {settled, delivery}
     end
   end
+
+  # A normal swing always resolves in its attacker's own session, so the
+  # attacker's procs sent here queue behind the rest of the swing's effects,
+  # exactly as if the attack path dispatched them last.
+  defp dispatch_swing_procs(delivery, hit_info, damage),
+    do: EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
 
   @doc """
   Applies damage to a living unit's session.
@@ -283,6 +301,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     {final_damage, hit_info} =
       prepare_delivery(target_type, target_id, damage, hit_info, attacker)
 
+    hit_info = attach_proc_event(hit_info, final_damage)
+
     delivery =
       deliver_unit_damage(target_type, target_pid, target_id, final_damage, hit_info, attacker)
 
@@ -291,6 +311,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
     merge_local_effects(delivery, post_delivery)
   end
+
+  # The settled hit's equipment-proc event rides to the recipient's own handler
+  # as `:proc_event`; the attack path dispatches the attacker's side itself.
+  defp attach_proc_event(%{settlement_error: _} = hit_info, _damage),
+    do: Map.delete(hit_info, :proc)
+
+  defp attach_proc_event(%{proc: _} = hit_info, damage) do
+    event = EquipProcDispatch.hit_event(hit_info, damage)
+    hit_info |> Map.delete(:proc) |> Map.put(:proc_event, event)
+  end
+
+  defp attach_proc_event(hit_info, _damage), do: hit_info
 
   @doc "Builds aggregate-local Homunculus damage without sending to its owner process."
   @spec local_damage_effect(Ref.t(), integer(), map(), Ref.t() | nil) :: tuple()
@@ -473,6 +505,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       {:ok, crusader_pid, _state, :player} ->
         redirected_info =
           hit_info
+          |> Map.drop([:proc, :proc_event])
           |> Map.put(:redirected, true)
           |> Map.put(:pre_delivery_prepared?, true)
 
@@ -535,14 +568,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   # Status absorb hooks see the hit's source as `hit_info.attacker` (a typed
   # unit ref, or nil when unknown), e.g. Basilica letting only bosses through.
-  defp absorb_unit_damage(:skill_unit, _target_id, damage, _hit_info, _attacker), do: damage
+  # A hit a blocking status stopped is marked `blocked?: true`.
+  defp absorb_unit_damage(damage, :skill_unit, _target_id, hit_info, _attacker),
+    do: {damage, hit_info}
 
-  defp absorb_unit_damage(target_type, target_id, damage, hit_info, attacker) when damage > 0 do
-    hit_info = Map.put(hit_info, :attacker, absorb_attacker(attacker))
-    StatusInterpreter.absorb_damage(target_type, target_id, damage, hit_info)
+  defp absorb_unit_damage(damage, target_type, target_id, hit_info, attacker) when damage > 0 do
+    absorb_hit = Map.put(hit_info, :attacker, absorb_attacker(attacker))
+
+    case StatusInterpreter.absorb_hit(target_type, target_id, damage, absorb_hit) do
+      {absorbed, :block} -> {absorbed, Map.put(hit_info, :blocked?, true)}
+      {absorbed, :hit} -> {absorbed, hit_info}
+    end
   end
 
-  defp absorb_unit_damage(_target_type, _target_id, damage, _hit_info, _attacker), do: damage
+  defp absorb_unit_damage(damage, _target_type, _target_id, hit_info, _attacker),
+    do: {damage, hit_info}
 
   defp absorb_attacker(attacker_id) when is_integer(attacker_id), do: {:player, attacker_id}
 
@@ -747,8 +787,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         prepare_ground_damage(target_type, target_id, damage, hit_info, attacker, target)
 
       :not_ground ->
-        {absorb_unit_damage(target_type, target_id, damage, hit_info, attacker),
-         Map.put(hit_info, :pre_delivery_prepared?, true)}
+        {absorbed, hit_info} =
+          absorb_unit_damage(damage, target_type, target_id, hit_info, attacker)
+
+        {absorbed, Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
 
@@ -836,16 +878,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
          :player,
          target_pid,
          _target_id,
-         %{skill_id: skill_id, skill_level: skill_level},
+         %{skill_id: skill_id, skill_level: skill_level} = hit_info,
          attacker
        )
        when is_integer(skill_id) and is_integer(skill_level) do
-    PlayerSession.apply_coma(target_pid, typed_attacker(attacker))
+    PlayerSession.apply_coma(target_pid, typed_attacker(attacker), hit_info)
     PlayerSession.record_skill_hit(target_pid, skill_id, skill_level)
   end
 
-  defp deliver_coma(:player, target_pid, _target_id, _hit_info, attacker) do
-    PlayerSession.apply_coma(target_pid, typed_attacker(attacker))
+  defp deliver_coma(:player, target_pid, _target_id, hit_info, attacker) do
+    PlayerSession.apply_coma(target_pid, typed_attacker(attacker), hit_info)
   end
 
   defp deliver_coma(:mob, target_pid, _target_id, _hit_info, attacker) do

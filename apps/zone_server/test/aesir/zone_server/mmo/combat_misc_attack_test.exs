@@ -143,9 +143,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         true
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 80, hit_info ->
         assert hit_info.coma?
-        80
+        {80, :hit}
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       end)
 
       expect(EquipComa, :trigger?, fn _attacker, ^target -> false end)
-      stub(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, _hit_info -> 80 end)
+      stub(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 80, _hit_info -> {80, :hit} end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
       expect(MobSession, :apply_damage, fn _pid, 80, @caster_id, _metadata ->
@@ -323,9 +323,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 80, hit_info ->
         assert hit_info.coma?
-        0
+        {0, :hit}
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
@@ -360,9 +360,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         {:ok, %{damage: 80, is_critical: false}}
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 80, hit_info ->
         refute hit_info.coma?
-        80
+        {80, :hit}
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)

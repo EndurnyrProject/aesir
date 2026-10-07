@@ -339,7 +339,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-      stub(StatusInterpreter, :absorb_damage, fn _type, _id, damage, _hit_info -> damage end)
+      stub(StatusInterpreter, :absorb_hit, fn _type, _id, damage, _hit_info -> {damage, :hit} end)
 
       expect(MobSession, :apply_damage, 2, fn _pid, 40, 1_000, _metadata -> :ok end)
       reject(&PlayerSession.apply_damage/4)

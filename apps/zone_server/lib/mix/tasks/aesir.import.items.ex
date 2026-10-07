@@ -3,7 +3,8 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   @moduledoc """
   Converts canonical `db/item_db.yml` plus its selected mode imports into
   `apps/zone_server/priv/db/<mode>/items/*.yml`. The selected
-  `db/item_group_db.yml` supplies item-group symbols during transpilation.
+  `db/item_group_db.yml` supplies item-group symbols during transpilation, and
+  the selected `db/skill_db.yml` the target of autocasts that name none.
 
       mix aesir.import.items [<rathena_root>] [--mode re|pre-re]
 
@@ -53,7 +54,8 @@ defmodule Mix.Tasks.Aesir.Import.Items do
 
     item_group_source = Path.join([rathena, "db", "item_group_db.yml"])
     item_group_rows = read_source!(item_group_source, mode)
-    source_catalogs = Resolver.source_catalogs(item_rows, item_group_rows)
+    skill_rows = read_source!(Path.join([rathena, "db", "skill_db.yml"]), mode)
+    source_catalogs = Resolver.source_catalogs(item_rows, item_group_rows, skill_rows)
     File.mkdir_p!(out_dir)
 
     entries =

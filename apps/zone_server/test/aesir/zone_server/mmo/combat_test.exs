@@ -259,13 +259,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         %{damage_rate: 150}
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 350, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 350, hit_info ->
         assert hit_info.components == [
                  {:primary, 250, :neutral},
                  {:secondary, 100, :neutral}
                ]
 
-        350
+        {350, :hit}
       end)
 
       expect(StatusInterpreter, :after_damage_taken, fn :mob, 2001, hit_info ->
@@ -355,18 +355,18 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         target.unit_id == 3001
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 50, hit_info ->
         refute hit_info.coma?
-        50
+        {50, :hit}
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :player, 3001, 50, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :player, 3001, 50, hit_info ->
         assert hit_info.coma?
-        50
+        {50, :hit}
       end)
 
       expect(MobSession, :apply_damage, fn ^test_pid, 50, {:player, 1001}, _metadata -> :ok end)
-      expect(PlayerSession, :apply_coma, fn ^splash_owner, {:player, 1001} -> :ok end)
+      expect(PlayerSession, :apply_coma, fn ^splash_owner, {:player, 1001}, _metadata -> :ok end)
       reject(&PlayerSession.apply_damage/4)
       reject(&MobSession.apply_coma/2)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
@@ -405,7 +405,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         true
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 140, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 140, hit_info ->
         assert hit_info.coma?
 
         assert hit_info.components == [
@@ -413,7 +413,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                  {:secondary, 40, :neutral}
                ]
 
-        140
+        {140, :hit}
       end)
 
       reject(&MobSession.apply_damage/4)
@@ -441,9 +441,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 50, hit_info ->
         refute hit_info.coma?
-        50
+        {50, :hit}
       end)
 
       reject(&MobSession.apply_coma/2)
@@ -478,9 +478,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 500, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 500, hit_info ->
         assert hit_info.coma?
-        500
+        {500, :hit}
       end)
 
       reject(&MobSession.apply_damage/4)
@@ -516,7 +516,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       reject(&EquipComa.trigger?/2)
-      reject(&StatusInterpreter.absorb_damage/4)
+      reject(&StatusInterpreter.absorb_hit/4)
       reject(&MobSession.apply_coma/2)
       reject(&MobSession.apply_damage/4)
 
@@ -561,13 +561,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         true
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :player, 3001, 50, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :player, 3001, 50, hit_info ->
         assert hit_info.coma?
-        50
+        {50, :hit}
       end)
 
       reject(&PlayerSession.apply_damage/4)
-      expect(PlayerSession, :apply_coma, fn ^target_pid, {:player, 1001} -> :ok end)
+      expect(PlayerSession, :apply_coma, fn ^target_pid, {:player, 1001}, _metadata -> :ok end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
       capture_log(fn ->
@@ -625,9 +625,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 50, hit_info ->
         assert hit_info.coma?
-        0
+        {0, :hit}
       end)
 
       reject(&MobSession.apply_coma/2)
@@ -658,7 +658,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       reject(&EquipComa.trigger?/2)
-      reject(&StatusInterpreter.absorb_damage/4)
+      reject(&StatusInterpreter.absorb_hit/4)
       reject(&MobSession.apply_coma/2)
       reject(&MobSession.apply_damage/4)
 
@@ -772,9 +772,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         true
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :homunculus, 4001, 50, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :homunculus, 4001, 50, hit_info ->
         assert hit_info.coma?
-        50
+        {50, :hit}
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
@@ -899,7 +899,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       test_pid = self()
 
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 100, _hit_info -> 100 end)
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 100, _hit_info -> {100, :hit} end)
 
       stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id, _metadata ->
         send(test_pid, {:damage_applied, damage})
@@ -926,7 +926,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       test_pid = self()
 
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 100, _hit_info -> 0 end)
+      expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, 100, _hit_info -> {0, :hit} end)
       stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id, _metadata -> :ok end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
@@ -1921,9 +1921,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       reject(&EquipComa.trigger?/2)
       reject(&PlayerSession.apply_coma/2)
 
-      expect(StatusInterpreter, :absorb_damage, fn :player, 2001, 10, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :player, 2001, 10, hit_info ->
         send(test_pid, {:hit_info, hit_info})
-        3
+        {3, :hit}
       end)
 
       expect(PlayerSession, :apply_damage, fn _pid, damage, {:mob, 3001}, _metadata ->
@@ -1950,9 +1950,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     test "a ranged mob attack is marked long-range in hit_info" do
       test_pid = self()
 
-      expect(StatusInterpreter, :absorb_damage, fn :player, 2001, 10, hit_info ->
+      expect(StatusInterpreter, :absorb_hit, fn :player, 2001, 10, hit_info ->
         send(test_pid, {:hit_info, hit_info})
-        10
+        {10, :hit}
       end)
 
       stub(PlayerSession, :apply_damage, fn _pid, _damage, _attacker_id, _metadata -> :ok end)
@@ -2050,7 +2050,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _p -> :ok end)
-      stub(StatusInterpreter, :absorb_damage, fn :player, 2001, dmg, _hit_info -> dmg end)
+      stub(StatusInterpreter, :absorb_hit, fn :player, 2001, dmg, _hit_info -> {dmg, :hit} end)
       stub(PlayerSession, :apply_damage, fn _pid, _d, _a, _metadata -> :ok end)
 
       stub(DamageCalculator, :calculate_damage, fn _a, _d ->

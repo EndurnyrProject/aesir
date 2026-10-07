@@ -191,9 +191,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
 
     stub(StatusInterpreter, :before_weapon_hit, fn :mob, @emperium_unit_id, _info -> :continue end)
 
-    stub(StatusInterpreter, :absorb_damage, fn :mob, @emperium_unit_id, 40, hit_info ->
+    stub(StatusInterpreter, :absorb_hit, fn :mob, @emperium_unit_id, 40, hit_info ->
       refute hit_info.is_short
-      40
+      {40, :hit}
     end)
 
     stub(StatusInterpreter, :after_damage_taken, fn :mob, @emperium_unit_id, _hit_info -> 0 end)
@@ -238,8 +238,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
       %{}
     end)
 
-    stub(StatusInterpreter, :absorb_damage, fn :mob, @emperium_unit_id, damage, _hit_info ->
-      damage
+    stub(StatusInterpreter, :absorb_hit, fn :mob, @emperium_unit_id, damage, _hit_info ->
+      {damage, :hit}
     end)
 
     stub(StatusInterpreter, :after_damage_taken, fn :mob, @emperium_unit_id, _hit_info -> 0 end)
@@ -314,9 +314,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
       %{attack_element: :fire}
     end)
 
-    stub(StatusInterpreter, :absorb_damage, fn :mob, ^target_id, 40, hit_info ->
+    stub(StatusInterpreter, :absorb_hit, fn :mob, ^target_id, 40, hit_info ->
       assert hit_info.element == :fire
-      40
+      {40, :hit}
     end)
 
     stub(StatusInterpreter, :after_damage_taken, fn :mob, ^target_id, _hit_info -> 0 end)
@@ -356,9 +356,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
       %{attack_element: :fire}
     end)
 
-    stub(StatusInterpreter, :absorb_damage, fn :mob, ^target_id, 40, hit_info ->
+    stub(StatusInterpreter, :absorb_hit, fn :mob, ^target_id, 40, hit_info ->
       assert hit_info.element == :poison
-      40
+      {40, :hit}
     end)
 
     stub(StatusInterpreter, :after_damage_taken, fn :mob, ^target_id, _hit_info -> 0 end)

@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -69,7 +70,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   Updates current HP, pushes an SP_HP update to the client, persists the new
   HP and triggers death handling when HP reaches 0. Dead players ignore damage.
-  Active zero-damage notifications reach statuses without changing HP.
+  Active zero-damage notifications reach statuses without changing HP. A hit
+  carrying a `:proc_event` runs this player's when-hit equipment procs once its
+  HP changed, unless the hit killed them.
   """
   @spec apply_damage(integer(), Ref.t() | integer() | nil, SessionState.t()) ::
           {:noreply, SessionState.t()}
@@ -116,11 +119,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     if new_hp == 0 do
       handle_death(normalize_attacker(attacker_id), state)
     else
+      dispatch_when_hit(state, attacker_id, metadata)
       {:noreply, maybe_interrupt_cast(state, metadata)}
     end
   end
 
-  def apply_damage(0, _attacker_id, metadata, state) do
+  def apply_damage(0, attacker_id, metadata, state) do
     stats = state.game_state.stats
 
     StatusInterpreter.on_damage(
@@ -135,10 +139,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       })
     )
 
+    dispatch_when_hit(state, attacker_id, metadata)
     {:noreply, maybe_interrupt_cast(state, metadata)}
   end
 
   def apply_damage(_damage, _attacker_id, _metadata, state), do: {:noreply, state}
+
+  defp dispatch_when_hit(%{game_state: game_state}, attacker, %{proc_event: event}) do
+    wearer = %{
+      unit_id: game_state.character_id,
+      equip_modifiers: game_state.stats.modifiers.equipment,
+      equip_autobonuses: game_state.stats.equip_autobonuses
+    }
+
+    EquipProcDispatch.when_hit(wearer, normalize_attacker(attacker), event)
+  end
+
+  defp dispatch_when_hit(_state, _attacker, _metadata), do: :ok
 
   defp maybe_interrupt_cast(state, metadata) do
     if Map.get(metadata, :passive?, false) or Map.get(metadata, :status_tick?, false),
@@ -179,19 +196,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   @doc "Leaves a living player at exactly 1 HP and 1 SP."
   @spec apply_coma(Ref.t() | integer() | nil, SessionState.t()) ::
           {:noreply, SessionState.t()}
-  def apply_coma(_source, %{game_state: %{action_state: :dead}} = state), do: {:noreply, state}
+  def apply_coma(source, state), do: apply_coma(source, %{}, state)
 
-  def apply_coma(_source, %{game_state: %{stats: %{current_state: %{hp: hp}}}} = state)
+  @doc """
+  Applies a coma hit with its prepared metadata: 1 HP and 1 SP, then the hit's
+  when-hit equipment procs, which a coma never prevents.
+  """
+  @spec apply_coma(Ref.t() | integer() | nil, map(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def apply_coma(_source, _metadata, %{game_state: %{action_state: :dead}} = state),
+    do: {:noreply, state}
+
+  def apply_coma(_source, _metadata, %{game_state: %{stats: %{current_state: %{hp: hp}}}} = state)
       when hp <= 0,
       do: {:noreply, state}
 
-  def apply_coma(source, state) do
+  def apply_coma(source, metadata, state) do
     hp_damage = max(current_hp(state) - 1, 0)
 
     {:noreply, state} =
       if hp_damage > 0, do: apply_damage(hp_damage, source, state), else: {:noreply, state}
 
-    if current_sp(state) == 1, do: {:noreply, state}, else: {:noreply, put_sp(state, 1)}
+    state = if current_sp(state) == 1, do: state, else: put_sp(state, 1)
+    dispatch_when_hit(state, source, metadata)
+    {:noreply, state}
   end
 
   @doc "Applies nonlethal equipment vanish from max-HP/SP percentages."

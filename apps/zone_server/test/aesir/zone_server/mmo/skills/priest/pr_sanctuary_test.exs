@@ -402,7 +402,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     stub(Cell, :step_traversable?, fn "prontera", _from, _to -> true end)
 
     # Delivery skips absorption for the Holy target's 0 damage.
-    expect(StatusInterpreter, :absorb_damage, 2, fn :mob, id, damage, hit_info ->
+    expect(StatusInterpreter, :absorb_hit, 2, fn :mob, id, damage, hit_info ->
       assert id in [2_001, 2_002]
 
       assert %{
@@ -413,7 +413,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
                from_caster?: false
              } = hit_info
 
-      damage
+      {damage, :hit}
     end)
 
     reject(&EquipVanish.after_hit/4)

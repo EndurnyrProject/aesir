@@ -269,7 +269,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     end)
 
     reject(&DamageCalculator.calculate_secondary_hand_damage/3)
-    stub(StatusInterpreter, :absorb_damage, fn :mob, @target_id, damage, _info -> damage end)
+    stub(StatusInterpreter, :absorb_hit, fn :mob, @target_id, damage, _info -> {damage, :hit} end)
 
     expect(Broadcast, :to_in_range, fn _, _, _, _, %SkillDamage{} = packet ->
       send(test_pid, {:packet, packet})

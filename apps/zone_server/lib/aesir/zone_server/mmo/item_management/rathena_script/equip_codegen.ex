@@ -547,8 +547,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
         compile_flagged_bonus(key, first_ast, second_ast, third_ast, env)
 
       match?({:ok, _trigger}, BonusKeys.auto_cast_trigger(key)) ->
-        # `bonus3 bAutoSpell,sk,lv,rate` - no flag argument at all.
-        compile_auto_cast(key, first_ast, second_ast, third_ast, {:int, 0}, {:int, 0}, env)
+        # `bonus3 bAutoSpell,sk,lv,rate` - no flag or force argument at all.
+        compile_auto_cast(key, first_ast, second_ast, third_ast, {:int, 0}, :implicit, env)
 
       match?({:ok, _family}, BonusKeys.on_skill_status_family(key)) ->
         compile_on_skill_status(key, first_ast, second_ast, third_ast, env)
@@ -568,7 +568,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
       # `bonus4 bAutoSpellOnSkill,src,sk,lv,rate` - the leading argument names
       # the skill whose use triggers the proc, so the rest shifts along.
       {:ok, :on_skill} ->
-        compile_auto_cast_on_skill(key, skill_ast, level_ast, rate_ast, force_ast, {:int, 0}, env)
+        compile_auto_cast_on_skill(key, skill_ast, level_ast, rate_ast, force_ast, :implicit, env)
 
       {:ok, _trigger} ->
         compile_auto_cast(key, skill_ast, level_ast, rate_ast, {:int, 0}, force_ast, env)
@@ -883,14 +883,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     with {:ok, trigger} <- auto_cast_trigger(key),
          {:ok, skill_id} <- resolve_skill_ref(skill_ast),
          {:ok, flag} <- resolve_auto_cast_flag(flag_ast),
-         {:ok, force} <- auto_cast_force(force_ast),
+         {:ok, force} <- auto_cast_force(force_ast, trigger, skill_id),
          {:ok, level_expr} <- compile_expr(level_ast, env),
          {:ok, rate_expr} <- compile_expr(rate_ast, env) do
       spec = %{
         trigger: trigger,
         skill_id: skill_id,
         flag:
-          BattleFlags.fill_battle(Bitwise.bor(flag, BonusKeys.auto_cast_preset_flag(trigger))),
+          BattleFlags.fill_autospell(Bitwise.bor(flag, BonusKeys.auto_cast_preset_flag(trigger))),
         force: force
       }
 
@@ -949,7 +949,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     with {:ok, trigger} <- auto_cast_trigger(key),
          {:ok, trigger_skill} <- resolve_skill_ref(trigger_skill_ast),
          {:ok, skill_id} <- resolve_skill_ref(skill_ast),
-         {:ok, force} <- auto_cast_force(force_ast),
+         {:ok, force} <- auto_cast_force(force_ast, trigger, skill_id),
          {:ok, level_expr} <- compile_expr(level_ast, env),
          {:ok, rate_expr} <- compile_expr(rate_ast, env) do
       spec = %{
@@ -981,10 +981,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp resolve_auto_cast_flag(ast), do: resolve_flag(:battle, ast)
 
   # The force argument is a plain bitmask literal in the corpus rather than a
-  # named constant, so a non-negative literal is the whole vocabulary.
-  @spec auto_cast_force(term()) :: {:ok, non_neg_integer()} | {:error, {:unsupported, detail()}}
-  defp auto_cast_force({:int, force}) when force >= 0, do: {:ok, force}
-  defp auto_cast_force(other), do: unsupported({:unresolved_param, other})
+  # named constant, so a non-negative literal is the whole vocabulary; only its
+  # target and random-level bits are kept. The forms without one derive the
+  # target bit from the cast skill: a support or self skill stays on the
+  # wearer. On-skill procs read the target bit inverted (set = the wearer).
+  @target_force 1
+  @force_bits 3
+
+  @spec auto_cast_force(term(), :attack | :when_hit | :on_skill, integer()) ::
+          {:ok, non_neg_integer()} | {:error, {:unsupported, detail()}}
+  defp auto_cast_force({:int, force}, _trigger, _skill_id) when force >= 0,
+    do: {:ok, Bitwise.band(force, @force_bits)}
+
+  defp auto_cast_force(:implicit, :on_skill, skill_id),
+    do: {:ok, if(Resolver.self_cast_skill?(skill_id), do: @target_force, else: 0)}
+
+  defp auto_cast_force(:implicit, _trigger, skill_id),
+    do: {:ok, if(Resolver.self_cast_skill?(skill_id), do: 0, else: @target_force)}
+
+  defp auto_cast_force(other, _trigger, _skill_id), do: unsupported({:unresolved_param, other})
 
   # A flag-param key carries its param in the lone `bonus` argument and a fixed
   # amount in its schema, so it resolves the param exactly like a `bonus2` key

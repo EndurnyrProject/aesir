@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
   @moduledoc """
-  Tests for equipment-granted autocast procs.
+  Tests for equipment-granted autocast selection and the wearer-side resolution
+  order of each proc branch.
   """
 
   use ExUnit.Case, async: true
@@ -14,12 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
 
   defp with_mods(combatant, mods), do: %{combatant | equip_modifiers: mods}
 
-  defp always_hit(_effective), do: true
-  defp never_hit(_effective), do: false
-
   # The default arming of `bonus3 bAutoSpell`: a weapon proc, either range,
-  # normal swings and skills alike.
-  defp default_flag, do: BattleFlags.fill_battle(0)
+  # normal swings only.
+  defp default_flag, do: BattleFlags.fill_autospell(0)
 
   defp entry(opts) do
     trigger = Keyword.get(opts, :trigger, :attack)
@@ -32,114 +30,105 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
 
   defp melee_swing, do: BattleFlags.build(:weapon, :short, false)
 
+  defp attacker_with(entries) do
+    CombatTestHelper.create_player_combatant(unit_id: 1001) |> with_mods(Map.new(entries))
+  end
+
+  defp defender, do: CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
   describe "on_attack/4" do
-    test "a matching proc casts the armed skill at the target" do
-      attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
-        |> with_mods(Map.new([entry([])]))
-
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
-
-      assert [{:auto_cast, @cold_bolt, 3, {:unit, 2001}}] =
-               EquipAutocast.on_attack(attacker, defender, melee_swing(), roll: &always_hit/1)
+    test "a matching proc is a candidate cast at the target" do
+      assert [
+               %{
+                 branch: :attack,
+                 skill_id: @cold_bolt,
+                 level: 3,
+                 random_level?: false,
+                 rate: 1_000,
+                 target: {:unit, 2001}
+               }
+             ] =
+               EquipAutocast.on_attack(
+                 attacker_with([entry([])]),
+                 defender(),
+                 melee_swing(),
+                 false
+               )
     end
 
     test "without the target bit the proc casts on the wearer" do
-      attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
-        |> with_mods(Map.new([entry(force: AutospellForceFlag.id(:self))]))
+      attacker = attacker_with([entry(force: AutospellForceFlag.id(:self))])
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      assert [%{target: :self}] =
+               EquipAutocast.on_attack(attacker, defender(), melee_swing(), false)
+    end
 
-      assert [{:auto_cast, @cold_bolt, 3, :self}] =
-               EquipAutocast.on_attack(attacker, defender, melee_swing(), roll: &always_hit/1)
+    test "the default arming fires on normal swings but not on weapon skills" do
+      attacker = attacker_with([entry([])])
+
+      assert [] =
+               EquipAutocast.on_attack(
+                 attacker,
+                 defender(),
+                 BattleFlags.build(:weapon, :short, true),
+                 false
+               )
     end
 
     test "a proc armed for magic never fires on a weapon swing" do
-      magic_flag = BattleFlags.fill_battle(BattleFlags.type_bit(:magic))
-
       attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
-        |> with_mods(Map.new([entry(flag: magic_flag)]))
+        attacker_with([entry(flag: BattleFlags.fill_autospell(BattleFlags.type_bit(:magic)))])
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
-
-      assert [] =
-               EquipAutocast.on_attack(attacker, defender, melee_swing(), roll: &always_hit/1)
+      assert [] = EquipAutocast.on_attack(attacker, defender(), melee_swing(), false)
 
       assert [_proc] =
                EquipAutocast.on_attack(
                  attacker,
-                 defender,
+                 defender(),
                  BattleFlags.build(:magic, :long, true),
-                 roll: &always_hit/1
+                 false
                )
     end
 
-    test "a failed roll casts nothing" do
-      attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
-        |> with_mods(Map.new([entry([])]))
+    test "the armed chance is capped and halved by an arrow attack" do
+      attacker = attacker_with([entry(rate: 4_000)])
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+      assert [%{rate: 1_000}] =
+               EquipAutocast.on_attack(attacker, defender(), melee_swing(), false)
 
-      assert [] = EquipAutocast.on_attack(attacker, defender, melee_swing(), roll: &never_hit/1)
+      assert [%{rate: 500}] = EquipAutocast.on_attack(attacker, defender(), melee_swing(), true)
     end
 
-    test "the roll sees the armed per-mille chance, capped" do
-      parent = self()
+    test "a ranged weapon swing without the arrow-attack state keeps the full chance" do
+      attacker = attacker_with([entry(rate: 600)])
+      ranged = BattleFlags.build(:weapon, :long, false)
 
-      attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
-        |> with_mods(Map.new([entry(rate: 4_000)]))
-
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
-
-      roll = fn effective ->
-        send(parent, {:rolled, effective})
-        false
-      end
-
-      EquipAutocast.on_attack(attacker, defender, melee_swing(), roll: roll)
-
-      assert_received {:rolled, 1_000}
+      assert [%{rate: 600}] = EquipAutocast.on_attack(attacker, defender(), ranged, false)
     end
 
-    test "the random-level bit rolls the cast level" do
+    test "the random-level bit is carried for the wearer to roll" do
       force = Bitwise.bor(AutospellForceFlag.id(:target), AutospellForceFlag.id(:random_level))
+      attacker = attacker_with([entry(level: 10, force: force)])
 
-      attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
-        |> with_mods(Map.new([entry(level: 10, force: force)]))
-
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
-
-      assert [{:auto_cast, @cold_bolt, 4, _target}] =
-               EquipAutocast.on_attack(attacker, defender, melee_swing(),
-                 roll: &always_hit/1,
-                 level_roll: fn 10 -> 4 end
-               )
+      assert [%{level: 10, random_level?: true}] =
+               EquipAutocast.on_attack(attacker, defender(), melee_swing(), false)
     end
 
     test "a mob attacker carries no equipment and procs nothing" do
       mob = CombatTestHelper.create_mob_combatant(unit_id: 3001)
       player = CombatTestHelper.create_player_combatant(unit_id: 1001)
 
-      assert [] = EquipAutocast.on_attack(mob, player, melee_swing(), roll: &always_hit/1)
+      assert [] = EquipAutocast.on_attack(mob, player, melee_swing(), false)
     end
 
     test "when-hit entries never fire on the attack trigger" do
-      attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
-        |> with_mods(Map.new([entry(trigger: :when_hit)]))
+      attacker = attacker_with([entry(trigger: :when_hit)])
 
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
-
-      assert [] = EquipAutocast.on_attack(attacker, defender, melee_swing(), roll: &always_hit/1)
+      assert [] = EquipAutocast.on_attack(attacker, defender(), melee_swing(), false)
     end
   end
 
-  describe "on_skill/4" do
+  describe "on_skill/3" do
     defp on_skill_entry(opts) do
       trigger_skill = Keyword.get(opts, :trigger_skill, 42)
       force = Keyword.get(opts, :force, 0)
@@ -151,85 +140,61 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
       }
     end
 
-    test "a proc fires on its trigger skill and sends the cast at the skill's target" do
+    test "a proc on its trigger skill is a candidate at the skill's target" do
       mods = on_skill_entry([])
 
-      assert [{:auto_cast, @cold_bolt, 2, {:unit, 2001}}] =
-               EquipAutocast.on_skill(mods, 42, {:unit, 2001}, roll: &always_hit/1)
+      assert [
+               %{
+                 branch: :skill,
+                 skill_id: @cold_bolt,
+                 level: 2,
+                 target: {:unit, 2001},
+                 entry: {:auto_cast_on_skill, {42, @cold_bolt, 2, 0}}
+               }
+             ] = EquipAutocast.on_skill(mods, 42, {:unit, 2001})
     end
 
     test "another skill fires nothing" do
-      mods = on_skill_entry([])
-
-      assert [] = EquipAutocast.on_skill(mods, 99, {:unit, 2001}, roll: &always_hit/1)
+      assert [] = EquipAutocast.on_skill(on_skill_entry([]), 99, {:unit, 2001})
     end
 
     # The target bit reads inverted here: it keeps the proc on the caster.
     test "the target bit keeps the proc on the caster" do
       mods = on_skill_entry(force: AutospellForceFlag.id(:target))
 
-      assert [{:auto_cast, @cold_bolt, 2, :self}] =
-               EquipAutocast.on_skill(mods, 42, {:unit, 2001}, roll: &always_hit/1)
+      assert [%{target: :self}] = EquipAutocast.on_skill(mods, 42, {:unit, 2001})
     end
 
-    test "a cast with no unit target fires only the procs that stay on the caster" do
-      outgoing = on_skill_entry([])
-      self_bound = on_skill_entry(force: AutospellForceFlag.id(:target))
-
-      assert [] = EquipAutocast.on_skill(outgoing, 42, nil, roll: &always_hit/1)
-
-      assert [{:auto_cast, @cold_bolt, 2, :self}] =
-               EquipAutocast.on_skill(self_bound, 42, nil, roll: &always_hit/1)
+    test "a cast with no unit target leaves an outgoing proc without a target" do
+      assert [%{target: nil}] = EquipAutocast.on_skill(on_skill_entry([]), 42, nil)
     end
 
-    test "a failed roll casts nothing" do
-      mods = on_skill_entry([])
-
-      assert [] = EquipAutocast.on_skill(mods, 42, {:unit, 2001}, roll: &never_hit/1)
-    end
-
-    test "attack-trigger entries are never rolled here" do
-      mods = Map.new([entry(trigger: :attack)])
-
-      assert [] = EquipAutocast.on_skill(mods, 42, {:unit, 2001}, roll: &always_hit/1)
+    test "attack-trigger entries are never selected here" do
+      assert [] = EquipAutocast.on_skill(Map.new([entry(trigger: :attack)]), 42, {:unit, 2001})
     end
   end
 
-  describe "when_hit/4" do
+  describe "when_hit/3" do
     test "the defender's proc targets the attacker" do
       defender =
         CombatTestHelper.create_player_combatant(unit_id: 2001)
-        |> with_mods(Map.new([entry(trigger: :when_hit)]))
+        |> with_mods(Map.new([entry(trigger: :when_hit, flag: BattleFlags.fill_battle(0))]))
 
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 1001)
-
-      assert [{:auto_cast, @cold_bolt, 3, {:unit, 1001}}] =
-               EquipAutocast.when_hit(defender, attacker, melee_swing(), roll: &always_hit/1)
+      assert [%{branch: :counter, skill_id: @cold_bolt, level: 3, target: {:unit, 1001}}] =
+               EquipAutocast.when_hit(defender, 1001, melee_swing())
     end
 
     test "long-range weapon damage halves the chance" do
-      parent = self()
-
       defender =
         CombatTestHelper.create_player_combatant(unit_id: 2001)
-        |> with_mods(Map.new([entry(trigger: :when_hit, rate: 600)]))
+        |> with_mods(
+          Map.new([entry(trigger: :when_hit, rate: 600, flag: BattleFlags.fill_battle(0))])
+        )
 
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 1001)
+      assert [%{rate: 300}] =
+               EquipAutocast.when_hit(defender, 1001, BattleFlags.build(:weapon, :long, false))
 
-      roll = fn effective ->
-        send(parent, {:rolled, effective})
-        false
-      end
-
-      EquipAutocast.when_hit(defender, attacker, BattleFlags.build(:weapon, :long, false),
-        roll: roll
-      )
-
-      assert_received {:rolled, 300}
-
-      EquipAutocast.when_hit(defender, attacker, melee_swing(), roll: roll)
-
-      assert_received {:rolled, 600}
+      assert [%{rate: 600}] = EquipAutocast.when_hit(defender, 1001, melee_swing())
     end
 
     test "attack entries never fire on the when-hit trigger" do
@@ -237,9 +202,99 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
         CombatTestHelper.create_player_combatant(unit_id: 2001)
         |> with_mods(Map.new([entry(trigger: :attack)]))
 
-      attacker = CombatTestHelper.create_mob_combatant(unit_id: 1001)
+      assert [] = EquipAutocast.when_hit(defender, 1001, melee_swing())
+    end
+  end
 
-      assert [] = EquipAutocast.when_hit(defender, attacker, melee_swing(), roll: &always_hit/1)
+  describe "resolve/3" do
+    defp candidate(branch, overrides \\ []) do
+      Map.merge(
+        %{
+          branch: branch,
+          skill_id: @cold_bolt,
+          level: 5,
+          random_level?: true,
+          rate: 300,
+          target: {:unit, 2001},
+          entry: :entry
+        },
+        Map.new(overrides)
+      )
+    end
+
+    defp recorder do
+      parent = self()
+
+      [
+        usable: fn skill_id ->
+          send(parent, {:step, :usable, skill_id})
+          :ok
+        end,
+        roll: fn rate ->
+          send(parent, {:step, :roll, rate})
+          true
+        end,
+        level_roll: fn level ->
+          send(parent, {:step, :level, level})
+          2
+        end
+      ]
+    end
+
+    defp steps do
+      receive_steps([])
+    end
+
+    defp receive_steps(acc) do
+      receive do
+        {:step, step, _value} -> receive_steps([step | acc])
+      after
+        0 -> Enum.reverse(acc)
+      end
+    end
+
+    test "an attack proc checks usability, then draws its level, then rolls" do
+      assert {:cast, 2} = EquipAutocast.resolve(candidate(:attack), recorder())
+      assert steps() == [:usable, :level, :roll]
+    end
+
+    test "a counter proc draws its level before the usability check" do
+      assert {:cast, 2} = EquipAutocast.resolve(candidate(:counter), recorder())
+      assert steps() == [:level, :usable, :roll]
+    end
+
+    test "an on-skill proc checks usability, rolls, then draws its level" do
+      assert {:cast, 2} = EquipAutocast.resolve(candidate(:skill), recorder())
+      assert steps() == [:usable, :roll, :level]
+    end
+
+    test "an unusable proc reports why and never rolls its chance" do
+      opts = Keyword.put(recorder(), :usable, fn _skill_id -> {:error, :cooldown} end)
+
+      assert {:unusable, :cooldown} = EquipAutocast.resolve(candidate(:attack), opts)
+      assert steps() == []
+    end
+
+    test "an on-skill proc without a target stops after the usability check" do
+      assert :skip = EquipAutocast.resolve(candidate(:skill, target: nil), recorder())
+      assert steps() == [:usable]
+    end
+
+    test "a failed roll casts nothing and a fixed level is kept" do
+      opts = Keyword.put(recorder(), :roll, fn _rate -> false end)
+
+      assert :skip = EquipAutocast.resolve(candidate(:attack), opts)
+
+      assert {:cast, 5} =
+               EquipAutocast.resolve(candidate(:attack, random_level?: false), recorder())
+    end
+
+    test "the default roll never fires a non-positive chance" do
+      opts = Keyword.delete(recorder(), :roll)
+
+      assert :skip = EquipAutocast.resolve(candidate(:attack, rate: 0), opts)
+      assert :skip = EquipAutocast.resolve(candidate(:attack, rate: -50), opts)
+      assert {:cast, _level} = EquipAutocast.resolve(candidate(:attack, rate: 1_000), opts)
     end
   end
 end

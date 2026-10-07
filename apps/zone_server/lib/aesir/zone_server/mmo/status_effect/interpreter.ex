@@ -572,14 +572,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   an exactly-once claim, so concurrent hits double at most once.
   """
   @spec absorb_damage(unit_type(), integer(), integer(), map()) :: integer()
-  def absorb_damage(_unit_type, _unit_id, 0, _hit_info), do: 0
+  def absorb_damage(unit_type, unit_id, damage, hit_info),
+    do: unit_type |> absorb_hit(unit_id, damage, hit_info) |> elem(0)
 
-  def absorb_damage(unit_type, unit_id, damage, hit_info) do
+  @doc """
+  Like `absorb_damage/4`, also classifying the hit: `:block` when Safety Wall,
+  Pneuma or Basilica stopped it, `:hit` otherwise. A hit Kyrie Eleison or the
+  common stages reduced to nothing still connected.
+  """
+  @spec absorb_hit(unit_type(), integer(), integer(), map()) :: {integer(), :hit | :block}
+  def absorb_hit(_unit_type, _unit_id, 0, _hit_info), do: {0, :hit}
+
+  def absorb_hit(unit_type, unit_id, damage, hit_info) do
     held = Map.new(StatusStorage.get_unit_statuses(unit_type, unit_id), &{&1.type, &1})
     run = &dispatch_absorb(unit_type, unit_id, Map.get(held, &1), &2, hit_info)
 
-    damage
-    |> attack_stages(Map.get(hit_info, :status_tick?, false), run)
+    attack_stages(damage, Map.get(hit_info, :status_tick?, false), run)
   end
 
   @doc "Intercepts a same-source magic skill hit after ordinary reductions and blockers."
@@ -595,19 +603,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @spec absorb_stages() :: [atom()]
   def absorb_stages, do: @common_stage ++ @block_stage
 
-  defp attack_stages(damage, true, _run), do: damage
+  defp attack_stages(damage, true, _run), do: {damage, :hit}
 
   defp attack_stages(damage, false, run) do
     case Enum.reduce(@common_stage, damage, run) do
-      0 -> 0
-      remaining -> Enum.reduce_while(@block_stage, remaining, &block_step(&1, &2, run))
+      0 -> {0, :hit}
+      remaining -> Enum.reduce_while(@block_stage, {remaining, :hit}, &block_step(&1, &2, run))
     end
   end
 
-  defp block_step(status_id, damage, run) do
+  defp block_step(status_id, {damage, class}, run) do
     case run.(status_id, damage) do
-      0 -> {:halt, 0}
-      left -> {:cont, left}
+      0 when status_id == :sc_kyrie -> {:halt, {0, :hit}}
+      0 -> {:halt, {0, :block}}
+      left -> {:cont, {left, class}}
     end
   end
 

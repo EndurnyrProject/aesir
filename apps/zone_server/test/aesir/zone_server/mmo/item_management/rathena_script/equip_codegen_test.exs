@@ -889,11 +889,47 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:auto_cast, spec, 3, 100}]} =
                compile(~S|bonus3 bAutoSpell,"MG_COLDBOLT",3,100;|)
 
-      assert %{trigger: :attack, skill_id: skill_id, force: 0} = spec
+      # An attack skill casts at the other party (the target force bit).
+      assert %{trigger: :attack, skill_id: skill_id, force: 1} = spec
       assert skill_id == skill_id!(:mg_coldbolt)
 
-      # No flag argument: a weapon proc, either range, normal swings and skills.
-      assert spec.flag == battle_flag(~w(weapon short long normal skill))
+      # No flag argument: a weapon proc, either range, normal swings only.
+      assert spec.flag == battle_flag(~w(weapon short long normal))
+    end
+
+    test "bonus3 autocasts of support and self skills stay on the wearer" do
+      assert {:ok, [{:auto_cast, %{force: 0}, 1, 10}]} =
+               compile(~S|bonus3 bAutoSpell,"AL_INCAGI",1,10;|)
+
+      assert {:ok, [{:auto_cast, %{force: 0}, 1, 10}]} =
+               compile(~S|bonus3 bAutoSpell,"LK_CONCENTRATION",1,10;|)
+    end
+
+    test "the source skill database decides the bonus3 force over the runtime catalog" do
+      dispell = skill_id!(:sa_dispell)
+      incagi = skill_id!(:al_incagi)
+
+      catalogs =
+        Resolver.source_catalogs([], [], [
+          %{"Id" => dispell, "TargetType" => "Attack", "Flags" => %{"NoTargetSelf" => true}},
+          %{"Id" => incagi, "TargetType" => "Support", "Flags" => %{"NoTargetSelf" => true}}
+        ])
+
+      compile = &Resolver.with_source_catalogs(catalogs, fn -> compile(&1) end)
+
+      assert {:ok, [{:auto_cast, %{force: 1}, 1, 10}]} =
+               compile.(~S|bonus3 bAutoSpellWhenHit,"SA_DISPELL",1,10;|)
+
+      assert {:ok, [{:auto_cast, %{force: 0}, 1, 10}]} =
+               compile.(~S|bonus3 bAutoSpell,"AL_INCAGI",1,10;|)
+    end
+
+    test "the four-argument on-skill form keeps support skills on the caster" do
+      assert {:ok, [{:auto_cast, %{trigger: :on_skill, force: 1}, 1, 50}]} =
+               compile(~S|bonus4 bAutoSpellOnSkill,"AL_HEAL","AL_INCAGI",1,50;|)
+
+      assert {:ok, [{:auto_cast, %{trigger: :on_skill, force: 0}, 1, 50}]} =
+               compile(~S|bonus4 bAutoSpellOnSkill,"AL_HEAL","MG_COLDBOLT",1,50;|)
     end
 
     test "bonus3 bAutoSpellWhenHit arms the when-hit trigger" do

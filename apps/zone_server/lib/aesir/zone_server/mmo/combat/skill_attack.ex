@@ -35,15 +35,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
-  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
-  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
-  alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
@@ -53,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
@@ -64,7 +63,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Ref
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @palm_strike_id 370
 
@@ -429,7 +427,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           skill_id,
           skill_level,
           damage_result,
-          %{divisions: divisions, element: element, ranged?: ranged?, coma?: coma?}
+          %{
+            divisions: divisions,
+            element: element,
+            ranged?: ranged?,
+            coma?: coma?,
+            target_state: target_state,
+            delivery: :direct
+          }
         )
 
       hit = %{hit?: true, damage: damage, divisions: divisions}
@@ -521,7 +526,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
         ignore_flee: Keyword.get(opts, :ignore_flee, false),
         ranged: ranged?,
-        weapon_hit_metadata: weapon_hit_metadata
+        weapon_hit_metadata: weapon_hit_metadata,
+        target_state: target_state,
+        delivery: Keyword.get(opts, :delivery, :direct)
       }
 
       {hit, coma?} =
@@ -882,7 +889,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_rate_bonus_flat: Map.get(result_opts, :hit_rate_bonus_flat, 0),
         ignore_flee: ignore_flee?,
         ranged: ranged?,
-        weapon_hit_metadata: %{}
+        weapon_hit_metadata: %{},
+        target_state: target_state,
+        delivery: Map.get(result_opts, :delivery, :direct)
       }
 
       calc_opts = resolve_distance_ratio(calc_opts, result_opts, target_state)
@@ -1177,6 +1186,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       {damage, divisions} = DamageShared.normalize_damage_divisions(damage, hit_divisions)
       coma? = decide_coma(attacker, target, damage)
 
+      attack_flag = BattleFlags.build(:misc, :long, true)
+
       hit_info = %{
         dmg_type: :misc,
         is_short: false,
@@ -1184,11 +1195,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_id: skill_id,
         skill_level: skill_level,
         coma?: coma?,
-        bypass_reductions: Map.get(misc_opts, :bypass_reductions?, false)
+        bypass_reductions: Map.get(misc_opts, :bypass_reductions?, false),
+        proc:
+          EquipProcDispatch.spec(attacker, target, target_state, attack_flag,
+            divisions: divisions,
+            skill_id: skill_id,
+            immediate?: EquipProcDispatch.immediate?(skill_id, misc_opts.delivery)
+          )
       }
 
       source = damage_source(attacker, target_type)
-      attack_flag = BattleFlags.build(:misc, :long, true)
 
       if damage > 1 do
         EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
@@ -1237,9 +1253,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         misc_opts.knockback_options
       )
 
-      if delivery == :ok do
-        dispatch_equip_autobonuses(attacker, target, attack_flag)
-      end
+      EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
 
       if delivery == :ok and Map.get(misc_opts, :report_hit?, false),
         do: {:ok, Map.put(result, :damage, damage)},
@@ -1532,7 +1546,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             skill_id,
             skill_level,
             damage_result,
-            %{divisions: divisions, element: element, ranged?: long?, coma?: coma?}
+            %{
+              divisions: divisions,
+              element: element,
+              ranged?: long?,
+              coma?: coma?,
+              target_state: Map.get(hit_opts, :target_state),
+              delivery: Map.get(hit_opts, :delivery, :direct)
+            }
           )
 
         {%{hit?: true, damage: damage, divisions: divisions}, coma?}
@@ -1577,6 +1598,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          hit_metadata
        ) do
     %{divisions: divisions, element: element, ranged?: ranged?, coma?: coma?} = hit_metadata
+    immediate? = EquipProcDispatch.immediate?(skill_id, hit_metadata.delivery)
+    attack_flag = BattleFlags.build(:weapon, if(ranged?, do: :long, else: :short), true)
 
     hit_info = %{
       dmg_type: :physical,
@@ -1584,11 +1607,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       element: element,
       skill_id: skill_id,
       skill_level: skill_level,
-      coma?: coma?
+      coma?: coma?,
+      proc:
+        EquipProcDispatch.spec(attacker, target, hit_metadata.target_state, attack_flag,
+          divisions: divisions,
+          skill_id: skill_id,
+          immediate?: immediate?,
+          arrow_attack?: immediate? and arrow_skill?(attacker, skill_id, hit_metadata.delivery)
+        )
     }
 
     source = damage_source(attacker, target_type)
-    attack_flag = physical_skill_flag(hit_info)
 
     if damage_result.damage > 1 do
       EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
@@ -1615,82 +1644,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
     DamageApplication.broadcast_nearby(target, packet)
 
-    DamageApplication.apply_unit_damage(
-      target_type,
-      target_pid,
-      target.unit_id,
-      damage,
-      hit_info,
-      source
-    )
+    delivery =
+      DamageApplication.apply_unit_damage(
+        target_type,
+        target_pid,
+        target.unit_id,
+        damage,
+        hit_info,
+        source
+      )
 
     OnHitEffects.after_hit(attacker, target, damage_result,
       attack_flag: attack_flag,
       skill_id: skill_id
     )
 
-    dispatch_equip_autocasts(attacker, target, target_pid, attack_flag)
-
+    EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
     damage
   end
 
-  # Rolls both sides' equipment autocasts for a landed skill hit: the caster's
-  # own procs run in the caster's session, the target's when-hit procs in the
-  # target's. Entries armed for normal swings only never match here.
-  @spec dispatch_equip_autocasts(Combatant.t(), Combatant.t(), pid() | nil, BattleFlags.flag()) ::
-          :ok
-  defp dispatch_equip_autocasts(attacker, target, target_pid, attack_flag) do
-    attacker
-    |> EquipAutocast.on_attack(target, attack_flag)
-    |> Enum.each(&send_auto_cast(self(), &1))
+  # The arrow-attack state holds only while a player's arrow skill resolves its
+  # own cast: an arrow skill's immediate hits from the caster itself.
+  defp arrow_skill?(%{unit_type: :player}, skill_id, delivery) when delivery != :unit,
+    do: match?({:ok, %{requires_ammo: true}}, Catalog.by_id(skill_id))
 
-    target
-    |> EquipAutocast.when_hit(attacker, attack_flag)
-    |> Enum.each(&send_auto_cast(target_pid, &1))
-
-    dispatch_equip_autobonuses(attacker, target, attack_flag)
-  end
-
-  defp dispatch_equip_autobonuses(attacker, target, attack_flag) do
-    send_equip_autobonuses(
-      attacker,
-      EquipAutobonus.on_attack(attacker.equip_autobonuses, attack_flag)
-    )
-
-    send_equip_autobonuses(
-      target,
-      EquipAutobonus.when_hit(target.equip_autobonuses, attack_flag)
-    )
-  end
-
-  defp send_equip_autobonuses(
-         %{unit_type: :player, unit_id: unit_id, equip_autobonuses: registrations},
-         [_ | _] = keys
-       ) do
-    with {:ok, pid} <- UnitRegistry.get_player_pid(unit_id) do
-      Enum.each(keys, fn key ->
-        source_identity = registrations |> Map.fetch!(key) |> Map.fetch!(:source_identity)
-        GenServer.cast(pid, {:equipment, {:autobonus_activate, key, source_identity}})
-      end)
-    end
-
-    :ok
-  end
-
-  defp send_equip_autobonuses(_combatant, _keys), do: :ok
-
-  @spec send_auto_cast(pid(), EquipAutocast.proc()) :: :ok
-  defp send_auto_cast(pid, {:auto_cast, skill_id, level, target}) do
-    GenServer.cast(pid, {:skill, {:proc_cast, skill_id, level, target}})
-  end
-
-  # Classifies a physical skill hit for the trigger-flagged equipment bonuses:
-  # a weapon attack of skill origin, melee or ranged as the delivered hit was.
-  @spec physical_skill_flag(map()) :: BattleFlags.flag()
-  defp physical_skill_flag(hit_info) do
-    range = if Map.get(hit_info, :is_short, false), do: :short, else: :long
-    BattleFlags.build(:weapon, range, true)
-  end
+  defp arrow_skill?(_attacker, _skill_id, _delivery), do: false
 
   defp damage_calculation({calc_opts, damage_calculator}),
     do: {calc_opts, damage_calculator}

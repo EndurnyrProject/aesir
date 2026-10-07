@@ -1,14 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutobonus do
   @moduledoc """
   Pure matching for equipment autobonus registrations.
+
+  Each registration whose trigger matches rolls its chance once: a draw from 0
+  to 1000 inclusive below the registered rate, so a rate of `n` succeeds with
+  probability `n/1001` and a rate above 1000 always does. Rates are not capped
+  at 1000.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  @roll_ceiling 1_000
+  @draw_values 1_001
 
-  @type roll_fun :: (non_neg_integer() -> boolean())
+  @type roll_fun :: (pos_integer() -> boolean())
 
   @spec on_attack(
           %{Stats.autobonus_key() => Stats.autobonus_registration()},
@@ -83,14 +88,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutobonus do
   end
 
   @spec successful_roll?(integer(), roll_fun()) :: boolean()
-  defp successful_roll?(rate, roll) do
-    effective = clamp_rate(rate)
-    effective > 0 and roll.(effective)
-  end
+  defp successful_roll?(rate, roll), do: rate > 0 and roll.(rate)
 
-  @spec clamp_rate(integer()) :: non_neg_integer()
-  defp clamp_rate(rate), do: rate |> max(0) |> min(@roll_ceiling)
-
-  @spec default_roll(non_neg_integer()) :: boolean()
-  defp default_roll(rate), do: :rand.uniform(@roll_ceiling) <= rate
+  # `:rand.uniform(1001)` is a draw from 0 to 1000 shifted up by one.
+  @spec default_roll(integer()) :: boolean()
+  defp default_roll(rate), do: :rand.uniform(@draw_values) <= rate
 end

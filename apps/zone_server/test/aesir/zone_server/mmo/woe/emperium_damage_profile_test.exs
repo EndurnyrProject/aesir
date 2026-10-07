@@ -185,9 +185,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
     expected = swing.raw_total
     test_pid = self()
 
-    expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, incoming, hit_info ->
+    expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, incoming, hit_info ->
       send(test_pid, {:absorbed, incoming, hit_info})
-      0
+      {0, :hit}
     end)
 
     assert {0, %{pre_delivery_prepared?: true}} =

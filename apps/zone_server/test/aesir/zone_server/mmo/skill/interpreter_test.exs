@@ -3051,6 +3051,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.act_delay_until >= before + 1000
     end
 
+    test "an on-skill proc arms no after-cast delay, even when its effect fails" do
+      gs = game_state(100, %{})
+
+      assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001}, act_delay?: false)
+      assert updated.act_delay_until == gs.act_delay_until
+
+      stub(Combat, :execute_magic_attack, fn _caster, _target_id, _opts ->
+        {:error, :target_not_found}
+      end)
+
+      assert {:error, :target_not_found} =
+               Interpreter.proc_cast(gs, 19, 1, {:unit, 2001}, act_delay?: false)
+    end
+
     test "needs no learned level and ignores the caster's act delay" do
       gs = %{game_state(100, %{}) | act_delay_until: System.monotonic_time(:millisecond) + 10_000}
 

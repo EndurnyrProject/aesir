@@ -456,6 +456,72 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "when-hit equipment procs" do
+    alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+
+    @when_hit_heal {{:auto_cast, {:when_hit, 28, 1, BattleFlags.fill_battle(0), 0}}, 1_000}
+
+    defp proc_event(overrides \\ []) do
+      Map.merge(
+        %{
+          attack_flag: BattleFlags.build(:weapon, :short, false),
+          divisions: 1,
+          hit_class: :hit,
+          damage: 10,
+          attack_effects?: true,
+          counter_effects?: true,
+          arrow_attack?: false,
+          skill_id: nil
+        },
+        Map.new(overrides)
+      )
+    end
+
+    defp wearing_state(hp) do
+      put_in(
+        build_state(hp, :idle).game_state.stats.modifiers.equipment,
+        Map.new([@when_hit_heal])
+      )
+    end
+
+    setup do
+      test_pid = self()
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, test_pid} end)
+      stub(CharacterPersistence, :update_stats, fn _id, _fields, _opts -> {:ok, %Character{}} end)
+      :ok
+    end
+
+    test "a surviving recipient runs its when-hit procs after the HP change" do
+      HealthHandler.apply_damage(10, {:mob, 7}, %{proc_event: proc_event()}, wearing_state(100))
+
+      assert_received {:"$gen_cast", {:skill, {:equip_proc, %{branch: :counter, skill_id: 28}}}}
+    end
+
+    test "a devotee spared an immediate hit by Devotion still reaches its counter stage" do
+      HealthHandler.apply_damage(
+        0,
+        {:mob, 7},
+        %{proc_event: proc_event(damage: 40)},
+        wearing_state(100)
+      )
+
+      assert_received {:"$gen_cast", {:skill, {:equip_proc, %{branch: :counter}}}}
+    end
+
+    test "a lethal hit or a hit without an event runs no when-hit proc" do
+      HealthHandler.apply_damage(100, {:mob, 7}, %{proc_event: proc_event()}, wearing_state(100))
+      HealthHandler.apply_damage(10, {:mob, 7}, %{}, wearing_state(100))
+
+      refute_received {:"$gen_cast", {:skill, {:equip_proc, _}}}
+    end
+
+    test "a coma hit leaves the recipient alive and runs its when-hit procs" do
+      HealthHandler.apply_coma({:mob, 7}, %{proc_event: proc_event()}, wearing_state(100))
+
+      assert_received {:"$gen_cast", {:skill, {:equip_proc, %{branch: :counter}}}}
+    end
+  end
+
   describe "apply_coma/2" do
     test "leaves a living player at 1 HP and 1 SP through damage and sync paths" do
       test_pid = self()

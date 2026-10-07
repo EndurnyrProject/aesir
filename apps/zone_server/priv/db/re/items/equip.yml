@@ -805,7 +805,7 @@
     ctx = bonus(ctx, {:add_eff, :sc_freeze}, 500)
     ctx = bonus(ctx, {:add_eff2, :sc_freeze}, 100)
     ctx = grant_skill(ctx, 14, 3)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 3, 100)
     ctx
   range: 1
   refineable: true
@@ -863,7 +863,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :fire)
     ctx = grant_skill(ctx, 19, 3)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 3, 100)
     ctx
   range: 1
   refineable: true
@@ -1012,7 +1012,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :shadow)
     ctx = bonus(ctx, {:addele, :ghost}, 15)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 16}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 16}, 3, 100)
     ctx = bonus(ctx, {:add_eff, :sc_stonewait}, 10)
     ctx = bonus(ctx, :dex, 3)
     ctx
@@ -1661,7 +1661,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
     ctx = bonus(ctx, :def, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, 3, 100)
     ctx
   range: 1
   refineable: true
@@ -1874,7 +1874,7 @@
   name: Muscle Cutter
   on_equip: |-
     ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 800)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 30}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 30}, 1, 30)
     ctx
   range: 1
   refineable: true
@@ -1917,7 +1917,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
     ctx = bonus(ctx, :def, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, 3, 100)
     ctx
   range: 1
   refineable: true
@@ -2106,8 +2106,8 @@
     - both_hand
   name: Violet Fear
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 3, 30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 88}, 5, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 83}, 3, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 88}, 5, 50)
     ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_def_class, :normal}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
     ctx
   range: 1
@@ -2172,8 +2172,8 @@
       ctx
     end
     ctx = if (refine(ctx) > 8) do
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 357}, max(skill_lv(ctx, 357), 1), 30)
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 355}, max(skill_lv(ctx, 355), 1), 30)
+      ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 357}, max(skill_lv(ctx, 357), 1), 30)
+      ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 355}, max(skill_lv(ctx, 355), 1), 30)
       ctx
     else
       ctx
@@ -4842,7 +4842,7 @@
   name: Krishna
   on_equip: |-
     ctx = bonus(ctx, {:skill_atk, 137}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 136}, max(skill_lv(ctx, 136), 1), 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 136}, max(skill_lv(ctx, 136), 1), 100)
     ctx
   range: 1
   refineable: true
@@ -6243,7 +6243,7 @@
     end
     ctx = if (refine(ctx) >= 7) do
       ctx = bonus(ctx, :matk, 10)
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 156}, 1, 100)
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 156}, 1, 100)
       ctx = bonus(ctx, {:skill_atk, 156}, 10)
       ctx
     else
@@ -6251,7 +6251,7 @@
     end
     ctx = if (refine(ctx) >= 9) do
       ctx = bonus(ctx, :matk, 20)
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 111}, 1, 70)
+      ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 111}, 1, 70)
       ctx = bonus(ctx, {:skill_atk, 156}, 20)
       ctx
     else
@@ -6957,7 +6957,7 @@
     ctx = bonus(ctx, :critical, (20 + refine(ctx)))
     ctx = bonus(ctx, :aspd_rate, 5)
     ctx = if (((((job_is(ctx, :class, :whitesmith) || job_is(ctx, :class, :creator)) || job_is(ctx, :class, :mechanic)) || job_is(ctx, :class, :mechanic_t)) || job_is(ctx, :class, :genetic)) || job_is(ctx, :class, :genetic_t)) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 110}, 3, 30)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 110}, 3, 30)
     else
       ctx
     end
@@ -7137,7 +7137,7 @@
   name: Celestial Axe
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :undead}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 34}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 34}, 5, 5)
     ctx
   range: 1
   refineable: true
@@ -7194,7 +7194,7 @@
       ctx
     end
     ctx = bonus(ctx, :vit, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 7, trigger_skill: 110}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 7, trigger_skill: 110}, 3, 50)
     ctx
   range: 1
   refineable: true
@@ -8088,7 +8088,7 @@
     ctx = bonus(ctx, {:ignore_def_race, :brute}, 100)
     ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 100)
     ctx = bonus(ctx, {:add_monster_drop, 517, :brute}, 1000)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 399}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 399}, 3, 100)
     ctx
   range: 3
   refineable: true
@@ -8263,7 +8263,7 @@
     ctx = bonus(ctx, {:ignore_def_race, :brute}, 100)
     ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 100)
     ctx = bonus(ctx, {:add_monster_drop, 517, :brute}, 1000)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 399}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 399}, 3, 100)
     ctx
   range: 3
   refineable: true
@@ -9153,7 +9153,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
     ctx = bonus(ctx, {:add_eff, :sc_silence}, 200)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, 3, 100)
     ctx
   range: 3
   refineable: true
@@ -9202,7 +9202,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :holy)
     ctx = grant_skill(ctx, 28, 5)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 13}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 13}, 3, 100)
     ctx
   range: 3
   refineable: true
@@ -9225,7 +9225,7 @@
   name: Hellfire
   on_equip: |-
     ctx = set(ctx, :atk_ele, :fire)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 5, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 5, 100)
     ctx = bonus(ctx, :str, 3)
     ctx
   range: 3
@@ -9389,7 +9389,7 @@
     ctx = bonus(ctx, {:ignore_def_class, :boss}, 100)
     ctx = bonus(ctx, {:addrace, :demi_human}, 10)
     ctx = bonus(ctx, {:addrace, :player_human}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 56}, 5, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 56}, 5, 30)
     ctx
   range: 3
   refineable: true
@@ -9465,7 +9465,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
     ctx = bonus(ctx, {:add_eff, :sc_silence}, 200)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, 3, 100)
     ctx
   range: 3
   refineable: true
@@ -9844,7 +9844,7 @@
   name: Hellfire
   on_equip: |-
     ctx = set(ctx, :atk_ele, :fire)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 5, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 5, 100)
     ctx = bonus(ctx, :str, 3)
     ctx
   range: 3
@@ -10585,7 +10585,7 @@
   name: Grand Cross
   on_equip: |-
     ctx = set(ctx, :atk_ele, :holy)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 77}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 77}, 3, 100)
     ctx = bonus(ctx, {:sp_drain_race, :undead}, 1)
     ctx = bonus(ctx, {:sp_gain_race, :undead}, 3)
     ctx
@@ -10633,7 +10633,7 @@
     ctx = bonus(ctx, :dex, 50)
     ctx = bonus(ctx, :str, 20)
     ctx = bonus(ctx, :aspd_rate, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 10, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, 10, 100)
     ctx = autobonus(ctx, %{primary: [{:bonus, :splash_range, 1}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 10000)
     ctx
   range: 1
@@ -10862,7 +10862,7 @@
   name: Grand Cross
   on_equip: |-
     ctx = set(ctx, :atk_ele, :holy)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 77}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 77}, 3, 100)
     ctx = bonus(ctx, {:sp_drain_race, :undead}, 1)
     ctx = bonus(ctx, {:sp_gain_race, :undead}, 3)
     ctx
@@ -10890,7 +10890,7 @@
     ctx = set(ctx, :atk_ele, :holy)
     ctx = bonus(ctx, {:addele, :shadow}, 10)
     ctx = bonus(ctx, {:addrace, :demon}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 32}, (1 + refine(ctx)), 100)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 32}, (1 + refine(ctx)), 100)
     ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 50}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 20000)
     ctx
   range: 1
@@ -11430,7 +11430,7 @@
   name: Battlefield Textbook
   on_equip: |-
     ctx = bonus(ctx, :int, 3)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 34}, (3 + (bool(ctx, (skill_lv(ctx, 34) > 3)) * (skill_lv(ctx, 34) - 3))), 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 34}, (3 + (bool(ctx, (skill_lv(ctx, 34) > 3)) * (skill_lv(ctx, 34) - 3))), 20)
     ctx
   range: 1
   slots: 1
@@ -13693,7 +13693,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :holy)
     ctx = bonus(ctx, :int, 4)
-    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 34, trigger_skill: 28}, max(skill_lv(ctx, 34), 1), 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 34, trigger_skill: 28}, max(skill_lv(ctx, 34), 1), 20)
     ctx
   range: 1
   refineable: true
@@ -15855,7 +15855,7 @@
   locations:
     - both_hand
   name: Double Bound
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 46}, skill_lv(ctx, 46), 10)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 46}, skill_lv(ctx, 46), 10)'
   range: 5
   refineable: true
   slots: 3
@@ -16552,7 +16552,7 @@
   locations:
     - right_hand
   name: Magma Fist
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 280}, 5, 10)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 280}, 5, 10)'
   range: 1
   refineable: true
   slots: 3
@@ -16571,7 +16571,7 @@
   locations:
     - right_hand
   name: Icicle Fist
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 281}, 5, 10)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 281}, 5, 10)'
   range: 1
   refineable: true
   slots: 3
@@ -16590,7 +16590,7 @@
   locations:
     - right_hand
   name: Electric Fist
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 282}, 5, 10)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 282}, 5, 10)'
   range: 1
   refineable: true
   slots: 3
@@ -16609,7 +16609,7 @@
   locations:
     - right_hand
   name: Seismic Fist
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 283}, 5, 10)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 283}, 5, 10)'
   range: 1
   refineable: true
   slots: 3
@@ -16660,7 +16660,7 @@
     ctx = bonus(ctx, {:addrace, :player_human}, 95)
     ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
     ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 401}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 401}, 1, 20)
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx
   range: 1
@@ -16747,8 +16747,8 @@
       ctx
     end
     ctx = if (refine(ctx) > 8) do
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 266}, 5, ((refine(ctx) * 10) - 50))
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 30}, 1, ((refine(ctx) * 10) - 50))
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 266}, 5, ((refine(ctx) * 10) - 50))
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 30}, 1, ((refine(ctx) * 10) - 50))
       ctx
     else
       ctx
@@ -16790,7 +16790,7 @@
     ctx = if (refine(ctx) > 8) do
       ctx = bonus(ctx, {:skill_varcast_rate, 271}, -100)
       ctx = bonus(ctx, {:skill_fixcast_rate, 271}, -100)
-      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 401, trigger_skill: 270}, 1, 1000)
+      ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 401, trigger_skill: 270}, 1, 1000)
       ctx
     else
       ctx
@@ -16899,7 +16899,7 @@
     ctx = if (refine(ctx) > 9) do
       ctx = bonus(ctx, {:skill_varcast_rate, 271}, -100)
       ctx = bonus(ctx, {:skill_fixcast_rate, 271}, -100)
-      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 401, trigger_skill: 270}, 1, 1000)
+      ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 401, trigger_skill: 270}, 1, 1000)
       ctx = bonus(ctx, {:hp_loss_bonus, 3000}, 500)
       ctx
     else
@@ -17077,7 +17077,7 @@
     ctx = bonus(ctx, {:addrace, :player_human}, 30)
     ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 10)
     ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 401}, 1, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 401}, 1, 5)
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx
   range: 1
@@ -18058,7 +18058,7 @@
   name: Electric Guitar
   on_equip: |-
     ctx = grant_skill(ctx, 84, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 84}, 1, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 84}, 1, 100)
     ctx = set(ctx, :atk_ele, :wind)
     ctx = bonus(ctx, :int, 2)
     ctx = bonus(ctx, :agi, 1)
@@ -19395,9 +19395,9 @@
     ctx = set(ctx, :atk_ele, :wind)
     ctx = bonus(ctx, :int, 2)
     ctx = bonus(ctx, :agi, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 84}, 3, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 84}, 3, 20)
     ctx = if (refine(ctx) > 0) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 394}, refine(ctx), 50)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 394}, refine(ctx), 50)
     else
       ctx
     end
@@ -19452,7 +19452,7 @@
   name: Carrot Whip
   on_equip: |-
     if (refine(ctx) > 0) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 29}, min(refine(ctx), 10), 10)
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 29}, min(refine(ctx), 10), 10)
     else
       ctx
     end
@@ -20072,7 +20072,7 @@
     ctx = bonus(ctx, :int, 3)
     ctx = bonus(ctx, :agi, 10)
     ctx = bonus(ctx, :sp_cost_rate, (refine(ctx) * 2))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 84}, 5, (refine(ctx) * 20))
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 84}, 5, (refine(ctx) * 20))
     ctx = bonus(ctx, {:skill_varcast_rate, 366}, -50)
     ctx
   range: 1
@@ -20171,7 +20171,7 @@
     ctx = bonus(ctx, :int, 3)
     ctx = bonus(ctx, :agi, 10)
     ctx = bonus(ctx, :sp_cost_rate, (refine(ctx) * 2))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 84}, 5, (refine(ctx) * 20))
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 84}, 5, (refine(ctx) * 20))
     ctx = bonus(ctx, {:skill_varcast_rate, 366}, -50)
     ctx
   range: 1
@@ -30695,7 +30695,7 @@
     ctx = bonus(ctx, :luk, 2)
     ctx = bonus(ctx, :hp_regen, 10)
     ctx = bonus(ctx, :sp_regen, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 92}, 3, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 92}, 3, 30)
     ctx = bonus(ctx, :mdef, 1)
     ctx
   type: armor
@@ -37199,11 +37199,11 @@
     ctx = bonus(ctx, :vit, 1)
     ctx = bonus(ctx, :atk, 15)
     ctx = bonus(ctx, {:subele, :fire}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 401}, 1, 30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 270}, 1, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 367}, 2, 30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 1, 150)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 62}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 401}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 270}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 367}, 2, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 1, 150)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 62}, 5, 20)
     ctx
   type: armor
   weight: 100
@@ -37239,10 +37239,10 @@
     ctx = bonus(ctx, :vit, 1)
     ctx = bonus(ctx, :mdef, 2)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 92}, 1, 50)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 141}, 10, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 141}, 10, 20)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 10, 30)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 361}, 3, 20)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 489}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 489}, 5, 20)
     ctx
   type: armor
   weight: 100
@@ -38338,7 +38338,7 @@
   name: Chinese Handicraft
   no_guild_storage: true
   no_trade: true
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 5, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 5, 50)'
   type: armor
   weight: 50
 - aegis_name: 5_Anniversary_Coin
@@ -40270,11 +40270,11 @@
     ctx = bonus(ctx, :vit, 1)
     ctx = bonus(ctx, :atk, 15)
     ctx = bonus(ctx, {:subele, :fire}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 401}, 1, 30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 270}, 1, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 367}, 2, 30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 1, 150)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 62}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 401}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 270}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 367}, 2, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 1, 150)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 62}, 5, 20)
     ctx
   type: armor
 - aegis_name: Ring_Of_Resonance_I
@@ -40310,10 +40310,10 @@
     ctx = bonus(ctx, :vit, 1)
     ctx = bonus(ctx, :mdef, 2)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 92}, 1, 50)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 141}, 10, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 141}, 10, 20)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 10, 30)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 361}, 3, 20)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 489}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 489}, 5, 20)
     ctx
   type: armor
 - aegis_name: Magic_Stone_Ring
@@ -41803,7 +41803,7 @@
     ctx = bonus(ctx, {:magic_atk_ele, :fire}, 10)
     ctx = bonus(ctx, {:magic_atk_ele, :water}, -20)
     ctx = bonus(ctx, {:subele, :water}, -30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 5, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 5, 30)
     ctx = auto_cast(ctx, %{force: 1, flag: 338, trigger: :attack, skill_id: 17}, 5, 30)
     ctx
   slots: 1
@@ -43863,11 +43863,11 @@
     ctx = bonus(ctx, :vit, 2)
     ctx = bonus(ctx, :atk, 20)
     ctx = bonus(ctx, {:subele, :fire}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 401}, 1, 30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 270}, 1, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 367}, 2, 30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 1, 150)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 62}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 401}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 270}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 367}, 2, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 1, 150)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 62}, 5, 20)
     ctx
   type: armor
   weight: 100
@@ -43903,10 +43903,10 @@
     ctx = bonus(ctx, :mdef, 2)
     ctx = bonus(ctx, :matk, 10)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 92}, 1, 50)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 141}, 10, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 141}, 10, 20)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 10, 30)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 361}, 3, 20)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 489}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 489}, 5, 20)
     ctx
   type: armor
   weight: 100
@@ -44505,7 +44505,7 @@
   locations:
     - both_accessory
   name: Water Crystal Stone
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 286}, 1, 10)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 286}, 1, 10)'
   type: armor
   weight: 100
 - aegis_name: Supplement_Part_Dex
@@ -47724,7 +47724,7 @@
   locations:
     - head_top
   name: Banana Hat
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 6}, 3, 30)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 6}, 3, 30)'
   refineable: true
   type: armor
   view: 197
@@ -49468,7 +49468,7 @@
   name: Puppy Hat
   on_equip: |-
     ctx = bonus(ctx, :agi, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 75}, 1, (10 + (20 * bool(ctx, (stat(ctx, :agi) >= 77)))))
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 75}, 1, (10 + (20 * bool(ctx, (stat(ctx, :agi) >= 77)))))
     ctx
   type: armor
   view: 234
@@ -50104,7 +50104,7 @@
   name: Moonlight Flower Hat
   on_equip: |-
     ctx = bonus(ctx, :dex, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 29}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 29}, 1, 50)
     ctx
   refineable: true
   type: armor
@@ -51306,7 +51306,7 @@
   name: Triple Poring Hat
   on_equip: |-
     ctx = bonus(ctx, :luk, 3)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 1013}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 1013}, 1, 50)
     ctx
   type: armor
   view: 299
@@ -51411,7 +51411,7 @@
   name: Elephant Hat
   on_equip: |-
     ctx = bonus(ctx, :vit, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 86}, 3, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 86}, 3, 10)
     ctx = grant_skill(ctx, 31, 1)
     ctx
   refineable: true
@@ -51757,7 +51757,7 @@
     - head_low
     - head_mid
   name: Tongue Mask
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 6}, 5, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 6}, 5, 50)'
   type: armor
   view: 253
   weight: 100
@@ -52216,9 +52216,9 @@
   name: Vanilmirth Hat
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_helm, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 1, 50)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 1, 50)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, 1, 50)
     ctx = bonus(ctx, :mdef, 5)
     ctx
   type: armor
@@ -52250,8 +52250,8 @@
     - head_top
   name: Kettle Hat
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 286}, 2, 30)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 86}, 3, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 286}, 2, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 86}, 3, 30)
     ctx
   refineable: true
   type: armor
@@ -52383,7 +52383,7 @@
     - head_mid
     - head_top
   name: Pagdayaw
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 326}, 1, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 326}, 1, 50)'
   slots: 1
   type: armor
   view: 303
@@ -52739,7 +52739,7 @@
   locations:
     - head_top
   name: Fisherman's Hat
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 86}, 3, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 86}, 3, 50)'
   refineable: true
   type: armor
   view: 339
@@ -53202,7 +53202,7 @@
     ctx = bonus(ctx, :critical, 5)
     ctx = bonus(ctx, :flee, 5)
     ctx = grant_skill(ctx, 20, 1)
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 21}, 5, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, 5, 30)
     ctx
   refineable: true
   type: armor
@@ -54067,7 +54067,7 @@
   name: Orc Hero Headdress
   on_equip: |-
     ctx = bonus(ctx, :str, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 112}, 3, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 112}, 3, 10)
     ctx
   refineable: true
   slots: 1
@@ -54145,7 +54145,7 @@
   locations:
     - head_top
   name: Fish Head Hat
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 281}, 1, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 281}, 1, 50)'
   refineable: true
   type: armor
   view: 386
@@ -54873,7 +54873,7 @@
   on_equip: |-
     ctx = bonus(ctx, :int, 1)
     ctx = bonus(ctx, {:res_eff, :sc_silence}, 10000)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 326}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 326}, 1, 50)
     ctx
   slots: 1
   type: armor
@@ -54967,7 +54967,7 @@
     ctx = bonus(ctx, :mdef, 5)
     ctx = bonus(ctx, :str, 2)
     ctx = bonus(ctx, :int, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 83}, 3, 50)
     ctx
   slots: 1
   type: armor
@@ -55174,7 +55174,7 @@
     - head_top
   name: Chicken Hat
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 155}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 155}, 1, 30)
     ctx = bonus(ctx, :aspd_rate, 5)
     ctx
   refineable: true
@@ -55746,7 +55746,7 @@
   name: Decorative Geographer
   on_equip: |-
     ctx = bonus(ctx, :int, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 28}, 5, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 28}, 5, 50)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 5, 30)
     ctx
   refineable: true
@@ -56149,7 +56149,7 @@
     - head_top
   name: Nipper Crab Hairpin
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 14}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 14}, 1, 30)
     ctx = bonus(ctx, {:add_monster_drop, 991, :fish}, 100)
     ctx
   refineable: true
@@ -56857,7 +56857,7 @@
     ctx = bonus(ctx, :mdef, 3)
     ctx = bonus(ctx, {:subele, :fire}, -5)
     ctx = bonus(ctx, {:subele, :earth}, 5)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 90}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 90}, 1, 10)
     ctx
   refineable: true
   type: armor
@@ -57695,7 +57695,7 @@
   name: Octopus Hat
   on_equip: |-
     ctx = bonus(ctx, :mdef, 3)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 6}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 6}, 5, 10)
     ctx = bonus(ctx, :unbreakable_helm, 1)
     ctx
   refineable: true
@@ -57893,7 +57893,7 @@
   locations:
     - head_top
   name: Dolor Hat
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 78}, 1, 15)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 78}, 1, 15)'
   slots: 1
   type: armor
   view: 547
@@ -58104,7 +58104,7 @@
   name: Dokebi Horn
   on_equip: |-
     ctx = bonus(ctx, {:add_monster_drop_group, :jewel}, 10000)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 42}, 5, 70)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 42}, 5, 70)
     ctx
   refineable: true
   slots: 1
@@ -58606,7 +58606,7 @@
     ctx = bonus(ctx, :aspd_rate, 3)
     ctx = bonus(ctx, {:subele, :earth}, 5)
     ctx = if (refine(ctx) > 6) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 1016}, 1, 20)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 1016}, 1, 20)
     else
       ctx
     end
@@ -58796,7 +58796,7 @@
   on_equip: |-
     ctx = bonus(ctx, :luk, 3)
     ctx = bonus(ctx, :mdef, 4)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 42}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 42}, 5, 5)
     ctx
   slots: 1
   type: armor
@@ -58811,7 +58811,7 @@
   name: Ice Wing Ear
   on_equip: |-
     ctx = bonus(ctx, :luk, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 14}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 14}, 5, 5)
     ctx
   type: armor
   view: 584
@@ -58825,7 +58825,7 @@
   name: Turtle Hat
   on_equip: |-
     ctx = bonus(ctx, :agi, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 30}, 3, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 30}, 3, 5)
     ctx
   refineable: true
   type: armor
@@ -59315,9 +59315,9 @@
   name: F Vanilmirth Hat
   on_equip: |-
     ctx = bonus(ctx, :mdef, 5)
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 19}, 1, 50)
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 14}, 1, 50)
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 20}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, 1, 50)
     ctx
   type: armor
   view: 317
@@ -59348,8 +59348,8 @@
     - head_top
   name: F Kettle Hat
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 286}, 2, 30)
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 86}, 3, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 286}, 2, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 86}, 3, 30)
     ctx
   refineable: true
   type: armor
@@ -59379,7 +59379,7 @@
   name: F Ramen Hat
   on_equip: |-
     ctx = bonus(ctx, :dex, 4)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 30}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 30}, 1, 30)
     ctx
   type: armor
   view: 320
@@ -59408,9 +59408,9 @@
   on_equip: |-
     ctx = bonus(ctx, :agi, 1)
     ctx = if (stat(ctx, :agi) > 77) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 75}, 3, 25)
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 75}, 3, 25)
     else
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 75}, 1, 25)
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 75}, 1, 25)
     end
     ctx
   type: armor
@@ -59925,7 +59925,7 @@
   locations:
     - head_top
   name: Imp Hat
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 280}, 1, 5)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 280}, 1, 5)'
   refineable: true
   slots: 1
   type: armor
@@ -59940,7 +59940,7 @@
   locations:
     - head_top
   name: Sleeper Hat
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 283}, 1, 5)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 283}, 1, 5)'
   refineable: true
   type: armor
   view: 590
@@ -59989,7 +59989,7 @@
     ctx = bonus(ctx, :dex, 1)
     ctx = bonus(ctx, :aspd_rate, 2)
     ctx = bonus(ctx, :varcast_rate, -2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 271}, 1, 3)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 271}, 1, 3)
     ctx
   refineable: true
   type: armor
@@ -62124,7 +62124,7 @@
   name: Sloth Hat
   on_equip: |-
     ctx = bonus(ctx, :agi, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 136}, 5, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 136}, 5, 50)
     ctx
   refineable: true
   slots: 1
@@ -62179,7 +62179,7 @@
     - head_mid
     - head_top
   name: Love Rabbit Hood
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 75}, 3, if((stat(ctx, :agi) >= 80), do: 30, else: 10))'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 75}, 3, if((stat(ctx, :agi) >= 80), do: 30, else: 10))'
   slots: 1
   type: armor
   view: 549
@@ -62213,7 +62213,7 @@
   name: Amistr Cap
   on_equip: |-
     ctx = bonus(ctx, :vit, (1 + div(refine(ctx), 2)))
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 56}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 56}, 5, 10)
     ctx
   refineable: true
   slots: 1
@@ -62631,7 +62631,7 @@
   on_equip: |-
     ctx = bonus(ctx, {:subrace, :demon}, -5)
     ctx = bonus(ctx, {:subrace, :undead}, -5)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 34}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 34}, 1, 20)
     ctx
   refineable: true
   slots: 1
@@ -63974,7 +63974,7 @@
   name: Miracle Blue Rose
   on_equip: |-
     ctx = bonus(ctx, :luk, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 68}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 68}, 1, 20)
     ctx
   type: armor
   view: 1064
@@ -65155,7 +65155,7 @@
   name: Flying Galapago
   on_equip: |-
     ctx = bonus(ctx, :agi, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 129}, max(skill_lv(ctx, 129), 1), ((50 + div(min(stat(ctx, :luk), 120), 3)) + (max(skill_lv(ctx, 129), 1) * 2)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 129}, max(skill_lv(ctx, 129), 1), ((50 + div(min(stat(ctx, :luk), 120), 3)) + (max(skill_lv(ctx, 129), 1) * 2)))
     ctx = bonus(ctx, {:skill_atk, 129}, (skill_lv(ctx, 128) * 40))
     ctx
   type: armor
@@ -66651,7 +66651,7 @@
   name: Hakujin
   on_equip: |-
     ctx = bonus(ctx, :int, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 28}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 28}, 1, 10)
     ctx
   range: 1
   refineable: true
@@ -66672,7 +66672,7 @@
   name: Hakujin
   on_equip: |-
     ctx = bonus(ctx, :int, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 28}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 28}, 1, 10)
     ctx
   range: 1
   refineable: true
@@ -69141,7 +69141,7 @@
   name: Faceworm Queen Leg
   on_equip: |-
     ctx = bonus(ctx, :int, 3)
-    ctx = autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 653}, 1, 200}], trigger: :attack, secondary: [], battle_flag: 593}, 8, 5000)
+    ctx = autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 593, trigger: :attack, skill_id: 653}, 1, 200}], trigger: :attack, secondary: [], battle_flag: 593}, 8, 5000)
     ctx
   range: 1
   refineable: true
@@ -69223,7 +69223,7 @@
     ctx = bonus(ctx, :atk, (20 * div(refine(ctx), 3)))
     ctx = bonus(ctx, :matk, (20 * div(refine(ctx), 3)))
     ctx = if (refine(ctx) >= 9) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 112}, 1, 10)
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 112}, 1, 10)
     else
       ctx
     end
@@ -71178,7 +71178,7 @@
   on_equip: |-
     ctx = bonus(ctx, :critical, 15)
     ctx = bonus(ctx, :hit, 10)
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 30}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 30}, 1, 30)
     ctx
   range: 9
   refineable: true
@@ -71220,7 +71220,7 @@
     ctx = bonus(ctx, :splash_range, 1)
     ctx = bonus(ctx, :hit, -10)
     ctx = bonus(ctx, :aspd_rate, -10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 5, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, 5, 30)
     ctx
   range: 9
   refineable: true
@@ -71265,7 +71265,7 @@
   on_equip: |-
     ctx = bonus(ctx, :critical, 15)
     ctx = bonus(ctx, :hit, 10)
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 30}, 1, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 30}, 1, 30)
     ctx
   range: 9
   refineable: true
@@ -71439,7 +71439,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :fire)
     ctx = bonus(ctx, :dex, -2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 5, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 5, 30)
     ctx
   range: 1
   refineable: true
@@ -71543,7 +71543,7 @@
   no_trade: true
   on_equip: |-
     ctx = set(ctx, :atk_ele, :fire)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 5, 30)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 5, 30)
     ctx = bonus(ctx, :dex, 2)
     ctx
   range: 1
@@ -72668,7 +72668,7 @@
     ctx = bonus(ctx, :int, 4)
     ctx = bonus(ctx, :dex, 1)
     ctx = bonus(ctx, {:addele, :neutral}, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 3, 50)
     ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 19, trigger_skill: 14}, 3, 1000)
     ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 20, trigger_skill: 19}, 3, 1000)
     ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 90, trigger_skill: 20}, 3, 1000)
@@ -72865,7 +72865,7 @@
   on_equip: |-
     ctx = bonus(ctx, :str, 2)
     ctx = bonus(ctx, :int, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 1, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 83}, 1, 5)
     ctx
   range: 1
   refineable: true
@@ -73234,7 +73234,7 @@
     ctx = bonus(ctx, :matk, 108)
     ctx = set(ctx, :atk_ele, :fire)
     ctx = grant_skill(ctx, 19, 3)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 3, 100)
     ctx
   range: 1
   refineable: true
@@ -73266,7 +73266,7 @@
     ctx = bonus(ctx, :matk, 108)
     ctx = set(ctx, :atk_ele, :water)
     ctx = grant_skill(ctx, 14, 3)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 3, 100)
     ctx
   range: 1
   refineable: true
@@ -73717,7 +73717,7 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :shadow)
     ctx = bonus(ctx, {:addele, :ghost}, 15)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 16}, 3, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 16}, 3, 100)
     ctx = bonus(ctx, {:add_eff, :sc_stonewait}, 10)
     ctx = bonus(ctx, :dex, 3)
     ctx
@@ -73868,7 +73868,7 @@
     - right_hand
   name: Sealed Magic Sword
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 5, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 5, 100)
     ctx = if (refine(ctx) >= 7) do
       ctx = if (refine(ctx) >= 10) do
         bonus(ctx, :aspd, 1)
@@ -73913,7 +73913,7 @@
     - right_hand
   name: Sealed Evil Sword
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 88}, 5, 100)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 88}, 5, 100)
     ctx = if (refine(ctx) >= 7) do
       ctx = if (refine(ctx) >= 10) do
         bonus(ctx, :aspd, 1)
@@ -77206,8 +77206,8 @@
     ctx = bonus(ctx, :long_atk_rate, 3)
     ctx = bonus(ctx, :aspd, 1)
     ctx = bonus(ctx, :all_stats, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 45}, 10, ((1 + refine(ctx)) * 3))
-    ctx = auto_cast(ctx, %{force: 1, flag: 833, trigger: :attack, skill_id: 46}, 10, ((1 + refine(ctx)) * 3))
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 45}, 10, ((1 + refine(ctx)) * 3))
+    ctx = auto_cast(ctx, %{force: 1, flag: 577, trigger: :attack, skill_id: 46}, 10, ((1 + refine(ctx)) * 3))
     ctx
   refineable: true
   slots: 1
@@ -77718,7 +77718,7 @@
   name: Whikebain Suit
   on_equip: |-
     ctx = bonus(ctx, :crit_atk_rate, if((refine(ctx) >= 7), do: 6, else: if((refine(ctx) >= 5), do: 4, else: 0)))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 1011}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 1011}, 1, 10)
     ctx
   refineable: true
   slots: 1
@@ -78707,7 +78707,7 @@
     ctx = bonus(ctx, :aspd_rate, 10)
     ctx = bonus(ctx, :matk, (5 * div(refine(ctx), 2)))
     ctx = if (refine(ctx) >= 9) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, max(5, skill_lv(ctx, 21)), 50)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, max(5, skill_lv(ctx, 21)), 50)
     else
       ctx
     end
@@ -78773,7 +78773,7 @@
   on_equip: |-
     ctx = bonus(ctx, :atk, 20)
     ctx = if (refine(ctx) >= 9) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 46}, max(3, skill_lv(ctx, 46)), 10)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 46}, max(3, skill_lv(ctx, 46)), 10)
     else
       ctx
     end
@@ -80379,7 +80379,7 @@
   name: Whikebain Suit
   on_equip: |-
     ctx = bonus(ctx, :mdef, 5)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 1011}, 1, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 1011}, 1, 100)
     ctx = if (refine(ctx) >= 7) do
       bonus(ctx, :crit_atk_rate, 4)
     else
@@ -83355,7 +83355,7 @@
     ctx = bonus(ctx, :vit, (3 * div(refine(ctx), 4)))
     ctx = bonus(ctx, :mdef, (5 * div(refine(ctx), 4)))
     ctx = if (refine(ctx) >= 11) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 25}, 1, 50)
+      auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 25}, 1, 50)
     else
       ctx
     end
@@ -84464,7 +84464,7 @@
     ctx = bonus(ctx, {:skill_atk, 21}, 5)
     ctx = bonus(ctx, {:skill_atk, 80}, 10)
     ctx = if (skill_lv(ctx, 88) == 10) do
-      auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 88, trigger_skill: 88}, 5, 500)
+      auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 88, trigger_skill: 88}, 5, 500)
     else
       ctx
     end
@@ -84526,7 +84526,7 @@
     ctx = bonus(ctx, {:skill_atk, 20}, 1)
     ctx = bonus(ctx, {:skill_atk, 90}, 1)
     ctx = if (skill_lv(ctx, 283) == 5) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 90}, 5, 100)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 90}, 5, 100)
     else
       ctx
     end
@@ -84569,7 +84569,7 @@
     ctx = bonus(ctx, :heal_power, 1)
     ctx = bonus(ctx, :item_heal_rate, 1)
     ctx = if (skill_lv(ctx, 68) == 5) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 367}, 5, 100)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 367}, 5, 100)
     else
       ctx
     end
@@ -85925,7 +85925,7 @@
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:magic_atk_ele, :all}, 5)
-    ctx = auto_cast(ctx, %{force: 1, flag: 785, trigger: :attack, skill_id: 13}, 10, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 529, trigger: :attack, skill_id: 13}, 10, 100)
     ctx
   type: armor
   view: 815
@@ -86706,7 +86706,7 @@
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx = set(ctx, :atk_ele, :holy)
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 32}, max(1, min(10, refine(ctx))), 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 32}, max(1, min(10, refine(ctx))), 10)
     ctx = bonus(ctx, {:addrace, :demon}, 10)
     ctx = bonus(ctx, {:addele, :shadow}, 10)
     ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 50}], trigger: :attack, secondary: [], battle_flag: 593}, 10, 20000)
@@ -86834,7 +86834,7 @@
     ctx = bonus(ctx, :atk, (div(refine(ctx), 3) * 30))
     ctx = if (refine(ctx) >= 9) do
       ctx = bonus(ctx, {:addrace, :all}, 5)
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 112}, 1, 10)
+      ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 112}, 1, 10)
       ctx
     else
       ctx
@@ -86944,7 +86944,7 @@
   name: Noble Cross
   on_equip: |-
     ctx = set(ctx, :atk_ele, :holy)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 77}, 6, 200)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 77}, 6, 200)
     ctx = bonus(ctx, {:sp_drain_race, :undead}, 1)
     ctx = bonus(ctx, {:sp_gain_race, :undead}, 12)
     ctx
@@ -87074,7 +87074,7 @@
     ctx = bonus(ctx, :dex, 50)
     ctx = bonus(ctx, :str, 20)
     ctx = bonus(ctx, :aspd_rate, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 10, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, 10, 100)
     ctx = autobonus(ctx, %{primary: [{:bonus, :splash_range, 1}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 10000)
     ctx
   range: 1
@@ -88633,7 +88633,7 @@
   name: Creeper Bow
   on_equip: |-
     ctx = bonus(ctx, :dex, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 405}, 1, 200)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 405}, 1, 200)
     ctx
   range: 5
   refineable: true
@@ -91078,8 +91078,8 @@
     - head_top
   name: Super Scell
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, max(skill_lv(ctx, 20), 5), (50 + (skill_lv(ctx, 20) * 5)))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, max(skill_lv(ctx, 21), 5), (50 + (skill_lv(ctx, 21) * 5)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, max(skill_lv(ctx, 20), 5), (50 + (skill_lv(ctx, 20) * 5)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, max(skill_lv(ctx, 21), 5), (50 + (skill_lv(ctx, 21) * 5)))
     ctx
   type: armor
   view: 688
@@ -93109,7 +93109,7 @@
   locations:
     - head_top
   name: Thief Bandana
-  on_equip: 'auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 210}, 1, 20)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 210}, 1, 20)'
   refineable: true
   type: armor
   view: 776
@@ -93430,7 +93430,7 @@
   name: Bridal Ribbon
   on_equip: |-
     ctx = bonus(ctx, :dex, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 1011}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 1011}, 1, 10)
     ctx
   refineable: true
   type: armor
@@ -93907,10 +93907,10 @@
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 8}, 1, 10)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 261}, 5, 10)
     ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 270}, 5, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 114}, 5, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 155}, 1, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 45}, 5, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 75}, 3, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 114}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 155}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 45}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 75}, 3, 10)
     ctx = autobonus(ctx, %{primary: [{:bonus, :str, 3}, {:bonus, :agi, 3}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 5000)
     ctx = autobonus(ctx, %{primary: [{:bonus, :int, 3}, {:bonus, :luk, 3}], trigger: :attack, secondary: [], battle_flag: 338}, 5, 5000)
     ctx
@@ -94075,7 +94075,7 @@
   name: Boitata Hat
   on_equip: |-
     ctx = autobonus(ctx, %{primary: [{:set, :atk_ele, :fire}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 180000)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 136}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 136}, 5, 10)
     ctx
   refineable: true
   slots: 1
@@ -95680,7 +95680,7 @@
     ctx = bonus(ctx, :luk, 2)
     ctx = autobonus(ctx, %{primary: [{:bonus, :hit, 30}], trigger: :attack, secondary: [], battle_flag: 849}, (1 + refine(ctx)), 6000)
     ctx = autobonus(ctx, %{primary: [{:bonus, :varcast_rate, -30}], trigger: :attack, secondary: [], battle_flag: 338}, (1 + refine(ctx)), 6000)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 136}, 10, 1)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 136}, 10, 1)
     ctx
   refineable: true
   slots: 1
@@ -96453,7 +96453,7 @@
   locations:
     - head_top
   name: Boys White Hat
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 112}, 1, if((refine(ctx) >= 5), do: 20, else: 10))'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 112}, 1, if((refine(ctx) >= 5), do: 20, else: 10))'
   refineable: true
   type: armor
   view: 877
@@ -98406,7 +98406,7 @@
   locations:
     - head_mid
   name: Flame Wing Ear
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 7}, 1, 30)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 7}, 1, 30)'
   type: armor
   view: 422
   weight: 100
@@ -98574,7 +98574,7 @@
   locations:
     - head_top
   name: Rolf Von Gigue 666
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 111}, 2, 5)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 111}, 2, 5)'
   refineable: true
   type: armor
   view: 946
@@ -98592,8 +98592,8 @@
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 1)
     ctx = bonus(ctx, :mdef, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 15}, 3, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 15}, 3, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 5, 10)
     ctx
   refineable: true
   slots: 1
@@ -99389,8 +99389,8 @@
     - head_top
   name: Kannam On Head
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 286}, 1, 100)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 86}, max(1, div(min(15, refine(ctx)), 3)), 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 286}, 1, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 86}, max(1, div(min(15, refine(ctx)), 3)), 100)
     ctx
   refineable: true
   type: armor
@@ -99582,7 +99582,7 @@
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
     ctx = bonus(ctx, :matk_rate, 5)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 383}, 5, (10 + (refine(ctx) * 3)))
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 383}, 5, (10 + (refine(ctx) * 3)))
     ctx
   refineable: true
   slots: 1
@@ -99771,9 +99771,9 @@
     - head_top
   name: Man's Pride
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 6}, 5, 2)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 6}, 5, 2)
     ctx = if (refine(ctx) >= 6) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 6}, min(10, refine(ctx)), 2)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 6}, min(10, refine(ctx)), 2)
     else
       ctx
     end
@@ -99903,7 +99903,7 @@
   name: Gossip Raven
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 24}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 24}, 1, 10)
     ctx
   slots: 1
   type: armor
@@ -99919,7 +99919,7 @@
   name: Baby Deviling
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 34}, 7, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 34}, 7, 10)
     ctx
   slots: 1
   type: armor
@@ -100130,7 +100130,7 @@
   name: Elephant Model Hat
   on_equip: |-
     ctx = bonus(ctx, :dex, (2 + if(((refine(ctx) >= 2) && (refine(ctx) <= 8)), do: 1, else: if((refine(ctx) > 8), do: div(refine(ctx), 8), else: 0))))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 89}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 89}, 5, 5)
     ctx
   refineable: true
   slots: 1
@@ -100155,7 +100155,7 @@
     else
       ctx
     end
-    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 62}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 62}, 1, 20)
     ctx = if (refine(ctx) > 10) do
       bonus(ctx, :str, 3)
     else
@@ -100178,7 +100178,7 @@
   name: Lion Model Hat
   on_equip: |-
     ctx = bonus(ctx, :int, (2 + if(((refine(ctx) >= 2) && (refine(ctx) <= 8)), do: 1, else: if((refine(ctx) > 8), do: div(refine(ctx), 8), else: 0))))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 83}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 83}, 5, 5)
     ctx
   refineable: true
   slots: 1
@@ -100196,7 +100196,7 @@
   name: Rhino Model Hat
   on_equip: |-
     ctx = bonus(ctx, :vit, (2 + if((refine(ctx) >= 11), do: div(refine(ctx), 11), else: 0)))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 85}, 5, 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 85}, 5, 5)
     ctx
   refineable: true
   slots: 1
@@ -100581,7 +100581,7 @@
     - head_low
   name: Shaving Foam
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 92}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 92}, 1, 10)
     ctx = bonus(ctx, {:res_eff, :sc_bleeding}, 3000)
     ctx
   type: armor
@@ -102524,7 +102524,7 @@
   on_equip: |-
     ctx = bonus(ctx, :dex, 2)
     ctx = bonus(ctx, :long_atk_rate, 10)
-    ctx = auto_cast(ctx, %{force: 1, flag: 833, trigger: :attack, skill_id: 78}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 577, trigger: :attack, skill_id: 78}, 1, 50)
     ctx
   refineable: true
   slots: 1
@@ -103237,7 +103237,7 @@
     - head_low
   name: Marin Balloon
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 92}, 1, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 92}, 1, 5)
     ctx = bonus(ctx, {:exp_add_race, :all}, 5)
     ctx = bonus(ctx, {:drop_add_race, :all}, 5)
     ctx
@@ -103301,7 +103301,7 @@
     - head_low
   name: Metalring Balloon
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 215}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 215}, 1, 50)
     ctx = bonus(ctx, {:exp_add_race, :all}, 5)
     ctx = bonus(ctx, {:drop_add_race, :all}, 5)
     ctx
@@ -103349,7 +103349,7 @@
     - head_low
   name: Ghostring Balloon
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 13}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 13}, 5, 10)
     ctx = bonus(ctx, {:exp_add_race, :all}, 5)
     ctx = bonus(ctx, {:drop_add_race, :all}, 5)
     ctx
@@ -104018,7 +104018,7 @@
       ctx
     end
     ctx = if (refine(ctx) >= 11) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 366}, 5, 30)
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 366}, 5, 30)
     else
       ctx
     end
@@ -104455,8 +104455,8 @@
     end
     ctx = bonus(ctx, {:skill_atk, 156}, div((100 * refine(ctx)), 3))
     ctx = bonus(ctx, {:skill_use_sp, 156}, div((-10 * refine(ctx)), 3))
-    ctx = auto_cast(ctx, %{force: 1, flag: 785, trigger: :attack, skill_id: 156}, (1 + if((refine(ctx) >= 9), do: if((refine(ctx) >= 12), do: 1, else: 0), else: 0)), 10)
-    ctx = auto_cast(ctx, %{force: 1, flag: 833, trigger: :attack, skill_id: 156}, (1 + if((refine(ctx) >= 9), do: if((refine(ctx) >= 12), do: 1, else: 0), else: 0)), 5)
+    ctx = auto_cast(ctx, %{force: 1, flag: 529, trigger: :attack, skill_id: 156}, (1 + if((refine(ctx) >= 9), do: if((refine(ctx) >= 12), do: 1, else: 0), else: 0)), 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 577, trigger: :attack, skill_id: 156}, (1 + if((refine(ctx) >= 9), do: if((refine(ctx) >= 12), do: 1, else: 0), else: 0)), 5)
     ctx
   refineable: true
   slots: 1
@@ -108861,7 +108861,7 @@
   locations:
     - costume_head_top
   name: Costume Imp Hat
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 280}, 1, 5)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 280}, 1, 5)'
   type: armor
   view: 589
   weight: 400
@@ -133592,7 +133592,7 @@
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = if (refine(ctx) >= 2) do
-      autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
+      autobonus(ctx, %{primary: [{:auto_cast, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
     else
       ctx
     end
@@ -133609,7 +133609,7 @@
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = if (refine(ctx) >= 2) do
-      autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
+      autobonus(ctx, %{primary: [{:auto_cast, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
     else
       ctx
     end
@@ -133626,7 +133626,7 @@
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = if (refine(ctx) >= 2) do
-      autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
+      autobonus(ctx, %{primary: [{:auto_cast, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
     else
       ctx
     end
@@ -133643,7 +133643,7 @@
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = if (refine(ctx) >= 2) do
-      autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 90}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
+      autobonus(ctx, %{primary: [{:auto_cast, %{force: 1, flag: 593, trigger: :attack, skill_id: 90}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
     else
       ctx
     end
@@ -135390,11 +135390,11 @@
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = if (refine(ctx) > 1) do
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, div(refine(ctx), 2), (5 + refine(ctx)))
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, div(refine(ctx), 2), (5 + refine(ctx)))
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, div(refine(ctx), 2), (5 + refine(ctx)))
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, div(refine(ctx), 2), (5 + refine(ctx)))
-      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 90}, div(refine(ctx), 2), (5 + refine(ctx)))
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, div(refine(ctx), 2), (5 + refine(ctx)))
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, div(refine(ctx), 2), (5 + refine(ctx)))
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, div(refine(ctx), 2), (5 + refine(ctx)))
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, div(refine(ctx), 2), (5 + refine(ctx)))
+      ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 90}, div(refine(ctx), 2), (5 + refine(ctx)))
       ctx
     else
       ctx
@@ -141780,10 +141780,10 @@
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = bonus(ctx, :matk, (15 + div(refine(ctx), 2)))
     ctx = if (refine(ctx) == 9) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 11}, 7, 70)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 11}, 7, 70)
     else
       if (refine(ctx) > 9) do
-        auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 11}, 10, 100)
+        auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 11}, 10, 100)
       else
         ctx
       end
@@ -141833,10 +141833,10 @@
     ctx = bonus(ctx, :matk, refine(ctx))
     ctx = bonus(ctx, :atk, (15 + div(refine(ctx), 2)))
     ctx = if (refine(ctx) == 9) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 5}, 7, 70)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 5}, 7, 70)
     else
       if (refine(ctx) > 9) do
-        auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 5}, 10, 100)
+        auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 5}, 10, 100)
       else
         ctx
       end
@@ -146683,10 +146683,10 @@
   magic_attack: 160
   name: Rainbow Foxtail
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 4, 40)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 4, 40)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, 4, 40)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 90}, 4, 40)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 4, 40)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 4, 40)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, 4, 40)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 90}, 4, 40)
     ctx = bonus(ctx, :atk, (10 * refine(ctx)))
     ctx = bonus(ctx, :matk, (10 * refine(ctx)))
     ctx = bonus(ctx, :aspd_rate, refine(ctx))
@@ -148788,7 +148788,7 @@
       ctx
     end
     ctx = bonus(ctx, :vit, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 7, trigger_skill: 110}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 7, trigger_skill: 110}, 3, 50)
     ctx
   range: 1
   refineable: true
@@ -150384,7 +150384,7 @@
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 1)
     ctx = bonus(ctx, :mdef, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 489}, 5, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 489}, 5, 100)
     ctx
   type: armor
   weight: 100
@@ -150601,7 +150601,7 @@
   locations:
     - both_accessory
   name: Divine Gloves
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 77}, 1, 30)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 77}, 1, 30)'
   slots: 1
   type: armor
   weight: 1000
@@ -151511,7 +151511,7 @@
     ctx = bonus(ctx, :mdef, 5)
     ctx = bonus(ctx, :matk_rate, 5)
     ctx = bonus(ctx, {:subele, :water}, 20)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 89}, 1, 25)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 89}, 1, 25)
     ctx
   type: armor
 - aegis_name: 4SeasonsClover
@@ -154011,12 +154011,12 @@
     ctx = bonus(ctx, :max_sp, (50 * refine(ctx)))
     ctx = bonus(ctx, :aspd_rate, refine(ctx))
     ctx = if (refine(ctx) >= 10) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 5, 200)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 83}, 5, 200)
     else
       if (refine(ctx) >= 8) do
-        auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 4, 150)
+        auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 83}, 4, 150)
       else
-        auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 3, 100)
+        auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 83}, 3, 100)
       end
     end
     ctx
@@ -154485,7 +154485,7 @@
     ctx = bonus(ctx, :max_hp, (200 * refine(ctx)))
     ctx = bonus(ctx, :max_sp, (50 * refine(ctx)))
     ctx = bonus(ctx, :aspd_rate, refine(ctx))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, if((refine(ctx) >= 14), do: (if((refine(ctx) >= 12), do: (3 + 1), else: 3) + 1), else: if((refine(ctx) >= 12), do: (3 + 1), else: 3)), 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 83}, if((refine(ctx) >= 14), do: (if((refine(ctx) >= 12), do: (3 + 1), else: 3) + 1), else: if((refine(ctx) >= 12), do: (3 + 1), else: 3)), 50)
     ctx
   range: 1
   refineable: true
@@ -174478,8 +174478,8 @@
   no_guild_storage: true
   no_trade: true
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, max(skill_lv(ctx, 20), 5), (50 + (skill_lv(ctx, 20) * 5)))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, max(skill_lv(ctx, 21), 5), (50 + (skill_lv(ctx, 21) * 5)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 20}, max(skill_lv(ctx, 20), 5), (50 + (skill_lv(ctx, 20) * 5)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 21}, max(skill_lv(ctx, 21), 5), (50 + (skill_lv(ctx, 21) * 5)))
     ctx
   type: armor
   view: 688
@@ -174494,8 +174494,8 @@
   no_guild_storage: true
   no_trade: true
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, max(skill_lv(ctx, 14), 5), (50 + (skill_lv(ctx, 14) * 5)))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 15}, max(skill_lv(ctx, 15), 5), (50 + (skill_lv(ctx, 15) * 5)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, max(skill_lv(ctx, 14), 5), (50 + (skill_lv(ctx, 14) * 5)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 15}, max(skill_lv(ctx, 15), 5), (50 + (skill_lv(ctx, 15) * 5)))
     ctx
   type: armor
   view: 705
@@ -175520,9 +175520,9 @@
     ctx = bonus(ctx, :agi, 3)
     ctx = bonus(ctx, :max_sp, 75)
     ctx = bonus(ctx, :mdef, 15)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 261}, 5, 1000)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 261}, 5, 1000)
     ctx = if job_is(ctx, :base_job, :monk) do
-      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 401, trigger_skill: 372}, 1, 1000)
+      ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 401, trigger_skill: 372}, 1, 1000)
       ctx = bonus(ctx, {:skill_atk, 272}, base_level(ctx))
       ctx = bonus(ctx, {:skill_atk, 273}, base_level(ctx))
       ctx = bonus(ctx, {:skill_atk, 371}, base_level(ctx))
@@ -178376,7 +178376,7 @@
       ctx = bonus(ctx, :atk_rate, 2)
       ctx = bonus(ctx, {:skill_atk, 57}, 30)
       ctx = if (refine(ctx) >= 9) do
-        ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 357}, 5, 10)
+        ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 357}, 5, 10)
         ctx = autobonus(ctx, %{primary: [{:bonus, {:addele, :all}, 20}], trigger: {:on_skill, 357}, secondary: [], battle_flag: 0}, 1000, 10000)
         ctx = if (refine(ctx) >= 11) do
           ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -178436,7 +178436,7 @@
       ctx = bonus(ctx, :atk_rate, 2)
       ctx = bonus(ctx, {:skill_atk, 57}, 30)
       ctx = if (refine(ctx) >= 9) do
-        ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 357}, 5, 10)
+        ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 357}, 5, 10)
         ctx = autobonus(ctx, %{primary: [{:bonus, {:addele, :all}, 20}], trigger: {:on_skill, 357}, secondary: [], battle_flag: 0}, 1000, 10000)
         ctx = if (refine(ctx) >= 11) do
           ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -184182,7 +184182,7 @@
   name: CD in Mouth
   on_equip: |-
     ctx = bonus(ctx, {:magic_atk_ele, :all}, 5)
-    ctx = auto_cast(ctx, %{force: 1, flag: 785, trigger: :attack, skill_id: 13}, 10, 100)
+    ctx = auto_cast(ctx, %{force: 1, flag: 529, trigger: :attack, skill_id: 13}, 10, 100)
     ctx
   type: armor
   view: 815
@@ -185382,7 +185382,7 @@
   name: Frenzy Galapago
   on_equip: |-
     ctx = bonus(ctx, :agi, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 129}, max(skill_lv(ctx, 129), 1), ((50 + div(min(stat(ctx, :luk), 120), 3)) + (max(skill_lv(ctx, 129), 1) * 2)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 129}, max(skill_lv(ctx, 129), 1), ((50 + div(min(stat(ctx, :luk), 120), 3)) + (max(skill_lv(ctx, 129), 1) * 2)))
     ctx = bonus(ctx, {:skill_atk, 129}, (40 * skill_lv(ctx, 128)))
     ctx
   type: armor
@@ -185413,7 +185413,7 @@
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :agi, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 129}, max(skill_lv(ctx, 129), 1), ((50 + div(min(stat(ctx, :luk), 120), 3)) + (max(skill_lv(ctx, 129), 1) * 2)))
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 129}, max(skill_lv(ctx, 129), 1), ((50 + div(min(stat(ctx, :luk), 120), 3)) + (max(skill_lv(ctx, 129), 1) * 2)))
     ctx = bonus(ctx, {:skill_atk, 129}, (40 * skill_lv(ctx, 128)))
     ctx
   type: armor
@@ -197719,7 +197719,7 @@
       ctx = bonus(ctx, :fixed_cast, -500)
       ctx = if (refine(ctx) >= 11) do
         ctx = grant_skill(ctx, 48, 10)
-        ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 78}, 1, 150)
+        ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 78}, 1, 150)
         ctx = autobonus(ctx, %{primary: [{:bonus, :int, 150}, {:bonus, {:hp_loss_bonus, 1000}, 100}, {:bonus, {:sp_loss_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 40, 10000)
         ctx
       else
@@ -214017,7 +214017,7 @@
     - both_accessory
   name: Shadow Ring
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 211}, max(skill_lv(ctx, 211), 1), 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 211}, max(skill_lv(ctx, 211), 1), 10)
     ctx = bonus(ctx, {:skill_atk, 212}, div(base_level(ctx), 2))
     ctx = bonus(ctx, {:add_eff, :sc_stun}, (100 * skill_lv(ctx, 214)))
     ctx
@@ -214034,7 +214034,7 @@
   no_guild_storage: true
   no_trade: true
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 211}, max(skill_lv(ctx, 211), 1), 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 211}, max(skill_lv(ctx, 211), 1), 10)
     ctx = bonus(ctx, {:skill_atk, 212}, div(base_level(ctx), 2))
     ctx = bonus(ctx, {:add_eff, :sc_stun}, (100 * skill_lv(ctx, 214)))
     ctx
@@ -215360,9 +215360,9 @@
     ctx = bonus(ctx, :agi, 3)
     ctx = bonus(ctx, :max_sp, 75)
     ctx = bonus(ctx, :mdef, 15)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 261}, 5, 1000)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 261}, 5, 1000)
     ctx = if job_is(ctx, :base_job, :monk) do
-      ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 401, trigger_skill: 372}, 1, 1000)
+      ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 401, trigger_skill: 372}, 1, 1000)
       ctx = bonus(ctx, {:skill_atk, 272}, base_level(ctx))
       ctx = bonus(ctx, {:skill_atk, 273}, base_level(ctx))
       ctx = bonus(ctx, {:skill_atk, 371}, base_level(ctx))
@@ -219012,7 +219012,7 @@
   locations:
     - right_hand
   name: IDTest weapon
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 1, 1)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 1, 1)'
   range: 1
   refineable: true
   slots: 1
@@ -234240,7 +234240,7 @@
   locations:
     - both_hand
   name: IDTest bothhand
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 1, 1)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 1, 1)'
   range: 1
   slots: 1
   subtype: two_handed_sword
@@ -236031,7 +236031,7 @@
     ctx = bonus(ctx, :critical, (3 * div(refine(ctx), 2)))
     ctx = bonus(ctx, {:skill_atk, 141}, (25 * div(refine(ctx), 3)))
     ctx = if (refine(ctx) >= 7) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 141}, max(skill_lv(ctx, 141), 7), 100)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 141}, max(skill_lv(ctx, 141), 7), 100)
     else
       ctx
     end
@@ -239207,7 +239207,7 @@
   locations:
     - both_hand
   name: IDTest bow
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 1, 1)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 1, 1)'
   range: 5
   slots: 1
   subtype: bow

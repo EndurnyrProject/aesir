@@ -3827,7 +3827,7 @@
     ctx = bonus(ctx, :flee, 2)
     ctx = bonus(ctx, :critical, 7)
     ctx = if job_is(ctx, :base_class, :swordman) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 62}, 5, 10)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 62}, 5, 10)
     else
       ctx
     end
@@ -3884,7 +3884,7 @@
   locations:
     - shoes
   name: Dark Lord Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 83}, 5, 100)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 83}, 5, 100)'
   type: card
   weight: 10
 - aegis_name: Dark_Illusion_Card
@@ -3976,7 +3976,7 @@
     - both_accessory
   name: Poisonous Toad Card
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 52}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 52}, 1, 20)
     ctx = bonus(ctx, {:add_skill_blow, 52}, 5)
     ctx
   type: card
@@ -4292,7 +4292,7 @@
   name: Mutant Dragonoid Card
   on_equip: |-
     ctx = bonus(ctx, :atk, 15)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, (3 + (7 * bool(ctx, (skill_lv(ctx, 17) == 10)))), 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, (3 + (7 * bool(ctx, (skill_lv(ctx, 17) == 10)))), 50)
     ctx
   type: card
   weight: 10
@@ -4359,7 +4359,7 @@
   locations:
     - both_accessory
   name: Violy Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 318}, (1 + (4 * bool(ctx, (skill_lv(ctx, 318) == 5)))), 20)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 318}, (1 + (4 * bool(ctx, (skill_lv(ctx, 318) == 5)))), 20)'
   type: card
   weight: 10
 - aegis_name: Wander_Man_Card
@@ -4370,7 +4370,7 @@
   name: Wanderer Card
   on_equip: |-
     ctx = if not equipped(ctx, [4172, 4257, 4230, 4272]) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 219}, 1, 20)
+      auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 219}, 1, 20)
     else
       ctx
     end
@@ -4398,7 +4398,7 @@
     - both_accessory
   name: Bongun Card
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 5}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 5}, 1, 20)
     ctx = bonus(ctx, {:add_skill_blow, 5}, 5)
     ctx = bonus(ctx, {:add_def_monster, 1026}, -100)
     ctx
@@ -4449,7 +4449,7 @@
   locations:
     - left_hand
   name: Enchanted Peach Tree Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 28}, (1 + (9 * bool(ctx, (skill_lv(ctx, 28) == 10)))), 20)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 28}, (1 + (9 * bool(ctx, (skill_lv(ctx, 28) == 10)))), 20)'
   type: card
   weight: 10
 - aegis_name: Succubus_Card
@@ -4694,7 +4694,7 @@
   locations:
     - both_accessory
   name: Owl Duke Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 66}, 3, 3)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 66}, 3, 3)'
   type: card
   weight: 10
 - aegis_name: Owl_Baron_Card
@@ -4703,7 +4703,7 @@
   locations:
     - both_accessory
   name: Owl Baron Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 78}, 1, 30)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 78}, 1, 30)'
   type: card
   weight: 10
 - aegis_name: Iron_Fist_Card
@@ -5022,7 +5022,7 @@
   locations:
     - both_accessory
   name: Wind Ghost Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 84}, (3 + (7 * bool(ctx, (skill_lv(ctx, 84) == 10)))), 20)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 84}, (3 + (7 * bool(ctx, (skill_lv(ctx, 84) == 10)))), 20)'
   type: card
   weight: 10
 - aegis_name: Li_Me_Mang_Ryang_Card
@@ -5061,7 +5061,7 @@
   locations:
     - right_hand
   name: Injustice Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 136}, 1, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 136}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Incubus_Card
@@ -5247,7 +5247,7 @@
   locations:
     - both_accessory
   name: Greatest General Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 261}, 5, (2 + (18 * bool(ctx, job_is(ctx, :base_class, :acolyte)))))'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 261}, 5, (2 + (18 * bool(ctx, job_is(ctx, :base_class, :acolyte)))))'
   type: card
   weight: 10
 - aegis_name: Chepet_Card
@@ -5256,7 +5256,7 @@
   locations:
     - right_hand
   name: Chepet Card
-  on_equip: 'auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 28}, 5, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 28}, 5, 50)'
   type: card
   weight: 10
 - aegis_name: Choco_Card
@@ -5505,7 +5505,7 @@
   name: Turtle General Card
   on_equip: |-
     ctx = bonus(ctx, :atk_rate, 20)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 7}, 10, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 7}, 10, 30)
     ctx
   type: card
   weight: 10
@@ -5655,7 +5655,7 @@
     - right_hand
   name: Stormy Knight Card
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 89}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 89}, 1, 20)
     ctx = bonus(ctx, {:add_eff, :sc_freeze}, 2000)
     ctx
   type: card
@@ -5682,7 +5682,7 @@
   locations:
     - right_hand
   name: Bloody Knight Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 1, 20)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 83}, 1, 20)'
   type: card
   weight: 10
 - aegis_name: Hylozoist_Card
@@ -5711,7 +5711,7 @@
   locations:
     - right_hand
   name: Hatii Babe Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 15}, 3, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 15}, 3, 50)'
   type: card
   weight: 10
 - aegis_name: Garm_Card
@@ -5925,7 +5925,7 @@
   locations:
     - right_hand
   name: Metaling Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 215}, 1, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 215}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Rsx_0806_Card
@@ -5999,7 +5999,7 @@
   locations:
     - both_accessory
   name: Wickebine Tres Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 217}, 1, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 217}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Erend_Card
@@ -6458,7 +6458,7 @@
   locations:
     - both_accessory
   name: Hydrolancer Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 277}, 1, 100)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 277}, 1, 100)'
   type: card
   weight: 10
 - aegis_name: Dragon_Egg_Card
@@ -6567,7 +6567,7 @@
   name: Lady Solace Card
   on_equip: |-
     if job_is(ctx, :base_job, :priest) do
-      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 254}, 5, 20)
+      auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 254}, 5, 20)
     else
       ctx
     end
@@ -6581,7 +6581,7 @@
   name: Maero of Thanatos Card
   on_equip: |-
     ctx = bonus(ctx, :atk, 5)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 30}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 30}, 3, 50)
     ctx
   type: card
   weight: 10
@@ -6632,7 +6632,7 @@
   locations:
     - armor
   name: Aliza Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 1011}, 1, (50 + (50 * bool(ctx, job_is(ctx, :base_job, :dancer)))))'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 1011}, 1, (50 + (50 * bool(ctx, job_is(ctx, :base_job, :dancer)))))'
   type: card
   weight: 10
 - aegis_name: Alicel_Card
@@ -6725,7 +6725,7 @@
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx = bonus(ctx, :atk_rate, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 289}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 289}, 1, 50)
     ctx
   type: card
   weight: 10
@@ -6871,7 +6871,7 @@
   locations:
     - both_accessory
   name: Gazeti Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 2, 100)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 14}, 2, 100)'
   type: card
   weight: 10
 - aegis_name: Ktullanux_Card
@@ -7022,8 +7022,8 @@
     - garment
   name: Kasa Card
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 5, 20)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 17}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 5, 20)
     ctx
   type: card
   weight: 10
@@ -7717,7 +7717,7 @@
   locations:
     - shoes
   name: Sealed Dark Lord Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 83}, 5, 50)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 83}, 5, 50)'
   type: card
   weight: 10
 - aegis_name: Sealed_Pharaoh_Card
@@ -7783,7 +7783,7 @@
   name: Sealed Turtle General Card
   on_equip: |-
     ctx = bonus(ctx, :atk_rate, if((refine(ctx) > 14), do: 15, else: 10))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 7}, 10, 15)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 7}, 10, 15)
     ctx
   type: card
   weight: 10
@@ -7818,7 +7818,7 @@
     - right_hand
   name: Sealed Stormy Knight Card
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 89}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 89}, 1, 10)
     ctx = bonus(ctx, {:add_eff, :sc_freeze}, if((refine(ctx) > 14), do: 1500, else: 1000))
     ctx
   type: card
@@ -8238,7 +8238,7 @@
   name: Wild Rider Card
   on_equip: |-
     ctx = bonus(ctx, :agi, 1)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 29}, 1, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 29}, 1, 50)
     ctx
   type: card
   weight: 10
@@ -8272,7 +8272,7 @@
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx = bonus(ctx, {:addclass, :all}, if((refine(ctx) >= 15), do: 8, else: 5))
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 289}, 1, 25)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 289}, 1, 25)
     ctx
   type: card
   weight: 10
@@ -9230,7 +9230,7 @@
   locations:
     - both_accessory
   name: Owl Marquees Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 287}, if((skill_lv(ctx, 287) == 5), do: 5, else: 1), 20)'
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 287}, if((skill_lv(ctx, 287) == 5), do: 5, else: 1), 20)'
   type: card
   weight: 10
 - aegis_name: P_Archer_Skeleton_Card
@@ -29062,7 +29062,7 @@
   name: Fury Hero Card
   on_equip: |-
     ctx = bonus(ctx, :atk_rate, 2)
-    ctx = auto_cast(ctx, %{force: 0, flag: 785, trigger: :attack, skill_id: 8}, 1, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 529, trigger: :attack, skill_id: 8}, 1, 5)
     ctx
   type: card
   weight: 10
@@ -31509,7 +31509,7 @@
     - head_mid
     - head_top
   name: Ancient Tri Joint Card
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 50}, 5, 200)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 50}, 5, 200)'
   type: card
   weight: 10
 - aegis_name: Anc_Sta_Golem_Card_J
@@ -33346,7 +33346,7 @@
 - aegis_name: Orcish_Hero_Of_Anger
   id: 29140
   name: Anger of the Brave
-  on_equip: 'autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 653}, 3, 1000}], trigger: :attack, secondary: [], battle_flag: 849}, 8, 5000)'
+  on_equip: 'autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 593, trigger: :attack, skill_id: 653}, 3, 1000}], trigger: :attack, secondary: [], battle_flag: 849}, 8, 5000)'
   subtype: enchant
   type: card
 - aegis_name: Roar_Of_Baphomet
@@ -33451,7 +33451,7 @@
 - aegis_name: LexAeterna
   id: 29155
   name: Lex Aeterna
-  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 78}, 1, 10)'
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 78}, 1, 10)'
   subtype: enchant
   type: card
 - aegis_name: Casting_Top
@@ -35951,7 +35951,7 @@
   name: Fire and Thunder God
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 111}, 2, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 111}, 2, 10)
     ctx = if (stat(ctx, :luk) >= 125) do
       autobonus(ctx, %{primary: [{:bonus, :dex, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
     else
@@ -40269,7 +40269,7 @@
     - right_hand
   name: Sealed Stormy Knight Card
   on_equip: |-
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 89}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 89}, 1, 10)
     ctx = bonus(ctx, {:add_eff, :sc_freeze}, 1000)
     ctx
   type: card
@@ -40282,7 +40282,7 @@
   name: Sealed Turtle General Card
   on_equip: |-
     ctx = bonus(ctx, :atk_rate, 10)
-    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 7}, 10, 15)
+    ctx = auto_cast(ctx, %{force: 0, flag: 593, trigger: :attack, skill_id: 7}, 10, 15)
     ctx
   type: card
   weight: 10

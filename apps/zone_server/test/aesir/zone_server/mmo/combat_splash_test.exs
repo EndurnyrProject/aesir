@@ -364,9 +364,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
     stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id, _metadata -> :ok end)
 
-    stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, hit_info ->
+    stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, damage, hit_info ->
       send(test_pid, {:hit_info, hit_info})
-      damage
+      {damage, :hit}
     end)
 
     hits =
@@ -408,9 +408,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, :packet -> :ok end)
     stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id, _metadata -> :ok end)
 
-    stub(StatusInterpreter, :absorb_damage, fn :mob, 2001, damage, hit_info ->
+    stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, damage, hit_info ->
       send(test_pid, {:hit_info, hit_info})
-      damage
+      {damage, :hit}
     end)
 
     hits =

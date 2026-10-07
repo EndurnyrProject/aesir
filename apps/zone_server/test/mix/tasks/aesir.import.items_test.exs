@@ -118,7 +118,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
                   {:bonus, :str, 2},
                   {:if, {:or, {:==, {:gettime, 6}, 1}, {:==, {:gettime, 6}, 2}},
                    [{:bonus, :str, 2}, {:bonus, :vit, 2}], []},
-                  {:auto_cast, %{force: 1, flag: 849, skill_id: 62, trigger: :attack}, 1, 20},
+                  {:auto_cast, %{force: 1, flag: 593, skill_id: 62, trigger: :attack}, 1, 20},
                   {:if, {:>, :refine, 10}, [{:bonus, :str, 3}], []}
                 ]
               }, nil} =
@@ -833,6 +833,9 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
     write_body(root, "item_group_db.yml", "ITEM_GROUP_DB", [
       %{"Group" => "PRE_BOX", "SubGroups" => []}
     ])
+
+    write_root(root, "skill_db.yml", "SKILL_DB", "db/pre-re/skill_db.yml")
+    write_body(root, "skill_db.yml", "SKILL_DB", [])
   end
 
   defp write_root(root, file, type, import) do

@@ -656,12 +656,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   `{:error, reason, charged}` so the owner commits the spent resources; both
   are dropped silently. The effect runs as an `:auto` invocation with the
   wearer's autocast flag set for exactly its execution.
+
+  ## Options
+    - `:act_delay?` - arm the after-cast delay (default `true`). On-skill procs
+      arm none.
   """
-  @spec proc_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
+  @spec proc_cast(Active.caster(), integer(), pos_integer(), Active.target(), keyword()) ::
           {:ok, Active.caster()} | {:error, atom()} | {:error, atom(), Active.caster()}
-  def proc_cast(%PlayerState{} = game_state, skill_id, level, target)
+  def proc_cast(game_state, skill_id, level, target, opts \\ [])
+
+  def proc_cast(%PlayerState{} = game_state, skill_id, level, target, opts)
       when is_integer(level) and level > 0 do
-    now = System.monotonic_time(:millisecond)
+    now = if Keyword.get(opts, :act_delay?, true), do: System.monotonic_time(:millisecond)
 
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
@@ -672,7 +678,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
            Caster.Player.charge_proc_requirement(game_state, module, resolved, definition, level) do
       case run_unconditional(module, charged, resolved, level, definition, :auto, true) do
         {:ok, game_state} ->
-          {:ok, put_act_delay(game_state, definition, level, now, 0)}
+          {:ok, proc_act_delay(game_state, definition, level, now)}
 
         {:error, reason} ->
           proc_failure(reason, game_state, charged, definition, level, now)
@@ -683,17 +689,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  def proc_cast(%PlayerState{}, _skill_id, _level, _target), do: {:error, :invalid_level}
-  def proc_cast(_game_state, _skill_id, _level, _target), do: {:error, :unsupported_caster}
+  def proc_cast(%PlayerState{}, _skill_id, _level, _target, _opts), do: {:error, :invalid_level}
+  def proc_cast(_game_state, _skill_id, _level, _target, _opts), do: {:error, :unsupported_caster}
 
   # The effect ran and failed: the requirement stays spent and the after-cast
   # delay still arms, so the owner commits the changed state silently.
   defp proc_failure(reason, game_state, charged, definition, level, now) do
-    case put_act_delay(charged, definition, level, now, 0) do
+    case proc_act_delay(charged, definition, level, now) do
       ^game_state -> {:error, reason}
       changed -> {:error, reason, changed}
     end
   end
+
+  # `now` is nil for a proc that arms no after-cast delay.
+  defp proc_act_delay(game_state, _definition, _level, nil), do: game_state
+
+  defp proc_act_delay(game_state, definition, level, now),
+    do: put_act_delay(game_state, definition, level, now, 0)
 
   @doc """
   Begins a client-selected item skill without learned or resource requirements.

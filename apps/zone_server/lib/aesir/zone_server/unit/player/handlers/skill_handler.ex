@@ -19,8 +19,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
-  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
+  alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -1532,7 +1532,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     case Interpreter.auto_cast(game_state, skill_id, level, target) do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, skill_id, level, false)
-        broadcast_skill_effect(new_state.game_state, skill_id, level, target)
+        broadcast_skill_use(new_state.game_state, skill_id, level, target)
         {:noreply, new_state}
 
       {:error, _reason} ->
@@ -1545,17 +1545,68 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   The equipment sibling of `handle_auto_cast/4`: it routes to the interpreter's
   proc entry, which consumes the skill's requirement with the SP waived and
-  honors its cooldown without arming it. A proc that is cooling down is dropped
+  honors its cooldown without arming it. A proc refused here is dropped
   silently; an effect that fails after the requirement was spent commits the
   spent resources just as silently. A requirement that took the player's last
-  HP kills them.
+  HP kills them. A completed proc arms the player's on-skill procs like any
+  other skill use.
   """
   @spec handle_proc_cast(map(), integer(), pos_integer(), term()) :: {:noreply, map()}
-  def handle_proc_cast(%{game_state: game_state} = state, skill_id, level, target) do
-    case Interpreter.proc_cast(game_state, skill_id, level, target) do
+  def handle_proc_cast(state, skill_id, level, target),
+    do:
+      run_proc_cast(
+        state,
+        skill_id,
+        level,
+        target,
+        Interpreter.proc_cast(state.game_state, skill_id, level, target)
+      )
+
+  @doc """
+  Resolves one equipment proc selected for this player by a hit or a skill use.
+
+  The usability check and the level and chance draws run here, in the wearer's
+  own session, in the order of the proc's branch (`EquipAutocast.resolve/2`). A
+  proc refused because its skill is cooling down or banned on the map reports
+  that to the player before any roll, as an ordinary cast would. An on-skill
+  proc arms no after-cast delay and, while it executes, cannot re-trigger the
+  entry that cast it.
+  """
+  @spec handle_equip_proc(SessionState.t(), EquipAutocast.candidate()) ::
+          {:noreply, SessionState.t()}
+  def handle_equip_proc(%{game_state: game_state} = state, candidate) do
+    usable = &Interpreter.check_proc_usable(game_state, &1)
+
+    case EquipAutocast.resolve(candidate, usable: usable) do
+      {:cast, level} ->
+        run_equip_proc(state, candidate, level)
+
+      {:unusable, reason} when reason in [:on_cooldown, :skill_not_allowed] ->
+        report_cast_failure(candidate.skill_id, game_state.character_id, reason)
+        {:noreply, state}
+
+      _skipped ->
+        {:noreply, state}
+    end
+  end
+
+  defp run_equip_proc(state, %{branch: :skill} = candidate, level) do
+    %{skill_id: skill_id, target: target, entry: entry} = candidate
+
+    EquipProcDispatch.with_on_skill_lock(state.game_state.character_id, entry, fn ->
+      result = Interpreter.proc_cast(state.game_state, skill_id, level, target, act_delay?: false)
+      run_proc_cast(state, skill_id, level, target, result)
+    end)
+  end
+
+  defp run_equip_proc(state, candidate, level),
+    do: handle_proc_cast(state, candidate.skill_id, level, candidate.target)
+
+  defp run_proc_cast(state, skill_id, level, target, result) do
+    case result do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, skill_id, level, false)
-        broadcast_skill_effect(new_state.game_state, skill_id, level, target)
+        broadcast_skill_use(new_state.game_state, skill_id, level, target)
         HealthHandler.settle_lethal_cost(new_state)
 
       {:error, _reason, charged} ->
@@ -1698,42 +1749,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # Damage skills broadcast their own ZC_NOTIFY_SKILL from the combat layer, so
   # the no-damage support visual is sent only for no-damage skills. Ground casts
   # emit their own ZC_NOTIFY_GROUNDSKILL visual, so they skip this entirely.
-  # A successful skill use: shows the skill to onlookers and arms whatever the
-  # caster's equipment procs off casting it. The two proc entry points broadcast
-  # without this dispatch, so a proc can never trigger another one.
+  # A completed skill use, ordinary or automatic: shows the skill to onlookers
+  # and arms the caster's on-skill procs for a no-damage or ground skill. A
+  # damage skill arms them per damaging hit from the combat layer instead.
   defp broadcast_skill_use(game_state, skill_id, level, target) do
     broadcast_skill_effect(game_state, skill_id, level, target)
-    dispatch_on_skill_procs(game_state, skill_id, target)
+    dispatch_castend_on_skill(game_state, skill_id, target)
   end
 
-  # Ordinary successful skill use arms both equipment proc families. Proc-origin
-  # casts bypass this seam, so neither family can recursively arm itself.
-  @spec dispatch_on_skill_procs(PlayerState.t(), integer(), term()) :: :ok
-  defp dispatch_on_skill_procs(game_state, skill_id, target) do
-    game_state.stats.modifiers.equipment
-    |> EquipAutocast.on_skill(skill_id, proc_skill_target(target))
-    |> Enum.each(fn {:auto_cast, proc_skill_id, level, proc_target} ->
-      GenServer.cast(self(), {:skill, {:proc_cast, proc_skill_id, level, proc_target}})
-    end)
+  @spec dispatch_castend_on_skill(PlayerState.t(), integer(), term()) :: :ok
+  defp dispatch_castend_on_skill(game_state, skill_id, target) do
+    with {:ok, definition} <- Catalog.by_id(skill_id),
+         {:ok, on_skill_target} <- EquipProcDispatch.castend_target(definition, target) do
+      wearer = %{
+        unit_id: game_state.character_id,
+        equip_modifiers: game_state.stats.modifiers.equipment,
+        equip_autobonuses: game_state.stats.equip_autobonuses
+      }
 
-    registrations = game_state.stats.equip_autobonuses
-    keys = EquipAutobonus.on_skill(registrations, skill_id)
-
-    with [_ | _] <- keys,
-         {:ok, pid} <- UnitRegistry.get_player_pid(game_state.character_id) do
-      Enum.each(keys, fn key ->
-        source_identity = registrations |> Map.fetch!(key) |> Map.fetch!(:source_identity)
-        GenServer.cast(pid, {:equipment, {:autobonus_activate, key, source_identity}})
-      end)
+      EquipProcDispatch.on_skill(wearer, skill_id, on_skill_target)
     end
 
     :ok
   end
-
-  @spec proc_skill_target(term()) :: :self | {:unit, integer()} | nil
-  defp proc_skill_target({:unit, unit_id}), do: {:unit, unit_id}
-  defp proc_skill_target(:self), do: :self
-  defp proc_skill_target(_other), do: nil
 
   defp broadcast_skill_effect(_game_state, _skill_id, _level, {:ground, _x, _y}), do: :ok
 

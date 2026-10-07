@@ -276,7 +276,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         | equip_autobonuses: %{
             key => %{
               trigger: {:on_skill, 29},
-              rate: 1_000,
+              rate: 1_001,
               source_order: 0,
               source_identity: {:host, 501}
             }
@@ -309,7 +309,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         | equip_autobonuses: %{
             key => %{
               trigger: {:on_skill, 29},
-              rate: 1_000,
+              rate: 1_001,
               source_order: 0,
               source_identity: {:host, 501}
             }
@@ -329,7 +329,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, _}}}
     end
 
-    test "proc-origin skill casts do not recursively dispatch named-skill autobonuses" do
+    test "a proc-cast skill use arms named-skill autobonuses like any other use" do
       key = {10, 0}
       state = casting_state(45)
 
@@ -338,7 +338,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         | equip_autobonuses: %{
             key => %{
               trigger: {:on_skill, 29},
-              rate: 1_000,
+              rate: 1_001,
               source_order: 0,
               source_identity: {:host, 501}
             }
@@ -351,10 +351,60 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Interpreter, :proc_cast, fn ^game_state, 29, 1, :self -> {:ok, game_state} end)
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub_commit()
-      reject(&UnitRegistry.get_player_pid/1)
+      expect(UnitRegistry, :get_player_pid, fn 1000 -> {:ok, self()} end)
 
       assert {:noreply, _state} = SkillHandler.handle_proc_cast(state, 29, 1, :self)
-      refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, _}}}
+      assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, {:host, 501}}}}
+    end
+
+    test "an equipment proc refused for its cooldown tells the player before any roll" do
+      state = casting_state(45)
+      game_state = state.game_state
+      parent = self()
+
+      stub(Interpreter, :check_proc_usable, fn ^game_state, 29 -> {:error, :on_cooldown} end)
+      reject(&Interpreter.proc_cast/4)
+
+      stub(Broadcast, :to_player, fn 1000, packet ->
+        send(parent, {:packet, packet})
+        :ok
+      end)
+
+      assert {:noreply, ^state} =
+               SkillHandler.handle_equip_proc(state, equip_proc(:attack, rate: 0))
+
+      assert_received {:packet,
+                       %SkillCastFailed{
+                         skill_id: 29,
+                         reason: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
+                       }}
+    end
+
+    test "an on-skill proc casts without an after-cast delay and cannot re-trigger itself" do
+      entry = {:auto_cast_on_skill, {29, 29, 1, 1}}
+      other = {:auto_cast_on_skill, {29, 30, 1, 1}}
+      state = casting_state(45)
+
+      state =
+        put_in(state.game_state.stats.modifiers.equipment, %{entry => 1_000, other => 1_000})
+
+      game_state = state.game_state
+
+      stub(Interpreter, :check_proc_usable, fn ^game_state, 29 -> :ok end)
+
+      expect(Interpreter, :proc_cast, fn ^game_state, 29, 1, :self, [act_delay?: false] ->
+        {:ok, game_state}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub_commit()
+      stub(UnitRegistry, :get_player_pid, fn 1000 -> {:ok, self()} end)
+
+      assert {:noreply, _state} =
+               SkillHandler.handle_equip_proc(state, equip_proc(:skill, entry: entry))
+
+      assert_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^other}}}}
+      refute_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^entry}}}}
     end
 
     test "a proc whose effect failed after its requirement commits the charged caster silently" do
@@ -1979,6 +2029,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       level: 1,
       target: :self
     }
+  end
+
+  defp equip_proc(branch, overrides) do
+    Map.merge(
+      %{
+        branch: branch,
+        skill_id: 29,
+        level: 1,
+        random_level?: false,
+        rate: 1_000,
+        target: :self,
+        entry: :entry
+      },
+      Map.new(overrides)
+    )
   end
 
   defp definition(fields) do

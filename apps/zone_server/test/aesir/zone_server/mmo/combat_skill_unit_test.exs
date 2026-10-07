@@ -139,11 +139,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     reject(&MagicDamageCalculator.calculate_magic_damage/3)
 
-    expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 103, info ->
+    expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 103, info ->
       assert info.element == :holy
       assert info.from_caster? == false
       send(test_pid, :absorbed)
-      97
+      {97, :hit}
     end)
 
     expect(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
@@ -307,7 +307,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     expect(EquipComa, :trigger?, fn ^attacker, _target -> false end)
 
-    expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+    expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 80, hit_info ->
       assert %{
                dmg_type: :magic,
                is_short: false,
@@ -317,7 +317,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
                from_caster?: false
              } = hit_info
 
-      40
+      {40, :hit}
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
@@ -414,7 +414,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
-    stub(StatusInterpreter, :absorb_damage, fn :mob, @target_id, ^damage, _info -> absorbed end)
+
+    stub(StatusInterpreter, :absorb_hit, fn :mob, @target_id, ^damage, _info ->
+      {absorbed, :hit}
+    end)
+
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id, _metadata -> :ok end)
 
@@ -476,9 +480,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     expect(EquipComa, :trigger?, fn ^attacker, _target -> true end)
 
-    expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+    expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 80, hit_info ->
       assert hit_info.coma?
-      0
+      {0, :hit}
     end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
@@ -591,7 +595,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     reject(&PlayerSession.apply_damage/4)
-    expect(PlayerSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
+    expect(PlayerSession, :apply_coma, fn _pid, {:player, @caster_id}, _metadata -> :ok end)
 
     assert :ok =
              Combat.apply_skill_unit_damage(attacker, :player, player_id, 89, 10, :water, 600)

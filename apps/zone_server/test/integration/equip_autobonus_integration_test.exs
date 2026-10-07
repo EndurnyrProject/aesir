@@ -183,7 +183,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
     refute wrong_key in active_keys(session.pid)
   end
 
-  test "only successful ordinary named skill use activates autobonus3" do
+  test "only a successful named skill use activates autobonus3, a proc-cast one included" do
     character =
       insert_character("ProcSkill", %{
         hp: 1,
@@ -229,7 +229,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
 
              state.stats.current_state.hp > before_hp and
                state.stats.current_state.sp == before_sp and
-               Map.fetch!(state.stats.active_autobonuses, key) == generation
+               Map.fetch!(state.stats.active_autobonuses, key) != generation
            end)
   end
 
@@ -359,7 +359,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
        battle_flag: battle_flag,
        primary: primary,
        secondary: secondary
-     }, 1_000, @duration}
+     }, 1_001, @duration}
   end
 
   defp item(id, program) do

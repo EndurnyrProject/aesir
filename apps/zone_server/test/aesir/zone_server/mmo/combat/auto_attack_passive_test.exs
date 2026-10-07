@@ -139,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
     %{
       trigger: trigger,
       battle_flag: battle_flag,
-      rate: 1_000,
+      rate: 1_001,
       source_order: source_order,
       source_identity: {:host, source_order + 1}
     }
@@ -277,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
       end)
     end
 
-    test "dispatches a defender autobonus to the defender session",
+    test "hands the defender session its when-hit event with the delivered swing",
          %{attacker: attacker, player_state: player_state} do
       attack_flag = BattleFlags.build(:weapon, :short, false)
       defender_key = {20, 0}
@@ -304,7 +304,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
         assert :ok = Combat.execute_attack(attacker, player_state, 3001)
       end)
 
-      assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^defender_key, _}}}
+      assert_received {:"$gen_cast",
+                       {:unit,
+                        {:apply_damage, _damage, {:player, 1001},
+                         %{proc_event: %{attack_flag: ^attack_flag, counter_effects?: true}}}}}
+
+      refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^defender_key, _}}}
     end
 
     test "a multi-hit swing still dispatches exactly once",

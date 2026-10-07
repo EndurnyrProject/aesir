@@ -19,11 +19,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
-  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
-  alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
@@ -710,6 +709,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       do: EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
 
     coma? = equipment_coma?(attacker, target, target_type, damage_result.damage)
+    proc = EquipProcDispatch.spec(attacker, target, target_state, attack_flag)
 
     with :ok <-
            handle_player_attack_hit(
@@ -720,7 +720,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
              target_type,
              target_id,
              1,
-             coma?
+             %{coma?: coma?, proc: proc}
            ) do
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
       roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
@@ -736,8 +736,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       OnHitEffects.after_hit(attacker, target, damage_result,
         attack_flag: normal_attack_flag(attacker)
       )
-
-      dispatch_equip_autocasts(attacker, target, target_pid, normal_attack_flag(attacker))
 
       drain_hp(attacker, damage_result.damage)
       drain_sp(attacker, target, damage_result.damage)
@@ -817,7 +815,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       skill_level: nil,
       from_caster?: true,
       basic_attack?: true,
-      coma?: coma?
+      coma?: coma?,
+      proc: EquipProcDispatch.spec(attacker, target, target_state, attack_flag)
     }
 
     source = player_damage_source(target_type, attacker.unit_id)
@@ -861,7 +860,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           dispatch_dealt_damage(attacker, target_type, target_id, damage, settled.primary_element)
 
           OnHitEffects.after_hit(attacker, target, damage_result, attack_flag: attack_flag)
-          dispatch_equip_autocasts(attacker, target, target_pid, attack_flag)
 
           drain_hp(attacker, damage)
           drain_sp(attacker, target, damage)
@@ -933,52 +931,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     BattleFlags.build(:weapon, range, false)
   end
 
-  # Rolls both sides' equipment procs once for the landed logical swing.
-  # Existing autocasts retain their session-local delivery; autobonus activation
-  # resolves each player through the registry so the wearer owns the mutation.
-  @spec dispatch_equip_autocasts(Combatant.t(), Combatant.t(), pid() | nil, BattleFlags.flag()) ::
-          :ok
-  defp dispatch_equip_autocasts(attacker, target, target_pid, attack_flag) do
-    attacker
-    |> EquipAutocast.on_attack(target, attack_flag)
-    |> Enum.each(&send_auto_cast(self(), &1))
-
-    target
-    |> EquipAutocast.when_hit(attacker, attack_flag)
-    |> Enum.each(&send_auto_cast(target_pid, &1))
-
-    send_equip_autobonuses(
-      attacker,
-      EquipAutobonus.on_attack(attacker.equip_autobonuses, attack_flag)
-    )
-
-    send_equip_autobonuses(
-      target,
-      EquipAutobonus.when_hit(target.equip_autobonuses, attack_flag)
-    )
-  end
-
-  defp send_equip_autobonuses(
-         %{unit_type: :player, unit_id: unit_id, equip_autobonuses: registrations},
-         [_ | _] = keys
-       ) do
-    with {:ok, pid} <- UnitRegistry.get_player_pid(unit_id) do
-      Enum.each(keys, fn key ->
-        source_identity = registrations |> Map.fetch!(key) |> Map.fetch!(:source_identity)
-        GenServer.cast(pid, {:equipment, {:autobonus_activate, key, source_identity}})
-      end)
-    end
-
-    :ok
-  end
-
-  defp send_equip_autobonuses(_combatant, _keys), do: :ok
-
-  @spec send_auto_cast(pid(), EquipAutocast.proc()) :: :ok
-  defp send_auto_cast(pid, {:auto_cast, skill_id, level, target}) do
-    GenServer.cast(pid, {:skill, {:proc_cast, skill_id, level, target}})
-  end
-
   # Recovers HP from the damage a landed swing dealt, when the attacker's
   # equipment carries the drain bonus. Rolled once per swing over the swing's
   # total damage (multi-hit included), never per delivered hit, so a multi-hit
@@ -1039,7 +991,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         target_type,
         target_id,
         1,
-        equipment_coma?(attacker, splash_target, target_type, damage_result.damage)
+        %{
+          coma?: equipment_coma?(attacker, splash_target, target_type, damage_result.damage),
+          proc:
+            EquipProcDispatch.spec(
+              attacker,
+              splash_target,
+              target_state,
+              normal_attack_flag(attacker)
+            )
+        }
       )
     end
 
@@ -1133,7 +1094,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id,
          hits,
-         coma?
+         %{coma?: coma?, proc: proc}
        ) do
     damage = damage_result.damage
     is_critical = damage_result.is_critical
@@ -1152,7 +1113,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           skill_level: nil,
           from_caster?: true,
           basic_attack?: true,
-          coma?: coma?
+          coma?: coma?,
+          proc: proc
         }
 
         prepared_hits =
@@ -1178,6 +1140,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         end)
 
         broadcast_basic_attack(attacker_combatant, target_combatant, damage_result, prepared_hits)
+        dispatch_swing_procs(prepared_hits)
 
       :player ->
         hit_info = %{
@@ -1188,7 +1151,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           skill_level: nil,
           from_caster?: true,
           basic_attack?: true,
-          coma?: coma?
+          coma?: coma?,
+          proc: proc
         }
 
         {final_damage, prepared_hit_info} =
@@ -1217,6 +1181,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           prepared_hit_info,
           {:player, attacker_combatant.unit_id}
         )
+        |> tap(fn _delivery -> dispatch_swing_procs([{final_damage, prepared_hit_info}]) end)
 
       :homunculus ->
         hit_info = %{
@@ -1227,7 +1192,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           skill_level: nil,
           from_caster?: true,
           basic_attack?: true,
-          coma?: coma?
+          coma?: coma?,
+          proc: proc
         }
 
         {final_damage, prepared_hit_info} =
@@ -1256,6 +1222,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           prepared_hit_info,
           {:player, attacker_combatant.unit_id}
         )
+        |> tap(fn _delivery -> dispatch_swing_procs([{final_damage, prepared_hit_info}]) end)
 
       :skill_unit ->
         apply_skill_unit_target_damage(
@@ -1265,9 +1232,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           attacker_combatant.unit_id,
           attacker_combatant,
           target_combatant,
-          damage_result
+          damage_result,
+          proc
         )
     end
+  end
+
+  # A normal swing resolves in its attacker's own session, so the attacker's
+  # procs sent here queue behind the rest of the swing's effects. A multi-hit
+  # swing is one logical attack: it dispatches once over its total damage.
+  defp dispatch_swing_procs([{_damage, hit_info} | _rest] = prepared_hits) do
+    total = prepared_hits |> Enum.map(&elem(&1, 0)) |> Enum.sum()
+    EquipProcDispatch.dispatch_hit(hit_info, total)
   end
 
   defp broadcast_basic_attack(attacker, target, damage_result, prepared_hits) do
@@ -1295,6 +1271,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     :ok
   end
 
+  # A struck skill unit is never dead, so the swing keeps its additional-effect
+  # stage; a unit wears nothing, so only the attacker's side dispatches.
   defp apply_skill_unit_target_damage(
          manager_pid,
          target_id,
@@ -1302,7 +1280,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          attacker_id,
          attacker,
          target,
-         damage_result
+         damage_result,
+         proc
        ) do
     with :ok <-
            DamageApplication.damage_skill_unit(
@@ -1312,6 +1291,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
              {:player, attacker_id}
            ) do
       broadcast_skill_unit_attack(attacker, target, damage_result)
+
+      event =
+        EquipProcDispatch.event(proc.attack_flag, damage, %{}, target_survives?: true)
+
+      EquipProcDispatch.dispatch(attacker, target, event)
     end
   end
 
@@ -1347,7 +1331,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       skill_id: nil,
       skill_level: nil,
       from_caster?: true,
-      basic_attack?: true
+      basic_attack?: true,
+      proc:
+        EquipProcDispatch.spec(
+          attacker_combatant,
+          target_combatant,
+          nil,
+          normal_attack_flag(attacker_combatant)
+        )
     }
 
     {damage, hit_info} =
@@ -1379,13 +1370,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     OnHitEffects.after_hit(attacker_combatant, target_combatant, damage_result,
       attack_flag: normal_attack_flag(attacker_combatant)
-    )
-
-    dispatch_equip_autocasts(
-      attacker_combatant,
-      target_combatant,
-      target_pid,
-      normal_attack_flag(attacker_combatant)
     )
   end
 
@@ -1425,7 +1409,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       skill_id: nil,
       skill_level: nil,
       from_caster?: true,
-      basic_attack?: true
+      basic_attack?: true,
+      proc: EquipProcDispatch.spec(attacker, target, target_hp, normal_attack_flag(attacker))
     }
 
     source = {:homunculus, attacker.unit_id}
