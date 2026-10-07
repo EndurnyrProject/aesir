@@ -65,6 +65,15 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     end)
   end
 
+  test "a caller-named current cell drives a second push before the first has landed" do
+    stub_movable_mob(position: {151, 150})
+
+    assert {:ok, {153, 150}} =
+             Knockback.knockback(:mob, @mob_id, 151, 150, 1, position: {152, 150})
+
+    assert_received {:"$gen_cast", {:movement, {:knockback, 152, 150, @map_name, 153, 150}}}
+  end
+
   test "skill combines native and equipment distances into one displacement" do
     attacker =
       CombatTestHelper.create_player_combatant(position: @from)

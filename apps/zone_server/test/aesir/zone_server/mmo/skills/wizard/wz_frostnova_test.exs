@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -124,20 +125,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
 
     @tag game_mode: :renewal
 
-    test "level 10 independently attempts a 15-second Freeze on hit mobs and players" do
+    test "level 10 independently attempts a 15-second Freeze on each connected mob and player" do
       caster = %{character_id: 1_000, x: 150, y: 150}
       definition = WzFrostnova.definition()
       resistance_roll = fn rate -> rate >= 83 end
 
       expect(Combat, :execute_magic_splash, fn ^caster, {150, 150}, 3, opts ->
         assert opts[:skill_ratio] == 200
-        [{:mob, 2_001}, {:player, 2_002}]
+        connect(opts, [{:mob, 2_001}, {:player, 2_002}])
       end)
 
       expect(StatusInterpreter, :apply_status, 2, fn unit_type, target_id, :sc_freeze, params ->
         assert {unit_type, target_id} in [{:mob, 2_001}, {:player, 2_002}]
         assert params[:duration] == 15_000
         assert params[:success_rate] == 83
+        assert params[:val1] == 10
         assert params[:resistance_roll].(83)
         :ok
       end)
@@ -151,7 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
       definition = WzFrostnova.definition()
       resistance_roll = fn rate -> 38 <= rate end
 
-      stub(Combat, :execute_magic_splash, fn _, _, _, _ -> [{:mob, 2_001}] end)
+      stub(Combat, :execute_magic_splash, fn _, _, _, opts -> connect(opts, [{:mob, 2_001}]) end)
 
       expect(StatusInterpreter, :apply_status, fn :mob, 2_001, :sc_freeze, params ->
         assert params[:duration] == 1_500
@@ -169,7 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
       definition = WzFrostnova.definition()
       resistance_roll = fn rate -> 39 <= rate end
 
-      stub(Combat, :execute_magic_splash, fn _, _, _, _ -> [{:mob, 2_001}] end)
+      stub(Combat, :execute_magic_splash, fn _, _, _, opts -> connect(opts, [{:mob, 2_001}]) end)
 
       expect(StatusInterpreter, :apply_status, fn :mob, 2_001, :sc_freeze, params ->
         refute params[:resistance_roll].(params[:success_rate])
@@ -184,8 +186,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
       caster = %{character_id: 1_000, x: 150, y: 150}
       definition = WzFrostnova.definition()
 
-      stub(Combat, :execute_magic_splash, fn _, _, _, _ ->
-        [{:mob, 2_001}, {:player, 2_002}]
+      stub(Combat, :execute_magic_splash, fn _, _, _, opts ->
+        connect(opts, [{:mob, 2_001}, {:player, 2_002}])
       end)
 
       expect(StatusInterpreter, :apply_status, 2, fn
@@ -195,6 +197,59 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
 
       assert {:ok, ^caster} = WzFrostnova.cast(caster, :self, 10, definition)
     end
+
+    test "a non-player source freezes with 35% plus 3% per level" do
+      caster = %{instance_id: 5_000, x: 150, y: 150}
+
+      stub(Combat, :execute_magic_splash, fn _, _, _, opts ->
+        opts[:additional_effect].(%{unit_type: :mob, unit_id: 5_000}, {:player, 2_002})
+        [{:player, 2_002}]
+      end)
+
+      expect(StatusInterpreter, :apply_status, fn :player, 2_002, :sc_freeze, params ->
+        assert params[:success_rate] == 65
+        assert params[:caster_id] == 5_000
+        assert params[:source_type] == :mob
+        :ok
+      end)
+
+      assert {:ok, ^caster} = WzFrostnova.cast(caster, :self, 10, WzFrostnova.definition())
+    end
+
+    test "a hit that did not connect freezes nothing" do
+      caster = %{character_id: 1_000, x: 150, y: 150}
+      stub(Combat, :execute_magic_splash, fn _, _, _, _opts -> [{:mob, 2_001}] end)
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, ^caster} = WzFrostnova.cast(caster, :self, 10, WzFrostnova.definition())
+    end
+
+    test "skips a unit on the caster's cell and one on a Land Protector cell" do
+      caster = %{character_id: 1_000, x: 150, y: 150}
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :mob, 2_001 -> {:ok, {150, 150, "prontera"}}
+        :mob, 2_002 -> {:ok, {151, 150, "prontera"}}
+        :mob, 2_003 -> {:ok, {152, 150, "prontera"}}
+      end)
+
+      stub(SkillUnitStorage, :land_protected?, fn "prontera", x, _y -> x == 151 end)
+
+      expect(Combat, :execute_magic_splash, fn _, _, _, opts ->
+        assert Enum.filter([{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}], opts[:target_filter]) ==
+                 [{:mob, 2_003}]
+
+        []
+      end)
+
+      assert {:ok, ^caster} = WzFrostnova.cast(caster, :self, 1, WzFrostnova.definition())
+    end
+  end
+
+  # Each target took damage and survived: Frost Nova's on-hit effect runs.
+  defp connect(opts, targets) do
+    Enum.each(targets, &opts[:additional_effect].(%{unit_type: :player, unit_id: 1_000}, &1))
+    targets
   end
 
   describe "real splash integration" do

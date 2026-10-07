@@ -67,15 +67,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneumaTest do
     end
   end
 
-  describe "on_interval/2" do
-    test "grants sc_pneuma (with the field duration) to every occupant who does not already have it" do
+  describe "on_touch/2" do
+    test "grants sc_pneuma for the field's lifetime to a unit stepping in without it" do
       test_pid = self()
       stub_living_units()
-
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
-        [{:player, @caster_id}, {:player, 2001}]
-      end)
-
       stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, :sc_pneuma -> false end)
 
       stub(StatusInterpreter, :apply_status, fn unit_type, target_id, :sc_pneuma, params ->
@@ -83,57 +78,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneumaTest do
         :ok
       end)
 
-      assert {:ok, %Group{}} = AlPneuma.on_interval(group(1, 9), 0)
+      assert {:ok, %Group{}} = AlPneuma.on_touch(group(1, 9), {:player, 2001})
 
-      assert_received {:granted, :player, @caster_id, params}
+      assert_received {:granted, :player, 2001, params}
       assert params[:val1] == 1
+      assert params[:val2] == 9
       assert params[:caster_id] == @caster_id
       assert params[:duration] == 10_000
-
-      assert_received {:granted, :player, 2001, _params}
     end
 
-    test "ignores targetable skill-unit cells sharing the footprint" do
-      test_pid = self()
+    test "ignores a targetable skill-unit cell sharing the footprint" do
       stub_living_units()
-
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
-        [{:skill_unit, 777}, {:player, 2001}]
-      end)
-
       stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, :sc_pneuma -> false end)
-
-      stub(StatusInterpreter, :apply_status, fn unit_type, target_id, :sc_pneuma, _params ->
-        send(test_pid, {:granted, unit_type, target_id})
-        :ok
-      end)
-
-      assert {:ok, %Group{}} = AlPneuma.on_interval(group(1, 9), 0)
-
-      assert_received {:granted, :player, 2001}
-      refute_received {:granted, :skill_unit, _}
-    end
-
-    test "does not re-grant to an occupant who already carries the buff" do
-      stub_living_units()
-
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
-        [{:player, @caster_id}]
-      end)
-
-      stub(StatusStorage, :has_status?, fn :player, @caster_id, :sc_pneuma -> true end)
-
       reject(&StatusInterpreter.apply_status/4)
 
-      assert {:ok, %Group{}} = AlPneuma.on_interval(group(1, 9), 0)
+      assert {:ok, %Group{}} = AlPneuma.on_touch(group(1, 9), {:skill_unit, 777})
+    end
+
+    test "does not re-grant to a unit that already carries the buff" do
+      stub_living_units()
+      stub(StatusStorage, :has_status?, fn :player, @caster_id, :sc_pneuma -> true end)
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, %Group{}} = AlPneuma.on_touch(group(1, 9), {:player, @caster_id})
     end
 
     test "does not grant the field status to a corpse" do
       corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
-
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
-        [{:player, 2001}]
-      end)
 
       stub(UnitRegistry, :get_unit, fn :player, 2001 ->
         {:ok, {PlayerState, corpse, self()}}
@@ -142,7 +113,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneumaTest do
       reject(&StatusStorage.has_status?/3)
       reject(&StatusInterpreter.apply_status/4)
 
+      assert {:ok, %Group{}} = AlPneuma.on_touch(group(1, 9), {:player, 2001})
+    end
+  end
+
+  describe "occupants that did not step in" do
+    test "the field's interval grants nothing, so a unit that unhides in it stays unprotected" do
+      reject(&SpatialIndex.get_all_units_in_range/4)
+      reject(&StatusInterpreter.apply_status/4)
+
       assert {:ok, %Group{}} = AlPneuma.on_interval(group(1, 9), 0)
+      assert {:ok, %Group{next_tick_at: nil}} = AlPneuma.schedule(group(1, 9), & &1)
     end
   end
 

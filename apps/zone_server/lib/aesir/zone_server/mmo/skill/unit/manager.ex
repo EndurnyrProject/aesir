@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -504,6 +505,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @impl true
   def handle_info({:unit_lifecycle, %Event{} = event}, state) do
     apply_lifecycle_event(event)
+    reset_unit_hit_counters(event)
     {:noreply, state}
   end
 
@@ -517,6 +519,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     state.schedule_tick.(self(), state.tick_interval)
     :ok
   end
+
+  # Death and leaving the server clear a unit's status data, Storm Gust's hit
+  # counter included; a warp keeps it. The manager is the counter's only
+  # incrementer, so ordering the reset here keeps both in one mailbox.
+  defp reset_unit_hit_counters(%Event{reason: :warp}), do: :ok
+
+  defp reset_unit_hit_counters(%Event{unit_type: unit_type, unit_id: unit_id}),
+    do: StatusStorage.reset_storm_gust_counter(unit_type, unit_id)
 
   defp apply_lifecycle_event(%Event{unit_type: unit_type, unit_id: unit_id} = event) do
     Storage.get_groups_by_caster(unit_type, unit_id)
@@ -891,6 +901,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp cleanup(%Group{group_id: group_id} = group, module, despawn_reason) do
     FieldSupport.release_group(group_id, linger_ms: field_linger_ms(group))
+    out_occupants(group, group.cells, module)
     cells = Storage.get_cells_by_group(group_id)
     Enum.each(cells, &remove_cell_indexes/1)
 
@@ -984,7 +995,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         hits_remaining = hits - 1
 
         if hits_remaining <= 0 or (shield_hp && shield_hp - damage <= 0) do
-          cleanup(group, nil, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+          cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
           {:block, :remove}
         else
           state = %{
@@ -1083,6 +1094,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp shrink_group(%Group{} = group, removed) do
     coordinates = MapSet.new(removed)
 
+    case handler_for(group) do
+      {:ok, module} -> out_occupants(group, removed, module)
+      :error -> :ok
+    end
+
     cells =
       group.group_id
       |> Storage.get_cells_by_group()
@@ -1095,6 +1111,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> reconcile_group()
 
     publish_cells_despawn(group, Enum.map(cells, & &1.cell_id))
+  end
+
+  # Deleting a unit cell runs the group's `on_out` for every unit standing on it,
+  # as a unit stepping off would. The group is ending or losing those cells, so
+  # the callback's returned group is not kept.
+  defp out_occupants(%Group{map_name: map_name} = group, cells, module) do
+    if module && function_exported?(module, :on_out, 2) do
+      cells
+      |> Enum.flat_map(fn {x, y} -> SpatialIndex.get_all_units_in_range(map_name, x, y, 0) end)
+      |> Enum.uniq()
+      |> Enum.each(&out_occupant(group, module, &1))
+    end
+
+    :ok
+  end
+
+  defp out_occupant(group, module, mover) do
+    case invoke(module, :on_out, [group, mover]) do
+      {:ok, _result} -> :ok
+      {:error, reason} -> log_callback_error(group, :on_out, reason)
+    end
   end
 
   # Shifts every cell by the caster's displacement, keeping cell IDs. Each

@@ -179,4 +179,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorageTest do
       assert %StatusEntry{next_tick_at: nil} = StatusStorage.get_status(:player, 4, :sc_blessing)
     end
   end
+
+  describe "Storm Gust counter" do
+    test "counts per unit, wraps like a byte and is cleared with the unit's statuses" do
+      assert StatusStorage.storm_gust_counter(:mob, 1) == 0
+      assert StatusStorage.increment_storm_gust_counter(:mob, 1) == 1
+      assert StatusStorage.storm_gust_counter(:mob, 2) == 0
+
+      for _ <- 2..255, do: StatusStorage.increment_storm_gust_counter(:mob, 1)
+      assert StatusStorage.storm_gust_counter(:mob, 1) == 255
+      assert StatusStorage.increment_storm_gust_counter(:mob, 1) == 0
+
+      StatusStorage.increment_storm_gust_counter(:mob, 1)
+      assert :ok = StatusStorage.clear_unit_statuses(:mob, 1)
+      assert StatusStorage.storm_gust_counter(:mob, 1) == 0
+    end
+  end
 end

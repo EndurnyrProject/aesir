@@ -492,6 +492,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       refute Map.get(prepared, :redirected, false)
     end
 
+    test "a forwarded hit stays connected for the devotee's on-hit effects", %{
+      devotee_id: devotee_id,
+      crusader_pid: crusader_pid
+    } do
+      stub(PlayerSession, :apply_damage, fn ^crusader_pid, 40, {:player, 20}, _metadata -> :ok end)
+
+      assert {0, %{devotion_rerouted?: true}} =
+               DamageApplication.prepare_unit_damage(
+                 :player,
+                 devotee_id,
+                 40,
+                 %{skill_id: 89, dmg_type: :magic},
+                 20
+               )
+    end
+
     @tag game_mode: :renewal
     test "renewal Pressure is rerouted like any other hit", %{
       devotee_id: devotee_id,

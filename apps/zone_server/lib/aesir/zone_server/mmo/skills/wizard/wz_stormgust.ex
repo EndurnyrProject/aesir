@@ -1,13 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
   @moduledoc """
-  Storm Gust (WZ_STORMGUST). A 5x5 water field ticking every 450 ms for 4.5 s that
-  pushes 2 cells on every hit.
+  Storm Gust (WZ_STORMGUST). A 5x5 water field ticking every 450 ms that pushes 2
+  cells on every hit.
 
-  Renewal: 70% plus 50% per level MATK per hit, each hit freezing with a 65% minus 5%
-  per level chance, with a 4.5 to 6.3 s cast plus 1.5 s fixed, a 1 s delay, and a 6 s
-  cooldown. Pre-renewal: 100% plus 40% per level, a freeze on the third accumulated hit
-  (the count resets once the freeze lands), a 6 to 15 s variable cast, a 5 s delay,
-  and no cooldown. The classic counter is kept per field, not per target across fields.
+  A freeze is an on-hit effect: it is rolled only for a hit that dealt damage to a
+  target that survived it.
+
+  Renewal: a 4.5 s field dealing 70% plus 50% per level MATK per hit, each hit freezing for 27 s with a
+  65% minus 5% per level chance, with a 4.5 to 6.3 s cast plus 1.5 s fixed, a 1 s
+  delay, and a 6 s cooldown. Pre-renewal: a 4.6 s field dealing 100% plus 40% per
+  level, a 6 to 15 s variable cast, a 5 s delay, and no cooldown. Each hit adds to
+  the target's own Storm Gust counter, shared by every Storm Gust that strikes it;
+  from the third counted hit each damaging hit tries a 150% chance, 12 s freeze,
+  and the counter resets when the freeze lands, when it passes 250, or when a hit
+  deals no damage. Death, leaving the server and buff-clearing effects reset it too.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 89,
@@ -23,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
     knockback: 2,
     splash_radius: 2,
     hit_interval: 450,
-    unit_duration: List.duplicate(4_500, 10),
+    unit_duration: [renewal: List.duplicate(4_500, 10), pre_renewal: List.duplicate(4_600, 10)],
+    duration: [renewal: List.duplicate(27_000, 10), pre_renewal: List.duplicate(12_000, 10)],
     sp_cost: List.duplicate(78, 10),
     cast_time: [
       renewal: [4500, 4700, 4900, 5100, 5300, 5500, 5700, 5900, 6100, 6300],
@@ -39,8 +46,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-
-  @freeze_threshold 3
+  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
 
   @behaviour Ground
 
@@ -51,45 +58,59 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
     {:ok,
      %{
        cells: Layout.square(center, definition.splash_radius),
-       state: %{hit_counts: %{}},
+       state: %{},
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1)
      }}
   end
 
   @impl Ground
-  def on_interval(%Group{center: {cx, cy} = center, map_name: map_name} = group, _now) do
+  def on_interval(%Group{center: center, map_name: map_name} = group, _now) do
     definition = definition()
 
-    case Combat.resolve_combatant(group.caster_id) do
-      {:ok, caster} ->
-        updated_counts =
-          map_name
-          |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
-          |> Enum.reduce(group.state.hit_counts, fn {unit_type, target_id}, counts ->
-            group
-            |> hit(definition, caster, unit_type, target_id, cx, cy)
-            |> record_hit(counts, unit_type, target_id, group.level)
-          end)
-
-        {:ok, %{group | state: %{group.state | hit_counts: updated_counts}}}
-
-      {:error, _reason} ->
-        {:ok, group}
+    with {:ok, caster} <- Combat.resolve_combatant(group.caster_id) do
+      map_name
+      |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
+      |> Enum.each(&hit(GameMode.mode(), group, definition, caster, &1))
     end
+
+    {:ok, group}
   end
 
-  defp record_hit(:ok, counts, unit_type, target_id, level),
-    do: bump_and_maybe_freeze(counts, unit_type, target_id, freeze_chance(level))
+  defp hit(:renewal, group, definition, caster, target) do
+    _ = attack(group, definition, caster, target, freeze(group, definition, 65 - 5 * group.level))
+    :ok
+  end
 
-  defp record_hit({:error, _refused}, counts, _unit_type, target_id, _level),
-    do: Map.delete(counts, target_id)
+  # The counter rises before the attack, the third counted damaging hit tries to
+  # freeze, and a hit that deals nothing (absorbed, blocked or refused) clears it.
+  # A skill-unit cell has no status data to count on.
+  defp hit(:pre_renewal, group, definition, caster, {:skill_unit, _id} = target) do
+    _ = attack(group, definition, caster, target, nil)
+    :ok
+  end
 
-  # A refused hit (a hidden or frozen target, a caster that cannot act) deals
-  # nothing, rolls no freeze and, in classic, clears the target's count.
-  @spec hit(Group.t(), struct(), struct(), atom(), integer(), integer(), integer()) ::
-          :ok | {:error, atom()}
-  defp hit(%Group{} = group, definition, caster, unit_type, target_id, cx, cy) do
+  # A target the siege rules refuse is not a valid target at all: the field
+  # skips it before counting, and the attack would be refused the same way.
+  defp hit(:pre_renewal, group, definition, caster, {unit_type, unit_id} = target) do
+    with {:ok, combatant} <- Combat.resolve_combatant(unit_type, unit_id),
+         :ok <- Rules.validate_target(caster, combatant, %{skill_id: group.skill_id}) do
+      StatusStorage.increment_storm_gust_counter(unit_type, unit_id)
+
+      case attack(group, definition, caster, target, counted_freeze(group, definition),
+             report_hit: true
+           ) do
+        {:ok, %{hit?: true}} -> :ok
+        _no_damage -> StatusStorage.reset_storm_gust_counter(unit_type, unit_id)
+      end
+    end
+
+    :ok
+  end
+
+  @spec attack(Group.t(), struct(), struct(), {atom(), integer()}, function() | nil, keyword()) ::
+          :ok | {:ok, map()} | {:error, atom()}
+  defp attack(group, definition, caster, {unit_type, target_id}, effect, opts \\ []) do
     Combat.apply_skill_unit_damage(
       caster,
       unit_type,
@@ -98,9 +119,43 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
       group.level,
       definition.element,
       skill_ratio(group.level),
-      base_distance: definition.knockback,
-      origin: {cx, cy}
+      [
+        base_distance: definition.knockback,
+        origin: group.center,
+        additional_effect: effect
+      ] ++ opts
     )
+  end
+
+  defp counted_freeze(group, definition) do
+    try_freeze = freeze(group, definition, 150)
+
+    fn source, {unit_type, unit_id} = target ->
+      count = StatusStorage.storm_gust_counter(unit_type, unit_id)
+
+      cond do
+        count >= 3 and try_freeze.(source, target) == :ok ->
+          StatusStorage.reset_storm_gust_counter(unit_type, unit_id)
+
+        count > 250 ->
+          StatusStorage.reset_storm_gust_counter(unit_type, unit_id)
+
+        true ->
+          :ok
+      end
+    end
+  end
+
+  defp freeze(group, definition, chance) do
+    fn _source, {unit_type, unit_id} ->
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,
+        val1: group.level,
+        duration: Enum.at(definition.duration, group.level - 1),
+        success_rate: chance,
+        caster_id: group.caster_id,
+        source_type: group.caster_type
+      )
+    end
   end
 
   # base_skillratio (100) - 30 + 50 * skill_lv.
@@ -111,37 +166,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
       :renewal -> 70 + 50 * level
       :pre_renewal -> 100 + 40 * level
     end
-  end
-
-  @doc """
-  Renewal freezes each hit with a 65 minus 5 per level percent chance and only
-  records the hit (`nil` in classic, where the third accumulated hit freezes).
-  """
-  @spec freeze_chance(pos_integer()) :: pos_integer() | nil
-  def freeze_chance(level) do
-    case GameMode.mode() do
-      :renewal -> 65 - 5 * level
-      :pre_renewal -> nil
-    end
-  end
-
-  @spec bump_and_maybe_freeze(map(), atom(), integer(), pos_integer() | nil) :: map()
-  # Classic counts hits and freezes on the third; renewal rolls a chance per hit.
-  defp bump_and_maybe_freeze(counts, unit_type, target_id, nil) do
-    count = Map.get(counts, target_id, 0) + 1
-
-    frozen? =
-      count >= @freeze_threshold and
-        StatusInterpreter.apply_status(unit_type, target_id, :sc_freeze, []) == :ok
-
-    Map.put(counts, target_id, if(frozen?, do: 0, else: count))
-  end
-
-  defp bump_and_maybe_freeze(counts, unit_type, target_id, chance) do
-    if :rand.uniform(100) <= chance do
-      StatusInterpreter.apply_status(unit_type, target_id, :sc_freeze, [])
-    end
-
-    Map.update(counts, target_id, 1, &(&1 + 1))
   end
 end

@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
 
   @doc "Delivers a formula-complete ground amount through the ordinary recipient hooks."
   @spec deliver_skill_unit_hit(MagicAttack.prepared_ground_hit(), non_neg_integer(), keyword()) ::
-          :ok
+          :ok | {:ok, %{hit?: boolean()}}
   defdelegate deliver_skill_unit_hit(prepared, amount, opts), to: MagicAttack
 
   @doc """

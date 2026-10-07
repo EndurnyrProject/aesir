@@ -235,15 +235,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
     end
   end
 
-  describe "on_interval/2" do
-    test "grants sc_safetywall to every occupant who does not already have it" do
+  describe "on_touch/2" do
+    test "grants sc_safetywall for the wall's lifetime to a unit stepping on without it" do
       test_pid = self()
       stub_living_units()
-
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 0 ->
-        [{:player, @caster_id}, {:player, 2001}]
-      end)
-
       stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, :sc_safetywall -> false end)
 
       stub(StatusInterpreter, :apply_status, fn unit_type, target_id, :sc_safetywall, params ->
@@ -251,56 +246,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
         :ok
       end)
 
-      assert {:ok, %Group{}} = MgSafetywall.on_interval(group(5, 7), 0)
+      assert {:ok, %Group{}} = MgSafetywall.on_touch(group(5, 7), {:player, 2001})
 
-      assert_received {:granted, :player, @caster_id, params}
+      assert_received {:granted, :player, 2001, params}
       assert params[:val1] == 5
       assert params[:val2] == 7
-
-      assert_received {:granted, :player, 2001, _params}
+      assert params[:duration] == 25_000
+      assert params[:caster_id] == @caster_id
     end
 
-    test "ignores targetable skill-unit cells on the wall cell" do
-      test_pid = self()
+    test "ignores a targetable skill-unit cell" do
       stub_living_units()
-
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 0 ->
-        [{:skill_unit, 777}, {:player, 2001}]
-      end)
-
       stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, :sc_safetywall -> false end)
-
-      stub(StatusInterpreter, :apply_status, fn unit_type, target_id, :sc_safetywall, _params ->
-        send(test_pid, {:granted, unit_type, target_id})
-        :ok
-      end)
-
-      assert {:ok, %Group{}} = MgSafetywall.on_interval(group(5, 7), 0)
-
-      assert_received {:granted, :player, 2001}
-      refute_received {:granted, :skill_unit, _}
-    end
-
-    test "does not re-grant to an occupant who already carries the buff" do
-      stub_living_units()
-
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 0 ->
-        [{:player, @caster_id}]
-      end)
-
-      stub(StatusStorage, :has_status?, fn :player, @caster_id, :sc_safetywall -> true end)
-
       reject(&StatusInterpreter.apply_status/4)
 
-      assert {:ok, %Group{}} = MgSafetywall.on_interval(group(5, 7), 0)
+      assert {:ok, %Group{}} = MgSafetywall.on_touch(group(5, 7), {:skill_unit, 777})
+    end
+
+    test "does not re-grant to a unit that already carries the buff" do
+      stub_living_units()
+      stub(StatusStorage, :has_status?, fn :player, @caster_id, :sc_safetywall -> true end)
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, %Group{}} = MgSafetywall.on_touch(group(5, 7), {:player, @caster_id})
     end
 
     test "does not grant the wall status to a corpse" do
       corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
-
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 0 ->
-        [{:player, 2001}]
-      end)
 
       stub(UnitRegistry, :get_unit, fn :player, 2001 ->
         {:ok, {PlayerState, corpse, self()}}
@@ -309,7 +281,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
       reject(&StatusStorage.has_status?/3)
       reject(&StatusInterpreter.apply_status/4)
 
+      assert {:ok, %Group{}} = MgSafetywall.on_touch(group(5, 7), {:player, 2001})
+    end
+  end
+
+  describe "occupants that did not step on" do
+    test "the wall's interval grants nothing, so a unit that unhides on it stays unprotected" do
+      reject(&SpatialIndex.get_all_units_in_range/4)
+      reject(&StatusInterpreter.apply_status/4)
+
       assert {:ok, %Group{}} = MgSafetywall.on_interval(group(5, 7), 0)
+      assert {:ok, %Group{next_tick_at: nil}} = MgSafetywall.schedule(group(5, 7), & &1)
+    end
+
+    test "stepping off removes the marker" do
+      expect(StatusInterpreter, :remove_status, fn :player, 2001, :sc_safetywall -> :ok end)
+      assert {:ok, %Group{}} = MgSafetywall.on_out(group(5, 7), {:player, 2001})
     end
   end
 end

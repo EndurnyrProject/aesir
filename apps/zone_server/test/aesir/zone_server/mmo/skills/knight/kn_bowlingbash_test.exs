@@ -2,7 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -12,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
 
   setup :verify_on_exit!
@@ -73,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
     end
 
     @tag game_mode: :pre_renewal
-    test "classic pushes each target one cell at every level" do
+    test "classic keeps the database's one cell, which its hits never apply" do
       for level <- 1..10 do
         assert KnBowlingbash.knockback_distance(level) == 1
       end
@@ -123,28 +127,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
   end
 
   describe "cast/4" do
-    @tag game_mode: :pre_renewal
-    test "classic strikes once inside a one-cell splash" do
-      caster = build_player(fist(), x: 10, y: 20)
-
-      stub(Combat, :resolve_combatant, fn @target_id ->
-        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
-      end)
-
-      stub(Combat, :splash_targets, fn "prontera", {15, 25}, 1, _combatant -> [{:mob, 1}] end)
-
-      expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
-        assert opts[:skill_ratio] == 220
-        assert opts[:hit_divisions] == 1
-        assert opts[:base_distance] == 1
-        [101]
-      end)
-
-      reject(&Combat.knockback/5)
-
-      assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, 3, definition())
-    end
-
     @tag game_mode: :renewal
     test "passes caster-centered mob-native and equipment blow with the base hit count" do
       caster = build_player(fist(), x: 10, y: 20)
@@ -279,6 +261,113 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end
   end
+
+  describe "classic chain" do
+    # Caster at (10, 20) facing east; every cell walkable unless a test walls it.
+    setup do
+      stub(MapCache, :get, fn "prontera" -> {:ok, MapData.new("prontera", 200, 200)} end)
+
+      stub(Knockback, :knockback, fn type, id, from_x, from_y, 1, opts ->
+        {x, y} = opts[:position]
+        refute opts[:source_boss?]
+        landing = {x + sign(x - from_x), y + sign(y - from_y)}
+        send(self(), {:push, {type, id}, landing})
+        {:ok, landing}
+      end)
+
+      stub(Combat, :execute_skill_attack, fn _caster, ref, opts ->
+        send(self(), {:hit, ref, opts})
+        :ok
+      end)
+
+      :ok
+    end
+
+    test "strikes a lone target twice, pushing it one cell along the caster's facing" do
+      place(%{{:mob, 1} => {11, 20}})
+
+      assert {:ok, _caster} = bowl(10, {:mob, 1}, fn _ -> flunk("no chained enemy") end)
+
+      assert_received {:push, {:mob, 1}, {12, 20}}
+      assert hits() == [{:mob, 1}, {:mob, 1}]
+    end
+
+    test "each hit is a plain physical strike with no knockback, re-checked off the primary" do
+      place(%{{:mob, 1} => {11, 20}})
+
+      bowl(3, {:mob, 1}, fn _ -> 0 end)
+
+      assert_received {:hit, {:mob, 1}, opts}
+      assert opts[:skill_ratio] == 220
+      assert opts[:skill_level] == 3
+      assert opts[:equipment_blow] == false
+      assert opts[:base_distance] in [nil, 0]
+      assert opts[:skip_range] == true
+      assert opts[:delivery] == {:splash, {:mob, 1}}
+    end
+
+    test "a wall in front stops the roll: one hit and no push" do
+      place(%{{:mob, 1} => {11, 20}})
+      stub(MapData, :check_cell, fn _map, x, y, :chk_wall -> {x, y} == {12, 20} end)
+
+      bowl(10, {:mob, 1}, fn _ -> 0 end)
+
+      refute_received {:push, _, _}
+      assert hits() == [{:mob, 1}]
+    end
+
+    test "the target knocks over an enemy it reaches, which rolls in a random direction" do
+      place(%{{:mob, 1} => {11, 20}, {:mob, 2} => {13, 21}})
+
+      # Direction 6 is east in the sprite convention.
+      bowl(10, {:mob, 1}, fn 8 -> 6 end)
+
+      assert_received {:push, {:mob, 1}, {12, 20}}
+      assert_received {:push, {:mob, 2}, {14, 21}}
+      assert hits() == [{:mob, 2}, {:mob, 2}, {:mob, 1}, {:mob, 1}]
+    end
+
+    test "an enemy across the 40-cell gutter line is never reached" do
+      caster = %{build_player(fist(), x: 45, y: 20) | dir: 2}
+      place(%{{:mob, 1} => {41, 20}, {:mob, 2} => {39, 21}})
+
+      KnBowlingbash.cast_at(:pre_renewal, caster, primary({:mob, 1}), 10, definition(), fn _ ->
+        flunk("no chained enemy")
+      end)
+
+      assert_received {:push, {:mob, 1}, {40, 20}}
+      refute_received {:push, {:mob, 2}, _}
+      assert hits() == [{:mob, 1}, {:mob, 1}]
+    end
+  end
+
+  defp bowl(level, target, rng) do
+    caster = %{build_player(fist(), x: 10, y: 20) | dir: 6}
+    KnBowlingbash.cast_at(:pre_renewal, caster, primary(target), level, definition(), rng)
+  end
+
+  defp primary({type, id}), do: %{unit_type: type, unit_id: id}
+
+  defp place(positions) do
+    stub(SpatialIndex, :get_unit_position, fn type, id ->
+      {x, y} = Map.fetch!(positions, {type, id})
+      {:ok, {x, y, "prontera"}}
+    end)
+
+    stub(Combat, :splash_targets, fn "prontera", _center, 6, _caster -> Map.keys(positions) end)
+  end
+
+  defp hits do
+    receive do
+      {:hit, ref, _opts} -> [ref | hits()]
+    after
+      0 -> []
+    end
+  end
+
+  defp sign(n) when n > 0, do: 1
+  defp sign(n) when n < 0, do: -1
+  defp sign(_n), do: 0
 
   defp definition do
     {:ok, definition} = Catalog.by_name(:kn_bowlingbash)

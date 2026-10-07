@@ -266,12 +266,6 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
     assert :ok = SkillUnitManager.tick(manager, sanctuary.next_tick_at)
     assert_eventually(fn -> get_player_state(caster.pid).stats.current_state.hp > wounded_hp end)
 
-    assert {:ok, ^caster_state} =
-             MgSafetywall.cast(caster_state, {:ground, 130, 130}, 1, MgSafetywall.definition())
-
-    safety_wall = Enum.find(SkillUnitStorage.all(), &(&1.skill_name == :mg_safetywall))
-    assert safety_wall.cells == [{130, 130}]
-
     protected =
       start_player_session(
         id: 24_203,
@@ -280,7 +274,11 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
         position: {130, 130}
       )
 
-    assert {:ok, _safety_wall} = MgSafetywall.on_interval(safety_wall, safety_wall.created_at)
+    assert {:ok, ^caster_state} =
+             MgSafetywall.cast(caster_state, {:ground, 130, 130}, 1, MgSafetywall.definition())
+
+    safety_wall = Enum.find(SkillUnitStorage.all(), &(&1.skill_name == :mg_safetywall))
+    assert safety_wall.cells == [{130, 130}]
     assert StatusStorage.has_status?(:player, protected.character.id, :sc_safetywall)
 
     mob =

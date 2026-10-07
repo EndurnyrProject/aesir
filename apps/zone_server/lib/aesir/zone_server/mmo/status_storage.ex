@@ -255,7 +255,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   end
 
   @doc """
-  Clears all statuses for a unit.
+  Clears all statuses for a unit, and its status-data counters.
   """
   @spec clear_unit_statuses(unit_type(), integer()) :: :ok
   def clear_unit_statuses(unit_type, unit_id) do
@@ -264,7 +264,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
       |> Enum.map(fn [status_type] -> {unit_type, unit_id, status_type} end)
 
     Enum.each(keys, &:ets.delete(table_for(:player_statuses), &1))
-    :ok
+    reset_storm_gust_counter(unit_type, unit_id)
   end
 
   @doc """
@@ -374,5 +374,35 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   def count_unit_statuses(unit_type, unit_id) do
     :ets.match(table_for(:player_statuses), {{unit_type, unit_id, :_}, :_})
     |> length()
+  end
+
+  @doc """
+  Counts one classic Storm Gust hit on a unit and returns the new count.
+
+  The counter belongs to the unit's status data, not to one field, so hits from
+  different Storm Gusts add up. It is a byte: it wraps from 255 to 0. Only the
+  skill-unit manager increments it; death, removal and the buff-clearing
+  effects reset it.
+  """
+  @spec increment_storm_gust_counter(unit_type(), integer()) :: non_neg_integer()
+  def increment_storm_gust_counter(unit_type, unit_id) do
+    key = {unit_type, unit_id, :storm_gust}
+    :ets.update_counter(table_for(:status_counters), key, {2, 1, 255, 0}, {key, 0})
+  end
+
+  @doc "Returns a unit's classic Storm Gust hit count (0 when it has none)."
+  @spec storm_gust_counter(unit_type(), integer()) :: non_neg_integer()
+  def storm_gust_counter(unit_type, unit_id) do
+    case :ets.lookup(table_for(:status_counters), {unit_type, unit_id, :storm_gust}) do
+      [{_key, count}] -> count
+      [] -> 0
+    end
+  end
+
+  @doc "Resets a unit's classic Storm Gust hit count to 0."
+  @spec reset_storm_gust_counter(unit_type(), integer()) :: :ok
+  def reset_storm_gust_counter(unit_type, unit_id) do
+    :ets.delete(table_for(:status_counters), {unit_type, unit_id, :storm_gust})
+    :ok
   end
 end

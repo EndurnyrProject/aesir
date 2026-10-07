@@ -173,6 +173,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
     end
   end
 
+  describe "reset_cleared_unit_state/1" do
+    test "clears the Storm Gust counter of a unit that has a status", %{unit_id: unit_id} do
+      StatusStorage.apply_status(:player, unit_id, :sc_blessing, val1: 10, duration: 60_000)
+      StatusStorage.increment_storm_gust_counter(:player, unit_id)
+
+      assert :ok = Dispel.reset_cleared_unit_state({:player, unit_id})
+      assert StatusStorage.storm_gust_counter(:player, unit_id) == 0
+    end
+
+    test "leaves a unit without any status untouched", %{unit_id: unit_id} do
+      StatusStorage.increment_storm_gust_counter(:player, unit_id)
+
+      assert :ok = Dispel.reset_cleared_unit_state({:player, unit_id})
+      assert StatusStorage.storm_gust_counter(:player, unit_id) == 1
+    end
+
+    test "Gospel's cleanse clears it", %{unit_id: unit_id} do
+      StatusStorage.apply_status(:player, unit_id, :sc_blind, val1: 1, duration: 60_000)
+      StatusStorage.increment_storm_gust_counter(:player, unit_id)
+
+      assert :ok = Dispel.dispel_debuffs({:player, unit_id})
+      assert StatusStorage.storm_gust_counter(:player, unit_id) == 0
+    end
+  end
+
   describe "dispel/1 on a mob" do
     # rAthena's mob_unlocktarget: a dispelled mob forgets its aggro and idles.
     test "drops the mob's aggro target", %{unit_id: unit_id} do

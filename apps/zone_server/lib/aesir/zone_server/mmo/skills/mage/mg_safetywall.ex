@@ -3,12 +3,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   Safety Wall (MG_SAFETYWALL). Ground-targeted, no-damage defensive skill-unit.
 
   A cast rejects a cell already occupied by Safety Wall before it can consume a
-  Blue Gemstone. Each tick the unit grants the `sc_safetywall` marker to every
-  unit standing on its cell - allies and the caster included, since it is
-  defensive - that does not already carry it. The status blocks short-range
-  physical hits and spends the wall's budget, which is shared by the wall rather
-  than held per defender; once the budget is exhausted the final hit is still
-  blocked and the wall is torn down.
+  Blue Gemstone. The wall grants the `sc_safetywall` marker to every unit on its
+  cell - allies and the caster included, since it is defensive - when it is
+  placed and to each unit that steps onto it, as
+  `Aesir.ZoneServer.Mmo.Skills.Shared.CellStatus` describes; stepping off or the
+  wall ending removes it. The status blocks short-range physical hits and spends
+  the wall's budget, which is shared by the wall rather than held per defender;
+  once the budget is exhausted the final hit is still blocked and the wall is
+  torn down.
 
   Renewal: the wall has two budgets and runs out on whichever empties first. It
   blocks `level + 1` hits, and it also holds a damage pool of
@@ -50,14 +52,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Ground
-  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.Shared.CellStatus
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
@@ -71,8 +70,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
       {:error, :safetywall_overlap}
     else
       case Unit.place(caster, :mg_safetywall, level, {x, y}) do
-        {:ok, _group} -> {:ok, caster}
-        {:error, _reason} = error -> error
+        {:ok, group} ->
+          CellStatus.grant_occupants(group, definition(), :sc_safetywall, grant_params(group))
+          {:ok, caster}
+
+        {:error, _reason} = error ->
+          error
       end
     end
   end
@@ -97,33 +100,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   end
 
   @impl Ground
-  def on_interval(%Group{center: {cx, cy}, map_name: map_name, level: level} = group, _now) do
-    # Skip occupants who already carry the marker so a stationary defender keeps
-    # spending the wall's shared budget instead of re-granting it each tick.
-    map_name
-    |> SpatialIndex.get_all_units_in_range(cx, cy, 0)
-    |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
-    |> Enum.reject(fn {unit_type, unit_id} ->
-      StatusStorage.has_status?(unit_type, unit_id, :sc_safetywall)
-    end)
-    |> Enum.filter(&Targeting.placement_reaches?(definition(), &1))
-    |> Enum.each(fn {unit_type, unit_id} ->
-      StatusInterpreter.apply_status(unit_type, unit_id, :sc_safetywall,
-        val1: level,
-        val2: group.group_id,
-        caster_id: group.caster_id,
-        source_type: group.caster_type
-      )
-    end)
+  def schedule(%Group{} = group, _rng), do: {:ok, %{group | next_tick_at: nil}}
 
+  @impl Ground
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
+
+  @impl Ground
+  def on_touch(%Group{} = group, mover) do
+    CellStatus.grant(group, definition(), :sc_safetywall, grant_params(group), mover)
     {:ok, group}
   end
 
-  defp living?({unit_type, unit_id}) do
-    case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {module, state, _pid}} -> module.living?(state)
-      {:error, :not_found} -> false
-    end
+  @impl Ground
+  def on_out(%Group{} = group, {unit_type, unit_id}) do
+    StatusInterpreter.remove_status(unit_type, unit_id, :sc_safetywall)
+    {:ok, group}
+  end
+
+  # The marker lasts the wall's whole lifetime from the moment it is granted.
+  defp grant_params(%Group{level: level, group_id: group_id}) do
+    [
+      val1: level,
+      val2: group_id,
+      duration: Enum.at(definition().unit_duration, level - 1)
+    ]
   end
 
   defp safetywall_at?(map_name, x, y) do

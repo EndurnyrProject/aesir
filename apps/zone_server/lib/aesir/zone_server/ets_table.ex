@@ -96,6 +96,12 @@ defmodule Aesir.ZoneServer.EtsTable do
         {:write_concurrency, true}
       ]
     )
+
+    # Per-unit status-data counters: {{unit_type, unit_id, counter}, count}
+    :ets.new(
+      table_for(:status_counters, seed),
+      [:set, :public, :named_table, write_concurrency: true]
+    )
   end
 
   defp status_effect_tables(seed) do

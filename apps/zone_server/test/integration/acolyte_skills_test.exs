@@ -72,6 +72,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma
@@ -474,7 +475,11 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
         )
 
       caster_state = get_player_state(caster.pid)
-      {:ok, group} = SkillUnit.place(caster_state, :al_pneuma, 1, field)
+
+      assert {:ok, _caster} =
+               AlPneuma.cast(caster_state, {:ground, 290, 290}, 1, AlPneuma.definition())
+
+      [group] = SkillUnitStorage.get_groups_at_cell(caster_state.map_name, 290, 290)
 
       on_exit(fn ->
         SkillUnit.destroy(group.group_id)
@@ -482,8 +487,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
         StatusStorage.remove_status(:player, victim.character.id, :sc_pneuma)
       end)
 
-      # The field's real tick grants sc_pneuma to occupants of its 3x3 footprint.
-      assert {:ok, _group} = AlPneuma.on_interval(group, System.monotonic_time(:millisecond))
+      # Placing the field grants sc_pneuma to the occupants of its 3x3 footprint.
       assert StatusStorage.has_status?(:player, victim.character.id, :sc_pneuma)
 
       ranged_physical = %{dmg_type: :physical, is_short: false, element: :neutral}

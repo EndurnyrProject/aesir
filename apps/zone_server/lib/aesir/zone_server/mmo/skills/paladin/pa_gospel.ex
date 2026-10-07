@@ -104,6 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   # overlapping Gospel) leaves the caster's statuses alone.
   defp start_chant(%PlayerState{character_id: id, x: x, y: y} = caster, level) do
     with {:ok, group} <- Unit.place(caster, :pa_gospel, level, {x, y}) do
+      Dispel.reset_cleared_unit_state({:player, id})
       Dispel.dispel({:player, id})
       lock(caster, level, group)
     end

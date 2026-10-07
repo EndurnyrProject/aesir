@@ -397,6 +397,60 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
              Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :water, 600)
   end
 
+  defp ground_hit(mob_state, damage, absorbed, opts) do
+    test_pid = self()
+    attacker = caster(100)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+      {:ok, %{damage: damage, is_critical: false}}
+    end)
+
+    stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+    stub(StatusInterpreter, :absorb_damage, fn :mob, @target_id, ^damage, _info -> absorbed end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id, _metadata -> :ok end)
+
+    effect = fn source, ref -> send(test_pid, {:effect, source.unit_id, ref}) end
+
+    Combat.apply_skill_unit_damage(
+      attacker,
+      :mob,
+      @target_id,
+      89,
+      10,
+      :water,
+      600,
+      [additional_effect: effect, report_hit: true] ++ opts
+    )
+  end
+
+  describe "on-hit effect and hit report" do
+    test "runs for a damaging hit on a target that survives it" do
+      assert {:ok, %{hit?: true}} = ground_hit(build_mob_state(0), 40, 40, [])
+      assert_received {:effect, @caster_id, {:mob, @target_id}}
+    end
+
+    test "does not run for a fully absorbed hit, which reports no hit" do
+      assert {:ok, %{hit?: false}} = ground_hit(build_mob_state(0), 40, 0, [])
+      refute_received {:effect, _source, _ref}
+    end
+
+    test "does not run for a hit that kills its target, which still reports a hit" do
+      mob_state = %{build_mob_state(0) | hp: 30}
+
+      assert {:ok, %{hit?: true}} = ground_hit(mob_state, 40, 40, [])
+      refute_received {:effect, _source, _ref}
+    end
+  end
+
   test "fully absorbed ground damage never requests equipment or native blow" do
     test_pid = self()
     mob_state = %{build_mob_state(0) | x: 151}

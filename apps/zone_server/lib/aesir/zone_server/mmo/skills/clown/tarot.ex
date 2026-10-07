@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   def apply(:fool, _caster, target, _level), do: Resource.drain_sp_percent(target, 100)
 
   def apply(:high_priestess, _caster, target, _level) do
+    Dispel.reset_cleared_unit_state(target)
     Dispel.dispel(target)
     :ok
   end

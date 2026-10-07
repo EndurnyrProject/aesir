@@ -79,7 +79,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
   removal batch runs the same expiry side effects as `dispel/1`.
   """
   @spec dispel_debuffs(Definition.target()) :: :ok
-  def dispel_debuffs({unit_type, unit_id}) do
+  def dispel_debuffs({unit_type, unit_id} = target) do
+    reset_cleared_unit_state(target)
+
     status_ids =
       unit_type
       |> StatusStorage.get_unit_statuses(unit_id)
@@ -88,6 +90,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
       |> Enum.filter(&PropertyChecker.debuff?/1)
 
     Interpreter.remove_statuses(unit_type, unit_id, status_ids, owner_refresh: :notify)
+  end
+
+  @doc """
+  Resets the unit state that clearing a unit's buffs also resets besides its
+  statuses: the classic Storm Gust hit counter.
+
+  Gospel's self-clear and cleanse, Hermode and Tarot's High Priestess clear
+  buffs. Like that routine, this leaves a unit with no status at all untouched,
+  so callers run it before removing anything.
+  """
+  @spec reset_cleared_unit_state(Definition.target()) :: :ok
+  def reset_cleared_unit_state({unit_type, unit_id}) do
+    if StatusStorage.count_unit_statuses(unit_type, unit_id) > 0,
+      do: StatusStorage.reset_storm_gust_counter(unit_type, unit_id),
+      else: :ok
   end
 
   defp spare_mob_assumptio(status_ids, :mob), do: List.delete(status_ids, :sc_assumptio)

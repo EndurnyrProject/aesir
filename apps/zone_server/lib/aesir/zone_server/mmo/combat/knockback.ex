@@ -63,7 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   Requests collision-aware movement away from `{from_x, from_y}`.
 
   `opts[:source_boss?]` marks the push as coming from a boss: a pre-renewal
-  Basilica caster resists every other source.
+  Basilica caster resists every other source. `opts[:position]` names the cell
+  the unit stands on when the caller already requested an earlier push of it in
+  the same synchronous sequence that has not landed yet (the target session
+  applies queued pushes in order, each validated against its expected cell).
   """
   @spec knockback(atom(), integer(), integer(), integer(), non_neg_integer(), keyword()) ::
           result()
@@ -72,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   def knockback(:skill_unit, _unit_id, _from_x, _from_y, _distance, _opts), do: :ok
 
   def knockback(unit_type, unit_id, from_x, from_y, distance, opts) do
-    with {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
+    with {:ok, {x, y, map_name}} <- current_position(unit_type, unit_id, opts),
          {:ok, {module, state, pid}} <- displacement_owner(unit_type, unit_id),
          :ok <- ensure_living(state),
          {:ok, _map} <- MapCache.get(map_name) do
@@ -123,6 +126,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
       )
 
       {:ok, {x, y}}
+    end
+  end
+
+  defp current_position(unit_type, unit_id, opts) do
+    with {:ok, {_x, _y, map_name}} = indexed <- SpatialIndex.get_unit_position(unit_type, unit_id) do
+      case Keyword.get(opts, :position) do
+        {x, y} -> {:ok, {x, y, map_name}}
+        nil -> indexed
+      end
     end
   end
 

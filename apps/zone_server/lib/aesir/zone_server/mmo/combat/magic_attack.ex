@@ -246,6 +246,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   is re-checked with `Targeting.validate_delivery/4` before any calculation.
   A caster-timed hit that only reuses this path (Water Ball, Ruwach) passes
   `:direct`.
+
+  `:additional_effect` (see `t:additional_effect/0`) runs the skill's on-hit
+  effect, after the damage and before any knockback, only for a hit that
+  connected: a settled amount of at least 1 (or one forwarded by Devotion),
+  not cancelled by Magic Rod, on a target that survives it.
+
+  `:report_hit` (default `false`) returns `{:ok, %{hit?: boolean()}}` instead of
+  `:ok`, where `hit?` says the hit dealt damage (a settled amount above 0, or
+  one forwarded by Devotion).
   """
   @spec apply_skill_unit_damage(
           struct(),
@@ -256,7 +265,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           atom(),
           non_neg_integer(),
           keyword()
-        ) :: :ok | {:error, atom()}
+        ) :: :ok | {:ok, %{hit?: boolean()}} | {:error, atom()}
   def apply_skill_unit_damage(
         caster,
         unit_type,
@@ -312,6 +321,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     end
   end
 
+  @typedoc """
+  A skill's on-hit effect: called with the hit's effective source (the reflector
+  when the spell was reflected) and the ref of the unit it hit.
+  """
+  @type additional_effect :: (struct(), Ref.t() -> term())
+
   @typedoc "A resolved ground target consumed synchronously by its preparing callback."
   @type prepared_ground_hit :: %{
           caster: struct(),
@@ -361,8 +376,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   Consume the prepared target immediately in the same callback. The nonnegative
   amount is already formula-complete: element, defense, scaling and hit division
   are not recalculated. Element and level options describe the hit to its recipients.
+  `:additional_effect` and `:report_hit` behave as `apply_skill_unit_damage/8`
+  documents.
   """
-  @spec deliver_skill_unit_hit(prepared_ground_hit(), non_neg_integer(), keyword()) :: :ok
+  @spec deliver_skill_unit_hit(prepared_ground_hit(), non_neg_integer(), keyword()) ::
+          :ok | {:ok, %{hit?: boolean()}}
   def deliver_skill_unit_hit(
         %{
           caster: caster,
@@ -420,6 +438,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       dispatch_equip_autobonuses(caster, target, magic_attack_flag())
     end
 
+    if delivery == :ok do
+      run_additional_effect(
+        Keyword.get(opts, :additional_effect),
+        caster,
+        {target_type, target_id},
+        target_state,
+        damage,
+        hit_info,
+        coma_decision == true
+      )
+    end
+
     if dst_delay > 0 do
       apply_walk_delay(target_type, target_pid, dst_delay)
     end
@@ -436,7 +466,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       opts
     )
 
-    :ok
+    if Keyword.get(opts, :report_hit, false),
+      do: {:ok, %{hit?: damage > 0 or hit_info[:devotion_rerouted?] == true}},
+      else: :ok
   end
 
   @doc """
@@ -587,6 +619,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:delivery` - how the splash reached each target (`t:Targeting.delivery/0`,
       default `:direct`); a target refused by `Targeting.validate_delivery/4` is
       neither calculated nor struck, but still counts toward `:split`
+    - `:target_filter` - a one-arity predicate on each selected `{unit_type,
+      unit_id}`; a rejected unit is not struck and does not count toward `:split`
+    - `:additional_effect` - the skill's on-hit effect (`t:additional_effect/0`),
+      run per connected hit as `apply_skill_unit_damage/8` documents; a
+      reflected hit runs it on the caster with the reflector as its source
   """
   @spec execute_magic_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [{atom(), integer()}]
@@ -604,6 +641,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       attacker.map_name
       |> SplashTargets.select(center, radius, attacker)
       |> filter_splash_line_of_sight(attacker.map_name, center, line_of_sight)
+      |> Enum.filter(Keyword.get(opts, :target_filter, fn _ref -> true end))
 
     divisor = if split, do: max(length(targets), 1), else: 1
 
@@ -621,7 +659,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
               divisor: divisor,
               center: center,
               hit_divisions: hit_divisions,
-              delivery: Keyword.get(opts, :delivery, :direct)
+              delivery: Keyword.get(opts, :delivery, :direct),
+              additional_effect: Keyword.get(opts, :additional_effect),
+              caster_state: caster_state
             },
             :unchecked
           )
@@ -783,6 +823,39 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       :native_requires_survival
     ])
   end
+
+  # rAthena's `skill_additional_effect` runs only when the hit reached ATK_DEF
+  # (its settled total is at least 1; a Devotion-forwarded hit still connected)
+  # and the recipient is alive after the damage. A skill-unit cell has no
+  # status data, so nothing applies to it.
+  defp run_additional_effect(nil, _source, _ref, _state, _damage, _hit_info, _coma?), do: :ok
+
+  defp run_additional_effect(_fun, _source, {:skill_unit, _id}, _state, _dmg, _info, _coma?),
+    do: :ok
+
+  defp run_additional_effect(fun, source, ref, target_state, damage, hit_info, coma?) do
+    if additional_effect?(target_state, damage, hit_info, coma?), do: fun.(source, ref)
+    :ok
+  end
+
+  # A reflected spell's on-hit effect lands on the caster, sourced from the reflector.
+  defp run_reflected_effect({settled, settled_info}, splash, reflector, caster_ref) do
+    run_additional_effect(
+      splash.additional_effect,
+      reflector,
+      caster_ref,
+      splash.caster_state,
+      settled,
+      settled_info,
+      false
+    )
+  end
+
+  defp additional_effect?(_state, _damage, %{magic_rod_miss?: true}, _coma?), do: false
+  defp additional_effect?(_state, _damage, %{devotion_rerouted?: true}, _coma?), do: true
+
+  defp additional_effect?(target_state, damage, _hit_info, coma?),
+    do: damage > 0 and (coma? or known_target_survives?(target_state, damage))
 
   defp known_target_survives?(target_state, damage) do
     case target_hp(target_state) do
@@ -950,16 +1023,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           {[target_ref], coma_decision, result}
 
         :reflect ->
-          deliver_reflected_hits(
-            attacker,
+          caster_ref = {attacker.unit_type, attacker.unit_id}
+
+          attacker
+          |> deliver_reflected_hits(
             target,
             [damage],
             hit_info,
             {skill_id, skill_level},
             packet_divisions
           )
-
-          caster_ref = {attacker.unit_type, attacker.unit_id}
+          |> Enum.each(&run_reflected_effect(&1, splash, target, caster_ref))
 
           result = %{
             target_ref: caster_ref,
@@ -981,7 +1055,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
             hit_info,
             {skill_id, skill_level},
             coma_decision,
-            packet_divisions
+            {packet_divisions, splash.additional_effect}
           )
       end
     else
@@ -996,7 +1070,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          hit_info,
          {skill_id, skill_level},
          coma_decision,
-         packet_divisions
+         {packet_divisions, additional_effect}
        ) do
     target_id = target.unit_id
     {tx, ty} = target.position
@@ -1038,6 +1112,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
     if delivery == :ok and hit_info[:magic_rod_miss?] != true do
       dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
+    end
+
+    if delivery == :ok or match?({:local_effects, _effects}, delivery) do
+      run_additional_effect(
+        additional_effect,
+        attacker,
+        target_ref,
+        target_state,
+        damage,
+        hit_info,
+        hit_info[:coma?] == true
+      )
     end
 
     result = %{
@@ -1083,6 +1169,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   # tick runs in the status tick manager and a Homunculus bolt runs in its
   # owner's session, so the owner pid is resolved from the registry and the
   # damage is always queued rather than returned as aggregate-local effects.
+  # Returns each reflected hit's settled amount and prepared hit information.
   defp deliver_reflected_hits(
          attacker,
          reflector,
@@ -1120,7 +1207,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       queue_reflected_damage(attacker, damage, prepared_hit_info, source)
     end)
 
-    :ok
+    prepared_hits
   end
 
   defp queue_reflected_damage(

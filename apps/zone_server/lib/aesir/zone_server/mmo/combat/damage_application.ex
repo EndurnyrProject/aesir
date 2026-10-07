@@ -43,7 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   A valid Devotion link delivers the devotee's settled damage to the Crusader
   with `redirected: true`, bypassing the Crusader's own statuses, map rates and
-  return damage, and returns `0` for the devotee. A stale link is torn down and
+  return damage, and returns `0` for the devotee with `devotion_rerouted?: true`
+  in the hit information, since the hit still connected. A stale link is torn down and
   the hit lands normally. Pre-renewal Gloria Domini (skill 367) and Gravitation
   Field (skill 484) are never rerouted: they strike the devotee directly.
   Reflected spells retain their metadata and settle at their actual recipient;
@@ -78,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
          attacker_id
        ) do
     case reroute_to_crusader(target_type, target_id, damage, hit_info, attacker_id) do
-      {:rerouted, _delivery} -> {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
+      {:rerouted, _delivery} -> {0, rerouted(hit_info)}
       :not_rerouted -> {damage, Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
@@ -92,10 +93,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     {settled, hit_info} = intercept_magic(target_type, target_id, settled, hit_info)
 
     case reroute_to_crusader(target_type, target_id, settled, hit_info, attacker_id) do
-      {:rerouted, _delivery} -> {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
+      {:rerouted, _delivery} -> {0, rerouted(hit_info)}
       :not_rerouted -> {settled, Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
   end
+
+  # The devotee takes nothing, but the hit still connected: its additional
+  # effects apply to the devotee as if the damage had landed.
+  defp rerouted(hit_info),
+    do: Map.merge(hit_info, %{pre_delivery_prepared?: true, devotion_rerouted?: true})
 
   defp prepare_ground_damage(
          target_type,
@@ -145,7 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     prepared_hit = Map.put(hit_info, :status_return_basis, settled)
 
     case reroute_to_crusader(target_type, target_id, settled, prepared_hit, attacker) do
-      {:rerouted, _delivery} -> {0, prepared_hit}
+      {:rerouted, _delivery} -> {0, rerouted(prepared_hit)}
       :not_rerouted -> {settled, prepared_hit}
     end
   end

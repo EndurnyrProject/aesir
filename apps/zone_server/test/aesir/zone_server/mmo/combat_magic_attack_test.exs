@@ -1572,6 +1572,62 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                )
     end
 
+    test "a reflected hit runs the on-hit effect on the caster, sourced from the reflector" do
+      test_pid = self()
+      target_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)
+      on_exit(fn -> Process.exit(target_pid, :kill) end)
+
+      caster = put_in(build_player(@caster_id, 150, %{}, %{}).stats.current_state.hp, 1_000)
+      target = build_player(@target_id, 151, %{magic_damage_return: 100}, %{})
+
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(target, target_pid)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+        [{:player, @target_id}]
+      end)
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      stub(StatusInterpreter, :absorb_damage, fn :player, @caster_id, 100, _info -> 30 end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, 30, {:player, @target_id}, _metadata -> :ok end)
+
+      MagicAttack.execute_magic_splash(caster, @center, 1,
+        skill_id: 88,
+        skill_level: 1,
+        element: :water,
+        additional_effect: fn source, ref -> send(test_pid, {:effect, source.unit_id, ref}) end
+      )
+
+      assert_received {:effect, @target_id, {:player, @caster_id}}
+    end
+
+    test "a filtered unit is neither struck nor counted" do
+      caster = build_player(@caster_id, 150, %{}, %{})
+      target = build_player(@target_id, 151, %{}, %{})
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(target, self())
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+        [{:player, @target_id}]
+      end)
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+      reject(&MagicDamageCalculator.calculate_magic_damage/3)
+
+      assert [] =
+               MagicAttack.execute_magic_splash(caster, @center, 1,
+                 skill_id: 88,
+                 skill_level: 1,
+                 target_filter: fn _ref -> false end
+               )
+    end
+
     test "line-of-sight splash uses rAthena's diagonal integer traversal" do
       caster = build_caster()
       visible_id = 2001

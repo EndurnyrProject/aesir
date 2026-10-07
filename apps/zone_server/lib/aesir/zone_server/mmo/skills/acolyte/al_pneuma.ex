@@ -2,10 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
   @moduledoc """
   Pneuma (AL_PNEUMA). Ground-targeted protective field.
 
-  Places a 3x3 skill-unit footprint at the target location. Every occupant on
-  those cells receives `sc_pneuma`, which blocks all long-ranged physical hits;
-  melee and magic pass through unchanged. There is no hit or shield budget — the
-  status lasts for the field's `Duration1` (10s).
+  Places a 3x3 skill-unit footprint at the target location. Occupants receive
+  `sc_pneuma`, which blocks all long-ranged physical hits; melee and magic pass
+  through unchanged. There is no hit or shield budget.
 
   Mirrors Safety Wall structurally; the differences are the blocked damage
   direction (ranged vs. melee), the 3x3 footprint (Safety Wall is single-cell),
@@ -15,12 +14,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
   skill unit's own layout, not from a splash area — the skill declares no splash
   radius, matching a source row that has none.
 
-  The source field applies its status on cell entry and removes it on cell exit,
-  with no periodic tick of its own. Aesir mirrors that: `on_interval` re-grants
-  the status on a one-second framework tick to any new occupant lacking it, and
-  `on_out` removes it the moment a unit steps off the footprint. The granted
-  status still carries the field's ten-second duration as a backstop, so it also
-  expires if the unit is still standing on the field when the field is torn down.
+  The field has no periodic tick. It grants the status when it is placed and as
+  units step in, and removes it when they step off or the field ends, as
+  `Aesir.ZoneServer.Mmo.Skills.Shared.CellStatus` describes. The status lasts
+  the field's whole ten seconds from the moment it is granted.
 
   Renewal: single level, ten SP, no cast time, range nine, ten-second field.
 
@@ -43,19 +40,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
     sp_cost: [10]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
-  alias Aesir.ZoneServer.Mmo.Skill.Targeting
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
+  alias Aesir.ZoneServer.Mmo.Skills.Shared.CellStatus
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
 
   @footprint_radius 1
+
+  @doc "Places the field and grants `sc_pneuma` to the units already standing in it."
+  @spec cast_with_origin(
+          struct(),
+          {:ground, integer(), integer()},
+          pos_integer(),
+          struct(),
+          atom()
+        ) ::
+          {:ok, struct()} | {:error, term()}
+  def cast_with_origin(caster, {:ground, x, y}, level, _definition, origin) do
+    case Unit.place(caster, :al_pneuma, level, {x, y}, origin: origin) do
+      {:ok, group} ->
+        CellStatus.grant_occupants(group, definition(), :sc_pneuma, grant_params(group))
+        {:ok, caster}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
 
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
@@ -72,35 +85,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
   end
 
   @impl Ground
+  def schedule(%Group{} = group, _rng), do: {:ok, %{group | next_tick_at: nil}}
+
+  @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
-  def on_interval(%Group{center: {cx, cy}, map_name: map_name, level: level} = group, _now) do
-    definition = definition()
-    duration = Enum.at(definition.unit_duration, level - 1)
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
 
-    map_name
-    |> SpatialIndex.get_all_units_in_range(cx, cy, @footprint_radius)
-    |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
-    |> Enum.reject(fn {unit_type, unit_id} ->
-      StatusStorage.has_status?(unit_type, unit_id, :sc_pneuma)
-    end)
-    |> Enum.filter(&Targeting.placement_reaches?(definition(), &1))
-    |> Enum.each(fn {unit_type, unit_id} ->
-      StatusInterpreter.apply_status(unit_type, unit_id, :sc_pneuma,
-        val1: 1,
-        caster_id: group.caster_id,
-        source_type: group.caster_type,
-        duration: duration
-      )
-    end)
-
+  @impl Ground
+  def on_touch(%Group{} = group, mover) do
+    CellStatus.grant(group, definition(), :sc_pneuma, grant_params(group), mover)
     {:ok, group}
-  end
-
-  defp living?({unit_type, unit_id}) do
-    case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {_module, state, _pid}} -> Unit.living?(state)
-      {:error, :not_found} -> false
-    end
   end
 
   @impl Ground
@@ -109,4 +103,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
     StatusInterpreter.remove_status(unit_type, unit_id, :sc_pneuma)
     {:ok, group}
   end
+
+  # The status lasts the field's whole lifetime from the moment it is granted.
+  defp grant_params(%Group{level: level, group_id: group_id}),
+    do: [val1: level, val2: group_id, duration: Enum.at(definition().unit_duration, level - 1)]
 end

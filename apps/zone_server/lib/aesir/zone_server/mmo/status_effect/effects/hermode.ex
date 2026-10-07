@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hermode do
     icon: :hermode
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -97,6 +98,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hermode do
           {:ok, StatusEntry.t()}
   def on_apply({type, id}, instance, _context) do
     if instance.source_id != id do
+      Dispel.reset_cleared_unit_state({type, id})
+
       ids =
         type
         |> StatusStorage.get_unit_statuses(id)

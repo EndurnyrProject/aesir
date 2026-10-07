@@ -87,12 +87,13 @@ defmodule Aesir.ZoneServer.Integration.MagicImmunityIntegrationTest do
         cast_ground(caster, @stormgust, @wearer_cell)
 
         assert_eventually(
-          fn ->
-            case Enum.find(SkillUnitStorage.all(), &(&1.skill_name == :wz_stormgust)) do
-              nil -> false
-              group -> Map.get(group.state.hit_counts, wearer_id, 0) >= 3
-            end
-          end,
+          fn -> Enum.any?(SkillUnitStorage.all(), &(&1.skill_name == :wz_stormgust)) end,
+          8_000
+        )
+
+        # Every tick of the field has struck its occupants once it ends.
+        assert_eventually(
+          fn -> not Enum.any?(SkillUnitStorage.all(), &(&1.skill_name == :wz_stormgust)) end,
           8_000
         )
       end)

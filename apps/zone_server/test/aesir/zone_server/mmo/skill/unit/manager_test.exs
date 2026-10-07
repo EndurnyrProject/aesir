@@ -62,6 +62,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  defmodule OutUnit do
+    @behaviour Ground
+
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+    @impl Ground
+    def on_place(%Group{cells: cells}),
+      do: {:ok, %{cells: cells, state: %{}, interval: 450, duration: 5_000}}
+
+    @impl Ground
+    def on_interval(%Group{} = group, _now), do: {:ok, group}
+
+    @impl Ground
+    def on_out(%Group{group_id: group_id, state: %{test_pid: test_pid}} = group, mover) do
+      send(test_pid, {:out, group_id, mover})
+      {:ok, group}
+    end
+  end
+
   defmodule FieldUnit do
     @behaviour Ground
 
@@ -2908,6 +2927,63 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert :ok = Manager.register(manager, replacement)
 
     assert [%Cell{x: 102, y: 100}] = Storage.get_cells_by_group(1)
+  end
+
+  test "deleting a cell runs on_out for the units standing on it" do
+    manager = start_manager(10_000)
+    SpatialIndex.add_player(501, 100, 100, "prontera")
+    SpatialIndex.add_player(502, 101, 100, "prontera")
+
+    assert :ok =
+             Manager.register(
+               manager,
+               group(1,
+                 handler: OutUnit,
+                 cells: [{100, 100}, {101, 100}],
+                 state: %{test_pid: self()}
+               )
+             )
+
+    assert :ok = Manager.clear_area(manager, "prontera", [{101, 100}])
+    assert_received {:out, 1, {:player, 502}}
+    refute_received {:out, 1, {:player, 501}}
+
+    assert :ok = Manager.destroy(manager, 1)
+    assert_received {:out, 1, {:player, 501}}
+    refute_received {:out, _, _}
+  end
+
+  test "a Safety Wall broken by its last hit runs on_out for every unit on it" do
+    manager = start_manager(10_000)
+    SpatialIndex.add_player(503, 100, 100, "prontera")
+
+    wall =
+      group(1,
+        skill_id: 12,
+        skill_name: :mg_safetywall,
+        handler: OutUnit,
+        state: %{hits_remaining: 1, shield_hp: nil, test_pid: self()}
+      )
+
+    assert :ok = Manager.register(manager, wall)
+    assert {:block, :remove} = Manager.absorb_safetywall_hit(manager, 1, 100)
+    assert_received {:out, 1, {:player, 503}}
+  end
+
+  test "death and departure clear a unit's Storm Gust counter while a warp keeps it" do
+    manager = start_manager(10_000)
+    StatusStorage.increment_storm_gust_counter(:mob, 77)
+    StatusStorage.increment_storm_gust_counter(:player, 78)
+    StatusStorage.increment_storm_gust_counter(:player, 79)
+
+    assert :ok = Lifecycle.publish_death(:mob, 77, "prontera")
+    assert :ok = Lifecycle.publish_departure(:player, 78, "prontera", :disconnect)
+    assert :ok = Lifecycle.publish_transition(:player, 79, "prontera", "geffen")
+    assert :ok = Manager.tick(manager, 10_000)
+
+    assert StatusStorage.storm_gust_counter(:mob, 77) == 0
+    assert StatusStorage.storm_gust_counter(:player, 78) == 0
+    assert StatusStorage.storm_gust_counter(:player, 79) == 1
   end
 
   test "async destruction cleans up once and ignores an unknown group" do

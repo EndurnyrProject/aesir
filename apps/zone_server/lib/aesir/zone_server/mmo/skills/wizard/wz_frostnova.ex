@@ -1,9 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
   @moduledoc """
-  Frost Nova (WZ_FROSTNOVA). Caster-centered 7x7 Water magic splash with Freeze.
+  Frost Nova (WZ_FROSTNOVA). Caster-centered Water magic splash with Freeze.
 
+  It never strikes a unit standing on the caster's own cell or on a Land
+  Protector cell. Each hit that deals damage to a target that survives it tries
+  to freeze for 1.5 s per level: a player source has a 33% plus 5% per level
+  chance, any other source 35% plus 3% per level. A reflected hit freezes the
+  caster, with the reflector as the source.
 
-  Renewal: 100% plus 10% per level MATK over a 3-cell radius with a short cast and a 0.2 s delay. Pre-renewal: two thirds of that ratio over a 2-cell radius, a 4 to 6 s variable cast, and a 1 s delay.
+  Renewal: 100% plus 10% per level MATK over a 3-cell radius with a short cast
+  and a 0.2 s delay. Pre-renewal: two thirds of that ratio over a 2-cell radius,
+  a 4 to 6 s variable cast, and a 1 s delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 88,
@@ -31,8 +38,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @behaviour Active
 
@@ -66,23 +75,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
       element: definition.element,
       split: false,
       line_of_sight: true,
-      delivery: {:area, nil}
+      delivery: {:area, nil},
+      target_filter: &reachable_cell?(&1, {x, y}),
+      additional_effect: &freeze(&1, &2, level, definition, resistance_roll)
     ]
 
-    caster
-    |> Combat.execute_magic_splash({x, y}, definition.splash_radius, opts)
-    |> Enum.each(&maybe_freeze(&1, level, definition, resistance_roll))
-
+    _ = Combat.execute_magic_splash(caster, {x, y}, definition.splash_radius, opts)
     {:ok, caster}
   end
 
-  defp maybe_freeze({unit_type, target_id}, level, definition, resistance_roll) do
-    StatusInterpreter.apply_status(unit_type, target_id, :sc_freeze,
-      duration: Enum.at(definition.duration, level - 1),
-      success_rate: 33 + 5 * level,
-      resistance_roll: resistance_roll
-    )
+  defp reachable_cell?({unit_type, unit_id}, caster_cell) do
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {x, y, map_name}} ->
+        {x, y} != caster_cell and not Storage.land_protected?(map_name, x, y)
 
-    :ok
+      _unknown ->
+        false
+    end
+  end
+
+  @doc "A player source freezes with 33% plus 5% per level; any other with 35% plus 3%."
+  @spec freeze_chance(atom(), pos_integer()) :: pos_integer()
+  def freeze_chance(:player, level), do: 33 + 5 * level
+  def freeze_chance(_unit_type, level), do: 35 + 3 * level
+
+  defp freeze(source, {unit_type, target_id}, level, definition, resistance_roll) do
+    StatusInterpreter.apply_status(unit_type, target_id, :sc_freeze,
+      val1: level,
+      duration: Enum.at(definition.duration, level - 1),
+      success_rate: freeze_chance(source.unit_type, level),
+      resistance_roll: resistance_roll,
+      caster_id: source.unit_id,
+      source_type: source.unit_type
+    )
   end
 end
