@@ -127,7 +127,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
     test "classic strikes once inside a one-cell splash" do
       caster = build_player(fist(), x: 10, y: 20)
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
+
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 1, _combatant -> [{:mob, 1}] end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
@@ -148,7 +151,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 62} => 3})
       level = 3
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
+
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant -> [{:mob, 1}] end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
@@ -174,7 +180,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       caster = build_player(two_handed_sword(), x: 10, y: 20)
       level = 1
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
 
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant ->
         [{:mob, 1}, {:mob, 2}]
@@ -196,7 +204,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       caster = build_player(two_handed_sword(), x: 10, y: 20)
       level = 1
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
 
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant ->
         [{:mob, 1}, {:mob, 2}, {:mob, 3}, {:mob, 4}]
@@ -218,7 +228,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       caster = build_player(fist(), x: 10, y: 20)
       level = 9
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
+
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant -> [{:mob, 1}] end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
@@ -249,7 +262,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       caster = build_mob(@mob_caster_id, 10, 20)
       level = 2
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
+
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant -> [{:mob, 1}] end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->

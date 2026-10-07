@@ -117,6 +117,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Effects do
       :ok ->
         :ok
 
+      {:error, reason}
+      when reason in [:caster_restricted, :target_restricted, :target_concealed] ->
+        :ok
+
       {:error, reason} ->
         Logger.warning("Gospel affliction on #{inspect(target)} refused: #{inspect(reason)}")
         :ok

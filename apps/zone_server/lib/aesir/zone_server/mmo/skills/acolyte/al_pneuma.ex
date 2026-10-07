@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
     sp_cost: [10]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
@@ -82,6 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
     |> Enum.reject(fn {unit_type, unit_id} ->
       StatusStorage.has_status?(unit_type, unit_id, :sc_pneuma)
     end)
+    |> Enum.filter(&Targeting.placement_reaches?(definition(), &1))
     |> Enum.each(fn {unit_type, unit_id} ->
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_pneuma,
         val1: 1,

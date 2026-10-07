@@ -55,7 +55,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstab do
       skill_level: level,
       skill_ratio: 100 + 20 * level,
       skip_crit: true,
-      base_distance: definition.knockback
+      base_distance: definition.knockback,
+      delivery: :splash
     ]
 
     Combat.execute_line_attack(caster, target_id, opts)

@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, atom()}
   def cast(caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{position: {x, y}}} <- Combat.resolve_combatant(target_id) do
+    with {:ok, %{position: {x, y}} = primary} <- Combat.resolve_combatant(target_id) do
       combatant = caster.__struct__.to_combatant(caster)
 
       opts = [
@@ -77,11 +77,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
         ranged: true,
         base_distance: definition.knockback,
         origin: {caster.x, caster.y},
-        native_target_types: [:mob]
+        native_target_types: [:mob],
+        delivery: delivery({primary.unit_type, primary.unit_id})
       ]
 
       _ = Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius, opts)
       {:ok, caster}
+    end
+  end
+
+  # Renewal strikes every recipient unanimated; classic animates every recipient
+  # but the targeted one.
+  defp delivery(primary) do
+    case GameMode.mode() do
+      :renewal -> :direct
+      :pre_renewal -> {:splash, primary}
     end
   end
 

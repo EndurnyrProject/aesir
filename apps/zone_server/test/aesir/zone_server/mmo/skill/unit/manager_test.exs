@@ -2989,6 +2989,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert StatusStorage.get_status(:player, 21, :sc_quagmire).expires_at != nil
   end
 
+  test "a hidden occupant gains a field status only from a TargetHidden skill, and keeps one it holds" do
+    player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+
+    for id <- [21, 22] do
+      :ok = UnitRegistry.register_unit(:player, id, PlayerState, player)
+      :ok = SpatialIndex.add_unit(:player, id, 100, 100, "prontera")
+    end
+
+    :ok = StatusStorage.apply_status(:player, 22, :sc_hiding)
+
+    stub(Interpreter, :apply_status, fn type, id, status, params ->
+      StatusStorage.apply_status(type, id, status, params)
+    end)
+
+    manager = start_manager(10_000)
+    allow(Interpreter, self(), manager)
+
+    assert :ok = Manager.register(manager, group(1, handler: FieldUnit, skill_id: 285))
+    assert [{:player, 21, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+    refute FieldSupport.field_owned?(:player, 22, :sc_quagmire)
+
+    :ok = StatusStorage.apply_status(:player, 21, :sc_hiding)
+    assert :ok = Manager.reconcile_unit(manager, {:player, 21})
+    assert [{:player, 21, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+
+    assert :ok = Manager.register(manager, group(2, handler: FieldUnit, skill_id: 92))
+    assert {:player, 22, :sc_quagmire, []} in FieldSupport.sources_for_group(2)
+  end
+
   test "a field without an occupant status does not grant one on touch" do
     manager = start_manager(10_000)
     assert :ok = Manager.register(manager, group(2, handler: EmptyField))

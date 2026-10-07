@@ -66,7 +66,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
         skill_id: 317,
         skill_level: level,
         base_damage: 30 + 10 * level + level * lesson,
-        element: :neutral
+        element: :neutral,
+        delivery: :unit
       )
     end)
   end

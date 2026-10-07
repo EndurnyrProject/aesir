@@ -43,13 +43,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmbeat do
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{position: center}} <- Combat.resolve_combatant(target_id) do
+    with {:ok, %{position: center} = primary} <- Combat.resolve_combatant(target_id) do
       opts = [
         skill_id: definition.id,
         skill_level: level,
         skill_ratio: 70 + 10 * level,
         element: definition.element,
-        split: true
+        split: true,
+        delivery: {:splash, {primary.unit_type, primary.unit_id}}
       ]
 
       Combat.execute_magic_splash(caster, center, definition.splash_radius, opts)

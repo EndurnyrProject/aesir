@@ -378,7 +378,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       target = player_target(9_809)
       :ok = StatusStorage.apply_status(:player, 9_809, :sc_hiding)
 
-      assert check(target, target, skill()) == [:ok, :ok, :ok]
+      assert check(target, target, skill(allow_when_hidden: true)) == [:ok, :ok, :ok]
+    end
+
+    test "a recipient check refuses a caster that cannot act, but not one waiting to petrify" do
+      target = player_target(9_812)
+
+      :ok = StatusStorage.apply_status(:mob, 9_801, :sc_stun)
+      assert check(caster(), target, skill()) == [:ok, :ok, {:error, :caster_restricted}]
+
+      :ok = StatusStorage.remove_status(:mob, 9_801, :sc_stun)
+      :ok = StatusStorage.apply_status(:mob, 9_801, :sc_stonewait)
+      assert check(caster(), target, skill()) == [:ok, :ok, :ok]
+    end
+
+    test "a hidden player's splash lands only for a skill usable while hidden" do
+      caster = player_target(9_813)
+      :ok = StatusStorage.apply_status(:player, 9_813, :sc_hiding)
+      target = CombatTestHelper.create_mob_combatant(unit_id: 9_814)
+
+      assert Targeting.validate_skill_use(caster, target, skill(), :splash) ==
+               {:error, :caster_restricted}
+
+      assert Targeting.validate_skill_use(caster, target, skill(allow_when_hidden: true), :splash) ==
+               :ok
+    end
+
+    test "Storm Gust and Frost Nova pass over a frozen recipient" do
+      target = player_target(9_815)
+      :ok = StatusStorage.apply_status(:player, 9_815, :sc_freeze)
+
+      for id <- [88, 89] do
+        assert check(caster(), target, skill(id: id)) == [:ok, :ok, {:error, :target_restricted}]
+      end
+
+      assert check(caster(), target, skill()) == [:ok, :ok, :ok]
     end
 
     @tag game_mode: :pre_renewal
@@ -398,6 +432,93 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       pressure = skill(id: 367, name: :pa_pressure)
 
       assert check(caster(class: :boss), target, pressure) == [:ok, :ok, :ok]
+    end
+  end
+
+  describe "validate_delivery/4" do
+    alias Aesir.ZoneServer.CombatTestHelper
+    alias Aesir.ZoneServer.Mmo.Skill.Definition
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
+    defp splash_skill(attrs \\ []) do
+      [id: 5, name: :sm_bash, display_name: "Bash", max_level: 1, damage_splash: true]
+      |> Keyword.merge(attrs)
+      |> Definition.build!(__MODULE__)
+    end
+
+    defp hidden_player(id) do
+      :ok =
+        UnitRegistry.register_unit(
+          :player,
+          id,
+          PlayerState,
+          %PlayerState{character_id: id},
+          self()
+        )
+
+      :ok = StatusStorage.apply_status(:player, id, :sc_hiding)
+      CombatTestHelper.create_player_combatant(unit_id: id)
+    end
+
+    defp boss, do: CombatTestHelper.create_mob_combatant(unit_id: 9_831) |> Map.put(:class, :boss)
+
+    test "a direct hit is never re-checked; a unit hit always is" do
+      target = hidden_player(9_832)
+
+      assert Targeting.validate_delivery(boss(), target, splash_skill(), :direct) == :ok
+
+      assert Targeting.validate_delivery(
+               %{boss() | class: :normal},
+               target,
+               splash_skill(),
+               :unit
+             ) ==
+               {:error, :target_concealed}
+
+      assert Targeting.validate_delivery(boss(), target, splash_skill(), :unit) == :ok
+    end
+
+    test "an animated splash re-checks every recipient but the primary, for Splash non-NPC skills" do
+      target = hidden_player(9_833)
+      caster = %{boss() | class: :normal}
+
+      assert Targeting.validate_delivery(
+               caster,
+               target,
+               splash_skill(),
+               {:splash, {:player, 9_833}}
+             ) ==
+               :ok
+
+      assert Targeting.validate_delivery(caster, target, splash_skill(), {:splash, nil}) ==
+               {:error, :target_concealed}
+
+      for skill <- [splash_skill(damage_splash: false), splash_skill(is_npc: true)] do
+        assert Targeting.validate_delivery(caster, target, skill, {:splash, nil}) == :ok
+      end
+    end
+
+    test "an area attack checks secondaries without a caster, so a boss does not see them" do
+      target = hidden_player(9_834)
+
+      assert Targeting.validate_delivery(boss(), target, splash_skill(), {:area, nil}) ==
+               {:error, :target_concealed}
+
+      assert Targeting.validate_delivery(
+               boss(),
+               target,
+               splash_skill(),
+               {:area, {:player, 9_834}}
+             ) ==
+               :ok
+    end
+
+    test "placement reaches a hidden unit only for a TargetHidden skill" do
+      hidden_player(9_835)
+
+      refute Targeting.placement_reaches?(splash_skill(), {:player, 9_835})
+      assert Targeting.placement_reaches?(splash_skill(target_hidden: true), {:player, 9_835})
+      assert Targeting.placement_reaches?(splash_skill(), {:player, 9_836})
     end
   end
 

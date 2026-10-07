@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSharpshooting do
 
     case GameMode.mode() do
       :renewal ->
-        with {:ok, %{position: center}} <- Combat.resolve_combatant(target) do
+        with {:ok, %{position: center} = primary} <- Combat.resolve_combatant(target) do
           Combat.execute_splash_attack(
             caster,
             center,
@@ -77,7 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSharpshooting do
               [
                 skill_ratio: ratio(caster, level, false),
                 critical_max_weapon: false,
-                target_skill_units: true
+                target_skill_units: true,
+                delivery: {:splash, {primary.unit_type, primary.unit_id}}
               ]
           )
 
@@ -88,7 +89,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSharpshooting do
         case Combat.execute_line_attack(
                caster,
                target,
-               opts ++ [skill_ratio: ratio(caster, level, true), length: 14, width: 1]
+               opts ++
+                 [skill_ratio: ratio(caster, level, true), length: 14, width: 1, delivery: :area]
              ) do
           [] ->
             Combat.execute_skill_attack(

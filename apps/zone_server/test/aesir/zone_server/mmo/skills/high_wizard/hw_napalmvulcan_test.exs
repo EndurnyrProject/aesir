@@ -15,7 +15,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
   setup :set_mimic_private
 
   setup do
-    stub(Combat, :resolve_combatant, fn 3001 -> {:ok, %{position: {110, 100}}} end)
+    stub(Combat, :resolve_combatant, fn 3001 ->
+      {:ok, %{unit_type: :mob, unit_id: 3001, position: {110, 100}}}
+    end)
+
     :ok
   end
 

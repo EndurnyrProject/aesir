@@ -109,7 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       definition = HtBlitzbeat.definition()
 
       expect(Combat, :resolve_combatant, fn 2001 ->
-        {:ok, %{position: {151, 150}}}
+        {:ok, %{unit_type: :mob, unit_id: 2001, position: {151, 150}}}
       end)
 
       expect(Combat, :execute_misc_splash, fn ^caster, {151, 150}, 1, opts ->
@@ -120,7 +120,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
                  skill_level: 5,
                  base_damage: 276,
                  element: :neutral,
-                 hit_divisions: 5
+                 hit_divisions: 5,
+                 delivery: {:splash, {:mob, 2001}}
                ]
 
         [2001, 2002]
@@ -206,7 +207,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       end)
 
       assert :ok =
-               HtBlitzbeat.deferred(%{center: {151, 150}, skill_level: 5}, caster)
+               HtBlitzbeat.deferred(
+                 %{center: {151, 150}, primary: {:mob, 2002}, skill_level: 5},
+                 caster
+               )
 
       assert caster.stats.current_state.sp == 3
     end
@@ -222,7 +226,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
         [2002, 2003]
       end)
 
-      assert :ok = HtBlitzbeat.deferred(%{center: {151, 150}, skill_level: 5}, caster)
+      assert :ok =
+               HtBlitzbeat.deferred(
+                 %{center: {151, 150}, primary: {:mob, 2002}, skill_level: 5},
+                 caster
+               )
     end
   end
 end

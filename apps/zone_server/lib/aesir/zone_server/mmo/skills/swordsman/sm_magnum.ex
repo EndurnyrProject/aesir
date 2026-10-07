@@ -101,7 +101,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
       skip_crit: true,
       base_distance: definition.knockback,
       origin: {x, y},
-      native_target_types: [:mob]
+      native_target_types: [:mob],
+      delivery: {:splash, nil}
     ]
 
     _ = Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius, opts)

@@ -18,11 +18,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
@@ -48,7 +51,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
               optional(:detector) => boolean()
             }
 
+  @typedoc """
+  How a skill hit reached its recipient, deciding whether the hit re-checks the
+  recipient's skill use (`validate_delivery/4`):
+
+    * `:direct` - the caster's own unanimated hit (a single-target strike, an
+      unanimated splash, a song): never re-checked.
+    * `:unit` - the actual source is a placed ground unit or trap: every
+      recipient is checked against the caster.
+    * `{:splash, primary}` - an animated splash: every recipient but `primary`
+      is checked against the caster when the skill has the Splash damage flag
+      and is not an NPC skill.
+    * `{:area, primary}` - an area attack resolved recipient by recipient: every
+      recipient but `primary` is checked without a caster, and additionally
+      against the caster when the skill has the Splash damage flag and keeps
+      its splash animation.
+  """
+  @type delivery :: :direct | :unit | {:splash, Ref.t() | nil} | {:area, Ref.t() | nil}
+
   @pressure 367
+  @lex_aeterna 78
+  @trick_dead 143
+  @adaptation 304
+  @gospel 369
+  @chase_walk 389
+  @freeze_immune_skills [88, 89]
+  @frost_nova 88
+  @free_body_states [0, 6, 7]
 
   @field_skills %{
     92 => :wz_quagmire,
@@ -185,6 +214,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   target after its cast begins. Unit placement checks only the target's Hiding
   against TargetHidden, whoever the caster is. A caster always reaches itself.
 
+  At `:splash` the check is the full one the source runs for a recipient after
+  the skill went off: the caster must still be able to act (see
+  `validate_delivery/4`) and a frozen recipient is out of Storm Gust's and Frost
+  Nova's reach, as a frozen or petrified one is out of Lex Aeterna's.
+
   Relationship, life and range are other checks' concern.
   """
   @spec validate_skill_use(
@@ -192,7 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
           concealment_unit(),
           Definition.t(),
           skill_use_phase()
-        ) :: :ok | {:error, :target_concealed}
+        ) :: :ok | {:error, :caster_restricted | :target_restricted | :target_concealed}
   def validate_skill_use(_caster, target, %Definition{} = definition, :unit_place) do
     if hidden?(target_option(target)) and not definition.target_hidden,
       do: {:error, :target_concealed},
@@ -206,8 +240,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
       classic_pressure?(definition) and phase != :cast_begin and hidden?(option) ->
         {:error, :target_concealed}
 
+      splash_check?(phase) and caster_restricted?(caster, definition) ->
+        {:error, :caster_restricted}
+
       same_unit?(caster, target) ->
         :ok
+
+      true ->
+        reach_target(caster, target, option, definition, phase)
+    end
+  end
+
+  defp reach_target(caster, target, option, definition, phase) do
+    cond do
+      splash_check?(phase) and target_restricted?(target, definition) ->
+        {:error, :target_restricted}
 
       concealed?(caster, target, option, skill_mask(phase, definition)) ->
         {:error, :target_concealed}
@@ -216,6 +263,138 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
         :ok
     end
   end
+
+  @doc """
+  Re-checks a skill hit's recipient according to how the hit reached it (see
+  `t:delivery/0`), before any damage is calculated.
+
+  A re-checked recipient goes through `validate_skill_use/4` at `:splash`,
+  which also refuses a caster that cannot act (a dead monster; stunned, frozen,
+  petrified or asleep; playing dead; chanting Battle Chant; Root-locked; under
+  classic Loki's Veil; hidden without a skill usable while hidden; chase
+  walking) and a frozen recipient of Storm Gust or Frost Nova. An unknown skill
+  id is never re-checked.
+  """
+  @spec validate_delivery(
+          concealment_unit(),
+          concealment_unit(),
+          integer() | Definition.t(),
+          delivery()
+        ) :: :ok | {:error, :caster_restricted | :target_restricted | :target_concealed}
+  def validate_delivery(_caster, _target, _skill, :direct), do: :ok
+
+  def validate_delivery(caster, target, skill_id, delivery) when is_integer(skill_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> validate_delivery(caster, target, definition, delivery)
+      :error -> :ok
+    end
+  end
+
+  def validate_delivery(caster, target, %Definition{} = definition, :unit),
+    do: validate_skill_use(caster, target, definition, :splash)
+
+  def validate_delivery(caster, target, %Definition{} = definition, {:splash, primary}) do
+    if primary?(target, primary) or definition.is_npc or not definition.damage_splash,
+      do: :ok,
+      else: validate_skill_use(caster, target, definition, :splash)
+  end
+
+  def validate_delivery(caster, target, %Definition{} = definition, {:area, primary}) do
+    cond do
+      primary?(target, primary) ->
+        :ok
+
+      definition.damage_splash and definition.id != @frost_nova ->
+        with :ok <- validate_skill_use(nil, target, definition, :splash),
+             do: validate_skill_use(caster, target, definition, :splash)
+
+      true ->
+        validate_skill_use(nil, target, definition, :splash)
+    end
+  end
+
+  @doc """
+  Whether a ground unit's on-enter effect (a field status, a web, a portal)
+  reaches the unit `ref`: a Hiding unit is out of reach unless the skill is
+  TargetHidden. Only acquiring the effect is gated; a unit that already holds
+  it keeps it while it hides. An unknown skill id always reaches.
+  """
+  @spec placement_reaches?(integer() | Definition.t(), Ref.t()) :: boolean()
+  def placement_reaches?(skill_id, ref) when is_integer(skill_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> placement_reaches?(definition, ref)
+      :error -> true
+    end
+  end
+
+  def placement_reaches?(%Definition{} = definition, {unit_type, unit_id}) do
+    validate_skill_use(
+      nil,
+      %{unit_type: unit_type, unit_id: unit_id},
+      definition,
+      :unit_place
+    ) == :ok
+  end
+
+  defp primary?(%{unit_type: type, unit_id: id}, {type, id}), do: true
+  defp primary?(_target, _primary), do: false
+
+  defp splash_check?(:splash), do: true
+  defp splash_check?(_phase), do: false
+
+  # The caster's own state at the source's flag-2 check. A `nil` caster (an
+  # area check made without one) carries no state.
+  defp caster_restricted?(nil, _definition), do: false
+
+  defp caster_restricted?(%{unit_type: type, unit_id: id}, %Definition{} = definition) do
+    %{body_state: body_state, effect_state: option} = caster_display(type, id)
+
+    dead_non_player?(type, id) or body_state not in @free_body_states or
+      status_locked?(type, id, definition.id) or option_locked?(type, option, definition)
+  end
+
+  defp caster_restricted?(_caster, _definition), do: false
+
+  defp status_locked?(type, id, skill_id) do
+    locked_by?(type, id, :sc_trickdead, skill_id, @trick_dead) or
+      locked_by?(type, id, :sc_gospel, skill_id, @gospel) or
+      not Root.skill_allowed?(type, id, skill_id) or
+      (GameMode.mode() == :pre_renewal and
+         locked_by?(type, id, :sc_rokisweil, skill_id, @adaptation))
+  end
+
+  defp locked_by?(type, id, status, skill_id, exempt_skill),
+    do: skill_id != exempt_skill and StatusStorage.has_status?(type, id, status)
+
+  defp option_locked?(type, option, %Definition{id: skill_id} = definition) do
+    (type == :player and hidden?(option) and not definition.allow_when_hidden) or
+      ((option &&& Option.id(:chasewalk)) != 0 and skill_id != @chase_walk)
+  end
+
+  defp caster_display(type, id) when type in [:player, :mob, :homunculus],
+    do: StatusDisplay.spawn_state(type, id)
+
+  defp caster_display(_type, _id), do: %{body_state: 0, effect_state: 0}
+
+  defp dead_non_player?(:player, _id), do: false
+
+  defp dead_non_player?(type, id) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, state, _pid}} -> not Unit.living?(state)
+      _missing -> false
+    end
+  end
+
+  defp target_restricted?(%{unit_type: type, unit_id: id}, %Definition{id: skill_id})
+       when skill_id in @freeze_immune_skills,
+       do: StatusStorage.has_status?(type, id, :sc_freeze)
+
+  defp target_restricted?(%{unit_type: type, unit_id: id}, %Definition{id: @lex_aeterna}),
+    do:
+      StatusStorage.has_status?(type, id, :sc_freeze) or
+        StatusStorage.has_status?(type, id, :sc_stone)
+
+  defp target_restricted?(_target, _definition), do: false
 
   @doc """
   Whether an attacker's normal attack can see `target`: Hiding, Cloaking and

@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Ref
 
   @behaviour Active
   @behaviour Passive
@@ -53,8 +54,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, _definition) do
-    with {:ok, %{position: center}} <- Combat.resolve_combatant(target_id) do
-      deliver(caster, center, level, false)
+    with {:ok, %{position: center} = primary} <- Combat.resolve_combatant(target_id) do
+      deliver(caster, center, {primary.unit_type, primary.unit_id}, level, false)
       {:ok, caster}
     end
   end
@@ -66,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   @spec after_normal_hit(PlayerState.t(), Passive.hit_context(), keyword()) :: :ok
   def after_normal_hit(
         %PlayerState{stats: %Stats{} = stats} = player_state,
-        %{position: center},
+        %{position: center} = hit,
         opts
       ) do
     learned_level = Map.get(stats.progression.learned_skills, definition().id, 0)
@@ -80,7 +81,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
       rng = Keyword.get(opts, :rng, &default_roll/1)
 
       if rng.(1_000) <= threshold do
-        Skill.defer(__MODULE__, %{center: center, skill_level: effective_level}, 0)
+        Skill.defer(
+          __MODULE__,
+          %{
+            center: center,
+            primary: {hit.target_type, hit.target_id},
+            skill_level: effective_level
+          },
+          0
+        )
       end
     end
 
@@ -91,10 +100,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
 
   @doc "Resolves a queued automatic Blitz Beat from the player's live session state."
   @impl Active
-  @spec deferred(%{center: {integer(), integer()}, skill_level: pos_integer()}, PlayerState.t()) ::
-          :ok
-  def deferred(%{center: center, skill_level: level}, %PlayerState{} = caster) do
-    deliver(caster, center, level, GameMode.mode() == :pre_renewal)
+  @spec deferred(
+          %{center: {integer(), integer()}, primary: Ref.t(), skill_level: pos_integer()},
+          PlayerState.t()
+        ) :: :ok
+  def deferred(%{center: center, primary: primary, skill_level: level}, %PlayerState{} = caster) do
+    deliver(caster, center, primary, level, GameMode.mode() == :pre_renewal)
   end
 
   defp automatic_eligible?(
@@ -106,7 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
       Stats.weapon_type(stats.equipment) == :bow
   end
 
-  defp deliver(%PlayerState{stats: stats} = caster, center, level, split?) do
+  defp deliver(%PlayerState{stats: stats} = caster, center, primary, level, split?) do
     steel_crow_level = Map.get(stats.progression.learned_skills, @steel_crow_id, 0)
 
     caster_stats = %{
@@ -124,7 +135,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
       base_damage: base_damage,
       element: definition.element,
       hit_divisions: level,
-      split: split?
+      split: split?,
+      delivery: {:splash, primary}
     )
 
     :ok

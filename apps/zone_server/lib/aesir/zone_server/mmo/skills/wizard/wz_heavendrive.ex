@@ -51,7 +51,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendrive do
       skill_ratio: skill_ratio(),
       element: definition.element,
       split: false,
-      hit_divisions: level
+      hit_divisions: level,
+      delivery: :unit
     ]
 
     caster

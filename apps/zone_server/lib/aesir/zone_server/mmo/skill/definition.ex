@@ -32,6 +32,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   a Hiding target; IsNpc and Splash change how a splash recipient's skill use is
   checked. They are mode-keyable and never inferred from other fields.
 
+  `allow_when_hidden` mirrors the source's AllowWhenHidden flag: a Hiding
+  player may use the skill, and its splash or ground hits still land while the
+  caster stays hidden. It is mode-keyable.
+
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
   declared range for a player caster. It is mode-invariant.
@@ -128,6 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             target_hidden: false,
             is_npc: false,
             damage_splash: false,
+            allow_when_hidden: false,
             after_cast_delay: [],
             cooldown: [],
             damage_kind: :weapon,
@@ -175,6 +180,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           target_hidden: boolean(),
           is_npc: boolean(),
           damage_splash: boolean(),
+          allow_when_hidden: boolean(),
           after_cast_delay: [non_neg_integer()],
           cooldown: [non_neg_integer()],
           damage_kind: damage_kind(),
@@ -230,6 +236,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     target_hidden: :boolean,
     is_npc: :boolean,
     damage_splash: :boolean,
+    allow_when_hidden: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
@@ -269,6 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     target_hidden: false,
     is_npc: false,
     damage_splash: false,
+    allow_when_hidden: false,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
@@ -306,6 +314,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :target_hidden,
     :is_npc,
     :damage_splash,
+    :allow_when_hidden,
     :after_cast_delay,
     :cooldown,
     :item_cost,

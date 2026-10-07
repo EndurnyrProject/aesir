@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{position: {x, y}}} <- Combat.resolve_combatant(target_id) do
+    with {:ok, %{position: {x, y}} = primary} <- Combat.resolve_combatant(target_id) do
       combatant = caster.__struct__.to_combatant(caster)
 
       enemy_count =
@@ -61,7 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
         skip_crit: true,
         base_distance: knockback_distance(level),
         origin: {caster.x, caster.y},
-        native_target_types: [:mob]
+        native_target_types: [:mob],
+        delivery: {:splash, {primary.unit_type, primary.unit_id}}
       ]
 
       _ = Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius, opts)

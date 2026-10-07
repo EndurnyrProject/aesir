@@ -49,7 +49,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
     end)
 
     expect(Combat, :execute_forced_no_card_splash, fn ^source, {120, 121}, 2, opts ->
-      assert opts == [skill_id: 141, skill_level: 10, skill_ratio: 1_600, typed_results: true]
+      assert opts == [
+               skill_id: 141,
+               skill_level: 10,
+               skill_ratio: 1_600,
+               typed_results: true,
+               delivery: {:splash, {:mob, 2_000}}
+             ]
+
       [{:mob, 2_001}, {:player, 2_002}]
     end)
 

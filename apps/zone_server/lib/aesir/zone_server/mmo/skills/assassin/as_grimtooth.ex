@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth do
     splash_radius: 1,
     sp_cost: List.duplicate(3, 5),
     require_weapon: [:katar],
-    damage_splash: true
+    damage_splash: true,
+    allow_when_hidden: true
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -57,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth do
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do
-    with {:ok, _target_type, {x, y, _map_name}} <- Combat.resolve_target_position(target_id) do
+    with {:ok, target_type, {x, y, _map_name}} <- Combat.resolve_target_position(target_id) do
       connected_targets =
         Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius,
           skill_id: definition.id,
@@ -66,13 +67,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth do
           skip_crit: true,
           ranged: true,
           typed_results: true,
-          target_skill_units: true
+          target_skill_units: true,
+          delivery: {:splash, primary_ref(target_type, target_id)}
         )
 
       apply_quagmire(connected_targets, caster, level)
       {:ok, caster}
     end
   end
+
+  defp primary_ref(_target_type, {_unit_type, _unit_id} = ref), do: ref
+  defp primary_ref(target_type, target_id), do: {target_type, target_id}
 
   defp apply_quagmire(targets, caster, level) do
     source = caster.__struct__.to_combatant(caster)

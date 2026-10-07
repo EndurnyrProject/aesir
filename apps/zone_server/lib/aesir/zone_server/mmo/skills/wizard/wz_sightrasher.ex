@@ -50,7 +50,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasher do
         element: definition.element,
         split: false,
         base_distance: definition.knockback,
-        origin: {x, y}
+        origin: {x, y},
+        delivery: {:splash, nil}
       ]
 
       _ = Combat.execute_magic_splash(caster, {x, y}, definition.splash_radius, opts)

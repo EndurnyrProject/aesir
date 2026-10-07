@@ -60,7 +60,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
                                                   24,
                                                   1,
                                                   :holy,
-                                                  145 ->
+                                                  145,
+                                                  [delivery: :direct] ->
         :ok
       end)
 
@@ -87,7 +88,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
                                                   24,
                                                   1,
                                                   :holy,
-                                                  145 ->
+                                                  145,
+                                                  [delivery: :direct] ->
         :ok
       end)
 
@@ -101,7 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
       reject(&Helpers.remove_statuses/2)
       reject(&Combat.resolve_combatant/1)
       reject(&Combat.splash_targets/4)
-      reject(&Combat.apply_skill_unit_damage/7)
+      reject(&Combat.apply_skill_unit_damage/8)
 
       assert {:ok, %StatusEntry{}} = Ruwach.on_apply(@caster, entry(), %{target_id: 1000})
       assert {:ok, %StatusEntry{}} = Ruwach.on_tick(@caster, entry(), %{target_id: 1000})
@@ -118,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RuwachTest do
 
       stub(Combat, :resolve_combatant, fn 1000 -> {:error, :not_found} end)
       reject(&Combat.splash_targets/4)
-      reject(&Combat.apply_skill_unit_damage/7)
+      reject(&Combat.apply_skill_unit_damage/8)
 
       assert {:ok, %StatusEntry{}} = Ruwach.on_apply(@caster, entry(), %{target_id: 1000})
     end

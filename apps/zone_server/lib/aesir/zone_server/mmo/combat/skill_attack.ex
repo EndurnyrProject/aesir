@@ -167,6 +167,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
       Native restrictions gate only `:base_distance`; equipment distance for the
       named landed skill participates independently.
+    - `:equipment_blow` - `false` drops the equipment knockback distance too,
+      for a hit that carries no knockback at all (default `true`)
+    - `:delivery` - how the hit reached the target (`t:Targeting.delivery/0`,
+      default `:direct`); a recipient refused by
+      `Targeting.validate_delivery/4` is neither calculated nor struck
 
   ## Returns
     - :ok if the skill was dispatched (regardless of whether any hit
@@ -208,7 +213,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   This restricted entry preserves the ordinary validation, calculation, hooks,
   and settlement path while replacing only enemy authorization with the exact
   source group's field authorization. The supplied skill id and level must
-  match the authoritative group.
+  match the authoritative group. The field is the hit's actual source, so
+  `:delivery` defaults to `:unit`.
   """
   @spec execute_field_skill_attack(struct(), Ref.t(), Group.t(), keyword()) ::
           :ok
@@ -227,7 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       execute_single_target_attack(
         caster_state,
         target_ref,
-        opts,
+        Keyword.put_new(opts, :delivery, :unit),
         calculator,
         %{},
         &Targeting.validate_field_target(group, &1, &2)
@@ -501,7 +507,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
          :ok <- authorize_target.(attacker, target),
-         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
+         :ok <-
+           Targeting.validate_delivery(
+             attacker,
+             target,
+             skill_id,
+             Keyword.get(opts, :delivery, :direct)
+           ) do
       hit_opts = %{
         hit_divisions: Keyword.get(opts, :hit_divisions, 1),
         hit_rate_bonus_pct: hit_rate_bonus_pct,
@@ -567,6 +580,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       bare ids from the same execution (default `false`)
     - `:target_skill_units` - additionally admits targetable enemy trap cells
       reached by the splash (default `false`)
+    - `:delivery` - how the splash reached each target (default `:direct`, see
+      `execute_skill_attack/3`)
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
@@ -588,6 +603,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   Selection and delivery both validate the exact source group. Connected
   targets are always returned as typed references for field follow-up effects.
+  The field is the hits' actual source, so `:delivery` defaults to `:unit`.
   """
   @spec execute_field_splash_attack(
           struct(),
@@ -616,7 +632,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             knockback_options: knockback_options(opts),
             hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
             hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
-            hit_divisions: Keyword.get(opts, :hit_divisions, 1)
+            hit_divisions: Keyword.get(opts, :hit_divisions, 1),
+            delivery: Keyword.get(opts, :delivery, :unit)
           },
           &Targeting.validate_field_target(group, &1, &2)
         )
@@ -660,7 +677,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
       hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
       hit_divisions: Keyword.get(opts, :hit_divisions, 1),
-      splash_center: center
+      splash_center: center,
+      delivery: Keyword.get(opts, :delivery, :direct)
     }
 
     selection_opts = Keyword.take(opts, [:target_skill_units])
@@ -698,6 +716,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:ranged` - declares a player's skill as long range (default `false`, see
       `execute_skill_attack/3`)
     - `:hit_divisions` - each target's signed hit divisions (default `1`)
+    - `:delivery` - `:direct` (default), `:splash` or `:area`: how the line
+      reached each target, as the same-named `t:Targeting.delivery/0` whose
+      primary is the line's own target
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
@@ -708,8 +729,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
 
     case TargetResolver.resolve_target_position(target_id) do
-      {:ok, _target_type, {tx, ty, _map_name}} ->
+      {:ok, target_type, {tx, ty, _map_name}} ->
         {sx, sy} = attacker.position
+        primary = line_primary(target_type, target_id)
 
         attacker.map_name
         |> LineTargets.select({sx, sy}, {tx, ty}, attacker, Keyword.take(opts, [:length, :width]))
@@ -720,13 +742,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           knockback_options: knockback_options(opts),
           hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
           hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
-          hit_divisions: Keyword.get(opts, :hit_divisions, 1)
+          hit_divisions: Keyword.get(opts, :hit_divisions, 1),
+          delivery: line_delivery(Keyword.get(opts, :delivery, :direct), primary)
         })
 
       {:error, _reason} ->
         []
     end
   end
+
+  defp line_primary(_target_type, {_unit_type, _unit_id} = ref), do: ref
+  defp line_primary(target_type, target_id), do: {target_type, target_id}
+
+  defp line_delivery(:direct, _primary), do: :direct
+  defp line_delivery(kind, primary) when kind in [:splash, :area], do: {kind, primary}
 
   # Resolves the shield damage base for a `damage_base: :shield` skill: the worn
   # shield contributes `4×refine + weight/10` on top of the caster's stat batk,
@@ -839,7 +868,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- authorize_target.(attacker, target),
-         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
+         :ok <-
+           Targeting.validate_delivery(
+             attacker,
+             target,
+             skill_id,
+             Map.get(result_opts, :delivery, :direct)
+           ) do
       hit_opts = %{
         hit_divisions: Map.get(result_opts, :hit_divisions, 1),
         hit_rate_bonus_pct: hit_rate_bonus_pct,
@@ -911,6 +947,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       statuses (pre-renewal Gravitation Field, Gloria Domini) (default `false`)
     - `:report_hit` - return settled damage and logical target survival (default `false`),
       without waiting for the target's asynchronous HP mutation
+    - `:delivery` - how the hit reached the target (default `:direct`, see
+      `execute_skill_attack/3`)
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
@@ -926,6 +964,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   The exact group authorizes the target at delivery time; all misc calculation,
   hooks, packets, and settlement remain shared with `execute_misc_attack/3`.
+  The field is the hit's actual source, so `:delivery` defaults to `:unit`.
   """
   @spec execute_field_misc_attack(struct(), Ref.t(), Group.t(), keyword()) ::
           :ok | {:ok, hit_report()} | {:error, atom()}
@@ -934,7 +973,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       execute_misc_attack_with(
         caster_state,
         target_ref,
-        opts,
+        Keyword.put_new(opts, :delivery, :unit),
         &Targeting.validate_field_target(group, &1, &2)
       )
     end
@@ -961,7 +1000,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         owner_derived_trap?: false,
         report_hit?: Keyword.get(opts, :report_hit, false),
         bypass_reductions?: Keyword.get(opts, :bypass_reductions, false),
-        knockback_options: knockback_options(opts)
+        knockback_options: knockback_options(opts),
+        delivery: Keyword.get(opts, :delivery, :direct)
       }
     )
   end
@@ -985,6 +1025,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:ignore_element` - bypass the element table (default `false`)
     - `:target_skill_units` - include only live targetable traps (default `false`)
     - `:shoot_range_los` - require projectile line of sight from the splash center
+    - `:delivery` - how the splash reached each target (default `:direct`, see
+      `execute_skill_attack/3`); the split divisor counts every selected target,
+      refused or not
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
@@ -1021,7 +1064,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
                authorize_target: &Targeting.validate_enemy/2,
                ignore_element?: ignore_element?,
                owner_derived_trap?: target_skill_units?,
-               knockback_options: knockback_options(opts)
+               knockback_options: knockback_options(opts),
+               delivery: Keyword.get(opts, :delivery, :direct)
              }
            ) do
         :ok -> [target_id]
@@ -1035,7 +1079,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   The exact group authorizes selection, the split divisor, and each actual
   delivery. The function preserves the existing misc splash geometry and
-  settlement behavior and returns after dispatching all eligible targets.
+  settlement behavior and returns after dispatching all eligible targets. The
+  field is the hits' actual source, so `:delivery` defaults to `:unit`; the
+  split divisor counts the authorized targets before that check.
   """
   @spec execute_field_misc_splash(
           struct(),
@@ -1076,7 +1122,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             authorize_target: authorize_target,
             ignore_element?: Keyword.get(opts, :ignore_element, false),
             owner_derived_trap?: false,
-            knockback_options: knockback_options(opts)
+            knockback_options: knockback_options(opts),
+            delivery: Keyword.get(opts, :delivery, :unit)
           }
         )
       end)
@@ -1120,6 +1167,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target_id <- target.unit_id,
          :ok <- misc_opts.authorize_target.(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
+         :ok <- Targeting.validate_delivery(attacker, target, skill_id, misc_opts.delivery),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(
              attacker,
@@ -1703,7 +1751,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :origin,
       :native_enabled,
       :native_target_types,
-      :native_requires_survival
+      :native_requires_survival,
+      :equipment_blow
     ])
   end
 

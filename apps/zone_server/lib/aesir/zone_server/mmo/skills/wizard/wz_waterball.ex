@@ -94,7 +94,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
         group.skill_id,
         group.level,
         :water,
-        100 + 30 * group.level
+        100 + 30 * group.level,
+        delivery: :direct
       )
 
       {:ok, mark_shot(group, true)}

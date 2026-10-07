@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, atom()}
   def cast(caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{position: center}} <- Combat.resolve_combatant(target_id) do
+    with {:ok, %{position: center} = primary} <- Combat.resolve_combatant(target_id) do
       combatant = caster.__struct__.to_combatant(caster)
 
       caster
@@ -56,7 +56,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
         hit_divisions: level,
         element: definition.element,
         skill_ratio: ratio(combatant, level),
-        split: GameMode.mode() == :pre_renewal
+        split: GameMode.mode() == :pre_renewal,
+        delivery: {:splash, {primary.unit_type, primary.unit_id}}
       )
       |> Enum.uniq()
       |> Enum.each(&maybe_curse(&1, combatant, level))

@@ -34,7 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
           origin: {integer(), integer()} | nil,
           native_enabled: boolean(),
           native_target_types: [target_type()],
-          native_requires_survival: boolean()
+          native_requires_survival: boolean(),
+          equipment_blow: boolean()
         ]
 
   @doc """
@@ -42,6 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
   Native conditions gate only `base_distance`. The final signed sum is floored
   at zero before one collision-aware, target-owned displacement request.
+  `equipment_blow: false` drops the equipment distance too, for a skill whose
+  hit carries no knockback at all.
   """
   @spec skill(Combatant.t(), Combatant.t(), pos_integer(), skill_result(), skill_options()) ::
           result()
@@ -50,7 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
       max(
         0,
         native_distance(target, skill_result, opts) +
-          EquipmentBonuses.add_skill_blow(attacker, skill_id)
+          equipment_distance(attacker, skill_id, opts)
       )
 
     request_skill_displacement(skill_result, attacker, target, distance, opts)
@@ -150,6 +153,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   end
 
   defp ensure_living(state), do: if(Unit.living?(state), do: :ok, else: {:error, :target_dead})
+
+  defp equipment_distance(attacker, skill_id, opts) do
+    if Keyword.get(opts, :equipment_blow, true),
+      do: EquipmentBonuses.add_skill_blow(attacker, skill_id),
+      else: 0
+  end
 
   defp native_distance(target, skill_result, opts) do
     if native_distance_enabled?(target, skill_result, opts),

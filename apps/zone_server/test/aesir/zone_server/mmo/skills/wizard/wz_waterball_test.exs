@@ -74,7 +74,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
     stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "prontera"}} end)
     stub(LineOfSight, :clear?, fn "prontera", {100, 100}, {101, 100} -> true end)
 
-    expect(Combat, :apply_skill_unit_damage, fn %{unit_id: 100}, :mob, 200, 86, 5, :water, 250 ->
+    expect(Combat, :apply_skill_unit_damage, fn %{unit_id: 100},
+                                                :mob,
+                                                200,
+                                                86,
+                                                5,
+                                                :water,
+                                                250,
+                                                [delivery: :direct] ->
       :ok
     end)
 
@@ -83,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
 
   test "expires without spending another source when its caster is unavailable" do
     stub(Combat, :resolve_combatant, fn 100 -> {:error, :not_found} end)
-    reject(&Combat.apply_skill_unit_damage/7)
+    reject(&Combat.apply_skill_unit_damage/8)
 
     assert {:expire, %Group{}} = WzWaterball.on_interval(group(), 0)
   end
@@ -91,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
   test "expires when its target leaves the map" do
     stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
     stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "geffen"}} end)
-    reject(&Combat.apply_skill_unit_damage/7)
+    reject(&Combat.apply_skill_unit_damage/8)
 
     assert {:expire, %Group{}} = WzWaterball.on_interval(group(), 0)
   end
@@ -204,7 +211,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
     stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
     stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "prontera"}} end)
     stub(LineOfSight, :clear?, fn "prontera", {100, 100}, {101, 100} -> false end)
-    reject(&Combat.apply_skill_unit_damage/7)
+    reject(&Combat.apply_skill_unit_damage/8)
 
     assert {:ok, %Group{state: %{water_ball_fired: false}}} = WzWaterball.on_interval(group(), 0)
   end
@@ -214,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
     stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
     stub(SpatialIndex, :get_unit_position, fn :mob, 200 -> {:ok, {101, 100, "prontera"}} end)
     stub(LineOfSight, :clear?, fn "prontera", {100, 100}, {101, 100} -> true end)
-    stub(Combat, :apply_skill_unit_damage, fn _, _, _, _, _, _, _ -> :ok end)
+    stub(Combat, :apply_skill_unit_damage, fn _, _, _, _, _, _, _, _ -> :ok end)
 
     assert {:ok, %Group{state: %{water_ball_fired: true}}} = WzWaterball.on_interval(group(), 0)
   end
@@ -224,7 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
     stub(Combat, :resolve_combatant, fn 100 -> {:ok, %{unit_id: 100}} end)
     stub(UnitRegistry, :get_unit, fn :mob, 200 -> {:ok, {MobState, corpse, self()}} end)
     reject(&SpatialIndex.get_unit_position/2)
-    reject(&Combat.apply_skill_unit_damage/7)
+    reject(&Combat.apply_skill_unit_damage/8)
 
     assert {:expire, %Group{}} = WzWaterball.on_interval(group(), 0)
   end

@@ -566,8 +566,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
         %{caster(100) | unit_type: unit_type, unit_id: unit_id}
       end
 
-    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
-      {:ok, {MobState, target, test_pid}}
+    stub(UnitRegistry, :get_unit, fn
+      :mob, @target_id -> {:ok, {MobState, target, test_pid}}
+      _unit_type, _unit_id -> {:error, :not_found}
     end)
 
     stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->

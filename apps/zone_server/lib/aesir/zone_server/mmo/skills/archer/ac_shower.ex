@@ -70,7 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShower do
       base_distance: definition.knockback,
       origin: {x, y},
       native_target_types: [:mob],
-      target_skill_units: true
+      target_skill_units: true,
+      delivery: {:splash, nil}
     ]
 
     _ = Combat.execute_splash_attack(caster, {x, y}, splash_radius(mode, level), opts)

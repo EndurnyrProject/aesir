@@ -57,7 +57,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
     test "a caster without a cart (a mob) hits at the 250% ceiling" do
       caster = %{mob_id: 77, x: 1, y: 1}
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
         assert opts[:skill_ratio] == 250
@@ -90,7 +92,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
 
       expected_ratio = McCartrevolution.skill_ratio(caster.cart)
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
         assert caster.stats.modifiers.equipment[{:add_skill_blow, 153}] == 3
@@ -115,7 +119,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
       light = %{cart_type: 1, cart: cart(10)}
       heavy = %{cart_type: 1, cart: cart(40)}
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {0, 0}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {0, 0}}}
+      end)
+
       reject(&Combat.knockback/5)
 
       test_pid = self()

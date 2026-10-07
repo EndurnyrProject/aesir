@@ -108,6 +108,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Root do
   end
 
   @doc """
+  Whether a unit's Root lock lets one of its skills act at all.
+
+  An unrooted unit always may. A rooted unit may use only the follow-up skills
+  its own stored Root level unlocks; every other skill is refused.
+  """
+  @spec skill_allowed?(Unit.unit_type(), integer(), integer()) :: boolean()
+  def skill_allowed?(unit_type, unit_id, skill_id) do
+    case StatusStorage.get_status(unit_type, unit_id, :sc_bladestop) do
+      %StatusEntry{state: %{root_level: root_level}} ->
+        case Map.fetch(@min_root_level, skill_id) do
+          {:ok, min_level} -> root_level >= min_level
+          :error -> false
+        end
+
+      %StatusEntry{} ->
+        false
+
+      _ ->
+        true
+    end
+  end
+
+  @doc """
   Initiates idempotent pair closure from `unit`'s side.
 
   Removing `unit`'s `sc_bladestop` cascades to the peer through the ordinary

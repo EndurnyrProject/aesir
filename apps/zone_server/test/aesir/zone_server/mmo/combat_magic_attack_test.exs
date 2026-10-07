@@ -206,6 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   defp stub_single_target_mob(x \\ 150, y \\ 150) do
     stub(UnitRegistry, :get_unit, fn
       :mob, @target_id -> {:ok, {MobState, build_mob_state(@target_id, x, y), self()}}
+      _unit_type, _unit_id -> {:error, :not_found}
     end)
 
     stub(SpatialIndex, :get_unit_position, fn

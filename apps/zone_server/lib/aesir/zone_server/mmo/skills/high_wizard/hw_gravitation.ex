@@ -143,7 +143,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
           skill_level: group.level,
           base_damage: tick_damage(target, group.level),
           ignore_element: true,
-          bypass_reductions: true
+          bypass_reductions: true,
+          delivery: :unit
         )
       end)
     end

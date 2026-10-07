@@ -44,7 +44,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSharpshootingTest do
   @tag game_mode: :renewal
   test "renewal uses target-centred splash and normal weapon variance on crits" do
     caster = player()
-    stub(Combat, :resolve_combatant, fn 3001 -> {:ok, %{position: {109, 100}}} end)
+
+    stub(Combat, :resolve_combatant, fn 3001 ->
+      {:ok, %{unit_type: :mob, unit_id: 3001, position: {109, 100}}}
+    end)
 
     expect(Combat, :execute_splash_attack, fn ^caster, {109, 100}, 2, opts ->
       assert opts[:skill_ratio] == 1800

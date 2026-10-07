@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
     hit_count: 1,
     sp_cost: List.duplicate(16, 10),
     after_cast_delay: List.duplicate(500, 10),
-    cooldown: [renewal: List.duplicate(500, 10), pre_renewal: []]
+    cooldown: [renewal: List.duplicate(500, 10), pre_renewal: []],
+    allow_when_hidden: [renewal: false, pre_renewal: true]
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Geometry

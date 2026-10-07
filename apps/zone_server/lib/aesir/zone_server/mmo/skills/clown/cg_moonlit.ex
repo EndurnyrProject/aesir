@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlit do
   alias Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Clown.Formulas
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -67,6 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlit do
   @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()}
   def on_touch(%Group{state: %{performance: %{performers: performers}}} = group, {type, id}) do
     with false <- type == :player and id in performers,
+         true <- Targeting.placement_reaches?(definition(), {type, id}),
          {:ok, {_module, unit, _pid}} <- UnitRegistry.get_unit(type, id) do
       {dx, dy} = Geometry.facing_delta(unit.dir)
       Knockback.knockback(type, id, unit.x - dx, unit.y - dy, 2)

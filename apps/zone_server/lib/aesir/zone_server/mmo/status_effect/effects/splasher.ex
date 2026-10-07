@@ -68,7 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher do
         skill_id: 141,
         skill_level: instance.val1,
         skill_ratio: damage_ratio(instance),
-        typed_results: true
+        typed_results: true,
+        delivery: {:splash, target}
       )
       |> Enum.each(&apply_poison(&1, instance))
 

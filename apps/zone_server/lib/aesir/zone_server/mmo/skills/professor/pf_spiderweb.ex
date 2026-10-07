@@ -181,6 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
   @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()}
   def on_touch(%Group{} = group, mover) do
     with true <- enemy?(group, mover),
+         true <- Targeting.placement_reaches?(definition(), mover),
          {:ok, web_ms} when is_integer(web_ms) <- capture(group, mover) do
       {:ok, %{group | expires_at: System.monotonic_time(:millisecond) + web_ms}}
     else

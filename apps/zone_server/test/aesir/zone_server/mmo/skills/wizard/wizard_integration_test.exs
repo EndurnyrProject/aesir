@@ -170,7 +170,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
                                                 86,
                                                 1,
                                                 :water,
-                                                130 ->
+                                                130,
+                                                [delivery: :direct] ->
       :ok
     end)
 

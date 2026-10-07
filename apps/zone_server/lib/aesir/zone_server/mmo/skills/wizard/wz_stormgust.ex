@@ -67,8 +67,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
           map_name
           |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
           |> Enum.reduce(group.state.hit_counts, fn {unit_type, target_id}, counts ->
-            hit(group, definition, caster, unit_type, target_id, cx, cy)
-            bump_and_maybe_freeze(counts, unit_type, target_id, freeze_chance(group.level))
+            group
+            |> hit(definition, caster, unit_type, target_id, cx, cy)
+            |> record_hit(counts, unit_type, target_id, group.level)
           end)
 
         {:ok, %{group | state: %{group.state | hit_counts: updated_counts}}}
@@ -78,7 +79,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
     end
   end
 
-  @spec hit(Group.t(), struct(), struct(), atom(), integer(), integer(), integer()) :: :ok
+  defp record_hit(:ok, counts, unit_type, target_id, level),
+    do: bump_and_maybe_freeze(counts, unit_type, target_id, freeze_chance(level))
+
+  defp record_hit({:error, _refused}, counts, _unit_type, target_id, _level),
+    do: Map.delete(counts, target_id)
+
+  # A refused hit (a hidden or frozen target, a caster that cannot act) deals
+  # nothing, rolls no freeze and, in classic, clears the target's count.
+  @spec hit(Group.t(), struct(), struct(), atom(), integer(), integer(), integer()) ::
+          :ok | {:error, atom()}
   defp hit(%Group{} = group, definition, caster, unit_type, target_id, cx, cy) do
     Combat.apply_skill_unit_damage(
       caster,
@@ -91,8 +101,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
       base_distance: definition.knockback,
       origin: {cx, cy}
     )
-
-    :ok
   end
 
   # base_skillratio (100) - 30 + 50 * skill_lv.

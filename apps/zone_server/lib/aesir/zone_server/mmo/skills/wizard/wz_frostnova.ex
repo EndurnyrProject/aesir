@@ -65,7 +65,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
       skill_ratio: skill_ratio(level),
       element: definition.element,
       split: false,
-      line_of_sight: true
+      line_of_sight: true,
+      delivery: {:area, nil}
     ]
 
     caster

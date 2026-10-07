@@ -96,6 +96,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.RootTest do
     end
   end
 
+  describe "skill_allowed?/3" do
+    test "a rooted unit acts only with the follow-ups its own level unlocks" do
+      place_blade_stop(:player, 100, %{peer: {:mob, 200}, link_id: make_ref(), root_level: 3})
+
+      assert Root.skill_allowed?(:player, 100, 266)
+      refute Root.skill_allowed?(:player, 100, 272)
+      refute Root.skill_allowed?(:player, 100, 89)
+      assert Root.skill_allowed?(:player, 101, 89)
+    end
+  end
+
   describe "close/2" do
     test "removing one side cascades to the peer and is idempotent" do
       stub_entity_info()

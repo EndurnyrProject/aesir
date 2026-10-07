@@ -99,5 +99,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
     do: SkillAttack.execute_field_misc_splash(caster_state, center, radius, group, opts)
 
   defp execute_splash(caster_state, center, radius, %Group{caster_type: :mob}, opts),
-    do: SkillAttack.execute_misc_splash(caster_state, center, radius, opts)
+    do:
+      SkillAttack.execute_misc_splash(
+        caster_state,
+        center,
+        radius,
+        Keyword.put(opts, :delivery, :unit)
+      )
 end

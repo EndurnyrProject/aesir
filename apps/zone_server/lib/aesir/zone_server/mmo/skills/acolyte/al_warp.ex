@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
     item_cost: [%{id: 717, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Unit
@@ -118,7 +119,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
   @impl Ground
   @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
   def on_touch(%Group{} = group, {:player, player_id}) do
-    if System.monotonic_time(:millisecond) >= group.state.opens_at do
+    if System.monotonic_time(:millisecond) >= group.state.opens_at and
+         Targeting.placement_reaches?(definition(), {:player, player_id}) do
       case consume_warp(group, player_id) do
         %Group{state: %{uses: uses}} when uses <= 0 -> :expire
         updated -> {:ok, updated}

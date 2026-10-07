@@ -118,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
   @impl Ground
   @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()}
   def on_touch(%Group{} = group, mover) do
-    blind_entrant(group, mover)
+    if Targeting.placement_reaches?(definition(), mover), do: blind_entrant(group, mover)
     {:ok, group}
   end
 

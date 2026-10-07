@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
     damage_type: :damage,
     splash_radius: [renewal: 2, pre_renewal: 1],
     sp_cost: [renewal: List.duplicate(15, 5), pre_renewal: List.duplicate(20, 5)],
-    damage_splash: true
+    damage_splash: true,
+    allow_when_hidden: true
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

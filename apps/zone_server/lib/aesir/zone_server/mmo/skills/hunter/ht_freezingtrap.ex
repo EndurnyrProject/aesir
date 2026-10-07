@@ -90,7 +90,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
     do: SkillAttack.execute_field_splash_attack(caster, center, radius, group, opts)
 
   defp execute_splash(caster, center, radius, %Group{caster_type: :mob}, opts),
-    do: SkillAttack.execute_splash_attack(caster, center, radius, opts)
+    do:
+      SkillAttack.execute_splash_attack(
+        caster,
+        center,
+        radius,
+        Keyword.put(opts, :delivery, :unit)
+      )
 
   defp freeze(group, {unit_type, unit_id}) do
     StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,

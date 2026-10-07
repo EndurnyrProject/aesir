@@ -83,7 +83,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ruwach do
             @skill_id,
             @skill_level,
             :holy,
-            @skill_ratio
+            @skill_ratio,
+            delivery: :direct
           )
         end)
 

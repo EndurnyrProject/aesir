@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -105,6 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
     |> Enum.reject(fn {unit_type, unit_id} ->
       StatusStorage.has_status?(unit_type, unit_id, :sc_safetywall)
     end)
+    |> Enum.filter(&Targeting.placement_reaches?(definition(), &1))
     |> Enum.each(fn {unit_type, unit_id} ->
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_safetywall,
         val1: level,

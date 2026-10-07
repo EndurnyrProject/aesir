@@ -36,6 +36,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
 
   @behaviour Ground
 
+  # A sprung mine is spent even when its hit is refused at delivery.
+  @refused [:caster_restricted, :target_restricted, :target_concealed]
+
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
   def on_place(%Group{center: center, level: level, caster_type: ct, caster_id: cid} = group) do
@@ -90,6 +93,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
 
             :expire
 
+          {:error, reason} when reason in @refused ->
+            :expire
+
           {:error, _reason} ->
             {:ok, group}
         end
@@ -103,5 +109,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
     do: SkillAttack.execute_field_misc_attack(caster_state, mover, group, opts)
 
   defp execute_attack(caster_state, mover, %Group{caster_type: :mob}, opts),
-    do: SkillAttack.execute_misc_attack(caster_state, mover, opts)
+    do: SkillAttack.execute_misc_attack(caster_state, mover, Keyword.put(opts, :delivery, :unit))
 end

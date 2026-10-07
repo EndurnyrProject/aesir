@@ -240,6 +240,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   The canonical skill knockback options are `:base_distance`, `:origin`,
   `:native_enabled`, `:native_target_types`, and `:native_requires_survival`.
   Player-owned damaging ground hits also consume exact-skill equipment blow.
+
+  `:delivery` (default `:unit`, see `t:Targeting.delivery/0`) says how the hit
+  reached the target: a placed unit is the hit's actual source, so the target
+  is re-checked with `Targeting.validate_delivery/4` before any calculation.
+  A caster-timed hit that only reuses this path (Water Ball, Ruwach) passes
+  `:direct`.
   """
   @spec apply_skill_unit_damage(
           struct(),
@@ -271,7 +277,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         do: -abs(hit_divisions),
         else: hit_divisions
 
-    with {:ok, prepared} <- prepare_skill_unit_hit(caster, {unit_type, target_id}, skill_id) do
+    with {:ok, prepared} <-
+           prepare_skill_unit_hit(
+             caster,
+             {unit_type, target_id},
+             skill_id,
+             Keyword.get(opts, :delivery, :unit)
+           ) do
       damage =
         skill_unit_damage(
           caster,
@@ -312,16 +324,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           skill_id: integer()
         }
 
-  @doc "Resolves and validates a ground target without rolling damage or delivering effects."
-  @spec prepare_skill_unit_hit(struct(), Ref.t(), integer()) ::
+  @doc """
+  Resolves and validates a ground target without rolling damage or delivering effects.
+
+  `delivery` (default `:unit`) re-checks the target as `apply_skill_unit_damage/8`
+  documents.
+  """
+  @spec prepare_skill_unit_hit(struct(), Ref.t(), integer(), Targeting.delivery()) ::
           {:ok, prepared_ground_hit()} | {:error, atom()}
-  def prepare_skill_unit_hit(caster, {unit_type, target_id}, skill_id) do
+  def prepare_skill_unit_hit(caster, {unit_type, target_id}, skill_id, delivery \\ :unit) do
     with {:ok, target_pid, target_state, target_type} <-
            resolve_skill_unit_target(unit_type, target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          :ok <- ensure_living_target(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- Rules.validate_target(caster, target, %{skill_id: skill_id}),
+         :ok <- Targeting.validate_delivery(caster, target, skill_id, delivery),
          {:ok, position} <- SpatialIndex.get_unit_position(unit_type, target_id) do
       {:ok,
        %{
@@ -566,6 +584,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:split` - divide total damage by the number of targets hit (default `false`)
     - `:line_of_sight` - require an unobstructed projectile path (default `false`)
     - `:hit_divisions` - signed divisions of each target's one attack (default `1`)
+    - `:delivery` - how the splash reached each target (`t:Targeting.delivery/0`,
+      default `:direct`); a target refused by `Targeting.validate_delivery/4` is
+      neither calculated nor struck, but still counts toward `:split`
   """
   @spec execute_magic_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [{atom(), integer()}]
@@ -599,7 +620,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
               skill_ratio: skill_ratio,
               divisor: divisor,
               center: center,
-              hit_divisions: hit_divisions
+              hit_divisions: hit_divisions,
+              delivery: Keyword.get(opts, :delivery, :direct)
             },
             :unchecked
           )
@@ -878,7 +900,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
            divisor: divisor,
            center: center,
            hit_divisions: hit_divisions
-         },
+         } = splash,
          coma_decision
        ) do
     with {:ok, target_pid, target_state, target_type} <-
@@ -887,6 +909,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- Targeting.validate_enemy(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
+         :ok <-
+           Targeting.validate_delivery(
+             attacker,
+             target,
+             skill_id,
+             Map.get(splash, :delivery, :direct)
+           ),
          {:ok, %{damage: damage}} <-
            MagicDamageCalculator.calculate_magic_damage(attacker, target,
              element: element,

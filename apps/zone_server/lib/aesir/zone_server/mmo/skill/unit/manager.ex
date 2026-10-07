@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -800,23 +801,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     )
   end
 
+  # A hidden occupant does not acquire a field status it lacks (unless the skill
+  # is TargetHidden) but keeps one it already holds.
   defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_touch) do
     with {:ok, spec} <- field_support_spec(group) do
-      if living_combat_unit?({unit_type, unit_id}) and
-           supports_target?(spec, {unit_type, unit_id}) do
-        FieldSupport.acquire(
-          unit_type,
-          unit_id,
-          spec.status_type,
-          group.group_id,
-          params_for(spec, unit_type, unit_id)
-        )
-        |> log_field_support_failure(group, :acquire)
-      else
-        FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id,
-          linger_ms: Map.get(spec, :linger_ms, 0)
-        )
-        |> log_field_support_failure(group, :release)
+      cond do
+        not (living_combat_unit?({unit_type, unit_id}) and
+                 supports_target?(spec, {unit_type, unit_id})) ->
+          FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id,
+            linger_ms: Map.get(spec, :linger_ms, 0)
+          )
+          |> log_field_support_failure(group, :release)
+
+        Targeting.placement_reaches?(group.skill_id, {unit_type, unit_id}) ->
+          FieldSupport.acquire(
+            unit_type,
+            unit_id,
+            spec.status_type,
+            group.group_id,
+            params_for(spec, unit_type, unit_id)
+          )
+          |> log_field_support_failure(group, :acquire)
+
+        true ->
+          :ok
       end
     end
 
@@ -2323,7 +2331,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp acquire_occupants(group, spec, occupants) do
     Enum.each(occupants, fn {unit_type, unit_id} ->
-      if supports_target?(spec, {unit_type, unit_id}) do
+      if supports_target?(spec, {unit_type, unit_id}) and
+           Targeting.placement_reaches?(group.skill_id, {unit_type, unit_id}) do
         FieldSupport.acquire(
           unit_type,
           unit_id,

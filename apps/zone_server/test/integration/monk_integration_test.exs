@@ -453,7 +453,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
   end
 
   describe "Ki Explosion" do
-    test "spends HP and SP, splashes damage, knocks back, and stuns the caught targets" do
+    test "spends HP and SP, strikes the target, and pushes and stuns the enemy beside it" do
       Mimic.copy(Formulas)
       stub(Formulas, :ki_explosion_stun_rate, fn -> 100 end)
 
@@ -470,12 +470,13 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
       assert after_cast.stats.current_state.sp == 200 - Formulas.ki_explosion_sp_cost()
 
       assert mob_hp(primary.pid) < primary_hp
-      assert mob_hp(splashed.pid) < splashed_hp
+      assert mob_hp(splashed.pid) == splashed_hp
 
-      assert StatusStorage.has_status?(:mob, primary.unit_id, :sc_stun)
+      refute StatusStorage.has_status?(:mob, primary.unit_id, :sc_stun)
       assert StatusStorage.has_status?(:mob, splashed.unit_id, :sc_stun)
 
-      # The off-center splashed target is knocked away from the blast.
+      # The neighbour is pushed away from the Monk; the struck target stays put.
+      assert {:ok, {151, 150, @map}} = SpatialIndex.get_unit_position(:mob, primary.unit_id)
       assert {:ok, {new_x, _y, @map}} = SpatialIndex.get_unit_position(:mob, splashed.unit_id)
       assert new_x > 152
     end

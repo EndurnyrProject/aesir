@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
 
     * `MO_BODYRELOCATION` (Snap) relocates the mob next to its target through the
       mob session's authoritative reposition path (spatial index updated);
-    * `MO_BALKYOUNG` (Ki Explosion) damages, knocks back, and stuns its player
-      targets using the caster's generic unit identity (no player-only state).
+    * `MO_BALKYOUNG` (Ki Explosion) strikes its target and pushes and stuns the
+      player beside it using the caster's generic unit identity (no player-only
+      state).
 
   Both satisfy their declared mob requirements, so the sweep exercises them
   too; these add the observable behavioural assertions.
@@ -99,7 +100,7 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
     assert Geometry.chebyshev_distance(state.x, state.y, 158, 150) == 1
   end
 
-  test "a mob casting Ki Explosion damages, knocks back, and stuns its player targets" do
+  test "a mob casting Ki Explosion strikes its target and pushes and stuns the player beside it" do
     primary =
       start_player_session(character: player_character(8_002, {151, 150}), position: {151, 150})
 
@@ -115,14 +116,15 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
 
     assert :ok = Executor.execute(caster, ki_explosion_row())
 
-    # Splash damage reaches both players; the stun rides the caster's mob identity.
+    # Only the target is struck; the stun on the bystander rides the caster's
+    # mob identity.
     assert eventually(fn -> current_hp(primary.pid) < primary_hp end)
-    assert eventually(fn -> current_hp(bystander.pid) < bystander_hp end)
+    assert current_hp(bystander.pid) == bystander_hp
 
-    assert StatusStorage.has_status?(:player, primary.character.id, :sc_stun)
+    refute StatusStorage.has_status?(:player, primary.character.id, :sc_stun)
     assert StatusStorage.has_status?(:player, bystander.character.id, :sc_stun)
 
-    # The off-center bystander is knocked away from the blast at the primary's cell.
+    # The bystander is pushed away from the casting mob.
     assert eventually(fn ->
              match?(
                {:ok, {x, _y, @map}} when x > 152,

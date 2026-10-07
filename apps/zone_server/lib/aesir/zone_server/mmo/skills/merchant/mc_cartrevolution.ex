@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
   def cast(%{cart_type: 0}, _target, _level, _definition), do: {:error, :no_cart}
 
   def cast(caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{position: {x, y}}} <- Combat.resolve_combatant(target_id) do
+    with {:ok, %{position: {x, y}} = primary} <- Combat.resolve_combatant(target_id) do
       opts = [
         skill_id: definition.id,
         skill_level: level,
@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
         skip_crit: true,
         base_distance: definition.knockback,
         origin: {x, y},
-        native_target_types: [:mob]
+        native_target_types: [:mob],
+        delivery: {:splash, {primary.unit_type, primary.unit_id}}
       ]
 
       _ = Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius, opts)

@@ -99,7 +99,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
       caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 57} => 3})
       level = 5
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
         assert caster.stats.modifiers.equipment[{:add_skill_blow, 57}] == 3
@@ -137,7 +139,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
       caster = build_mob(@mob_caster_id, 10, 20)
       level = 3
 
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :resolve_combatant, fn @target_id ->
+        {:ok, %{unit_type: :mob, unit_id: @target_id, position: {15, 25}}}
+      end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
         assert opts[:skill_ratio] == KnBrandishspear.skill_ratio(level, 10)
