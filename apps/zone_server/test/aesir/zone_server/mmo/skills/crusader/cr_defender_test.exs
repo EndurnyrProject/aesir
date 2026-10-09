@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -129,9 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
   end
 
   describe "sc_defender modifiers/2" do
-    alias Aesir.ZoneServer.Mmo.StatusEntry
-
-    defp entry(overrides), do: struct(%StatusEntry{type: :sc_defender, state: %{}}, overrides)
+    defp entry(val1: level), do: defender(level)
 
     @tag game_mode: :renewal
     test "lv1 reduces ASPD by 20 and floors the walk delay" do
@@ -153,25 +152,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
   end
 
   describe "sc_defender absorb_damage/4" do
-    alias Aesir.ZoneServer.Mmo.StatusEntry
-
     @long_weapon %{damage: 101, dmg_type: :physical, is_short: false}
 
     test "removes 5 + 15 per level percent of a long-range weapon hit, truncating the cut" do
-      entry = %StatusEntry{type: :sc_defender, val1: 5}
+      entry = defender(5)
       assert {:ok, 21, ^entry} = Defender.absorb_damage({:player, 1}, entry, @long_weapon, %{})
 
-      entry = %StatusEntry{type: :sc_defender, val1: 1}
+      entry = defender(1)
       assert {:ok, 81, ^entry} = Defender.absorb_damage({:player, 1}, entry, @long_weapon, %{})
     end
 
     test "leaves melee weapon and long-range magic hits untouched" do
-      entry = %StatusEntry{type: :sc_defender, val1: 5}
+      entry = defender(5)
       melee = %{@long_weapon | is_short: true}
       magic = %{@long_weapon | dmg_type: :magic}
 
       assert {:ok, 101, ^entry} = Defender.absorb_damage({:player, 1}, entry, melee, %{})
       assert {:ok, 101, ^entry} = Defender.absorb_damage({:player, 1}, entry, magic, %{})
     end
+  end
+
+  defp defender(level) do
+    %StatusEntry{
+      type: :sc_defender,
+      val1: level,
+      state: %{reduction: 5 + 15 * level, aspd_penalty: 250 - 50 * level}
+    }
   end
 end

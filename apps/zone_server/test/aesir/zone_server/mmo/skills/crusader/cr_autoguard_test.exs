@@ -244,7 +244,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
     definition
   end
 
-  defp entry(level), do: %StatusEntry{type: :sc_autoguard, val1: level}
+  defp entry(level),
+    do: %StatusEntry{
+      type: :sc_autoguard,
+      val1: level,
+      state: %{block_chance: Autoguard.block_chance(level)}
+    }
 
   # Seeds `:rand` so the next `:rand.uniform(100)` returns exactly `target`, for a
   # deterministic block roll. Every 1..100 value is reachable, so the search

@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -307,7 +308,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
 
     session = session(intimacy_hundredths: 40_000, learned_skills: %{@sbr44 => 3})
     register_units(session.homunculus, mob())
-    :ok = StatusStorage.apply_status(:mob, @mob_gid, :sc_autoguard, val1: 10)
+    :ok = StatusInterpreter.apply_status(:mob, @mob_gid, :sc_autoguard, val1: 10)
     :rand.seed(:exsss, {1, 1, 1})
 
     assert {:ok, cast} =

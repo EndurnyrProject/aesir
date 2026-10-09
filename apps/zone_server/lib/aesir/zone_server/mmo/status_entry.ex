@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
 
   - `val1-val4`: Context-dependent values with different meanings per status type
   - `tick`: How often the status effect should be processed (in milliseconds, defaults to 0)
-  - `flag`: Special flags for status behavior (defaults to 0)
+  - `flag`: Special flags for status behavior (defaults to 0); see `no_icon_flag/0`
   - `caster_id`: ID of the entity that applied the status (defaults to nil)
   - `duration`: How long the status lasts in milliseconds (defaults to nil for permanent)
   - `source_id`: Alias for caster_id for backward compatibility (defaults to nil)
@@ -190,6 +190,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   @spec tick_due?(t(), integer()) :: boolean()
   def tick_due?(%__MODULE__{next_tick_at: nil}, _now_ms), do: false
   def tick_due?(%__MODULE__{next_tick_at: next_tick_at}, now_ms), do: next_tick_at <= now_ms
+
+  @no_icon 0x10
+
+  @doc "The `flag` bit that keeps an entry's icon off the client's status bar."
+  @spec no_icon_flag() :: pos_integer()
+  def no_icon_flag, do: @no_icon
+
+  @doc "Whether the entry was started without its status icon."
+  @spec no_icon?(t()) :: boolean()
+  def no_icon?(%__MODULE__{flag: flag}) when is_integer(flag),
+    do: Bitwise.band(flag, @no_icon) != 0
+
+  def no_icon?(%__MODULE__{}), do: false
 
   @doc """
   Extracts status parameters from a keyword list with defaults.

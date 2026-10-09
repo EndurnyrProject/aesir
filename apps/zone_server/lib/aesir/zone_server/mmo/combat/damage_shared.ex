@@ -37,14 +37,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   @doc """
   Classifies one settled hit as its additional and counter stages see it.
 
-  A Magic Rod interception is a miss and a blocking status's stop a block. Any
-  other hit whose total before Devotion forwarding (`settled_total/2`) is below
-  1 is a miss. A Devotion-forwarded hit that resolves after the attack motion
-  (not `immediate?`) is a block. Everything else connected (`:hit`).
+  A Magic Rod interception is a miss and a blocking status's stop a block. A
+  reflected hit connected even when it reaches its new target for nothing.
+  Any other hit whose total before Devotion forwarding (`settled_total/2`) is
+  below 1 is a miss. A Devotion-forwarded hit that resolves after the attack
+  motion (not `immediate?`) is a block. Everything else connected (`:hit`).
   """
   @spec hit_class(map(), integer(), boolean()) :: :miss | :block | :hit
   def hit_class(%{magic_rod_miss?: true}, _damage, _immediate?), do: :miss
   def hit_class(%{blocked?: true}, _damage, _immediate?), do: :block
+  def hit_class(%{reflected: true}, _damage, _immediate?), do: :hit
 
   def hit_class(hit_info, damage, immediate?) do
     cond do

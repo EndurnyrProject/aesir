@@ -14,7 +14,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefense do
   @typedoc "The result of resolving an incoming magic hit."
   @type outcome :: :hit | :miss | :reflect
 
-  @doc "Decides a from-caster magic hit before any packet is built."
+  @doc """
+  Decides a from-caster magic hit before any packet is built. Only a hit that
+  deals damage (`hit_info.damage`, when given) can be reflected; one that deals
+  nothing never rolls.
+  """
   @spec resolve(Combatant.t(), map()) :: outcome()
   def resolve(%Combatant{} = defender, hit_info) do
     resolve(defender, hit_info, &Resistance.roll_success/1)
@@ -27,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefense do
       Map.get(hit_info, :reflected, false) -> :hit
       full_immunity?(defender) -> :miss
       not Map.get(hit_info, :from_caster?, false) -> :hit
+      Map.get(hit_info, :damage, 1) <= 0 -> :hit
       roll.(Map.get(defender.equip_modifiers, :magic_damage_return, 0)) -> :reflect
       true -> :hit
     end

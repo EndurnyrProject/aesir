@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
 
   Three independent rAthena display mechanisms are covered:
 
-    - **EFST icon bar** — `StatusChange` (apply/remove), driven by `Definition.icon`.
+    - **EFST icon bar** — `StatusChange` (apply/remove), driven by `Definition.icon`;
+      an entry started with `StatusEntry.no_icon_flag/0` shows none.
     - **Sprite ailment state** — `UnitStateChange`, the unit's aggregate
       `opt1`/`opt2`/`option`/`opt3` over all active statuses.
     - **One-shot effect** — `Unit.SpecialEffect`, fired when a status declares
@@ -176,6 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   def active_icons(unit_type, unit_id) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.reject(&StatusEntry.no_icon?/1)
     |> Enum.flat_map(fn instance ->
       case Registry.get_definition(instance.type) do
         %{icon: icon} when not is_nil(icon) ->
@@ -191,6 +193,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   defp broadcast_icon(_unit_type, _unit_id, nil, _instance, _on), do: :ok
 
   defp broadcast_icon(unit_type, unit_id, %{icon: icon}, instance, on) do
+    if StatusEntry.no_icon?(instance),
+      do: :ok,
+      else: send_icon(unit_type, unit_id, icon, instance, on)
+  end
+
+  defp send_icon(unit_type, unit_id, icon, instance, on) do
     case icon_message(unit_id, icon, instance, on) do
       nil -> :ok
       message -> broadcast_area(unit_type, unit_id, message)

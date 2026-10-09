@@ -1392,7 +1392,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     }
 
     {duration, instance} = resolve_duration(definition, instance, duration, status_params)
-    context = ContextBuilder.build_context(unit_type, unit_id, caster_id, instance)
+
+    context =
+      unit_type
+      |> ContextBuilder.build_context(unit_id, caster_id, instance)
+      |> Map.put(:duration, duration)
 
     case definition.module.on_apply({unit_type, unit_id}, instance, context) do
       {:ok, new_instance} ->

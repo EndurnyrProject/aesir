@@ -163,7 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
       assert {:intercept, :blocked} =
                Autoguard.before_weapon_hit(
                  {:player, 4000},
-                 %StatusEntry{type: :sc_autoguard, val1: 10},
+                 %StatusEntry{type: :sc_autoguard, val1: 10, state: %{block_chance: 30}},
                  %{attacker: {:mob, 7100}},
                  %{}
                )
@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
       assert {:intercept, :blocked} =
                Autoguard.before_weapon_hit(
                  {:player, 4001},
-                 %StatusEntry{type: :sc_autoguard, val1: 10},
+                 %StatusEntry{type: :sc_autoguard, val1: 10, state: %{block_chance: 30}},
                  %{attacker: {:mob, 7101}},
                  %{}
                )

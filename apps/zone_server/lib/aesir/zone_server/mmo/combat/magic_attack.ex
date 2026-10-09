@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           from_caster?: true
         )
 
-      case MagicDefense.resolve(target, hit_info) do
+      case MagicDefense.resolve(target, Map.put(hit_info, :damage, damage)) do
         :miss ->
           broadcast_magic_miss(attacker, target, skill_id, skill_level)
           {:ok, {target_type, target_id}}
@@ -613,7 +613,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           from_caster?: true
         )
 
-      case MagicDefense.resolve(target, hit_info) do
+      case MagicDefense.resolve(target, Map.put(hit_info, :damage, damage)) do
         :miss ->
           broadcast_magic_miss(attacker, target, skill_id, skill_level)
           magic_attack_result({target_type, target_id}, @no_hit, opts)
@@ -1077,7 +1077,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           from_caster?: true
         )
 
-      case MagicDefense.resolve(target, hit_info) do
+      case MagicDefense.resolve(target, Map.put(hit_info, :damage, damage)) do
         :miss ->
           broadcast_magic_miss(attacker, target, skill_id, skill_level)
 

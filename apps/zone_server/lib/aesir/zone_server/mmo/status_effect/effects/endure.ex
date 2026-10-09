@@ -2,8 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
   @moduledoc """
   Endure (SC_ENDURE).
 
-  Grants MDEF (val1) and uninterrupted movement while taking hits. Wears off
-  after 7 hits unless val4 marks it as infinite.
+  Grants uninterrupted movement while taking hits and, unless `val3` is set,
+  MDEF: `val1`, or 1 for an infinite Endure (`val4`). A finite Endure wears off
+  after 7 connected hits from a non-player on a map outside siege ground;
+  player hits never use it up. It survives its holder's death, and a
+  player's Endure starts and ends its devotees' copies (`DevotionMirror`).
 
   The no-flinch half of the status has no modifier: Aesir has no hit-stun
   mechanic yet, so there is nothing for an `endure` flag to disable. Wire a
@@ -13,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
     id: :sc_endure,
     no_dispel: false,
     no_clear_buff: false,
+    remove_on_death: false,
     properties: [:buff],
     calc_flags: [:mdef],
     prevented_by: [:sc_refresh, :sc_inspiration],
@@ -20,28 +24,60 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+
   @max_hits 7
 
   @impl true
-  def modifiers(instance, _context), do: %{mdef: instance.val1}
+  def modifiers(%{val3: 0, val4: 0} = instance, _context), do: %{mdef: instance.val1}
+  def modifiers(%{val3: 0}, _context), do: %{mdef: 1}
+  def modifiers(_instance, _context), do: %{}
 
   @impl true
-  def on_apply(_target, instance, _context) do
-    {:ok, put_state(instance, :hits_remaining, @max_hits)}
+  def on_apply(target, instance, context) do
+    instance = put_state(instance, :hits_remaining, @max_hits)
+    DevotionMirror.started(target, instance, instance.state, context.duration)
+    {:ok, instance}
   end
+
+  @impl true
+  def on_expire(target, instance, _context), do: DevotionMirror.ended(target, instance)
 
   @impl true
   def on_damage(_target, %{val4: val4} = instance, _damage_info, _context) when val4 != 0 do
     {:ok, instance}
   end
 
-  def on_damage(_target, instance, _damage_info, _context) do
-    hits = instance.state.hits_remaining - 1
+  def on_damage({unit_type, unit_id}, instance, damage_info, _context) do
+    if wears?(unit_type, unit_id, damage_info),
+      do: count_hit(instance),
+      else: {:ok, instance}
+  end
 
-    if hits <= 0 do
-      :remove
-    else
-      {:ok, put_state(instance, :hits_remaining, hits)}
+  defp count_hit(instance) do
+    case instance.state.hits_remaining - 1 do
+      hits when hits <= 0 -> :remove
+      hits -> {:ok, put_state(instance, :hits_remaining, hits)}
     end
   end
+
+  defp wears?(unit_type, unit_id, %{attacker: {attacker_type, _id}} = damage_info)
+       when attacker_type != :player do
+    with true <- connected?(damage_info),
+         {:ok, {_x, _y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id) do
+      not Rules.ground?(map_name)
+    else
+      false -> false
+      _unplaced -> true
+    end
+  end
+
+  defp wears?(_unit_type, _unit_id, _damage_info), do: false
+
+  # An attack counts when it connected (even for nothing, as a reflected spell
+  # can); other active damage counts when it took HP.
+  defp connected?(%{proc_event: %{hit_class: class}}), do: class == :hit
+  defp connected?(%{damage: damage}), do: damage > 0
 end

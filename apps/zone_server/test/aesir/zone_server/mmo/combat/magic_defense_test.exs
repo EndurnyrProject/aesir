@@ -177,4 +177,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDefenseTest do
 
     UnitRegistry.register_player(player, self())
   end
+
+  test "a hit that deals nothing is never reflected and never rolls" do
+    defender = %{
+      CombatTestHelper.create_player_combatant()
+      | equip_modifiers: %{magic_damage_return: 100}
+    }
+
+    roll = fn _chance -> flunk("a hit that deals nothing must not roll reflection") end
+
+    assert MagicDefense.resolve(defender, %{from_caster?: true, damage: 0}, roll) == :hit
+  end
 end

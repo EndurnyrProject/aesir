@@ -20,10 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
       terminating session that cleared status storage directly leaves behind;
     * the finite 30xlv second duration is the final backstop.
 
-  No gameplay modifiers land here yet: damage rerouting through this link is a
-  later change. The status is not persisted (`no_save`) and ends on a cross-map
-  warp (`remove_on_map_change`): the pairing is tied to two live units on one
-  map.
+  Ending this record also ends the devotee's Guard, Defending Aura, Reflect
+  Shield and Endure, whoever started them (`DevotionMirror.end_inherited/1`).
+  The status is not persisted (`no_save`) and ends on a cross-map warp
+  (`remove_on_map_change`): the pairing is tied to two live units on one map.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_devotion,
@@ -71,6 +71,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   end
 
   @doc """
+  Whether `devotee_id` holds a link whose Crusader stands farther away than the
+  link's range. A Crusader that cannot be located does not count as away.
+  """
+  @spec beyond_range?(non_neg_integer()) :: boolean()
+  def beyond_range?(devotee_id) do
+    case StatusStorage.get_status(:player, devotee_id, :sc_devotion) do
+      %StatusEntry{state: %{peer: {:player, crusader_id}, range: range, link_id: link_id}} ->
+        provider_matches?(crusader_id, devotee_id, link_id) and
+          farther_than?(devotee_id, crusader_id, range)
+
+      _ ->
+        false
+    end
+  end
+
+  defp farther_than?(devotee_id, crusader_id, range) do
+    with {:ok, {dx, dy, _map}} <- SpatialIndex.get_unit_position(:player, devotee_id),
+         {:ok, {cx, cy, _map}} <- SpatialIndex.get_unit_position(:player, crusader_id) do
+      Geometry.chebyshev_distance(dx, dy, cx, cy) > range
+    else
+      _ -> false
+    end
+  end
+
+  @doc """
   Tears down both sides of `devotee_id`'s link through the normal removal
   cascade: removing the devotee's `sc_devotion` runs `on_expire`, which detaches
   the Crusader's `sc_devoted_by` entry for the same link.
@@ -81,8 +106,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   end
 
   @impl true
-  def on_expire({_type, devotee_id}, %StatusEntry{state: state}, _context) do
+  def on_expire({_type, devotee_id}, %StatusEntry{state: state} = instance, _context) do
     detach(devotee_id, state)
+    if is_integer(instance.generation), do: DevotionMirror.end_inherited(devotee_id)
     :ok
   end
 
@@ -94,10 +120,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   # Detaches this devotee from the Crusader's provider entry. A nulled peer -
   # cleared by the Crusader-side cascade before it removed this record - makes
   # the detach a no-op, which is what terminates the removal echo.
-  defp detach(devotee_id, %{peer: {:player, crusader_id}, link_id: link_id}) do
-    DevotionMirror.remove_from_devotee(crusader_id, devotee_id)
-    DevotedBy.unlink(crusader_id, devotee_id, link_id)
-  end
+  defp detach(devotee_id, %{peer: {:player, crusader_id}, link_id: link_id}),
+    do: DevotedBy.unlink(crusader_id, devotee_id, link_id)
 
   defp detach(_devotee_id, _state), do: :ok
 

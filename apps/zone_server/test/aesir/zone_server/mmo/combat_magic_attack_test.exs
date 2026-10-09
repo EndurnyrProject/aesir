@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
@@ -574,6 +575,40 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         assert {:ok, %{hit?: false, damage: 0}} =
                  MagicAttack.execute_magic_attack(caster, {:player, id}, opts)
       end
+    end
+
+    test "a reflected bolt its caster's element takes to nothing still runs its on-hit effect" do
+      test_pid = self()
+      caster = put_in(build_player(@caster_id, 150, %{}, %{}).stats.current_state.hp, 1_000)
+      target = build_player(@target_id, 151, %{magic_damage_return: 100}, %{})
+
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(target, self())
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      Mimic.copy(DamageShared)
+
+      stub(DamageShared, :apply_element_step, fn _damage, :water, _attacker, _defender, _opts ->
+        0
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, 0, _source, _metadata -> :ok end)
+
+      MagicAttack.execute_magic_attack(caster, {:player, @target_id},
+        skill_id: 15,
+        skill_level: 1,
+        element: :water,
+        skip_range: true,
+        additional_effect: fn source, ref -> send(test_pid, {:effect, source.unit_id, ref}) end
+      )
+
+      assert_received {:effect, @target_id, {:player, @caster_id}}
     end
 
     test "a reflected bolt runs its on-hit effect on the caster, sourced from the reflector" do

@@ -111,7 +111,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       |> Map.merge(%{
         damage: min(damage, stats.current_state.hp),
         hp_after: new_hp,
-        max_hp: max_hp
+        max_hp: max_hp,
+        attacker: normalize_attacker(attacker_id)
       })
 
     StatusInterpreter.on_damage(:player, char_id, damage_info)
@@ -135,7 +136,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       |> Map.merge(%{
         damage: 0,
         hp_after: stats.current_state.hp,
-        max_hp: stats.derived_stats.max_hp
+        max_hp: stats.derived_stats.max_hp,
+        attacker: normalize_attacker(attacker_id)
       })
     )
 

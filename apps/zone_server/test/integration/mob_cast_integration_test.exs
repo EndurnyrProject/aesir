@@ -460,7 +460,6 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       assert :ok =
                StatusInterpreter.apply_status(:player, char_id, :sc_endure,
                  val1: 80,
-                 val4: 1,
                  duration: 1_800_000
                )
 

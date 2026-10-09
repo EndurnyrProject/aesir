@@ -4,17 +4,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirrorTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Efst
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguard
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield
   alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -128,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirrorTest do
       refute StatusStorage.has_status?(:player, 4002, :sc_defender)
     end
 
-    test "a devotee's own self-owned copy survives the link break" do
+    test "the link break also ends a devotee's own copy of a mirrored status" do
       caster = register(player(@crusader_id, job_id: @crusader_class))
       register(player(4001))
 
@@ -137,9 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirrorTest do
 
       StatusInterpreter.remove_status(:player, 4001, :sc_devotion)
 
-      entry = StatusStorage.get_status(:player, 4001, :sc_defender)
-      assert %StatusEntry{val1: 1} = entry
-      refute Map.has_key?(entry.state, :mirrored_from)
+      refute StatusStorage.has_status?(:player, 4001, :sc_defender)
     end
   end
 
@@ -166,11 +168,131 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirrorTest do
     end
   end
 
-  describe "persistence flags" do
-    test "the mirrored statuses are all no_save" do
-      for status <- DevotionMirror.mirrored_statuses() do
-        assert Registry.get_definition(status).no_save
+  describe "any end of the Crusader's own status" do
+    test "a dispelled Crusader leaves no devotee shielded" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+      {:ok, _} = CrDefender.cast(caster, :self, 3, def_of(:cr_defender))
+      {:ok, _} = CrReflectshield.cast(caster, :self, 3, def_of(:cr_reflectshield))
+      {:ok, _} = CrAutoguard.cast(caster, :self, 3, def_of(:cr_autoguard))
+
+      :ok = Dispel.dispel({:player, @crusader_id})
+
+      for status <- [:sc_defender, :sc_reflectshield, :sc_autoguard] do
+        refute StatusStorage.has_status?(:player, 4001, status)
       end
+    end
+
+    test "the Crusader's status ending ends a devotee's own copy too" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+      :ok = StatusInterpreter.apply_status(:player, @crusader_id, :sc_endure, val1: 1)
+      :ok = StatusInterpreter.apply_status(:player, 4001, :sc_endure, val1: 9, duration: 60_000)
+
+      StatusInterpreter.remove_status(:player, @crusader_id, :sc_endure)
+
+      refute StatusStorage.has_status?(:player, 4001, :sc_endure)
+    end
+  end
+
+  test "neither the Crusader's Endure ending nor the link ending ends an infinite Endure" do
+    caster = register(player(@crusader_id, job_id: @crusader_class))
+    register(player(4001))
+
+    {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+    :ok = StatusInterpreter.apply_status(:player, @crusader_id, :sc_endure, val1: 1)
+    :ok = StatusInterpreter.apply_status(:player, 4001, :sc_endure, val1: 1, val4: 1)
+
+    StatusInterpreter.remove_status(:player, @crusader_id, :sc_endure)
+    assert StatusStorage.has_status?(:player, 4001, :sc_endure)
+
+    StatusInterpreter.remove_status(:player, 4001, :sc_devotion)
+    assert StatusStorage.has_status?(:player, 4001, :sc_endure)
+  end
+
+  describe "copies" do
+    test "a started copy takes the Crusader's values and duration and shows no icon" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+      {:ok, _} = CrAutoguard.cast(caster, :self, 4, def_of(:cr_autoguard))
+
+      own = StatusStorage.get_status(:player, @crusader_id, :sc_autoguard)
+      copy = StatusStorage.get_status(:player, 4001, :sc_autoguard)
+
+      assert %StatusEntry{val1: 4, state: %{block_chance: 18}} = own
+      assert %StatusEntry{val1: 4, state: %{block_chance: 18, mirrored_from: @crusader_id}} = copy
+      assert_in_delta copy.expires_at, own.expires_at, 50
+      assert StatusEntry.no_icon?(copy)
+
+      refute Enum.any?(
+               StatusDisplay.active_icons(:player, 4001),
+               &(&1.efst == Efst.id(:autoguard))
+             )
+    end
+
+    test "a link copies the Crusader's toggles at their level without the start values" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+
+      {:ok, _} = CrAutoguard.cast(caster, :self, 4, def_of(:cr_autoguard))
+      {:ok, _} = CrDefender.cast(caster, :self, 2, def_of(:cr_defender))
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+
+      guard = StatusStorage.get_status(:player, 4001, :sc_autoguard)
+      defender = StatusStorage.get_status(:player, 4001, :sc_defender)
+
+      assert %StatusEntry{val1: 4, state: %{block_chance: 0}} = guard
+      assert %StatusEntry{val1: 2, state: %{reduction: 0, aspd_penalty: 0}} = defender
+      refute StatusEntry.no_icon?(defender)
+
+      now = System.monotonic_time(:millisecond)
+      assert_in_delta guard.expires_at - now, 300_000, 100
+      assert_in_delta defender.expires_at - now, 180_000, 100
+    end
+
+    test "Endure is mirrored, except an infinite one or on siege ground" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+
+      :ok =
+        StatusInterpreter.apply_status(:player, @crusader_id, :sc_endure,
+          val1: 3,
+          duration: 16_000
+        )
+
+      assert %StatusEntry{val1: 3, state: %{mirrored_from: @crusader_id}} =
+               StatusStorage.get_status(:player, 4001, :sc_endure)
+
+      StatusInterpreter.remove_status(:player, @crusader_id, :sc_endure)
+
+      :ok =
+        StatusInterpreter.apply_status(:player, @crusader_id, :sc_endure,
+          val1: 3,
+          val4: 1,
+          duration: 16_000
+        )
+
+      refute StatusStorage.has_status?(:player, 4001, :sc_endure)
+
+      StatusInterpreter.remove_status(:player, @crusader_id, :sc_endure)
+      :ok = SpatialIndex.add_player(@crusader_id, 50, 50, "prt_gld")
+      :ok = MapFlags.set_runtime("prt_gld", :gvg, true)
+      on_exit(fn -> MapFlags.clear_runtime("prt_gld", :gvg) end)
+
+      :ok =
+        StatusInterpreter.apply_status(:player, @crusader_id, :sc_endure,
+          val1: 3,
+          duration: 16_000
+        )
+
+      refute StatusStorage.has_status?(:player, 4001, :sc_endure)
     end
   end
 

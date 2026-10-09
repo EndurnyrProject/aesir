@@ -178,10 +178,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc "Returns the stat modifiers granted by this status for the given instance."
   @callback modifiers(StatusEntry.t(), context()) :: map()
 
-  @doc "Invoked when the status is applied. May veto the application by returning :remove."
+  @doc """
+  Invoked when the status is applied, before it is stored; only its `state`
+  and `phase` are kept. The context carries the resolved `:duration` (nil for
+  a permanent status). May veto the application by returning :remove.
+  """
   @callback on_apply(target(), StatusEntry.t(), context()) :: hook_result()
 
-  @doc "Invoked when the status is removed or expires."
+  @doc """
+  Invoked when the status is removed or expires, and to undo `c:on_apply/3`
+  for an application that was never stored (its `generation` is nil).
+  """
   @callback on_expire(target(), StatusEntry.t(), context()) :: :ok
 
   @doc "Invoked on every tick while the status is active."
