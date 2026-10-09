@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Berserk do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_berserk,
     no_dispel: false,
+    no_clear_buff: false,
     no_save: true,
     properties: [
       :buff,

@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaBuff do
     id: :sc_basilica_buff,
     no_save: true,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     icon: :basilica_buff
 

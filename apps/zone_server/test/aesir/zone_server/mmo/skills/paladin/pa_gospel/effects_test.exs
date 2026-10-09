@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.EffectsTest do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Effects
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
 
@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.EffectsTest do
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
-    Mimic.copy(Dispel)
+    Mimic.copy(ClearBuffs)
     Mimic.copy(DamageApplication)
     Mimic.copy(SkillAttack)
     :ok
@@ -116,8 +116,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.EffectsTest do
       assert :ok = Effects.apply({:heal, 1_000..9_999}, @group, nil, {:player, 7})
     end
 
-    test "the cleanse blessing dispels debuffs only" do
-      expect(Dispel, :dispel_debuffs, fn {:player, 7} -> :ok end)
+    test "the cleanse blessing clears debuffs and refresh-cleared statuses" do
+      expect(ClearBuffs, :clear, fn {:player, 7}, [:debuffs, :refresh] -> :ok end)
       assert :ok = Effects.apply(:cleanse, @group, nil, {:player, 7})
     end
 

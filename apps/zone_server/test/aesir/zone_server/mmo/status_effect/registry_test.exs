@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_registry_test,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:debuff],
       immunity: [:boss],
       icon: :provoke,
@@ -18,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
   defmodule MovementIntentStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_registry_movement_intent,
-      no_dispel: false
+      no_dispel: false,
+      no_clear_buff: false
 
     @impl true
     def on_movement_intent(_target, instance, _position, _context), do: {:ok, instance}
@@ -28,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_registry_committed_action,
       no_dispel: false,
+      no_clear_buff: false,
       flags: [:no_pick_item]
 
     @impl true

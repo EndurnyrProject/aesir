@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LongingTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_support_block,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:prevents_support_skills]
   end
 

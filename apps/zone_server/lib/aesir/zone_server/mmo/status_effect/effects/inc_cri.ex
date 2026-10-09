@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncCri do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_inccri,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:critical],
     icon: :criticalpercent

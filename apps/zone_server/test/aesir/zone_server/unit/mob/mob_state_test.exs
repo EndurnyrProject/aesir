@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mob_atk_buff,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -31,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mob_flee_rate,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:debuff]
 
     @impl true
@@ -42,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mob_magic_rates,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:debuff]
 
     @impl true

@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bleeding do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_bleeding,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     properties: [:debuff, :damage_over_time],
     calc_flags: [:regen],
     prevented_by: [:sc_refresh, :sc_inspiration, :sc_protection],

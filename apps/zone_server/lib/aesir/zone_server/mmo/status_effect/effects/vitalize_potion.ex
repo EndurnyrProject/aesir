@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.VitalizePotion do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_vitalize_potion,
     no_dispel: false,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:atk_rate, :matk_rate],
     icon: :vitalize_potion

@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Provoke do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_provoke,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff, :remove_on_hermode],
     immunity: [:undead, :status_immune],
     properties: [:debuff],
     calc_flags: [:atk, :def, :def2, :hit],

@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bloodlust do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_bloodlust,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:atk],
     no_save: true,

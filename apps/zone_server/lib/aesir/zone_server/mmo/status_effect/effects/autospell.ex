@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autospell do
     properties: [:buff],
     icon: :autospell,
     no_save: true,
-    no_dispel: true
+    no_dispel: true,
+    no_clear_buff: false
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
 

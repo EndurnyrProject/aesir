@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sacrifice do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sacrifice,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     no_save: true,
     permanent: true,
     properties: [:buff],

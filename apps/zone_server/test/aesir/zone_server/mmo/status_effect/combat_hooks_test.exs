@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CombatHooksTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_normal_attack_claim,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CombatHooksTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_invalid_normal_attack_claim,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -41,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CombatHooksTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_remove_after_damage,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true

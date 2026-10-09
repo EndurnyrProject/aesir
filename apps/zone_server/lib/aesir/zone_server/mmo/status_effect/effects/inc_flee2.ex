@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncFlee2 do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incflee2,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:perfect_dodge],
     icon: :plusavoidvalue

@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HermodeTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -75,24 +74,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HermodeTest do
              )
 
     assert StatusStorage.has_status?(:player, 17, :sc_blessing)
-  end
-
-  test "every status in Hermode's removal set has a definition" do
-    path =
-      Path.expand(
-        "../../../../../../lib/aesir/zone_server/mmo/status_effect/effects/hermode.ex",
-        __DIR__
-      )
-
-    ast = path |> File.read!() |> Code.string_to_quoted!()
-
-    {_, ids} =
-      Macro.prewalk(ast, [], fn
-        {:@, _, [{:cleared, _, [ids]}]} = node, _acc -> {node, ids}
-        node, acc -> {node, acc}
-      end)
-
-    assert length(ids) == 66
-    for id <- ids, do: assert(Registry.get_definition(id), "missing #{id}")
   end
 end

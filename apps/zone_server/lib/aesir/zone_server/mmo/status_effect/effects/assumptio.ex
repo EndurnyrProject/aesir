@@ -23,6 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Assumptio do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_assumptio,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     bypass_boss_immunity: true,
     properties: [:buff],
     calc_flags: [:def],

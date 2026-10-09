@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_tick_expiring,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:debuff],
       icon: :provoke
 
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_kyrie,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       icon: :provoke
 
@@ -40,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_damage_expiring,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:debuff],
       icon: :provoke
 
@@ -51,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterDisplayTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_veto,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       icon: :provoke
 

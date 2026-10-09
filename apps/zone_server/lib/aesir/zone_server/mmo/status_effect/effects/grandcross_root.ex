@@ -21,6 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GrandcrossRoot do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_grandcross_root,
     no_dispel: false,
+    no_clear_buff: true,
+    engine_only: true,
     no_save: true,
     remove_on_map_change: true,
     calc_flags: [:def, :mdef],

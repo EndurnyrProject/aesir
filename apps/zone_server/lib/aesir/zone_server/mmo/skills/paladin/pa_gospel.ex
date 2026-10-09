@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Tick
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -104,8 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   # overlapping Gospel) leaves the caster's statuses alone.
   defp start_chant(%PlayerState{character_id: id, x: x, y: y} = caster, level) do
     with {:ok, group} <- Unit.place(caster, :pa_gospel, level, {x, y}) do
-      Dispel.reset_cleared_unit_state({:player, id})
-      Dispel.dispel({:player, id})
+      ClearBuffs.clear({:player, id}, [:buffs, :debuffs, :chem_protect])
       lock(caster, level, group)
     end
   end

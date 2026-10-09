@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GdLeadership do
     id: :sc_gd_leadership,
     properties: [:buff],
     no_dispel: true,
+    no_clear_buff: true,
     no_save: true,
     calc_flags: [:str]
 

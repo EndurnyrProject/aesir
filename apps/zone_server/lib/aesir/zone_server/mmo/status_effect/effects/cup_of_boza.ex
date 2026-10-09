@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CupOfBoza do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_cup_of_boza,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:vit],
     icon: :cup_of_boza

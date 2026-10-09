@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounter do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_auto_counter,
     no_dispel: false,
+    no_clear_buff: false,
     no_save: true,
     properties: [:buff]
 

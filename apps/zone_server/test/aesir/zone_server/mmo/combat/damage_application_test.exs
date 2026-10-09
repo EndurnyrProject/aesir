@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_kyrie,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -38,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_pneuma,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -51,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_weapon_swing_after_damage,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true

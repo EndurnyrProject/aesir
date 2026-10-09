@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Almighty do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_almighty,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:atk, :matk],
     icon: :almighty,

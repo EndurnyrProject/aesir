@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MoonStar do
     permanent: true,
     no_save: true,
     no_dispel: true,
+    no_clear_buff: true,
     remove_on_death: false,
     icon: :moonstar
 end

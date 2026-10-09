@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HomunculusDefence do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_defence,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:vit, :def],
     no_save: true,

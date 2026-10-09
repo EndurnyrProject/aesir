@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Providence do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_providence,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     calc_flags: [:subele_holy, :subrace_demon],
     icon: :providence

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncMatkRate do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incmatkrate,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:matk_rate]
 

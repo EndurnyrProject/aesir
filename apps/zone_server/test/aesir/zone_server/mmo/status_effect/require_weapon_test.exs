@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RequireWeaponTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_require_two_handed_sword,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       require_weapon: [:two_handed_sword]
   end
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RequireWeaponTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_no_weapon_requirement,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
   end
 

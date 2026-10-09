@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Mysticpowder do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_mysticpowder,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:flee, :luk],
     icon: :mysticpowder

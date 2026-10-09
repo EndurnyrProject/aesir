@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GdSoulcold do
     id: :sc_gd_soulcold,
     properties: [:buff],
     no_dispel: true,
+    no_clear_buff: true,
     no_save: true,
     calc_flags: [:agi]
 

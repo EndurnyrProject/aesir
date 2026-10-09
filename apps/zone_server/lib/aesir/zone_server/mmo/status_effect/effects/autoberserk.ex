@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoberserk do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_autoberserk,
     no_dispel: true,
+    no_clear_buff: false,
     properties: [:buff],
     permanent: true,
     icon: :autoberserk

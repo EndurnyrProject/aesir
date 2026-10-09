@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncHealRate do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_inchealrate,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:received_heal_rate],
     icon: :healplus

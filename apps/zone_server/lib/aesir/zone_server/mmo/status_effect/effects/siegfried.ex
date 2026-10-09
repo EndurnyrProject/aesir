@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Siegfried do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_siegfried,
     no_dispel: true,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [
       :subele_water,

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Raid do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_raid,
     no_dispel: true,
+    no_clear_buff: [renewal: false, pre_renewal: true],
     properties: [:debuff],
     duration: 10_000,
     icon: :raid

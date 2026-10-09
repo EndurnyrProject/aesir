@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FullSwingK do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_full_swing_k,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:atk],
     icon: :full_swing_k

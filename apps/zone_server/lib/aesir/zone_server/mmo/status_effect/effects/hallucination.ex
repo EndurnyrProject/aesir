@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hallucination do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_hallucination,
     no_dispel: true,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff],
     properties: [:debuff],
     prevented_by: [:sc_inspiration],
     icon: :illusion

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MdefSet do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_mdefset,
     no_dispel: false,
+    no_clear_buff: false,
     bypass_resistance: true,
     properties: [:debuff],
     calc_flags: [:mdef],

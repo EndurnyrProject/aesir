@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stop do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_stop,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff, :remove_on_hermode],
     no_save: true,
     remove_on_map_change: true,
     properties: [:debuff, :prevents_movement],

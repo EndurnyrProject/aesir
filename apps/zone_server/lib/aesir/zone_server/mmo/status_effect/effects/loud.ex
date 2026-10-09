@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Loud do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_loud,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     calc_flags: [:str, :watk]
 

@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_attack_replacement,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true

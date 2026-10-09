@@ -15,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gravitation do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_gravitation,
     no_dispel: true,
+    no_clear_buff: [renewal: true, pre_renewal: false],
+    clear_buff_flags: [renewal: [], pre_renewal: [:remove_on_hermode]],
     no_save: true,
     properties: [:debuff],
     calc_flags: [:aspd_rate],

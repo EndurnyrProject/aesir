@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_health_death_survivor,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       remove_on_death: false
   end

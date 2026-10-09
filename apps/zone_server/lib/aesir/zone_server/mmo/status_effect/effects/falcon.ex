@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Falcon do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_falcon,
     no_dispel: true,
+    no_clear_buff: true,
+    engine_only: true,
     properties: [:buff],
     permanent: true,
     no_save: true,

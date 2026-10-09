@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_richmankim,
     no_dispel: true,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:exp_rate],
     end_on_start: [

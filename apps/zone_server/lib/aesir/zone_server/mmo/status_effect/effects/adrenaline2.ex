@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Adrenaline2 do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_adrenaline2,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     calc_flags: [:aspd, :aspd_rate],
     require_weapon: [

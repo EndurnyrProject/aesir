@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Marionette do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_marionette,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:str, :agi, :vit, :int, :dex, :luk, :max_hp],
     permanent: true,

@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoemBragi do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_poembragi,
     no_dispel: true,
+    no_clear_buff: false,
     no_save: [renewal: false, pre_renewal: true],
     properties: [:buff],
     calc_flags: [:cast_time, :after_cast_delay],

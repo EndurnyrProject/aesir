@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EmergencyMove do
     id: :sc_emergency_move,
     properties: [:buff],
     no_dispel: true,
+    no_clear_buff: true,
     no_save: true,
     calc_flags: [:speed]
 

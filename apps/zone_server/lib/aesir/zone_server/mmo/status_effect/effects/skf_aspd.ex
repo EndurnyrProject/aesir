@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SkfAspd do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_skf_aspd,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:aspd],
     icon: :skf_aspd

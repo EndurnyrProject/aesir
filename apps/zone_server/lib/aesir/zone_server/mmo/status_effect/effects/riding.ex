@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Riding do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_riding,
     no_dispel: true,
+    no_clear_buff: true,
+    engine_only: true,
     properties: [:buff],
     calc_flags: [:speed, :aspd, :aspd_rate],
     permanent: true,

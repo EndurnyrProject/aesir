@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HomunculusChange do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_change,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:vit, :int],
     prevented_by: [:sc_change],

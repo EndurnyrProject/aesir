@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AtkPotion do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_atkpotion,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     calc_flags: [:atk],
     icon: :plusattackpower

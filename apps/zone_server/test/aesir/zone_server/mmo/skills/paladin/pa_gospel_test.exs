@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
-    Mimic.copy(Dispel)
+    Mimic.copy(ClearBuffs)
     Mimic.copy(Unit)
 
     caster =
@@ -74,7 +74,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
   } do
     group = %Group{group_id: 501, skill_name: :pa_gospel}
 
-    expect(Dispel, :dispel, fn {:player, @caster_id} -> :ok end)
+    expect(ClearBuffs, :clear, fn {:player, @caster_id}, [:buffs, :debuffs, :chem_protect] ->
+      :ok
+    end)
+
     expect(Unit, :place, fn ^caster, :pa_gospel, 4, {120, 80} -> {:ok, group} end)
 
     expect(Interpreter, :apply_status, fn :player, @caster_id, :sc_gospel, params ->
@@ -92,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
     caster: caster,
     definition: definition
   } do
-    stub(Dispel, :dispel, fn _target -> :ok end)
+    stub(ClearBuffs, :clear, fn _target, _families -> :ok end)
 
     stub(Unit, :place, fn _c, _n, _l, _cell ->
       {:ok, %Group{group_id: 502, skill_name: :pa_gospel}}
@@ -109,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
     definition: definition
   } do
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_gospel, val1: 1, val2: 503)
-    reject(&Dispel.dispel/1)
+    reject(&ClearBuffs.clear/2)
     reject(&Unit.place/4)
     expect(Interpreter, :remove_status, fn :player, @caster_id, :sc_gospel -> :ok end)
 

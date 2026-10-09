@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Battleorder do
     id: :sc_battleorder,
     properties: [:buff],
     no_dispel: false,
+    no_clear_buff: false,
     no_save: true,
     calc_flags: [:str, :int, :dex]
 

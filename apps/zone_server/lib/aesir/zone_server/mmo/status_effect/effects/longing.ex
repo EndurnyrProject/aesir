@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Longing do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_longing,
     no_dispel: false,
+    no_clear_buff: [renewal: true, pre_renewal: false],
     properties: [:buff],
     calc_flags: [:movement_speed, :aspd_rate],
     no_save: true,

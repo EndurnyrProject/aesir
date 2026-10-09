@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RokisWeil do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_rokisweil,
     no_dispel: true,
+    no_clear_buff: false,
     properties: [:debuff, :prevents_skills],
     end_on_start: [
       :sc_richmankim,

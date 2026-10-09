@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ViolentGale do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_violentgale,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:flee],
     no_save: true,

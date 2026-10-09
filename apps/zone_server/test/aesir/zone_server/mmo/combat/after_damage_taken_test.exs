@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_reflect,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -35,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_inert_reflect,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
   end
 

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Regeneration do
     id: :sc_regeneration,
     properties: [:buff],
     no_dispel: true,
+    no_clear_buff: false,
     no_save: true,
     calc_flags: [:regen]
 

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncHitRate do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_inchitrate,
     no_dispel: false,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:hit_rate]
 

@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mob_skill_block,
       no_dispel: false,
+      no_clear_buff: false,
       blocked_skills: [19]
   end
 
@@ -47,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mob_skill_allow,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:prevents_skills],
       allow_skills: [19]
   end

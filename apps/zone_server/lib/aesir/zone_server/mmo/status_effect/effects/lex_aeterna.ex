@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeterna do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_aeterna,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     properties: [:debuff],
     conflicts_with: [:sc_freeze, :sc_stone],
     prevented_by: [:sc_refresh, :sc_inspiration]

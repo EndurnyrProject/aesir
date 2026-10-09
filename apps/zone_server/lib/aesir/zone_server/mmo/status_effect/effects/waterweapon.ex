@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Waterweapon do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_waterweapon,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:atk_ele],
     flags: [:remove_on_unequip_weapon],

@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Avoid do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_avoid,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:movement_speed],
     no_save: true,

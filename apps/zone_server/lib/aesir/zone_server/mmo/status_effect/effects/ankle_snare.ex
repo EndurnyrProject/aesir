@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleSnare do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_anklesnare,
     no_dispel: true,
+    no_clear_buff: true,
     no_save: true,
     remove_on_map_change: true,
     bypass_resistance: true,

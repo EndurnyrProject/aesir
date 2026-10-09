@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GuildAuraSource do
     properties: [:buff],
     permanent: true,
     no_dispel: true,
+    no_clear_buff: true,
+    engine_only: true,
     no_save: true,
     tick_interval: 1_000
 

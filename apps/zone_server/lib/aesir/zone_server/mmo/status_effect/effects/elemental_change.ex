@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_elementalchange,
     no_dispel: true,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:def_ele],
     icon: :armor_property

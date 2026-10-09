@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DeadlyPoison do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_dpoison,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:debuff, :damage_over_time],
     calc_flags: [:def, :regen],
     immunity: [:boss, :plant],

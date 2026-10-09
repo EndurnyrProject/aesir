@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_dispel_expire,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       icon: :provoke
 
@@ -154,47 +155,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
       assert_received {:on_expire, :player, ^unit_id}
       assert_received {:on_removed, :player, ^unit_id, :sc_test_dispel_expire}
       refute StatusStorage.has_status?(:player, unit_id, :sc_test_dispel_expire)
-    end
-  end
-
-  describe "dispel_debuffs/1" do
-    test "removes debuffs, keeps buffs and no_dispel debuffs", %{unit_id: unit_id} do
-      StatusStorage.apply_status(:player, unit_id, :sc_blind, val1: 1, duration: 60_000)
-      StatusStorage.apply_status(:player, unit_id, :sc_curse, val1: 1, duration: 60_000)
-      StatusStorage.apply_status(:player, unit_id, :sc_blessing, val1: 10, duration: 60_000)
-      StatusStorage.apply_status(:player, unit_id, :sc_eternalchaos, val1: 1, duration: 60_000)
-
-      assert :ok = Dispel.dispel_debuffs({:player, unit_id})
-
-      refute StatusStorage.has_status?(:player, unit_id, :sc_blind)
-      refute StatusStorage.has_status?(:player, unit_id, :sc_curse)
-      assert StatusStorage.has_status?(:player, unit_id, :sc_blessing)
-      assert StatusStorage.has_status?(:player, unit_id, :sc_eternalchaos)
-    end
-  end
-
-  describe "reset_cleared_unit_state/1" do
-    test "clears the Storm Gust counter of a unit that has a status", %{unit_id: unit_id} do
-      StatusStorage.apply_status(:player, unit_id, :sc_blessing, val1: 10, duration: 60_000)
-      StatusStorage.increment_storm_gust_counter(:player, unit_id)
-
-      assert :ok = Dispel.reset_cleared_unit_state({:player, unit_id})
-      assert StatusStorage.storm_gust_counter(:player, unit_id) == 0
-    end
-
-    test "leaves a unit without any status untouched", %{unit_id: unit_id} do
-      StatusStorage.increment_storm_gust_counter(:player, unit_id)
-
-      assert :ok = Dispel.reset_cleared_unit_state({:player, unit_id})
-      assert StatusStorage.storm_gust_counter(:player, unit_id) == 1
-    end
-
-    test "Gospel's cleanse clears it", %{unit_id: unit_id} do
-      StatusStorage.apply_status(:player, unit_id, :sc_blind, val1: 1, duration: 60_000)
-      StatusStorage.increment_storm_gust_counter(:player, unit_id)
-
-      assert :ok = Dispel.dispel_debuffs({:player, unit_id})
-      assert StatusStorage.storm_gust_counter(:player, unit_id) == 0
     end
   end
 

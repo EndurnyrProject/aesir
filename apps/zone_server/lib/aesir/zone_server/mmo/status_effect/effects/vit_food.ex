@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.VitFood do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_vitfood,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:vit],
     icon: :food_vit,

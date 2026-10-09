@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IntoAbyss do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_intoabyss,
     no_dispel: true,
+    no_clear_buff: false,
     properties: [:buff],
     end_on_start: [
       :sc_richmankim,

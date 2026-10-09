@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ArcaneCharge do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_arcane_charge,
     no_dispel: false,
+    no_clear_buff: true,
+    engine_only: true,
     properties: [:buff],
     calc_flags: [:matk]
 

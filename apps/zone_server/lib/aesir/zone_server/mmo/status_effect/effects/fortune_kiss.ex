@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FortuneKiss do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_fortunekiss,
     no_dispel: true,
+    no_clear_buff: false,
     no_save: [renewal: false, pre_renewal: true],
     properties: [:buff],
     calc_flags: [:critical],

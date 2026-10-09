@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StrFood do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_strfood,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:str],
     icon: :food_str,

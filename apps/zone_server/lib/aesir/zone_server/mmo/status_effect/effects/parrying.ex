@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Parrying do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_parrying,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     no_save: true,
     properties: [:buff],
     require_weapon: [:two_handed_sword],

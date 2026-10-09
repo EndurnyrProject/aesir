@@ -7,13 +7,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   defmodule MinimalStatus do
-    use Aesir.ZoneServer.Mmo.StatusEffect.Definition, id: :sc_test_minimal, no_dispel: false
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_minimal,
+      no_dispel: false,
+      no_clear_buff: false
   end
 
   defmodule ModeStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mode,
       no_dispel: false,
+      no_clear_buff: false,
       end_on_start: [renewal: [:sc_whistle], pre_renewal: []],
       no_save: [renewal: false, pre_renewal: true]
   end
@@ -22,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_plain,
       no_dispel: false,
+      no_clear_buff: false,
       end_on_start: [:sc_whistle],
       no_save: true
   end
@@ -30,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_full,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:debuff, :damage_over_time],
       calc_flags: [:def],
       flags: [:no_move],
@@ -62,7 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
   defmodule InterceptStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_intercept,
-      no_dispel: false
+      no_dispel: false,
+      no_clear_buff: false
 
     @impl true
     def before_weapon_hit(_target, _instance, _attack_info, _context),
@@ -91,6 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
         use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
           id: :sc_test_action_restricted,
           no_dispel: false,
+          no_clear_buff: false,
           properties: [:prevents_items, :prevents_chat, :prevents_equip_change]
       end
 
@@ -233,6 +241,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_incomplete_mode,
             no_dispel: false,
+            no_clear_buff: false,
             end_on_start: [renewal: [:sc_whistle]]
         end
       end
@@ -244,6 +253,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_extra_mode,
             no_dispel: false,
+            no_clear_buff: false,
             no_save: [renewal: false, pre_renewal: true, extra: true]
         end
       end
@@ -263,6 +273,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad,
             no_dispel: false,
+            no_clear_buff: false,
             phases: %{wait: %{}}
         end
       end
@@ -274,6 +285,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad_prop,
             no_dispel: false,
+            no_clear_buff: false,
             properties: [:debuf]
         end
       end
@@ -285,6 +297,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad_tick,
             no_dispel: false,
+            no_clear_buff: false,
             tick_interval: 0
         end
       end
@@ -296,6 +309,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad_blocked_skills,
             no_dispel: false,
+            no_clear_buff: false,
             blocked_skills: [0]
         end
       end
@@ -307,6 +321,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad_blocked_skills_float,
             no_dispel: false,
+            no_clear_buff: false,
             blocked_skills: [42.0]
         end
       end
@@ -318,6 +333,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad_blocked_skills_negative,
             no_dispel: false,
+            no_clear_buff: false,
             blocked_skills: [-42]
         end
       end
@@ -329,6 +345,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
           use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
             id: :sc_bad_blocked_skills_string,
             no_dispel: false,
+            no_clear_buff: false,
             blocked_skills: ["42"]
         end
       end

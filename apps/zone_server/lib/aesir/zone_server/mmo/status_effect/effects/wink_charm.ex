@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WinkCharm do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_winkcharm,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff],
     properties: [:debuff],
     icon: :dc_winkcharm
 

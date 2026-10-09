@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWeb do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_spiderweb,
     no_dispel: true,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff],
     no_save: true,
     bypass_resistance: true,
     properties: [:debuff, :prevents_movement],

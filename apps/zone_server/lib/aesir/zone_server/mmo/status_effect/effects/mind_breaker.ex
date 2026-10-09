@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MindBreaker do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_mindbreaker,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff, :remove_on_hermode],
     no_save: true,
     properties: [:debuff],
     calc_flags: [:matk, :mdef],

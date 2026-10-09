@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Fleet do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_fleet,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:aspd, :atk],
     icon: :hfli_fleet

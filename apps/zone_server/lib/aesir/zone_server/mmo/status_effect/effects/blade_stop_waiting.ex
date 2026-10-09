@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopWaiting do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_bladestop_wait,
     no_dispel: false,
+    no_clear_buff: false,
     no_save: true,
     remove_on_map_change: true,
     properties: [:buff, :prevents_movement],

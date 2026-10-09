@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneWait do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_stonewait,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:debuff, :prevents_skills, :prevents_attack],
     prevented_by: [
       renewal: [:sc_whiteimprison, :sc_freeze, :sc_stun, :sc_sleep, :sc_burning],

@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExplosionSpirits do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_explosionspirits,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff, :remove_on_hermode],
     no_save: true,
     properties: [:buff],
     calc_flags: [:critical, :regen],

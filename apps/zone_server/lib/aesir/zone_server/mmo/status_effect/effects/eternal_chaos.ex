@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EternalChaos do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_eternalchaos,
     no_dispel: true,
+    no_clear_buff: false,
     properties: [:debuff],
     calc_flags: [:def, :def2],
     end_on_start: [

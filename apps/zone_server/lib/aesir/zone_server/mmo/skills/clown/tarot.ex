@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Clown.Formulas
   alias Aesir.ZoneServer.Mmo.Skills.Clown.TarotDeck
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
@@ -51,9 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   def apply(:fool, _caster, target, _level), do: Resource.drain_sp_percent(target, 100)
 
   def apply(:high_priestess, _caster, target, _level) do
-    Dispel.reset_cleared_unit_state(target)
-    Dispel.dispel(target)
-    :ok
+    ClearBuffs.clear(target, [:buffs, :chem_protect])
   end
 
   def apply(:magician, caster, target, _level),

@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Summer do
     permanent: true,
     no_save: true,
     no_dispel: true,
+    no_clear_buff: true,
     remove_on_death: false,
     option: :summer
 end

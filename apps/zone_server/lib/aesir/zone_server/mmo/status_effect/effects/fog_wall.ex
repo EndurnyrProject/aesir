@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FogWall do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_fogwall,
     no_dispel: true,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     no_save: true,
     properties: [:debuff],
     immunity: [:boss],

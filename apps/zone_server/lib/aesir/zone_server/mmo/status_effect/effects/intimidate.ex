@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Intimidate do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_intimidate,
     no_dispel: false,
+    no_clear_buff: true,
+    engine_only: true,
     no_save: true,
     duration: 800,
     icon: nil

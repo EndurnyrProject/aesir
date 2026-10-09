@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.UltimateCook do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_ultimatecook,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:str, :agi, :vit, :int, :dex, :luk, :atk, :matk],
     icon: :ultimatecook,

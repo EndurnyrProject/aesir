@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HomunculusSpeed do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_speed,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:flee],
     icon: :hfli_speed

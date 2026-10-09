@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicCandy do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_magiccandy,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     target_types: [:player],
     calc_flags: [:matk],

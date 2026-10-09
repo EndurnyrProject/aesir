@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StrScroll do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_str_scroll,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:str],
     icon: :str_scroll

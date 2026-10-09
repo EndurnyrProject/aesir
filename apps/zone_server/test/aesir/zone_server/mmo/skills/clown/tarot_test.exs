@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Clown.Tarot
   alias Aesir.ZoneServer.Mmo.Skills.Clown.TarotDeck
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -71,9 +71,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
     assert {:ok, :fool} = Tarot.play(caster, {:player, 18}, 5)
   end
 
-  test "High Priestess dispels the target", %{caster: caster} do
+  test "High Priestess clears the target's buffs", %{caster: caster} do
     stub(TarotDeck, :draw, fn -> :high_priestess end)
-    expect(Dispel, :dispel, fn {:player, 18} -> :ok end)
+    expect(ClearBuffs, :clear, fn {:player, 18}, [:buffs, :chem_protect] -> :ok end)
     assert {:ok, :high_priestess} = Tarot.play(caster, {:player, 18}, 5)
   end
 

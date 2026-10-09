@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_permanent,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       permanent: true
   end
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_ailment_resistance,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -39,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_finite_death_survivor,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       remove_on_death: false
   end
@@ -47,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_rejected,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -57,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_rejected_replacement,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       end_on_start: [:sc_provoke]
 
@@ -68,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_replacement,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       end_on_start: [:sc_provoke]
 
@@ -95,6 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_generation,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -108,6 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_exact_tick,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -126,6 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_movement_intent,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -179,6 +188,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_committed_action,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       flags: [:no_pick_item]
 
@@ -224,6 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_unrelated_flag,
       no_dispel: false,
+      no_clear_buff: false,
       flags: [:unrelated]
   end
 
@@ -231,6 +242,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mutually_exclusive_x,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       end_on_start: [:sc_test_mutually_exclusive_y]
 
@@ -250,6 +262,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mutually_exclusive_y,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       end_on_start: [:sc_test_mutually_exclusive_x]
 
@@ -269,6 +282,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_self_replacing,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff],
       end_on_start: [:sc_test_self_replacing]
 
@@ -302,6 +316,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_followup,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     @impl true
@@ -314,6 +329,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_intercept,
       no_dispel: false,
+      no_clear_buff: false,
       properties: [:buff]
 
     alias Aesir.ZoneServer.Mmo.StatusStorage

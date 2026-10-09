@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncAllStatus do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_incallstatus,
     no_dispel: true,
+    no_clear_buff: true,
     properties: [:buff],
     calc_flags: [:str, :agi, :vit, :int, :dex, :luk]
 

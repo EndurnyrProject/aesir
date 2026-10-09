@@ -38,6 +38,12 @@ are part of the mechanic.
 
 - `no_save: true` — not persisted at logout (map-bound, warp-cleared, or rebuilt statuses).
 - `no_dispel: true` — survives Dispel (Dispel ends everything else, debuffs included).
+- `no_clear_buff:` (required, mode-keyable) and `clear_buff_flags:` — mirror the
+  `NoClearbuff` and `Debuff`/`RemoveOnRefresh`/`RemoveChemicalProtect`/`RemoveOnHermode`
+  flags of each mode's `status.yml`; `StatusEffect.ClearBuffs` (Gospel, Hermode, Tarot's
+  High Priestess) reads only these, never `properties`.
+- `engine_only: true` — no rAthena status behind it (an option, link or marker); it never
+  counts as a held status and must be `no_clear_buff: true`.
 - `bypass_boss_immunity: true` — external application to boss-flagged units normally
   rejects; this flag pierces it.
 - `remove_on_map_change: true` — cleared by WarpHandler on cross-map warp only.

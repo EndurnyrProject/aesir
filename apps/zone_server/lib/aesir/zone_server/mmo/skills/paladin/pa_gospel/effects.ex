@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Effects do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @typedoc "One table entry: a status, a status pair, a heal, a cleanse, or a damage roll."
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Effects do
     DamageApplication.apply_heal(type, id, Enum.random(range), caster_id)
   end
 
-  def apply(:cleanse, _group, _caster, target), do: Dispel.dispel_debuffs(target)
+  def apply(:cleanse, _group, _caster, target), do: ClearBuffs.clear(target, [:debuffs, :refresh])
 
   def apply({:damage, kind, range}, %Group{level: level} = group, caster, target) do
     case roll_damage(kind, Enum.random(range), target) do

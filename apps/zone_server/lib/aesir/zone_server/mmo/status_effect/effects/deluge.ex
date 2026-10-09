@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Deluge do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_deluge,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:max_hp_rate],
     no_save: true,

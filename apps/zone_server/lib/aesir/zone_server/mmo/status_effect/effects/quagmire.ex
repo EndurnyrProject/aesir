@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Quagmire do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_quagmire,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff, :remove_on_hermode],
     properties: [:debuff],
     calc_flags: [:agi, :dex, :aspd, :speed],
     end_on_start: [

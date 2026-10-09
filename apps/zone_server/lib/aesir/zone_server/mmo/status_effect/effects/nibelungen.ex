@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_nibelungen,
     no_dispel: true,
+    no_clear_buff: false,
     properties: [:buff],
     calc_flags: [
       :aspd_rate,

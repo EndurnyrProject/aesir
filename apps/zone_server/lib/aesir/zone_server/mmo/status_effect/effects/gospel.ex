@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gospel do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_gospel,
     no_dispel: true,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     no_save: true,
     bypass_resistance: true,
     remove_on_map_change: true,

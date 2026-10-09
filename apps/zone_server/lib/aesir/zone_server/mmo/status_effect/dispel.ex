@@ -29,15 +29,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
   Mob targets additionally drop their aggro target and fall back to idle,
   rAthena's `mob_unlocktarget`. Assumptio is spared on mobs (players lose it as
   usual).
-
-  `dispel_debuffs/1` is the debuff-only variant used by Gospel's cleansing
-  blessing: buffs and `no_dispel` debuffs stay.
   """
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -70,41 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
 
       unlock_target(target)
     end
-  end
-
-  @doc """
-  Removes every dispellable debuff from the target and nothing else.
-
-  Gospel's cleansing blessing: buffs stay, `no_dispel` debuffs stay, and the
-  removal batch runs the same expiry side effects as `dispel/1`.
-  """
-  @spec dispel_debuffs(Definition.target()) :: :ok
-  def dispel_debuffs({unit_type, unit_id} = target) do
-    reset_cleared_unit_state(target)
-
-    status_ids =
-      unit_type
-      |> StatusStorage.get_unit_statuses(unit_id)
-      |> Enum.reject(&no_dispel?/1)
-      |> Enum.map(& &1.type)
-      |> Enum.filter(&PropertyChecker.debuff?/1)
-
-    Interpreter.remove_statuses(unit_type, unit_id, status_ids, owner_refresh: :notify)
-  end
-
-  @doc """
-  Resets the unit state that clearing a unit's buffs also resets besides its
-  statuses: the classic Storm Gust hit counter.
-
-  Gospel's self-clear and cleanse, Hermode and Tarot's High Priestess clear
-  buffs. Like that routine, this leaves a unit with no status at all untouched,
-  so callers run it before removing anything.
-  """
-  @spec reset_cleared_unit_state(Definition.target()) :: :ok
-  def reset_cleared_unit_state({unit_type, unit_id}) do
-    if StatusStorage.count_unit_statuses(unit_type, unit_id) > 0,
-      do: StatusStorage.reset_storm_gust_counter(unit_type, unit_id),
-      else: :ok
   end
 
   defp spare_mob_assumptio(status_ids, :mob), do: List.delete(status_ids, :sc_assumptio)

@@ -86,6 +86,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       dispellable. Mirror the `NoDispell` flag of the matching entry in
       rAthena's `db/re/status.yml`; a status with no rAthena counterpart records
       its disposition with a one-line rationale.
+    - `:no_clear_buff` - **required**; when true, clearing a unit's buffs
+      (Gospel, Hermode, Tarot's High Priestess) never ends the status, whatever
+      the clearing asks for. Mirrors the `NoClearbuff` flag of the matching entry
+      in each mode's rAthena `status.yml`; a status with no entry in a mode is
+      `true` there.
+    - `:clear_buff_flags` - the status's flags that clearing buffs reads:
+      `:debuff` (cleared as a debuff, never as a buff), `:remove_on_refresh`,
+      `:remove_chemical_protect` and `:remove_on_hermode`, mirroring the
+      `Debuff`, `RemoveOnRefresh`, `RemoveChemicalProtect` and
+      `RemoveOnHermode` flags. Independent of `:properties`.
+    - `:engine_only` - when true, the status has no rAthena status behind it (an
+      option, a link or a marker Aesir keeps as a status), so it never counts as
+      a held status where the reference checks whether a unit has any.
     - `:icon` - `:efst` id atom for the buff/debuff icon bar (resolved via `Mmo.Efst`)
     - `:opt1` - sprite body state, e.g. `:stone | :freeze` (`Mmo.Opt1`, single-valued)
     - `:opt2` - sprite health state, e.g. `:poison | :curse` (`Mmo.Opt2`, bitmask)
@@ -93,9 +106,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:opt3` - sprite virtue state (`Mmo.Opt3`, bitmask)
     - `:on_apply_effect` - `:ef_*` one-shot effect fired on apply (`Mmo.EffectId`)
 
-  `:end_on_start`, `:end_return`, `:prevented_by`, `:no_save`, `:duration` and
-  `:duration_adjustment` also accept `[renewal: value, pre_renewal: value]` for
-  mode-specific values.
+  `:end_on_start`, `:end_return`, `:prevented_by`, `:no_save`, `:duration`,
+  `:duration_adjustment`, `:no_clear_buff` and `:clear_buff_flags` also accept
+  `[renewal: value, pre_renewal: value]` for mode-specific values.
   """
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
@@ -335,6 +348,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :no_resistance
   ]
 
+  @clear_buff_flags [:debuff, :remove_on_refresh, :remove_chemical_protect, :remove_on_hermode]
+
   @list_defaults %{
     properties: [],
     calc_flags: [],
@@ -348,6 +363,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     immunity: [],
     cleanse: [],
     require_weapon: [],
+    clear_buff_flags: [],
     target_types: [:player, :mob, :homunculus]
   }
 
@@ -364,6 +380,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     remove_on_map_change: false,
     remove_on_death: true,
     bypass_boss_immunity: false,
+    engine_only: false,
     icon: nil,
     opt1: nil,
     opt2: nil,
@@ -400,6 +417,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     remove_on_death: :boolean,
     bypass_boss_immunity: :boolean,
     no_dispel: {:required, :boolean},
+    no_clear_buff: {:required, :boolean},
+    clear_buff_flags: {:list, {:enum, @clear_buff_flags}},
+    engine_only: :boolean,
     icon: :atom,
     opt1: :atom,
     opt2: :atom,
@@ -631,7 +651,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :prevented_by,
     :no_save,
     :duration,
-    :duration_adjustment
+    :duration_adjustment,
+    :no_clear_buff,
+    :clear_buff_flags
   ]
 
   @doc "Resolves the mode-keyable metadata options for the selected mode."

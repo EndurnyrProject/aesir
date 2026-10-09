@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Slowdown do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_slowdown,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:debuff],
     properties: [:debuff],
     calc_flags: [:speed]
 

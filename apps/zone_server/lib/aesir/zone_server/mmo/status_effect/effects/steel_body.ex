@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SteelBody do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_steelbody,
     no_dispel: false,
+    no_clear_buff: false,
+    clear_buff_flags: [:remove_on_hermode],
     no_save: true,
     properties: [:buff, :prevents_skills],
     calc_flags: [:speed, :aspd, :def, :mdef],

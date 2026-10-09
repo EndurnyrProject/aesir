@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_stone,
     no_dispel: false,
+    no_clear_buff: false,
     properties: [:debuff, :prevents_movement, :prevents_skills, :prevents_attack],
     calc_flags: [:def_ele, :def_rate, :mdef_rate],
     prevented_by: [
