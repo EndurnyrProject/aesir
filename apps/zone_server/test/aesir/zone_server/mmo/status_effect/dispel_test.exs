@@ -133,6 +133,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
       assert StatusStorage.has_status?(:player, unit_id, :sc_poembragi)
     end
 
+    @tag game_mode: :pre_renewal
+    test "classic songs keep their song-area exemption although their flag allows dispel", %{
+      unit_id: unit_id
+    } do
+      StatusStorage.apply_status(:player, unit_id, :sc_whistle, val1: 1, duration: 60_000)
+
+      StatusStorage.apply_status(:player, unit_id, :sc_gravitation,
+        val1: 1,
+        duration: 60_000,
+        state: %{self?: false}
+      )
+
+      Dispel.dispel({:player, unit_id})
+
+      assert StatusStorage.has_status?(:player, unit_id, :sc_whistle)
+      refute StatusStorage.has_status?(:player, unit_id, :sc_gravitation)
+    end
+
     # The removal must go through the interpreter, never a bulk ETS delete:
     # on_expire, the icon delta and calc-flag recomputation all hang off it.
     test "runs each status's on_expire and icon removal", %{unit_id: unit_id} do

@@ -6,12 +6,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ArcaneCharge do
   per charge. At 3 charges the energy discharges, damaging the holder based on
   the caster's INT and resetting the counter.
 
-  Dispel: no rAthena counterpart; a plain damage-triggered MATK buff, and
-  rAthena dispels every status not flagged `NoDispell`.
+  It has no reference status, so Dispel never ends it.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_arcane_charge,
-    no_dispel: false,
+    no_dispel: true,
     no_clear_buff: true,
     engine_only: true,
     properties: [:buff],

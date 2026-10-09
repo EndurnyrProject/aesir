@@ -41,12 +41,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
     :ok
   end
 
-  test "the occupant and caster statuses are unsaved, undispellable and end on map change" do
+  test "the occupant and caster statuses are unsaved, dispellable and end on map change" do
     for module <- [Basilica, BasilicaCaster] do
       metadata = module.metadata()
 
       assert metadata.no_save
-      assert metadata.no_dispel
+      refute metadata.no_dispel
       assert metadata.remove_on_map_change
       assert metadata.icon == :basilica
     end

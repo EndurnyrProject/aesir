@@ -4,7 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GravitationTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gravitation
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -14,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GravitationTest do
 
   setup do
     Mimic.copy(Manager)
+    Mimic.copy(Storage)
     :ok
   end
 
@@ -26,9 +29,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GravitationTest do
   end
 
   test "the caster's own instance collapses on damage and tears its field down" do
-    assert Gravitation.on_damage(@target, instance(true), %{damage: 10}, %{}) == :remove
-
+    stub(Storage, :get, fn 77 -> struct(Group, group_id: 77) end)
     expect(Manager, :destroy_async, fn 77 -> :ok end)
+    assert Gravitation.on_damage(@target, instance(true), %{damage: 10}, %{}) == :remove
+  end
+
+  test "with its field already gone, damage leaves the caster's instance in place" do
+    stub(Storage, :get, fn 77 -> nil end)
+    reject(&Manager.destroy_async/1)
+
+    assert Gravitation.on_damage(@target, instance(true), %{damage: 10}, %{}) ==
+             {:ok, instance(true)}
+  end
+
+  test "any other end of the caster's own instance leaves its field running" do
+    reject(&Manager.destroy_async/1)
     assert Gravitation.on_expire(@target, instance(true), %{}) == :ok
   end
 

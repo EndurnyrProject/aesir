@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gospel do
   paid the chant ends. `val2` holds the Gospel field's group id: ending the
   status tears the field down, and the field ending removes this status, so
   either side may finish first. The chant also ends on map change, on Silence
-  (declared on `sc_silence`), and on death.
+  (declared on `sc_silence`), on Dispel and on death.
 
   The reference keeps the caster lock and the enemy slow on one status id with
   a discriminator; Aesir's status properties are static per definition, so the
@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gospel do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_gospel,
-    no_dispel: true,
+    no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     no_save: true,

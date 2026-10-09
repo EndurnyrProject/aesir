@@ -7,10 +7,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
   its caster, bosses included. As the last blocker, after Kyrie Eleison and
   Safety Wall, it blocks every attack still carrying damage unless the attacker
   is status-immune (a boss-class monster or one with the status-immune mode).
-  The holder cannot attack or cast; it may still walk out. The field removes the status when the holder leaves, and the
-  holder's own one-second tick drops it if the holder is no longer on any
-  Basilica cell (a teleport or relocation emits no leave event). It ends on map
-  change and is never saved or dispelled.
+  The holder cannot attack or cast; it may still walk out. The field removes
+  the status when the holder leaves, and the holder's own one-second tick drops
+  it if the holder is no longer on any Basilica cell (a teleport or relocation
+  emits no leave event). It ends on map change and is never saved. Dispel ends
+  it too; the field grants it again when the holder next enters one of its
+  cells.
 
   Renewal Basilica is the `sc_basilica_buff` self buff; this status is only
   granted in pre-renewal. `absorb_damage/4` is shared with the caster lock,
@@ -19,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_basilica,
     no_save: true,
-    no_dispel: true,
+    no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     remove_on_map_change: true,

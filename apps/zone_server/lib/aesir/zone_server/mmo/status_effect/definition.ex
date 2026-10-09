@@ -83,9 +83,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       that this is *not* a buff/debuff distinction - rAthena's `SA_DISPELL`
       walks every entry in `status_db` and ends everything that lacks the flag,
       so Poison, Stun, Curse, Silence, Blind, Bleeding, Freeze and Stone are all
-      dispellable. Mirror the `NoDispell` flag of the matching entry in
-      rAthena's `db/re/status.yml`; a status with no rAthena counterpart records
-      its disposition with a one-line rationale.
+      dispellable. Mirror the `NoDispell` flag of the matching entry in each
+      mode's rAthena `status.yml`. A status with no entry in a mode is `true`
+      there, and an `:engine_only` status is always `true`: Dispel never
+      reaches what it models.
     - `:no_clear_buff` - **required**; when true, clearing a unit's buffs
       (Gospel, Hermode, Tarot's High Priestess) never ends the status, whatever
       the clearing asks for. Mirrors the `NoClearbuff` flag of the matching entry
@@ -107,8 +108,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:on_apply_effect` - `:ef_*` one-shot effect fired on apply (`Mmo.EffectId`)
 
   `:end_on_start`, `:end_return`, `:prevented_by`, `:no_save`, `:duration`,
-  `:duration_adjustment`, `:no_clear_buff` and `:clear_buff_flags` also accept
-  `[renewal: value, pre_renewal: value]` for mode-specific values.
+  `:duration_adjustment`, `:no_dispel`, `:no_clear_buff` and `:clear_buff_flags`
+  also accept `[renewal: value, pre_renewal: value]` for mode-specific values.
   """
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
@@ -652,6 +653,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :no_save,
     :duration,
     :duration_adjustment,
+    :no_dispel,
     :no_clear_buff,
     :clear_buff_flags
   ]

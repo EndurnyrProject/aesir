@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripHelm do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_striphelm,
     metadata: %{strip_slot: :head_top},
-    no_dispel: false,
+    no_dispel: true,
     no_clear_buff: false,
     clear_buff_flags: [:debuff, :remove_on_hermode],
     properties: [:debuff],

@@ -72,11 +72,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnsembleFatigueTest do
     refute StatusStorage.has_status?(:player, @player_id, :sc_ensemblefatigue)
   end
 
-  test "cannot be cleared early by Dispell" do
+  test "is cleared by Dispel" do
     assert :ok = apply_fatigue()
     assert :ok = Dispel.dispel({:player, @player_id})
 
-    assert StatusStorage.has_status?(:player, @player_id, :sc_ensemblefatigue)
+    refute StatusStorage.has_status?(:player, @player_id, :sc_ensemblefatigue)
   end
 
   defp apply_fatigue do

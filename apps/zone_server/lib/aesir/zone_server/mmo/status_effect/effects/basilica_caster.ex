@@ -7,8 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaCaster do
   cannot attack, cannot move, and cannot cast anything except Basilica, whose
   recast ends the sanctuary. Knockback from non-boss sources cannot move it.
   Ending this status destroys the field, and the field ending removes this
-  status, so either side may finish first. It ends on map change and death and
-  is never saved or dispelled.
+  status, so either side may finish first. It ends on map change, on death and
+  on Dispel, and is never saved.
 
   The reference keeps caster and occupant on one status id with a discriminator;
   Aesir's status properties are static per definition, so the caster has its
@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaCaster do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_basilica_caster,
     no_save: true,
-    no_dispel: true,
+    no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     remove_on_map_change: true,

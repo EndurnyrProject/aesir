@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_devoted_by,
-    no_dispel: false,
+    no_dispel: true,
     no_clear_buff: true,
     engine_only: true,
     no_save: true,

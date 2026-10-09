@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_defender,
-    no_dispel: true,
+    no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],

@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DontForgetMe do
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_dontforgetme,
-    no_dispel: true,
+    no_dispel: [renewal: true, pre_renewal: false],
     no_clear_buff: false,
     no_save: [renewal: false, pre_renewal: true],
     properties: [:debuff],

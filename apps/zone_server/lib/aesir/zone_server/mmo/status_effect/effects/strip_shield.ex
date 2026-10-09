@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripShield do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_stripshield,
     metadata: %{strip_slot: :left_hand},
-    no_dispel: false,
+    no_dispel: true,
     no_clear_buff: false,
     clear_buff_flags: [:debuff, :remove_on_hermode],
     properties: [:debuff],
