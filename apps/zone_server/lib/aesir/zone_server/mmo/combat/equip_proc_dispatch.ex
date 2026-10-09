@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
@@ -125,9 +126,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   Builds the event for one prepared hit.
 
   `hit_info` is the hit as `DamageApplication.prepare_unit_damage/5` returned
-  it. A Magic Rod interception is a miss and a blocking status a block. A
-  Devotion-forwarded hit is a block when it resolves delayed; an immediate one
-  keeps its class and gates the counter stage on the damage before forwarding.
+  it, classified by `DamageShared.hit_class/3`: a total below 1 is a miss, so it
+  runs neither stage. An immediate Devotion-forwarded hit gates its counter
+  stage on the damage before forwarding.
 
   ## Options
     - `:immediate?` - the hit resolves immediately (ground skills and fields)
@@ -138,9 +139,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   @spec event(BattleFlags.flag(), integer(), map(), keyword()) :: event()
   def event(attack_flag, damage, hit_info, opts \\ []) do
     immediate? = Keyword.get(opts, :immediate?, false)
-    rerouted? = Map.get(hit_info, :devotion_rerouted?, false)
-    gate_damage = if rerouted?, do: Map.get(hit_info, :devotion_damage, damage), else: damage
-    hit_class = hit_class(hit_info, rerouted? and not immediate?)
+    gate_damage = DamageShared.settled_total(hit_info, damage)
+    hit_class = DamageShared.hit_class(hit_info, damage, immediate?)
 
     %{
       attack_flag: attack_flag,
@@ -153,11 +153,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
       skill_id: Keyword.get(opts, :skill_id)
     }
   end
-
-  defp hit_class(%{magic_rod_miss?: true}, _delayed_devotion?), do: :miss
-  defp hit_class(%{blocked?: true}, _delayed_devotion?), do: :block
-  defp hit_class(_hit_info, true), do: :block
-  defp hit_class(_hit_info, false), do: :hit
 
   @doc """
   The event of a prepared hit carrying a `:proc` spec, settled at `damage`;

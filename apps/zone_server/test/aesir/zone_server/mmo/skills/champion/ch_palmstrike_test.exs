@@ -87,10 +87,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChPalmstrikeTest do
       caster = caster()
 
       stub(Combat, :execute_skill_attack, fn _caster, @target_id, _opts ->
-        {:ok, %{hit?: false, damage: 0, target_survives?: true, coma?: false}}
+        {:ok, %{hit?: false, connected?: false, damage: 0, target_survives?: true, coma?: false}}
       end)
 
       expect(Knockback, :knockback, fn :mob, @target_id, 50, 50, 3 -> :ok end)
+
+      assert :ok = ChPalmstrike.deferred(payload(), caster)
+    end
+
+    test "a connected blow that deals nothing is pushed by the attack, not again" do
+      caster = caster()
+
+      stub(Combat, :execute_skill_attack, fn _caster, @target_id, _opts ->
+        {:ok, %{hit?: false, connected?: true, damage: 0, target_survives?: true, coma?: false}}
+      end)
+
+      reject(&Knockback.knockback/5)
 
       assert :ok = ChPalmstrike.deferred(payload(), caster)
     end

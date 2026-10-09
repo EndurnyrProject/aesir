@@ -9,6 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
   level percent, hard DEF ignored while the target's soft DEF is taken off the
   attack before the ratio, a 1 s cast, 120 s bleeding, and a 3/7/10/12/13 percent
   armor break.
+
+  The bleeding and armor break follow a hit that deals damage, and a player's
+  hit that a blocking status (Pneuma) stopped.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 230,
@@ -40,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @behaviour Active
 
@@ -61,7 +65,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
         apply_on_hit(target_id, level)
         {:ok, caster}
 
-      {:ok, %{hit?: false}} ->
+      {:ok, %{blocked?: true}} when is_struct(caster, PlayerState) ->
+        apply_on_hit(target_id, level)
+        {:ok, caster}
+
+      {:ok, _no_effect} ->
         {:ok, caster}
 
       {:error, _reason} = error ->

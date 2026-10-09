@@ -35,6 +35,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
         }
 
   @doc """
+  Classifies one settled hit as its additional and counter stages see it.
+
+  A Magic Rod interception is a miss and a blocking status's stop a block. Any
+  other hit whose total before Devotion forwarding (`settled_total/2`) is below
+  1 is a miss. A Devotion-forwarded hit that resolves after the attack motion
+  (not `immediate?`) is a block. Everything else connected (`:hit`).
+  """
+  @spec hit_class(map(), integer(), boolean()) :: :miss | :block | :hit
+  def hit_class(%{magic_rod_miss?: true}, _damage, _immediate?), do: :miss
+  def hit_class(%{blocked?: true}, _damage, _immediate?), do: :block
+
+  def hit_class(hit_info, damage, immediate?) do
+    cond do
+      settled_total(hit_info, damage) < 1 -> :miss
+      Map.get(hit_info, :devotion_rerouted?, false) and not immediate? -> :block
+      true -> :hit
+    end
+  end
+
+  @doc """
+  A settled hit's total before Devotion forwarding: the forwarded amount for a
+  rerouted hit (the devotee itself takes 0), else `damage`.
+  """
+  @spec settled_total(map(), integer()) :: integer()
+  def settled_total(%{devotion_rerouted?: true} = hit_info, damage),
+    do: Map.get(hit_info, :devotion_damage, damage)
+
+  def settled_total(_hit_info, damage), do: damage
+
+  @doc """
+  The division count a settled attack shows: a player's attack whose total
+  before Devotion forwarding (`settled_total/2`) is below 1 shows one.
+  """
+  @spec display_divisions(map(), map(), integer(), non_neg_integer()) :: non_neg_integer()
+  def display_divisions(%{unit_type: :player}, hit_info, damage, divisions) do
+    if settled_total(hit_info, damage) < 1, do: 1, else: divisions
+  end
+
+  def display_divisions(_attacker, _hit_info, _damage, divisions), do: divisions
+
+  @doc """
   Normalizes one calculated damage into its logical total and division count.
 
   Positive divisions multiply the damage; negative divisions floor it to an

@@ -35,6 +35,18 @@ defmodule Aesir.ZoneServer.Map.LineOfSight do
     end)
   end
 
+  @doc """
+  Returns whether every cell the straight line crosses between two cells is
+  walkable, without the corner-cut rule. Like `clear?/3`, neither endpoint is
+  tested. Used by skills that move their caster in one step.
+  """
+  @spec passable?(String.t(), {integer(), integer()}, {integer(), integer()}) :: boolean()
+  def passable?(map_name, {from_x, from_y}, {to_x, to_y}) when is_binary(map_name) do
+    walk?(map_name, {from_x, from_y}, {to_x, to_y}, fn _map, _prev, {x, y} ->
+      Cell.traversable?(map_name, x, y)
+    end)
+  end
+
   defp walk?(map_name, {from_x, from_y}, {to_x, to_y}, clear_step?) do
     {from_x, from_y, to_x, to_y, dx} =
       if to_x < from_x,

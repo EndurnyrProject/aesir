@@ -168,6 +168,26 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     assert {:error, :no_walkable_cell} = Cell.random_traversable("single_cell", 1)
   end
 
+  test "a random cell near a center skips the center, the five-cell edge and blocked cells" do
+    map =
+      Enum.reduce(9..11, MapData.new("near", 20, 20), fn x, map ->
+        MapData.set_cell(map, x, 11, GatType.wall())
+      end)
+
+    :ets.insert(EtsTable.table_for(:map_cache), {"near", map})
+
+    for _ <- 1..30 do
+      {x, y} = Cell.random_traversable_near("near", {10, 10}, 1)
+      assert {x, y} != {10, 10} and abs(x - 10) <= 1 and abs(y - 10) <= 1 and y != 11
+    end
+
+    # Every neighbour of {5, 5} on the five-cell edge or beyond is rejected.
+    for _ <- 1..30,
+        do: assert(Cell.random_traversable_near("near", {5, 5}, 1) in [{5, 6}, {6, 5}, {6, 6}])
+
+    assert Cell.random_traversable_near("near", {2, 2}, 1) == {2, 2}
+  end
+
   test "requires a valid base coordinate for dynamic water and validates its cell ID" do
     :ok = Cell.put("missing", 0, 0, :deluge, 1, consumable_water: 1)
     :ok = Cell.put("cell_test", 99, 99, :deluge, 2, consumable_water: 2)

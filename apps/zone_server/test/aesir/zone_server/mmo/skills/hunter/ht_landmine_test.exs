@@ -99,7 +99,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
         assert opts[:base_damage] >= 450 and opts[:base_damage] <= 545
         assert opts[:element] == :earth
         assert opts[:skill_level] == 3
-        :ok
+        assert opts[:report_hit]
+        {:ok, %{hit?: true}}
       end)
 
       expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_stun, params ->
@@ -109,6 +110,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
         assert params[:duration] == 4_500
         :ok
       end)
+
+      assert :expire = HtLandmine.on_touch(group(%{base_damage: 500}), {:mob, 2001})
+    end
+
+    test "a blast that deals nothing stuns nobody but still spends the mine" do
+      caster = %PlayerState{character_id: @caster_id, map_name: "prontera"}
+      target = %{instance_id: 2001, map_name: "prontera", hp: 100}
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, @caster_id -> {:ok, {PlayerState, caster, self()}}
+        :mob, 2001 -> {:ok, {Map, target, self()}}
+      end)
+
+      stub(SkillAttack, :execute_field_misc_attack, fn _caster, {:mob, 2001}, %Group{}, _opts ->
+        {:ok, %{hit?: false}}
+      end)
+
+      reject(&StatusInterpreter.apply_status/4)
 
       assert :expire = HtLandmine.on_touch(group(%{base_damage: 500}), {:mob, 2001})
     end
@@ -157,7 +176,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
         {:ok, {Map, mob_caster, self()}}
       end)
 
-      expect(SkillAttack, :execute_misc_attack, fn ^mob_caster, {:player, 3000}, _opts -> :ok end)
+      expect(SkillAttack, :execute_misc_attack, fn ^mob_caster, {:player, 3000}, _opts ->
+        {:ok, %{hit?: true}}
+      end)
 
       expect(StatusInterpreter, :apply_status, fn :player, 3000, :sc_stun, params ->
         assert params[:source_id] == 4000

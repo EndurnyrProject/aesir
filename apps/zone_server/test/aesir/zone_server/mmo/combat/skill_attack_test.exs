@@ -1089,7 +1089,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     reject(&EquipComa.trigger?/2)
     reject(&MobSession.apply_coma/2)
 
-    assert {:ok, %{hit?: true, damage: 0, coma?: false}} =
+    assert {:ok, %{hit?: false, connected?: true, damage: 0, coma?: false}} =
              SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
                skill_id: 7,
                skill_level: 1,
@@ -1133,13 +1133,75 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     reject(&MobSession.apply_damage/4)
     reject(&MobSession.apply_coma/2)
 
-    assert {:ok, %{hit?: true, damage: 0, target_survives?: true, coma?: true}} =
+    assert {:ok, %{hit?: false, connected?: true, damage: 0, target_survives?: true, coma?: true}} =
              SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
                skill_id: 7,
                skill_level: 1,
                ignore_flee: true,
                report_hit: true
              )
+  end
+
+  test "a hit a blocking status stops reports a block, not a hit" do
+    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 100}
+
+    stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, 50, _hit_info -> {0, :block} end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 0, 1001, _metadata -> :ok end)
+
+    expect(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+      {:ok, %{damage: 50, is_critical: false}}
+    end)
+
+    assert {:ok, %{hit?: false, blocked?: true, connected?: true, damage: 0}} =
+             SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
+               skill_id: 7,
+               skill_level: 1,
+               ignore_flee: true,
+               report_hit: true
+             )
+  end
+
+  test "a player's attack totalling below 1 shows one division" do
+    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 100}
+    test_pid = self()
+
+    stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, 150, _hit_info -> {0, :hit} end)
+    stub(MobSession, :apply_damage, fn _pid, 0, 1001, _metadata -> :ok end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      send(test_pid, {:div, packet.div})
+      :ok
+    end)
+
+    stub(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+      {:ok, %{damage: 50, is_critical: false}}
+    end)
+
+    SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},
+      skill_id: 7,
+      skill_level: 1,
+      hit_divisions: 3,
+      ignore_flee: true
+    )
+
+    assert_received {:div, 1}
   end
 
   test "physical coma marker reaches a player target owner" do

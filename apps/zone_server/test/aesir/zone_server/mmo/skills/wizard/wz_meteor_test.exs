@@ -119,7 +119,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     stub(Combat, :splash_targets, fn @map_name, {148, 148}, 3, @caster_id -> [{:mob, 2001}] end)
 
     expect(Combat, :apply_skill_unit_damage, fn
-      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125, [hit_divisions: 2] -> :ok
+      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125, opts ->
+        assert opts[:hit_divisions] == 2
+        :ok
     end)
 
     stub(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_stun, _params -> :ok end)
@@ -172,7 +174,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     stub(Combat, :splash_targets, fn @map_name, {151, 149}, 3, @caster_id -> [{:mob, 2001}] end)
 
     expect(Combat, :apply_skill_unit_damage, fn
-      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125, [hit_divisions: 2] -> :ok
+      %{unit_id: @caster_id} = caster, :mob, 2001, 83, 1, :fire, 125, opts ->
+        assert opts[:hit_divisions] == 2
+        opts[:additional_effect].(caster, {:mob, 2001})
+        :ok
     end)
 
     expect(StatusInterpreter, :apply_status, fn

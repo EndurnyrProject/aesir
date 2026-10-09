@@ -89,8 +89,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
                EquipProcDispatch.event(melee(), 40, %{})
     end
 
-    test "a delayed hit that connected for zero damage still runs the counter stage" do
-      assert %{hit_class: :hit, counter_effects?: true} = EquipProcDispatch.event(melee(), 0, %{})
+    test "a hit that connected for a total below 1 is a miss with no counter stage" do
+      assert %{hit_class: :miss, counter_effects?: false} =
+               EquipProcDispatch.event(melee(), 0, %{})
+
+      assert %{hit_class: :miss, counter_effects?: false} =
+               EquipProcDispatch.event(
+                 melee(),
+                 0,
+                 %{devotion_rerouted?: true, devotion_damage: 0}, immediate?: true)
     end
 
     test "an immediate hit gates the counter stage on positive damage" do

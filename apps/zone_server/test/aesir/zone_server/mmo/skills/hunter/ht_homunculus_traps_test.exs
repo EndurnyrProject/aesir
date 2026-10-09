@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
 
     expect(SkillAttack, :execute_misc_attack, fn @caster, {:homunculus, @gid}, opts ->
       assert opts[:skill_id] == 116
-      :ok
+      {:ok, %{hit?: true}}
     end)
 
     expect(StatusInterpreter, :apply_status, fn :homunculus, @gid, :sc_stun, opts ->

@@ -132,8 +132,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     state =
       struct(MobState, %{
         instance_id: combatant.unit_id,
-        hp: 100,
-        max_hp: 100,
+        hp: 1_000,
+        max_hp: 1_000,
         is_dead: false,
         x: x,
         y: y,
@@ -921,7 +921,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       refute_received {:packet, %DamageDealt{}}
     end
 
-    test "a fully absorbed Double Attack retains divisions with zero components",
+    test "a fully absorbed Double Attack shows one division and keeps its multi-hit type",
          %{player_state: player_state, stats: stats} do
       test_pid = self()
 
@@ -938,8 +938,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_received {:packet, %DamageDealt{damage: 0, damage2: 0, div: 2, type: 4}}
-      refute_received {:packet, %DamageDealt{div: 1}}
+      assert_received {:packet, %DamageDealt{damage: 0, damage2: 0, div: 1, type: 4}}
+      refute_received {:packet, %DamageDealt{div: 2}}
     end
 
     test "applies damage once and packet reflects a single hit when no proc",

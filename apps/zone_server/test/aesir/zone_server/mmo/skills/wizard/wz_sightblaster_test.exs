@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     register(:mob, 2001, target)
 
     expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts ->
-      {:ok, {:mob, 2001}}
+      {:ok, %{hit?: true, damage: 100}}
     end)
 
     expect(Combat, :knockback, fn :mob, 2001, 50, 50, 3 -> {:ok, {54, 50}} end)
@@ -123,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     :ok = SpatialIndex.update_unit_position(:mob, 2001, 51, 50, "prontera")
 
     expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts ->
-      {:ok, {:mob, 2001}}
+      {:ok, %{hit?: true, damage: 100}}
     end)
 
     expect(Combat, :knockback, fn :mob, 2001, 50, 50, 3 -> {:ok, {54, 50}} end)
@@ -147,8 +147,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
       )
 
     expect(Combat, :execute_magic_attack, fn ^caster, 2001, opts ->
-      assert opts == [skill_id: 1006, skill_level: 1, skill_ratio: 600, element: :fire]
-      {:ok, {:mob, 2001}}
+      assert opts == [
+               skill_id: 1006,
+               skill_level: 1,
+               skill_ratio: 600,
+               element: :fire,
+               report_hit: true
+             ]
+
+      {:ok, %{hit?: true, damage: 100}}
     end)
 
     expect(Combat, :knockback, fn :mob, 2001, 50, 50, 3 ->
@@ -159,7 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
-  test "a reflected contact consumes the status without knocking the reflector back" do
+  test "a reflected contact keeps the status armed without knocking the reflector back" do
     caster = living_player(1001, 50, 50)
     target = %{instance_id: 2001, x: 55, y: 50, map_name: "prontera", movement_state: :moving}
     register(:player, 1001, caster)
@@ -171,14 +178,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
         val1: 1
       )
 
-    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> {:ok, {:player, 1001}} end)
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts ->
+      {:ok, %{hit?: false, damage: 0}}
+    end)
+
     reject(&Combat.knockback/5)
 
     assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
-    refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
-  test "a missed contact on a magic-immune player consumes the status without knockback" do
+  test "a missed contact on a magic-immune player keeps the status armed without knockback" do
     caster = living_player(1001, 50, 50)
     immune = Map.put(living_player(2001, 55, 50), :magic_reduction, 100)
     register(:player, 1001, caster)
@@ -190,11 +200,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
         val1: 1
       )
 
-    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> {:ok, {:player, 2001}} end)
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts ->
+      {:ok, %{hit?: false, damage: 0}}
+    end)
+
     reject(&Combat.knockback/5)
 
     assert :ok = Movement.set_position(:player, 2001, %{immune | x: 51}, "prontera")
-    refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
   test "a partially magic-resistant player that takes the hit is still knocked back" do
@@ -209,7 +222,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
         val1: 1
       )
 
-    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> {:ok, {:player, 2001}} end)
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts ->
+      {:ok, %{hit?: true, damage: 1}}
+    end)
+
     expect(Combat, :knockback, fn :player, 2001, 50, 50, 3 -> {:ok, {58, 50}} end)
 
     assert :ok = Movement.set_position(:player, 2001, %{resistant | x: 51}, "prontera")

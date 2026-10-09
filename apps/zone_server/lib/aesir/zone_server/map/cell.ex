@@ -215,6 +215,43 @@ defmodule Aesir.ZoneServer.Map.Cell do
     end
   end
 
+  @doc """
+  Returns a random traversable cell within `range` cells of `center` on each
+  axis, other than `center` itself and at least five cells inside the map
+  edge, trying 50 times; `center` when none was found.
+  """
+  @spec random_traversable_near(String.t(), {integer(), integer()}, pos_integer()) ::
+          {integer(), integer()}
+  def random_traversable_near(map_name, center, range) do
+    map_name = canonical_map_name(map_name)
+
+    case MapCache.get(map_name) do
+      {:ok, %MapData{xs: xs, ys: ys}} -> random_near(map_name, center, range, {xs, ys}, 50)
+      _missing -> center
+    end
+  end
+
+  defp random_near(_map_name, center, _range, _size, 0), do: center
+
+  defp random_near(map_name, {cx, cy} = center, range, {xs, ys} = size, tries) do
+    x = cx - range - 1 + :rand.uniform(2 * range + 1)
+    y = cy - range - 1 + :rand.uniform(2 * range + 1)
+
+    cond do
+      {x, y} == center ->
+        random_near(map_name, center, range, size, tries - 1)
+
+      x < 5 or x > xs - 5 or y < 5 or y > ys - 5 ->
+        random_near(map_name, center, range, size, tries - 1)
+
+      traversable?(map_name, x, y) ->
+        {x, y}
+
+      true ->
+        random_near(map_name, center, range, size, tries - 1)
+    end
+  end
+
   @doc "Returns whether an active terrain contribution blocks movement at a cell."
   @spec dynamically_blocked?(String.t(), integer(), integer()) :: boolean()
   def dynamically_blocked?(map_name, x, y) do

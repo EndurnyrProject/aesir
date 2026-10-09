@@ -129,29 +129,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
 
   @spec hit(Group.t(), struct(), struct(), {atom(), integer()}) :: :ok
   defp hit(group, definition, caster, {unit_type, target_id}) do
-    idx = min(group.level, definition.max_level) - 1
-
-    case Combat.apply_skill_unit_damage(
-           caster,
-           unit_type,
-           target_id,
-           group.skill_id,
-           group.level,
-           definition.element,
-           skill_ratio(),
-           hit_divisions: hits_per_meteor(group.level)
-         ) do
-      :ok ->
-        StatusInterpreter.apply_status(unit_type, target_id, :sc_stun,
-          val1: group.level,
-          duration: Enum.at(definition.unit_duration, idx),
-          success_rate: 3 * group.level
-        )
-
-      _ ->
-        :ok
-    end
+    _ =
+      Combat.apply_skill_unit_damage(
+        caster,
+        unit_type,
+        target_id,
+        group.skill_id,
+        group.level,
+        definition.element,
+        skill_ratio(),
+        hit_divisions: hits_per_meteor(group.level),
+        additional_effect: fn _source, ref -> stun(group, definition, ref) end
+      )
 
     :ok
+  end
+
+  # The Stun roll is each impact's additional effect.
+  defp stun(group, definition, {unit_type, target_id}) do
+    idx = min(group.level, definition.max_level) - 1
+
+    StatusInterpreter.apply_status(unit_type, target_id, :sc_stun,
+      val1: group.level,
+      duration: Enum.at(definition.unit_duration, idx),
+      success_rate: 3 * group.level
+    )
   end
 end

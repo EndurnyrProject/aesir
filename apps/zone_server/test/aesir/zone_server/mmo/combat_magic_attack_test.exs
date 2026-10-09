@@ -514,6 +514,96 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       refute_received {:source_session, {:unit, {:apply_damage, _damage, _attacker, _metadata}}}
     end
 
+    test "the on-hit effect follows a damaging hit, never a magic-immune miss" do
+      test_pid = self()
+      caster = build_player(@caster_id, 150, %{}, %{})
+      target = put_in(build_player(@target_id, 151, %{}, %{}).stats.current_state.hp, 1_000)
+      immune = build_player(@target_id + 1, 151, %{no_magic_damage: 100}, %{})
+
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(target, self())
+      :ok = UnitRegistry.register_player(immune, self())
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, _damage, _source, _metadata -> :ok end)
+
+      opts = [
+        skill_id: 15,
+        skill_level: 1,
+        element: :water,
+        skip_range: true,
+        additional_effect: fn source, ref -> send(test_pid, {:effect, source.unit_id, ref}) end
+      ]
+
+      MagicAttack.execute_magic_attack(caster, {:player, @target_id + 1}, opts)
+      refute_received {:effect, _source, _ref}
+
+      MagicAttack.execute_magic_attack(caster, {:player, @target_id}, opts)
+      assert_received {:effect, @caster_id, {:player, @target_id}}
+    end
+
+    test "the hit report carries the damage dealt, 0 for a magic-immune miss or a reflection" do
+      caster = put_in(build_player(@caster_id, 150, %{}, %{}).stats.current_state.hp, 1_000)
+      target = put_in(build_player(@target_id, 151, %{}, %{}).stats.current_state.hp, 1_000)
+      immune = build_player(@target_id + 1, 151, %{no_magic_damage: 100}, %{})
+      reflector = build_player(@target_id + 2, 151, %{magic_damage_return: 100}, %{})
+
+      for unit <- [caster, target, immune, reflector],
+          do: :ok = UnitRegistry.register_player(unit, self())
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, _damage, _source, _metadata -> :ok end)
+      opts = [skill_id: 15, skill_level: 1, element: :water, skip_range: true, report_hit: true]
+
+      assert {:ok, %{hit?: true, damage: 100}} =
+               MagicAttack.execute_magic_attack(caster, {:player, @target_id}, opts)
+
+      for id <- [@target_id + 1, @target_id + 2] do
+        assert {:ok, %{hit?: false, damage: 0}} =
+                 MagicAttack.execute_magic_attack(caster, {:player, id}, opts)
+      end
+    end
+
+    test "a reflected bolt runs its on-hit effect on the caster, sourced from the reflector" do
+      test_pid = self()
+      caster = put_in(build_player(@caster_id, 150, %{}, %{}).stats.current_state.hp, 1_000)
+      target = build_player(@target_id, 151, %{magic_damage_return: 100}, %{})
+
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(target, self())
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, _damage, _source, _metadata -> :ok end)
+
+      MagicAttack.execute_magic_attack(caster, {:player, @target_id},
+        skill_id: 15,
+        skill_level: 1,
+        element: :water,
+        skip_range: true,
+        additional_effect: fn source, ref -> send(test_pid, {:effect, source.unit_id, ref}) end
+      )
+
+      assert_received {:effect, @target_id, {:player, @caster_id}}
+    end
+
     test "dispatches matching attacker and defender procs once for a multi-division magic hit" do
       flag = BattleFlags.build(:magic, :long, true)
       attacker_key = {10, 0}

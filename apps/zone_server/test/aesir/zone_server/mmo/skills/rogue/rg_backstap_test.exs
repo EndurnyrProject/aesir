@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
@@ -21,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
 
   setup do
     Mimic.copy(Cell)
+    stub(Cell, :traversable?, fn "backstab", _x, _y -> true end)
     :ok
   end
 
@@ -42,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
 
     %PlayerState{
       character_id: @caster_id,
+      map_name: "backstab",
       x: x,
       y: y,
       stats: %Stats{
@@ -82,10 +85,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
   @tag game_mode: :renewal
   test "a rear attack rolls its hit and applies its stun chance on hit" do
     caster = player(@katar_id, 10, 11)
+    attacker = %{caster | y: 9}
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
 
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+    expect(Combat, :execute_skill_attack, fn ^attacker, @target_id, opts ->
       assert opts[:skill_id] == 212
       assert opts[:skill_level] == 3
       assert opts[:skill_ratio] == 420
@@ -102,7 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
       :ok
     end)
 
-    assert {:ok, ^caster} = RgBackstap.cast(caster, {:unit, @target_id}, 3, definition())
+    assert {:ok, updated} = RgBackstap.cast(caster, {:unit, @target_id}, 3, definition())
+    assert %ForcedMovement{x: 10, y: 9} = updated.pending_forced_movement
   end
 
   @tag game_mode: :pre_renewal
@@ -119,12 +124,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
   end
 
   @tag game_mode: :renewal
-  test "mob casters use the same rear attack path" do
+  test "mob casters slip by relocating themselves and attack from the slipped cell" do
     caster = mob(@caster_id, 10, 11, 0)
+    attacker = %{caster | y: 9}
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+    expect(Knockback, :relocate, fn :mob, @caster_id, 10, 9 -> {:ok, {10, 9}} end)
 
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+    expect(Combat, :execute_skill_attack, fn ^attacker, @target_id, opts ->
       assert opts[:skill_ratio] == 700
       {:ok, %{hit?: true, damage: 0, target_survives?: true}}
     end)
@@ -141,12 +148,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
 
   @tag game_mode: :renewal
   test "a front attack is allowed and the caster slips behind the target" do
-    caster = %{player(@katar_id, 10, 9) | map_name: "backstab"}
+    caster = player(@katar_id, 10, 9)
+    attacker = %{caster | y: 11}
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
-    stub(Cell, :traversable?, fn "backstab", 10, 11 -> true end)
 
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+    expect(Combat, :execute_skill_attack, fn ^attacker, @target_id, opts ->
       assert opts[:skill_ratio] == 340
       assert opts[:hit_divisions] == 1
       {:ok, %{hit?: true, damage: 0, target_survives?: true}}
@@ -159,18 +166,82 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
   end
 
   @tag game_mode: :renewal
-  test "a dagger repeats the one calculated damage over two hits without touching the ratio" do
-    caster = player(@dagger_id, 10, 11)
+  test "the caster slips behind the target before the attack, even one that misses" do
+    caster = player(@katar_id, 10, 9)
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
 
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+    stub(Combat, :execute_skill_attack, fn _caster, @target_id, _opts -> {:ok, %{hit?: false}} end)
+
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, updated} = RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
+    assert %ForcedMovement{map_name: "backstab", x: 10, y: 11} = updated.pending_forced_movement
+  end
+
+  @tag game_mode: :renewal
+  test "the slip cell follows the 8-way direction from the caster to the target" do
+    target = mob(@target_id, 10, 10, 0)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+
+    stub(Combat, :execute_skill_attack, fn _caster, @target_id, _opts -> {:ok, %{hit?: false}} end)
+
+    # {caster cell, slip cell}: an axis three times the other is straight.
+    # Toward the east an exact 3:1 is straight horizontally; toward the west it
+    # is straight only vertically. A caster on the target's cell steps east.
+    for {{x, y}, slip} <- [
+          {{10, 10}, {11, 10}},
+          {{5, 9}, {11, 10}},
+          {{7, 9}, {11, 10}},
+          {{8, 9}, {11, 11}},
+          {{13, 11}, {9, 9}},
+          {{11, 13}, {10, 9}}
+        ] do
+      assert {:ok, updated} =
+               RgBackstap.cast(player(@katar_id, x, y), {:unit, @target_id}, 1, definition())
+
+      assert {updated.pending_forced_movement.x, updated.pending_forced_movement.y} == slip
+    end
+  end
+
+  @tag game_mode: :renewal
+  test "a wall on the straight line to the slip cell fails the skill" do
+    caster = player(@katar_id, 7, 10)
+    target = mob(@target_id, 10, 10, 0)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+    stub(Cell, :traversable?, fn "backstab", x, y -> {x, y} != {8, 10} end)
+    reject(&Combat.execute_skill_attack/3)
+
+    assert {:error, :invalid_destination} =
+             RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  @tag game_mode: :renewal
+  test "a slip that cannot land fails the skill without attacking" do
+    caster = player(@katar_id, 10, 9)
+    target = mob(@target_id, 10, 10, 0)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+    stub(Cell, :traversable?, fn "backstab", x, y -> {x, y} != {10, 11} end)
+    reject(&Combat.execute_skill_attack/3)
+
+    assert {:error, :invalid_destination} =
+             RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  @tag game_mode: :renewal
+  test "a dagger repeats the one calculated damage over two hits without touching the ratio" do
+    caster = player(@dagger_id, 10, 11)
+    attacker = %{caster | y: 9}
+    target = mob(@target_id, 10, 10, 0)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+
+    expect(Combat, :execute_skill_attack, fn ^attacker, @target_id, opts ->
       assert opts[:hit_divisions] == 2
       assert opts[:skill_ratio] == 340
       {:ok, %{hit?: false}}
     end)
 
-    assert {:ok, ^caster} = RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
+    assert {:ok, _moved} = RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
   @tag game_mode: :pre_renewal

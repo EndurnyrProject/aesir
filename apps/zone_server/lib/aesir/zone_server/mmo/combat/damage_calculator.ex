@@ -448,7 +448,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          total_atk = modified_atk + scalar_banes(attacker, defender, classic_player?),
          total_atk = apply_res_reduction(total_atk, defender),
          {:ok, defended} <-
-           scalar_defense(
+           scalar_defense_stage(
              total_atk,
              defender,
              attacker,
@@ -465,7 +465,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
       taken =
         defended
-        |> scalar_post_defense(hit, classic_player?)
+        |> scalar_post_defense(hit, classic_player?, total_atk)
         |> scalar_element(hit)
         |> classic_player_cards(hit, attack_path, classic_player?)
         |> scalar_critical(attacker, critical?)
@@ -487,6 +487,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp scalar_banes(attacker, defender, false),
     do: demon_bane_bonus(attacker, defender) + beast_bane_bonus(attacker, defender)
+
+  # DEF and the post-defense stage run only for an attack with damage before
+  # them; one with nothing stays at 0.
+  defp scalar_defense_stage(0, _defender, _attacker, _attack_path, _mode), do: {:ok, 0}
+
+  defp scalar_defense_stage(total_atk, defender, attacker, attack_path, mode),
+    do: scalar_defense(total_atk, defender, attacker, attack_path, mode)
+
+  defp scalar_post_defense(damage, _hit, _classic_player?, 0), do: damage
+
+  defp scalar_post_defense(damage, hit, classic_player?, _total_atk),
+    do: scalar_post_defense(damage, hit, classic_player?)
 
   # A classic player's post-defense stage: the refine bonus, the minimum of 1, the
   # weapon masteries and the post-defense status ATK, each where the skill takes

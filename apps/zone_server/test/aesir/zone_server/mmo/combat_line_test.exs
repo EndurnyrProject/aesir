@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -192,6 +193,36 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
 
     assert Enum.sort(hits) == [2001, 3000]
     refute 2002 in hits
+  end
+
+  test "lists a target whose damage Devotion forwarded, and none that took nothing" do
+    caster = build_caster()
+    Mimic.copy(DamageApplication)
+
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 3 ->
+      [{:mob, 3000}, {:mob, 2001}]
+    end)
+
+    stub_mobs([{3000, 153, 150}, {2001, 151, 150}])
+    stub_damage_pipeline()
+
+    stub(DamageApplication, :prepare_unit_damage, fn
+      :mob, 3000, 50, hit_info, _attacker ->
+        {0, Map.merge(hit_info, %{devotion_rerouted?: true, devotion_damage: 50})}
+
+      :mob, 2001, 50, hit_info, _attacker ->
+        {0, hit_info}
+    end)
+
+    stub(MobSession, :apply_damage, fn _pid, 0, @caster_id, _metadata -> :ok end)
+
+    assert [3000] =
+             Combat.execute_line_attack(caster, 3000,
+               skill_id: 382,
+               skill_level: 1,
+               skill_ratio: 150,
+               skip_crit: true
+             )
   end
 
   test "skips a dead mob standing on the line" do

@@ -37,6 +37,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  # A missed or reflected spell's report: the reference skill_attack returns 0.
+  @no_hit %{hit?: false, damage: 0}
+
   @bolts %{
     14 => {:water, 100},
     19 => {:fire, 100},
@@ -146,6 +149,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         :hit ->
           {target_type, target_pid, target_id, target_state, target}
           |> deliver_magic_hits([damage], hit_info, attacker, {skill_id, skill_level}, opts)
+          |> elem(0)
           |> magic_delivery_result({target_type, target_id})
       end
     else
@@ -261,13 +265,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   even when the field was placed before the status started.
 
   `:additional_effect` (see `t:additional_effect/0`) runs the skill's on-hit
-  effect, after the damage and before any knockback, only for a hit that
-  connected: a settled amount of at least 1 (or one forwarded by Devotion),
-  not cancelled by Magic Rod, on a target that survives it.
+  effect, after the damage and before any knockback, only for a hit whose
+  additional effects apply (`DamageShared.hit_class/3` is `:hit`: a settled
+  total of at least 1 before Devotion forwarding, not blocked, not cancelled by
+  Magic Rod, not a delayed Devotion-forwarded hit) on a target that survives it.
 
   `:report_hit` (default `false`) returns `{:ok, %{hit?: boolean()}}` instead of
-  `:ok`, where `hit?` says the hit dealt damage (a settled amount above 0, or
-  one forwarded by Devotion).
+  `:ok`, where `hit?` is that same `:hit` class.
   """
   @spec apply_skill_unit_damage(
           struct(),
@@ -453,7 +457,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         skill_id,
         skill_level,
         damage,
-        div: packet_divisions,
+        div: DamageShared.display_divisions(caster, hit_info, damage, packet_divisions),
         dst_delay: dst_delay
       )
 
@@ -492,7 +496,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
 
     if Keyword.get(opts, :report_hit, false),
-      do: {:ok, %{hit?: damage > 0 or hit_info[:devotion_rerouted?] == true}},
+      do: {:ok, %{hit?: connected_hit?(hit_info, damage)}},
       else: :ok
   end
 
@@ -552,6 +556,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       validated by the interpreter at cast start and castend, and the weapon-range
       gate would fizzle any cast beyond melee reach. Map, life, and enemy-relation
       checks still run (default `false`)
+    - `:additional_effect` - the skill's on-hit effect (`t:additional_effect/0`),
+      run as `apply_skill_unit_damage/8` documents; a reflected hit runs it on
+      the caster, sourced from the reflector
+    - `:report_hit` - return `{:ok, %{hit?: boolean(), damage: integer()}}` in
+      place of the hit ref: `damage` is the settled total before Devotion
+      forwarding (0 for a miss or a reflected spell) and `hit?` whether the
+      hit's additional effects apply (default `false`)
 
   ## Returns
     - `{:ok, hit_ref}` if the skill connected
@@ -561,7 +572,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `{:error, reason}` if the target was invalid, friendly, dead, or out of range
   """
   @spec execute_magic_attack(struct(), integer() | Ref.t(), keyword()) ::
-          {:ok, Ref.t() | :suppressed} | {:error, atom()}
+          {:ok, Ref.t() | :suppressed | %{hit?: boolean(), damage: integer()}}
+          | {:error, atom()}
   def execute_magic_attack(caster_state, target_ref, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -604,7 +616,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       case MagicDefense.resolve(target, hit_info) do
         :miss ->
           broadcast_magic_miss(attacker, target, skill_id, skill_level)
-          {:ok, {target_type, target_id}}
+          magic_attack_result({target_type, target_id}, @no_hit, opts)
 
         :reflect ->
           attacker
@@ -615,14 +627,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
             {skill_id, skill_level},
             packet_divisions
           )
+          |> Enum.map(&run_reflected_bolt_effect(&1, opts, target, caster_state))
           |> dispatch_reflected_procs()
 
-          {:ok, {attacker.unit_type, attacker.unit_id}}
+          magic_attack_result({attacker.unit_type, attacker.unit_id}, @no_hit, opts)
 
         :hit ->
-          {target_type, target_pid, target_id, target_state, target}
-          |> deliver_magic_hits(damages, hit_info, attacker, {skill_id, skill_level}, opts)
+          {delivery, report} =
+            deliver_magic_hits(
+              {target_type, target_pid, target_id, target_state, target},
+              damages,
+              hit_info,
+              attacker,
+              {skill_id, skill_level},
+              opts
+            )
+
+          delivery
           |> magic_delivery_result({target_type, target_id})
+          |> delivered_attack_result(report, opts)
       end
     else
       :suppressed -> {:ok, :suppressed}
@@ -893,11 +916,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     reflected_hit
   end
 
-  defp additional_effect?(_state, _damage, %{magic_rod_miss?: true}, _coma?), do: false
-  defp additional_effect?(_state, _damage, %{devotion_rerouted?: true}, _coma?), do: true
+  defp additional_effect?(target_state, damage, hit_info, coma?) do
+    connected_hit?(hit_info, damage) and
+      (coma? or known_target_survives?(target_state, damage))
+  end
 
-  defp additional_effect?(target_state, damage, _hit_info, coma?),
-    do: damage > 0 and (coma? or known_target_survives?(target_state, damage))
+  # The reference's ATK_DEF: `DamageShared.hit_class/3` of the prepared hit.
+  defp connected_hit?(hit_info, damage) do
+    immediate? = get_in(hit_info, [:proc, :immediate?]) || false
+    DamageShared.hit_class(hit_info, damage, immediate?) == :hit
+  end
 
   defp known_target_survives?(target_state, damage) do
     case target_hp(target_state) do
@@ -1148,7 +1176,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         skill_id,
         skill_level,
         damage,
-        div: packet_divisions,
+        div: DamageShared.display_divisions(attacker, hit_info, damage, packet_divisions),
         missed: hit_info[:magic_rod_miss?] == true
       )
 
@@ -1211,6 +1239,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp magic_delivery_result(:ok, target_ref), do: {:ok, target_ref}
   defp magic_delivery_result(delivery, _target_ref), do: delivery
 
+  defp delivered_attack_result({:ok, ref}, report, opts),
+    do: magic_attack_result(ref, report, opts)
+
+  defp delivered_attack_result(delivery, _report, _opts), do: delivery
+
+  defp magic_attack_result(ref, report, opts),
+    do: if(Keyword.get(opts, :report_hit, false), do: {:ok, report}, else: {:ok, ref})
+
   defp successful_delivery(:ok, _delivery), do: :ok
   defp successful_delivery(_delivery, :ok), do: :ok
   defp successful_delivery({:local_effects, _effects} = delivery, _current), do: delivery
@@ -1267,6 +1303,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       {damage,
        queue_reflected_damage(attacker, damage, prepared_hit_info, source, {reflector, proc_opts})}
     end)
+  end
+
+  # A reflected bolt's on-hit effect lands on the caster, sourced from the reflector.
+  defp run_reflected_bolt_effect({settled, settled_info} = reflected_hit, opts, reflector, caster) do
+    caster_ref = {caster.__struct__.get_unit_type(caster), caster.__struct__.get_unit_id(caster)}
+
+    run_additional_effect(
+      Keyword.get(opts, :additional_effect),
+      reflector,
+      caster_ref,
+      caster,
+      settled,
+      settled_info,
+      false
+    )
+
+    reflected_hit
   end
 
   # The reflector's side of each reflected hit, after the hit's effects.
@@ -1370,7 +1423,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         skill_id,
         skill_level,
         damage,
-        div: Keyword.get(opts, :packet_divisions, 1),
+        div:
+          DamageShared.display_divisions(
+            attacker,
+            prepared_hit_info,
+            damage,
+            Keyword.get(opts, :packet_divisions, 1)
+          ),
         missed: prepared_hit_info[:magic_rod_miss?] == true
       )
 
@@ -1386,6 +1445,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         packet
       )
 
+    if delivery == :ok or match?({:local_effects, _effects}, delivery) do
+      run_additional_effect(
+        Keyword.get(opts, :additional_effect),
+        attacker,
+        {target_type, target_id},
+        target_state,
+        damage,
+        prepared_hit_info,
+        prepared_hit_info[:coma?] == true
+      )
+    end
+
     final_damages = [damage]
 
     maybe_apply_magic_knockback(
@@ -1399,7 +1470,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     )
 
     EquipProcDispatch.dispatch_delivered(delivery, prepared_hit_info, damage)
-    delivery
+
+    {delivery,
+     %{
+       hit?: connected_hit?(prepared_hit_info, damage),
+       damage: DamageShared.settled_total(prepared_hit_info, damage)
+     }}
   end
 
   defp apply_vanish_hits(attacker, target, target_pid, [damage]) when damage > 1,

@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
   setup :verify_on_exit!
 
-  @landed %{damage: 100, is_critical: false}
+  @landed %{hit_class: :hit, attack_effects?: true, counter_effects?: true}
 
   defp always_hit(_effective), do: true
   defp never_hit(_effective), do: false
@@ -171,16 +171,64 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   end
 
   describe "after_hit/4 gates" do
-    test "a zero-damage hit rolls nothing" do
+    test "a miss rolls nothing" do
       reject(&StatusInterpreter.apply_status/4)
 
       attacker =
         CombatTestHelper.create_player_combatant()
         |> with_mods(%{{:add_eff, :sc_stun} => 10_000})
 
-      defender = CombatTestHelper.create_mob_combatant()
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, %{damage: 0}, roll: &always_hit/1)
+      miss = %{hit_class: :miss, attack_effects?: true, counter_effects?: false}
+      assert :ok = OnHitEffects.after_hit(attacker, defender, miss, roll: &always_hit/1)
+    end
+
+    test "a blocked hit rolls the attacker's bAddEff but no when-hit or race proc" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{
+          {:add_eff, :sc_stun} => 10_000,
+          {:def_set_race_rate, :player_human} => 10_000,
+          {:def_set_race_duration, :player_human} => 5_000
+        })
+
+      defender =
+        %{CombatTestHelper.create_player_combatant(unit_id: 2001) | race: :player_human}
+        |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
+
+      block = %{hit_class: :block, attack_effects?: true, counter_effects?: false}
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, block,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      assert_received {:applied, :player, 2001, :sc_stun, _params}
+      refute_received {:applied, _type, _id, _sc, _params}
+    end
+
+    test "a target the hit killed takes no bAddEff, while the when-hit stage still rolls" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff, :sc_stun} => 10_000})
+
+      defender =
+        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
+
+      killed = %{hit_class: :hit, attack_effects?: false, counter_effects?: true}
+      assert :ok = OnHitEffects.after_hit(attacker, defender, killed, roll: &always_hit/1)
+
+      assert_received {:applied, :player, 1001, :sc_freeze, _params}
+      refute_received {:applied, :mob, 2001, :sc_stun, _params}
     end
 
     test "a skill-unit defender is skipped" do

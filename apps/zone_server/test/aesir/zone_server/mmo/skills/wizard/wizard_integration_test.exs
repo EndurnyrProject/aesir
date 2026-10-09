@@ -368,9 +368,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
                                                skill_id: 1006,
                                                skill_level: 1,
                                                skill_ratio: 600,
-                                               element: :fire
+                                               element: :fire,
+                                               report_hit: true
                                              ] ->
-      {:ok, {:mob, @target_id}}
+      {:ok, %{hit?: true, damage: 100}}
     end)
 
     expect(Combat, :knockback, fn :mob, @target_id, 120, 120, 3 -> {:ok, {124, 120}} end)

@@ -246,7 +246,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
     stub(StatusInterpreter, :on_dealt_damage, fn :homunculus, ^homunculus_id, _info -> [] end)
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
 
-    stub(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+    stub(DamageCalculator, :calculate_damage, fn ^attacker, ^target ->
       {:ok, %{damage: 40, is_critical: false}}
     end)
 

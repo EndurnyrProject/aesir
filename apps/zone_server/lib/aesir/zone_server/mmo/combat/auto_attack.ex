@@ -725,7 +725,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     coma? = equipment_coma?(attacker, target, target_type, damage_result.damage)
     proc = EquipProcDispatch.spec(attacker, target, target_state, attack_flag)
 
-    with :ok <-
+    with {:ok, stages} <-
            handle_player_attack_hit(
              damage_result,
              attacker,
@@ -736,8 +736,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
              1,
              %{coma?: coma?, proc: proc}
            ) do
-      dispatch_normal_hit_passives(player_state, target_type, target_id, target)
-      roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
+      if connected?(stages) do
+        dispatch_normal_hit_passives(player_state, target_type, target_id, target)
+        roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
+      end
 
       dispatch_dealt_damage(
         attacker,
@@ -747,9 +749,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         attacker.weapon.element
       )
 
-      OnHitEffects.after_hit(attacker, target, damage_result,
-        attack_flag: normal_attack_flag(attacker)
-      )
+      OnHitEffects.after_hit(attacker, target, stages, attack_flag: normal_attack_flag(attacker))
 
       drain_hp(attacker, damage_result.damage)
       drain_sp(attacker, target, damage_result.damage)
@@ -855,7 +855,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       DamageApplication.broadcast_nearby(
         target,
         PacketFactory.build_weapon_swing_packet(attacker, target, settled,
-          is_sp_damage: match?({:sp, _amount}, override)
+          is_sp_damage: match?({:sp, _amount}, override),
+          div: swing_divisions(attacker, settled, override)
         )
       )
 
@@ -866,20 +867,50 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
         _other ->
           damage = settled_damage(settled)
-          damage_result = %{damage: damage, is_critical: settled.outcome == :critical}
-          updated_player_state = maybe_snatch(player_state, target_type, target_id)
+          stages = settled.stages || EquipProcDispatch.event(attack_flag, 0, %{})
 
-          dispatch_normal_hit_passives(player_state, target_type, target_id, target)
-          roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
+          updated_player_state =
+            connected_swing_effects(
+              stages,
+              player_state,
+              target_state,
+              {target_type, target_id, target_pid, target}
+            )
+
           dispatch_dealt_damage(attacker, target_type, target_id, damage, settled.primary_element)
 
-          OnHitEffects.after_hit(attacker, target, damage_result, attack_flag: attack_flag)
+          OnHitEffects.after_hit(attacker, target, stages, attack_flag: attack_flag)
 
           drain_hp(attacker, damage)
           drain_sp(attacker, target, damage)
           splash_attack(attacker, target)
           {:snatcher, updated_player_state}
       end
+    end
+  end
+
+  defp swing_divisions(_attacker, settled, {:sp, _amount}), do: settled.display_divisions
+
+  defp swing_divisions(attacker, %HandedAttack{stages: stages} = settled, _override) do
+    total = if stages, do: stages.damage, else: 0
+    DamageShared.display_divisions(attacker, %{}, total, settled.display_divisions)
+  end
+
+  # A normal attack's own additional effects (Snatcher, the automatic Blitz
+  # Beat, equipment breaks) need a hit that connected for damage on a target
+  # that survives it.
+  defp connected?(stages), do: stages.attack_effects? and stages.hit_class == :hit
+
+  defp connected_swing_effects(stages, player_state, target_state, target_context) do
+    {target_type, target_id, target_pid, target} = target_context
+
+    if connected?(stages) do
+      snatched = maybe_snatch(player_state, target_type, target_id)
+      dispatch_normal_hit_passives(player_state, target_type, target_id, target)
+      roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
+      snatched
+    else
+      player_state
     end
   end
 
@@ -1155,6 +1186,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
         broadcast_basic_attack(attacker_combatant, target_combatant, damage_result, prepared_hits)
         dispatch_swing_procs(prepared_hits)
+        {:ok, swing_stages(prepared_hits)}
 
       :player ->
         hit_info = %{
@@ -1187,15 +1219,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           )
         )
 
-        DamageApplication.apply_unit_damage(
-          :player,
+        :player
+        |> DamageApplication.apply_unit_damage(
           target_pid,
           target_id,
           final_damage,
           prepared_hit_info,
           {:player, attacker_combatant.unit_id}
         )
-        |> tap(fn _delivery -> dispatch_swing_procs([{final_damage, prepared_hit_info}]) end)
+        |> delivered_swing([{final_damage, prepared_hit_info}])
 
       :homunculus ->
         hit_info = %{
@@ -1228,15 +1260,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           )
         )
 
-        DamageApplication.apply_unit_damage(
-          :homunculus,
+        :homunculus
+        |> DamageApplication.apply_unit_damage(
           target_pid,
           target_id,
           final_damage,
           prepared_hit_info,
           {:player, attacker_combatant.unit_id}
         )
-        |> tap(fn _delivery -> dispatch_swing_procs([{final_damage, prepared_hit_info}]) end)
+        |> delivered_swing([{final_damage, prepared_hit_info}])
 
       :skill_unit ->
         apply_skill_unit_target_damage(
@@ -1251,6 +1283,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         )
     end
   end
+
+  defp delivered_swing(delivery, prepared_hits) do
+    dispatch_swing_procs(prepared_hits)
+    with :ok <- delivery, do: {:ok, swing_stages(prepared_hits)}
+  end
+
+  # The stages of a swing's prepared hits: one logical attack over their total.
+  defp swing_stages([{_damage, hit_info} | _rest] = prepared_hits),
+    do:
+      EquipProcDispatch.hit_event(hit_info, prepared_hits |> Enum.map(&elem(&1, 0)) |> Enum.sum())
 
   # A normal swing resolves in its attacker's own session, so the attacker's
   # procs sent here queue behind the rest of the swing's effects. A multi-hit
@@ -1310,6 +1352,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         EquipProcDispatch.event(proc.attack_flag, damage, %{}, target_survives?: true)
 
       EquipProcDispatch.dispatch(attacker, target, event)
+      {:ok, event}
     end
   end
 
@@ -1382,7 +1425,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       mob_damage_source(target_type, attacker_combatant.unit_id)
     )
 
-    OnHitEffects.after_hit(attacker_combatant, target_combatant, damage_result,
+    OnHitEffects.after_hit(
+      attacker_combatant,
+      target_combatant,
+      EquipProcDispatch.hit_event(hit_info, damage),
       attack_flag: normal_attack_flag(attacker_combatant)
     )
   end

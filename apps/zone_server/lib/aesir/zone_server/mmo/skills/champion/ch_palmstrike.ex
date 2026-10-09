@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChPalmstrike do
 
   defp strike(caster, type, id, level) do
     case Combat.execute_skill_attack(caster, id, attack_options(caster, level)) do
-      {:ok, %{hit?: false}} -> push(type, id, caster)
+      {:ok, %{connected?: false}} -> push(type, id, caster)
       _landed_or_refused -> :ok
     end
   end

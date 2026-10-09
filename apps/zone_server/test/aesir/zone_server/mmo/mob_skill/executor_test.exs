@@ -478,6 +478,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       expect(Combat, :execute_magic_attack, fn ^caster, {:homunculus, ^gid}, opts ->
         assert opts[:skill_id] == 15
         assert opts[:skill_level] == 40
+
+        opts[:additional_effect].(
+          %{unit_type: :mob, unit_id: caster.instance_id},
+          {:homunculus, gid}
+        )
+
         {:ok, {:homunculus, gid}}
       end)
 

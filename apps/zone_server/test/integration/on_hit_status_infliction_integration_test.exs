@@ -86,7 +86,8 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
       # (1) OnHitEffects subtracts the defender's full tolerance at the proc
       # rate: `effective = 5_000 - 10_000` floors at 0 before any roll, so the
       # real `StatusEffect.Interpreter.apply_status/4` is never even reached.
-      assert :ok = OnHitEffects.after_hit(attacker, defender, %{damage: 100})
+      landed = %{hit_class: :hit, attack_effects?: true, counter_effects?: true}
+      assert :ok = OnHitEffects.after_hit(attacker, defender, landed)
       refute StatusStorage.has_status?(:mob, mob.unit_id, :sc_stun)
 
       # (2) The same tolerance value, reached through a skill-sourced

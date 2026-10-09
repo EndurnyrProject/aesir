@@ -93,30 +93,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion do
 
   @spec hit(Group.t(), struct(), struct(), {atom(), integer()}) :: :ok
   defp hit(group, definition, caster, {unit_type, target_id}) do
-    idx = min(group.level, definition.max_level) - 1
-
-    case Combat.apply_skill_unit_damage(
-           caster,
-           unit_type,
-           target_id,
-           group.skill_id,
-           group.level,
-           definition.element,
-           skill_ratio(group.level, group.caster_type == :player),
-           definition.hit_count
-         ) do
-      :ok ->
-        StatusInterpreter.apply_status(unit_type, target_id, definition.status,
-          val1: group.level,
-          duration: Enum.at(definition.duration, idx),
-          success_rate: blind_chance(group.level)
-        )
-
-      _ ->
-        :ok
-    end
+    _ =
+      Combat.apply_skill_unit_damage(
+        caster,
+        unit_type,
+        target_id,
+        group.skill_id,
+        group.level,
+        definition.element,
+        skill_ratio(group.level, group.caster_type == :player),
+        hit_divisions: definition.hit_count,
+        additional_effect: fn _source, ref -> blind(group, definition, ref) end
+      )
 
     :ok
+  end
+
+  # The Blind roll is the hit's additional effect.
+  defp blind(group, definition, {unit_type, target_id}) do
+    idx = min(group.level, definition.max_level) - 1
+
+    StatusInterpreter.apply_status(unit_type, target_id, definition.status,
+      val1: group.level,
+      duration: Enum.at(definition.duration, idx),
+      success_rate: blind_chance(group.level)
+    )
   end
 
   # Renewal `WZ_VERMILION`: base_skillratio (100) + 300 + 100 * skill_lv.

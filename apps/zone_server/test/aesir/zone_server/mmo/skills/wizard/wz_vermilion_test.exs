@@ -115,8 +115,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       end)
 
       expect(Combat, :apply_skill_unit_damage, 2, fn
-        %{unit_id: @caster_id}, unit_type, target_id, 85, 10, :wind, 1_400, -20
+        %{unit_id: @caster_id} = caster, unit_type, target_id, 85, 10, :wind, 1_400, opts
         when {unit_type, target_id} in [{:mob, 2001}, {:player, 2002}] ->
+          assert opts[:hit_divisions] == -20
+          opts[:additional_effect].(caster, {unit_type, target_id})
           :ok
       end)
 
@@ -135,7 +137,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
       stub(Combat, :splash_targets, fn @map_name, @center, 6, @caster_id -> [{:mob, 2001}] end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _caster, _type, _id, 85, 10, :wind, 1_400, -20 ->
+      stub(Combat, :apply_skill_unit_damage, fn _caster,
+                                                _type,
+                                                _id,
+                                                85,
+                                                10,
+                                                :wind,
+                                                1_400,
+                                                _opts ->
         {:error, :target_not_found}
       end)
 
@@ -153,7 +162,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
       stub(Combat, :splash_targets, fn @map_name, @center, 6, @caster_id -> [{:mob, 2001}] end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _caster, :mob, 2001, 85, 10, :wind, 1_400, -20 ->
+      stub(Combat, :apply_skill_unit_damage, fn _caster,
+                                                :mob,
+                                                2001,
+                                                85,
+                                                10,
+                                                :wind,
+                                                1_400,
+                                                _opts ->
         send(test_pid, :hit)
         :ok
       end)

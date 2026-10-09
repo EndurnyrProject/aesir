@@ -4,9 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
 
   The caster is armed until an enemy is within one cell. It checks immediately
   and on 20ms status ticks, while movement contact uses the same trigger path.
-  The first successful hit deals 600% Fire magic damage, knocks the target
-  back, and consumes the status. A contact the caster's own Gravitation Field
-  suppresses is no hit: the status stays armed.
+  The first hit that deals damage (600% Fire magic) knocks the target back and
+  consumes the status. A contact that deals nothing (a miss, a reflected spell,
+  a hit the caster's own Gravitation Field suppresses) leaves it armed.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_sightblaster,
@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -45,17 +44,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
     if living_contact?(contact) and hostile_contact?(caster_id, contact) do
       with {:ok, {_module, caster, _pid}} <- UnitRegistry.get_unit(:player, caster_id),
            {:ok, {x, y, _map_name}} <- SpatialIndex.get_unit_position(:player, caster_id),
-           {:ok, {_hit_type, _hit_id} = hit_ref} <-
+           {:ok, %{damage: damage}} when damage > 0 <-
              Combat.execute_magic_attack(caster, target_id,
                skill_id: @skill_id,
                skill_level: instance.val1,
                skill_ratio: skill_ratio(),
-               element: :fire
+               element: :fire,
+               report_hit: true
              ) do
-        knockback_contact(hit_ref, contact, x, y)
+        knockback_contact(contact, x, y)
         :remove
       else
-        {:ok, :suppressed} -> {:ok, instance}
+        {:ok, _no_damage} -> {:ok, instance}
         {:error, _reason} -> {:ok, instance}
       end
     else
@@ -63,20 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
     end
   end
 
-  # The hit only displaces the contact when it actually landed there. A reflected
-  # hit returns the caster's ref instead of the contact, and a hit into a player
-  # with complete magic reduction misses while still returning the contact ref,
-  # so that case is read from the gear directly; both leave the contact in place.
-  defp knockback_contact({target_type, target_id} = hit_ref, contact, x, y)
-       when hit_ref == contact do
-    unless MagicDefense.reduce(100, target_type, target_id) == 0 do
-      _ = Combat.knockback(target_type, target_id, x, y, @knockback)
-    end
-
+  defp knockback_contact({target_type, target_id}, x, y) do
+    _ = Combat.knockback(target_type, target_id, x, y, @knockback)
     :ok
   end
-
-  defp knockback_contact(_hit_ref, _contact, _x, _y), do: :ok
 
   # The source gates the trigger on the enemy relationship, so a
   # friendly ground unit (the caster's own or an ally's Ice Wall) is never a

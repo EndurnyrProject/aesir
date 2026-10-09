@@ -111,7 +111,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     }
   end
 
-  @doc "Builds one authoritative packet for a settled ordinary weapon swing."
+  @doc """
+  Builds one authoritative packet for a settled ordinary weapon swing. `:div`
+  overrides the shown division count (the packet type keeps the swing's own);
+  `:is_sp_damage` marks SP damage.
+  """
   @spec build_weapon_swing_packet(Combatant.t(), Combatant.t(), HandedAttack.t()) ::
           DamageDealt.t()
   @spec build_weapon_swing_packet(Combatant.t(), Combatant.t(), HandedAttack.t(), keyword()) ::
@@ -124,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       src_speed: attacker.attack_delay_ms,
       dmg_speed: 500,
       damage: swing.primary.damage,
-      div: swing.display_divisions,
+      div: Keyword.get(opts, :div, swing.display_divisions),
       type: weapon_swing_type(swing),
       damage2: secondary_damage(swing.secondary),
       is_sp_damage: Keyword.get(opts, :is_sp_damage, false)

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -119,6 +120,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
       assert opts[:success_rate] == 15
       :ok
     end)
+
+    assert {:ok, _caster} = AmAcidterror.cast(caster(), {:unit, @target_id}, 5, definition())
+  end
+
+  test "a player's hit a blocking status stops still bleeds and may break armor" do
+    stub(Combat, :execute_acid_terror_attack, fn _caster, @target_id, _opts ->
+      {:ok, %{hit?: false, blocked?: true}}
+    end)
+
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), %{stats: %Stats{}}, :player} end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_bleeding, _opts ->
+      :ok
+    end)
+
+    expect(EquipBreak, :resolve_slot, fn _rate, _target, :armor, [] -> [] end)
+
+    caster = %PlayerState{stats: %Stats{}}
+    assert {:ok, ^caster} = AmAcidterror.cast(caster, {:unit, @target_id}, 5, definition())
+  end
+
+  test "a monster's blocked hit applies nothing" do
+    stub(Combat, :execute_acid_terror_attack, fn _caster, @target_id, _opts ->
+      {:ok, %{hit?: false, blocked?: true}}
+    end)
+
+    reject(&StatusInterpreter.apply_status/4)
+    reject(&EquipBreak.resolve_slot/4)
 
     assert {:ok, _caster} = AmAcidterror.cast(caster(), {:unit, @target_id}, 5, definition())
   end

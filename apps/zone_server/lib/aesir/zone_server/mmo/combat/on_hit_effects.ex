@@ -3,7 +3,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   On-hit status infliction from equipment (`bAddEff` / `bAddEffWhenHit`).
 
   Invoked from the physical attack paths (`AutoAttack`, physical `SkillAttack`)
-  after a hit lands with positive damage. For each attacker `{:add_eff, sc}` the
+  once a hit is settled, with the hit's stages (`t:stages/0`, an
+  `EquipProcDispatch.event/4` carries them). The attacker's families (bAddEff,
+  bAddEff2, bAddEffOnSkill) belong to the additional-effect stage and roll for a
+  connected or blocked hit on a target that survives it; the race procs
+  (bDefSetRace and its siblings) need a connected hit; the defender's
+  bAddEffWhenHit belongs to the counter stage. For each attacker `{:add_eff, sc}` the
   effective chance is `rate - defender {:res_eff, sc}` (per-10000, floored at 0);
   a successful roll delegates to `StatusEffect.Interpreter.apply_status/4` for the
   defender, naming the attacker as the source so the interpreter's boss-immunity
@@ -49,12 +54,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   @typedoc "A per-10000 chance/tolerance predicate: given an effective rate, is the roll a hit."
   @type roll_fun :: (non_neg_integer() -> boolean())
 
-  @doc """
-  Rolls both on-hit infliction families for one landed physical hit.
+  @typedoc """
+  A settled hit's stages: its class (`DamageShared.hit_class/3`), whether its
+  additional-effect stage runs (the target survived) and whether its counter
+  stage runs.
+  """
+  @type stages :: %{
+          required(:hit_class) => :miss | :block | :hit,
+          required(:attack_effects?) => boolean(),
+          required(:counter_effects?) => boolean(),
+          optional(atom()) => term()
+        }
 
-  A miss or zero-damage hit never reaches here from the attack paths; the
-  zero-damage clause guards direct callers. Skill-unit targets carry no living
-  state to inflict on and are skipped.
+  @doc """
+  Rolls the on-hit infliction families of one settled physical hit, each in
+  the stage `stages` says runs. Skill-unit targets carry no living state to
+  inflict on and are skipped.
 
   A bonus written with a trigger flag (`bonus3 bAddEff,Eff_Stun,500,ATF_MAGIC`)
   only rolls when the flag matches `:attack_flag`, and its victim axis decides
@@ -69,22 +84,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
     - `:skill_id` - the skill that landed this hit, matched against the
       infliction bonuses armed for one named skill. A normal attack passes none.
   """
-  @spec after_hit(Combatant.t(), Combatant.t(), map(), keyword()) :: :ok
-  def after_hit(attacker, defender, damage_result, opts \\ [])
+  @spec after_hit(Combatant.t(), Combatant.t(), stages(), keyword()) :: :ok
+  def after_hit(attacker, defender, stages, opts \\ [])
 
-  def after_hit(_attacker, _defender, %{damage: damage}, _opts) when damage <= 0, do: :ok
+  def after_hit(_attacker, %Combatant{unit_type: :skill_unit}, _stages, _opts), do: :ok
 
-  def after_hit(_attacker, %Combatant{unit_type: :skill_unit}, _damage_result, _opts), do: :ok
-
-  def after_hit(%Combatant{} = attacker, %Combatant{} = defender, _damage_result, opts) do
+  def after_hit(%Combatant{} = attacker, %Combatant{} = defender, stages, opts) do
     roll = Keyword.get(opts, :roll, &default_roll/1)
     attack_flag = Keyword.get(opts, :attack_flag, 0)
+    additional? = stages.attack_effects?
 
-    inflict(attacker, defender, :add_eff, roll, attack_flag)
-    inflict(defender, attacker, :add_eff_when_hit, roll, attack_flag)
-    inflict(attacker, attacker, :add_eff2, roll, attack_flag)
-    inflict_on_skill(attacker, defender, Keyword.get(opts, :skill_id), roll)
-    inflict_defender_procs(attacker, defender, roll, attack_flag)
+    if additional? and stages.hit_class in [:block, :hit] do
+      inflict(attacker, defender, :add_eff, roll, attack_flag)
+      inflict(attacker, attacker, :add_eff2, roll, attack_flag)
+      inflict_on_skill(attacker, defender, Keyword.get(opts, :skill_id), roll)
+    end
+
+    if additional? and stages.hit_class == :hit,
+      do: inflict_defender_procs(attacker, defender, roll, attack_flag)
+
+    if stages.counter_effects?,
+      do: inflict(defender, attacker, :add_eff_when_hit, roll, attack_flag)
+
     :ok
   end
 

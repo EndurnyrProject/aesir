@@ -44,7 +44,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
     max(max(defended + refine, 1) + mastery, 1)
   end
 
-  @doc "Calculates one classic hit up to its post-defense attribute step."
+  @doc """
+  Calculates one classic hit up to its post-defense attribute step.
+
+  The post-defense stage (refine, minimum, masteries, post-defense status ATK)
+  runs only for damage before it: a shield attack, which has no second hand
+  and takes its DEF before the ratio, that has nothing left stays at 0.
+  """
   @spec pre_element(PhysicalAttack.parts(), PhysicalAttack.context()) :: integer()
   def pre_element(parts, context) do
     base = attack_bonus(base(parts, context), parts, context)
@@ -59,10 +65,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
       |> PhysicalAttack.rate(-Map.get(context, :skill_taken_rate, 0))
       |> PhysicalAttack.status_damage(context)
 
-    defended = if parts.source == :shield, do: skilled, else: defend(skilled, context)
+    if parts.source == :shield and trunc(skilled) == 0 do
+      0
+    else
+      defended = if parts.source == :shield, do: skilled, else: defend(skilled, context)
 
-    max(trunc(defended) + parts.refine_atk, minimum(parts)) + parts.mastery_atk +
-      Map.get(context, :post_defense_atk, 0)
+      max(trunc(defended) + parts.refine_atk, minimum(parts)) + parts.mastery_atk +
+        Map.get(context, :post_defense_atk, 0)
+    end
   end
 
   # After its refine bonus the right hand keeps at least 1 damage, the left hand

@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
 
   Both modes deal 300 plus 40 per level percent (a bow halves the part above
   the base 100) for 16 SP with a 0.5 s delay. Renewal: no rear requirement,
-  the caster slips to the cell behind the target, the hit is rolled normally, a
+  the caster first slips to the cell behind the target (a cell it cannot reach
+  fails the skill), the hit is rolled normally, a
   dagger repeats the one calculated damage over two hits, a 5 plus 2 per level
   percent 4.5 s stun lands on hit, and a
   0.5 s cooldown applies. Pre-renewal: the caster must already stand behind the
@@ -29,7 +30,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -44,8 +48,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
   @impl Active
   def cast(caster, {:unit, target_ref}, level, definition) do
     with {:ok, _pid, target, target_type} <- TargetResolver.resolve(target_ref),
-         :ok <- approach(caster, target) do
+         {:ok, destination} <- approach(caster, target) do
       break_hiding(caster)
+      {attacker, moved} = slip(caster, destination)
 
       opts =
         mode_opts() ++
@@ -58,18 +63,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
             report_hit: true
           ]
 
-      strike(caster, target, target_type, target_ref, level, opts)
+      strike(attacker, moved, target_type, target_ref, level, opts)
     end
   end
 
-  defp strike(caster, target, target_type, target_ref, level, opts) do
-    case Combat.execute_skill_attack(caster, target_ref, opts) do
+  defp strike(attacker, moved, target_type, target_ref, level, opts) do
+    case Combat.execute_skill_attack(attacker, target_ref, opts) do
       {:ok, %{hit?: true}} ->
-        if GameMode.mode() == :renewal, do: apply_stun(caster, target_type, target_ref, level)
-        {:ok, slip_behind(caster, target)}
+        if GameMode.mode() == :renewal, do: apply_stun(attacker, target_type, target_ref, level)
+        {:ok, moved}
 
-      {:ok, %{hit?: false}} ->
-        {:ok, caster}
+      {:ok, _no_effect} ->
+        {:ok, moved}
 
       {:error, _reason} = error ->
         error
@@ -79,10 +84,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
   defp approach(caster, target) do
     case GameMode.mode() do
       :renewal ->
-        :ok
+        slip_destination(caster, target)
 
       :pre_renewal ->
-        if Geometry.behind?(caster, target), do: :ok, else: {:error, :must_be_behind}
+        if Geometry.behind?(caster, target), do: {:ok, nil}, else: {:error, :must_be_behind}
     end
   end
 
@@ -105,24 +110,54 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
 
   defp break_hiding(_caster), do: :ok
 
-  defp slip_behind(%PlayerState{map_name: map_name} = caster, %{x: target_x, y: target_y})
+  # Renewal moves the caster to the cell one step beyond the target, along the
+  # direction from the caster to it, before the attack. The cell must be
+  # walkable and reachable in a straight line; otherwise the skill fails.
+  defp slip_destination(%{map_name: map_name, x: x, y: y}, %{x: target_x, y: target_y})
        when is_binary(map_name) do
-    if GameMode.mode() == :renewal do
-      dx = axis_step(target_x - caster.x)
-      dy = axis_step(target_y - caster.y)
+    {dx, dy} = beyond_step(target_x - x, target_y - y)
+    destination = {target_x + dx, target_y + dy}
 
-      case ForcedMovement.validate(caster, target_x + dx, target_y + dy, 2) do
-        {:ok, directive} -> PlayerState.put_pending_forced_movement(caster, directive)
-        {:error, _reason} -> caster
-      end
-    else
-      caster
+    if Cell.traversable?(map_name, target_x + dx, target_y + dy) and
+         LineOfSight.passable?(map_name, {x, y}, destination),
+       do: {:ok, destination},
+       else: {:error, :invalid_destination}
+  end
+
+  defp slip_destination(_caster, _target), do: {:error, :invalid_destination}
+
+  # The attack comes from the slipped cell. A player moves when the cast
+  # commits; a monster requests its own relocation.
+  defp slip(caster, nil), do: {caster, caster}
+
+  defp slip(%PlayerState{} = caster, {x, y}) do
+    directive = %ForcedMovement{map_name: caster.map_name, x: x, y: y}
+    {%{caster | x: x, y: y}, PlayerState.put_pending_forced_movement(caster, directive)}
+  end
+
+  defp slip(%MobState{instance_id: id} = caster, {x, y}) do
+    _ = Knockback.relocate(:mob, id, x, y)
+    {%{caster | x: x, y: y}, caster}
+  end
+
+  # The unit step of the 8-way direction of `{dx, dy}`, quadrant by quadrant:
+  # straight along an axis about three times the other, diagonal otherwise.
+  # Toward the east an exact 3:1 counts as straight horizontally and diagonal
+  # vertically; toward the west, the reverse. A caster on the target's own cell
+  # steps east.
+  defp beyond_step(dx, dy) do
+    cond do
+      dx == 0 and dy == 0 -> {1, 0}
+      dx >= 0 and dy >= 0 -> pick(dx >= dy * 3, dx * 3 < dy, {1, 0}, {0, 1}, {1, 1})
+      dx >= 0 -> pick(dx >= -dy * 3, dx * 3 < -dy, {1, 0}, {0, -1}, {1, -1})
+      dy <= 0 -> pick(dx * 3 >= dy, dx < dy * 3, {0, -1}, {-1, 0}, {-1, -1})
+      true -> pick(-dx * 3 <= dy, -dx > dy * 3, {0, 1}, {-1, 0}, {-1, 1})
     end
   end
 
-  defp slip_behind(caster, _target), do: caster
-
-  defp axis_step(delta), do: delta |> max(-1) |> min(1)
+  defp pick(true, _second?, first, _second, _diagonal), do: first
+  defp pick(false, true, _first, second, _diagonal), do: second
+  defp pick(false, false, _first, _second, diagonal), do: diagonal
 
   @doc """
   Returns Back Stab's weapon ratio: the base 100 plus 200 plus 40 per level,

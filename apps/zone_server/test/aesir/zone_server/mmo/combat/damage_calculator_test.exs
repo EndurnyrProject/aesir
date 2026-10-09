@@ -478,6 +478,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                DamageCalculator.calculate_damage(attacker, defender, opts)
     end
 
+    test "an attack with nothing before DEF skips DEF and its minimum of 1" do
+      attacker = CombatTestHelper.create_mob_combatant(atk: 500)
+
+      defender =
+        CombatTestHelper.create_mob_combatant(vit: 40)
+        |> Map.put(:element, {:neutral, 1})
+
+      assert {:ok, %{damage: 0}} =
+               DamageCalculator.calculate_damage(attacker, defender,
+                 base_damage: 0,
+                 element: :neutral,
+                 skip_crit: true
+               )
+    end
+
     test "rejects negative and non-integer overrides" do
       attacker = CombatTestHelper.create_mob_combatant()
 
@@ -549,6 +564,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:ok, ^expected} =
                DamageCalculator.calculate_base_attack(player, shield_base: shield_base)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic shield base that DEF takes to nothing skips the post-defense minimum" do
+      player = CombatTestHelper.create_player_combatant(str: 10)
+
+      # DEF 98 keeps 1 of the ~51 shield base; the target's 1 VIT DEF takes it.
+      defender =
+        CombatTestHelper.create_mob_combatant(def: 98, vit: 0)
+        |> Map.put(:element, {:neutral, 1})
+
+      assert {:ok, %{damage: 0}} =
+               DamageCalculator.calculate_damage(player, defender,
+                 shield_base: 40,
+                 skill_ratio: 300,
+                 element: :neutral,
+                 skip_crit: true
+               )
     end
 
     test "mob ignores the shield base and uses its plain batk" do

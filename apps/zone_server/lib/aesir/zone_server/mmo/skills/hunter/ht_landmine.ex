@@ -81,16 +81,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
                skill_id: definition.id,
                skill_level: group.level,
                base_damage: Trap.roll_damage(base_damage),
-               element: definition.element
+               element: definition.element,
+               report_hit: true
              ) do
-          :ok ->
-            StatusInterpreter.apply_status(mover_type, mover_id, :sc_stun,
-              source_id: group.caster_id,
-              source_type: group.caster_type,
-              success_rate: 10,
-              duration: 4_500
-            )
-
+          {:ok, %{hit?: hit?}} ->
+            stun(hit?, group, mover_type, mover_id)
             :expire
 
           {:error, reason} when reason in @refused ->
@@ -103,6 +98,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
       :error ->
         {:ok, group}
     end
+  end
+
+  # The Stun roll is the blast's additional effect.
+  defp stun(false, _group, _mover_type, _mover_id), do: :ok
+
+  defp stun(true, group, mover_type, mover_id) do
+    StatusInterpreter.apply_status(mover_type, mover_id, :sc_stun,
+      source_id: group.caster_id,
+      source_type: group.caster_type,
+      success_rate: 10,
+      duration: 4_500
+    )
   end
 
   defp execute_attack(caster_state, mover, %Group{caster_type: :player} = group, opts),

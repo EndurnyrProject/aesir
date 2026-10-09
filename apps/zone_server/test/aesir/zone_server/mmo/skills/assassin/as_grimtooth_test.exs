@@ -222,7 +222,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
     refute_received :trap_damage_delivered
   end
 
-  test "one-second Quagmire rides a connected mob whose ranged hit is fully absorbed" do
+  test "a connected mob whose ranged hit Pneuma blocks gets no Quagmire" do
     caster = combat_ready_player(1)
     target = mob_state(100, [])
 
@@ -230,28 +230,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
     :ok = SpatialIndex.add_player(caster.character_id, 50, 50, caster.map_name)
     register_mob(target, 55, 50)
     :ok = StatusInterpreter.apply_status(:mob, target.instance_id, :sc_pneuma, duration: 5_000)
-    # The 1 VIT target resists Quagmire 1% of the time; pin the roll.
-    stub(Resistance, :roll_success, fn _rate -> true end)
-
-    Mimic.copy(StatusInterpreter)
-
-    expect(StatusInterpreter, :apply_status, fn :mob, 100, :sc_quagmire, params ->
-      assert params[:duration] == 1_000
-      send(self(), :quagmire_applied)
-      call_original(StatusInterpreter, :apply_status, [:mob, 100, :sc_quagmire, params])
-    end)
 
     assert {:ok, ^caster} =
              AsGrimtooth.cast(caster, {:unit, target.instance_id}, 3, AsGrimtooth.definition())
 
-    assert_received :quagmire_applied
     assert_received {:"$gen_cast", {:combat, {:apply_damage, 0, 1, _metadata}}}
-
-    assert %{val1: 3, val2: 30, expires_at: expires_at} =
-             StatusStorage.get_status(:mob, target.instance_id, :sc_quagmire)
-
-    assert_in_delta expires_at - System.monotonic_time(:millisecond), 1_000, 100
-    refute_received :quagmire_applied
+    refute StatusStorage.get_status(:mob, target.instance_id, :sc_quagmire)
   end
 
   test "one-second Quagmire rides connected non-immune mobs only" do

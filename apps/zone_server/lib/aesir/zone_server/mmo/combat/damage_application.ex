@@ -182,8 +182,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   Mutating status absorption sees the raw aggregate once. On siege ground,
   each resulting positive component receives its own map rate and minimum.
   Devotion then forwards the settled sum when it is above zero. The returned
-  swing retains its raw total and its settled components sum to the one
-  delivered HP mutation (zero for a devotee).
+  swing retains its raw total, its settled components sum to the one
+  delivered HP mutation (zero for a devotee), and `stages` holds the hit's
+  `EquipProcDispatch.hit_event/2` (nil for a swing that dealt nothing raw).
   """
   @spec apply_weapon_swing(
           :player | :mob | :homunculus | :skill_unit,
@@ -227,7 +228,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
           apply_unit_damage(target_type, target_pid, target_id, damage, prepared_hit, attacker)
 
         dispatch_swing_procs(delivery, prepared_hit, damage)
-        {if(damage == 0, do: settle_components(swing, 0), else: settled), delivery}
+        settled = if(damage == 0, do: settle_components(swing, 0), else: settled)
+        {with_stages(settled, prepared_hit, damage), delivery}
 
       :not_ground ->
         apply_ordinary_swing(target_type, target_pid, target_id, swing, hit_info, attacker)
@@ -251,8 +253,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
     case reroute_to_crusader(target_type, target_id, final_damage, hit_info, attacker) do
       {:rerouted, delivery} ->
-        dispatch_swing_procs(delivery, rerouted(hit_info, final_damage), 0)
-        {settle_components(swing, 0), delivery}
+        rerouted_hit = rerouted(hit_info, final_damage)
+        dispatch_swing_procs(delivery, rerouted_hit, 0)
+        {with_stages(settle_components(swing, 0), rerouted_hit, 0), delivery}
 
       :not_rerouted ->
         settled = settle_components(swing, final_damage)
@@ -269,9 +272,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
           )
 
         dispatch_swing_procs(delivery, prepared_hit, final_damage)
-        {settled, delivery}
+        {with_stages(settled, prepared_hit, final_damage), delivery}
     end
   end
+
+  # The settled swing carries its hit's stages for the attack path's on-hit effects.
+  defp with_stages(swing, hit_info, damage),
+    do: %{swing | stages: EquipProcDispatch.hit_event(hit_info, damage)}
 
   # A normal swing always resolves in its attacker's own session, so the
   # attacker's procs sent here queue behind the rest of the swing's effects,

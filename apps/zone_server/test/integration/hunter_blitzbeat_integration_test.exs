@@ -90,16 +90,17 @@ defmodule Aesir.ZoneServer.Integration.HunterBlitzbeatIntegrationTest do
 
   test "confirmed bow hit auto-procs at the Hunter cap without SP, cast, cooldown, or recursion" do
     hunter = start_hunter(job_level: 11, bow?: true)
-    primary = start_mob(91_011, {151, 150}, hp: 1, max_hp: 1)
+    primary = start_mob(91_011, {151, 150})
     secondary = start_mob(91_012, {152, 150})
 
+    primary_hp = mob_hp(primary)
     secondary_hp = mob_hp(secondary)
     initial_sp = player_sp(hunter.pid)
 
     flush_packets()
     simulate_incoming_message(hunter.pid, %ActionRequest{target_id: primary.unit_id, action: 0})
 
-    assert eventually(fn -> mob_hp(primary) == 0 end)
+    assert eventually(fn -> mob_hp(primary) < primary_hp end)
     assert eventually(fn -> mob_hp(secondary) < secondary_hp end)
 
     state = get_player_state(hunter.pid)

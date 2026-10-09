@@ -46,30 +46,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
       skill_level: level,
       skill_ratio: 100 + 10 * level,
       element: definition.element,
-      skip_range: true
+      skip_range: true,
+      additional_effect: &freeze(&1, &2, level)
     ]
 
     case Combat.execute_magic_attack(caster, target, opts) do
-      {:ok, hit_ref} ->
-        maybe_freeze(caster, hit_ref, level)
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        error
+      {:ok, _hit_ref} -> {:ok, caster}
+      {:error, _reason} = error -> error
     end
   end
 
-  # A hit the caster's own Gravitation Field suppressed never ran its effects.
-  defp maybe_freeze(_caster, :suppressed, _level), do: :ok
-
-  defp maybe_freeze(caster, {unit_type, unit_id}, level) do
+  # The freeze is the hit's additional effect: it rolls only for a hit that
+  # dealt damage to a surviving target, on the caster when the spell was
+  # reflected, sourced from the reflector.
+  defp freeze(source, {unit_type, unit_id}, level) do
     if :rand.uniform(100) <= freeze_chance(level) do
-      {source_type, source_id} = source_ref(caster)
-
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,
         duration: 3000 * level,
-        caster_id: source_id,
-        source_type: source_type
+        caster_id: source.unit_id,
+        source_type: source.unit_type
       )
     end
 
@@ -78,8 +73,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
 
   @spec freeze_chance(pos_integer()) :: pos_integer()
   defp freeze_chance(level), do: min(3 * level + 35, level + 60)
-
-  defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
-  defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
-  defp source_ref(%{world_gid: unit_id}), do: {:homunculus, unit_id}
 end

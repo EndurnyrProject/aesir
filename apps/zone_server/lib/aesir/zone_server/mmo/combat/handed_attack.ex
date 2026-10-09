@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -42,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
     :outcome,
     :primary_element
   ]
-  defstruct @enforce_keys
+  defstruct @enforce_keys ++ [stages: nil]
 
   @type outcome :: :hit | :critical | :miss | :perfect_dodge
   @type rng :: (pos_integer() -> pos_integer())
@@ -52,7 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
           raw_total: non_neg_integer(),
           display_divisions: pos_integer(),
           outcome: outcome(),
-          primary_element: atom()
+          primary_element: atom(),
+          stages: OnHitEffects.stages() | nil
         }
 
   @doc "Calculates one ordinary swing without delivery, mutation, or publication."
