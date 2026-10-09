@@ -162,6 +162,54 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
       assert {:ok, {:combo, :quadruple, {:mob, @target_id}, _delay}} =
                Combat.execute_attack(attacker, player_state, @target_id)
     end
+
+    test "a fled replacement still lands the damage a fled attack deals, rolling once",
+         %{attacker: attacker, player_state: player_state} do
+      stub_passive_replacement()
+      expect(HitCalculations, :calculate_hit_result, fn _a, _t -> :miss end)
+      reject(&DamageCalculator.calculate_damage/3)
+
+      stub(DamageCalculator, :calculate_fled_damage, fn _a, _d, _opts ->
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, 10, _attacker_id, _metadata -> :ok end)
+
+      assert {:ok, {:combo, :quadruple, {:mob, @target_id}, _delay}} =
+               Combat.execute_attack(attacker, player_state, @target_id)
+    end
+
+    test "a fled replacement that deals nothing stays a miss the target never intercepts",
+         %{attacker: attacker, player_state: player_state} do
+      stub_passive_replacement()
+      expect(HitCalculations, :calculate_hit_result, fn _a, _t -> :miss end)
+
+      stub(DamageCalculator, :calculate_fled_damage, fn _a, _d, _opts ->
+        {:ok, %{damage: 0, is_critical: false}}
+      end)
+
+      test_pid = self()
+
+      stub(StatusInterpreter, :before_weapon_hit, fn :mob, @target_id, info ->
+        send(test_pid, {:intercept_check, info.basic_attack?})
+        :continue
+      end)
+
+      reject(&MobSession.apply_damage/4)
+
+      assert {:ok, {:combo, :quadruple, {:mob, @target_id}, _delay}} =
+               Combat.execute_attack(attacker, player_state, @target_id)
+
+      assert_received {:intercept_check, true}
+      refute_received {:intercept_check, false}
+    end
+  end
+
+  defp stub_passive_replacement do
+    stub(Passives, :attack_replacement, fn _player ->
+      {:skill_attack, [skill_id: 263, skill_level: 5, skill_ratio: 200, skip_crit: true],
+       :quadruple}
+    end)
   end
 
   defp hold_replacement(level) do

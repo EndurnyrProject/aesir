@@ -281,6 +281,98 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp maximized_matk(_attacker, matk), do: matk
 
+  @doc """
+  Calculates the damage a weapon attack still deals after the target fled it.
+
+  In classic a fled weapon attack skips its hit block but still runs the rest
+  of the weapon recipe on zero damage. That covers the bonuses that follow the
+  attribute step (Star Crumb, spirit spheres, Envenom's flat ATK and its
+  attribute step), the Magnum Break share (its normal-attack base is zero), the
+  0 cap, Weapon Research and Hilt Binding, and both sides' cards. The caller
+  repeats the result over the attack's divisions. It delivers a total of at
+  least 1 as a connected hit and anything less as the miss. A dual wielder's
+  normal attack also returns its left hand's `:left_components` for
+  `calculate_secondary_hand_damage/3`. Renewal keeps these bonuses inside the
+  hit block, so a fled renewal attack deals 0. Takes the `calculate_damage/3`
+  options; the result is never critical.
+  """
+  @spec calculate_fled_damage(combatant(), combatant(), keyword()) :: {:ok, damage_result()}
+  def calculate_fled_damage(attacker, defender, opts) do
+    if classic?(),
+      do: {:ok, classic_fled_damage(select_weapon_hand(attacker, :primary), defender, opts)},
+      else: {:ok, %{damage: 0, is_critical: false}}
+  end
+
+  # Neither hand has damage, so the attribute step itself is skipped; the Magnum
+  # Break share's zero base still takes its element.
+  defp classic_fled_damage(attacker, defender, opts) do
+    hit = %{
+      attacker: attacker,
+      defender: defender,
+      opts: opts,
+      critical: %{damage: 0, is_critical: false},
+      modifiers: attacker_status_modifiers(attacker)
+    }
+
+    element = hit_element(attacker, hit.modifiers, opts)
+    left = fled_left_stage(hit, element)
+
+    damage =
+      0
+      |> classic_after_element(hit, element, :right_hand)
+      |> classic_watk(hit, %{left: fn -> left || 0 end, base: fn -> 0 end})
+      |> max(0)
+      |> Kernel.+(classic_late_atk(hit))
+      |> fled_cards(hit, element)
+
+    result = %{damage: damage, is_critical: false}
+
+    if is_integer(left) and dual_wield?(attacker),
+      do: Map.put(result, :left_components, max(left, 0)),
+      else: result
+  end
+
+  # A normal attack's left hand (a dual wield's weapon or a katar's empty hand)
+  # takes its own Star Crumb and the spirit spheres too; a skill never uses it.
+  defp fled_left_stage(hit, element) do
+    with nil <- Keyword.get(hit.opts, :skill_id),
+         %{} <- left_hand_attacker(hit.attacker) do
+      classic_after_element(0, hit, element, :left_hand)
+    else
+      _no_left_hand -> nil
+    end
+  end
+
+  # Cards only scale damage there is. A player's hit takes its own attack cards
+  # and the target's cards; any other attacker's takes only the target's.
+  defp fled_cards(0, _hit, _element), do: 0
+
+  defp fled_cards(damage, %{attacker: %{unit_type: :player}} = hit, _element) do
+    context =
+      player_damage_context(
+        hit.attacker,
+        hit.defender,
+        hit.opts,
+        :primary,
+        :normal,
+        %{source: :weapon},
+        hit.critical
+      )
+
+    PreRenewalAttack.post_element(damage, context)
+  end
+
+  defp fled_cards(damage, hit, element) do
+    apply_equipment_taken_families(
+      damage,
+      hit.attacker,
+      hit.defender,
+      Keyword.get(hit.opts, :skill_id),
+      element,
+      hit.opts
+    )
+  end
+
   defp stave_crasher_damage(%{unit_type: :player} = attacker, defender, opts, matk) do
     opts = Keyword.put(opts, :stave_matk, matk)
     calculate_damage_with(attacker, defender, opts, :primary, :normal)
@@ -693,7 +785,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp star_atk(%{unit_type: :player} = attacker, :left_hand),
-    do: Map.get(attacker.combat_stats.physical_attack, :left_star_atk, 0)
+    do: Map.get(physical_snapshot(attacker), :left_star_atk, 0)
 
   defp star_atk(%{unit_type: :player} = attacker, _hand), do: classic_star_atk(attacker)
   defp star_atk(_attacker, _hand), do: 0
@@ -706,7 +798,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # Weapon Research and Hilt Binding (except on Cart Revolution) join every
   # classic player weapon hit after the 0 cap, before the attacker's cards.
   defp classic_late_atk(%{attacker: %{unit_type: :player} = attacker, opts: opts}) do
-    snapshot = attacker.combat_stats.physical_attack
+    snapshot = physical_snapshot(attacker)
 
     hilt =
       if Keyword.get(opts, :skill_id) == @cart_revolution,
@@ -846,12 +938,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp classic_weapon_mastery_atk(attacker, defender, attack_path \\ :primary) do
     key = if attack_path == :secondary, do: :left_weapon_mastery_atk, else: :weapon_mastery_atk
 
-    Map.get(attacker.combat_stats.physical_attack, key, 0) +
+    Map.get(physical_snapshot(attacker), key, 0) +
       demon_bane_bonus(attacker, defender) + beast_bane_bonus(attacker, defender)
   end
 
   defp classic_star_atk(attacker),
-    do: Map.get(attacker.combat_stats.physical_attack, :star_atk, 0)
+    do: Map.get(physical_snapshot(attacker), :star_atk, 0)
+
+  defp physical_snapshot(attacker), do: Map.get(attacker.combat_stats, :physical_attack) || %{}
 
   # Three per spirit sphere: by default the spheres held, or the count the skill
   # passes for its own sphere use.

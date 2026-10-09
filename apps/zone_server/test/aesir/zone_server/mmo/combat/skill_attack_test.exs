@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack.PreparedHit
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -995,6 +996,76 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                skill_level: 1,
                report_hit: true
              )
+  end
+
+  describe "a fled skill attack" do
+    setup do
+      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+      target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+      caster_state = %TestUnit{combatant: attacker, hp: 100}
+      target_state = %TestUnit{combatant: target, hp: 100}
+
+      Mimic.copy(HitCalculations)
+      stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
+      stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+      stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+      stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+      stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+      stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+      reject(&DamageCalculator.calculate_damage/3)
+
+      %{attacker: attacker, target: target, caster_state: caster_state}
+    end
+
+    test "lands the damage that follows its hit block as a hit", ctx do
+      %{attacker: attacker, target: target} = ctx
+
+      expect(DamageCalculator, :calculate_fled_damage, fn ^attacker, ^target, opts ->
+        assert opts[:skill_id] == 7
+        {:ok, %{damage: 7, is_critical: false}}
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, 14, 1001, _metadata -> :ok end)
+
+      assert {:ok, %{hit?: true, damage: 14}} =
+               SkillAttack.execute_skill_attack(ctx.caster_state, {:mob, 2001},
+                 skill_id: 7,
+                 skill_level: 1,
+                 hit_divisions: 2,
+                 report_hit: true
+               )
+    end
+
+    test "stays a miss when that damage quantizes below 1", ctx do
+      stub(DamageCalculator, :calculate_fled_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 7, is_critical: false}}
+      end)
+
+      reject(&MobSession.apply_damage/4)
+
+      assert {:ok, %{hit?: false, damage: 0}} =
+               SkillAttack.execute_skill_attack(ctx.caster_state, {:mob, 2001},
+                 skill_id: 7,
+                 skill_level: 1,
+                 hit_divisions: -8,
+                 report_hit: true
+               )
+    end
+
+    test "is prepared as a connected staged hit", ctx do
+      stub(DamageCalculator, :calculate_fled_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 7, is_critical: false}}
+      end)
+
+      assert {:ok, %PreparedHit{damage_result: %{damage: 21}, divisions: 3}} =
+               SkillAttack.prepare_staged_skill_attack(ctx.caster_state, {:mob, 2001},
+                 skill_id: 7,
+                 skill_level: 1,
+                 hit_divisions: 3
+               )
+    end
   end
 
   test "a connected attack quantized to zero never decides coma" do

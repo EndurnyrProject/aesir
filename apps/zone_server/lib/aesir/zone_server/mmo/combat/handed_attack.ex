@@ -8,6 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   result. Its one side effect is the attacker's own Auto Counter stance, which a
   swing ends when it turns the swing critical.
 
+  A classic swing the target flees still deals what follows the hit block
+  (`DamageCalculator.calculate_fled_damage/3`) and connects when that totals at
+  least 1; a perfect dodge deals nothing.
+
   A multi-hit proc (Double Attack) is one logical swing: its single calculated
   primary damage is repeated over the proc's divisions before the hand
   components derive from it, so the katar off-hand follows the repeated value
@@ -60,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
     case swing_result(attacker, defender, double_attack?) do
       :critical -> calculate_hit(player_state, attacker, defender, divisions, true)
       :hit -> calculate_hit(player_state, attacker, defender, divisions, false)
+      :miss -> calculate_fled(player_state, attacker, defender, divisions)
       outcome -> {:ok, empty_result(attacker, divisions, outcome)}
     end
   end
@@ -108,9 +113,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
 
     with {:ok, primary} <- DamageCalculator.calculate_damage(attacker, defender, primary_opts),
          {primary, divisions} <- repeat_primary(primary, divisions, defender),
-         {:ok, primary, secondary} <- components(player, attacker, defender, primary) do
+         {:ok, primary, secondary} <-
+           components(player, attacker, defender, primary, plant_mode?(defender)) do
       {:ok, result(attacker, primary, secondary, divisions)}
     end
+  end
+
+  # A fled swing still deals what follows its hit block, through both hands as
+  # a connected swing does, and is a hit when that totals at least 1. The plant
+  # check belongs to the hit block, so a fled katar swing keeps its off-hand.
+  defp calculate_fled(player, attacker, defender, divisions) do
+    with {:ok, primary} <- DamageCalculator.calculate_fled_damage(attacker, defender, []),
+         {damage, divisions} = DamageShared.normalize_damage_divisions(primary.damage, divisions),
+         {:ok, primary, secondary} <-
+           fled_components(player, attacker, defender, primary, damage) do
+      case result(attacker, primary, secondary, divisions) do
+        %{raw_total: total} = result when total >= 1 -> {:ok, result}
+        _nothing -> {:ok, empty_result(attacker, divisions, :miss)}
+      end
+    end
+  end
+
+  # The bonuses after the 0 cap join both hands, so a right hand left at 0 means
+  # the left hand deals only its own earlier damage; with none it deals nothing.
+  defp fled_components(player, attacker, defender, primary, damage) do
+    if damage == 0 and Map.get(primary, :left_components, 0) == 0,
+      do: {:ok, %{primary | damage: 0}, nil},
+      else: components(player, attacker, defender, %{primary | damage: damage}, false)
   end
 
   # A plant-mode Emperium contact stays at its fixed 1 damage; the proc's
@@ -128,7 +157,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
          %PlayerState{stats: %Stats{}} = player,
          %Combatant{right_hand: %WeaponHand{}, left_hand: %WeaponHand{}} = attacker,
          defender,
-         primary
+         primary,
+         _plant?
        ) do
     primary = scale(primary, Passives.right_hand_damage_rate(player))
     critical_opts = if primary.is_critical, do: [force_crit: true], else: [skip_crit: true]
@@ -151,11 +181,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   defp components(
          %PlayerState{stats: %Stats{}} = player,
          %Combatant{right_hand: %WeaponHand{subtype: :katar}},
-         defender,
-         primary
+         _defender,
+         primary,
+         plant?
        ) do
     secondary =
-      if plant_mode?(defender) do
+      if plant? do
         nil
       else
         %{primary | damage: div(primary.damage * Passives.katar_secondary_rate(player), 100)}
@@ -164,7 +195,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
     {:ok, primary, secondary}
   end
 
-  defp components(_player, _attacker, _defender, primary), do: {:ok, primary, nil}
+  defp components(_player, _attacker, _defender, primary, _plant?), do: {:ok, primary, nil}
 
   defp scale(%{damage: 0} = result, _rate), do: result
   defp scale(result, rate), do: %{result | damage: max(div(result.damage * rate, 100), 1)}

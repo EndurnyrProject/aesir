@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -254,6 +255,67 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     end
   end
 
+  describe "a fled swing" do
+    setup :set_mimic_private
+
+    setup do
+      Mimic.copy(HitCalculations)
+      stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
+      :ok
+    end
+
+    @tag game_mode: :pre_renewal
+    test "lands its classic Star Crumb damage as a hit, repeated by Double Attack" do
+      attacker = with_hands(hand(:right_hand, 100), nil) |> put_star_atk(10)
+
+      assert {:ok, %HandedAttack{primary: %{damage: 10}, raw_total: 10, outcome: :hit}} =
+               HandedAttack.calculate(%PlayerState{}, attacker, defender())
+
+      assert {:ok, %HandedAttack{raw_total: 20, display_divisions: 2, outcome: :hit}} =
+               HandedAttack.calculate(player(%{48 => 10}, :dagger), attacker, defender(),
+                 rng: fn 100 -> 1 end
+               )
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a dual wielder's hands each take their own classic Star Crumb and hand rate" do
+      attacker =
+        with_hands(hand(:right_hand, 100), hand(:left_hand, 80))
+        |> put_star_atk(10)
+        |> put_in([Access.key!(:combat_stats), :physical_attack, :left_star_atk], 20)
+
+      assert {:ok,
+              %HandedAttack{
+                primary: %{damage: 5},
+                secondary: %{damage: 6},
+                raw_total: 11,
+                outcome: :hit
+              }} = HandedAttack.calculate(player(%{}, :dagger), attacker, defender())
+    end
+
+    @tag game_mode: :pre_renewal
+    test "stays a miss without any damage, and a perfect dodge deals none" do
+      plain = with_hands(hand(:right_hand, 100), nil)
+      starred = plain |> put_star_atk(10)
+
+      assert {:ok, %HandedAttack{raw_total: 0, outcome: :miss}} =
+               HandedAttack.calculate(%PlayerState{}, plain, defender())
+
+      stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :perfect_dodge end)
+
+      assert {:ok, %HandedAttack{raw_total: 0, outcome: :perfect_dodge}} =
+               HandedAttack.calculate(%PlayerState{}, starred, defender())
+    end
+
+    @tag game_mode: :renewal
+    test "stays a miss in renewal" do
+      attacker = with_hands(hand(:right_hand, 100), nil) |> put_star_atk(10)
+
+      assert {:ok, %HandedAttack{raw_total: 0, outcome: :miss}} =
+               HandedAttack.calculate(%PlayerState{}, attacker, defender())
+    end
+  end
+
   test "minimal player context and mob combatants retain aggregate one-component behavior" do
     mob =
       CombatTestHelper.create_mob_combatant(atk: 50, dex: 200, luk: 0)
@@ -348,6 +410,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       :pre_renewal -> 100
     end
   end
+
+  defp put_star_atk(combatant, star_atk),
+    do: put_in(combatant, [Access.key!(:combat_stats), :physical_attack, :star_atk], star_atk)
 
   defp put_hit(combatant, hit), do: put_in(combatant.combat_stats.hit, hit)
   defp put_flee(combatant, flee), do: put_in(combatant.combat_stats.flee, flee)

@@ -299,8 +299,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     end
   end
 
-  # A replacement swing rolls its one hit/flee check here, so the connected
-  # skill attack is delivered without rolling it again.
+  # A replacement swing rolls its one hit/flee check here, so the skill attack
+  # is delivered without rolling it again. A fled one still lands what a fled
+  # attack deals; one that deals nothing shows the zero-damage swing.
   defp resolve_attack_replacement(player_state, attacker, target, target_id, opts) do
     with :ok <-
            Rules.validate_target(attacker, target, %{skill_id: Keyword.fetch!(opts, :skill_id)}) do
@@ -313,25 +314,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           )
 
         :miss ->
-          damage_result = %{damage: 0, is_critical: false}
-
-          {0, divisions} =
-            DamageShared.normalize_damage_divisions(0, Keyword.get(opts, :hit_divisions, 1))
-
-          packet =
-            PacketFactory.build_skill_damage_packet(
-              attacker,
-              target,
-              Keyword.fetch!(opts, :skill_id),
-              Keyword.fetch!(opts, :skill_level),
-              damage_result,
-              div: divisions
-            )
-
-          DamageApplication.broadcast_nearby(target, packet)
+          resolve_fled_replacement(player_state, attacker, target, target_id, opts)
       end
 
       :ok
+    end
+  end
+
+  defp resolve_fled_replacement(player_state, attacker, target, target_id, opts) do
+    fled_opts = Keyword.merge(opts, fled: true, report_hit: true)
+
+    case SkillAttack.execute_skill_attack(player_state, target_id, fled_opts) do
+      {:ok, %{hit?: true}} ->
+        :ok
+
+      _missed ->
+        damage_result = %{damage: 0, is_critical: false}
+
+        {0, divisions} =
+          DamageShared.normalize_damage_divisions(0, Keyword.get(opts, :hit_divisions, 1))
+
+        packet =
+          PacketFactory.build_skill_damage_packet(
+            attacker,
+            target,
+            Keyword.fetch!(opts, :skill_id),
+            Keyword.fetch!(opts, :skill_level),
+            damage_result,
+            div: divisions
+          )
+
+        DamageApplication.broadcast_nearby(target, packet)
     end
   end
 
@@ -1550,10 +1563,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         |> landed_swing()
 
       :miss ->
-        {:ok, {:miss}}
+        fled_swing(attacker_combatant, defender_combatant)
 
       :perfect_dodge ->
         {:ok, {:perfect_dodge}}
+    end
+  end
+
+  # A fled swing still deals what follows its hit block, and connects when that
+  # is at least 1.
+  defp fled_swing(attacker, defender) do
+    case DamageCalculator.calculate_fled_damage(attacker, defender, []) do
+      {:ok, %{damage: damage} = fled} when damage >= 1 -> {:ok, {:hit, fled}}
+      {:ok, _nothing} -> {:ok, {:miss}}
     end
   end
 

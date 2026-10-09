@@ -142,6 +142,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:ignore_flee` - when `true`, skips the hit/flee roll while retaining
       interception, validation, damage preparation, and delivery, so the strike
       always connects (e.g. Occult Impaction, Asura Strike) (default `false`)
+    - `:fled` - when `true`, the caller already rolled this attack's hit and the
+      target fled it (an attack replacement): the roll is skipped, the damage a
+      fled attack still deals lands as a hit, and a fled attack that deals
+      nothing reports `hit?: false` without miss feedback, which the caller owns
+      (default `false`)
     - `:simple_defense` - when `true`, the target's DEF is dropped as a flat
       hard+soft subtraction instead of the renewal DEF curve (e.g. Asura
       Strike) (default `false`)
@@ -548,6 +553,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_rate_bonus_pct: hit_rate_bonus_pct,
         hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
         ignore_flee: Keyword.get(opts, :ignore_flee, false),
+        fled: Keyword.get(opts, :fled, false),
         ranged: ranged?,
         weapon_hit_metadata: weapon_hit_metadata,
         target_state: target_state,
@@ -1319,8 +1325,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
     {hit_result, calc_opts} = skill_hit_result(attacker, target, skill_id, calc_opts, hit_opts)
 
-    case hit_result do
-      :miss ->
+    case {hit_result, fled_damage(hit_result, attacker, target, skill_id, calc_opts, hit_opts)} do
+      {:miss, :none} ->
         DamageApplication.broadcast_nearby(
           target,
           PacketFactory.build_miss_packet(attacker, target)
@@ -1328,7 +1334,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
         {:ok, :miss}
 
-      :perfect_dodge ->
+      {:perfect_dodge, _fled} ->
         DamageApplication.broadcast_nearby(
           target,
           PacketFactory.build_perfect_dodge_packet(attacker, target)
@@ -1336,11 +1342,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
         {:ok, :miss}
 
-      :hit ->
+      {_connected, fled} ->
         long? = long_range?(attacker, target, skill_id, ranged?)
         calc_opts = Keyword.put(calc_opts, :ranged, long?)
 
-        case DamageCalculator.calculate_damage(attacker, target, calc_opts) do
+        case fled_or_calculated(fled, attacker, target, calc_opts) do
           {:ok, damage_result} ->
             {damage_result, divisions} = normalize_divisions(damage_result, hit_divisions)
 
@@ -1383,7 +1389,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # Resolves one logical attack: the target's weapon interceptions, one
   # hit/flee roll, one damage calculation normalized over the attack's signed
   # divisions, and its delivery. A miss or interception broadcasts its own
-  # feedback. Returns the resolved hit and the target's coma decision.
+  # feedback. Returns the resolved hit and the target's coma decision. A flee
+  # the caller rolled that deals nothing never reaches the interceptions, which
+  # only act on damage.
   @spec apply_skill_damage(
           struct(),
           {:player | :mob | :homunculus | :skill_unit, pid(), struct()},
@@ -1393,6 +1401,48 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           map()
         ) :: {resolved_hit(), boolean()}
   defp apply_skill_damage(
+         attacker,
+         {_target_type, _target_pid, target} = target_context,
+         skill_id,
+         skill_level,
+         calc_context,
+         %{fled: true} = hit_opts
+       ) do
+    case fled_damage(:miss, attacker, target, skill_id, calc_context, hit_opts) do
+      :none ->
+        {missed_hit(hit_opts), false}
+
+      {:ok, _fled} ->
+        intercept_or_resolve(
+          attacker,
+          target_context,
+          skill_id,
+          skill_level,
+          calc_context,
+          hit_opts
+        )
+    end
+  end
+
+  defp apply_skill_damage(
+         attacker,
+         target_context,
+         skill_id,
+         skill_level,
+         calc_context,
+         hit_opts
+       ),
+       do:
+         intercept_or_resolve(
+           attacker,
+           target_context,
+           skill_id,
+           skill_level,
+           calc_context,
+           hit_opts
+         )
+
+  defp intercept_or_resolve(
          attacker,
          {target_type, _target_pid, target} = target_context,
          skill_id,
@@ -1488,16 +1538,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {hit_result, calc_context} =
       skill_hit_result(attacker, target, skill_id, calc_context, hit_opts)
 
-    case hit_result do
-      :miss ->
-        DamageApplication.broadcast_nearby(
-          target,
-          PacketFactory.build_miss_packet(attacker, target)
+    case {hit_result, fled_damage(hit_result, attacker, target, skill_id, calc_context, hit_opts)} do
+      {:miss, {:ok, fled}} ->
+        {calc_opts, _calculator} = damage_calculation(calc_context)
+
+        deliver_skill_hit(
+          attacker,
+          target_context,
+          skill_id,
+          skill_level,
+          {calc_opts, fn _attacker, _target, _opts -> {:ok, fled} end},
+          hit_opts
         )
+
+      {:miss, :none} ->
+        unless Map.get(hit_opts, :fled, false) do
+          DamageApplication.broadcast_nearby(
+            target,
+            PacketFactory.build_miss_packet(attacker, target)
+          )
+        end
 
         {missed_hit(hit_opts), false}
 
-      :perfect_dodge ->
+      {:perfect_dodge, _fled} ->
         DamageApplication.broadcast_nearby(
           target,
           PacketFactory.build_perfect_dodge_packet(attacker, target)
@@ -1505,7 +1569,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
         {missed_hit(hit_opts), false}
 
-      :hit ->
+      {:hit, _fled} ->
         deliver_skill_hit(
           attacker,
           target_context,
@@ -1517,6 +1581,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     end
   end
 
+  # A fled weapon attack still deals what follows its hit block
+  # (`DamageCalculator.calculate_fled_damage/3`) and connects when that,
+  # repeated over its divisions, totals at least 1. Returns that raw result, or
+  # `:none` when it deals nothing or the roll was not a flee.
+  defp fled_damage(:miss, attacker, target, skill_id, calc_context, hit_opts) do
+    calc_opts =
+      calc_context
+      |> calc_opts()
+      |> Keyword.put(:ranged, long_range?(attacker, target, skill_id, hit_opts.ranged))
+
+    {:ok, fled} = DamageCalculator.calculate_fled_damage(attacker, target, calc_opts)
+
+    case normalize_divisions(fled, hit_opts.hit_divisions) do
+      {%{damage: damage}, _divisions} when damage >= 1 -> {:ok, fled}
+      _nothing -> :none
+    end
+  end
+
+  defp fled_damage(_hit_result, _attacker, _target, _skill_id, _calc_context, _hit_opts),
+    do: :none
+
+  defp fled_or_calculated({:ok, fled}, _attacker, _target, _calc_opts), do: {:ok, fled}
+
+  defp fled_or_calculated(:none, attacker, target, calc_opts),
+    do: DamageCalculator.calculate_damage(attacker, target, calc_opts)
+
   # Of all skills only Sacrifice can be perfect-dodged, before anything else.
   # The critical is decided next and always hits; only a non-critical hit that
   # does not ignore flee rolls its accuracy. Returns the calculation context
@@ -1526,23 +1616,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     target_stats = skill_flee_stats(target, skill_id)
 
     result =
-      if hit_opts.ignore_flee do
-        cond do
-          HitCalculations.perfect_dodge_triggered?(target_stats) -> :perfect_dodge
-          critical.() -> :critical
-          true -> :hit
-        end
-      else
-        attacker
-        |> hit_stats(hit_opts.hit_rate_bonus_pct, hit_opts.hit_rate_bonus_flat)
-        |> Map.put(:critical, critical)
-        |> HitCalculations.calculate_hit_result(target_stats)
+      cond do
+        Map.get(hit_opts, :fled, false) -> :miss
+        hit_opts.ignore_flee -> forced_hit_result(target_stats, critical)
+        true -> rolled_hit_result(attacker, target_stats, critical, hit_opts)
       end
 
     case result do
       :critical -> {:hit, decided_critical(calc_context, true)}
       other -> {other, decided_critical(calc_context, false)}
     end
+  end
+
+  defp forced_hit_result(target_stats, critical) do
+    cond do
+      HitCalculations.perfect_dodge_triggered?(target_stats) -> :perfect_dodge
+      critical.() -> :critical
+      true -> :hit
+    end
+  end
+
+  defp rolled_hit_result(attacker, target_stats, critical, hit_opts) do
+    attacker
+    |> hit_stats(hit_opts.hit_rate_bonus_pct, hit_opts.hit_rate_bonus_flat)
+    |> Map.put(:critical, critical)
+    |> HitCalculations.calculate_hit_result(target_stats)
   end
 
   # A critical skill (`critical: true`) rolls its chance with its own bonus; a
