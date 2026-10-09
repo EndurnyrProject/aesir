@@ -301,6 +301,46 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     assert PhysicalAttack.apply_defense(1_000, %{defense_mode: :ignore}, nil) == 1_000
   end
 
+  describe "classic normal-attack base for Magnum Break" do
+    test "normal_base sizes the weapon and takes the critical or non-critical rate" do
+      context = %{size_rate: 50, non_crit_atk_rate: 10, crit_atk_rate: 20}
+
+      # 20 status + 15 flat + 100 * 50% + 3 overrefine = 88.
+      assert PreRenewal.normal_base(parts(), context) == 96
+      assert PreRenewal.normal_base(parts(), Map.put(context, :critical?, true)) == 105
+      assert PreRenewal.normal_base(%{parts() | source: :shield}, context) == 96
+    end
+
+    test "magnum_break_base takes ATK rate, full DEF, refine and masteries with its minimums" do
+      context = %{
+        atk_rate: 20,
+        critical?: true,
+        defense_mode: :ignore,
+        defense: %{hard_def: 10, soft_def: 5, ignore_soft_def?: false}
+      }
+
+      # 100 * 120% = 120, * 90% - 5 = 103, + 7 refine, + 4 masteries.
+      assert PreRenewal.magnum_break_base(100, context, %{refine_atk: 7, mastery_atk: 4}) == 114
+
+      weak = %{
+        context
+        | atk_rate: 0,
+          defense: %{hard_def: 0, soft_def: 10, ignore_soft_def?: false}
+      }
+
+      assert PreRenewal.magnum_break_base(3, weak, %{refine_atk: 2, mastery_atk: 0}) == 1
+    end
+  end
+
+  test "classic post-defense keeps the right hand at 1 and the left hand at 0" do
+    parts = %{parts() | status_atk: 0, flat_atk: 0, weapon_atk: 10, refine_atk: 0}
+    parts = %{parts | overrefine_atk: 0, mastery_atk: 0}
+    context = %{size_rate: 100, defense: %{hard_def: 100, soft_def: 5, ignore_soft_def?: false}}
+
+    assert PreRenewal.pre_element(parts, context) == 1
+    assert PreRenewal.pre_element(%{parts | hand: :left_hand}, context) == 0
+  end
+
   # The stages composed as one hit, with `weapon_element` and `neutral_element`
   # standing in for the coordinator's attribute steps (default 1.0).
   defp renewal(parts, context) do

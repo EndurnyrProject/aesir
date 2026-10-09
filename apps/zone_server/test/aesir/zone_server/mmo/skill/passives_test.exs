@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passives
@@ -351,6 +352,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     test "AM_AXEMASTERY grants no ATK with another weapon or bare hands" do
       assert Passives.atk_bonus(build_player(%{226 => 10}, :mace)) == 0
       assert Passives.atk_bonus(build_player(%{226 => 10}, :bare_hands)) == 0
+    end
+  end
+
+  describe "weapon_mastery_atk/1" do
+    test "keeps Hilt Binding out, and Weapon Research too in classic" do
+      player = build_player(%{2 => 5, 105 => 1, 107 => 5}, :one_handed_sword)
+
+      assert Passives.atk_bonus(player) == 34
+
+      assert Passives.weapon_mastery_atk(player.stats) ==
+               if(GameMode.mode() == :renewal, do: 30, else: 20)
     end
   end
 

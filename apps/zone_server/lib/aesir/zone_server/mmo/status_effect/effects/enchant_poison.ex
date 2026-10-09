@@ -4,7 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
 
   Endows the weapon with the poison element, replacing other weapon endows.
   Confirmed ordinary swings may Poison the target through the existing
-  attacker-side damage hook.
+  attacker-side damage hook. In classic it also ends Weapon Enchant
+  (SC_ENCHANTARMS); in renewal the two coexist and Weapon Enchant's element
+  wins.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_encpoison,
@@ -13,14 +15,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
     calc_flags: [:atk_ele],
     flags: [:remove_on_unequip_weapon],
     end_on_start: [
-      :sc_aspersio,
-      :sc_fireweapon,
-      :sc_waterweapon,
-      :sc_windweapon,
-      :sc_earthweapon,
-      :sc_shadowweapon,
-      :sc_ghostweapon,
-      :sc_watk_element
+      renewal: [
+        :sc_aspersio,
+        :sc_fireweapon,
+        :sc_waterweapon,
+        :sc_windweapon,
+        :sc_earthweapon,
+        :sc_shadowweapon,
+        :sc_ghostweapon
+      ],
+      pre_renewal: [
+        :sc_aspersio,
+        :sc_fireweapon,
+        :sc_waterweapon,
+        :sc_windweapon,
+        :sc_earthweapon,
+        :sc_shadowweapon,
+        :sc_ghostweapon,
+        :sc_enchantarms
+      ]
     ],
     prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :enchantpoison

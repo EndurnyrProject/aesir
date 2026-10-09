@@ -115,6 +115,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   defp web_modifier(_element, _defender), do: []
 
   @doc """
+  The attack element a weapon endow imposes, `nil` without one.
+
+  Weapon Enchant (`enchant_arms_element`) outranks the other endows, which
+  share the `attack_element` key and exclude each other.
+  """
+  @spec endow_element(map()) :: atom() | nil
+  def endow_element(modifiers),
+    do: Map.get(modifiers, :enchant_arms_element) || Map.get(modifiers, :attack_element)
+
+  @doc """
   Resolves an attacker combatant's aggregated status modifiers for the flat-
   damage element step.
 

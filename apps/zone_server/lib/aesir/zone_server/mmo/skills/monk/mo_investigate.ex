@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -62,14 +63,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
 
   defp attack(caster, caster_id, target_id, level, definition, target_type) do
     with :ok <- Root.check_cast(:player, caster_id, definition.id),
-         opts <- attack_opts(definition, level, target_type, target_id),
+         opts <- attack_opts(caster, definition, level, target_type, target_id),
          :ok <- Combat.execute_skill_attack(caster, target_id, opts) do
       if Root.rooted?(:player, caster_id), do: Root.close(:player, caster_id)
       {:ok, caster}
     end
   end
 
-  defp attack_opts(definition, level, target_type, target_id) do
+  defp attack_opts(caster, definition, level, target_type, target_id) do
     element_opts() ++
       [
         skill_id: definition.id,
@@ -77,9 +78,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
         skill_ratio: Formulas.occult_ratio(level, Root.rooted?(target_type, target_id)),
         skip_crit: true,
         skip_range: true,
-        ignore_flee: true
+        ignore_flee: true,
+        spirit_spheres: sphere_bonus_count(caster, definition, level)
       ]
   end
+
+  # The sphere bonus counts this strike's single division plus the spheres left
+  # once its cost is paid.
+  defp sphere_bonus_count(caster, definition, level),
+    do: 1 + Combo.spheres_after(caster, Enum.at(definition.sphere_cost, level - 1, 0))
 
   defp element_opts do
     case GameMode.mode() do

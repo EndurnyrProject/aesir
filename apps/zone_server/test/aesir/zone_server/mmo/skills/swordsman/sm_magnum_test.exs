@@ -166,7 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic raises the aura in the shared endow slot, which replaces an endow" do
+  test "classic raises its own aura, which leaves an endow alone" do
     caster = %PlayerState{character_id: 42, x: 10, y: 20}
     stub(Combat, :execute_splash_attack, fn _c, _center, _radius, _opts -> [] end)
 
@@ -179,7 +179,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
 
     assert {:ok, ^caster} = SmMagnum.cast(caster, :self, 1, definition())
 
-    # The shared slot ends every endow on cast, so classic cannot hold both.
-    assert :sc_aspersio in StatusRegistry.get_definition(:sc_watk_element).end_on_start
+    # The aura replaces only an earlier aura, and no endow names it.
+    assert StatusRegistry.get_definition(:sc_watk_element).end_on_start == [:sc_watk_element]
+    refute :sc_watk_element in StatusRegistry.get_definition(:sc_aspersio).end_on_start
   end
 end

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1_016,
     name: :mo_balkyoung,
+    ignore_atk_card: [renewal: false, pre_renewal: true],
     requires: [],
     display_name: "Ki Explosion",
     max_level: 1,

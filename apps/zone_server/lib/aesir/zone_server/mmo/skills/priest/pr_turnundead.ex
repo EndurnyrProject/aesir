@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrTurnundead do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 77,
     name: :pr_turnundead,
+    ignore_atk_card: true,
     display_name: "Turn Undead",
     max_level: 10,
     target_type: :target_enemy,

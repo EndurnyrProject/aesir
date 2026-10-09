@@ -833,7 +833,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :fixed_damage,
       :element,
       :skill_id,
-      :skip_status_atk
+      :skip_status_atk,
+      :spirit_spheres
     ]) ++ shield_base_opts(caster_state, opts)
   end
 
@@ -1730,11 +1731,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp physical_attack_element(attacker, calc_opts) do
     Keyword.get(calc_opts, :element) ||
-      Map.get(
-        ModifierCalculator.get_all_modifiers(attacker.unit_type, attacker.unit_id),
-        :attack_element,
-        attacker.weapon.element
-      )
+      DamageShared.endow_element(
+        ModifierCalculator.get_all_modifiers(attacker.unit_type, attacker.unit_id)
+      ) || attacker.weapon.element
   end
 
   defp decide_coma(attacker, target, damage) when damage > 0,

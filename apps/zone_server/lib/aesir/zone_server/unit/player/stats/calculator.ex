@@ -323,7 +323,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     %{min: base_matk_min, max: base_matk_max} = formulas.base_matk(values)
     base_def = formulas.base_def(values)
     skill_passive_atk = Passives.atk_bonus(stats)
-    passive_atk = skill_passive_atk + forged_star_damage(stats.worn_items)
+    star_atk = forged_star_damage(stats.worn_items)
+    passive_atk = skill_passive_atk + star_atk
     passive_critical = Passives.critical_bonus(stats)
 
     flat_critical =
@@ -374,6 +375,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
           Stats.get_status_modifier(stats, :atk) + Stats.get_equipment_modifier(stats, :atk) -
             hand_attack(stats.right_hand) - hand_attack(stats.left_hand),
         mastery_atk: passive_atk,
+        weapon_mastery_atk: Passives.weapon_mastery_atk(stats),
+        star_atk: star_atk,
         str: values.str,
         dex: values.dex
       },

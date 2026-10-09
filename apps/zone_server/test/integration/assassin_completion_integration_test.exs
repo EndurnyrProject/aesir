@@ -531,7 +531,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
            mode_value(Enum.to_list(11_000..2_000//-1_000), Enum.to_list(7_500..12_000//500)),
          duration: mode_value(List.duplicate(18_000, 10), List.duplicate(60_000, 10)),
          item_cost: mode_value([], [%{id: 716, amount: 1}]),
-         requires: []
+         requires: [],
+         ignore_atk_card: true
        ), :active},
       {AsSonicaccel,
        definition(
@@ -556,7 +557,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          duration: mode_value([18_000], [60_000]),
          requires_ammo: true,
          quest_skill: true,
-         quest_owner_job: :assassin
+         quest_owner_job: :assassin,
+         ignore_atk_card: true
        ), :active}
     ]
   end

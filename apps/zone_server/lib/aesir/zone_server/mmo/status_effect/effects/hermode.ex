@@ -86,7 +86,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hermode do
     :sc_sacrifice,
     :sc_steelbody,
     :sc_adrenaline2,
-    :sc_stop
+    :sc_stop,
+    :sc_enchantarms
   ]
 
   @impl true

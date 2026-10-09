@@ -347,7 +347,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         defender: defender,
         opts: opts,
         modifiers: modifiers,
-        watk_base: modified_atk
+        critical?: critical?
       }
 
       taken =
@@ -384,25 +384,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp critical_decision(opts), do: Keyword.get(opts, :force_crit, false)
 
   # Non-player basic attacks take no attribute step (`attack_attr_none`); renewal
-  # players take one only in the Sacrifice group; other hits take their element.
+  # players take one only in the Sacrifice group; other hits take their element,
+  # and a classic player's hit may gain the Magnum Break share.
   defp scalar_element(damage, %{attacker: attacker, opts: opts} = hit) do
     player? = attacker.unit_type == :player
+    element = hit_element(attacker, hit.modifiers, opts)
 
     cond do
       not player? and is_nil(Keyword.get(opts, :skill_id)) ->
         damage
 
       player? and GameMode.mode() == :renewal ->
-        post_defense_element(
-          damage,
-          hit,
-          hit_element(attacker, hit.modifiers, opts),
-          sacrifice_group?(opts)
-        )
+        post_defense_element(damage, hit, element, sacrifice_group?(opts))
+
+      player? ->
+        damage
+        |> attribute_steps(hit, element, true)
+        |> classic_watk(hit, scalar_watk_input(hit))
+        |> max(0)
 
       true ->
-        post_defense_element(damage, hit, hit_element(attacker, hit.modifiers, opts), true)
+        post_defense_element(damage, hit, element, true)
     end
+  end
+
+  # A replaced-base hit has no weapon parts of its own; the Magnum Break share
+  # builds the player's normal-attack inputs when it needs them.
+  defp scalar_watk_input(hit) do
+    player_hit = %{
+      attacker: hit.attacker,
+      defender: hit.defender,
+      opts: hit.opts,
+      attack_path: :primary,
+      defense_mode: :normal,
+      critical: %{damage: 0, is_critical: Map.get(hit, :critical?, false)},
+      modifiers: hit.modifiers
+    }
+
+    parts = player_parts(%{player_hit | opts: []}, hit.attacker, :primary)
+    context = hand_context(player_hit, hit.attacker, :primary, parts)
+    normal_attack = {parts, normal_attack_context(context, hit.attacker, hit.defender)}
+
+    %{
+      left: fn -> classic_damage2(player_hit, nil, elem(normal_attack, 1)) end,
+      base: fn -> classic_watk_base(player_hit, normal_attack) end
+    }
   end
 
   defp ratio_scaled_mode(:soft_only, skill_ratio), do: {:soft_only, skill_ratio}
@@ -486,23 +512,195 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     )
   end
 
-  # Classic runs one attribute step on each hand's post-defense damage.
+  # Classic runs one attribute step on each hand's post-defense damage. A
+  # dual-wield normal attack calculates its left hand here too, after the right
+  # hand's step and before the Magnum Break share, and hands the result to the
+  # second hand's call.
+  defp classic_player_damage(%{attack_path: :secondary} = hit) do
+    parts = player_parts(hit, hit.attacker, :secondary)
+    context = hand_context(hit, hit.attacker, :secondary, parts)
+
+    staged =
+      case Keyword.fetch(hit.opts, :left_components) do
+        {:ok, staged} -> staged
+        :error -> parts |> classic_hand_stage(context, hit, hit.attacker) |> max(0)
+      end
+
+    {:ok, %{hit.critical | damage: PreRenewalAttack.post_element(staged, context)}}
+  end
+
   defp classic_player_damage(hit) do
     parts = player_parts(hit, hit.attacker, hit.attack_path)
     context = hand_context(hit, hit.attacker, hit.attack_path, parts)
-    element = hit_element(hit.attacker, hit.modifiers, hit.opts)
-    # NOTE: Task 27 completes wd->basedamage (Star Crumb, Spirit Sphere).
-    hit = Map.put(hit, :watk_base, PreRenewalAttack.normal_base(parts, context))
-    {parts, context} = classic_stave_base(parts, context, Keyword.get(hit.opts, :stave_matk))
+
+    {stave_parts, stave_context} =
+      classic_stave_base(parts, context, Keyword.get(hit.opts, :stave_matk))
+
+    right = classic_hand_stage(stave_parts, stave_context, hit, hit.attacker)
+    left = classic_left_stage(hit)
+
+    watk_input = %{
+      left: fn -> classic_damage2(hit, left, context) end,
+      base: fn -> classic_watk_base(hit, normal_attack_inputs(hit, parts, context)) end
+    }
 
     damage =
-      parts
-      |> PreRenewalAttack.pre_element(context)
-      |> post_defense_element(hit, element, true)
+      right
+      |> classic_watk(hit, watk_input)
+      |> max(0)
       |> PreRenewalAttack.post_element(context)
 
-    {:ok, %{hit.critical | damage: damage}}
+    result = %{hit.critical | damage: damage}
+
+    {:ok,
+     if(is_integer(left) and dual_wield?(hit.attacker),
+       do: Map.put(result, :left_components, max(left, 0)),
+       else: result
+     )}
   end
+
+  # One classic hand up to its attribute steps, before the 0 cap.
+  defp classic_hand_stage(parts, context, hit, attacker) do
+    parts
+    |> PreRenewalAttack.pre_element(context)
+    |> attribute_steps(hit, hit_element(attacker, hit.modifiers, hit.opts), true)
+  end
+
+  # A classic normal attack's left hand reaches the attribute step too: a
+  # dual-wield left weapon, or a katar's empty left hand (no weapon ATK). Skills
+  # never use it.
+  defp classic_left_stage(hit) do
+    with nil <- Keyword.get(hit.opts, :skill_id),
+         %{} = attacker <- left_hand_attacker(hit.attacker) do
+      classic_left_hand_stage(hit, attacker)
+    else
+      _no_left_hand -> nil
+    end
+  end
+
+  # The attacker with a left hand where a normal attack has one: its own left
+  # weapon, or a katar's empty left hand (no weapon ATK, neutral). `nil` without.
+  defp left_hand_attacker(attacker) do
+    cond do
+      dual_wield?(attacker) -> attacker
+      katar?(attacker) -> %{attacker | left_hand: empty_left_hand(attacker)}
+      true -> nil
+    end
+  end
+
+  defp classic_left_hand_stage(hit, attacker) do
+    secondary = select_weapon_hand(attacker, :secondary)
+    parts = player_parts(hit, secondary, :secondary)
+    context = hand_context(hit, secondary, :secondary, parts)
+    classic_hand_stage(parts, context, hit, secondary)
+  end
+
+  defp katar?(%{right_hand: %WeaponHand{subtype: :katar}}), do: true
+  defp katar?(_attacker), do: false
+
+  defp empty_left_hand(%{right_hand: %WeaponHand{} = katar}) do
+    %{katar | element: :neutral, base_atk: 0, refine_atk: 0, overrefine_band: 0, slot: :left_hand}
+  end
+
+  # The left hand's damage where classic Magnum Break checks it: on a normal
+  # attack the left hand's own attribute-stage damage, on a skill the left hand's
+  # untouched normal-attack base; 0 for an attacker that has no left hand.
+  defp classic_damage2(_hit, left, _context) when is_integer(left), do: left
+
+  defp classic_damage2(hit, nil, context) do
+    with false <- is_nil(Keyword.get(hit.opts, :skill_id)),
+         %{} = attacker <- left_hand_attacker(hit.attacker) do
+      left_normal_base(hit, attacker, context)
+    else
+      _no_left_hand -> 0
+    end
+  end
+
+  defp left_normal_base(hit, attacker, context) do
+    secondary = select_weapon_hand(attacker, :secondary)
+    parts = player_parts(%{hit | opts: []}, secondary, :secondary)
+    PreRenewalAttack.normal_base(parts, normal_attack_context(context, secondary, hit.defender))
+  end
+
+  # A normal attack's context: no skill size override and no skill exemption from
+  # the non-critical equipment rate.
+  defp normal_attack_context(context, attacker, defender) do
+    %{
+      context
+      | size_rate: trunc(apply_size_modifier(100, attacker, defender, [])),
+        ignore_noncrit_atk_bonus: false
+    }
+  end
+
+  # Classic Magnum Break (SC_WATK_ELEMENT): a player's hit, unless it ignores
+  # elements or attack cards, gains `val2` percent of its normal-attack base taken
+  # as the status element, plus the right weapon's Star Crumb bonus and the
+  # spirit sphere bonus, when either hand still has positive damage after the
+  # attribute step.
+  defp classic_watk(damage, hit, input) do
+    with {element, percent} <- classic_watk_status(hit),
+         true <- damage > 0 or input.left.() > 0 do
+      base =
+        element_step(input.base.(), element, hit, allow_negative: true) +
+          classic_star_atk(hit.attacker) + spirit_sphere_atk(hit.attacker, hit.opts)
+
+      damage + div(base * percent, 100)
+    else
+      _no_share -> damage
+    end
+  end
+
+  defp classic_watk_status(%{attacker: %{unit_type: :player}} = hit) do
+    if GameMode.mode() == :pre_renewal and not Keyword.get(hit.opts, :ignore_element, false) and
+         not ignore_atk_card?(Keyword.get(hit.opts, :skill_id)) do
+      Enum.find_value(hit.modifiers, fn
+        {{:pseudo_element_atk, element}, percent} when is_integer(percent) -> {element, percent}
+        _modifier -> nil
+      end)
+    end
+  end
+
+  defp classic_watk_status(_hit), do: nil
+
+  defp ignore_atk_card?(nil), do: false
+
+  defp ignore_atk_card?(skill_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> definition.ignore_atk_card
+      :error -> false
+    end
+  end
+
+  # The normal attack behind the Magnum Break share: a normal attack is its own,
+  # a skill rolls a fresh one (critical when the skill hit is).
+  defp normal_attack_inputs(hit, parts, context) do
+    if is_nil(Keyword.get(hit.opts, :skill_id)) do
+      {parts, context}
+    else
+      {player_parts(%{hit | opts: []}, hit.attacker, :primary),
+       normal_attack_context(context, hit.attacker, hit.defender)}
+    end
+  end
+
+  defp classic_watk_base(hit, {parts, context}) do
+    PreRenewalAttack.magnum_break_base(PreRenewalAttack.normal_base(parts, context), context, %{
+      refine_atk: parts.refine_atk,
+      mastery_atk: classic_weapon_mastery_atk(hit.attacker, hit.defender)
+    })
+  end
+
+  defp classic_weapon_mastery_atk(attacker, defender) do
+    Map.get(attacker.combat_stats.physical_attack, :weapon_mastery_atk, 0) +
+      demon_bane_bonus(attacker, defender) + beast_bane_bonus(attacker, defender)
+  end
+
+  defp classic_star_atk(attacker),
+    do: Map.get(attacker.combat_stats.physical_attack, :star_atk, 0)
+
+  # Three per spirit sphere: by default the spheres held, or the count the skill
+  # passes for its own sphere use.
+  defp spirit_sphere_atk(attacker, opts),
+    do: 3 * Keyword.get(opts, :spirit_spheres, Map.get(attacker, :spirit_spheres, 0))
 
   # Classic Stave Crasher's base is the MATK roll in place of the weapon roll,
   # sized like it; base ATK, overrefine and the status weapon ATK and ATK rate
@@ -630,14 +828,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     )
   end
 
-  # battle_calc_element_damage: the post-defense attribute recipe. `primary?` says
-  # whether the hit's own element applies here (classic and non-player hits, and
-  # the Sacrifice group); the forced-neutral skills then take a neutral step, and
-  # classic Envenom adds its flat ATK and takes its element again. Damage is then
-  # capped at 0 (`attribute_recover: no`).
+  # battle_calc_element_damage: the post-defense attribute recipe, then the 0 cap
+  # (`attribute_recover: no`).
   defp post_defense_element(damage, hit, element, primary?) do
+    damage
+    |> attribute_steps(hit, element, primary?)
+    |> max(0)
+  end
+
+  # The attribute steps of battle_calc_element_damage. `primary?` says whether the
+  # hit's own element applies here (classic and non-player hits, and the
+  # Sacrifice group); the forced-neutral skills then take a neutral step, and
+  # classic Envenom adds its flat ATK and takes its element again. A hit that
+  # ignores elements or has no damage left takes none.
+  defp attribute_steps(damage, hit, element, primary?) do
     if Keyword.get(hit.opts, :ignore_element, false) or damage <= 0 do
-      max(damage, 0)
+      damage
     else
       damage =
         if primary?, do: element_step(damage, element, hit, allow_negative: true), else: damage
@@ -647,30 +853,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           do: element_step(damage, :neutral, hit, allow_negative: true),
           else: damage
 
-      damage
-      |> classic_envenom(element, hit)
-      |> classic_pseudo_element(hit)
-      |> max(0)
+      classic_envenom(damage, element, hit)
     end
   end
-
-  # Classic Magnum Break (SC_WATK_ELEMENT): for players, a share of the normal-attack
-  # base takes the status element and joins the damage before the 0 cap.
-  defp classic_pseudo_element(damage, %{attacker: %{unit_type: :player}, watk_base: base} = hit) do
-    if GameMode.mode() == :pre_renewal do
-      Enum.reduce(hit.modifiers, damage, fn
-        {{:pseudo_element_atk, element}, percent}, acc when is_integer(percent) and percent > 0 ->
-          acc + div(element_step(base, element, hit, allow_negative: true) * percent, 100)
-
-        _modifier, acc ->
-          acc
-      end)
-    else
-      damage
-    end
-  end
-
-  defp classic_pseudo_element(damage, _hit), do: damage
 
   # Cart Revolution and Stave Crasher in both modes; Investigate, Asura Strike,
   # Shield Boomerang and Shield Chain in renewal.
@@ -706,7 +891,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp hand_elements(attacker, modifiers, opts) do
     case Keyword.get(opts, :element) do
       nil ->
-        endow = Map.get(modifiers, :attack_element)
+        endow = DamageShared.endow_element(modifiers)
         {resolve_attack_element(attacker, modifiers), endow || left_weapon_element(attacker)}
 
       forced ->
@@ -966,7 +1151,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     damage =
       base_damage
       |> apply_attack_modifiers(attacker, defender, opts, :primary, modifiers)
-      |> then(&scalar_element(&1, Map.put(hit, :watk_base, &1)))
+      |> scalar_element(hit)
       |> apply_equipment_taken_families(
         attacker,
         defender,
@@ -1364,9 +1549,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp apply_def_rate_step(damage, rate), do: div(trunc(damage) * max(100 - rate, 0), 100)
 
   defp resolve_attack_element(attacker, attacker_modifiers) do
-    Map.get_lazy(attacker_modifiers, :attack_element, fn ->
-      Map.get(attacker.weapon, :element, :neutral)
-    end)
+    DamageShared.endow_element(attacker_modifiers) || Map.get(attacker.weapon, :element, :neutral)
   end
 
   defp apply_size_modifier(damage, attacker, defender, opts) do

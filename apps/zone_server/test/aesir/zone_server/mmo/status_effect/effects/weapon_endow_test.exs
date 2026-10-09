@@ -57,13 +57,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
     assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender)
   end
 
-  # Every weapon endow, with the element it must hand the element table.
-  # `val1` is only read by :sc_watk_element (rAthena element id 3 => fire); the
-  # rest carry a fixed element and ignore it.
+  # The mutually exclusive weapon endows, with the element each must hand the
+  # element table. They carry a fixed element and ignore `val1`.
   @endows [
     {:sc_aspersio, :holy},
     {:sc_encpoison, :poison},
-    {:sc_watk_element, :fire},
     {:sc_fireweapon, :fire},
     {:sc_waterweapon, :water},
     {:sc_windweapon, :wind},
@@ -71,7 +69,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
   ]
 
   describe "a single endow" do
-    for {status_id, element} <- @endows do
+    # Weapon Enchant reads its element from `val1` (rAthena element id 3 => fire).
+    for {status_id, element} <- [{:sc_enchantarms, :fire} | @endows] do
       test "#{status_id} endows the weapon with the #{element} element" do
         :ok =
           StatusStorage.apply_status(:player, @attacker_id, unquote(status_id),
@@ -87,7 +86,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
   end
 
   describe "RemoveOnUnequipWeapon flag" do
-    for status_id <- [:sc_fireweapon, :sc_waterweapon, :sc_windweapon, :sc_earthweapon] do
+    for status_id <- [
+          :sc_fireweapon,
+          :sc_waterweapon,
+          :sc_windweapon,
+          :sc_earthweapon,
+          :sc_enchantarms
+        ] do
       test "#{status_id} carries :remove_on_unequip_weapon" do
         assert :remove_on_unequip_weapon in Registry.get_definition(unquote(status_id)).flags
       end
@@ -132,6 +137,82 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
 
         assert_received {:attack_element, unquote(expected)}
       end
+    end
+  end
+
+  describe "Weapon Enchant" do
+    # It neither ends nor is ended by the elemental Sage endows and outranks
+    # them for the attack element, whichever arrived first.
+    for other <- [:sc_fireweapon, :sc_waterweapon, :sc_windweapon, :sc_earthweapon],
+        order <- [:before, :after] do
+      test "outranks #{other} applied #{order} it" do
+        statuses =
+          if unquote(order) == :before,
+            do: [{unquote(other), 0}, {:sc_enchantarms, 9}],
+            else: [{:sc_enchantarms, 9}, {unquote(other), 0}]
+
+        for {status_id, val1} <- statuses do
+          :ok =
+            Interpreter.apply_status(:player, @attacker_id, status_id,
+              duration: 30_000,
+              val1: val1
+            )
+        end
+
+        attack_undead()
+
+        assert_received {:attack_element, :undead}
+        assert StatusStorage.has_status?(:player, @attacker_id, unquote(other))
+      end
+    end
+
+    test "ends Aspersio and is ended by it" do
+      apply_in_order([:sc_aspersio, :sc_enchantarms])
+      refute StatusStorage.has_status?(:player, @attacker_id, :sc_aspersio)
+
+      apply_in_order([:sc_aspersio])
+      refute StatusStorage.has_status?(:player, @attacker_id, :sc_enchantarms)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Enchant Poison ends it" do
+      apply_in_order([:sc_enchantarms, :sc_encpoison])
+
+      refute StatusStorage.has_status?(:player, @attacker_id, :sc_enchantarms)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal Enchant Poison coexists with it and loses the attack element" do
+      apply_in_order([:sc_enchantarms, :sc_encpoison])
+
+      attack_undead()
+
+      assert_received {:attack_element, :undead}
+      assert StatusStorage.has_status?(:player, @attacker_id, :sc_encpoison)
+    end
+
+    test "a later Weapon Enchant replaces an earlier one" do
+      :ok =
+        Interpreter.apply_status(:player, @attacker_id, :sc_enchantarms,
+          duration: 30_000,
+          val1: 9
+        )
+
+      :ok =
+        Interpreter.apply_status(:player, @attacker_id, :sc_enchantarms,
+          duration: 30_000,
+          val1: 1
+        )
+
+      attack_undead()
+
+      assert_received {:attack_element, :water}
+    end
+  end
+
+  defp apply_in_order(status_ids) do
+    for status_id <- status_ids do
+      :ok = Interpreter.apply_status(:player, @attacker_id, status_id, duration: 30_000, val1: 9)
     end
   end
 end

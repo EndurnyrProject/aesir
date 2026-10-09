@@ -1039,9 +1039,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       riding: riding?(state.option),
       equip_modifiers: state.stats.modifiers.equipment,
       magic_reduction: PlayerStats.magic_reduction_percent(state.stats),
-      equip_autobonuses: state.stats.equip_autobonuses
+      equip_autobonuses: state.stats.equip_autobonuses,
+      spirit_spheres: held_spirit_spheres(state)
     })
   end
+
+  defp held_spirit_spheres(%{spirit_spheres: %SpiritSpheres{} = spheres}),
+    do: SpiritSpheres.count(spheres)
+
+  defp held_spirit_spheres(_state), do: 0
 
   defp riding?(option) when is_integer(option), do: (option &&& @riding_option_bit) != 0
   defp riding?(_option), do: false

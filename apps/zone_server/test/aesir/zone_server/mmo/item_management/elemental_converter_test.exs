@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
     # source shipped in usable.yml.
     ScriptCompiler.compile_all!()
 
-    on_exit(fn -> StatusStorage.remove_status(:player, @char_id, :sc_watk_element) end)
+    on_exit(fn -> StatusStorage.remove_status(:player, @char_id, :sc_enchantarms) end)
 
     :ok
   end
@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
     test "converter #{item_id} endows for ITEM_ENCHANTARMS's Duration1 of 20 minutes" do
       cast_converter(unquote(item_id))
 
-      instance = StatusStorage.get_status(:player, @char_id, :sc_watk_element)
+      instance = StatusStorage.get_status(:player, @char_id, :sc_enchantarms)
 
       remaining = instance.expires_at - System.monotonic_time(:millisecond)
 

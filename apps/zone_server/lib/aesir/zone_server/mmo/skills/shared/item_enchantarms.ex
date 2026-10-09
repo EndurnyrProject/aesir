@@ -10,8 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarms do
   The skill level selects the element rather than the strength: the applied
   element id is `level - 1`, so level 1 endows neutral, 2 water, 3 earth,
   4 fire, 5 wind, 6 poison, 7 holy, 8 shadow, 9 ghost and 10 undead. That id is
-  handed to `:sc_watk_element` as `val1`, the highest-priority attack-element
-  override the damage pipeline reads.
+  handed to `:sc_enchantarms` as `val1`, the endow that outranks every other
+  attack-element override the damage pipeline reads.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 492,
@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarms do
       duration: Enum.at(definition.duration, level - 1)
     ]
 
-    case StatusInterpreter.apply_status(:player, caster_id, :sc_watk_element, params) do
+    case StatusInterpreter.apply_status(:player, caster_id, :sc_enchantarms, params) do
       :ok -> {:ok, caster}
       {:error, _reason} = error -> error
     end

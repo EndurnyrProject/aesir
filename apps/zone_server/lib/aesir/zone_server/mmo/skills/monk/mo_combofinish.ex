@@ -92,7 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
       skill_level: level,
       skill_ratio: Formulas.thrust_ratio(level, caster.stats.base_stats.str),
       hit_divisions: Formulas.thrust_hit_count(),
-      skip_crit: true
+      skip_crit: true,
+      spirit_spheres: Combo.spheres_after(caster, Enum.at(definition.sphere_cost, level - 1, 0))
     ]
   end
 

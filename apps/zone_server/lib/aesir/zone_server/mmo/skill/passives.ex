@@ -12,8 +12,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   Consumers (the stat pipeline, the natural-heal tick, SmBash) call this module
   instead of iterating `learned_skills` directly.
   """
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passive
+  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbinding
+  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponresearch
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
@@ -76,6 +79,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
       module.attack_replacement(level, ctx)
     else
       _other -> :normal
+    end
+  end
+
+  @doc """
+  Sums the ATK of the learned weapon masteries: the passive part of a hit's
+  mastery stage, without the target-dependent banes.
+
+  Hilt Binding never belongs to it, and Weapon Research only in renewal; in
+  classic both join the damage at a later stage.
+  """
+  @spec weapon_mastery_atk(PlayerStats.t()) :: integer()
+  def weapon_mastery_atk(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+    excluded = non_mastery_atk_passives()
+
+    stats
+    |> learned_passives()
+    |> Enum.reject(fn {module, _level} -> module in excluded end)
+    |> Enum.reduce(0, fn {module, level}, acc -> acc + module.atk_bonus(level, ctx) end)
+  end
+
+  defp non_mastery_atk_passives do
+    case GameMode.mode() do
+      :renewal -> [BsHiltbinding]
+      :pre_renewal -> [BsHiltbinding, BsWeaponresearch]
     end
   end
 

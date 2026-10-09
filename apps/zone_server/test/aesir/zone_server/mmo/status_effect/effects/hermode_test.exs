@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HermodeTest do
         node, acc -> {node, acc}
       end)
 
-    assert length(ids) == 65
+    assert length(ids) == 66
     for id <- ids, do: assert(Registry.get_definition(id), "missing #{id}")
   end
 end

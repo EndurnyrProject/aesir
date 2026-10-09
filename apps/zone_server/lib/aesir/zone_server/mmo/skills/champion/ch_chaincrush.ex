@@ -92,7 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
       skill_level: level,
       skill_ratio: Formulas.chain_crush_ratio(level, caster.stats.progression.base_level),
       hit_divisions: Definition.hit_count_at_level(definition, level),
-      skip_crit: true
+      skip_crit: true,
+      spirit_spheres: Combo.spheres_after(caster, Enum.at(definition.sphere_cost, level - 1, 0))
     ]
   end
 

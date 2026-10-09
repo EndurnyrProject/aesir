@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarmsTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarms
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantArms
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarmsTest do
     test "level #{level} endows the #{element} element" do
       caster = %{character_id: 42}
 
-      expect(StatusInterpreter, :apply_status, fn :player, 42, :sc_watk_element, params ->
+      expect(StatusInterpreter, :apply_status, fn :player, 42, :sc_enchantarms, params ->
         send(self(), {:val1, params[:val1]})
         :ok
       end)
@@ -43,15 +43,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarmsTest do
       assert_received {:val1, val1}
       assert val1 == unquote(level) - 1
 
-      assert %{attack_element: unquote(element)} =
-               WatkElement.modifiers(%StatusEntry{val1: val1}, %{})
+      assert %{enchant_arms_element: unquote(element)} =
+               EnchantArms.modifiers(%StatusEntry{val1: val1}, %{})
     end
   end
 
   test "the endow lasts 20 minutes at every level" do
     caster = %{character_id: 42}
 
-    expect(StatusInterpreter, :apply_status, 10, fn :player, 42, :sc_watk_element, params ->
+    expect(StatusInterpreter, :apply_status, 10, fn :player, 42, :sc_enchantarms, params ->
       send(self(), {:duration, params[:duration]})
       :ok
     end)

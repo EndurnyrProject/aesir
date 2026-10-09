@@ -4,9 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Waterweapon do
 
   Endows the weapon with the water element, replacing other weapon endows.
 
-  Every endow contributes the same `attack_element` modifier and aggregation
-  sums colliding keys, so the endows list each other in `end_on_start`
-  (replace-on-cast) to keep two of them from ever being live at once.
+  These endows contribute the same `attack_element` modifier and aggregation
+  sums colliding keys, so they list each other in `end_on_start`
+  (replace-on-cast) to keep two of them from ever being live at once. Weapon
+  Enchant (SC_ENCHANTARMS) is not among them: it coexists with this endow and
+  outranks it.
 
   rAthena ends this status when the endowed weapon is unequipped
   (`RemoveOnUnequipWeapon`), which the equipment handler enforces off the
@@ -25,8 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Waterweapon do
       :sc_windweapon,
       :sc_earthweapon,
       :sc_shadowweapon,
-      :sc_ghostweapon,
-      :sc_watk_element
+      :sc_ghostweapon
     ],
     icon: :propertywater
 

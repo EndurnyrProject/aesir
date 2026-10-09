@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Aspersio do
       :sc_earthweapon,
       :sc_shadowweapon,
       :sc_ghostweapon,
-      :sc_watk_element
+      :sc_enchantarms
     ],
     prevented_by: [:sc_refresh, :sc_inspiration],
     icon: :aspersio

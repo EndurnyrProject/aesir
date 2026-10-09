@@ -163,7 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   def open_follow_up(caster, opener, expected, target, now, delay, own_cost) do
     ctx = %{
       learned: caster.stats.progression.learned_skills,
-      spheres: max(SpiritSpheres.count(caster.spirit_spheres) - own_cost, 0),
+      spheres: spheres_after(caster, own_cost),
       fury?: Fury.active?(caster.character_id)
     }
 
@@ -180,6 +180,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
         end
     end
   end
+
+  @doc """
+  The spirit spheres `caster` holds once a cost of `own_cost` is paid, which the
+  interpreter commits only after the skill returns.
+  """
+  @spec spheres_after(map(), non_neg_integer()) :: non_neg_integer()
+  def spheres_after(caster, own_cost),
+    do: max(SpiritSpheres.count(caster.spirit_spheres) - own_cost, 0)
 
   defp asura?(ctx, min_spheres),
     do: knows?(ctx, @asura) and ctx.fury? and ctx.spheres >= min_spheres

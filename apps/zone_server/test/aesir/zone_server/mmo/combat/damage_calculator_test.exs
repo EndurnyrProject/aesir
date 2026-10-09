@@ -615,7 +615,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert result == 100
     end
 
-    test "adds a percentage of the attack as second-element damage (Magnum Break's fire aura)" do
+    test "adds a percentage of the normal attack as second-element damage (Magnum Break's fire aura)" do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
 
@@ -633,10 +633,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:ok, result} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
 
-      # Classic: 100 neutral, plus 20% of the attack resolved as fire against a
-      # defender the fire table doubles against: 100 + 100 * 0.2 * 2.0. Renewal
-      # adds the share to weapon components, never to a replaced scalar base.
-      assert result == mode_value(100, 140)
+      # Classic: 100 neutral, plus 20% of the player's own normal attack taken as
+      # fire. The unarmed normal attack is status ATK 5 + 0 + 1 + 1 = 7, after
+      # DEF 10 and the minimum soft DEF 7 * 90 / 100 - 1 = 5, doubled by the fire
+      # table to 10: 100 + 10 * 20 / 100. Renewal adds the share to weapon
+      # components, never to a replaced scalar base.
+      assert result == mode_value(100, 102)
     end
 
     test "adds flat weapon ATK (:watk) granted by statuses (SC_LOUD / Impositio)" do

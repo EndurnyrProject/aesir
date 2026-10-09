@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.ElementTest do
   alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.Mechanics.Elements.PreRenewal
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantArms
 
   test "unknown elements support a caller-selected fallback without aliasing neutral" do
     assert Element.id(:unknown) == 0
@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.ElementTest do
     for id <- [-1, 10, nil, 1.0, "1"] do
       assert_raise KeyError, fn -> Element.from_id!(id) end
       assert_raise KeyError, fn -> ElementalChange.modifiers(%{val1: 1, val2: id}, %{}) end
-      assert_raise KeyError, fn -> WatkElement.modifiers(%{val1: id}, %{}) end
+      assert_raise KeyError, fn -> EnchantArms.modifiers(%{val1: id}, %{}) end
     end
   end
 
@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.ElementTest do
       assert Element.id(element) == id
       assert Element.from_id!(id) == element
       assert ElementModifiers.id(element) == id
-      assert WatkElement.modifiers(%{val1: id}, %{}) == %{attack_element: element}
+      assert EnchantArms.modifiers(%{val1: id}, %{}) == %{enchant_arms_element: element}
 
       assert ElementalChange.modifiers(%{val1: 2, val2: id}, %{}) ==
                %{element_override: {element, 2}}

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 375,
     name: :pf_soulburn,
+    ignore_atk_card: true,
     requires: [],
     display_name: "Soul Siphon",
     max_level: 5,

@@ -27,6 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   the skill's physical hits never receive the equipment non-critical damage
   rate. It is mode-keyable.
 
+  `ignore_atk_card` mirrors the source's IgnoreAtkCard damage flag. Among other
+  things it keeps classic Magnum Break's fire aura out of the skill's hits. It
+  is mode-keyable.
+
   `target_hidden`, `is_npc` and `damage_splash` mirror the source's TargetHidden
   and IsNpc flags and its Splash damage flag. TargetHidden lets the skill reach
   a Hiding target; IsNpc and Splash change how a splash recipient's skill use is
@@ -136,6 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             ignore_status_cast: false,
             ignore_item_cast: false,
             ignore_noncrit_atk_bonus: false,
+            ignore_atk_card: false,
             target_hidden: false,
             is_npc: false,
             damage_splash: false,
@@ -185,6 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           ignore_status_cast: boolean(),
           ignore_item_cast: boolean(),
           ignore_noncrit_atk_bonus: boolean(),
+          ignore_atk_card: boolean(),
           target_hidden: boolean(),
           is_npc: boolean(),
           damage_splash: boolean(),
@@ -242,6 +248,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_status_cast: :boolean,
     ignore_item_cast: :boolean,
     ignore_noncrit_atk_bonus: :boolean,
+    ignore_atk_card: :boolean,
     target_hidden: :boolean,
     is_npc: :boolean,
     damage_splash: :boolean,
@@ -283,6 +290,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ignore_status_cast: false,
     ignore_item_cast: false,
     ignore_noncrit_atk_bonus: false,
+    ignore_atk_card: false,
     target_hidden: false,
     is_npc: false,
     damage_splash: false,
@@ -322,6 +330,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :fixed_cast_time,
     :ignore_item_cast,
     :ignore_noncrit_atk_bonus,
+    :ignore_atk_card,
     :target_hidden,
     :is_npc,
     :damage_splash,

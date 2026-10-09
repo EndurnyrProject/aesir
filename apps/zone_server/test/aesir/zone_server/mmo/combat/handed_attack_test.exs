@@ -78,6 +78,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     assert maximum.secondary.damage == max(div(raw_secondary.damage * 80, 100), 1)
   end
 
+  test "any left-hand weapon is dual wield, not only a second dagger" do
+    attacker =
+      with_hands(hand(:right_hand, 100, :one_handed_sword), hand(:left_hand, 80))
+
+    assert {:ok, raw_secondary} =
+             DamageCalculator.calculate_secondary_hand_damage(attacker, defender(),
+               skip_crit: true
+             )
+
+    assert {:ok, %HandedAttack{secondary: %{damage: secondary}}} =
+             HandedAttack.calculate(player(%{}, :dagger), attacker, defender())
+
+    assert secondary == max(div(raw_secondary.damage * 30, 100), 1)
+  end
+
   test "one critical decision governs both dual-dagger components" do
     attacker =
       with_hands(hand(:right_hand, 100), hand(:left_hand, 80))

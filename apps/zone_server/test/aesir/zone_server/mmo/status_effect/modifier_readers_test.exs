@@ -66,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :atk_bonus,
                :atk_rate,
                :attack_element,
+               :enchant_arms_element,
                :damage_bonus,
                :damage_multiplier,
                :def_bonus,

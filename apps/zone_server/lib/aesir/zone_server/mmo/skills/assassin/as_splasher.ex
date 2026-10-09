@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 141,
     name: :as_splasher,
+    ignore_atk_card: true,
     requires: [],
     display_name: "Venom Splasher",
     max_level: 10,

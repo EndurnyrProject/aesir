@@ -137,7 +137,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
     # Current derived equipment autobonus registrations. Non-player combatants
     # have no equipment, so they retain the safe empty default.
-    equip_autobonuses: %{}
+    equip_autobonuses: %{},
+
+    # Spirit spheres a player held when the combatant was built (0 for others).
+    spirit_spheres: 0
   ]
 
   @type t() :: %__MODULE__{
@@ -203,7 +206,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           riding: boolean(),
           equip_modifiers: map(),
           magic_reduction: 0..100,
-          equip_autobonuses: %{Stats.autobonus_key() => Stats.autobonus_registration()}
+          equip_autobonuses: %{Stats.autobonus_key() => Stats.autobonus_registration()},
+          spirit_spheres: non_neg_integer()
         }
 
   @doc """

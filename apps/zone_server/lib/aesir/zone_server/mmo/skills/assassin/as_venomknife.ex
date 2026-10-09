@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1004,
     name: :as_venomknife,
+    ignore_atk_card: true,
     display_name: "Throw Venom Knife",
     max_level: 1,
     target_type: :target_enemy,

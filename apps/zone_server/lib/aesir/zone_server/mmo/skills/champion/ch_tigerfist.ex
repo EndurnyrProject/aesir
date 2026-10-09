@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
          {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
          {:ok, target} <- Combo.validate(caster.combo, stages, {target_type, target_id}, now),
          {:ok, %{hit?: hit?}} <-
-           Combat.execute_skill_attack(caster, target_id, attack_options(caster, level)),
+           Combat.execute_skill_attack(caster, target_id, attack_options(caster, level, own_cost)),
          :ok <- if(hit?, do: maybe_immobilise(caster, target, level), else: :ok),
          {:ok, combo} <-
            Combo.open_follow_up(caster, :tiger_fist, stages, target, now, duration, own_cost) do
@@ -84,13 +84,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
     end
   end
 
-  defp attack_options(caster, level) do
+  defp attack_options(caster, level, own_cost) do
     [
       skill_id: 371,
       skill_level: level,
       skill_ratio: Formulas.glacier_ratio(level, caster.stats.progression.base_level),
       skip_crit: true,
-      report_hit: true
+      report_hit: true,
+      spirit_spheres: Combo.spheres_after(caster, own_cost)
     ]
   end
 

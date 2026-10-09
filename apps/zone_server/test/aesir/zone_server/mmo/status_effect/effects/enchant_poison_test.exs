@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
   test "replaces and is replaced by every ordinary weapon endow" do
     endows = [
       :sc_aspersio,
-      :sc_watk_element,
       :sc_fireweapon,
       :sc_waterweapon,
       :sc_windweapon,
@@ -176,7 +175,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
     |> Enum.find(
       &(&1.type in [
           :sc_aspersio,
-          :sc_watk_element,
           :sc_fireweapon,
           :sc_waterweapon,
           :sc_windweapon,
