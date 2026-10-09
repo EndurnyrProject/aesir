@@ -2224,7 +2224,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 100)
       opts = [base_damage: 1_000, skip_crit: true]
-      primary = mode_value(2_000, 1_999)
+      primary = mode_value(2_000, 1_998)
       without_cards = mode_value(1_000, 999)
       secondary = mode_value(820, 1)
 
@@ -2250,7 +2250,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
             Map.merge(attacker.combat_stats, %{
               atk: 9_999,
               max_weapon_damage: true,
-              physical_attack: %{status_atk: 20, flat_atk: 15, mastery_atk: 7, str: 0, dex: 0}
+              physical_attack: %{
+                status_atk: 20,
+                flat_atk: 15,
+                mastery_atk: 7,
+                weapon_mastery_atk: 7,
+                left_weapon_mastery_atk: 7,
+                str: 0,
+                dex: 0
+              }
             })
       }
 
@@ -2304,7 +2312,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         | equip_modifiers: Map.delete(attacker.equip_modifiers, {:addrace, :dragon})
       }
 
-      expected = mode_value(2_430, 2_429)
+      expected = mode_value(2_430, 2_427)
 
       assert {:ok, %{damage: ^expected}} =
                DamageCalculator.calculate_damage(no_cards, defender, opts)
@@ -2822,7 +2830,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
             matk: 200,
             matk_min: 100,
             matk_max: 200,
-            physical_attack: %{status_atk: 20, flat_atk: 15, mastery_atk: 5, str: 0, dex: 0}
+            physical_attack: %{
+              status_atk: 20,
+              flat_atk: 15,
+              mastery_atk: 5,
+              weapon_mastery_atk: 5,
+              str: 0,
+              dex: 0
+            }
           })
     }
   end

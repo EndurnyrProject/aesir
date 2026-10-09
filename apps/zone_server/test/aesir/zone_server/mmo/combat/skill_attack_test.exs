@@ -1395,7 +1395,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end)
 
     # Classic retains its minimum one-point soft DEF after equipment DEF-ignore.
-    expected_damage = if GameMode.mode() == :renewal, do: 1_944, else: 1_943
+    expected_damage = if GameMode.mode() == :renewal, do: 1_944, else: 1_942
 
     expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, ^expected_damage, hit_info ->
       assert hit_info.is_short == false

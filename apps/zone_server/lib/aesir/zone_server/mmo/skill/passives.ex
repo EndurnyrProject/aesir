@@ -90,8 +90,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   classic both join the damage at a later stage.
   """
   @spec weapon_mastery_atk(PlayerStats.t()) :: integer()
-  def weapon_mastery_atk(%PlayerStats{} = stats) do
+  def weapon_mastery_atk(%PlayerStats{} = stats), do: weapon_mastery_atk(stats, nil)
+
+  @doc """
+  Sums the weapon masteries' ATK as `weapon_mastery_atk/1` does, for a hand
+  holding `weapon_type` instead of the right-hand weapon; `nil` keeps the
+  right-hand weapon.
+  """
+  @spec weapon_mastery_atk(PlayerStats.t(), atom() | nil) :: integer()
+  def weapon_mastery_atk(%PlayerStats{} = stats, weapon_type) do
     ctx = build_ctx(stats)
+    ctx = if weapon_type, do: %{ctx | weapon_type: weapon_type}, else: ctx
     excluded = non_mastery_atk_passives()
 
     stats
@@ -105,6 +114,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
       :renewal -> [BsHiltbinding]
       :pre_renewal -> [BsHiltbinding, BsWeaponresearch]
     end
+  end
+
+  @doc """
+  Returns the ATK bonus of one learned passive module, or 0 when it is not
+  learned.
+  """
+  @spec atk_bonus_of(PlayerStats.t(), module()) :: integer()
+  def atk_bonus_of(%PlayerStats{} = stats, module) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn
+      {^module, level}, acc -> acc + module.atk_bonus(level, ctx)
+      _other, acc -> acc
+    end)
   end
 
   @doc """

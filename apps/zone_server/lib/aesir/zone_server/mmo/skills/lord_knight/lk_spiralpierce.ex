@@ -5,10 +5,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   one second on a connecting hit.
 
   Renewal folds the 70% base and size adjustment into one integer rate, which
-  can round by one point. Pre-renewal's refine bonus rides `bonus_atk` under
-  ATK rate rather than being added after that rate. Mob casts use physical
-  ranged neutral damage rather than the reference misc attack. Charging
-  Pierce's optional alteration is not modelled.
+  can round by one point. Classic replaces a player's base with 8% of the
+  weapon's weight raised by 50% per level, plus (STR / 10)^2, scaled 125% on
+  small and 75% on large targets; the weapon's refine ATK joins after DEF. Mob casts
+  use physical ranged neutral damage rather than the reference misc attack.
+  Charging Pierce's optional alteration is not modelled.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 397,
@@ -41,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @behaviour Active
 
@@ -60,12 +62,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
           {:ok, Active.caster()} | {:error, atom()}
   def cast(%PlayerState{} = caster, {:unit, target_id}, level, definition) do
     with {:ok, target} <- Combat.resolve_combatant(target_id),
-         {weight, refine} <-
+         {weight, _refine} <-
            Stats.right_hand_weapon_stats(caster.stats.equipment, Map.values(caster.inventory)) do
       opts =
         if GameMode.mode() == :renewal,
           do: renewal_opts(caster, target.size, weight, level, definition),
-          else: classic_opts(weight, refine, level, definition)
+          else: classic_opts(caster, target.size, weight, level, definition)
 
       case strike(caster, target_id, target, opts) do
         :ok -> {:ok, caster}
@@ -118,16 +120,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
       ]
   end
 
-  defp classic_opts(weight, refine, level, definition) do
+  defp classic_opts(caster, size, weight, level, definition) do
+    str_bonus = Integer.pow(div(Stats.get_effective_stat(caster.stats, :str), 10), 2)
+    weighted = div(div(weight * 8, 100) * (100 + 50 * level), 100) + str_bonus
+    size_rate = Map.get(%{small: 125, large: 75}, size, 100)
+
     attack_opts(definition, level) ++
       [
-        base_damage: div(weight * 8, 100),
-        skill_ratio: 100 + 50 * level,
+        base_damage: div(weighted * size_rate, 100),
         ignore_defense: true,
         ignore_size: true,
-        bonus_atk: refine
+        refine_atk: right_refine_atk(caster.stats)
       ]
   end
+
+  defp right_refine_atk(%Stats{right_hand: %WeaponHand{refine_atk: refine_atk}}), do: refine_atk
+  defp right_refine_atk(_stats), do: 0
 
   defp attack_opts(definition, level) do
     [

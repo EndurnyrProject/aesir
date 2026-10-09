@@ -12,12 +12,18 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
   Effective player attack inputs captured during stat recomputation.
 
   `mastery_atk` is every passive ATK plus the right-hand Star Crumb bonus;
-  `weapon_mastery_atk` is only the weapon masteries' part of it and `star_atk`
-  only the Star Crumb part.
+  `weapon_mastery_atk` is only the weapon masteries' part of it (for the
+  left hand's weapon in `left_weapon_mastery_atk`), `star_atk` and
+  `left_star_atk` each hand's Star Crumb bonus, and `weapon_research_atk` and
+  `hilt_binding_atk` those two passives' ATK.
   """
   @type snapshot :: %{
           optional(:weapon_mastery_atk) => integer(),
+          optional(:left_weapon_mastery_atk) => integer(),
           optional(:star_atk) => integer(),
+          optional(:left_star_atk) => integer(),
+          optional(:weapon_research_atk) => integer(),
+          optional(:hilt_binding_atk) => integer(),
           status_atk: integer(),
           flat_atk: integer(),
           mastery_atk: integer(),

@@ -48,6 +48,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @emperium_mob_id 1288
+  @cart_revolution 153
+  @spiral_pierce 397
+
+  # Skills that take no mastery, refine, Star Crumb or spirit sphere bonus: Shield
+  # Chain, Shield Boomerang, Acid Terror, Investigate, Asura Strike, Sacrifice,
+  # both Dragon Breaths, Self Destruction, Shield Press, Earth Drive and the
+  # monster Dragon Breath.
+  @mastery_exempt_skills [480, 251, 230, 266, 271, 368, 2008, 5004, 2267, 2310, 2323, 731]
 
   @typedoc """
   Result of damage calculation containing final damage and critical hit status.
@@ -118,6 +126,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       priority over both the weapon element and an `SC_WATK_ELEMENT` endow
       (e.g. Envenom's poison, Sand Attack's earth). Default `nil` (resolve
       normally).
+    - `:refine_atk` - with `:base_damage`, a classic player's refine bonus,
+      added after DEF unless the skill takes no refine bonus. Default `0`.
 
   Player weapon hits use the active physical-attack component pipeline, including
   mode-specific ratio, element and cardfix ordering. Non-player hits and explicit
@@ -312,7 +322,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # modifiers and DEF, the post-defense minimum, the attribute step, the critical
   # tail and then the target's cards (battle.cpp:5625-5758). The critical is
   # decided first: it sets a non-player's base to its maximum and, in classic,
-  # skips DEF.
+  # skips DEF. A classic player's hit takes its refine and masteries after DEF
+  # and its attack cards only after the attribute step, Weapon Research and Hilt
+  # Binding.
   defp calculate_ordinary_pipeline_damage(
          attacker,
          defender,
@@ -325,14 +337,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
     modifiers = attacker_status_modifiers(attacker)
+    classic_player? = classic?() and attacker.unit_type == :player
+    pre_defense_families = if classic_player?, do: :skill, else: :all
 
     with {:ok, base_atk} <- calculate_base_attack(attacker, opts),
          patk_atk = apply_patk_multiplier(base_atk, attacker),
          skilled_atk = div(patk_atk * skill_ratio, 100) + bonus_atk,
          modified_atk =
-           apply_attack_modifiers(skilled_atk, attacker, defender, opts, attack_path, modifiers),
-         total_atk = modified_atk + demon_bane_bonus(attacker, defender),
-         total_atk = total_atk + beast_bane_bonus(attacker, defender),
+           apply_attack_modifiers(
+             skilled_atk,
+             attacker,
+             defender,
+             opts,
+             attack_path,
+             modifiers,
+             pre_defense_families
+           ),
+         total_atk = modified_atk + scalar_banes(attacker, defender, classic_player?),
          total_atk = apply_res_reduction(total_atk, defender),
          {:ok, defended} <-
            scalar_defense(
@@ -352,8 +373,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
       taken =
         defended
-        |> max(1)
+        |> scalar_post_defense(hit, classic_player?)
         |> scalar_element(hit)
+        |> classic_player_cards(hit, attack_path, classic_player?)
         |> scalar_critical(attacker, critical?)
         |> apply_equipment_taken_families(
           attacker,
@@ -365,6 +387,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
       {:ok, %{damage: taken, is_critical: critical?}}
     end
+  end
+
+  # The banes are a classic player's post-defense masteries; every other hit adds
+  # them before DEF.
+  defp scalar_banes(_attacker, _defender, true), do: 0
+
+  defp scalar_banes(attacker, defender, false),
+    do: demon_bane_bonus(attacker, defender) + beast_bane_bonus(attacker, defender)
+
+  # A classic player's post-defense stage: the refine bonus, the minimum of 1, the
+  # weapon masteries and the post-defense status ATK, each where the skill takes
+  # it. Every other hit only keeps a minimum of 1.
+  defp scalar_post_defense(damage, hit, true) do
+    skill_id = Keyword.get(hit.opts, :skill_id)
+
+    refine =
+      if stacks_masteries?(skill_id, :refine), do: Keyword.get(hit.opts, :refine_atk, 0), else: 0
+
+    mastery =
+      if stacks_masteries?(skill_id, :all),
+        do: classic_weapon_mastery_atk(hit.attacker, hit.defender),
+        else: 0
+
+    max(damage + refine, 1) + mastery + post_defense_atk(hit.modifiers, skill_id)
+  end
+
+  defp scalar_post_defense(damage, _hit, false), do: max(damage, 1)
+
+  defp classic_player_cards(damage, hit, attack_path, true) do
+    apply_equipment_attack_families(
+      damage + classic_late_atk(hit),
+      hit.attacker,
+      hit.modifiers,
+      hit.defender,
+      Keyword.get(hit.opts, :skill_id),
+      hit_element(hit.attacker, hit.modifiers, hit.opts),
+      attack_path,
+      :cards
+    )
+  end
+
+  defp classic_player_cards(damage, _hit, _attack_path, false), do: damage
+
+  defp post_defense_atk(modifiers, skill_id) do
+    if skill_id in Map.get(modifiers, :post_defense_atk_excludes, []),
+      do: 0,
+      else: Map.get(modifiers, :post_defense_atk, 0)
   end
 
   # Renewal multiplies a critical after the attribute step; classic has no
@@ -400,6 +469,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       player? ->
         damage
         |> attribute_steps(hit, element, true)
+        |> classic_after_element(hit, element, :right_hand)
         |> classic_watk(hit, scalar_watk_input(hit))
         |> max(0)
 
@@ -493,12 +563,44 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         hit.critical.is_critical and Keyword.get(hit.opts, :critical_max_weapon, true)
       )
 
-    mastery =
-      parts.mastery_atk + demon_bane_bonus(attacker, hit.defender) +
-        beast_bane_bonus(attacker, hit.defender) + renewal_envenom_atk(hit.opts)
+    cond do
+      parts.source == :shield ->
+        parts
 
-    if parts.source == :shield, do: parts, else: %{parts | mastery_atk: mastery}
+      classic?() ->
+        classic_parts(parts, hit, attacker, attack_path)
+
+      true ->
+        mastery =
+          parts.mastery_atk + demon_bane_bonus(attacker, hit.defender) +
+            beast_bane_bonus(attacker, hit.defender) + renewal_envenom_atk(hit.opts)
+
+        %{parts | mastery_atk: mastery}
+    end
   end
+
+  # A classic hand's post-defense bonuses: its refine bonus and its own weapon
+  # masteries with the banes, each only for a skill that stacks it.
+  defp classic_parts(parts, hit, attacker, attack_path) do
+    skill_id = Keyword.get(hit.opts, :skill_id)
+
+    %{
+      parts
+      | mastery_atk:
+          if(stacks_masteries?(skill_id, :all),
+            do: classic_weapon_mastery_atk(attacker, hit.defender, attack_path),
+            else: 0
+          ),
+        refine_atk: if(stacks_masteries?(skill_id, :refine), do: parts.refine_atk, else: 0)
+    }
+  end
+
+  # Whether a skill takes the classic post-defense masteries (`:all`, which also
+  # gates the spirit spheres), the refine bonus or the Star Crumb bonus. Classic
+  # Spiral Pierce keeps only the refine and Star Crumb bonuses.
+  defp stacks_masteries?(skill_id, _bonus) when skill_id in @mastery_exempt_skills, do: false
+  defp stacks_masteries?(@spiral_pierce, bonus), do: not classic?() or bonus in [:refine, :star]
+  defp stacks_masteries?(_skill_id, _bonus), do: true
 
   defp hand_context(hit, attacker, attack_path, parts) do
     player_damage_context(
@@ -526,7 +628,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         :error -> parts |> classic_hand_stage(context, hit, hit.attacker) |> max(0)
       end
 
-    {:ok, %{hit.critical | damage: PreRenewalAttack.post_element(staged, context)}}
+    damage = PreRenewalAttack.post_element(staged + classic_late_atk(hit), context)
+    {:ok, %{hit.critical | damage: damage}}
   end
 
   defp classic_player_damage(hit) do
@@ -548,6 +651,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       right
       |> classic_watk(hit, watk_input)
       |> max(0)
+      |> Kernel.+(classic_late_atk(hit))
       |> PreRenewalAttack.post_element(context)
 
     result = %{hit.critical | damage: damage}
@@ -559,12 +663,60 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
      )}
   end
 
-  # One classic hand up to its attribute steps, before the 0 cap.
+  # One classic hand up to its attribute steps and the bonuses that follow them,
+  # before the 0 cap.
   defp classic_hand_stage(parts, context, hit, attacker) do
+    element = hit_element(attacker, hit.modifiers, hit.opts)
+
     parts
     |> PreRenewalAttack.pre_element(context)
-    |> attribute_steps(hit, hit_element(attacker, hit.modifiers, hit.opts), true)
+    |> attribute_steps(hit, element, true)
+    |> classic_after_element(hit, element, parts.hand)
   end
+
+  # Classic adds a player's Star Crumb and spirit sphere ATK after the attribute
+  # step, even to a hit the step nullified, then Envenom's flat ATK, which takes
+  # the element once more together with them. Renewal has none of these here.
+  defp classic_after_element(damage, hit, element, hand) do
+    if classic?() do
+      skill_id = Keyword.get(hit.opts, :skill_id)
+
+      damage
+      |> Kernel.+(
+        if stacks_masteries?(skill_id, :star), do: star_atk(hit.attacker, hand), else: 0
+      )
+      |> Kernel.+(if stacks_masteries?(skill_id, :all), do: player_sphere_atk(hit), else: 0)
+      |> classic_envenom(element, hit)
+    else
+      damage
+    end
+  end
+
+  defp star_atk(%{unit_type: :player} = attacker, :left_hand),
+    do: Map.get(attacker.combat_stats.physical_attack, :left_star_atk, 0)
+
+  defp star_atk(%{unit_type: :player} = attacker, _hand), do: classic_star_atk(attacker)
+  defp star_atk(_attacker, _hand), do: 0
+
+  defp player_sphere_atk(%{attacker: %{unit_type: :player} = attacker, opts: opts}),
+    do: spirit_sphere_atk(attacker, opts)
+
+  defp player_sphere_atk(_hit), do: 0
+
+  # Weapon Research and Hilt Binding (except on Cart Revolution) join every
+  # classic player weapon hit after the 0 cap, before the attacker's cards.
+  defp classic_late_atk(%{attacker: %{unit_type: :player} = attacker, opts: opts}) do
+    snapshot = attacker.combat_stats.physical_attack
+
+    hilt =
+      if Keyword.get(opts, :skill_id) == @cart_revolution,
+        do: 0,
+        else: Map.get(snapshot, :hilt_binding_atk, 0)
+
+    Map.get(snapshot, :weapon_research_atk, 0) + hilt
+  end
+
+  defp classic_late_atk(_hit), do: 0
 
   # A classic normal attack's left hand reaches the attribute step too: a
   # dual-wield left weapon, or a katar's empty left hand (no weapon ATK). Skills
@@ -689,8 +841,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     })
   end
 
-  defp classic_weapon_mastery_atk(attacker, defender) do
-    Map.get(attacker.combat_stats.physical_attack, :weapon_mastery_atk, 0) +
+  # battle_addmastery: the hand's weapon masteries (the left hand's for its own
+  # weapon type) plus the banes.
+  defp classic_weapon_mastery_atk(attacker, defender, attack_path \\ :primary) do
+    key = if attack_path == :secondary, do: :left_weapon_mastery_atk, else: :weapon_mastery_atk
+
+    Map.get(attacker.combat_stats.physical_attack, key, 0) +
       demon_bane_bonus(attacker, defender) + beast_bane_bonus(attacker, defender)
   end
 
@@ -833,14 +989,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp post_defense_element(damage, hit, element, primary?) do
     damage
     |> attribute_steps(hit, element, primary?)
+    |> classic_after_element(hit, element, :right_hand)
     |> max(0)
   end
 
   # The attribute steps of battle_calc_element_damage. `primary?` says whether the
   # hit's own element applies here (classic and non-player hits, and the
-  # Sacrifice group); the forced-neutral skills then take a neutral step, and
-  # classic Envenom adds its flat ATK and takes its element again. A hit that
-  # ignores elements or has no damage left takes none.
+  # Sacrifice group); the forced-neutral skills then take a neutral step. A hit
+  # that ignores elements or has no damage left takes none.
   defp attribute_steps(damage, hit, element, primary?) do
     if Keyword.get(hit.opts, :ignore_element, false) or damage <= 0 do
       damage
@@ -848,12 +1004,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       damage =
         if primary?, do: element_step(damage, element, hit, allow_negative: true), else: damage
 
-      damage =
-        if Keyword.get(hit.opts, :skill_id) in forced_neutral_skills(),
-          do: element_step(damage, :neutral, hit, allow_negative: true),
-          else: damage
-
-      classic_envenom(damage, element, hit)
+      if Keyword.get(hit.opts, :skill_id) in forced_neutral_skills(),
+        do: element_step(damage, :neutral, hit, allow_negative: true),
+        else: damage
     end
   end
 
@@ -965,11 +1118,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       skill_ratio: Keyword.get(opts, :skill_ratio, 100),
       base_atk_rate: Keyword.get(opts, :base_atk_rate, 100),
       bonus_atk: Keyword.get(opts, :bonus_atk, 0),
-      post_defense_atk:
-        if(skill_id in Map.get(attacker_modifiers, :post_defense_atk_excludes, []),
-          do: 0,
-          else: Map.get(attacker_modifiers, :post_defense_atk, 0)
-        ),
+      post_defense_atk: post_defense_atk(attacker_modifiers, skill_id),
       skill_atk_rate: attack_rates.skill,
       skill_taken_rate: taken_rates.skill,
       global_race_rate: RaceModifiers.dragonology_atk_rate(attacker, defender.race),
@@ -1164,8 +1313,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   # The scalar recipe's pre-defense modifiers: size, status ATK channels and the
-  # attacker's equipment families. Element and the target's cards follow DEF.
-  defp apply_attack_modifiers(base_damage, attacker, defender, opts, attack_path, modifiers) do
+  # attacker's equipment families (`families`: every family, only the skill
+  # rate, or only the cards and range rates). Element and the target's cards
+  # follow DEF.
+  defp apply_attack_modifiers(
+         base_damage,
+         attacker,
+         defender,
+         opts,
+         attack_path,
+         modifiers,
+         families \\ :all
+       ) do
     skill_id = Keyword.get(opts, :skill_id)
     attack_element = hit_element(attacker, modifiers, opts)
 
@@ -1178,7 +1337,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       defender,
       skill_id,
       attack_element,
-      attack_path
+      attack_path,
+      families
     )
     |> trunc()
   end
@@ -1442,7 +1602,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          defender,
          skill_id,
          attack_element,
-         attack_path
+         attack_path,
+         families
        ) do
     %{race_class: card_race_class, element: card_element, size: card_size, skill: skill} =
       EquipmentBonuses.attack_rates(
@@ -1462,13 +1623,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     race_class =
       card_race_class + RaceModifiers.dragonology_atk_rate(attacker, defender.race)
 
+    cards = fn rate -> if families in [:all, :cards], do: rate, else: 0 end
+    skill = if families in [:all, :skill], do: skill, else: 0
+
     damage
-    |> apply_family_step(race_class)
-    |> apply_family_step(card_element)
-    |> apply_family_step(card_size)
+    |> apply_family_step(cards.(race_class))
+    |> apply_family_step(cards.(card_element))
+    |> apply_family_step(cards.(card_size))
     |> apply_family_step(skill)
-    |> apply_family_step(EquipmentBonuses.long_atk_rate(attacker))
-    |> apply_family_step(EquipmentBonuses.short_atk_rate(attacker))
+    |> apply_family_step(cards.(EquipmentBonuses.long_atk_rate(attacker)))
+    |> apply_family_step(cards.(EquipmentBonuses.short_atk_rate(attacker)))
   end
 
   # Defender percent damage-taken families, read off the defender's own

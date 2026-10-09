@@ -12,8 +12,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistPassivesTest do
     assert AmAxemastery.atk_bonus(10, %{weapon_type: :two_handed_axe}) == 30
   end
 
+  @tag game_mode: :renewal
   test "Axe Mastery grants 3 ATK per level with a one-handed sword" do
     assert AmAxemastery.atk_bonus(10, %{weapon_type: :one_handed_sword}) == 30
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Axe Mastery grants no ATK with a one-handed sword" do
+    assert AmAxemastery.atk_bonus(10, %{weapon_type: :one_handed_sword}) == 0
   end
 
   test "Axe Mastery grants no ATK without a supported weapon" do

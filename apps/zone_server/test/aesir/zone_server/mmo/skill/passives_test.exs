@@ -342,11 +342,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       assert Calculator.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
     end
 
+    @tag game_mode: :renewal
     test "AM_AXEMASTERY level 10 with a one-handed sword grants 30 ATK" do
       player = build_player(%{226 => 10}, :one_handed_sword)
 
       assert Passives.atk_bonus(player) == 30
       assert Calculator.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic AM_AXEMASTERY grants no ATK with a one-handed sword" do
+      player = build_player(%{226 => 10}, :one_handed_sword)
+
+      assert Passives.atk_bonus(player) == 0
     end
 
     test "AM_AXEMASTERY grants no ATK with another weapon or bare hands" do

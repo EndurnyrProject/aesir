@@ -21,6 +21,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbinding
+  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponresearch
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -323,7 +325,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     %{min: base_matk_min, max: base_matk_max} = formulas.base_matk(values)
     base_def = formulas.base_def(values)
     skill_passive_atk = Passives.atk_bonus(stats)
-    star_atk = forged_star_damage(stats.worn_items)
+    star_atk = forged_star_damage(stats.worn_items, :right_hand)
     passive_atk = skill_passive_atk + star_atk
     passive_critical = Passives.critical_bonus(stats)
 
@@ -376,7 +378,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
             hand_attack(stats.right_hand) - hand_attack(stats.left_hand),
         mastery_atk: passive_atk,
         weapon_mastery_atk: Passives.weapon_mastery_atk(stats),
+        left_weapon_mastery_atk: Passives.weapon_mastery_atk(stats, left_weapon_type(stats)),
         star_atk: star_atk,
+        left_star_atk: forged_star_damage(stats.worn_items, :left_hand),
+        weapon_research_atk: Passives.atk_bonus_of(stats, BsWeaponresearch),
+        hilt_binding_atk: Passives.atk_bonus_of(stats, BsHiltbinding),
         str: values.str,
         dex: values.dex
       },
@@ -464,10 +470,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   defp apply_katar_critical(critical, %WeaponHand{subtype: :katar}), do: critical * 2
   defp apply_katar_critical(critical, _right_hand), do: critical
 
-  @spec forged_star_damage([map()]) :: non_neg_integer()
-  defp forged_star_damage(worn_items) do
+  # A two-handed weapon is the right hand's only; the left hand's Star Crumbs
+  # come from a weapon worn in the left hand alone.
+  @spec forged_star_damage([map()], :right_hand | :left_hand) :: non_neg_integer()
+  defp forged_star_damage(worn_items, hand) do
     Enum.reduce(worn_items, 0, fn item, damage ->
-      with true <- :right_hand in EquipLocation.bitmask_to_location_atoms(item.equip),
+      with true <- star_hand(EquipLocation.bitmask_to_location_atoms(item.equip)) == hand,
            {:ok, %ItemCraft{kind: :forged} = craft} <- ItemCraft.from_map(item.craft) do
         damage + ItemCraft.star_damage(craft)
       else
@@ -475,6 +483,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
       end
     end)
   end
+
+  defp star_hand(locations) do
+    cond do
+      :right_hand in locations -> :right_hand
+      :left_hand in locations -> :left_hand
+      true -> nil
+    end
+  end
+
+  # The left hand's weapon type: its own weapon, or for a two-handed weapon the
+  # same type, which then occupies both hands.
+  defp left_weapon_type(%Stats{left_hand: %WeaponHand{subtype: subtype}}), do: subtype
+  defp left_weapon_type(stats), do: equipped_weapon_type(stats)
 
   defp calculate_trait_slots(stats, formulas, values) do
     bonuses = %{

@@ -71,13 +71,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMagnumBreakTest do
       )
       |> Map.put(:spirit_spheres, 2)
 
-    # Hit: 156 + 7 refine + 4 mastery = 167. Share base 167 doubled by fire, then
-    # + 10 Star Crumb + 2 * 3 spheres = 350, of which 20% is 70.
-    assert damage(attacker, []) == 167 + 70
+    # Hit: 156 + 7 refine + 4 mastery = 167, then + 10 Star Crumb + 2 * 3 spheres
+    # after its attribute step = 183. Share base 167 doubled by fire, then the
+    # same + 16 = 350, of which 20% is 70.
+    assert damage(attacker, []) == 183 + 70
 
-    # A skill passing its own sphere count replaces the spheres held:
-    # (334 + 10 + 5 * 3) * 20 / 100 = 71.
-    assert damage(attacker, skill_id: @bash, spirit_spheres: 5) == 167 + 71
+    # A skill passing its own sphere count replaces the spheres held, in the hit
+    # (167 + 10 + 15) and in the share: (334 + 10 + 5 * 3) * 20 / 100 = 71.
+    assert damage(attacker, skill_id: @bash, spirit_spheres: 5) == 192 + 71
   end
 
   test "an attack-card-ignoring skill takes no share" do

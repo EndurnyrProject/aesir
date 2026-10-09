@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_from_context
@@ -59,22 +61,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic level five uses weapon weight and refine, bypassing defense and size" do
+  test "classic level five raises the weight by level, adds STR and takes its own size fix" do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
     caster = caster(1401)
+
+    caster = %{
+      caster
+      | stats: %{
+          caster.stats
+          | base_stats: %{caster.stats.base_stats | str: 50},
+            right_hand: spear()
+        }
+    }
+
     stub_weapon(1401, :one_handed_spear)
     assert :ok = LkSpiralpierce.validate(caster, {:unit, 6_160}, 5, definition)
 
     stub(Combat, :resolve_combatant, fn 6_160 ->
-      {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_160)}
+      {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_160, size: :small)}
     end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, 6_160, opts ->
-      assert opts[:base_damage] == 120
-      assert opts[:skill_ratio] == 350
+      # 1500 * 8 / 100 = 120, raised 250% to 420, + (50 / 10)^2 = 445, small 125%.
+      assert opts[:base_damage] == 556
+      refute Keyword.has_key?(opts, :skill_ratio)
       assert opts[:ignore_defense] == true
       assert opts[:ignore_size] == true
-      assert opts[:bonus_atk] == 7
+      # The weapon's refine ATK, not its refine level.
+      assert opts[:refine_atk] == 35
       assert opts[:hit_divisions] == 5
       {:ok, %{hit?: false}}
     end)
@@ -171,9 +185,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
       character_id: 5_160,
       inventory: %{0 => row},
       stats: %Stats{
+        base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
         equipment: %Equipment{right_hand: nameid},
         progression: %PlayerProgression{base_level: 99, job_id: 7}
       }
+    }
+  end
+
+  defp spear do
+    %WeaponHand{
+      item_id: 1401,
+      subtype: :one_handed_spear,
+      element: :neutral,
+      base_atk: 100,
+      weapon_level: 4,
+      refine_atk: 35,
+      overrefine_band: 0,
+      slot: :right_hand
     }
   end
 
