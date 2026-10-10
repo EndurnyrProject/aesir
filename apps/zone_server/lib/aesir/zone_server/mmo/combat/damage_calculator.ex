@@ -511,7 +511,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     mastery =
       if stacks_masteries?(skill_id, :all),
-        do: classic_weapon_mastery_atk(hit.attacker, hit.defender),
+        do: hand_mastery_atk(hit.attacker, hit.defender),
         else: 0
 
     max(damage + refine, 1) + mastery + post_defense_atk(hit.modifiers, skill_id)
@@ -675,11 +675,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         classic_parts(parts, hit, attacker, attack_path)
 
       true ->
-        mastery =
-          parts.mastery_atk + demon_bane_bonus(attacker, hit.defender) +
-            beast_bane_bonus(attacker, hit.defender) + renewal_envenom_atk(hit.opts)
+        %{parts | mastery_atk: renewal_mastery_atk(hit, attacker, attack_path)}
+    end
+  end
 
-        %{parts | mastery_atk: mastery}
+  # A renewal hand's mastery ATK, only for a skill that stacks masteries: its
+  # weapon masteries with the banes, Envenom, Hilt Binding, its own Star Crumb
+  # and the spirit spheres.
+  defp renewal_mastery_atk(hit, attacker, attack_path) do
+    if stacks_masteries?(Keyword.get(hit.opts, :skill_id), :all) do
+      hand = if attack_path == :secondary, do: :left_hand, else: :right_hand
+
+      hand_mastery_atk(attacker, hit.defender, attack_path) + renewal_envenom_atk(hit.opts) +
+        hilt_binding_atk(attacker, hit.opts) + star_atk(attacker, hand) +
+        spirit_sphere_atk(attacker, hit.opts)
+    else
+      0
     end
   end
 
@@ -692,16 +703,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       parts
       | mastery_atk:
           if(stacks_masteries?(skill_id, :all),
-            do: classic_weapon_mastery_atk(attacker, hit.defender, attack_path),
+            do: hand_mastery_atk(attacker, hit.defender, attack_path),
             else: 0
           ),
         refine_atk: if(stacks_masteries?(skill_id, :refine), do: parts.refine_atk, else: 0)
     }
   end
 
-  # Whether a skill takes the classic post-defense masteries (`:all`, which also
-  # gates the spirit spheres), the refine bonus or the Star Crumb bonus. Classic
-  # Spiral Pierce keeps only the refine and Star Crumb bonuses.
+  # Whether a skill takes the mastery block (`:all`: renewal's whole mastery ATK,
+  # classic's post-defense masteries and spirit spheres), the classic refine bonus
+  # or the classic Star Crumb bonus. Classic Spiral Pierce keeps only the refine
+  # and Star Crumb bonuses.
   defp stacks_masteries?(skill_id, _bonus) when skill_id in @mastery_exempt_skills, do: false
   defp stacks_masteries?(@spiral_pierce, bonus), do: not classic?() or bonus in [:refine, :star]
   defp stacks_masteries?(_skill_id, _bonus), do: true
@@ -807,18 +819,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp player_sphere_atk(_hit), do: 0
 
-  # Weapon Research and Hilt Binding (except on Cart Revolution) join every
-  # classic player weapon hit after the 0 cap, before the attacker's cards.
-  defp classic_late_atk(%{attacker: %{unit_type: :player} = attacker, opts: opts}) do
-    snapshot = physical_snapshot(attacker)
-
-    hilt =
-      if Keyword.get(opts, :skill_id) == @cart_revolution,
-        do: 0,
-        else: Map.get(snapshot, :hilt_binding_atk, 0)
-
-    Map.get(snapshot, :weapon_research_atk, 0) + hilt
-  end
+  # Weapon Research and Hilt Binding join every classic player weapon hit after
+  # the 0 cap, before the attacker's cards.
+  defp classic_late_atk(%{attacker: %{unit_type: :player} = attacker, opts: opts}),
+    do:
+      Map.get(physical_snapshot(attacker), :weapon_research_atk, 0) +
+        hilt_binding_atk(attacker, opts)
 
   defp classic_late_atk(_hit), do: 0
 
@@ -941,13 +947,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp classic_watk_base(hit, {parts, context}) do
     PreRenewalAttack.magnum_break_base(PreRenewalAttack.normal_base(parts, context), context, %{
       refine_atk: parts.refine_atk,
-      mastery_atk: classic_weapon_mastery_atk(hit.attacker, hit.defender)
+      mastery_atk: hand_mastery_atk(hit.attacker, hit.defender)
     })
+  end
+
+  # Hilt Binding's ATK, which Cart Revolution never takes.
+  defp hilt_binding_atk(attacker, opts) do
+    if Keyword.get(opts, :skill_id) == @cart_revolution,
+      do: 0,
+      else: Map.get(physical_snapshot(attacker), :hilt_binding_atk, 0)
   end
 
   # battle_addmastery: the hand's weapon masteries (the left hand's for its own
   # weapon type) plus the banes.
-  defp classic_weapon_mastery_atk(attacker, defender, attack_path \\ :primary) do
+  defp hand_mastery_atk(attacker, defender, attack_path \\ :primary) do
     key = if attack_path == :secondary, do: :left_weapon_mastery_atk, else: :weapon_mastery_atk
 
     Map.get(physical_snapshot(attacker), key, 0) +
