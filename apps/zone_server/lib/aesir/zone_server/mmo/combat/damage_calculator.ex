@@ -680,15 +680,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   # A renewal hand's mastery ATK, only for a skill that stacks masteries: its
-  # weapon masteries with the banes, Envenom, Hilt Binding, its own Star Crumb
-  # and the spirit spheres.
+  # weapon masteries with the banes, Envenom, Hilt Binding, its own Star Crumb,
+  # the spirit spheres and the statuses counted as masteries.
   defp renewal_mastery_atk(hit, attacker, attack_path) do
     if stacks_masteries?(Keyword.get(hit.opts, :skill_id), :all) do
       hand = if attack_path == :secondary, do: :left_hand, else: :right_hand
 
       hand_mastery_atk(attacker, hit.defender, attack_path) + renewal_envenom_atk(hit.opts) +
         hilt_binding_atk(attacker, hit.opts) + star_atk(attacker, hand) +
-        spirit_sphere_atk(attacker, hit.opts)
+        spirit_sphere_atk(attacker, hit.opts) + Map.get(hit.modifiers, :mastery_atk, 0)
     else
       0
     end

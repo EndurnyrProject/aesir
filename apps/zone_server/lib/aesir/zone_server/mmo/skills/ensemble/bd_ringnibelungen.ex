@@ -1,12 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungen do
   @moduledoc """
-  Harmonic Lick (BD_RINGNIBELUNGEN). An ensemble adding weapon ATK for high-level weapons.
+  Harmonic Lick (BD_RINGNIBELUNGEN), an ensemble granting Ring of Nibelungen.
 
   Renewal: cast, fixed cast, delay, cooldown, SP, and duration as declared, applied
-  as a party buff within its area. Pre-renewal: an instant cast with no cooldown
-  for the classic SP. An adjacent partner maintains a stationary 9x9 field
-  for one minute, with 1 SP upkeep every 3 seconds each. Party occupants other
-  than the performers lose the effect immediately when leaving.
+  as a party buff within its area; each recipient rolls its own random bonus.
+  Pre-renewal: an instant cast with no cooldown for the classic SP. An adjacent
+  partner maintains a stationary 9x9 field for one minute, with 1 SP upkeep every
+  3 seconds each, granting `(level + 2) * 25` weapon ATK to level-4 weapons. Party
+  occupants other than the performers lose the effect immediately when leaving.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -29,19 +30,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungen do
 
   use Aesir.ZoneServer.Mmo.Skill.Ensemble
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen
 
   @impl Active
   def cast(caster, _target, level, definition) do
-    Perform.perform(
-      caster,
-      definition,
-      level,
-      :sc_nibelungen,
-      fn _level -> [state: %{rng: &Nibelungen.roll/1}] end,
-      scope: :party
-    )
+    Perform.perform(caster, definition, level, :sc_nibelungen, &status_params/1, scope: :party)
+  end
+
+  defp status_params(level) do
+    case GameMode.mode() do
+      :renewal -> [val1: level]
+      :pre_renewal -> [val1: level, val2: (level + 2) * 25]
+    end
   end
 end

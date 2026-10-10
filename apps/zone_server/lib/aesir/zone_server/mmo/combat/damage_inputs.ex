@@ -78,16 +78,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     }
 
     case Keyword.get(opts, :shield_base) do
-      nil -> roll_player_weapon(parts, snapshot, hand, attacker.combat_stats, critical?)
+      nil -> roll_player_weapon(parts, snapshot, hand, attacker, critical?)
       shield -> %{parts | source: :shield, weapon_atk: shield, flat_atk: 0, mastery_atk: 0}
     end
   end
 
-  defp roll_player_weapon(parts, _snapshot, nil, _combat_stats, _critical?), do: parts
+  defp roll_player_weapon(parts, _snapshot, nil, _attacker, _critical?), do: parts
 
-  defp roll_player_weapon(parts, snapshot, hand, combat_stats, critical?) do
+  defp roll_player_weapon(parts, snapshot, hand, attacker, critical?) do
+    combat_stats = attacker.combat_stats
+
     inputs = %{
-      base_atk: hand.base_atk,
+      base_atk: hand.base_atk + level4_watk(attacker, hand),
       refine_atk: hand.refine_atk,
       weapon_level: hand.weapon_level,
       primary_stat:
@@ -107,6 +109,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
         overrefine_atk: DamageShared.overrefine_roll(hand.overrefine_band)
     }
   end
+
+  # Classic status weapon ATK for a level-4 weapon raises that hand's weapon ATK,
+  # the roll's maximum. A left hand takes it only when its weapon has ATK.
+  defp level4_watk(_attacker, %{slot: :left_hand, base_atk: 0}), do: 0
+
+  defp level4_watk(attacker, %{weapon_level: 4}) do
+    :player
+    |> ModifierCalculator.get_all_modifiers(attacker.unit_id)
+    |> Map.get(:level4_watk, 0)
+  end
+
+  defp level4_watk(_attacker, _hand), do: 0
 
   @doc """
   Rolls the existing non-player base attack representation.

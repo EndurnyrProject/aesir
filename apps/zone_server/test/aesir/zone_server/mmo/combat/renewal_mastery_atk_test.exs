@@ -84,6 +84,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RenewalMasteryAtkTest do
     assert hands(dual).left == hands(bare).left + 6 + 20 + 3
   end
 
+  test "a status counted as a mastery (Ring of Nibelungen) joins both hands" do
+    bare = attacker(%{}) |> with_left_hand(50)
+    bare_hands = hands(bare)
+    bare_investigate = damage(bare, skill_id: @investigate)
+
+    stub(ModifierCalculator, :get_all_modifiers, fn
+      :player, _id -> %{mastery_atk: 7}
+      _type, _id -> %{}
+    end)
+
+    assert hands(bare) == %{right: bare_hands.right + 7, left: bare_hands.left + 7}
+    assert damage(bare, skill_id: @investigate) == bare_investigate
+  end
+
   defp hands(attacker) do
     {:ok, %{damage: right, left_components: left_components}} =
       DamageCalculator.calculate_damage(attacker, defender(), skip_crit: true)

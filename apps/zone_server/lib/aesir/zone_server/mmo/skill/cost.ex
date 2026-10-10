@@ -4,7 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   defstruct hp: 0, sp_requirement: nil, sp: 0, spheres: 0
@@ -169,7 +171,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
         equipment_modifier(game_state, {:skill_use_sp_rate, skill_id})
 
     reduced = div(base * max(0, 100 + rate), 100)
-    max(0, reduced - equipment_modifier(game_state, {:skill_use_sp, skill_id}))
+    sp = max(0, reduced - equipment_modifier(game_state, {:skill_use_sp, skill_id}))
+    nibelungen = StatusStorage.get_status(:player, game_state.character_id, :sc_nibelungen)
+
+    Nibelungen.reduce_sp_cost(sp, nibelungen)
   end
 
   # Precomputed into `modifiers.passive` at stat calculation, like max SP rate.

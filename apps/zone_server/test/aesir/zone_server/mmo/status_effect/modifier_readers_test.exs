@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :max_hp,
                :max_hp_rate,
                :max_sp_rate,
+               :batk_rate,
                # DamageCalculator / MagicDamageCalculator / DamageShared
                :atk_bonus,
                :atk_rate,
@@ -84,6 +85,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :phys_damage_reduction,
                :vit_bonus,
                :watk,
+               :mastery_atk,
+               # DamageInputs.player_attack_parts/4 (classic weapon roll)
+               :level4_watk,
                # HitCalculations.normal_attack_hit_taken_flat/2
                :normal_ranged_hit_taken_flat,
                :subele_water,
