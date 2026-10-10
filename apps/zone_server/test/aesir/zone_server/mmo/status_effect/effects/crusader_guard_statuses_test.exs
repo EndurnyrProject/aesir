@@ -76,7 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CrusaderGuardStatusesTest do
       mob_hit = %{damage: 10, attacker: {:mob, 9}}
 
       assert :remove = Endure.on_damage({:player, 1}, endure(), mob_hit, %{})
-      assert {:ok, _} = Endure.on_damage({:player, 1}, endure(), %{mob_hit | damage: 0}, %{})
+      assert :remove = Endure.on_damage({:player, 1}, endure(), %{mob_hit | damage: 0}, %{})
 
       reflected_for_nothing = Map.merge(mob_hit, %{damage: 0, proc_event: %{hit_class: :hit}})
       assert :remove = Endure.on_damage({:player, 1}, endure(), reflected_for_nothing, %{})

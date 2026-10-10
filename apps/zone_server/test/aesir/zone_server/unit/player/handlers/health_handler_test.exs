@@ -563,9 +563,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert_received {:send, _, {_, %ParamChange{var_id: ^sp_id, value: 1}}}
     end
 
-    test "is idempotent once HP and SP are already 1" do
+    test "is idempotent once HP and SP are already 1, still notifying statuses of the hit" do
       state = put_in(build_state(1, :idle).game_state.stats.current_state.sp, 1)
-      reject(&StatusInterpreter.on_damage/3)
+
+      expect(StatusInterpreter, :on_damage, fn :player, 1, info ->
+        assert %{damage: 0, coma?: true, hp_after: 1} = info
+        :ok
+      end)
+
       reject(&CharacterPersistence.update_stats/3)
 
       assert {:noreply, ^state} = HealthHandler.apply_coma({:player, 2}, state)
@@ -621,6 +626,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
       assert {:noreply, %{game_state: %{casting: nil}}} =
                HealthHandler.apply_damage(0, {:mob, 2}, %{}, state)
+    end
+
+    test "an attack that missed or was blocked does not interrupt a cast" do
+      state = casting_state(-500)
+
+      for metadata <- [
+            %{dmg_type: :physical},
+            %{dmg_type: :physical, blocked?: true},
+            %{dmg_type: :magic, magic_rod_miss?: true}
+          ] do
+        assert {:noreply, after_hit} = HealthHandler.apply_damage(0, {:mob, 2}, metadata, state)
+        assert after_hit.game_state.casting == state.game_state.casting, inspect(metadata)
+      end
     end
   end
 

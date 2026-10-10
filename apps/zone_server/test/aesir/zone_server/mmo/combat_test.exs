@@ -417,7 +417,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       reject(&MobSession.apply_damage/4)
-      expect(MobSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, 1001}, _metadata -> :ok end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
       capture_log(fn ->
@@ -484,7 +484,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       reject(&MobSession.apply_damage/4)
-      expect(MobSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, 1001}, _metadata -> :ok end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
       capture_log(fn ->

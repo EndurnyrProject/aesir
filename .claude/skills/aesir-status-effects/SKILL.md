@@ -47,6 +47,10 @@ are part of the mechanic.
 - `bypass_boss_immunity: true` — external application to boss-flagged units normally
   rejects; this flag pierces it.
 - `remove_on_map_change: true` — cleared by WarpHandler on cross-map warp only.
+- `flags: [:remove_on_damaged]` — the reference `RemoveOnDamaged`: the holder's own
+  damage notification (`Interpreter.on_damage/3`) ends it on active damage
+  (`DamageShared.active_damage?/1`), for every unit type. Never hand-write an
+  `on_damage` returning `:remove` for it.
 - `tick_interval:` — **mandatory for any effect overriding `on_tick`**; tickless statuses
   (`tick <= 0`) get `next_tick_at: nil` and never enter the due set.
 

@@ -265,6 +265,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
 
     Enum.each(keys, &:ets.delete(table_for(:player_statuses), &1))
     reset_storm_gust_counter(unit_type, unit_id)
+    :ets.delete(table_for(:status_counters), {unit_type, unit_id, :last_effect})
+    :ok
   end
 
   @doc """
@@ -396,6 +398,34 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
     case :ets.lookup(table_for(:status_counters), {unit_type, unit_id, :storm_gust}) do
       [{_key, count}] -> count
       [] -> 0
+    end
+  end
+
+  @last_effect_ms 10
+
+  @doc """
+  Records `status_id` as the status damage last broke on a unit holding a body
+  state, for 10 ms from `now_ms`, so the same attack cannot start a status whose
+  Fail list names it. A record still lasting is kept, not replaced.
+  """
+  @spec note_last_effect(unit_type(), integer(), atom(), integer()) :: :ok
+  def note_last_effect(unit_type, unit_id, status_id, now_ms) do
+    if is_nil(last_effect(unit_type, unit_id, now_ms)) do
+      :ets.insert(
+        table_for(:status_counters),
+        {{unit_type, unit_id, :last_effect}, status_id, now_ms + @last_effect_ms}
+      )
+    end
+
+    :ok
+  end
+
+  @doc "Returns the status damage last broke on a unit while its record lasts, else nil."
+  @spec last_effect(unit_type(), integer(), integer()) :: atom() | nil
+  def last_effect(unit_type, unit_id, now_ms) do
+    case :ets.lookup(table_for(:status_counters), {unit_type, unit_id, :last_effect}) do
+      [{_key, status_id, until}] when now_ms < until -> status_id
+      _none -> nil
     end
   end
 

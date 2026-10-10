@@ -308,7 +308,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     {final_damage, hit_info} =
       prepare_delivery(target_type, target_id, damage, hit_info, attacker)
 
-    hit_info = attach_proc_event(hit_info, final_damage)
+    hit_info =
+      hit_info
+      |> attach_proc_event(final_damage)
+      |> capture_damage_broken(target_type, target_id)
 
     delivery =
       deliver_unit_damage(target_type, target_pid, target_id, final_damage, hit_info, attacker)
@@ -330,6 +333,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp attach_proc_event(hit_info, _damage), do: hit_info
+
+  # The recipient's damage-broken statuses as the hit is dealt, before the attack
+  # path runs its additional effects; see `StatusInterpreter.damage_broken_snapshot/2`.
+  defp capture_damage_broken(hit_info, target_type, target_id)
+       when target_type in [:player, :mob],
+       do:
+         Map.put(
+           hit_info,
+           :damage_broken,
+           StatusInterpreter.damage_broken_snapshot(target_type, target_id)
+         )
+
+  defp capture_damage_broken(hit_info, _target_type, _target_id), do: hit_info
 
   @doc "Builds aggregate-local Homunculus damage without sending to its owner process."
   @spec local_damage_effect(Ref.t(), integer(), map(), Ref.t() | nil) :: tuple()
@@ -897,8 +913,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     PlayerSession.apply_coma(target_pid, typed_attacker(attacker), hit_info)
   end
 
-  defp deliver_coma(:mob, target_pid, _target_id, _hit_info, attacker) do
-    MobSession.apply_coma(target_pid, typed_attacker(attacker))
+  defp deliver_coma(:mob, target_pid, _target_id, hit_info, attacker) do
+    MobSession.apply_coma(target_pid, typed_attacker(attacker), hit_info)
   end
 
   defp deliver_coma(:homunculus, target_pid, target_id, _hit_info, attacker)

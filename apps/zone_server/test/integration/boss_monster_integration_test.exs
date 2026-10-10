@@ -193,15 +193,14 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
 
     test "the same crowd control lands on a non-boss mob of the same id" do
       attacker = start_attacker("NormalCaster")
-      mob = start_mob_session(map_name: @map, position: {150, 151}, modes: [])
 
-      assert :ok = cast_status(mob, attacker, :sc_stun)
-      assert :ok = cast_status(mob, attacker, :sc_freeze)
-      assert :ok = cast_status(mob, attacker, :sc_sleep)
+      # One mob per status: Freeze's Fail list names Stun and Sleep.
+      for status <- [:sc_stun, :sc_freeze, :sc_sleep] do
+        mob = start_mob_session(map_name: @map, position: {150, 151}, modes: [])
 
-      assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_stun)
-      assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_freeze)
-      assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_sleep)
+        assert :ok = cast_status(mob, attacker, status)
+        assert StatusStorage.has_status?(:mob, mob.unit_id, status)
+      end
     end
 
     test "a boss self-buff still applies while external crowd control is rejected" do

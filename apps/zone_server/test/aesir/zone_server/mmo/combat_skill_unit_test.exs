@@ -360,7 +360,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     reject(&MobSession.apply_damage/4)
-    expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id} -> :ok end)
+    expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id}, _metadata -> :ok end)
 
     assert :ok =
              Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :water, 600)
@@ -524,7 +524,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     reject(&MobSession.apply_damage/4)
-    expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id} -> :ok end)
+    expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id}, _metadata -> :ok end)
 
     assert :ok =
              Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :neutral, 0,

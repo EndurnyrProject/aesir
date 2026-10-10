@@ -57,6 +57,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   end
 
   @doc """
+  Whether a delivered damage notification is active damage, the only kind that
+  breaks damage-broken statuses, counts against Endure and interrupts a cast.
+
+  Passive HP loss (`:passive?`, `:status_tick?`) never is, nor is a hit Devotion
+  forwarded to the Crusader, for the devotee. An attack (metadata carrying
+  `:dmg_type`) is only when it connected (`hit_class/3` is `:hit`): a missed or
+  blocked attack never reaches the target's damage handling at all. Any other
+  notification is, even when it took no HP.
+  """
+  @spec active_damage?(map()) :: boolean()
+  def active_damage?(%{passive?: true}), do: false
+  def active_damage?(%{status_tick?: true}), do: false
+  def active_damage?(%{devotion_rerouted?: true}), do: false
+
+  def active_damage?(%{dmg_type: _} = info),
+    do: hit_class(info, Map.get(info, :damage, 0), true) == :hit
+
+  def active_damage?(_info), do: true
+
+  @doc """
   A settled hit's total before Devotion forwarding: the forwarded amount for a
   rerouted hit (the devotee itself takes 0), else `damage`.
   """

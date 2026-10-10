@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
   defp wears?(_unit_type, _unit_id, _damage_info), do: false
 
   # An attack counts when it connected (even for nothing, as a reflected spell
-  # can); other active damage counts when it took HP.
+  # can); any other active damage counts even when it took no HP.
   defp connected?(%{proc_event: %{hit_class: class}}), do: class == :hit
-  defp connected?(%{damage: damage}), do: damage > 0
+  defp connected?(_damage_info), do: true
 end

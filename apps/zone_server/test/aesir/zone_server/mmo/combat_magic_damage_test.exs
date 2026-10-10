@@ -259,7 +259,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       end)
 
       reject(&MobSession.apply_damage/4)
-      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id}, _metadata -> :ok end)
 
       assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_damage(caster, @target_id, 1,

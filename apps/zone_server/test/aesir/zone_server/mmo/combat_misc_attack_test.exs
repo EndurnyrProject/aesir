@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
       reject(&MobSession.apply_damage/4)
 
-      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} ->
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id}, _metadata ->
         send(test_pid, :coma_delivered)
         :ok
       end)

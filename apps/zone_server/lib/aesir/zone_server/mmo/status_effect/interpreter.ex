@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   require Logger
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
@@ -311,18 +312,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
-  Notifies player damage callbacks and non-player charm callbacks of delivered damage.
+  Notifies a unit's statuses of damage delivered to it, in its owning session.
 
-  Passive notifications (`:passive?` or `:status_tick?`) do not run active-hit
-  cancellation callbacks. HP-dependent callbacks still see positive HP loss.
-  Active zero-damage notifications remain eligible for callback-specific rules.
-  `damage_info` is a map with at least `:damage` and `:element`; the player
-  damage path also populates `:hp_after` and `:max_hp`. An `on_damage` callback
-  may request follow-up status applications; they are drained after every active
-  status has been notified.
+  Active damage (`DamageShared.active_damage?/1`) first ends every held
+  `:remove_on_damaged` status, even when it took no HP, except that a non-player
+  keeps Wink of Charm unless HP was dealt (`:damage` above 0, or a coma hit).
+  When the unit held a body state (an `opt1` status), the first status ended is
+  recorded for 10 ms (`StatusStorage.note_last_effect/4`), so the same attack
+  cannot start a status whose Fail list names it. Active damage then runs the
+  remaining `on_damage` callbacks; HP-dependent callbacks also see positive
+  passive HP loss.
+
+  `damage_info` is a map with at least `:damage` (the HP the hit took, 0 for
+  none) and `:element`; the damage handlers also populate `:hp_after`,
+  `:max_hp` and `:attacker`. An `on_damage` callback may request follow-up
+  status applications; they are drained after every status has been notified.
   """
   @spec on_damage(unit_type(), integer(), map()) :: :ok
   def on_damage(unit_type, unit_id, damage_info) do
+    if DamageShared.active_damage?(damage_info),
+      do: end_damage_broken(unit_type, unit_id, damage_info)
+
     implementing = Registry.statuses_implementing(:on_damage)
 
     follow_ups =
@@ -330,7 +340,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       |> StatusStorage.get_unit_statuses(unit_id)
       |> Enum.filter(fn instance ->
         MapSet.member?(implementing, instance.type) and
-          damage_callback_eligible?(unit_type, instance.type, damage_info)
+          damage_callback_eligible?(instance.type, damage_info)
       end)
       |> Enum.flat_map(fn instance ->
         dispatch_damage(unit_type, unit_id, instance, damage_info)
@@ -341,17 +351,109 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end)
   end
 
-  defp damage_callback_eligible?(:player, status, damage_info)
+  defp damage_callback_eligible?(status, damage_info)
        when status in [:sc_berserk, :sc_autoberserk],
        do: Map.get(damage_info, :damage, 0) > 0 and Map.get(damage_info, :hp_after, 1) > 0
 
-  defp damage_callback_eligible?(unit_type, status, damage_info) do
-    supported? = unit_type == :player or status == :sc_winkcharm
+  defp damage_callback_eligible?(_status, damage_info),
+    do: DamageShared.active_damage?(damage_info)
 
-    passive? =
-      Map.get(damage_info, :passive?, false) or Map.get(damage_info, :status_tick?, false)
+  # The order the first broken status is picked in. The reference walks an
+  # unordered status table, so its order is unspecified; this is its status-type
+  # order.
+  @damage_broken_order [
+    :sc_stone,
+    :sc_freeze,
+    :sc_sleep,
+    :sc_hiding,
+    :sc_cloaking,
+    :sc_trickdead,
+    :sc_winkcharm
+  ]
 
-    supported? and not passive?
+  @typedoc """
+  The damage-broken statuses a unit held when a hit was dealt: each status with
+  its generation, in the order the first broken one is picked, and whether the
+  unit held a body state (an `opt1` status) then.
+  """
+  @type damage_broken :: %{statuses: [{atom(), pos_integer()}], body_state?: boolean()}
+
+  @doc """
+  Captures the damage-broken statuses a unit holds as a hit is dealt to it.
+
+  The attack path captures it before the hit's additional effects run and sends
+  it with the hit as `:damage_broken`, so the owning session ends only what the
+  unit held when the damage was dealt, never a status the same attack started
+  afterwards. A notification without it ends what the unit holds when notified.
+  """
+  @spec damage_broken_snapshot(unit_type(), integer()) :: damage_broken()
+  def damage_broken_snapshot(unit_type, unit_id) do
+    statuses =
+      :remove_on_damaged
+      |> Registry.statuses_with_flag()
+      |> Enum.flat_map(fn status_id ->
+        case StatusStorage.get_status(unit_type, unit_id, status_id) do
+          %StatusEntry{generation: generation} -> [{status_id, generation}]
+          nil -> []
+        end
+      end)
+      |> Enum.sort_by(fn {status_id, _generation} -> damage_broken_rank(status_id) end)
+
+    %{statuses: statuses, body_state?: statuses != [] and holds_body_state?(unit_type, unit_id)}
+  end
+
+  defp end_damage_broken(unit_type, unit_id, damage_info) do
+    %{statuses: held, body_state?: body_state?} =
+      Map.get_lazy(damage_info, :damage_broken, fn ->
+        damage_broken_snapshot(unit_type, unit_id)
+      end)
+
+    ended =
+      Enum.filter(held, fn {status_id, generation} ->
+        not keeps_without_hp?(status_id, unit_type, damage_info) and
+          end_generation(unit_type, unit_id, status_id, generation)
+      end)
+
+    case ended do
+      [{first, _generation} | _rest] when body_state? ->
+        now = System.monotonic_time(:millisecond)
+        StatusStorage.note_last_effect(unit_type, unit_id, first, now)
+
+      _none ->
+        :ok
+    end
+
+    maybe_refresh_owner(unit_type, unit_id, ended != [], [])
+  end
+
+  # Retries while the same generation is rewritten in place (a tick) between the
+  # read and the compare-delete.
+  defp end_generation(unit_type, unit_id, status_id, generation) do
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      %StatusEntry{generation: ^generation} = current ->
+        expire_status_if_current(unit_type, unit_id, status_id, current) or
+          end_generation(unit_type, unit_id, status_id, generation)
+
+      _gone_or_newer ->
+        false
+    end
+  end
+
+  defp keeps_without_hp?(:sc_winkcharm, unit_type, damage_info) when unit_type != :player,
+    do: Map.get(damage_info, :damage, 0) == 0 and not Map.get(damage_info, :coma?, false)
+
+  defp keeps_without_hp?(_status, _unit_type, _damage_info), do: false
+
+  defp damage_broken_rank(status_id) do
+    Enum.find_index(@damage_broken_order, &(&1 == status_id)) || length(@damage_broken_order)
+  end
+
+  defp holds_body_state?(unit_type, unit_id) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.any?(fn %StatusEntry{type: type} ->
+      match?(%{opt1: opt1} when not is_nil(opt1), Registry.get_definition(type))
+    end)
   end
 
   @doc """
@@ -1161,8 +1263,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp check_boss_immunity(_entity_info, _unit_type, _unit_id, _status_params, _definition),
     do: :ok
 
+  # The Fail list (`prevented_by` and `conflicts_with`) also fails on the status
+  # damage last broke on the unit, while that record lasts.
   defp check_prevented(unit_type, unit_id, definition) do
-    if any_status_active?(unit_type, unit_id, definition.prevented_by) do
+    if fails_on?(unit_type, unit_id, definition.prevented_by) do
       {:error, :prevented}
     else
       :ok
@@ -1170,7 +1274,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   defp check_conflicts(unit_type, unit_id, definition) do
-    if any_status_active?(unit_type, unit_id, definition.conflicts_with) do
+    if fails_on?(unit_type, unit_id, definition.conflicts_with) do
       {:error, :conflict}
     else
       :ok
@@ -1179,6 +1283,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp any_status_active?(unit_type, unit_id, status_ids) do
     Enum.any?(status_ids, &StatusStorage.has_status?(unit_type, unit_id, &1))
+  end
+
+  defp fails_on?(_unit_type, _unit_id, []), do: false
+
+  defp fails_on?(unit_type, unit_id, status_ids) do
+    any_status_active?(unit_type, unit_id, status_ids) or
+      StatusStorage.last_effect(unit_type, unit_id, System.monotonic_time(:millisecond)) in status_ids
   end
 
   defp roll_resistance(

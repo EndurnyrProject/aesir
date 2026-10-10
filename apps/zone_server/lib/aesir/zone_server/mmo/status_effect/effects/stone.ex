@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
     end_on_start: [:sc_aeterna],
     immunity: [:boss, :undead],
     bypass_resistance: true,
+    flags: [:remove_on_damaged],
     tick_interval: 1_000,
     opt1: :stone
 
@@ -78,9 +79,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
     run_steps(target, instance, context, 0)
     []
   end
-
-  @impl true
-  def on_damage(_target, _instance, _damage_info, _context), do: :remove
 
   @doc """
   Returns the timer steps of a petrification lasting `petrify_ms`.

@@ -12,6 +12,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
+  describe "active_damage?/1" do
+    test "passive losses and status ticks are never active" do
+      refute DamageShared.active_damage?(%{damage: 10, passive?: true})
+      refute DamageShared.active_damage?(%{damage: 10, status_tick?: true})
+    end
+
+    test "a non-attack notification is active even for nothing" do
+      assert DamageShared.active_damage?(%{damage: 0})
+      assert DamageShared.active_damage?(%{damage: 0, coma?: true})
+    end
+
+    test "an attack counts only when it connected" do
+      assert DamageShared.active_damage?(%{damage: 1, dmg_type: :physical})
+      refute DamageShared.active_damage?(%{damage: 0, dmg_type: :physical})
+      refute DamageShared.active_damage?(%{damage: 0, dmg_type: :physical, blocked?: true})
+      refute DamageShared.active_damage?(%{damage: 0, dmg_type: :magic, magic_rod_miss?: true})
+      assert DamageShared.active_damage?(%{damage: 0, dmg_type: :magic, reflected: true})
+    end
+
+    test "a hit Devotion forwarded to the Crusader is not active damage for the devotee" do
+      forwarded = %{damage: 0, dmg_type: :physical, devotion_rerouted?: true, devotion_damage: 50}
+      refute DamageShared.active_damage?(forwarded)
+    end
+  end
+
   describe "apply_element_step/5" do
     defp step(damage, element, defender, modifiers \\ %{}),
       do:

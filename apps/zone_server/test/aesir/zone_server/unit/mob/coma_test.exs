@@ -8,9 +8,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.ComaTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup {Aesir.MimicMode, :global}
   setup :verify_on_exit!
@@ -59,6 +61,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.ComaTest do
     assert state.aggro_list == %{}
     assert state.typed_aggro_list == %{}
     assert is_nil(state.last_damage_time)
+  end
+
+  test "coma at 1 HP still breaks damage-broken statuses without logging damage" do
+    pid = start_mob(hp: 1, sp: 1)
+    UnitRegistry.register_unit(:mob, 1, MobState, MobSession.get_state(pid), pid)
+    reject(&Broadcast.to_in_range/5)
+    StatusStorage.apply_status(:mob, 1, :sc_sleep, duration: 30_000)
+
+    assert :ok = MobSession.apply_coma(pid, {:player, 42})
+    state = MobSession.get_state(pid)
+
+    refute StatusStorage.has_status?(:mob, 1, :sc_sleep)
+    assert state.hp == 1
+    assert state.aggro_list == %{}
   end
 
   test "coma does not alter an HP-zero mob whose death flag is inconsistent" do

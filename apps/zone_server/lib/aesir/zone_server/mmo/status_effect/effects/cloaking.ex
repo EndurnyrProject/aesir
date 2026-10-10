@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   In renewal and pre-renewal, conceals its holder, doubles CRIT, and applies
   wall-sensitive movement speed. Wall-adjacent haste keeps only the strongest
   haste buff; open-ground slows remain additive. Player movement commands
-  refresh the stored adjacency branch.
+  refresh the stored adjacency branch. Active damage breaks it.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_cloaking,
@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
     no_clear_buff: false,
     properties: [:buff, :conceals],
     calc_flags: [:cri, :speed],
-    flags: [:cloak, :no_pick_item, :stop_attacking],
+    flags: [:cloak, :no_pick_item, :stop_attacking, :remove_on_damaged],
     prevented_by: [:sc_refresh, :sc_inspiration],
     no_save: true,
     remove_on_map_change: true,
@@ -104,14 +104,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   end
 
   def on_tick({:mob, _unit_id}, instance, _context), do: {:ok, instance}
-
-  @impl true
-  @spec after_damage_taken(Definition.target(), StatusEntry.t(), map(), Definition.context()) ::
-          :ok | :remove
-  def after_damage_taken(_target, _instance, %{damage: damage}, _context) when damage > 0,
-    do: :remove
-
-  def after_damage_taken(_target, _instance, %{damage: 0}, _context), do: :ok
 
   defp movement_modifier(level) when level in 1..2, do: 300
   defp movement_modifier(level), do: 30 - 3 * level

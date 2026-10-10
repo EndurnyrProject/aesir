@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Leveling
@@ -121,7 +122,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       handle_death(normalize_attacker(attacker_id), state)
     else
       dispatch_when_hit(state, attacker_id, metadata)
-      {:noreply, maybe_interrupt_cast(state, metadata)}
+      {:noreply, maybe_interrupt_cast(state, metadata, damage)}
     end
   end
 
@@ -142,7 +143,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     )
 
     dispatch_when_hit(state, attacker_id, metadata)
-    {:noreply, maybe_interrupt_cast(state, metadata)}
+    {:noreply, maybe_interrupt_cast(state, metadata, 0)}
   end
 
   def apply_damage(_damage, _attacker_id, _metadata, state), do: {:noreply, state}
@@ -159,10 +160,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   defp dispatch_when_hit(_state, _attacker, _metadata), do: :ok
 
-  defp maybe_interrupt_cast(state, metadata) do
-    if Map.get(metadata, :passive?, false) or Map.get(metadata, :status_tick?, false),
-      do: state,
-      else: SkillHandler.interrupt_cast_on_damage(state)
+  defp maybe_interrupt_cast(state, metadata, damage) do
+    if DamageShared.active_damage?(Map.put(metadata, :damage, damage)),
+      do: SkillHandler.interrupt_cast_on_damage(state),
+      else: state
   end
 
   @doc """
@@ -202,7 +203,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   @doc """
   Applies a coma hit with its prepared metadata: 1 HP and 1 SP, then the hit's
-  when-hit equipment procs, which a coma never prevents.
+  when-hit equipment procs, which a coma never prevents. The hit is active
+  damage for the player's statuses even when the player is already at 1 HP.
   """
   @spec apply_coma(Ref.t() | integer() | nil, map(), SessionState.t()) ::
           {:noreply, SessionState.t()}
@@ -215,9 +217,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def apply_coma(source, metadata, state) do
     hp_damage = max(current_hp(state) - 1, 0)
-
-    {:noreply, state} =
-      if hp_damage > 0, do: apply_damage(hp_damage, source, state), else: {:noreply, state}
+    coma = metadata |> Map.take([:damage_broken]) |> Map.put(:coma?, true)
+    {:noreply, state} = apply_damage(hp_damage, source, coma, state)
 
     state = if current_sp(state) == 1, do: state, else: put_sp(state, 1)
     dispatch_when_hit(state, source, metadata)

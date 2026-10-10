@@ -61,10 +61,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:combat, {:apply_passive_hp_loss, amount}})
   end
 
-  @doc "Applies coma through this mob's owning session."
-  @spec apply_coma(pid(), tuple() | integer() | nil) :: :ok
-  def apply_coma(pid, source) do
-    GenServer.cast(pid, {:combat, {:apply_coma, source}})
+  @doc "Applies coma through this mob's owning session, with the hit's prepared metadata."
+  @spec apply_coma(pid(), tuple() | integer() | nil, map()) :: :ok
+  def apply_coma(pid, source, metadata \\ %{}) do
+    GenServer.cast(pid, {:combat, {:apply_coma, source, metadata}})
   end
 
   @doc """
@@ -396,8 +396,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     CombatHandler.handle_apply_damage(damage, attacker_id, state)
   end
 
-  def handle_cast({:combat, {:apply_coma, source}}, state) do
-    CombatHandler.handle_coma(source, state)
+  def handle_cast({:combat, {:apply_coma, source, metadata}}, state) do
+    CombatHandler.handle_coma(source, metadata, state)
   end
 
   def handle_cast({:combat, {:apply_passive_hp_loss, amount}}, state) do

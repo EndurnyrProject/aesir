@@ -100,10 +100,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
     player = register_player(5)
     apply_cloaking(player, 5, false)
 
-    assert 0 = Interpreter.after_damage_taken(:player, 5, %{damage: 0})
+    Interpreter.on_damage(:player, 5, %{damage: 0, dmg_type: :physical, blocked?: true})
     assert StatusStorage.has_status?(:player, 5, :sc_cloaking)
 
-    assert 0 = Interpreter.after_damage_taken(:player, 5, %{damage: 1})
+    Interpreter.on_damage(:player, 5, %{damage: 1, dmg_type: :physical})
     refute StatusStorage.has_status?(:player, 5, :sc_cloaking)
   end
 

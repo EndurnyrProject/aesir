@@ -338,7 +338,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
     reject(&MobSession.note_hit_type/4)
     reject(&MobSession.apply_damage/4)
-    expect(MobSession, :apply_coma, fn ^target_pid, {:mob, 20} -> :ok end)
+    expect(MobSession, :apply_coma, fn ^target_pid, {:mob, 20}, _metadata -> :ok end)
 
     assert :ok =
              DamageApplication.apply_unit_damage(

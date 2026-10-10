@@ -77,7 +77,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       |> Map.merge(%{
         damage: min(damage, state.hp),
         hp_after: updated_mob.hp,
-        max_hp: state.max_hp
+        max_hp: state.max_hp,
+        attacker: attacker_ref
       })
     )
 
@@ -99,22 +100,47 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
-  @doc "Leaves a living mob at exactly 1 HP and 1 SP."
-  @spec handle_coma(tuple() | integer() | nil, MobState.t()) :: {:noreply, MobState.t()}
-  def handle_coma(_source, %{is_dead: true} = state), do: {:noreply, state}
-  def handle_coma(_source, %{hp: hp} = state) when hp <= 0, do: {:noreply, state}
+  @doc """
+  Leaves a living mob at exactly 1 HP and 1 SP. The hit is active damage for the
+  mob's statuses even when the mob is already at 1 HP.
+  """
+  @spec handle_coma(tuple() | integer() | nil, map(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_coma(_source, _metadata, %{is_dead: true} = state), do: {:noreply, state}
+  def handle_coma(_source, _metadata, %{hp: hp} = state) when hp <= 0, do: {:noreply, state}
 
-  def handle_coma(source, state) do
+  def handle_coma(source, metadata, state) do
     hp_damage = max(state.hp - 1, 0)
+    coma = coma_metadata(metadata)
 
     {:noreply, state} =
       if hp_damage > 0,
-        do: handle_apply_damage(hp_damage, source, state),
-        else: {:noreply, state}
+        do: handle_apply_damage(hp_damage, source, coma, state),
+        else: notify_coma(source, coma, state)
 
     if state.sp == 1,
       do: {:noreply, state},
       else: {:noreply, StateCommit.commit(%{state | sp: 1})}
+  end
+
+  # A coma hit keeps only what the mob's statuses need from the prepared hit.
+  defp coma_metadata(metadata),
+    do: metadata |> Map.take([:damage_broken]) |> Map.put(:coma?, true)
+
+  # A coma hit on a mob already at 1 HP takes nothing but is still active damage.
+  defp notify_coma(source, metadata, state) do
+    StatusInterpreter.on_damage(
+      :mob,
+      state.instance_id,
+      Map.merge(metadata, %{
+        damage: 0,
+        element: :neutral,
+        hp_after: state.hp,
+        max_hp: state.max_hp,
+        attacker: typed_attacker(source)
+      })
+    )
+
+    {:noreply, state}
   end
 
   @doc """

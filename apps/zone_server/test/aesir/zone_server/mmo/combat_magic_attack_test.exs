@@ -1070,7 +1070,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       reject(&MobSession.apply_damage/4)
 
-      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} ->
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id}, _metadata ->
         send(test_pid, :coma_delivered)
         :ok
       end)
@@ -1132,7 +1132,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} -> :ok end)
       reject(&MobSession.apply_damage/4)
-      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id}, _metadata -> :ok end)
 
       assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_attack(caster, @target_id,
@@ -2069,7 +2069,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id}, _metadata -> :ok end)
       expect(MobSession, :apply_damage, fn _pid, 40, @caster_id, _metadata -> :ok end)
 
       assert [{:mob, 2001}, {:mob, 2002}] =
@@ -2108,7 +2108,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       reject(&MobSession.apply_damage/4)
-      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id}, _metadata -> :ok end)
 
       expect(Knockback, :skill, fn attacker, target, 91, result, opts ->
         assert attacker.equip_modifiers[{:add_skill_blow, 91}] == 4
