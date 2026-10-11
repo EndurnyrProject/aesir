@@ -57,6 +57,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   ]
   @block_stage [:sc_kyrie, :sc_safetywall, :sc_pneuma, :sc_basilica, :sc_basilica_caster]
 
+  @defense_stats [:str, :agi, :vit, :int, :dex, :luk]
+
   @doc """
   Initializes the status effect system by loading all definitions.
   """
@@ -91,10 +93,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   that session defers, while one made from any other process (another player's
   cast, a mob, a manager) notifies the owner.
 
-  A skill may pass `success_rate` and `resistance_roll` to combine its base
-  application chance with status resistance in one injectable final roll.
-  `bypass_resistance: true` skips that roll and all chance/stat/duration
-  resistance while retaining immunity, prevention, and conflict gates.
+  A skill may pass `success_rate` (a percentage) and `resistance_roll` (given
+  the final per-10000 rate) to combine its base application chance with the
+  status defense (`Resistance.defend/2`) in one injectable final roll. The
+  source of the defense is the caster (`caster_id`, typed by `source_type` or
+  the unit registry), or the target itself without a caster; a caster no
+  longer in the world leaves the status undefended and unrolled.
+  `no_rate_def: true` (`SCSTART_NORATEDEF`) rolls the given chance without the
+  target's rate defense; `no_tick_def: true` (`SCSTART_NOTICKDEF`) keeps the
+  given duration. `bypass_resistance: true` skips the roll and all
+  chance/stat/duration resistance while retaining immunity, prevention, and
+  conflict gates.
   `no_avoid: true` additionally skips the immunity gates (race, element, boss and
   magic immunity): the application cannot be avoided, only prevented.
 
@@ -140,8 +149,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp ensure_status_allowed(_unit_type, _unit_id, _status_id), do: :ok
 
-  # Reference order (status_change_start): magic and boss immunity (BossResist),
-  # then EndReturn, then the Fail list and the race/element immunity before resistance.
+  # Reference order (status_change_start): boss immunity (BossResist), then
+  # EndReturn, then the Fail list, then the status defense (magic immunity first).
   defp apply_new_status(unit_type, unit_id, status_id, status_params, definition) do
     entity_info = get_entity_info(unit_type, unit_id)
 
@@ -176,6 +185,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     with :ok <- check_avoidable(entity_info, status_params, definition),
          :ok <- check_prevented(unit_type, unit_id, definition),
          :ok <- check_conflicts(unit_type, unit_id, definition),
+         :ok <- check_defended_magic(unit_type, unit_id, status_params),
          {:ok, duration} <-
            roll_resistance(
              unit_type,
@@ -194,8 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     if Keyword.get(status_params, :no_avoid, false) do
       :ok
     else
-      with :ok <- check_magic_immunity(unit_type, unit_id),
-           :ok <- check_immunity(entity_info, immunities(definition, &(&1 == :boss))) do
+      with :ok <- check_immunity(entity_info, immunities(definition, &(&1 == :boss))) do
         check_boss_immunity(entity_info, unit_type, unit_id, status_params, definition)
       end
     end
@@ -1312,87 +1321,123 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          duration_override,
          status_params
        ) do
+    tick = duration_override || definition.duration || 10_000
+
     if Keyword.get(status_params, :bypass_resistance, false) or
-         Keyword.get(status_params, :no_avoid, false) do
-      {:ok, duration_override || definition.duration || 10_000}
-    else
-      roll_resistance_with_adjustment(
-        unit_type,
-        unit_id,
-        definition,
-        entity_info,
-        status_id,
-        duration_override,
-        status_params
-      )
-    end
+         Keyword.get(status_params, :no_avoid, false),
+       do: {:ok, tick},
+       else: defend(unit_type, unit_id, status_id, definition, entity_info, tick, status_params)
   end
 
-  defp roll_resistance_with_adjustment(
-         unit_type,
-         unit_id,
-         definition,
-         entity_info,
-         status_id,
-         duration_override,
-         status_params
-       ) do
-    base_duration = duration_override || definition.duration || 10_000
-    base_success_rate = Keyword.get(status_params, :success_rate, 100)
-    resistance_roll = Keyword.get(status_params, :resistance_roll, &Resistance.roll_success/1)
+  defp defend(unit_type, unit_id, status_id, definition, entity_info, tick, status_params) do
+    status = if definition.bypass_resistance, do: nil, else: status_id
+    rate = status_params |> Keyword.get(:success_rate, 100) |> Kernel.*(100) |> round()
+    roll = Keyword.get(status_params, :resistance_roll, &Resistance.roll_rate/1)
 
-    {success_rate, adjusted_duration} =
-      if Resistance.should_apply_resistance?(definition) do
-        Resistance.apply_resistance(
-          definition,
-          entity_info[:stats] || %{},
-          base_success_rate,
-          base_duration
-        )
-      else
-        {base_success_rate, base_duration}
+    result =
+      case defense_source(unit_type, unit_id, status_params) do
+        :gone ->
+          {:ok, tick}
+
+        {:ok, {source_type, source_id, source_info}} ->
+          if Resistance.defended?(status) do
+            %{
+              status: status,
+              rate: rate,
+              tick: tick,
+              target: defense_view(unit_type, unit_id, entity_info),
+              source: defense_view(source_type, source_id, source_info),
+              scresist: held_val(unit_type, unit_id, :sc_scresist, :val1),
+              siegfried: held_val(unit_type, unit_id, :sc_siegfried, :val2),
+              res_eff:
+                entity_info |> Map.get(:equip_modifiers, %{}) |> Map.get({:res_eff, status}, 0),
+              roll: roll,
+              no_rate_def: Keyword.get(status_params, :no_rate_def, false),
+              no_tick_def: Keyword.get(status_params, :no_tick_def, false)
+            }
+            |> Resistance.defend(GameMode.mode())
+          else
+            Resistance.roll_chance(rate, tick, roll)
+          end
       end
 
-    success_rate = apply_res_eff_tolerance(success_rate, entity_info, status_id, status_params)
-    success_rate = apply_ailment_resistance(success_rate, unit_type, unit_id, status_id)
-
-    if resistance_roll.(success_rate) do
-      {:ok, adjusted_duration}
-    else
-      {:error, :resisted}
+    case result do
+      {:ok, duration} -> {:ok, duration}
+      :resisted -> {:error, :resisted}
     end
   end
 
-  # Equipment `bResEff` tolerance (per-10000) subtracts from the final infliction
-  # rate before the roll, floored at zero. The target's equipment slice rides its
-  # published UnitRegistry entry (`entity_info[:equip_modifiers]`), so this reaches
-  # every infliction source without a call into the target's session. Mobs and
-  # players without the key are unaffected. Callers that already subtracted the
-  # tolerance at their own roll (item on-hit procs) pass `res_eff_exempt: true`
-  # so the reduction applies exactly once per infliction.
-  defp apply_res_eff_tolerance(success_rate, entity_info, status_id, status_params) do
-    if Keyword.get(status_params, :res_eff_exempt, false) do
-      success_rate
-    else
-      tolerance =
-        entity_info
-        |> Map.get(:equip_modifiers, %{})
-        |> Map.get({:res_eff, status_id}, 0)
+  # The source of a status defense: the caster, or the target without one. A
+  # caster that has left the world is `:gone` and defends nothing.
+  defp defense_source(unit_type, unit_id, status_params) do
+    case Keyword.get(status_params, :caster_id) do
+      nil ->
+        {:ok, {unit_type, unit_id, get_entity_info(unit_type, unit_id)}}
 
-      max(success_rate - tolerance / 100, 0)
+      caster_id ->
+        with {:ok, source_type} <- source_type(caster_id, status_params),
+             {:ok, info} <- UnitRegistry.get_unit_info(source_type, caster_id) do
+          {:ok, {source_type, caster_id, info}}
+        else
+          _missing -> :gone
+        end
     end
   end
 
-  defp apply_ailment_resistance(success_rate, unit_type, unit_id, status_id) do
-    if PropertyChecker.debuff?(status_id) do
-      resistance =
-        unit_type
-        |> ModifierCalculator.get_all_modifiers(unit_id)
-        |> Map.get(:ailment_resist_rate, 0)
+  defp source_type(caster_id, status_params) do
+    case Keyword.get(status_params, :source_type) do
+      nil -> UnitRegistry.unit_type_for(caster_id)
+      source_type -> {:ok, source_type}
+    end
+  end
 
-      max(success_rate - resistance, 0)
-    else
-      success_rate
+  defp held_val(unit_type, unit_id, status_id, field) do
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      %StatusEntry{} = entry -> Map.get(entry, field)
+      nil -> nil
+    end
+  end
+
+  # The stats a defense recipe reads: effective primary stats, hard MDEF and
+  # base level. A monster's stats are read from its combatant so its statuses
+  # count; a player's entity info already carries its effective stats.
+  defp defense_view(unit_type, unit_id, entity_info) when unit_type in [:mob, :homunculus] do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {module, state, _pid}} -> combatant_view(module.to_combatant(state))
+      {:error, :not_found} -> info_view(entity_info)
+    end
+  end
+
+  defp defense_view(_unit_type, _unit_id, entity_info), do: info_view(entity_info)
+
+  defp combatant_view(combatant) do
+    %{
+      player?: false,
+      level: combatant.progression.base_level,
+      mdef: Map.get(combatant.combat_stats, :mdef) || 0
+    }
+    |> Map.merge(Map.new(@defense_stats, &{&1, Map.get(combatant.base_stats, &1) || 0}))
+  end
+
+  defp info_view(entity_info) do
+    stats = Map.get(entity_info, :stats) || %{}
+    primary = Map.get(stats, :total_stats) || stats
+
+    %{
+      player?: Map.get(entity_info, :entity_type) == :player,
+      level: Map.get(stats, :base_level) || Map.get(stats, :level) || 0,
+      mdef: Map.get(stats, :mdef) || 0
+    }
+    |> Map.merge(Map.new(@defense_stats, &{&1, Map.get(primary, &1) || 0}))
+  end
+
+  # Magic immunity is the first step of the status defense, so an unavoidable
+  # application and a caster no longer in the world skip it.
+  defp check_defended_magic(unit_type, unit_id, status_params) do
+    cond do
+      Keyword.get(status_params, :no_avoid, false) -> :ok
+      defense_source(unit_type, unit_id, status_params) == :gone -> :ok
+      true -> check_magic_immunity(unit_type, unit_id)
     end
   end
 

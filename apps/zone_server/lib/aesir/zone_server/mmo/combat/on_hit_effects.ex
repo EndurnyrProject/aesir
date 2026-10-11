@@ -8,27 +8,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   bAddEff2, bAddEffOnSkill) belong to the additional-effect stage and roll for a
   connected or blocked hit on a target that survives it; the race procs
   (bDefSetRace and its siblings) need a connected hit; the defender's
-  bAddEffWhenHit belongs to the counter stage. For each attacker `{:add_eff, sc}` the
-  effective chance is `rate - defender {:res_eff, sc}` (per-10000, floored at 0);
-  a successful roll delegates to `StatusEffect.Interpreter.apply_status/4` for the
-  defender, naming the attacker as the source so the interpreter's boss-immunity
-  and resistance chain still gates the attempt. Defender `{:add_eff_when_hit, sc}`
-  rolls symmetrically against the attacker, with the defender as the source.
-
-  The per-10000 roll only decides whether infliction is *attempted*; durations and
-  resistance stay the status system's job. Because the `{:res_eff, sc}` tolerance
-  is already subtracted here at the proc rate, `apply_status` is called with
-  `res_eff_exempt: true` so the interpreter's own tolerance step does not apply it
-  a second time. The roll is injectable through the `:roll` option (mirroring
-  `roll_resistance`'s `resistance_roll`) so tests are deterministic.
+  bAddEffWhenHit belongs to the counter stage. Each bonus with a nonzero per-10000
+  rate is handed to `StatusEffect.Interpreter.apply_status/4` as the application
+  chance, naming its wearer as the source, so the status defense (the victim's
+  stats and `{:res_eff, sc}` equipment resistance included) rolls it once. The
+  roll is injectable through the `:roll` option (the interpreter's
+  `resistance_roll`) so tests are deterministic.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
 
-  @roll_ceiling 10_000
   @normal_short BattleFlags.build(:weapon, :short, false)
   @normal_long BattleFlags.build(:weapon, :long, false)
   @defender_procs [
@@ -171,10 +163,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
     :ok
   end
 
-  # Applies `sc` to `victim` when the roll lands, with `source` named as the
-  # caster so boss immunity gates. The victim's tolerance for the status is
-  # subtracted from the proc rate here, so the status system does not apply it
-  # a second time.
+  # Hands `sc` to the status system for `victim` at the bonus's rate, naming
+  # `source` as the caster; the status defense makes the one roll.
   @spec try_inflict(Combatant.t(), Combatant.t(), atom(), integer(), roll_fun()) :: :ok
   defp try_inflict(source, victim, sc, rate, roll),
     do: try_inflict(source, victim, sc, rate, roll, 0)
@@ -188,21 +178,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
           non_neg_integer()
         ) :: :ok
   defp try_inflict(source, victim, sc, rate, roll, duration) do
-    effective = rate - Map.get(victim.equip_modifiers, {:res_eff, sc}, 0)
-
-    if effective > 0 and roll.(effective) do
+    if rate > 0 do
       params =
-        [
-          caster_id: source.unit_id,
-          source_type: source.unit_type,
-          res_eff_exempt: true
-        ]
+        source
+        |> chance_params(rate, roll)
         |> maybe_duration(duration)
 
       StatusInterpreter.apply_status(victim.unit_type, victim.unit_id, sc, params)
     end
 
     :ok
+  end
+
+  defp chance_params(source, rate, roll) do
+    [
+      caster_id: source.unit_id,
+      source_type: source.unit_type,
+      success_rate: rate / 100,
+      resistance_roll: roll
+    ]
   end
 
   defp status_duration(source, family, param) do
@@ -242,31 +236,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
 
     if rate > 0 do
       duration = Map.get(modifiers, {proc.duration, victim.race}, 0)
-      {rate, duration} = adjust_defender_proc(proc.status, rate, duration, victim)
-      apply_defender_proc(proc, source, victim, modifiers, rate, duration, roll)
-    end
-  end
 
-  defp apply_defender_proc(proc, source, victim, modifiers, rate, duration, roll) do
-    if rate > 0 and roll.(rate) do
-      params = [
-        caster_id: source.unit_id,
-        source_type: source.unit_type,
-        duration: max(duration, 1)
-      ]
+      params =
+        source
+        |> chance_params(rate, roll)
+        |> Keyword.put(:duration, max(duration, 1))
+        |> maybe_proc_value(proc, modifiers, victim.race)
 
-      params = maybe_proc_value(params, proc, modifiers, victim.race)
       StatusInterpreter.apply_status(:player, victim.unit_id, proc.status, params)
     end
   end
-
-  defp adjust_defender_proc(:sc_norecover_state, rate, duration, victim) do
-    tolerance = Map.get(victim.equip_modifiers, {:res_eff, :sc_norecover_state}, 0)
-    rate = max(0, rate - div(rate * tolerance, 10_000))
-    {rate, duration - DamageInputs.effective_luk(victim) * 100}
-  end
-
-  defp adjust_defender_proc(_status, rate, duration, _victim), do: {rate, duration}
 
   defp maybe_proc_value(params, %{value: value_family}, modifiers, race) do
     Keyword.put(params, :val1, Map.get(modifiers, {value_family, race}, 0))
@@ -280,5 +259,5 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   end
 
   @spec default_roll(non_neg_integer()) :: boolean()
-  defp default_roll(effective), do: :rand.uniform(@roll_ceiling) <= effective
+  defp default_roll(rate), do: Resistance.roll_rate(rate)
 end

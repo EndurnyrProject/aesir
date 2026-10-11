@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -57,7 +56,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
   @tag game_mode: :renewal
   test "renewal hits lv rounds at 70% per level, unscaled at base level 99, unsplit" do
     caster = player()
-    stub(Resistance, :roll_success, fn _rate -> false end)
 
     expect(Combat, :execute_magic_splash, fn ^caster, {110, 100}, 1, opts ->
       assert opts[:skill_ratio] == 350
@@ -73,7 +71,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
   @tag game_mode: :pre_renewal
   test "pre-renewal splits a flat 125% among the targets" do
     caster = player()
-    stub(Resistance, :roll_success, fn _rate -> false end)
 
     expect(Combat, :execute_magic_splash, fn ^caster, {110, 100}, 1, opts ->
       assert opts[:skill_ratio] == 125
@@ -92,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
     refs
   end
 
-  test "each struck target is cursed on a successful 5% per level roll" do
+  test "each struck target receives the 5% per level curse chance" do
     caster = mob()
     source = MobState.to_combatant(caster)
     test_pid = self()
@@ -101,9 +98,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
       run_effect_per_hit(opts, source, [{:player, 7}, {:mob, 8}])
     end)
 
-    expect(Resistance, :roll_success, 2, fn 15 -> true end)
-
     stub(StatusInterpreter, :apply_status, fn type, id, :sc_curse, params ->
+      assert params[:success_rate] == 15
       send(test_pid, {:cursed, type, id, params[:duration], params[:source_type]})
       :ok
     end)
@@ -115,7 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
     assert_received {:cursed, :mob, 8, ^duration, :mob}
   end
 
-  test "a failed roll curses nobody" do
+  test "forwards the 5% per level curse chance" do
     caster = player()
     source = PlayerState.to_combatant(caster)
 
@@ -123,8 +119,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
       run_effect_per_hit(opts, source, [{:mob, 8}])
     end)
 
-    stub(Resistance, :roll_success, fn _rate -> false end)
-    reject(&StatusInterpreter.apply_status/4)
+    expect(StatusInterpreter, :apply_status, fn :mob, 8, :sc_curse, params ->
+      assert params[:success_rate] == 15
+      {:error, :resisted}
+    end)
 
     assert {:ok, ^caster} = cast(caster, 3)
   end
@@ -138,9 +136,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcanTest do
       run_effect_per_hit(opts, reflector, [{:player, 1001}])
     end)
 
-    stub(Resistance, :roll_success, fn 15 -> true end)
-
     stub(StatusInterpreter, :apply_status, fn type, id, :sc_curse, params ->
+      assert params[:success_rate] == 15
       send(test_pid, {:cursed, type, id, params[:caster_id], params[:source_type]})
       :ok
     end)

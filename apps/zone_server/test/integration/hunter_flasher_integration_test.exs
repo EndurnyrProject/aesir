@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.MoveRequest
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
@@ -45,7 +46,8 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
     blind = StatusStorage.get_status(:player, @player_id, :sc_blind)
     assert blind.source_id == @mob_id
     assert blind.source_type == :mob
-    assert_in_delta blind.expires_at - blind.started_at, 18_000, 100
+    expected = if GameMode.mode() == :renewal, do: 20_000, else: 18_000
+    assert_in_delta blind.expires_at - blind.started_at, expected, 100
 
     assert %Group{
              visibility: :party_only,

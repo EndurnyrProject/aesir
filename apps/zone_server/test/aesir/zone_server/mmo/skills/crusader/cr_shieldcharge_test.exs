@@ -177,9 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
     end
 
     @tag game_mode: :renewal
-    test "applies sc_stun for 4500ms when the roll succeeds on a connecting hit" do
-      # Seed {1,1,185} yields :rand.uniform(100) == 1, at or below the 30% (15+5x3) chance.
-      :rand.seed(:exsss, {1, 1, 185})
+    test "applies sc_stun for 4500ms with the source chance on a connecting hit" do
       caster = caster_with_shield()
 
       stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
@@ -193,6 +191,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
       expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
         assert_received :combined_blow_requested
         assert params[:duration] == 4_500
+        assert params[:success_rate] == 30
         :ok
       end)
 
@@ -205,9 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
       assert definition.duration == List.duplicate(5_000, 5)
     end
 
-    test "does not apply stun on a connecting hit when the roll fails" do
-      # Seed {1,1,2} yields :rand.uniform(100) == 98, above the 20% (15+5x1) chance.
-      :rand.seed(:exsss, {1, 1, 2})
+    test "forwards the level-one stun chance on a connecting hit" do
       caster = caster_with_shield()
 
       stub(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
@@ -217,7 +214,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
 
       stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
       reject(&Combat.knockback/5)
-      reject(&StatusInterpreter.apply_status/4)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
+        assert params[:success_rate] == 20
+        {:error, :resisted}
+      end)
 
       assert {:ok, ^caster} = CrShieldcharge.cast(caster, {:unit, @target_id}, 1, definition())
     end

@@ -116,7 +116,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion do
     StatusInterpreter.apply_status(unit_type, target_id, definition.status,
       val1: group.level,
       duration: Enum.at(definition.duration, idx),
-      success_rate: blind_chance(group.level)
+      success_rate: blind_chance(group.level),
+      caster_id: group.caster_id,
+      source_type: group.caster_type
     )
   end
 

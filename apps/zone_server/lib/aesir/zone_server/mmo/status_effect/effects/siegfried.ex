@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Siegfried do
-  @moduledoc "Finite Acoustic Rhythm elemental and ailment resistance snapshot."
+  @moduledoc """
+  Finite Acoustic Rhythm elemental and ailment resistance snapshot.
+
+  `val1` is the elemental resistance and `val2` the ailment resistance that the
+  status defense adds to an inflicted status's `sc_def` share.
+  """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_siegfried,
@@ -10,8 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Siegfried do
       :subele_water,
       :subele_earth,
       :subele_fire,
-      :subele_wind,
-      :ailment_resist_rate
+      :subele_wind
     ],
     end_on_start: [
       :sc_richmankim,
@@ -33,8 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Siegfried do
       subele_water: instance.val1,
       subele_earth: instance.val1,
       subele_fire: instance.val1,
-      subele_wind: instance.val1,
-      ailment_resist_rate: instance.val2
+      subele_wind: instance.val1
     }
   end
 end

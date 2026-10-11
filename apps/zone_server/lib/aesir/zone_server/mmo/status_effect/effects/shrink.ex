@@ -58,13 +58,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Shrink do
   def maybe_stun_attacker(_guarder, _attacker, _guard_level), do: :ok
 
   defp maybe_stun({guarder_type, guarder_id}, {attacker_type, attacker_id}) do
-    if :rand.uniform(100) <= @stun_chance do
-      StatusInterpreter.apply_status(attacker_type, attacker_id, :sc_stun,
-        duration: @stun_duration,
-        caster_id: guarder_id,
-        source_type: guarder_type
-      )
-    end
+    StatusInterpreter.apply_status(attacker_type, attacker_id, :sc_stun,
+      duration: @stun_duration,
+      success_rate: @stun_chance,
+      caster_id: guarder_id,
+      source_type: guarder_type
+    )
   end
 
   defp maybe_push(guarder, {attacker_type, attacker_id}, guard_level) do

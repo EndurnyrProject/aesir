@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
     Mimic.copy(Resistance)
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
     stub(Resistance, :roll_success, fn _rate -> true end)
+    stub(Resistance, :roll_rate, fn _rate -> true end)
     :ok
   end
 

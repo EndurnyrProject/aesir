@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.EnvenomTest do
 
   @tag game_mode: :renewal
   test "executes the free level-five effect directly with a typed mob source" do
-    :rand.seed(:exsss, {1, 2, 3})
     caster = %{instance_id: 1_000}
 
     expect(Combat, :execute_skill_attack, fn ^caster, {:player, 2_000}, opts ->
@@ -29,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.EnvenomTest do
     end)
 
     expect(StatusInterpreter, :apply_status, fn :player, 2_000, :sc_poison, params ->
-      assert params == [duration: 18_000, caster_id: 1_000, source_type: :mob]
+      assert params == [duration: 18_000, success_rate: 30, caster_id: 1_000, source_type: :mob]
       :ok
     end)
 
@@ -38,7 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.EnvenomTest do
 
   @tag game_mode: :pre_renewal
   test "classic executes the free level-five effect directly with a typed mob source" do
-    :rand.seed(:exsss, {1, 2, 3})
     caster = %{instance_id: 1_000}
 
     expect(Combat, :execute_skill_attack, fn ^caster, {:player, 2_000}, opts ->
@@ -57,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.EnvenomTest do
     end)
 
     expect(StatusInterpreter, :apply_status, fn :player, 2_000, :sc_poison, params ->
-      assert params == [duration: 60_000, caster_id: 1_000, source_type: :mob]
+      assert params == [duration: 60_000, success_rate: 30, caster_id: 1_000, source_type: :mob]
       :ok
     end)
 
@@ -66,7 +64,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.EnvenomTest do
 
   @tag game_mode: :renewal
   test "leaves Poison immunity to the existing status application" do
-    :rand.seed(:exsss, {1, 2, 3})
     caster = %{world_gid: 3_000}
 
     stub(Combat, :execute_skill_attack, fn ^caster, {:mob, 4_000}, _opts ->
@@ -74,7 +71,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.EnvenomTest do
     end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, 4_000, :sc_poison, params ->
-      assert params == [duration: 18_000, caster_id: 3_000, source_type: :homunculus]
+      assert params == [
+               duration: 18_000,
+               success_rate: 30,
+               caster_id: 3_000,
+               source_type: :homunculus
+             ]
+
       {:error, :immune}
     end)
 
@@ -83,7 +86,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.EnvenomTest do
 
   @tag game_mode: :pre_renewal
   test "classic leaves Poison immunity to the existing status application" do
-    :rand.seed(:exsss, {1, 2, 3})
     caster = %{world_gid: 3_000}
 
     stub(Combat, :execute_skill_attack, fn ^caster, {:mob, 4_000}, _opts ->
@@ -91,7 +93,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.EnvenomTest do
     end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, 4_000, :sc_poison, params ->
-      assert params == [duration: 60_000, caster_id: 3_000, source_type: :homunculus]
+      assert params == [
+               duration: 60_000,
+               success_rate: 30,
+               caster_id: 3_000,
+               source_type: :homunculus
+             ]
+
       {:error, :immune}
     end)
 

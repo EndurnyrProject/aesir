@@ -190,9 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
                MgFrostdiver.cast(caster, {:unit, @target_id}, 6, definition)
     end
 
-    test "the hit's additional effect freezes for 3000*level ms when the roll succeeds" do
-      # Seed {1,2,3} yields :rand.uniform(100) == 27, below every freeze chance.
-      :rand.seed(:exsss, {1, 2, 3})
+    test "the hit's additional effect freezes for 3000*level ms with the source chance" do
       caster = caster()
       definition = definition(:mg_frostdiver)
       hit_id = @target_id + 1
@@ -204,15 +202,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
 
       expect(StatusInterpreter, :apply_status, fn :player, ^hit_id, :sc_freeze, params ->
         assert params[:duration] == 3000 * 4
+        assert params[:success_rate] == 47
         :ok
       end)
 
       assert {:ok, ^caster} = MgFrostdiver.cast(caster, {:unit, @target_id}, 4, definition)
     end
 
-    test "does not apply sc_freeze when the roll fails" do
-      # Seed {6,7,8} yields :rand.uniform(100) == 87, above every freeze chance.
-      :rand.seed(:exsss, {6, 7, 8})
+    test "forwards the level-four freeze chance to the status defense" do
       caster = caster()
       definition = definition(:mg_frostdiver)
 
@@ -221,7 +218,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
         {:ok, {:mob, @target_id}}
       end)
 
-      reject(&StatusInterpreter.apply_status/4)
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_freeze, params ->
+        assert params[:success_rate] == 47
+        {:error, :resisted}
+      end)
 
       assert {:ok, ^caster} = MgFrostdiver.cast(caster, {:unit, @target_id}, 4, definition)
     end

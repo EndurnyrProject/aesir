@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.NoRecoverState do
     id: :sc_norecover_state,
     no_dispel: false,
     no_clear_buff: false,
-    bypass_resistance: true,
     properties: [:debuff],
     calc_flags: [:regen],
     target_types: [:player],

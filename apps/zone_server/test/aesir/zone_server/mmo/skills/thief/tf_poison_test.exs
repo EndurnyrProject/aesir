@@ -40,16 +40,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
   end
 
   @tag game_mode: :renewal
-  test "applies sc_poison for 18000ms when the roll succeeds" do
-    # Seed {1,2,3} yields :rand.uniform(100) == 27, at or below 4*6+10 = 34.
-    :rand.seed(:exsss, {1, 2, 3})
+  test "applies sc_poison for 18000ms with the source chance" do
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
-      assert params == [duration: 18_000, caster_id: 1_000, source_type: :player]
+      assert params == [
+               duration: 18_000,
+               success_rate: 34,
+               caster_id: 1_000,
+               source_type: :player
+             ]
+
       :ok
     end)
 
@@ -57,37 +61,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic applies sc_poison for 60000ms when the roll succeeds" do
-    # Seed {1,2,3} yields :rand.uniform(100) == 27, at or below 4*6+10 = 34.
-    :rand.seed(:exsss, {1, 2, 3})
+  test "classic applies sc_poison for 60000ms with the source chance" do
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
-      assert params == [duration: 60_000, caster_id: 1_000, source_type: :player]
+      assert params == [
+               duration: 60_000,
+               success_rate: 34,
+               caster_id: 1_000,
+               source_type: :player
+             ]
+
       :ok
     end)
 
     assert {:ok, ^caster} = TfPoison.cast(caster, {:unit, @target_id}, 6, definition())
   end
 
-  test "does not apply sc_poison when the roll fails" do
-    # Seed {6,7,8} yields :rand.uniform(100) == 87, above 4*1+10 = 14.
-    :rand.seed(:exsss, {6, 7, 8})
+  test "forwards the level-one poison chance to the status defense" do
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
-    reject(&StatusInterpreter.apply_status/4)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
+      assert params[:success_rate] == 14
+      {:error, :resisted}
+    end)
 
     assert {:ok, ^caster} = TfPoison.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
   test "applies sc_poison to a player target when the mob lookup misses" do
-    # Seed {1,2,3} yields :rand.uniform(100) == 27, at or below 4*10+10 = 50.
-    :rand.seed(:exsss, {1, 2, 3})
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
@@ -101,9 +109,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
   end
 
   test "does not apply sc_poison when the attack is dodged, but still returns {:ok, caster}" do
-    # Seed {1,2,3} yields :rand.uniform(100) == 27, which would pass the roll
-    # if it ran; the miss must skip the roll entirely.
-    :rand.seed(:exsss, {1, 2, 3})
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: false}} end)

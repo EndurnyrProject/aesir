@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
   defp apply_cleanup_status(status, duration, value, character_id) do
     params =
-      [caster_id: character_id, val1: value, owner_refresh: :defer]
+      [caster_id: character_id, val1: value, owner_refresh: :defer, no_tick_def: true]
       |> maybe_put_duration(duration)
 
     case Interpreter.apply_status(:player, character_id, status, params) do
@@ -148,7 +148,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
   defp apply_equip_status(status, duration, value, character_id) do
     params =
-      [caster_id: character_id, val1: value, owner_refresh: :defer]
+      [caster_id: character_id, val1: value, owner_refresh: :defer, no_tick_def: true]
       |> maybe_put_duration(duration)
 
     case Interpreter.apply_status(:player, character_id, status, params) do
@@ -168,7 +168,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
         character_id = state.game_state.character_id
 
         params =
-          [caster_id: character_id, val1: value, owner_refresh: :defer]
+          [caster_id: character_id, val1: value, owner_refresh: :defer, no_tick_def: true]
           |> maybe_put_duration(duration)
 
         case Interpreter.apply_status(:player, character_id, status, params) do
@@ -200,6 +200,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
     end)
   end
 
+  # Equipment scripts start statuses as the item use does (`SCSTART_NOTICKDEF`).
   defp maybe_put_duration(params, :infinite), do: params
   defp maybe_put_duration(params, duration), do: Keyword.put(params, :duration, duration)
 

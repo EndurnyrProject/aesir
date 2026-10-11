@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
 
   @behaviour Active
 
@@ -78,13 +77,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwNapalmvulcan do
   end
 
   defp maybe_curse({type, id}, combatant, level) do
-    if Resistance.roll_success(5 * level) do
-      StatusInterpreter.apply_status(type, id, :sc_curse,
-        duration: curse_ms(),
-        caster_id: combatant.unit_id,
-        source_type: combatant.unit_type
-      )
-    end
+    StatusInterpreter.apply_status(type, id, :sc_curse,
+      duration: curse_ms(),
+      success_rate: 5 * level,
+      caster_id: combatant.unit_id,
+      source_type: combatant.unit_type
+    )
   end
 
   defp curse_ms do

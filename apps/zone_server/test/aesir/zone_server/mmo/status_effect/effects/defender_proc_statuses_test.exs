@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DefenderProcStatusesTest do
     assert %{
              module: NoRecoverState,
              icon: :handicapstate_norecover,
-             bypass_resistance: true,
+             bypass_resistance: false,
              target_types: [:player]
            } = Registry.get_definition(:sc_norecover_state)
   end

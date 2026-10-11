@@ -18,10 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagiTest do
     definition
   end
 
-  describe "cast/4 — landing roll hit" do
-    # Seed {1,2,3} yields :rand.uniform(100) == 27, below any reasonable Decrease AGI rate.
+  describe "cast/4 — status parameters" do
     setup do
-      :rand.seed(:exsss, {1, 2, 3})
       stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
       stub(PlayerState, :get_stats, fn _ -> %{base_level: 50, int: 50} end)
       {:ok, definition: definition()}
@@ -29,11 +27,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagiTest do
 
     test "applies sc_decreaseagi with correct val1 and duration on hit",
          %{definition: definition} do
-      # level=5, base_level=50, int=50: rate = 50 + 15 + div(100, 5) = 85; 27 <= 85 → hit
       expected_duration = Enum.at(definition.duration, 4)
 
       expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_decreaseagi, params ->
         assert params[:val1] == 5
+        assert params[:success_rate] == 85
         assert params[:caster_id] == 1000
         assert params[:duration] == expected_duration
         :ok
@@ -83,34 +81,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagiTest do
     end
   end
 
-  describe "cast/4 — landing roll miss" do
-    # Seed {6,7,8} yields :rand.uniform(100) == 87.
-    # At level=5, base_level=50, int=50: rate = 85; 87 > 85 → miss.
+  describe "cast/4 — status defense" do
     setup do
-      :rand.seed(:exsss, {6, 7, 8})
       stub(PlayerState, :get_stats, fn _ -> %{base_level: 50, int: 50} end)
       {:ok, definition: definition()}
     end
 
-    test "returns {:ok, caster} without applying status on miss", %{definition: definition} do
-      reject(&StatusInterpreter.apply_status/4)
+    test "forwards the source chance and returns the caster when resisted", %{
+      definition: definition
+    } do
+      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_decreaseagi, params ->
+        assert params[:success_rate] == 85
+        {:error, :resisted}
+      end)
 
       assert {:ok, @caster} = AlDecagi.cast(@caster, {:unit, @target_id}, 5, definition)
     end
   end
 
   describe "cast/4 — rate formula" do
-    # base_level=60, int=60, level=5:
-    # rate = 50 + (3 * 5) + div(60 + 60, 5) = 50 + 15 + 24 = 89
-    # Seed {6,7,8} gives 87; 87 <= 89 → hit at this higher stat level.
-    # Contrast: same seed at base_level=50, int=50 gives miss (rate=85, 87>85).
-    test "higher base_level/int raises rate enough to turn a miss into a hit" do
-      :rand.seed(:exsss, {6, 7, 8})
+    test "higher base_level/int raises the forwarded source chance" do
       stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
       stub(PlayerState, :get_stats, fn _ -> %{base_level: 60, int: 60} end)
 
       expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_decreaseagi, params ->
         assert params[:val1] == 5
+        assert params[:success_rate] == 89
         :ok
       end)
 
@@ -120,7 +118,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagiTest do
 
   describe "target unit type resolution" do
     setup do
-      :rand.seed(:exsss, {1, 2, 3})
       stub(PlayerState, :get_stats, fn _ -> %{base_level: 50, int: 50} end)
       {:ok, definition: definition()}
     end

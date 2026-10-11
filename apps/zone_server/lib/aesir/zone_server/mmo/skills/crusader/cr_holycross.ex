@@ -67,16 +67,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
   defp skill_ratio(_caster, level), do: 100 + 35 * level
 
   defp maybe_blind(caster, target, level, duration) do
-    if :rand.uniform(100) <= 3 * level do
-      {unit_type, unit_id} = target_ref(target)
-      {source_type, source_id} = source_ref(caster)
+    {unit_type, unit_id} = target_ref(target)
+    {source_type, source_id} = source_ref(caster)
 
-      StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
-        duration: duration,
-        caster_id: source_id,
-        source_type: source_type
-      )
-    end
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
+      duration: duration,
+      success_rate: 3 * level,
+      caster_id: source_id,
+      source_type: source_type
+    )
 
     :ok
   end

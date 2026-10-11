@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   """
 
   import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2]
+  import Bitwise, only: [band: 2]
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
@@ -22,6 +23,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @scstart_noavoid 0x01
+  @scstart_notickdef 0x02
+  @scstart_noratedef 0x08
 
   @typedoc "An HP/SP heal amount: a flat integer or a `lo..hi` range to roll within."
   @type amount :: integer() | Range.t()
@@ -85,20 +90,51 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   @doc """
   Applies a status effect to the player for `duration_ms` with strength `val`.
 
+  Starts it as the `sc_start` script command does, with the player as its own
+  source: an item script lands at `rate` (per 10000) through the status
+  defense, with the duration kept (`SCSTART_NOTICKDEF`), unless the script gave
+  an explicit `flag` (`SCSTART_*` bits); an NPC script's start cannot be avoided
+  (`SCSTART_NOAVOID`).
+
   The status lives in external storage, not in `game_state`, so the context is
   returned unchanged. Halts `:no_player` on a detached ctx — there is no
   `char_id` to key the status storage on.
   """
-  @spec sc_start(Ctx.t(), atom(), non_neg_integer(), integer()) :: Ctx.t()
-  def sc_start(%Ctx{status: {:error, _}} = ctx, _status, _duration_ms, _val), do: ctx
+  @spec sc_start(
+          Ctx.t(),
+          atom(),
+          non_neg_integer(),
+          integer(),
+          0..10_000,
+          non_neg_integer() | nil
+        ) ::
+          Ctx.t()
+  def sc_start(ctx, status, duration_ms, val, rate \\ 10_000, flag \\ nil)
 
-  def sc_start(%Ctx{game_state: nil} = ctx, _status, _duration_ms, _val),
+  def sc_start(%Ctx{status: {:error, _}} = ctx, _status, _duration_ms, _val, _rate, _flag),
+    do: ctx
+
+  def sc_start(%Ctx{game_state: nil} = ctx, _status, _duration_ms, _val, _rate, _flag),
     do: Ctx.halt(ctx, :no_player)
 
-  def sc_start(%Ctx{} = ctx, status, duration_ms, val) do
-    StatusInterpreter.apply_status(:player, ctx.char_id, status, val1: val, duration: duration_ms)
+  def sc_start(%Ctx{} = ctx, status, duration_ms, val, rate, flag) do
+    flag = flag || default_start_flag(ctx.source)
+
+    params =
+      [val1: val, duration: duration_ms, success_rate: min(rate, 10_000) / 100]
+      |> put_start_flag(:no_avoid, flag, @scstart_noavoid)
+      |> put_start_flag(:no_tick_def, flag, @scstart_notickdef)
+      |> put_start_flag(:no_rate_def, flag, @scstart_noratedef)
+
+    StatusInterpreter.apply_status(:player, ctx.char_id, status, params)
     ctx
   end
+
+  defp default_start_flag({:npc, _module}), do: @scstart_noavoid
+  defp default_start_flag(_item), do: @scstart_notickdef
+
+  defp put_start_flag(params, key, flag, bit),
+    do: if(band(flag, bit) != 0, do: Keyword.put(params, key, true), else: params)
 
   @doc """
   Removes a status effect from the player. Returns the context unchanged.

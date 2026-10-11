@@ -39,9 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
   end
 
   @tag game_mode: :renewal
-  test "applies sc_blind for 18000ms when the 20% roll succeeds" do
-    # Seed {1,1,1} yields :rand.uniform(100) == 8, at or below the 20% chance.
-    :rand.seed(:exsss, {1, 1, 1})
+  test "applies sc_blind for 18000ms with the 20% source chance" do
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
@@ -49,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
       assert params[:duration] == 18_000
+      assert params[:success_rate] == 20
       :ok
     end)
 
@@ -56,9 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic applies sc_blind for 30000ms when the 20% roll succeeds" do
-    # Seed {1,1,1} yields :rand.uniform(100) == 8, at or below the 20% chance.
-    :rand.seed(:exsss, {1, 1, 1})
+  test "classic applies sc_blind for 30000ms with the 20% source chance" do
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
@@ -66,28 +63,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
       assert params[:duration] == 30_000
+      assert params[:success_rate] == 20
       :ok
     end)
 
     assert {:ok, ^caster} = TfSprinklesand.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
-  test "does not apply sc_blind when the roll fails" do
-    # Seed {6,7,8} yields :rand.uniform(100) == 87, above the 20% chance.
-    :rand.seed(:exsss, {6, 7, 8})
+  test "forwards the 20 percent blind chance to the status defense" do
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
-    reject(&StatusInterpreter.apply_status/4)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
+      assert params[:success_rate] == 20
+      {:error, :resisted}
+    end)
 
     assert {:ok, ^caster} = TfSprinklesand.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
   test "does not apply sc_blind when the attack is dodged, but still returns {:ok, caster}" do
-    # Seed {1,1,1} yields :rand.uniform(100) == 8, which would pass the 20%
-    # roll if it ran; the miss must skip the roll entirely.
-    :rand.seed(:exsss, {1, 1, 1})
     caster = caster()
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: false}} end)

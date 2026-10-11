@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SiegfriedTest do
     end
   end
 
-  test "reduces ailment application rate without affecting buffs" do
+  @tag game_mode: :renewal
+  test "adds its ailment resistance to a listed status's defense, not to a status without one" do
     test_pid = self()
     apply_siegfried()
 
@@ -66,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SiegfriedTest do
                end
              )
 
-    assert_received {:ailment_rate, 75.0}
+    assert_received {:ailment_rate, 7500}
 
     assert :ok =
              Interpreter.apply_status(:player, @defender_id, :sc_hiding,
@@ -77,7 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SiegfriedTest do
                end
              )
 
-    assert_received {:buff_rate, 63.0}
+    assert_received {:buff_rate, 6300}
   end
 
   defp apply_siegfried do

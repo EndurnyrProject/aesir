@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncRateBuffsTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncHit
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncMhpRate
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncMspRate
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Scresist
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -28,11 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IncRateBuffsTest do
   end
 
   describe "sc_scresist" do
-    test "emits the ailment resistance rate from val1" do
-      assert Scresist.modifiers(%StatusEntry{type: :sc_scresist, val1: 40}, %{}) ==
-               %{ailment_resist_rate: 40}
-    end
-
     test "at 100 every debuff application is resisted" do
       :ok =
         StatusStorage.apply_status(:player, @target_id, :sc_scresist, val1: 100, duration: 60_000)

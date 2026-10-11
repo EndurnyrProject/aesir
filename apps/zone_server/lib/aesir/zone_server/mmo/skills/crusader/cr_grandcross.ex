@@ -178,7 +178,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
 
       amount = Damage.calculate(GameMode.mode(), inputs)
       :ok = Combat.deliver_skill_unit_hit(prepared, amount, skill_level: level, element: :holy)
-      unless self?, do: maybe_blind(unit_type, target_id)
+      unless self?, do: maybe_blind(caster, unit_type, target_id)
     end
 
     :ok
@@ -213,13 +213,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
 
   # Blind lands only on mob targets that are undead-element or undead/demon-race;
   # players are never blinded by the field.
-  @spec maybe_blind(atom(), integer()) :: :ok
-  defp maybe_blind(:mob, target_id) do
+  @spec maybe_blind(map(), atom(), integer()) :: :ok
+  defp maybe_blind(caster, :mob, target_id) do
     case Combat.resolve_combatant(:mob, target_id) do
       {:ok, %{race: race} = target} ->
         if race == :demon or RaceModifiers.undead_target?(target) do
           StatusInterpreter.apply_status(:mob, target_id, :sc_blind,
-            duration: hd(definition().duration)
+            duration: hd(definition().duration),
+            caster_id: caster.unit_id,
+            source_type: caster.unit_type
           )
         end
 
@@ -230,5 +232,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     end
   end
 
-  defp maybe_blind(_unit_type, _target_id), do: :ok
+  defp maybe_blind(_caster, _unit_type, _target_id), do: :ok
 end

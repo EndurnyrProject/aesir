@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   setup :verify_on_exit!
 
@@ -47,11 +46,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       assert_received {:applied, :mob, 2001, :sc_stun, params}
       assert params[:caster_id] == 1001
       assert params[:source_type] == :player
-      assert params[:res_eff_exempt] == true
+      assert params[:success_rate] == 5.0
     end
 
-    test "a failed roll applies nothing" do
-      reject(&StatusInterpreter.apply_status/4)
+    test "forwards the per-10000 rate and the roll to the status defense" do
+      record_applications()
 
       attacker =
         CombatTestHelper.create_player_combatant()
@@ -60,34 +59,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       defender = CombatTestHelper.create_mob_combatant()
 
       assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &never_hit/1)
+
+      assert_received {:applied, :mob, _id, :sc_stun, params}
+      assert params[:success_rate] == 5.0
+      refute params[:resistance_roll].(500)
     end
 
-    test "res_eff subtracts before the roll" do
-      pid = self()
-
-      stub(StatusInterpreter, :apply_status, fn _t, _id, _sc, _p -> :ok end)
-
-      roll = fn effective ->
-        send(pid, {:rolled, effective})
-        true
-      end
-
-      attacker =
-        CombatTestHelper.create_player_combatant()
-        |> with_mods(%{{:add_eff, :sc_stun} => 500})
-
-      defender =
-        CombatTestHelper.create_mob_combatant()
-        |> with_mods(%{{:res_eff, :sc_stun} => 200})
-
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: roll)
-      assert_received {:rolled, 300}
-    end
-
-    test "rate 500 vs res 500 never attempts (floor 0, no roll)" do
-      reject(&StatusInterpreter.apply_status/4)
-
-      rolled = fn _ -> flunk("roll must not run when the effective rate floors to 0") end
+    test "leaves the victim's res_eff to the status defense" do
+      record_applications()
+      roll = fn _rate -> flunk("the status defense makes the only roll") end
 
       attacker =
         CombatTestHelper.create_player_combatant()
@@ -97,7 +77,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
         CombatTestHelper.create_mob_combatant()
         |> with_mods(%{{:res_eff, :sc_stun} => 500})
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: rolled)
+      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: roll)
+
+      assert_received {:applied, :mob, _id, :sc_stun, params}
+      assert params[:success_rate] == 5.0
+    end
+
+    test "a zero rate never reaches the status system" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_mods(%{{:add_eff, :sc_stun} => 0})
+
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
     end
   end
 
@@ -118,14 +113,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       assert params[:source_type] == :mob
     end
 
-    test "subtracts the attacker's res_eff symmetrically" do
-      pid = self()
-      stub(StatusInterpreter, :apply_status, fn _t, _id, _sc, _p -> :ok end)
-
-      roll = fn effective ->
-        send(pid, {:rolled, effective})
-        true
-      end
+    test "forwards the when-hit rate unreduced by the attacker's res_eff" do
+      record_applications()
 
       attacker =
         CombatTestHelper.create_player_combatant()
@@ -135,8 +124,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
         CombatTestHelper.create_mob_combatant()
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 400})
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: roll)
-      assert_received {:rolled, 250}
+      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
+
+      assert_received {:applied, :player, _id, :sc_freeze, params}
+      assert params[:success_rate] == 4.0
     end
   end
 
@@ -157,16 +148,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       assert params[:source_type] == :player
     end
 
-    test "a failed roll applies nothing" do
-      reject(&StatusInterpreter.apply_status/4)
+    test "forwards its rate and roll to the status defense" do
+      record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
         |> with_mods(%{{:add_eff2, :sc_curse} => 500})
 
       defender = CombatTestHelper.create_mob_combatant()
 
       assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &never_hit/1)
+
+      assert_received {:applied, :player, 1001, :sc_curse, params}
+      assert params[:success_rate] == 5.0
+      refute params[:resistance_roll].(500)
     end
   end
 
@@ -303,9 +298,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       refute_received {:applied, _type, _id, _sc, _params}
     end
 
-    test "the victim's tolerance subtracts from the proc rate" do
-      pid = self()
-      stub(StatusInterpreter, :apply_status, fn _t, _i, _sc, _p -> :ok end)
+    test "forwards the proc rate unreduced by the victim's tolerance" do
+      record_applications()
 
       attacker =
         CombatTestHelper.create_player_combatant(unit_id: 1001)
@@ -315,14 +309,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
         CombatTestHelper.create_mob_combatant(unit_id: 2001)
         |> with_mods(%{{:res_eff, :sc_stun} => 1_000})
 
-      roll = fn effective ->
-        send(pid, {:rolled, effective})
-        false
-      end
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &never_hit/1,
+                 skill_id: 110
+               )
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: roll, skill_id: 110)
-
-      assert_received {:rolled, 2_000}
+      assert_received {:applied, :mob, 2001, :sc_stun, params}
+      assert params[:success_rate] == 30.0
     end
   end
 
@@ -462,28 +456,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       assert_received {:applied, :player, 1001, :sc_blind, _params}
     end
 
-    test "a failed roll inflicts nothing" do
+    test "a flagged proc forwards its rate and roll, unreduced by the victim's tolerance" do
       record_applications()
-
-      attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 1001)
-        |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:target])}} => 10_000})
-
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
-
-      assert :ok =
-               OnHitEffects.after_hit(attacker, defender, @landed,
-                 roll: &never_hit/1,
-                 attack_flag: BattleFlags.build(:weapon, :short, false)
-               )
-
-      refute_received {:applied, _type, _id, _sc, _params}
-    end
-
-    test "the victim's tolerance still subtracts from a flagged proc rate" do
-      pid = self()
-
-      stub(StatusInterpreter, :apply_status, fn _type, _id, _sc, _params -> :ok end)
 
       attacker =
         CombatTestHelper.create_player_combatant(unit_id: 1001)
@@ -493,18 +467,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
         CombatTestHelper.create_mob_combatant(unit_id: 2001)
         |> with_mods(%{{:res_eff, :sc_stun} => 1_000})
 
-      roll = fn effective ->
-        send(pid, {:rolled, effective})
-        false
-      end
-
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
-                 roll: roll,
+                 roll: &never_hit/1,
                  attack_flag: BattleFlags.build(:weapon, :short, false)
                )
 
-      assert_received {:rolled, 2_000}
+      assert_received {:applied, :mob, 2001, :sc_stun, params}
+      assert params[:success_rate] == 30.0
+      refute params[:resistance_roll].(3_000)
     end
   end
 
@@ -576,11 +547,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
                )
     end
 
-    test "no-recover applies tolerance to chance and effective LUK to duration" do
+    test "no-recover forwards its rate, roll and duration to the status defense" do
       record_applications()
-      test_pid = self()
-
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, 2001 -> %{luk: 5} end)
 
       attacker =
         CombatTestHelper.create_player_combatant(unit_id: 1001)
@@ -593,20 +561,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
         %{CombatTestHelper.create_player_combatant(unit_id: 2001, luk: 10) | race: :player_human}
         |> with_mods(%{:luk => 2, {:res_eff, :sc_norecover_state} => 2_000})
 
-      roll = fn rate ->
-        send(test_pid, {:rolled, rate})
-        true
-      end
-
       assert :ok =
                OnHitEffects.after_hit(attacker, defender, @landed,
-                 roll: roll,
+                 roll: &always_hit/1,
                  attack_flag: BattleFlags.build(:weapon, :long, false)
                )
 
-      assert_received {:rolled, 8_000}
       assert_received {:applied, :player, 2001, :sc_norecover_state, params}
-      assert params[:duration] == 8_300
+      assert params[:success_rate] == 100.0
+      assert params[:duration] == 10_000
+      assert params[:resistance_roll].(10_000)
       refute Keyword.has_key?(params, :val1)
     end
   end

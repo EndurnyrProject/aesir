@@ -3,336 +3,262 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ResistanceTest do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
 
-  describe "calculate_success_rate/3" do
-    test "calculates physical resistance based on VIT" do
-      # VIT reduces success rate multiplicatively: rate * (100 - vit) / 100
-      assert Resistance.calculate_success_rate(:physical, %{vit: 50}, 100) == 50.0
-      assert Resistance.calculate_success_rate(:physical, %{vit: 30}, 80) == 56.0
-      assert Resistance.calculate_success_rate(:physical, %{vit: 100}, 90) == 0.0
+  defp view(overrides \\ []) do
+    Map.merge(
+      %{player?: true, level: 50, str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0, mdef: 0},
+      Map.new(overrides)
+    )
+  end
+
+  # The roll reports the final rate and lands.
+  defp input(status, overrides) do
+    test_pid = self()
+
+    Map.merge(
+      %{
+        status: status,
+        rate: 10_000,
+        tick: 10_000,
+        target: view(),
+        source: view(),
+        scresist: nil,
+        siegfried: nil,
+        res_eff: 0,
+        roll: fn rate ->
+          send(test_pid, {:rate, rate})
+          true
+        end
+      },
+      Map.new(overrides)
+    )
+  end
+
+  defp defend(status, mode, overrides \\ []),
+    do: Resistance.defend(input(status, overrides), mode)
+
+  defp rolled_rate do
+    assert_received {:rate, rate}
+    rate
+  end
+
+  describe "renewal recipes" do
+    test "Stun: VIT share of the rate and duration, then 0.5 s longer" do
+      assert {:ok, 3500} = defend(:sc_stun, :renewal, target: view(vit: 40), tick: 5000)
+      assert rolled_rate() == 6000
     end
 
-    test "multiplicative reduction never zeroes out a low base rate at moderate VIT" do
-      # A subtractive formula would clamp any base rate <= VIT to 0%, making
-      # low-rate stuns (e.g. Meteor Storm's 3x level, max 30%) impossible
-      # against any target with VIT >= 30. The renewal formula reduces the
-      # rate proportionally instead: 30 * (100 - 50) / 100 = 15.0
-      assert Resistance.calculate_success_rate(:physical, %{vit: 50}, 30) == 15.0
+    test "the source's level lead lowers sc_def by lead squared / 5 * 100" do
+      source = view(level: 60)
+      assert {:ok, _} = defend(:sc_silence, :renewal, target: view(int: 50), source: source)
+      assert rolled_rate() == 7000
     end
 
-    test "VIT 0 leaves the success rate unchanged" do
-      assert Resistance.calculate_success_rate(:physical, %{vit: 0}, 45) == 45.0
+    test "the level advantage wraps at 16 bits" do
+      target = view(level: 1, vit: 100)
+
+      assert {:ok, _} = defend(:sc_stun, :renewal, target: target, source: view(level: 99))
+      refute_received {:rate, _}
+
+      assert {:ok, _} = defend(:sc_stun, :renewal, target: target, source: view(level: 59))
+      assert rolled_rate() == 1670
     end
 
-    test "calculates magical resistance based on MDEF" do
-      # MDEF reduces the base success rate by 1% per point
-      assert Resistance.calculate_success_rate(:magical, %{mdef: 20}, 100) == 80.0
-      assert Resistance.calculate_success_rate(:magical, %{mdef: 50}, 75) == 37.5
-      assert Resistance.calculate_success_rate(:magical, %{mdef: 100}, 80) == 0.0
+    test "a negative sc_def is clamped to 0" do
+      assert {:ok, 12_000} =
+               defend(:sc_poison, :renewal, target: view(level: 1), source: view(level: 20))
+
+      refute_received {:rate, _}
     end
 
-    test "returns base success rate for unknown resistance types" do
-      assert Resistance.calculate_success_rate(:unknown, %{vit: 50}, 100) == 100
-      assert Resistance.calculate_success_rate(nil, %{vit: 50}, 75) == 75
+    test "Petrifying and Freeze use MDEF and add 3 s" do
+      assert {:ok, 8000} = defend(:sc_stonewait, :renewal, target: view(mdef: 50))
+      assert rolled_rate() == 5000
+
+      assert {:ok, 8000} = defend(:sc_freeze, :renewal, target: view(mdef: 50))
     end
 
-    test "handles missing stats gracefully" do
-      # Missing VIT
-      assert Resistance.calculate_success_rate(:physical, %{}, 100) == 100
-      assert Resistance.calculate_success_rate(:physical, %{vit: nil}, 100) == 100
-
-      # Missing MDEF
-      assert Resistance.calculate_success_rate(:magical, %{}, 100) == 100
-      assert Resistance.calculate_success_rate(:magical, %{mdef: nil}, 100) == 100
-    end
-
-    test "never returns negative success rate" do
-      assert Resistance.calculate_success_rate(:physical, %{vit: 200}, 100) == 0.0
-      assert Resistance.calculate_success_rate(:magical, %{mdef: 150}, 50) == 0.0
+    test "Bleeding, Sleep, Blind, Curse and Confusion read their own stat" do
+      assert {:ok, 21_000} = defend(:sc_bleeding, :renewal, target: view(agi: 10))
+      assert {:ok, 11_000} = defend(:sc_sleep, :renewal, target: view(agi: 10))
+      assert {:ok, 11_000} = defend(:sc_blind, :renewal, target: view(int: 10))
+      assert {:ok, 11_000} = defend(:sc_curse, :renewal, target: view(luk: 10))
+      assert {:ok, 11_000} = defend(:sc_confusion, :renewal, target: view(luk: 10))
     end
   end
 
-  describe "calculate_duration/2" do
-    test "calculates duration reduction based on VIT and LUK" do
-      # Formula: duration * (100 - (VIT + LUK/3)) / 100
-      stats = %{vit: 60, luk: 30}
-      # 60 + 30/3 = 60 + 10 = 70% reduction
-      # 10_000 * (100 - 70) / 100 = 3000
-      assert Resistance.calculate_duration(10_000, stats) == 3000
+  describe "pre-renewal recipes" do
+    test "Stun: VIT share, then LUK and the level difference as flat defense" do
+      target = view(vit: 30, luk: 20, level: 60)
+
+      assert {:ok, 6800} = defend(:sc_stun, :pre_renewal, target: target, tick: 10_000)
+      assert rolled_rate() == 6700
     end
 
-    test "handles fractional LUK values" do
-      stats = %{vit: 50, luk: 20}
-      # 50 + 20/3 = 50 + 6.666... = 56.666... reduction
-      # 10_000 * (100 - 56.666) / 100 = 4333.33...
-      assert_in_delta Resistance.calculate_duration(10_000, stats), 4333, 1
+    test "a level lead turns sc_def2 negative and raises the rate" do
+      target = view(level: 1)
+
+      assert {:ok, 10_000} =
+               defend(:sc_stun, :pre_renewal, rate: 5000, target: target, source: view(level: 99))
+
+      assert rolled_rate() == 5980
     end
 
-    test "handles missing stats" do
-      # Missing both or invalid stats - returns base duration
-      assert Resistance.calculate_duration(10_000, %{}) == 10_000
+    test "player Poison: its own VIT and LUK duration defense" do
+      target = view(vit: 30, luk: 20)
 
-      # Missing VIT - returns base duration
-      assert Resistance.calculate_duration(10_000, %{luk: 30}) == 10_000
-
-      # Missing LUK - returns base duration
-      assert Resistance.calculate_duration(10_000, %{vit: 50}) == 10_000
-
-      # Nil values - returns base duration
-      assert Resistance.calculate_duration(10_000, %{vit: nil, luk: nil}) == 10_000
+      assert {:ok, 44_500} = defend(:sc_poison, :pre_renewal, target: target, tick: 60_000)
+      assert rolled_rate() == 6800
     end
 
-    test "caps reduction at 100%" do
-      stats = %{vit: 90, luk: 60}
-      # 90 + 60/3 = 90 + 20 = 110%, capped at 100%
-      # Duration becomes 0
-      assert Resistance.calculate_duration(10_000, stats) == 0
+    test "monster Poison: half the duration, two thirds of a VIT share" do
+      target = view(player?: false, vit: 30)
+
+      assert {:ok, 24_000} = defend(:sc_poison, :pre_renewal, target: target, tick: 60_000)
     end
 
-    test "never returns negative duration" do
-      # VIT + LUK/3 = 0, so no reduction
-      stats = %{vit: 0, luk: 0}
-      assert Resistance.calculate_duration(10_000, stats) == 10_000
-    end
-  end
+    test "Petrifying is not shortened" do
+      assert {:ok, 20_000} =
+               defend(:sc_stonewait, :pre_renewal, target: view(mdef: 40), tick: 20_000)
 
-  describe "apply_resistance/4" do
-    test "applies both success rate and duration reduction for physical status" do
-      definition = %{resistance_type: :physical}
-      stats = %{vit: 40, luk: 30}
-      base_success = 100
-      base_duration = 10_000
-
-      {success_rate, duration} =
-        Resistance.apply_resistance(definition, stats, base_success, base_duration)
-
-      # Success rate: 100 - 40 = 60%
-      assert success_rate == 60.0
-
-      # Duration reduction: 40 + 30/3 = 50%
-      # Duration: 10_000 * (100 - 50) / 100 = 5000ms
-      assert duration == 5000
+      assert rolled_rate() == 6000
     end
 
-    test "applies both success rate and duration reduction for magical status" do
-      definition = %{resistance_type: :magical, duration_adjustment: 3_000}
-      stats = %{mdef: 25, vit: 30, luk: 60}
-      base_success = 80
-      base_duration = 20_000
-
-      {success_rate, duration} =
-        Resistance.apply_resistance(definition, stats, base_success, base_duration)
-
-      # Success rate: 80% base chance reduced by 25% MDEF resistance
-      assert success_rate == 60.0
-
-      # Duration: 20_000 reduced by 25% MDEF, then the status' 3-second adjustment
-      assert duration == 18_000
+    test "Freeze: the source's LUK lengthens it" do
+      assert {:ok, 7500} =
+               defend(:sc_freeze, :pre_renewal, target: view(mdef: 30), source: view(luk: 50))
     end
 
-    test "adds the status duration adjustment after magical resistance" do
-      definition = %{resistance_type: :magical, duration_adjustment: 3_000}
+    test "Curse defends duration with VIT and has only a source level penalty" do
+      target = view(luk: 20, vit: 10, level: 99)
 
-      assert Resistance.apply_resistance(definition, %{mdef: 0}, 38, 1_500) ==
-               {38.0, 4_500}
-
-      assert Resistance.apply_resistance(definition, %{mdef: 20}, 38, 1_500) ==
-               {30.4, 4_200}
+      assert {:ok, 8800} = defend(:sc_curse, :pre_renewal, target: target)
+      assert rolled_rate() == 8300
     end
 
-    test "handles complete resistance (0% success rate)" do
-      definition = %{resistance_type: :physical}
-      stats = %{vit: 100, luk: 30}
-      base_success = 90
-      base_duration = 10_000
+    test "Confusion reverses its flat defense" do
+      target = view(str: 20, int: 20, level: 40)
 
-      {success_rate, duration} =
-        Resistance.apply_resistance(definition, stats, base_success, base_duration)
-
-      # Success rate: 90 - 100 = 0% (clamped)
-      assert success_rate == 0.0
-
-      # Duration would be reduced but doesn't matter if success is 0%
-      # Duration reduction: 100 + 30/3 = 110% (capped at 100%)
-      # Duration: 10_000 * 0 / 100 = 0ms
-      assert duration == 0
-    end
-
-    test "handles no resistance type (defaults to physical)" do
-      definition = %{}
-      stats = %{vit: 50, luk: 30, mdef: 20}
-      base_success = 75
-      base_duration = 15_000
-
-      {success_rate, duration} =
-        Resistance.apply_resistance(definition, stats, base_success, base_duration)
-
-      # No resistance type defaults to physical (uses VIT)
-      # Success rate: 75 * (100 - 50) / 100 = 37.5%
-      assert success_rate == 37.5
-
-      # Duration reduction: 50 + 30/3 = 60%
-      # Duration: 15_000 * (100 - 60) / 100 = 6000ms
-      assert duration == 6000
-    end
-
-    test "handles missing stats gracefully" do
-      definition = %{resistance_type: :physical}
-      stats = %{}
-      base_success = 100
-      base_duration = 10_000
-
-      {success_rate, duration} =
-        Resistance.apply_resistance(definition, stats, base_success, base_duration)
-
-      # No stats means no resistance
-      assert success_rate == 100
-      assert duration == 10_000
-    end
-
-    test "can reduce duration to 0 with complete resistance" do
-      definition = %{resistance_type: :physical}
-      stats = %{vit: 100, luk: 0}
-      base_success = 50
-      base_duration = 5000
-
-      {_success_rate, duration} =
-        Resistance.apply_resistance(definition, stats, base_success, base_duration)
-
-      # Duration reduction: 100% makes it 0ms
-      assert duration == 0
+      assert {:ok, _} = defend(:sc_confusion, :pre_renewal, target: target)
+      assert rolled_rate() == 7900
     end
   end
 
-  describe "should_apply_resistance?/1" do
-    test "returns false for status effects with no_resistance property" do
-      definition = %{properties: [:no_resistance, :debuff]}
-      refute Resistance.should_apply_resistance?(definition)
+  describe "mode-independent recipes" do
+    test "Decrease AGI: MDEF as flat defense and half duration on players" do
+      assert {:ok, 5000} = defend(:sc_decreaseagi, :renewal, target: view(mdef: 10))
+      assert rolled_rate() == 9000
+
+      assert {:ok, 10_000} =
+               defend(:sc_decreaseagi, :pre_renewal, target: view(player?: false, mdef: 10))
     end
 
-    test "returns true for status effects without no_resistance property" do
-      definition = %{properties: [:debuff, :prevent_movement]}
-      assert Resistance.should_apply_resistance?(definition)
+    test "Joint Beat and No Recover shorten by a flat LUK term" do
+      target = view(luk: 40, agi: 25)
+
+      assert {:ok, 98_000} = defend(:sc_jointbeat, :renewal, target: target, tick: 110_000)
+      assert {:ok, 6000} = defend(:sc_norecover_state, :pre_renewal, target: target)
     end
 
-    test "returns true when properties list is empty" do
-      definition = %{properties: []}
-      assert Resistance.should_apply_resistance?(definition)
+    test "Curse never lands on a target without LUK" do
+      assert :resisted = defend(:sc_curse, :renewal)
+      refute_received {:rate, _}
     end
 
-    test "returns true when properties is nil" do
-      definition = %{}
-      assert Resistance.should_apply_resistance?(definition)
-    end
-
-    test "handles properties not being a list" do
-      definition = %{properties: :invalid}
-      assert Resistance.should_apply_resistance?(definition)
-    end
-  end
-
-  describe "roll_success/1" do
-    test "always succeeds with 100% rate" do
-      # Test multiple times to ensure consistency
-      for _ <- 1..10 do
-        assert Resistance.roll_success(100.0) == true
-      end
-    end
-
-    test "always fails with 0% rate" do
-      # Test multiple times to ensure consistency
-      for _ <- 1..10 do
-        assert Resistance.roll_success(0.0) == false
-      end
-    end
-
-    test "handles negative rates as failure" do
-      assert Resistance.roll_success(-10) == false
-    end
-
-    test "handles rates over 100% as success" do
-      assert Resistance.roll_success(150) == true
-    end
-
-    test "returns boolean for intermediate rates" do
-      # Just verify it returns a boolean, not testing randomness
-      result = Resistance.roll_success(50)
-      assert is_boolean(result)
-    end
-
-    test "samples a fractional percent at 10,000-scale precision" do
-      assert Resistance.roll_success(30.4, fn 10_000 -> 3_040 end)
-      refute Resistance.roll_success(30.4, fn 10_000 -> 3_041 end)
-    end
-
-    test "rounds fractional rates up to the next Aegis tenth-percent" do
-      assert Resistance.roll_success(30.31, fn 10_000 -> 3_040 end)
-      refute Resistance.roll_success(30.31, fn 10_000 -> 3_041 end)
-    end
-
-    test "invokes the production sampler exactly once" do
-      test_pid = self()
-
-      assert Resistance.roll_success(30.4, fn scale ->
-               send(test_pid, {:sampled, scale})
-               3_040
-             end)
-
-      assert_received {:sampled, 10_000}
-      refute_received {:sampled, _scale}
+    test "a status without a recipe only rolls its rate and keeps its duration" do
+      assert {:ok, 10_000} = defend(:sc_provoke, :renewal, rate: 7000, target: view(vit: 99))
+      assert rolled_rate() == 7000
     end
   end
 
-  describe "integration scenarios" do
-    test "high VIT character resists physical status effects" do
-      # Tank character with high VIT
-      definition = %{resistance_type: :physical}
-      tank_stats = %{vit: 90, luk: 20}
-
-      {success_rate, duration} = Resistance.apply_resistance(definition, tank_stats, 100, 30_000)
-
-      # Only 10% chance to be affected
-      assert success_rate == 10.0
-      # Duration heavily reduced: 90 + 20/3 = 96.666%
-      assert duration == 1000
+  describe "caps, resistance statuses and equipment" do
+    test "sc_def is capped at 100%" do
+      assert :resisted = defend(:sc_stun, :pre_renewal, target: view(vit: 150, luk: 0))
     end
 
-    test "high MDEF character resists magical status effects" do
-      # Mage with high MDEF
-      definition = %{resistance_type: :magical}
-      mage_stats = %{mdef: 75, vit: 40, luk: 30}
+    test "Status Resistance adds after the cap and ahead of Siegfried" do
+      assert {:ok, _} = defend(:sc_stun, :renewal, target: view(vit: 20), scresist: 50)
+      assert rolled_rate() == 3000
 
-      {success_rate, duration} = Resistance.apply_resistance(definition, mage_stats, 100, 20_000)
+      assert {:ok, _} =
+               defend(:sc_stun, :renewal, target: view(vit: 20), scresist: 50, siegfried: 99)
 
-      # 25% chance to be affected from a 100% base rate
-      assert success_rate == 25.0
-      # Duration is reduced by MDEF for magical statuses
-      assert duration == 5000
+      assert rolled_rate() == 3000
     end
 
-    test "balanced character has moderate resistance" do
-      definition = %{resistance_type: :physical}
-      balanced_stats = %{vit: 50, luk: 50, mdef: 50}
+    test "Siegfried resists only its seven statuses in renewal and all in pre-renewal" do
+      assert {:ok, _} = defend(:sc_stun, :renewal, siegfried: 25)
+      assert rolled_rate() == 7500
 
-      {success_rate, duration} =
-        Resistance.apply_resistance(definition, balanced_stats, 100, 15_000)
+      assert {:ok, _} = defend(:sc_poison, :renewal, siegfried: 25)
+      refute_received {:rate, _}
 
-      # 50% chance to be affected
-      assert success_rate == 50.0
-      # Duration: 50 + 50/3 = 66.666% reduction
-      assert_in_delta duration, 5000, 1
+      assert {:ok, _} = defend(:sc_poison, :pre_renewal, siegfried: 25)
+      assert rolled_rate() == 7500
     end
 
-    test "low stat character has minimal resistance" do
-      definition = %{resistance_type: :magical}
-      novice_stats = %{vit: 10, luk: 10, mdef: 5}
+    test "equipment resistance is a share of the rate, and of the renewal duration" do
+      assert {:ok, 10_500} = defend(:sc_stun, :renewal, res_eff: 5000, tick: 20_000)
+      assert rolled_rate() == 5000
 
-      {success_rate, duration} =
-        Resistance.apply_resistance(definition, novice_stats, 100, 10_000)
+      assert {:ok, 10_000} = defend(:sc_stun, :pre_renewal, res_eff: 5000)
+      assert rolled_rate() == 5000
+    end
 
-      # 95% chance to be affected from a 100% base rate
-      assert success_rate == 95.0
-      # Duration is reduced by MDEF for magical statuses
-      assert duration == 9500
+    test "the rate is rounded up to a multiple of 10" do
+      assert {:ok, _} = defend(:sc_stun, :renewal, rate: 5001)
+      assert rolled_rate() == 5010
+    end
+
+    test "a full rate lands without rolling; a non-positive one never lands" do
+      assert {:ok, _} = defend(:sc_stun, :renewal)
+      refute_received {:rate, _}
+
+      assert :resisted = defend(:sc_stun, :renewal, rate: 0)
+      refute_received {:rate, _}
+    end
+  end
+
+  describe "start flags and durations" do
+    test "no_rate_def rolls the given rate; no_tick_def keeps the duration" do
+      target = view(vit: 50)
+
+      assert {:ok, _} = defend(:sc_stun, :renewal, target: target, rate: 5001, no_rate_def: true)
+      assert rolled_rate() == 5001
+
+      assert {:ok, 10_000} = defend(:sc_stun, :renewal, target: target, no_tick_def: true)
+      assert rolled_rate() == 5000
+    end
+
+    test "a reduced duration never drops below 1 ms" do
+      assert {:ok, 1} = defend(:sc_stun, :pre_renewal, target: view(vit: 50, luk: 99), tick: 100)
+    end
+
+    test "a field-held duration of 0 is never reduced" do
+      assert {:ok, 0} = defend(:sc_stun, :renewal, target: view(vit: 50), tick: 0)
+    end
+  end
+
+  describe "rolls" do
+    test "roll_rate/1 always lands from 10000 and never at 0 or below" do
+      assert Resistance.roll_rate(10_000)
+      assert Resistance.roll_rate(12_000)
+      refute Resistance.roll_rate(0)
+      refute Resistance.roll_rate(-5)
+    end
+
+    test "roll_success/2 samples a fractional percent at 10,000-scale precision" do
+      assert Resistance.roll_success(30.4, fn 10_000 -> 3040 end)
+      refute Resistance.roll_success(30.4, fn 10_000 -> 3041 end)
+    end
+
+    test "roll_success/2 rounds fractional rates up to the next Aegis tenth-percent" do
+      assert Resistance.roll_success(30.31, fn 10_000 -> 3040 end)
+      refute Resistance.roll_success(30.31, fn 10_000 -> 3041 end)
+    end
+
+    test "roll_success/1 bounds" do
+      assert Resistance.roll_success(100)
+      refute Resistance.roll_success(0)
     end
   end
 end

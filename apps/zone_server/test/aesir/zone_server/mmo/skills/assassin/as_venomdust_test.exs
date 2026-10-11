@@ -186,7 +186,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
     :ok = UnitRegistry.register_unit(:mob, target.instance_id, MobState, target, self())
     :ok = SpatialIndex.add_unit(:mob, target.instance_id, 100, 100, "prontera")
 
-    expect(Resistance, :roll_success, fn _rate -> true end)
+    expect(Resistance, :roll_rate, fn _rate -> true end)
     manager = start_manager(fn _type, _id, _map -> true end)
     allow(Resistance, self(), manager)
     interval_group = timed_group(9, next_tick_at: 1_000, expires_at: 5_000)

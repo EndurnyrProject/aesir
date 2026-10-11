@@ -181,7 +181,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     end)
 
     expect(StatusInterpreter, :apply_status, fn
-      :mob, 2001, :sc_stun, [val1: 1, duration: 4_500, success_rate: 3] -> :ok
+      :mob,
+      2001,
+      :sc_stun,
+      [val1: 1, duration: 4_500, success_rate: 3, caster_id: @caster_id, source_type: :player] ->
+        :ok
     end)
 
     group = group(state: %{meteor_schedule: [%{at: 700, position: {151, 149}}]})

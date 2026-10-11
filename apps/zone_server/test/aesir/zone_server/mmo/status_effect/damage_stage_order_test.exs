@@ -201,6 +201,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DamageStageOrderTest do
   defp player(vitals) do
     Mimic.copy(Resistance)
     stub(Resistance, :roll_success, fn _ -> true end)
+    stub(Resistance, :roll_rate, fn _ -> true end)
 
     pid = spawn(fn -> Process.sleep(:infinity) end)
     stats = Map.merge(%{max_hp: 1_000, hp: 1_000, level: 50, base_level: 50}, Map.new(vitals))

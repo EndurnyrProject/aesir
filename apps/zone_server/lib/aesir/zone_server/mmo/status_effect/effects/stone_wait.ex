@@ -25,8 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneWait do
     ],
     end_return: [:sc_stonewait, :sc_stone],
     immunity: [:boss, :undead],
-    resistance_type: :magical,
-    duration_adjustment: [renewal: 3_000, pre_renewal: 0],
     duration: [renewal: 17_000, pre_renewal: 20_000],
     opt1: :stonewait
 

@@ -60,13 +60,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
   # dealt damage to a surviving target, on the caster when the spell was
   # reflected, sourced from the reflector.
   defp freeze(source, {unit_type, unit_id}, level) do
-    if :rand.uniform(100) <= freeze_chance(level) do
-      StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,
-        duration: 3000 * level,
-        caster_id: source.unit_id,
-        source_type: source.unit_type
-      )
-    end
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,
+      duration: 3000 * level,
+      success_rate: freeze_chance(level),
+      caster_id: source.unit_id,
+      source_type: source.unit_type
+    )
 
     :ok
   end

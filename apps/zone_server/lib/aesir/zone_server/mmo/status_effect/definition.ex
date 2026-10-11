@@ -47,9 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       prevent skills
     - `:immunity` - races/elements/special flags immune to this status
     - `:cleanse` - statuses that cure this one
-    - `:resistance_type` - `:physical` or `:magical`
-    - `:duration_adjustment` - milliseconds added after resistance reduction
-    - `:bypass_resistance` - skip resistance calculations entirely
+    - `:bypass_resistance` - the status has no defense recipe: an application
+      only rolls its chance (see `StatusEffect.Resistance`)
     - `:initial_phase` - starting phase for multi-phase statuses
     - `:tick_interval` - default tick interval in milliseconds
     - `:duration` - base duration in milliseconds
@@ -108,8 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:on_apply_effect` - `:ef_*` one-shot effect fired on apply (`Mmo.EffectId`)
 
   `:end_on_start`, `:end_return`, `:prevented_by`, `:no_save`, `:duration`,
-  `:duration_adjustment`, `:no_dispel`, `:no_clear_buff` and `:clear_buff_flags`
-  also accept `[renewal: value, pre_renewal: value]` for mode-specific values.
+  `:no_dispel`, `:no_clear_buff` and `:clear_buff_flags` also accept `[renewal: value, pre_renewal: value]` for mode-specific values.
   """
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
@@ -350,10 +348,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :prevents_equip_change,
     :prevents_attack,
     :untargetable,
-    :conceals,
-    :physical,
-    :magical,
-    :no_resistance
+    :conceals
   ]
 
   @clear_buff_flags [:debuff, :remove_on_refresh, :remove_chemical_protect, :remove_on_hermode]
@@ -377,8 +372,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   @scalar_defaults %{
     metadata: %{},
-    resistance_type: nil,
-    duration_adjustment: 0,
     bypass_resistance: false,
     initial_phase: nil,
     tick_interval: nil,
@@ -413,8 +406,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     cleanse: {:list, :atom},
     require_weapon: {:list, :atom},
     target_types: {:list, {:enum, @known_target_types}},
-    resistance_type: {:enum, [:physical, :magical]},
-    duration_adjustment: :integer,
     bypass_resistance: :boolean,
     initial_phase: :atom,
     tick_interval: {:integer, {:gt, 0}},
@@ -659,7 +650,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :prevented_by,
     :no_save,
     :duration,
-    :duration_adjustment,
     :no_dispel,
     :no_clear_buff,
     :clear_buff_flags

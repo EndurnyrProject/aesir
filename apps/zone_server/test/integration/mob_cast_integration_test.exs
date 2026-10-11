@@ -247,6 +247,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       Mimic.copy(Resistance)
       stub(Resistance, :roll_success, fn success_rate -> success_rate > 0 end)
+      stub(Resistance, :roll_rate, fn success_rate -> success_rate > 0 end)
       Mimic.allow(Resistance, self(), mob.pid)
 
       complete_mob_cast(mob, row, char_id)
@@ -495,6 +496,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     test "a normal-flee target takes damage and sc_stun applies on connect" do
       Mimic.copy(Resistance)
       stub(Resistance, :roll_success, fn success_rate -> success_rate > 0 end)
+      stub(Resistance, :roll_rate, fn success_rate -> success_rate > 0 end)
 
       player =
         start_player_session(id: 9_812, name: "Rooted", base_level: 1, agi: 1, luk: 0, vit: 0)
@@ -739,6 +741,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       Mimic.copy(Resistance)
       stub(Resistance, :roll_success, fn _success_rate -> true end)
+      stub(Resistance, :roll_rate, fn _success_rate -> true end)
       Mimic.allow(Resistance, self(), mob.pid)
 
       :sys.replace_state(mob.pid, fn state ->
@@ -774,6 +777,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       Mimic.copy(Resistance)
       stub(Resistance, :roll_success, fn _success_rate -> true end)
+      stub(Resistance, :roll_rate, fn _success_rate -> true end)
       Mimic.allow(Resistance, self(), mob.pid)
 
       :sys.replace_state(mob.pid, fn state ->

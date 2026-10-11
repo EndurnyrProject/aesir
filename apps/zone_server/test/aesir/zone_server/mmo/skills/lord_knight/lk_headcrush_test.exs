@@ -104,12 +104,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrushTest do
     expect(StatusInterpreter, :apply_status, fn :mob, 6_130, :sc_bleeding, params ->
       assert params[:val1] == 5
       assert params[:duration] == expected_duration
+      assert params[:success_rate] == 50
       assert params[:caster_id] == caster.character_id
       assert params[:source_type] == :player
       :ok
     end)
 
-    :rand.seed(:exsss, {2, 3, 4})
     assert {:ok, ^caster} = LkHeadcrush.cast(caster, {:unit, target_ref}, 5, definition)
   end
 

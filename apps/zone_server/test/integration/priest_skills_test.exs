@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
       )
 
     caster_state = get_player_state(caster.pid)
-    expect(Resistance, :roll_success, fn _chance -> true end)
+    expect(Resistance, :roll_rate, fn _chance -> true end)
 
     assert :ok =
              StatusInterpreter.apply_status(:player, ally.character.id, :sc_stun,

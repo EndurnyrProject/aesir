@@ -43,8 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Freeze do
       ]
     ],
     immunity: [:boss, :freeze, :undead],
-    resistance_type: :magical,
-    duration_adjustment: 3_000,
     opt1: :freeze
 
   @impl true

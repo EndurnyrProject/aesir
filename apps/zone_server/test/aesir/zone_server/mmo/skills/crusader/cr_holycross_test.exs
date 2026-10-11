@@ -168,9 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
     end
 
     @tag game_mode: :renewal
-    test "applies sc_blind for 18000ms when the roll succeeds on a connecting hit" do
-      # Seed {1,1,185} yields :rand.uniform(100) == 1, at or below the 15% (3x5) chance.
-      :rand.seed(:exsss, {1, 1, 185})
+    test "applies sc_blind for 18000ms with the source chance on a connecting hit" do
       caster = build_caster(@sword)
 
       stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
@@ -181,22 +179,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
 
       expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
         assert params[:duration] == 18_000
+        assert params[:success_rate] == 15
         :ok
       end)
 
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 5, definition())
     end
 
-    test "does not apply blind on a connecting hit when the roll fails" do
-      # Seed {1,1,1} yields :rand.uniform(100) == 8, above the 3% (3x1) chance.
-      :rand.seed(:exsss, {1, 1, 1})
+    test "forwards the level-one blind chance on a connecting hit" do
       caster = build_caster(@sword)
 
       stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
         {:ok, %{hit?: true}}
       end)
 
-      reject(&StatusInterpreter.apply_status/4)
+      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
+        assert params[:success_rate] == 3
+        {:error, :resisted}
+      end)
 
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 1, definition())
     end

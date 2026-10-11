@@ -73,15 +73,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
   defp knockback_distance(level), do: 4 + level
 
   defp maybe_stun(caster, unit_type, unit_id, level, duration) do
-    if :rand.uniform(100) <= 15 + 5 * level do
-      {source_type, source_id} = source_ref(caster)
+    {source_type, source_id} = source_ref(caster)
 
-      StatusInterpreter.apply_status(unit_type, unit_id, :sc_stun,
-        duration: duration,
-        caster_id: source_id,
-        source_type: source_type
-      )
-    end
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_stun,
+      duration: duration,
+      success_rate: 15 + 5 * level,
+      caster_id: source_id,
+      source_type: source_type
+    )
 
     :ok
   end

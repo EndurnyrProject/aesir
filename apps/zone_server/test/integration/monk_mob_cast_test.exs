@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
     Mimic.copy(Formulas)
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
     stub(Resistance, :roll_success, fn _rate -> true end)
+    stub(Resistance, :roll_rate, fn _rate -> true end)
     stub(Formulas, :ki_explosion_stun_rate, fn -> 100 end)
     :ok
   end

@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
     Mimic.copy(UnitRegistry)
     Mimic.copy(Resistance)
     stub(Resistance, :roll_success, fn _success_rate -> true end)
+    stub(Resistance, :roll_rate, fn _success_rate -> true end)
 
     player_id = :rand.uniform(100_000)
 

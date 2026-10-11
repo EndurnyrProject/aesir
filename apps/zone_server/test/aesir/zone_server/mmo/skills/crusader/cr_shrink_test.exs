@@ -94,12 +94,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
 
   describe "maybe_stun_attacker/3 proc" do
     @tag game_mode: :renewal
-    test "stuns the attacker on a successful roll while the guarder holds Shrink" do
+    test "requests stun while the guarder holds Shrink" do
       :ok = StatusStorage.apply_status(:player, 3000, :sc_shrink, val1: 1)
-      seed_for_roll(50)
 
       expect(StatusInterpreter, :apply_status, fn :mob, 7000, :sc_stun, params ->
         assert Keyword.fetch!(params, :duration) == 5_000
+        assert Keyword.fetch!(params, :success_rate) == 50
         assert Keyword.fetch!(params, :caster_id) == 3000
         assert Keyword.fetch!(params, :source_type) == :player
         :ok
@@ -109,10 +109,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
     end
 
     @tag game_mode: :renewal
-    test "does not stun when the roll exceeds the 50% chance" do
+    test "forwards the 50 percent stun chance to the status defense" do
       :ok = StatusStorage.apply_status(:player, 3001, :sc_shrink, val1: 1)
-      seed_for_roll(51)
-      reject(&StatusInterpreter.apply_status/4)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, 7001, :sc_stun, params ->
+        assert params[:success_rate] == 50
+        :ok
+      end)
 
       assert :ok = Shrink.maybe_stun_attacker({:player, 3001}, {:mob, 7001}, 10)
     end
@@ -156,7 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
       stub(SpecialEffect, :play, fn _unit, _effect, _target -> :ok end)
       :ok = StatusStorage.apply_status(:player, 4000, :sc_shrink, val1: 1)
 
-      seed_block_then_stun()
+      seed_for_roll(1)
 
       expect(StatusInterpreter, :apply_status, fn :mob, 7100, :sc_stun, _params -> :ok end)
 
@@ -195,18 +198,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
       Enum.find(1..50_000, fn candidate ->
         :rand.seed(:exsss, {1, 1, candidate})
         :rand.uniform(100) == target
-      end)
-
-    :rand.seed(:exsss, {1, 1, seed})
-  end
-
-  # Seeds `:rand` so the block roll succeeds (<= 30 at level 10) and the
-  # following Shrink roll also succeeds (<= 50).
-  defp seed_block_then_stun do
-    seed =
-      Enum.find(1..500_000, fn candidate ->
-        :rand.seed(:exsss, {1, 1, candidate})
-        :rand.uniform(100) <= 30 and :rand.uniform(100) <= 50
       end)
 
     :rand.seed(:exsss, {1, 1, seed})

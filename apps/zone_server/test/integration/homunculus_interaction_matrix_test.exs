@@ -236,6 +236,7 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
     # The status lands via a real MDEF-reduced resistance roll in this process;
     # pin the Bernoulli draw so the pipeline assertion is deterministic.
     Mimic.stub(Resistance, :roll_success, fn _rate -> true end)
+    Mimic.stub(Resistance, :roll_rate, fn _rate -> true end)
 
     gid = PlayerSession.get_state(owner.pid).homunculus.world_gid
     mob = %{mob_state() | target_ref: {:homunculus, gid}}

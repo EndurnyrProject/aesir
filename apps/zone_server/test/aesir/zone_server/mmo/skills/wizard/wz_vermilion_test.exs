@@ -123,7 +123,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       end)
 
       expect(StatusInterpreter, :apply_status, 2, fn
-        unit_type, target_id, :sc_blind, [val1: 10, duration: 18_000, success_rate: 60]
+        unit_type,
+        target_id,
+        :sc_blind,
+        [
+          val1: 10,
+          duration: 18_000,
+          success_rate: 60,
+          caster_id: @caster_id,
+          source_type: :player
+        ]
         when {unit_type, target_id} in [{:mob, 2001}, {:player, 2002}] ->
           :ok
       end)

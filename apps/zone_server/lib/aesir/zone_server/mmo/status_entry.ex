@@ -26,8 +26,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
     gates (defaults to false)
   - `success_rate`: Base application chance as a percentage before resistance
     (defaults to 100)
-  - `resistance_roll`: Injectable final-rate roll used by the resistance gate
-    (defaults to `Resistance.roll_success/1`)
+  - `resistance_roll`: Injectable roll given the final per-10000 rate by the
+    status defense (defaults to `Resistance.roll_rate/1`)
+  - `no_rate_def`: Rolls `success_rate` without the target's rate defense
+    (`SCSTART_NORATEDEF`, defaults to false)
+  - `no_tick_def`: Keeps the given duration (`SCSTART_NOTICKDEF`, defaults to false)
   - `bypass_resistance`: Bypasses ordinary chance/stat resistance and duration
     reduction only; does not bypass hard immunity, prevention, or conflicts
     (defaults to false)
@@ -53,7 +56,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
           phase: atom() | nil,
           loaded: boolean(),
           success_rate: number(),
-          resistance_roll: (number() -> boolean()),
+          resistance_roll: (integer() -> boolean()),
+          no_rate_def: boolean(),
+          no_tick_def: boolean(),
           bypass_resistance: boolean(),
           owner_refresh: owner_refresh()
         ]

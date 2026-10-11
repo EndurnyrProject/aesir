@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     caster = start_character(Repo.get!(Character, caster_character.id), {10, 20})
     ally = start_character(Repo.get!(Character, ally_character.id), {11, 20})
     outsider = start_assassin(%{}, {11, 21})
-    mob = start_real_mob(26_101, {12, 20}, agi: 1)
+    mob = start_real_mob(26_101, {12, 20}, agi: 1, vit: 0)
 
     assert get_player_state(caster.pid).party_id == party.party_id
     assert get_player_state(ally.pid).party_id == party.party_id

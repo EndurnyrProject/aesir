@@ -36,16 +36,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.Envenom do
   end
 
   defp maybe_poison(caster, target, level) do
-    if :rand.uniform(100) <= 4 * level + 10 do
-      {unit_type, unit_id} = target_ref(target)
-      {source_type, source_id} = source_ref(caster)
+    {unit_type, unit_id} = target_ref(target)
+    {source_type, source_id} = source_ref(caster)
 
-      StatusInterpreter.apply_status(unit_type, unit_id, :sc_poison,
-        duration: poison_duration_ms(),
-        caster_id: source_id,
-        source_type: source_type
-      )
-    end
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_poison,
+      duration: poison_duration_ms(),
+      success_rate: 4 * level + 10,
+      caster_id: source_id,
+      source_type: source_type
+    )
 
     :ok
   end

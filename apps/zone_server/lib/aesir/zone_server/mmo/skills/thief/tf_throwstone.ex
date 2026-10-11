@@ -70,18 +70,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
   defp maybe_stun_or_blind(caster, target) do
     {unit_type, unit_id} = target_ref(target)
     {source_type, source_id} = source_ref(caster)
-    status_opts = [duration: stun_duration_ms(), caster_id: source_id, source_type: source_type]
 
-    cond do
-      :rand.uniform(100) <= stun_chance(caster) ->
-        StatusInterpreter.apply_status(unit_type, unit_id, :sc_stun, status_opts)
+    status_opts = [
+      duration: stun_duration_ms(),
+      success_rate: stun_chance(caster),
+      caster_id: source_id,
+      source_type: source_type
+    ]
 
-      player?(caster) ->
-        maybe_blind(unit_type, unit_id, {source_type, source_id})
+    stunned = StatusInterpreter.apply_status(unit_type, unit_id, :sc_stun, status_opts)
 
-      true ->
-        :ok
-    end
+    if stunned != :ok and player?(caster),
+      do: blind(unit_type, unit_id, {source_type, source_id})
 
     :ok
   end
@@ -92,16 +92,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
   defp base_damage(%{character_id: _}), do: @player_damage
   defp base_damage(_non_player), do: @mob_damage
 
-  defp maybe_blind(unit_type, unit_id, {source_type, source_id}) do
-    if :rand.uniform(100) <= @blind_chance do
-      StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
-        duration: blind_duration_ms(),
-        caster_id: source_id,
-        source_type: source_type
-      )
-    end
-
-    :ok
+  defp blind(unit_type, unit_id, {source_type, source_id}) do
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
+      duration: blind_duration_ms(),
+      success_rate: @blind_chance,
+      caster_id: source_id,
+      source_type: source_type
+    )
   end
 
   defp stun_chance(%{character_id: _}), do: @player_stun_chance

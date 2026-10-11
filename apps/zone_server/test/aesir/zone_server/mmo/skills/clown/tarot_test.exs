@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
@@ -284,14 +285,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
     assert {:ok, :death} = Tarot.play(caster, {:mob, 42}, 5)
   end
 
-  test "Temperance confuses the target for thirty seconds", %{caster: caster} do
+  test "Temperance confuses the target for thirty seconds through its status defense",
+       %{caster: caster} do
     stub(TarotDeck, :draw, fn -> :temperance end)
+    stub(Resistance, :roll_rate, fn _rate -> true end)
     assert {:ok, :temperance} = Tarot.play(caster, {:player, 18}, 5)
 
     assert %{started_at: start, expires_at: expires} =
              StatusStorage.get_status(:player, 18, :sc_confusion)
 
-    assert expires - start == 30_000
+    expected = if GameMode.mode() == :renewal, do: 32_000, else: 27_000
+    assert expires - start == expected
   end
 
   test "Star stuns the target", %{caster: caster} do
@@ -304,6 +308,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
     {:ok, {_module, target, _pid}} = UnitRegistry.get_unit(:player, 18)
     :ok = UnitRegistry.update_unit_state(:player, 18, put_in(target.stats.base_stats.luk, 1))
     stub(Resistance, :roll_success, fn _ -> true end)
+    stub(Resistance, :roll_rate, fn _ -> true end)
   end
 
   defp expect_fixed(caster, damage, survives) do

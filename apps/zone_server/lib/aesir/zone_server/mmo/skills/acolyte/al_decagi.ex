@@ -54,17 +54,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagi do
     {source_type, source_id} = source_ref(caster)
     rate = 50 + 3 * level + div(base_level + caster_int, 5)
 
-    if :rand.uniform(100) <= rate do
-      {unit_type, unit_id} = target_ref(target)
-      duration = Enum.at(definition.duration, min(level, length(definition.duration)) - 1)
+    {unit_type, unit_id} = target_ref(target)
+    duration = Enum.at(definition.duration, min(level, length(definition.duration)) - 1)
 
-      StatusInterpreter.apply_status(unit_type, unit_id, :sc_decreaseagi,
-        val1: level,
-        caster_id: source_id,
-        source_type: source_type,
-        duration: duration
-      )
-    end
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_decreaseagi,
+      val1: level,
+      caster_id: source_id,
+      source_type: source_type,
+      duration: duration,
+      success_rate: rate
+    )
 
     {:ok, caster}
   end

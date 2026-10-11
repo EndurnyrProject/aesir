@@ -70,15 +70,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
                compile("sc_start SC_BLESSING,0xEA60,10;")
     end
 
-    test "sc_start with rate wraps the call in a random-roll guard" do
-      assert {:ok,
-              "if(Enum.random(1..10_000) <= 2500, do: sc_start(ctx, :sc_freeze, 10000, 0), else: ctx)"} =
+    test "sc_start passes the rate and flag through to sc_start" do
+      assert {:ok, "sc_start(ctx, :sc_freeze, 10000, 0, 2500, 0)"} =
                compile("sc_start SC_FREEZE,10000,0,2500,0;")
     end
 
-    test "sc_start with a 10000 rate collapses to the plain call" do
-      assert {:ok, "sc_start(ctx, :sc_stun, 3000, 0)"} =
+    test "sc_start with an explicit flag keeps the rate and flag" do
+      assert {:ok, "sc_start(ctx, :sc_stun, 3000, 0, 10000, 0)"} =
                compile("sc_start SC_STUN,3000,0,10000,0;")
+
+      assert {:ok, "sc_start(ctx, :sc_stun, 3000, 0)"} =
+               compile("sc_start SC_STUN,3000,0,10000;")
+
+      assert {:ok, "sc_start(ctx, :sc_curse, 4000, 0, 1500)"} =
+               compile("sc_start SC_CURSE,4000,0,1500;")
     end
 
     test "sc_start GID-targeted six-arg form is unsupported" do

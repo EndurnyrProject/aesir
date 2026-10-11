@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
   setup do
     Mimic.copy(Resistance)
     stub(Resistance, :roll_success, fn _effective_rate -> true end)
+    stub(Resistance, :roll_rate, fn _effective_rate -> true end)
 
     map_cache = EtsTable.table_for(:map_cache)
     :ets.insert(map_cache, {@map, MapData.new(@map, 200, 200)})

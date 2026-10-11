@@ -60,18 +60,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrush do
   defp maybe_bleed(caster, target_id, level) do
     with {:ok, target} <- Combat.resolve_combatant(target_id),
          true <- target.race not in [:undead, :demon],
-         false <- undead_element?(target.element),
-         true <- :rand.uniform(100) <= 50 do
-      type = caster.__struct__.get_unit_type(caster)
-      id = caster.__struct__.get_unit_id(caster)
+         false <- undead_element?(target.element) do
       duration = if(GameMode.mode() == :renewal, do: 108_000, else: 120_000)
 
       _ =
         StatusInterpreter.apply_status(target.unit_type, target.unit_id, :sc_bleeding,
           val1: level,
           duration: duration,
-          caster_id: id,
-          source_type: type
+          success_rate: 50,
+          caster_id: caster.__struct__.get_unit_id(caster),
+          source_type: caster.__struct__.get_unit_type(caster)
         )
     end
 

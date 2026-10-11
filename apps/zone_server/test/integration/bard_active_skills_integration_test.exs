@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Integration.BardActiveSkillsIntegrationTest do
     Mimic.copy(Resistance)
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
     stub(Resistance, :roll_success, fn effective_rate -> effective_rate > 0 end)
+    stub(Resistance, :roll_rate, fn effective_rate -> effective_rate > 0 end)
 
     map_cache = EtsTable.table_for(:map_cache)
     :ets.insert(map_cache, {@map, MapData.new(@map, 200, 200)})

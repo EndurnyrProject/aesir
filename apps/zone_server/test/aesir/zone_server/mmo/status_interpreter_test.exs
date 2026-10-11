@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
 
     # Stub resistance roll to always succeed for predictable tests
     stub(Resistance, :roll_success, fn _success_rate -> true end)
+    stub(Resistance, :roll_rate, fn _success_rate -> true end)
 
     # Stub combat damage dealing to avoid registry warnings
     stub(Combat, :deal_damage, fn _target_id, _damage, _element, _source_type -> :ok end)

@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
   end
 
   @tag game_mode: :renewal
-  test "cast/4 applies sc_stun to a mob target at level 6 with SM_FATALBLOW when the roll succeeds" do
+  test "cast/4 applies sc_stun to a mob target at level 6 with SM_FATALBLOW and a 100 percent source chance" do
     caster = build_caster(%{145 => 1})
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
@@ -118,6 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
       assert params[:duration] == 4_500
+      assert params[:success_rate] == 100.0
       :ok
     end)
 
@@ -133,6 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
       assert params[:duration] == 5_000
+      assert params[:success_rate] == 100.0
       :ok
     end)
 
@@ -152,11 +154,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
     assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 6, definition())
   end
 
-  test "cast/4 does not apply stun when the chance roll cannot succeed" do
-    caster = build_caster(%{145 => 1}, 0)
+  test "cast/4 forwards the basis-point stun chance as a percentage" do
+    caster = build_caster(%{145 => 1}, 99)
 
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
-    reject(&StatusInterpreter.apply_status/4)
+    stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
+      assert params[:success_rate] == 9.9
+      {:error, :resisted}
+    end)
 
     assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 6, definition())
   end

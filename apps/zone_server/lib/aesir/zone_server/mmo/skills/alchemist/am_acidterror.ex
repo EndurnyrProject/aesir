@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -62,11 +63,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
 
     case Combat.execute_acid_terror_attack(caster, target_id, opts) do
       {:ok, %{hit?: true}} ->
-        apply_on_hit(target_id, level)
+        apply_on_hit(caster, target_id, level)
         {:ok, caster}
 
       {:ok, %{blocked?: true}} when is_struct(caster, PlayerState) ->
-        apply_on_hit(target_id, level)
+        apply_on_hit(caster, target_id, level)
         {:ok, caster}
 
       {:ok, _no_effect} ->
@@ -94,12 +95,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
 
   defp learning_potion_level(_caster), do: 0
 
-  defp apply_on_hit(target_id, level) do
+  defp caster_id(%PlayerState{character_id: id}), do: id
+  defp caster_id(%MobState{instance_id: id}), do: id
+  defp caster_id(_caster), do: nil
+
+  defp apply_on_hit(caster, target_id, level) do
     case TargetResolver.resolve(target_id) do
       {:ok, target_pid, target_state, target_type} ->
         StatusInterpreter.apply_status(target_type, target_id, :sc_bleeding,
           duration: bleeding_duration(),
-          success_rate: 3 * level
+          success_rate: 3 * level,
+          caster_id: caster_id(caster)
         )
 
         maybe_break_armor(target_pid, target_id, target_type, target_state, level)

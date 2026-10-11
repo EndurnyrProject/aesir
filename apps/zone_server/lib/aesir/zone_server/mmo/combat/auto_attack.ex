@@ -613,28 +613,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
   defp apply_poison_rider(%{poison: poison}, source, {target_type, target_id})
        when target_type != :skill_unit do
-    if :rand.uniform(100) <= poison.chance do
-      {source_type, source_id} = source
+    {source_type, source_id} = source
 
-      case StatusInterpreter.apply_status(target_type, target_id, :sc_poison,
-             caster_id: source_id,
-             source_type: source_type,
-             duration: poison.duration,
-             val1: poison.level
-           ) do
-        :ok ->
-          :ok
+    case StatusInterpreter.apply_status(target_type, target_id, :sc_poison,
+           caster_id: source_id,
+           source_type: source_type,
+           duration: poison.duration,
+           val1: poison.level,
+           success_rate: poison.chance
+         ) do
+      :ok ->
+        :ok
 
-        {:error, reason}
-        when reason in [:immune, :boss_immune, :prevented, :conflict, :resisted, :target_dead] ->
-          :ok
+      {:error, reason}
+      when reason in [:immune, :boss_immune, :prevented, :conflict, :resisted, :target_dead] ->
+        :ok
 
-        {:error, reason} ->
-          raise "ordinary-swing Poison rider failed: #{inspect(reason)}"
-      end
+      {:error, reason} ->
+        raise "ordinary-swing Poison rider failed: #{inspect(reason)}"
     end
-
-    :ok
   end
 
   defp apply_poison_rider(_modifier, _source, _target), do: :ok

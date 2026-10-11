@@ -43,7 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
 
     for {module, level, expected_status} <- @riders do
       flush_statuses()
-      :rand.seed(:exsss, {123, 124, 125})
       assert_cast_dispatched(module.cast(mob(), {:unit, @target}, level, module.definition()))
 
       case expected_status do
@@ -57,14 +56,21 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
     stub_combat(false)
     capture_statuses()
 
-    for {module, level, _status} <- @riders do
+    for {module, level, _status} <- @riders, module != AlDecagi do
       flush_statuses()
-      :rand.seed(:exsss, {6, 7, 8})
-      caster = if module == AlDecagi, do: decagi_miss_mob(), else: mob()
-      level = if module == AlDecagi, do: 1, else: level
-      _ = module.cast(caster, {:unit, @target}, level, module.definition())
+      _ = module.cast(mob(), {:unit, @target}, level, module.definition())
       refute_received {:status, _, _, _}
     end
+  end
+
+  test "mob Decrease AGI forwards its source chance without a hit check" do
+    expect(StatusInterpreter, :apply_status, fn :homunculus, 90_001, :sc_decreaseagi, opts ->
+      assert opts[:success_rate] == 93
+      assert opts[:source_type] == :mob
+      :ok
+    end)
+
+    assert {:ok, _caster} = AlDecagi.cast(mob(), {:unit, @target}, 1, AlDecagi.definition())
   end
 
   test "player casts retain player source identity and learned Fatal Blow" do
@@ -73,7 +79,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
 
     for {module, level, expected_status} <- @riders do
       flush_statuses()
-      :rand.seed(:exsss, {123, 124, 125})
       assert_cast_dispatched(module.cast(player(), {:unit, @target}, level, module.definition()))
 
       expected_status = if module == SmBash, do: :sc_stun, else: expected_status
@@ -177,11 +182,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
       max_sp: 100,
       spawned_at: 0
     }
-  end
-
-  defp decagi_miss_mob do
-    caster = mob()
-    %{caster | mob_data: %{caster.mob_data | level: 1, stats: %{caster.mob_data.stats | int: 1}}}
   end
 
   defp player do

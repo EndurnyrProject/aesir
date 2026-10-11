@@ -87,18 +87,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
   end
 
   defp apply_resolved_splash_effects(caster, unit_type, target_id) do
-    if :rand.uniform(100) <= Formulas.ki_explosion_stun_rate() do
-      {caster_type, caster_id} = caster_identity(caster)
+    {caster_type, caster_id} = caster_identity(caster)
 
-      StatusInterpreter.apply_status(
-        unit_type,
-        target_id,
-        :sc_stun,
-        duration: Formulas.ki_explosion_stun_duration(),
-        caster_id: caster_id,
-        source_type: caster_type
-      )
-    end
+    StatusInterpreter.apply_status(
+      unit_type,
+      target_id,
+      :sc_stun,
+      duration: Formulas.ki_explosion_stun_duration(),
+      success_rate: Formulas.ki_explosion_stun_rate(),
+      caster_id: caster_id,
+      source_type: caster_type
+    )
 
     :ok
   end

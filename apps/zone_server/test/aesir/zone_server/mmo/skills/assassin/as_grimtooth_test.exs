@@ -248,6 +248,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
     register_mob(immune_target, 55, 51)
     # The 1 VIT target resists Quagmire 1% of the time; pin the roll.
     stub(Resistance, :roll_success, fn _rate -> true end)
+    stub(Resistance, :roll_rate, fn _rate -> true end)
     :ok = UnitRegistry.register_player(player_target, self())
     :ok = SpatialIndex.add_player(player_target.character_id, 54, 50, player_target.map_name)
 

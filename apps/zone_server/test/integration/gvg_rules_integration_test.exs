@@ -210,6 +210,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     reflector = fighter(@map, class: 1, items: [%{nameid: 2106, equip: 32, card0: 4146}])
     assert get_player_stats(reflector.pid).modifiers.equipment.magic_damage_return == 50
     stub(Resistance, :roll_success, fn chance -> chance > 0 end)
+    stub(Resistance, :roll_rate, fn chance -> chance > 0 end)
     :ok = StatusInterpreter.apply_status(:player, attacker.character.id, :sc_aeterna)
     attacker_hp = hp(attacker)
     reflector_hp = hp(reflector)

@@ -91,13 +91,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
     assert break in Jointbeat.breaks()
   end
 
-  test "a zero-percent break chance applies no wound" do
+  test "forwards a non-positive break chance" do
     caster = spear_caster()
     {:ok, definition} = Catalog.by_name(:lk_jointbeat)
     combatant = CombatTestHelper.create_mob_combatant(unit_id: 6_150, str: 40)
     stub(Combat, :resolve_combatant, fn 6_150 -> {:ok, combatant} end)
     stub(Combat, :execute_skill_attack, fn _caster, 6_150, _opts -> {:ok, %{hit?: true}} end)
-    reject(&StatusInterpreter.apply_status/4)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, 6_150, :sc_jointbeat, params ->
+      assert params[:success_rate] == -0.8
+      {:error, :resisted}
+    end)
 
     :rand.seed(:exsss, {2, 3, 4})
     assert {:ok, ^caster} = LkJointbeat.cast(caster, {:unit, 6_150}, 1, definition)

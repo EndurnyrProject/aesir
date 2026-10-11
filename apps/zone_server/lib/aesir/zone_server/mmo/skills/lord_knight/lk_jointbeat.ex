@@ -73,21 +73,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeat do
   end
 
   defp maybe_apply_break(caster, target, break, level) do
-    chance = max(50 * (level + 1) - div(270 * target.base_stats.str, 100), 0)
+    # Per mille: `status_change_start` gets ten times this per 10000.
+    chance = 50 * (level + 1) - div(270 * target.base_stats.str, 100)
 
-    if :rand.uniform(100) <= chance do
-      type = caster.__struct__.get_unit_type(caster)
-      id = caster.__struct__.get_unit_id(caster)
-
-      _ =
-        Interpreter.apply_status(target.unit_type, target.unit_id, :sc_jointbeat,
-          val1: level,
-          val2: break,
-          duration: 30_000,
-          caster_id: id,
-          source_type: type
-        )
-    end
+    _ =
+      Interpreter.apply_status(target.unit_type, target.unit_id, :sc_jointbeat,
+        val1: level,
+        val2: break,
+        duration: 30_000,
+        success_rate: chance / 10,
+        caster_id: caster.__struct__.get_unit_id(caster),
+        source_type: caster.__struct__.get_unit_type(caster)
+      )
 
     :ok
   end

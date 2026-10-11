@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurse do
     sp_cost: [25, 24, 23, 22, 21, 20, 19, 18, 17, 16],
     item_cost: [%{id: 716, amount: 1}]
 
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -53,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurse do
   def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
     unit_type = target_unit_type(target_id)
 
-    if status_immune?(unit_type, target_id) do
+    if status_immune?(unit_type, target_id) or MagicDefense.immune?({unit_type, target_id}) do
       {:ok, caster}
     else
       unit_type

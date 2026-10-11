@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
     :ok = MapFlags.reload()
     Mimic.copy(HitCalculations)
     stub(Resistance, :roll_success, fn _chance -> true end)
+    stub(Resistance, :roll_rate, fn _chance -> true end)
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
     :ok
   end

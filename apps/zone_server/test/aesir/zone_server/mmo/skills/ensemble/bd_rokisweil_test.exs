@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
     # path, so the mob's non-zero vit/luk would otherwise let the debuff be
     # resisted on some seeds.
     stub(Resistance, :roll_success, fn _success_rate -> true end)
+    stub(Resistance, :roll_rate, fn _success_rate -> true end)
 
     Catalog.reload()
     :ok

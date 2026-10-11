@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePowerTest do
     Mimic.copy(UnitRegistry)
 
     stub(Resistance, :roll_success, fn _ -> true end)
+    stub(Resistance, :roll_rate, fn _ -> true end)
 
     stub(UnitRegistry, :get_unit_info, fn :player, player_id ->
       {:ok,

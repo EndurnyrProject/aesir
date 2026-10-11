@@ -152,7 +152,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
     StatusInterpreter.apply_status(unit_type, target_id, :sc_stun,
       val1: group.level,
       duration: Enum.at(definition.unit_duration, idx),
-      success_rate: 3 * group.level
+      success_rate: 3 * group.level,
+      caster_id: group.caster_id,
+      source_type: group.caster_type
     )
   end
 end

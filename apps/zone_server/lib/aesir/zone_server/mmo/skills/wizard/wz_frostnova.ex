@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
   end
 
   def cast(caster, :self, level, definition) do
-    cast(caster, :self, level, definition, &Resistance.roll_success/1)
+    cast(caster, :self, level, definition, &Resistance.roll_rate/1)
   end
 
   @doc false

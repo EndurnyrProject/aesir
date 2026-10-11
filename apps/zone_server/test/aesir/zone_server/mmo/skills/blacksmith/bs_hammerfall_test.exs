@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
 
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stun
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -53,14 +53,43 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
                    1_100
   end
 
-  test "stun's existing physical resistance path lowers chance and duration as VIT rises" do
-    definition = Stun.metadata()
+  test "stun's status defense lowers chance and duration as VIT rises" do
+    test_pid = self()
 
-    {low_vit_chance, low_vit_duration} =
-      Resistance.apply_resistance(definition, %{vit: 0, luk: 0}, 70, 4_500)
+    attempt = fn vit ->
+      view = %{
+        player?: false,
+        level: 50,
+        str: 0,
+        agi: 0,
+        vit: vit,
+        int: 0,
+        dex: 0,
+        luk: 0,
+        mdef: 0
+      }
 
-    {high_vit_chance, high_vit_duration} =
-      Resistance.apply_resistance(definition, %{vit: 50, luk: 0}, 70, 4_500)
+      %{
+        status: :sc_stun,
+        rate: 7000,
+        tick: 4500,
+        target: view,
+        source: %{view | vit: 0},
+        scresist: nil,
+        siegfried: nil,
+        res_eff: 0,
+        roll: fn rate ->
+          send(test_pid, {:rate, rate})
+          true
+        end
+      }
+      |> Resistance.defend(GameMode.mode())
+    end
+
+    {:ok, low_vit_duration} = attempt.(0)
+    assert_received {:rate, low_vit_chance}
+    {:ok, high_vit_duration} = attempt.(50)
+    assert_received {:rate, high_vit_chance}
 
     assert high_vit_chance < low_vit_chance
     assert high_vit_duration < low_vit_duration

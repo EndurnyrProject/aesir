@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamagePathsTest do
 
   setup do
     stub(Resistance, :roll_success, fn chance -> chance > 0 end)
+    stub(Resistance, :roll_rate, fn chance -> chance > 0 end)
     :ok = MapFlags.reload()
     :ok = CastleDb.reload()
     :ok = CastleStore.init()

@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @impl true
@@ -49,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
 
   @impl true
   def on_dealt_damage(target, instance, hit_info, context),
-    do: on_dealt_damage(target, instance, hit_info, context, &roll/0)
+    do: on_dealt_damage(target, instance, hit_info, context, &Resistance.roll_rate/1)
 
   @doc false
   @spec on_dealt_damage(
@@ -57,18 +58,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
           StatusEntry.t(),
           map(),
           Definition.context(),
-          (-> non_neg_integer())
+          (integer() -> boolean())
         ) :: Definition.hook_result()
   def on_dealt_damage({source_type, source_id}, instance, hit_info, _context, roll) do
-    chance = 250 + 50 * instance.val1
-
-    if hit_info.damage > 0 and roll.() < chance do
+    if hit_info.damage > 0 do
       {target_type, target_id} = hit_info.target
 
       case StatusInterpreter.apply_status(target_type, target_id, :sc_poison,
              caster_id: source_id,
              source_type: source_type,
-             duration: 10_000 * instance.val1
+             duration: 10_000 * instance.val1,
+             success_rate: (250 + 50 * instance.val1) / 100,
+             resistance_roll: roll
            ) do
         :ok ->
           {:ok, instance}
@@ -84,6 +85,4 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
       {:ok, instance}
     end
   end
-
-  defp roll, do: :rand.uniform(10_000) - 1
 end

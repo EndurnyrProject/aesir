@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
   use ExUnit.Case, async: false
+  use Mimic
 
   import Aesir.TestEtsSetup
 
@@ -17,6 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
   @attacker_id 1
   @target_id 2
 
+  setup :set_mimic_private
+  setup :verify_on_exit!
   setup :setup_ets_tables
 
   setup do
@@ -59,11 +62,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
     end
   end
 
-  test "ordinary-swing proc uses exact level-one and level-ten basis-point boundaries" do
-    for {level, chance, duration} <- [{1, 300, 10_000}, {10, 750, 100_000}] do
+  test "ordinary-swing proc forwards the source chance and injected resistance roll" do
+    for {level, chance} <- [{1, 3.0}, {10, 7.5}], result <- [true, false] do
       instance = arm_enchant(level)
       hit_info = %{target: {:mob, @target_id}, damage: 50, element: :poison}
-      test_pid = self()
+      roll = fn _rate -> result end
+
+      expect(Interpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
+        assert params == [
+                 caster_id: @attacker_id,
+                 source_type: :player,
+                 duration: 10_000 * level,
+                 success_rate: chance,
+                 resistance_roll: roll
+               ]
+
+        {:error, :resisted}
+      end)
 
       assert {:ok, ^instance} =
                EnchantPoison.on_dealt_damage(
@@ -71,31 +86,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
                  instance,
                  hit_info,
                  %{},
-                 fn ->
-                   send(test_pid, :rolled)
-                   chance - 1
-                 end
+                 roll
                )
 
-      assert_received :rolled
-      refute_received :rolled
-      assert %{} = poison = StatusStorage.get_status(:mob, @target_id, :sc_poison)
-      assert poison.source_id == @attacker_id
-      assert poison.source_type == :player
-      assert_in_delta poison.expires_at - System.monotonic_time(:millisecond), duration, 100
-
-      Interpreter.remove_status(:mob, @target_id, :sc_poison)
-
-      assert {:ok, ^instance} =
-               EnchantPoison.on_dealt_damage(
-                 {:player, @attacker_id},
-                 instance,
-                 hit_info,
-                 %{},
-                 fn -> chance end
-               )
-
-      refute StatusStorage.has_status?(:mob, @target_id, :sc_poison)
       Interpreter.remove_status(:player, @attacker_id, :sc_encpoison)
     end
   end
@@ -109,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
                instance,
                %{target: {:mob, @target_id}, damage: 0, element: :poison},
                %{},
-               fn -> raise "misses must not roll" end
+               fn _rate -> raise "misses must not roll" end
              )
 
     refute StatusStorage.has_status?(:mob, @target_id, :sc_poison)
@@ -126,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
                instance,
                %{target: {:mob, @target_id}, damage: 50, element: :poison},
                %{},
-               fn -> 0 end
+               fn _rate -> true end
              )
 
     refute StatusStorage.has_status?(:mob, @target_id, :sc_poison)

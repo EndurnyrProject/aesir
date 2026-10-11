@@ -133,6 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurseTest do
       end)
 
       stub(Resistance, :roll_success, fn _success_rate -> true end)
+      stub(Resistance, :roll_rate, fn _success_rate -> true end)
       :ok
     end
 

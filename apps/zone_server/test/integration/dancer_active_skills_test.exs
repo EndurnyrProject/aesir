@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
     Mimic.copy(Resistance)
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
     stub(Resistance, :roll_success, fn _effective_rate -> true end)
+    stub(Resistance, :roll_rate, fn _effective_rate -> true end)
 
     map_cache = EtsTable.table_for(:map_cache)
     :ets.insert(map_cache, {@map, MapData.new(@map, 200, 200)})
@@ -125,9 +126,9 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
     target = start_target({151, 150})
     test_pid = self()
 
-    stub(Resistance, :apply_resistance, fn definition, _stats, chance, duration ->
-      send(test_pid, {:resistance, definition.id, chance, duration})
-      {chance, duration}
+    stub(Resistance, :defend, fn input, _mode ->
+      send(test_pid, {:resistance, input.status, input.rate, input.tick})
+      {:ok, input.tick}
     end)
 
     cast(dancer, @dazzler, dancer.character.id, 5)
@@ -143,8 +144,8 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
              4_000
            )
 
-    assert_received {:resistance, :sc_stun, 50, 4_500}
-    assert_received {:resistance, :sc_stun, 12.5, 4_500}
+    assert_received {:resistance, :sc_stun, 5000, 4_500}
+    assert_received {:resistance, :sc_stun, 1250, 4_500}
 
     assert %{expires_at: enemy_expiry} =
              StatusStorage.get_status(:mob, target.unit_id, :sc_stun)

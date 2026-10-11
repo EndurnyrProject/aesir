@@ -483,6 +483,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   test "an enemy mob stepping onto a Land Mine leaves one used state without deadlocking" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Resistance, :roll_success, fn _success_rate -> true end)
+    stub(Resistance, :roll_rate, fn _success_rate -> true end)
 
     caster = build_caster()
     UnitRegistry.register_unit(:player, @caster_id, PlayerState, caster, self())

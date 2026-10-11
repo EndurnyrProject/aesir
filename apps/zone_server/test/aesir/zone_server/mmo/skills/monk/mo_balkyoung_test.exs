@@ -100,12 +100,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
 
       expect(StatusInterpreter, :apply_status, fn :mob, @splash_target_id, :sc_stun, opts ->
         assert opts[:duration] == mode_value(4_500, 5_000)
+        assert opts[:success_rate] == 70
         assert opts[:caster_id] == 1
         send(test_pid, :stunned)
         :ok
       end)
-
-      :rand.seed(:exsss, {1, 2, 3})
 
       assert {:ok, ^caster} =
                MoBalkyoung.cast(caster, {:unit, @primary_target_id}, 1, definition())
@@ -129,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
                MoBalkyoung.cast(caster, {:unit, @primary_target_id}, 1, definition())
     end
 
-    test "a failed 70 percent roll pushes a neighbour without stunning it" do
+    test "pushes a neighbour and forwards the 70 percent stun chance" do
       caster = caster()
       stub_damaging_strike()
 
@@ -142,9 +141,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
       end)
 
       expect(Knockback, :knockback, fn :mob, @splash_target_id, 100, 100, 5, _opts -> :ok end)
-      reject(&StatusInterpreter.apply_status/4)
 
-      :rand.seed(:exsss, {6, 7, 8})
+      expect(StatusInterpreter, :apply_status, fn :mob, @splash_target_id, :sc_stun, params ->
+        assert params[:success_rate] == 70
+        {:error, :resisted}
+      end)
 
       assert {:ok, ^caster} =
                MoBalkyoung.cast(caster, {:unit, @primary_target_id}, 1, definition())
@@ -167,8 +168,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
       expect(StatusInterpreter, :apply_status, fn :player, @splash_target_id, :sc_stun, _opts ->
         :ok
       end)
-
-      :rand.seed(:exsss, {1, 2, 3})
 
       assert {:ok, ^caster} =
                MoBalkyoung.cast(caster, {:unit, @primary_target_id}, 1, definition())

@@ -45,11 +45,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   The base `sc_start type,ticks,val1` form emits `sc_start(ctx, status, ticks,
   val1)` via the standard `CommandSet` rule. rAthena's optional `rate` (out of
   10000) and `flag` arguments — `sc_start type,ticks,val1,rate{,flag}`, common on
-  foods that carry a chance to inflict a negative status — are handled here: the
-  `rate` becomes a runtime `Enum.random(1..10_000) <= rate` guard around the base
-  call, and the `flag` bitmask is dropped (no sc-flag is modelled). A `rate` of
-  `10000` (always) collapses back to the plain call. The six-arg GID-targeted form
-  is unsupported.
+  foods that carry a chance to inflict a negative status — are passed through:
+  `sc_start(ctx, status, ticks, val1, rate)` and, with a flag,
+  `sc_start(ctx, status, ticks, val1, rate, flag)`, so the status defense makes
+  the one roll. A `rate` of `10000` with no flag collapses back to the plain
+  call. The six-arg GID-targeted form is unsupported.
 
   ## Char variable increments
 
@@ -137,21 +137,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     with {:ok, s} <- render_arg(:status, status),
          {:ok, t} <- render_arg(:int, ticks),
          {:ok, v} <- render_arg(:int, val1),
-         {:ok, r} <- render_arg(:int, rate) do
-      render_sc_start_rate(s, t, v, r)
+         {:ok, r} <- render_arg(:int, rate),
+         {:ok, f} <- render_flag(flag) do
+      render_sc_start_rate(s, t, v, r, f)
     end
   end
 
   defp render_command(name, args), do: render_known_command(name, args)
 
-  @spec render_sc_start_rate(String.t(), String.t(), String.t(), String.t()) :: {:ok, String.t()}
-  defp render_sc_start_rate(status, ticks, val, "10000"),
+  defp render_flag([]), do: {:ok, nil}
+  defp render_flag([flag]), do: render_arg(:int, flag)
+
+  @spec render_sc_start_rate(String.t(), String.t(), String.t(), String.t(), String.t() | nil) ::
+          {:ok, String.t()}
+  defp render_sc_start_rate(status, ticks, val, "10000", nil),
     do: {:ok, "sc_start(ctx, #{status}, #{ticks}, #{val})"}
 
-  defp render_sc_start_rate(status, ticks, val, rate),
-    do:
-      {:ok,
-       "if(Enum.random(1..10_000) <= #{rate}, do: sc_start(ctx, #{status}, #{ticks}, #{val}), else: ctx)"}
+  defp render_sc_start_rate(status, ticks, val, rate, nil),
+    do: {:ok, "sc_start(ctx, #{status}, #{ticks}, #{val}, #{rate})"}
+
+  defp render_sc_start_rate(status, ticks, val, rate, flag),
+    do: {:ok, "sc_start(ctx, #{status}, #{ticks}, #{val}, #{rate}, #{flag})"}
 
   @spec render_known_command(String.t(), [term()]) ::
           {:ok, String.t()} | {:error, {:unsupported, detail()}}

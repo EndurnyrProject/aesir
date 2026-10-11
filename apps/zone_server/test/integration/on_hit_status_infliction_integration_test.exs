@@ -10,11 +10,9 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
     * An attacker's `{:add_eff, sc}` equipment lands a real auto attack
       through `Combat.execute_attack/3` on a live mob and the status is
       genuinely stored.
-    * The `res_eff_exempt` single-subtraction seam between `OnHitEffects`
-      (subtracts the defender's `{:res_eff, sc}` tolerance once, at the proc
-      rate, then calls `apply_status` with `res_eff_exempt: true`) and a
-      skill-sourced `apply_status` call that omits the flag and is still
-      blocked by the interpreter's own tolerance step.
+    * A player's full `{:res_eff, sc}` equipment resistance refuses the status
+      in the status defense, both for an on-hit proc and for a skill-sourced
+      `apply_status`.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -71,30 +69,9 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
     end
   end
 
-  describe "res_eff single-subtraction seam" do
-    test "full res_eff blocks the on-hit proc once, and still blocks a skill-sourced apply_status without res_eff_exempt" do
+  describe "res_eff in the status defense" do
+    test "full res_eff refuses an on-hit proc and a skill-sourced apply_status alike" do
       mob = start_mob_session(position: {151, 150})
-
-      attacker =
-        CombatTestHelper.create_player_combatant(unit_id: 9001)
-        |> with_combatant_equip_modifiers(%{{:add_eff, :sc_stun} => 5_000})
-
-      defender =
-        CombatTestHelper.create_mob_combatant(unit_id: mob.unit_id)
-        |> with_combatant_equip_modifiers(%{{:res_eff, :sc_stun} => 10_000})
-
-      # (1) OnHitEffects subtracts the defender's full tolerance at the proc
-      # rate: `effective = 5_000 - 10_000` floors at 0 before any roll, so the
-      # real `StatusEffect.Interpreter.apply_status/4` is never even reached.
-      landed = %{hit_class: :hit, attack_effects?: true, counter_effects?: true}
-      assert :ok = OnHitEffects.after_hit(attacker, defender, landed)
-      refute StatusStorage.has_status?(:mob, mob.unit_id, :sc_stun)
-
-      # (2) The same tolerance value, reached through a skill-sourced
-      # `apply_status` call that carries no `res_eff_exempt`, must still be
-      # subtracted -- this time by the interpreter's own `roll_resistance`
-      # step -- against a live player whose `equip_modifiers` are published
-      # to the real `UnitRegistry` (mirroring `StateCommit.commit/2`).
       player = start_player_session(position: {150, 150})
       player_state = get_player_state(player.pid)
 
@@ -102,6 +79,16 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
         with_player_equip_modifiers(player_state, %{{:res_eff, :sc_stun} => 10_000})
 
       :ok = UnitRegistry.update_unit_state(:player, player.character.id, geared_state)
+
+      attacker =
+        CombatTestHelper.create_mob_combatant(unit_id: mob.unit_id)
+        |> with_combatant_equip_modifiers(%{{:add_eff_when_hit, :sc_stun} => 10_000})
+
+      victim = CombatTestHelper.create_player_combatant(unit_id: player.character.id)
+      landed = %{hit_class: :hit, attack_effects?: true, counter_effects?: true}
+
+      assert :ok = OnHitEffects.after_hit(victim, attacker, landed)
+      refute StatusStorage.has_status?(:player, player.character.id, :sc_stun)
 
       assert {:error, :resisted} =
                StatusInterpreter.apply_status(:player, player.character.id, :sc_stun)

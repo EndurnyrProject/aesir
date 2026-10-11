@@ -262,7 +262,7 @@
   name: Ice Cream
   on_use: |-
     ctx = heal(ctx, hp: 105..145)
-    ctx = if(Enum.random(1..10_000) <= 2500, do: sc_start(ctx, :sc_freeze, 10000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_freeze, 10000, 0, 2500, 0)
     ctx
   type: healing
   weight: 80
@@ -356,7 +356,7 @@
   name: Yam
   on_use: |-
     ctx = heal(ctx, hp: 50..100)
-    ctx = if(Enum.random(1..10_000) <= 1500, do: sc_start(ctx, :sc_stun, 3000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_stun, 3000, 0, 1500, 0)
     ctx
   type: healing
   weight: 80
@@ -395,7 +395,7 @@
   on_use: |-
     ctx = heal(ctx, hp: 105..145)
     ctx = sc_start(ctx, :sc_stun, 3000, 0)
-    ctx = if(Enum.random(1..10_000) <= 1500, do: sc_start(ctx, :sc_blind, 2000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_blind, 2000, 0, 1500, 0)
     ctx
   type: healing
   weight: 80
@@ -1229,7 +1229,7 @@
   id: 679
   name: Pilule
   on_use: |-
-    ctx = if(Enum.random(1..10_000) <= 1000, do: sc_start(ctx, :sc_dpoison, 10000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_dpoison, 10000, 0, 1000, 0)
     ctx = sc_start(ctx, :sc_poison, 50000, 0)
     ctx
   type: usable
@@ -3070,7 +3070,7 @@
   name: Giggling Box
   on_use: |-
     ctx = percent_heal(ctx, hp: 9)
-    ctx = if(Enum.random(1..10_000) <= 3000, do: sc_start(ctx, :sc_curse, 30000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_curse, 30000, 0, 3000, 0)
     ctx
   type: usable
   weight: 200
@@ -3121,7 +3121,7 @@
   name: Box of Panting
   on_use: |-
     ctx = percent_heal(ctx, sp: 9)
-    ctx = if(Enum.random(1..10_000) <= 3000, do: sc_start(ctx, :sc_silence, 30000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_silence, 30000, 0, 3000, 0)
     ctx
   type: usable
   weight: 200
@@ -4015,7 +4015,7 @@
   name: Green Ale
   on_use: |-
     ctx = percent_heal(ctx, hp: 50, sp: 50)
-    ctx = if(Enum.random(1..10_000) <= 1000, do: sc_start(ctx, :sc_confusion, 10000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_confusion, 10000, 0, 1000, 0)
     ctx
   type: usable
   weight: 30
@@ -4844,7 +4844,7 @@
   no_guild_storage: true
   no_trade: true
   on_use: |-
-    ctx = if(Enum.random(1..10_000) <= 1000, do: sc_start(ctx, :sc_dpoison, 10000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_dpoison, 10000, 0, 1000, 0)
     ctx = sc_start(ctx, :sc_poison, 50000, 0)
     ctx
   type: usable
@@ -4856,7 +4856,7 @@
   no_guild_storage: true
   no_trade: true
   on_use: |-
-    ctx = if(Enum.random(1..10_000) <= 1000, do: sc_start(ctx, :sc_dpoison, 10000, 0), else: ctx)
+    ctx = sc_start(ctx, :sc_dpoison, 10000, 0, 1000, 0)
     ctx = sc_start(ctx, :sc_poison, 50000, 0)
     ctx
   type: usable
@@ -29490,7 +29490,7 @@
   buy: 10
   id: 22516
   name: Black As Night Piece
-  on_use: 'if(Enum.random(1..10_000) <= 1500, do: sc_start(ctx, :sc_curse, 4000, 0), else: ctx)'
+  on_use: sc_start(ctx, :sc_curse, 4000, 0, 1500, 0)
   type: usable
 - aegis_name: Loki_Summon_Scroll
   buy: 10
@@ -33783,7 +33783,7 @@
   name: Snow Candy
   on_use: |-
     ctx = percent_heal(ctx, hp: 5, sp: 5)
-    ctx = sc_start(ctx, :sc_freeze, 3000, 0)
+    ctx = sc_start(ctx, :sc_freeze, 3000, 0, 10000, 0)
     ctx
   type: usable
   weight: 20

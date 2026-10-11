@@ -43,7 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       conflicts_with: [:sc_aeterna],
       immunity: [:boss, :plant],
       cleanse: [:sc_slowpoison],
-      resistance_type: :physical,
       tick_interval: 1_000,
       initial_phase: :wait,
       duration: 30_000,
@@ -156,7 +155,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
       assert metadata.conflicts_with == [:sc_aeterna]
       assert metadata.immunity == [:boss, :plant]
       assert metadata.cleanse == [:sc_slowpoison]
-      assert metadata.resistance_type == :physical
       assert metadata.tick_interval == 1_000
       assert metadata.initial_phase == :wait
       assert metadata.duration == 30_000

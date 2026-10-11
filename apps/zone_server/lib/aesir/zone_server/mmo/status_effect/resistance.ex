@@ -1,189 +1,209 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
   @moduledoc """
-  Implements status effect resistance calculations based on rAthena mechanics.
+  Status defense: decides whether an inflicted status lands and for how long.
 
-  This module handles:
-  - Success rate calculations for physical and magical status effects
-  - Duration reduction based on the status' resistance type
-  - Integration with the status effect definition system
+  Rates are per 10000. A status with a defense recipe (`recipe/5`) lowers the
+  rate by its `sc_def` share and then by the flat `sc_def2`, subtracts the
+  target's equipment resistance share, rounds the rate up to a multiple of 10
+  and rolls it. A surviving duration is lowered by its `tick_def` share (the
+  `sc_def` share unless the recipe sets one), in renewal by the equipment
+  resistance share too, and then by the flat `tick_def2`, never below 1 ms. A
+  duration of 0 is a field-held status with no expiry and is never reduced.
 
-  This module works in conjunction with the status effect definitions
-  in the database and does not hardcode specific status effect behaviors.
+  `no_rate_def` (`SCSTART_NORATEDEF`) skips the rate reductions and the
+  rounding; `no_tick_def` (`SCSTART_NOTICKDEF`) keeps the duration as given.
+
+  Both shares are capped at 100% before the holder's status resistance adds to
+  `sc_def`: Status Resistance first, otherwise Siegfried (in renewal only for
+  Blind, Stone, Freeze, Stun, Curse, Sleep and Silence). The shares are clamped
+  at 0 in renewal only. Any other status only rolls its rate and keeps its
+  duration.
+
+  Renewal recipes subtract a level advantage from `sc_def`: one hundred times
+  the squared level lead of the source over the target, divided by five, kept
+  in 16 bits as the reference's `uint16` (a 98-level lead gives 60928).
   """
 
-  @type status_type :: :physical | :magical
+  import Bitwise
+
+  @typedoc "The stats a recipe reads, for the target or the source."
+  @type unit_view :: %{
+          player?: boolean(),
+          level: integer(),
+          str: integer(),
+          agi: integer(),
+          vit: integer(),
+          int: integer(),
+          dex: integer(),
+          luk: integer(),
+          mdef: integer()
+        }
+
+  @typedoc """
+  A status defense attempt.
+
+  `scresist` and `siegfried` are the holder's Status Resistance `val1` and
+  Siegfried ailment resistance (nil when not held). `res_eff` is the target's
+  equipment resistance to this status, per 10000 (players only). `roll` gets the
+  final rate and decides the application. `no_rate_def` and `no_tick_def` are
+  optional and default to false.
+  """
+  @type input :: %{
+          optional(:no_rate_def) => boolean(),
+          optional(:no_tick_def) => boolean(),
+          status: atom(),
+          rate: integer(),
+          tick: integer(),
+          target: unit_view(),
+          source: unit_view(),
+          scresist: integer() | nil,
+          siegfried: integer() | nil,
+          res_eff: integer(),
+          roll: (integer() -> boolean())
+        }
+
+  @typedoc "A status's defense values before caps and resistance statuses."
+  @type defense :: %{
+          sc_def: integer(),
+          sc_def2: integer(),
+          tick_def: integer() | nil,
+          tick_def2: integer(),
+          tick: integer()
+        }
+
+  @max_def 10_000
+  @defended [
+    :sc_poison,
+    :sc_dpoison,
+    :sc_stun,
+    :sc_silence,
+    :sc_bleeding,
+    :sc_sleep,
+    :sc_stonewait,
+    :sc_freeze,
+    :sc_curse,
+    :sc_blind,
+    :sc_confusion,
+    :sc_decreaseagi,
+    :sc_jointbeat,
+    :sc_norecover_state
+  ]
+  # The list names Stone, not the petrifying wait that is actually defended.
+  @siegfried_renewal [
+    :sc_blind,
+    :sc_stone,
+    :sc_freeze,
+    :sc_stun,
+    :sc_curse,
+    :sc_sleep,
+    :sc_silence
+  ]
 
   @doc """
-  Calculates the success rate for applying a status effect.
-
-  ## Parameters
-  - `status_type`: Whether the status is :physical or :magical
-  - `target_stats`: Map containing target's stats (must include :vit for physical, :mdef for magical)
-  - `base_success_rate`: Initial success rate (0-100)
-
-  ## Returns
-  The adjusted success rate (0-100) after resistance calculations.
-
-  ## Formula from rAthena (Renewal)
-  - Physical: `success_rate = base_rate * (100 - target_VIT) / 100`
-    (rAthena: `sc_def = VIT * 100` capped to 0..10000, `rate -= rate * sc_def / 10000`)
-  - Magical: `success_rate = base_rate * (100 - target_MDEF) / 100`
-
-  ## Examples
-      iex> calculate_success_rate(:physical, %{vit: 50}, 100)
-      50.0
-
-      iex> calculate_success_rate(:magical, %{mdef: 30}, 80)
-      56.0
+  Resolves one attempt: `{:ok, duration}` when the status lands, otherwise
+  `:resisted` (including Curse on a target without LUK).
   """
-  @spec calculate_success_rate(status_type(), map(), number()) :: float()
-  def calculate_success_rate(:physical, %{vit: vit}, base_success_rate) when is_number(vit) do
-    base_success_rate * max(0, 100 - vit) / 100
-  end
-
-  def calculate_success_rate(:magical, target_stats, base_success_rate) do
-    mdef = get_mdef_value(target_stats)
-    base_success_rate * max(0, 100 - mdef) / 100
-  end
-
-  def calculate_success_rate(_, _, base_success_rate), do: base_success_rate
-
-  @doc """
-  Calculates the reduced duration for a status effect based on target stats.
-
-  ## Parameters
-  - `base_duration`: Initial duration in milliseconds
-  - `target_stats`: Map containing target's stats (must include :vit and :luk)
-
-  ## Returns
-  The adjusted duration in milliseconds after resistance calculations.
-
-  ## Formula from rAthena
-  `final_duration = base_duration * (100 - (target_VIT + target_LUK/3)) / 100`
-
-  ## Examples
-      iex> calculate_duration(10000, %{vit: 50, luk: 30})
-      4000
-
-      iex> calculate_duration(5000, %{vit: 100, luk: 0})
-      0
-  """
-  @spec calculate_duration(integer(), map()) :: integer()
-  def calculate_duration(base_duration, %{vit: vit, luk: luk})
-      when is_integer(base_duration) and is_number(vit) and is_number(luk) do
-    # Duration reduction formula from rAthena
-    # final_duration = base_duration * (100 - (target_VIT + target_LUK/3)) / 100
-    reduction_percent = vit + luk / 3
-    multiplier = max(0, 100 - reduction_percent) / 100
-
-    round(base_duration * multiplier)
-  end
-
-  def calculate_duration(base_duration, _), do: base_duration
-
-  @doc """
-  Calculates duration reduction using the status' resistance type.
-
-  Physical statuses retain the VIT/LUK formula used by `calculate_duration/2`.
-  Magical statuses are reduced by MDEF.
-  """
-  @spec calculate_duration(status_type(), integer(), map()) :: integer()
-  def calculate_duration(:physical, base_duration, target_stats),
-    do: calculate_duration(base_duration, target_stats)
-
-  def calculate_duration(:magical, base_duration, target_stats) do
-    mdef = get_mdef_value(target_stats)
-    multiplier = max(0, 100 - mdef) / 100
-
-    round(base_duration * multiplier)
-  end
-
-  def calculate_duration(_, base_duration, _target_stats), do: base_duration
-
-  @doc """
-  Determines the resistance type of a status effect from its definition.
-
-  Status effects can define their resistance type in the definition,
-  or it can be inferred from their properties.
-
-  ## Parameters
-  - `definition`: The status effect definition map
-
-  ## Returns
-  Either `:physical` or `:magical`, defaults to `:physical` if not specified
-  """
-  @spec get_resistance_type(map()) :: status_type()
-  def get_resistance_type(%{resistance_type: type}) when type in [:physical, :magical] do
-    type
-  end
-
-  def get_resistance_type(%{properties: properties}) when is_list(properties) do
-    cond do
-      :magical in properties -> :magical
-      :physical in properties -> :physical
-      true -> :physical
+  @spec defend(input(), :renewal | :pre_renewal) :: {:ok, non_neg_integer()} | :resisted
+  def defend(%{} = input, mode) do
+    case recipe(input.status, mode, input.target, input.source, input.tick) do
+      :default -> default_roll(input)
+      :immune -> :resisted
+      %{} = defense -> defend_with(input, mode, defense)
     end
   end
 
-  def get_resistance_type(_), do: :physical
+  @doc "Whether a status has a defense recipe (`recipe/5`) in both modes."
+  @spec defended?(atom()) :: boolean()
+  def defended?(status), do: status in @defended
 
   @doc """
-  Applies full resistance calculation pipeline.
-
-  ## Parameters
-  - `definition`: The status effect definition
-  - `target_stats`: Complete target stats including VIT, LUK, MDEF
-  - `base_success_rate`: Initial success rate (0-100), defaults to 100
-  - `base_duration`: Initial duration in milliseconds
-
-  ## Returns
-  A tuple with `{adjusted_success_rate, adjusted_duration}`
+  Rolls an undefended status: `{:ok, tick}` when its rate lands, otherwise
+  `:resisted`.
   """
-  @spec apply_resistance(map(), map(), number(), integer()) :: {float(), integer()}
-  def apply_resistance(definition, target_stats, base_success_rate \\ 100, base_duration) do
-    status_type = get_resistance_type(definition)
+  @spec roll_chance(integer(), integer(), (integer() -> boolean())) ::
+          {:ok, integer()} | :resisted
+  def roll_chance(rate, tick, roll),
+    do: if(lands?(rate, roll), do: {:ok, tick}, else: :resisted)
 
-    success_rate = calculate_success_rate(status_type, target_stats, base_success_rate)
+  @doc """
+  Returns a status's defense recipe, `:default` for a status without one, or
+  `:immune` when the target cannot receive it.
+  """
+  @spec recipe(atom(), :renewal | :pre_renewal, unit_view(), unit_view(), integer()) ::
+          defense() | :default | :immune
+  def recipe(status, :pre_renewal, t, s, tick) when status in [:sc_poison, :sc_dpoison] do
+    base = %{sc_def: t.vit * 100, sc_def2: classic_sc_def2(t, s), tick_def2: 0}
 
-    duration =
-      status_type
-      |> calculate_duration(base_duration, target_stats)
-      |> Kernel.+(Map.get(definition, :duration_adjustment, 0))
-      |> max(0)
-
-    {success_rate, duration}
+    if t.player?,
+      do: Map.merge(base, %{tick_def: t.vit * 75, tick_def2: t.luk * 100, tick: tick}),
+      else: Map.merge(base, %{tick_def: div(t.vit * 200, 3), tick: div(tick, 2)})
   end
 
-  @doc """
-  Checks if resistance should be applied to a status effect.
+  def recipe(status, :pre_renewal, t, s, tick)
+      when status in [:sc_stun, :sc_silence, :sc_bleeding],
+      do: defense(t.vit * 100, classic_sc_def2(t, s), nil, t.luk * 10, tick)
 
-  Some status effects bypass resistance calculations entirely
-  (e.g., beneficial effects, special mechanics).
+  def recipe(:sc_sleep, :pre_renewal, t, s, tick),
+    do: defense(t.int * 100, classic_sc_def2(t, s), nil, t.luk * 10, tick)
 
-  ## Parameters
-  - `definition`: The status effect definition
+  def recipe(:sc_stonewait, :pre_renewal, t, s, tick),
+    do: defense(t.mdef * 100, classic_sc_def2(t, s), 0, 0, tick)
 
-  ## Returns
-  `true` if resistance should be applied, `false` to bypass
-  """
-  @spec should_apply_resistance?(map()) :: boolean()
-  def should_apply_resistance?(%{bypass_resistance: true}), do: false
+  def recipe(:sc_freeze, :pre_renewal, t, s, tick),
+    do: defense(t.mdef * 100, classic_sc_def2(t, s), nil, s.luk * -10, tick)
 
-  def should_apply_resistance?(%{properties: properties}) when is_list(properties) do
-    # Buffs and certain special effects bypass resistance
-    not (:buff in properties or :no_resistance in properties)
+  def recipe(:sc_curse, _mode, %{luk: 0}, _s, _tick), do: :immune
+
+  def recipe(:sc_curse, :pre_renewal, t, s, tick),
+    do: defense(t.luk * 100, t.luk * 10 - s.level * 10, t.vit * 100, t.luk * 10, tick)
+
+  def recipe(:sc_blind, :pre_renewal, t, s, tick),
+    do: defense((t.vit + t.int) * 50, classic_sc_def2(t, s), nil, t.luk * 10, tick)
+
+  def recipe(:sc_confusion, :pre_renewal, t, s, tick) do
+    sc_def2 = s.level * 10 - t.level * 10 - t.luk * 10
+    defense((t.str + t.int) * 50, sc_def2, nil, t.luk * 10, tick)
   end
 
-  def should_apply_resistance?(_), do: true
+  def recipe(status, :renewal, t, s, tick) when status in [:sc_poison, :sc_dpoison],
+    do: renewal(t.vit, t, s, -2000, tick)
+
+  def recipe(:sc_stun, :renewal, t, s, tick), do: renewal(t.vit, t, s, -500, tick)
+  def recipe(:sc_silence, :renewal, t, s, tick), do: renewal(t.int, t, s, -2000, tick)
+  def recipe(:sc_bleeding, :renewal, t, s, tick), do: renewal(t.agi, t, s, -12_000, tick)
+  def recipe(:sc_sleep, :renewal, t, s, tick), do: renewal(t.agi, t, s, -2000, tick)
+
+  def recipe(status, :renewal, t, s, tick) when status in [:sc_stonewait, :sc_freeze],
+    do: renewal(t.mdef, t, s, -3000, tick)
+
+  def recipe(status, :renewal, t, s, tick) when status in [:sc_curse, :sc_confusion],
+    do: renewal(t.luk, t, s, -2000, tick)
+
+  def recipe(:sc_blind, :renewal, t, s, tick), do: renewal(t.int, t, s, -2000, tick)
+
+  def recipe(:sc_decreaseagi, _mode, t, _s, tick) do
+    tick = if t.player?, do: div(tick, 2), else: tick
+    defense(0, t.mdef * 100, nil, 0, tick)
+  end
+
+  def recipe(:sc_jointbeat, _mode, t, _s, tick),
+    do: defense(0, 0, nil, 1000 * div(div(t.luk, 2) + div(t.agi, 5), 2), tick)
+
+  def recipe(:sc_norecover_state, _mode, t, _s, tick), do: defense(0, 0, nil, t.luk * 100, tick)
+
+  def recipe(_status, _mode, _t, _s, _tick), do: :default
 
   @doc """
-  Calculates hit chance based on success rate.
+  Rolls a per-10000 rate: at least 10000 always lands, 0 or less never does.
+  """
+  @spec roll_rate(integer()) :: boolean()
+  def roll_rate(rate) when rate >= @max_def, do: true
+  def roll_rate(rate) when rate <= 0, do: false
+  def roll_rate(rate), do: :rand.uniform(@max_def) <= rate
 
-  ## Parameters
-  - `success_rate`: The calculated success rate (0-100)
-
-  ## Returns
-  `true` if the status should be applied, `false` if resisted
+  @doc """
+  Rolls a percentage chance that is not a status start (magic reflection, a
+  skill's own trigger roll).
   """
   @spec roll_success(number()) :: boolean()
   def roll_success(success_rate), do: roll_success(success_rate, &:rand.uniform/1)
@@ -203,14 +223,74 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Resistance do
     sampler.(10_000) <= threshold
   end
 
-  # Private helper functions
+  defp defense(sc_def, sc_def2, tick_def, tick_def2, tick),
+    do: %{sc_def: sc_def, sc_def2: sc_def2, tick_def: tick_def, tick_def2: tick_def2, tick: tick}
 
-  defp get_mdef_value(stats) do
+  defp classic_sc_def2(t, s), do: t.luk * 10 + t.level * 10 - s.level * 10
+
+  defp renewal(stat, t, s, tick_def2, tick),
+    do: defense(stat * 100 - level_advantage(s, t), 0, nil, tick_def2, tick)
+
+  # Both the squared lead and the result are narrowed to 16 bits.
+  defp level_advantage(s, t) do
+    lead = max(0, s.level - t.level)
+    band(div(band(lead * lead, 0xFFFF), 5) * 100, 0xFFFF)
+  end
+
+  defp default_roll(%{rate: rate, tick: tick, roll: roll}), do: roll_chance(rate, tick, roll)
+
+  defp lands?(rate, _roll) when rate >= @max_def, do: true
+  defp lands?(rate, _roll) when rate <= 0, do: false
+  defp lands?(rate, roll), do: roll.(rate)
+
+  defp defend_with(input, mode, defense) do
+    sc_def = cap(defense.sc_def, mode) + status_resistance(input, mode)
+    sc_def2 = cap(defense.sc_def2, mode)
+    tick_def = defense.tick_def || sc_def
+
+    rate =
+      if Map.get(input, :no_rate_def, false) do
+        input.rate
+      else
+        input.rate
+        |> Kernel.-(div(input.rate * sc_def, @max_def))
+        |> Kernel.-(sc_def2)
+        |> reduce_by(input.res_eff)
+        |> aegis_round()
+      end
+
     cond do
-      Map.has_key?(stats, :mdef) -> stats.mdef || 0
-      Map.has_key?(stats, :mdef1) -> stats.mdef1 || 0
-      Map.has_key?(stats, :mdef_rate) -> stats.mdef_rate || 0
-      true -> 0
+      not lands?(rate, input.roll) -> :resisted
+      Map.get(input, :no_tick_def, false) -> {:ok, defense.tick}
+      true -> {:ok, duration(defense.tick, tick_def, defense.tick_def2, input.res_eff, mode)}
     end
+  end
+
+  defp cap(value, :renewal), do: value |> max(0) |> min(@max_def)
+  defp cap(value, :pre_renewal), do: min(value, @max_def)
+
+  defp status_resistance(%{scresist: value}, _mode) when is_integer(value), do: value * 100
+
+  defp status_resistance(%{siegfried: value, status: status}, :renewal)
+       when is_integer(value) and status in @siegfried_renewal,
+       do: value * 100
+
+  defp status_resistance(%{siegfried: value}, :pre_renewal) when is_integer(value),
+    do: value * 100
+
+  defp status_resistance(_input, _mode), do: 0
+
+  defp reduce_by(value, 0), do: value
+  defp reduce_by(value, share), do: value - div(value * share, @max_def)
+
+  defp aegis_round(rate) when rate > 0 and rem(rate, 10) != 0, do: rate + 10 - rem(rate, 10)
+  defp aegis_round(rate), do: rate
+
+  defp duration(0, _tick_def, _tick_def2, _res_eff, _mode), do: 0
+
+  defp duration(tick, tick_def, tick_def2, res_eff, mode) do
+    tick = tick - div(tick * tick_def, @max_def)
+    tick = if mode == :renewal, do: reduce_by(tick, res_eff), else: tick
+    max(tick - tick_def2, 1)
   end
 end
