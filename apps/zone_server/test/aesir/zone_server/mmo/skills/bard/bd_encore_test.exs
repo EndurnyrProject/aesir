@@ -209,6 +209,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert replayed.stats.current_state.sp == 75
   end
 
+  test "an encored ensemble needs an adjacent partner when its replay begins" do
+    caster = player(%{skill_id: EnsembleSkill.definition().id, level: 1})
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+
+    assert {:error, :ensemble_partner_required} =
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "an encored ensemble's replay records the partner found when it begins" do
+    caster =
+      player(%{skill_id: EnsembleSkill.definition().id, level: 1}) |> with_ensemble_partner()
+
+    assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
+
+    assert {:instant, replayed} =
+             Interpreter.begin_encore_replay(encore, encore.last_song, :self)
+
+    assert replayed.ensemble_partner == @caster_id + 1
+  end
+
   test "zero transformed consumption still requires one SP for songs and ensembles" do
     modifiers = %{sp_cost_rate: -100}
 

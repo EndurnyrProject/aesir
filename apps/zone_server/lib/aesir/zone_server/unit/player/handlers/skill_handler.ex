@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
@@ -659,6 +660,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp reject_preflighted_cast(%{game_state: game_state} = state, skill_id, reason) do
     report_cast_failure(skill_id, game_state.character_id, reason)
     {:noreply, state}
+  end
+
+  @doc "Sets the Encore memory an ensemble partner receives from the caster's cast."
+  @spec remember_song(SessionState.t(), integer(), pos_integer()) :: {:noreply, SessionState.t()}
+  def remember_song(%{game_state: game_state} = state, skill_id, level) do
+    {:noreply, StateCommit.commit(state, Snapshot.remember(game_state, skill_id, level))}
   end
 
   @doc "Returns and clears an unsettled deferred skill result."

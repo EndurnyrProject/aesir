@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble do
   Capability behaviour for ensemble skills.
 
   Ensembles use Renewal snapshots or maintained pre-renewal ground fields.
-  The capability supplies field callbacks and partner validation without
-  changing the ordinary skill cost resolver.
+  The capability supplies field callbacks and the cast-begin partner
+  requirement without changing the ordinary skill cost resolver.
   """
 
   @doc false
@@ -20,10 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble do
       @behaviour Aesir.ZoneServer.Mmo.Skill.Ground
 
       @impl Aesir.ZoneServer.Mmo.Skill.Active
-      def validate(caster, _target, level, definition),
-        do: unquote(Perform).validate(caster, definition, level)
+      def begin_attempt(caster, _target, _level, definition),
+        do: unquote(Perform).begin_attempt(caster, definition)
 
-      defoverridable validate: 4
+      defoverridable begin_attempt: 4
 
       @impl Aesir.ZoneServer.Mmo.Skill.Ground
       defdelegate on_place(group), to: unquote(Field)

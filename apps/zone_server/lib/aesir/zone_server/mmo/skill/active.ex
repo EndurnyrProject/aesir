@@ -95,6 +95,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               :ok | {:error, atom()}
 
   @doc """
+  Optional cast-begin condition, run after `validate/4` and before the cost
+  check when an ordinary or Encore attempt begins (and by preflight). It returns
+  the caster carrying whatever the attempt's completion reads. Completion never
+  runs it again.
+  """
+  @callback begin_attempt(caster(), target(), pos_integer(), Definition.t()) ::
+              {:ok, caster()} | {:error, atom()}
+
+  @doc """
   Optional deferred effect, run later inside the caster's session process.
 
   A skill schedules it with `Skill.defer/3`, which posts the effect back to the
@@ -171,6 +180,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @optional_callbacks cast_with_origin: 5,
                       cast_with_input: 5,
                       validate: 4,
+                      begin_attempt: 4,
                       deferred: 2,
                       mob_cast: 5,
                       dynamic_cost: 4,

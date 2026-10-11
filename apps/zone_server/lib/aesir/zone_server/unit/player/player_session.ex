@@ -157,6 +157,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:unit, {:drain_sp, amount}})
   end
 
+  @doc "Sets this player's Encore memory, as an ensemble partner does."
+  @spec remember_song(pid(), integer(), pos_integer()) :: :ok
+  def remember_song(pid, skill_id, level) do
+    GenServer.cast(pid, {:skill, {:remember_song, skill_id, level}})
+  end
+
   @spec summon_spirit_sphere(pid(), pos_integer(), pos_integer()) :: :ok
   def summon_spirit_sphere(pid, duration, cap \\ 5) do
     GenServer.cast(pid, {:skill, {:summon_spirit_sphere, duration, cap}})
@@ -1295,6 +1301,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:skill, {:summon_spirit_sphere, duration, cap}}, state) do
     SpiritSphereHandler.summon(state, duration, cap)
+  end
+
+  @impl true
+  def handle_cast({:skill, {:remember_song, skill_id, level}}, state) do
+    SkillHandler.remember_song(state, skill_id, level)
   end
 
   # Skill: the spirit-exchange write path (Monk). Receive/absorb spirit spheres

@@ -101,6 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           last_emote_at: integer() | nil,
           deferred_epoch: non_neg_integer(),
           last_song: %{skill_id: integer(), level: pos_integer()} | nil,
+          ensemble_partner: integer() | nil,
           plagiarized: %{skill_id: integer(), level: pos_integer()} | nil,
           continuous_attack_timer: reference() | nil,
           pending_forced_movement: ForcedMovement.t() | nil,
@@ -301,6 +302,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     last_emote_at: nil,
     deferred_epoch: 0,
     last_song: nil,
+    # Character id of the partner found by the last ensemble cast begin; the
+    # attempt's completion locks or fatigues that partner without searching again.
+    ensemble_partner: nil,
     plagiarized: nil,
     regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0},
     # Per-interval elapsed-time accumulators for periodic equipment HP

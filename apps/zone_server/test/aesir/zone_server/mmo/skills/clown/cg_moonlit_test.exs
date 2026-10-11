@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlitTest do
     :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map})
 
     assert {:error, :blocked_by_wall} =
-             CgMoonlit.validate(caster, :self, 2, CgMoonlit.definition())
+             CgMoonlit.begin_attempt(caster, :self, 2, CgMoonlit.definition())
   end
 
   @tag game_mode: :renewal
@@ -73,23 +73,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlitTest do
     refute StatusStorage.has_status?(:player, 17, :sc_ensemblefatigue)
   end
 
-  test "paired upkeep uses the averaged field level", %{caster: caster} do
+  test "paired upkeep uses the caster level", %{caster: caster} do
     caster = put_in(caster.stats.progression.learned_skills, %{395 => 5})
     register(caster)
     register(player(18, 4021, 11, 1, 1960))
+    {:ok, caster} = CgMoonlit.begin_attempt(caster, :self, 5, CgMoonlit.definition())
     assert {:ok, _} = CgMoonlit.cast(caster, :self, 5, CgMoonlit.definition())
     [group] = Storage.get_groups_by_caster(:player, 17)
-    assert group.level == 3
+    assert group.level == 5
 
     for id <- [17, 18] do
-      assert %{state: %{upkeep_sp: 12}} = StatusStorage.get_status(:player, id, :sc_dancing)
+      assert %{state: %{upkeep_sp: 20}} = StatusStorage.get_status(:player, id, :sc_dancing)
     end
   end
 
-  @tag game_mode: :pre_renewal
-  test "classic cast requires an adjacent partner", %{caster: caster} do
+  test "a cast without an adjacent partner is refused when it begins", %{caster: caster} do
     assert {:error, :ensemble_partner_required} =
-             CgMoonlit.cast(caster, :self, 2, CgMoonlit.definition())
+             CgMoonlit.begin_attempt(caster, :self, 2, CgMoonlit.definition())
   end
 
   test "the first interval sweeps existing occupants exactly once", %{caster: caster} do

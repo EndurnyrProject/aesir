@@ -9,9 +9,11 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.CastCancel
   alias Aesir.Net.SkillCast
+  alias Aesir.Net.SkillCastFailed
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -40,18 +42,18 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
     :ok
   end
 
-  test "a Bard and Dancer pair at the averaged level and both become fatigued" do
+  test "a Bard and Dancer pair at the Bard's level and both become fatigued" do
     %{bard: bard, dancer: dancer, nearby: nearby, far: far} = start_full_party()
     baseline = get_player_state(nearby.pid).stats.combat_stats
 
     cast(bard, @drum, 5)
 
-    assert eventually(fn -> status_level(nearby, :sc_drumbattle) == 3 end)
+    assert eventually(fn -> status_level(nearby, :sc_drumbattle) == 5 end)
     assert eventually(fn -> cast_finished?(bard) end)
 
     assert eventually(fn ->
              stats = get_player_state(nearby.pid).stats.combat_stats
-             stats.atk == baseline.atk + 30 and stats.def == baseline.def + 45
+             stats.atk == baseline.atk + 40 and stats.def == baseline.def + 75
            end)
 
     assert eventually(fn -> has_status?(bard, @fatigue) end)
@@ -73,46 +75,63 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
     assert current_sp(bard) == sp
   end
 
-  test "the same Bard casts solo at his own level without fatiguing anyone" do
-    %{bard: bard, nearby: nearby, far: far} = start_solo_party([@drum])
+  test "a Bard without an adjacent partner cannot cast" do
+    %{bard: bard, nearby: nearby} = start_solo_party([@drum])
+    sp = current_sp(bard)
+    flush_packets()
 
     cast(bard, @drum, 5)
 
-    assert eventually(fn -> status_level(nearby, :sc_drumbattle) == 5 end)
-    assert eventually(fn -> cast_finished?(bard) end)
+    assert_packet_sent(SkillCastFailed)
+    assert cast_finished?(bard)
+    assert current_sp(bard) == sp
+    refute has_status?(bard, :sc_drumbattle)
+    refute has_status?(nearby, :sc_drumbattle)
     refute has_status?(bard, @fatigue)
-    refute has_status?(nearby, @fatigue)
-    refute has_status?(far, @fatigue)
-    refute has_status?(far, :sc_drumbattle)
   end
 
   for rejection <- [:different_party, :wrong_weapon, :sitting, :skill_not_learned] do
     @rejection rejection
 
-    test "#{rejection} partner degrades the ensemble to a successful solo cast" do
+    test "#{rejection} partner refuses the ensemble" do
       %{bard: bard, dancer: dancer} = start_ineligible_pair(@rejection)
+      sp = current_sp(bard)
+      flush_packets()
 
       cast(bard, @drum, 5)
 
-      assert eventually(fn -> status_level(bard, :sc_drumbattle) == 5 end)
-      assert eventually(fn -> cast_finished?(bard) end)
+      assert_packet_sent(SkillCastFailed)
+      assert current_sp(bard) == sp
+      refute has_status?(bard, :sc_drumbattle)
+      refute has_status?(dancer, :sc_drumbattle)
       refute has_status?(bard, @fatigue)
       refute has_status?(dancer, @fatigue)
-
-      if @rejection == :different_party do
-        refute has_status?(dancer, :sc_drumbattle)
-      else
-        assert eventually(fn -> status_level(dancer, :sc_drumbattle) == 5 end)
-      end
     end
   end
 
+  test "the partner found at cast begin is fatigued even after sitting down mid-cast" do
+    %{bard: bard, dancer: dancer} = start_full_party()
+
+    cast(bard, @drum, 5)
+    assert eventually(fn -> get_player_state(bard.pid).action_state == :casting end)
+    set_action_state(dancer, :sitting)
+
+    assert eventually(fn -> has_status?(bard, @fatigue) end)
+    assert eventually(fn -> has_status?(dancer, @fatigue) end)
+    assert status_level(bard, :sc_drumbattle) == 5
+  end
+
   test "a second buff ensemble replaces the first on recipients" do
-    %{bard: bard, nearby: nearby} = start_solo_party([@drum, @siegfried])
+    %{bard: bard, dancer: dancer, nearby: nearby} = start_full_party([@drum, @siegfried])
 
     cast(bard, @drum, 5)
     assert eventually(fn -> has_status?(nearby, :sc_drumbattle) end)
     assert eventually(fn -> act_ready?(bard) end)
+
+    for performer <- [bard, dancer] do
+      assert eventually(fn -> has_status?(performer, @fatigue) end)
+      StatusInterpreter.remove_status(:player, performer.character.id, @fatigue)
+    end
 
     cast(bard, @siegfried, 5)
 
@@ -122,9 +141,13 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
     assert has_status?(bard, :sc_siegfried)
   end
 
-  defp start_full_party do
-    bard_character = insert_character("PairBard", :bard, @origin, %{@drum => 5, @first_aid => 1})
-    dancer_character = insert_character("PairDancer", :dancer, {151, 150}, %{@drum => 1})
+  defp start_full_party(ensembles \\ [@drum]) do
+    bard_skills = Map.new(ensembles, &{&1, 5}) |> Map.put(@first_aid, 1)
+    bard_character = insert_character("PairBard", :bard, @origin, bard_skills)
+
+    dancer_character =
+      insert_character("PairDancer", :dancer, {151, 150}, Map.new(ensembles, &{&1, 1}))
+
     nearby_character = insert_character("PairNear", :novice, {155, 150}, %{})
     far_character = insert_character("PairFar", :novice, {170, 150}, %{})
 

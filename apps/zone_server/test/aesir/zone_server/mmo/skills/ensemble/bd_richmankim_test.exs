@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
   @tag game_mode: :pre_renewal
   test "classic level-one cast requires a partner instead of granting a solo EXP buff" do
     assert {:error, :ensemble_partner_required} =
-             BdRichmankim.cast(player(), :self, 1, BdRichmankim.definition())
+             BdRichmankim.begin_attempt(player(), :self, 1, BdRichmankim.definition())
 
     refute StatusStorage.has_status?(:player, @player_id, :sc_richmankim)
   end
@@ -148,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
   @tag game_mode: :pre_renewal
   test "classic level-five cast requires a partner instead of granting a solo EXP buff" do
     assert {:error, :ensemble_partner_required} =
-             BdRichmankim.cast(player(), :self, 5, BdRichmankim.definition())
+             BdRichmankim.begin_attempt(player(), :self, 5, BdRichmankim.definition())
 
     refute StatusStorage.has_status?(:player, @player_id, :sc_richmankim)
   end

@@ -19,59 +19,59 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
 
   setup :setup_ets_tables
 
-  test "returns an eligible partner and the averaged skill level" do
+  test "returns an eligible partner" do
     caster = player(1, :bard, 7, @violin)
     partner = player(2, :dancer, 4, @whip)
     register(partner)
 
-    assert {:ok, ^partner, 5} = Partner.find(caster, @skill_id, 7)
+    assert {:ok, ^partner} = Partner.find(caster, @skill_id)
   end
 
   test "rejects the caster" do
     caster = player(1, :bard, 7, @violin)
     register(player(1, :dancer, 4, @whip))
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "rejects a candidate with the same performer job" do
     caster = player(1, :bard, 7, @violin)
     register(player(2, :bard, 4, @whip))
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "rejects a candidate from a different or zero party" do
     caster = player(1, :bard, 7, @violin)
     register(%{player(2, :dancer, 4, @whip) | party_id: 2})
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
 
     caster_without_party = %{caster | party_id: 0}
     register(%{player(3, :dancer, 4, @whip) | party_id: 0})
 
-    assert :none = Partner.find(caster_without_party, @skill_id, 7)
+    assert :none = Partner.find(caster_without_party, @skill_id)
   end
 
   test "rejects a candidate who does not know the skill" do
     caster = player(1, :bard, 7, @violin)
     register(player(2, :dancer, 0, @whip))
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "rejects a candidate without a musical or whip weapon" do
     caster = player(1, :bard, 7, @violin)
     register(player(2, :dancer, 4, nil))
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "rejects a sitting candidate" do
     caster = player(1, :bard, 7, @violin)
     register(%{player(2, :dancer, 4, @whip) | action_state: :sitting})
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "rejects a candidate who cannot move" do
@@ -79,7 +79,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     register(player(2, :dancer, 4, @whip))
     :ok = StatusStorage.apply_status(:player, 2, :sc_stun)
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
+  end
+
+  test "rejects a candidate who cannot cast" do
+    caster = player(1, :bard, 7, @violin)
+    register(player(2, :dancer, 4, @whip))
+    :ok = StatusStorage.apply_status(:player, 2, :sc_silence)
+
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "rejects a dead candidate" do
@@ -87,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     candidate = put_in(player(2, :dancer, 4, @whip).stats.current_state.hp, 0)
     register(candidate)
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "rejects an unknown candidate job without raising" do
@@ -95,7 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     candidate = put_in(player(2, :dancer, 4, @whip).stats.progression.job_id, -1)
     register(candidate)
 
-    assert :none = Partner.find(caster, @skill_id, 7)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "rejects a caster or candidate with no job ID without raising" do
@@ -103,10 +111,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     candidate = player(2, :dancer, 1, @whip)
     register(candidate)
 
-    assert :none = Partner.find(put_in(caster.stats.progression.job_id, nil), @skill_id, 1)
+    assert :none = Partner.find(put_in(caster.stats.progression.job_id, nil), @skill_id)
 
     register(put_in(candidate.stats.progression.job_id, nil))
-    assert :none = Partner.find(caster, @skill_id, 1)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "returns at most one of several eligible partners" do
@@ -116,29 +124,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     register(first)
     register(second)
 
-    assert {:ok, partner, effective_level} = Partner.find(caster, @skill_id, 7)
-    assert {partner, effective_level} in [{first, 5}, {second, 4}]
+    assert {:ok, partner} = Partner.find(caster, @skill_id)
+    assert partner in [first, second]
   end
 
-  @tag game_mode: :pre_renewal
-  test "classic requires adjacency and rejects a partner already performing a solo song" do
+  test "requires adjacency and rejects a partner already performing a solo song" do
     caster = player(1, :bard, 1, @violin)
     partner = %{player(2, :dancer, 1, @whip) | x: 52}
     register(partner)
-    assert :none = Partner.find(caster, @skill_id, 1)
+    assert :none = Partner.find(caster, @skill_id)
 
     register(%{partner | x: 51})
-    assert {:ok, _, 1} = Partner.find(caster, @skill_id, 1)
+    assert {:ok, _} = Partner.find(caster, @skill_id)
     :ok = StatusStorage.apply_status(:player, 2, :sc_dancing)
-    assert :none = Partner.find(caster, @skill_id, 1)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
-  @tag game_mode: :renewal
-  test "renewal still finds a partner three cells away" do
+  test "a partner two cells away is out of range" do
     caster = player(1, :bard, 1, @violin)
-    partner = %{player(2, :dancer, 1, @whip) | x: 53}
-    register(partner)
-    assert {:ok, ^partner, 1} = Partner.find(caster, @skill_id, 1)
+    register(%{player(2, :dancer, 1, @whip) | x: 52, y: 52})
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   @tag game_mode: :renewal
@@ -146,14 +151,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     caster = player(1, :bard, 1, @violin)
     register(player(2, :dancer, 1, @whip))
     :ok = StatusStorage.apply_status(:player, 2, :sc_dancing, state: %{root: :none})
-    assert :none = Partner.find(caster, @skill_id, 1)
+    assert :none = Partner.find(caster, @skill_id)
   end
 
   test "an adjacent diagonal partner is within the square search area" do
     caster = player(1, :bard, 1, @violin)
     partner = %{player(2, :dancer, 1, @whip) | x: 51, y: 51}
     register(partner)
-    assert {:ok, ^partner, 1} = Partner.find(caster, @skill_id, 1)
+    assert {:ok, ^partner} = Partner.find(caster, @skill_id)
   end
 
   defp player(id, job, skill_level, weapon) do

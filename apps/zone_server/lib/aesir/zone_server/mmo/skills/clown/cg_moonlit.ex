@@ -2,10 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlit do
   @moduledoc """
   Moonlit Water Mill maintains a wall-free nine-by-nine field in both modes.
 
-  Renewal permits a solo cast or an optional partner within three cells;
-  pre-renewal requires an adjacent partner. Performers are always rooted and
-  pay `4 * field level` SP every ten seconds. A partner averages that level.
-  Neither mode grants fatigue or an occupant status.
+  Both modes require an adjacent partner when the cast begins. Performers are
+  always rooted and each pays `4 * caster level` SP every ten seconds. Neither
+  mode grants fatigue or an occupant status.
 
   Intruders are pushed two cells along their own facing on entry. Occupants
   already present are swept on the first manager interval, not inside the
@@ -41,15 +40,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlit do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(caster, _target, level, definition) do
-    with :ok <- Perform.validate(caster, definition, level),
-         true <- Formulas.box_wall_free?(caster.map_name, caster.x, caster.y, 4) do
-      :ok
-    else
-      false -> {:error, :blocked_by_wall}
-      {:error, _} = error -> error
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def begin_attempt(caster, _target, _level, definition) do
+    with {:ok, caster} <- Perform.begin_attempt(caster, definition) do
+      if Formulas.box_wall_free?(caster.map_name, caster.x, caster.y, 4),
+        do: {:ok, caster},
+        else: {:error, :blocked_by_wall}
     end
   end
 
@@ -61,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlit do
       Perform.perform_field(caster, definition, level,
         root: :always,
         upkeep: 10,
-        upkeep_sp: &(4 * &1)
+        upkeep_sp: 4 * level
       )
 
   @impl Ground

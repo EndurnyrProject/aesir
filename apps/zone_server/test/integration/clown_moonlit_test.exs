@@ -24,8 +24,20 @@ defmodule Aesir.ZoneServer.Integration.ClownMoonlitTest do
   describe "renewal" do
     @describetag game_mode: :renewal, integration_pre_re: false
 
-    test "a solo cast roots only the caster, without fatigue, and pushes an entering mob" do
-      clown = start(:clown, @center, 1)
+    test "a cast without an adjacent partner is refused" do
+      clown = start(:clown, @center, 5)
+      sp = get_player_state(clown.pid).stats.current_state.sp
+      flush_packets()
+
+      ClownSessions.cast(clown, @moonlit, 5)
+
+      assert_packet_sent(SkillCastFailed)
+      assert groups(clown) == []
+      assert get_player_state(clown.pid).stats.current_state.sp == sp
+    end
+
+    test "a paired cast pushes an entering mob, without fatigue" do
+      %{clown: clown} = start_pair(1, 1)
       mob = start_mob_session(map_name: @map, position: {170, 150}, vit: 0, luk: 0)
       on_exit(fn -> if Process.alive?(mob.pid), do: end_mob_session(mob) end)
 
@@ -48,16 +60,16 @@ defmodule Aesir.ZoneServer.Integration.ClownMoonlitTest do
       end)
     end
 
-    test "a paired cast roots both performers at the averaged level" do
+    test "a paired cast roots both performers at the caster's level" do
       %{clown: clown, gypsy: gypsy} = start_pair(5, 1)
 
       ClownSessions.cast(clown, @moonlit, 5)
 
-      assert_eventually(fn -> match?([%{level: 3}], groups(clown)) end)
+      assert_eventually(fn -> match?([%{level: 5}], groups(clown)) end)
 
       for performer <- [clown, gypsy] do
         assert_eventually(fn ->
-          match?(%{state: %{root: :always, upkeep_sp: 12}}, dancing(performer))
+          match?(%{state: %{root: :always, upkeep_sp: 20}}, dancing(performer))
         end)
 
         refute StatusInterpreter.can_move?(:player, performer.character.id)
@@ -66,7 +78,7 @@ defmodule Aesir.ZoneServer.Integration.ClownMoonlitTest do
     end
 
     test "upkeep pays four SP per level every ten seconds" do
-      clown = start(:clown, @center, 1)
+      %{clown: clown} = start_pair(1, 1)
       id = clown.character.id
       ClownSessions.cast(clown, @moonlit, 1)
       assert_eventually(fn -> match?(%{state: %{upkeep: 10}}, dancing(clown)) end)

@@ -171,7 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     case validate_cast(refreshed, skill_id, level, target, now) do
       {:ok, context} ->
-        finish_attempt(refreshed, skill_id, level, target, context, early)
+        finish_attempt(context.caster, skill_id, level, target, context, early)
 
       {:error, reason} ->
         if early.reactions == [],
@@ -343,8 +343,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp prepare_encore_attempt(caster, memory, target, definition, early, now) do
     with {:ok, prepared} <- validate_encore_replay(caster, memory, target, now),
-         {:ok, _cost} <- encore_prepared_cost(caster, prepared) do
-      finish_encore_timing(caster, memory, target, definition, early)
+         {:ok, begun} <-
+           begin_attempt(prepared.module, caster, target, prepared.level, prepared.definition),
+         {:ok, _cost} <- encore_prepared_cost(begun, prepared) do
+      finish_encore_timing(begun, memory, target, definition, early)
     else
       {:error, reason} ->
         if early.reactions == [],
@@ -1132,7 +1134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          context = CastContext.build(caster, definition, level, target, :begin),
          :ok <- check_context_cooldown(context, now),
          :ok <- check_context_act_delay(context, now) do
-      validate_and_prepare(context)
+      validate_and_prepare(context, phase == :cast_begin)
     end
   end
 
@@ -1179,7 +1181,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
          context = CastContext.build(caster, definition, level, target, :completion),
          :ok <- check_context_cooldown(context, now) do
-      validate_and_prepare(context)
+      validate_and_prepare(context, false)
     end
   end
 
@@ -1193,7 +1195,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_fog(target, definition),
          :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
          :ok <- check_context_cooldown(context, now) do
-      validate_and_prepare(context)
+      validate_and_prepare(context, false)
     end
   end
 
@@ -1248,29 +1250,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp validate_encore_replay(_game_state, _memory, _target, _now),
     do: {:error, :invalid_replay_memory}
 
-  defp validate_and_prepare(%CastContext{} = context) do
+  # `begin?` runs the skill's cast-begin condition after `validate/4`; its
+  # caster replaces the context's so the attempt's completion can read it.
+  defp validate_and_prepare(%CastContext{} = context, begin?) do
     if context.adapter.cost_before_validation?() do
       with {:ok, context} <- prepare_cast(context),
-           :ok <-
-             context.module.validate(
-               context.caster,
-               context.target,
-               context.level,
-               context.definition
-             ) do
-        {:ok, context}
+           :ok <- validate_module(context) do
+        begin_context(context, begin?)
       end
     else
-      with :ok <-
-             context.module.validate(
-               context.caster,
-               context.target,
-               context.level,
-               context.definition
-             ) do
+      with :ok <- validate_module(context),
+           {:ok, context} <- begin_context(context, begin?) do
         prepare_cast(context)
       end
     end
+  end
+
+  defp validate_module(%CastContext{} = context),
+    do: context.module.validate(context.caster, context.target, context.level, context.definition)
+
+  defp begin_context(context, false), do: {:ok, context}
+
+  defp begin_context(%CastContext{} = context, true) do
+    with {:ok, caster} <-
+           begin_attempt(
+             context.module,
+             context.caster,
+             context.target,
+             context.level,
+             context.definition
+           ),
+         do: {:ok, %{context | caster: caster}}
+  end
+
+  defp begin_attempt(module, caster, target, level, definition) do
+    if function_exported?(module, :begin_attempt, 4),
+      do: module.begin_attempt(caster, target, level, definition),
+      else: {:ok, caster}
   end
 
   defp prepare_cast(%CastContext{} = context) do

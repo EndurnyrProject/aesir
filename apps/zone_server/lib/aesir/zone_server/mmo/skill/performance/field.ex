@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit, as: GameUnit
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -79,13 +80,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   defp finish_start(caster, definition, level, perf, group, partners) do
     case lock(caster.character_id, definition.id, group, perf, List.first(partners)) do
       :ok ->
-        Enum.each(partners, &lock_partner(&1, caster.character_id, definition.id, group, perf))
+        Enum.each(partners, fn partner ->
+          lock_partner(partner, caster.character_id, definition.id, group, perf)
+          remember_for_partner(partner, definition.id, level)
+        end)
 
         {:ok, Snapshot.remember(caster, definition.id, level)}
 
       {:error, _reason} = error ->
         Unit.destroy_async(group.group_id)
         error
+    end
+  end
+
+  # The partner's Encore replays the ensemble at the caster's level, even when
+  # the partner's own lock failed.
+  defp remember_for_partner(partner, skill_id, level) do
+    case UnitRegistry.get_unit(:player, partner) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        PlayerSession.remember_song(pid, skill_id, level)
+
+      _ ->
+        :ok
     end
   end
 

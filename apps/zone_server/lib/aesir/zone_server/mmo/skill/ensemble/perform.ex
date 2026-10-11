@@ -2,12 +2,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform do
   @moduledoc """
   Runs Renewal snapshots with fatigue or paired pre-renewal ensemble fields.
 
-  Classic ensembles require a partner, cover a stationary 9x9 square, and
-  end their occupant effects on exit. Lullaby instead attempts sleep every
-  six seconds; inflicted sleep survives the performance.
+  Every ensemble needs a partner within one cell when its cast begins
+  (`begin_attempt/2`). The completed cast reuses that partner without searching
+  again, and always runs at the caster's own skill level.
 
-  `perform_field/4` starts a maintained ensemble in either mode, with an
-  optional renewal partner and a required classic partner, without fatigue.
+  Renewal fatigues the caster and then the partner, when the partner is still
+  online, before applying the snapshot. Classic ensembles cover a stationary 9x9
+  square, lock both performers, and end their occupant effects on exit. Lullaby
+  instead attempts sleep every six seconds; inflicted sleep survives the
+  performance.
+
+  `perform_field/4` starts a maintained ensemble in either mode, locking the
+  partner, without fatigue.
   """
 
   alias Aesir.Commons.GameMode
@@ -18,20 +24,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @fatigue_opts [owner_refresh: :notify, bypass_resistance: true]
 
-  @doc "Checks the mandatory classic partner before resources are committed."
-  @spec validate(PlayerState.t(), Definition.t(), pos_integer()) :: :ok | {:error, atom()}
-  def validate(caster, definition, level) do
-    if GameMode.mode() == :pre_renewal do
-      with {:ok, _partner, _level} <- classic_partner(caster, definition, level), do: :ok
-    else
-      :ok
+  @doc """
+  Finds the cast-begin partner and records it on the caster for completion.
+
+  A classic caster already performing is refused first.
+  """
+  @spec begin_attempt(PlayerState.t(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def begin_attempt(%PlayerState{} = caster, %Definition{} = definition) do
+    with :ok <- check_not_performing(caster) do
+      case Partner.find(caster, definition.id) do
+        {:ok, partner} -> {:ok, %{caster | ensemble_partner: partner.character_id}}
+        :none -> {:error, :ensemble_partner_required}
+      end
     end
   end
 
-  @doc "Runs an ensemble at its solo or partner-averaged effective level."
+  @doc "Runs an ensemble at the caster's level with the cast-begin partner."
   @spec perform(
           PlayerState.t(),
           Definition.t(),
@@ -57,71 +70,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform do
   @doc """
   Starts a field ensemble in either mode, with no ensemble fatigue.
 
-  `:upkeep_sp` may be an amount or a function of the partner-averaged field level.
-  The resolved amount is passed to the field and shared by both performers.
+  `:upkeep_sp` is the SP each performer pays per upkeep step.
   """
   @spec perform_field(PlayerState.t(), Definition.t(), pos_integer(), keyword()) ::
           {:ok, PlayerState.t()} | {:error, term()}
   def perform_field(caster, definition, level, opts) do
-    with {:ok, partners, effective_level} <- field_partner(caster, definition, level) do
-      upkeep = Keyword.get(opts, :upkeep_sp, 1)
-      amount = if is_function(upkeep, 1), do: upkeep.(effective_level), else: upkeep
-      opts = Keyword.put(opts, :upkeep_sp, amount)
-
-      Field.start(
-        caster,
-        definition,
-        effective_level,
-        nil,
-        [],
-        [kind: :ensemble, layout_radius: 4, linger_ms: 0, partners: partners] ++ opts
-      )
-    end
+    Field.start(
+      caster,
+      definition,
+      level,
+      nil,
+      [],
+      [kind: :ensemble, layout_radius: 4, linger_ms: 0, partners: partners(caster)] ++ opts
+    )
   end
 
-  defp field_partner(caster, definition, level) do
-    case GameMode.mode() do
-      :pre_renewal ->
-        with {:ok, partner, avg} <- classic_partner(caster, definition, level),
-             do: {:ok, [partner.character_id], avg}
-
-      :renewal ->
-        case Partner.find(caster, definition.id, level) do
-          :none -> {:ok, [], level}
-          {:ok, partner, avg} -> {:ok, [partner.character_id], avg}
-        end
-    end
+  defp check_not_performing(caster) do
+    if GameMode.mode() == :pre_renewal and
+         StatusStorage.has_status?(:player, caster.character_id, :sc_dancing),
+       do: {:error, :already_performing},
+       else: :ok
   end
 
   defp classic(caster, definition, level, status_id, params_fun) do
-    with {:ok, partner, effective_level} <- classic_partner(caster, definition, level) do
-      opts =
-        [kind: :ensemble, layout_radius: 4, linger_ms: 0, partners: [partner.character_id]] ++
-          field_options(definition.id)
+    opts =
+      [kind: :ensemble, layout_radius: 4, linger_ms: 0, partners: partners(caster)] ++
+        field_options(definition.id)
 
-      status_id = if definition.id == 306, do: nil, else: status_id
+    status_id = if definition.id == 306, do: nil, else: status_id
 
-      Field.start(
-        caster,
-        definition,
-        effective_level,
-        status_id,
-        params_fun.(effective_level),
-        opts
-      )
-    end
+    Field.start(caster, definition, level, status_id, params_fun.(level), opts)
   end
 
-  defp classic_partner(caster, definition, level) do
-    if StatusStorage.has_status?(:player, caster.character_id, :sc_dancing) do
-      {:error, :already_performing}
-    else
-      case Partner.find(caster, definition.id, level) do
-        :none -> {:error, :ensemble_partner_required}
-        partner -> partner
-      end
-    end
+  defp partners(%PlayerState{ensemble_partner: partner_id}) do
+    if online?(partner_id), do: [partner_id], else: []
   end
+
+  defp online?(nil), do: false
+  defp online?(partner_id), do: match?({:ok, _unit}, UnitRegistry.get_unit(:player, partner_id))
 
   defp field_options(306), do: [reach: :enemy, upkeep: 4, tick: :lullaby, tick_interval: 6_000]
   defp field_options(307), do: [reach: :mobs, upkeep: 3]
@@ -133,27 +119,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform do
   defp field_options(313), do: [reach: :party, upkeep: 3]
 
   defp renewal(caster, definition, level, status_id, params_fun, opts) do
-    case Partner.find(caster, definition.id, level) do
-      {:ok, partner, effective_level} ->
-        result = snapshot(caster, definition, effective_level, status_id, params_fun, opts)
-        fatigue_partner(partner.character_id)
-        :ok = fatigue(caster.character_id)
-        result
+    partner_id = caster.ensemble_partner
 
-      :none ->
-        snapshot(caster, definition, level, status_id, params_fun, opts)
+    if online?(partner_id) do
+      :ok = fatigue(caster.character_id)
+      fatigue_partner(partner_id)
     end
-  end
 
-  defp snapshot(caster, definition, level, status_id, params_fun, opts) do
     Snapshot.snapshot(caster, definition, level, status_id, params_fun.(level), opts)
   end
 
-  # The partner is a point-in-time ETS read: they may have died, warped or logged
-  # out between selection and this write. A dead partner yields `{:error,
-  # :target_dead}` and a deregistered one makes the interpreter raise, and neither
-  # is worth failing the caster's own cast for - the caster still owes their
-  # fatigue, and an unapplied partner status self-heals because it is finite.
+  # The partner is a point-in-time registry read: they may have died, warped or
+  # logged out since. A dead partner yields `{:error, :target_dead}` and a
+  # deregistered one makes the interpreter raise; neither fails the caster's
+  # cast, and the caster's own fatigue was already applied.
   defp fatigue_partner(character_id) do
     _ = fatigue(character_id)
     :ok

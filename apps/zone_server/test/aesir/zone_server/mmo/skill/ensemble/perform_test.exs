@@ -34,8 +34,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
-  test "snapshots at the averaged level before fatiguing the partner and caster" do
+  test "begin records an adjacent partner and refuses a cast without one" do
     caster = player(1, :bard, 7, @violin)
+    definition = EnsembleSkill.definition()
+
+    assert {:error, :ensemble_partner_required} = Perform.begin_attempt(caster, definition)
+
+    register(player(2, :dancer, 4, @whip))
+    assert {:ok, %PlayerState{ensemble_partner: 2}} = Perform.begin_attempt(caster, definition)
+  end
+
+  test "a begin partner who logged out leaves both performers unfatigued" do
+    caster = %{player(1, :bard, 7, @violin) | ensemble_partner: 2}
+
+    expect(Combat, :splash_targets, fn @map, {50, 50}, 4, 1 -> [{:mob, 3}] end)
+    record_status_writes()
+
+    assert {:ok, _result} =
+             Perform.perform(
+               caster,
+               EnsembleSkill.definition(),
+               7,
+               :sc_test_ensemble,
+               fn level -> [val1: level] end,
+               scope: :enemy,
+               radius: 4,
+               duration: 60_000
+             )
+
+    assert [{:mob, 3, :sc_test_ensemble, _params}] = Process.get(:status_writes)
+  end
+
+  test "snapshots at the caster level after fatiguing the caster and the begin partner" do
+    caster = %{player(1, :bard, 7, @violin) | ensemble_partner: 2}
     partner = player(2, :dancer, 4, @whip)
     register(partner)
 
@@ -59,14 +90,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
                duration: 60_000
              )
 
-    assert Process.get(:params_level) == 5
-    assert result.last_song == %{skill_id: @skill_id, level: 5}
+    assert Process.get(:params_level) == 7
+    assert result.last_song == %{skill_id: @skill_id, level: 7}
 
     assert Process.get(:status_writes) == [
-             {:mob, 3, :sc_test_ensemble,
-              [val1: 5, caster_id: 1, duration: 60_000, owner_refresh: :notify]},
+             {:player, 1, :sc_ensemblefatigue, [owner_refresh: :notify, bypass_resistance: true]},
              {:player, 2, :sc_ensemblefatigue, [owner_refresh: :notify, bypass_resistance: true]},
-             {:player, 1, :sc_ensemblefatigue, [owner_refresh: :notify, bypass_resistance: true]}
+             {:mob, 3, :sc_test_ensemble,
+              [val1: 7, caster_id: 1, duration: 60_000, owner_refresh: :notify]}
            ]
   end
 
@@ -132,14 +163,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
       refute StatusStorage.has_status?(:player, 1, :sc_ensemblefatigue)
     end
 
-    test "renewal paired field uses the averaged level and locks both without fatigue" do
-      caster = field_player(1, :bard, 5, @violin)
+    test "renewal paired field uses the caster level and locks both without fatigue" do
+      caster = %{field_player(1, :bard, 5, @violin) | ensemble_partner: 2}
       register(caster)
       register(field_player(2, :dancer, 1, @whip))
       {:ok, definition} = Catalog.by_id(309)
       assert {:ok, _} = Perform.perform_field(caster, definition, 5, upkeep: 10)
       [group] = Storage.get_groups_by_caster(:player, 1)
-      assert group.level == 3
+      assert group.level == 5
       assert group.state.performance.performers == [1, 2]
 
       for id <- [1, 2] do
@@ -148,15 +179,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
       end
     end
 
-    @tag game_mode: :pre_renewal
-    test "classic field refuses a solo cast" do
+    test "a field refuses a solo cast when it begins" do
       caster = field_player(1, :bard, 5, @violin)
       register(caster)
       {:ok, definition} = Catalog.by_id(309)
 
-      assert {:error, :ensemble_partner_required} =
-               Perform.perform_field(caster, definition, 5, upkeep: 10)
-
+      assert {:error, :ensemble_partner_required} = Perform.begin_attempt(caster, definition)
       assert Storage.get_groups_by_caster(:player, 1) == []
     end
   end
@@ -168,7 +196,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
   end
 
   defp assert_partner_write_failure_is_survived(partner_result) do
-    caster = player(1, :bard, 7, @violin)
+    caster = %{player(1, :bard, 7, @violin) | ensemble_partner: 2}
     partner = player(2, :dancer, 4, @whip)
     register(partner)
 
@@ -200,12 +228,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
                duration: 60_000
              )
 
-    assert result.last_song == %{skill_id: @skill_id, level: 5}
+    assert result.last_song == %{skill_id: @skill_id, level: 7}
 
     assert Process.get(:status_writes) == [
-             {:mob, 3, :sc_test_ensemble},
+             {:player, 1, :sc_ensemblefatigue},
              {:player, 2, :sc_ensemblefatigue},
-             {:player, 1, :sc_ensemblefatigue}
+             {:mob, 3, :sc_test_ensemble}
            ]
   end
 

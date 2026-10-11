@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
     :ok
   end
 
-  test "Drum places a visible stationary field and locks both performers at their averaged level" do
+  test "Drum places a visible stationary field and locks both performers at the caster's level" do
     %{bard: bard, dancer: dancer, guest: guest} = start_party(309, 5, 1)
     bard_id = bard.character.id
     dancer_id = dancer.character.id
@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
     assert_eventually(fn -> match?([_], Storage.get_groups_by_caster(:player, bard_id)) end)
     [group] = Storage.get_groups_by_caster(:player, bard_id)
     assert group.skill_id == 309
-    assert group.level == 3
+    assert group.level == 5
     assert group.center == {150, 150}
     assert length(group.cells) == 81
     assert group.expires_at - group.created_at == 60_000
@@ -52,6 +52,11 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
 
     refute StatusInterpreter.can_move?(:player, bard_id)
     refute StatusInterpreter.can_move?(:player, dancer_id)
+
+    assert_eventually(fn ->
+      get_player_state(dancer.pid).last_song == %{skill_id: 309, level: 5}
+    end)
+
     refute StatusStorage.has_status?(:player, bard_id, :sc_ensemblefatigue)
     refute StatusStorage.has_status?(:player, dancer_id, :sc_ensemblefatigue)
     refute StatusStorage.has_status?(:player, bard_id, :sc_drumbattle)
@@ -59,7 +64,7 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
 
     assert_eventually(fn ->
       match?(
-        %{val1: 3, expires_at: nil},
+        %{val1: 5, expires_at: nil},
         StatusStorage.get_status(:player, guest.character.id, :sc_drumbattle)
       )
     end)
