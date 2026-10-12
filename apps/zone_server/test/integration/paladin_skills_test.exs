@@ -53,6 +53,8 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
       mob = target_mob(position: {150, 151}, vit: 0)
       :ok = StatusStorage.apply_status(:player, paladin.character.id, :sc_blessing, val1: 10)
       :ok = StatusStorage.apply_status(:player, ally.character.id, :sc_curse, val1: 1)
+      # Curse is no debuff to the cleanse; Decrease AGI is, so every blessing shows.
+      :ok = StatusStorage.apply_status(:player, ally.character.id, :sc_decreaseagi, val1: 1)
       PlayerSession.set_vitals(ally.pid, hp: 1)
       assert eventually(fn -> get_player_state(ally.pid).stats.current_state.hp == 1 end)
 
@@ -314,7 +316,7 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
     not MapSet.disjoint?(types, bless_ids) or
       (stats.current_state.hp > hp_before and
          stats.current_state.hp == stats.derived_stats.max_hp) or
-      not MapSet.member?(types, :sc_curse)
+      not MapSet.member?(types, :sc_curse) or not MapSet.member?(types, :sc_decreaseagi)
   end
 
   defp afflicted?(mob, hp_before) do

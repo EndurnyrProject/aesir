@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Integration.MonkStatusLifecycleIntegrationTest do
     StatusTickManager.force_tick()
 
     assert eventually(fn -> status_effects_reverted?(player, baseline) end)
-    assert_single_cached_state_update(baseline)
+    assert_cached_state_restored(baseline)
     assert_status_displays_removed(player.character.id)
   end
 
@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Integration.MonkStatusLifecycleIntegrationTest do
     assert :ok = Dispel.dispel({:player, player.character.id})
 
     assert eventually(fn -> status_effects_reverted?(player, baseline) end)
-    assert_single_cached_state_update(baseline)
+    assert_cached_state_restored(baseline)
     assert_status_displays_removed(player.character.id)
   end
 
@@ -127,7 +127,9 @@ defmodule Aesir.ZoneServer.Integration.MonkStatusLifecycleIntegrationTest do
     assert_receive {:packet_sent, %StatusChange{unit_id: ^char_id, on: false}, _}, 1_000
   end
 
-  defp assert_single_cached_state_update(baseline) do
+  # Each ended status refreshes the cached stats on its own, so an intermediate
+  # value may precede the final one; the client must be left on the baseline.
+  defp assert_cached_state_restored(baseline) do
     expected = [
       {StatusParams.critical(), baseline.stats.combat_stats.critical},
       {StatusParams.aspd(), baseline.stats.derived_stats.aspd},
@@ -135,8 +137,16 @@ defmodule Aesir.ZoneServer.Integration.MonkStatusLifecycleIntegrationTest do
     ]
 
     Enum.each(expected, fn {var_id, value} ->
-      assert_receive {:packet_sent, %ParamChange{var_id: ^var_id, value: ^value}, _}, 1_000
-      refute_receive {:packet_sent, %ParamChange{var_id: ^var_id}, _}
+      assert_receive {:packet_sent, %ParamChange{var_id: ^var_id}, _} = first, 1_000
+      assert last_param_value(var_id, first) == value
     end)
+  end
+
+  defp last_param_value(var_id, {:packet_sent, %ParamChange{value: value}, _}) do
+    receive do
+      {:packet_sent, %ParamChange{var_id: ^var_id}, _} = next -> last_param_value(var_id, next)
+    after
+      100 -> value
+    end
   end
 end

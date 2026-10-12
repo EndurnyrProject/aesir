@@ -87,6 +87,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
     entry.expires_at - System.monotonic_time(:millisecond)
   end
 
+  # Runs `fun` and asserts the hold now ends `hold_ms` after some instant of the
+  # call, whatever the call took.
+  defp assert_hold_from_call(hold_ms, fun) do
+    before = System.monotonic_time(:millisecond)
+    result = fun.()
+    expires_at = StatusStorage.get_status(:mob, 9_701, :sc_spiderweb).expires_at
+    assert expires_at in (before + hold_ms)..(System.monotonic_time(:millisecond) + hold_ms)
+    result
+  end
+
   defp seed_held(groups, duration) do
     :ok =
       StatusStorage.apply_status(:mob, 9_701, :sc_spiderweb,
@@ -141,18 +151,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
     seed_held([51], 1_000)
     reject(&Knockback.pull_to/4)
 
-    assert {:ok, 16_000} = PfSpiderweb.capture(group(52), @victim)
+    assert {:ok, 16_000} =
+             assert_hold_from_call(16_000, fn -> PfSpiderweb.capture(group(52), @victim) end)
 
     assert StatusStorage.get_status(:mob, 9_701, :sc_spiderweb).state.groups == [51, 52]
-    assert_in_delta remaining_ms(), 16_000, 100
   end
 
   test "a third web on a versus map extends the hold to 12 s; a fourth expires at once" do
     versus(true)
     seed_held([51, 52], 1_000)
 
-    assert {:ok, 12_000} = PfSpiderweb.capture(group(53, "pvp"), @victim)
-    assert_in_delta remaining_ms(), 12_000, 100
+    assert {:ok, 12_000} =
+             assert_hold_from_call(12_000, fn ->
+               PfSpiderweb.capture(group(53, "pvp"), @victim)
+             end)
 
     assert {:ok, 0} = PfSpiderweb.capture(group(54, "pvp"), @victim)
     assert StatusStorage.get_status(:mob, 9_701, :sc_spiderweb).state.groups == [51, 52, 53]
@@ -172,8 +184,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
     versus(false)
     seed_held([51, 52], 1_000)
 
-    assert {:ok, 8_000} = PfSpiderweb.capture(group(53), @victim)
-    assert_in_delta remaining_ms(), 8_000, 100
+    assert {:ok, 8_000} =
+             assert_hold_from_call(8_000, fn -> PfSpiderweb.capture(group(53), @victim) end)
   end
 
   test "an entering enemy's web lives as long as the hold it applied" do
@@ -182,9 +194,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
     stub(Targeting, :validate_field_target, fn _group, _caster, _target -> :ok end)
     register_units()
 
-    now = System.monotonic_time(:millisecond)
+    before = System.monotonic_time(:millisecond)
     assert {:ok, %Group{expires_at: expires_at}} = PfSpiderweb.on_touch(group(51), @victim)
-    assert_in_delta expires_at - now, 8_000, 100
+    assert expires_at in (before + 8_000)..(System.monotonic_time(:millisecond) + 8_000)
   end
 
   test "a web's end releases its group, and the last web ends the hold" do
