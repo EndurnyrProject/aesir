@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
   test "Renewal equipment ATK rate is separate from cardfix and PAtk excludes mastery" do
     context =
       neutral_context()
-      |> Map.put(:attacker_rates, %{race_class: 100, element: 0, size: 0})
+      |> Map.put(:attacker_cards, [100])
       |> Map.merge(%{patk: 100, equipment_atk_rate: 50})
 
     assert renewal(parts(), context) == 677
@@ -71,8 +71,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       |> put_in([:defense, :soft_def], 10)
       |> Map.merge(%{skill_ratio: 200, bonus_atk: 5, skill_atk_rate: 50, skill_taken_rate: 20})
 
-    assert renewal(parts(), context) == 389
-    assert classic(parts(), context) == 343
+    assert renewal(parts(), context) == 390
+    assert classic(parts(), context) == 344
   end
 
   test "critical damage uses Renewal's final multiplier and classic DEF bypass" do
@@ -94,35 +94,27 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       |> Map.merge(%{
         weapon_element: 1.5,
         neutral_element: 0.5,
-        defender_rates: %{
-          race_class: 0,
-          monster: 0,
-          element: 50,
-          size: 0,
-          long_def: 20,
-          def_rate: 25
-        },
+        defender_cards: %{weapon: [50, 20, 25], status: [20, 25]},
         res: 100
       })
 
-    assert renewal(parts(), context) == 56
-    assert classic(parts(), context) == 69
+    assert renewal(parts(), context) == 60
+    assert classic(parts(), context) == 70
   end
 
-  test "global race, flat/status ATK and range channels survive component separation" do
+  test "the race card scales only weapon and equipment ATK; flat, status ATK and range rate survive" do
     context =
       neutral_context()
       |> Map.merge(%{
-        attacker_rates: %{race_class: 30, element: 0, size: 0},
-        global_race_rate: 20,
+        attacker_cards: [50],
         weapon_bonus: 5,
         flat_bonus: 4,
         atk_rate: 25,
         long_atk_rate: 20
       })
 
-    assert renewal(parts(), context) == 368
-    assert classic(parts(), context) == 357
+    assert renewal(parts(), context) == 354
+    assert classic(parts(), %{context | attacker_cards: [50, 20]}) == 358
   end
 
   test "simple defense subtracts both DEF buckets and does not apply Renewal Res" do
@@ -162,14 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     penalized = %{parts() | flat_atk: -15}
 
     context =
-      Map.put(neutral_context(), :defender_rates, %{
-        race_class: 0,
-        monster: 0,
-        element: 0,
-        size: 0,
-        long_def: 0,
-        def_rate: 0
-      })
+      Map.put(neutral_context(), :defender_cards, %{weapon: [0], status: [0]})
 
     assert renewal(penalized, context) == 135
     assert classic(penalized, context) == 124
@@ -219,7 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       context =
         neutral_context()
         |> Map.put(:defense_mode, :ignore)
-        |> Map.put(:attacker_rates, %{race_class: 50, element: 0, size: 0})
+        |> Map.put(:attacker_cards, [50])
         |> Map.merge(%{equipment_atk_rate: 20, stave_matk: 200})
 
       assert renewal(weapon_only, context) == 470
@@ -249,7 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       | size_rate: 100,
         weapon_element: 1.0,
         neutral_element: 1.0,
-        attacker_rates: %{race_class: 0, element: 0, size: 0},
+        attacker_cards: [],
         defense: %{hard_def: 0, soft_def: 0, attacker_level: nil, ignore_soft_def?: false}
     }
   end
@@ -259,7 +244,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       size_rate: 50,
       weapon_element: 1.5,
       neutral_element: 0.5,
-      attacker_rates: %{race_class: 100, element: 0, size: 0},
+      attacker_cards: [100],
       defense: %{hard_def: 20, soft_def: 10, attacker_level: nil, ignore_soft_def?: false}
     }
   end

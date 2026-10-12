@@ -1736,7 +1736,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       refute Map.has_key?(result.modifiers.equipment, {:granted_skill, 28})
     end
 
-    test "the ammunition slot's script adds no non-critical rate while other sources still do" do
+    test "the ammunition slot's script adds no non-critical or short-attack rate while other sources still do" do
       ammunition = %ItemDefinition{
         id: 90_122,
         aegis_name: "test_noncrit_arrow",
@@ -1763,7 +1763,63 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         ])
 
       assert result.modifiers.equipment.non_crit_atk_rate == 15
-      assert result.modifiers.equipment.short_atk_rate == 5
+      refute Map.has_key?(result.modifiers.equipment, :short_atk_rate)
+    end
+
+    test "weapon card bonuses land in the hand, shield or arrow destination their slot routes to" do
+      card_bonuses = [
+        {:bonus, {:addrace, :brute}, 1},
+        {:bonus, {:add_damage_class, 1_002}, 10},
+        {:bonus, {:addrace2, :goblin}, 100},
+        {:bonus, {:subele, :fire}, 1_000},
+        {:bonus, :short_atk_rate, 10_000}
+      ]
+
+      item = fn id, fields ->
+        struct!(
+          ItemDefinition,
+          [id: id, aegis_name: "test_slot_#{id}", name: "Slot #{id}"] ++ fields
+        )
+      end
+
+      defs = %{
+        90_131 =>
+          item.(90_131, type: :weapon, subtype: :dagger, slots: 1, on_equip: card_bonuses),
+        90_133 => item.(90_133, type: :armor, slots: 1, on_equip: card_bonuses),
+        90_134 => item.(90_134, type: :ammo, on_equip: card_bonuses),
+        90_135 => item.(90_135, type: :card, on_equip: card_bonuses)
+      }
+
+      stub(ItemManagement, :get_item_by_id, &Map.fetch(defs, &1))
+      carded = fn nameid, equip -> %{equipped(nameid, equip) | card0: 90_135} end
+
+      equipment = fn rows ->
+        Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, rows).modifiers.equipment
+      end
+
+      right = equipment.([carded.(90_131, @right_hand)])
+      assert right[{:addrace, :brute}] == 2
+      assert right[{:add_damage_class, 1_002}] == 20
+      assert right[{:addrace2, :goblin}] == 200
+
+      left = equipment.([carded.(90_131, @left_hand)])
+      assert left[{:left_addrace, :brute}] == 2
+      assert left[{:left_add_damage_class, 1_002}] == 20
+      assert left[{:addrace2, :goblin}] == 200
+      assert left[{:subele, :fire}] == 2_000
+      refute Map.has_key?(left, {:addrace, :brute})
+
+      shield = equipment.([carded.(90_133, @left_hand)])
+      assert shield[{:addrace, :brute}] == 1
+      assert shield[{:left_addrace, :brute}] == 1
+      assert shield[{:left_add_damage_class, 1_002}] == 20
+
+      arrow = equipment.([equipped(90_134, @ammo_pos)])
+      assert arrow[{:arrow_addrace, :brute}] == 1
+      assert arrow[{:left_add_damage_class, 1_002}] == 10
+      assert arrow[{:left_addrace2, :goblin}] == 100
+      refute Map.has_key?(arrow, {:subele, :fire})
+      refute Map.has_key?(arrow, :short_atk_rate)
     end
 
     test "Soul Staff contributes its mode-specific MATK band" do

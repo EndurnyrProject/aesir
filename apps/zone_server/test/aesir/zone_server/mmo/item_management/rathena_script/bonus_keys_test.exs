@@ -74,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :hp_drain_rate,
     :hp_drain_percent,
     :long_atk_def,
+    :near_atk_def,
     :hp_gain_value,
     :sp_gain_value,
     :magic_hp_gain_value,
@@ -296,11 +297,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
   end
 
   describe "bNonCritAtkRate" do
-    test "resolves to its own destination, excluded only for ammunition scripts" do
+    test "resolves to its own destination, excluded for ammunition scripts" do
       assert BonusKeys.destination("bNonCritAtkRate") == {:ok, :non_crit_atk_rate}
-      assert BonusKeys.ammunition_excluded?(:non_crit_atk_rate)
-      refute BonusKeys.ammunition_excluded?(:short_atk_rate)
-      refute BonusKeys.ammunition_excluded?(:crit_atk_rate)
+      assert BonusKeys.slot_destination(:non_crit_atk_rate, :arrow) == nil
+      assert BonusKeys.slot_destination(:short_atk_rate, :arrow) == nil
+      assert BonusKeys.slot_destination(:crit_atk_rate, :arrow) == :crit_atk_rate
+      assert BonusKeys.slot_destination(:non_crit_atk_rate, nil) == :non_crit_atk_rate
     end
   end
 

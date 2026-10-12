@@ -61,8 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
 
     skilled =
       skilled
-      |> PhysicalAttack.rate(Map.get(context, :skill_atk_rate, 0))
-      |> PhysicalAttack.rate(-Map.get(context, :skill_taken_rate, 0))
+      |> PhysicalAttack.add_rate(Map.get(context, :skill_atk_rate, 0))
+      |> PhysicalAttack.add_rate(-Map.get(context, :skill_taken_rate, 0))
       |> PhysicalAttack.status_damage(context)
 
     if parts.source == :shield and trunc(skilled) == 0 do
@@ -80,21 +80,19 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
   defp minimum(%{hand: :left_hand}), do: 0
   defp minimum(_parts), do: 1
 
-  @doc "Finishes one classic hit after its attribute step: the attacker and target cards."
+  @doc """
+  Finishes one classic hit after its attribute step: the attacker's cards (with
+  the range rates) and then the target's, each one product.
+  """
   @spec post_element(integer(), PhysicalAttack.context()) :: integer()
   def post_element(damage, context) do
-    rates =
-      Map.update!(
-        context.attacker_rates,
-        :race_class,
-        &(&1 + Map.get(context, :global_race_rate, 0))
-      )
-
     damage
-    |> PhysicalAttack.attacker_cardfix(rates)
-    |> PhysicalAttack.range_damage(context)
-    |> PhysicalAttack.defender_cardfix(Map.get(context, :defender_rates), :weapon)
+    |> PhysicalAttack.attacker_cardfix(context.attacker_cards)
+    |> PhysicalAttack.defender_cardfix(weapon_cards(Map.get(context, :defender_cards)))
   end
+
+  defp weapon_cards(nil), do: nil
+  defp weapon_cards(%{weapon: cards}), do: cards
 
   defp base(parts, context) do
     weapon = div((parts.weapon_atk + Map.get(context, :weapon_bonus, 0)) * context.size_rate, 100)

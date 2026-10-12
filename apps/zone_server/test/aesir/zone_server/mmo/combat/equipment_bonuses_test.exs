@@ -10,6 +10,147 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
 
+  describe "physical_attack_cardfix/4" do
+    setup do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> Map.put(:dragonology_level, 1)
+        |> with_equip_modifiers(%{
+          {:addele, :earth} => 1,
+          {:left_addele, :earth} => 2,
+          {:arrow_addele, :earth} => 4,
+          {:addrace, :dragon} => 10,
+          {:left_addrace, :all} => 20,
+          {:arrow_addrace, :dragon} => 40,
+          {:addsize, :large} => 100,
+          {:left_addsize, :large} => 200,
+          {:arrow_addsize, :all} => 400,
+          {:addrace2, :goblin} => 3,
+          {:left_addrace2, :kobold} => 5,
+          {:addclass, :boss} => 7,
+          {:left_addclass, :boss} => 8,
+          {:arrow_addclass, :all} => 9,
+          {:add_damage_class, 1_002} => 11,
+          {:left_add_damage_class, 1_002} => 13,
+          short_atk_rate: 17,
+          long_atk_rate: 19
+        })
+
+      defender =
+        CombatTestHelper.create_mob_combatant(
+          race: :dragon,
+          size: :large,
+          monster_id: 1_002,
+          class: :boss
+        )
+        |> Map.merge(%{element: {:earth, 1}, race2: [:goblin, :kobold]})
+
+      %{attacker: attacker, defender: defender}
+    end
+
+    defp attack_opts(overrides),
+      do:
+        Map.merge(
+          %{arrow?: false, ranged?: false, range_rates?: false, attacker_modifiers: %{}},
+          overrides
+        )
+
+    test "a melee right hand sums both hands as element, race, size, each group, class", ctx do
+      assert EquipmentBonuses.physical_attack_cardfix(
+               ctx.attacker,
+               ctx.defender,
+               :right_hand,
+               attack_opts(%{})
+             ) ==
+               [1 + 2, 10 + 20 + 4, 100 + 200, 3, 5, 7 + 8, 11]
+    end
+
+    test "an arrow hit reads the right hand and ammunition as race, element, size, groups, class",
+         ctx do
+      assert EquipmentBonuses.physical_attack_cardfix(
+               ctx.attacker,
+               ctx.defender,
+               :right_hand,
+               attack_opts(%{arrow?: true})
+             ) == [10 + 40 + 4, 1 + 4, 100 + 400, 3, 7 + 9, 11]
+    end
+
+    test "the range rate the hit's range selects joins only where the mode adds it", ctx do
+      melee = attack_opts(%{range_rates?: true})
+      long = attack_opts(%{range_rates?: true, ranged?: true})
+
+      assert List.last(
+               EquipmentBonuses.physical_attack_cardfix(
+                 ctx.attacker,
+                 ctx.defender,
+                 :right_hand,
+                 melee
+               )
+             ) == 17
+
+      assert List.last(
+               EquipmentBonuses.physical_attack_cardfix(
+                 ctx.attacker,
+                 ctx.defender,
+                 :right_hand,
+                 long
+               )
+             ) == 19
+    end
+
+    test "the left hand takes only its own per-monster damage bonus", ctx do
+      assert EquipmentBonuses.physical_attack_cardfix(
+               ctx.attacker,
+               ctx.defender,
+               :left_hand,
+               attack_opts(%{})
+             ) ==
+               [13]
+    end
+  end
+
+  describe "physical_defense_cardfix/3" do
+    test "orders the resists and adds the left element only when given" do
+      attacker =
+        CombatTestHelper.create_mob_combatant(race: :brute, size: :small, monster_id: 1_002)
+        |> Map.merge(%{element: {:water, 1}, race2: [:goblin]})
+
+      defender =
+        CombatTestHelper.create_player_combatant()
+        |> Map.put(:faith_level, 1)
+        |> with_equip_modifiers(%{
+          {:subele, :fire} => 1,
+          {:subele, :holy} => 2,
+          {:sub_def_ele, :water} => 4,
+          {:subsize, :small} => 8,
+          {:subrace2, :goblin} => 16,
+          {:subrace, :brute} => 32,
+          {:subclass, :normal} => 64,
+          {:add_def_monster, 1_002} => 3,
+          near_atk_def: 5,
+          long_atk_def: 6
+        })
+
+      opts = %{
+        elements: [:fire, :holy],
+        ignore_element?: false,
+        status_modifiers: %{phys_damage_reduction: 7},
+        attack_flag: 0,
+        ranged?: false
+      }
+
+      assert EquipmentBonuses.physical_defense_cardfix(defender, attacker, opts) ==
+               [1, 2 + 5, 4, 8, 16, 32, 64, 3, 5, 7]
+
+      assert EquipmentBonuses.physical_defense_cardfix(defender, attacker, %{
+               opts
+               | elements: [:fire],
+                 ignore_element?: true,
+                 ranged?: true
+             }) == [8, 16, 32, 64, 3, 6, 7]
+    end
+  end
+
   describe "attack_rates/4" do
     test "sums specific-param and :all within each family" do
       attacker =

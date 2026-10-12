@@ -47,8 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     bonus across items, starting from zero.
   - `@capped_rate_families` — per-skill rates whose first contribution is clamped
     to `-10_000..10_000` and whose running sum never exceeds `10_000`.
-  - `@ammunition_excluded_destinations` — destinations that do not accumulate
-    while the equipped ammunition's script runs.
+  - `slot_destination/2` — where a bonus lands for the slot whose script runs
+    (`lr_flag`): a left-hand weapon's, a shield's and the ammunition's.
   - `@destination_scales` — destinations whose consumer works in finer units
     than the script argument (`bFlee2` is written in percent but rolled against
     a per-mille random). The codegen scales the emitted **expression**, so a
@@ -153,6 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bperfecthitaddrate" => :perfect_hit,
     "bsplashrange" => :splash_range,
     "blongatkdef" => :long_atk_def,
+    "bnearatkdef" => :near_atk_def,
     "bhpgainvalue" => :hp_gain_value,
     "bspgainvalue" => :sp_gain_value,
     "bmagichpgainvalue" => :magic_hp_gain_value,
@@ -174,8 +175,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @min_destinations MapSet.new([:fixcast_rate])
   @capped_rate_families MapSet.new([:skill_use_sp_rate])
   @rate_cap 10_000
-  @ammunition_excluded_destinations MapSet.new([:non_crit_atk_rate])
+  @ammunition_excluded_destinations MapSet.new([
+                                      :non_crit_atk_rate,
+                                      :short_atk_rate,
+                                      :long_atk_rate,
+                                      :near_atk_def,
+                                      :long_atk_def
+                                    ])
+  @ammunition_excluded_families [
+    :subele,
+    :subrace,
+    :subclass,
+    :subsize,
+    :subrace2,
+    :add_def_monster
+  ]
   @ammunition_redirects %{critical: :arrow_critical, critical_long: :arrow_critical}
+  @hand_families %{
+    addele: {:left_addele, :arrow_addele},
+    addrace: {:left_addrace, :arrow_addrace},
+    addclass: {:left_addclass, :arrow_addclass},
+    addsize: {:left_addsize, :arrow_addsize}
+  }
 
   @destination_scales %{perfect_dodge: 10}
 
@@ -429,17 +450,50 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @spec max_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()
   def max_destination?(dest), do: MapSet.member?(@max_destinations, dest)
 
-  @doc "Whether a destination ignores contributions from the equipped ammunition's script."
-  @spec ammunition_excluded?(destination() | tuple()) :: boolean()
-  def ammunition_excluded?(dest), do: MapSet.member?(@ammunition_excluded_destinations, dest)
+  @typedoc """
+  The slot whose script is running: a left-hand weapon or any card in the left
+  hand (`:weapon`), a shield's own script (`:shield`), the ammunition
+  (`:arrow`), or any other worn item (`nil`).
+  """
+  @type lr_flag :: :weapon | :shield | :arrow | nil
 
   @doc """
-  Where the equipped ammunition's script stores a destination: its critical
-  bonuses feed only the critical of normal arrow attacks (`:arrow_critical`);
-  every other destination is unchanged.
+  Where a bonus lands for the slot whose script runs, or `nil` when that slot
+  does not accumulate it.
+
+  The attack families (`addele`, `addrace`, `addclass`, `addsize`) of a shield
+  or any other item belong to the right hand, of a left-hand weapon to the left
+  hand (`left_*`) and of the ammunition to arrow attacks (`arrow_*`). The
+  ammunition's secondary-race bonus lands on the left hand, and every slot but
+  an ordinary item puts its per-monster damage bonus on the left hand. The
+  ammunition accumulates none of the resist, defense-rate and range-rate
+  channels nor the non-critical rate, and its critical bonuses feed only
+  arrow attacks.
   """
-  @spec ammunition_destination(destination() | tuple()) :: destination() | tuple()
-  def ammunition_destination(dest), do: Map.get(@ammunition_redirects, dest, dest)
+  @spec slot_destination(destination() | tuple(), lr_flag()) :: destination() | tuple() | nil
+  def slot_destination(dest, nil), do: dest
+
+  def slot_destination({family, param}, lr_flag) when is_map_key(@hand_families, family) do
+    case {lr_flag, Map.fetch!(@hand_families, family)} do
+      {:shield, _families} -> {family, param}
+      {:weapon, {left, _arrow}} -> {left, param}
+      {:arrow, {_left, arrow}} -> {arrow, param}
+    end
+  end
+
+  def slot_destination({:addrace2, group}, :arrow), do: {:left_addrace2, group}
+  def slot_destination({:add_damage_class, monster}, _lr), do: {:left_add_damage_class, monster}
+
+  def slot_destination({family, _param}, :arrow) when family in @ammunition_excluded_families,
+    do: nil
+
+  def slot_destination(dest, :arrow) do
+    if MapSet.member?(@ammunition_excluded_destinations, dest),
+      do: nil,
+      else: Map.get(@ammunition_redirects, dest, dest)
+  end
+
+  def slot_destination(dest, _lr_flag), do: dest
 
   @doc "Whether the cast-rate destination retains its most reducing item bonus."
   @spec min_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()

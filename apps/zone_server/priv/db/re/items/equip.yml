@@ -173184,6 +173184,21 @@
   locations:
     - head_top
   name: Herosria Beret
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 8)
+    ctx = bonus(ctx, {:subele, :all}, 5)
+    ctx = bonus(ctx, :near_atk_def, 5)
+    ctx = bonus(ctx, :long_atk_def, 5)
+    ctx = bonus(ctx, :long_atk_rate, -10)
+    ctx = bonus(ctx, :short_atk_rate, -10)
+    ctx = bonus(ctx, {:magic_atk_ele, :all}, -10)
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 10)
+    ctx = bonus(ctx, {:addrace, :player_human}, -10)
+    ctx = bonus(ctx, {:addrace, :player_doram}, -10)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, -10)
+    ctx = bonus(ctx, {:magic_addrace, :player_doram}, -10)
+    ctx
   refineable: true
   type: armor
   view: 226
@@ -228604,6 +228619,13 @@
     - right_hand
   magic_attack: 110
   name: Herosria Link Wand
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :near_atk_def, -5)
+    ctx = bonus(ctx, :heal_power, 10)
+    ctx = bonus(ctx, :delay_rate, -10)
+    ctx = bonus(ctx, :varcast_rate, 5)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -228669,6 +228691,13 @@
     - right_hand
   magic_attack: 130
   name: Herosria Foxtail
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :near_atk_def, -5)
+    ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 10)
+    ctx = bonus(ctx, :delay_rate, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -242093,6 +242122,13 @@
   locations:
     - both_hand
   name: Herosria Shotgun
+  on_equip: |-
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx = bonus(ctx, :long_atk_rate, 15)
+    ctx = bonus(ctx, :near_atk_def, -7)
+    ctx = bonus(ctx, :varcast_rate, -15)
+    ctx = bonus(ctx, :hit, -25)
+    ctx
   range: 9
   refineable: true
   subtype: shotgun
@@ -242602,6 +242638,12 @@
   locations:
     - both_hand
   name: Herosria Gatling Gun
+  on_equip: |-
+    ctx = bonus(ctx, :long_atk_rate, 15)
+    ctx = bonus(ctx, :near_atk_def, -7)
+    ctx = bonus(ctx, :aspd_rate, 15)
+    ctx = bonus(ctx, :hit, -25)
+    ctx
   range: 9
   refineable: true
   subtype: gatling
@@ -243027,6 +243069,12 @@
   locations:
     - both_hand
   name: Herosria Launcher
+  on_equip: |-
+    ctx = bonus(ctx, :long_atk_rate, 15)
+    ctx = bonus(ctx, :near_atk_def, -7)
+    ctx = bonus(ctx, :varcast_rate, 7)
+    ctx = bonus(ctx, :atk_rate, 7)
+    ctx
   range: 9
   refineable: true
   subtype: grenade

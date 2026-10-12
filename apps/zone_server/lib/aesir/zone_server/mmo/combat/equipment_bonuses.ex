@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
 
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @typedoc "A percent (or per-mille, depending on family) sum read from equip_modifiers."
@@ -158,6 +160,168 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
       skill: skill_rate(defender, :sub_skill, skill_id)
     }
   end
+
+  @typedoc """
+  How a physical hit reads the attacker's cards: whether it is an arrow attack
+  (a bow or gun normal attack, or a skill that uses ammunition), whether its
+  range is long, whether this mode adds the range rates to the card product, and
+  the attacker's status modifiers.
+  """
+  @type attack_cardfix_opts :: %{
+          arrow?: boolean(),
+          ranged?: boolean(),
+          range_rates?: boolean(),
+          attacker_modifiers: map()
+        }
+
+  @doc """
+  The attacker's weapon card percentages for one hand of a physical hit, in the
+  order they multiply into one per-mille factor.
+
+  Both hands' bonuses act together on the right hand. A melee hit takes the
+  element, race (with Dragonology), size, each secondary monster group in
+  turn and class. An arrow hit reads the right hand and the ammunition only,
+  as race, element, size, the secondary groups summed once, and class. The
+  per-monster damage bonus follows, then, where `range_rates?`, the short or
+  long attack rate the hit's range selects. The left hand takes only its own
+  per-monster damage bonus.
+  """
+  @spec physical_attack_cardfix(
+          Combatant.t(),
+          Combatant.t(),
+          :right_hand | :left_hand,
+          attack_cardfix_opts()
+        ) :: [rate()]
+  def physical_attack_cardfix(attacker, defender, :left_hand, _opts),
+    do: [monster_damage_rate(attacker, defender, :left_add_damage_class)]
+
+  def physical_attack_cardfix(attacker, defender, :right_hand, opts) do
+    defender_element = element_atom(defender.element)
+    dragon = RaceModifiers.dragonology_atk_rate(attacker, defender.race)
+    status_element = status_read(opts.attacker_modifiers, :addele, defender_element)
+    other_hand = if opts.arrow?, do: :arrow, else: :weapon
+
+    race = hand_sum(attacker, :addrace, defender.race, other_hand) + dragon
+    element = hand_sum(attacker, :addele, defender_element, other_hand) + status_element
+    size = hand_sum(attacker, :addsize, defender.size, other_hand)
+    class = hand_sum(attacker, :addclass, defender.class, other_hand)
+
+    cards =
+      if opts.arrow?,
+        do: [race, element, size, race2_sum(attacker, :addrace2, defender.race2), class],
+        else: [element, race, size] ++ melee_race2(attacker, defender.race2) ++ [class]
+
+    cards ++
+      [monster_damage_rate(attacker, defender, :add_damage_class)] ++ range_rate(attacker, opts)
+  end
+
+  # The other hand's (or the ammunition's) family is where that slot's script
+  # stores the same bonus.
+  defp hand_sum(attacker, family, param, other_hand) do
+    {other_family, _param} = BonusKeys.slot_destination({family, param}, other_hand)
+    read(attacker, family, param) + read(attacker, other_family, param)
+  end
+
+  defp melee_race2(attacker, race2) do
+    Enum.map(
+      race2,
+      &(race2_rate(attacker, :addrace2, &1) + race2_rate(attacker, :left_addrace2, &1))
+    )
+  end
+
+  defp race2_sum(combatant, family, race2),
+    do: Enum.reduce(race2, 0, &(race2_rate(combatant, family, &1) + &2))
+
+  defp race2_rate(combatant, family, group),
+    do: Map.get(combatant.equip_modifiers, {family, group}, 0)
+
+  defp monster_damage_rate(_attacker, %Combatant{monster_id: nil}, _family), do: 0
+
+  defp monster_damage_rate(attacker, %Combatant{monster_id: monster_id}, family),
+    do: Map.get(attacker.equip_modifiers, {family, monster_id}, 0)
+
+  defp range_rate(_attacker, %{range_rates?: false}), do: []
+
+  defp range_rate(attacker, %{ranged?: true}),
+    do: [Map.get(attacker.equip_modifiers, :long_atk_rate, 0)]
+
+  defp range_rate(attacker, _opts), do: [Map.get(attacker.equip_modifiers, :short_atk_rate, 0)]
+
+  @typedoc """
+  How a physical hit reads the target's cards: the right hand's attack element,
+  then the left hand's when this is a left-hand hit with a different element
+  (`elements`), whether the element resists are skipped, the target's status
+  modifiers, the hit's battle flag and whether its range is long.
+  """
+  @type defense_cardfix_opts :: %{
+          elements: [atom()],
+          ignore_element?: boolean(),
+          status_modifiers: map(),
+          attack_flag: BattleFlags.flag(),
+          ranged?: boolean()
+        }
+
+  @doc """
+  The target's weapon card reductions against a physical hit, in the order they
+  multiply into one per-mille factor: each attack element's resist and the
+  attacker's defensive element (unless `ignore_element?`), size, the secondary
+  monster groups summed, race (with Dragonology), class, the per-monster
+  defense, the near or long defense the hit's range selects, and the DEF-rate
+  status.
+  """
+  @spec physical_defense_cardfix(Combatant.t(), Combatant.t(), defense_cardfix_opts()) ::
+          [rate()]
+  def physical_defense_cardfix(defender, attacker, opts) do
+    rates =
+      defense_rates(
+        defender,
+        attacker,
+        hd(opts.elements),
+        opts.status_modifiers,
+        nil,
+        opts.attack_flag
+      )
+
+    element_resists =
+      if opts.ignore_element?,
+        do: [],
+        else:
+          Enum.map(opts.elements, &element_resist(defender, &1, opts)) ++
+            [read(defender, :sub_def_ele, element_atom(attacker.element))]
+
+    element_resists ++
+      [
+        rates.size,
+        race2_sum(defender, :subrace2, attacker.race2),
+        rates.race + RaceModifiers.dragonology_resist_rate(defender, attacker.race),
+        rates.class,
+        def_monster_rate(defender, attacker),
+        range_defense_rate(defender, opts),
+        Map.get(opts.status_modifiers, :phys_damage_reduction, 0)
+      ]
+  end
+
+  defp element_resist(defender, element, opts) do
+    read(defender, :subele, element, opts.attack_flag) +
+      status_subele(opts.status_modifiers, element) + faith_resist_rate(defender, element) +
+      skin_temper_resist_rate(defender, element)
+  end
+
+  defp range_defense_rate(defender, %{ranged?: true, status_modifiers: modifiers}),
+    do: long_range_defense_rate(defender, modifiers, true)
+
+  defp range_defense_rate(defender, _opts),
+    do: Map.get(defender.equip_modifiers, :near_atk_def, 0)
+
+  @doc "Percent the attacker's equipment adds to its hits of the named skill."
+  @spec skill_atk_rate(Combatant.t(), pos_integer() | nil) :: rate()
+  def skill_atk_rate(%Combatant{} = attacker, skill_id),
+    do: skill_rate(attacker, :skill_atk, skill_id)
+
+  @doc "Percent the defender's equipment takes off hits of the named skill."
+  @spec sub_skill_rate(Combatant.t(), pos_integer() | nil) :: rate()
+  def sub_skill_rate(%Combatant{} = defender, skill_id),
+    do: skill_rate(defender, :sub_skill, skill_id)
 
   @doc """
   Percent reduction the defender's equipment and statuses apply to incoming

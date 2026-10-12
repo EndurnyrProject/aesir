@@ -1807,14 +1807,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "phys_damage_reduction shrugs off a percent of final damage and clamps at 100" do
       attacker = CombatTestHelper.create_player_combatant()
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0)
+      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
 
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
       :rand.seed(:exsss, {1, 2, 3})
       {:ok, base} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
 
       stub(ModifierCalculator, :get_all_modifiers, fn
-        :mob, 2001 -> %{phys_damage_reduction: 50}
+        :player, 1002 -> %{phys_damage_reduction: 50}
         _, _ -> %{}
       end)
 
@@ -1827,7 +1827,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # hits apply it per component before defense, whose minimum leaves 1;
       # classic applies it to the finished hit, with no minimum.
       stub(ModifierCalculator, :get_all_modifiers, fn
-        :mob, 2001 -> %{phys_damage_reduction: 150}
+        :player, 1002 -> %{phys_damage_reduction: 150}
         _, _ -> %{}
       end)
 
@@ -1956,12 +1956,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "a defender {:subrace, attacker-race} card reduces incoming damage by the percent" do
       attacker = CombatTestHelper.create_player_combatant(race: :player_human)
 
-      defender = %{
-        CombatTestHelper.create_mob_combatant()
-        | equip_modifiers: %{{:subrace, :player_human} => 20}
-      }
-
-      plain_defender = CombatTestHelper.create_mob_combatant()
+      plain_defender = CombatTestHelper.create_player_combatant(unit_id: 1002)
+      defender = %{plain_defender | equip_modifiers: %{{:subrace, :player_human} => 20}}
 
       {:ok, base} = DamageCalculator.apply_modifier_pipeline(1000, attacker, plain_defender)
       {:ok, reduced} = DamageCalculator.apply_modifier_pipeline(1000, attacker, defender)
@@ -2086,12 +2082,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
 
       fire_resist = %{
-        CombatTestHelper.create_mob_combatant()
+        CombatTestHelper.create_player_combatant(unit_id: 1002)
         | equip_modifiers: %{{:subele, :fire} => 20}
       }
 
       neutral_resist = %{
-        CombatTestHelper.create_mob_combatant()
+        CombatTestHelper.create_player_combatant(unit_id: 1002)
         | equip_modifiers: %{{:subele, :neutral} => 20}
       }
 
@@ -2314,7 +2310,55 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                )
     end
 
-    test "restricted paths retain skill, range, status, passive, and defender channels", %{
+    test "a skill whose definition ignores attacker cards drops them on the ordinary path" do
+      plain = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      carded = %{plain | equip_modifiers: %{{:addrace, :brute} => 50}}
+      defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 0)
+      opts = [base_damage: 1_000, skip_crit: true]
+
+      # Venom Knife (IgnoreAtkCard) against Double Strafe, which takes the card.
+      assert DamageCalculator.calculate_damage(carded, defender, [skill_id: 1004] ++ opts) ==
+               DamageCalculator.calculate_damage(plain, defender, [skill_id: 1004] ++ opts)
+
+      {:ok, %{damage: boosted}} =
+        DamageCalculator.calculate_damage(carded, defender, [skill_id: 46] ++ opts)
+
+      {:ok, %{damage: base}} =
+        DamageCalculator.calculate_damage(plain, defender, [skill_id: 46] ++ opts)
+
+      assert boosted > base
+    end
+
+    test "only an arrow attack reads the ammunition's cards" do
+      defender = CombatTestHelper.create_mob_combatant(race: :brute)
+      arrow_card = %{{:arrow_addrace, :brute} => 50}
+      bow = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+      sword = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+
+      assert {:ok, 1_500} =
+               DamageCalculator.apply_modifier_pipeline(
+                 1_000,
+                 %{bow | equip_modifiers: arrow_card},
+                 defender
+               )
+
+      assert {:ok, 1_000} =
+               DamageCalculator.apply_modifier_pipeline(
+                 1_000,
+                 %{sword | equip_modifiers: arrow_card},
+                 defender
+               )
+
+      assert {:ok, 1_500} =
+               DamageCalculator.apply_modifier_pipeline(
+                 1_000,
+                 %{sword | equip_modifiers: arrow_card},
+                 defender,
+                 skill_id: 46
+               )
+    end
+
+    test "IgnoreAtkCard and the left hand drop every attacker card, Dragonology included", %{
       left_hand: left_hand
     } do
       attacker = %{
@@ -2328,32 +2372,34 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
           }
       }
 
-      defender = %{
-        CombatTestHelper.create_mob_combatant(race: :dragon, def: 0)
-        | equip_modifiers: %{{:subrace, :human} => 10}
-      }
+      defender = CombatTestHelper.create_mob_combatant(race: :dragon, def: 0)
 
       stub(ModifierCalculator, :get_all_modifiers, fn
         :player, 1001 -> %{atk_rate: 50}
         _, _ -> %{}
       end)
 
-      opts = [base_damage: 1_000, skill_id: 123, skip_crit: true]
+      opts = [base_damage: 1_000, skip_crit: true, skill_id: 123]
 
       no_cards = %{
         attacker
         | equip_modifiers: Map.delete(attacker.equip_modifiers, {:addrace, :dragon})
       }
 
-      expected = mode_value(2_430, 2_427)
+      # 1000 at ATK +50% is 1500. Dragonology's race card (+20%) and classic's
+      # short-attack rate (+25%) are one product (1.2 * 1.25); renewal adds its
+      # range rate and then the skill rate (+20%) after DEF, classic the skill rate
+      # before its minimum soft DEF of 1.
+      primary = mode_value(2_700, 2_698)
+      restricted = mode_value(2_250, 1_799)
 
-      assert {:ok, %{damage: ^expected}} =
+      assert {:ok, %{damage: ^primary}} =
                DamageCalculator.calculate_damage(no_cards, defender, opts)
 
-      assert {:ok, %{damage: ^expected}} =
+      assert {:ok, %{damage: ^restricted}} =
                DamageCalculator.calculate_damage_ignoring_attacker_cards(attacker, defender, opts)
 
-      assert {:ok, %{damage: ^expected}} =
+      assert {:ok, %{damage: ^restricted}} =
                DamageCalculator.calculate_secondary_hand_damage(attacker, defender, opts)
     end
 
@@ -2489,7 +2535,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "long_atk_def combines equipment and status reductions on ranged damage" do
       attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
       equipped = %{defender | equip_modifiers: %{long_atk_def: 20}}
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
@@ -2500,7 +2546,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "long_atk_def: 30 reduces long-range weapon damage by 30%" do
       attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
       equipped = %{defender | equip_modifiers: %{long_atk_def: 30}}
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
@@ -2524,7 +2570,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
 
       defender = %{
-        CombatTestHelper.create_mob_combatant(def: 0)
+        CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
         | equip_modifiers: %{long_atk_def: 100}
       }
 
@@ -2533,7 +2579,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "the per-hit ranged opt triggers the reduction with a melee weapon equipped" do
       attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
 
@@ -2561,7 +2607,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert_in_delta reduced / baseline, 0.80, 0.02
     end
 
-    test "each elemental status key reduces matching physical damage for a mob defender" do
+    test "a mob defender's elemental status keys reduce no physical damage" do
       defender = CombatTestHelper.create_mob_combatant(def: 0)
 
       for {element, key} <- @element_status_keys do
@@ -2570,7 +2616,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         baseline = damage_with_defender_modifiers(attacker, defender, %{})
         reduced = damage_with_defender_modifiers(attacker, defender, modifiers)
 
-        assert_in_delta reduced / baseline, 0.75, 0.02
+        assert reduced == baseline
       end
     end
 
@@ -2590,7 +2636,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "subele_holy: 25 reduces incoming holy damage ~25%" do
       attacker = CombatTestHelper.create_player_combatant(weapon_element: :holy)
-      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
       reduced = damage_with_defender_modifiers(attacker, defender, %{subele_holy: 25})
@@ -2610,7 +2656,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "subrace_demon: 25 reduces damage from a demon-race attacker ~25%" do
       attacker = CombatTestHelper.create_mob_combatant(race: :demon)
-      defender = CombatTestHelper.create_mob_combatant(unit_id: 3001, def: 0)
+      defender = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
 
       baseline = damage_with_defender_modifiers(attacker, defender, %{})
       reduced = damage_with_defender_modifiers(attacker, defender, %{subrace_demon: 25})
@@ -2620,7 +2666,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "status and equipment resist for the same element family combine" do
       attacker = CombatTestHelper.create_player_combatant(weapon_element: :holy)
-      clean = CombatTestHelper.create_mob_combatant(def: 0)
+      clean = CombatTestHelper.create_player_combatant(unit_id: 1002, vit: 1)
       equipped = Map.put(clean, :equip_modifiers, %{{:subele, :holy} => 10})
 
       baseline = damage_with_defender_modifiers(attacker, clean, %{})

@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal, as: PreRenewalAttack
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal, as: RenewalAttack
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -362,16 +363,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     PreRenewalAttack.post_element(damage, context)
   end
 
-  defp fled_cards(damage, hit, element) do
-    apply_equipment_taken_families(
-      damage,
-      hit.attacker,
-      hit.defender,
-      Keyword.get(hit.opts, :skill_id),
-      element,
-      hit.opts
-    )
-  end
+  defp fled_cards(damage, hit, element), do: scalar_target_cards(damage, hit, element)
 
   defp stave_crasher_damage(%{unit_type: :player} = attacker, defender, opts, matk) do
     opts = Keyword.put(opts, :stave_matk, matk)
@@ -430,21 +422,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
     modifiers = attacker_status_modifiers(attacker)
     classic_player? = classic?() and attacker.unit_type == :player
-    pre_defense_families = if classic_player?, do: :skill, else: :all
 
     with {:ok, base_atk} <- calculate_base_attack(attacker, opts),
          patk_atk = apply_patk_multiplier(base_atk, attacker),
          skilled_atk = div(patk_atk * skill_ratio, 100) + bonus_atk,
          modified_atk =
-           apply_attack_modifiers(
-             skilled_atk,
-             attacker,
-             defender,
-             opts,
-             attack_path,
-             modifiers,
-             pre_defense_families
-           ),
+           apply_attack_modifiers(skilled_atk, attacker, defender, opts, attack_path, modifiers),
          total_atk = modified_atk + scalar_banes(attacker, defender, classic_player?),
          total_atk = apply_res_reduction(total_atk, defender),
          {:ok, defended} <-
@@ -466,16 +449,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       taken =
         defended
         |> scalar_post_defense(hit, classic_player?, total_atk)
+        |> renewal_skill_rates(hit)
         |> scalar_element(hit)
         |> classic_player_cards(hit, attack_path, classic_player?)
         |> scalar_critical(attacker, critical?)
-        |> apply_equipment_taken_families(
-          attacker,
-          defender,
-          Keyword.get(opts, :skill_id),
-          hit_element(attacker, modifiers, opts),
-          opts
-        )
+        |> scalar_target_cards(hit, hit_element(attacker, modifiers, opts))
 
       {:ok, %{damage: taken, is_critical: critical?}}
     end
@@ -527,16 +505,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp classic_player_cards(damage, hit, attack_path, true) do
-    apply_equipment_attack_families(
-      damage + classic_late_atk(hit),
-      hit.attacker,
-      hit.modifiers,
-      hit.defender,
-      Keyword.get(hit.opts, :skill_id),
-      hit_element(hit.attacker, hit.modifiers, hit.opts),
-      attack_path,
-      :cards
-    )
+    cards = attacker_cards(hit.attacker, hit.defender, hit.opts, attack_path, hit.modifiers)
+    PhysicalAttack.attacker_cardfix(damage + classic_late_atk(hit), cards)
   end
 
   defp classic_player_cards(damage, _hit, _attack_path, false), do: damage
@@ -1199,26 +1169,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     element = Keyword.get(opts, :element) || resolve_attack_element(attacker, attacker_modifiers)
     skill_id = Keyword.get(opts, :skill_id)
 
-    attack_rates =
-      EquipmentBonuses.attack_rates(attacker, defender, skill_id, element, attacker_modifiers)
-
-    ranged? = ranged_hit?(attacker, opts)
-    flag = BattleFlags.build(:weapon, if(ranged?, do: :long, else: :short), not is_nil(skill_id))
-
-    taken_rates =
-      EquipmentBonuses.damage_taken_rates(
-        defender,
-        attacker,
-        element,
-        defender_modifiers,
-        skill_id,
-        flag
-      )
-
-    card_rates =
-      if attack_path in [:secondary, :ignore_attacker_cards],
-        do: %{race_class: 0, element: 0, size: 0},
-        else: Map.take(attack_rates, [:race_class, :element, :size])
+    elements =
+      if attack_path == :secondary,
+        do: Enum.uniq([right_attack_element(attacker, attacker_modifiers, opts), element]),
+        else: [element]
 
     %{
       size_rate:
@@ -1226,16 +1180,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           do: 100,
           else: trunc(apply_size_modifier(100, attacker, defender, opts))
         ),
-      attacker_rates: card_rates,
-      defender_rates: %{
-        race_class:
-          taken_rates.race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race),
-        monster: EquipmentBonuses.def_monster_rate(defender, attacker),
-        element: taken_rates.element,
-        size: taken_rates.size,
-        long_def: EquipmentBonuses.long_range_defense_rate(defender, defender_modifiers, ranged?),
-        def_rate: Map.get(defender_modifiers, :phys_damage_reduction, 0)
-      },
+      attacker_cards: attacker_cards(attacker, defender, opts, attack_path, attacker_modifiers),
+      defender_cards: defender_cards(defender, attacker, opts, elements),
       defense:
         player_defense_context(defender, attacker, attack_path, defense_mode, defender_modifiers),
       defense_mode:
@@ -1245,9 +1191,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       base_atk_rate: Keyword.get(opts, :base_atk_rate, 100),
       bonus_atk: Keyword.get(opts, :bonus_atk, 0),
       post_defense_atk: post_defense_atk(attacker_modifiers, skill_id),
-      skill_atk_rate: attack_rates.skill,
-      skill_taken_rate: taken_rates.skill,
-      global_race_rate: RaceModifiers.dragonology_atk_rate(attacker, defender.race),
+      skill_atk_rate: EquipmentBonuses.skill_atk_rate(attacker, skill_id),
+      skill_taken_rate: EquipmentBonuses.sub_skill_rate(defender, skill_id),
       weapon_bonus: Map.get(attacker_modifiers, :watk, 0),
       flat_bonus:
         Map.get(attacker_modifiers, :damage_bonus, 0) + Map.get(attacker_modifiers, :atk_bonus, 0),
@@ -1255,8 +1200,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       damage_multiplier: Map.get(attacker_modifiers, :damage_multiplier, 0),
       equipment_atk_rate: Map.get(attacker.equip_modifiers, :atk_rate, 0),
       stave_matk: Keyword.get(opts, :stave_matk, 0),
-      long_atk_rate: EquipmentBonuses.long_atk_rate(attacker),
-      short_atk_rate: EquipmentBonuses.short_atk_rate(attacker),
       patk: Map.get(attacker.combat_stats, :patk, 0),
       res: Map.get(defender.combat_stats, :res, 0),
       critical?: critical.is_critical,
@@ -1267,6 +1210,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       non_crit_atk_rate: EquipmentBonuses.non_crit_atk_rate(attacker),
       ignore_noncrit_atk_bonus: ignore_noncrit_atk_bonus?(skill_id)
     }
+    |> Map.merge(range_rates(attacker, opts))
+  end
+
+  # The equipment short- or long-attack rate the hit's range selects.
+  defp range_rates(attacker, opts) do
+    if ranged_hit?(attacker, opts),
+      do: %{
+        short_atk_rate: 0,
+        long_atk_rate: Map.get(attacker.equip_modifiers, :long_atk_rate, 0)
+      },
+      else: %{
+        short_atk_rate: Map.get(attacker.equip_modifiers, :short_atk_rate, 0),
+        long_atk_rate: 0
+      }
   end
 
   # A skill absent from the catalog cannot carry the flag, so its hit stays
@@ -1279,6 +1236,82 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       :error -> false
     end
   end
+
+  # The attacker's cards for one hand of a physical hit: none for a non-player or
+  # a hit that ignores them (IgnoreAtkCard), the left hand's own per-monster
+  # bonus for a left-hand hit, both hands' bonuses for the right hand. Classic
+  # adds the hit's range rate to the product.
+  defp attacker_cards(%{unit_type: :player} = attacker, defender, opts, attack_path, modifiers) do
+    skill_id = Keyword.get(opts, :skill_id)
+
+    if attack_path == :ignore_attacker_cards or ignore_atk_card?(skill_id) do
+      []
+    else
+      hand = if attack_path == :secondary, do: :left_hand, else: :right_hand
+
+      EquipmentBonuses.physical_attack_cardfix(attacker, defender, hand, %{
+        arrow?: arrow_attack?(attacker, skill_id),
+        ranged?: ranged_hit?(attacker, opts),
+        range_rates?: classic?(),
+        attacker_modifiers: modifiers
+      })
+    end
+  end
+
+  defp attacker_cards(_attacker, _defender, _opts, _attack_path, _modifiers), do: []
+
+  # An arrow attack is a bow or gun normal attack, or a skill that uses
+  # ammunition.
+  defp arrow_attack?(attacker, nil),
+    do: attacker.weapon |> Map.get(:type) |> WeaponTypes.requires_ammo?()
+
+  defp arrow_attack?(_attacker, skill_id),
+    do: match?({:ok, %{requires_ammo: true}}, Catalog.by_id(skill_id))
+
+  # The target's cards against a physical hit, only for a player target:
+  # `weapon` with the element resists of `elements` (the right hand's attack
+  # element, then a left-hand hit's own when it differs), `status` without them.
+  defp defender_cards(%{unit_type: :player} = defender, attacker, opts, elements) do
+    {unit_type, unit_id} = get_unit_type_and_id(defender)
+    ranged? = ranged_hit?(attacker, opts)
+
+    cards = %{
+      elements: elements,
+      ignore_element?: false,
+      status_modifiers: ModifierCalculator.get_all_modifiers(unit_type, unit_id),
+      attack_flag:
+        BattleFlags.build(
+          :weapon,
+          if(ranged?, do: :long, else: :short),
+          not is_nil(Keyword.get(opts, :skill_id))
+        ),
+      ranged?: ranged?
+    }
+
+    %{
+      weapon: EquipmentBonuses.physical_defense_cardfix(defender, attacker, cards),
+      status:
+        EquipmentBonuses.physical_defense_cardfix(defender, attacker, %{
+          cards
+          | ignore_element?: true
+        })
+    }
+  end
+
+  defp defender_cards(_defender, _attacker, _opts, _elements), do: nil
+
+  # The right hand's attack element for a left-hand hit's target cards: the
+  # skill's element, an endow, or the right weapon's own.
+  defp right_attack_element(attacker, modifiers, opts) do
+    Keyword.get(opts, :element) || DamageShared.endow_element(modifiers) ||
+      right_weapon_element(attacker)
+  end
+
+  defp right_weapon_element(%{right_hand: %WeaponHand{element: element}})
+       when not is_nil(element),
+       do: element
+
+  defp right_weapon_element(_attacker), do: :neutral
 
   defp player_defense_context(defender, attacker, attack_path, defense_mode, modifiers) do
     status_mode =
@@ -1408,65 +1441,83 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @doc """
   Applies the scalar recipe's modifier stages to `base_damage`, without DEF.
 
-  In reference order: size, status ATK channels and the attacker's equipment
-  families; then the hit's post-defense attribute step (none for a non-player
-  basic attack, the Sacrifice group only for a renewal player) and the target's
-  equipment damage-taken families. The attribute step is an actual application:
-  it can burn a web.
+  In reference order: size, status ATK channels and, in classic, the equipment
+  skill rates; then, in renewal, the equipment skill rates, the hit's
+  post-defense attribute step (none for a non-player basic attack, the Sacrifice
+  group only for a renewal player) and a player target's cards. The attribute
+  step is an actual application: it can burn a web.
 
   `opts` accepts `:element` to force the attack element, `:skill_id` to scope the
-  skill families, and `:skip_status_atk` to leave status ATK channels unapplied.
+  skill rates, and `:skip_status_atk` to leave status ATK channels unapplied.
   """
   @spec apply_modifier_pipeline(integer(), combatant(), combatant(), keyword()) ::
           {:ok, integer()}
   def apply_modifier_pipeline(base_damage, attacker, defender, opts \\ []) do
     modifiers = attacker_status_modifiers(attacker)
     hit = %{attacker: attacker, defender: defender, opts: opts, modifiers: modifiers}
+    classic_player? = classic?() and attacker.unit_type == :player
 
     damage =
       base_damage
       |> apply_attack_modifiers(attacker, defender, opts, :primary, modifiers)
+      |> renewal_skill_rates(hit)
       |> scalar_element(hit)
-      |> apply_equipment_taken_families(
-        attacker,
-        defender,
-        Keyword.get(opts, :skill_id),
-        hit_element(attacker, modifiers, opts),
-        opts
-      )
+      |> classic_player_cards(hit, :primary, classic_player?)
+      |> scalar_target_cards(hit, hit_element(attacker, modifiers, opts))
 
     {:ok, damage}
   end
 
-  # The scalar recipe's pre-defense modifiers: size, status ATK channels and the
-  # attacker's equipment families (`families`: every family, only the skill
-  # rate, or only the cards and range rates). Element and the target's cards
-  # follow DEF.
-  defp apply_attack_modifiers(
-         base_damage,
-         attacker,
-         defender,
-         opts,
-         attack_path,
-         modifiers,
-         families \\ :all
-       ) do
-    skill_id = Keyword.get(opts, :skill_id)
-    attack_element = hit_element(attacker, modifiers, opts)
+  # The scalar recipe's pre-defense modifiers: size and status ATK channels, then
+  # classic's equipment skill rates, or a renewal player's cards and range rate,
+  # which act on the whole scalar where its components would take them. Element
+  # and the rest of the cards follow DEF.
+  defp apply_attack_modifiers(base_damage, attacker, defender, opts, attack_path, modifiers) do
+    damage =
+      base_damage
+      |> apply_size_modifier(attacker, defender, opts)
+      |> apply_status_effect_damage_modifiers(
+        modifiers,
+        Keyword.get(opts, :skip_status_atk, false)
+      )
+      |> trunc()
 
-    base_damage
-    |> apply_size_modifier(attacker, defender, opts)
-    |> apply_status_effect_damage_modifiers(modifiers, Keyword.get(opts, :skip_status_atk, false))
-    |> apply_equipment_attack_families(
-      attacker,
-      modifiers,
-      defender,
-      skill_id,
-      attack_element,
-      attack_path,
-      families
-    )
-    |> trunc()
+    cond do
+      classic?() ->
+        skill_rates(damage, attacker, defender, opts)
+
+      attacker.unit_type == :player ->
+        damage
+        |> PhysicalAttack.attacker_cardfix(
+          attacker_cards(attacker, defender, opts, attack_path, modifiers)
+        )
+        |> PhysicalAttack.range_damage(range_rates(attacker, opts))
+
+      true ->
+        damage
+    end
+  end
+
+  # Renewal adds the equipment skill rates after the post-defense stage, before
+  # the attribute step; classic adds them before DEF.
+  defp renewal_skill_rates(damage, hit) do
+    if classic?(), do: damage, else: skill_rates(damage, hit.attacker, hit.defender, hit.opts)
+  end
+
+  defp skill_rates(damage, attacker, defender, opts) do
+    skill_id = Keyword.get(opts, :skill_id)
+
+    damage
+    |> PhysicalAttack.add_rate(EquipmentBonuses.skill_atk_rate(attacker, skill_id))
+    |> PhysicalAttack.add_rate(-EquipmentBonuses.sub_skill_rate(defender, skill_id))
+  end
+
+  # A player target's cards, after the attribute step.
+  defp scalar_target_cards(damage, hit, element) do
+    case defender_cards(hit.defender, hit.attacker, hit.opts, [element]) do
+      nil -> damage
+      %{weapon: cards} -> PhysicalAttack.defender_cardfix(damage, cards)
+    end
   end
 
   @doc """
@@ -1720,106 +1771,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     %{weapon | type: hand.subtype, element: hand.element}
   end
 
-  # Attacker percent damage families. Each family (race+class, element, size,
-  # skill, long-attack, short-attack) is one sequential multiplicative step. The
-  # two range families are mutually exclusive — the weapon is either ranged or
-  # not — so only one of them is ever non-zero. Every contributor to a family
-  # sums into a single accumulator before the multiply, so passives (Dragonology)
-  # and equipment never compound against each other — mirroring the magic
-  # pipeline's cardfix model. A family summing to 0 is identity, preserving the
-  # float damage untouched.
-  defp apply_equipment_attack_families(
-         damage,
-         attacker,
-         attacker_modifiers,
-         defender,
-         skill_id,
-         attack_element,
-         attack_path,
-         families
-       ) do
-    %{race_class: card_race_class, element: card_element, size: card_size, skill: skill} =
-      EquipmentBonuses.attack_rates(
-        attacker,
-        defender,
-        skill_id,
-        attack_element,
-        attacker_modifiers
-      )
-
-    {card_race_class, card_element, card_size} =
-      case attack_path do
-        path when path in [:secondary, :ignore_attacker_cards] -> {0, 0, 0}
-        :primary -> {card_race_class, card_element, card_size}
-      end
-
-    race_class =
-      card_race_class + RaceModifiers.dragonology_atk_rate(attacker, defender.race)
-
-    cards = fn rate -> if families in [:all, :cards], do: rate, else: 0 end
-    skill = if families in [:all, :skill], do: skill, else: 0
-
-    damage
-    |> apply_family_step(cards.(race_class))
-    |> apply_family_step(cards.(card_element))
-    |> apply_family_step(cards.(card_size))
-    |> apply_family_step(skill)
-    |> apply_family_step(cards.(EquipmentBonuses.long_atk_rate(attacker)))
-    |> apply_family_step(cards.(EquipmentBonuses.short_atk_rate(attacker)))
-  end
-
-  # Defender percent damage-taken families, read off the defender's own
-  # equipment and status effects, keyed on the attacker's traits / the effective
-  # attack element. Dragonology's resist rate sums into the race+class family like
-  # any other contributor; the defender's status resist keys (subele/subrace) sum
-  # into the element/race families through EquipmentBonuses. The long-range
-  # family is gated on the hit being ranged: the per-hit `:ranged` opt
-  # (thrown-weapon skills), a ranged weapon class, or a long attack range (ranged
-  # mobs). The DEF-rate status channel is the last step. The families follow the
-  # attribute step, so an immune hit stays 0.
-  defp apply_equipment_taken_families(damage, attacker, defender, skill_id, attack_element, opts) do
-    {unit_type, unit_id} = get_unit_type_and_id(defender)
-    status_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
-
-    # A physical hit is a weapon attack, ranged or melee by the same rule that
-    # decides `is_short` at hit delivery, and skill-sourced whenever a skill id
-    # is present. Trigger-flagged resists match against that classification.
-    attack_flag =
-      BattleFlags.build(
-        :weapon,
-        if(ranged_hit?(attacker, opts), do: :long, else: :short),
-        skill_id != nil
-      )
-
-    %{race_class: race_class, element: element, size: size, skill: skill} =
-      EquipmentBonuses.damage_taken_rates(
-        defender,
-        attacker,
-        attack_element,
-        status_modifiers,
-        skill_id,
-        attack_flag
-      )
-
-    race_class = race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race)
-
-    long_def =
-      EquipmentBonuses.long_range_defense_rate(
-        defender,
-        status_modifiers,
-        ranged_hit?(attacker, opts)
-      )
-
-    damage
-    |> apply_taken_step(race_class)
-    |> apply_taken_step(EquipmentBonuses.def_monster_rate(defender, attacker))
-    |> apply_taken_step(element)
-    |> apply_taken_step(size)
-    |> apply_taken_step(skill)
-    |> apply_taken_step(long_def)
-    |> apply_def_rate_step(Map.get(status_modifiers, :phys_damage_reduction, 0))
-  end
-
   @doc """
   Whether a physical hit is ranged: the hit's explicit `:ranged` classification
   when given, otherwise a ranged weapon class or an attack range above 3 cells.
@@ -1835,15 +1786,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           Map.get(attacker, :attack_range, 1) > 3
     end
   end
-
-  defp apply_family_step(damage, 0), do: damage
-  defp apply_family_step(damage, sum), do: div(trunc(damage) * (100 + sum), 100)
-
-  defp apply_taken_step(damage, 0), do: damage
-  defp apply_taken_step(damage, sum), do: div(trunc(damage) * (100 - sum), 100)
-
-  defp apply_def_rate_step(damage, 0), do: damage
-  defp apply_def_rate_step(damage, rate), do: div(trunc(damage) * max(100 - rate, 0), 100)
 
   defp resolve_attack_element(attacker, attacker_modifiers) do
     DamageShared.endow_element(attacker_modifiers) || Map.get(attacker.weapon, :element, :neutral)

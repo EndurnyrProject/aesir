@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Providence do
   Resistant Souls (SC_PROVIDENCE).
 
   Raises holy-element and demon-race damage resistance by 5% per skill level
-  (`val1`), read by `EquipmentBonuses.damage_taken_rates/4` via the
+  (`val1`), read by the target card reductions (`EquipmentBonuses`) via the
   `:subele_holy`/`:subrace_demon` status-modifier keys.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,

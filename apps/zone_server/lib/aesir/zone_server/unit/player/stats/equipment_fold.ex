@@ -6,9 +6,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   the flat item-DB and refine bonuses, each host and in-range card `on_equip`
   program, the autobonus proc registrations, the direct statuses worn items
   desire, the card cleanup effects retained for unequip, and the resolved
-  weapon hands. The item worn in the ammunition slot evaluates its program with
-  the `:ammunition` input set, so ammunition-excluded destinations ignore it and
-  it arms no autocast. Autocasts register into the per-trigger lists of
+  weapon hands. Each program runs with the `:lr_flag` of its slot: the
+  ammunition's `:arrow` (it arms no autocast), a left-hand weapon's and every
+  card in the left hand's `:weapon`, a shield's own script `:shield`, so
+  `BonusKeys.slot_destination/2` routes its bonuses. Autocasts register into the per-trigger lists of
   `EquipAutocast.register/3` in the order the worn scripts run, each carrying
   the id of the card that armed it.
   Pure: it reads the item and refine catalogs and writes only to
@@ -363,12 +364,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   defp fold_worn_item(item, worn_ordinal, fold, inputs) do
     case ItemManagement.get_item_by_id(item.nameid) do
       {:ok, %ItemDefinition{} = item_def} ->
-        item_inputs = Map.merge(inputs, %{refine: item.refine, ammunition: ammunition?(item)})
+        item_inputs = Map.put(inputs, :refine, item.refine)
         fold = %{fold | bonuses: accumulate_item_bonus(fold.bonuses, item_def, item.refine)}
 
         [{item_def, nil} | card_sources(item, item_def)]
-        |> Enum.reduce({fold, 0}, fn source, {acc, next_slot} ->
-          apply_equipment_source(source, item, item_inputs, worn_ordinal, acc, next_slot)
+        |> Enum.reduce({fold, 0}, fn {_def, card_slot} = source, {acc, next_slot} ->
+          source_inputs = put_lr_flag(item_inputs, lr_flag(item, item_def, card_slot))
+          apply_equipment_source(source, item, source_inputs, worn_ordinal, acc, next_slot)
         end)
         |> elem(0)
 
@@ -377,7 +379,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     end
   end
 
-  defp ammunition?(item), do: :ammo in EquipLocation.bitmask_to_location_atoms(item.equip)
+  defp put_lr_flag(inputs, nil), do: inputs
+  defp put_lr_flag(inputs, lr_flag), do: Map.put(inputs, :lr_flag, lr_flag)
+
+  # The ammunition runs as `:arrow`. An item worn only in the left hand runs its
+  # own script as `:weapon` when it is a weapon and `:shield` otherwise, and every
+  # card in it as `:weapon`. A two-handed weapon is a right-hand item.
+  defp lr_flag(item, item_def, card_slot) do
+    locations = EquipLocation.bitmask_to_location_atoms(item.equip)
+
+    cond do
+      :ammo in locations -> :arrow
+      :left_hand not in locations or :right_hand in locations -> nil
+      card_slot != nil or item_def.type == :weapon -> :weapon
+      true -> :shield
+    end
+  end
 
   defp apply_equipment_source(
          {%ItemDefinition{} = source_def, card_slot},

@@ -100,8 +100,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     |> PhysicalAttack.apply_defense(context, Defense)
     |> trunc()
     |> Kernel.+(Map.get(context, :post_defense_atk, 0))
-    |> PhysicalAttack.rate(Map.get(context, :skill_atk_rate, 0))
-    |> PhysicalAttack.rate(-Map.get(context, :skill_taken_rate, 0))
+    |> PhysicalAttack.add_rate(Map.get(context, :skill_atk_rate, 0))
+    |> PhysicalAttack.add_rate(-Map.get(context, :skill_taken_rate, 0))
     |> max(1)
   end
 
@@ -114,27 +114,22 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   defp reduce_res(damage, context),
     do: DamageShared.res_reduction(damage, Map.get(context, :res, 0))
 
+  # The attacker's cards scale only the weapon and equipment components; the
+  # target's scale every component, its element resists only the weapon ones.
   defp modified_component(damage, context, channel) do
     damage
     |> attacker_component(context, channel)
-    |> PhysicalAttack.defender_cardfix(Map.get(context, :defender_rates), channel)
+    |> PhysicalAttack.defender_cardfix(defender_cards(Map.get(context, :defender_cards), channel))
     |> PhysicalAttack.status_damage(context)
   end
 
-  defp attacker_component(damage, context, :status) do
-    PhysicalAttack.rate(damage, Map.get(context, :global_race_rate, 0))
-  end
+  defp attacker_component(damage, _context, :status), do: damage
 
-  defp attacker_component(damage, context, :weapon) do
-    rates =
-      Map.update!(
-        context.attacker_rates,
-        :race_class,
-        &(&1 + Map.get(context, :global_race_rate, 0))
-      )
+  defp attacker_component(damage, context, :weapon),
+    do: PhysicalAttack.attacker_cardfix(damage, context.attacker_cards)
 
-    PhysicalAttack.attacker_cardfix(damage, rates)
-  end
+  defp defender_cards(nil, _channel), do: nil
+  defp defender_cards(cards, channel), do: Map.fetch!(cards, channel)
 
   defp critical_equipment_bonus(damage, %{critical?: true} = context) do
     divisor = if Map.get(context, :skill_id), do: 200, else: 100

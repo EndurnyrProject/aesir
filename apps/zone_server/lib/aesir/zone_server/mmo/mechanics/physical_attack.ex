@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
   """
 
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense
+  alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage
 
   @typedoc """
   Effective player attack inputs captured during stat recomputation.
@@ -55,18 +56,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           source: :weapon | :shield
         }
 
-  @typedoc "Ordered attacker cardfix families, represented as additive percentage points."
-  @type attack_rates :: %{race_class: integer(), element: integer(), size: integer()}
-
-  @typedoc "Defender cardfix channels, separated from skill-specific reduction."
-  @type defender_rates :: %{
-          race_class: integer(),
-          monster: integer(),
-          element: integer(),
-          size: integer(),
-          long_def: integer(),
-          def_rate: integer()
-        }
+  @typedoc """
+  The target's card reductions in product order: `weapon` for the weapon and
+  equipment components, `status` (without the element resists) for renewal's
+  status and mastery components. `nil` when the target has no cards to apply
+  (it is not a player).
+  """
+  @type defender_cards :: %{weapon: [integer()], status: [integer()]} | nil
 
   @typedoc "Captured modifier and defense values; implementations perform no lookups."
   @type context :: %{
@@ -77,10 +73,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:post_defense_atk) => integer(),
           optional(:base_atk_rate) => integer(),
           optional(:damage_multiplier) => number(),
-          optional(:global_race_rate) => integer(),
           optional(:long_atk_rate) => integer(),
           optional(:short_atk_rate) => integer(),
-          optional(:defender_rates) => defender_rates(),
+          optional(:defender_cards) => defender_cards(),
           optional(:res) => integer(),
           optional(:critical?) => boolean(),
           optional(:crit_atk_rate) => integer(),
@@ -96,36 +91,29 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:equipment_atk_rate) => integer(),
           optional(:stave_matk) => non_neg_integer(),
           size_rate: integer(),
-          attacker_rates: attack_rates(),
+          attacker_cards: [integer()],
           defense: Defense.physical_context()
         }
 
-  @doc "Applies the three attacker cardfix families in their fixed order."
-  @spec attacker_cardfix(integer(), attack_rates()) :: integer()
-  def attacker_cardfix(damage, rates) do
-    damage
-    |> rate(rates.race_class)
-    |> rate(rates.element)
-    |> rate(rates.size)
-  end
+  @doc """
+  Applies the attacker's card percentages as one per-mille factor: each
+  percentage multiplies the factor in order, truncating, and the damage takes
+  the factor once.
+  """
+  @spec attacker_cardfix(integer(), [integer()]) :: integer()
+  def attacker_cardfix(damage, cards), do: cardfix(damage, cards, 1)
 
   @doc """
-  Applies the target's card families, ending with the DEF-rate status channel,
-  without creating damage from an empty component.
+  Applies the target's card reductions as one per-mille factor, without
+  creating damage from an empty component. `nil` applies nothing.
   """
-  @spec defender_cardfix(integer(), defender_rates() | nil, :weapon | :status) :: integer()
-  def defender_cardfix(damage, nil, _channel), do: damage
+  @spec defender_cardfix(integer(), [integer()] | nil) :: integer()
+  def defender_cardfix(damage, nil), do: damage
+  def defender_cardfix(damage, cards), do: cardfix(damage, cards, -1)
 
-  def defender_cardfix(damage, rates, channel) do
-    element_rate = if channel == :weapon, do: rates.element, else: 0
-
-    damage
-    |> taken_rate(rates.race_class)
-    |> taken_rate(rates.monster)
-    |> taken_rate(element_rate)
-    |> taken_rate(rates.size)
-    |> taken_rate(rates.long_def)
-    |> taken_rate(rates.def_rate)
+  defp cardfix(damage, cards, sign) do
+    factor = Enum.reduce(cards, 1000, &MagicDamage.factor(&2, sign * &1))
+    MagicDamage.apply_factor(damage, factor)
   end
 
   @doc "Applies shared status attack-rate and generic damage-multiplier channels."
@@ -137,12 +125,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
     |> trunc()
   end
 
-  @doc "Applies the existing short- and long-attack channels in their fixed order."
+  @doc "Adds the short- and long-attack rates the hit's range selected, in that order."
   @spec range_damage(integer(), context()) :: integer()
   def range_damage(damage, context) do
     damage
-    |> rate(Map.get(context, :long_atk_rate, 0))
-    |> rate(Map.get(context, :short_atk_rate, 0))
+    |> add_rate(Map.get(context, :short_atk_rate, 0))
+    |> add_rate(Map.get(context, :long_atk_rate, 0))
   end
 
   @doc "Applies the selected existing DEF formula or the restricted flat-defense recipe."
@@ -160,7 +148,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
     implementation.apply_def(damage, context.defense)
   end
 
-  defp taken_rate(damage, reduction), do: div(damage * max(100 - reduction, 0), 100)
+  @doc """
+  Adds a percentage of the damage, truncating the added amount toward zero
+  (the reference `ATK_ADDRATE`).
+  """
+  @spec add_rate(number(), integer()) :: integer()
+  def add_rate(damage, rate), do: trunc(damage) + div(trunc(damage) * rate, 100)
 
   @doc "Applies additive percentage points with integer truncation."
   @spec rate(number(), integer()) :: integer()

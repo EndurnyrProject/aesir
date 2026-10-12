@@ -102,9 +102,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @typedoc """
   The evaluation inputs: the item's refine and the wearer's levels, plus
   optional wearer learned skills, base stats, job, equipped-item multiset,
-  fixed local timestamp, and attached-character information. `:ammunition`
-  marks the equipped ammunition's script, whose ammunition-excluded bonus
-  destinations do not accumulate.
+  fixed local timestamp, and attached-character information. `:lr_flag` names
+  the slot whose script runs (`BonusKeys.slot_destination/2` routes its bonuses).
   """
   @type inputs :: %{
           :refine => integer(),
@@ -116,7 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:equipped_item_counts) => %{pos_integer() => pos_integer()},
           optional(:local_time) => NaiveDateTime.t(),
           optional(:character_info) => Rathena.character_info() | nil,
-          optional(:ammunition) => boolean()
+          optional(:lr_flag) => BonusKeys.lr_flag()
         }
 
   @typedoc """
@@ -749,9 +748,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_instr({:bonus, key, expr}, inputs, %Result{} = result) do
     value = eval_expr(expr, inputs)
 
-    if ammunition_excluded?(key, inputs),
-      do: result,
-      else: accumulate_bonus(ammunition_destination(key, inputs), value, result)
+    case BonusKeys.slot_destination(key, Map.get(inputs, :lr_flag)) do
+      nil -> result
+      dest -> accumulate_bonus(dest, value, result)
+    end
   end
 
   defp eval_instr(
@@ -778,7 +778,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   # An autocast is emitted as an ordered registration rather than folded here:
   # whether two identical procs merge depends on which card registered each, so
   # the equipment fold registers them. The equipped ammunition arms none.
-  defp eval_instr({:auto_cast, _spec, _level, _rate}, %{ammunition: true}, %Result{} = result),
+  defp eval_instr({:auto_cast, _spec, _level, _rate}, %{lr_flag: :arrow}, %Result{} = result),
     do: result
 
   defp eval_instr({:auto_cast, spec, level_expr, rate_expr}, inputs, %Result{} = result) do
@@ -839,12 +839,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp eval_instr(other, _inputs, _acc), do: malformed!("instruction", other)
-
-  defp ammunition_excluded?(key, %{ammunition: true}), do: BonusKeys.ammunition_excluded?(key)
-  defp ammunition_excluded?(_key, _inputs), do: false
-
-  defp ammunition_destination(key, %{ammunition: true}), do: BonusKeys.ammunition_destination(key)
-  defp ammunition_destination(key, _inputs), do: key
 
   defp accumulate_bonus(key, value, %Result{modifiers: modifiers} = result) do
     modifiers =

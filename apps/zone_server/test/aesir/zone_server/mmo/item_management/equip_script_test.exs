@@ -789,7 +789,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
              }
     end
 
-    test "an ammunition script drops only the non-critical rate" do
+    test "an ammunition script drops the non-critical and short-attack rates" do
       program =
         EquipScript.parse!("""
         ctx = bonus(ctx, :non_crit_atk_rate, 15)
@@ -799,10 +799,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.eval(program, on(0)) == %{non_crit_atk_rate: 15, short_atk_rate: 10}
 
-      assert EquipScript.eval(program, Map.put(on(0), :ammunition, true)) ==
-               %{short_atk_rate: 10}
+      assert EquipScript.eval(program, Map.put(on(0), :lr_flag, :arrow)) == %{}
 
-      assert EquipScript.eval(program, Map.put(on(0), :ammunition, false)) ==
+      assert EquipScript.eval(program, Map.put(on(0), :lr_flag, :shield)) ==
                %{non_crit_atk_rate: 15, short_atk_rate: 10}
     end
 
@@ -814,7 +813,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         ctx
         """)
 
-      assert EquipScript.eval(program, Map.put(on(0), :ammunition, true)) ==
+      assert EquipScript.eval(program, Map.put(on(0), :lr_flag, :arrow)) ==
                %{arrow_critical: 25}
 
       assert EquipScript.eval(program, on(0)) == %{critical: 20, critical_long: 5}

@@ -1485,7 +1485,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
              )
   end
 
-  test "no-card delivery omits cardfix but retains DEF-ignore and all global/defender hooks" do
+  test "no-card delivery omits every attacker card, Dragonology included, but retains DEF-ignore and global hooks" do
     attacker = %{
       CombatTestHelper.create_player_combatant(
         unit_id: 1001,
@@ -1528,8 +1528,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       _, _ -> %{}
     end)
 
-    # Classic retains its minimum one-point soft DEF after equipment DEF-ignore.
-    expected_damage = if GameMode.mode() == :renewal, do: 1_944, else: 1_942
+    # ATK +50% gives 1500. No attacker card applies; renewal adds the long-attack
+    # rate (+25%) and then the skill rate (+20%) after DEF, classic the skill rate
+    # before its minimum one-point soft DEF. A mob target has no cards.
+    expected_damage = if GameMode.mode() == :renewal, do: 2_250, else: 1_799
 
     expect(StatusInterpreter, :absorb_hit, fn :mob, 2001, ^expected_damage, hit_info ->
       assert hit_info.is_short == false
