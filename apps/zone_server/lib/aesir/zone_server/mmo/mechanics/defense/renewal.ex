@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.Defense.Renewal do
   @moduledoc """
-  Renewal physical and magic defense mitigation.
+  Renewal physical and magic defense mitigation. Physical DEF truncates its
+  quotient before soft DEF is subtracted, so a result below zero is exact.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.Defense
@@ -12,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Defense.Renewal do
   def apply_def(damage, %{hard_def: hard_def, soft_def: soft_def}) do
     effective_hard_def = if hard_def == -400, do: -399, else: hard_def
 
-    damage * (4000 + effective_hard_def) / (4000 + 10 * effective_hard_def) - soft_def
+    trunc(damage * (4000 + effective_hard_def) / (4000 + 10 * effective_hard_def)) - soft_def
   end
 
   @impl true

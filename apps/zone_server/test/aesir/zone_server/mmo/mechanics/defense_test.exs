@@ -10,14 +10,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.DefenseTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense.Renewal
 
-  test "renewal physical mitigation matches the extracted parent formula" do
+  test "renewal physical mitigation truncates the DEF quotient before soft DEF" do
     cases = [
-      {200, 10, 20, 1, false, 175.609756097561},
-      {200, 0, 0, 50, false, 200.0},
-      {200, 500, 20, 99, false, 80.0},
-      {200, -100, 20, 150, false, 240.0},
-      {100, -400, 0, nil, false, 36_010.0},
-      {150, 15, 5, 75, true, 140.12048192771084}
+      {200, 10, 20, 1, false, 175},
+      {200, 0, 0, 50, false, 200},
+      {200, 500, 20, 99, false, 80},
+      {200, -100, 20, 150, false, 240},
+      {100, -400, 0, nil, false, 36_010},
+      {150, 15, 5, 75, true, 140},
+      {11, 10, 20, 1, false, -10}
     ]
 
     for {damage, hard_def, soft_def, attacker_level, ignore_soft_def?, expected} <- cases do
@@ -28,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.DefenseTest do
         ignore_soft_def?: ignore_soft_def?
       }
 
-      assert_in_delta Renewal.apply_def(damage, context), expected, 1.0e-12
+      assert Renewal.apply_def(damage, context) == expected
     end
   end
 

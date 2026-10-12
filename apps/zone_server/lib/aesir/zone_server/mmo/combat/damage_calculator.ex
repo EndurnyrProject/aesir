@@ -502,7 +502,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   # A classic player's post-defense stage: the refine bonus, the minimum of 1, the
   # weapon masteries and the post-defense status ATK, each where the skill takes
-  # it. Every other hit only keeps a minimum of 1.
+  # it. Every other hit adds the post-defense status ATK of whatever holds it, a
+  # classic one after a minimum of 1, and keeps a minimum of 1.
   defp scalar_post_defense(damage, hit, true) do
     skill_id = Keyword.get(hit.opts, :skill_id)
 
@@ -517,7 +518,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     max(damage + refine, 1) + mastery + post_defense_atk(hit.modifiers, skill_id)
   end
 
-  defp scalar_post_defense(damage, _hit, false), do: max(damage, 1)
+  defp scalar_post_defense(damage, hit, false) do
+    status_atk = post_defense_atk(hit.modifiers, Keyword.get(hit.opts, :skill_id))
+
+    if classic?(),
+      do: max(damage, 1) + status_atk,
+      else: max(damage + status_atk, 1)
+  end
 
   defp classic_player_cards(damage, hit, attack_path, true) do
     apply_equipment_attack_families(
@@ -611,7 +618,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # The modifier pipeline yields a float; every defense path truncates it on the
   # way out, so the DEF-ignoring path must too or a float reaches the HP pools.
   defp scalar_defense(damage, _defender, _attacker, _path, :ignore),
-    do: {:ok, DamageShared.clamp_min_one(damage)}
+    do: {:ok, trunc(damage)}
 
   defp scalar_defense(damage, defender, attacker, _path, {:soft_only, ratio}),
     do:
@@ -634,7 +641,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     do: apply_defense_formula_without_equipment_def_ignore(damage, defender, attacker)
 
   defp scalar_defense(damage, defender, attacker, _path, :normal),
-    do: apply_defense_formula(damage, defender, attacker)
+    do: defended_damage(damage, defender, attacker)
 
   defp calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode) do
     hit = %{
@@ -1472,7 +1479,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   - sDEF = soft defense (VIT-based)
   """
   @spec apply_defense_formula(number(), combatant(), combatant() | nil) :: {:ok, integer()}
-  def apply_defense_formula(total_atk, defender, attacker \\ nil),
+  def apply_defense_formula(total_atk, defender, attacker \\ nil) do
+    {:ok, defended} = defended_damage(total_atk, defender, attacker)
+    {:ok, DamageShared.clamp_min_one(defended)}
+  end
+
+  # DEF leaves the damage as it lands, at or below zero included; the
+  # post-defense stage applies the minimum.
+  defp defended_damage(total_atk, defender, attacker),
     do: apply_defense_formula(total_atk, defender, attacker, :apply_status_def)
 
   defp apply_defense_formula_ignoring_status_def(total_atk, defender, attacker),
@@ -1565,7 +1579,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           total_atk - div(modified_soft_def * ratio, 100)
       end
 
-    final_damage = DamageShared.clamp_min_one(base_damage)
+    final_damage = trunc(base_damage)
 
     Logger.debug(
       "Defense calculation: total_atk=#{trunc(total_atk)}, hard_def=#{modified_hard_def}, soft_def=#{modified_soft_def}, final_damage=#{final_damage}"

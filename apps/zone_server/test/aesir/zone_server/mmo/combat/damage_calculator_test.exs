@@ -2687,6 +2687,74 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "scalar post-defense status ATK" do
+    setup do
+      CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
+      :ok
+    end
+
+    defp scalar_damage(attacker, opts) do
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, vit: 0)
+      opts = Keyword.merge([base_damage: 100, skip_crit: true], opts)
+      {:ok, %{damage: damage}} = DamageCalculator.calculate_damage(attacker, defender, opts)
+      damage
+    end
+
+    defp holding_post_defense_atk(unit_type, unit_id) do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        ^unit_type, ^unit_id -> %{post_defense_atk: 50, post_defense_atk_excludes: [397]}
+        _, _ -> %{}
+      end)
+    end
+
+    test "a monster's hit adds its post-defense status ATK, except on an excluded skill" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2003)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      plain = scalar_damage(attacker, skill_id: 5)
+      holding_post_defense_atk(:mob, 2003)
+
+      assert scalar_damage(attacker, skill_id: 5) == plain + 50
+      assert scalar_damage(attacker, skill_id: 397) == plain
+    end
+
+    test "renewal adds the status ATK before the minimum, classic after it" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2003)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 200, vit: 200)
+      opts = [base_damage: 10, skip_crit: true, skill_id: 5]
+
+      damage = fn ->
+        elem(DamageCalculator.calculate_damage(attacker, defender, opts), 1).damage
+      end
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      assert damage.() == 1
+
+      holding_post_defense_atk(:mob, 2003)
+
+      case GameMode.mode() do
+        :renewal -> assert damage.() < 51
+        :pre_renewal -> assert damage.() == 51
+      end
+    end
+
+    test "an attack with nothing before DEF takes no post-defense ATK" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2003)
+      holding_post_defense_atk(:mob, 2003)
+
+      assert scalar_damage(attacker, base_damage: 0) == 0
+    end
+
+    @tag game_mode: :renewal
+    test "renewal: a player's replaced-base hit adds its post-defense status ATK" do
+      attacker = CombatTestHelper.create_player_combatant()
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      plain = scalar_damage(attacker, skill_id: 5)
+      holding_post_defense_atk(:player, attacker.unit_id)
+
+      assert scalar_damage(attacker, skill_id: 5) == plain + 50
+    end
+  end
+
   describe "scalar critical recipe" do
     setup do
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
