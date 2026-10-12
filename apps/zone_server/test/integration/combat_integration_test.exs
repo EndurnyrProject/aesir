@@ -14,8 +14,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Unit.Mob.MobSession
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   describe "player vs mob combat" do
     test "player attacks mob and deals damage" do
@@ -86,38 +86,17 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       # assert mob_has_aggro?(mob.unit_id, player.character.id)
     end
 
-    test "player misses attack when mob has high flee" do
-      # Setup player with low hit
+    test "a missed swing sends a zero-damage miss packet" do
       player =
         start_player_session(
-          character:
-            create_test_character(
-              id: 1001,
-              # Low DEX for low HIT
-              dex: 1,
-              base_level: 1
-            ),
+          character: create_test_character(id: 1001),
           position: {150, 150}
         )
 
-      # Setup mob with high flee using test helper
-      mob =
-        start_mob_session(
-          position: {151, 150},
-          # High level mob will have high flee
-          level: 50
-        )
+      mob = start_mob_session(position: {151, 150})
 
-      # Mock the mob to have very high flee
-      mob_unit_id = mob.unit_id
-
-      stub(UnitRegistry, :get_unit, fn :mob, unit_id when unit_id == mob_unit_id ->
-        # Update the mob's stats AGI instead of trying to set AGI directly
-        updated_stats = %{mob.mob_state.mob_data.stats | agi: 99}
-        updated_mob_data = %{mob.mob_state.mob_data | stats: updated_stats}
-        mob_state = %{mob.mob_state | mob_data: updated_mob_data}
-        {:ok, {MobSession, mob_state, mob.pid}}
-      end)
+      # Every swing keeps a chance to land or crit; pin the outcome to a miss.
+      stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
 
       # Execute attack
       stats = get_player_stats(player.pid)
@@ -259,6 +238,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       on_exit(fn -> MapFlags.clear_runtime("prontera", :pvp) end)
 
       flush_packets()
+      # A player defender always has a Lucky Dodge chance; pin the swing to a hit.
+      stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
 
       stats = get_player_stats(attacker.pid)
       attacker_state = get_player_state(attacker.pid)
