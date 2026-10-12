@@ -2,13 +2,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   @moduledoc """
   Grand Cross (CR_GRANDCROSS). Plants a 9-cell holy cross on the caster's cell that
   ticks every 300 ms for about 900 ms, costing 20% of current HP plus 37 to 100 SP
-  (a share of current HP always leaves the caster alive). A player caster is rooted
-  for the field's life and loses the shield's DEF and MDEF while it lasts; every tick hits
+  (a share of current HP always leaves the caster alive). A player's own cast holds
+  them in place (no walking or Teleport) and bars equipping a shield for 950 ms,
+  keeping the shield worn; every tick hits
   each offensive target on the cross, the player caster included, through the
   skill-owned hybrid recipe (renewal averages raw attack contributions before flat
   defences; classic sums separately defended contributions). Enemy damage takes two
   holy adjustments; self-damage one holy adjustment and one half-rate. Mob casters
-  skip the HP, root, and self-damage rules. Demon-race and undead-element mobs on
+  skip the HP, lock, and self-damage rules. Demon-race and undead-element mobs on
   the field are blinded.
 
   Renewal: a 1 s cast plus 0.5 s fixed, a 0.5 s delay, a 1 s cooldown, blind 18 s.
@@ -44,6 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.CastendStrip
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -52,52 +54,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @behaviour Active
   @behaviour Ground
 
   @arm_length 2
-  @root_duration 950
+  @self_lock_ms 950
 
   @impl Active
-  def cast(%{instance_id: id} = caster, {:unit, id}, level, definition),
-    do: cast(caster, :self, level, definition)
+  def cast(caster, target, level, definition),
+    do: cast_with_origin(caster, target, level, definition, :normal)
 
-  def cast(caster, :self, level, _definition) do
+  @impl Active
+  def cast_with_origin(%{instance_id: id} = caster, {:unit, id}, level, definition, origin),
+    do: cast_with_origin(caster, :self, level, definition, origin)
+
+  def cast_with_origin(caster, :self, level, _definition, origin) do
+    CastendStrip.start(caster, origin, :sc_stripshield, @self_lock_ms, [:sc_ankle])
+
     case Unit.place(caster, :cr_grandcross, level, {caster.x, caster.y}) do
-      {:ok, _group} ->
-        root_player_caster(caster)
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        error
+      {:ok, _group} -> {:ok, caster}
+      {:error, _reason} = error -> error
     end
   end
 
   @impl Ground
   def on_place(%Group{} = group), do: placement(group)
-
-  # A player caster is rooted for the field's lifetime and loses their own
-  # shield's defensive contribution for the same window: the shield DEF/MDEF is
-  # captured now and carried on the status as val1/val2, which the status emits
-  # as negative flat modifiers. Mob casters have no shield and are never rooted.
-  @spec root_player_caster(struct()) :: :ok
-  defp root_player_caster(%PlayerState{character_id: caster_id, stats: stats}) do
-    %{def: shield_def, mdef: shield_mdef} = EquipmentFold.shield_defense_contribution(stats)
-
-    StatusInterpreter.apply_status(:player, caster_id, :sc_grandcross_root,
-      duration: @root_duration,
-      val1: shield_def,
-      val2: shield_mdef
-    )
-
-    :ok
-  end
-
-  defp root_player_caster(_mob_caster), do: :ok
 
   @impl Ground
   def on_interval(%Group{origin: origin, map_name: map_name, level: level} = group, _now) do

@@ -16,12 +16,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
@@ -158,32 +158,48 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
     end
   end
 
-  describe "cast rooting and shield suppression" do
+  describe "castend self lock" do
     setup do
-      Mimic.copy(Stats)
+      stub(StatusStorage, :get_status, fn :player, @caster_id, :sc_stripshield -> nil end)
       :ok
     end
 
-    test "a player cast roots the caster and suppresses their shield DEF/MDEF for the window" do
+    test "a player's cast bars shield changes and holds the caster for 950 ms" do
       caster = %PlayerState{character_id: @caster_id, x: 100, y: 100}
+      test_pid = self()
 
       stub(Unit, :place, fn ^caster, :cr_grandcross, 1, {100, 100} -> {:ok, :group} end)
-      stub(EquipmentFold, :shield_defense_contribution, fn _stats -> %{def: 7, mdef: 3} end)
 
-      expect(StatusInterpreter, :apply_status, fn :player,
-                                                  @caster_id,
-                                                  :sc_grandcross_root,
-                                                  params ->
-        assert params[:duration] == 950
-        assert params[:val1] == 7
-        assert params[:val2] == 3
+      stub(StatusInterpreter, :apply_status, fn :player, @caster_id, status, params ->
+        send(test_pid, {:started, status, params[:duration]})
         :ok
       end)
 
       assert {:ok, ^caster} = CrGrandcross.cast(caster, :self, 1, definition())
+      assert_received {:started, :sc_stripshield, 950}
+      assert_received {:started, :sc_ankle, 950}
     end
 
-    test "a non-player (mob) self-cast is not rooted" do
+    test "a longer held shield strip skips the whole lock, and automatic casts lock nothing" do
+      caster = %PlayerState{character_id: @caster_id, x: 100, y: 100}
+      later = System.monotonic_time(:millisecond) + 60_000
+      stub(Unit, :place, fn ^caster, :cr_grandcross, 1, {100, 100} -> {:ok, :group} end)
+
+      stub(StatusStorage, :get_status, fn :player, @caster_id, :sc_stripshield ->
+        %StatusEntry{type: :sc_stripshield, expires_at: later}
+      end)
+
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, ^caster} = CrGrandcross.cast(caster, :self, 1, definition())
+
+      stub(StatusStorage, :get_status, fn :player, @caster_id, :sc_stripshield -> nil end)
+
+      assert {:ok, ^caster} =
+               CrGrandcross.cast_with_origin(caster, :self, 1, definition(), :auto)
+    end
+
+    test "a non-player (mob) self-cast is not locked" do
       caster = %{x: 5, y: 5}
 
       stub(Unit, :place, fn ^caster, :cr_grandcross, 1, {5, 5} -> {:ok, :group} end)

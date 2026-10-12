@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ankle do
   @moduledoc """
-  Ankle (SC_ANKLE), the immobilise Glacier Fist inflicts.
+  Ankle (SC_ANKLE), the immobilise Glacier Fist inflicts and a player's own Grand
+  Cross puts on its caster.
 
   The holder cannot move or teleport but can still attack and cast. Glacier
   Fist rolls the chance and the duration itself (shorter against high AGI, a

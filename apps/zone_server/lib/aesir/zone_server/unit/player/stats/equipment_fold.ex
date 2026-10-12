@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
@@ -271,41 +270,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       nil -> {0, 0}
     end
   end
-
-  @doc """
-  Returns the DEF and MDEF the currently equipped shield contributes.
-
-  Computed as the marginal difference the shield makes to the folded equipment
-  DEF/MDEF - the full worn set minus the same set without the left-hand item -
-  so shared armor-refine rounding is attributed to the shield correctly rather
-  than isolated per-item. A left-hand weapon (dual-wield or a two-hander) is not
-  a shield and contributes nothing. Both values are clamped at zero.
-
-  Used to suppress a caster's own shield defense for the lifetime of a skill
-  (Grand Cross): the caller applies these as negative flat `:def`/`:mdef` status
-  modifiers, so the shield's protection returns when the status ends.
-  """
-  @spec shield_defense_contribution(Stats.t()) :: %{
-          def: non_neg_integer(),
-          mdef: non_neg_integer()
-        }
-  def shield_defense_contribution(%Stats{equipment: %Equipment{} = equipment} = stats) do
-    if Stats.shield?(equipment) do
-      without_shield = Enum.reject(stats.worn_items, &worn_in_slot?(&1, :left_hand))
-      inputs = %{local_time: NaiveDateTime.local_now()}
-      full = equipment_fold_result(stats, stats.worn_items, inputs).bonuses
-      reduced = equipment_fold_result(stats, without_shield, inputs).bonuses
-
-      %{
-        def: max(scaled_equipment_def(full) - scaled_equipment_def(reduced), 0),
-        mdef: max(Map.get(full, :mdef, 0) - Map.get(reduced, :mdef, 0), 0)
-      }
-    else
-      %{def: 0, mdef: 0}
-    end
-  end
-
-  def shield_defense_contribution(%Stats{}), do: %{def: 0, mdef: 0}
 
   @doc """
   Equipment DEF after the `def_rate` percentage modifier (a negative rate can

@@ -53,10 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.CastendStrip
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEntry
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
@@ -93,7 +91,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
         ) :: {:ok, Active.caster()} | {:error, atom()}
   def cast_with_origin(caster, {:unit, target_id}, level, definition, origin) do
     with {:ok, _primary} <- Combat.resolve_combatant(target_id) do
-      bar_weapon_change(caster, definition, level, origin)
+      CastendStrip.start(
+        caster,
+        origin,
+        :sc_stripweapon,
+        Enum.at(definition.duration, level - 1)
+      )
+
       str = caster_str(caster, caster.__struct__.to_combatant(caster))
 
       for {offset, length, row} <- sweeps(caster, level) do
@@ -140,27 +144,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
       & &1
     )
   end
-
-  # A player's cast bars weapon changes for the skill's duration, unless an
-  # existing bar already lasts longer. Automatic and monster casts do not.
-  defp bar_weapon_change(%PlayerState{character_id: id}, definition, level, origin)
-       when origin in [:normal, :item] do
-    duration = Enum.at(definition.duration, level - 1)
-    until = System.monotonic_time(:millisecond) + duration
-
-    case StatusStorage.get_status(:player, id, :sc_stripweapon) do
-      %StatusEntry{expires_at: expires_at} when is_integer(expires_at) and expires_at > until ->
-        :ok
-
-      _held ->
-        StatusInterpreter.apply_status(:player, id, :sc_stripweapon,
-          caster_id: id,
-          duration: duration
-        )
-    end
-  end
-
-  defp bar_weapon_change(_caster, _definition, _level, _origin), do: :ok
 
   # Renewal strikes every recipient unanimated; classic animates every recipient
   # but the targeted one.
