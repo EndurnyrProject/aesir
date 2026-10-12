@@ -89,7 +89,13 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
     miss_attacker =
       CombatTestHelper.create_player_combatant()
       |> then(fn attacker ->
-        %{attacker | combat_stats: Map.put(attacker.combat_stats, :hit_rate_bonus_pct, -100)}
+        # A critical skips the hit roll, so the miss needs no critical rate.
+        combat_stats =
+          attacker.combat_stats
+          |> Map.put(:hit_rate_bonus_pct, -100)
+          |> Map.put(:critical_rate, 0)
+
+        %{attacker | combat_stats: combat_stats}
       end)
 
     assert {:ok, %{outcome: :miss, raw_total: 0}} =
