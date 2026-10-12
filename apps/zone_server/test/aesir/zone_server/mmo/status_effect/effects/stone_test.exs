@@ -32,42 +32,49 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StoneTest do
   end
 
   describe "drain timing" do
-    defp petrified(petrify_ms, elapsed_ms, state \\ %{}) do
+    defp step(petrify_ms, step_ms) do
       now = System.monotonic_time(:millisecond)
-      lifetime = Stone.lifetime(petrify_ms)
 
       %StatusEntry{
         type: :sc_stone,
         val3: petrify_ms,
-        state: state,
-        started_at: now - elapsed_ms,
-        expires_at: now - elapsed_ms + lifetime
+        tick: 5_000,
+        state: %{},
+        started_at: now - step_ms,
+        next_tick_at: now,
+        expires_at: now - step_ms + Stone.lifetime(petrify_ms)
       }
     end
 
     @healthy %{target: %{hp: 1_000, max_hp: 1_000}}
 
-    test "a tick fires each step once as its time passes" do
-      expect(Helpers, :apply_passive_hp_loss, fn {:mob, 1}, 10 -> :ok end)
-
-      assert {:ok, ticked} = Stone.on_tick({:mob, 1}, petrified(12_000, 5_500), @healthy)
-
-      reject(&Helpers.apply_passive_hp_loss/2)
-      assert {:ok, _again} = Stone.on_tick({:mob, 1}, ticked, @healthy)
+    test "runs every 5 seconds" do
+      assert Stone.metadata().tick_interval == 5_000
     end
 
-    test "running out fires the final step, draining when it lands on the end" do
-      instance = petrified(15_000, 15_000, %{remaining: 4_500})
+    test "a step while time remains drains" do
       expect(Helpers, :apply_passive_hp_loss, fn {:mob, 1}, 10 -> :ok end)
 
-      assert [] = Stone.on_timeout({:mob, 1}, instance, @healthy)
+      assert {:ok, _} = Stone.on_tick({:mob, 1}, step(12_000, 5_000), @healthy)
+    end
+
+    test "a step landing exactly on the end still drains" do
+      expect(Helpers, :apply_passive_hp_loss, fn {:mob, 1}, 10 -> :ok end)
+
+      assert {:ok, _} = Stone.on_tick({:mob, 1}, step(15_000, 15_000), @healthy)
+    end
+
+    test "the step after a short petrification ran out does not drain" do
+      reject(&Helpers.apply_passive_hp_loss/2)
+
+      assert {:ok, _} = Stone.on_tick({:mob, 1}, step(3_000, 5_000), @healthy)
     end
 
     test "no drain at a quarter of Max HP or below" do
       reject(&Helpers.apply_passive_hp_loss/2)
 
       assert {:ok, _} =
-               Stone.on_tick({:mob, 1}, petrified(12_000, 5_500), %{
+               Stone.on_tick({:mob, 1}, step(12_000, 5_000), %{
                  target: %{hp: 250, max_hp: 1_000}
                })
     end

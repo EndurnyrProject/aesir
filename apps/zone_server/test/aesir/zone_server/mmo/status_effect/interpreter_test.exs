@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -889,6 +890,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert expires_at >= before_ms + override
       assert expires_at <= after_ms + override
+    end
+
+    test "a stored status arms its deadline with the tick manager" do
+      target_id = 13
+
+      setup_player_mock(target_id)
+      Process.put({StatusTickManager, :server}, self())
+
+      assert :ok = Interpreter.apply_status(:player, target_id, :sc_hiding, duration: 30_000)
+
+      stored = StatusStorage.get_status(:player, target_id, :sc_hiding)
+      assert_receive {:"$gen_cast", {:arm, :player, ^target_id, ^stored}}
     end
 
     test "falls back to the definition default when :duration is omitted" do

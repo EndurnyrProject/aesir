@@ -64,6 +64,23 @@ defmodule Aesir.ZoneServer.Integration.StoneBodyStateParityTest do
     refute StatusStorage.has_status?(:mob, mob_id, :sc_stonewait)
   end
 
+  test "a 100 ms wait petrifies on its own deadline", %{mob: mob_id} do
+    :ok =
+      Interpreter.apply_status(:mob, mob_id, :sc_stonewait,
+        duration: 12_100,
+        bypass_resistance: true
+      )
+
+    wait = StatusStorage.get_status(:mob, mob_id, :sc_stonewait)
+    assert wait.expires_at - wait.started_at == 100
+
+    assert_body_state(mob_id, @petrified)
+    stone = StatusStorage.get_status(:mob, mob_id, :sc_stone)
+    assert (stone.started_at - wait.expires_at) in 0..50
+    assert stone.next_tick_at - stone.started_at == 5_000
+    assert stone.expires_at - stone.started_at == 12_000
+  end
+
   test "a cured wait never petrifies", %{mob: mob_id} do
     petrify(mob_id)
     assert_body_state(mob_id, @petrifying)

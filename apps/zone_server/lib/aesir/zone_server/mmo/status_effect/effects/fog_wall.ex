@@ -22,7 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FogWall do
     icon: :fogwall
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.StatusTickManager
 
   @blind_hold_ms 5_000
   @blind_after_ms 30_000
@@ -66,11 +68,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FogWall do
     :ok
   end
 
+  # Leaving the fog can shorten the Blind, so its deadline is re-armed.
   defp extend_blind(type, id, _until, update) do
     if StatusStorage.has_status?(type, id, :sc_blind) do
       StatusStorage.update_status(type, id, :sc_blind, fn entry ->
         %{entry | expires_at: update.(entry.expires_at)}
       end)
+
+      case StatusStorage.get_status(type, id, :sc_blind) do
+        %StatusEntry{} = blind -> StatusTickManager.arm(type, id, blind)
+        nil -> :ok
+      end
     end
   end
 end

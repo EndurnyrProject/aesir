@@ -38,8 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RaidTest do
         %{status | expires_at: System.monotonic_time(:millisecond) - 1}
       end)
 
-    assert {:noreply, state} = StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
-    Process.cancel_timer(state.tick_timer)
+    assert {:noreply, _state} = StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
 
     refute StatusStorage.has_status?(:mob, target_id, :sc_raid)
     assert 100 = Interpreter.absorb_damage(:mob, target_id, 100, %{dmg_type: :physical})

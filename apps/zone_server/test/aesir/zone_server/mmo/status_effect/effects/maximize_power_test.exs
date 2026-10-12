@@ -133,7 +133,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePowerTest do
 
     due_at = System.monotonic_time(:millisecond) - 1
     :ok = StatusStorage.update_next_tick(:player, player_id, :sc_maximizepower, due_at)
-    now = System.monotonic_time(:millisecond)
 
     assert {:noreply, %StatusTickManager.State{}} =
              StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
@@ -143,7 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePowerTest do
     assert %StatusEntry{tick: 5_000, next_tick_at: next_tick_at} =
              StatusStorage.get_status(:player, player_id, :sc_maximizepower)
 
-    assert next_tick_at in (now + 5_000)..(System.monotonic_time(:millisecond) + 5_000)
+    assert next_tick_at == due_at + 5_000
   end
 
   test "never expires on a timer, because it is toggled off rather than timed out" do

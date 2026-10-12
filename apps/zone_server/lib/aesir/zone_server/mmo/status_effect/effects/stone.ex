@@ -8,10 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
   damage breaks it. Starting it ends Lex Aeterna, and applying it while the target is
   petrifying or petrified ends both instead.
 
-  Petrification runs on a 5 second timer: every 5 seconds, while time remains and the
-  holder has more than a quarter of its Max HP, it loses 1% of Max HP (at least 1) without
-  dying. The last step of the timer ends it, so it lasts at least 5 seconds, and a final
-  remainder shorter than 100 ms is dropped.
+  Petrification runs on a 5 second timer: at every step that lands within the petrification
+  duration (`val3`), while the holder has more than a quarter of its Max HP, it loses 1% of
+  Max HP (at least 1) without dying. The last step of the timer ends it, so it lasts at least
+  5 seconds, and a final remainder shorter than 100 ms is dropped.
 
   It stops movement through the `:prevents_movement` property, not through a speed
   penalty: the speed calculation never consults this status.
@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
     immunity: [:boss, :undead],
     bypass_resistance: true,
     flags: [:remove_on_damaged],
-    tick_interval: 1_000,
+    tick_interval: 5_000,
     opt1: :stone
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
@@ -70,14 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
 
   @impl true
   def on_tick(target, instance, context) do
-    remaining = max(instance.expires_at - System.monotonic_time(:millisecond), 0)
-    {:ok, run_steps(target, instance, context, remaining)}
-  end
-
-  @impl true
-  def on_timeout(target, instance, context) do
-    run_steps(target, instance, context, 0)
-    []
+    if instance.next_tick_at - instance.started_at <= instance.val3, do: drain_hp(target, context)
+    {:ok, instance}
   end
 
   @doc """
@@ -106,25 +100,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone do
   """
   @spec drain(non_neg_integer()) :: pos_integer()
   def drain(max_hp), do: max(div(max_hp, 100), 1)
-
-  # Steps fire once each, as the remaining duration crosses their countdown. The
-  # countdown window starts at the stored duration, so a restored petrification
-  # does not repeat steps that fired before it was saved.
-  defp run_steps(target, instance, context, remaining) do
-    lifetime = lifetime(instance.val3)
-
-    previous =
-      Map.get(instance.state || %{}, :remaining, instance.expires_at - instance.started_at)
-
-    instance.val3
-    |> steps()
-    |> Enum.filter(fn {at, _drain?} ->
-      lifetime - at >= remaining and lifetime - at < previous
-    end)
-    |> Enum.each(fn {_at, drain?} -> if drain?, do: drain_hp(target, context) end)
-
-    put_state(instance, :remaining, remaining)
-  end
 
   defp drain_hp(target, %{target: %{hp: hp, max_hp: max_hp}}) when hp > div(max_hp, 4),
     do: apply_passive_hp_loss(target, drain(max_hp))

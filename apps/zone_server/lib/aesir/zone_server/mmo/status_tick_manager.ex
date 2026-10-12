@@ -1,13 +1,25 @@
 defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   @moduledoc """
-  Single process that manages all status tick effects and expirations.
-  Runs on a fixed interval and batch processes all status updates.
+  Runs every status's interval ticks and expiry on exact deadlines.
 
-  This manager is optimized to handle thousands of concurrent players by:
-  1. Only processing statuses that are actually due for a tick
-  2. Using efficient ETS operations for status updates
-  3. Batching processing to avoid overloading the system
-  4. Tracking performance metrics to monitor efficiency
+  Each live status owns one timer, armed at the earlier of its next tick and
+  its expiry (`arm/3`, called by the interpreter after every store). When it
+  fires, a tick that is due runs first and its next deadline is anchored to the
+  tick's own deadline, not to the processing time; a tick run more than a second
+  late anchors to the present instead. The entry is then re-read: an expiry that
+  is due ends the status (a tick landing on the expiry runs before it), anything
+  else re-arms from storage, so an expiry pushed later simply waits longer. A
+  deadline whose stored generation changed is dropped and the replacement is
+  armed from storage. A writer that shortens a stored deadline through
+  `StatusStorage.update_status/4` must call `arm/3` afterwards.
+
+  `schedule_exact_tick/5` is the loop of statuses that drive their own
+  countdown (Venom Splasher): a generation-tagged deadline that continues from
+  the prior deadline while the callback keeps the status.
+
+  `force_tick/0` sweeps storage for everything already due (tests and
+  diagnostics); `init/1` arms whatever storage holds, so a restarted manager
+  loses no deadline.
   """
 
   use GenServer
@@ -20,22 +32,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
-  # 1 second tick rate
-  @tick_interval_ms 1000
   @exact_tick_interval_ms 500
-  # Process statuses in batches
-  @tick_batch_size 100
+  @late_deadline_ms 1_000
 
   defmodule State do
-    defstruct [
-      :tick_timer,
-      tick_count: 0,
-      last_tick: 0,
-      # Performance metrics
-      last_total_statuses: 0,
-      last_due_statuses: 0,
-      processing_ratio: 0.0
-    ]
+    @moduledoc false
+    defstruct timers: %{}
+
+    @type key :: {atom(), integer(), atom()}
+    @type t :: %__MODULE__{timers: %{key() => {reference(), pos_integer(), integer()}}}
   end
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -48,9 +53,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     end
   end
 
+  @doc "Processes every status whose tick or expiry is already due."
   @spec force_tick() :: :ok
   def force_tick do
     GenServer.cast(server(), :force_tick)
+  end
+
+  @doc """
+  Arms the deadline timer of a stored status entry.
+
+  Re-arming the same generation at the same deadline is a no-op; a changed
+  deadline replaces the pending timer. An entry older than the pending timer's
+  generation is ignored, and an entry without a tick or an expiry disarms any
+  pending timer.
+  """
+  @spec arm(atom(), integer(), StatusEntry.t()) :: :ok
+  def arm(unit_type, unit_id, %StatusEntry{} = entry) do
+    GenServer.cast(server(), {:arm, unit_type, unit_id, entry})
   end
 
   @doc "Schedules a generation-tagged status tick for an absolute monotonic deadline."
@@ -68,18 +87,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
   @impl true
   def init(_opts) do
-    timer_ref = Process.send_after(self(), :tick, @tick_interval_ms)
+    state =
+      Enum.reduce(StatusStorage.get_all_statuses(), %State{}, fn
+        {{unit_type, unit_id, _status_id}, entry}, state ->
+          arm_entry(state, unit_type, unit_id, entry)
+      end)
 
-    state = %State{
-      tick_timer: timer_ref,
-      last_tick: System.monotonic_time(:millisecond)
-    }
-
-    Logger.info("StatusTickManager started with #{@tick_interval_ms}ms interval")
     {:ok, state}
   end
 
   @impl true
+  def handle_info({:status_timer, key, generation, due_at}, state) do
+    case Map.get(state.timers, key) do
+      {_ref, ^generation, ^due_at} ->
+        state = %{state | timers: Map.delete(state.timers, key)}
+        {:noreply, process_deadline(state, key, generation, due_at)}
+
+      _rearmed_or_cancelled ->
+        {:noreply, state}
+    end
+  end
+
   def handle_info(
         {:exact_status_tick, unit_type, unit_id, status_id, generation, due_at},
         state
@@ -100,44 +128,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   def handle_info(:tick, state) do
     now_ms = System.monotonic_time(:millisecond)
 
-    # Process expired statuses
-    expired_count = process_expired_statuses(now_ms)
+    due =
+      (StatusStorage.get_expired_statuses(now_ms) ++ StatusStorage.get_due_statuses(now_ms))
+      |> Enum.uniq_by(fn {key, _entry} -> key end)
 
-    # Process tick effects
-    tick_count = process_tick_effects(now_ms)
+    state =
+      Enum.reduce(due, state, fn {key, %StatusEntry{generation: generation}}, state ->
+        process_deadline(state, key, generation, now_ms)
+      end)
 
-    # Get total statuses for stats
-    total_statuses = StatusStorage.count_all_statuses()
-
-    # Calculate processing ratio (percentage of statuses actually processed)
-    processing_ratio = if total_statuses > 0, do: tick_count / total_statuses * 100, else: 0.0
-
-    # Update state with performance metrics
-    new_state = %{
-      state
-      | tick_count: state.tick_count + 1,
-        last_tick: now_ms,
-        last_total_statuses: total_statuses,
-        last_due_statuses: tick_count,
-        processing_ratio: processing_ratio
-    }
-
-    # Log stats periodically (every 60 ticks)
-    if rem(new_state.tick_count, 60) == 0 do
-      Logger.debug(
-        "StatusTick ##{new_state.tick_count}: expired=#{expired_count}, " <>
-          "ticked=#{tick_count}/#{total_statuses} (#{Float.round(processing_ratio, 2)}%)"
-      )
-    end
-
-    # Schedule next tick
-    timer_ref = Process.send_after(self(), :tick, @tick_interval_ms)
-    new_state = %{new_state | tick_timer: timer_ref}
-
-    {:noreply, new_state}
+    {:noreply, state}
   end
 
   @impl true
+  def handle_cast({:arm, unit_type, unit_id, %StatusEntry{} = entry}, state) do
+    {:noreply, arm_entry(state, unit_type, unit_id, entry)}
+  end
+
   def handle_cast(
         {:schedule_exact_tick, unit_type, unit_id, status_id, generation, due_at},
         state
@@ -161,113 +168,148 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     )
   end
 
-  defp process_expired_statuses(now_ms) do
-    expired = StatusStorage.get_expired_statuses(now_ms)
+  # Timer bookkeeping
 
-    expired
-    |> Enum.chunk_every(@tick_batch_size)
-    |> Enum.each(&process_expired_batch/1)
+  defp arm_entry(
+         state,
+         unit_type,
+         unit_id,
+         %StatusEntry{type: status_id, generation: generation} = entry
+       ) do
+    key = {unit_type, unit_id, status_id}
 
-    length(expired)
-  end
+    case {deadline(entry), Map.get(state.timers, key)} do
+      {nil, nil} ->
+        state
 
-  defp process_expired_batch(batch) do
-    # Group expired statuses by unit for efficiency
-    unit_expirations =
-      Enum.group_by(batch, fn {{unit_type, unit_id, _status_type}, _entry} ->
-        {unit_type, unit_id}
-      end)
+      {nil, {ref, _generation, _due_at}} ->
+        Process.cancel_timer(ref)
+        %{state | timers: Map.delete(state.timers, key)}
 
-    Enum.each(unit_expirations, fn {{unit_type, unit_id}, statuses} ->
-      if UnitRegistry.unit_exists?(unit_type, unit_id) do
-        process_unit_expirations(unit_type, unit_id, statuses)
-      else
-        clear_orphaned_statuses(unit_type, unit_id, statuses)
-      end
-    end)
-  end
+      {due_at, {_ref, ^generation, due_at}} ->
+        state
 
-  defp process_unit_expirations(unit_type, unit_id, statuses) do
-    removed_status_types =
-      Enum.reduce(statuses, [], fn
-        {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = entry}, removed ->
-          if Interpreter.expire_status_if_current(unit_type, unit_id, status_type, entry) do
-            Interpreter.run_timeout(unit_type, unit_id, status_type, entry)
-            [status_type | removed]
-          else
-            removed
-          end
-      end)
+      {_due_at, {_ref, pending_generation, _pending_due}} when pending_generation > generation ->
+        state
 
-    case {unit_type, removed_status_types} do
-      {:player, [_ | _]} ->
-        notify_player_status_expiration(unit_id)
-
-      {_unit_type, status_types} ->
-        Enum.each(status_types, fn status_type ->
-          notify_unit_session(unit_type, unit_id, status_type, :expired)
-        end)
+      {due_at, pending} ->
+        if pending, do: Process.cancel_timer(elem(pending, 0))
+        delay = max(due_at - System.monotonic_time(:millisecond), 0)
+        ref = Process.send_after(self(), {:status_timer, key, generation, due_at}, delay)
+        %{state | timers: Map.put(state.timers, key, {ref, generation, due_at})}
     end
   end
 
-  defp process_tick_effects(now_ms) do
-    # Get only statuses that are due for ticking, instead of all statuses
-    due_statuses = StatusStorage.get_due_statuses(now_ms)
-
-    # Process tick effects in batches
-    due_statuses
-    |> Enum.chunk_every(@tick_batch_size)
-    |> Enum.each(&process_tick_batch(&1, now_ms))
-
-    length(due_statuses)
+  defp deadline(%StatusEntry{next_tick_at: next_tick_at, expires_at: expires_at}) do
+    [next_tick_at, expires_at]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.min(fn -> nil end)
   end
 
-  defp process_tick_batch(batch, now_ms) do
-    # Group status ticks by unit for efficiency
-    unit_ticks =
-      Enum.group_by(batch, fn {{unit_type, unit_id, _status_type}, _entry} ->
-        {unit_type, unit_id}
-      end)
-
-    Enum.each(unit_ticks, fn {{unit_type, unit_id}, statuses} ->
-      if UnitRegistry.unit_exists?(unit_type, unit_id) do
-        process_unit_ticks(unit_type, unit_id, statuses, now_ms)
-      else
-        clear_orphaned_statuses(unit_type, unit_id, statuses)
-      end
-    end)
+  defp rearm(state, {unit_type, unit_id, status_id}) do
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      %StatusEntry{} = entry -> arm_entry(state, unit_type, unit_id, entry)
+      nil -> state
+    end
   end
 
-  defp process_unit_ticks(unit_type, unit_id, statuses, now_ms) do
-    Enum.each(statuses, fn {{^unit_type, ^unit_id, status_type}, %StatusEntry{} = entry} ->
-      # Process the tick effect using the Interpreter
-      Interpreter.process_tick(unit_type, unit_id, status_type)
+  # Deadline processing
 
-      # Schedule next tick based on the status's tick value; only statuses
-      # with a positive tick interval ever enter the due set
-      tick_interval = if entry.tick > 0, do: entry.tick, else: 1000
+  defp process_deadline(state, {unit_type, unit_id, status_id} = key, generation, due_at) do
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      %StatusEntry{generation: ^generation} = entry ->
+        if UnitRegistry.unit_exists?(unit_type, unit_id) do
+          run_deadline(unit_type, unit_id, entry, due_at)
+          rearm(state, key)
+        else
+          clear_orphaned_status(unit_type, unit_id, status_id)
+          state
+        end
 
-      # Update the next tick time efficiently
-      StatusStorage.update_next_tick(unit_type, unit_id, status_type, now_ms + tick_interval)
+      _replaced_or_removed ->
+        rearm(state, key)
+    end
+  end
 
-      notify_unit_session(unit_type, unit_id, status_type, :tick)
-    end)
+  defp run_deadline(unit_type, unit_id, %StatusEntry{type: status_id} = entry, due_at) do
+    if tick_due?(entry, due_at), do: run_tick(unit_type, unit_id, entry)
 
-    # Notify the unit to recalculate stats after processing all statuses
-    # For now, only notify player sessions
-    if unit_type == :player do
-      notify_player_session(unit_id)
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      %StatusEntry{generation: generation} = current when generation == entry.generation ->
+        if expiry_due?(current, due_at), do: run_expiry(unit_type, unit_id, current)
+
+      _replaced_or_removed ->
+        :ok
+    end
+  end
+
+  defp tick_due?(%StatusEntry{next_tick_at: next_tick_at}, due_at),
+    do: is_integer(next_tick_at) and next_tick_at <= due_at
+
+  defp expiry_due?(%StatusEntry{expires_at: expires_at}, due_at),
+    do: is_integer(expires_at) and expires_at <= due_at
+
+  defp run_tick(unit_type, unit_id, %StatusEntry{type: status_id} = entry) do
+    Interpreter.process_tick_if_current(unit_type, unit_id, status_id, entry.generation)
+
+    advance_next_tick(
+      unit_type,
+      unit_id,
+      status_id,
+      entry.generation,
+      entry.next_tick_at,
+      next_tick_deadline(entry)
+    )
+
+    notify_unit_session(unit_type, unit_id, status_id, :tick)
+    if unit_type == :player, do: notify_player_session(unit_id)
+  end
+
+  # The next tick is anchored to this tick's deadline, unless the tick ran more
+  # than a second late, in which case it anchors to the present.
+  defp next_tick_deadline(%StatusEntry{next_tick_at: next_tick_at, tick: tick}) do
+    now_ms = System.monotonic_time(:millisecond)
+    anchor = if now_ms - next_tick_at > @late_deadline_ms, do: now_ms, else: next_tick_at
+    anchor + tick
+  end
+
+  # Compare-and-swap on the exact entry: a tick that replaced its own status, or a
+  # concurrent re-application, leaves the newer entry untouched.
+  defp advance_next_tick(unit_type, unit_id, status_id, generation, from, to) do
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      %StatusEntry{generation: ^generation, next_tick_at: ^from} = current ->
+        updated = %{current | next_tick_at: to, tick_count: current.tick_count + 1}
+
+        if StatusStorage.replace_status_if_current(
+             unit_type,
+             unit_id,
+             status_id,
+             current,
+             updated
+           ),
+           do: :ok,
+           else: advance_next_tick(unit_type, unit_id, status_id, generation, from, to)
+
+      _replaced_or_advanced ->
+        :ok
+    end
+  end
+
+  defp run_expiry(unit_type, unit_id, %StatusEntry{type: status_id} = entry) do
+    if Interpreter.expire_status_if_current(unit_type, unit_id, status_id, entry) do
+      Interpreter.run_timeout(unit_type, unit_id, status_id, entry)
+
+      if unit_type == :player,
+        do: notify_player_status_expiration(unit_id),
+        else: notify_unit_session(unit_type, unit_id, status_id, :expired)
     end
   end
 
   # A unit can vanish without running its cleanup (killed session, node
   # restart), leaving its statuses behind in StatusStorage. Processing them
   # would crash on the missing unit, so drop them and keep ticking.
-  defp clear_orphaned_statuses(unit_type, unit_id, statuses) do
-    Logger.warning(
-      "Clearing #{length(statuses)} orphaned status(es) for missing #{unit_type} #{unit_id}"
-    )
-
+  defp clear_orphaned_status(unit_type, unit_id, status_id) do
+    Logger.warning("Clearing orphaned status #{status_id} of missing #{unit_type} #{unit_id}")
     StatusStorage.clear_unit_statuses(unit_type, unit_id)
   end
 

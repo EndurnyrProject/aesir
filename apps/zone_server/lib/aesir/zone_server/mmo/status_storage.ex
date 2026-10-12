@@ -270,6 +270,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   end
 
   @doc """
+  Gets every stored status as `{{unit_type, unit_id, status_type}, entry}` tuples.
+  """
+  @spec get_all_statuses() :: list({{unit_type(), integer(), atom()}, StatusEntry.t()})
+  def get_all_statuses do
+    :ets.tab2list(table_for(:player_statuses))
+  end
+
+  @doc """
   Gets all expired statuses (for tick manager).
   Returns list of {{unit_type, unit_id, status_type}, entry} tuples.
 

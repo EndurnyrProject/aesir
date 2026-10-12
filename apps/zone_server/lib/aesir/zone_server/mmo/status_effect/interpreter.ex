@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -1607,6 +1608,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
            phase: new_instance.phase
          ) do
       {:stored, stored_instance, prior_instance} ->
+        StatusTickManager.arm(unit_type, unit_id, stored_instance)
+
         finish_stored_application(
           unit_type,
           unit_id,

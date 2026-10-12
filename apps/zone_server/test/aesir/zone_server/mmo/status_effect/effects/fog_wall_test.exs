@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FogWallTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.FogWall
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -56,17 +57,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FogWallTest do
 
     :ok = UnitRegistry.register_unit(:player, 7, PlayerState, player, self())
     :ok = StatusStorage.apply_status(:player, 7, :sc_blind, duration: 500)
-    :ok = StatusStorage.apply_status(:mob, 8, :sc_blind, duration: 500)
+    :ok = StatusStorage.apply_status(:mob, 8, :sc_blind, duration: 60_000)
+    Process.put({StatusTickManager, :server}, self())
 
     FogWall.on_expire({:player, 7}, @instance, %{})
     FogWall.on_expire({:mob, 8}, @instance, %{})
 
     refute StatusStorage.has_status?(:player, 7, :sc_blind)
 
-    remaining =
-      StatusStorage.get_status(:mob, 8, :sc_blind).expires_at -
-        System.monotonic_time(:millisecond)
+    blind = StatusStorage.get_status(:mob, 8, :sc_blind)
+    remaining = blind.expires_at - System.monotonic_time(:millisecond)
 
     assert_in_delta remaining, 30_000, 1_000
+    assert_receive {:"$gen_cast", {:arm, :mob, 8, ^blind}}
   end
 end

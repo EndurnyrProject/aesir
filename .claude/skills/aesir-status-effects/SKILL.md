@@ -52,7 +52,11 @@ are part of the mechanic.
   (`DamageShared.active_damage?/1`), for every unit type. Never hand-write an
   `on_damage` returning `:remove` for it.
 - `tick_interval:` — **mandatory for any effect overriding `on_tick`**; tickless statuses
-  (`tick <= 0`) get `next_tick_at: nil` and never enter the due set.
+  (`tick <= 0`) get `next_tick_at: nil` and never tick. `StatusTickManager` arms one exact
+  timer per status (next tick or expiry, whichever is earlier); ticks are anchored to their
+  deadline (`started_at + k * tick`), a tick landing on the expiry runs before it, and the
+  `on_tick` instance's `next_tick_at` is the deadline of the step being run. A status whose
+  interval tail ends it on a step (Stone) snaps its duration in `resolve_duration/2`.
 
 `end_on_start` is **directional** (fires when the *new* status applies) — mutual exclusion
 requires declarations in both directions on both modules, tested pairwise in both orders

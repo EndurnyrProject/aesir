@@ -42,8 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.IntimidateTest do
         %{status | expires_at: System.monotonic_time(:millisecond) - 1}
       end)
 
-    assert {:noreply, state} = StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
-    Process.cancel_timer(state.tick_timer)
+    assert {:noreply, _state} = StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
 
     refute StatusStorage.has_status?(:player, @player_id, :sc_intimidate)
   end
