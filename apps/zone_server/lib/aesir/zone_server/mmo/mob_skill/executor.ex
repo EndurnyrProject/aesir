@@ -124,8 +124,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   def resolve_target(%MobState{}, %{target: other}), do: {:error, {:unsupported_target, other}}
 
   @doc """
-  Resolves the row's target and dispatches to its skill module. At `:cast_end`
-  (a timed cast completing) the mob's own state is checked first
+  Shows the row's emotion, then resolves its target and dispatches to its skill
+  module. The emotion shows even when the cast then fails. At `:cast_end` (a
+  timed cast completing) the mob's own state is checked before the skill runs
   (`Targeting.validate_cast_completion/3`).
 
   Target invalidation, a caster that can no longer complete the cast, a failed
@@ -135,8 +136,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   """
   @spec execute(MobState.t(), map(), Targeting.skill_use_phase()) :: :ok | {:error, term()}
   def execute(%MobState{} = state, row, phase \\ :cast_begin) do
+    maybe_emote(state, row)
+
     with {:ok, target} <- resolve_target(state, row) do
-      maybe_emote(state, row)
       dispatch(state, target, row, phase)
     end
   end

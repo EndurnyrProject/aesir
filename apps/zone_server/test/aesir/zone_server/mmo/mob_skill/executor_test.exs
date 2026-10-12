@@ -648,11 +648,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert Executor.execute(mob(), row(%{emotion: nil})) == :ok
     end
 
-    test "does not fire an emote when target resolution fails" do
-      reject(&Emote.show/2)
+    test "fires the emote at cast end even when the target is gone" do
+      expect(Emote, :show, fn {:mob, _instance_id}, 3 -> :ok end)
       reject(&Combat.execute_magic_attack/3)
 
-      assert Executor.execute(mob(%{target_ref: nil}), row(%{emotion: 3})) == {:error, :no_target}
+      assert Executor.execute(mob(%{target_ref: nil}), row(%{emotion: 3}), :cast_end) ==
+               {:error, :no_target}
     end
   end
 
