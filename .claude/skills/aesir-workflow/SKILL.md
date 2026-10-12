@@ -132,6 +132,13 @@ Every flake the suite has had traces to one of these. Check them before diagnosi
   path as arranged state must be pinned: `vit: 0, luk: 0` on the target (rolls in a
   session/manager process), or `stub(Resistance, :roll_success, fn _ -> true end)` when the
   roll happens in the test process (`Resistance` is Mimic-able via `test_helper.exs`).
+- **Unpinned swing rolls**: a critical skips the hit roll, a player defender always has a
+  Lucky Dodge chance, and the hit rate never guarantees a miss. A test that needs a hit or a
+  miss pins the outcome (`stub(HitCalculations, :calculate_hit_result, ...)`) or the crit
+  (`critical_rate: 0`) when the attack runs in the test process.
+- **Deadlines stamped inside the call**: assert `expires_at` between `before + d` and
+  `after + d` around the call, never `assert_in_delta expires_at - now`, which drifts
+  under load.
 - **Mimic mode leak**: a file that stubs without claiming a mode inherits whatever the
   previous module leaked. Files that stub need `setup :set_mimic_private`; files that go
   global need `setup {Aesir.MimicMode, :global}`, never raw `setup :set_mimic_global`.
