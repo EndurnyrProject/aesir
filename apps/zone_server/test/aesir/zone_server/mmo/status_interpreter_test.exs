@@ -328,6 +328,30 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       assert Interpreter.can_use_skill?(:mob, 77, 29)
     end
 
+    test "can_use_skill?/4 lets an item skill through casting locks and skill blocks only",
+         %{player_id: player_id} do
+      for status <- [:sc_silence, :sc_steelbody, :sc_ankle, :sc_stonewait] do
+        :ok = StatusStorage.apply_status(:player, player_id, status)
+        refute Interpreter.can_use_skill?(:player, player_id, 26)
+        assert Interpreter.can_use_skill?(:player, player_id, 26, true), inspect(status)
+        :ok = StatusStorage.remove_status(:player, player_id, status)
+      end
+
+      for status <- [:sc_stun, :sc_freeze, :sc_trickdead, :sc_hiding, :sc_auto_counter] do
+        :ok = StatusStorage.apply_status(:player, player_id, status)
+        refute Interpreter.can_use_skill?(:player, player_id, 26, true), inspect(status)
+        :ok = StatusStorage.remove_status(:player, player_id, status)
+      end
+    end
+
+    test "can_use_skill?/3 denies every skill during the Auto Counter stance",
+         %{player_id: player_id} do
+      :ok = StatusStorage.apply_status(:player, player_id, :sc_auto_counter)
+
+      refute Interpreter.can_use_skill?(:player, player_id, 61)
+      refute Interpreter.can_use_skill?(:player, player_id, 5)
+    end
+
     test "can_use_skill?/3 denies only skills listed by a narrow block", %{player_id: player_id} do
       assert :ok = Interpreter.apply_status(:player, player_id, :sc_test_blocked_skill)
 

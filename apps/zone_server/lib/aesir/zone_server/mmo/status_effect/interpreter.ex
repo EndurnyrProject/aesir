@@ -1124,19 +1124,37 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   A status' `:blocked_skills` always denies its listed skills. Otherwise, a
   `prevents_skills` status does not block a skill it lists in `:allow_skills`.
-  A hidden player may use only a skill usable while hidden.
   This lets a feigning-death player recast NV_TRICKDEAD to stand back up even
-  though SC_TRICKDEAD prevents skills.
+  though SC_TRICKDEAD prevents skills. A hidden player may use only a skill
+  usable while hidden, and the Auto Counter stance allows no skill at all.
+
+  `item?` marks a player's skill cast from an item: casting locks (Silence and
+  the other statuses that forbid starting a cast) and skill blocks do not stop
+  it, while a stun-like body state, playing dead, Blade Stop, a performance,
+  the caster's own Battle Chant, Hiding and Auto Counter still do.
   """
-  @spec can_use_skill?(unit_type(), integer(), integer()) :: boolean()
-  def can_use_skill?(unit_type, unit_id, skill_id) do
+  @spec can_use_skill?(unit_type(), integer(), integer(), boolean()) :: boolean()
+  def can_use_skill?(unit_type, unit_id, skill_id, item? \\ false) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
     |> Enum.all?(fn %StatusEntry{type: type} = entry ->
-      skill_id not in PropertyChecker.blocked_skills(type) and
-        skill_allowed?(entry, unit_type, unit_id, skill_id)
+      (item? and not item_skill_lock?(entry)) or
+        (skill_id not in PropertyChecker.blocked_skills(type) and
+           skill_allowed?(entry, unit_type, unit_id, skill_id))
     end)
   end
+
+  @item_skill_locks [
+    :sc_trickdead,
+    :sc_bladestop,
+    :sc_dancing,
+    :sc_gospel,
+    :sc_hiding,
+    :sc_auto_counter
+  ]
+
+  defp item_skill_lock?(%StatusEntry{type: type} = entry),
+    do: type in @item_skill_locks or locking_body_state?(entry)
 
   @doc """
   Whether a performing unit's lock lets it use `skill_id`, as `can_use_skill?/3`
@@ -1225,6 +1243,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
     allowed and not hermode_adaptation?(entry, skill_id)
   end
+
+  defp skill_allowed?(%StatusEntry{type: :sc_auto_counter}, _unit_type, _unit_id, _skill_id),
+    do: false
 
   defp skill_allowed?(%StatusEntry{type: :sc_hiding}, :player, _unit_id, skill_id),
     do: match?({:ok, %{allow_when_hidden: true}}, Catalog.by_id(skill_id))

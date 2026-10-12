@@ -95,6 +95,34 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
     assert get_player_state(player.pid).stats.current_state.sp == 100
   end
 
+  test "silence does not stop a skill cast from an item, stun does" do
+    player = start_player_session(name: "Silenced", sp: 100, max_sp: 100)
+    mob = start_mob_session(position: {151, 150}, awake: false)
+    id = player.character.id
+    on_exit(fn -> StatusStorage.clear_unit_statuses(:player, id) end)
+
+    cast_scroll = fn ->
+      {:ok, _state} = PlayerSession.script_apply(player.pid, {:stage_item_skill, 19, 1})
+      assert_packet_sent(ItemSkillReady)
+
+      simulate_incoming_message(player.pid, %SkillCast{
+        skill_id: 19,
+        level: 1,
+        target_id: mob.unit_id
+      })
+    end
+
+    :ok = StatusStorage.apply_status(:player, id, :sc_stun, duration: 60_000)
+    cast_scroll.()
+    assert collect_packets_of_type(SkillCasting) == []
+    :ok = StatusStorage.remove_status(:player, id, :sc_stun)
+
+    :ok = StatusStorage.apply_status(:player, id, :sc_silence, duration: 60_000)
+    cast_scroll.()
+    assert %SkillCasting{skill_id: 19} = assert_packet_sent(SkillCasting)
+    assert eventually(fn -> get_mob_state(mob.pid).hp < 100 end)
+  end
+
   defp charges(char_id) do
     case StatusStorage.get_status(:player, char_id, @memorize) do
       %{state: %{charges: n}} -> n

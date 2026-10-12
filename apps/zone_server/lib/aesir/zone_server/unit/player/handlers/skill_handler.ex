@@ -454,7 +454,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp drive_item_cast(%{game_state: game_state} = state, skill_id, level, target) do
     locked = game_state.combat_target_id
 
-    with {:ok, state} <- cast_gate(state, skill_id),
+    with {:ok, state} <- cast_gate(state, skill_id, :item),
          {:ok, state} <- ensure_idle_for_cast(state) do
       begin_ready_item_cast(state, skill_id, level, target, locked)
     else
@@ -1193,12 +1193,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @doc """
   Applies the session-owned living, status, and action gate for a skill cast.
 
-  Staged and resumed input casts use the default start phase. Timed casts use
-  `:completion`, which requires the existing cast action to still be active and
-  leaves the caster's statuses to the interpreter's completion check: a status
-  that only forbids starting a cast does not stop one already under way.
+  Staged and resumed input casts use the default start phase. A skill cast from
+  an item starts with `:item`, which casting locks and skill blocks do not stop.
+  Timed casts use `:completion`, which requires the existing cast action to still
+  be active and leaves the caster's statuses to the interpreter's completion
+  check: a status that only forbids starting a cast does not stop one already
+  under way.
   """
-  @spec cast_gate(SessionState.t(), integer(), :start | :completion | :restricted) ::
+  @spec cast_gate(SessionState.t(), integer(), :start | :item | :completion | :restricted) ::
           {:ok, SessionState.t()} | {:error, :dead | :status_blocked | :busy}
   def cast_gate(state, skill_id, phase \\ :start)
 
@@ -1211,11 +1213,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp check_start_status(_game_state, _skill_id, :completion), do: :ok
 
-  defp check_start_status(game_state, skill_id, _phase) do
-    if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id),
+  defp check_start_status(game_state, skill_id, phase) do
+    if start_allowed?(game_state.character_id, skill_id, phase),
       do: :ok,
       else: {:error, :status_blocked}
   end
+
+  defp start_allowed?(id, skill_id, :item),
+    do: StatusInterpreter.can_use_skill?(:player, id, skill_id, true)
+
+  defp start_allowed?(id, skill_id, _phase),
+    do: StatusInterpreter.can_use_skill?(:player, id, skill_id)
 
   defp ensure_living_caster(%{action_state: :dead}), do: {:error, :dead}
 
@@ -1223,6 +1231,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     do: {:error, :dead}
 
   defp ensure_living_caster(_game_state), do: :ok
+
+  defp check_cast_action(state, :item), do: check_cast_action(state, :start)
 
   defp check_cast_action(state, :start) do
     if SessionState.interaction_blocked?(state) do
