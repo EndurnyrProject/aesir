@@ -4,8 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DamageBrokenStatusTest do
   import Aesir.TestEtsSetup
   import Aesir.ZoneServer.SessionHelpers
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
 
@@ -52,10 +55,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DamageBrokenStatusTest do
       Interpreter.on_damage(:mob, mob.unit_id, %{damage: 0, coma?: true})
       refute StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
 
-      player = start_player_session()
-      hold(:player, player.character.id, :sc_winkcharm)
-      Interpreter.on_damage(:player, player.character.id, %{damage: 0})
-      refute StatusStorage.has_status?(:player, player.character.id, :sc_winkcharm)
+      player_id = register_player()
+      hold(:player, player_id, :sc_winkcharm)
+      Interpreter.on_damage(:player, player_id, %{damage: 0})
+      refute StatusStorage.has_status?(:player, player_id, :sc_winkcharm)
     end
 
     test "ends only what the unit held when the hit was dealt" do
@@ -131,6 +134,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DamageBrokenStatusTest do
       StatusStorage.clear_unit_statuses(:mob, 1)
       assert StatusStorage.last_effect(:mob, 1, now + 10) == nil
     end
+  end
+
+  # A registered player is enough here; a live session would need the DB sandbox.
+  defp register_player do
+    id = System.unique_integer([:positive])
+
+    player =
+      PlayerState.new(%Character{
+        id: id,
+        account_id: id,
+        name: "Charmed",
+        last_map: "prontera",
+        last_x: 150,
+        last_y: 150,
+        hp: 100,
+        sp: 100,
+        class: 0,
+        sex: "M"
+      })
+
+    :ok = UnitRegistry.register_unit(:player, id, PlayerState, player, self())
+    id
   end
 
   defp hold(unit_type, unit_id, status),
