@@ -97,7 +97,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
                EquipProcDispatch.event(
                  melee(),
                  0,
-                 %{devotion_rerouted?: true, devotion_damage: 0}, immediate?: true)
+                 %{devotion_rerouted?: true, devotion_damage: 0},
+                 immediate?: true
+               )
     end
 
     test "an immediate hit gates the counter stage on positive damage" do
