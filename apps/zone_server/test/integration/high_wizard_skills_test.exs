@@ -42,8 +42,17 @@ defmodule Aesir.ZoneServer.Integration.HighWizardSkillsTest do
 
     cast_ground(wizard, @gravitation, 1, {155, 150})
 
-    assert eventually(fn -> SkillUnitStorage.get_groups_by_caster(:player, id) != [] end, 8_000)
-    assert %{state: %{self?: true}} = StatusStorage.get_status(:player, id, :sc_gravitation)
+    # The field is stored before the caster's own status lands; wait for both.
+    assert eventually(
+             fn ->
+               SkillUnitStorage.get_groups_by_caster(:player, id) != [] and
+                 match?(
+                   %{state: %{self?: true}},
+                   StatusStorage.get_status(:player, id, :sc_gravitation)
+                 )
+             end,
+             8_000
+           )
 
     PlayerSession.apply_damage(wizard.pid, 10)
 
