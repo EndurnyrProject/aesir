@@ -1291,7 +1291,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                report_hit: true
              )
 
-    assert_receive {:owner_cast, {:homunculus, {:apply_coma, 2001, {:player, 1001}}}}
+    assert_receive {:owner_cast,
+                    {:homunculus, {:apply_coma, 2001, {:player, 1001}, %{damage_broken: _}}}}
   end
 
   test "a targetable skill unit receives ordinary physical damage without coma" do

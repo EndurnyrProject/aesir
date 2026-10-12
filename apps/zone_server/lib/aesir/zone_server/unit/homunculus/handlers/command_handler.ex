@@ -124,7 +124,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def cast({:apply_damage, _gid, _damage, _hit_info, _source} = combat_event, session),
     do: CombatHandler.handle(combat_event, session)
 
-  def cast({:apply_coma, _gid, _source} = combat_event, session),
+  def cast({:apply_coma, _gid, _source, _metadata} = combat_event, session),
+    do: CombatHandler.handle(combat_event, session)
+
+  def cast({:apply_passive_hp_loss, _gid, _amount} = combat_event, session),
     do: CombatHandler.handle(combat_event, session)
 
   def cast({:apply_heal, _gid, _amount, _source} = combat_event, session),

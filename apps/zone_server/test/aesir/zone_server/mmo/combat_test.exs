@@ -784,7 +784,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       assert_receive {:relayed,
-                      {:"$gen_cast", {:homunculus, {:apply_coma, 4001, {:player, 1001}}}}}
+                      {:"$gen_cast",
+                       {:homunculus, {:apply_coma, 4001, {:player, 1001}, %{damage_broken: _}}}}}
     end
   end
 

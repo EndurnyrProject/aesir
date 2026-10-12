@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
@@ -598,7 +599,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
     assert {:error, :not_found} = UnitRegistry.get_unit(:homunculus, gid)
 
     dead = state.homunculus
-    GenServer.cast(session.pid, {:homunculus, {:apply_coma, gid, {:mob, 2_001}}})
+    GenServer.cast(session.pid, {:homunculus, {:apply_coma, gid, {:mob, 2_001}, %{}}})
     assert PlayerSession.get_state(session.pid).homunculus == dead
 
     row = Persistence.load_for_character(character.id)
@@ -617,6 +618,82 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
     refute source =~ "KillExp"
     refute source =~ "ItemDrop"
     refute source =~ "Coordinator.mob_died"
+  end
+
+  describe "damage notifications" do
+    test "an active hit ends the Homunculus's damage-broken statuses; a status tick does not", %{
+      session: session,
+      gid: gid
+    } do
+      hold_sleep(gid)
+
+      assert :ok =
+               DamageApplication.apply_unit_damage(
+                 :homunculus,
+                 session.pid,
+                 gid,
+                 5,
+                 %{status_tick?: true},
+                 nil
+               )
+
+      assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp == 795 end)
+      assert StatusStorage.has_status?(:homunculus, gid, :sc_sleep)
+
+      assert :ok =
+               DamageApplication.apply_unit_damage(
+                 :homunculus,
+                 session.pid,
+                 gid,
+                 5,
+                 %{dmg_type: :physical},
+                 {:mob, 2_001}
+               )
+
+      assert_eventually(fn -> not StatusStorage.has_status?(:homunculus, gid, :sc_sleep) end)
+      assert PlayerSession.get_state(session.pid).homunculus.hp == 790
+    end
+
+    test "a zero-damage notification and a coma at 1 HP are still active damage", %{
+      session: session,
+      gid: gid
+    } do
+      hold_sleep(gid)
+
+      assert :ok =
+               DamageApplication.apply_unit_damage(:homunculus, session.pid, gid, 0, %{}, nil)
+
+      assert_eventually(fn -> not StatusStorage.has_status?(:homunculus, gid, :sc_sleep) end)
+
+      :sys.replace_state(session.pid, fn current ->
+        StateCommit.commit(current, %{current.homunculus | hp: 1, sp: 1})
+      end)
+
+      hold_sleep(gid)
+
+      assert :ok =
+               DamageApplication.apply_unit_damage(
+                 :homunculus,
+                 session.pid,
+                 gid,
+                 40,
+                 %{coma?: true},
+                 {:mob, 2_001}
+               )
+
+      assert_eventually(fn -> not StatusStorage.has_status?(:homunculus, gid, :sc_sleep) end)
+      assert %{hp: 1, sp: 1} = PlayerSession.get_state(session.pid).homunculus
+    end
+  end
+
+  defp hold_sleep(gid) do
+    assert :ok =
+             StatusInterpreter.apply_status(:homunculus, gid, :sc_sleep,
+               no_avoid: true,
+               duration: 60_000
+             )
+
+    assert StatusStorage.has_status?(:homunculus, gid, :sc_sleep)
   end
 
   defp insert_homunculus(character_id) do

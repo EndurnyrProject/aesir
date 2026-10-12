@@ -362,7 +362,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                {:mob, 20}
              )
 
-    assert effect == {:homunculus, {:apply_coma, 25, {:mob, 20}}}
+    assert {:homunculus, {:apply_coma, 25, {:mob, 20}, %{damage_broken: %{statuses: []}}}} =
+             effect
   end
 
   test "zero prepared coma damage performs no owner delivery or post-damage hook" do

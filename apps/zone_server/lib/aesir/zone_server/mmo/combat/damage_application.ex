@@ -337,13 +337,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   # The recipient's damage-broken statuses as the hit is dealt, before the attack
   # path runs its additional effects; see `StatusInterpreter.damage_broken_snapshot/2`.
   defp capture_damage_broken(hit_info, target_type, target_id)
-       when target_type in [:player, :mob],
+       when target_type in [:player, :mob, :homunculus],
        do:
-         Map.put(
-           hit_info,
-           :damage_broken,
+         Map.put_new_lazy(hit_info, :damage_broken, fn ->
            StatusInterpreter.damage_broken_snapshot(target_type, target_id)
-         )
+         end)
 
   defp capture_damage_broken(hit_info, _target_type, _target_id), do: hit_info
 
@@ -355,6 +353,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       {final_damage, hit_info} =
         prepare_delivery(:homunculus, world_gid, damage, hit_info, attacker)
 
+      hit_info = capture_damage_broken(hit_info, :homunculus, world_gid)
       {:homunculus, {:apply_damage, world_gid, final_damage, hit_info, attacker}}
     else
       raise ArgumentError, "invalid typed Homunculus damage effect"
@@ -917,13 +916,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     MobSession.apply_coma(target_pid, typed_attacker(attacker), hit_info)
   end
 
-  defp deliver_coma(:homunculus, target_pid, target_id, _hit_info, attacker)
+  defp deliver_coma(:homunculus, target_pid, target_id, hit_info, attacker)
        when target_pid == self() do
-    {:local_effects, [{:homunculus, {:apply_coma, target_id, typed_attacker(attacker)}}]}
+    {:local_effects, [homunculus_coma(target_id, hit_info, attacker)]}
   end
 
-  defp deliver_coma(:homunculus, target_pid, target_id, _hit_info, attacker) do
-    GenServer.cast(target_pid, {:homunculus, {:apply_coma, target_id, typed_attacker(attacker)}})
+  defp deliver_coma(:homunculus, target_pid, target_id, hit_info, attacker) do
+    GenServer.cast(target_pid, homunculus_coma(target_id, hit_info, attacker))
+  end
+
+  defp homunculus_coma(target_id, hit_info, attacker) do
+    metadata = Map.take(hit_info, [:damage_broken])
+    {:homunculus, {:apply_coma, target_id, typed_attacker(attacker), metadata}}
   end
 
   # Classifies a hit for the on-kill HP/SP gain equipment bonuses: a physical

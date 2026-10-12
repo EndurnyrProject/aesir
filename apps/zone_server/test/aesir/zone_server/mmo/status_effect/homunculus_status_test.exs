@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bloodlust
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Stone
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -153,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
              UnitRegistry.get_unit(:homunculus, gid)
   end
 
-  test "a lethal status tick clears rows and world presence", %{session: session, gid: gid} do
+  test "lethal status damage clears rows and world presence", %{session: session, gid: gid} do
     :sys.replace_state(session.pid, fn current ->
       StateCommit.commit(current, %{current.homunculus | hp: 1})
     end)
@@ -161,14 +163,46 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
     assert :ok =
              Interpreter.apply_status(:homunculus, gid, :sc_poison, bypass_resistance: true)
 
-    past = System.monotonic_time(:millisecond) - 1
-    :ok = StatusStorage.update_next_tick(:homunculus, gid, :sc_poison, past)
-
-    assert {:noreply, _state} =
-             StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
+    assert :ok = Helpers.deal_damage({:homunculus, gid}, 1)
 
     assert_eventually(fn -> StatusStorage.get_unit_statuses(:homunculus, gid) == [] end)
     assert_eventually(fn -> UnitRegistry.get_unit(:homunculus, gid) == {:error, :not_found} end)
+  end
+
+  test "passive status HP loss reaches the Homunculus through its owner and stops at 1 HP", %{
+    session: session,
+    gid: gid
+  } do
+    assert :ok = Helpers.apply_passive_hp_loss({:homunculus, gid}, 10)
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp == 790 end)
+
+    assert :ok = Helpers.apply_passive_hp_loss({:homunculus, gid}, 5_000)
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp == 1 end)
+
+    assert :ok = Helpers.apply_passive_hp_loss({:homunculus, gid}, 5)
+    state = PlayerSession.get_state(session.pid)
+    assert %{hp: 1, lifecycle: :active} = state.homunculus
+    assert {:ok, {HomunculusState, %{hp: 1}, _pid}} = UnitRegistry.get_unit(:homunculus, gid)
+  end
+
+  test "a petrified Homunculus loses 1% of its Max HP on a petrification step", %{
+    session: session,
+    gid: gid
+  } do
+    max_hp = PlayerSession.get_state(session.pid).homunculus.max_hp
+
+    assert :ok =
+             Interpreter.apply_status(:homunculus, gid, :sc_stone,
+               no_avoid: true,
+               duration: 12_000
+             )
+
+    past = System.monotonic_time(:millisecond) - 1
+    :ok = StatusStorage.update_next_tick(:homunculus, gid, :sc_stone, past)
+    assert {:noreply, _state} = StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
+
+    expected = 800 - Stone.drain(max_hp)
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp == expected end)
   end
 
   test "cross-map warp clears flagged statuses and retains ordinary statuses", %{

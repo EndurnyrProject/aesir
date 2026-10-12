@@ -612,7 +612,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
              )
 
     assert_receive {:owner_cast,
-                    {:homunculus, {:apply_coma, ^homunculus_id, {:player, @caster_id}}}}
+                    {:homunculus,
+                     {:apply_coma, ^homunculus_id, {:player, @caster_id}, %{damage_broken: _}}}}
   end
 
   test "mob and Homunculus ground attackers cannot source player equipment coma" do

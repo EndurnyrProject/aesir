@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bleeding do
   @moduledoc """
   Bleeding (SC_BLEEDING).
 
-  Stops HP/SP regeneration and deals damage every 10 seconds based on the
-  status level (val1).
+  Stops HP/SP regeneration and every 10 seconds takes a uniform 200 to 799 HP
+  as passive loss. A player can bleed to death; any other unit stops at 1 HP.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_bleeding,
@@ -25,8 +25,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bleeding do
 
   @impl true
   def on_tick(target, instance, _context) do
-    deal_damage(target, max(200 + instance.val1 * 10, 1))
-    deal_damage(target, max(instance.val1 * 2, 1))
+    damage = :rand.uniform(600) + 199
+
+    if player?(target),
+      do: deal_damage(target, damage),
+      else: apply_passive_hp_loss(target, damage)
+
     {:ok, instance}
   end
 end

@@ -32,41 +32,42 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   @type event ::
           {:apply_damage, pos_integer(), non_neg_integer(), map(), tuple() | nil}
-          | {:apply_coma, pos_integer(), tuple() | nil}
+          | {:apply_coma, pos_integer(), tuple() | nil, map()}
+          | {:apply_passive_hp_loss, pos_integer(), pos_integer()}
           | {:apply_heal, pos_integer(), DamageApplication.heal_amount(), tuple() | nil}
           | {:drain_sp, pos_integer(), non_neg_integer()}
           | {:basic_attack, pos_integer(), tuple()}
           | {:status_changed, pos_integer(), atom(), :applied | :tick | :expired | :removed}
 
-  @doc "Applies one typed combat event through the owning aggregate."
+  @doc """
+  Applies one typed combat event through the owning aggregate.
+
+  Damage and coma notify the Homunculus's statuses as any unit's damage does
+  (`StatusInterpreter.on_damage/3`), a zero-damage notification and a coma on a
+  Homunculus already at 1 HP included. Passive HP loss stops at 1 HP and
+  notifies nothing.
+  """
   @spec handle(event(), SessionState.t()) ::
           {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
-  def handle({:apply_damage, gid, damage, _hit_info, _attacker}, session)
-      when is_integer(damage) and damage > 0 do
+  def handle({:apply_damage, gid, damage, hit_info, attacker}, session)
+      when is_integer(damage) and damage >= 0 do
     case active_homunculus(session, gid) do
-      {:ok, homunculus} ->
-        new_hp = max(homunculus.hp - damage, 0)
-
-        if new_hp == 0 do
-          die(session)
-        else
-          commit_damage(session, homunculus, %{homunculus | hp: new_hp})
-        end
-
-      {:error, :stale_target} ->
-        {:noreply, session}
+      {:ok, homunculus} -> take_damage(session, homunculus, damage, hit_info, attacker)
+      {:error, :stale_target} -> {:noreply, session}
     end
   end
 
   def handle({:apply_damage, _gid, _damage, _hit_info, _attacker}, session),
     do: {:noreply, session}
 
-  def handle({:apply_coma, gid, _source}, session) do
+  def handle({:apply_coma, gid, source, metadata}, session) do
     case active_homunculus(session, gid) do
       {:ok, %{hp: hp}} when hp <= 0 ->
         {:noreply, session}
 
       {:ok, homunculus} ->
+        coma = Map.put(metadata, :coma?, true)
+        notify_statuses(homunculus, homunculus.hp - 1, 1, coma, source)
         updated = %{homunculus | hp: 1, sp: 1}
 
         if updated == homunculus,
@@ -77,6 +78,18 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
         {:noreply, session}
     end
   end
+
+  def handle({:apply_passive_hp_loss, gid, amount}, session)
+      when is_integer(amount) and amount > 0 do
+    with {:ok, homunculus} <- active_homunculus(session, gid),
+         loss when loss > 0 <- min(amount, homunculus.hp - 1) do
+      commit_damage(session, homunculus, %{homunculus | hp: homunculus.hp - loss})
+    else
+      _none -> {:noreply, session}
+    end
+  end
+
+  def handle({:apply_passive_hp_loss, _gid, _amount}, session), do: {:noreply, session}
 
   # Renewal's three-times Homunculus bonus applies only to HP potion recovery; SP uses shared recovery unmultiplied.
   def handle({:apply_heal, gid, {:potion, :hp, _amount} = descriptor, _source}, session) do
@@ -323,6 +336,35 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
     else
       reason -> {:stop, {:homunculus_death_persistence_failed, reason}, session}
     end
+  end
+
+  defp take_damage(session, homunculus, 0, hit_info, attacker) do
+    notify_statuses(homunculus, 0, homunculus.hp, hit_info, attacker)
+    {:noreply, session}
+  end
+
+  defp take_damage(session, homunculus, damage, hit_info, attacker) do
+    new_hp = max(homunculus.hp - damage, 0)
+    notify_statuses(homunculus, min(damage, homunculus.hp), new_hp, hit_info, attacker)
+
+    if new_hp == 0,
+      do: die(session),
+      else: commit_damage(session, homunculus, %{homunculus | hp: new_hp})
+  end
+
+  defp notify_statuses(homunculus, damage, hp_after, hit_info, attacker) do
+    StatusInterpreter.on_damage(
+      :homunculus,
+      homunculus.world_gid,
+      hit_info
+      |> Map.put_new(:element, :neutral)
+      |> Map.merge(%{
+        damage: damage,
+        hp_after: hp_after,
+        max_hp: homunculus.max_hp,
+        attacker: attacker
+      })
+    )
   end
 
   defp commit_damage(session, previous, updated) do

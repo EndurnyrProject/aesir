@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
   test "Poison suppresses its damage tick while Slow Poison is active" do
     target = {:player, 2_000}
     instance = %StatusEntry{type: :sc_poison}
-    context = %{target: %{max_hp: 1_000}}
+    context = %{target: %{max_hp: 1_000, hp: 1_000}}
 
     stub(StatusStorage, :has_status?, fn :player, 2_000, :sc_slowpoison -> true end)
     reject(&Helpers.deal_damage/2)
@@ -165,7 +165,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
   test "Poison still damages when Slow Poison is absent" do
     target = {:player, 2_000}
     instance = %StatusEntry{type: :sc_poison}
-    context = %{target: %{max_hp: 1_000}}
+    context = %{target: %{max_hp: 1_000, hp: 1_000}}
 
     stub(StatusStorage, :has_status?, fn :player, 2_000, :sc_slowpoison -> false end)
     expect(Helpers, :deal_damage, fn ^target, 17 -> :ok end)
