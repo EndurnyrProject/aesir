@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincross
@@ -64,16 +63,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
   end
 
   @tag game_mode: :renewal
-  test "dynamic cost uses Bard cost ordering" do
-    caster = player()
-    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
-    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
-
-    assert %Cost{sp: 32, sp_requirement: 32} =
-             BaAssassincross.dynamic_cost(cost_state(), :self, 1, BaAssassincross.definition())
-  end
-
-  @tag game_mode: :renewal
   test "completion excludes the caster under a real Quagmire status" do
     caster = player()
     :ok = StatusStorage.apply_status(:player, 1, :sc_quagmire, duration: 10_000, val2: 5)
@@ -90,13 +79,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
 
     assert {:ok, result} = BaAssassincross.cast(caster, :self, 1, BaAssassincross.definition())
     assert result.last_song == %{skill_id: 320, level: 1}
-  end
-
-  defp cost_state do
-    %{
-      character_id: 1,
-      stats: %{current_state: %{hp: 100, sp: 100}, derived_stats: %{max_hp: 100}}
-    }
   end
 
   defp player do
@@ -149,15 +131,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
 
     assert {:ok, result} = BaAssassincross.cast(caster, :self, 1, BaAssassincross.definition())
     assert result.last_song == %{skill_id: 320, level: 1}
-  end
-
-  @tag game_mode: :pre_renewal
-  test "classic dynamic cost ignores Adaptation" do
-    caster = player()
-    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
-    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
-
-    assert %Cost{sp: 38, sp_requirement: 38} =
-             BaAssassincross.dynamic_cost(cost_state(), :self, 1, BaAssassincross.definition())
   end
 end

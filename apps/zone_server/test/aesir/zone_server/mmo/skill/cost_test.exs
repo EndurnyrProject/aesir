@@ -1,9 +1,136 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.CostTest do
   use ExUnit.Case, async: true
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
+  alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  defmodule UnitStub do
+    def get_entity_info(_state), do: %{stats: %{}}
+  end
+
+  describe "resolve_sp/4" do
+    setup :setup_ets_tables
+
+    @char 1_000
+
+    setup do
+      :ok = UnitRegistry.register_unit(:player, @char, UnitStub, %{}, self())
+    end
+
+    defp sp_state(equipment \\ %{}, passive \\ %{}) do
+      %{
+        character_id: @char,
+        stats: %{
+          current_state: %{hp: 100, sp: 100},
+          derived_stats: %{max_hp: 100},
+          modifiers: %{equipment: equipment, passive: passive}
+        }
+      }
+    end
+
+    # 319 (Whistle) is a performance, so a song; 318 (Frost Joker) is not.
+    defp sp_definition(sp, overrides \\ []),
+      do: definition([id: 319, sp_cost: [sp]] ++ overrides)
+
+    defp hold(status_id, params \\ []) do
+      :ok =
+        StatusStorage.apply_status(
+          :player,
+          @char,
+          status_id,
+          Keyword.put(params, :duration, 10_000)
+        )
+    end
+
+    test "the global rate folds status, passive and equipment shares before the flat" do
+      hold(:sc_spcost_rate, val1: 10)
+      state = sp_state(%{{:skill_use_sp, 319} => 3, sp_cost_rate: -10}, %{sp_cost_rate: -20})
+
+      assert Cost.resolve_sp(state, sp_definition(37), 1) == 19
+    end
+
+    test "the global rate floors at zero" do
+      hold(:sc_spcost_rate, val1: 150)
+
+      assert Cost.resolve_sp(sp_state(), sp_definition(37), 1) == 0
+    end
+
+    test "the per-skill rate applies after the flat, positive is cheaper, and the result floors at zero" do
+      assert Cost.resolve_sp(
+               sp_state(%{{:skill_use_sp, 319} => 3, {:skill_use_sp_rate, 319} => 50}),
+               sp_definition(9),
+               1
+             ) == 3
+
+      assert Cost.resolve_sp(
+               sp_state(%{{:skill_use_sp, 319} => 20, {:skill_use_sp_rate, 319} => 50}),
+               sp_definition(9),
+               1
+             ) == 0
+
+      assert Cost.resolve_sp(sp_state(%{{:skill_use_sp_rate, 999} => 50}), sp_definition(9), 1) ==
+               9
+    end
+
+    test "a negative flat result times a negative per-skill factor comes back positive" do
+      assert Cost.resolve_sp(
+               sp_state(%{{:skill_use_sp, 319} => 20, {:skill_use_sp_rate, 319} => 150}),
+               sp_definition(9),
+               1
+             ) == 5
+    end
+
+    test "the per-skill rate step caps at 32,767" do
+      assert Cost.resolve_sp(
+               sp_state(%{{:skill_use_sp_rate, 319} => -20}),
+               sp_definition(30_000),
+               1
+             ) ==
+               32_767
+    end
+
+    @tag game_mode: :renewal
+    test "Adaptation cuts a song by a fifth after the rate and flat steps" do
+      hold(:sc_spcost_rate, val1: 10)
+      hold(:sc_adaptation)
+
+      state =
+        sp_state(%{{:skill_use_sp, 319} => 3, {:skill_use_sp_rate, 319} => 20, sp_cost_rate: -10})
+
+      assert Cost.resolve_sp(state, sp_definition(37), 1) == 16
+      assert Cost.resolve_sp(state, sp_definition(99), 1, 37) == 16
+      # Frost Joker (318) is not a song: no Adaptation and no per-skill keys.
+      assert Cost.resolve_sp(state, sp_definition(37, id: 318), 1) == 29
+    end
+
+    @tag game_mode: :renewal
+    test "Adaptation rounds down only the discount and precedes Nibelungen" do
+      hold(:sc_adaptation)
+
+      assert Cost.resolve_sp(sp_state(), sp_definition(8), 1) == 7
+      assert Cost.resolve_sp(sp_state(), sp_definition(5), 1) == 4
+
+      hold(:sc_nibelungen, val1: 5, val2: 9)
+
+      assert Cost.resolve_sp(sp_state(), sp_definition(25), 1) == 14
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Adaptation leaves a song's cost alone" do
+      hold(:sc_spcost_rate, val1: 10)
+      hold(:sc_adaptation)
+
+      state =
+        sp_state(%{{:skill_use_sp, 319} => 3, {:skill_use_sp_rate, 319} => 20, sp_cost_rate: -10})
+
+      assert Cost.resolve_sp(state, sp_definition(37), 1) == 20
+    end
+  end
 
   test "resolves fixed definition costs" do
     definition = definition(hp_cost: [10], sp_cost: [20], sphere_cost: [2])

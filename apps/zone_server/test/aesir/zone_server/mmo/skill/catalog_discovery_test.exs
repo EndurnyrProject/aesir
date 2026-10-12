@@ -204,7 +204,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
     @skills_dir Path.expand("../../../../../lib/aesir/zone_server/mmo/skills", __DIR__)
 
     @non_skill_modules [
-      Aesir.ZoneServer.Mmo.Skill.Performance.Cost,
       Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot,
       Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill,
       Aesir.ZoneServer.Mmo.Skills.Champion.Formulas,

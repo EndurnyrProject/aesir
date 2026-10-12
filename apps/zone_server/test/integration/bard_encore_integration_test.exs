@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
         {:ok,
          modifier_item(@cost_cloak, [
            {:bonus, :sp_cost_rate, 10},
-           {:bonus, {:skill_use_sp_rate, @dissonance}, -20},
+           {:bonus, {:skill_use_sp_rate, @dissonance}, 20},
            {:bonus, {:skill_use_sp, @dissonance}, 3}
          ])}
 
@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
 
     after_original = get_player_state(bard.pid)
     assert after_original.last_song == %{skill_id: @dissonance, level: 5}
-    assert initial_sp - after_original.stats.current_state.sp == 32
+    assert initial_sp - after_original.stats.current_state.sp == 31
 
     wait_for_skill_ready(bard.pid, @dissonance)
     wait_for_act_ready(bard.pid)

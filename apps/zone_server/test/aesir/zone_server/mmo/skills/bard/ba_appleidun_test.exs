@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidun
@@ -84,16 +83,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
   end
 
   @tag game_mode: :renewal
-  test "dynamic cost uses Bard cost ordering" do
-    caster = player()
-    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
-    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
-
-    assert %Cost{sp: 32, sp_requirement: 32} =
-             BaAppleidun.dynamic_cost(cost_state(), :self, 1, BaAppleidun.definition())
-  end
-
-  @tag game_mode: :renewal
   test "a failed snapshot commits neither memory nor replacement state" do
     caster = player()
     :ok = StatusStorage.apply_status(:player, 1, :sc_poembragi, duration: 10_000, val2: 20)
@@ -106,13 +95,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
     assert caster.last_song == nil
     assert StatusStorage.has_status?(:player, 1, :sc_poembragi)
     refute StatusStorage.has_status?(:player, 1, :sc_appleidun)
-  end
-
-  defp cost_state do
-    %{
-      character_id: 1,
-      stats: %{current_state: %{hp: 100, sp: 100}, derived_stats: %{max_hp: 100}}
-    }
   end
 
   defp player do
@@ -145,16 +127,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
     assert definition.cast_time == []
     assert definition.fixed_cast_time == []
     assert definition.cooldown == []
-  end
-
-  @tag game_mode: :pre_renewal
-  test "classic dynamic cost ignores Adaptation" do
-    caster = player()
-    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
-    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
-
-    assert %Cost{sp: 40, sp_requirement: 40} =
-             BaAppleidun.dynamic_cost(cost_state(), :self, 1, BaAppleidun.definition())
   end
 
   @tag game_mode: :pre_renewal

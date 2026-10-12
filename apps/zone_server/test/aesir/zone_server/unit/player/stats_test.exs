@@ -3268,6 +3268,19 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert reversed.modifiers.equipment.movement_speed == 25
     end
 
+    test "a per-skill SP rate sums across equipment up to the source cap" do
+      first = scripted_item(90_283, on_equip: [{:bonus, {:skill_use_sp_rate, 28}, 9_000}])
+      second = scripted_item(90_284, on_equip: [{:bonus, {:skill_use_sp_rate, 28}, 9_000}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_283 -> {:ok, first}
+        90_284 -> {:ok, second}
+      end)
+
+      stats = with_equipped_items([equipped(90_283, @right_hand), equipped(90_284, @left_hand)])
+      assert stats.modifiers.equipment[{:skill_use_sp_rate, 28}] == 10_000
+    end
+
     test "global fixed cast rate keeps the strongest reduction across equipment" do
       first = scripted_item(90_281, on_equip: [{:bonus, :fixcast_rate, -20}])
       second = scripted_item(90_282, on_equip: [{:bonus, :fixcast_rate, -50}])

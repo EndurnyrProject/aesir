@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance
@@ -107,16 +106,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
              )
   end
 
-  @tag game_mode: :renewal
-  test "dynamic cost uses Bard ordering and applies Adaptation last" do
-    caster = player_state(50)
-    :ok = UnitRegistry.register_unit(:player, @caster_id, UnitStub, %{}, self())
-    :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
-
-    assert %Cost{sp: 28, sp_requirement: 28} =
-             BaDissonance.dynamic_cost(caster, :self, 1, BaDissonance.definition())
-  end
-
   test "weapon validation failure preserves memory and ordinary commitment" do
     caster = player_state(50)
 
@@ -198,15 +187,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
     assert definition.cast_time == []
     assert definition.fixed_cast_time == []
     assert definition.cooldown == []
-  end
-
-  @tag game_mode: :pre_renewal
-  test "classic dynamic cost ignores Adaptation" do
-    caster = player_state(50)
-    :ok = UnitRegistry.register_unit(:player, @caster_id, UnitStub, %{}, self())
-    :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
-
-    assert %Cost{sp: 18, sp_requirement: 18} =
-             BaDissonance.dynamic_cost(caster, :self, 1, BaDissonance.definition())
   end
 end

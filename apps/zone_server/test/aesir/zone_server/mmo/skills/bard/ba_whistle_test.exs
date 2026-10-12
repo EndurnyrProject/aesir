@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle
@@ -73,16 +72,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
   end
 
   @tag game_mode: :renewal
-  test "dynamic cost uses Bard cost ordering" do
-    caster = player()
-    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
-    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
-
-    assert %Cost{sp: 18, sp_requirement: 18} =
-             BaWhistle.dynamic_cost(cost_state(), :self, 1, BaWhistle.definition())
-  end
-
-  @tag game_mode: :renewal
   test "a failed snapshot is returned without a replacement state" do
     caster = player()
 
@@ -102,13 +91,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
     expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_whistle, _params -> :ok end)
 
     assert {:ok, _result} = BaWhistle.cast(caster, :self, 1, BaWhistle.definition())
-  end
-
-  defp cost_state do
-    %{
-      character_id: 1,
-      stats: %{current_state: %{hp: 100, sp: 100}, derived_stats: %{max_hp: 100}}
-    }
   end
 
   defp player do
@@ -162,16 +144,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
 
     assert {:ok, result} = BaWhistle.cast(caster, :self, 3, BaWhistle.definition())
     assert result.last_song == %{skill_id: 319, level: 3}
-  end
-
-  @tag game_mode: :pre_renewal
-  test "classic dynamic cost ignores Adaptation" do
-    caster = player()
-    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
-    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
-
-    assert %Cost{sp: 24, sp_requirement: 24} =
-             BaWhistle.dynamic_cost(cost_state(), :self, 1, BaWhistle.definition())
   end
 
   @tag game_mode: :pre_renewal

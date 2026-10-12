@@ -1947,15 +1947,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.stats.current_state.sp == 100 - 4
     end
 
-    test "a per-skill rate lowers only the named skill's cost" do
-      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => -50})
+    test "a positive per-skill rate lowers only the named skill's cost" do
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => 50})
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
       assert updated.stats.current_state.sp == 100 - 4
     end
 
     test "a per-skill rate keyed on another skill leaves this skill's cost untouched" do
-      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 999} => -50})
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 999} => 50})
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
       assert updated.stats.current_state.sp == 100 - 9
@@ -1971,37 +1971,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.stats.current_state.sp == 100 - 4
     end
 
-    test "status, global and per-skill rates all sum into one percent step" do
+    test "status and global rates share one step; the per-skill rate scales the result" do
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{sp_cost_rate: -20} end)
 
       gs =
-        game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => -20, sp_cost_rate: -20})
+        game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => 20, sp_cost_rate: -20})
 
-      # base 9 at -60% -> div(9 * 40, 100) = 3
+      # base 9 at -40% -> div(9 * 60, 100) = 5; then 80% -> div(5 * 80, 100) = 4
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
-      assert updated.stats.current_state.sp == 100 - 3
+      assert updated.stats.current_state.sp == 100 - 4
     end
 
-    test "ordinary SP resolution applies rates before flat reduction for default and raw bases" do
+    test "ordinary SP resolution runs global rate, flat, then per-skill rate for default and raw bases" do
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> %{sp_cost_rate: -10} end)
 
       gs =
         game_state(100, %{6 => 1}, %{
-          {:skill_use_sp_rate, 6} => -10,
+          {:skill_use_sp_rate, 6} => 10,
           {:skill_use_sp, 6} => 3,
           sp_cost_rate: -10
         })
 
       definition = instant_definition()
 
+      # base 9 at -20% -> div(9 * 80, 100) = 7; flat -3 -> 4; 90% -> div(4 * 90, 100) = 3
       assert Cost.resolve_sp(gs, definition, 1) == 3
+      # raw 21: div(21 * 80, 100) = 16, 16 - 3 = 13, div(13 * 90, 100) = 11
       assert Cost.resolve_sp(gs, definition, 1, 21) == 11
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
       assert updated.stats.current_state.sp == 97
     end
 
     test "a stacked over-100% reduction floors the cost at 0 instead of inverting it" do
-      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => -150})
+      gs = game_state(100, %{6 => 1}, %{{:skill_use_sp_rate, 6} => 150})
 
       assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, :self)
       assert updated.stats.current_state.sp == 100

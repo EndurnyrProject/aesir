@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Origin
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Cost, as: PerformanceCost
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -422,14 +421,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp encore_prepared_cost(caster, %{definition: definition, module: module, level: level}) do
     raw_half = definition.sp_cost |> Enum.at(level - 1, 0) |> div(2)
-
-    cost =
-      if Catalog.performance?(definition.id) do
-        PerformanceCost.resolve(caster, definition, level, raw_half)
-      else
-        sp = Cost.resolve_sp(caster, definition, level, raw_half)
-        Cost.from_definition(caster, definition, level, sp: sp)
-      end
+    sp = Cost.resolve_sp(caster, definition, level, raw_half)
+    cost = Cost.from_definition(caster, definition, level, sp: sp)
 
     with {:ok, cost} <- Cost.validate_resolved(cost) do
       Caster.Player.prepare_cost(caster, module, definition, cost, 0)

@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -166,43 +167,50 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
     assert assert_spiral_pierce() == 1_385
   end
 
-  test "Joint Beat amplifies the next live spear strike after a forced neck break" do
-    force_hits()
-    knight = knight(items: [%{nameid: 1401, amount: 1, identify: 1}])
-    equip!(knight, 1401, 2)
-    mob = target_mob(vit: 1)
-    id = knight.character.id
-    flush_packets()
+  describe "Joint Beat" do
+    # The break's own chance is a real roll (at most 55%), so it is pinned at the
+    # RNG boundary inside the owning sessions.
+    setup {Aesir.MimicMode, :global}
 
-    cast(knight, 399, 10, mob.unit_id)
+    test "Joint Beat amplifies the next live spear strike after a forced neck break" do
+      force_hits()
+      Mimic.stub(Resistance, :roll_rate, fn _rate -> true end)
+      knight = knight(items: [%{nameid: 1401, amount: 1, identify: 1}])
+      equip!(knight, 1401, 2)
+      mob = target_mob(vit: 1)
+      id = knight.character.id
+      flush_packets()
 
-    assert_receive {:packet_sent, %SkillDamage{src_id: ^id, skill_id: 399, damage: first}, _},
-                   1_000
+      cast(knight, 399, 10, mob.unit_id)
 
-    assert eventually(fn -> StatusStorage.has_status?(:mob, mob.unit_id, :sc_jointbeat) end)
+      assert_receive {:packet_sent, %SkillDamage{src_id: ^id, skill_id: 399, damage: first}, _},
+                     1_000
 
-    first_break = StatusStorage.get_status(:mob, mob.unit_id, :sc_jointbeat).val2
-    baseline = if first_break == :neck, do: first / 2, else: first
-    assert :ok = Interpreter.remove_status(:mob, mob.unit_id, :sc_jointbeat)
+      assert eventually(fn -> StatusStorage.has_status?(:mob, mob.unit_id, :sc_jointbeat) end)
 
-    assert :ok =
-             Interpreter.apply_status(:mob, mob.unit_id, :sc_jointbeat,
-               val1: 10,
-               val2: :neck,
-               duration: 30_000,
-               caster_id: id,
-               source_type: :player
-             )
+      first_break = StatusStorage.get_status(:mob, mob.unit_id, :sc_jointbeat).val2
+      baseline = if first_break == :neck, do: first / 2, else: first
+      assert :ok = Interpreter.remove_status(:mob, mob.unit_id, :sc_jointbeat)
 
-    assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_bleeding)
-    Process.sleep(1_100)
-    flush_packets()
-    cast(knight, 399, 10, mob.unit_id)
+      assert :ok =
+               Interpreter.apply_status(:mob, mob.unit_id, :sc_jointbeat,
+                 val1: 10,
+                 val2: :neck,
+                 duration: 30_000,
+                 caster_id: id,
+                 source_type: :player
+               )
 
-    assert_receive {:packet_sent, %SkillDamage{src_id: ^id, skill_id: 399, damage: second}, _},
-                   1_000
+      assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_bleeding)
+      Process.sleep(1_100)
+      flush_packets()
+      cast(knight, 399, 10, mob.unit_id)
 
-    assert second > 1.5 * baseline
+      assert_receive {:packet_sent, %SkillDamage{src_id: ^id, skill_id: 399, damage: second}, _},
+                     1_000
+
+      assert second > 1.5 * baseline
+    end
   end
 
   test "Head Crush bleeds normal mobs but skips undead and refuses bosses" do

@@ -45,6 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     largest contribution instead of summing.
   - `@min_destinations` — global fixed cast rate keeps the strongest negative
     bonus across items, starting from zero.
+  - `@capped_rate_families` — per-skill rates whose first contribution is clamped
+    to `-10_000..10_000` and whose running sum never exceeds `10_000`.
   - `@ammunition_excluded_destinations` — destinations that do not accumulate
     while the equipped ammunition's script runs.
   - `@destination_scales` — destinations whose consumer works in finer units
@@ -170,6 +172,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   @max_destinations MapSet.new([:movement_speed, :perfect_hit_rate, :splash_range])
   @min_destinations MapSet.new([:fixcast_rate])
+  @capped_rate_families MapSet.new([:skill_use_sp_rate])
+  @rate_cap 10_000
   @ammunition_excluded_destinations MapSet.new([:non_crit_atk_rate])
   @ammunition_redirects %{critical: :arrow_critical, critical_long: :arrow_critical}
 
@@ -440,6 +444,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @doc "Whether the cast-rate destination retains its most reducing item bonus."
   @spec min_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()
   def min_destination?(dest), do: MapSet.member?(@min_destinations, dest)
+
+  @doc """
+  Whether a per-skill rate destination accumulates under the source's cap: the
+  first contribution is clamped to `-10_000..10_000` and every later addition
+  keeps the running sum at or below `10_000`.
+  """
+  @spec capped_rate_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()
+  def capped_rate_destination?({family, _param}),
+    do: MapSet.member?(@capped_rate_families, family)
+
+  def capped_rate_destination?(_dest), do: false
+
+  @doc "Folds `value` into a capped per-skill rate accumulator (`nil` when empty)."
+  @spec accumulate_capped_rate(integer() | nil, integer()) :: integer()
+  def accumulate_capped_rate(nil, value), do: value |> max(-@rate_cap) |> min(@rate_cap)
+  def accumulate_capped_rate(current, value), do: min(current + value, @rate_cap)
 
   @doc "Whether a numeric destination combines contributions as a bit mask."
   @spec bitwise_destination?(destination()) :: boolean()

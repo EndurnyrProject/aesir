@@ -212,6 +212,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.destination("bCrt") == {:ok, :crt}
     end
 
+    test "per-skill SP rates accumulate under the source cap" do
+      assert BonusKeys.capped_rate_destination?({:skill_use_sp_rate, 28})
+      refute BonusKeys.capped_rate_destination?({:skill_use_sp, 28})
+      refute BonusKeys.capped_rate_destination?(:sp_cost_rate)
+
+      assert BonusKeys.accumulate_capped_rate(nil, 12_000) == 10_000
+      assert BonusKeys.accumulate_capped_rate(nil, -12_000) == -10_000
+      assert BonusKeys.accumulate_capped_rate(9_000, 9_000) == 10_000
+      assert BonusKeys.accumulate_capped_rate(-9_000, -9_000) == -18_000
+    end
+
     test "cast-time flat and per-skill bonus keys retain separate destinations" do
       assert BonusKeys.destination("bVariableCast") == {:ok, :variable_cast}
       assert BonusKeys.destination("bFixedCast") == {:ok, :fixed_cast}

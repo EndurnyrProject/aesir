@@ -2,15 +2,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
   @moduledoc """
   Capability behaviour for skills that are songs or dances.
 
-  Using this behaviour marks a skill as a performance and supplies its dynamic
-  cost through the generic skill cost resolver. A module that uses this behaviour
-  must not separately declare `Aesir.ZoneServer.Mmo.Skill.Active`, because
-  performance implies the active behaviour.
+  Using this behaviour marks a skill as a performance; its SP cost, Adaptation
+  included, resolves through the generic skill cost recipe like any song. A
+  module that uses this behaviour must not separately declare
+  `Aesir.ZoneServer.Mmo.Skill.Active`, because performance implies the active
+  behaviour.
   """
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -81,10 +81,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
       @doc false
       @impl Aesir.ZoneServer.Mmo.Skill.Performance
       def __performance__, do: true
-
-      @impl Aesir.ZoneServer.Mmo.Skill.Active
-      def dynamic_cost(caster, _target, level, definition),
-        do: unquote(Cost).resolve(caster, definition, level)
 
       @impl Aesir.ZoneServer.Mmo.Skill.Ground
       defdelegate on_place(group), to: unquote(Field)

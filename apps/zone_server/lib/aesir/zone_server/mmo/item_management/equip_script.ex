@@ -861,6 +861,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
         BonusKeys.min_destination?(key) ->
           Map.update(modifiers, key, min(0, value), &min(&1, value))
 
+        BonusKeys.capped_rate_destination?(key) ->
+          Map.put(
+            modifiers,
+            key,
+            BonusKeys.accumulate_capped_rate(Map.get(modifiers, key), value)
+          )
+
         true ->
           Map.update(modifiers, key, value, &(&1 + value))
       end

@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
 
     modifiers = %{
-      {:skill_use_sp_rate, 317} => -20,
+      {:skill_use_sp_rate, 317} => 20,
       {:skill_use_sp, 317} => 3,
       sp_cost_rate: 10
     }
@@ -428,7 +428,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
 
     modifiers = %{
-      {:skill_use_sp_rate, 317} => -20,
+      {:skill_use_sp_rate, 317} => 20,
       {:skill_use_sp, 317} => 3,
       sp_cost_rate: 10
     }

@@ -1,8 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   @moduledoc """
   Resolves, validates, and applies the owner-local resources for one skill cast.
+
+  The SP cost runs the requirement recipe in order, each step truncating: the
+  raw base (halved by Encore) is scaled by the global SP rate (status, Mana
+  Recharge and equipment shares, floored at 0), the skill's flat equipment
+  reduction comes off (the result may go negative), the skill's own equipment
+  rate scales it (positive is cheaper) with the result capped to `0..32_767`,
+  then renewal Adaptation cuts a song (a performance) by a fifth and renewal
+  Nibelungen's SP outcome cuts the rest by 30%.
   """
 
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -63,12 +73,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   def resolve_sp(game_state, definition, level, nil) do
     case Enum.at(definition.sp_cost, level - 1, 0) do
       :all -> game_state.stats.current_state.sp
-      base -> reduce_sp(game_state, definition.id, base)
+      base -> reduce_sp(game_state, definition, base)
     end
   end
 
   def resolve_sp(game_state, definition, _level, raw_base),
-    do: reduce_sp(game_state, definition.id, raw_base)
+    do: reduce_sp(game_state, definition, raw_base)
 
   @spec validate_resolved(term()) :: {:ok, t()} | {:error, :invalid_cost}
   def validate_resolved(%__MODULE__{sp_requirement: nil, sp: sp} = cost)
@@ -163,18 +173,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
     end
   end
 
-  defp reduce_sp(game_state, skill_id, base) do
-    rate =
-      merged_modifier(game_state.character_id, :sp_cost_rate) +
-        passive_sp_cost_rate(game_state) +
-        equipment_modifier(game_state, :sp_cost_rate) +
-        equipment_modifier(game_state, {:skill_use_sp_rate, skill_id})
+  @sp_cap 32_767
 
-    reduced = div(base * max(0, 100 + rate), 100)
-    sp = max(0, reduced - equipment_modifier(game_state, {:skill_use_sp, skill_id}))
+  defp reduce_sp(game_state, %Definition{id: skill_id} = definition, base) do
+    global_rate =
+      100 + merged_modifier(game_state.character_id, :sp_cost_rate) +
+        passive_sp_cost_rate(game_state) + equipment_modifier(game_state, :sp_cost_rate)
+
+    skill_rate = 100 - equipment_modifier(game_state, {:skill_use_sp_rate, skill_id})
+
+    sp =
+      (div(base * max(global_rate, 0), 100) -
+         equipment_modifier(game_state, {:skill_use_sp, skill_id}))
+      |> Kernel.*(skill_rate)
+      |> div(100)
+      |> min(@sp_cap)
+      |> max(0)
+
+    sp = adaptation_sp(game_state, definition, sp)
     nibelungen = StatusStorage.get_status(:player, game_state.character_id, :sc_nibelungen)
 
     Nibelungen.reduce_sp_cost(sp, nibelungen)
+  end
+
+  # Adaptation discounts the source's songs, which are exactly the performances.
+  defp adaptation_sp(game_state, %Definition{id: skill_id}, sp) do
+    if GameMode.mode() == :renewal and Catalog.performance?(skill_id) and
+         StatusStorage.has_status?(:player, game_state.character_id, :sc_adaptation),
+       do: sp - div(sp * 20, 100),
+       else: sp
   end
 
   # Precomputed into `modifiers.passive` at stat calculation, like max SP rate.

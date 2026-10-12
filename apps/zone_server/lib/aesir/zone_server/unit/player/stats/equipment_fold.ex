@@ -697,11 +697,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       BonusKeys.bitwise_destination?(key) -> Map.update(acc, key, value, &Bitwise.bor(&1, value))
       BonusKeys.max_destination?(key) -> Map.update(acc, key, value, &max(&1, value))
       BonusKeys.min_destination?(key) -> Map.update(acc, key, min(0, value), &min(&1, value))
+      BonusKeys.capped_rate_destination?(key) -> accumulate_capped_rate(acc, key, value)
       true -> Map.update(acc, key, value, &(&1 + value))
     end
   end
 
   defp merge_equip_bonus(acc, key, value), do: Map.put(acc, key, value)
+
+  defp accumulate_capped_rate(acc, key, value),
+    do: Map.put(acc, key, BonusKeys.accumulate_capped_rate(Map.get(acc, key), value))
 
   # Splits the folded equipment accumulator into its numeric bonus map (stored on
   # `modifiers.equipment`) and the granted-skills map. `{:granted_skill, id}` is

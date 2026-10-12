@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
       `on_interval/2`, optional `on_expire/1`)
     * `Skill.Menu` - the skill's cast opens a `SkillMenu` and acts on the reply
       (`on_menu_reply/3`)
-    * `Skill.Performance` - the skill is a song or dance (`dynamic_cost/4`)
+    * `Skill.Performance` - the skill is a song or dance
     * `Skill.Ensemble` - the skill is an ensemble
 
   A skill declares only the behaviours it needs and can mix several at once.
