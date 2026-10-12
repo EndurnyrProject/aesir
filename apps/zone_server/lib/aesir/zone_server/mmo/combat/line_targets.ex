@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
   """
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
@@ -22,16 +23,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
   `caster`.
 
   With both `:length` and `:width`, selects an eight-direction lane from the
-  origin toward the endpoint instead. Without them, uses the original line.
-  The spatial query covers the greatest Manhattan distance of the chosen cells.
+  origin toward the endpoint instead, starting `:offset` rows out (default 0),
+  and keeps only the units the origin has a clear line of sight to. Without
+  them, uses the original line. The spatial query covers the greatest
+  Manhattan distance of the chosen cells.
   """
   @spec select(String.t(), {integer(), integer()}, {integer(), integer()}, map(), keyword()) ::
           [Ref.t()]
   def select(map_name, {sx, sy} = from, {tx, ty} = to, caster, opts \\ []) do
-    cell_set =
+    {cell_set, sighted?} =
       case {Keyword.fetch(opts, :length), Keyword.fetch(opts, :width)} do
-        {{:ok, length}, {:ok, width}} -> Geometry.path_cells(from, to, length, width)
-        _ -> sx |> Geometry.line_cells(sy, tx, ty) |> MapSet.new()
+        {{:ok, length}, {:ok, width}} ->
+          offset = Keyword.get(opts, :offset, 0)
+
+          {Geometry.path_cells(from, to, length, width, offset),
+           &LineOfSight.clear?(map_name, from, &1)}
+
+        _ ->
+          {sx |> Geometry.line_cells(sy, tx, ty) |> MapSet.new(), fn _cell -> true end}
       end
 
     radius = Enum.max_by(cell_set, fn {x, y} -> Geometry.manhattan_distance(sx, sy, x, y) end)
@@ -43,23 +52,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
     |> Enum.filter(fn target_ref ->
       CombatTarget.combat_unit?(target_ref) and
         target_ref != {caster.unit_type, caster.unit_id} and
-        offensive_target_on_line?(caster, target_ref, cell_set)
+        offensive_target_on_line?(caster, target_ref, cell_set, sighted?)
     end)
   end
 
-  defp offensive_target_on_line?(caster, {unit_type, target_id}, cell_set) do
+  defp offensive_target_on_line?(caster, {unit_type, target_id}, cell_set, sighted?) do
     case TargetResolver.resolve(unit_type, target_id) do
-      {:ok, _pid, target_state, _target_type} ->
+      {:ok, _pid, %{x: x, y: y} = target_state, _target_type} ->
         target = target_state.__struct__.to_combatant(target_state)
 
         Unit.living?(target_state) and
           Targeting.validate_enemy(caster, target) == :ok and
-          on_line?(target_state, cell_set)
+          MapSet.member?(cell_set, {x, y}) and sighted?.({x, y})
 
       _ ->
         false
     end
   end
-
-  defp on_line?(%{x: x, y: y}, cell_set), do: MapSet.member?(cell_set, {x, y})
 end

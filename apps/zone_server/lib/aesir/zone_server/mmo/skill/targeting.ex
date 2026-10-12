@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
@@ -215,10 +216,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   target after its cast begins. Unit placement checks only the target's Hiding
   against TargetHidden, whoever the caster is. A caster always reaches itself.
 
-  At `:splash` the check is the full one the source runs for a recipient after
-  the skill went off: the caster must still be able to act (see
-  `validate_delivery/4`) and a frozen recipient is out of Storm Gust's and Frost
-  Nova's reach, as a frozen or petrified one is out of Lex Aeterna's. The
+  A frozen target is out of Storm Gust's and Frost Nova's reach, as a frozen or
+  petrified one is out of Lex Aeterna's, in every phase. At `:splash` the
+  caster must also still be able to act (see `validate_delivery/4`). The
   classic Roki's Weil lock does not block the skill a player is casting from an
   item: that exemption holds only while the item cast itself executes, so a
   later timer delivery of the same skill is locked again.
@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
       classic_pressure?(definition) and phase != :cast_begin and hidden?(option) ->
         {:error, :target_concealed}
 
-      splash_check?(phase) and caster_restricted?(caster, definition) ->
+      splash_check?(phase) and caster_restricted?(caster, definition, :splash) ->
         {:error, :caster_restricted}
 
       same_unit?(caster, target) ->
@@ -257,7 +257,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
 
   defp reach_target(caster, target, option, definition, phase) do
     cond do
-      splash_check?(phase) and target_restricted?(target, definition) ->
+      target_restricted?(target, definition) ->
         {:error, :target_restricted}
 
       concealed?(caster, target, option, skill_mask(phase, definition)) ->
@@ -266,6 +266,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
       true ->
         :ok
     end
+  end
+
+  @doc """
+  Checks the caster's own state when its timed cast completes; the target is
+  `validate_skill_use/4`'s concern at `:cast_end`.
+
+  A dead monster fails. Stun, freeze, sleep or petrification fails only a
+  damage cast: support, self and ground casts still complete, and waiting to
+  petrify fails nothing. Silence and the other statuses that only forbid
+  starting a cast never fail it here. Playing dead, chanting Battle Chant, a
+  Root lock, a performance that does not allow the skill, Hiding without a
+  skill usable while hidden and Chase Walk fail it. Classic Roki's Weil fails
+  it unless `item?` marks the caster's own item cast.
+  """
+  @spec validate_cast_completion(concealment_unit(), Definition.t(), boolean()) ::
+          :ok | {:error, :caster_restricted}
+  def validate_cast_completion(caster, %Definition{} = definition, item? \\ false) do
+    if caster_restricted?(caster, definition, {:cast_end, item?}),
+      do: {:error, :caster_restricted},
+      else: :ok
   end
 
   @doc """
@@ -346,28 +366,51 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   defp splash_check?(:splash), do: true
   defp splash_check?(_phase), do: false
 
-  # The caster's own state at the source's flag-2 check. A `nil` caster (an
-  # area check made without one) carries no state.
-  defp caster_restricted?(nil, _definition), do: false
+  # The caster's own state at the source's recipient check (`:splash`) or at a
+  # timed cast's completion (`{:cast_end, item?}`). A `nil` caster (an area
+  # check made without one) carries no state.
+  defp caster_restricted?(nil, _definition, _check), do: false
 
-  defp caster_restricted?(%{unit_type: type, unit_id: id}, %Definition{} = definition) do
+  defp caster_restricted?(%{unit_type: type, unit_id: id}, %Definition{} = definition, check) do
     %{body_state: body_state, effect_state: option} = caster_display(type, id)
 
-    dead_non_player?(type, id) or body_state not in @free_body_states or
-      status_locked?(type, id, definition) or option_locked?(type, option, definition)
+    dead_non_player?(type, id) or body_locked?(body_state, definition, check) or
+      status_locked?(type, id, definition, item_cast?(type, id, definition, check)) or
+      performance_locked?(type, id, definition, check) or
+      option_locked?(type, option, definition)
   end
 
-  defp caster_restricted?(_caster, _definition), do: false
+  defp caster_restricted?(_caster, _definition, _check), do: false
 
-  defp status_locked?(type, id, %Definition{id: skill_id} = definition) do
+  defp body_locked?(body_state, _definition, _check) when body_state in @free_body_states,
+    do: false
+
+  defp body_locked?(_body_state, definition, {:cast_end, _item?}), do: damage_cast?(definition)
+  defp body_locked?(_body_state, _definition, :splash), do: true
+
+  # The source's damage cast type: not ground, support or self (an enemy-aimed
+  # combo is `:target_enemy` here), and not flagged as dealing no damage.
+  defp damage_cast?(%Definition{damage_type: :damage, target_type: type}),
+    do: type not in [:ground, :self, :target_ally, :passive]
+
+  defp damage_cast?(_definition), do: false
+
+  defp performance_locked?(type, id, %Definition{id: skill_id}, {:cast_end, _item?}),
+    do: not StatusInterpreter.performance_allows_skill?(type, id, skill_id)
+
+  defp performance_locked?(_type, _id, _definition, :splash), do: false
+
+  defp status_locked?(type, id, %Definition{id: skill_id}, item_cast?) do
     locked_by?(type, id, :sc_trickdead, skill_id, @trick_dead) or
       locked_by?(type, id, :sc_gospel, skill_id, @gospel) or
       not Root.skill_allowed?(type, id, skill_id) or
-      (GameMode.mode() == :pre_renewal and not item_cast?(type, id, definition) and
+      (GameMode.mode() == :pre_renewal and not item_cast? and
          locked_by?(type, id, :sc_rokisweil, skill_id, @adaptation))
   end
 
-  defp item_cast?(type, id, %Definition{name: skill_name}) do
+  defp item_cast?(_type, _id, _definition, {:cast_end, item?}), do: item?
+
+  defp item_cast?(type, id, %Definition{name: skill_name}, :splash) do
     match?(
       %{invocation: :item, skill: ^skill_name, caster: {^type, ^id}},
       Origin.current()

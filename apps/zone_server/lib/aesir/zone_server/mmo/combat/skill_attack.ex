@@ -742,7 +742,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:critical`, `:critical_rate_bonus`, `:critical_max_weapon` - critical
       pre-roll options documented by `execute_skill_attack/3`
     - `:length` / `:width` - use an eight-direction lane with the supplied
-      length and half-width; without both, use the Bresenham line
+      length and half-width, starting `:offset` rows out (default 0), hitting
+      only targets in the caster's line of sight; without both, use the
+      Bresenham line
     - `:ranged` - declares a player's skill as long range (default `false`, see
       `execute_skill_attack/3`)
     - `:hit_divisions` - each target's signed hit divisions (default `1`)
@@ -764,7 +766,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         primary = line_primary(target_type, target_id)
 
         attacker.map_name
-        |> LineTargets.select({sx, sy}, {tx, ty}, attacker, Keyword.take(opts, [:length, :width]))
+        |> LineTargets.select(
+          {sx, sy},
+          {tx, ty},
+          attacker,
+          Keyword.take(opts, [:length, :width, :offset])
+        )
         |> hit_targets(attacker, skill_id, skill_level, calc_opts, %{
           ranged?: Keyword.get(opts, :ranged, false),
           ignore_flee?: false,

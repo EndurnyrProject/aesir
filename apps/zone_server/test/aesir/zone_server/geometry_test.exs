@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.GeometryTest do
       assert cells == Geometry.path_cells({0, 0}, {5, 4}, 14, 1)
     end
 
-    test "lanes reflect in every direction and same-cell aim faces north" do
+    test "lanes reflect in every direction and same-cell aim faces east" do
       east = Geometry.path_cells({0, 0}, {9, 1}, 14, 1)
       northeast = Geometry.path_cells({0, 0}, {5, 4}, 14, 1)
 
@@ -137,10 +137,46 @@ defmodule Aesir.ZoneServer.GeometryTest do
                  MapSet.new(northeast, fn {x, y} -> {20 + sx * x, 20 + sy * y} end)
       end
 
-      north = Geometry.path_cells({0, 0}, {0, 0}, 14, 1)
-      assert north == Geometry.path_cells({0, 0}, {0, -9}, 14, 1)
-      assert MapSet.member?(north, {1, -13})
-      refute MapSet.member?(north, {0, 1})
+      same_cell = Geometry.path_cells({0, 0}, {0, 0}, 14, 1)
+      assert same_cell == Geometry.path_cells({0, 0}, {9, 0}, 14, 1)
+      assert MapSet.member?(same_cell, {13, 1})
+      refute MapSet.member?(same_cell, {-1, 0})
+    end
+  end
+
+  describe "path_cells/5" do
+    test "the lane faces the nearest direction, with the uneven western boundaries" do
+      step = fn {dx, dy} ->
+        {0, 0} |> Geometry.path_cells({dx, dy}, 2, 0) |> MapSet.delete({0, 0}) |> Enum.at(0)
+      end
+
+      assert step.({3, 1}) == {1, 0}
+      assert step.({1, 3}) == {1, 1}
+      assert step.({3, -1}) == {1, 0}
+      assert step.({1, -3}) == {1, -1}
+      assert step.({-3, -1}) == {-1, -1}
+      assert step.({-1, -3}) == {0, -1}
+      assert step.({-3, 1}) == {-1, 1}
+      assert step.({-1, 3}) == {0, 1}
+      assert step.({0, 0}) == {1, 0}
+    end
+
+    test "an offset lane starts that many rows out" do
+      assert Geometry.path_cells({0, 0}, {9, 0}, 1, 2, 2) == MapSet.new(-2..2, &{2, &1})
+      assert Geometry.path_cells({0, 0}, {0, -9}, 2, 0, 3) == MapSet.new([{0, -3}, {0, -4}])
+    end
+
+    test "diagonal offsets count half-tile rows, so consecutive rows tile the lane" do
+      assert Geometry.path_cells({0, 0}, {5, 5}, 1, 0, 2) == MapSet.new([{2, 2}])
+
+      rows =
+        [Geometry.path_cells({0, 0}, {5, 5}, 2, 2, 0)] ++
+          for(offset <- 2..4, do: Geometry.path_cells({0, 0}, {5, 5}, 1, 2, offset))
+
+      lane = Geometry.path_cells({0, 0}, {5, 5}, 5, 2, 0)
+
+      assert Enum.reduce(rows, &MapSet.union/2) == lane
+      assert Enum.sum(Enum.map(rows, &MapSet.size/1)) == MapSet.size(lane)
     end
   end
 

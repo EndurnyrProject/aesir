@@ -115,8 +115,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @doc """
   Notifies the mob that one of its statuses was applied, ticked, or expired.
 
-  Status application and `StatusTickManager` send this asynchronously; any
-  status that denies the pending skill may abort an in-flight cast.
+  Status application and `StatusTickManager` send this asynchronously; a
+  `:max_hp_rate` status recomputes the mob's HP ceiling. It never interrupts
+  an in-flight cast.
   """
   @spec notify_status_changed(pid(), atom(), atom()) :: :ok
   def notify_status_changed(pid, status_id, event) do
@@ -343,11 +344,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     AiHandler.handle_set_target(state, target_ref)
   end
 
-  # Casting: a status apply/tick/expiry that may interrupt an in-flight cast,
-  # and may also recompute the mob's HP ceiling for a `:max_hp_rate` status.
+  # Casting: a status apply/tick/expiry, which may recompute the mob's HP
+  # ceiling for a `:max_hp_rate` status.
   @impl GenServer
-  def handle_cast({:casting, {:status_changed, status_id, event}}, state) do
-    {:noreply, state} = CastingHandler.handle_status_changed(status_id, event, state)
+  def handle_cast({:casting, {:status_changed, status_id, _event}}, state) do
     {:noreply, CombatHandler.handle_max_hp_status(status_id, state)}
   end
 

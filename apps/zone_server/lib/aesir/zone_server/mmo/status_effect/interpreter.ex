@@ -1124,6 +1124,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   A status' `:blocked_skills` always denies its listed skills. Otherwise, a
   `prevents_skills` status does not block a skill it lists in `:allow_skills`.
+  A hidden player may use only a skill usable while hidden.
   This lets a feigning-death player recast NV_TRICKDEAD to stand back up even
   though SC_TRICKDEAD prevents skills.
   """
@@ -1135,6 +1136,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       skill_id not in PropertyChecker.blocked_skills(type) and
         skill_allowed?(entry, unit_type, unit_id, skill_id)
     end)
+  end
+
+  @doc """
+  Whether a performing unit's lock lets it use `skill_id`, as `can_use_skill?/3`
+  judges it. A unit that is not performing is never locked.
+  """
+  @spec performance_allows_skill?(unit_type(), integer(), integer()) :: boolean()
+  def performance_allows_skill?(unit_type, unit_id, skill_id) do
+    case StatusStorage.get_status(unit_type, unit_id, :sc_dancing) do
+      %StatusEntry{} = entry -> skill_allowed?(entry, unit_type, unit_id, skill_id)
+      _none -> true
+    end
   end
 
   @doc "True when an active status prevents ally-targeted support skills."
@@ -1205,13 +1218,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp longing?(unit_id), do: StatusStorage.has_status?(:player, unit_id, :sc_longing)
 
   defp skill_allowed?(%StatusEntry{type: :sc_dancing} = entry, :player, unit_id, skill_id) do
-    if root(entry) != :none and longing?(unit_id),
-      do: skill_id != 305 and not Catalog.replayable?(skill_id),
-      else: skill_id in PropertyChecker.allowed_skills(:sc_dancing)
+    allowed =
+      if root(entry) != :none and longing?(unit_id),
+        do: skill_id != 305 and not Catalog.replayable?(skill_id),
+        else: skill_id in PropertyChecker.allowed_skills(:sc_dancing)
+
+    allowed and not hermode_adaptation?(entry, skill_id)
   end
+
+  defp skill_allowed?(%StatusEntry{type: :sc_hiding}, :player, _unit_id, skill_id),
+    do: match?({:ok, %{allow_when_hidden: true}}, Catalog.by_id(skill_id))
 
   defp skill_allowed?(%StatusEntry{type: type}, _unit_type, _unit_id, skill_id),
     do: not prevents_skills?(type) or skill_id in PropertyChecker.allowed_skills(type)
+
+  # Classic Adaptation cannot end a Wand of Hermode performance.
+  defp hermode_adaptation?(%StatusEntry{val1: performance}, skill_id),
+    do: GameMode.mode() == :pre_renewal and performance == 488 and skill_id == 304
 
   defp tunnel_drive?(unit_id) do
     case UnitRegistry.get_unit(:player, unit_id) do

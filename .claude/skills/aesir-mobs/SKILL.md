@@ -26,9 +26,10 @@ Parity"). A mob row naming a skill with no module is skipped, which is itself a 
   new inline session clauses (`session_hygiene_test` guards this). See `aesir-units` for the
   full shell/handler + single-writer model shared with `PlayerSession`.
 - Mob statuses share the player `StatusStorage`; mob vitals never touch `UnitRegistry`.
-- Mobs have real cast state via `CastingHandler`: `begin_cast/3` / `abort_cast/1` (silence/
-  stun interrupt works), cooldowns keyed by skill_id, and `{:skill, {:deferred, module,
-  payload}}` handling.
+- Mobs have real cast state via `CastingHandler`: `begin_cast/3` / `abort_cast/1` (forced
+  interrupts such as Spell Breaker), cooldowns keyed by skill_id, and `{:skill, {:deferred,
+  module, payload}}` handling. A status landing mid-cast never interrupts it; the cast is
+  judged at completion (`Targeting.validate_cast_completion/3`, see `aesir-skills`).
 - **Death path is deadlock-sensitive**: work that touches a player (e.g. MVP reward delivery,
   `unit/mob/mvp_reward.ex`) runs *outside* the dying mob's process to avoid a reciprocal
   player↔mob deadlock. Death/teleport advance the mob's `deferred_epoch`; the epoch/token rule

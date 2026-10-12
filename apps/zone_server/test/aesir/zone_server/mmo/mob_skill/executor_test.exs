@@ -170,8 +170,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   end
 
   defp stub_living_player_target(id \\ 42) do
-    stub(UnitRegistry, :get_unit, fn :player, ^id ->
-      {:ok, {PlayerState, player_state(id), self()}}
+    stub(UnitRegistry, :get_unit, fn
+      :player, ^id -> {:ok, {PlayerState, player_state(id), self()}}
+      :mob, _id -> {:error, :not_found}
     end)
   end
 

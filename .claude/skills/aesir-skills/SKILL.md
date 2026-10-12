@@ -22,6 +22,12 @@ Recurring traps, each a past bug:
   the resolved cost in `cast` first (`CgTarotcard`, `PfSoulchange`).
 - **Validate vs cast end.** Checks the reference makes at cast end (immunity, undead, target
   state) belong in `cast`, not `validate/4`, or the SP and the cast bar behave differently.
+- **Cast end status check.** No status cancels a cast when it starts. A timed cast's
+  completion runs `Targeting.validate_cast_completion/3`: stun, freeze,
+  sleep and stone fail only a damage cast (`damage_type: :damage`, not ground/self/support),
+  silence fails nothing already under way, and the failure is silent with nothing spent.
+  Keep `damage_type` equal to the skill_db `NoDamage` flag; it decides this, the castend
+  on-skill arming and when-hit procs.
 - **Cast start.** Statuses that react to a cast starting run through
   `Caster.on_cast_start/2` (instant casts) and `SkillHandler` (timed casts at bar start).
 - **Level modifier and multi-hit.** Use `Combat.LevelModifier.skill_ratio/2` wherever the

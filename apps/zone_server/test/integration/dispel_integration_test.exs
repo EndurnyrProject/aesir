@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Integration.DispelIntegrationTest do
         duration: 1_800_000
       )
 
-    :ok = StatusInterpreter.apply_status(:player, char_id, :sc_hiding, duration: 1_800_000)
+    :ok = StatusInterpreter.apply_status(:player, char_id, :sc_cp_weapon, duration: 1_800_000)
 
     flush_packets()
 
@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Integration.DispelIntegrationTest do
            "Dispell must not disturb a cast in progress (dispell.cpp touches statuses only)"
 
     refute StatusStorage.has_status?(:player, char_id, :sc_blessing)
-    assert StatusStorage.has_status?(:player, char_id, :sc_hiding)
+    assert StatusStorage.has_status?(:player, char_id, :sc_cp_weapon)
 
     # The cast still resolves: AL_INCAGI lands its own buff on completion.
     assert eventually(fn -> StatusStorage.has_status?(:player, char_id, :sc_increaseagi) end),

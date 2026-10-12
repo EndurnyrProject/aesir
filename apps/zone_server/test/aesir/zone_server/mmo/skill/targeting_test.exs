@@ -410,7 +410,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       :ok = StatusStorage.apply_status(:player, 9_815, :sc_freeze)
 
       for id <- [88, 89] do
-        assert check(caster(), target, skill(id: id)) == [:ok, :ok, {:error, :target_restricted}]
+        assert check(caster(), target, skill(id: id)) ==
+                 List.duplicate({:error, :target_restricted}, 3)
       end
 
       assert check(caster(), target, skill()) == [:ok, :ok, :ok]
@@ -459,6 +460,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
                [:ok, {:error, :target_concealed}, {:error, :target_concealed}]
     end
 
+    test "Lex Aeterna cannot be aimed at a frozen or petrified target in any phase" do
+      lex = skill(id: 78, name: :pr_lexaeterna)
+
+      for {id, status} <- [{9_821, :sc_freeze}, {9_822, :sc_stone}] do
+        target = player_target(id)
+        :ok = StatusStorage.apply_status(:player, id, status)
+
+        assert check(caster(), target, lex) == List.duplicate({:error, :target_restricted}, 3)
+      end
+    end
+
     @tag game_mode: :renewal
     test "renewal Pressure follows the ordinary rule" do
       target = player_target(9_811)
@@ -466,6 +478,103 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       pressure = skill(id: 367, name: :pa_pressure)
 
       assert check(caster(class: :boss), target, pressure) == [:ok, :ok, :ok]
+    end
+  end
+
+  describe "validate_cast_completion/3" do
+    alias Aesir.ZoneServer.CombatTestHelper
+    alias Aesir.ZoneServer.Mmo.Skill.Definition
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
+    @caster_id 9_841
+
+    defp completing(attrs) do
+      [id: 5, name: :sm_bash, display_name: "Bash", max_level: 1]
+      |> Keyword.merge(attrs)
+      |> Definition.build!(__MODULE__)
+    end
+
+    defp damage_cast, do: completing(target_type: :target_enemy, damage_type: :damage)
+
+    defp mob_caster, do: CombatTestHelper.create_mob_combatant(unit_id: @caster_id)
+
+    defp player_caster(id) do
+      :ok =
+        UnitRegistry.register_unit(
+          :player,
+          id,
+          PlayerState,
+          %PlayerState{character_id: id},
+          self()
+        )
+
+      CombatTestHelper.create_player_combatant(unit_id: id)
+    end
+
+    test "a stunned, frozen, sleeping or petrified caster fails only a damage cast" do
+      for status <- [:sc_stun, :sc_freeze, :sc_sleep, :sc_stone] do
+        :ok = StatusStorage.apply_status(:mob, @caster_id, status)
+
+        assert Targeting.validate_cast_completion(mob_caster(), damage_cast()) ==
+                 {:error, :caster_restricted}
+
+        for no_damage <- [
+              completing(target_type: :target_enemy, damage_type: :no_damage),
+              completing(target_type: :target_ally, damage_type: :damage),
+              completing(target_type: :self, damage_type: :damage),
+              completing(target_type: :ground, damage_type: :damage)
+            ] do
+          assert Targeting.validate_cast_completion(mob_caster(), no_damage) == :ok
+        end
+
+        :ok = StatusStorage.remove_status(:mob, @caster_id, status)
+      end
+    end
+
+    test "waiting to petrify or silenced never fails a completing cast" do
+      for status <- [:sc_stonewait, :sc_silence] do
+        :ok = StatusStorage.apply_status(:mob, @caster_id, status)
+        assert Targeting.validate_cast_completion(mob_caster(), damage_cast()) == :ok
+        :ok = StatusStorage.remove_status(:mob, @caster_id, status)
+      end
+    end
+
+    test "playing dead fails every cast but Play Dead itself" do
+      caster = player_caster(9_842)
+      :ok = StatusStorage.apply_status(:player, 9_842, :sc_trickdead)
+
+      assert Targeting.validate_cast_completion(caster, completing(target_type: :self)) ==
+               {:error, :caster_restricted}
+
+      assert Targeting.validate_cast_completion(caster, completing(id: 143, name: :nv_trickdead)) ==
+               :ok
+    end
+
+    test "a performer completes only a skill its performance allows" do
+      caster = player_caster(9_843)
+      :ok = StatusStorage.apply_status(:player, 9_843, :sc_dancing, val1: 317)
+
+      assert Targeting.validate_cast_completion(caster, completing(target_type: :self)) ==
+               {:error, :caster_restricted}
+
+      assert Targeting.validate_cast_completion(caster, completing(id: 304, name: :bd_adaptation)) ==
+               :ok
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Roki's Weil fails a completing cast unless it is the caster's item skill" do
+      caster = player_caster(9_844)
+      :ok = StatusStorage.apply_status(:player, 9_844, :sc_rokisweil)
+
+      assert Targeting.validate_cast_completion(caster, completing(target_type: :self)) ==
+               {:error, :caster_restricted}
+
+      assert Targeting.validate_cast_completion(caster, completing(target_type: :self), true) ==
+               :ok
+    end
+
+    test "a free caster completes any cast" do
+      assert Targeting.validate_cast_completion(mob_caster(), damage_cast()) == :ok
     end
   end
 

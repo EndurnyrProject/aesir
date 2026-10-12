@@ -141,47 +141,80 @@ defmodule Aesir.ZoneServer.Geometry do
     line_cells({x1, y1}, {x2, y2}, {dx, dy}, {sx, sy}, dx - dy, [])
   end
 
-  @doc "Cells in an eight-direction lane of `length` cells and half-width `width`."
+  @doc """
+  Cells in an eight-direction lane of `length` rows and half-width `width`,
+  starting `offset` rows out from the origin toward `{tx, ty}`.
+
+  The direction is the nearest of the eight, with the reference's uneven
+  boundaries on the western half; aiming at the origin's own cell faces east.
+  A diagonal lane counts its rows in half-tiles, so consecutive offsets tile
+  the lane without gaps or overlap.
+  """
   @spec path_cells(
           {integer(), integer()},
           {integer(), integer()},
           pos_integer(),
+          non_neg_integer(),
           non_neg_integer()
         ) ::
           MapSet.t({integer(), integer()})
-  def path_cells({ox, oy}, {tx, ty}, length, width) when length > 0 and width >= 0 do
+  def path_cells({ox, oy}, {tx, ty}, length, width, offset \\ 0)
+      when length > 0 and width >= 0 and offset >= 0 do
     step = lane_step(tx - ox, ty - oy)
 
     step
-    |> lane_offsets(length, width)
+    |> lane_offsets(length, width, offset)
     |> MapSet.new(fn {x, y} -> {ox + x, oy + y} end)
   end
 
-  defp lane_step(0, 0), do: {0, -1}
+  defp lane_step(0, 0), do: {1, 0}
 
-  defp lane_step(dx, dy) do
+  defp lane_step(dx, dy) when dx >= 0 and dy >= 0 do
     cond do
-      abs(dx) >= 3 * abs(dy) -> {sign(dx), 0}
-      3 * abs(dx) < abs(dy) -> {0, sign(dy)}
-      true -> {sign(dx), sign(dy)}
+      dx >= dy * 3 -> {1, 0}
+      dx * 3 < dy -> {0, 1}
+      true -> {1, 1}
     end
   end
 
-  defp sign(value) when value < 0, do: -1
-  defp sign(_value), do: 1
+  defp lane_step(dx, dy) when dx >= 0 do
+    cond do
+      dx >= -dy * 3 -> {1, 0}
+      dx * 3 < -dy -> {0, -1}
+      true -> {1, -1}
+    end
+  end
 
-  defp lane_offsets({sx, sy}, length, width) when sx == 0 or sy == 0 do
-    for along <- 0..(length - 1), across <- -width..width do
+  defp lane_step(dx, dy) when dy <= 0 do
+    cond do
+      dx * 3 >= dy -> {0, -1}
+      dx < dy * 3 -> {-1, 0}
+      true -> {-1, -1}
+    end
+  end
+
+  defp lane_step(dx, dy) do
+    cond do
+      -dx * 3 <= dy -> {0, 1}
+      -dx > dy * 3 -> {-1, 0}
+      true -> {-1, 1}
+    end
+  end
+
+  defp lane_offsets({sx, sy}, length, width, offset) when sx == 0 or sy == 0 do
+    for along <- offset..(offset + length - 1), across <- -width..width do
       {along * sx - across * sy, along * sy + across * sx}
     end
   end
 
-  defp lane_offsets({sx, sy}, length, width) do
-    last = length - 1
+  defp lane_offsets({sx, sy}, length, width, offset) do
+    {offset, length} = if offset > 0, do: {2 * offset - 1, length + 1}, else: {0, length}
+    first = div(offset, 2)
+    last = first + length - 1
 
-    for rx <- -width..(last + width),
-        ry <- -width..(last + width),
-        rx + ry >= 0,
+    for rx <- (first - width)..(last + width),
+        ry <- (first - width)..(last + width),
+        rx + ry >= offset,
         rx + ry <= 2 * last,
         abs(rx - ry) <= 2 * width do
       {rx * sx, ry * sy}

@@ -79,8 +79,9 @@ observe another unit without messaging its process:
   (`unit/mob/ai_state_machine.ex`) is a pure functional patrol/aggro/chase/attack/flee FSM
   (`gen_state_machine` is a listed dep but intentionally unused).
 - Mob cast state is real: `CastingHandler.begin_cast/3` stores the row + timer, completion
-  executes or aborts, `abort_cast/1` cancels the timer, broadcasts cancel, applies cooldown,
-  and clears the descriptor (silence/stun interruption works). See `aesir-mobs`.
+  executes through the cast-end check or fails silently, `abort_cast/1` (forced interrupts)
+  cancels the timer, broadcasts cancel, applies cooldown, and clears the descriptor. No
+  status interrupts a cast when it starts, for any unit. See `aesir-mobs`.
 
 ## Single-writer rule (the load-bearing invariant)
 

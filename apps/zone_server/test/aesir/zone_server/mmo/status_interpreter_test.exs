@@ -316,6 +316,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
       assert Interpreter.can_use_skill?(:player, player_id, 89) == false
     end
 
+    test "can_use_skill?/3 lets a hidden player begin only a skill usable while hidden",
+         %{player_id: player_id} do
+      :ok = StatusStorage.apply_status(:player, player_id, :sc_hiding)
+
+      assert Interpreter.can_use_skill?(:player, player_id, 51)
+      assert Interpreter.can_use_skill?(:player, player_id, 137)
+      refute Interpreter.can_use_skill?(:player, player_id, 29)
+
+      :ok = StatusStorage.apply_status(:mob, 77, :sc_hiding)
+      assert Interpreter.can_use_skill?(:mob, 77, 29)
+    end
+
     test "can_use_skill?/3 denies only skills listed by a narrow block", %{player_id: player_id} do
       assert :ok = Interpreter.apply_status(:player, player_id, :sc_test_blocked_skill)
 

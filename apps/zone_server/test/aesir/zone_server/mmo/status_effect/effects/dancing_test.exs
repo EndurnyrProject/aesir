@@ -100,6 +100,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     assert Registry.get_definition(:sc_dancing).bypass_resistance
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic Adaptation cannot end a Wand of Hermode performance" do
+    player = player(17)
+    :ok = UnitRegistry.register_player(player, self())
+
+    assert :ok =
+             Interpreter.apply_status(:player, 17, :sc_dancing,
+               caster_id: 17,
+               val1: 488,
+               val2: 42,
+               duration: 60_000,
+               state: %{upkeep: 5, ticks: 0, root: :always}
+             )
+
+    refute Interpreter.can_use_skill?(:player, 17, 304)
+    assert Interpreter.can_use_skill?(:player, 17, 316)
+  end
+
   test "an ensemble lock roots its performer" do
     player = player(17)
     :ok = UnitRegistry.register_player(player, self())

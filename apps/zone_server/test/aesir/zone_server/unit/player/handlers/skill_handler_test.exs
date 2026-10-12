@@ -1725,7 +1725,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert Process.cancel_timer(swing_timer) == false
     end
 
-    test "a status landing during a timed cast drops to idle without committing" do
+    test "a status that only forbids starting a cast does not stop its completion" do
       stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
 
@@ -1733,18 +1733,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       token = casting.game_state.state_context.token
 
       stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, _skill -> false end)
-      reject(&Interpreter.complete_cast/4)
-      reject(&CharacterPersistence.update_character/3)
-
       test_pid = self()
-      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
 
-      assert {:noreply, dropped} = SkillHandler.handle_cast_complete(casting, token)
+      expect(Interpreter, :complete_cast, fn _game_state, 29, 1, _target ->
+        send(test_pid, :completed)
+        {:error, :test_stop}
+      end)
 
-      assert dropped.game_state.action_state == :idle
-      assert dropped.game_state.state_context == %{}
-      assert dropped.game_state.stats.current_state.sp == 45
-      assert_received {:to_player, %CastCancel{gid: 1000}}
+      assert {:noreply, _completed} = SkillHandler.handle_cast_complete(casting, token)
+      assert_received :completed
     end
   end
 
@@ -2046,6 +2043,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert_received {:broadcast,
                        %SkillEffect{skill_id: 35, level: 1, src_id: 1000, target_id: 2000}}
+    end
+
+    test "Brandish Spear, a no-damage cast that sweeps the area, broadcasts no SkillEffect" do
+      stub(Catalog, :by_id, fn 57 ->
+        {:ok,
+         definition(id: 57, target_type: :target_enemy, damage_type: :no_damage, cooldown: [])}
+      end)
+
+      stub(Interpreter, :begin_cast, fn gs, 57, 1, {:unit, 2000} -> {:instant, gs} end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, packet ->
+        send(test_pid, {:broadcast, packet})
+        :ok
+      end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 57, 1, 2000)
+
+      refute_received {:broadcast, %SkillEffect{}}
     end
 
     test "PR_STRECOVERY broadcasts a SkillEffect on cast" do

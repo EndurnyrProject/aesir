@@ -398,6 +398,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     with {:ok, %{definition: definition, skill_id: skill_id, level: level} = prepared} <-
            validate_encore_replay(game_state, memory, target, now),
+         :ok <- check_completion_caster(game_state, definition, false),
          {:ok, cost} <- encore_prepared_cost(game_state, prepared) do
       complete_resolved_cast(
         game_state,
@@ -881,10 +882,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- maybe_check_item_map(caster, definition.id, keep?),
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_target(caster, target, definition),
-         :ok <- check_concealment(caster, target, definition, phase) do
+         :ok <- check_item_skill_use(caster, target, definition, phase) do
       {:ok, module}
     end
   end
+
+  defp check_item_skill_use(caster, target, definition, :cast_end),
+    do: check_cast_end(caster, target, definition, true)
+
+  defp check_item_skill_use(caster, target, definition, phase),
+    do: check_concealment(caster, target, definition, phase)
 
   defp maybe_check_item_map(caster, skill_id, true),
     do: Caster.Player.castable_state(caster, skill_id, :begin)
@@ -1139,54 +1146,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_support_status(caster, definition) do
       if :erlang.apply(adapter, :completion_revalidates_definition?, []) do
-        validate_revalidated_completion(
-          caster,
-          skill_id,
-          level,
-          target,
-          now,
-          adapter,
-          definition
-        )
+        validate_revalidated_completion(caster, level, target, now, adapter, definition)
       else
-        validate_player_completion(caster, skill_id, level, target, now, adapter, definition)
+        validate_player_completion(caster, level, target, now, adapter, definition)
       end
     end
   end
 
-  defp validate_revalidated_completion(
-         caster,
-         skill_id,
-         level,
-         target,
-         now,
-         adapter,
-         definition
-       ) do
+  defp validate_revalidated_completion(caster, level, target, now, adapter, definition) do
     with :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
          :ok <- check_target(caster, target, definition),
-         :ok <- check_concealment(caster, target, definition, :cast_end),
+         :ok <- check_cast_end(caster, target, definition, false),
          :ok <- check_range(caster, target, definition, level),
          :ok <- check_fog(target, definition),
          {:ok, _module} <- fetch_active_module(definition),
-         :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
          context = CastContext.build(caster, definition, level, target, :completion),
          :ok <- check_context_cooldown(context, now) do
       validate_and_prepare(context, false)
     end
   end
 
-  defp validate_player_completion(caster, skill_id, level, target, now, adapter, definition) do
+  defp validate_player_completion(caster, level, target, now, adapter, definition) do
     with {:ok, _module} <- fetch_active_module(definition),
          context = CastContext.build(caster, definition, level, target, :completion),
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
          :ok <- check_target(caster, target, definition),
-         :ok <- check_concealment(caster, target, definition, :cast_end),
+         :ok <- check_cast_end(caster, target, definition, false),
          :ok <- check_range(caster, target, definition, level),
          :ok <- check_fog(target, definition),
-         :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
          :ok <- check_context_cooldown(context, now) do
       validate_and_prepare(context, false)
     end
@@ -1496,6 +1485,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp check_concealment(_caster, _target, _definition, _phase), do: :ok
+
+  # A timed cast's completion checks its caster's state, then its target.
+  defp check_cast_end(caster, target, definition, item?) do
+    with :ok <- check_completion_caster(caster, definition, item?),
+         do: check_concealment(caster, target, definition, :cast_end)
+  end
+
+  defp check_completion_caster(caster, definition, item?) do
+    {type, id} = caster_ref(caster)
+    Targeting.validate_cast_completion(%{unit_type: type, unit_id: id}, definition, item?)
+  end
 
   defp target_unit_id({_unit_type, unit_id}), do: unit_id
   defp target_unit_id(unit_id), do: unit_id

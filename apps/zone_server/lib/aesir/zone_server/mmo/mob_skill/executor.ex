@@ -124,9 +124,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   def resolve_target(%MobState{}, %{target: other}), do: {:error, {:unsupported_target, other}}
 
   @doc """
-  Resolves the row's target and dispatches to its skill module.
+  Resolves the row's target and dispatches to its skill module. At `:cast_end`
+  (a timed cast completing) the mob's own state is checked first
+  (`Targeting.validate_cast_completion/3`).
 
-  Target invalidation, a failed `validate/4`, and a `cast/4`/`mob_cast/5`
+  Target invalidation, a caster that can no longer complete the cast, a failed
+  `validate/4`, and a `cast/4`/`mob_cast/5`
   error surface as `{:error, reason}` — a clean abort, never a crash. A skill
   unresolvable in the catalog is a no-op `:ok`.
   """
@@ -140,9 +143,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   @doc """
   Checks that the row's resolved unit target is not concealed from the mob at
-  `phase` (`Targeting.validate_skill_use/4`); a ground target, a target that
-  cannot be resolved or a skill missing from the catalog passes, since
-  `execute/3` reports those itself.
+  `phase` (`Targeting.validate_skill_use/4`); a ground target or ground skill
+  (checked without a target), a target that cannot be resolved or a skill
+  missing from the catalog passes, since `execute/3` reports those itself.
   """
   @spec check_target(MobState.t(), map(), Targeting.skill_use_phase()) :: :ok | {:error, term()}
   def check_target(%MobState{} = state, row, phase) do
@@ -214,6 +217,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   defp run(module, state, target, row, definition, phase) do
     with :ok <- check_support_status(state, definition),
+         :ok <- check_completion_caster(state, definition, phase),
          :ok <- check_concealment(state, target, definition, phase),
          {:ok, adapted_target} <- adapt_target(target, definition, state),
          :ok <- module.validate(state, adapted_target, row.level, definition),
@@ -232,6 +236,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   defp check_support_status(_state, _definition), do: :ok
+
+  defp check_completion_caster(state, definition, :cast_end),
+    do: Targeting.validate_cast_completion(concealment_caster(state), definition)
+
+  defp check_completion_caster(_state, _definition, _phase), do: :ok
+
+  defp check_concealment(_state, _target, %{target_type: :ground}, _phase), do: :ok
 
   defp check_concealment(state, {:unit, type, id}, definition, phase) do
     Targeting.validate_skill_use(

@@ -69,6 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # reject it) and never takes the ordinary cast path.
   @cast_cancel_id 275
   @encore_id 305
+  @brandish_spear 57
   @combo_followup_ids [271, 272, 273, 371, 372]
 
   @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer() | tuple()) ::
@@ -1193,7 +1194,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   Applies the session-owned living, status, and action gate for a skill cast.
 
   Staged and resumed input casts use the default start phase. Timed casts use
-  `:completion`, which requires the existing cast action to still be active.
+  `:completion`, which requires the existing cast action to still be active and
+  leaves the caster's statuses to the interpreter's completion check: a status
+  that only forbids starting a cast does not stop one already under way.
   """
   @spec cast_gate(SessionState.t(), integer(), :start | :completion | :restricted) ::
           {:ok, SessionState.t()} | {:error, :dead | :status_blocked | :busy}
@@ -1201,12 +1204,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   def cast_gate(%{game_state: game_state} = state, skill_id, phase) do
     with :ok <- ensure_living_caster(game_state),
-         true <- StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id) do
+         :ok <- check_start_status(game_state, skill_id, phase) do
       check_cast_action(state, phase)
-    else
-      false -> {:error, :status_blocked}
-      {:error, _reason} = error -> error
     end
+  end
+
+  defp check_start_status(_game_state, _skill_id, :completion), do: :ok
+
+  defp check_start_status(game_state, skill_id, _phase) do
+    if StatusInterpreter.can_use_skill?(:player, game_state.character_id, skill_id),
+      do: :ok,
+      else: {:error, :status_blocked}
   end
 
   defp ensure_living_caster(%{action_state: :dead}), do: {:error, :dead}
@@ -1685,8 +1693,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   @doc false
   @spec report_cast_failure(integer(), non_neg_integer(), atom()) :: :ok
-  def report_cast_failure(skill_id, character_id, :target_concealed) do
-    Logger.debug("Skill #{skill_id} cast by #{character_id} cannot reach a concealed target")
+  def report_cast_failure(skill_id, character_id, reason)
+      when reason in [:target_concealed, :target_restricted, :caster_restricted] do
+    Logger.debug("Skill #{skill_id} cast by #{character_id} silently refused: #{reason}")
   end
 
   def report_cast_failure(skill_id, character_id, reason) do
@@ -1782,6 +1791,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp broadcast_skill_effect(_game_state, _skill_id, _level, {:ground, _x, _y}), do: :ok
+
+  # Brandish Spear is a no-damage cast whose only visuals are its hits.
+  defp broadcast_skill_effect(_game_state, @brandish_spear, _level, _target), do: :ok
 
   defp broadcast_skill_effect(game_state, skill_id, level, target) do
     case Catalog.by_id(skill_id) do

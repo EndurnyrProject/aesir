@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   @moduledoc """
   Handles a mob's skill-cast lifecycle: starting a cast, resolving it on
-  completion, and aborting it on a forced interrupt or a mid-cast status
-  restriction. Extracted from MobSession to improve modularity and
-  maintainability.
+  completion, and aborting it on a forced interrupt. A status that lands
+  mid-cast does not interrupt it; the cast is judged when it completes.
+  Extracted from MobSession to improve modularity and maintainability.
 
   Cross-references `Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler` to
   reschedule the AI tick after a cast resolves; `AiHandler` calls back into
@@ -54,9 +54,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
 
   @doc """
   Resolves a `{:casting, :complete}` timer firing: dead and no-longer-casting
-  mobs drop it, a live cast either aborts when current statuses deny its skill
-  (or its target is invalidated) or executes and writes its cooldown, then the
-  AI tick is rescheduled either way.
+  mobs drop it, a live cast executes through the completion check and writes
+  its cooldown, then the AI tick is rescheduled.
   """
   @spec handle_cast_complete(MobState.t()) :: {:noreply, MobState.t()}
   def handle_cast_complete(%{is_dead: true} = state), do: {:noreply, state}
@@ -64,22 +63,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   def handle_cast_complete(%{casting: nil} = state), do: {:noreply, state}
 
   def handle_cast_complete(%{casting: %{row: row}} = state) do
-    # A status may have landed via a plain apply with no status-change hook, so
-    # this poll guarantees it cannot fire a newly denied skill. Target invalidation surfaces as
-    # {:error, _} from the Executor - also a clean abort with no packet. The
-    # cooldown is written in every case so an aborted cast cannot be instantly
-    # re-rolled every tick.
-    updated_state =
-      if can_use_skill?(state, row) do
-        MobSkillExecutor.execute(state, row, :cast_end)
-        now = System.system_time(:millisecond)
+    # A caster that can no longer complete the cast, or an invalidated target,
+    # surfaces as {:error, _} from the Executor: a clean abort with no packet.
+    # The cooldown is written in every case so a failed cast cannot be
+    # instantly re-rolled every tick.
+    MobSkillExecutor.execute(state, row, :cast_end)
+    now = System.system_time(:millisecond)
 
-        state
-        |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
-        |> MobState.clear_casting()
-      else
-        abort_cast(state)
-      end
+    updated_state =
+      state
+      |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
+      |> MobState.clear_casting()
 
     if updated_state.ai_timer_ref, do: Process.cancel_timer(updated_state.ai_timer_ref)
 
@@ -112,24 +106,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     {:reply, {:ok, identity}, abort_cast(state)}
   end
 
-  @doc """
-  Resolves an `{:casting, {:status_changed, ...}}` notification by promptly
-  interrupting a cast newly denied by the status interpreter.
-  """
-  @spec handle_status_changed(atom(), atom(), MobState.t()) :: {:noreply, MobState.t()}
-  def handle_status_changed(_status_id, _event, %{casting: %{row: row}} = state) do
-    if can_use_skill?(state, row), do: {:noreply, state}, else: {:noreply, abort_cast(state)}
-  end
-
-  def handle_status_changed(_status_id, _event, state), do: {:noreply, state}
-
-  @doc """
-  Returns whether the pending cast is denied by the status interpreter.
-  """
-  @spec cast_interrupted?(MobState.t()) :: boolean()
-  def cast_interrupted?(%{casting: %{row: row}} = state), do: not can_use_skill?(state, row)
-  def cast_interrupted?(_state), do: false
-
   defp can_use_skill?(state, row) do
     StatusInterpreter.can_use_skill?(:mob, state.instance_id, row.skill_id)
   end
@@ -143,10 +119,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   Aborts an in-flight cast cleanly: cancels the pending `{:casting, :complete}`
   timer so a stale one cannot fire against a later cast, tears down the
   client's cast bar, writes the skill's delay cooldown (mirroring the
-  target-invalidation abort so there is no instant re-roll), and clears the
-  cast descriptor. No damage or effect fires. Every status restriction and
-  forced interrupt funnels through here, so the CastCancel is
-  unconditional.
+  completion path so there is no instant re-roll), and clears the cast
+  descriptor. No damage or effect fires. Every forced interrupt funnels
+  through here, so the CastCancel is unconditional.
   """
   @spec abort_cast(MobState.t()) :: MobState.t()
   def abort_cast(%{casting: %{row: row} = casting} = state) do
