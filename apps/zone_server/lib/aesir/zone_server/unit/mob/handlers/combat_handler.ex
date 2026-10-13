@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MvpReward
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   def handle_apply_damage(damage, attacker, metadata, state) do
+    state = CastingHandler.interrupt_on_damage(state, Map.put(metadata, :damage, damage))
     {updated_mob, status} = MobState.apply_damage(state, damage)
     current_time = System.system_time(:second)
     attacker_ref = typed_attacker(attacker)
@@ -128,6 +130,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   # A coma hit on a mob already at 1 HP takes nothing but is still active damage.
   defp notify_coma(source, metadata, state) do
+    state = CastingHandler.interrupt_on_damage(state, Map.put(metadata, :damage, 0))
+
     StatusInterpreter.on_damage(
       :mob,
       state.instance_id,

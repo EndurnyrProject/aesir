@@ -534,6 +534,80 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     end
   end
 
+  describe "damage cast interruption" do
+    defp casting_mob(cancelable) do
+      ref = Process.send_after(self(), {:casting, :complete}, 10_000)
+
+      build_mob_state()
+      |> MobState.set_casting(%{row: row(cancelable: cancelable), complete_at: 0, timer_ref: ref})
+    end
+
+    test "active damage cancels a cancelable cast, writes the delay and starts the attack delay" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      before = System.system_time(:millisecond)
+
+      {:noreply, updated} =
+        MobSession.handle_cast({:combat, {:apply_damage, 10, nil, %{}}}, casting_mob(true))
+
+      assert updated.casting == nil
+      assert updated.skill_cooldowns[19] >= before + 5_000
+      assert updated.last_attack_time >= before
+      assert_received {:packet, %CastCancel{gid: 1}}
+    end
+
+    test "a non-cancelable cast, and passive loss on a cancelable one, keep running" do
+      {:noreply, kept} =
+        MobSession.handle_cast({:combat, {:apply_damage, 10, nil, %{}}}, casting_mob(false))
+
+      assert kept.casting
+
+      {:noreply, passive} =
+        MobSession.handle_cast(
+          {:combat, {:apply_damage, 10, nil, %{status_tick?: true}}},
+          casting_mob(true)
+        )
+
+      assert passive.casting
+    end
+
+    test "an instant cast starts the attack delay" do
+      stub(MobSkillDb, :rows_for, fn 1001 -> [row(%{cast_time: 0})] end)
+
+      stub(UnitRegistry, :get_unit, fn :player, @target_id ->
+        {:ok, {nil, living_player_state(), nil}}
+      end)
+
+      stub(Combat, :execute_magic_attack, fn _caster, @target_id, _opts ->
+        {:ok, {:player, @target_id}}
+      end)
+
+      before = System.system_time(:millisecond)
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+
+      assert updated.last_attack_time >= before
+    end
+
+    test "a cast's end starts the attack delay" do
+      state = build_mob_state() |> MobState.set_casting(%{row: row(), complete_at: 0})
+      stub_living_target()
+
+      stub(Combat, :execute_magic_attack, fn _caster, @target_id, _opts ->
+        {:ok, {:player, @target_id}}
+      end)
+
+      before = System.system_time(:millisecond)
+      {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
+
+      assert updated.last_attack_time >= before
+    end
+  end
+
   describe "interrupt_cast/1 against a live mob process" do
     # The mailbox ordering these assert can only be observed through a real
     # process. The mob is dormant so no AI tick can re-select mid-test, and its

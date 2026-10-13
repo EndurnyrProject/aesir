@@ -1,8 +1,10 @@
 defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   @moduledoc """
   Handles a mob's skill-cast lifecycle: starting a cast, resolving it on
-  completion, and aborting it on a forced interrupt. A status that lands
-  mid-cast does not interrupt it; the cast is judged when it completes.
+  completion, and aborting it on a forced interrupt or on active damage when
+  its row is cancelable. A status that lands mid-cast does not interrupt it;
+  the cast is judged when it completes. A cast's end and its cancel both start
+  the mob's attack delay.
   Extracted from MobSession to improve modularity and maintainability.
 
   Cross-references `Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler` to
@@ -10,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   this module to start a cast and to gate/abort a locked AI tick.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor, as: MobSkillExecutor
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
@@ -26,7 +29,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
 
     if can_use_skill?(state, row) and target_reachable?(state, row) do
       MobSkillExecutor.execute(state, row)
-      {:ok, MobState.put_skill_cooldown(state, row.skill_id, now + row.delay)}
+
+      {:ok,
+       state
+       |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
+       |> start_attack_delay()}
     else
       MobSkillExecutor.broadcast_cast_cancel(state)
       {:rejected, state}
@@ -74,6 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
       state
       |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
       |> MobState.clear_casting()
+      |> start_attack_delay()
 
     if updated_state.ai_timer_ref, do: Process.cancel_timer(updated_state.ai_timer_ref)
 
@@ -106,6 +114,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     {:reply, {:ok, identity}, abort_cast(state)}
   end
 
+  @doc """
+  Cancels the in-flight cast on active damage (`DamageShared.active_damage?/1`
+  over `damage_info`) when its row is cancelable, as `abort_cast/1` does.
+  Anything else passes through unchanged.
+  """
+  @spec interrupt_on_damage(MobState.t(), map()) :: MobState.t()
+  def interrupt_on_damage(%{casting: %{row: %{cancelable: true}}} = state, damage_info) do
+    if DamageShared.active_damage?(damage_info), do: abort_cast(state), else: state
+  end
+
+  def interrupt_on_damage(state, _damage_info), do: state
+
+  # The reference sets a monster's attack delay when a cast ends or is cancelled.
+  defp start_attack_delay(state),
+    do: %{state | last_attack_time: System.system_time(:millisecond)}
+
   defp can_use_skill?(state, row) do
     StatusInterpreter.can_use_skill?(:mob, state.instance_id, row.skill_id)
   end
@@ -120,8 +144,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   timer so a stale one cannot fire against a later cast, tears down the
   client's cast bar, writes the skill's delay cooldown (mirroring the
   completion path so there is no instant re-roll), and clears the cast
-  descriptor. No damage or effect fires. Every forced interrupt funnels
-  through here, so the CastCancel is unconditional.
+  descriptor and starts the attack delay. No damage or effect fires. Every
+  forced interrupt funnels through here, so the CastCancel is unconditional.
   """
   @spec abort_cast(MobState.t()) :: MobState.t()
   def abort_cast(%{casting: %{row: row} = casting} = state) do
@@ -137,5 +161,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     state
     |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
     |> MobState.clear_casting()
+    |> start_attack_delay()
   end
 end
