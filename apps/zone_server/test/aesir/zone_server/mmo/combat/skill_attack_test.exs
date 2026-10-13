@@ -302,6 +302,75 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^defender_key, _}}}
   end
 
+  test "a dmg_type: :misc weapon skill hit is delivered as long misc to every flag consumer" do
+    flag = BattleFlags.build(:misc, :long, true)
+    defender_key = {40, 0}
+    wrong_key = {40, 1}
+
+    attacker = CombatTestHelper.create_mob_combatant(unit_id: 3001, position: {100, 100})
+
+    target =
+      CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
+      |> Map.put(:equip_autobonuses, %{
+        defender_key => autobonus(:when_hit, flag, 0),
+        wrong_key => autobonus(:when_hit, BattleFlags.build(:weapon, :long, true), 1)
+      })
+
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 100}
+
+    stub(TargetResolver, :resolve, fn {:player, 2001} ->
+      {:ok, self(), target_state, :player}
+    end)
+
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    # Weapon-only interception (Auto Guard, Parrying) never sees a misc hit.
+    reject(&StatusInterpreter.before_weapon_hit/3)
+
+    stub(DamageCalculator, :calculate_damage, fn ^attacker, ^target, opts ->
+      assert opts[:ranged] == true
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+    stub(EquipVanish, :after_hit, fn ^attacker, ^target, _pid, ^flag -> :ok end)
+
+    stub(OnHitEffects, :after_hit, fn ^attacker, ^target, _result, opts ->
+      assert opts[:attack_flag] == flag
+      :ok
+    end)
+
+    stub(Knockback, :skill, fn ^attacker, ^target, 397, _result, [] -> :ok end)
+
+    stub(StatusInterpreter, :absorb_hit, fn :player, 2001, 40, hit_info ->
+      assert hit_info.dmg_type == :misc
+      refute hit_info.is_short
+      {40, :hit}
+    end)
+
+    stub(StatusInterpreter, :after_damage_taken, fn :player, 2001, _hit_info -> 0 end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    test_pid = self()
+
+    expect(PlayerSession, :apply_damage, fn _pid, 40, {:mob, 3001}, metadata ->
+      send(test_pid, {:delivered, metadata})
+      :ok
+    end)
+
+    assert :ok =
+             SkillAttack.execute_skill_attack(caster_state, {:player, 2001},
+               skill_id: 397,
+               skill_level: 5,
+               ignore_flee: true,
+               dmg_type: :misc
+             )
+
+    assert_received {:delivered, %{dmg_type: :misc, is_short: false} = metadata}
+    assert %{proc_event: %{attack_flag: ^flag}} = metadata
+  end
+
   test "misc skill hit dispatches only misc attacker and defender procs" do
     flag = BattleFlags.build(:misc, :short, true)
     attacker_key = {30, 0}

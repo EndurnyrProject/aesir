@@ -298,10 +298,10 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
     assert damage > 0
     assert eventually(fn -> get_mob_state(mob.pid).hp < 100_000 end)
 
-    assert eventually(fn -> StatusStorage.has_status?(:mob, mob.unit_id, :sc_stop) end)
+    assert eventually(fn -> StatusStorage.has_status?(:mob, mob.unit_id, :sc_ankle) end)
 
     %{expires_at: expiry, started_at: started} =
-      StatusStorage.get_status(:mob, mob.unit_id, :sc_stop)
+      StatusStorage.get_status(:mob, mob.unit_id, :sc_ankle)
 
     assert expiry - started == 1_000
     damage

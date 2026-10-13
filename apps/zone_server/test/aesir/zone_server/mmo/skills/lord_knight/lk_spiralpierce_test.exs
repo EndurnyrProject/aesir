@@ -112,7 +112,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     assert :ok = LkSpiralpierce.validate(caster(1101), {:unit, 6_160}, 1, definition)
   end
 
-  test "a level-seven mob row uses neutral ranged physical damage without weapon stats" do
+  @tag game_mode: :renewal
+  test "a level-seven renewal mob row uses neutral long misc-flagged damage without weapon stats" do
     caster = mob([])
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
     target_ref = {:player, 6_161}
@@ -126,6 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
       assert opts[:skill_level] == 5
       assert opts[:hit_divisions] == 5
       assert opts[:element] == :neutral
+      assert opts[:dmg_type] == :misc
       assert opts[:skip_crit] == true
       refute Keyword.has_key?(opts, :weight_atk)
       refute Keyword.has_key?(opts, :base_damage)
@@ -136,7 +138,128 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
              LkSpiralpierce.mob_cast(caster, {:unit, :player, 6_161}, 7, definition, %{level: 7})
   end
 
-  test "a landed strike roots a normal mob for one second" do
+  @tag game_mode: :pre_renewal
+  test "a classic mob row adds the STR bonus and its own size fix to the ordinary base and ignores DEF" do
+    caster = mob([], str: 50)
+    {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
+
+    stub(Combat, :resolve_combatant, fn
+      {:player, 6_161} ->
+        {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161)}
+
+      {:player, 6_162} ->
+        {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_162, size: :large)}
+    end)
+
+    # ATK 0 rolls 0, so the base is STR 50 + level 10 = 60, plus (50 / 10)^2 = 85.
+    expect(Combat, :execute_skill_attack, 2, fn ^caster, {:player, id}, opts ->
+      assert opts[:base_damage] == if(id == 6_161, do: 85, else: div(85 * 75, 100))
+      assert opts[:ignore_defense] == true
+      assert opts[:dmg_type] == :misc
+      assert opts[:element] == :neutral
+      refute Keyword.has_key?(opts, :skill_ratio)
+      refute Keyword.has_key?(opts, :ignore_size)
+      refute Keyword.has_key?(opts, :refine_atk)
+      {:ok, %{hit?: false}}
+    end)
+
+    assert :ok = LkSpiralpierce.mob_cast(caster, {:unit, :player, 6_161}, 5, definition, %{})
+    assert :ok = LkSpiralpierce.mob_cast(caster, {:unit, :player, 6_162}, 5, definition, %{})
+  end
+
+  @tag game_mode: :pre_renewal
+  test "a classic mob row scales a small target by 125%" do
+    caster = mob([], str: 50)
+    {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
+
+    stub(Combat, :resolve_combatant, fn {:player, 6_161} ->
+      {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161, size: :small)}
+    end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, {:player, 6_161}, opts ->
+      assert opts[:base_damage] == div(85 * 125, 100)
+      {:ok, %{hit?: false}}
+    end)
+
+    assert :ok = LkSpiralpierce.mob_cast(caster, {:unit, :player, 6_161}, 5, definition, %{})
+  end
+
+  @tag game_mode: :renewal
+  test "a renewal mob row keeps the ordinary base at the level ratio with the misc flag" do
+    caster = mob([])
+    {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
+
+    stub(Combat, :resolve_combatant, fn {:player, 6_161} ->
+      {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161)}
+    end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, {:player, 6_161}, opts ->
+      assert opts[:skill_ratio] == 400
+      assert opts[:dmg_type] == :misc
+      assert opts[:element] == :neutral
+      refute Keyword.has_key?(opts, :base_damage)
+      refute Keyword.has_key?(opts, :ignore_defense)
+      {:ok, %{hit?: false}}
+    end)
+
+    assert :ok = LkSpiralpierce.mob_cast(caster, {:unit, :player, 6_161}, 5, definition, %{})
+  end
+
+  test "a landed strike immobilises a player target with Ankle for one second" do
+    caster = mob([])
+    {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
+
+    stub(Combat, :resolve_combatant, fn {:player, 6_161} ->
+      {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_161)}
+    end)
+
+    stub(Combat, :execute_skill_attack, fn _caster, _target, _opts ->
+      {:ok, %{hit?: true, target_survives?: true}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 6_161, :sc_ankle, params ->
+      assert params[:duration] == 1_000
+      assert params[:caster_id] == 6_160
+      assert params[:source_type] == :mob
+      refute Keyword.has_key?(params, :bypass_resistance)
+      {:ok, :applied}
+    end)
+
+    assert :ok = LkSpiralpierce.mob_cast(caster, {:unit, :player, 6_161}, 5, definition, %{})
+  end
+
+  test "status-immune mobs, killed targets and homunculi are never immobilised" do
+    caster = caster(1401)
+    stub_weapon(1401, :one_handed_spear)
+    {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
+
+    stub(Combat, :resolve_combatant, fn
+      6_160 ->
+        {:ok,
+         CombatTestHelper.create_mob_combatant(unit_id: 6_160, class: :normal)
+         |> Map.put(:status_immune, true)}
+
+      6_161 ->
+        {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_161, class: :normal)}
+
+      6_162 ->
+        {:ok,
+         CombatTestHelper.create_mob_combatant(unit_id: 6_162, class: :normal)
+         |> Map.put(:unit_type, :homunculus)}
+    end)
+
+    stub(Combat, :execute_skill_attack, fn _caster, target_id, _opts ->
+      {:ok, %{hit?: true, target_survives?: target_id != 6_161}}
+    end)
+
+    reject(&StatusInterpreter.apply_status/4)
+
+    for target_id <- [6_160, 6_161, 6_162] do
+      assert {:ok, ^caster} = LkSpiralpierce.cast(caster, {:unit, target_id}, 5, definition)
+    end
+  end
+
+  test "a landed strike immobilises a normal mob with Ankle for one second" do
     target = mob([])
     :ok = UnitRegistry.register_unit(:mob, target.instance_id, MobState, target, self())
     caster = caster(1401)
@@ -153,7 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     assert {:ok, ^caster} = LkSpiralpierce.cast(caster, {:unit, 6_160}, 5, definition)
 
     assert %{expires_at: expiry, started_at: start} =
-             StatusStorage.get_status(:mob, 6_160, :sc_stop)
+             StatusStorage.get_status(:mob, 6_160, :sc_ankle)
 
     assert expiry - start == 1_000
   end
@@ -204,14 +327,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     }
   end
 
-  defp mob(modes) do
+  defp mob(modes, stats \\ []) do
     data = %MobDefinition{
       id: 1002,
       aegis_name: "test_mob",
       name: "Test Mob",
       level: 10,
       hp: 100,
-      stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+      stats: Map.merge(%{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1}, Map.new(stats)),
       attack_range: 1,
       size: :medium,
       race: :brute,

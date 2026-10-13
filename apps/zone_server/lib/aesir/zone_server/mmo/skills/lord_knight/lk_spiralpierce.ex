@@ -1,15 +1,20 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   @moduledoc """
   Spiral Pierce (LK_SPIRALPIERCE) is a spear/sword weight strike whose one
-  calculated damage is repeated over five hits, rooting a non-boss target for
-  one second on a connecting hit.
+  calculated damage is repeated over five hits. A hit that deals damage to a
+  living player, or to a monster that is not status immune, immobilises it
+  with Ankle for one second through the ordinary status application.
 
   Renewal folds the 70% base and size adjustment into one integer rate, which
   can round by one point. Classic replaces a player's base with 8% of the
   weapon's weight raised by 50% per level, plus (STR / 10)^2, scaled 125% on
-  small and 75% on large targets; the weapon's refine ATK joins after DEF. A
-  non-player's hit is always long range; mob casts use physical neutral damage
-  rather than the reference misc attack.
+  small and 75% on large targets; the weapon's refine ATK joins after DEF.
+
+  A monster has no weapon weight: its hit is calculated as a weapon attack on
+  its ordinary base, forced neutral, and delivered as a long misc hit to every
+  flag consumer. In renewal that base takes the level ratio; in classic it is
+  the ordinary roll plus (STR / 10)^2 with the same small/large size fix, at
+  100% and ignoring DEF.
   Charging Pierce's optional alteration is not modelled.
   """
   use Aesir.ZoneServer.Mmo.Skill,
@@ -37,6 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -47,6 +54,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @behaviour Active
+
+  @ankle_ms 1_000
 
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
@@ -97,18 +106,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
 
   defp mob_strike(caster, target_id, level, definition) do
     with {:ok, target} <- Combat.resolve_combatant(target_id) do
-      ratio =
+      mode_opts =
         if GameMode.mode() == :renewal,
-          do: LevelModifier.skill_ratio(150 + 50 * level, caster.mob_data.level),
-          else: 100 + 50 * level
+          do: [skill_ratio: LevelModifier.skill_ratio(150 + 50 * level, caster.mob_data.level)],
+          else: classic_mob_opts(caster, target.size)
 
       opts =
         attack_opts(definition, min(level, 5)) ++
-          [skill_ratio: ratio, element: :neutral]
+          mode_opts ++ [element: :neutral, dmg_type: :misc]
 
       strike(caster, target_id, target, opts)
     end
   end
+
+  # The ordinary non-player roll, the STR bonus and the Spiral size fix form
+  # the base; DEF is ignored.
+  defp classic_mob_opts(caster, size) do
+    attacker = MobState.to_combatant(caster)
+    {:ok, roll} = DamageInputs.non_player_base_attack(attacker)
+    str_bonus = Integer.pow(div(attacker.base_stats.str, 10), 2)
+
+    [base_damage: div((roll + str_bonus) * spiral_size_rate(size), 100), ignore_defense: true]
+  end
+
+  defp spiral_size_rate(:small), do: 125
+  defp spiral_size_rate(:large), do: 75
+  defp spiral_size_rate(_size), do: 100
 
   defp renewal_opts(caster, size, weight, level, definition) do
     size_rate = %{small: 130, medium: 115, large: 100}[size]
@@ -125,11 +148,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   defp classic_opts(caster, size, weight, level, definition) do
     str_bonus = Integer.pow(div(Stats.get_effective_stat(caster.stats, :str), 10), 2)
     weighted = div(div(weight * 8, 100) * (100 + 50 * level), 100) + str_bonus
-    size_rate = Map.get(%{small: 125, large: 75}, size, 100)
 
     attack_opts(definition, level) ++
       [
-        base_damage: div(weighted * size_rate, 100),
+        base_damage: div(weighted * spiral_size_rate(size), 100),
         ignore_defense: true,
         ignore_size: true,
         refine_atk: right_refine_atk(caster.stats)
@@ -152,15 +174,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
 
   defp strike(caster, target_id, target, opts) do
     case Combat.execute_skill_attack(caster, target_id, opts) do
-      {:ok, %{hit?: true}} ->
-        if target.class != :boss do
+      {:ok, %{hit?: true} = hit} ->
+        if Map.get(hit, :target_survives?, true) and ankle_target?(target) do
           type = caster.__struct__.get_unit_type(caster)
           id = caster.__struct__.get_unit_id(caster)
 
           _ =
-            StatusInterpreter.apply_status(target.unit_type, target.unit_id, :sc_stop,
-              duration: 1_000,
-              bypass_resistance: true,
+            StatusInterpreter.apply_status(target.unit_type, target.unit_id, :sc_ankle,
+              duration: @ankle_ms,
               caster_id: id,
               source_type: type
             )
@@ -175,4 +196,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
         error
     end
   end
+
+  # A player, or a monster that is not status immune.
+  defp ankle_target?(%Combatant{unit_type: :player}), do: true
+
+  defp ankle_target?(%Combatant{unit_type: :mob} = target),
+    do: target.class != :boss and not target.status_immune
+
+  defp ankle_target?(_target), do: false
 end

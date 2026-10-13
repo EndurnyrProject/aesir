@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Integration.LordKnightMobCastTest do
 
   @map "prontera"
 
-  test "a mob's Spiral Pierce damages and roots its player target" do
+  test "a mob's Spiral Pierce damages and immobilises its player target" do
     Mimic.copy(HitCalculations)
     Mimic.stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
 
@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Integration.LordKnightMobCastTest do
     assert eventually(fn -> get_player_state(target.pid).stats.current_state.hp < initial_hp end)
 
     assert %{expires_at: expiry, started_at: started} =
-             StatusStorage.get_status(:player, target.character.id, :sc_stop)
+             StatusStorage.get_status(:player, target.character.id, :sc_ankle)
 
     assert expiry - started == 1_000
   end

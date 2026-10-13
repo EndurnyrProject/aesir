@@ -148,6 +148,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       (default `0`)
     - `:element` - forces the attack element for this hit, overriding the
       weapon element (e.g. Envenom's poison, Sand Attack's earth)
+    - `:dmg_type` - the damage kind the delivered hit carries to every flag
+      consumer (absorbing and blocking statuses, procs, on-hit and vanish
+      effects, reflection, kill classification): `:physical` (default) or
+      `:misc` for a hit calculated as a weapon attack but flagged as misc (a
+      monster's Spiral Pierce). The calculation itself is unchanged.
     - `:skip_range` - skip only the distance check (which gates on the caster's
       *weapon* attack range) for a cast whose skill range the interpreter
       already validated; map, life, and enemy-relation checks still run
@@ -525,7 +530,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         fled: Keyword.get(opts, :fled, false),
         weapon_hit_metadata: weapon_hit_metadata,
         target_state: target_state,
-        delivery: Keyword.get(opts, :delivery, :direct)
+        delivery: Keyword.get(opts, :delivery, :direct),
+        dmg_type: Keyword.get(opts, :dmg_type, :physical)
       }
 
       {hit, coma?} =
@@ -1436,12 +1442,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_context,
          hit_opts
        ) do
-    if weapon_hit_intercepted?(
-         attacker,
-         target_type,
-         target,
-         Map.fetch!(hit_opts, :weapon_hit_metadata)
-       ) do
+    if Map.get(hit_opts, :dmg_type, :physical) == :physical and
+         weapon_hit_intercepted?(
+           attacker,
+           target_type,
+           target,
+           Map.fetch!(hit_opts, :weapon_hit_metadata)
+         ) do
       {missed_hit(hit_opts), false}
     else
       resolve_skill_hit(
@@ -1479,7 +1486,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # no damage. A shield block (Guard) still broadcasts a zero-damage "guarded"
   # packet so the attacker sees the swing land for 0; other interceptions own
   # their own feedback effect and stay silent.
-  # Magic and misc skills never call this path, so they can never be blocked.
+  # Magic and misc skills never call this path, nor does a weapon-calculated hit
+  # delivered as misc, so they can never be blocked.
   @spec weapon_hit_intercepted?(
           struct(),
           :player | :mob | :homunculus | :skill_unit,
@@ -1703,7 +1711,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
               long?: long?,
               coma?: coma?,
               target_state: Map.get(hit_opts, :target_state),
-              delivery: Map.get(hit_opts, :delivery, :direct)
+              delivery: Map.get(hit_opts, :delivery, :direct),
+              dmg_type: Map.get(hit_opts, :dmg_type, :physical)
             }
           )
 
@@ -1746,11 +1755,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          hit_metadata
        ) do
     %{divisions: divisions, element: element, long?: long?, coma?: coma?} = hit_metadata
+    dmg_type = Map.get(hit_metadata, :dmg_type, :physical)
     immediate? = EquipProcDispatch.immediate?(skill_id, hit_metadata.delivery)
-    attack_flag = BattleFlags.build(:weapon, if(long?, do: :long, else: :short), true)
+
+    attack_flag =
+      BattleFlags.build(flag_type(dmg_type), if(long?, do: :long, else: :short), true)
 
     hit_info = %{
-      dmg_type: :physical,
+      dmg_type: dmg_type,
       is_short: not long?,
       element: element,
       skill_id: skill_id,
@@ -1810,6 +1822,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
     connected_hit(damage, hit_info, divisions, immediate?)
   end
+
+  defp flag_type(:physical), do: :weapon
+  defp flag_type(:misc), do: :misc
 
   # The arrow-attack state holds only while a player's arrow skill resolves its
   # own cast: an arrow skill's immediate hits from the caster itself.
