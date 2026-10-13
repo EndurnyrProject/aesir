@@ -40,7 +40,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
   @behaviour Ground
@@ -67,9 +66,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
     end
   end
 
-  # The Manager fires no on_touch for a unit already standing on a new group's
-  # cell, so the victim is captured right after placement and the web is sized
-  # to the hold it applied.
+  # A web never acts on a unit stepping or appearing onto its cell, so the
+  # victim is captured right after placement and the web is sized to the hold
+  # it applied.
   defp web(caster, victim, level, cell) do
     with {:ok, group} <- Unit.place(caster, :pf_spiderweb, level, cell, state: %{victim: victim}) do
       {:ok, web_ms} = capture(group, victim)
@@ -178,18 +177,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
-  @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()}
-  def on_touch(%Group{} = group, mover) do
-    with true <- enemy?(group, mover),
-         true <- Targeting.placement_reaches?(definition(), mover),
-         {:ok, web_ms} when is_integer(web_ms) <- capture(group, mover) do
-      {:ok, %{group | expires_at: System.monotonic_time(:millisecond) + web_ms}}
-    else
-      _unchanged -> {:ok, group}
-    end
-  end
-
-  @impl Ground
   @spec on_expire(Group.t()) :: :ok
   def on_expire(%Group{group_id: gid, state: %{victim: {type, id}}}) do
     case StatusStorage.get_status(type, id, :sc_spiderweb) do
@@ -212,20 +199,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
       %{entry | state: Map.update!(entry.state, :groups, &(&1 -- [gid]))}
     end)
   end
-
-  defp enemy?(%Group{} = group, {target_type, target_id}) do
-    with {:ok, {_module, caster, _pid}} <-
-           UnitRegistry.get_unit(group.caster_type, group.caster_id),
-         {:ok, {_module, target, _pid}} <- UnitRegistry.get_unit(target_type, target_id) do
-      field_target?(group, caster, target)
-    else
-      _unavailable -> false
-    end
-  end
-
-  defp field_target?(%Group{caster_type: :player} = group, caster, target),
-    do: Targeting.validate_field_target(group, caster, target) == :ok
-
-  defp field_target?(%Group{}, caster, target),
-    do: Targeting.validate_enemy(caster, target) == :ok
 end

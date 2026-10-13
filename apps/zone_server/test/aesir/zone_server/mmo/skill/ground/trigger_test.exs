@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
 
   alias __MODULE__.MalformedFieldSupport
@@ -142,6 +143,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       refute_received {:touched, _, _}
     end
 
+    test "never runs Spider Web for a unit stepping onto its cell" do
+      stub(Catalog, :ground_module_for, fn _ -> {:ok, TouchPersist} end)
+      :ok = Storage.insert(group(1, skill_name: :pf_spiderweb))
+
+      assert :ok = Trigger.on_enter_cell(@mover, "prontera", 5, 5)
+
+      refute_received {:touched, _, _}
+    end
+
     test "is a no-op when no group covers the cell" do
       stub(Catalog, :ground_module_for, fn _ -> {:ok, TouchExpire} end)
       :ok = Storage.insert(group(1, cells: [{5, 5}]))
@@ -150,6 +160,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
 
       refute_received {:touched, _, _}
       assert %Group{group_id: 1} = Storage.get(1)
+    end
+  end
+
+  describe "on_appear/4" do
+    test "runs only the units the source places on arrival, not timer units or Spider Web" do
+      stub(Catalog, :ground_module_for, fn _ -> {:ok, TouchPersist} end)
+      :ok = Storage.insert(group(1, skill_name: :test_field))
+      :ok = Storage.insert(group(2, state: %{test_pid: self(), trap: %TrapState{}}))
+      :ok = Storage.insert(group(3, skill_name: :wz_firepillar))
+      :ok = Storage.insert(group(4, skill_name: :hp_basilica))
+      :ok = Storage.insert(group(5, skill_name: :pf_spiderweb))
+
+      assert :ok = Trigger.on_appear(@mover, "prontera", 5, 5)
+
+      assert_received {:touched, 1, {:player, 1000}}
+      refute_received {:touched, _, _}
     end
   end
 

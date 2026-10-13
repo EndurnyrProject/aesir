@@ -1,3 +1,13 @@
+defmodule Aesir.ZoneServer.Map.CoordinatorTest.ArrivalSpy do
+  @moduledoc false
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+  def on_touch(%Group{state: %{test_pid: test_pid}} = group, mover) do
+    send(test_pid, {:touched, mover})
+    {:ok, group}
+  end
+end
+
 defmodule Aesir.ZoneServer.Map.CoordinatorTest do
   use ExUnit.Case, async: false
   use Mimic
@@ -10,6 +20,10 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -47,6 +61,38 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       assert mob.mob_id == @poring_id
       assert {mob.x, mob.y} == {150, 100}
       assert mob.map_name == "prontera"
+    end
+
+    test "a mob spawning on a ground unit's cell is placed by it" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+      stub(Catalog, :ground_module_for, fn :test_field -> {:ok, __MODULE__.ArrivalSpy} end)
+
+      manager =
+        start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+
+      Process.put({Manager, :server}, manager)
+      allow(Catalog, self(), manager)
+
+      :ok =
+        Storage.insert(%Group{
+          group_id: 1,
+          skill_id: 999,
+          skill_name: :test_field,
+          map_name: "prontera",
+          center: {150, 100},
+          cells: [{150, 100}],
+          next_tick_at: 0,
+          expires_at: 0,
+          interval: 1_000,
+          state: %{test_pid: self()}
+        })
+
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      {:reply, {:ok, instance_id}, _new_state} =
+        Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
+
+      assert_received {:touched, {:mob, ^instance_id}}
     end
 
     test "non-positive coordinates pick a random walkable cell (rAthena 0,0 semantics)" do

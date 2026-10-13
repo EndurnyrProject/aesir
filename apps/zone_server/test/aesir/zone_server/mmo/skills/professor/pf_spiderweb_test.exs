@@ -4,22 +4,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
 
   import Aesir.TestEtsSetup
 
-  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
-  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_private
   setup :setup_ets_tables
@@ -48,36 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
       interval: 1_000,
       state: %{}
     }
-  end
-
-  defp register_units do
-    {:ok, definition} = Mobs.by_id(1002)
-
-    spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5000,
-      spawn_area: %MobSpawn.SpawnArea{x: 105, y: 100, xs: 0, ys: 0}
-    }
-
-    mob = MobState.new(9_701, definition, spawn, "prontera", 105, 100)
-
-    caster =
-      PlayerState.new(%Character{
-        id: 9_601,
-        account_id: 9_601,
-        name: "Professor",
-        last_map: "prontera",
-        last_x: 100,
-        last_y: 100,
-        sex: "M",
-        base_level: 99,
-        job_level: 50,
-        class: 4017
-      })
-
-    :ok = UnitRegistry.register_unit(:player, 9_601, PlayerState, caster, self())
-    :ok = UnitRegistry.register_unit(:mob, 9_701, MobState, mob, self())
   end
 
   defp versus(map?), do: stub(MapFlags, :get, fn _map, flag -> map? and flag == :pvp end)
@@ -186,17 +150,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
 
     assert {:ok, 8_000} =
              assert_hold_from_call(8_000, fn -> PfSpiderweb.capture(group(53), @victim) end)
-  end
-
-  test "an entering enemy's web lives as long as the hold it applied" do
-    versus(false)
-    stub(Knockback, :pull_to, fn _type, _id, _x, _y -> :ok end)
-    stub(Targeting, :validate_field_target, fn _group, _caster, _target -> :ok end)
-    register_units()
-
-    before = System.monotonic_time(:millisecond)
-    assert {:ok, %Group{expires_at: expires_at}} = PfSpiderweb.on_touch(group(51), @victim)
-    assert expires_at in (before + 8_000)..(System.monotonic_time(:millisecond) + 8_000)
   end
 
   test "a web's end releases its group, and the last web ends the hold" do

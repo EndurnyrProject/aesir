@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -155,6 +156,44 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
 
       assert_received {:touched, 1, {:mob, 2001}}
       assert nil == Storage.get(1)
+    end
+
+    test "does not fire on_touch when the unit stays on its cell" do
+      map_name = "prontera"
+      stub(Catalog, :ground_module_for, fn :test_trap -> {:ok, TouchSpy} end)
+      UnitRegistry.register_unit(:mob, 2002, __MODULE__, %{movement_state: :moving}, nil)
+      SpatialIndex.add_unit(:mob, 2002, 55, 60, map_name)
+      :ok = Storage.insert(touch_group(1, map_name))
+
+      assert :ok =
+               Movement.set_position(
+                 :mob,
+                 2002,
+                 %{movement_state: :standing, x: 55, y: 60},
+                 map_name
+               )
+
+      refute_received {:touched, _, _}
+    end
+
+    test "places a unit with no previous position by the arrival rule" do
+      map_name = "prontera"
+      stub(Catalog, :ground_module_for, fn _ -> {:ok, TouchSpy} end)
+      UnitRegistry.register_unit(:homunculus, 3001, __MODULE__, %{movement_state: :standing}, nil)
+      trap = %{touch_group(1, map_name) | state: %{test_pid: self(), trap: %TrapState{}}}
+      :ok = Storage.insert(trap)
+      :ok = Storage.insert(%{touch_group(2, map_name) | skill_name: :test_field})
+
+      assert :ok =
+               Movement.set_position(
+                 :homunculus,
+                 3001,
+                 %{movement_state: :standing, x: 55, y: 60},
+                 map_name
+               )
+
+      assert_received {:touched, 2, {:homunculus, 3001}}
+      refute_received {:touched, 1, _}
     end
 
     test "does not fire on_touch when the destination cell has no ground unit" do

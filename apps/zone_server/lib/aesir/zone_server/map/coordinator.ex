@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -781,6 +782,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     case MobSupervisor.spawn_mob(state.map_name, mob_state, session_opts) do
       {:ok, mob_pid} ->
         UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
+        Trigger.on_appear({:mob, instance_id}, state.map_name, x, y)
         {{:ok, instance_id}, %{state | next_mob_id: state.next_mob_id + 1}}
 
       {:error, reason} ->
