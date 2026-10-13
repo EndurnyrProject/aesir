@@ -1,7 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion do
   @moduledoc """
-  Lord of Vermilion (WZ_VERMILION). A wide wind field whose ticks split their damage
-  over many displayed hits and can blind.
+  Lord of Vermilion (WZ_VERMILION). A wide wind field whose cells each strike the
+  enemies within one cell of them, splitting the damage over many displayed hits,
+  and can blind. A unit is struck at most once every 1.25 s by all Lords of
+  Vermilion together. The field is 13x13 cells in renewal and 11x11 in
+  pre-renewal (15x15 from level 11).
 
   Renewal: 400% plus 100% per level MATK (80% plus 20% per level for a monster caster)
   over 20 displayed hits, a 1 s field, blind 10% plus 5% per level for 18 s, a 4.5 to
@@ -48,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
@@ -64,31 +68,48 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion do
 
     {:ok,
      %{
-       cells: Layout.square(center, definition.splash_radius),
+       cells: Layout.square(center, layout_radius(level)),
        state: %{},
        interval: definition.hit_interval,
        initial_delay: 0,
        duration: Enum.at(definition.unit_duration, idx),
-       lifecycle_policy: %LifecyclePolicy{on_caster_loss: :skip_action}
+       lifecycle_policy: %LifecyclePolicy{on_caster_loss: :skip_action},
+       unit_range: 1,
+       no_overlap: true,
+       path_check: true
      }}
+  end
+
+  defp layout_radius(level) when level >= 11, do: 7
+
+  defp layout_radius(_level) do
+    case GameMode.mode() do
+      :renewal -> 6
+      :pre_renewal -> 5
+    end
   end
 
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
-  def on_interval(%Group{center: center, map_name: map_name} = group, _now) do
-    definition = definition()
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
 
+  @impl Ground
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs) do
     case Combat.resolve_combatant(group.caster_id) do
-      {:ok, caster} ->
-        map_name
-        |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
-        |> Enum.each(&hit(group, definition, caster, &1))
-
-        {:ok, group}
-
-      {:error, _reason} ->
-        {:ok, group}
+      {:ok, caster} -> SplashTargets.eligible(refs, caster)
+      {:error, _reason} -> []
     end
+  end
+
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, target, _now) do
+    with {:ok, caster} <- Combat.resolve_combatant(group.caster_id) do
+      hit(group, definition(), caster, target)
+    end
+
+    {:ok, group}
   end
 
   @spec hit(Group.t(), struct(), struct(), {atom(), integer()}) :: :ok

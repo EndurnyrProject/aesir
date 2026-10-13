@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
+  alias Aesir.ZoneServer.Unit.Ref
 
   @typedoc "A single map cell occupied by a skill-unit footprint."
   @type cell :: {integer(), integer()}
@@ -54,6 +55,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
 
   @typedoc "The placement result: footprint, initial per-skill state, timing, and optional lifecycle policy."
   @type placement :: %{
+          optional(:unit_range) => non_neg_integer(),
+          optional(:no_overlap) => boolean(),
           optional(:lifecycle_policy) => LifecyclePolicy.t(),
           optional(:initial_delay) => non_neg_integer(),
           optional(:cell_attrs) => %{cell() => map()},
@@ -105,6 +108,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   """
   @callback on_out(Group.t(), mover :: {atom(), integer()}) :: trigger_result()
 
+  @doc """
+  Keeps the units one footprint cell of a `unit_range` field may affect, in
+  order, from those it reaches whose strike interval has run out.
+
+  Required for a placement with `unit_range`. Return `[]` when the field acts
+  on nobody (its caster is gone).
+  """
+  @callback unit_targets(Group.t(), cell(), [Ref.t()]) :: [Ref.t()]
+
+  @doc """
+  Strikes one unit from one footprint cell of a `unit_range` field.
+
+  Required for a placement with `unit_range`. `{:expire, group}` ends the field
+  after this cell's remaining strikes.
+  """
+  @callback on_unit_hit(Group.t(), cell(), Ref.t(), now :: integer()) ::
+              {:ok, Group.t()} | {:expire, Group.t()}
+
   @doc "Describes the source-owned status granted while a mover occupies the field."
   @callback field_support(Group.t()) :: %{
               optional(:linger_ms) => non_neg_integer(),
@@ -118,5 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
                       on_expire: 1,
                       on_touch: 2,
                       on_out: 2,
-                      field_support: 1
+                      field_support: 1,
+                      unit_targets: 3,
+                      on_unit_hit: 4
 end

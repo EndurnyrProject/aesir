@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
@@ -310,7 +311,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       rng: Keyword.get(opts, :rng, &__MODULE__.default_rng/1),
       schedule_tick: Keyword.get(opts, :schedule_tick, &__MODULE__.default_schedule_tick/2),
       tick_interval: Keyword.get(opts, :tick_interval, @tick_interval),
-      unit_available?: Keyword.get(opts, :unit_available?, &__MODULE__.default_unit_available?/3)
+      unit_available?: Keyword.get(opts, :unit_available?, &__MODULE__.default_unit_available?/3),
+      ticksets: %{}
     }
 
     schedule_tick(state)
@@ -463,13 +465,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call(:tick, _from, state) do
-    process_tick(state.clock.(), state.unit_available?)
-    {:reply, :ok, state}
+    {:reply, :ok, process_tick(state, state.clock.())}
   end
 
   def handle_call({:tick, now}, _from, state) do
-    process_tick(now, state.unit_available?)
-    {:reply, :ok, state}
+    {:reply, :ok, process_tick(state, now)}
   end
 
   @impl true
@@ -510,7 +510,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_info(:tick, state) do
-    process_tick(state.clock.(), state.unit_available?)
+    state = process_tick(state, state.clock.())
     schedule_tick(state)
     {:noreply, state}
   end
@@ -561,12 +561,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp policy_field(:caster), do: :on_caster_loss
   defp policy_field(:target), do: :on_target_loss
 
-  defp process_tick(now, unit_available?) do
+  defp process_tick(state, now) do
+    state = run_unit_pass(state, now)
     due = Storage.get_due_groups(now)
     expired = Storage.get_expired_groups(now)
 
-    Enum.each(due, &run_interval(&1, now, unit_available?))
-    Enum.each(expired, &expire_if_live(&1, now, unit_available?))
+    Enum.each(due, &run_interval(&1, now, state.unit_available?))
+    Enum.each(expired, &expire_if_live(&1, now, state.unit_available?))
+    state
+  end
+
+  # Interval fields acting per cell; an expired field is reaped below instead.
+  defp run_unit_pass(state, now) do
+    fields =
+      for %Group{unit_range: range, expires_at: expires_at} = group <- Storage.all(),
+          is_integer(range) and is_integer(expires_at) and expires_at > now,
+          {:ok, module} <- [handler_for(group)],
+          do: {group, module}
+
+    case fields do
+      [] ->
+        %{state | ticksets: Map.reject(state.ticksets, fn {_key, next} -> next <= now end)}
+
+      fields ->
+        {results, ticksets} = UnitTimer.run(fields, state.ticksets, now, &invoke/3)
+        Enum.each(results, &finish_unit_pass(&1, fields))
+        %{state | ticksets: ticksets}
+    end
+  end
+
+  defp finish_unit_pass({group, module, outcome}, fields) do
+    case outcome do
+      :ok -> if {group, module} not in fields, do: persist_unit_pass(group)
+      :expire -> cleanup(group, module)
+      {:failed, callback, reason} -> callback_failed(group, callback, reason, module)
+    end
+  end
+
+  defp persist_unit_pass(%Group{group_id: group_id} = group) do
+    if Storage.get(group_id), do: Storage.update(group)
   end
 
   defp run_interval(%Group{} = group, now, unit_available?) do

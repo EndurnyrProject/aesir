@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdust do
   @moduledoc """
-  Venom Dust (AS_VENOMDUST). A five-cell cross of poison that every second poisons
-  enemies within a cell of each cell, for 5 s per level, 20 SP, and a Red Gemstone.
+  Venom Dust (AS_VENOMDUST). A five-cell cross of poison whose cells each poison
+  the unpoisoned enemies within one cell of them, each enemy at most once a second
+  per field, for 5 s per level, 20 SP, and a Red Gemstone.
 
   Renewal poisons for 18 s; pre-renewal for 60 s.
   """
@@ -22,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdust do
     item_cost: [%{id: 716, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -41,7 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdust do
        cells: Enum.map(@offsets, fn {dx, dy} -> {x + dx, y + dy} end),
        state: %{},
        interval: definition.hit_interval,
-       duration: Enum.at(definition.unit_duration, level - 1)
+       duration: Enum.at(definition.unit_duration, level - 1),
+       unit_range: 1
      }}
   end
 
@@ -49,34 +52,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdust do
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
   def on_interval(%Group{} = group, _now) do
     case Combat.resolve_combatant(group.caster_type, group.caster_id) do
-      {:ok, caster} ->
-        group
-        |> targets(caster)
-        |> Enum.reject(fn {unit_type, unit_id} ->
-          StatusStorage.has_status?(unit_type, unit_id, :sc_poison)
-        end)
-        |> Enum.each(&apply_poison(&1, group))
-
-        {:ok, group}
-
-      {:error, _reason} ->
-        {:expire, group}
+      {:ok, _caster} -> {:ok, group}
+      {:error, _reason} -> {:expire, group}
     end
   end
 
-  defp targets(group, caster) do
-    group.cells
-    |> Enum.flat_map(fn cell -> Combat.splash_targets(group.map_name, cell, 1, caster) end)
-    |> Enum.uniq()
+  @impl Ground
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs) do
+    case Combat.resolve_combatant(group.caster_type, group.caster_id) do
+      {:ok, caster} -> SplashTargets.eligible(refs, caster)
+      {:error, _reason} -> []
+    end
   end
 
-  defp apply_poison({unit_type, unit_id}, group) do
-    StatusInterpreter.apply_status(unit_type, unit_id, :sc_poison,
-      duration: Enum.at(definition().duration, group.level - 1),
-      caster_id: group.caster_id,
-      source_type: group.caster_type
-    )
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, {unit_type, unit_id}, _now) do
+    unless StatusStorage.has_status?(unit_type, unit_id, :sc_poison) do
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_poison,
+        duration: Enum.at(definition().duration, group.level - 1),
+        caster_id: group.caster_id,
+        source_type: group.caster_type
+      )
+    end
 
-    :ok
+    {:ok, group}
   end
 end

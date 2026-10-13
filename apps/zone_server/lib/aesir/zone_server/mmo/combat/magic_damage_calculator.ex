@@ -35,6 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     * `:matk_divisor`: split a rolled MATK among splash recipients before the
       skill ratio, defense and element steps. Default `1`.
     * `:fixed_damage`: returns this amount without rolls or modifier lookups.
+    * `:base_matk`: a skill formula's base that replaces the MATK roll; every
+      later step still runs.
     * `:ignore_mdef`: bypasses both MDEF components, not cardfix, element,
       skill/status channels or Renewal MRes. Default `false`.
     * `:attack_flag`: the hit's battle flag, whose range class selects the
@@ -57,7 +59,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   defdelegate roll_matk(combat_stats), to: DamageInputs
 
   defp calculate_pipeline_damage(attacker, defender, opts) do
-    matk = div(roll_matk(attacker.combat_stats), Keyword.get(opts, :matk_divisor, 1))
+    matk =
+      case Keyword.get(opts, :base_matk) do
+        nil -> div(roll_matk(attacker.combat_stats), Keyword.get(opts, :matk_divisor, 1))
+        base -> base
+      end
+
     modifiers = combatant_modifiers(attacker)
     defender_modifiers = combatant_modifiers(defender)
     context = DamageInputs.magic_context(attacker, defender, opts, modifiers, defender_modifiers)

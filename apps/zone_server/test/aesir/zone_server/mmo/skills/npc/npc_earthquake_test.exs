@@ -3,28 +3,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquakeTest do
   import Aesir.TestEtsSetup
   import Mimic
 
-  alias Aesir.ZoneServer.EtsTable
-  alias Aesir.ZoneServer.Map.Cell
-  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
+  setup :set_mimic_private
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(DamageInputs)
+    Mimic.copy(SplashTargets)
+    :ok
+  end
 
   @caster_id 5002
   @map_name "prontera"
   @center {200, 200}
-  @level 7
 
-  defp stub_walkable_map do
-    map = MapData.new(@map_name, 250, 250)
-    :ets.insert(EtsTable.table_for(:map_cache), {@map_name, map})
-  end
-
-  defp group(level \\ @level) do
+  defp group(level) do
     %Group{
       group_id: 1,
       skill_id: 653,
@@ -34,89 +34,68 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquakeTest do
       caster_type: :mob,
       map_name: @map_name,
       center: @center,
-      cells: [],
-      interval: 450,
+      cells: [@center],
+      interval: 300,
       state: %{}
     }
   end
 
-  defp stub_caster do
-    stub(Combat, :resolve_combatant, fn :mob, @caster_id ->
-      {:ok, %{unit_id: @caster_id, unit_type: :mob}}
+  defp caster, do: %{unit_id: @caster_id, unit_type: :mob, map_name: @map_name}
+
+  defp strike(level, enemies, atk_rate) do
+    test_pid = self()
+    caster = caster()
+    stub(Combat, :resolve_combatant, fn :mob, @caster_id -> {:ok, caster} end)
+    stub(DamageInputs, :non_player_base_attack, fn ^caster -> {:ok, 1_000} end)
+    stub(ModifierCalculator, :get_all_modifiers, fn :mob, @caster_id -> %{atk_rate: atk_rate} end)
+    stub(SplashTargets, :select, fn @map_name, @center, 13, ^caster -> enemies end)
+
+    stub(Combat, :apply_skill_unit_damage, fn ^caster,
+                                              :player,
+                                              42,
+                                              653,
+                                              ^level,
+                                              :neutral,
+                                              100,
+                                              opts ->
+      send(test_pid, {:strike, opts[:base_damage], opts[:ignore_mdef]})
+      :ok
     end)
+
+    assert {:ok, %Group{}} = NpcEarthquake.on_unit_hit(group(level), @center, {:player, 42}, 0)
   end
 
-  describe "on_place/1" do
-    test "returns the 5x5 footprint, 450ms interval, and 4500ms duration" do
-      stub_walkable_map()
+  test "is one cell reaching five to thirteen cells by level, ignoring Land Protector" do
+    assert {:ok, placement} = NpcEarthquake.on_place(group(1))
+    assert placement.cells == [@center]
+    assert %{unit_range: 5, interval: 300, duration: 910} = placement
+    assert placement.state == %{ignore_land_protector: true}
+    refute Map.has_key?(placement, :path_check) or Map.has_key?(placement, :no_overlap)
 
-      assert {:ok, placement} = NpcEarthquake.on_place(group())
-      assert length(placement.cells) == 25
-      assert @center in placement.cells
-      assert placement.interval == 450
-      assert placement.duration == 4_500
-      assert placement.state == %{}
-    end
-
-    test "clamps the footprint to walkable cells" do
-      stub_walkable_map()
-
-      for {x, y} <- Layout.square(@center, 2), {x, y} != @center do
-        :ok = Cell.put(@map_name, x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
-      end
-
-      assert {:ok, placement} = NpcEarthquake.on_place(group())
-      assert placement.cells == [@center]
-    end
+    assert {:ok, %{unit_range: 13}} = NpcEarthquake.on_place(group(5))
+    assert {:ok, %{unit_range: 5}} = NpcEarthquake.on_place(group(6))
+    assert {:ok, %{unit_range: 13}} = NpcEarthquake.on_place(group(12))
   end
 
-  describe "on_interval/2" do
-    test "damages a player standing on the footprint" do
-      test_pid = self()
-      stub_caster()
+  @tag game_mode: :renewal
+  test "renewal splits the level rate of the monster's attack over the enemies in its splash" do
+    strike(10, [{:player, 42}, {:player, 43}, {:mob, 44}], 20)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, 2, caster ->
-        assert caster.unit_type == :mob
-        [{:player, 42}]
-      end)
+    # 1000 * (200 + 1000 + 500 + 100) / 100 = 18000, over three enemies.
+    assert_received {:strike, 6_000, true}
+  end
 
-      stub(Combat, :apply_skill_unit_damage, fn caster,
-                                                :player,
-                                                42,
-                                                653,
-                                                @level,
-                                                :neutral,
-                                                ratio ->
-        assert caster.unit_type == :mob
-        send(test_pid, {:hit, :player, 42, ratio})
-        :ok
-      end)
+  @tag game_mode: :pre_renewal
+  test "classic raises the attack by the monster's attack percent and a lone enemy takes it all" do
+    strike(10, [{:player, 42}], 20)
 
-      assert {:ok, %Group{}} = NpcEarthquake.on_interval(group(), 0)
-      assert_received {:hit, :player, 42, ratio}
-      assert ratio == 70 + 50 * @level
-    end
+    # 1000 * 120 / 100 = 1200; 1200 * 1800 / 100 = 21600.
+    assert_received {:strike, 21_600, true}
+  end
 
-    test "never damages a mob (mob-vs-mob gate lives in Combat.splash_targets)" do
-      stub_caster()
+  test "strikes nobody while its caster is gone" do
+    stub(Combat, :resolve_combatant, fn :mob, @caster_id -> {:error, :target_not_found} end)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, 2, caster ->
-        assert caster.unit_type == :mob
-        []
-      end)
-
-      reject(&Combat.apply_skill_unit_damage/7)
-
-      assert {:ok, %Group{}} = NpcEarthquake.on_interval(group(), 0)
-    end
-
-    test "skips the whole tick when the mob caster cannot be resolved" do
-      stub(Combat, :resolve_combatant, fn :mob, @caster_id -> {:error, :target_not_found} end)
-
-      reject(&Combat.splash_targets/4)
-      reject(&Combat.apply_skill_unit_damage/7)
-
-      assert {:ok, %Group{}} = NpcEarthquake.on_interval(group(), 0)
-    end
+    assert [] = NpcEarthquake.unit_targets(group(1), @center, [{:player, 42}])
   end
 end

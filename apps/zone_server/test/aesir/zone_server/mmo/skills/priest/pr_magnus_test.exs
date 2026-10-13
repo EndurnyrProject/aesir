@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus
-  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :verify_on_exit!
 
@@ -107,9 +106,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
     end
   end
 
-  describe "on_interval/2" do
+  describe "per-cell units" do
+    test "each of the 33 cells reaches one cell and shares strikes with every Magnus" do
+      assert {:ok, placement} = PrMagnus.on_place(group(1))
+      assert length(placement.cells) == 33
+      assert %{unit_range: 1, no_overlap: true, path_check: true} = placement
+    end
+  end
+
+  describe "on_unit_hit/4" do
     @tag game_mode: :renewal
-    test "hits only targets on the 33-cell footprint and gives the +30 ratio only to undead and demon" do
+    test "gives the +30 ratio only to supplied undead and demon targets" do
       test_pid = self()
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
@@ -119,30 +126,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
         :mob, 2_003 -> {:ok, %{race: :demon, element: {:fire, 1}}}
       end)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, 3, @caster_id ->
-        [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}, {:mob, 2_004}]
-      end)
-
-      stub(SpatialIndex, :get_unit_position, fn
-        :mob, 2_001 -> {:ok, {150, 150, @map_name}}
-        :mob, 2_002 -> {:ok, {147, 149, @map_name}}
-        :mob, 2_003 -> {:ok, {151, 153, @map_name}}
-        :mob, 2_004 -> {:ok, {147, 147, @map_name}}
-      end)
-
       stub(Combat, :apply_skill_unit_damage, fn
         %{unit_id: @caster_id}, :mob, target_id, 79, 10, :holy, ratio, hit_divisions: 10 ->
           send(test_pid, {:hit, target_id, ratio})
           :ok
       end)
 
-      assert {:ok, %Group{}} =
-               PrMagnus.on_interval(group(10, [{150, 150}, {147, 149}, {151, 153}]), 0)
+      for target <- [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}] do
+        assert {:ok, %Group{}} = PrMagnus.on_unit_hit(group(10), @center, target, 0)
+      end
 
       assert_received {:hit, 2_001, 100}
       assert_received {:hit, 2_002, 130}
       assert_received {:hit, 2_003, 130}
-      refute_received {:hit, 2_004, _}
     end
 
     @tag game_mode: :pre_renewal
@@ -156,19 +152,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
         :mob, 2_003 -> {:ok, %{race: :demon, element: {:fire, 1}}}
       end)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, 3, @caster_id ->
-        [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}]
-      end)
-
-      stub(SpatialIndex, :get_unit_position, fn :mob, _id -> {:ok, {150, 150, @map_name}} end)
-
       stub(Combat, :apply_skill_unit_damage, fn
         %{unit_id: @caster_id}, :mob, target_id, 79, 10, :holy, ratio, hit_divisions: 10 ->
           send(test_pid, {:hit, target_id, ratio})
           :ok
       end)
 
-      assert {:ok, %Group{}} = PrMagnus.on_interval(group(10, [{150, 150}]), 0)
+      for target <- [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}] do
+        assert {:ok, %Group{}} = PrMagnus.on_unit_hit(group(10), @center, target, 0)
+      end
 
       refute_received {:hit, 2_001, _}
       assert_received {:hit, 2_002, 130}
@@ -179,11 +171,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
       stub(Combat, :resolve_combatant, fn :mob, 2_001 -> {:error, :target_not_found} end)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, 3, @caster_id -> [{:mob, 2_001}] end)
-      stub(SpatialIndex, :get_unit_position, fn :mob, 2_001 -> {:ok, {150, 150, @map_name}} end)
       reject(&Combat.apply_skill_unit_damage/8)
 
-      assert {:ok, %Group{}} = PrMagnus.on_interval(group(10, [@center]), 0)
+      assert {:ok, %Group{}} = PrMagnus.on_unit_hit(group(10), @center, {:mob, 2_001}, 0)
     end
   end
 end

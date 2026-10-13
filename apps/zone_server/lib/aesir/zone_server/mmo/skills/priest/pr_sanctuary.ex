@@ -1,10 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   @moduledoc """
-  Sanctuary (PR_SANCTUARY). A 21-cell holy field that every second heals living
-  non-undead, non-demon occupants below full HP (100 per level, 777 from level 7)
-  and instead strikes enemy undead and demons for that amount as fixed holy magic
-  damage, pushing them 2 cells. Successful strikes spend a shared quota of level plus
-  3; heals and failed strikes do not. Magic-immune players receive no healing.
+  Sanctuary (PR_SANCTUARY). A 21-cell holy field whose cells each act on the
+  living units within one cell of them, each unit at most once a second for all
+  Sanctuaries together: it heals non-undead, non-demon units below full HP (100
+  per level, 777 from level 7) and instead strikes enemy undead and demons for
+  that amount as fixed holy magic damage, pushing them 2 cells away from the
+  striking cell. Successful strikes spend a shared quota of level plus 3; heals
+  and failed strikes do not. Once it is spent the field ends after the striking
+  cell's remaining units. Magic-immune players receive no healing.
 
   Renewal: a 4 s cast plus 1 s fixed, and the Emperium is never healed. Pre-renewal:
   a 5 s variable cast, and the Emperium heals like any other mob. Both modes cost
@@ -49,15 +52,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
@@ -96,75 +98,57 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
        state: %{hits_remaining: level + 3},
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
+       unit_range: 1,
+       no_overlap: true,
        path_check: true
      }}
   end
 
   @impl Ground
-  def on_interval(%Group{state: %{hits_remaining: hits}} = group, _now) when hits <= 0,
-    do: {:expire, group}
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
 
-  def on_interval(%Group{} = group, _now) do
+  @impl Ground
+  def unit_targets(%Group{} = group, _cell, refs) do
     case Combat.resolve_combatant(group.caster_type, group.caster_id) do
-      {:ok, caster} ->
-        enemies =
-          group.map_name
-          |> Combat.splash_targets(group.center, definition().splash_radius, caster)
-          |> MapSet.new()
-
-        group
-        |> targets_in_field()
-        |> Enum.reduce_while(group, &affect_target(&1, &2, caster, enemies))
-        |> finish_interval()
-
-      {:error, _reason} ->
-        {:ok, group}
+      {:ok, _caster} -> Enum.filter(refs, &living?/1)
+      {:error, _reason} -> []
     end
   end
 
-  defp targets_in_field(%Group{} = group) do
-    group.cells
-    |> Enum.flat_map(fn {x, y} ->
-      SpatialIndex.get_all_units_in_range(group.map_name, x, y, 0)
-    end)
-    |> Enum.filter(&CombatTarget.combat_unit?/1)
-    |> Enum.uniq()
-  end
-
-  defp affect_target({unit_type, unit_id} = target, group, caster, enemies) do
-    with {:ok, {module, state, pid}} <- UnitRegistry.get_unit(unit_type, unit_id),
-         true <- Unit.living?(state) do
-      affect_living_target(target, {module, state, pid}, group, caster, enemies)
+  @impl Ground
+  def on_unit_hit(%Group{} = group, cell, {unit_type, unit_id} = target, _now) do
+    with {:ok, caster} <- Combat.resolve_combatant(group.caster_type, group.caster_id),
+         {:ok, {module, state, pid}} <- UnitRegistry.get_unit(unit_type, unit_id) do
+      case target_effect(module, state, target, caster) do
+        :damage -> damage_target(group, caster, cell, unit_type, unit_id)
+        :skip -> {:ok, group}
+        :heal -> heal_target(unit_type, unit_id, pid, group)
+      end
     else
-      _ -> {:cont, group}
+      _unavailable -> {:ok, group}
     end
   end
 
-  defp affect_living_target(
-         {unit_type, unit_id} = target,
-         {module, state, pid},
-         group,
-         caster,
-         enemies
-       ) do
-    case target_effect(module, state, target, enemies) do
-      :damage ->
-        damage_target(group, caster, unit_type, unit_id)
-
-      :skip ->
-        {:cont, group}
-
-      :heal ->
-        heal_target(unit_type, unit_id, pid, group)
+  defp living?({unit_type, unit_id}) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> Unit.living?(state)
+      _missing -> false
     end
   end
 
-  defp target_effect(module, state, target, enemies) do
+  defp target_effect(module, state, target, caster) do
     cond do
-      undead_or_demon?(module, state) and MapSet.member?(enemies, target) -> :damage
-      undead_or_demon?(module, state) -> :skip
-      full_hp?(state) or protected_emperium?(state) -> :skip
-      true -> :heal
+      undead_or_demon?(module, state) and SplashTargets.eligible([target], caster) != [] ->
+        :damage
+
+      undead_or_demon?(module, state) ->
+        :skip
+
+      full_hp?(state) or protected_emperium?(state) ->
+        :skip
+
+      true ->
+        :heal
     end
   end
 
@@ -173,7 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
       DamageApplication.apply_heal(:player, unit_id, heal_amount(group.level), group.caster_id)
     end
 
-    {:cont, group}
+    {:ok, group}
   end
 
   defp heal_target(:homunculus, unit_id, _pid, group) do
@@ -184,19 +168,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
       group.caster_id
     )
 
-    {:cont, group}
+    {:ok, group}
   end
 
   defp heal_target(:mob, _unit_id, pid, group) when is_pid(pid) do
     MobSession.heal(pid, heal_amount(group.level))
-    {:cont, group}
+    {:ok, group}
   end
 
   defp heal_target(_unit_type, _unit_id, _pid, group) do
-    {:cont, group}
+    {:ok, group}
   end
 
-  defp damage_target(group, caster, unit_type, unit_id) do
+  defp damage_target(group, caster, cell, unit_type, unit_id) do
     result =
       Combat.apply_skill_unit_damage(
         caster,
@@ -208,23 +192,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
         0,
         fixed_damage: heal_amount(group.level),
         base_distance: definition().knockback,
-        origin: group.center,
+        origin: cell,
         native_target_types: [:player, :mob, :homunculus]
       )
 
     if result == :ok do
       hits_remaining = group.state.hits_remaining - 1
       updated = %{group | state: %{group.state | hits_remaining: hits_remaining}}
-      if hits_remaining <= 0, do: {:halt, updated}, else: {:cont, updated}
+      if hits_remaining <= 0, do: {:expire, updated}, else: {:ok, updated}
     else
-      {:cont, group}
+      {:ok, group}
     end
   end
-
-  defp finish_interval(%Group{state: %{hits_remaining: hits}} = group) when hits <= 0,
-    do: {:expire, group}
-
-  defp finish_interval(group), do: {:ok, group}
 
   defp undead_or_demon?(module, state) do
     module.get_race(state) == :demon or

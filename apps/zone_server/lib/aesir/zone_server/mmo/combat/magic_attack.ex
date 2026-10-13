@@ -254,6 +254,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   `:damage_scale` (default `1`) multiplies the computed damage before delivery
   and re-clamps to a floor of 1.
 
+  `:base_damage` replaces the MATK roll with a skill formula's base; the skill
+  ratio, cardfix, defense and element steps still run. `:ignore_mdef` skips
+  both MDEF components (IgnoreDefense).
+
   The canonical skill knockback options are `:base_distance`, `:origin`,
   `:native_enabled`, `:native_target_types`, and `:native_requires_survival`.
   Player-owned damaging ground hits also consume exact-skill equipment blow.
@@ -320,7 +324,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           skill_ratio,
           bonus_matk,
           {skill_id, skill_level},
-          fixed_damage
+          fixed_damage,
+          Keyword.take(opts, [:base_damage, :ignore_mdef])
         )
 
       damage = scale_damage(damage, Keyword.get(opts, :damage_scale, 1))
@@ -781,7 +786,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          skill_ratio,
          bonus_matk,
          {skill_id, skill_level},
-         nil
+         nil,
+         formula
        ) do
     {:ok, %{damage: damage}} =
       MagicDamageCalculator.calculate_magic_damage(attacker, target,
@@ -789,7 +795,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         skill_ratio: skill_ratio,
         bonus_matk: bonus_matk,
         skill_id: skill_id,
-        attack_flag: attack_flag(attacker, target, skill_id, skill_level)
+        attack_flag: attack_flag(attacker, target, skill_id, skill_level),
+        base_matk: Keyword.get(formula, :base_damage),
+        ignore_mdef: Keyword.get(formula, :ignore_mdef, false)
       )
 
     damage
@@ -802,7 +810,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          _skill_ratio,
          _bonus_matk,
          _skill,
-         fixed_damage
+         fixed_damage,
+         _formula
        )
        when is_integer(fixed_damage) and fixed_damage >= 0 do
     DamageShared.apply_element_step(max(fixed_damage, 1), element, attacker, target)

@@ -4,15 +4,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  setup do
+    Mimic.copy(SplashTargets)
+    :ok
+  end
 
   @caster_id 1000
   @map_name "prontera"
@@ -54,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
 
     allow(Catalog, self(), manager)
     allow(Combat, self(), manager)
+    allow(SplashTargets, self(), manager)
     allow(StatusInterpreter, self(), manager)
     manager
   end
@@ -76,9 +84,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
     test "classic keeps the field alive for 4 seconds" do
       assert {:ok, placement} = WzVermilion.on_place(group())
 
-      assert length(placement.cells) == 169
+      assert length(placement.cells) == 121
       assert placement.interval == 1_250
       assert placement.duration == 4_000
+    end
+  end
+
+  describe "per-cell units" do
+    @tag game_mode: :renewal
+    test "renewal places 13x13 cells, each reaching one cell and sharing strikes" do
+      assert {:ok, placement} = WzVermilion.on_place(group())
+      assert length(placement.cells) == 169
+      assert %{unit_range: 1, no_overlap: true, path_check: true} = placement
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic places 11x11 cells" do
+      assert {:ok, placement} = WzVermilion.on_place(group())
+      assert length(placement.cells) == 121
+      assert {145, 145} in placement.cells and {155, 155} in placement.cells
+    end
+
+    test "a level 11 monster field places 15x15 cells" do
+      assert {:ok, placement} = WzVermilion.on_place(group(level: 11))
+      assert length(placement.cells) == 225
     end
   end
 
@@ -105,14 +134,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
     end
   end
 
-  describe "on_interval/2" do
+  describe "on_unit_hit/4" do
     @tag game_mode: :renewal
     test "hits each eligible target and delegates an independent resistance-aware Blind attempt" do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
-
-      stub(Combat, :splash_targets, fn @map_name, @center, 6, @caster_id ->
-        [{:mob, 2001}, {:player, 2002}]
-      end)
 
       expect(Combat, :apply_skill_unit_damage, 2, fn
         %{unit_id: @caster_id} = caster, unit_type, target_id, 85, 10, :wind, 1_400, opts
@@ -137,14 +162,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
           :ok
       end)
 
-      assert {:ok, %Group{}} = WzVermilion.on_interval(group(), 1_250)
+      assert {:ok, %Group{}} = WzVermilion.on_unit_hit(group(), @center, {:mob, 2001}, 1_250)
+      assert {:ok, %Group{}} = WzVermilion.on_unit_hit(group(), @center, {:player, 2002}, 1_250)
     end
 
     @tag game_mode: :renewal
 
     test "does not attempt Blind when the target is no longer valid for damage" do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
-      stub(Combat, :splash_targets, fn @map_name, @center, 6, @caster_id -> [{:mob, 2001}] end)
 
       stub(Combat, :apply_skill_unit_damage, fn _caster,
                                                 _type,
@@ -159,7 +184,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
 
       reject(&StatusInterpreter.apply_status/4)
 
-      assert {:ok, %Group{}} = WzVermilion.on_interval(group(), 1_250)
+      assert {:ok, %Group{}} = WzVermilion.on_unit_hit(group(), @center, {:mob, 2001}, 1_250)
     end
   end
 
@@ -169,7 +194,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       test_pid = self()
       stub(Catalog, :ground_module_for, fn :wz_vermilion -> {:ok, WzVermilion} end)
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
-      stub(Combat, :splash_targets, fn @map_name, @center, 6, @caster_id -> [{:mob, 2001}] end)
 
       stub(Combat, :apply_skill_unit_damage, fn _caster,
                                                 :mob,
@@ -185,12 +209,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
 
       stub(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_blind, _params -> :ok end)
 
+      stub(SplashTargets, :eligible, fn refs, _caster -> refs end)
+      SpatialIndex.add_unit(:mob, 2001, 150, 150, @map_name)
       manager = start_manager()
 
       :ok =
         Manager.register(
           manager,
-          group(next_tick_at: 0, expires_at: 18_000)
+          group(
+            visibility: :public,
+            unit_range: 1,
+            cells: [@center],
+            next_tick_at: 0,
+            expires_at: 18_000
+          )
         )
 
       assert :ok = Manager.tick(manager, 0)
@@ -204,7 +236,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
         assert_received :hit
       end
 
-      assert %Group{next_tick_at: 18_750} = Storage.get(1)
+      assert %Group{} = Storage.get(1)
 
       assert :ok = Manager.tick(manager, 18_000)
       refute_received :hit
@@ -220,19 +252,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
         Manager.register(
           manager,
           group(
+            visibility: :public,
+            unit_range: 1,
+            cells: [@center],
             next_tick_at: 1_250,
             expires_at: 18_000,
             lifecycle_policy: placement.lifecycle_policy
           )
         )
 
-      reject(&Combat.resolve_combatant/1)
+      stub(Combat, :resolve_combatant, fn @caster_id -> {:error, :target_not_found} end)
+      SpatialIndex.add_unit(:mob, 2001, 150, 150, @map_name)
       reject(&Combat.splash_targets/4)
       reject(&Combat.apply_skill_unit_damage/8)
       reject(&StatusInterpreter.apply_status/4)
 
       assert :ok = Manager.tick(manager, 1_250)
-      assert %Group{next_tick_at: 2_500} = Storage.get(1)
+      assert %Group{} = Storage.get(1)
 
       assert :ok = Manager.tick(manager, 18_000)
       assert Storage.get(1) == nil

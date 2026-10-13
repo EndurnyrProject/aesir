@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -40,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     Mimic.copy(Cell)
     Mimic.copy(DamageApplication)
     Mimic.copy(EquipVanish)
+    Mimic.copy(SplashTargets)
     Mimic.copy(MapCache)
     Mimic.copy(StatusInterpreter)
     :ok
@@ -116,17 +118,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     }
   end
 
-  defp stub_tick(targets, enemies \\ []) do
+  defp stub_caster(enemies \\ []) do
     stub(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, %{unit_id: 1_000}} end)
-    stub(Combat, :splash_targets, fn "prontera", @center, 2, %{unit_id: 1_000} -> enemies end)
-
-    stub(SpatialIndex, :get_all_units_in_range, fn
-      "prontera", 150, 150, 0 -> targets
-    end)
-
-    stub(SpatialIndex, :get_unit_position, fn _type, _id ->
-      {:ok, {150, 150, "prontera"}}
-    end)
+    stub(SplashTargets, :eligible, fn refs, _caster -> Enum.filter(refs, &(&1 in enemies)) end)
   end
 
   @tag game_mode: :renewal
@@ -167,6 +161,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     assert placement.duration == 15_900
     assert placement.path_check
     assert placement.state == %{hits_remaining: 8}
+  end
+
+  test "each of the 21 cells reaches one cell and shares strikes with every Sanctuary" do
+    assert {:ok, placement} = PrSanctuary.on_place(group(5))
+    assert %{unit_range: 1, no_overlap: true, path_check: true} = placement
+  end
+
+  test "the strike that spends the last quota ends the field, pushing from its cell" do
+    test_pid = self()
+    UnitRegistry.register_unit(:mob, 2_001, MobState, mob(2_001, :undead, :undead), self())
+    stub(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, %{unit_id: 1_000}} end)
+    stub(SplashTargets, :eligible, fn refs, %{unit_id: 1_000} -> refs end)
+
+    stub(Combat, :apply_skill_unit_damage, fn _c, :mob, 2_001, 70, 1, :holy, 0, opts ->
+      send(test_pid, {:origin, opts[:origin]})
+      :ok
+    end)
+
+    assert {:expire, %Group{state: %{hits_remaining: 0}}} =
+             PrSanctuary.on_unit_hit(group(1, %{hits_remaining: 1}), {151, 150}, {:mob, 2_001}, 0)
+
+    assert_received {:origin, {151, 150}}
   end
 
   test "registers a visible observer field with the exact first-level expiry" do
@@ -283,7 +299,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       race: :demi_human
     }
 
-    stub_tick([{:homunculus, gid}])
+    stub_caster()
 
     stub(UnitRegistry, :get_unit, fn :homunculus, ^gid ->
       {:ok, {HomunculusState, homunculus, self()}}
@@ -292,39 +308,59 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     expect(DamageApplication, :apply_heal, fn :homunculus, ^gid, 500, 1_000 -> :ok end)
 
     assert {:ok, %Group{state: %{hits_remaining: 8}}} =
-             PrSanctuary.on_interval(group(5, %{hits_remaining: 8}), 1_000)
+             PrSanctuary.on_unit_hit(
+               group(5, %{hits_remaining: 8}),
+               @center,
+               {:homunculus, gid},
+               1_000
+             )
   end
 
-  test "heals living injured mobs every second without spending offensive quota" do
+  test "heals living injured mobs without spending offensive quota" do
     target = mob(2_001, :formless, :neutral)
-    stub_tick([{:mob, 2_001}])
+    stub_caster()
     stub(UnitRegistry, :get_unit, fn :mob, 2_001 -> {:ok, {MobState, target, self()}} end)
     expect(MobSession, :heal, fn pid, 600 -> assert pid == self() end)
     reject(&Combat.apply_skill_unit_damage/8)
 
     assert {:ok, %Group{state: %{hits_remaining: 9}}} =
-             PrSanctuary.on_interval(group(6, %{hits_remaining: 9}), 1_000)
+             PrSanctuary.on_unit_hit(
+               group(6, %{hits_remaining: 9}),
+               @center,
+               {:mob, 2_001},
+               1_000
+             )
   end
 
   test "does not heal a magic-immune player" do
     target_id = 2_001
     register_player(target_id, 50)
-    stub_tick([{:player, target_id}])
+    stub_caster()
     reject(&DamageApplication.apply_heal/4)
 
     assert {:ok, %Group{state: %{hits_remaining: 8}}} =
-             PrSanctuary.on_interval(group(5, %{hits_remaining: 8}), 1_000)
+             PrSanctuary.on_unit_hit(
+               group(5, %{hits_remaining: 8}),
+               @center,
+               {:player, target_id},
+               1_000
+             )
   end
 
   test "heals a player below magic immunity through the existing player damage application path" do
     target_id = 2_001
     register_player(target_id, 49)
-    stub_tick([{:player, target_id}])
+    stub_caster()
 
     expect(DamageApplication, :apply_heal, fn :player, ^target_id, 500, 1_000 -> :ok end)
 
     assert {:ok, %Group{state: %{hits_remaining: 8}}} =
-             PrSanctuary.on_interval(group(5, %{hits_remaining: 8}), 1_000)
+             PrSanctuary.on_unit_hit(
+               group(5, %{hits_remaining: 8}),
+               @center,
+               {:player, target_id},
+               1_000
+             )
   end
 
   @tag game_mode: :renewal
@@ -335,16 +371,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     emperium = mob(1_288, :angel, :holy)
     targets = [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}, {:mob, 1_288}]
     states = %{2_001 => injured, 2_002 => full, 2_003 => corpse, 1_288 => emperium}
-    stub_tick(targets)
+    stub_caster()
 
     stub(UnitRegistry, :get_unit, fn :mob, id ->
       {:ok, {MobState, Map.fetch!(states, id), self()}}
     end)
 
+    assert PrSanctuary.unit_targets(group(7), @center, targets) ==
+             [{:mob, 2_001}, {:mob, 2_002}, {:mob, 1_288}]
+
     expect(MobSession, :heal, 1, fn _pid, 777 -> :ok end)
 
     assert {:ok, %Group{state: %{hits_remaining: 10}}} =
-             PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
+             Enum.reduce(
+               PrSanctuary.unit_targets(group(7), @center, targets),
+               {:ok, group(7, %{hits_remaining: 10})},
+               fn target, {:ok, field} ->
+                 PrSanctuary.on_unit_hit(field, @center, target, 1_000)
+               end
+             )
   end
 
   @tag game_mode: :pre_renewal
@@ -353,7 +398,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     emperium = mob(1_288, :angel, :holy)
     targets = [{:mob, 2_001}, {:mob, 1_288}]
     states = %{2_001 => injured, 1_288 => emperium}
-    stub_tick(targets)
+    stub_caster()
 
     stub(UnitRegistry, :get_unit, fn :mob, id ->
       {:ok, {MobState, Map.fetch!(states, id), self()}}
@@ -362,10 +407,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     expect(MobSession, :heal, 2, fn _pid, 777 -> :ok end)
 
     assert {:ok, %Group{state: %{hits_remaining: 10}}} =
-             PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
+             Enum.reduce(
+               PrSanctuary.unit_targets(group(7), @center, targets),
+               {:ok, group(7, %{hits_remaining: 10})},
+               fn target, {:ok, field} ->
+                 PrSanctuary.on_unit_hit(field, @center, target, 1_000)
+               end
+             )
   end
 
-  test "real offensive ticks retain ground Holy damage and one field-centered combined blow" do
+  test "real offensive strikes retain ground Holy damage and one cell-origin combined blow" do
     target_ids = [2_001, 2_002, 2_003, 2_004]
     targets = Enum.map(target_ids, &{:mob, &1})
 
@@ -384,10 +435,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       )
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 70} => 3})
 
-    expect(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, attacker} end)
-    stub(Combat, :splash_targets, fn "prontera", @center, 2, ^attacker -> targets end)
-
-    stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 0 -> targets end)
+    stub(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, attacker} end)
+    stub(SplashTargets, :eligible, fn refs, ^attacker -> refs end)
 
     stub(SpatialIndex, :get_unit_position, fn
       :mob, 2_004 -> {:error, :not_found}
@@ -430,7 +479,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     end)
 
     assert {:ok, %Group{state: %{hits_remaining: 7}}} =
-             PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
+             Enum.reduce(targets, {:ok, group(7, %{hits_remaining: 10})}, fn target,
+                                                                             {:ok, field} ->
+               PrSanctuary.on_unit_hit(field, {149, 150}, target, 1_000)
+             end)
 
     water_damage = 777
     assert_received {:damage_packet, 2_001, 1_000, 971}
@@ -463,7 +515,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       2_003 => mob(2_003, :formless, :undead)
     }
 
-    stub_tick(targets, targets)
+    stub_caster(targets)
     stub(UnitRegistry, :get_unit, fn :mob, id -> {:ok, {MobState, states[id], self()}} end)
 
     expect(Combat, :apply_skill_unit_damage, 3, fn
@@ -482,13 +534,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     reject(&Combat.knockback/5)
 
     assert {:ok, %Group{state: %{hits_remaining: 8}}} =
-             PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
+             Enum.reduce(targets, {:ok, group(7, %{hits_remaining: 10})}, fn target,
+                                                                             {:ok, field} ->
+               PrSanctuary.on_unit_hit(field, @center, target, 1_000)
+             end)
   end
 
-  test "stops offensive processing exactly when the shared quota reaches zero" do
+  test "the offensive strike that spends the last shared quota expires the field" do
     targets = Enum.map(2_001..2_006, &{:mob, &1})
     states = Map.new(2_001..2_006, &{&1, mob(&1, :undead, :undead)})
-    stub_tick(targets, targets)
+    stub_caster(targets)
     stub(UnitRegistry, :get_unit, fn :mob, id -> {:ok, {MobState, states[id], self()}} end)
 
     expect(Combat, :apply_skill_unit_damage, 4, fn
@@ -503,7 +558,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     reject(&Combat.knockback/5)
 
     assert {:expire, %Group{state: %{hits_remaining: 0}}} =
-             PrSanctuary.on_interval(group(1, %{hits_remaining: 4}), 1_000)
+             Enum.reduce_while(targets, {:ok, group(1, %{hits_remaining: 4})}, fn target,
+                                                                                  {:ok, field} ->
+               case PrSanctuary.on_unit_hit(field, @center, target, 1_000) do
+                 {:ok, updated} -> {:cont, {:ok, updated}}
+                 {:expire, updated} -> {:halt, {:expire, updated}}
+               end
+             end)
   end
 
   defp register_player(character_id, no_magic_damage) do
@@ -520,13 +581,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       })
 
     UnitRegistry.register_unit(:player, character_id, PlayerState, player, self())
-  end
-
-  test "an exhausted field expires without looking up targets" do
-    reject(&Combat.resolve_combatant/2)
-    reject(&SpatialIndex.get_all_units_in_range/4)
-
-    assert {:expire, %Group{state: %{hits_remaining: 0}}} =
-             PrSanctuary.on_interval(group(1, %{hits_remaining: 0}), 1_000)
   end
 end

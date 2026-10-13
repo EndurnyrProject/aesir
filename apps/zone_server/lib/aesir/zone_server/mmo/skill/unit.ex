@@ -12,13 +12,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
-  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -204,12 +205,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
 
   defp caster_identity(%MobState{instance_id: instance_id}), do: {instance_id, :mob, nil}
 
-  defp accepted_cells(map_name, cells, origin, path_check?) do
+  # A cell off the map is skipped; so is a cell a unit cannot stand on, except
+  # for a song or dance, and a PathCheck cell with no straight line to the
+  # caster.
+  defp accepted_cells(%Group{map_name: map_name} = group, cells, origin, path_check?) do
     case MapCache.get(map_name) do
       {:ok, %{xs: width, ys: height}} ->
         Enum.filter(cells, fn {x, y} = cell ->
           x >= 0 and x < width and y >= 0 and y < height and
-            (not path_check? or reachable?(map_name, origin, cell))
+            standable?(group, cell) and
+            (not path_check? or LineOfSight.clear?(map_name, cell, origin))
         end)
 
       {:error, :not_found} ->
@@ -217,8 +222,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     end
   end
 
-  defp register_placement(%Group{map_name: map_name} = group, origin, placement) do
-    case accepted_cells(map_name, placement.cells, origin, Map.get(placement, :path_check, false)) do
+  defp standable?(%Group{state: %{performance: _}}, _cell), do: true
+  defp standable?(%Group{map_name: map_name}, {x, y}), do: Cell.traversable?(map_name, x, y)
+
+  defp register_placement(%Group{} = group, origin, placement) do
+    case accepted_cells(group, placement.cells, origin, Map.get(placement, :path_check, false)) do
       [] ->
         {:error, :no_walkable_cells}
 
@@ -234,6 +242,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
             visibility: Map.get(placement, :visibility, :public),
             state: state,
             interval: placement.interval,
+            unit_range: Map.get(placement, :unit_range),
+            no_overlap: Map.get(placement, :no_overlap, false),
+            path_check: Map.get(placement, :path_check, false),
             lifecycle_policy: Map.get(placement, :lifecycle_policy, group.lifecycle_policy),
             next_tick_at: now + initial_delay,
             expires_at: now + placement.duration
@@ -247,15 +258,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
           {:error, _reason} = error ->
             error
         end
-    end
-  end
-
-  defp reachable?(map_name, origin, cell) do
-    with {:ok, map_data} <- MapCache.get(map_name),
-         {:ok, _path} <- Pathfinding.find_path(map_data, origin, cell) do
-      true
-    else
-      _ -> false
     end
   end
 

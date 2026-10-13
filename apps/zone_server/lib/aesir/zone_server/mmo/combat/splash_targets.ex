@@ -57,6 +57,38 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   end
 
   @doc """
+  Keeps the `refs` that `select/6` would accept regardless of where they stand:
+  living enemies of the caster (living targetable trap cells too with
+  `target_skill_units: true`), never the caster itself. Order is kept.
+
+  `field: group` authorizes as `select_field/4` does instead.
+  """
+  @spec eligible([Ref.t()], integer() | map(), keyword()) :: [Ref.t()]
+  def eligible(refs, caster, opts \\ []) do
+    caster = resolve_splash_caster(caster)
+    caster_ref = {caster.unit_type, caster.unit_id}
+    authorized? = authorization(Keyword.get(opts, :field))
+
+    Enum.filter(refs, fn target_ref ->
+      selectable_target?(target_ref, opts) and
+        not CombatTarget.own_caster?(target_ref, caster_ref, false) and
+        match?(
+          {:ok, _target, _state},
+          authorized_target(caster, target_ref, caster_ref, opts, authorized?)
+        )
+    end)
+  end
+
+  defp authorization(nil), do: &splash_hittable?/4
+  defp authorization(%Group{} = group), do: field_authorization(group)
+
+  defp field_authorization(group) do
+    fn field_caster, target, _target_ref, _caster_ref ->
+      Targeting.validate_field_target(group, field_caster, target) == :ok
+    end
+  end
+
+  @doc """
   Returns living targets selected by a supported player-owned field.
 
   Geometry and liveness match `select/6`, but target authorization is tied to
@@ -80,10 +112,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   def select_field(%Group{} = group, center, radius, caster, opts) do
     selection_opts = Keyword.take(opts, [:shoot_range_los])
 
-    select_with(group.map_name, center, radius, caster, false, selection_opts, fn
-      field_caster, target, _target_ref, _caster_ref ->
-        Targeting.validate_field_target(group, field_caster, target) == :ok
-    end)
+    select_with(
+      group.map_name,
+      center,
+      radius,
+      caster,
+      false,
+      selection_opts,
+      field_authorization(group)
+    )
   end
 
   defp select_with(map_name, {cx, cy}, radius, caster, hits_caster, opts, target_authorized?) do
@@ -115,7 +152,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
 
   defp offensive_target_in_square?(
          caster,
-         {unit_type, target_id} = target_ref,
+         target_ref,
          caster_ref,
          cx,
          cy,
@@ -123,15 +160,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
          opts,
          target_authorized?
        ) do
+    case authorized_target(caster, target_ref, caster_ref, opts, target_authorized?) do
+      {:ok, target, target_state} ->
+        splash_hit?(target_state, cx, cy, radius) and
+          splash_visible?(caster.map_name, {cx, cy}, target.position, opts)
+
+      :error ->
+        false
+    end
+  end
+
+  defp authorized_target(
+         caster,
+         {unit_type, target_id} = target_ref,
+         caster_ref,
+         opts,
+         authorized?
+       ) do
     with {:ok, _pid, target_state, _target_type} <-
            TargetResolver.resolve(unit_type, target_id),
-         {:ok, target} <- splash_target_combatant(target_state, opts) do
-      target_living?(target_ref, target_state) and
-        target_authorized?.(caster, target, target_ref, caster_ref) and
-        splash_hit?(target_state, cx, cy, radius) and
-        splash_visible?(caster.map_name, {cx, cy}, target.position, opts)
+         {:ok, target} <- splash_target_combatant(target_state, opts),
+         true <- target_living?(target_ref, target_state),
+         true <- authorized?.(caster, target, target_ref, caster_ref) do
+      {:ok, target, target_state}
     else
-      _unavailable -> false
+      _unavailable -> :error
     end
   end
 

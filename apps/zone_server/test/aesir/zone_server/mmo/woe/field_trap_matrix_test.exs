@@ -66,17 +66,23 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
     end
   end
 
-  test "Demonstration damages friendly and enemy players on the same active field tick" do
+  test "Demonstration damages friendly and enemy players struck from the same active field cell" do
     caster = player(13_011, {150, 150}, party_id: 7, str: 80, dex: 80)
     friendly = player(13_012, {151, 150}, party_id: 7)
     enemy = player(13_013, {150, 151}, party_id: 8)
     group = group(:am_demonstration, 229, caster.character.id, {150, 150})
+    friendly_ref = {:player, friendly.character.id}
+    enemy_ref = {:player, enemy.character.id}
     friendly_hp = hp(friendly)
     enemy_hp = hp(enemy)
 
     :ok = MapFlags.set_runtime("prontera", :pvp, true)
 
-    assert {:ok, %Group{}} = AmDemonstration.on_interval(group, 500)
+    assert [^friendly_ref, ^enemy_ref] =
+             AmDemonstration.unit_targets(group, {150, 150}, [friendly_ref, enemy_ref])
+
+    assert {:ok, %Group{}} = AmDemonstration.on_unit_hit(group, {150, 150}, friendly_ref, 500)
+    assert {:ok, %Group{}} = AmDemonstration.on_unit_hit(group, {150, 150}, enemy_ref, 500)
     assert_eventually(fn -> hp(friendly) < friendly_hp and hp(enemy) < enemy_hp end)
   end
 

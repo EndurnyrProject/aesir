@@ -454,7 +454,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       # An isolated cell well away from the default test positions, so the
       # field's occupant scan only touches this test's own units (the shared
       # spatial index retains stray entities across integration tests).
-      field = {290, 290}
+      field = {205, 290}
 
       caster =
         start_player_session(
@@ -471,15 +471,15 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
           name: "Guarded",
           class: @acolyte_class,
           base_level: 60,
-          position: {291, 290}
+          position: {206, 290}
         )
 
       caster_state = get_player_state(caster.pid)
 
       assert {:ok, _caster} =
-               AlPneuma.cast(caster_state, {:ground, 290, 290}, 1, AlPneuma.definition())
+               AlPneuma.cast(caster_state, {:ground, 205, 290}, 1, AlPneuma.definition())
 
-      [group] = SkillUnitStorage.get_groups_at_cell(caster_state.map_name, 290, 290)
+      [group] = SkillUnitStorage.get_groups_at_cell(caster_state.map_name, 205, 290)
 
       on_exit(fn ->
         SkillUnit.destroy(group.group_id)

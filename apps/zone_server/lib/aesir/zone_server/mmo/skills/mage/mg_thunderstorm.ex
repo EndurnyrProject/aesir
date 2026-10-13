@@ -3,13 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstorm do
   Thunderstorm (MG_THUNDERSTORM). Ground-targeted, short-lived skill-unit.
 
   As a `target_type: :ground` skill, `use Skill` auto-derives the `cast/4` that
-  places this unit at the target cell. The unit covers a 5x5 wind field and is
-  a single burst, not a lingering field: it fires once, immediately, delivering
-  the cast level's whole hit count to every offensive target standing in the
-  footprint at that moment, and then expires. A target inside the area when the
-  burst lands takes all `level` hits; one that is not takes none, so there is no
-  walking out of it partway through. If the caster is gone the unit expires
-  without dealing damage. SP and cooldown are deducted by the interpreter from
+  places this unit at the target cell. The unit is one cell that lives for a
+  single 100 ms pass and reaches every enemy within two cells of it (three from
+  level 11) in line of sight from that cell: each takes the cast level's whole
+  hit count at once, and a target outside the area takes none. If the caster is
+  gone it deals no damage. SP and cooldown are deducted by the interpreter from
   the definition.
 
   Renewal: each pulse lands at the full magic ratio, and the cast is slow to
@@ -44,9 +42,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstorm do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
 
   @behaviour Ground
 
@@ -60,38 +58,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstorm do
   def skill_ratio(:pre_renewal), do: 80
 
   @impl Ground
-  def on_place(%Group{center: center}) do
-    definition = definition()
-
+  def on_place(%Group{center: center, level: level}) do
     {:ok,
      %{
-       cells: Layout.square(center, definition.splash_radius),
+       cells: [center],
        state: %{},
-       interval: definition.hit_interval,
-       # The burst is the unit's whole life: fire on the first sweep rather than
-       # after an interval, and expire immediately afterwards.
-       initial_delay: 0,
-       duration: definition.hit_interval
+       interval: definition().hit_interval,
+       duration: 100,
+       unit_range: if(level >= 11, do: 3, else: 2),
+       path_check: true
      }}
   end
 
   @impl Ground
-  def on_interval(%Group{center: center, map_name: map_name} = group, _now) do
-    definition = definition()
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
 
+  @impl Ground
+  def unit_targets(%Group{} = group, _cell, refs) do
     case Combat.resolve_combatant(group.caster_id) do
-      {:ok, caster} ->
-        map_name
-        |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
-        |> Enum.each(fn {unit_type, target_id} ->
-          hit(group, definition, caster, unit_type, target_id)
-        end)
-
-        {:expire, group}
-
-      {:error, _reason} ->
-        {:expire, group}
+      {:ok, caster} -> SplashTargets.eligible(refs, caster)
+      {:error, _reason} -> []
     end
+  end
+
+  @impl Ground
+  def on_unit_hit(%Group{} = group, _cell, {unit_type, target_id}, _now) do
+    with {:ok, caster} <- Combat.resolve_combatant(group.caster_id) do
+      hit(group, definition(), caster, unit_type, target_id)
+    end
+
+    {:ok, group}
   end
 
   @spec hit(Group.t(), struct(), struct(), atom(), integer()) :: :ok

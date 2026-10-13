@@ -110,6 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
       end
     end
 
+    @tag game_mode: :renewal
     test "drops only Lord of Vermilion's cells inside the footprint" do
       manager = start_manager()
 
@@ -121,6 +122,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
       assert survivors != []
       assert Enum.all?(survivors, fn {x, y} -> max(abs(x - 100), abs(y - 100)) > 5 end)
       assert length(survivors) == 13 * 13 - 11 * 11
+    end
+
+    @tag game_mode: :pre_renewal
+    test "suppresses classic Lord of Vermilion entirely inside the footprint" do
+      manager = start_manager()
+      assert :ok = place(manager, SaLandprotector, 1, 5)
+      assert {:error, :land_protector} = place(manager, WzVermilion, 2, 1)
+      assert Storage.get(2) == nil
+      assert %Group{group_id: 1} = Storage.get(1)
     end
 
     test "placing land protector destroys an ice wall immediately, clearing its terrain" do

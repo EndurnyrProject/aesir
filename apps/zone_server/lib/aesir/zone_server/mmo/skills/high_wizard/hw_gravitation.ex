@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
   fixed, 1 s after-cast delay and a 5 s cooldown.
 
   Pre-renewal: a 5x5 field lasting `4 + level` seconds that deals a fixed
-  `200 + 200 * level` misc damage per second to every enemy inside (400 to the
+  `200 + 200 * level` misc damage to every enemy inside, once a second for all
+  Gravitation fields together, timed from when a field first reached it (400 to the
   Emperium; no FLEE, DEF, element or damage-reducing status) and slows their attack speed by 5% per level through
   `:sc_gravitation`. The caster holds the same status bound to the field: they
   cannot walk or use items while it lasts, taking damage collapses it, and no
@@ -46,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.LevelModifier
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -120,6 +122,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
        path_check: true,
+       unit_range: 0,
+       no_overlap: true,
        lifecycle_policy: %LifecyclePolicy{on_caster_loss: :expire}
      }}
   end
@@ -132,23 +136,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
 
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
-  def on_interval(%Group{} = group, _now) do
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
+
+  @impl Ground
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs) do
+    case UnitRegistry.get_unit(group.caster_type, group.caster_id) do
+      {:ok, {_module, caster, _pid}} ->
+        SplashTargets.eligible(refs, caster.__struct__.to_combatant(caster))
+
+      _unavailable ->
+        []
+    end
+  end
+
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, target, _now) do
     with {:ok, {_module, caster, _pid}} <-
            UnitRegistry.get_unit(group.caster_type, group.caster_id) do
-      combatant = caster.__struct__.to_combatant(caster)
-
-      group.map_name
-      |> Combat.splash_targets(group.center, definition().splash_radius, combatant)
-      |> Enum.each(fn target ->
-        SkillAttack.execute_misc_attack(caster, target,
-          skill_id: group.skill_id,
-          skill_level: group.level,
-          base_damage: tick_damage(target, group.level),
-          ignore_element: true,
-          bypass_reductions: true,
-          delivery: :unit
-        )
-      end)
+      SkillAttack.execute_misc_attack(caster, target,
+        skill_id: group.skill_id,
+        skill_level: group.level,
+        base_damage: tick_damage(target, group.level),
+        ignore_element: true,
+        bypass_reductions: true,
+        delivery: :unit
+      )
     end
 
     {:ok, group}

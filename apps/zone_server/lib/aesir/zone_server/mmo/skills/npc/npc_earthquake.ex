@@ -1,16 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
   @moduledoc """
-  NPC Earthquake (NPC_EARTHQUAKE), a mob-cast Neutral ground shockwave.
+  NPC Earthquake (NPC_EARTHQUAKE), a monster's neutral shockwave.
 
-  As a `target_type: :ground` skill, `use Skill` auto-derives the `cast/4` that
-  places this unit at the target cell through `Skill.Unit.place/4` - the mob
-  `MobSkill.Executor` centers that cell on the caster's own cell for the
-  overwhelmingly common `self`-targeted rows, so mob casters need no bespoke
-  placement path. The field deals renewal magic damage
-  (`Combat.apply_skill_unit_damage`, MATK/MDEF/neutral) every `hit_interval` to
-  every living enemy standing in its footprint, same pipeline and timing
-  (450ms/4500ms unit, 70 + 50 * level ratio) as every other mob ground
-  shockwave.
+  The monster places one cell under itself that lives 910 ms, ignores Land
+  Protector, and strikes every enemy within 5, 7, 9, 11 or 13 cells of it (by
+  level, repeating from level 6) once every 300 ms, from when it first reached
+  that enemy. A strike is magic damage that ignores MDEF: the monster's
+  attack (raised by its attack-percent statuses in pre-renewal) at
+  `200 + 100 * level + 100 * (level / 2)` percent, plus 100 from level 5,
+  split evenly among the enemies within the same distance of the cell.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 653,
@@ -22,72 +20,94 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
     damage_type: :damage,
     damage_kind: :magic,
     element: :neutral,
-    splash_radius: 2,
-    hit_interval: 450,
-    unit_duration: List.duplicate(4_500, 10),
+    splash_radius: 5,
+    hit_interval: 300,
+    unit_duration: List.duplicate(910, 10),
     is_npc: true,
     damage_splash: true
 
-  alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   @behaviour Ground
 
+  @reach [5, 7, 9, 11, 13, 5, 7, 9, 11, 13]
+
   @impl Ground
-  def on_place(%Group{center: center, map_name: map_name, level: level}) do
+  def on_place(%Group{center: center, level: level}) do
     definition = definition()
 
     {:ok,
      %{
-       cells: walkable_footprint(map_name, center, definition.splash_radius),
-       state: %{},
+       cells: [center],
+       state: %{ignore_land_protector: true},
        interval: definition.hit_interval,
-       duration: Enum.at(definition.unit_duration, level - 1)
+       duration: Enum.at(definition.unit_duration, level_index(level)),
+       unit_range: reach(level)
      }}
   end
 
   @impl Ground
-  def on_interval(%Group{center: center, map_name: map_name} = group, _now) do
-    definition = definition()
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
 
+  @impl Ground
+  def unit_targets(%Group{} = group, _cell, refs) do
     case Combat.resolve_combatant(group.caster_type, group.caster_id) do
-      {:ok, caster} ->
-        map_name
-        |> Combat.splash_targets(center, definition.splash_radius, caster)
-        |> Enum.each(&hit(group, definition, caster, &1))
-
-        {:ok, group}
-
-      {:error, _reason} ->
-        {:ok, group}
+      {:ok, caster} -> SplashTargets.eligible(refs, caster)
+      {:error, _reason} -> []
     end
   end
 
-  @spec hit(Group.t(), struct(), struct(), {atom(), integer()}) :: :ok
-  defp hit(%Group{} = group, definition, caster, {unit_type, target_id}) do
-    Combat.apply_skill_unit_damage(
-      caster,
-      unit_type,
-      target_id,
-      group.skill_id,
-      group.level,
-      definition.element,
-      skill_ratio(group.level)
-    )
+  @impl Ground
+  def on_unit_hit(%Group{} = group, cell, {unit_type, target_id}, _now) do
+    with {:ok, caster} <- Combat.resolve_combatant(group.caster_type, group.caster_id),
+         {:ok, attack} <- DamageInputs.non_player_base_attack(caster) do
+      enemies =
+        group.map_name |> SplashTargets.select(cell, reach(group.level), caster) |> length()
 
-    :ok
+      Combat.apply_skill_unit_damage(
+        caster,
+        unit_type,
+        target_id,
+        group.skill_id,
+        group.level,
+        :neutral,
+        100,
+        base_damage: base_damage(attack, caster, group.level, enemies),
+        ignore_mdef: true
+      )
+    end
+
+    {:ok, group}
   end
 
-  @spec skill_ratio(non_neg_integer()) :: non_neg_integer()
-  defp skill_ratio(level), do: 70 + 50 * level
-
-  @spec walkable_footprint(String.t(), Group.cell(), non_neg_integer()) :: [Group.cell()]
-  defp walkable_footprint(map_name, center, radius) do
-    center
-    |> Layout.square(radius)
-    |> Enum.filter(fn {x, y} -> Cell.traversable?(map_name, x, y) end)
+  defp base_damage(attack, caster, level, enemies) do
+    attack
+    |> attack_percent(caster, GameMode.mode())
+    |> Kernel.*(200 + 100 * level + 100 * div(level, 2) + if(level > 4, do: 100, else: 0))
+    |> div(100)
+    |> div(max(enemies, 1))
   end
+
+  defp attack_percent(attack, _caster, :renewal), do: attack
+
+  defp attack_percent(attack, caster, :pre_renewal) do
+    rate =
+      Map.get(
+        ModifierCalculator.get_all_modifiers(caster.unit_type, caster.unit_id),
+        :atk_rate,
+        0
+      )
+
+    div(attack * max(100 + rate, 0), 100)
+  end
+
+  defp reach(level), do: Enum.at(@reach, level_index(level))
+
+  defp level_index(level), do: min(level, 10) - 1
 end

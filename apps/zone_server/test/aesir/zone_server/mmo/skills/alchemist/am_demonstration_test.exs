@@ -76,11 +76,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
       assert definition.unit_duration == [40_000, 45_000, 50_000, 55_000, 60_000]
     end
 
-    test "places the filled 3x3 area for the level duration" do
+    test "places one range-one cell for the level duration" do
       assert {:ok, placement} = AmDemonstration.on_place(group(3))
 
-      assert Enum.sort(placement.cells) ==
-               Enum.sort(for(x <- 149..151, y <- 149..151, do: {x, y}))
+      assert placement.cells == [@center]
 
       assert placement.interval == mode_value(500, 1_000)
       assert placement.duration == 50_000
@@ -118,6 +117,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
       assert :ok = Storage.insert(expired_group)
       assert :ok = Manager.tick(manager, 55_000)
       assert Storage.get(expired_group.group_id) == nil
+    end
+  end
+
+  describe "per-cell unit" do
+    test "is one cell reaching one cell around it" do
+      assert {:ok, placement} = AmDemonstration.on_place(group(1))
+      assert placement.cells == [@center]
+      assert placement.unit_range == 1
     end
   end
 
@@ -173,10 +180,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
         {:ok, {PlayerState, caster, self()}}
       end)
 
-      stub(SplashTargets, :select_field, fn %Group{}, @center, 1, _caster ->
-        [{:player, 2_000}]
-      end)
-
       stub(SkillAttack, :execute_field_skill_attack, fn ^caster,
                                                         {:player, 2_000},
                                                         %Group{},
@@ -203,7 +206,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
         []
       end)
 
-      assert {:ok, %Group{}} = AmDemonstration.on_interval(group(3), 500)
+      assert {:ok, %Group{}} =
+               AmDemonstration.on_unit_hit(group(3), @center, {:player, 2_000}, 500)
+
       assert_received :break_rolled
     end
 
@@ -214,17 +219,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
         {:ok, {PlayerState, caster, self()}}
       end)
 
-      stub(SplashTargets, :select_field, fn %Group{}, @center, 1, _caster ->
-        [{:mob, 2_000}]
-      end)
-
       stub(SkillAttack, :execute_field_skill_attack, fn ^caster, {:mob, 2_000}, %Group{}, _opts ->
         {:ok, %{hit?: false, damage: 0, target_survives?: true}}
       end)
 
       reject(&EquipBreak.resolve_slot/4)
 
-      assert {:ok, %Group{}} = AmDemonstration.on_interval(group(3), 500)
+      assert {:ok, %Group{}} = AmDemonstration.on_unit_hit(group(3), @center, {:mob, 2_000}, 500)
     end
 
     test "expires gracefully when the caster is gone" do

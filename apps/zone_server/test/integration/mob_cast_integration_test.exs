@@ -29,7 +29,6 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
-  alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -329,13 +328,13 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   describe "wizard ground rows above player max level" do
     test "Meteor Storm and Lord of Vermilion cast without raising and preserve row level" do
-      target = spawn_test_mob(@map, {170, 170}, mob_id: @stun_mob_id)
+      target = spawn_test_mob(@map, {162, 174}, mob_id: @stun_mob_id)
 
       for {mob_id, skill_name, skill_atom, level} <- [
             {@meteor_mob_id, "WZ_METEOR", :wz_meteor, 11},
             {@vermilion_mob_id, "WZ_VERMILION", :wz_vermilion, 21}
           ] do
-        mob = spawn_test_mob(@map, {169, 170}, mob_id: mob_id)
+        mob = spawn_test_mob(@map, {161, 174}, mob_id: mob_id)
         caster = %{get_mob_state(mob.pid) | target_ref: {:mob, target.unit_id}}
 
         assert :ok = Executor.execute(caster, row!(mob_id, skill_name, level: level))
@@ -517,7 +516,9 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   end
 
   describe "NPC_EARTHQUAKE ground cast" do
-    test "damages a player standing on the footprint but spares a mob on the same footprint" do
+    test "damages a player within its reach but spares a mob within it", %{
+      skill_unit_manager: manager
+    } do
       caster_mob = spawn_test_mob(@map, {160, 160}, mob_id: @earthquake_mob_id)
       caster = get_mob_state(caster_mob.pid)
 
@@ -532,7 +533,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       assert %Group{} = group = Enum.find(Storage.all(), &(&1.skill_name == :npc_earthquake))
       on_exit(fn -> Storage.delete(group.group_id) end)
 
-      assert {:ok, _group} = NpcEarthquake.on_interval(group, System.system_time(:millisecond))
+      assert :ok = Manager.tick(manager, System.monotonic_time(:millisecond))
 
       assert get_player_state(victim.pid).stats.current_state.hp < 100
       assert get_mob_state(bystander_mob.pid).hp == 500

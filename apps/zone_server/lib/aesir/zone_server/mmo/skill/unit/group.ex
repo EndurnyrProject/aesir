@@ -10,6 +10,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   One row per cast is stored in the `:skill_units` ETS table keyed by `group_id`;
   `Skill.Unit.Storage` keeps its secondary keys synchronized.
 
+  A group with a `unit_range` acts as one unit per footprint cell on every
+  manager tick (`Skill.Unit.UnitTimer`): each cell affects the units within
+  `unit_range` cells of it, line-of-sight checked from the cell when
+  `path_check` is set, and a `no_overlap` field shares each unit's strike
+  interval with every other group of its skill.
+
   `handler` carries the group's tick/trigger module for casters that bypass
   `Skill.Catalog` (e.g. mob ground skills built without a catalog entry). When
   `nil`, `Skill.Unit.Manager` resolves the handler from `skill_name` via
@@ -47,6 +53,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
             next_tick_at: nil,
             expires_at: nil,
             interval: nil,
+            unit_range: nil,
+            no_overlap: false,
+            path_check: false,
             lifecycle_policy: %LifecyclePolicy{},
             visibility: :public,
             state: %{},
@@ -70,6 +79,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
           next_tick_at: integer() | nil,
           expires_at: integer() | nil,
           interval: pos_integer() | nil,
+          unit_range: non_neg_integer() | nil,
+          no_overlap: boolean(),
+          path_check: boolean(),
           lifecycle_policy: LifecyclePolicy.t(),
           visibility: visibility(),
           state: skill_state(),

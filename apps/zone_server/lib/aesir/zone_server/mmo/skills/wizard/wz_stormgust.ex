@@ -1,7 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
   @moduledoc """
-  Storm Gust (WZ_STORMGUST). A 5x5 water field ticking every 450 ms that pushes 2
-  cells on every hit.
+  Storm Gust (WZ_STORMGUST). A 9x9 water field whose cells each strike the
+  enemies within one cell of them, so it reaches 11x11. A unit is struck at most
+  once every 450 ms by all Storm Gusts together, from the first cell that
+  reaches it, and is pushed 2 cells away from that cell.
 
   A freeze is an on-hit effect: it is rolled only for a hit that dealt damage to a
   target that survived it.
@@ -42,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
@@ -57,47 +60,58 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
 
     {:ok,
      %{
-       cells: Layout.square(center, definition.splash_radius),
+       cells: Layout.square(center, 4),
        state: %{},
        interval: definition.hit_interval,
-       duration: Enum.at(definition.unit_duration, level - 1)
+       duration: Enum.at(definition.unit_duration, level - 1),
+       unit_range: 1,
+       no_overlap: true,
+       path_check: true
      }}
   end
 
   @impl Ground
-  def on_interval(%Group{center: center, map_name: map_name} = group, _now) do
-    definition = definition()
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
 
+  @impl Ground
+  def unit_targets(%Group{} = group, _cell, refs) do
+    case Combat.resolve_combatant(group.caster_id) do
+      {:ok, caster} -> SplashTargets.eligible(refs, caster)
+      {:error, _reason} -> []
+    end
+  end
+
+  @impl Ground
+  def on_unit_hit(%Group{} = group, cell, target, _now) do
     with {:ok, caster} <- Combat.resolve_combatant(group.caster_id) do
-      map_name
-      |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
-      |> Enum.each(&hit(GameMode.mode(), group, definition, caster, &1))
+      hit(GameMode.mode(), group, definition(), caster, cell, target)
     end
 
     {:ok, group}
   end
 
-  defp hit(:renewal, group, definition, caster, target) do
-    _ = attack(group, definition, caster, target, freeze(group, definition, 65 - 5 * group.level))
+  defp hit(:renewal, group, definition, caster, cell, target) do
+    freeze = freeze(group, definition, 65 - 5 * group.level)
+    _ = attack(group, definition, caster, cell, target, freeze)
     :ok
   end
 
   # The counter rises before the attack, the third counted damaging hit tries to
   # freeze, and a hit that deals nothing (absorbed, blocked or refused) clears it.
   # A skill-unit cell has no status data to count on.
-  defp hit(:pre_renewal, group, definition, caster, {:skill_unit, _id} = target) do
-    _ = attack(group, definition, caster, target, nil)
+  defp hit(:pre_renewal, group, definition, caster, cell, {:skill_unit, _id} = target) do
+    _ = attack(group, definition, caster, cell, target, nil)
     :ok
   end
 
   # A target the siege rules refuse is not a valid target at all: the field
   # skips it before counting, and the attack would be refused the same way.
-  defp hit(:pre_renewal, group, definition, caster, {unit_type, unit_id} = target) do
+  defp hit(:pre_renewal, group, definition, caster, cell, {unit_type, unit_id} = target) do
     with {:ok, combatant} <- Combat.resolve_combatant(unit_type, unit_id),
          :ok <- Rules.validate_target(caster, combatant, %{skill_id: group.skill_id}) do
       StatusStorage.increment_storm_gust_counter(unit_type, unit_id)
 
-      case attack(group, definition, caster, target, counted_freeze(group, definition),
+      case attack(group, definition, caster, cell, target, counted_freeze(group, definition),
              report_hit: true
            ) do
         {:ok, %{hit?: true}} -> :ok
@@ -108,9 +122,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
     :ok
   end
 
-  @spec attack(Group.t(), struct(), struct(), {atom(), integer()}, function() | nil, keyword()) ::
-          :ok | {:ok, map()} | {:error, atom()}
-  defp attack(group, definition, caster, {unit_type, target_id}, effect, opts \\ []) do
+  @spec attack(
+          Group.t(),
+          struct(),
+          struct(),
+          Ground.cell(),
+          {atom(), integer()},
+          function() | nil,
+          keyword()
+        ) :: :ok | {:ok, map()} | {:error, atom()}
+  defp attack(group, definition, caster, cell, {unit_type, target_id}, effect, opts \\ []) do
     Combat.apply_skill_unit_damage(
       caster,
       unit_type,
@@ -121,7 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
       skill_ratio(group.level),
       [
         base_distance: definition.knockback,
-        origin: group.center,
+        origin: cell,
         additional_effect: effect
       ] ++ opts
     )

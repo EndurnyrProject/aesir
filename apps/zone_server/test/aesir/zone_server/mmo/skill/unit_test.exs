@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   alias Aesir.Net.GroundSkill
   alias Aesir.Net.SkillUnitGroupState
   alias Aesir.ZoneServer.EtsTable
-  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -18,7 +18,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
-  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -334,20 +333,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert group.next_tick_at < before + @interval
     end
 
-    test "skips impassable and unreachable PathCheck cells" do
+    test "skips wall cells and PathCheck cells without a straight line to the caster" do
       stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, PathCheckedUnit} end)
       stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
 
-      stub(MapCache, :get, fn "prontera" ->
-        {:ok, %MapData{name: "prontera", xs: 100, ys: 100}}
-      end)
+      map = "prontera" |> MapData.new(100, 100) |> MapData.set_cell(50, 60, GatType.wall())
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map})
+      caster = %{caster() | x: 53, y: 60}
 
-      stub(Pathfinding, :find_path, fn
-        _map, {50, 60}, {50, 60} -> {:ok, []}
-        _map, {50, 60}, _cell -> {:error, :no_path}
-      end)
+      assert {:ok, %Group{cells: [{51, 60}]}} = Unit.place(caster, @skill_name, 1, {50, 60})
+    end
 
-      assert {:ok, %Group{cells: [{50, 60}]}} = Unit.place(caster(), @skill_name, 1, {50, 60})
+    test "a song or dance keeps its wall cells" do
+      stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, BorderFakeUnit} end)
+      stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+      map = "border" |> MapData.new(2, 2) |> MapData.set_cell(1, 1, GatType.wall())
+      :ets.insert(EtsTable.table_for(:map_cache), {"border", map})
+      caster = %{caster() | map_name: "border"}
+
+      assert {:ok, %Group{cells: plain}} = Unit.place(caster, @skill_name, 7, {0, 0})
+      refute {1, 1} in plain
+
+      assert {:ok, %Group{cells: song}} =
+               Unit.place(caster, @skill_name, 7, {0, 0}, state: %{performance: %{}})
+
+      assert {1, 1} in song
     end
 
     test "filters a border layout to in-bounds cells before registering it" do

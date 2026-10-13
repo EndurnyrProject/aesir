@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
            anchored_by_basilica?(unit_type, unit_id, opts) do
         {:ok, {x, y}}
       else
-        {dx, dy} = {sign(x - from_x), sign(y - from_y)}
+        {dx, dy} = push_direction({x, y}, {from_x, from_y})
         destination = blow_path(map_name, x, y, dx, dy, distance)
         request_knockback(unit_type, unit_id, pid, {x, y, map_name}, destination)
       end
@@ -240,9 +240,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
     {:ok, {dst_x, dst_y}}
   end
 
-  defp sign(n) when n > 0, do: 1
-  defp sign(n) when n < 0, do: -1
-  defp sign(_), do: 0
+  # The step away from the source: the eight-sector direction from the target
+  # toward the source, reversed. A target on the source's own cell faces east
+  # toward it, so it is pushed west.
+  defp push_direction({x, y}, {from_x, from_y}) do
+    {toward_x, toward_y} = sector(from_x - x, from_y - y)
+    {-toward_x, -toward_y}
+  end
+
+  defp sector(0, 0), do: {1, 0}
+
+  defp sector(dx, dy) when dx >= 0 and dy >= 0 do
+    cond do
+      dx >= dy * 3 -> {1, 0}
+      dx * 3 < dy -> {0, 1}
+      true -> {1, 1}
+    end
+  end
+
+  defp sector(dx, dy) when dx >= 0 and dy <= 0 do
+    cond do
+      dx >= -dy * 3 -> {1, 0}
+      dx * 3 < -dy -> {0, -1}
+      true -> {1, -1}
+    end
+  end
+
+  defp sector(dx, dy) when dx <= 0 and dy <= 0 do
+    cond do
+      dx * 3 >= dy -> {0, -1}
+      dx < dy * 3 -> {-1, 0}
+      true -> {-1, -1}
+    end
+  end
+
+  defp sector(dx, dy) do
+    cond do
+      -dx * 3 <= dy -> {0, 1}
+      -dx > dy * 3 -> {-1, 0}
+      true -> {-1, 1}
+    end
+  end
 
   defp blow_path(_map_name, x, y, 0, 0, _distance), do: {x, y}
   defp blow_path(_map_name, x, y, _dx, _dy, 0), do: {x, y}

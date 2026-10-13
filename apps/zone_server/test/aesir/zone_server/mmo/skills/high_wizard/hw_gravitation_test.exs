@@ -108,6 +108,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
     assert placement.duration == 8_000
   end
 
+  test "each field cell strikes only its own cell, sharing strikes with every Gravitation" do
+    assert {:ok, placement} = HwGravitation.on_place(group(4))
+    assert %{unit_range: 0, no_overlap: true, path_check: true} = placement
+  end
+
   test "the Emperium takes a flat 400 per tick" do
     emperium = struct(MobState, mob_id: 1288, instance_id: 77)
     stub(UnitRegistry, :get_unit, fn :mob, 77 -> {:ok, {MobState, emperium, self()}} end)
@@ -115,17 +120,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
     assert HwGravitation.tick_damage({:mob, 77}, 5) == 400
   end
 
-  test "each interval deals 200 + 200 per level fixed misc damage to every enemy inside" do
+  test "each unit strike deals 200 + 200 per level fixed misc damage" do
     caster = player()
     test_pid = self()
 
     stub(UnitRegistry, :get_unit, fn
       :player, 1001 -> {:ok, {PlayerState, caster, self()}}
       _type, _id -> {:error, :not_found}
-    end)
-
-    stub(Combat, :splash_targets, fn "prontera", {110, 100}, 2, _caster ->
-      [{:mob, 5}, {:player, 6}]
     end)
 
     stub(SkillAttack, :execute_misc_attack, fn ^caster, ref, opts ->
@@ -137,7 +138,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
       :ok
     end)
 
-    assert {:ok, _group} = HwGravitation.on_interval(group(2), 0)
+    for target <- [{:mob, 5}, {:player, 6}] do
+      assert {:ok, _group} = HwGravitation.on_unit_hit(group(2), {110, 100}, target, 0)
+    end
 
     assert_received {:hit, {:mob, 5}, 600, true}
     assert_received {:hit, {:player, 6}, 600, true}

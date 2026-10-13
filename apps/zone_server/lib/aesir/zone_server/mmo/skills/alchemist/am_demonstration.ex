@@ -2,9 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   @moduledoc """
   Demonstration (AM_DEMONSTRATION), a Fire weapon-damage field.
 
-  The field occupies a 3x3 area for 35 plus 5 seconds per skill level. Every
-  tick, each enemy in that area receives a normal physical weapon attack, which
-  may miss. A confirmed hit attempts to break a player target's weapon.
+  The field is one cell that lasts 35 plus 5 seconds per skill level and
+  reaches the 3x3 area around it. Each enemy there receives a normal physical
+  weapon attack every tick, timed from when the field first reached it; the
+  attack may miss. A confirmed hit attempts to break a player target's weapon.
 
   Both modes cost 10 SP and a Fire Bottle and deal 100 plus 20 per level percent
   fire weapon damage. Renewal: ticks every 0.5 s, a 0.8 s cast plus 0.2 s fixed,
@@ -75,10 +76,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
 
     {:ok,
      %{
-       cells: Layout.square(center, @radius),
+       cells: [center],
        state: %{},
        interval: definition.hit_interval,
-       duration: Enum.at(definition.unit_duration, level - 1)
+       duration: Enum.at(definition.unit_duration, level - 1),
+       unit_range: @radius
      }}
   end
 
@@ -86,16 +88,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
   def on_interval(%Group{caster_id: caster_id} = group, _now) do
     case UnitRegistry.get_unit(:player, caster_id) do
-      {:ok, {PlayerState, caster, _pid}} ->
-        group
-        |> SplashTargets.select_field(group.center, @radius, PlayerState.to_combatant(caster))
-        |> Enum.each(&hit(caster, group, &1))
+      {:ok, {PlayerState, _caster, _pid}} -> {:ok, group}
+      {:error, :not_found} -> {:expire, group}
+    end
+  end
 
-        {:ok, group}
+  @impl Ground
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{caster_id: caster_id} = group, _cell, refs) do
+    case UnitRegistry.get_unit(:player, caster_id) do
+      {:ok, {PlayerState, caster, _pid}} ->
+        SplashTargets.eligible(refs, PlayerState.to_combatant(caster), field: group)
 
       {:error, :not_found} ->
-        {:expire, group}
+        []
     end
+  end
+
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{caster_id: caster_id} = group, _cell, target, _now) do
+    with {:ok, {PlayerState, caster, _pid}} <- UnitRegistry.get_unit(:player, caster_id) do
+      hit(caster, group, target)
+    end
+
+    {:ok, group}
   end
 
   @spec hit(PlayerState.t(), Group.t(), {atom(), integer()}) :: :ok

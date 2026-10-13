@@ -2958,6 +2958,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     # WZ_METEOR carries a real cooldown, unlike the single-target bolts above.
     @tag game_mode: :renewal
     test "never arms the skill's cooldown, which only an ordinary cast's completion does" do
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 20, 20)})
       stub(Combat, :resolve_target_position, fn 2001 -> {:ok, :mob, {14, 12, "prontera"}} end)
       stub(Combat, :execute_magic_splash, fn _caster, _center, _radius, _opts -> [] end)
 

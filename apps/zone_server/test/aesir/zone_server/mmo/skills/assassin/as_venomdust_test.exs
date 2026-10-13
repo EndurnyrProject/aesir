@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
   import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit
@@ -55,56 +54,54 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
     assert placement.duration == 50_000
   end
 
+  test "each cell reaches one cell on its own group's interval" do
+    assert {:ok, placement} = AsVenomdust.on_place(group(1))
+    assert placement.unit_range == 1
+    refute :no_overlap in Map.keys(placement)
+    refute :path_check in Map.keys(placement)
+  end
+
+  test "a strike leaves an already poisoned unit alone" do
+    :ok = StatusStorage.apply_status(:mob, 2_001, :sc_poison, duration: 5_000)
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, %Group{}} = AsVenomdust.on_unit_hit(group(1), {100, 100}, {:mob, 2_001}, 0)
+  end
+
   @tag game_mode: :renewal
-  test "queries every cell at range one, deduplicates targets, and skips existing Poison" do
-    caster = %{unit_type: :player, unit_id: 1_000, map_name: "prontera"}
+  test "poisons a supplied target and skips existing Poison" do
     poisoned_target = 2_001
     :ok = StatusStorage.apply_status(:mob, poisoned_target, :sc_poison, duration: 5_000)
-
-    expect(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, caster} end)
-
-    expect(Combat, :splash_targets, 5, fn "prontera", cell, 1, ^caster ->
-      assert cell in [{100, 100}, {99, 100}, {101, 100}, {100, 99}, {100, 101}]
-      [{:mob, 2_000}, {:mob, poisoned_target}]
-    end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, 2_000, :sc_poison, params ->
       assert params == [duration: 18_000, caster_id: 1_000, source_type: :player]
       :ok
     end)
 
-    assert {:ok, %Group{}} = AsVenomdust.on_interval(group(1), 1_000)
+    assert {:ok, %Group{}} = AsVenomdust.on_unit_hit(group(1), @center, {:mob, 2_000}, 1_000)
+    assert {:ok, %Group{}} = AsVenomdust.on_unit_hit(group(1), @center, {:mob, 2_001}, 1_000)
   end
 
   @tag game_mode: :renewal
   test "preserves a mob caster as the typed Poison source" do
-    caster = %{unit_type: :mob, unit_id: 3_000, map_name: "prontera"}
     mob_group = %{group(1) | caster_type: :mob, caster_id: 3_000}
-
-    expect(Combat, :resolve_combatant, fn :mob, 3_000 -> {:ok, caster} end)
-    stub(Combat, :splash_targets, fn "prontera", _cell, 1, ^caster -> [{:player, 4_000}] end)
 
     expect(StatusInterpreter, :apply_status, fn :player, 4_000, :sc_poison, params ->
       assert params == [duration: 18_000, caster_id: 3_000, source_type: :mob]
       :ok
     end)
 
-    assert {:ok, %Group{}} = AsVenomdust.on_interval(mob_group, 1_000)
+    assert {:ok, %Group{}} = AsVenomdust.on_unit_hit(mob_group, @center, {:player, 4_000}, 1_000)
   end
 
   @tag game_mode: :pre_renewal
   test "classic poisons for a full minute" do
-    caster = %{unit_type: :player, unit_id: 1_000, map_name: "prontera"}
-
-    expect(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, caster} end)
-    stub(Combat, :splash_targets, fn "prontera", _cell, 1, ^caster -> [{:mob, 2_000}] end)
-
     expect(StatusInterpreter, :apply_status, fn :mob, 2_000, :sc_poison, params ->
       assert params == [duration: 60_000, caster_id: 1_000, source_type: :player]
       :ok
     end)
 
-    assert {:ok, %Group{}} = AsVenomdust.on_interval(group(1), 1_000)
+    assert {:ok, %Group{}} = AsVenomdust.on_unit_hit(group(1), @center, {:mob, 2_000}, 1_000)
     assert AsVenomdust.definition(:renewal).duration == List.duplicate(18_000, 10)
   end
 
@@ -273,6 +270,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
       | group_id: group_id,
         created_at: 0,
         interval: 1_000,
+        unit_range: 1,
         next_tick_at: Keyword.fetch!(opts, :next_tick_at),
         expires_at: Keyword.fetch!(opts, :expires_at)
     }

@@ -1,7 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
   @moduledoc """
-  Magnus Exorcismus (PR_MAGNUS). A 33-cell holy field pulsing every three seconds,
-  each pulse striking level times at 130% MATK against undead and demons.
+  Magnus Exorcismus (PR_MAGNUS). A 33-cell holy field whose cells each strike the
+  enemies within one cell of them, level times at 130% MATK against undead and
+  demons. A unit is struck at most once every three seconds by all Magnus
+  Exorcismus fields together.
 
   Renewal: every other enemy on the field takes 100% MATK per hit; a 4 s cast plus
   1 s fixed, a 1 s delay, a 6 s cooldown, and 4 to 13 s of field. Pre-renewal: only
@@ -34,9 +36,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @footprint [
     {-1, -3},
@@ -90,36 +92,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
        state: %{},
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
+       unit_range: 1,
+       no_overlap: true,
        path_check: true
      }}
   end
 
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
-  def on_interval(%Group{center: center, map_name: map_name, cells: cells} = group, _now) do
-    definition = definition()
-    footprint = MapSet.new(cells)
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
 
+  @impl Ground
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs) do
     case Combat.resolve_combatant(group.caster_id) do
-      {:ok, caster} ->
-        map_name
-        |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
-        |> Enum.filter(&on_footprint?(&1, footprint))
-        |> Enum.each(&hit(group, definition, caster, &1))
-
-        {:ok, group}
-
-      {:error, _reason} ->
-        {:ok, group}
+      {:ok, caster} -> SplashTargets.eligible(refs, caster)
+      {:error, _reason} -> []
     end
   end
 
-  @spec on_footprint?({atom(), integer()}, MapSet.t({integer(), integer()})) :: boolean()
-  defp on_footprint?({unit_type, target_id}, footprint) do
-    case SpatialIndex.get_unit_position(unit_type, target_id) do
-      {:ok, {x, y, _map_name}} -> MapSet.member?(footprint, {x, y})
-      {:error, :not_found} -> false
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, target, _now) do
+    with {:ok, caster} <- Combat.resolve_combatant(group.caster_id) do
+      hit(group, definition(), caster, target)
     end
+
+    {:ok, group}
   end
 
   @spec hit(Group.t(), struct(), struct(), {atom(), integer()}) :: :ok
