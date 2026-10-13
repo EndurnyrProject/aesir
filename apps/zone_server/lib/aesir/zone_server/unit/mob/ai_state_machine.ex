@@ -541,7 +541,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       # status caught it, dealing no damage) still advances the attack cadence.
       case Combat.execute_mob_attack(state, target_ref) do
         result when result in [:ok, :intercepted] ->
-          %{state | last_attack_time: current_time}
+          MobState.rest(%{state | last_attack_time: current_time}, current_time)
 
         {:error, reason} ->
           # Attack failed, don't update attack time

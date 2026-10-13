@@ -593,6 +593,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.last_attack_time >= before
     end
 
+    test "a resting mob skips its AI tick and wakes when the rest ends" do
+      reject(&MobSkillDb.rows_for/1)
+      reject(&Combat.execute_mob_attack/2)
+
+      resting = %{build_mob_state() | next_think_at: System.system_time(:millisecond) + 300}
+      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, resting)
+
+      assert updated.ai_timer_ref
+      assert Process.read_timer(updated.ai_timer_ref) <= 300
+    end
+
     test "a cast's end starts the attack delay" do
       state = build_mob_state() |> MobState.set_casting(%{row: row(), complete_at: 0})
       stub_living_target()
@@ -605,6 +616,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       {:noreply, updated} = MobSession.handle_info({:casting, :complete}, state)
 
       assert updated.last_attack_time >= before
+      assert updated.next_think_at >= before + MobState.get_attack_motion(state)
     end
   end
 

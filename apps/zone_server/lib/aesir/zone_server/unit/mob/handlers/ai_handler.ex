@@ -22,8 +22,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
 
   @doc """
   Processes a periodic `{:ai, :tick}`: dead and dormant mobs drop it, a
-  casting mob stays locked, and otherwise runs skill selection/AI and
-  reschedules the next tick.
+  casting mob stays locked, a resting mob (`MobState.thinking?/2`) waits until
+  its rest ends, and otherwise runs skill selection/AI and reschedules the next
+  tick.
   """
   @spec handle_ai_tick(MobState.t()) :: {:noreply, MobState.t()}
   def handle_ai_tick(state) do
@@ -40,6 +41,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         # A casting mob is locked: no movement, no melee, no re-selection.
         # Completion is driven by the separate {:casting, :complete} timer.
         {:noreply, schedule_ai_tick(state)}
+
+      not MobState.thinking?(state, System.system_time(:millisecond)) ->
+        # Resting after an attack or a cast's end: think again once it passes.
+        rest = state.next_think_at - System.system_time(:millisecond)
+        {:noreply, schedule_ai_tick(state, min(max(rest, 1), @ai_tick_interval))}
 
       true ->
         updated_state = state |> run_skill_or_ai() |> schedule_ai_tick()

@@ -125,6 +125,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert_received :attacked
       assert result.last_attack_time != nil
     end
+
+    test "a landed swing rests the AI for the mob's attack motion" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
+      stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
+      state = combat_mob_state()
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.next_think_at == result.last_attack_time + MobState.get_attack_motion(state)
+    end
   end
 
   describe "find_nearby_targets/1 targeting filter via process_ai aggro" do

@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   completion, and aborting it on a forced interrupt or on active damage when
   its row is cancelable. A status that lands mid-cast does not interrupt it;
   the cast is judged when it completes. A cast's end and its cancel both start
-  the mob's attack delay.
+  the mob's attack delay; a cast's end also rests its AI for its attack motion.
   Extracted from MobSession to improve modularity and maintainability.
 
   Cross-references `Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler` to
@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
       {:ok,
        state
        |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
-       |> start_attack_delay()}
+       |> start_attack_delay()
+       |> MobState.rest(now)}
     else
       MobSkillExecutor.broadcast_cast_cancel(state)
       {:rejected, state}
@@ -82,6 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
       |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
       |> MobState.clear_casting()
       |> start_attack_delay()
+      |> MobState.rest(now)
 
     if updated_state.ai_timer_ref, do: Process.cancel_timer(updated_state.ai_timer_ref)
 

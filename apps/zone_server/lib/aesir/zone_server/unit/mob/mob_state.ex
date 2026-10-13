@@ -104,6 +104,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     last_movement_end_time: nil,
     last_idle_movement_time: nil,
     last_attack_time: nil,
+    # The AI does not think before this time (ms): after an attack or a cast's
+    # end it rests for its attack motion.
+    next_think_at: nil,
 
     # Combat state
     hp: nil,
@@ -196,6 +199,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           last_movement_end_time: integer() | nil,
           last_idle_movement_time: integer() | nil,
           last_attack_time: integer() | nil,
+          next_think_at: integer() | nil,
           hp: integer(),
           max_hp: integer(),
           base_max_hp: integer() | nil,
@@ -881,14 +885,51 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     mob_data.chase_range
   end
 
+  @min_amotion 100
+  @max_motion 8_000
+
   @doc """
-  Gets the mob's attack delay in milliseconds, applying any aspd_rate bonus.
+  Gets the mob's attack delay in milliseconds: its database delay scaled by an
+  `aspd_rate` bonus that only ever shortens it, kept between its attack motion
+  and 8000.
   """
   @spec get_attack_delay(t()) :: integer()
-  def get_attack_delay(%__MODULE__{mob_data: mob_data, stat_bonus: stat_bonus}) do
-    rate = Map.get(stat_bonus, :aspd_rate, 0)
-    div(mob_data.attack_delay * (100 - rate), 100)
+  def get_attack_delay(%__MODULE__{mob_data: mob_data, stat_bonus: stat_bonus} = state) do
+    rate = max(Map.get(stat_bonus, :aspd_rate, 0), 0)
+
+    (mob_data.attack_delay * (100 - rate))
+    |> div(100)
+    |> max(get_attack_motion(state))
+    |> min(@max_motion)
   end
+
+  @doc """
+  Gets the mob's attack motion in milliseconds: its database motion scaled by
+  its `aspd_rate` bonus, kept between 100 and 8000.
+  """
+  @spec get_attack_motion(t()) :: integer()
+  def get_attack_motion(%__MODULE__{mob_data: mob_data, stat_bonus: stat_bonus}) do
+    rate = Map.get(stat_bonus, :aspd_rate, 0)
+
+    (mob_data.attack_motion * (100 - rate))
+    |> div(100)
+    |> max(@min_amotion)
+    |> min(@max_motion)
+  end
+
+  @doc """
+  Rests the mob's AI for its attack motion from `now` (ms), never shortening a
+  longer rest.
+  """
+  @spec rest(t(), integer()) :: t()
+  def rest(%__MODULE__{} = state, now) do
+    %{state | next_think_at: max(now + get_attack_motion(state), state.next_think_at || now)}
+  end
+
+  @doc "Whether the mob's AI may think at `now` (ms)."
+  @spec thinking?(t(), integer()) :: boolean()
+  def thinking?(%__MODULE__{next_think_at: nil}, _now), do: true
+  def thinking?(%__MODULE__{next_think_at: next}, now), do: now >= next
 
   # Private Helper Functions
 

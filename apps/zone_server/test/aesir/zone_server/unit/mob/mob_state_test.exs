@@ -85,6 +85,41 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     MobState.new(1, mob_data, spawn_ref, "prontera", 100, 100)
   end
 
+  describe "attack motion, attack delay and rest" do
+    defp motion_state(motion, delay, rate) do
+      state = build_mob_state()
+
+      %{
+        state
+        | mob_data: %{state.mob_data | attack_motion: motion, attack_delay: delay},
+          stat_bonus: %{aspd_rate: rate}
+      }
+    end
+
+    test "the motion scales by the rate and stays between 100 and 8000" do
+      assert MobState.get_attack_motion(motion_state(500, 1_200, 20)) == 400
+      assert MobState.get_attack_motion(motion_state(110, 1_200, 50)) == 100
+      assert MobState.get_attack_motion(motion_state(9_000, 9_000, 0)) == 8_000
+    end
+
+    test "the delay only ever shortens and never drops below the motion" do
+      assert MobState.get_attack_delay(motion_state(500, 1_200, 25)) == 900
+      assert MobState.get_attack_delay(motion_state(500, 1_200, -50)) == 1_200
+      assert MobState.get_attack_delay(motion_state(1_000, 800, 0)) == 1_000
+    end
+
+    test "a rest lasts the motion and never shortens a longer one" do
+      state = motion_state(500, 1_200, 0)
+      assert MobState.thinking?(state, 0)
+
+      rested = MobState.rest(state, 10_000)
+      refute MobState.thinking?(rested, 10_499)
+      assert MobState.thinking?(rested, 10_500)
+
+      assert MobState.rest(%{rested | next_think_at: 20_000}, 10_000).next_think_at == 20_000
+    end
+  end
+
   describe "stolen_from" do
     test "a freshly built mob state is not stolen from" do
       state = build_mob_state()
