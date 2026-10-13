@@ -3,8 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Volcano do
   Volcano (SC_VOLCANO), the fire field buff left by the Sage's Volcano.
 
   Every occupant's fire attack gains the tabulated element points. Renewal grants
-  everyone 5 plus 5 per level ATK and MATK (weapon ATK for mobs); pre-renewal grants
-  10 per level weapon ATK to fire-element holders only.
+  everyone 5 plus 5 per level status ATK and MATK; pre-renewal grants 10 per
+  level to fire-element holders only, as status ATK for players and homunculi
+  and as weapon ATK for monsters, which have no status ATK.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_volcano,
@@ -31,9 +32,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Volcano do
 
   defp attack_modifiers(level, unit_type) do
     case {GameMode.mode(), unit_type} do
-      {:renewal, :mob} -> %{watk: 5 + 5 * level}
-      {:renewal, _player} -> %{atk: 5 + 5 * level, matk: 5 + 5 * level}
-      {:pre_renewal, _any} -> %{watk: 10 * level}
+      {:renewal, _any} -> %{batk: 5 + 5 * level, matk: 5 + 5 * level}
+      {:pre_renewal, :mob} -> %{watk: 10 * level}
+      {:pre_renewal, _any} -> %{batk: 10 * level}
     end
   end
 end

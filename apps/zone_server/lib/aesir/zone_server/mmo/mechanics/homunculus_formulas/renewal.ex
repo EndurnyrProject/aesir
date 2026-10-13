@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas.Renewal do
   @spec derive(HomunculusFormulas.input()) :: HomunculusFormulas.result()
   def derive(%{level: level, base: base, effective: stats, modifiers: mods} = input) do
     combat = %{
-      atk: 2 * level + stats.str,
+      atk: 2 * level + stats.str + Map.get(mods, :batk, 0),
       atk_min: div(stats.str + stats.dex, 5),
       atk_max: div(stats.luk + stats.str + stats.dex, 3),
       def:

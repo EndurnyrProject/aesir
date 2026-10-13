@@ -8,8 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LoudTest do
 
   describe "modifiers/2" do
     @tag game_mode: :renewal
-    test "renewal grants +4 STR and +30 base ATK" do
-      assert %{str: 4, watk: 30} = Loud.modifiers(entry([]), %{})
+    test "renewal grants +4 STR and +30 status ATK" do
+      assert %{str: 4, batk: 30} = Loud.modifiers(entry([]), %{})
     end
 
     @tag game_mode: :pre_renewal
@@ -19,9 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LoudTest do
   end
 
   describe "calc_flags" do
-    test "includes :str and :watk" do
+    test "includes :str and :atk" do
       assert :str in Loud.metadata().calc_flags
-      assert :watk in Loud.metadata().calc_flags
+      assert :atk in Loud.metadata().calc_flags
     end
   end
 end

@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   """
   @spec prepare_components(PhysicalAttack.parts(), PhysicalAttack.context()) :: components()
   def prepare_components(parts, context) do
-    weapon = parts.weapon_atk + parts.overrefine_atk + Map.get(context, :weapon_bonus, 0)
+    weapon = parts.weapon_atk + parts.overrefine_atk
 
     %{
       status_atk: parts.status_atk,
@@ -159,7 +159,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   @spec weapon_bounds(PhysicalAttack.weapon_inputs()) :: {non_neg_integer(), non_neg_integer()}
   def weapon_bounds(inputs) do
     base = inputs.base_atk
-    center = 200 * (base + inputs.refine_atk) + base * inputs.primary_stat
+
+    center =
+      200 * (base + inputs.refine_atk + Map.get(inputs, :status_watk, 0)) +
+        base * inputs.primary_stat
+
     variance = 10 * base * inputs.weapon_level
     minimum = max(div(center - variance, 200), 0)
     maximum = min(div(center + variance, 200), 65_535)

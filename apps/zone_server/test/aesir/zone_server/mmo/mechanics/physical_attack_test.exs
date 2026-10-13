@@ -20,6 +20,18 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     assert PreRenewal.weapon_bounds(critical) == {100, 100}
   end
 
+  test "status weapon ATK shifts the renewal centre and raises the classic maximum" do
+    inputs = %{weapon_inputs() | status_watk: 20}
+
+    assert Renewal.weapon_bounds(inputs) == {142, 172}
+    assert PreRenewal.weapon_bounds(inputs) == {42, 119}
+
+    # The classic DEX minimum is capped by the raised maximum.
+    low = %{inputs | base_atk: 10, dex: 30}
+    assert PreRenewal.weapon_bounds(low) == {30, 30}
+    assert PreRenewal.weapon_bounds(%{low | status_watk: 0}) == {10, 10}
+  end
+
   test "base attack adds each component once and doubles only Renewal right-hand status ATK" do
     parts = parts()
     assert Renewal.base_attack(parts) == 165
@@ -107,14 +119,18 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       neutral_context()
       |> Map.merge(%{
         attacker_cards: [50],
-        weapon_bonus: 5,
         flat_bonus: 4,
         atk_rate: 25,
         long_atk_rate: 20
       })
 
-    assert renewal(parts(), context) == 354
-    assert classic(parts(), %{context | attacker_cards: [50, 20]}) == 358
+    # Renewal: status 40 and mastery 7 take only the 25% rate (50, 8); weapon
+    # 103 and equipment 19 take the card (154, 28) then the rate (192, 35);
+    # 277 + 8, then the long rate: 342. Classic: 142 at 125% is 177, the
+    # minimum soft DEF leaves 176, refine 10 and mastery 7 make 193, then the
+    # card and the range rate as one product: 347.
+    assert renewal(parts(), context) == 342
+    assert classic(parts(), %{context | attacker_cards: [50, 20]}) == 347
   end
 
   test "simple defense subtracts both DEF buckets and does not apply Renewal Res" do
@@ -271,7 +287,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       dex: 30,
       arrow?: false,
       critical?: false,
-      max_weapon_damage?: false
+      max_weapon_damage?: false,
+      status_watk: 0
     }
   end
 

@@ -955,13 +955,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     do: 3 * Keyword.get(opts, :spirit_spheres, Map.get(attacker, :spirit_spheres, 0))
 
   # Classic Stave Crasher's base is the MATK roll in place of the weapon roll,
-  # sized like it; base ATK, overrefine and the status weapon ATK and ATK rate
-  # (which only scale base and weapon ATK) do not apply to it.
+  # sized like it; base ATK, overrefine and the status ATK rate (which only
+  # scales base and weapon ATK) do not apply to it, and the status weapon ATK
+  # lives in the weapon roll it replaces.
   defp classic_stave_base(parts, context, nil), do: {parts, context}
 
   defp classic_stave_base(parts, context, matk) do
     {%{parts | weapon_atk: matk, status_atk: 0, flat_atk: 0, overrefine_atk: 0},
-     %{context | weapon_bonus: 0, flat_bonus: 0, atk_rate: 0}}
+     %{context | flat_bonus: 0, atk_rate: 0}}
   end
 
   # Renewal attributes each component of both hands before the ratio and defense,
@@ -1193,7 +1194,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       post_defense_atk: post_defense_atk(attacker_modifiers, skill_id),
       skill_atk_rate: EquipmentBonuses.skill_atk_rate(attacker, skill_id),
       skill_taken_rate: EquipmentBonuses.sub_skill_rate(defender, skill_id),
-      weapon_bonus: Map.get(attacker_modifiers, :watk, 0),
       flat_bonus:
         Map.get(attacker_modifiers, :damage_bonus, 0) + Map.get(attacker_modifiers, :atk_bonus, 0),
       atk_rate: Map.get(attacker_modifiers, :atk_rate, 0),
@@ -1807,17 +1807,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp apply_status_effect_damage_modifiers(damage, modifiers, true),
     do: DamageShared.apply_damage_multiplier(damage, modifiers)
 
+  # Status weapon ATK and status ATK live in the unit's base roll, which a
+  # replaced base does not have; only the flat channels and the ATK rate
+  # (SC_INCATKRATE, Curse's -25, Provoke) act here, before the damage multiplier.
   defp apply_status_effect_damage_modifiers(damage, modifiers, false) do
     damage_bonus = Map.get(modifiers, :damage_bonus, 0)
     atk_bonus = Map.get(modifiers, :atk_bonus, 0)
-    # :watk is flat weapon ATK granted by statuses (SC_LOUD / Crazy Uproar, Impositio
-    # Manus); it is added as flat ATK alongside :atk_bonus / :damage_bonus.
-    weapon_atk = Map.get(modifiers, :watk, 0)
-    # :atk_rate is an additive percent delta on physical damage (SC_INCATKRATE,
-    # Curse's -25, Provoke). Applied after flat ATK, before the damage multiplier.
     atk_rate = Map.get(modifiers, :atk_rate, 0)
 
-    flat_atk = damage_bonus + atk_bonus + weapon_atk
+    flat_atk = damage_bonus + atk_bonus
     scaled_atk = (damage + flat_atk) * (100 + atk_rate) / 100
 
     DamageShared.apply_damage_multiplier(scaled_atk, modifiers)

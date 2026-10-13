@@ -626,7 +626,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       attacker = CombatTestHelper.create_mob_combatant()
       defender = CombatTestHelper.create_mob_combatant()
 
-      assert {:ok, 480} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
+      assert {:ok, 390} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
 
       assert {:ok, 150} =
                DamageCalculator.apply_modifier_pipeline(100, attacker, defender,
@@ -674,7 +674,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert result == mode_value(100, 102)
     end
 
-    test "adds flat weapon ATK (:watk) granted by statuses (SC_LOUD / Impositio)" do
+    test "status weapon ATK (:watk) is not read by the scalar: it lives in the weapon roll" do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
@@ -683,9 +683,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       attacker = CombatTestHelper.create_player_combatant()
       defender = CombatTestHelper.create_mob_combatant()
 
-      assert {:ok, result} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
-      # SC_LOUD's +30 base ATK flows into damage as flat weapon ATK
-      assert result == 130
+      assert {:ok, 100} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
     end
   end
 

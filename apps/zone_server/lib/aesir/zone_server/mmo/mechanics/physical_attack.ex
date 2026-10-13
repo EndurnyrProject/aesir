@@ -32,8 +32,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           dex: integer()
         }
 
-  @typedoc "Selected weapon and effective stats used for its damage roll."
+  @typedoc """
+  Selected weapon and effective stats used for its damage roll. `status_watk`
+  is the status weapon ATK the hand takes: it raises the classic maximum and
+  shifts the renewal centre, never the renewal variance.
+  """
   @type weapon_inputs :: %{
+          optional(:status_watk) => integer(),
           base_atk: non_neg_integer(),
           refine_atk: non_neg_integer(),
           weapon_level: non_neg_integer(),
@@ -67,7 +72,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
   @typedoc "Captured modifier and defense values; implementations perform no lookups."
   @type context :: %{
           optional(:defense_mode) => :normal | :simple | :ignore | :soft_only,
-          optional(:weapon_bonus) => integer(),
           optional(:flat_bonus) => integer(),
           optional(:atk_rate) => integer(),
           optional(:post_defense_atk) => integer(),

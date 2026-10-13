@@ -83,13 +83,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     end
   end
 
-  defp roll_player_weapon(parts, _snapshot, nil, _attacker, _critical?), do: parts
+  # A classic bare hand still rolls its status weapon ATK as its maximum, from
+  # an unscaled DEX minimum; a renewal empty hand reads zero.
+  defp roll_player_weapon(parts, snapshot, nil, attacker, critical?) do
+    case bare_hand_watk(attacker) do
+      0 -> parts
+      maximum -> %{parts | weapon_atk: bare_hand_roll(maximum, snapshot.dex, attacker, critical?)}
+    end
+  end
 
   defp roll_player_weapon(parts, snapshot, hand, attacker, critical?) do
     combat_stats = attacker.combat_stats
 
     inputs = %{
-      base_atk: hand.base_atk + level4_watk(attacker, hand),
+      base_atk: hand.base_atk,
+      status_watk: status_watk(attacker, hand),
       refine_atk: hand.refine_atk,
       weapon_level: hand.weapon_level,
       primary_stat:
@@ -110,23 +118,61 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     }
   end
 
-  # Classic status weapon ATK for a level-4 weapon raises that hand's weapon ATK,
-  # the roll's maximum. A left hand takes it only when its weapon has ATK.
-  defp level4_watk(_attacker, %{slot: :left_hand, base_atk: 0}), do: 0
-
-  defp level4_watk(attacker, %{weapon_level: 4}) do
-    :player
-    |> ModifierCalculator.get_all_modifiers(attacker.unit_id)
-    |> Map.get(:level4_watk, 0)
+  defp bare_hand_watk(attacker) do
+    if GameMode.mode() == :pre_renewal,
+      do: :player |> ModifierCalculator.get_all_modifiers(attacker.unit_id) |> Map.get(:watk, 0),
+      else: 0
   end
 
-  defp level4_watk(_attacker, _hand), do: 0
+  defp bare_hand_roll(maximum, dex, attacker, critical?) do
+    if critical? or Map.get(attacker.combat_stats, :max_weapon_damage, false) do
+      maximum
+    else
+      minimum = min(max(dex, 0), maximum)
+      DamageShared.roll(minimum, maximum)
+    end
+  end
+
+  # The status weapon ATK a hand's roll takes. Classic: the right hand always,
+  # the left hand only when its weapon has ATK, plus the level-4 key for a
+  # level-4 weapon. Renewal: the right hand when it holds a weapon, else the
+  # left; a second weapon never.
+  defp status_watk(attacker, hand) do
+    modifiers = ModifierCalculator.get_all_modifiers(:player, attacker.unit_id)
+
+    case GameMode.mode() do
+      :pre_renewal -> classic_status_watk(hand, modifiers)
+      :renewal -> renewal_status_watk(attacker, hand, modifiers)
+    end
+  end
+
+  defp classic_status_watk(%{slot: :left_hand, base_atk: 0}, _modifiers), do: 0
+
+  defp classic_status_watk(hand, modifiers) do
+    level4 = if hand.weapon_level == 4, do: Map.get(modifiers, :level4_watk, 0), else: 0
+    Map.get(modifiers, :watk, 0) + level4
+  end
+
+  defp renewal_status_watk(attacker, hand, modifiers) do
+    right_weapon? = weapon_atk?(Map.get(attacker, :right_hand))
+
+    if (hand.slot == :right_hand and right_weapon?) or
+         (hand.slot == :left_hand and not right_weapon?),
+       do: Map.get(modifiers, :watk, 0),
+       else: 0
+  end
+
+  defp weapon_atk?(%{base_atk: base_atk, refine_atk: refine_atk}), do: base_atk + refine_atk > 0
+  defp weapon_atk?(_hand), do: false
 
   @doc """
   Rolls the existing non-player base attack representation.
 
   A critical takes the maximum weapon attack instead of a roll; in renewal the
-  critical base is then multiplied by 14/10.
+  critical base is then multiplied by 14/10. A monster's status weapon ATK
+  moves both bounds of its classic roll and nothing in renewal; its status ATK
+  joins its renewal base only (a classic monster has none). A homunculus takes
+  both in its own stat derivation.
   """
   @spec non_player_base_attack(map(), boolean()) :: {:ok, integer()} | {:error, atom()}
   def non_player_base_attack(attacker, critical? \\ false)
@@ -144,14 +190,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     atk = attacker.combat_stats.atk
     atk_min = div(atk * 80, 100)
     atk_max = div(atk * 120, 100)
+    {status_watk, status_batk} = mob_status_attack(attacker)
 
-    weapon_atk = weapon_attack(atk_min, atk_max, critical?)
-    batk = attacker.base_stats.str + attacker.progression.base_level
+    weapon_atk = weapon_attack(atk_min + status_watk, atk_max + status_watk, critical?)
+    batk = attacker.base_stats.str + attacker.progression.base_level + status_batk
 
     {:ok, critical_base(weapon_atk + batk, critical?)}
   end
 
   def non_player_base_attack(_attacker, _critical?), do: {:error, :unknown_unit_type}
+
+  defp mob_status_attack(attacker) do
+    modifiers = ModifierCalculator.get_all_modifiers(:mob, attacker.unit_id)
+
+    case GameMode.mode() do
+      :pre_renewal -> {Map.get(modifiers, :watk, 0), 0}
+      :renewal -> {0, Map.get(modifiers, :batk, 0)}
+    end
+  end
 
   defp weapon_attack(min_atk, max_atk, false),
     do: DamageShared.roll(min(min_atk, max_atk), max_atk)

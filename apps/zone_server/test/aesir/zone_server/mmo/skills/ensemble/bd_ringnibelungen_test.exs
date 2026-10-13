@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
   alias Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungen
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
@@ -155,6 +156,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
 
     assert %{val2: 125} = StatusStorage.get_status(:player, @player_id, :sc_nibelungen)
     assert StatusInterpreter.get_all_modifiers(:player, @player_id) == %{level4_watk: 125}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic gives a non-player holder the value as plain weapon ATK" do
+    entry = %StatusEntry{type: :sc_nibelungen, val2: 125, state: %{}}
+
+    assert Nibelungen.modifiers(entry, %{unit_type: :mob}) == %{watk: 125}
+    assert Nibelungen.modifiers(entry, %{unit_type: :homunculus}) == %{watk: 125}
   end
 
   @tag game_mode: :renewal

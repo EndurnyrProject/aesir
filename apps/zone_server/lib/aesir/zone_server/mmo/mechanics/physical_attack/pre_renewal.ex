@@ -94,8 +94,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
   defp weapon_cards(nil), do: nil
   defp weapon_cards(%{weapon: cards}), do: cards
 
+  # The weapon roll (its maximum already raised by status weapon ATK) takes the
+  # size fix; status ATK and the flat ATK channels join after it.
   defp base(parts, context) do
-    weapon = div((parts.weapon_atk + Map.get(context, :weapon_bonus, 0)) * context.size_rate, 100)
+    weapon = div(parts.weapon_atk * context.size_rate, 100)
 
     parts.status_atk + parts.flat_atk + weapon + parts.overrefine_atk +
       Map.get(context, :flat_bonus, 0)
@@ -134,7 +136,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
   @impl true
   @spec weapon_bounds(PhysicalAttack.weapon_inputs()) :: {non_neg_integer(), non_neg_integer()}
   def weapon_bounds(inputs) do
-    maximum = inputs.base_atk
+    maximum = inputs.base_atk + Map.get(inputs, :status_watk, 0)
     minimum = min(div(max(inputs.dex, 0) * (80 + 20 * inputs.weapon_level), 100), maximum)
     minimum = if inputs.arrow?, do: div(minimum * maximum, 100), else: minimum
     maximum = max(minimum, maximum)

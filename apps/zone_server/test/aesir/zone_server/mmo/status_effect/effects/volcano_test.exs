@@ -13,25 +13,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.VolcanoTest do
   # rAthena src/map/status.cpp:10994-11007 (val2 = 5 + val1 * 5, enchant_eff),
   # 7300-7301 (batk), 7352-7353 (watk, BL_MOB only), 7447-7448 (matk).
   @tag game_mode: :renewal
-  test "grants players exact ATK and MATK at levels 1 through 5" do
-    for {level, atk} <- [{1, 10}, {2, 15}, {3, 20}, {4, 25}, {5, 30}] do
-      modifiers = Volcano.modifiers(instance(level), %{unit_type: :player})
+  test "renewal grants every unit exact status ATK and MATK at levels 1 through 5" do
+    for {level, atk} <- [{1, 10}, {2, 15}, {3, 20}, {4, 25}, {5, 30}],
+        unit_type <- [:player, :mob, :homunculus] do
+      modifiers = Volcano.modifiers(instance(level), %{unit_type: unit_type})
 
-      assert Map.get(modifiers, :atk) == atk
+      assert Map.get(modifiers, :batk) == atk
       assert Map.get(modifiers, :matk) == atk
       refute Map.has_key?(modifiers, :watk)
     end
   end
 
-  @tag game_mode: :renewal
-  test "grants mobs exact weapon ATK, and never player ATK/MATK, at levels 1 through 5" do
-    for {level, watk} <- [{1, 10}, {2, 15}, {3, 20}, {4, 25}, {5, 30}] do
-      modifiers = Volcano.modifiers(instance(level), %{unit_type: :mob})
+  @tag game_mode: :pre_renewal
+  test "classic grants a fire-element player status ATK, not weapon ATK" do
+    stub(UnitRegistry, :get_unit_info, fn :player, 1 -> {:ok, %{element: :fire}} end)
 
-      assert Map.get(modifiers, :watk) == watk
-      refute Map.has_key?(modifiers, :atk)
-      refute Map.has_key?(modifiers, :matk)
-    end
+    modifiers = Volcano.modifiers(instance(5), %{unit_type: :player, target_id: 1})
+
+    assert Map.get(modifiers, :batk) == 50
+    refute Map.has_key?(modifiers, :watk)
+    refute Map.has_key?(modifiers, :matk)
   end
 
   test "raises the fire element ratio by the exact tabulated points at levels 1 through 5" do

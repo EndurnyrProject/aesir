@@ -9,14 +9,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Loud do
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
-    calc_flags: [:str, :watk]
+    calc_flags: [:str, :atk]
 
   alias Aesir.Commons.GameMode
 
   @impl true
   def modifiers(_instance, _context) do
     case GameMode.mode() do
-      :renewal -> %{str: 4, watk: 30}
+      :renewal -> %{str: 4, batk: 30}
       :pre_renewal -> %{str: 4}
     end
   end

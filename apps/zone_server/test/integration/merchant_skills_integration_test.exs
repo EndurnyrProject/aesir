@@ -21,15 +21,12 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
 
   ## Scoping
 
-  - MC_LOUD's `Effects.Loud` grants `%{str: 4, watk: 30}` (rAthena's `+4 STR,
-    +30 batk`). Effective STR is wired through `Stats.get_effective_stat/2` and
-    is asserted directly. The `:watk` bonus (shared with `Effects.Impositio`)
+  - MC_LOUD's `Effects.Loud` grants `%{str: 4, batk: 30}` in renewal (+4 STR
+    and +30 status ATK). Effective STR is wired through
+    `Stats.get_effective_stat/2` and is asserted directly. The `:batk` bonus
     lands in `modifiers.status_effects`, is readable via
-    `Stats.get_status_modifier/2` (asserted here), and flows into melee/skill
-    damage as flat weapon ATK via `DamageCalculator`'s status-effect damage
-    modifiers — the `:watk`-reaches-damage wiring is proven deterministically in
-    `damage_calculator_test.exs` ("adds flat weapon ATK (:watk) granted by
-    statuses").
+    `Stats.get_status_modifier/2` (asserted here), and joins status ATK before
+    its rate in `Stats.Calculator`, proven in `status_attack_stages_test.exs`.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -96,7 +93,7 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
 
       after_stats = get_player_state(pid).stats
       assert Stats.get_effective_stat(after_stats, :str) == str_before + 4
-      assert Stats.get_status_modifier(after_stats, :watk) == 30
+      assert Stats.get_status_modifier(after_stats, :batk) == 30
     end
   end
 

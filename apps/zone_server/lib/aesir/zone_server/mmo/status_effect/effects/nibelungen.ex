@@ -11,8 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen do
 
   Pre-renewal: the ensemble field starts the status with `val2 = (level + 2) * 25`
   and there is no roll. That value raises the weapon ATK (the weapon roll's
-  maximum) of each hand holding a level-4 weapon. The status does not end the
-  other ensembles' statuses.
+  maximum) of each hand holding a level-4 weapon; a non-player holder takes it
+  as plain weapon ATK. The status does not end the other ensembles' statuses.
   """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -75,11 +75,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Nibelungen do
   end
 
   @impl true
-  def modifiers(%{val2: value}, _context) when is_integer(value) do
-    case GameMode.mode() do
-      :renewal -> value |> outcome_modifiers() |> with_mastery_atk(value)
-      :pre_renewal when value > 0 -> %{level4_watk: value}
-      :pre_renewal -> %{}
+  def modifiers(%{val2: value}, %{unit_type: unit_type}) when is_integer(value) do
+    case {GameMode.mode(), unit_type} do
+      {:renewal, _any} -> value |> outcome_modifiers() |> with_mastery_atk(value)
+      {:pre_renewal, _any} when value <= 0 -> %{}
+      {:pre_renewal, :player} -> %{level4_watk: value}
+      {:pre_renewal, _other} -> %{watk: value}
     end
   end
 

@@ -322,6 +322,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     status_atk =
       values
       |> formulas.base_atk(equipped_weapon_type(stats) in @ranged_weapons)
+      |> Kernel.+(Stats.get_status_modifier(stats, :batk))
       |> apply_batk_rate(Stats.get_status_modifier(stats, :batk_rate))
 
     base_atk = apply_rate(status_atk, Stats.get_equipment_modifier(stats, :atk_rate))

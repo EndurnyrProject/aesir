@@ -85,6 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :phys_damage_reduction,
                :vit_bonus,
                :watk,
+               :batk,
                :mastery_atk,
                # DamageInputs.player_attack_parts/4 (classic weapon roll)
                :level4_watk,

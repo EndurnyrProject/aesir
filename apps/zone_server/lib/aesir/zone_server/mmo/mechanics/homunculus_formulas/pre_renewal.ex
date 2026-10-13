@@ -14,13 +14,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas.PreRenewal do
   @impl true
   @spec derive(HomunculusFormulas.input()) :: HomunculusFormulas.result()
   def derive(%{level: level, raw: raw, base: base, effective: stats, modifiers: mods} = input) do
-    weapon_max = stats.str + level
+    status_watk = Map.get(mods, :watk, 0)
+    weapon_max = stats.str + level + status_watk
     hard_def = (div(level, 10) + div(raw.vit, 5)) |> max(0) |> min(99)
     hard_mdef = (div(level, 10) + div(raw.int, 5)) |> max(0) |> min(99)
 
     combat = %{
-      atk: stats.str + div(stats.str, 10) * div(stats.str, 10),
-      atk_min: min(stats.dex, weapon_max),
+      atk: stats.str + div(stats.str, 10) * div(stats.str, 10) + Map.get(mods, :batk, 0),
+      atk_min: min(stats.dex + status_watk, weapon_max),
       atk_max: weapon_max,
       def:
         hard_def + 4 * input.skin_rank + div(stats.vit, 5) - div(base.vit, 5) +
