@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Castability
@@ -1578,13 +1579,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @doc """
   The cast-range of a skill for a given caster and level, in cells (Chebyshev).
 
-  Resolves the definition's declared range at `level` first (`Definition.range_at_level/2`,
-  a no-op for a flat range). A negative declared range means "use the weapon's range"
-  and resolves to the caster's equipped-weapon attack range at cast time. A skill
-  declaring `vulture_range: true` (the bow skills whose reach trains with Vulture's
-  Eye) adds a player caster's learned Vulture's Eye level to its flat range; no other
-  caster kind gains anything. Exposed so the session handler can size the move-to-range
-  approach for an out-of-range cast.
+  Resolves the definition's declared range at `level` as the server counts it
+  (`SkillRange.database_range/2`: its absolute value, so a negative range does not
+  take the weapon's reach, capped at 14 cells). A skill declaring
+  `vulture_range: true` (the bow skills whose reach trains with Vulture's Eye) then
+  adds a player caster's learned Vulture's Eye level; no other caster kind gains
+  anything. Exposed so the session handler can size the move-to-range approach for
+  an out-of-range cast.
   """
   @spec effective_range(Definition.t(), Active.caster(), non_neg_integer()) :: non_neg_integer()
   def effective_range(definition, game_state, level) do
@@ -1596,12 +1597,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp base_range(definition, game_state, level) do
-    case Definition.range_at_level(definition, level) do
-      range when range >= 0 -> range + vulture_range_bonus(definition, game_state)
-      _weapon_range_sentinel -> weapon_range(game_state)
-    end
-  end
+  defp base_range(definition, game_state, level),
+    do: SkillRange.database_range(definition, level) + vulture_range_bonus(definition, game_state)
 
   defp vulture_range_bonus(%{vulture_range: true}, %PlayerState{} = game_state) do
     game_state.stats.progression.learned_skills
@@ -1619,11 +1616,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     else
       base_range
     end
-  end
-
-  defp weapon_range(caster) do
-    adapter = Caster.for(caster)
-    adapter.attack_range(caster)
   end
 
   defp check_ground_walkable(map_name, x, y) do

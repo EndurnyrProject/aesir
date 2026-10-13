@@ -54,7 +54,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSharpshootingTest do
       assert opts[:critical]
       assert opts[:critical_rate_bonus] == 30
       assert opts[:critical_max_weapon] == false
-      assert opts[:ranged]
       assert opts[:target_skill_units]
       [3001]
     end)
@@ -71,7 +70,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSharpshootingTest do
       assert opts[:skill_ratio] == 450
       assert opts[:length] == 14
       assert opts[:width] == 1
-      assert opts[:ranged]
       assert opts[:critical]
       assert opts[:critical_rate_bonus] == 20
       []

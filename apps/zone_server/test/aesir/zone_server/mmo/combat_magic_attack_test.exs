@@ -708,6 +708,57 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^defender_key, _}}}
     end
 
+    test "a magic skill with a short database range lands as a short-range hit" do
+      flag = BattleFlags.build(:magic, :short, true)
+      attacker = PlayerState.to_combatant(build_caster())
+
+      target =
+        %{build_caster() | character_id: @target_id, account_id: @target_id, x: 151}
+        |> PlayerState.to_combatant()
+
+      target_state = %TestUnit{combatant: target}
+      test_pid = self()
+
+      stub(TargetResolver, :resolve, fn {:player, @target_id} ->
+        {:ok, self(), target_state, :player}
+      end)
+
+      stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
+      stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+      stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+      stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+      stub(StatusInterpreter, :after_damage_taken, fn :player, @target_id, _hit_info -> 0 end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(UnitRegistry, :get_player_pid, fn @caster_id -> {:ok, self()} end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, ^target, opts ->
+        send(test_pid, {:calculated_flag, opts[:attack_flag]})
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(StatusInterpreter, :absorb_hit, fn :player, @target_id, 40, hit_info ->
+        send(test_pid, {:delivered_short, hit_info.is_short})
+        {40, :hit}
+      end)
+
+      stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, @caster_id}, metadata ->
+        send(test_pid, {:delivered, metadata})
+        :ok
+      end)
+
+      assert {:ok, {:player, @target_id}} =
+               MagicAttack.execute_magic_attack(
+                 %TestUnit{combatant: attacker},
+                 {:player, @target_id},
+                 skill_id: 88,
+                 skill_level: 10
+               )
+
+      assert_received {:calculated_flag, ^flag}
+      assert_received {:delivered_short, true}
+      assert_received {:delivered, %{proc_event: %{attack_flag: ^flag}}}
+    end
+
     test "never resolves the defender's session from the attacker's process" do
       flag = BattleFlags.build(:magic, :long, true)
       defender_key = {20, 0}

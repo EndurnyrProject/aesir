@@ -65,7 +65,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcan do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: Formulas.arrow_vulcan_ratio(level, base_level(caster)),
-      ranged: true,
       skip_range: true,
       skip_crit: true,
       hit_divisions: Definition.hit_count_at_level(definition, level)

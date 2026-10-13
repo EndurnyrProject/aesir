@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerangTest do
           assert opts[:damage_base] == :shield
           assert opts[:skip_crit] == true
           assert opts[:skip_range] == true
-          assert opts[:ranged] == true
           :ok
         end)
 

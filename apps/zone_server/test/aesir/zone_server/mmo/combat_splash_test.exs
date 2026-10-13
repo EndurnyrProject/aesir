@@ -381,7 +381,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     assert_received {:hit_info, %{is_short: true}}
   end
 
-  test "execute_splash_attack with ranged: true forces is_short: false in hit_info" do
+  test "a splash skill with a long database range lands as a long-range hit" do
     caster = build_caster()
     test_pid = self()
 
@@ -415,11 +415,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
 
     hits =
       Combat.execute_splash_attack(caster, @center, 2,
-        skill_id: 7,
+        skill_id: 47,
         skill_level: 5,
         skill_ratio: 200,
-        skip_crit: true,
-        ranged: true
+        skip_crit: true
       )
 
     assert hits == [2001]

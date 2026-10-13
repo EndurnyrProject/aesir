@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcThrowarrow do
       skill_level: level,
       skill_ratio: skill_ratio(level),
       hit_divisions: Definition.hit_count_at_level(definition, level),
-      ranged: true,
       skip_range: true,
       skip_crit: true
     ]

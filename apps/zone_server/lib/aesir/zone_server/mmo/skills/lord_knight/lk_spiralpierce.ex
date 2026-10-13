@@ -7,8 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   Renewal folds the 70% base and size adjustment into one integer rate, which
   can round by one point. Classic replaces a player's base with 8% of the
   weapon's weight raised by 50% per level, plus (STR / 10)^2, scaled 125% on
-  small and 75% on large targets; the weapon's refine ATK joins after DEF. Mob casts
-  use physical ranged neutral damage rather than the reference misc attack.
+  small and 75% on large targets; the weapon's refine ATK joins after DEF. A
+  non-player's hit is always long range; mob casts use physical neutral damage
+  rather than the reference misc attack.
   Charging Pierce's optional alteration is not modelled.
   """
   use Aesir.ZoneServer.Mmo.Skill,
@@ -103,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
 
       opts =
         attack_opts(definition, min(level, 5)) ++
-          [skill_ratio: ratio, element: :neutral, ranged: true]
+          [skill_ratio: ratio, element: :neutral]
 
       strike(caster, target_id, target, opts)
     end

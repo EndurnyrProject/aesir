@@ -76,7 +76,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
       assert opts[:skill_id] == 316
       assert opts[:skill_ratio] == Enum.at(expected_ratios, level - 1)
       assert opts[:hit_divisions] == 2
-      assert opts[:ranged]
       assert opts[:skip_range]
       assert opts[:skip_crit]
       :ok

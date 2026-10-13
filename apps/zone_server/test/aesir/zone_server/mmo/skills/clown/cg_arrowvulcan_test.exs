@@ -24,7 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcanTest do
       assert opts[:hit_divisions] == -9
       assert opts[:skip_range]
       assert opts[:skip_crit]
-      assert opts[:ranged]
       :ok
     end)
 

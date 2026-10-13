@@ -108,7 +108,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
           skill_ratio: skill_ratio(level, str, row),
           hit_divisions: Definition.hit_count_at_level(definition, level),
           skip_crit: true,
-          ranged: GameMode.mode() == :renewal,
           length: length,
           width: definition.splash_radius,
           offset: offset,

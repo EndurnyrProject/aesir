@@ -26,8 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.BattleFlags do
 
   import Bitwise
 
-  alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
   alias Aesir.ZoneServer.Mmo.BattleFlag
 
@@ -79,43 +77,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.BattleFlags do
   @spec origin_bit(boolean()) :: flag()
   def origin_bit(true), do: @skill
   def origin_bit(false), do: @normal
-
-  # Hunter traps in both modes; classic Fire Pillar is a trap too.
-  @trap_skills [115, 116, 117, 118, 119, 120, 121, 122, 123, 125]
-  @classic_trap_skills [80 | @trap_skills]
-  # Arrow Shower and Bomb cast by a monster.
-  @monster_short_skills [47, 229]
-  @brandish_spear 57
-
-  @doc """
-  Classifies a skill attack's range axis.
-
-  Traps are always short. A monster's Arrow Shower and Bomb are short, and
-  renewal Brandish Spear is long for every caster. Any other monster or
-  homunculus skill is short within 3 cells of its target and long beyond. A
-  player's skill keeps `declared`, the classification of its own skill range.
-  A non-player without a known position also keeps `declared`.
-  """
-  @spec skill_range(map(), map(), integer() | nil, range()) :: range()
-  def skill_range(attacker, target, skill_id, declared) do
-    cond do
-      skill_id in trap_skills() -> :short
-      attacker.unit_type == :mob and skill_id in @monster_short_skills -> :short
-      skill_id == @brandish_spear and GameMode.mode() == :renewal -> :long
-      attacker.unit_type in [:mob, :homunculus] -> distance_range(attacker, target, declared)
-      true -> declared
-    end
-  end
-
-  defp trap_skills do
-    if GameMode.mode() == :renewal, do: @trap_skills, else: @classic_trap_skills
-  end
-
-  defp distance_range(%{position: {x1, y1}}, %{position: {x2, y2}}, _declared) do
-    if Geometry.chebyshev_distance(x1, y1, x2, y2) <= 3, do: :short, else: :long
-  end
-
-  defp distance_range(_attacker, _target, declared), do: declared
 
   @doc """
   Builds the battle flag describing one hit.

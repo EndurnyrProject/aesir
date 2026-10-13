@@ -48,7 +48,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwMagiccrasherTest do
     expect(Combat, :execute_stave_crasher_attack, fn ^caster, 3001, opts ->
       assert opts[:skill_id] == 365
       assert opts[:skip_crit]
-      assert opts[:ranged]
       assert opts[:skip_range]
       refute Keyword.has_key?(opts, :element)
       :ok

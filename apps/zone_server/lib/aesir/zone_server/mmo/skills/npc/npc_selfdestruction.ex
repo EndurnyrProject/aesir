@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
+  alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -82,17 +83,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   end
 
   defp damage_target(caster, definition, {unit_type, target_id}) do
-    hit_info = %{
-      dmg_type: :magic,
-      is_short: false,
-      element: definition.element,
-      skill_id: definition.id,
-      skill_level: 1,
-      from_caster?: true
-    }
-
     with {:ok, target_pid, target_state, ^unit_type} <-
            TargetResolver.resolve(unit_type, target_id),
+         range = hit_range(caster, target_state, definition.id),
+         hit_info = %{
+           dmg_type: :magic,
+           is_short: range == :short,
+           element: definition.element,
+           skill_id: definition.id,
+           skill_level: 1,
+           from_caster?: true
+         },
          :ok <-
            DamageApplication.apply_unit_damage(
              unit_type,
@@ -102,7 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
              Map.put(
                hit_info,
                :proc,
-               proc_spec(caster, {unit_type, target_id}, target_state, definition.id)
+               proc_spec(caster, {unit_type, target_id}, target_state, {definition.id, range})
              ),
              damage_source(caster, unit_type)
            ) do
@@ -110,14 +111,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     end
   end
 
+  # The monster's distance to each victim decides the hit's range class.
+  defp hit_range(caster, target_state, skill_id) do
+    target = %{position: position(target_state)}
+    SkillRange.classify(%{unit_type: :mob, position: {caster.x, caster.y}}, target, skill_id, 1)
+  end
+
+  defp position(%{x: x, y: y}) when is_integer(x) and is_integer(y), do: {x, y}
+  defp position(_target_state), do: nil
+
   # Self Destruction is a misc skill: its victims' when-hit procs see a misc hit.
   # A monster wears nothing, so the hit's parties are needed only by identity.
-  defp proc_spec(caster, {unit_type, target_id}, target_state, skill_id) do
+  defp proc_spec(caster, {unit_type, target_id}, target_state, {skill_id, range}) do
     EquipProcDispatch.spec(
       %{unit_type: :mob, unit_id: caster.instance_id},
       %{unit_type: unit_type, unit_id: target_id},
       target_state,
-      BattleFlags.build(:misc, :long, true),
+      BattleFlags.build(:misc, range, true),
       skill_id: skill_id
     )
   end

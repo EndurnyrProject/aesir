@@ -76,7 +76,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcThrowarrowTest do
       assert opts[:skill_id] == 324
       assert opts[:skill_ratio] == Enum.at(expected_ratios, level - 1)
       assert opts[:hit_divisions] == 2
-      assert opts[:ranged]
       assert opts[:skip_range]
       assert opts[:skip_crit]
       :ok

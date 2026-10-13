@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -131,7 +132,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
-          from_caster?: true
+          from_caster?: true,
+          range: SkillRange.classify(attacker, target, skill_id, skill_level)
         )
 
       case MagicDefense.resolve(target, Map.put(hit_info, :damage, damage)) do
@@ -317,7 +319,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           element,
           skill_ratio,
           bonus_matk,
-          skill_id,
+          {skill_id, skill_level},
           fixed_damage
         )
 
@@ -425,16 +427,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     coma_decision = decide_coma(caster, target, [damage])
 
     hit_info =
-      element
-      |> magic_hit_info(
+      magic_hit_info(element,
         skill_id: skill_id,
         skill_level: skill_level,
         from_caster?: false,
-        coma?: coma_decision == true
+        coma?: coma_decision == true,
+        range: SkillRange.classify(caster, target, skill_id, skill_level)
       )
-      |> Map.put(
+
+    hit_info =
+      Map.put(
+        hit_info,
         :proc,
-        EquipProcDispatch.spec(caster, target, target_state, magic_attack_flag(),
+        EquipProcDispatch.spec(caster, target, target_state, magic_attack_flag(hit_info),
           divisions: packet_divisions,
           skill_id: skill_id,
           immediate?: EquipProcDispatch.immediate?(skill_id, Keyword.get(opts, :delivery, :unit))
@@ -591,13 +596,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- Targeting.validate_enemy(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
+      range = SkillRange.classify(attacker, target, skill_id, skill_level)
+
       {:ok, %{damage: damage}} =
         MagicDamageCalculator.calculate_magic_damage(attacker, target,
           element: element,
           skill_ratio: skill_ratio,
           bonus_matk: bonus_matk,
           skill_id: skill_id,
-          ignore_mdef: Keyword.get(opts, :ignore_mdef, false)
+          ignore_mdef: Keyword.get(opts, :ignore_mdef, false),
+          attack_flag: BattleFlags.build(:magic, range, true)
         )
 
       {damage, packet_divisions} =
@@ -610,7 +618,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
-          from_caster?: true
+          from_caster?: true,
+          range: range
         )
 
       case MagicDefense.resolve(target, Map.put(hit_info, :damage, damage)) do
@@ -771,7 +780,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          element,
          skill_ratio,
          bonus_matk,
-         skill_id,
+         {skill_id, skill_level},
          nil
        ) do
     {:ok, %{damage: damage}} =
@@ -779,7 +788,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         element: element,
         skill_ratio: skill_ratio,
         bonus_matk: bonus_matk,
-        skill_id: skill_id
+        skill_id: skill_id,
+        attack_flag: attack_flag(attacker, target, skill_id, skill_level)
       )
 
     damage
@@ -791,7 +801,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          element,
          _skill_ratio,
          _bonus_matk,
-         _skill_id,
+         _skill,
          fixed_damage
        )
        when is_integer(fixed_damage) and fixed_damage >= 0 do
@@ -957,7 +967,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp magic_hit_info(element, opts) do
     %{
       dmg_type: :magic,
-      is_short: false,
+      is_short: Keyword.get(opts, :range, :long) == :short,
       element: element,
       skill_id: Keyword.get(opts, :skill_id),
       skill_level: Keyword.get(opts, :skill_level),
@@ -1060,12 +1070,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
              Map.get(splash, :delivery, :direct)
            ),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id),
+         range = SkillRange.classify(attacker, target, skill_id, skill_level),
          {:ok, %{damage: damage}} <-
            MagicDamageCalculator.calculate_magic_damage(attacker, target,
              element: element,
              skill_ratio: distance_ratio(skill_ratio, center, target_state),
              skill_id: skill_id,
-             matk_divisor: divisor
+             matk_divisor: divisor,
+             attack_flag: BattleFlags.build(:magic, range, true)
            ) do
       {damage, packet_divisions} =
         DamageShared.normalize_damage_divisions(damage, hit_divisions)
@@ -1074,7 +1086,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
-          from_caster?: true
+          from_caster?: true,
+          range: range
         )
 
       case MagicDefense.resolve(target, Map.put(hit_info, :damage, damage)) do
@@ -1154,7 +1167,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       |> Map.put(:coma?, coma_decision == true)
       |> Map.put(
         :proc,
-        EquipProcDispatch.spec(attacker, target, target_state, magic_attack_flag(),
+        EquipProcDispatch.spec(attacker, target, target_state, magic_attack_flag(hit_info),
           divisions: packet_divisions,
           skill_id: skill_id,
           immediate?: EquipProcDispatch.immediate?(skill_id, delivery)
@@ -1167,7 +1180,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     hit_info =
       if hit_info[:magic_rod_miss?], do: Map.put(hit_info, :coma?, false), else: hit_info
 
-    if damage > 1, do: EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
+    if damage > 1,
+      do: EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag(hit_info))
 
     packet =
       PacketFactory.build_splash_damage_packet(
@@ -1346,7 +1360,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           DamageApplication.local_damage_effect({:homunculus, unit_id}, damage, hit_info, source)
 
         GenServer.cast(owner_pid, effect)
-        proc = EquipProcDispatch.spec(reflector, caster, state, magic_attack_flag(), proc_opts)
+
+        proc =
+          EquipProcDispatch.spec(reflector, caster, state, magic_attack_flag(hit_info), proc_opts)
+
         Map.put(hit_info, :proc, proc)
 
       {:error, _reason} ->
@@ -1363,7 +1380,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
        ) do
     case TargetResolver.resolve(unit_type, unit_id) do
       {:ok, owner_pid, state, ^unit_type} ->
-        proc = EquipProcDispatch.spec(reflector, caster, state, magic_attack_flag(), proc_opts)
+        proc =
+          EquipProcDispatch.spec(reflector, caster, state, magic_attack_flag(hit_info), proc_opts)
+
         hit_info = Map.put(hit_info, :proc, proc)
 
         DamageApplication.apply_unit_damage(
@@ -1398,7 +1417,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       |> Map.put(:coma?, coma_decision == true)
       |> Map.put(
         :proc,
-        EquipProcDispatch.spec(attacker, target, target_state, magic_attack_flag(),
+        EquipProcDispatch.spec(attacker, target, target_state, magic_attack_flag(hit_info),
           divisions: Keyword.get(opts, :packet_divisions, 1),
           skill_id: skill_id,
           immediate?:
@@ -1414,7 +1433,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         do: Map.put(prepared_hit_info, :coma?, false),
         else: prepared_hit_info
 
-    apply_vanish_hits(attacker, target, target_pid, [damage])
+    apply_vanish_hits(attacker, target, target_pid, [damage], hit_info)
 
     packet =
       PacketFactory.build_splash_damage_packet(
@@ -1478,12 +1497,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
      }}
   end
 
-  defp apply_vanish_hits(attacker, target, target_pid, [damage]) when damage > 1,
-    do: EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
+  defp apply_vanish_hits(attacker, target, target_pid, [damage], hit_info) when damage > 1,
+    do: EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag(hit_info))
 
-  defp apply_vanish_hits(_attacker, _target, _target_pid, _damages), do: :ok
+  defp apply_vanish_hits(_attacker, _target, _target_pid, _damages, _hit_info), do: :ok
 
-  defp magic_attack_flag, do: BattleFlags.build(:magic, :long, true)
+  # A magic hit's battle flag carries the range class its hit information took.
+  defp magic_attack_flag(%{is_short: true}), do: BattleFlags.build(:magic, :short, true)
+  defp magic_attack_flag(_hit_info), do: BattleFlags.build(:magic, :long, true)
+
+  defp attack_flag(attacker, target, skill_id, skill_level),
+    do:
+      BattleFlags.build(
+        :magic,
+        SkillRange.classify(attacker, target, skill_id, skill_level),
+        true
+      )
 
   defp decide_coma(attacker, target, damages) do
     case Enum.find(damages, &(&1 > 0)) do

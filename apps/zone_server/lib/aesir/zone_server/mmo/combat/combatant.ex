@@ -110,6 +110,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     dragonology_level: 0,
     faith_level: 0,
     skin_temper_level: 0,
+    # Vulture's Eye level, which extends the range of the archer skills that
+    # train with it (0 for non-players).
+    vulture_eye_level: 0,
 
     # Mob-class axis for bAddClass/bSubClass-style equipment bonuses. Players
     # are always :normal; mobs are :boss when tagged with the :boss mode.
@@ -199,6 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           dragonology_level: integer(),
           faith_level: integer(),
           skin_temper_level: integer(),
+          vulture_eye_level: non_neg_integer(),
           class: :normal | :boss,
           status_immune: boolean(),
           detector: boolean(),

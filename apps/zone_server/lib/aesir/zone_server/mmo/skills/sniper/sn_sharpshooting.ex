@@ -62,8 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSharpshooting do
       skill_id: definition.id,
       skill_level: level,
       critical: true,
-      critical_rate_bonus: Formulas.sharpshooting_crit_bonus(),
-      ranged: true
+      critical_rate_bonus: Formulas.sharpshooting_crit_bonus()
     ]
 
     case GameMode.mode() do

@@ -1166,11 +1166,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert Interpreter.effective_range(definition, gs, 5) == 11
     end
 
-    test "resolves a -1 sentinel to the caster's weapon range" do
-      definition = enemy_definition(-1)
+    test "a negative range counts its cells, not the caster's weapon reach" do
+      definition = enemy_definition(-2)
       gs = game_state(100, %{})
 
-      assert Interpreter.effective_range(definition, gs, 1) == 1
+      assert Interpreter.effective_range(definition, gs, 1) == 2
+    end
+
+    test "the range is capped at 14 cells before Vulture's Eye" do
+      assert Interpreter.effective_range(enemy_definition(18), game_state(100, %{}), 1) == 14
+
+      definition = %{enemy_definition(18) | vulture_range: true}
+      assert Interpreter.effective_range(definition, game_state(100, %{44 => 7}), 1) == 21
     end
 
     test "a vulture_range skill gains the caster's Vulture's Eye level" do

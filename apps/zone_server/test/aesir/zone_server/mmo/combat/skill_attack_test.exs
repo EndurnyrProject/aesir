@@ -303,7 +303,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   test "misc skill hit dispatches only misc attacker and defender procs" do
-    flag = BattleFlags.build(:misc, :long, true)
+    flag = BattleFlags.build(:misc, :short, true)
     attacker_key = {30, 0}
     defender_key = {40, 0}
     wrong_key = {30, 1}
@@ -534,7 +534,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
              SkillAttack.execute_stave_crasher_attack(caster_state, {:mob, 2001},
                skill_id: 365,
                skill_level: 1,
-               ranged: true,
                skip_crit: true,
                ignore_flee: true,
                report_hit: true
@@ -564,7 +563,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       {40, :hit}
     end)
 
-    for {position, ranged?, short?} <- [{{103, 97}, true, true}, {{104, 100}, false, false}] do
+    for {position, short?} <- [{{103, 97}, true}, {{104, 100}, false}] do
       attacker =
         CombatTestHelper.create_mob_combatant(unit_id: 2002, position: position)
         |> Map.put(:attack_range, 1)
@@ -575,8 +574,54 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                  {:mob, 2001},
                  skill_id: 5,
                  skill_level: 1,
-                 ranged: ranged?,
                  ignore_flee: true,
+                 report_hit: true
+               )
+
+      assert_received {:calculated_ranged, ranged_result}
+      assert_received {:delivered_short, ^short?}
+      assert ranged_result == not short?
+    end
+  end
+
+  test "a player's skill hit takes its class from the skill's range, not the weapon's reach" do
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    target_state = %TestUnit{combatant: target, hp: 1_000}
+    test_pid = self()
+
+    stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+    stub(AttackValidator, :validate, fn _attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn _attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, _damage, _source, _metadata -> :ok end)
+    stub(UnitRegistry, :get_player_pid, fn 1001 -> {:ok, self()} end)
+
+    stub(DamageCalculator, :calculate_damage, fn _attacker, ^target, opts ->
+      send(test_pid, {:calculated_ranged, opts[:ranged]})
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, 40, hit_info ->
+      send(test_pid, {:delivered_short, hit_info.is_short})
+      {40, :hit}
+    end)
+
+    # Bash (1 cell) with a bow's reach, Spear Stab (4 cells) with a fist's.
+    for {skill_id, attack_range, short?} <- [{5, 9, true}, {58, 1, false}] do
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+        |> Map.put(:attack_range, attack_range)
+
+      assert {:ok, %{hit?: true}} =
+               SkillAttack.execute_skill_attack(
+                 %TestUnit{combatant: attacker, hp: 100},
+                 {:mob, 2001},
+                 skill_id: skill_id,
+                 skill_level: 1,
+                 ignore_flee: true,
+                 skip_crit: true,
                  report_hit: true
                )
 

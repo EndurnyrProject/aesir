@@ -121,7 +121,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
         assert opts[:skill_ratio] == 1_080
         assert opts[:hit_divisions] == -3
         assert opts[:skip_crit] == true
-        assert opts[:ranged] == true
         assert {opts[:offset], opts[:length], opts[:width]} == {0, 5, 2}
         assert opts[:base_distance] == 2
         assert opts[:origin] == {10, 20}
@@ -142,7 +141,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
       test_pid = self()
 
       stub(Combat, :execute_line_attack, fn ^caster, @target_id, opts ->
-        assert opts[:ranged] == false
         assert opts[:width] == 2
         assert opts[:delivery] == :splash
         send(test_pid, {:sweep, opts[:offset], opts[:length], opts[:skill_ratio]})

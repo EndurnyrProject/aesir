@@ -271,12 +271,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     {modified_hard_def, modified_soft_def}
   end
 
-  @doc "Captures magic channels using status maps already read by the caller."
+  @doc """
+  Captures magic channels using status maps already read by the caller.
+
+  `opts` carries the hit's `:element`, `:skill_id`, `:skill_ratio`,
+  `:bonus_matk`, `:ignore_mdef` and `:attack_flag` (the battle flag whose range
+  class selects range-flagged resists, default a long-range magic skill hit).
+  """
   @spec magic_context(map(), map(), keyword(), map(), map()) :: MagicDamage.context()
   def magic_context(attacker, defender, opts, modifiers, defender_modifiers) do
     element = Keyword.get(opts, :element, :neutral)
     skill_id = Keyword.get(opts, :skill_id)
-    equip = equipment_rates(attacker, defender, defender_modifiers, skill_id, element)
+    attack_flag = Keyword.get(opts, :attack_flag, @magic_attack_flag)
+
+    equip =
+      equipment_rates(attacker, defender, defender_modifiers, {skill_id, attack_flag}, element)
+
     {hard, soft} = mdef_values(defender, defender_modifiers)
 
     attack = %{
@@ -358,7 +368,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
          %Combatant{} = attacker,
          %Combatant{} = defender,
          modifiers,
-         skill_id,
+         {skill_id, attack_flag},
          element
        ) do
     %{
@@ -370,13 +380,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
           element,
           modifiers,
           skill_id,
-          @magic_attack_flag
+          attack_flag
         ),
       ignore_mdef: EquipmentBonuses.ignore_mdef_rate(attacker, defender)
     }
   end
 
-  defp equipment_rates(_attacker, _defender, _modifiers, _skill_id, _element),
+  defp equipment_rates(_attacker, _defender, _modifiers, _skill, _element),
     do: @zero_equip_rates
 
   defp magic_unit_ref(%{unit_type: type, unit_id: id}) when type in [:player, :mob],

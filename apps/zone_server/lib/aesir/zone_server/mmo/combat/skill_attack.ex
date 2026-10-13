@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :damage_result,
       :divisions,
       :element,
-      :ranged,
+      :long?,
       :coma?,
       :knockback_options
     ]
@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+  alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -169,11 +170,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       rate are not applied to this hit; the generic damage multiplier still is.
       Only honoured by the ordinary pipeline, i.e. together with `:base_damage`
       (Sacrifice, whose base is a share of max HP) (default `false`)
-    - `:ranged` - declares a player's skill as long range regardless of the
-      caster's weapon reach (default `false`). The hit's one classification
-      (`BattleFlags.skill_range/4`, which also decides traps and non-player
-      casters) reaches both the calculator's range channels and the delivered
-      hit_info's `is_short`
     - `:base_distance` - native knockback cells (default `0`)
     - `:origin` - native/equipment knockback origin; `nil` uses the attacker's
       position (default `nil`)
@@ -320,7 +316,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @doc """
   Executes the forced-hit, no-attacker-card physical path used by Venom Knife.
 
-  This narrow entry forces neutral long-range damage and marks only Auto Guard
+  This narrow entry forces neutral damage and marks only Auto Guard
   as exempt. Every other weapon interception and ordinary damage-delivery hook
   remains active.
   """
@@ -329,7 +325,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           | {:ok, hit_report()}
           | {:error, atom()}
   def execute_forced_no_card_attack(caster_state, target_id, opts) do
-    opts = Keyword.merge(opts, ignore_flee: true, element: :neutral, ranged: true)
+    opts = Keyword.merge(opts, ignore_flee: true, element: :neutral)
 
     execute_single_target_attack(
       caster_state,
@@ -384,7 +380,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             hit_rate_bonus_pct: hit_rate_bonus_pct,
             hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
             ignore_flee: Keyword.get(opts, :ignore_flee, false),
-            ranged: Keyword.get(opts, :ranged, false),
             knockback_options: knockback_options(opts)
           }
         )
@@ -415,7 +410,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       damage_result: damage_result,
       divisions: divisions,
       element: element,
-      ranged: ranged?,
+      long?: long?,
       coma?: coma?,
       knockback_options: knockback_options
     } = prepared
@@ -439,7 +434,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           %{
             divisions: divisions,
             element: element,
-            ranged?: ranged?,
+            long?: long?,
             coma?: coma?,
             target_state: target_state,
             delivery: :direct
@@ -504,7 +499,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     skill_level = Keyword.fetch!(opts, :skill_level)
     report_hit? = Keyword.get(opts, :report_hit, false)
     hit_rate_bonus_pct = Keyword.get(opts, :hit_rate_bonus_pct, 0)
-    ranged? = Keyword.get(opts, :ranged, false)
 
     calc_opts = physical_skill_calc_opts(caster_state, opts)
     validator_opts = physical_skill_validator_opts(opts)
@@ -529,7 +523,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
         ignore_flee: Keyword.get(opts, :ignore_flee, false),
         fled: Keyword.get(opts, :fled, false),
-        ranged: ranged?,
         weapon_hit_metadata: weapon_hit_metadata,
         target_state: target_state,
         delivery: Keyword.get(opts, :delivery, :direct)
@@ -603,8 +596,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       (default `0`)
     - `:hit_divisions` - each target's signed hit divisions, resolved as one
       logical attack per target (default `1`, see `execute_skill_attack/3`)
-    - `:ranged` - declares a player's skill as long range for each connected
-      target (default `false`, see `execute_skill_attack/3`)
     - `:typed_results` - returns `{unit_type, unit_id}` refs instead of bare ids
       from the same execution (default `false`)
     - `:target_skill_units` - additionally admits targetable enemy trap cells
@@ -655,7 +646,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           skill_level,
           calc_opts,
           %{
-            ranged?: Keyword.get(opts, :ranged, false),
             ignore_flee?: Keyword.get(opts, :ignore_flee, false),
             typed_results?: true,
             knockback_options: knockback_options(opts),
@@ -699,7 +689,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
 
     result_opts = %{
-      ranged?: Keyword.get(opts, :ranged, false),
       ignore_flee?: Keyword.get(opts, :ignore_flee, false),
       typed_results?: Keyword.get(opts, :typed_results, false),
       knockback_options: knockback_options(opts),
@@ -745,8 +734,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       length and half-width, starting `:offset` rows out (default 0), hitting
       only targets in the caster's line of sight; without both, use the
       Bresenham line
-    - `:ranged` - declares a player's skill as long range (default `false`, see
-      `execute_skill_attack/3`)
     - `:hit_divisions` - each target's signed hit divisions (default `1`)
     - `:delivery` - `:direct` (default), `:splash` or `:area`: how the line
       reached each target, as the same-named `t:Targeting.delivery/0` whose
@@ -773,7 +760,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           Keyword.take(opts, [:length, :width, :offset])
         )
         |> hit_targets(attacker, skill_id, skill_level, calc_opts, %{
-          ranged?: Keyword.get(opts, :ranged, false),
           ignore_flee?: false,
           typed_results?: false,
           results: :damaged,
@@ -895,7 +881,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_level,
          calc_opts,
          %{
-           ranged?: ranged?,
            ignore_flee?: ignore_flee?,
            typed_results?: typed_results?,
            knockback_options: knockback_options,
@@ -921,7 +906,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_rate_bonus_pct: hit_rate_bonus_pct,
         hit_rate_bonus_flat: Map.get(result_opts, :hit_rate_bonus_flat, 0),
         ignore_flee: ignore_flee?,
-        ranged: ranged?,
         weapon_hit_metadata: %{},
         target_state: target_state,
         delivery: Map.get(result_opts, :delivery, :direct)
@@ -1235,12 +1219,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       {damage, divisions} = DamageShared.normalize_damage_divisions(damage, hit_divisions)
       coma? = decide_coma(attacker, target, damage)
 
-      attack_flag = BattleFlags.build(:misc, :long, true)
+      range = SkillRange.classify(attacker, target, skill_id, skill_level)
+      attack_flag = BattleFlags.build(:misc, range, true)
       immediate? = EquipProcDispatch.immediate?(skill_id, misc_opts.delivery)
 
       hit_info = %{
         dmg_type: :misc,
-        is_short: false,
+        is_short: range == :short,
         element: element,
         skill_id: skill_id,
         skill_level: skill_level,
@@ -1320,13 +1305,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
        ) do
     %{
       hit_divisions: hit_divisions,
-      ranged: ranged?,
       knockback_options: knockback_options
     } = hit_opts
 
     {hit_result, calc_opts} = skill_hit_result(attacker, target, skill_id, calc_opts, hit_opts)
+    skill = {skill_id, skill_level}
 
-    case {hit_result, fled_damage(hit_result, attacker, target, skill_id, calc_opts, hit_opts)} do
+    case {hit_result, fled_damage(hit_result, attacker, target, skill, calc_opts, hit_opts)} do
       {:miss, :none} ->
         DamageApplication.broadcast_nearby(
           target,
@@ -1344,7 +1329,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         {:ok, :miss}
 
       {_connected, fled} ->
-        long? = long_range?(attacker, target, skill_id, ranged?)
+        long? = long_range?(attacker, target, skill_id, skill_level)
         calc_opts = Keyword.put(calc_opts, :ranged, long?)
 
         case fled_or_calculated(fled, attacker, target, calc_opts) do
@@ -1361,7 +1346,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
                damage_result: damage_result,
                divisions: divisions,
                element: physical_attack_element(attacker, calc_opts),
-               ranged: long?,
+               long?: long?,
                coma?: decide_coma(attacker, target, damage_result.damage),
                knockback_options: knockback_options
              }}
@@ -1409,7 +1394,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_context,
          %{fled: true} = hit_opts
        ) do
-    case fled_damage(:miss, attacker, target, skill_id, calc_context, hit_opts) do
+    case fled_damage(:miss, attacker, target, {skill_id, skill_level}, calc_context, hit_opts) do
       :none ->
         {missed_hit(hit_opts), false}
 
@@ -1551,7 +1536,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {hit_result, calc_context} =
       skill_hit_result(attacker, target, skill_id, calc_context, hit_opts)
 
-    case {hit_result, fled_damage(hit_result, attacker, target, skill_id, calc_context, hit_opts)} do
+    skill = {skill_id, skill_level}
+
+    case {hit_result, fled_damage(hit_result, attacker, target, skill, calc_context, hit_opts)} do
       {:miss, {:ok, fled}} ->
         {calc_opts, _calculator} = damage_calculation(calc_context)
 
@@ -1598,11 +1585,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # (`DamageCalculator.calculate_fled_damage/3`) and connects when that,
   # repeated over its divisions, totals at least 1. Returns that raw result, or
   # `:none` when it deals nothing or the roll was not a flee.
-  defp fled_damage(:miss, attacker, target, skill_id, calc_context, hit_opts) do
+  defp fled_damage(:miss, attacker, target, {skill_id, skill_level}, calc_context, hit_opts) do
     calc_opts =
       calc_context
       |> calc_opts()
-      |> Keyword.put(:ranged, long_range?(attacker, target, skill_id, hit_opts.ranged))
+      |> Keyword.put(:ranged, long_range?(attacker, target, skill_id, skill_level))
 
     {:ok, fled} = DamageCalculator.calculate_fled_damage(attacker, target, calc_opts)
 
@@ -1612,7 +1599,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     end
   end
 
-  defp fled_damage(_hit_result, _attacker, _target, _skill_id, _calc_context, _hit_opts),
+  defp fled_damage(_hit_result, _attacker, _target, _skill, _calc_context, _hit_opts),
     do: :none
 
   defp fled_or_calculated({:ok, fled}, _attacker, _target, _calc_opts), do: {:ok, fled}
@@ -1692,10 +1679,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_context,
          hit_opts
        ) do
-    %{hit_divisions: hit_divisions, ranged: ranged?} = hit_opts
+    %{hit_divisions: hit_divisions} = hit_opts
     {calc_opts, damage_calculator} = damage_calculation(calc_context)
     element = physical_attack_element(attacker, calc_opts)
-    long? = long_range?(attacker, target, skill_id, ranged?)
+    long? = long_range?(attacker, target, skill_id, skill_level)
     calc_opts = Keyword.put(calc_opts, :ranged, long?)
 
     case damage_calculator.(attacker, target, calc_opts) do
@@ -1713,7 +1700,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             %{
               divisions: divisions,
               element: element,
-              ranged?: long?,
+              long?: long?,
               coma?: coma?,
               target_state: Map.get(hit_opts, :target_state),
               delivery: Map.get(hit_opts, :delivery, :direct)
@@ -1728,12 +1715,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   end
 
   # One range classification per hit feeds the calculator's range channels and
-  # the delivered hit: the skill's own `:ranged` declaration or the attacker's
-  # long reach for a player, the reference rules for traps and non-players.
-  defp long_range?(attacker, target, skill_id, ranged?) do
-    declared = if ranged? or attacker.attack_range > 3, do: :long, else: :short
-    BattleFlags.skill_range(attacker, target, skill_id, declared) == :long
-  end
+  # the delivered hit.
+  defp long_range?(attacker, target, skill_id, skill_level),
+    do: SkillRange.classify(attacker, target, skill_id, skill_level) == :long
 
   # The one calculated damage becomes the attack's logical total before any
   # mutable target status sees it; the packet shows the normalized count.
@@ -1761,13 +1745,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          damage_result,
          hit_metadata
        ) do
-    %{divisions: divisions, element: element, ranged?: ranged?, coma?: coma?} = hit_metadata
+    %{divisions: divisions, element: element, long?: long?, coma?: coma?} = hit_metadata
     immediate? = EquipProcDispatch.immediate?(skill_id, hit_metadata.delivery)
-    attack_flag = BattleFlags.build(:weapon, if(ranged?, do: :long, else: :short), true)
+    attack_flag = BattleFlags.build(:weapon, if(long?, do: :long, else: :short), true)
 
     hit_info = %{
       dmg_type: :physical,
-      is_short: not ranged?,
+      is_short: not long?,
       element: element,
       skill_id: skill_id,
       skill_level: skill_level,

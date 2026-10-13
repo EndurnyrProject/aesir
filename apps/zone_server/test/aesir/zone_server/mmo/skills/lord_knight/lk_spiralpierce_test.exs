@@ -126,7 +126,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
       assert opts[:skill_level] == 5
       assert opts[:hit_divisions] == 5
       assert opts[:element] == :neutral
-      assert opts[:ranged] == true
       assert opts[:skip_crit] == true
       refute Keyword.has_key?(opts, :weight_atk)
       refute Keyword.has_key?(opts, :base_damage)

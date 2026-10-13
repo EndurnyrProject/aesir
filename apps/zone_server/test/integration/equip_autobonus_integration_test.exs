@@ -327,7 +327,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
       ),
       registration(
         :attack,
-        BattleFlags.build(:misc, :long, true),
+        BattleFlags.build(:misc, :short, true),
         [],
         [{:status_start, :sc_strangelights, @duration, 1}]
       ),

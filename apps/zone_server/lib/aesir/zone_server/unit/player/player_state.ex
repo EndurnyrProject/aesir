@@ -1039,6 +1039,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       dragonology_level: Learned.learned_level(learned, 284),
       faith_level: Learned.learned_level(learned, 248),
       skin_temper_level: Learned.learned_level(learned, 109),
+      vulture_eye_level: Learned.learned_level(learned, 44),
       class: :normal,
       riding: riding?(state.option),
       equip_modifiers: state.stats.modifiers.equipment,

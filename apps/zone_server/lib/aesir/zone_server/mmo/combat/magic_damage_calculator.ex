@@ -37,6 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     * `:fixed_damage`: returns this amount without rolls or modifier lookups.
     * `:ignore_mdef`: bypasses both MDEF components, not cardfix, element,
       skill/status channels or Renewal MRes. Default `false`.
+    * `:attack_flag`: the hit's battle flag, whose range class selects the
+      target's range-flagged resists. Default a long-range magic skill hit.
 
   Percentage equipment MDEF-ignore affects hard MDEF only and uses the active
   mode's rounding. Missing trait slots are zero; classic ignores them entirely.

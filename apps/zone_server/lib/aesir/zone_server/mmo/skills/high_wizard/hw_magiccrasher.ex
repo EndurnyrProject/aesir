@@ -62,7 +62,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwMagiccrasher do
       skill_id: definition.id,
       skill_level: level,
       skip_crit: true,
-      ranged: true,
       skip_range: true
     ]
 

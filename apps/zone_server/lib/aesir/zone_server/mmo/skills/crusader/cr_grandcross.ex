@@ -40,11 +40,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastendStrip
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -132,7 +134,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
         DamageInputs.magic_context(
           caster,
           target,
-          [skill_id: definition().id, element: :holy],
+          [
+            skill_id: definition().id,
+            element: :holy,
+            attack_flag:
+              BattleFlags.build(
+                :magic,
+                SkillRange.classify(caster, target, definition().id, level),
+                true
+              )
+          ],
           modifiers,
           defender_modifiers
         )

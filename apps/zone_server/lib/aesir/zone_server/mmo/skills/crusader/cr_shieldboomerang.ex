@@ -1,11 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerang do
   @moduledoc """
   Shield Boomerang (CR_SHIELDBOOMERANG). Throws the shield at 3 to 11 cells by
-  level for 12 SP with a 0.7 s delay, dealing neutral ranged damage on the shield
-  base (attack plus 4 per refine plus the shield's weight) instead of the weapon.
-  A player needs a shield; a mob caster falls back to the plain attack base. The
+  level for 12 SP with a 0.7 s delay, dealing neutral damage on the shield base
+  (attack plus 4 per refine plus the shield's weight) instead of the weapon. A
+  player needs a shield; a mob caster falls back to the plain attack base. The
   interpreter enforces the per-level reach and the attack skips the melee range
-  check; the hit counts as ranged so Defending Aura reduces it.
+  check. A player's level-1 throw (3 cells) is a melee hit and every longer
+  throw a ranged one, which Defending Aura reduces.
 
   Renewal: 80% per level and a second, forced neutral attribute step after
   defense. Pre-renewal: 100% plus 30% per level, with the target's
@@ -49,8 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerang do
       damage_base: :shield,
       element: :neutral,
       skip_crit: true,
-      skip_range: true,
-      ranged: true
+      skip_range: true
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do

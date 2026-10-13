@@ -123,15 +123,15 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     end
   end
 
-  test "Moonlight uses the interpreter's typed fifteen-cell range pipeline" do
+  test "Moonlight uses the interpreter's typed range pipeline, capped at fourteen cells" do
     session = session(learned_skills: %{@moon => 1}, sp: 100)
-    register_units(session.homunculus, mob(25))
+    register_units(session.homunculus, mob(24))
 
     assert {:ok, _cast} =
              CastingHandler.begin(session, @moon, 1, {:unit, {:mob, @mob_gid}})
 
     clear_units()
-    register_units(session.homunculus, mob(26))
+    register_units(session.homunculus, mob(25))
 
     assert {:error, :out_of_range, ^session} =
              CastingHandler.begin(session, @moon, 1, {:unit, {:mob, @mob_gid}})
