@@ -2,10 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DeadlyPoison do
   @moduledoc """
   Deadly Poison (SC_DPOISON).
 
-  Strong damage over time that stops regeneration and reduces defense.
-  Following rAthena, the tick only damages while HP stays above
-  `max(max_hp / 4, tick damage)`: players take `2 + max_hp / 50`, monsters
-  `2 + max_hp / 100`.
+  Strong damage over time that stops regeneration and reduces defense. Starting
+  it (not restoring it) takes 10% of a player's Max HP, 15% of anyone else's,
+  at once as passive loss, never below a quarter of Max HP and only while HP is
+  above that quarter. Each second it then damages only while HP stays above
+  `max(max_hp / 4, tick damage)`: players take `2 + max_hp / 50`, any other
+  unit `2 + max_hp / 100`.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_dpoison,
@@ -31,6 +33,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DeadlyPoison do
       %{hp_regen: -100, sp_regen: -100, def_rate: -25}
     end
   end
+
+  @impl true
+  def on_apply(target, instance, %{loaded: false, target: %{hp: hp, max_hp: max_hp}}) do
+    quarter = div(max_hp, 4)
+
+    if hp > quarter do
+      loss = min(div(max_hp * if(player?(target), do: 10, else: 15), 100), hp - quarter)
+      if loss > 0, do: apply_passive_hp_loss(target, loss)
+    end
+
+    {:ok, instance}
+  end
+
+  def on_apply(_target, instance, _context), do: {:ok, instance}
 
   @impl true
   def on_tick(target, instance, context) do

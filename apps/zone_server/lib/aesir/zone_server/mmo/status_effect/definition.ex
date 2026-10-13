@@ -182,7 +182,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc """
   Invoked when the status is applied, before it is stored; only its `state`
   and `phase` are kept. The context carries the resolved `:duration` (nil for
-  a permanent status). May veto the application by returning :remove.
+  a permanent status) and `:loaded` (true when restoring a saved status). May
+  veto the application by returning :remove.
   """
   @callback on_apply(target(), StatusEntry.t(), context()) :: hook_result()
 

@@ -1625,7 +1625,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     context =
       unit_type
       |> ContextBuilder.build_context(unit_id, instance.source_id, instance)
-      |> Map.put(:duration, duration)
+      |> Map.merge(%{duration: duration, loaded: Keyword.get(status_params, :loaded, false)})
 
     case definition.module.on_apply({unit_type, unit_id}, instance, context) do
       {:ok, new_instance} ->
