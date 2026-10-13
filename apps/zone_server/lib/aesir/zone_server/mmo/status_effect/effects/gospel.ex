@@ -55,4 +55,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gospel do
 
   defp upkeep(level) when level > 5, do: [hp: 45, sp: 35]
   defp upkeep(_level), do: [hp: 30, sp: 20]
+
+  # A chanting Paladin's lock is never replaced.
+  @impl true
+  def overlap(_target, _held, _incoming), do: :fail
 end

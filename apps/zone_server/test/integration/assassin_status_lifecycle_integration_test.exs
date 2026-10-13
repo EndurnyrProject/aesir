@@ -326,7 +326,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     replacement = start_real_mob(26_403, {21, 10})
     arm_splasher(caster, :mob, replacement.unit_id, 10)
     old_generation = splasher_generation(:mob, replacement.unit_id)
-    arm_splasher(caster, :mob, replacement.unit_id, 9)
+    arm_splasher(caster, :mob, replacement.unit_id, 10)
     new_generation = splasher_generation(:mob, replacement.unit_id)
     assert new_generation > old_generation
     assert tick_current(:mob, replacement.unit_id, old_generation, 1) == :stop

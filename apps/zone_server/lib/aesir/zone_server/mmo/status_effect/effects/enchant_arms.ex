@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantArms do
     id: :sc_enchantarms,
     no_dispel: false,
     no_clear_buff: false,
+    overlap_ignore_level: true,
     clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     calc_flags: [:atk_ele],

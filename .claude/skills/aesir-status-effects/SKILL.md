@@ -92,6 +92,19 @@ use the atomic `StatusStorage.take_status/3`.
   reader in combat/stats AND add it to `modifier_readers_test.exs`'s `@read_keys` — that
   test statically extracts every emitted key and fails on dead ones.
 
+## Re-applying a held status
+
+A new application first ends its `end_on_start` statuses and, for a body state
+(`opt1`), every held body state. It then meets the held instance of the same status
+through `overlap/3`: by default the held one stays (the application still returns
+`:ok`) when its `val1` is greater, unless the status sets `overlap_ignore_level:
+true` (status.yml `OverlapIgnoreLevel`). Override `overlap/3` for the source's
+special cases: `:fail` refuses (`{:error, :overlap_refused}`), `{:replace, instance}`
+adjusts the new instance (Joint Beat's stacked breaks), and
+`Definition.self_cast_overlap/3` keeps a caster's own buff from a recipient copy.
+Keep `val1` as the reference's `val1` (usually the skill level), since the rule
+compares it.
+
 ## Applying and caster identity
 
 - Apply via `StatusEffect.Interpreter.apply_status(unit_type, unit_id, status_id, params)`.

@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
     id: :sc_devotion,
     no_dispel: false,
     no_clear_buff: false,
+    overlap_ignore_level: true,
     clear_buff_flags: [:remove_on_hermode],
     no_save: true,
     remove_on_map_change: true,

@@ -223,7 +223,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert {:ok, {_module, %{account_id: 100}, _pid}} = UnitRegistry.get_unit(:player, 1)
     end
 
-    test "reconciles loaded equip statuses after registration and persisted-status restore", %{
+    test "reconciles loaded equip statuses after restore and keeps a stronger restored status", %{
       character: character
     } do
       expect(Calculator, :calculate_stats, fn stats, 1, [] ->
@@ -249,7 +249,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
                PlayerSession.init(%{character: character, connection_pid: self()})
 
       assert state.applied_equip_statuses == %{sc_summer: {:infinite, 1}}
-      assert StatusStorage.get_status(:player, 1, :sc_summer).val1 == 1
+      assert StatusStorage.get_status(:player, 1, :sc_summer).val1 == 9
     end
 
     test "stores the negotiated client capabilities", %{character: character} do

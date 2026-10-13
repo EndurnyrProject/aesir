@@ -17,6 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrust do
     calc_flags: [:atk],
     icon: :overthrust
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+
   @impl true
   def modifiers(instance, _context), do: %{atk_rate: instance.val1}
+
+  @impl true
+  def overlap(target, held, incoming),
+    do: Definition.self_cast_overlap(target, held, incoming)
 end

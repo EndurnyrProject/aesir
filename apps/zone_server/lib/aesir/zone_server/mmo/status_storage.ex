@@ -54,13 +54,38 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   application wins even when this call reaches storage later. Callers that
   perform generation-sensitive lifecycle work must retain the returned entry
   instead of fetching by status type after insertion.
+
+  `decide` is asked about the current entry (nil when there is none) inside the
+  compare-and-swap: `:store` stores the entry, `{:store, adjust}` stores
+  `adjust.(entry)`, and `:keep` leaves the current entry and returns
+  `{:kept, current}`.
   """
-  @spec apply_status_with_entry(unit_type(), integer(), atom(), StatusEntry.status_params()) ::
-          {:stored, StatusEntry.t(), StatusEntry.t() | nil} | {:superseded, StatusEntry.t()}
-  def apply_status_with_entry(unit_type, unit_id, status_type, status_params \\ []) do
+  @spec apply_status_with_entry(
+          unit_type(),
+          integer(),
+          atom(),
+          StatusEntry.status_params(),
+          decision()
+        ) ::
+          {:stored, StatusEntry.t(), StatusEntry.t() | nil}
+          | {:superseded | :kept, StatusEntry.t()}
+  def apply_status_with_entry(
+        unit_type,
+        unit_id,
+        status_type,
+        status_params \\ [],
+        decide \\ &store_always/1
+      ) do
     entry = build_entry(unit_type, unit_id, status_type, status_params)
-    store_if_newer(unit_type, unit_id, entry)
+    store_if_newer(unit_type, unit_id, entry, decide)
   end
+
+  @typedoc "How a new entry meets the current one inside the compare-and-swap."
+  @type decision ::
+          (StatusEntry.t() | nil ->
+             :store | {:store, (StatusEntry.t() -> StatusEntry.t())} | :keep)
+
+  defp store_always(_current), do: :store
 
   @doc """
   Atomically stores an entry only when its generation is newer than the current entry.
@@ -70,43 +95,58 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   entry replaced by their compare-and-swap. Superseded results continue to
   report the current entry.
   """
-  @spec store_if_newer(unit_type(), integer(), StatusEntry.t()) ::
-          {:stored, StatusEntry.t(), StatusEntry.t() | nil} | {:superseded, StatusEntry.t()}
-  def store_if_newer(unit_type, unit_id, %StatusEntry{type: status_type} = entry) do
+  @spec store_if_newer(unit_type(), integer(), StatusEntry.t(), decision()) ::
+          {:stored, StatusEntry.t(), StatusEntry.t() | nil}
+          | {:superseded | :kept, StatusEntry.t()}
+  def store_if_newer(
+        unit_type,
+        unit_id,
+        %StatusEntry{type: status_type} = entry,
+        decide \\ &store_always/1
+      ) do
     table = table_for(:player_statuses)
     key = {unit_type, unit_id, status_type}
-    store_if_newer_loop(table, key, entry)
+    store_if_newer_loop(table, key, entry, decide)
   end
 
-  defp store_if_newer_loop(table, key, entry) do
+  defp store_if_newer_loop(table, key, entry, decide) do
     case :ets.lookup(table, key) do
       [] ->
-        if :ets.insert_new(table, {key, entry}) do
-          {:stored, entry, nil}
+        stored = decided_entry(decide.(nil), entry)
+
+        if :ets.insert_new(table, {key, stored}) do
+          {:stored, stored, nil}
         else
-          store_if_newer_loop(table, key, entry)
+          store_if_newer_loop(table, key, entry, decide)
         end
 
       [{^key, current}] ->
-        if newer_generation?(entry.generation, current.generation) do
-          replace_if_current(table, key, current, entry)
-        else
-          {:superseded, current}
-        end
+        if newer_generation?(entry.generation, current.generation),
+          do: replace_if_current(table, key, current, entry, decide),
+          else: {:superseded, current}
     end
   end
 
-  defp replace_if_current(table, key, current, entry) do
-    match_spec = [
-      {{key, :"$1"}, [{:"=:=", :"$1", {:const, current}}], [{:const, {key, entry}}]}
-    ]
+  defp replace_if_current(table, key, current, entry, decide) do
+    case decide.(current) do
+      :keep ->
+        {:kept, current}
 
-    if :ets.select_replace(table, match_spec) == 1 do
-      {:stored, entry, current}
-    else
-      store_if_newer_loop(table, key, entry)
+      decision ->
+        stored = decided_entry(decision, entry)
+
+        match_spec = [
+          {{key, :"$1"}, [{:"=:=", :"$1", {:const, current}}], [{:const, {key, stored}}]}
+        ]
+
+        if :ets.select_replace(table, match_spec) == 1,
+          do: {:stored, stored, current},
+          else: store_if_newer_loop(table, key, entry, decide)
     end
   end
+
+  defp decided_entry(:store, entry), do: entry
+  defp decided_entry({:store, adjust}, entry), do: adjust.(entry)
 
   defp newer_generation?(generation, nil) when is_integer(generation) and generation > 0,
     do: true

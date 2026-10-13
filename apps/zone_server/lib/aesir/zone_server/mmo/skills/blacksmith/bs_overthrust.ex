@@ -66,10 +66,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrust do
     recipient_params = [
       val1: recipient_rate(level),
       caster_id: caster_id,
-      duration: duration
+      duration: duration,
+      own: [val2: 1]
     ]
 
-    caster_params = Keyword.put(recipient_params, :val1, level * 5)
+    caster_params = [val1: level * 5, val2: 1, caster_id: caster_id, duration: duration]
 
     # The party walk necessarily applies the party rate to the caster too, so the
     # caster's own stronger rate is applied second and overwrites it. Storage

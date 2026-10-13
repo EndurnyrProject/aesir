@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Jointbeat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -189,13 +190,13 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
       assert eventually(fn -> StatusStorage.has_status?(:mob, mob.unit_id, :sc_jointbeat) end)
 
       first_break = StatusStorage.get_status(:mob, mob.unit_id, :sc_jointbeat).val2
-      baseline = if first_break == :neck, do: first / 2, else: first
+      baseline = if first_break == Jointbeat.flag(:neck), do: first / 2, else: first
       assert :ok = Interpreter.remove_status(:mob, mob.unit_id, :sc_jointbeat)
 
       assert :ok =
                Interpreter.apply_status(:mob, mob.unit_id, :sc_jointbeat,
                  val1: 10,
-                 val2: :neck,
+                 val2: Jointbeat.flag(:neck),
                  duration: 30_000,
                  caster_id: id,
                  source_type: :player

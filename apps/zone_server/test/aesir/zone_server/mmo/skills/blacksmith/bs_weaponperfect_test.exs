@@ -36,7 +36,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfectTest do
     expect(PartyManager, :get, fn 10 -> {:ok, party_state()} end)
 
     expect(StatusInterpreter, :apply_status, 2, fn
-      :player, target_id, :sc_weaponperfection, params when target_id in [1, 2] ->
+      :player, 1, :sc_weaponperfection, params ->
+        assert params == [val1: 4, caster_id: 1, duration: 40_000, val2: 1]
+        :ok
+
+      :player, 2, :sc_weaponperfection, params ->
         assert params == [val1: 4, caster_id: 1, duration: 40_000]
         :ok
     end)

@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenalineTest do
     definition = BsAdrenaline.definition()
 
     expect(PartyBuff, :apply, fn ^caster, :sc_adrenaline, params, 14, eligible? ->
-      assert params == [val1: 4, caster_id: 1, duration: 120_000]
+      assert params == [val1: 4, caster_id: 1, duration: 120_000, own: [val2: 1]]
       assert eligible?.(player(1301))
       refute eligible?.(player(1201))
       :ok
@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenalineTest do
     definition = BsAdrenaline2.definition()
 
     expect(PartyBuff, :apply, fn ^caster, :sc_adrenaline2, params, 14, eligible? ->
-      assert params == [val1: 1, caster_id: 1, duration: 150_000]
+      assert params == [val1: 1, caster_id: 1, duration: 150_000, own: [val2: 1]]
       assert eligible?.(player(1301))
       refute eligible?.(player(1701))
       :ok

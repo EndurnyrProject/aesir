@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   @moduletag :capture_log
 
   @mob_id 7001
-  @player_id 8001
+  @player_id 8_417
   @status :sc_increase_agi
 
   setup do

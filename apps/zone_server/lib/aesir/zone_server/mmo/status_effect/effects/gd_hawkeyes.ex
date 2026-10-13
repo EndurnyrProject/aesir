@@ -17,4 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GdHawkeyes do
 
   @impl true
   def modifiers(instance, _context), do: %{dex: instance.val1}
+
+  # A guild aura is refreshed whatever its level.
+  @impl true
+  def overlap(_target, _held, _incoming), do: :replace
 end

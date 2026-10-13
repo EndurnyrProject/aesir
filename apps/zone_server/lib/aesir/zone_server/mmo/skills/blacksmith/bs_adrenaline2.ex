@@ -49,7 +49,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline2 do
     params = [
       val1: level,
       caster_id: caster_id,
-      duration: PartyBuff.duration_for_caster(caster, Enum.at(definition.duration, level - 1))
+      duration: PartyBuff.duration_for_caster(caster, Enum.at(definition.duration, level - 1)),
+      own: [val2: 1]
     ]
 
     with :ok <-

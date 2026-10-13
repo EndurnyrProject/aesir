@@ -33,12 +33,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PartyBuff do
 
   @doc """
   Applies `status` to the caster and eligible online party members within `range`.
+
+  `params` may carry `own:`, extra parameters for the caster's own application
+  only (the reference self-cast flag of Adrenaline Rush, Weapon Perfection and
+  Over Thrust: `own: [val2: 1]`).
   """
   @spec apply(PlayerState.t(), atom(), keyword(), non_neg_integer(), (PlayerState.t() ->
                                                                         boolean())) ::
           :ok | {:error, atom()}
   def apply(caster, status, params, range, eligible? \\ fn _candidate -> true end) do
-    with :ok <- StatusInterpreter.apply_status(:player, caster.character_id, status, params) do
+    {own, params} = Keyword.pop(params, :own, [])
+    own_params = Keyword.merge(params, own)
+
+    with :ok <- StatusInterpreter.apply_status(:player, caster.character_id, status, own_params) do
       caster
       |> party_members()
       |> Enum.each(&apply_to_member(&1, caster, status, params, range, eligible?))

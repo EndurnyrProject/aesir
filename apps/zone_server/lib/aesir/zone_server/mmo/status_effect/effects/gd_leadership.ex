@@ -17,4 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GdLeadership do
 
   @impl true
   def modifiers(instance, _context), do: %{str: instance.val1}
+
+  # A guild aura is refreshed whatever its level.
+  @impl true
+  def overlap(_target, _held, _incoming), do: :replace
 end

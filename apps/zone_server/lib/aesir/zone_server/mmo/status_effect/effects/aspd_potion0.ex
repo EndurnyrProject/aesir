@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AspdPotion0 do
     id: :sc_aspdpotion0,
     no_dispel: false,
     no_clear_buff: false,
+    overlap_ignore_level: true,
     properties: [:buff],
     calc_flags: [:aspd],
     icon: :atthaste_potion1,

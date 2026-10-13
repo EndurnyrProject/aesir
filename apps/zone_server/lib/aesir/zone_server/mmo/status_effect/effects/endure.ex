@@ -80,4 +80,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
   # can); any other active damage counts even when it took no HP.
   defp connected?(%{proc_event: %{hit_class: class}}), do: class == :hit
   defp connected?(_damage_info), do: true
+
+  # An infinite Endure is never replaced by a finite one.
+  @impl true
+  def overlap(_target, %{val4: held}, %{val4: 0}) when held != 0, do: :keep
+  def overlap(_target, %{val1: held}, %{val1: incoming}) when held > incoming, do: :keep
+  def overlap(_target, _held, _incoming), do: :replace
 end

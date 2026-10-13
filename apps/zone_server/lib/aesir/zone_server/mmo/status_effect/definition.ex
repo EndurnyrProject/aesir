@@ -105,6 +105,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:option` - sprite effect state, e.g. `:hide | :cloak` (`Mmo.Option`, bitmask)
     - `:opt3` - sprite virtue state (`Mmo.Opt3`, bitmask)
     - `:on_apply_effect` - `:ef_*` one-shot effect fired on apply (`Mmo.EffectId`)
+    - `:overlap_ignore_level` - when true, a new application always replaces the
+      held one, whatever its level (mirrors the `OverlapIgnoreLevel` flag of
+      `status.yml`); otherwise `c:overlap/3` decides
 
   `:end_on_start`, `:end_return`, `:prevented_by`, `:no_save`, `:duration`,
   `:no_dispel`, `:no_clear_buff` and `:clear_buff_flags` also accept `[renewal: value, pre_renewal: value]` for mode-specific values.
@@ -191,6 +194,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   @doc "Invoked on every tick while the status is active."
   @callback on_tick(target(), StatusEntry.t(), context()) :: hook_result()
+
+  @typedoc """
+  How a new application meets the instance its holder already has: `:replace`
+  it (optionally with the instance adjusted, e.g. merged values), `:keep` the
+  held one (the application succeeds without changing it), or `:fail` the
+  application.
+  """
+  @type overlap :: :replace | {:replace, StatusEntry.t()} | :keep | :fail
+
+  @doc """
+  Decides how a new application meets the held instance of the same status,
+  after the statuses it ends on start are gone and before `c:on_apply/3`.
+
+  Defaults to the reference rule: the held instance stays when its `val1` is
+  greater than the new one's, unless the status ignores levels
+  (`:overlap_ignore_level`).
+  """
+  @callback overlap(target(), StatusEntry.t(), StatusEntry.t()) :: overlap()
 
   @doc """
   Resolves the stored lifetime of a new application from its resistance-adjusted duration.
@@ -387,7 +408,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     opt2: nil,
     option: nil,
     opt3: nil,
-    on_apply_effect: nil
+    on_apply_effect: nil,
+    overlap_ignore_level: false
   }
 
   @metadata_schema %{
@@ -424,7 +446,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     opt2: :atom,
     option: :atom,
     opt3: :atom,
-    on_apply_effect: :atom
+    on_apply_effect: :atom,
+    overlap_ignore_level: :boolean
   }
 
   @typedoc """
@@ -447,6 +470,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
       alias Aesir.Commons.GameMode
+      alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
 
       @behaviour Aesir.ZoneServer.Mmo.StatusEffect.Definition
       @before_compile Aesir.ZoneServer.Mmo.StatusEffect.Definition
@@ -489,15 +513,46 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       @impl true
       def dynamic_option(_instance), do: nil
 
+      @impl true
+      def overlap(_target, held, incoming),
+        do: Definition.level_overlap(metadata(), held, incoming)
+
       defoverridable modifiers: 2,
                      on_apply: 3,
                      on_expire: 3,
                      on_tick: 3,
                      resolve_duration: 2,
                      on_contact: 4,
-                     dynamic_option: 1
+                     dynamic_option: 1,
+                     overlap: 3
     end
   end
+
+  @doc """
+  The reference overlap rule: a held instance with a greater `val1` stays,
+  unless the status ignores levels.
+  """
+  @spec level_overlap(map(), StatusEntry.t(), StatusEntry.t()) :: overlap()
+  def level_overlap(%{overlap_ignore_level: true}, _held, _incoming), do: :replace
+
+  def level_overlap(_metadata, %StatusEntry{val1: held}, %StatusEntry{val1: incoming})
+      when is_integer(held) and is_integer(incoming) and held > incoming,
+      do: :keep
+
+  def level_overlap(_metadata, _held, _incoming), do: :replace
+
+  @doc """
+  The overlap of a buff whose caster's own copy a recipient's copy cannot
+  replace (Adrenaline Rush, Weapon Perfection, Over Thrust): `val2` is set only
+  on the caster's own skill application, and an application with a lower `val2`
+  than the held one fails. Levels are not compared.
+  """
+  @spec self_cast_overlap(target(), StatusEntry.t(), StatusEntry.t()) :: overlap()
+  def self_cast_overlap(_target, %StatusEntry{val2: held}, %StatusEntry{val2: incoming})
+      when is_integer(held) and is_integer(incoming) and held > incoming,
+      do: :fail
+
+  def self_cast_overlap(_target, _held, _incoming), do: :replace
 
   @doc false
   defmacro __before_compile__(env) do

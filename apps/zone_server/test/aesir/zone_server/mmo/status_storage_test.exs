@@ -39,6 +39,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorageTest do
       assert StatusStorage.get_status(:player, 10, :poison) === higher
     end
 
+    test "a decision keeps the current entry, stores an adjusted entry, and sees no entry as nil" do
+      current = status_entry(1)
+      assert {:stored, ^current, nil} = StatusStorage.store_if_newer(:player, 14, current)
+
+      assert {:kept, ^current} =
+               StatusStorage.store_if_newer(:player, 14, status_entry(2), fn ^current -> :keep end)
+
+      adjust = &%{&1 | val2: 3}
+
+      assert {:stored, %StatusEntry{generation: 3, val2: 3} = stored, ^current} =
+               StatusStorage.store_if_newer(:player, 14, status_entry(3), fn ^current ->
+                 {:store, adjust}
+               end)
+
+      assert StatusStorage.get_status(:player, 14, :poison) === stored
+
+      assert {:stored, %StatusEntry{val2: 3}, nil} =
+               StatusStorage.store_if_newer(:player, 15, status_entry(1), fn nil ->
+                 {:store, adjust}
+               end)
+    end
+
     test "replaces a lower generation and returns that exact prior entry" do
       lower = status_entry(1)
       higher = status_entry(2)

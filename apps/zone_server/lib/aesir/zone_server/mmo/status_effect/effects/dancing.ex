@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     id: :sc_dancing,
     no_dispel: true,
     no_clear_buff: true,
+    overlap_ignore_level: true,
     no_save: true,
     bypass_resistance: true,
     remove_on_map_change: true,

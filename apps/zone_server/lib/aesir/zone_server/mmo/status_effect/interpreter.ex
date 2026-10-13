@@ -1592,11 +1592,39 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       expires_at: nil
     }
 
+    # The statuses this application ends before meeting the held instance: its
+    # end-on-start list and, for a body state, every held body state.
+    definition = %{definition | end_on_start: ended_on_start(unit_type, unit_id, definition)}
+    held = held_instance(unit_type, unit_id, status_id, definition)
+
+    case overlap(definition, {unit_type, unit_id}, held, instance) do
+      {:replace, adjusted} ->
+        start_application(unit_type, unit_id, status_id, status_params, definition, duration, {
+          adjusted,
+          held,
+          instance
+        })
+
+      refused ->
+        end_ended_on_start(unit_type, unit_id, status_id, definition)
+        overlap_result(refused)
+    end
+  end
+
+  defp start_application(
+         unit_type,
+         unit_id,
+         status_id,
+         status_params,
+         definition,
+         duration,
+         {instance, held, incoming}
+       ) do
     {duration, instance} = resolve_duration(definition, instance, duration, status_params)
 
     context =
       unit_type
-      |> ContextBuilder.build_context(unit_id, caster_id, instance)
+      |> ContextBuilder.build_context(unit_id, instance.source_id, instance)
       |> Map.put(:duration, duration)
 
     case definition.module.on_apply({unit_type, unit_id}, instance, context) do
@@ -1607,7 +1635,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
           status_id,
           duration,
           definition,
-          instance,
+          {instance, held, incoming},
           new_instance,
           status_params
         )
@@ -1619,6 +1647,75 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         {:error, reason}
     end
   end
+
+  defp ended_on_start(unit_type, unit_id, %{opt1: opt1} = definition) when not is_nil(opt1) do
+    body_states =
+      unit_type
+      |> StatusStorage.get_unit_statuses(unit_id)
+      |> Enum.filter(&body_state?(&1.type))
+      |> Enum.map(& &1.type)
+
+    Enum.uniq(definition.end_on_start ++ body_states)
+  end
+
+  defp ended_on_start(_unit_type, _unit_id, definition), do: definition.end_on_start
+
+  defp body_state?(status_id) do
+    case Registry.get_definition(status_id) do
+      %{opt1: opt1} -> not is_nil(opt1)
+      nil -> false
+    end
+  end
+
+  defp held_instance(unit_type, unit_id, status_id, definition) do
+    if status_id in definition.end_on_start,
+      do: nil,
+      else: StatusStorage.get_status(unit_type, unit_id, status_id)
+  end
+
+  defp overlap(_definition, _target, nil, instance), do: {:replace, instance}
+
+  defp overlap(definition, target, held, instance) do
+    case definition.module.overlap(target, held, instance) do
+      :replace -> {:replace, instance}
+      decision -> decision
+    end
+  end
+
+  defp overlap_result(:keep), do: :ok
+  defp overlap_result(:fail), do: {:error, :overlap_refused}
+
+  # A refused application still ends what it ends on start.
+  defp end_ended_on_start(unit_type, unit_id, status_id, definition) do
+    remove_statuses(unit_type, unit_id, List.delete(definition.end_on_start, status_id))
+  end
+
+  # Inside the store's compare-and-swap the application meets what is current
+  # again when it is no longer `held`: an instance stored, or the held one removed,
+  # in between. `incoming` is the application before `overlap/3` adjusted it.
+  defp store_decision(definition, target, held, incoming) do
+    if incoming.type in definition.end_on_start do
+      fn _current -> :store end
+    else
+      fn
+        current when current === held -> :store
+        current -> stored_decision(overlap(definition, target, current, incoming))
+      end
+    end
+  end
+
+  defp stored_decision({:replace, adjusted}),
+    do:
+      {:store,
+       &%{
+         &1
+         | val1: adjusted.val1,
+           val2: adjusted.val2,
+           val3: adjusted.val3,
+           val4: adjusted.val4
+       }}
+
+  defp stored_decision(_refused), do: :keep
 
   defp resolve_duration(_definition, instance, nil, _status_params), do: {nil, instance}
 
@@ -1634,22 +1731,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          status_id,
          duration,
          definition,
-         instance,
+         {instance, held, incoming},
          new_instance,
          status_params
        ) do
-    case StatusStorage.apply_status_with_entry(unit_type, unit_id, status_id,
-           val1: instance.val1,
-           val2: instance.val2,
-           val3: instance.val3,
-           val4: instance.val4,
-           tick: instance.tick,
-           flag: instance.flag,
-           duration: duration,
-           caster_id: instance.source_id,
-           source_type: instance.source_type,
-           state: new_instance.state || %{},
-           phase: new_instance.phase
+    case StatusStorage.apply_status_with_entry(
+           unit_type,
+           unit_id,
+           status_id,
+           [
+             val1: instance.val1,
+             val2: instance.val2,
+             val3: instance.val3,
+             val4: instance.val4,
+             tick: instance.tick,
+             flag: instance.flag,
+             duration: duration,
+             caster_id: instance.source_id,
+             source_type: instance.source_type,
+             state: new_instance.state || %{},
+             phase: new_instance.phase
+           ],
+           store_decision(definition, {unit_type, unit_id}, held, incoming)
          ) do
       {:stored, stored_instance, prior_instance} ->
         StatusTickManager.arm(unit_type, unit_id, stored_instance)
@@ -1666,6 +1769,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
       {:superseded, _current} ->
         cleanup_unstored_application(unit_type, unit_id, definition, new_instance)
+
+      {:kept, _current} ->
+        cleanup_unstored_application(unit_type, unit_id, definition, new_instance)
+        end_ended_on_start(unit_type, unit_id, status_id, definition)
     end
   end
 

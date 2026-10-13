@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeat do
       case Combat.execute_skill_attack(caster, target_id,
              skill_id: definition.id,
              skill_level: level,
-             skill_ratio: if(break == :neck, do: 2 * ratio, else: ratio),
+             skill_ratio: if(break == Jointbeat.flag(:neck), do: 2 * ratio, else: ratio),
              skip_crit: true,
              skip_range: true,
              report_hit: true
@@ -89,12 +89,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeat do
     :ok
   end
 
-  @doc "Keeps a previously broken neck, or chooses one of six fresh wounds."
-  @spec choose_break({atom(), integer()}) :: atom()
+  @doc """
+  Chooses one of the six breaks at random, as a bit; a target whose neck is
+  already broken always takes the neck break again.
+  """
+  @spec choose_break({atom(), integer()}) :: pos_integer()
   def choose_break({unit_type, unit_id}) do
+    break = Enum.random(Jointbeat.breaks())
+
     case StatusStorage.get_status(unit_type, unit_id, :sc_jointbeat) do
-      %StatusEntry{val2: :neck} -> :neck
-      _ -> Enum.random(Jointbeat.breaks())
+      %StatusEntry{val2: wounds} ->
+        if Jointbeat.broken?(wounds, :neck), do: Jointbeat.flag(:neck), else: break
+
+      nil ->
+        break
     end
   end
 end

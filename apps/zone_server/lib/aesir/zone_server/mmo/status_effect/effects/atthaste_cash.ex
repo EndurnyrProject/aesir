@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AtthasteCash do
     id: :sc_atthaste_cash,
     no_dispel: true,
     no_clear_buff: true,
+    overlap_ignore_level: true,
     properties: [:buff],
     calc_flags: [:aspd],
     icon: :atthaste_cash

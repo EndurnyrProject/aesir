@@ -28,8 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
     :rand.seed(:exsss, {2, 3, 4})
     assert LkJointbeat.choose_break({:mob, 6_150}) in Jointbeat.breaks()
 
-    :ok = StatusStorage.apply_status(:mob, 6_150, :sc_jointbeat, val2: :neck)
-    assert :neck = LkJointbeat.choose_break({:mob, 6_150})
+    :ok = StatusStorage.apply_status(:mob, 6_150, :sc_jointbeat, val2: Jointbeat.flag(:neck))
+    assert LkJointbeat.choose_break({:mob, 6_150}) == Jointbeat.flag(:neck)
   end
 
   test "a new wound strikes for 150 percent at level ten; an existing neck for 300" do
@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
 
     :rand.seed(:exsss, {2, 3, 4})
     assert {:ok, ^caster} = LkJointbeat.cast(caster, {:unit, 6_150}, 10, definition)
-    :ok = StatusStorage.apply_status(:mob, 6_150, :sc_jointbeat, val2: :neck)
+    :ok = StatusStorage.apply_status(:mob, 6_150, :sc_jointbeat, val2: Jointbeat.flag(:neck))
     assert {:ok, ^caster} = LkJointbeat.cast(caster, {:unit, 6_150}, 10, definition)
   end
 

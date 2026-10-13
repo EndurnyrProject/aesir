@@ -53,21 +53,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic Adrenaline Rush is a 30 percent caster rate and 20 percent party rate with no HIT" do
-    own = %{caster_id: 1, target_id: 1}
-    received = %{caster_id: 1, target_id: 2}
-
+  test "classic Adrenaline Rush is a 30 percent own-cast rate and 20 percent otherwise, with no HIT" do
     assert %{aspd_rate: 30} ==
-             Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: 5}, own)
+             Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: 5, val2: 1}, %{})
 
     assert %{aspd_rate: 20} ==
-             Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: 5}, received)
+             Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: 5, val2: 0}, %{})
 
     assert %{aspd_rate: 30} ==
-             Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: 1}, own)
+             Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: 1, val2: 1}, %{})
 
     assert %{aspd_rate: 20} ==
-             Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: 1}, received)
+             Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: 1, val2: 0}, %{})
   end
 
   test "status definitions are discoverable with their calculation flags and weapon requirements" do

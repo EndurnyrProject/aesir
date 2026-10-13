@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MatkPotion do
     id: :sc_matkpotion,
     no_dispel: false,
     no_clear_buff: false,
+    overlap_ignore_level: true,
     clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     calc_flags: [:matk],

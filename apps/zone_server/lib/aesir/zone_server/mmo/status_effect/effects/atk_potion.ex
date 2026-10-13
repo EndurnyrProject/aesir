@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AtkPotion do
     id: :sc_atkpotion,
     no_dispel: false,
     no_clear_buff: false,
+    overlap_ignore_level: true,
     clear_buff_flags: [:remove_on_hermode],
     properties: [:buff],
     calc_flags: [:atk],

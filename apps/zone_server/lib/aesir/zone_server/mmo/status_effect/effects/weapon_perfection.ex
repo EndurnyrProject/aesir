@@ -11,6 +11,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponPerfection do
     calc_flags: [:atk],
     icon: :weaponperfect
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+
   @impl true
   def modifiers(_instance, _context), do: %{ignore_size_penalty: true}
+
+  @impl true
+  def overlap(target, held, incoming),
+    do: Definition.self_cast_overlap(target, held, incoming)
 end

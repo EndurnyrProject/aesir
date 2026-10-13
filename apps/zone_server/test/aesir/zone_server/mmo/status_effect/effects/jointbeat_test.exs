@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.JointbeatTest do
     assert :ok =
              Interpreter.apply_status(:player, 5_140, :sc_jointbeat,
                val1: 7,
-               val2: :neck,
+               val2: Jointbeat.flag(:neck),
                duration: 30_000,
                caster_id: 5_140,
                bypass_resistance: true
@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.JointbeatTest do
     assert :ok =
              Interpreter.apply_status(:player, 5_140, :sc_jointbeat,
                val1: 7,
-               val2: :ankle,
+               val2: Jointbeat.flag(:ankle),
                duration: 30_000,
                caster_id: 5_140,
                bypass_resistance: true
@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.JointbeatTest do
   end
 
   test "the six break types have their own movement, ASPD, DEF and ATK penalties" do
-    assert Jointbeat.breaks() == [:ankle, :wrist, :knee, :shoulder, :waist, :neck]
+    assert Jointbeat.breaks() == [1, 2, 4, 8, 16, 32]
 
     expected = %{
       ankle: %{movement_speed: 50},
@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.JointbeatTest do
     }
 
     for {break, modifiers} <- expected do
-      assert Jointbeat.modifiers(%StatusEntry{val2: break}, %{}) == modifiers
+      assert Jointbeat.modifiers(%StatusEntry{val2: Jointbeat.flag(break)}, %{}) == modifiers
     end
   end
 end

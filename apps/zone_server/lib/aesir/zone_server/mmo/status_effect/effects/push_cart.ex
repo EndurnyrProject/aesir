@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCart do
     id: :sc_push_cart,
     no_dispel: true,
     no_clear_buff: true,
+    overlap_ignore_level: true,
     properties: [:buff],
     calc_flags: [:speed],
     icon: :on_push_cart,
