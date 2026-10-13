@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
 
   @typedoc "Options for a maintained performance field in either mode."
   @type field_opt ::
-          {:reach, :everyone | :all | :party | :party_or_guild | :enemy | :mobs}
+          {:reach, :everyone | :all | :party | :party_or_guild | :enemy}
           | {:upkeep, pos_integer()}
           | {:upkeep_sp, pos_integer()}
           | {:root, :none | :ensemble | :always}

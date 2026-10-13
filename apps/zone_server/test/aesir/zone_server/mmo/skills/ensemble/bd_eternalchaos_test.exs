@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
            } = BdEternalchaos.definition()
   end
 
+  @tag game_mode: :renewal
   test "status lasts 60 seconds and declares the canonical mutual exclusion list" do
     assert %{duration: 60_000, calc_flags: [:def, :def2], properties: [:debuff]} =
              EternalChaos.metadata()
@@ -91,6 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
     assert {:ok, ^caster} = BdEternalchaos.cast(caster, :self, 1, definition)
   end
 
+  @tag game_mode: :renewal
   test "Eternal Chaos resolves both player and mob defense as zero in the damage pipeline", %{
     player: player,
     mob: mob

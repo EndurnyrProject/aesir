@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfriedTest do
     assert definition.require_weapon == [:musical, :whip]
   end
 
+  @tag game_mode: :renewal
   test "delegates party application with effective-level magnitudes" do
     caster = %{character_id: 313}
     definition = BdSiegfried.definition()

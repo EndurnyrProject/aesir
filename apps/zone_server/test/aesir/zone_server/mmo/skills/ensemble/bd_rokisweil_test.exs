@@ -89,6 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
     assert {:rejected, ^mob} = CastingHandler.begin_cast(mob, mob_skill_row(), 0)
   end
 
+  @tag game_mode: :renewal
   test "status prevents skills for thirty seconds and declares ensemble replacement" do
     metadata = RokisWeil.metadata()
 
@@ -104,6 +105,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
              :sc_intoabyss,
              :sc_siegfried
            ]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Roki's Weil blocks every skill but Adaptation at cast begin" do
+    :ok = StatusStorage.apply_status(:player, 77, :sc_rokisweil, duration: 60_000)
+
+    assert StatusInterpreter.can_use_skill?(:player, 77, 304)
+    refute StatusInterpreter.can_use_skill?(:player, 77, 19)
+  end
+
+  @tag game_mode: :renewal
+  test "renewal Roki's Weil blocks Adaptation too" do
+    :ok = StatusStorage.apply_status(:player, 77, :sc_rokisweil, duration: 30_000)
+
+    refute StatusInterpreter.can_use_skill?(:player, 77, 304)
   end
 
   defp caster do

@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdIntoabyssTest do
     assert Catalog.ensemble?(312)
   end
 
+  @tag game_mode: :renewal
   test "status is registered as a finite, mutually-exclusive buff" do
     metadata = IntoAbyss.metadata()
 

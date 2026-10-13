@@ -7,6 +7,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfried do
   for the classic SP. An adjacent partner maintains a stationary 9x9 field
   for one minute, with 1 SP upkeep every 3 seconds each. Party occupants other
   than the performers lose the effect immediately when leaving.
+
+  Renewal grants 3% resistance to Water, Earth, Fire and Wind and 5% ailment
+  resistance per level; pre-renewal grants `55 + 5 * level`% to every element
+  but Neutral and `10 * level`% ailment resistance.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -30,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfried do
 
   use Aesir.ZoneServer.Mmo.Skill.Ensemble
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform
 
@@ -40,8 +45,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfried do
       definition,
       level,
       :sc_siegfried,
-      fn effective_level -> [val1: 3 * effective_level, val2: 5 * effective_level] end,
+      &params/1,
       scope: :party
     )
+  end
+
+  @doc "The status values an ensemble at `level` grants, by game mode."
+  @spec params(pos_integer()) :: keyword()
+  def params(level) do
+    case GameMode.mode() do
+      :renewal -> [val1: 3 * level, val2: 5 * level]
+      :pre_renewal -> [val1: 55 + 5 * level, val2: 10 * level]
+    end
   end
 end

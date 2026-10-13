@@ -701,6 +701,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   end
 
   @mode_keyable [
+    :allow_skills,
     :end_on_start,
     :end_return,
     :prevented_by,

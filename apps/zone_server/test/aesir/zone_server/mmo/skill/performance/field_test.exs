@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "reach can select party members, enemies or mobs without selecting the performer" do
+  test "reach can select party members or enemies without selecting the performer" do
     caster = %{player(17) | party_id: 2}
     ally = %{player(18) | party_id: 2}
     stranger = %{player(19) | party_id: 3}
@@ -185,10 +185,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     enemy = put_in(group.state.performance.reach, :enemy) |> Field.field_support()
     assert enemy.target?.({:mob, 42})
     refute enemy.target?.({:player, 18})
-
-    mobs = put_in(group.state.performance.reach, :mobs) |> Field.field_support()
-    assert mobs.target?.({:mob, 42})
-    refute mobs.target?.({:player, 18})
   end
 
   test "renewal performs through the unchanged snapshot with only snapshot options" do

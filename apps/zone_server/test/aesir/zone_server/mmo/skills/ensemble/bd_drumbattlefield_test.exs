@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "Drum of the Battlefield adds flat ATK and DEF at every pinned level" do
     for {level, expected_atk, expected_def} <- [{1, 20, 15}, {5, 40, 75}] do
       modifiers =
@@ -34,12 +35,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "Drum of the Battlefield status has its pinned duration and mutual exclusion" do
     metadata = DrumBattle.metadata()
 
     assert metadata.duration == 180_000
     assert metadata.properties == [:buff]
-    assert metadata.calc_flags == [:atk, :def]
+    assert metadata.calc_flags == [:atk, :watk, :def]
 
     assert metadata.end_on_start == [
              :sc_richmankim,

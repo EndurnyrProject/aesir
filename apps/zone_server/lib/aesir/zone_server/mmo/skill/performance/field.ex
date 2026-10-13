@@ -201,7 +201,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
 
   defp eligible_unit?(:all, _group, type, _target) when type in [:player, :mob], do: true
   defp eligible_unit?(:everyone, _group, :player, _target), do: true
-  defp eligible_unit?(:mobs, _group, :mob, _target), do: true
 
   defp eligible_unit?(:party, %{party_id: party_id}, :player, %{party_id: party_id})
        when is_integer(party_id) and party_id > 0,

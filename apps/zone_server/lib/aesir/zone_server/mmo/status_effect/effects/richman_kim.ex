@@ -3,10 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim do
   Mr. Kim a Rich Man (SC_RICHMANKIM), keyed by the effective skill level in `val1`.
 
   Renewal places the status on the party and raises each holder's EXP rate by
-  `10 + 10 * level` percent. Pre-renewal places it on enemy mobs inside the
-  field instead: the holder gains nothing, and killing a mob that carries the
+  `10 + 10 * level` percent and ends the other ensembles' statuses. Pre-renewal
+  places it on enemies inside the field instead, for 60 seconds and ending no
+  other status: the holder gains nothing, and killing a mob that carries the
   status raises that kill's base and job EXP by `kill_exp_bonus/1` percent
-  before it is shared among attackers.
+  before it is shared among attackers. A status-immune target resists it.
   """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -14,17 +15,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim do
     no_dispel: true,
     no_clear_buff: false,
     properties: [:buff],
+    immunity: [:boss],
     calc_flags: [:exp_rate],
     end_on_start: [
-      :sc_richmankim,
-      :sc_eternalchaos,
-      :sc_drumbattle,
-      :sc_nibelungen,
-      :sc_rokisweil,
-      :sc_intoabyss,
-      :sc_siegfried
+      renewal: [
+        :sc_richmankim,
+        :sc_eternalchaos,
+        :sc_drumbattle,
+        :sc_nibelungen,
+        :sc_rokisweil,
+        :sc_intoabyss,
+        :sc_siegfried
+      ],
+      pre_renewal: []
     ],
-    duration: 180_000,
+    duration: [renewal: 180_000, pre_renewal: 60_000],
     remove_on_death: false,
     remove_on_map_change: false,
     icon: :richmankim

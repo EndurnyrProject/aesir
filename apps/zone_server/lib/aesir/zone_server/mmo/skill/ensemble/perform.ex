@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform do
   defp online?(partner_id), do: match?({:ok, _unit}, UnitRegistry.get_unit(:player, partner_id))
 
   defp field_options(306), do: [reach: :enemy, upkeep: 4, tick: :lullaby, tick_interval: 6_000]
-  defp field_options(307), do: [reach: :mobs, upkeep: 3]
+  defp field_options(307), do: [reach: :enemy, upkeep: 3]
   defp field_options(308), do: [reach: :enemy, upkeep: 4]
   defp field_options(309), do: [reach: :party, upkeep: 3]
   defp field_options(310), do: [reach: :party, upkeep: 3]

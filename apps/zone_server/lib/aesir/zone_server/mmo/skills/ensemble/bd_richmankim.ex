@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankim do
   Renewal: cast, fixed cast, delay, cooldown, SP, and duration as declared, applied
   as a party buff within its area. Pre-renewal: an instant cast with no cooldown
   for the classic SP. An adjacent partner maintains a stationary 9x9 field
-  for one minute, with 1 SP upkeep every 3 seconds each. Monsters in the field
-  yield increased experience when killed; players are not buffed.
+  for one minute, with 1 SP upkeep every 3 seconds each. Enemies in the field
+  take the status; a monster carrying it yields increased experience when
+  killed, and no player is buffed.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

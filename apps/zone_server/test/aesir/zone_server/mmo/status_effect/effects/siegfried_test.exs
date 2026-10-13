@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SiegfriedTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "declares the canonical ensemble exclusion list and 180 second duration" do
     assert Siegfried.metadata().end_on_start == [
              :sc_richmankim,
@@ -43,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SiegfriedTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "does not reduce Holy, Shadow, Poison, Ghost, Undead or Neutral damage" do
     elements = [:holy, :shadow, :poison, :ghost, :undead, :neutral]
     baseline = Map.new(elements, &{&1, damage(&1)})
@@ -79,6 +81,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SiegfriedTest do
              )
 
     assert_received {:buff_rate, 6300}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic resists every element but Neutral" do
+    elements = [:water, :earth, :fire, :wind, :poison, :holy, :shadow, :ghost, :undead, :neutral]
+    baseline = Map.new(elements, &{&1, damage(&1)})
+
+    :ok =
+      StatusStorage.apply_status(:player, @defender_id, :sc_siegfried,
+        val1: 80,
+        val2: 50,
+        duration: 60_000
+      )
+
+    for element <- elements -- [:neutral] do
+      assert damage(element) == div(baseline[element] * 20, 100)
+    end
+
+    assert damage(:neutral) == baseline[:neutral]
   end
 
   defp apply_siegfried do
