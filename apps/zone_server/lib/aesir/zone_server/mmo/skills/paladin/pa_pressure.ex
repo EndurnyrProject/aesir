@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 367,
     name: :pa_pressure,
+    cast_cancel: false,
     requires: [],
     display_name: "Gloria Domini",
     max_level: 5,

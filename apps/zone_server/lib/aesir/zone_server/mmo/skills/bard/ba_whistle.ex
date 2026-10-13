@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 319,
     name: :ba_whistle,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Whistle",
     max_level: 10,
     target_type: :self,

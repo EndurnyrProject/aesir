@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStriphelm do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 218,
     name: :rg_striphelm,
+    cast_cancel: false,
     requires: [],
     display_name: "Divest Helm",
     max_level: 5,

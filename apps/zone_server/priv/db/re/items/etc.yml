@@ -35018,6 +35018,7 @@
 - aegis_name: ReactorZ_NoDispell
   id: 29442
   name: Z-NoDispell
+  on_equip: bonus(ctx, :no_cast_cancel2, 1)
   subtype: enchant
   type: card
 - aegis_name: ReactorZ_Clairvoyance

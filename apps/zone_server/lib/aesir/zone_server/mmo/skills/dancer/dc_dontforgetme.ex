@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDontforgetme do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 328,
     name: :dc_dontforgetme,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Slow Grace",
     max_level: 10,
     target_type: :self,

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungen do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 310,
     name: :bd_ringnibelungen,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Ring of Nibelungen",
     max_level: 5,
     target_type: :self,

@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 397,
     name: :lk_spiralpierce,
+    cast_cancel: false,
     requires: [],
     display_name: "Spiral Pierce",
     max_level: 5,

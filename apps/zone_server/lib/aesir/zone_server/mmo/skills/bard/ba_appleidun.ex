@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidun do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 322,
     name: :ba_appleidun,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "The Apple of Idun",
     max_level: 10,
     target_type: :self,

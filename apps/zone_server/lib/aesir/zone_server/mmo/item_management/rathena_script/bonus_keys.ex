@@ -168,7 +168,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bfixedcastrate" => :fixcast_rate,
     "badditemhealrate" => :item_heal_rate,
     "bnoknockback" => :no_knockback,
-    "bnocastcancel" => :no_cast_cancel
+    "bnocastcancel" => :no_cast_cancel,
+    "bnocastcancel2" => :no_cast_cancel2
   }
 
   @max_destinations MapSet.new([:movement_speed, :perfect_hit_rate, :splash_range])

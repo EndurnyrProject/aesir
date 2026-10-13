@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYou do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 330,
     name: :dc_serviceforyou,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Gypsy's Kiss",
     max_level: 10,
     target_type: :self,

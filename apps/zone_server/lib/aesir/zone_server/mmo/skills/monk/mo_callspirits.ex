@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspirits do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 261,
     name: :mo_callspirits,
+    cast_cancel: false,
     display_name: "Summon Spirit Sphere",
     max_level: 5,
     target_type: :self,

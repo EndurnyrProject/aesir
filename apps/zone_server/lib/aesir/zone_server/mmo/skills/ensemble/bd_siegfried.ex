@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfried do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 313,
     name: :bd_siegfried,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Acoustic Rhythm",
     max_level: 5,
     target_type: :self,

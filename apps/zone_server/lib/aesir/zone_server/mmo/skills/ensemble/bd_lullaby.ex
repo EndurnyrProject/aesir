@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullaby do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 306,
     name: :bd_lullaby,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Lullaby",
     max_level: 1,
     target_type: :self,

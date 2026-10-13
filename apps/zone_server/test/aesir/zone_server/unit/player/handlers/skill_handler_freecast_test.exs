@@ -117,10 +117,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerFreecastTest do
       assert_received {:to_player, %CastCancel{gid: 1000}}
     end
 
-    test "damage in the fixed phase leaves it running mid-walk" do
+    test "damage in the fixed phase cancels it mid-walk too" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+
       state = walking_cast_state(fixed_offset: 60_000)
 
-      assert SkillHandler.interrupt_cast_on_damage(state) == state
+      result = SkillHandler.interrupt_cast_on_damage(state)
+
+      assert result.game_state.casting == nil
+      assert_received {:to_player, %CastCancel{gid: 1000}}
     end
 
     test "a non-interruptible overlaid cast in the variable phase is immune" do

@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrow do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 148,
     name: :ac_chargearrow,
+    cast_cancel: false,
     requires: [],
     display_name: "Charge Arrow",
     max_level: 1,

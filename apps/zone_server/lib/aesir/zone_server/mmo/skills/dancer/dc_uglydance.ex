@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 325,
     name: :dc_uglydance,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Hip Shaker",
     max_level: 5,
     target_type: :self,

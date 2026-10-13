@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHumming do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 327,
     name: :dc_humming,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Focus Ballet",
     max_level: 10,
     target_type: :self,

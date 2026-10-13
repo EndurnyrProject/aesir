@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.Net.SkillList
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -1330,6 +1331,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert gs.stats.current_state.sp == 45
     end
 
+    test "a skill whose cast damage cannot cancel schedules a non-interruptible cast" do
+      stub(Broadcast, :to_player, fn 1000, %SkillCasting{} -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      {:ok, definition} = Catalog.by_id(29)
+      stub(Catalog, :by_id, fn 29 -> {:ok, %{definition | cast_cancel: false}} end)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+
+      assert new_state.game_state.state_context.interruptible == false
+    end
+
     test "cast bar carries the caster, self target and total cast time" do
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
 
@@ -1422,16 +1434,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert Process.cancel_timer(timer_ref) == false
     end
 
-    test "damage in the fixed phase leaves the cast untouched" do
-      reject(&Broadcast.to_player/2)
+    test "damage in the fixed phase cancels the cast too" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
 
       state = interrupting_state(45, fixed_offset: 60_000)
 
       result = SkillHandler.interrupt_cast_on_damage(state)
 
-      assert result == state
-      assert result.game_state.action_state == :casting
-      refute_received {:to_player, %CastCancel{}}
+      assert result.game_state.action_state == :idle
+      assert_received {:to_player, %CastCancel{gid: 1000}}
     end
 
     test "a non-interruptible cast in the variable phase is immune" do
@@ -1440,6 +1453,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       state = interrupting_state(45, fixed_offset: -100, interruptible: false)
 
       assert SkillHandler.interrupt_cast_on_damage(state) == state
+    end
+
+    test "bNoCastCancel does not protect a cast on siege ground; bNoCastCancel2 does" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn _map, 150, 150, _range, _packet, _opts -> :ok end)
+      map = "cast_cancel_gvg_#{System.unique_integer([:positive])}"
+      :ok = MapFlags.set_runtime(map, :gvg, true)
+      on_exit(fn -> MapFlags.clear_runtime(map, :gvg) end)
+
+      on_siege_ground = fn modifiers ->
+        state =
+          45 |> interrupting_state(fixed_offset: -100) |> with_equipment_modifiers(modifiers)
+
+        %{state | game_state: %{state.game_state | map_name: map}}
+      end
+
+      protected = on_siege_ground.(%{no_cast_cancel2: 1})
+      assert SkillHandler.interrupt_cast_on_damage(protected) == protected
+
+      result = SkillHandler.interrupt_cast_on_damage(on_siege_ground.(%{no_cast_cancel: 1}))
+      assert result.game_state.action_state == :idle
+      assert_received {:to_player, %CastCancel{gid: 1000}}
     end
 
     test "bNoCastCancel equipment keeps a variable-phase cast alive despite damage" do

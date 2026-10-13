@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStriparmor do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 217,
     name: :rg_striparmor,
+    cast_cancel: false,
     requires: [],
     display_name: "Divest Armor",
     max_level: 5,

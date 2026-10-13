@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankim do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 307,
     name: :bd_richmankim,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Mental Sensing",
     max_level: 5,
     target_type: :self,

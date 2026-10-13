@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSteelbody do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 268,
     name: :mo_steelbody,
+    cast_cancel: false,
     status: :sc_steelbody,
     display_name: "Mental Strength",
     max_level: 5,

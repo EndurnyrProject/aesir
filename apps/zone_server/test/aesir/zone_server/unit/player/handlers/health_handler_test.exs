@@ -446,14 +446,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert_received {:to_player, %CastCancel{gid: 1}}
     end
 
-    test "does not interrupt a survivable cast in the fixed phase" do
-      reject(&Broadcast.to_player/2)
+    test "interrupts a survivable cast in the fixed phase too" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
 
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_damage(30, 2001, casting_state(60_000))
 
-      assert game_state.action_state == :casting
-      refute_received {:to_player, %CastCancel{}}
+      assert game_state.action_state == :idle
+      assert_received {:to_player, %CastCancel{gid: 1}}
     end
   end
 

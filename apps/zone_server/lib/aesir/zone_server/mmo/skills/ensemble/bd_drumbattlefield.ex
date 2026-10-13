@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefield do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 309,
     name: :bd_drumbattlefield,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Drum of the Battlefield",
     max_level: 5,
     target_type: :self,

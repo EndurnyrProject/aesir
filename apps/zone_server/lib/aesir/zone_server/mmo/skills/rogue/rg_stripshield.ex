@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStripshield do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 216,
     name: :rg_stripshield,
+    cast_cancel: false,
     requires: [],
     display_name: "Divest Shield",
     max_level: 5,

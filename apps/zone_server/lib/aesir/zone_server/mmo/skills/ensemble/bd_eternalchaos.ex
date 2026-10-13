@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaos do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 308,
     name: :bd_eternalchaos,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Eternal Chaos",
     max_level: 1,
     target_type: :self,

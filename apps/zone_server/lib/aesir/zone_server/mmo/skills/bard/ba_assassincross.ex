@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincross do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 320,
     name: :ba_assassincross,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Assassin Cross of Sunset",
     max_level: 10,
     target_type: :self,

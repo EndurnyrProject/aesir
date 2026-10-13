@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweil do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 311,
     name: :bd_rokisweil,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Roki's Weil",
     max_level: 1,
     target_type: :self,

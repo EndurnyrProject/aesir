@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekiss do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 329,
     name: :dc_fortunekiss,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Lady Luck",
     max_level: 10,
     target_type: :self,

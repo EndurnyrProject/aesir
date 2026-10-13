@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Script.Ctx
@@ -319,29 +320,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   @doc """
-  Phase-aware damage interruption. A cast is immune during the fixed phase
-  (`now < fixed_until`) and cancellable once it reaches the variable phase, as
-  long as it is flagged interruptible. Anything else passes through unchanged.
+  Damage interruption: active damage cancels a timed cast in any phase when its
+  skill can be cancelled (`cast_cancel`, captured as `interruptible`), unless
+  `bNoCastCancel2` equipment is worn, or `bNoCastCancel` equipment off siege
+  ground. Anything else passes through unchanged.
   """
   @spec interrupt_cast_on_damage(SessionState.t()) :: SessionState.t()
   def interrupt_cast_on_damage(
-        %{game_state: %{casting: %{fixed_until: _, interruptible: _} = ctx} = game_state} = state
+        %{game_state: %{casting: %{interruptible: true}} = game_state} = state
       ) do
-    now = System.monotonic_time(:millisecond)
-
-    if now >= ctx.fixed_until and ctx.interruptible and not cast_cancel_immune?(game_state) do
-      cancel_cast(state, :damage)
-    else
-      state
-    end
+    if cast_cancel_immune?(game_state), do: state, else: cancel_cast(state, :damage)
   end
 
   def interrupt_cast_on_damage(state), do: state
 
-  # `bNoCastCancel`: equipment that keeps a cast running when the caster is hit
-  # during the interruptible (variable) phase.
-  defp cast_cancel_immune?(%{stats: stats}) do
-    Stats.get_equipment_modifier(stats, :no_cast_cancel) > 0
+  defp cast_cancel_immune?(%{stats: stats, map_name: map_name}) do
+    Stats.get_equipment_modifier(stats, :no_cast_cancel2) > 0 or
+      (Stats.get_equipment_modifier(stats, :no_cast_cancel) > 0 and not Rules.ground?(map_name))
   end
 
   defp cast_cancel_immune?(_game_state), do: false
@@ -1312,6 +1307,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  defp cast_cancel?(skill_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> definition.cast_cancel
+      :error -> true
+    end
+  end
+
   defp schedule_cast(%{game_state: game_state} = state, info, locked) do
     now = System.monotonic_time(:millisecond)
     token = make_ref()
@@ -1327,7 +1329,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       total_until: now + info.total,
       timer_ref: timer_ref,
       token: token,
-      interruptible: true,
+      interruptible: cast_cancel?(info.skill_id),
       combat_target_id: locked,
       homunculus_id: lifecycle_homunculus_id(state, info.skill_id, info.level),
       origin: Map.get(info, :origin, :normal),

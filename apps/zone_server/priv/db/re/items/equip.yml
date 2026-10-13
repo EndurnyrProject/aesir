@@ -76565,6 +76565,11 @@
   locations:
     - armor
   name: Geffen Magic Robe
+  on_equip: |-
+    ctx = bonus(ctx, :sp_cost_rate, (-10 - if((refine(ctx) >= 7), do: 5, else: 0)))
+    ctx = bonus(ctx, :varcast_rate, (15 - if((refine(ctx) >= 9), do: 5, else: 0)))
+    ctx = bonus(ctx, :no_cast_cancel2, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor

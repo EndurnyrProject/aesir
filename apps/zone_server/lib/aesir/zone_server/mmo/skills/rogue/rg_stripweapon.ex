@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStripweapon do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 215,
     name: :rg_stripweapon,
+    cast_cancel: false,
     requires: [],
     display_name: "Divest Weapon",
     max_level: 5,

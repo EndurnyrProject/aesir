@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdIntoabyss do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 312,
     name: :bd_intoabyss,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Into the Abyss",
     max_level: 1,
     target_type: :self,

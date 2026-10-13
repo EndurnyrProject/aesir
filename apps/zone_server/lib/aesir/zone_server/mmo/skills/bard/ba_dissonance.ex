@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 317,
     name: :ba_dissonance,
+    cast_cancel: [renewal: false, pre_renewal: true],
     display_name: "Dissonance",
     max_level: 5,
     target_type: :self,

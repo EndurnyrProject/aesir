@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 316,
     name: :ba_musicalstrike,
+    cast_cancel: [renewal: false, pre_renewal: true],
     requires: [],
     display_name: "Musical Strike",
     max_level: 5,
