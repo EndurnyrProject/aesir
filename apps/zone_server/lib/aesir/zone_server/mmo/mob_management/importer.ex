@@ -87,8 +87,15 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
     |> Map.new(fn {k, v} -> {Atom.to_string(k), v} end)
   end
 
-  @spec to_definition(map()) :: {:ok, MobDefinition.t()} | {:error, term()}
-  def to_definition(entry) do
+  @doc """
+  Converts one rAthena `mob_db` row read in `mode`.
+
+  `Attack2` is the maximum ATK in pre-renewal (`atk2`) and the MATK in renewal
+  (`matk`), as `mob.cpp` loads it.
+  """
+  @spec to_definition(map(), :renewal | :pre_renewal) ::
+          {:ok, MobDefinition.t()} | {:error, term()}
+  def to_definition(entry, mode \\ :renewal) do
     with {:ok, size} <- fetch_enum(@sizes, Map.get(entry, "Size", "Small"), :unknown_size),
          {:ok, race} <- fetch_enum(@races, Map.get(entry, "Race", "Formless"), :unknown_race),
          {:ok, element} <-
@@ -104,7 +111,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
          base_exp: Map.get(entry, "BaseExp", 0),
          job_exp: Map.get(entry, "JobExp", 0),
          atk: Map.get(entry, "Attack", 0),
-         matk: Map.get(entry, "Attack2", 0),
+         atk2: if(mode == :pre_renewal, do: Map.get(entry, "Attack2", 0), else: 0),
+         matk: if(mode == :renewal, do: Map.get(entry, "Attack2", 0), else: 0),
          def: Map.get(entry, "Defense", 0),
          mdef: Map.get(entry, "MagicDefense", 0),
          stats: parse_stats(entry),

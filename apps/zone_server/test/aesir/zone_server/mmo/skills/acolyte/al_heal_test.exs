@@ -495,8 +495,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
          %{definition: definition} do
       mob = mob_caster(base_level: 50, int: 50, matk: 50)
 
-      # Same vector as the player lv5 @ base_level=50 test above: 350.
-      expect(Combat, :apply_heal, fn :player, @ally_id, 350, 9001 -> :ok end)
+      # Base heal 300, plus a MATK roll over INT + level + MATK 70%..130% with the
+      # database MATK added again: 185..214.
+      expect(Combat, :apply_heal, fn :player, @ally_id, amount, 9001 when amount in 485..514 ->
+        :ok
+      end)
 
       assert {:ok, ^mob} = AlHeal.cast(mob, {:unit, @ally_id}, 5, definition)
     end

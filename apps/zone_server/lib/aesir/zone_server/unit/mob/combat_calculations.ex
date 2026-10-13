@@ -86,12 +86,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculations do
     Mechanics.mob_formulas().calculate_soft_defense(mob_data)
   end
 
-  @doc "Calculates the mob magic attack stat from its database MATK."
-  @spec calculate_magic_attack(mob_data()) :: integer()
-  def calculate_magic_attack(%MobDefinition{} = mob_data) do
-    Mechanics.mob_formulas().calculate_magic_attack(mob_data)
-  end
-
   @doc "Calculates the mob hard-MDEF stat from its database MDEF."
   @spec calculate_magic_defense(mob_data()) :: integer()
   def calculate_magic_defense(%MobDefinition{} = mob_data) do

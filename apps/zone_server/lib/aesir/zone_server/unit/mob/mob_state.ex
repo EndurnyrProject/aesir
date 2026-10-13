@@ -378,13 +378,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     formulas = Mechanics.mob_formulas()
     modifiers = Interpreter.get_all_modifiers(:mob, mob_state.instance_id)
 
-    mob_matk =
-      apply_rate(
-        formulas.calculate_magic_attack(mob_data) + modifier(modifiers, :matk),
-        modifier(modifiers, :matk_rate)
-      )
-
     stat_bonus = mob_state.stat_bonus
+    str = mob_data.stats.str + modifier(modifiers, :str)
+    int = mob_data.stats.int + modifier(modifiers, :int)
+    guard_up = Map.get(stat_bonus, :atk, 0)
+    {atk_min, atk_max} = formulas.attack_bounds(mob_data, modifiers)
+    atk_max = atk_max + guard_up
+    {matk_min, matk_max} = formulas.magic_attack_bounds(mob_data, int, modifiers)
+    # Renewal Heal adds the database MATK on top of the base bounds again
+    # (`skill_calc_heal`'s weapon MATK, no variance for a monster).
+    {heal_matk_min, heal_matk_max} = formulas.magic_attack_bounds(mob_data, int, %{})
+
+    {heal_matk_min, heal_matk_max} =
+      {heal_matk_min + mob_data.matk, heal_matk_max + mob_data.matk}
 
     Combatant.new!(%{
       unit_id: mob_state.instance_id,
@@ -393,10 +399,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       reward_root: nil,
       guild_id: mob_state.guild_id,
       base_stats: %{
-        str: mob_data.stats.str + modifier(modifiers, :str),
+        str: str,
         agi: mob_data.stats.agi + modifier(modifiers, :agi),
         vit: mob_data.stats.vit + modifier(modifiers, :vit),
-        int: mob_data.stats.int + modifier(modifiers, :int),
+        int: int,
         dex: mob_data.stats.dex + modifier(modifiers, :dex),
         luk: mob_data.stats.luk + modifier(modifiers, :luk)
       },
@@ -416,12 +422,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           formulas.calculate_defense(mob_data) + modifier(modifiers, :def) +
             Map.get(stat_bonus, :def, 0),
         soft_def: formulas.calculate_soft_defense(mob_data),
-        atk:
-          formulas.calculate_base_attack(mob_data) + modifier(modifiers, :atk) +
-            Map.get(stat_bonus, :atk, 0),
-        matk: mob_matk,
-        matk_min: mob_matk,
-        matk_max: mob_matk,
+        atk: formulas.status_attack(mob_data, str, guard_up, modifiers),
+        atk_min: min(atk_min + guard_up, atk_max),
+        atk_max: atk_max,
+        matk: matk_max,
+        matk_min: matk_min,
+        matk_max: matk_max,
+        heal_matk_min: heal_matk_min,
+        heal_matk_max: heal_matk_max,
         mdef:
           formulas.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef) +
             Map.get(stat_bonus, :mdef, 0),

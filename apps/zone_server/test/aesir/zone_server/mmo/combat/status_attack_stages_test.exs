@@ -18,7 +18,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
+  alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
@@ -105,22 +108,64 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
   end
 
   describe "a non-player's base" do
+    defp mob_combatant(modifiers) do
+      mob = struct(MobDefinition, level: 5, atk: 50, atk2: 60)
+      formulas = Mechanics.mob_formulas()
+      {atk_min, atk_max} = formulas.attack_bounds(mob, modifiers)
+
+      %{
+        CombatTestHelper.create_mob_combatant()
+        | combat_stats: %{
+            atk: formulas.status_attack(mob, 10, 0, modifiers),
+            atk_min: atk_min,
+            atk_max: atk_max
+          }
+      }
+    end
+
     @tag game_mode: :pre_renewal
     test "a classic mob's bounds both take status weapon ATK and no status ATK" do
-      stub_modifiers(%{watk: 20, batk: 7})
-      mob = CombatTestHelper.create_mob_combatant(atk: 50, str: 10, base_level: 5)
-
-      # Maximum 60, status weapon ATK 20, then the existing STR + level.
-      assert DamageInputs.non_player_base_attack(mob, true) == {:ok, 95}
+      # Attack2 60 plus status weapon ATK 20 is the critical maximum; no batk.
+      assert DamageInputs.non_player_base_attack(mob_combatant(%{watk: 20, batk: 7}),
+               critical: true
+             ) ==
+               {:ok, 80}
     end
 
     @tag game_mode: :renewal
     test "a renewal mob's base takes status ATK and ignores status weapon ATK" do
-      stub_modifiers(%{watk: 20, batk: 7})
-      mob = CombatTestHelper.create_mob_combatant(atk: 50, str: 10, base_level: 5)
+      # (50 * 120 / 100 + 10 + 5 + 7) * 14 / 10 for the critical maximum.
+      assert DamageInputs.non_player_base_attack(mob_combatant(%{watk: 20, batk: 7}),
+               critical: true
+             ) ==
+               {:ok, 114}
+    end
+  end
 
-      # (60 + 15 + 7) * 14 / 10 for the critical maximum.
-      assert DamageInputs.non_player_base_attack(mob, true) == {:ok, 114}
+  describe "Mental Charge on a non-player" do
+    defp charged do
+      :ok = StatusStorage.apply_status(:homunculus, 77, :sc_change, val2: 0, val3: 0)
+
+      %{
+        CombatTestHelper.create_mob_combatant()
+        | unit_type: :homunculus,
+          unit_id: 77,
+          combat_stats: %{atk: 30, atk_min: 40, atk_max: 60, matk_min: 100, matk_max: 150}
+      }
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic takes the maximum MATK as the base of every attack" do
+      assert DamageInputs.non_player_base_attack(charged()) == {:ok, 150}
+      assert DamageInputs.non_player_base_attack(charged(), skill_id: 5) == {:ok, 150}
+    end
+
+    @tag game_mode: :renewal
+    test "renewal rolls a normal attack from MATK without status ATK, a skill from ATK" do
+      assert DamageInputs.non_player_base_attack(charged(), critical: true) == {:ok, 210}
+
+      assert DamageInputs.non_player_base_attack(charged(), critical: true, skill_id: 5) ==
+               {:ok, 126}
     end
   end
 

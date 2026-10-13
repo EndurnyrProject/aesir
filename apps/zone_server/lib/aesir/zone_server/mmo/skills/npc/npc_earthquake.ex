@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
   @impl Ground
   def on_unit_hit(%Group{} = group, cell, {unit_type, target_id}, _now) do
     with {:ok, caster} <- Combat.resolve_combatant(group.caster_type, group.caster_id),
-         {:ok, attack} <- DamageInputs.non_player_base_attack(caster) do
+         {:ok, attack} <- DamageInputs.non_player_base_attack(caster, skill_id: group.skill_id) do
       enemies =
         group.map_name |> SplashTargets.select(cell, reach(group.level), caster) |> length()
 

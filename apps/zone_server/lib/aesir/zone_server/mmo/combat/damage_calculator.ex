@@ -1435,8 +1435,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, Mechanics.physical_attack().base_attack(parts)}
   end
 
-  defp calculate_unit_base_attack(attacker, opts),
-    do: DamageInputs.non_player_base_attack(attacker, Keyword.get(opts, :force_crit, false))
+  defp calculate_unit_base_attack(attacker, opts) do
+    DamageInputs.non_player_base_attack(attacker,
+      critical: Keyword.get(opts, :force_crit, false),
+      skill_id: Keyword.get(opts, :skill_id)
+    )
+  end
 
   @doc """
   Applies the scalar recipe's modifier stages to `base_damage`, without DEF.

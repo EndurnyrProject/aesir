@@ -166,48 +166,38 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   defp weapon_atk?(_hand), do: false
 
   @doc """
-  Rolls the existing non-player base attack representation.
+  Rolls a non-player's base attack (`battle_calc_base_damage` for a monster
+  or homunculus): its weapon roll `atk_min..atk_max - 1` plus its status ATK
+  (`atk`).
 
-  A critical takes the maximum weapon attack instead of a roll; in renewal the
-  critical base is then multiplied by 14/10. A monster's status weapon ATK
-  moves both bounds of its classic roll and nothing in renewal; its status ATK
-  joins its renewal base only (a classic monster has none). A homunculus takes
-  both in its own stat derivation.
+  `:critical` takes the maximum instead of a roll; in renewal the critical base
+  is then multiplied by 14/10. Under Mental Charge a classic non-player's base
+  is its maximum MATK, and in either mode a normal attack (no `:skill_id`)
+  rolls its MATK bounds instead, with no status ATK.
   """
-  @spec non_player_base_attack(map(), boolean()) :: {:ok, integer()} | {:error, atom()}
-  def non_player_base_attack(attacker, critical? \\ false)
+  @spec non_player_base_attack(map(), keyword()) :: {:ok, integer()} | {:error, atom()}
+  def non_player_base_attack(attacker, opts \\ [])
 
-  def non_player_base_attack(%{unit_type: :homunculus} = attacker, critical?) do
-    min_atk = attacker.combat_stats.atk_min
-    max_atk = attacker.combat_stats.atk_max
+  def non_player_base_attack(%{unit_type: type} = attacker, opts)
+      when type in [:mob, :homunculus] do
+    critical? = Keyword.get(opts, :critical, false)
+    stats = attacker.combat_stats
+    charged? = StatusStorage.has_status?(type, attacker.unit_id, :sc_change)
 
-    weapon_atk = weapon_attack(min_atk, max_atk, critical?)
+    cond do
+      charged? and GameMode.mode() == :pre_renewal ->
+        {:ok, stats.matk_max}
 
-    {:ok, critical_base(attacker.combat_stats.atk + weapon_atk, critical?)}
-  end
+      charged? and is_nil(Keyword.get(opts, :skill_id)) ->
+        {:ok, critical_base(weapon_attack(stats.matk_min, stats.matk_max, critical?), critical?)}
 
-  def non_player_base_attack(%{unit_type: :mob} = attacker, critical?) do
-    atk = attacker.combat_stats.atk
-    atk_min = div(atk * 80, 100)
-    atk_max = div(atk * 120, 100)
-    {status_watk, status_batk} = mob_status_attack(attacker)
-
-    weapon_atk = weapon_attack(atk_min + status_watk, atk_max + status_watk, critical?)
-    batk = attacker.base_stats.str + attacker.progression.base_level + status_batk
-
-    {:ok, critical_base(weapon_atk + batk, critical?)}
-  end
-
-  def non_player_base_attack(_attacker, _critical?), do: {:error, :unknown_unit_type}
-
-  defp mob_status_attack(attacker) do
-    modifiers = ModifierCalculator.get_all_modifiers(:mob, attacker.unit_id)
-
-    case GameMode.mode() do
-      :pre_renewal -> {Map.get(modifiers, :watk, 0), 0}
-      :renewal -> {0, Map.get(modifiers, :batk, 0)}
+      true ->
+        weapon = weapon_attack(stats.atk_min, stats.atk_max, critical?)
+        {:ok, critical_base(stats.atk + weapon, critical?)}
     end
   end
+
+  def non_player_base_attack(_attacker, _opts), do: {:error, :unknown_unit_type}
 
   defp weapon_attack(min_atk, max_atk, false),
     do: DamageShared.roll(min(min_atk, max_atk), max_atk)

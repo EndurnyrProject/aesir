@@ -434,19 +434,12 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       caster = caster_targeting(char_id)
       caster = put_in(caster.mob_data.matk, 500)
+      caster = put_in(caster.mob_data.stats.int, 100)
       row = row!(@mob_id, "MG_FIREBOLT", level: 10)
 
       attacker = MobState.to_combatant(caster)
       target = PlayerState.to_combatant(get_player_state(player.pid))
-
-      {:ok, %{damage: per_hit}} =
-        MagicDamageCalculator.calculate_magic_damage(attacker, target,
-          element: :fire,
-          skill_ratio: 100,
-          skill_id: row.skill_id
-        )
-
-      expected_damage = per_hit * row.level
+      {lowest, highest} = bolt_band(attacker, target, row)
 
       flush_packets()
       assert :ok = Executor.execute(caster, row)
@@ -454,7 +447,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       assert_packet_sent_with(SkillDamage, fn packet ->
         assert packet.skill_id == row.skill_id
         assert packet.target_id == char_id
-        assert packet.damage == expected_damage
+        assert packet.damage in lowest..highest
       end)
 
       assert :ok =
@@ -466,13 +459,38 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       stats = PlayerSession.recalculate_stats(player.pid)
       assert stats.combat_stats.mdef == 80
 
+      endured = PlayerState.to_combatant(get_player_state(player.pid))
+      {endured_lowest, endured_highest} = bolt_band(attacker, endured, row)
+      assert endured_highest < highest
+
       flush_packets()
       assert :ok = Executor.execute(caster, row)
 
       assert_packet_sent_with(SkillDamage, fn packet ->
-        assert packet.damage < expected_damage
+        assert packet.damage in endured_lowest..endured_highest
       end)
     end
+  end
+
+  # A monster's MATK is a band and a bolt rolls it once for all its hits: the
+  # total at the band's minimum and at its maximum.
+  defp bolt_band(attacker, target, row) do
+    %{matk_min: matk_min, matk_max: matk_max} = attacker.combat_stats
+
+    [matk_min, matk_max]
+    |> Enum.map(fn matk ->
+      stats = %{attacker.combat_stats | matk_min: matk, matk_max: matk}
+
+      {:ok, %{damage: per_hit}} =
+        MagicDamageCalculator.calculate_magic_damage(%{attacker | combat_stats: stats}, target,
+          element: :fire,
+          skill_ratio: 100,
+          skill_id: row.skill_id
+        )
+
+      per_hit * row.level
+    end)
+    |> List.to_tuple()
   end
 
   describe "NPC_STUNATTACK on-connect status" do

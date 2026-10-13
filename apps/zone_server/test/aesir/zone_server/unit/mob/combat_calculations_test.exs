@@ -65,9 +65,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
     end
   end
 
-  test "magic attack and hard MDEF preserve database values" do
-    mob = create_test_mob(%{matk: 95, mdef: 22})
-    assert CombatCalculations.calculate_magic_attack(mob) == 95
+  test "hard MDEF preserves the database value" do
+    mob = create_test_mob(%{mdef: 22})
     assert CombatCalculations.calculate_magic_defense(mob) == 22
   end
 

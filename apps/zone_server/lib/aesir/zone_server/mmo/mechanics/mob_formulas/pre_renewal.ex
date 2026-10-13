@@ -1,9 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal do
   @moduledoc """
   Classic mob formulas use unshifted HIT/FLEE and VIT-based soft defenses.
+
+  A monster rolls its `Attack` to `Attack2`, both raised by status weapon ATK,
+  and has no status ATK. Its MATK is INT-based, plus flat status MATK, then
+  Mystical Amplification. A guardian's Guard Up is its only status ATK.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
+
+  alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
 
@@ -42,8 +48,26 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal do
   def calculate_soft_defense(%MobDefinition{} = mob_data), do: mob_data.stats.vit
 
   @impl true
-  def calculate_magic_attack(%MobDefinition{} = mob_data) do
-    mob_data.matk
+  def attack_bounds(%MobDefinition{atk: atk, atk2: atk2}, modifiers) do
+    watk = Map.get(modifiers, :watk, 0)
+    {atk + watk, atk2 + watk}
+  end
+
+  # A classic monster has no status ATK; Guard Up gives a guardian some, and
+  # only then do status ATK modifiers apply (`status_calc_bl_main` runs
+  # `status_calc_batk` only for a non-zero base).
+  @impl true
+  def status_attack(%MobDefinition{}, _str, 0, _modifiers), do: 0
+
+  def status_attack(%MobDefinition{}, _str, guard_up, modifiers),
+    do: guard_up + Map.get(modifiers, :batk, 0)
+
+  @impl true
+  def magic_attack_bounds(%MobDefinition{}, int, modifiers) do
+    {int + div(int, 7) * div(int, 7), int + div(int, 5) * div(int, 5)}
+    |> MobFormulas.add_flat(modifiers)
+    |> MobFormulas.amplify(modifiers)
+    |> MobFormulas.floor_zero()
   end
 
   @impl true

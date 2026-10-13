@@ -21,15 +21,15 @@ defmodule Mix.Tasks.Aesir.Import.Mobs do
     src = Path.join([rathena, "db", "mob_db.yml"])
     File.mkdir_p!(out_dir)
 
-    definitions = src |> Import.read_mode_filtered!(mode) |> Enum.map(&to_definition!/1)
+    definitions = src |> Import.read_mode_filtered!(mode) |> Enum.map(&to_definition!(&1, mode))
     yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
     out = Path.join(out_dir, "mobs.yml")
     File.write!(out, yaml)
     Mix.shell().info("mobs: #{length(definitions)} -> #{out}")
   end
 
-  defp to_definition!(entry) do
-    case Importer.to_definition(entry) do
+  defp to_definition!(entry, mode) do
+    case Importer.to_definition(entry, mode) do
       {:ok, definition} ->
         definition
 

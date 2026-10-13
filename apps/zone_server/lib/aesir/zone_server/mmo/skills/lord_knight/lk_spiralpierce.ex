@@ -123,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   # the base; DEF is ignored.
   defp classic_mob_opts(caster, size) do
     attacker = MobState.to_combatant(caster)
-    {:ok, roll} = DamageInputs.non_player_base_attack(attacker)
+    {:ok, roll} = DamageInputs.non_player_base_attack(attacker, skill_id: definition().id)
     str_bonus = Integer.pow(div(attacker.base_stats.str, 10), 2)
 
     [base_damage: div((roll + str_bonus) * spiral_size_rate(size), 100), ignore_defense: true]

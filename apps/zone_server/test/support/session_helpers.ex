@@ -93,6 +93,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
   - :level - Mob level
   - :dex - Mob DEX stat (default 10)
   - :agi - Mob AGI stat, feeds the mob's flee (default 10)
+  - :atk / :atk2 - Database `Attack` and classic `Attack2` (default 10 each)
   - :modes - Mob mode list, e.g. `[:boss]` (default `[]`)
   - :drops - Mob drop table (default `[]`)
   - :mvp_exp - MVP experience (default `0`; a non-zero value makes the mob MVP-tier)
@@ -128,7 +129,8 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       sp: 50,
       base_exp: 10,
       job_exp: 5,
-      atk: 10,
+      atk: opts[:atk] || 10,
+      atk2: opts[:atk2] || 10,
       matk: 0,
       def: 5,
       mdef: 3,

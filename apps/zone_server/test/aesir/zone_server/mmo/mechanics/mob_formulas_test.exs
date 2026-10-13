@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulasTest do
   test "mode-shared leaves preserve the extracted formulas" do
     mob = mob_fixture()
 
-    expected = {0, 100, 50, 25, 60, 10}
+    expected = {0, 100, 50, 25, 10}
 
     assert shared_leaves(Renewal, mob) === expected
     assert shared_leaves(PreRenewal, mob) === expected
@@ -39,7 +39,6 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulasTest do
       formulas.calculate_aspd(mob),
       formulas.calculate_base_attack(mob),
       formulas.calculate_defense(mob),
-      formulas.calculate_magic_attack(mob),
       formulas.calculate_magic_defense(mob)
     }
   end

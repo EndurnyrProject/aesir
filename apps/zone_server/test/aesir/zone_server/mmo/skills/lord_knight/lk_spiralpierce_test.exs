@@ -151,9 +151,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
         {:ok, CombatTestHelper.create_player_combatant(unit_id: 6_162, size: :large)}
     end)
 
-    # ATK 0 rolls 0, so the base is STR 50 + level 10 = 60, plus (50 / 10)^2 = 85.
+    # Classic Attack..Attack2 is 0..0; only the skill's (STR 50 / 10)^2 adds 25.
     expect(Combat, :execute_skill_attack, 2, fn ^caster, {:player, id}, opts ->
-      assert opts[:base_damage] == if(id == 6_161, do: 85, else: div(85 * 75, 100))
+      assert opts[:base_damage] == if(id == 6_161, do: 25, else: 18)
       assert opts[:ignore_defense] == true
       assert opts[:dmg_type] == :misc
       assert opts[:element] == :neutral
@@ -177,7 +177,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, {:player, 6_161}, opts ->
-      assert opts[:base_damage] == div(85 * 125, 100)
+      # Zero ordinary ATK + (STR 50 / 10)^2 = 25; small size floors 25 * 125% to 31.
+      assert opts[:base_damage] == 31
       {:ok, %{hit?: false}}
     end)
 

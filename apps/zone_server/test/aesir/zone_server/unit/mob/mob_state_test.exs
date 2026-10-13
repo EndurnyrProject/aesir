@@ -27,6 +27,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     def modifiers(instance, _context), do: %{atk: instance.val1}
   end
 
+  defmodule TestBatkBuff do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mob_batk_buff,
+      no_dispel: false,
+      no_clear_buff: false,
+      properties: [:buff]
+
+    @impl true
+    def modifiers(_instance, _context), do: %{batk: 7}
+  end
+
   defmodule TestFleeRate do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -61,6 +73,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       sp: 0,
       stats: %{str: 40, agi: 30, vit: 50, int: 20, dex: 35, luk: 15},
       atk: 50,
+      atk2: 70,
       matk: 60,
       def: 25,
       mdef: 10,
@@ -267,24 +280,110 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
-  describe "to_combatant/1 magic stats" do
-    test "carries matk and hard mdef in combat_stats" do
+  describe "to_combatant/1 attack bounds" do
+    defp bounded(atk2 \\ 70) do
       state = build_mob_state()
+      %{state | mob_data: %{state.mob_data | atk2: atk2}}
+    end
 
-      combatant = MobState.to_combatant(state)
+    defp register(state) do
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+      state
+    end
 
-      assert combatant.combat_stats.matk == 60
+    @tag game_mode: :pre_renewal
+    test "a classic monster rolls Attack to Attack2 with no status ATK and INT-based MATK" do
+      stats = MobState.to_combatant(bounded()).combat_stats
+
+      assert {stats.atk_min, stats.atk_max, stats.atk} == {50, 70, 0}
+      # INT 20: 20 + (20 / 7)^2 .. 20 + (20 / 5)^2
+      assert {stats.matk_min, stats.matk_max} == {24, 36}
+    end
+
+    @tag game_mode: :renewal
+    test "a renewal monster rolls 80 to 120 percent plus STR and level, MATK from INT, level and MATK" do
+      stats = MobState.to_combatant(bounded()).combat_stats
+
+      assert {stats.atk_min, stats.atk_max, stats.atk} == {40, 60, 65}
+      # 20 + 25 + 60 * 70 / 100 .. 20 + 25 + 60 * 130 / 100
+      assert {stats.matk_min, stats.matk_max} == {87, 123}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a classic Attack2 below Attack rolls Attack2 only" do
+      stats = MobState.to_combatant(bounded(30)).combat_stats
+
+      assert {stats.atk_min, stats.atk_max} == {30, 30}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "Guard Up raises both classic bounds and status ATK" do
+      stats = MobState.to_combatant(%{bounded() | stat_bonus: %{atk: 10}}).combat_stats
+
+      assert {stats.atk_min, stats.atk_max, stats.atk} == {60, 80, 10}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a classic guardian's status ATK takes status ATK modifiers, a plain monster's does not" do
+      Registry.register_module(TestBatkBuff)
+      plain = register(bounded())
+      guardian = register(%{bounded() | instance_id: 2, stat_bonus: %{atk: 10}})
+
+      for state <- [plain, guardian],
+          do: StatusStorage.apply_status(:mob, state.instance_id, TestBatkBuff.id())
+
+      assert MobState.to_combatant(plain).combat_stats.atk == 0
+      assert MobState.to_combatant(guardian).combat_stats.atk == 10 + 7
+    end
+
+    @tag game_mode: :renewal
+    test "Guard Up raises both renewal bounds after the variance and status ATK" do
+      stats = MobState.to_combatant(%{bounded() | stat_bonus: %{atk: 10}}).combat_stats
+
+      assert {stats.atk_min, stats.atk_max, stats.atk} == {50, 70, 75}
+    end
+
+    @tag game_mode: :renewal
+    test "renewal Mystical Amplification scales the MATK bounds before flat MATK" do
+      state = register(bounded())
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_magicpower, val1: 10)
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_impositio, val2: 5)
+
+      stats = MobState.to_combatant(state).combat_stats
+
+      assert {stats.matk_min, stats.matk_max} ==
+               {87 + div(87 * 50, 100) + 5, 123 + div(123 * 50, 100) + 5}
+    end
+
+    test "a MATK rate is a player bonus and leaves a monster's MATK alone" do
+      state = register(bounded())
+      Registry.register_module(TestMagicRates)
+      baseline = MobState.to_combatant(state).combat_stats
+
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, TestMagicRates.id())
+      rated = MobState.to_combatant(state).combat_stats
+
+      assert {rated.matk_min, rated.matk_max} == {baseline.matk_min, baseline.matk_max}
+    end
+  end
+
+  describe "to_combatant/1 magic stats" do
+    test "carries the maximum MATK as matk and hard mdef in combat_stats" do
+      combatant = MobState.to_combatant(build_mob_state())
+
+      assert combatant.combat_stats.matk == combatant.combat_stats.matk_max
       assert combatant.combat_stats.mdef == 10
     end
 
-    test "mob MATK band is deterministic: matk_min == matk_max == matk" do
-      state = build_mob_state()
+    test "Heal's MATK band is the base band plus the database MATK, without status MATK" do
+      state = register(build_mob_state())
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_magicpower, val1: 10)
+      stats = MobState.to_combatant(state).combat_stats
+      base = MobState.to_combatant(%{state | instance_id: 99}).combat_stats
+      matk = state.mob_data.matk
 
-      combatant = MobState.to_combatant(state)
-
-      assert combatant.combat_stats.matk_min == 60
-      assert combatant.combat_stats.matk_max == 60
-      assert combatant.combat_stats.matk_min == combatant.combat_stats.matk
+      assert {stats.heal_matk_min, stats.heal_matk_max} ==
+               {base.matk_min + matk, base.matk_max + matk}
     end
 
     @tag game_mode: :renewal
@@ -420,42 +519,36 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert MobState.to_combatant(state).combat_stats.flee == div(baseline, 2)
     end
 
-    test "matk_rate scales MATK and mdef2_rate scales soft MDEF" do
-      state = build_mob_state()
+    test "mdef2_rate scales soft MDEF" do
+      state = register(build_mob_state())
       Registry.register_module(TestMagicRates)
-      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
       baseline = MobState.to_combatant(state).combat_stats
 
       :ok = StatusStorage.apply_status(:mob, state.instance_id, TestMagicRates.id())
       rated = MobState.to_combatant(state).combat_stats
 
-      assert rated.matk == 120
-      assert {rated.matk_min, rated.matk_max} == {120, 120}
       assert rated.soft_mdef == div(baseline.soft_mdef * 40, 100)
     end
 
-    test "an ATK-raising status on the mob raises combat_stats.atk" do
-      state = build_mob_state()
+    test "an :atk status bonus is a player bonus and leaves a monster's attack alone" do
+      state = register(build_mob_state())
       Registry.register_module(TestAtkBuff)
-      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
-
-      baseline = MobState.to_combatant(state).combat_stats.atk
+      baseline = MobState.to_combatant(state).combat_stats
 
       StatusStorage.apply_status(:mob, state.instance_id, :sc_test_mob_atk_buff, val1: 30)
+      buffed = MobState.to_combatant(state).combat_stats
 
-      buffed = MobState.to_combatant(state).combat_stats.atk
-
-      assert buffed == baseline + 30
-      assert buffed > baseline
+      assert {buffed.atk, buffed.atk_min, buffed.atk_max} ==
+               {baseline.atk, baseline.atk_min, baseline.atk_max}
     end
 
     test "with no active statuses, to_combatant/1 is unchanged from the un-buffed values" do
-      state = build_mob_state()
-      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+      state = register(build_mob_state())
 
       combatant = MobState.to_combatant(state)
+      unbuffed = MobState.to_combatant(%{state | instance_id: 99})
 
-      assert combatant.combat_stats.atk == 50
+      assert combatant.combat_stats == unbuffed.combat_stats
       assert combatant.combat_stats.def == 25
       assert combatant.base_stats.str == 40
       assert combatant.beast_bane_level == 0
@@ -638,54 +731,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   end
 
   describe "to_combatant/1 with atk stat bonus" do
-    test "stat_bonus atk raises combat_stats.atk by exact amount" do
-      state = build_mob_state()
+    test "stat_bonus atk raises status ATK and both bounds by the exact amount" do
+      base = build_mob_state() |> MobState.configure_summon([]) |> MobState.to_combatant()
 
-      combatant =
-        state
+      bonus =
+        build_mob_state()
         |> MobState.configure_summon(stat_bonus: %{atk: 10})
         |> MobState.to_combatant()
 
-      assert combatant.combat_stats.atk == 50 + 10
-    end
-
-    test "absent atk bonus leaves atk unchanged" do
-      state = build_mob_state()
-      combatant = state |> MobState.configure_summon([]) |> MobState.to_combatant()
-
-      assert combatant.combat_stats.atk == 50
-    end
-
-    test "atk bonus and status modifiers stack" do
-      state = build_mob_state()
-      Registry.register_module(TestAtkBuff)
-      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
-
-      baseline =
-        state
-        |> MobState.configure_summon([])
-        |> MobState.to_combatant()
-        |> Map.get(:combat_stats)
-        |> Map.get(:atk)
-
-      with_bonus =
-        state
-        |> MobState.configure_summon(stat_bonus: %{atk: 10})
-        |> MobState.to_combatant()
-        |> Map.get(:combat_stats)
-        |> Map.get(:atk)
-
-      StatusStorage.apply_status(:mob, state.instance_id, :sc_test_mob_atk_buff, val1: 30)
-
-      with_bonus_and_status =
-        state
-        |> MobState.configure_summon(stat_bonus: %{atk: 10})
-        |> MobState.to_combatant()
-        |> Map.get(:combat_stats)
-        |> Map.get(:atk)
-
-      assert with_bonus == baseline + 10
-      assert with_bonus_and_status == baseline + 10 + 30
+      assert bonus.combat_stats.atk == base.combat_stats.atk + 10
+      assert bonus.combat_stats.atk_min == base.combat_stats.atk_min + 10
+      assert bonus.combat_stats.atk_max == base.combat_stats.atk_max + 10
     end
   end
 

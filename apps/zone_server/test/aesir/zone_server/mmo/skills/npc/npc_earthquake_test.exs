@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquakeTest do
     test_pid = self()
     caster = caster()
     stub(Combat, :resolve_combatant, fn :mob, @caster_id -> {:ok, caster} end)
-    stub(DamageInputs, :non_player_base_attack, fn ^caster -> {:ok, 1_000} end)
+    stub(DamageInputs, :non_player_base_attack, fn ^caster, _opts -> {:ok, 1_000} end)
     stub(ModifierCalculator, :get_all_modifiers, fn :mob, @caster_id -> %{atk_rate: atk_rate} end)
     stub(SplashTargets, :select, fn @map_name, @center, 13, ^caster -> enemies end)
 

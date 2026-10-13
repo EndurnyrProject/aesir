@@ -10,6 +10,15 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
     Map.merge(%{"Id" => 1001, "AegisName" => "TEST", "Name" => "Test Mob"}, overrides)
   end
 
+  describe "to_definition/2 Attack2" do
+    test "is the classic maximum ATK and the renewal MATK" do
+      row = entry(%{"Attack" => 80, "Attack2" => 135})
+
+      assert {:ok, %{atk: 80, atk2: 135, matk: 0}} = Importer.to_definition(row, :pre_renewal)
+      assert {:ok, %{atk: 80, atk2: 0, matk: 135}} = Importer.to_definition(row, :renewal)
+    end
+  end
+
   describe "to_definition/1 mode derivation" do
     test "an Ai type that decodes to MD_AGGRESSIVE yields :aggressive" do
       {:ok, definition} = Importer.to_definition(entry(%{"Ai" => 4}))

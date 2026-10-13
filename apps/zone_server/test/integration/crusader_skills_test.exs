@@ -235,7 +235,7 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   describe "Reflect Shield" do
     test "returns part of a melee mob's damage to it without looping" do
       crusader = start_solo_crusader(9_640, {150, 150}, %{vit: 1})
-      mob = spawn_mob(9_641, {151, 150}, hp: 100_000, level: 100)
+      mob = spawn_mob(9_641, {151, 150}, hp: 100_000, level: 100, atk: 300, atk2: 300)
 
       toggle_defensive(CrReflectshield, crusader.pid, 10)
 

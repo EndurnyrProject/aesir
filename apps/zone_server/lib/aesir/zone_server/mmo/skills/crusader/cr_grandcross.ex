@@ -183,7 +183,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     do: {:ok, {:player, DamageInputs.player_attack_parts(caster, [], :primary, false)}}
 
   defp physical_input(caster) do
-    with {:ok, amount} <- DamageInputs.non_player_base_attack(caster),
+    with {:ok, amount} <- DamageInputs.non_player_base_attack(caster, skill_id: definition().id),
          do: {:ok, {:non_player, amount}}
   end
 

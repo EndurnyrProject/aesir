@@ -105,7 +105,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   end
 
   test "Homunculus normal weapon rolls exclude the upper endpoint and add status ATK once" do
-    attacker = %{unit_type: :homunculus, combat_stats: %{atk: 111, atk_min: 14, atk_max: 15}}
+    attacker = %{
+      unit_id: 3001,
+      unit_type: :homunculus,
+      combat_stats: %{atk: 111, atk_min: 14, atk_max: 15}
+    }
+
     :rand.seed(:exsss, {17, 19, 23})
 
     for _ <- 1..32 do
@@ -506,7 +511,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "ordinary base attacks remain unit-specific" do
       attacker = CombatTestHelper.create_mob_combatant(atk: 0, str: 10, base_level: 5)
 
-      assert {:ok, 15} = DamageCalculator.calculate_base_attack(attacker)
+      # Renewal adds STR 10 + level 5; classic has no status ATK and rolls 0..0.
+      expected = mode_value(15, 0)
+      assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(attacker)
     end
   end
 
@@ -525,9 +532,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert base_atk == mode_value(62, 29)
     end
 
-    test "calculates mob base attack with renewal variance band plus batk" do
-      # atk 100 -> weapon roll in the 80%-120% band [80, 119]; batk = str(10) + level(5).
-      mob = CombatTestHelper.create_mob_combatant(atk: 100, str: 10, base_level: 5)
+    test "calculates mob base attack with mode-specific weapon bounds and status ATK" do
+      mob = CombatTestHelper.create_mob_combatant(atk: 100, atk2: 120, str: 10, base_level: 5)
 
       # Run multiple times to test variance
       results =
@@ -536,8 +542,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
           atk
         end
 
-      # Weapon roll [80, 119] + batk 15 => [95, 134]
-      assert Enum.all?(results, fn atk -> atk >= 95 and atk <= 134 end)
+      # Renewal: [80, 119] + STR 10 + level 5; classic: Attack..Attack2-1, no status ATK.
+      {minimum, maximum} = mode_value({95, 134}, {100, 119})
+      assert Enum.all?(results, fn atk -> atk >= minimum and atk <= maximum end)
 
       # Should have some variance (not all the same)
       unique_results = Enum.uniq(results)
@@ -584,12 +591,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                )
     end
 
-    test "mob ignores the shield base and uses its plain batk" do
-      # atk 0 collapses the variance band to 0, so base = str(10) + level(5) = 15,
-      # regardless of any shield_base passed through (mobs carry no shield).
+    test "mob ignores the shield base and uses its ordinary base attack" do
+      # ATK 0 rolls 0; Renewal adds STR 10 + level 5, classic adds no status ATK.
       mob = CombatTestHelper.create_mob_combatant(atk: 0, str: 10, base_level: 5)
+      expected = mode_value(15, 0)
 
-      assert {:ok, 15} = DamageCalculator.calculate_base_attack(mob, shield_base: 999)
+      assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(mob, shield_base: 999)
     end
   end
 
@@ -1677,8 +1684,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
 
     test "mob attacker is unaffected by passive_atk mastery" do
-      mob = CombatTestHelper.create_mob_combatant(atk: 0)
-      expected = mob.base_stats.str + mob.progression.base_level
+      mob = CombatTestHelper.create_mob_combatant(atk: 0, str: 10, base_level: 5)
+      mob = put_in(mob.combat_stats[:passive_atk], 20)
+      # ATK 0 rolls 0; only Renewal adds STR 10 + level 5, never passive mastery.
+      expected = mode_value(15, 0)
       assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(mob)
     end
   end
@@ -2838,7 +2847,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 50, str: 10)
       defender = CombatTestHelper.create_mob_combatant(def: 60, soft_def: 30, vit: 80)
 
-      assert {:ok, %{damage: 75, is_critical: true}} =
+      # Attack2 defaults to Attack 50; classic adds no status ATK or critical multiplier.
+      assert {:ok, %{damage: 50, is_critical: true}} =
                DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
     end
 

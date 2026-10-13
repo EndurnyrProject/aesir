@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @doc """
@@ -135,6 +136,10 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
 
   @doc """
   Creates a basic mob combatant for testing.
+
+  `:atk` is the database `Attack`; `:atk2` the classic `Attack2` (default
+  `:atk`). The combatant's status ATK and roll bounds come from the active
+  mode's mob formulas with no status modifiers.
   """
   @spec create_mob_combatant(keyword()) :: Combatant.t()
   def create_mob_combatant(opts \\ []) do
@@ -162,6 +167,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
 
     # Mobs use different stat calculations
     hit = calculate_mob_hit(opts[:dex], opts[:base_level])
+    {atk_min, atk_max, status_atk} = mob_attack(opts)
     flee = calculate_mob_flee(opts[:agi], opts[:base_level])
     perfect_dodge = calculate_perfect_dodge(opts[:luk])
 
@@ -177,7 +183,9 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
         luk: opts[:luk]
       },
       combat_stats: %{
-        atk: opts[:atk],
+        atk: status_atk,
+        atk_min: atk_min,
+        atk_max: atk_max,
         def: opts[:def],
         soft_def: opts[:soft_def],
         hit: hit,
@@ -203,6 +211,20 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
       position: opts[:position],
       map_name: opts[:map_name]
     }
+  end
+
+  defp mob_attack(opts) do
+    formulas = Mechanics.mob_formulas()
+
+    mob =
+      struct(MobDefinition,
+        level: opts[:base_level],
+        atk: opts[:atk],
+        atk2: Keyword.get(opts, :atk2, opts[:atk])
+      )
+
+    {atk_min, atk_max} = formulas.attack_bounds(mob, %{})
+    {min(atk_min, atk_max), atk_max, formulas.status_attack(mob, opts[:str], 0, %{})}
   end
 
   @doc """
