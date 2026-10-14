@@ -38,11 +38,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   @type cell :: {integer(), integer()}
 
   @typedoc """
-  An action a unit strike asks the manager to run on other groups at once,
-  without invoking their own callbacks: Claymore Trap's spend command marks the
-  armed traps in its blast area used, so detonations never recurse.
+  An action a unit strike asks the manager to run at once, without invoking
+  any group's own strike callbacks: Claymore Trap's spend command marks the
+  armed traps in its blast area used, so detonations never recurse;
+  `:remove_cells` deletes cells of the striking group itself (a Fire Wall cell
+  whose hit budget ran out), running `on_out` for their occupants and ending
+  the group with its last cell.
   """
-  @type command :: {:spend_traps, String.t(), cell(), non_neg_integer()}
+  @type command ::
+          {:spend_traps, String.t(), cell(), non_neg_integer()}
+          | {:remove_cells, non_neg_integer(), [cell()]}
 
   @typedoc "A movement callback result serialized and persisted by the skill-unit manager."
   @type trigger_result :: {:ok, Group.t()} | :expire

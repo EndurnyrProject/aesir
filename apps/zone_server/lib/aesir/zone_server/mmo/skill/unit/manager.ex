@@ -578,7 +578,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp finish_unit_pass({group, module, outcome}) do
     case outcome do
       :ok -> persist_unit_pass(group, module)
-      :expire -> cleanup(group, module)
+      :expire -> if Storage.get(group.group_id), do: cleanup(group, module)
       {:failed, callback, reason} -> callback_failed(group, callback, reason, module)
     end
   end
@@ -717,6 +717,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp unit_available?(_unit_type, _unit_id, _map_name), do: false
 
+  @doc """
+  The default pass interval, rAthena's `SKILLUNITTIMER_INTERVAL`: how often
+  every unit cell acts. A unit striking faster than this strikes several times
+  per pass.
+  """
+  @spec tick_interval() :: pos_integer()
+  def tick_interval, do: @tick_interval
+
   @doc false
   @spec default_clock() :: integer()
   def default_clock, do: System.monotonic_time(:millisecond)
@@ -812,11 +820,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  # Returns the groups the command changed, as stored.
+  # Returns the groups the command changed, as stored; a group whose last cell
+  # it removed comes back without cells.
   defp run_manager_command({:spend_traps, map_name, {x, y}, radius}, now) do
     map_name
     |> groups_in_area(x, y, radius)
     |> Enum.flat_map(&spend_trap(&1, now))
+  end
+
+  defp run_manager_command({:remove_cells, group_id, cells}, _now) do
+    case Storage.get(group_id) do
+      nil ->
+        []
+
+      %Group{} = live ->
+        :ok = remove_group_cells(live, MapSet.new(cells))
+        [Storage.get(group_id) || %{live | cells: []}]
+    end
   end
 
   defp spend_trap(%Group{} = group, now) do

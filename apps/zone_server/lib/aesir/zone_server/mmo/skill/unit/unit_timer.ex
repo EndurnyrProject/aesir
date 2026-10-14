@@ -27,8 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
 
   A strike may also return manager commands (`{:ok | :expire, group,
   commands}`) that change other groups (a Claymore Trap spending the traps in
-  its blast). They run at once, so a group they change acts on the rest of the
-  pass in its changed state.
+  its blast) or remove the striking group's own cells (a Fire Wall cell whose
+  budget ran out). They run at once, so a group they change acts on the rest
+  of the pass in its changed state, and a removed cell strikes nobody more. The
+  striking group keeps its in-pass state and takes only its remaining cells.
   """
 
   alias Aesir.ZoneServer.Geometry
@@ -91,11 +93,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   defp run_cell(%Cell{group_id: group_id} = cell, {by_id, ticksets} = acc, env) do
     case Map.fetch(by_id, group_id) do
       {:ok, {group, module, :ok}} ->
-        if protected?(group, cell) do
-          acc
-        else
-          strike_cell(group, module, {cell.x, cell.y}, {by_id, ticksets}, env)
-        end
+        if {cell.x, cell.y} in group.cells and not protected?(group, cell),
+          do: strike_cell(group, module, {cell.x, cell.y}, {by_id, ticksets}, env),
+          else: acc
 
       _ended ->
         acc
@@ -137,11 +137,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
       case strike(env, module, [group, cell, ref, now], group.group_id) do
         {:ok, struck, commands} ->
           by_id = Map.put(by_id, group.group_id, {struck, module, outcome})
-          continue_cell(group, struck, {run_commands(commands, by_id, env), ticksets})
+          by_id = run_commands(commands, by_id, group.group_id, env)
+          continue_cell(group, cell, by_id, ticksets)
 
         {:expire, struck, commands} ->
           by_id = Map.put(by_id, group.group_id, {struck, module, :expire})
-          {:cont, {run_commands(commands, by_id, env), ticksets}}
+          by_id = run_commands(commands, by_id, group.group_id, env)
+          continue_cell(group, cell, by_id, ticksets)
 
         {:failed, reason} ->
           failed = {group, module, {:failed, :on_unit_hit, reason}}
@@ -150,9 +152,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
     end)
   end
 
-  # A replaced unit strikes nobody else in the cell.
-  defp continue_cell(group, struck, acc) do
-    if generation(struck) == generation(group), do: {:cont, acc}, else: {:halt, acc}
+  # A replaced or removed unit strikes nobody else in the cell.
+  defp continue_cell(group, cell, by_id, ticksets) do
+    {struck, _module, _outcome} = Map.fetch!(by_id, group.group_id)
+
+    if generation(struck) == generation(group) and cell in struck.cells,
+      do: {:cont, {by_id, ticksets}},
+      else: {:halt, {by_id, ticksets}}
   end
 
   defp strike(env, module, args, group_id) do
@@ -172,13 +178,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
     end
   end
 
-  defp run_commands(commands, by_id, env) do
+  defp run_commands(commands, by_id, striking_id, env) do
     commands
     |> Enum.flat_map(env.run_command)
     |> Enum.reduce(by_id, fn %Group{group_id: id} = changed, by_id ->
       case Map.fetch(by_id, id) do
-        {:ok, {_group, module, outcome}} -> Map.put(by_id, id, {changed, module, outcome})
-        :error -> by_id
+        {:ok, {group, module, outcome}} when id == striking_id ->
+          Map.put(by_id, id, {%{group | cells: changed.cells}, module, outcome})
+
+        {:ok, {_group, module, outcome}} ->
+          Map.put(by_id, id, {changed, module, outcome})
+
+        :error ->
+          by_id
       end
     end)
   end

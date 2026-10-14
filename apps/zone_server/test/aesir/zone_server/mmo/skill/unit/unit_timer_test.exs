@@ -38,6 +38,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest.Phase do
   end
 end
 
+defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest.Burnout do
+  @moduledoc false
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
+  def unit_targets(%Group{}, _cell, refs), do: refs
+
+  def on_unit_hit(%Group{state: %{test_pid: test_pid} = state} = group, cell, ref, _now) do
+    send(test_pid, {:burned, cell, ref})
+    group = %{group | state: Map.update!(state, :strikes, &(&1 + 1))}
+
+    {Map.get(state, :tag, :ok), group,
+     [{:remove_cells, group.group_id, Map.get(state, :remove, [cell])}]}
+  end
+
+  def on_expire(%Group{state: %{test_pid: test_pid}} = group) do
+    send(test_pid, {:ended, group.group_id})
+    :ok
+  end
+end
+
 defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
   use ExUnit.Case, async: false
 
@@ -51,6 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
+  alias __MODULE__.Burnout
   alias __MODULE__.Phase
   alias __MODULE__.Strike
 
@@ -235,6 +257,73 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
 
     assert_received {:struck, 1, {50, 50}, {:mob, 1}, 1_100}
     assert_received {:struck, 1, {50, 50}, {:mob, 2}, 1_100}
+  end
+
+  test "a strike removing its own cell ends that cell at once and the group keeps its pass state",
+       %{manager: manager} do
+    burnout = field(1, [{50, 50}, {53, 50}], unit_range: 0, handler: Burnout)
+    :ok = Manager.register(manager, %{burnout | state: %{test_pid: self(), strikes: 0}})
+    mob_at(1, 50, 50)
+    mob_at(2, 50, 50)
+    mob_at(3, 53, 50)
+
+    :ok = Manager.tick(manager, 1_000)
+
+    assert_received {:burned, {50, 50}, _first}
+    refute_received {:burned, {50, 50}, _second}
+    assert_received {:burned, {53, 50}, {:mob, 3}}
+    assert Storage.get_cells_by_group(1) == []
+    assert Storage.get(1) == nil
+  end
+
+  test "a group losing some cells keeps the rest with its pass state", %{manager: manager} do
+    burnout = field(1, [{50, 50}, {53, 50}], unit_range: 0, handler: Burnout)
+    :ok = Manager.register(manager, %{burnout | state: %{test_pid: self(), strikes: 0}})
+    mob_at(1, 50, 50)
+
+    :ok = Manager.tick(manager, 1_000)
+
+    assert_received {:burned, {50, 50}, {:mob, 1}}
+    assert %Group{cells: [{53, 50}], state: %{strikes: 1}} = Storage.get(1)
+    assert [%Cell{x: 53, y: 50}] = Storage.get_cells_by_group(1)
+  end
+
+  test "an expiring strike removing the last cell strikes nobody else and ends the group once",
+       %{manager: manager} do
+    burnout = field(1, [{50, 50}], unit_range: 0, handler: Burnout)
+
+    :ok =
+      Manager.register(manager, %{burnout | state: %{test_pid: self(), strikes: 0, tag: :expire}})
+
+    mob_at(1, 50, 50)
+    mob_at(2, 50, 50)
+
+    :ok = Manager.tick(manager, 1_000)
+
+    assert_received {:burned, {50, 50}, _first}
+    refute_received {:burned, {50, 50}, _second}
+    assert_received {:ended, 1}
+    refute_received {:ended, 1}
+    assert Storage.get(1) == nil
+  end
+
+  test "a cell removed earlier in the pass strikes nothing", %{manager: manager} do
+    burnout = field(1, [{50, 50}, {53, 50}, {56, 50}], unit_range: 0, handler: Burnout)
+
+    :ok =
+      Manager.register(manager, %{
+        burnout
+        | state: %{test_pid: self(), strikes: 0, remove: [{53, 50}]}
+      })
+
+    mob_at(1, 50, 50)
+    mob_at(2, 53, 50)
+
+    :ok = Manager.tick(manager, 1_000)
+
+    assert_received {:burned, {50, 50}, {:mob, 1}}
+    refute_received {:burned, {53, 50}, _}
+    assert %Group{cells: [{50, 50}, {56, 50}]} = Storage.get(1)
   end
 
   test "cells run in skill-unit table order: id remainder by 283, then id" do
