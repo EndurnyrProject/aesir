@@ -10,9 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -301,7 +301,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     assert {:ok, ^caster} =
              PrBenedictio.cast(caster, {:ground, 160, 160}, 5, PrBenedictio.definition())
 
-    expected = AlHeal.compute_heal(PlayerState.to_combatant(caster), 5, true, 69)
+    expected = SkillHeal.amount(SkillHeal.caster(caster), {:mob, 3_001}, 69, 5, false)
     assert expected > 0
 
     for target_id <- [3_001, 3_002, 3_003] do

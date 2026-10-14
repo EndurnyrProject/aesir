@@ -1,38 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   @moduledoc """
-  Heal (AL_HEAL). Restores HP on an ally, or deals the same amount as a holy
-  magic hit when the target is an enemy whose defence element is undead. A
-  demon-race target, and an undead-element target friendly to the caster, are
-  both healed normally.
+  Heal (AL_HEAL). Restores HP on an ally, or deals the amount as a holy magic
+  hit when the target is an enemy whose defence element is undead. A demon-race
+  target, and an undead-element target friendly to the caster, are both healed
+  normally.
 
-  An offensive cast halves the base amount before any other term. The recipient's
-  own heal-received bonus is applied downstream on the generic heal path that
-  every heal flows through.
-
-  Renewal: the base is `(base level + INT) / 5 * 30 * skill level / 10`.
-  Equipment heal power (the general bonus plus the Heal-specific one) is a
-  percentage of that base, the caster's MATK band is rolled and added flat on
-  top, and the trait heal bonus is a final percentage of the whole. The MATK
-  band is the caster's base MATK plus weapon MATK variance only: flat item and
-  status MATK never reach it. With no MATK weapon the band collapses and the
-  heal is deterministic.
-
-  Pre-renewal: the base is `(base level + INT) / 8 * (4 + skill level * 8)`,
-  with no MATK term and no trait bonus. Equipment heal power is a percentage of
-  that base and that is the whole amount. Heal therefore scales with the caster's
-  magic gear in renewal and with nothing but level and INT in pre-renewal, and
-  the classic ladder is the higher of the two at full skill level.
-
-  The caster's stats are read generically through `caster.__struct__.to_combatant/1`,
-  so a `%MobState{}` caster heals off its own INT and base level the same way a
-  player does; mobs simply have no equipment (heal power reads as 0) and no trait
-  heal bonus.
-
-  Heal bonuses: a caster with Meditatio adds 2 percent per learned level. In
-  renewal the target's Assumptio adds 2 percent per level as well, offensive
-  casts included, and both join equipment heal power in one additive
-  percentage; pre-renewal applies Meditatio as its own step before equipment
-  heal power and ignores Assumptio.
+  The amount is `Combat.SkillHeal`'s recipe for both modes: the base from the
+  caster's base level and effective INT (9999 from level 11), halved for a
+  strike, the caster's and the target's heal bonuses, the renewal MATK part,
+  and the target's penalties. A monster or NPC caster heals off its own INT and
+  base level with no equipment bonus.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,
@@ -51,23 +28,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
       pre_renewal: List.duplicate(1_000, 10)
     ]
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
-  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
-  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
-
-  @meditatio_id 363
 
   @impl Active
   def validate(
@@ -105,7 +76,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     combatant = caster.__struct__.to_combatant(caster)
     target = Active.resolve_target_id(caster, target)
     offensive? = offensive_target?(combatant, target)
-    amount = compute_heal(combatant, level, offensive?, 28, heal_target_ref(target))
+
+    amount =
+      SkillHeal.amount(
+        SkillHeal.caster(caster),
+        heal_target_ref(target),
+        28,
+        level,
+        not offensive?
+      )
 
     if offensive? do
       attack_undead(caster, target, amount, level)
@@ -160,51 +139,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     Combat.apply_heal(unit_type, unit_id, heal_value, source_id)
     {:ok, caster}
   end
-
-  @doc """
-  The Heal amount for `combatant` at `level`; an offensive cast (undead target)
-  halves the base. Shared with B.S. Sacramenti, whose strike uses the same formula;
-  `skill_id` scopes the per-skill heal bonus from equipment to the casting skill.
-  `target` (a `{unit_type, unit_id}` ref, or `nil`) supplies the recipient's
-  renewal Assumptio bonus.
-  """
-  @spec compute_heal(map(), pos_integer(), boolean(), pos_integer(), {atom(), term()} | nil) ::
-          non_neg_integer()
-  def compute_heal(combatant, level, offensive?, skill_id, target \\ nil) do
-    combat_stats = combatant.combat_stats
-    matk_min = Map.get(combat_stats, :heal_matk_min, combat_stats.matk)
-    matk_max = Map.get(combat_stats, :heal_matk_max, combat_stats.matk)
-
-    heal_power =
-      Map.get(combatant.equip_modifiers, :heal_power, 0) +
-        Map.get(combatant.equip_modifiers, {:skill_heal, skill_id}, 0)
-
-    Formula.calculate(GameMode.mode(), %{
-      base_level: combatant.progression.base_level,
-      int: combatant.base_stats.int,
-      level: level,
-      matk_roll: DamageShared.roll(matk_min, matk_max),
-      heal_power: heal_power,
-      hplus: Map.get(combat_stats, :hplus, 0),
-      offensive?: offensive?,
-      caster_heal_bonus: 2 * meditatio_level(combatant),
-      target_heal_bonus: assumptio_bonus(target)
-    })
-  end
-
-  defp meditatio_level(%{progression: %{learned_skills: learned}}) when is_map(learned),
-    do: Learned.learned_level(learned, @meditatio_id)
-
-  defp meditatio_level(_combatant), do: 0
-
-  defp assumptio_bonus({unit_type, unit_id}) do
-    case StatusStorage.get_status(unit_type, unit_id, :sc_assumptio) do
-      %{val1: level} when is_integer(level) -> 2 * level
-      _absent -> 0
-    end
-  end
-
-  defp assumptio_bonus(nil), do: 0
 
   # A target the caller could not type stays without the Assumptio bonus
   # rather than guessing its unit type.

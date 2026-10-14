@@ -679,13 +679,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   end
 
   describe "SC_NORECOVER_STATE" do
-    test "blocks HP healing and SP restoration" do
+    test "blocks a potion heal and SP restoration, never a final heal amount" do
       :ok = StatusStorage.apply_status(:player, 1, :sc_norecover_state)
       on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_norecover_state) end)
       state = build_state(20, :idle)
 
-      assert {:noreply, ^state} = HealthHandler.apply_heal(50, 2, state)
+      assert {:noreply, ^state} = HealthHandler.apply_heal({:potion, :hp, 50}, 2, state)
       assert {:noreply, ^state} = HealthHandler.restore_sp(30, state)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 70}}}}} =
+               HealthHandler.apply_heal(50, 2, state)
     end
   end
 
@@ -812,20 +815,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert game_state.stats.current_state.hp == 70
     end
 
-    test "scales the heal by the target's received_heal_rate (once)" do
+    test "takes a final amount without the target's heal rates" do
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 ->
         %{received_heal_rate: 50}
-      end)
-
-      {:noreply, %{game_state: game_state}} =
-        HealthHandler.apply_heal(20, nil, build_state(50, :idle))
-
-      assert game_state.stats.current_state.hp == 80
-    end
-
-    test "adds the equipment heal_power2 bonus to the received-heal scaling" do
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 ->
-        %{received_heal_rate: 20}
       end)
 
       state =
@@ -841,17 +833,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
           %{heal_power2: 30}
         )
 
-      # 20 base * (100 + 20 status + 30 equip)/100 = 30 -> hp 50 + 30 = 80
       {:noreply, %{game_state: game_state}} = HealthHandler.apply_heal(20, nil, state)
 
-      assert game_state.stats.current_state.hp == 80
+      assert game_state.stats.current_state.hp == 70
     end
 
-    test "leaves the heal unchanged with no received_heal_rate" do
-      {:noreply, %{game_state: game_state}} =
-        HealthHandler.apply_heal(20, nil, build_state(50, :idle))
+    test "a player in Frenzy refuses an ordinary heal but takes a passive one" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_berserk, val1: 1)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_berserk) end)
+      state = build_state(50, :idle)
 
-      assert game_state.stats.current_state.hp == 70
+      assert {:noreply, ^state} = HealthHandler.apply_heal(20, nil, state)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 70}}}}} =
+               HealthHandler.apply_heal({:passive, 20}, nil, state)
     end
 
     test "persists the updated HP asynchronously" do

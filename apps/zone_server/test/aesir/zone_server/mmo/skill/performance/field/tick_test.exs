@@ -61,6 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.TickTest do
       assert_received {:mob, 42, 50}
     end
 
+    # Only the classic song heals on its unit; renewal Apple of Idun has none.
+    @tag game_mode: :pre_renewal
     test "Idun heals a player unit by the performer's current VIT but never targets its caster" do
       test_pid = self()
 
@@ -98,6 +100,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.TickTest do
       assert Tick.target?(group(5, :dissonance, 0), :dissonance, {:mob, 42})
     end
 
+    # Only the classic song heals on its unit; renewal Apple of Idun has none.
+    @tag game_mode: :pre_renewal
     test "Idun heals a homunculus" do
       test_pid = self()
 

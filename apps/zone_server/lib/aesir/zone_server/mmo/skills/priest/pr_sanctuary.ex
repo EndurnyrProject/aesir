@@ -3,7 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   Sanctuary (PR_SANCTUARY). A 21-cell holy field whose cells each act on the
   living units within one cell of them, each unit at most once a second for all
   Sanctuaries together: it heals non-undead, non-demon units below full HP (100
-  per level, 777 from level 7) and instead strikes enemy undead and demons for
+  per level, 777 from level 7, with the caster's and the target's heal bonuses
+  of `Combat.SkillHeal`) and instead strikes enemy undead and demons for half
   that amount as fixed holy magic damage, pushing them 2 cells away from the
   striking cell. Successful strikes spend a shared quota of level plus 3; heals
   and failed strikes do not. Once it is spent the field ends after the striking
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -122,7 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
       case target_effect(module, state, target, caster) do
         :damage -> damage_target(group, caster, cell, unit_type, unit_id)
         :skip -> {:ok, group}
-        :heal -> heal_target(unit_type, unit_id, pid, group)
+        :heal -> heal_target(unit_type, unit_id, pid, group, heal_amount(group, target, true))
       end
     else
       _unavailable -> {:ok, group}
@@ -152,31 +154,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
     end
   end
 
-  defp heal_target(:player, unit_id, _pid, group) do
+  defp heal_target(:player, unit_id, _pid, group, amount) do
     unless MagicDefense.immune?({:player, unit_id}) do
-      DamageApplication.apply_heal(:player, unit_id, heal_amount(group.level), group.caster_id)
+      DamageApplication.apply_heal(:player, unit_id, amount, group.caster_id)
     end
 
     {:ok, group}
   end
 
-  defp heal_target(:homunculus, unit_id, _pid, group) do
-    DamageApplication.apply_heal(
-      :homunculus,
-      unit_id,
-      heal_amount(group.level),
-      group.caster_id
-    )
-
+  defp heal_target(:homunculus, unit_id, _pid, group, amount) do
+    DamageApplication.apply_heal(:homunculus, unit_id, amount, group.caster_id)
     {:ok, group}
   end
 
-  defp heal_target(:mob, _unit_id, pid, group) when is_pid(pid) do
-    MobSession.heal(pid, heal_amount(group.level))
+  defp heal_target(:mob, _unit_id, pid, group, amount) when is_pid(pid) do
+    MobSession.heal(pid, amount)
     {:ok, group}
   end
 
-  defp heal_target(_unit_type, _unit_id, _pid, group) do
+  defp heal_target(_unit_type, _unit_id, _pid, group, _amount) do
     {:ok, group}
   end
 
@@ -190,7 +186,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
         group.level,
         :holy,
         0,
-        fixed_damage: heal_amount(group.level),
+        fixed_damage: heal_amount(group, {unit_type, unit_id}, false),
         base_distance: definition().knockback,
         origin: cell,
         native_target_types: [:player, :mob, :homunculus]
@@ -224,6 +220,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   # NOTE: Exclude battlefield-class mobs once Aesir models that mob classification.
   defp protected_emperium?(_state), do: false
 
-  defp heal_amount(level) when level <= 6, do: 100 * level
-  defp heal_amount(_level), do: 777
+  # The recipe for the field's caster as it is now; a caster gone since the
+  # strike was decided heals and deals nothing.
+  defp heal_amount(%Group{} = group, target, heal?) do
+    case UnitRegistry.get_unit(group.caster_type, group.caster_id) do
+      {:ok, {_module, caster, _pid}} ->
+        SkillHeal.amount(SkillHeal.caster(caster), target, group.skill_id, group.level, heal?)
+
+      _gone ->
+        0
+    end
+  end
 end

@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
@@ -363,46 +364,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   defp apply_forced_sp(_amount, state), do: {:noreply, state}
 
   @doc """
-  Applies a heal to the player.
+  Applies a heal to the player, clamped at `max_hp`.
 
-  Raises HP by `amount`, clamped at `max_hp`. No-op when the player is dead
-  or `amount` is non-positive. Does not trigger death or cast-interrupt logic.
+  An integer is a heal whose amount is already final (a skill's recipe, a
+  drain, a percentage restore): it takes no rate here, and a player in Frenzy
+  takes none of it. `{:passive, amount}` is a heal Frenzy does not stop (an HP
+  drain). A potion descriptor runs the recipient's potion terms and is refused
+  under No Recovery. No-op when the player is dead or the amount is
+  non-positive. Does not trigger death or cast-interrupt logic.
   """
-  @spec apply_heal(
-          non_neg_integer() | {:potion, :hp | :sp, non_neg_integer()},
-          integer() | nil,
-          SessionState.t()
-        ) :: {:noreply, SessionState.t()}
+  @spec apply_heal(DamageApplication.heal_amount(), integer() | nil, SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def apply_heal(_amount, _source_id, %{game_state: %{action_state: :dead}} = state) do
     {:noreply, state}
   end
 
-  def apply_heal(amount, source_id, state) do
-    if recovery_blocked?(state) do
-      {:noreply, state}
-    else
-      do_apply_heal(amount, source_id, state)
-    end
+  def apply_heal({:potion, _resource, _amount} = descriptor, _source_id, state) do
+    if recovery_blocked?(state), do: {:noreply, state}, else: apply_potion(descriptor, state)
   end
 
-  defp do_apply_heal({:potion, :hp, _amount} = descriptor, source_id, state) do
+  def apply_heal({:passive, amount}, _source_id, state), do: restore_hp(amount, state)
+
+  def apply_heal(amount, _source_id, state) when is_integer(amount) do
+    if DamageApplication.heal_refused?(:player, state.game_state.character_id),
+      do: {:noreply, state},
+      else: restore_hp(amount, state)
+  end
+
+  defp apply_potion({:potion, :hp, _amount} = descriptor, state) do
+    stats = state.game_state.stats
+
     descriptor
     |> PotionRecovery.recover(potion_recipient_terms(state))
-    |> do_apply_heal(source_id, state)
+    |> scale_received_heal(state.game_state.character_id, stats)
+    |> restore_hp(state)
   end
 
-  defp do_apply_heal({:potion, :sp, _amount} = descriptor, _source_id, state) do
+  defp apply_potion({:potion, :sp, _amount} = descriptor, state) do
     descriptor
     |> PotionRecovery.recover(potion_recipient_terms(state))
     |> do_restore_sp(state)
   end
 
-  defp do_apply_heal(amount, _source_id, state) when amount > 0 do
+  defp restore_hp(amount, state) when is_integer(amount) and amount > 0 do
     stats = state.game_state.stats
     max_hp = stats.derived_stats.max_hp
     char_id = state.game_state.character_id
-    scaled = scale_received_heal(amount, char_id, stats)
-    new_hp = min(stats.current_state.hp + scaled, max_hp)
+    new_hp = min(stats.current_state.hp + amount, max_hp)
 
     updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
     game_state = %{state.game_state | stats: updated_stats}
@@ -414,13 +422,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     {:noreply, state}
   end
 
-  defp do_apply_heal(_amount, _source_id, state), do: {:noreply, state}
+  defp restore_hp(_amount, state), do: {:noreply, state}
 
-  # Scales a heal by the target's `received_heal_rate` (SC_INCHEALRATE) percent
-  # delta before it is applied. The status delta (`received_heal_rate`,
-  # SC_INCHEALRATE) and the equipment `heal_power2` bonus (heal received from
-  # skills) add together. Natural regen is not routed here, so it never
-  # double-dips this bonus.
+  # A thrown potion's recovery scaled by the target's Increase Heal Rate and
+  # received heal power, as before; Potion Pitcher's own recipient terms are a
+  # separate recipe.
   defp scale_received_heal(amount, char_id, stats) do
     status_rate =
       :player

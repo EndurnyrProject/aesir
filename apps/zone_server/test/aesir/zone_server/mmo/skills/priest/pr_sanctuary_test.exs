@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.EtsTable
@@ -118,9 +119,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     }
   end
 
+  # The field's caster as the heal recipe reads it: a real player with no heal
+  # bonuses, registered so the recipe finds it.
   defp stub_caster(enemies \\ []) do
+    register_caster()
     stub(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, %{unit_id: 1_000}} end)
     stub(SplashTargets, :eligible, fn refs, _caster -> Enum.filter(refs, &(&1 in enemies)) end)
+  end
+
+  defp register_caster do
+    caster =
+      PlayerState.new(%Character{
+        id: 1_000,
+        account_id: 1_000,
+        name: "Priest",
+        class: 8,
+        sex: "M",
+        last_map: "prontera",
+        last_x: 150,
+        last_y: 150,
+        base_level: 99,
+        hp: 100,
+        sp: 100
+      })
+
+    UnitRegistry.register_unit(:player, 1_000, PlayerState, caster, self())
   end
 
   @tag game_mode: :renewal
@@ -301,8 +324,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
 
     stub_caster()
 
-    stub(UnitRegistry, :get_unit, fn :homunculus, ^gid ->
-      {:ok, {HomunculusState, homunculus, self()}}
+    stub(UnitRegistry, :get_unit, fn
+      :homunculus, ^gid -> {:ok, {HomunculusState, homunculus, self()}}
+      type, id -> call_original(UnitRegistry, :get_unit, [type, id])
     end)
 
     expect(DamageApplication, :apply_heal, fn :homunculus, ^gid, 500, 1_000 -> :ok end)
@@ -319,7 +343,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   test "heals living injured mobs without spending offensive quota" do
     target = mob(2_001, :formless, :neutral)
     stub_caster()
-    stub(UnitRegistry, :get_unit, fn :mob, 2_001 -> {:ok, {MobState, target, self()}} end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, 2_001 -> {:ok, {MobState, target, self()}}
+      type, id -> call_original(UnitRegistry, :get_unit, [type, id])
+    end)
+
     expect(MobSession, :heal, fn pid, 600 -> assert pid == self() end)
     reject(&Combat.apply_skill_unit_damage/8)
 
@@ -373,8 +402,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     states = %{2_001 => injured, 2_002 => full, 2_003 => corpse, 1_288 => emperium}
     stub_caster()
 
-    stub(UnitRegistry, :get_unit, fn :mob, id ->
-      {:ok, {MobState, Map.fetch!(states, id), self()}}
+    stub(UnitRegistry, :get_unit, fn
+      :mob, id -> {:ok, {MobState, Map.fetch!(states, id), self()}}
+      type, id -> call_original(UnitRegistry, :get_unit, [type, id])
     end)
 
     assert PrSanctuary.unit_targets(group(7), @center, targets) ==
@@ -400,8 +430,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     states = %{2_001 => injured, 1_288 => emperium}
     stub_caster()
 
-    stub(UnitRegistry, :get_unit, fn :mob, id ->
-      {:ok, {MobState, Map.fetch!(states, id), self()}}
+    stub(UnitRegistry, :get_unit, fn
+      :mob, id -> {:ok, {MobState, Map.fetch!(states, id), self()}}
+      type, id -> call_original(UnitRegistry, :get_unit, [type, id])
     end)
 
     expect(MobSession, :heal, 2, fn _pid, 777 -> :ok end)
@@ -435,6 +466,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       )
       |> Map.put(:equip_modifiers, %{{:add_skill_blow, 70} => 3})
 
+    register_caster()
     stub(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, attacker} end)
     stub(SplashTargets, :eligible, fn refs, ^attacker -> refs end)
 
@@ -443,8 +475,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       :mob, id when id in [2_001, 2_002, 2_003] -> {:ok, {151, 150, "prontera"}}
     end)
 
-    stub(UnitRegistry, :get_unit, fn :mob, id ->
-      {:ok, {MobState, Map.fetch!(states, id), self()}}
+    stub(UnitRegistry, :get_unit, fn
+      :mob, id -> {:ok, {MobState, Map.fetch!(states, id), self()}}
+      type, id -> call_original(UnitRegistry, :get_unit, [type, id])
     end)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, :map} end)
@@ -484,13 +517,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
                PrSanctuary.on_unit_hit(field, {149, 150}, target, 1_000)
              end)
 
-    water_damage = 777
-    assert_received {:damage_packet, 2_001, 1_000, 971}
+    # A strike is half the heal: 777 / 2 = 388, x125% against Shadow.
+    water_damage = 388
+    assert_received {:damage_packet, 2_001, 1_000, 485}
     assert_received {:damage_packet, 2_002, 1_000, ^water_damage}
     assert_received {:damage_packet, 2_003, 1_000, 0}
     refute_received {:damage_packet, 2_004, _, _}
 
-    assert_received {:delivered_damage, 971}
+    assert_received {:delivered_damage, 485}
     assert_received {:delivered_damage, ^water_damage}
     assert_received {:delivered_damage, 0}
 
@@ -506,7 +540,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     refute_receive {:"$gen_cast", {:movement, _movement}}
   end
 
-  test "damages enemy undead and demons with fixed Holy damage and spends quota only on success" do
+  test "damages enemy undead and demons with half the heal as fixed Holy damage, spending quota only on success" do
     targets = [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}]
 
     states = %{
@@ -516,12 +550,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     }
 
     stub_caster(targets)
-    stub(UnitRegistry, :get_unit, fn :mob, id -> {:ok, {MobState, states[id], self()}} end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, id -> {:ok, {MobState, states[id], self()}}
+      type, id -> call_original(UnitRegistry, :get_unit, [type, id])
+    end)
 
     expect(Combat, :apply_skill_unit_damage, 3, fn
       %{unit_id: 1_000}, :mob, id, 70, 7, :holy, 0, opts ->
         assert opts == [
-                 fixed_damage: 777,
+                 fixed_damage: 388,
                  base_distance: 2,
                  origin: {150, 150},
                  native_target_types: [:player, :mob, :homunculus]
@@ -544,11 +582,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     targets = Enum.map(2_001..2_006, &{:mob, &1})
     states = Map.new(2_001..2_006, &{&1, mob(&1, :undead, :undead)})
     stub_caster(targets)
-    stub(UnitRegistry, :get_unit, fn :mob, id -> {:ok, {MobState, states[id], self()}} end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, id -> {:ok, {MobState, states[id], self()}}
+      type, id -> call_original(UnitRegistry, :get_unit, [type, id])
+    end)
 
     expect(Combat, :apply_skill_unit_damage, 4, fn
       %{unit_id: 1_000}, :mob, _id, 70, 1, :holy, 0, opts ->
-        assert opts[:fixed_damage] == 100
+        assert opts[:fixed_damage] == 50
         assert opts[:base_distance] == 2
         assert opts[:origin] == {150, 150}
         :ok

@@ -7,9 +7,9 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase3IntegrationTest do
   is that the shipped effect module -> resolver -> modifier vocabulary wiring is
   observable at the consumer):
 
-    1. `SC_INCHEALRATE` (`received_heal_rate`) - a heal through
-       `HealthHandler.apply_heal/3` restores the boosted amount for the buffed
-       player and the plain amount for an unbuffed control given the same input.
+    1. `SC_INCHEALRATE` - a skill heal's recipe (`Combat.SkillHeal`) gives the
+       buffed player the boosted amount and an unbuffed control the plain one,
+       and the buffed player's session restores that final amount unscaled.
     2. `SC_SKF_CAST` (`varcast_rate`) - a timed skill's variable cast computed by
        `Interpreter.begin_cast/4` is shorter for the buffed caster than for an
        unbuffed control, with the fixed portion untouched.
@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase3IntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
@@ -40,14 +41,15 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase3IntegrationTest do
   setup :verify_on_exit!
 
   describe "SC_INCHEALRATE" do
-    test "a heal restores the boosted amount versus an unbuffed control" do
+    test "a skill heal on the buffed player is boosted versus an unbuffed control" do
       buffed = start_player_session(id: 9801, name: "Blessed", base_level: 50)
       control = start_player_session(id: 9802, name: "Plain", base_level: 50)
 
       buffed_id = buffed.character.id
       on_exit(fn -> StatusInterpreter.remove_status(:player, buffed_id, :sc_inchealrate) end)
 
-      # SC_INCHEALRATE val1 = 100 -> received_heal_rate +100% -> heals double.
+      # SC_INCHEALRATE val1 = 100 -> +100%: a level-5 Sanctuary heal (500, no
+      # MATK part in either mode) doubles.
       :ok =
         StatusInterpreter.apply_status(:player, buffed_id, :sc_inchealrate,
           val1: 100,
@@ -56,14 +58,13 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase3IntegrationTest do
 
       flush_packets()
 
+      healer = SkillHeal.caster(get_player_state(control.pid))
+
+      assert SkillHeal.amount(healer, {:player, control.character.id}, 70, 5, true) == 500
+      assert SkillHeal.amount(healer, {:player, buffed_id}, 70, 5, true) == 1_000
+
       heal = heal_amount(buffed)
-
-      buffed_gain = heal_gain(buffed, heal)
-      control_gain = heal_gain(control, heal)
-
-      assert control_gain == heal
-      assert buffed_gain == heal * 2
-      assert buffed_gain > control_gain
+      assert heal_gain(buffed, heal) == heal
     end
   end
 
@@ -143,8 +144,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase3IntegrationTest do
     healed.game_state.stats.current_state.hp - 1
   end
 
-  # A heal small enough that even the doubled buffed heal stays under max HP, so
-  # neither result clamps and the boost is a clean factor of two.
+  # A heal small enough not to clamp at max HP.
   defp heal_amount(player) do
     max_hp = get_player_state(player.pid).stats.derived_stats.max_hp
     div(max_hp - 1, 3)

@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -170,9 +171,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     assert updated.sp == 75
     assert updated.cooldowns[8_001] > System.monotonic_time(:millisecond)
 
+    # Renewal: (20 + 5) / 5 * 30 * 5 / 10 = 75, +6% Brain Surgery = 79, + 77 MATK.
+    # Pre-renewal: (20 + 5) / 8 * (4 + 5 * 8) = 132, +6% Brain Surgery = 139.
+    healed = if GameMode.mode() == :renewal, do: 156, else: 139
+
     assert effects == [
              {:owner_item_cost, 545, 1},
-             {:player, {:apply_heal, 156, {:homunculus, caster.world_gid}}}
+             {:player, {:apply_heal, healed, {:homunculus, caster.world_gid}}}
            ]
   end
 

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -186,14 +187,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   @doc """
-  Heals the mob by `amount`, clamped at max HP, and broadcasts the new HP.
-  Ungated: a corpse still heals. Non-positive amounts are silent no-ops.
+  Heals the mob by `amount`, clamped at max HP, and broadcasts the new HP. A
+  dead mob, a mob in Frenzy and non-positive amounts are silent no-ops.
   """
   @spec handle_heal(integer(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_heal(_amount, %{is_dead: true} = state), do: {:noreply, state}
+
   def handle_heal(amount, state) when is_integer(amount) and amount > 0 do
-    state = StateCommit.commit(%{state | hp: min(state.hp + amount, state.max_hp)})
-    SpawnView.notify_hp_update(state)
-    {:noreply, state}
+    if DamageApplication.heal_refused?(:mob, state.instance_id) do
+      {:noreply, state}
+    else
+      state = StateCommit.commit(%{state | hp: min(state.hp + amount, state.max_hp)})
+      SpawnView.notify_hp_update(state)
+      {:noreply, state}
+    end
   end
 
   def handle_heal(_amount, state), do: {:noreply, state}

@@ -31,11 +31,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -166,8 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   end
 
   defp strike_damage(caster, level, target),
-    do:
-      AlHeal.compute_heal(PlayerState.to_combatant(caster), level, true, definition().id, target)
+    do: SkillHeal.amount(SkillHeal.caster(caster), target, definition().id, level, false)
 
   defp undead_or_demon?(module, state) do
     combatant = module.to_combatant(state)

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -411,15 +412,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   def apply_vanish(_target_type, _target_pid, _hp_percent, _sp_percent, _source), do: :ok
 
+  @typedoc """
+  A heal as the recipient takes it: an integer is a final amount a unit in
+  Frenzy refuses, `{:passive, amount}` one Frenzy does not stop (an HP drain),
+  and a potion descriptor runs the recipient's potion terms.
+  """
+  @type heal_amount ::
+          non_neg_integer()
+          | {:passive, non_neg_integer()}
+          | {:potion, :hp | :sp, non_neg_integer()}
+
   @doc """
-  Heals a living unit.
+  Whether a unit refuses an ordinary heal: one in Frenzy takes no HP from it.
+  """
+  @spec heal_refused?(:player | :mob | :homunculus, integer()) :: boolean()
+  def heal_refused?(unit_type, unit_id),
+    do: StatusStorage.has_status?(unit_type, unit_id, :sc_berserk)
+
+  @doc """
+  Heals a living unit with an amount that is already final; the recipient adds
+  no rate of its own (see `heal_amount/0`).
 
   For `:player` this broadcasts to the player's PubSub topic; an offline
   player (no subscriber) is a silent no-op. For `:mob` this resolves the
   target's session pid via `UnitRegistry` and calls `MobSession.heal/2`; a
   target that no longer exists is a silent no-op.
   """
-  @type heal_amount :: non_neg_integer() | {:potion, :hp | :sp, non_neg_integer()}
 
   @spec apply_heal(
           :player | :mob | :homunculus,

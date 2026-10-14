@@ -117,17 +117,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
     end
   end
 
+  def handle({:apply_heal, gid, {:passive, amount}, _source}, session),
+    do: restore_hp(gid, amount, session)
+
   def handle({:apply_heal, gid, amount, _source}, session)
       when is_integer(amount) and amount > 0 do
-    case active_homunculus(session, gid) do
-      {:ok, homunculus} ->
-        updated = %{homunculus | hp: min(homunculus.hp + amount, homunculus.max_hp)}
-        notify_hp(updated)
-        {:noreply, StateCommit.commit(session, updated)}
-
-      {:error, :stale_target} ->
-        {:noreply, session}
-    end
+    if DamageApplication.heal_refused?(:homunculus, gid),
+      do: {:noreply, session},
+      else: restore_hp(gid, amount, session)
   end
 
   def handle({:apply_heal, _gid, _amount, _source}, session), do: {:noreply, session}
@@ -397,4 +394,18 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
       %UnitHp{id: state.world_gid, hp: state.hp, max_hp: max(state.max_hp, 1)}
     )
   end
+
+  defp restore_hp(gid, amount, session) when is_integer(amount) and amount > 0 do
+    case active_homunculus(session, gid) do
+      {:ok, homunculus} ->
+        updated = %{homunculus | hp: min(homunculus.hp + amount, homunculus.max_hp)}
+        notify_hp(updated)
+        {:noreply, StateCommit.commit(session, updated)}
+
+      {:error, :stale_target} ->
+        {:noreply, session}
+    end
+  end
+
+  defp restore_hp(_gid, _amount, session), do: {:noreply, session}
 end

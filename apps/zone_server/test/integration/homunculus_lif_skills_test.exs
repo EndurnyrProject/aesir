@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
@@ -35,11 +36,17 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
   end
 
   test "Healing Touch formula preserves exact integer order at ranks one, three, and five" do
-    for {rank, level, int, brain, matk, expected} <- [
-          {1, 1, 3, 0, 10, 10},
-          {3, 20, 5, 2, 40, 86},
-          {5, 99, 46, 5, 100, 578}
-        ] do
+    # Renewal: (level + INT) / 5 * 30 * rank / 10, +2% per Brain Surgery level,
+    # plus MATK. Pre-renewal: (level + INT) / 8 * (4 + 8 * rank), +2% per Brain
+    # Surgery level, no MATK.
+    expected_heals =
+      if GameMode.mode() == :renewal, do: [10, 86, 578], else: [0, 87, 871]
+
+    for {{rank, level, int, brain, matk}, expected} <-
+          Enum.zip(
+            [{1, 1, 3, 0, 10}, {3, 20, 5, 2, 40}, {5, 99, 46, 5, 100}],
+            expected_heals
+          ) do
       caster = formula_lif(level, int, brain, matk)
 
       assert {:local_effects, ^caster,

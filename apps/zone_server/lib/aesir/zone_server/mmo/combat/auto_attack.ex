@@ -983,8 +983,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   # ordinary message the single writer applies after the current one.
   defp drain_hp(attacker, damage) do
     case HpDrain.roll(attacker, damage) do
-      0 -> :ok
-      heal -> DamageApplication.apply_heal(:player, attacker.unit_id, heal, attacker.unit_id)
+      0 ->
+        :ok
+
+      heal ->
+        DamageApplication.apply_heal(
+          :player,
+          attacker.unit_id,
+          {:passive, heal},
+          attacker.unit_id
+        )
     end
   end
 
@@ -1511,8 +1519,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     append_local_effects(delivery, proc_effects)
   end
 
+  # A drain (Bloodlust) heal, which Frenzy does not stop.
   defp homunculus_proc_effect({:local_heal, target, amount, source}) do
-    DamageApplication.local_heal_effect(target, amount, source)
+    DamageApplication.local_heal_effect(target, {:passive, amount}, source)
   end
 
   defp homunculus_proc_effect(follow_up) do

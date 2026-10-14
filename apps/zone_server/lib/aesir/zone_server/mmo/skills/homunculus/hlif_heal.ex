@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
   @moduledoc """
   Healing Touch (HLIF_HEAL). Consumes one Red Slim Potion and restores the
-  owning player's HP from Lif's level, effective INT, Brain Surgery rank, and
-  MATK. The Homunculus is never healed by this skill.
+  owning player's HP by `Combat.SkillHeal`'s recipe from Lif's level, INT and
+  Brain Surgery rank (and its MATK in renewal) and the owner's received-heal
+  bonuses. The Homunculus is never healed by this skill.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -17,9 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
     cooldown: List.duplicate(20_000, 5),
     item_cost: [%{id: 545, amount: 1}]
 
-  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
-  alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -46,10 +46,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
         level,
         %{item_cost: [%{id: item_id, amount: amount}]}
       ) do
-    base = (div(caster.level + caster.int, 5) * 30 * level) |> div(10)
-    bonus = div(base * Stats.healing_touch_bonus_rate(caster), 100)
-    matk = DamageShared.roll(caster.combat_stats.matk_min, caster.combat_stats.matk_max)
-    heal = {:player, {:apply_heal, base + bonus + matk, {:homunculus, caster.world_gid}}}
+    owner = {:player, caster.owner_character_id}
+    restored = SkillHeal.amount(SkillHeal.caster(caster), owner, definition().id, level, true)
+    heal = {:player, {:apply_heal, restored, {:homunculus, caster.world_gid}}}
 
     {:local_effects, caster, [{:owner_item_cost, item_id, amount}, heal]}
   end

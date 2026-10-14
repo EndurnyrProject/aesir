@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
@@ -113,7 +114,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
 
     for {cast_rank, recipient_roll} <- [{1, 21}, {3, 26}, {5, 35}] do
       seed_rolls([{100, recipient_roll}, {cast_rank, cast_rank}])
-      expected = 60 * cast_rank + 7
+      expected = rank_heal(cast_rank)
 
       assert {:local_effects, ^caster,
               [{:player, {:apply_heal, ^expected, {:homunculus, 1_500_001}}}]} =
@@ -122,6 +123,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
   end
 
   test "Benediction honors every rank threshold edge and falls back to Vanilmirth without an attacker" do
+    rank_one = rank_heal(1)
     caster = vanilmirth()
 
     for {level, hom_threshold, owner_threshold} <- [
@@ -134,23 +136,25 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
       seed_rolls([{100, hom_threshold}, {level, 1}])
 
       assert {:local_effects, ^caster,
-              [{:homunculus, {:apply_heal, 1_500_001, 67, {:homunculus, 1_500_001}}}]} =
+              [{:homunculus, {:apply_heal, 1_500_001, ^rank_one, {:homunculus, 1_500_001}}}]} =
                HvanChaotic.cast(caster, :self, level, HvanChaotic.definition())
 
       seed_rolls([{100, hom_threshold + 1}, {level, 1}])
 
-      assert {:local_effects, ^caster, [{:player, {:apply_heal, 67, {:homunculus, 1_500_001}}}]} =
+      assert {:local_effects, ^caster,
+              [{:player, {:apply_heal, ^rank_one, {:homunculus, 1_500_001}}}]} =
                HvanChaotic.cast(caster, :self, level, HvanChaotic.definition())
 
       seed_rolls([{100, owner_threshold + 1}, {level, 1}])
 
       assert {:local_effects, ^caster,
-              [{:homunculus, {:apply_heal, 1_500_001, 67, {:homunculus, 1_500_001}}}]} =
+              [{:homunculus, {:apply_heal, 1_500_001, ^rank_one, {:homunculus, 1_500_001}}}]} =
                HvanChaotic.cast(caster, :self, level, HvanChaotic.definition())
     end
   end
 
   test "Benediction centers on the owner and reads a real mob's current target" do
+    rank_one = rank_heal(1)
     owner = %PlayerState{character_id: 100, map_name: "vanilmirth_skills_map", x: 20, y: 20}
     :ok = UnitRegistry.register_unit(:player, 100, PlayerState, owner, self())
     :ok = SpatialIndex.add_unit(:player, 100, 20, 20, owner.map_name)
@@ -171,7 +175,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
     assert_eventually(fn -> get_mob_state(mob.pid).target_ref == {:player, 100} end)
     seed_rolls([{100, 100}, {1, 1}, {5, 1}])
 
-    assert {:local_effects, ^caster, [{:mob, {:apply_heal, 7_002, 67, {:homunculus, 1_500_001}}}]} =
+    assert {:local_effects, ^caster,
+            [{:mob, {:apply_heal, 7_002, ^rank_one, {:homunculus, 1_500_001}}}]} =
              HvanChaotic.cast(caster, :self, 5, HvanChaotic.definition())
 
     :ok = MobSession.set_target(mob.pid, {:player, 999})
@@ -179,11 +184,12 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
     seed_rolls([{100, 100}, {5, 1}])
 
     assert {:local_effects, ^caster,
-            [{:homunculus, {:apply_heal, 1_500_001, 67, {:homunculus, 1_500_001}}}]} =
+            [{:homunculus, {:apply_heal, 1_500_001, ^rank_one, {:homunculus, 1_500_001}}}]} =
              HvanChaotic.cast(caster, :self, 5, HvanChaotic.definition())
   end
 
   test "Benediction bounds all unresponsive attacker reads to one scan budget" do
+    rank_one = rank_heal(1)
     owner = %PlayerState{character_id: 100, map_name: "vanilmirth_skills_map", x: 20, y: 20}
     :ok = UnitRegistry.register_unit(:player, 100, PlayerState, owner, self())
     :ok = SpatialIndex.add_unit(:player, 100, 20, 20, owner.map_name)
@@ -216,13 +222,14 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
     started_at = System.monotonic_time(:millisecond)
 
     assert {:local_effects, _,
-            [{:homunculus, {:apply_heal, 1_500_001, 67, {:homunculus, 1_500_001}}}]} =
+            [{:homunculus, {:apply_heal, 1_500_001, ^rank_one, {:homunculus, 1_500_001}}}]} =
              HvanChaotic.cast(vanilmirth(), :self, 5, HvanChaotic.definition())
 
     assert System.monotonic_time(:millisecond) - started_at <= 180
   end
 
   test "the typed mob heal effect is delivered only through the post-settlement local route" do
+    rank_one = rank_heal(1)
     caster = vanilmirth()
     register_mob(7_001, 10, 11, {:player, 100})
 
@@ -232,12 +239,12 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
       homunculus: caster
     }
 
-    expect(MobSession, :heal, fn pid, 67 ->
+    expect(MobSession, :heal, fn pid, ^rank_one ->
       assert pid == self()
       :ok
     end)
 
-    effect = {:mob, {:apply_heal, 7_001, 67, {:homunculus, caster.world_gid}}}
+    effect = {:mob, {:apply_heal, 7_001, rank_one, {:homunculus, caster.world_gid}}}
     assert {:noreply, ^session} = CommandHandler.local_effect(effect, session)
   end
 
@@ -894,5 +901,14 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
       end)
 
     :rand.seed(:exsss, {seed, seed + 1, seed + 2})
+  end
+
+  # Benediction's heal at `rank` for the fixture Vanilmirth (level 50, INT 50,
+  # MATK 7): renewal adds the MATK part, pre-renewal has none.
+  defp rank_heal(rank) do
+    case GameMode.mode() do
+      :renewal -> 60 * rank + 7
+      :pre_renewal -> div(50 + 50, 8) * (4 + 8 * rank)
+    end
   end
 end

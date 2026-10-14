@@ -219,6 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
     "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
     "bskillheal" => %{family: :skill_heal, param: :skill, unit: :percent},
+    "bskillheal2" => %{family: :skill_heal2, param: :skill, unit: :percent},
     "baddskillblow" => %{family: :add_skill_blow, param: :skill, unit: :cells},
     "bexpaddrace" => %{family: :exp_add_race, param: :race, unit: :percent},
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},

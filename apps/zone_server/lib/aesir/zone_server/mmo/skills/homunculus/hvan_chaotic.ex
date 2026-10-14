@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
   @moduledoc """
-  Benediction of Chaos heals Vanilmirth, its owner, or one current owner-attacker.
+  Benediction of Chaos heals Vanilmirth, its owner, or one current owner-attacker,
+  by `Combat.SkillHeal`'s recipe at a random level from 1 to the skill level.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -15,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
     cooldown: List.duplicate(3_000, 5)
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
-  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -33,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
   @impl Active
   def cast(%HomunculusState{} = caster, :self, level, _definition) do
     recipient = recipient(caster, level, :rand.uniform(100))
-    amount = heal_amount(caster, :rand.uniform(level))
+    amount = heal_amount(caster, recipient, :rand.uniform(level))
     {:local_effects, caster, [heal_effect(caster, recipient, amount)]}
   end
 
@@ -121,10 +122,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
         else: {:error, :mob_unavailable}
   end
 
-  defp heal_amount(caster, rank) do
-    stat_term = div(div(caster.level + caster.int, 5) * 30 * rank, 10)
-    stat_term + DamageShared.roll(caster.combat_stats.matk_min, caster.combat_stats.matk_max)
+  defp heal_amount(caster, recipient, rank) do
+    target = recipient_ref(caster, recipient)
+    SkillHeal.amount(SkillHeal.caster(caster), target, definition().id, rank, true)
   end
+
+  defp recipient_ref(caster, :homunculus), do: {:homunculus, caster.world_gid}
+  defp recipient_ref(caster, :owner), do: {:player, caster.owner_character_id}
+  defp recipient_ref(_caster, {:mob, id}), do: {:mob, id}
 
   defp heal_effect(caster, :homunculus, amount) do
     source = {:homunculus, caster.world_gid}

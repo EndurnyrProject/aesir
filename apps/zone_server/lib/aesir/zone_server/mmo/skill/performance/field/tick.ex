@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
   ]
 
   @music_lessons 315
+  @apple_of_idun 322
   @dancing_lessons 323
 
   @doc "Whether `effect` may reach `target` from this field."
@@ -99,14 +101,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
     Enum.each(targets, fn {type, id} -> Resource.drain_sp(type, id, amount) end)
   end
 
-  @doc "Heals each Idun occupant by the performer's current VIT and Music Lessons."
+  @doc """
+  Heals each Idun occupant by `Combat.SkillHeal`'s recipe from the performer as
+  it is now (VIT, Music Lessons, Apple of Idun's own skill-heal bonus) and each
+  occupant's received-heal bonuses.
+  """
   @spec idun_heal(Group.t(), struct(), [{atom(), integer()}]) :: :ok
   def idun_heal(group, caster, targets) do
-    amount =
-      30 + 5 * group.level + div(Caster.stat(caster, :vit), 2) +
-        5 * Caster.lesson_level(caster, @music_lessons)
+    healer = SkillHeal.caster(caster)
 
-    Enum.each(targets, fn {type, id} ->
+    Enum.each(targets, fn {type, id} = target ->
+      amount = SkillHeal.amount(healer, target, @apple_of_idun, group.level, true)
       DamageApplication.apply_heal(type, id, amount, group.caster_id)
     end)
   end
