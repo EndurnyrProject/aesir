@@ -37,6 +37,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble do
       @impl Aesir.ZoneServer.Mmo.Skill.Ground
       defdelegate on_expire(group), to: unquote(Field)
 
+      @impl Aesir.ZoneServer.Mmo.Skill.Ground
+      defdelegate cell_profile(group, cell), to: unquote(Field)
+
+      @impl Aesir.ZoneServer.Mmo.Skill.Ground
+      defdelegate unit_targets(group, cell, refs), to: unquote(Field)
+
+      @impl Aesir.ZoneServer.Mmo.Skill.Ground
+      defdelegate on_unit_hit(group, cell, target, now), to: unquote(Field)
+
       defoverridable on_interval: 2
 
       @doc false

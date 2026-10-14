@@ -55,6 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance do
           upkeep: 3,
           tick: :dissonance,
           tick_interval: 3_000,
+          no_overlap: true,
           lesson_level: Caster.lesson_level(caster, 315)
         )
     end

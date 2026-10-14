@@ -100,24 +100,17 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
     assert eventually(fn -> persisted_arrow_amount(dancer.character.id) == 2 end)
   end
 
-  test "Hip Shaker rejects a normal map with its versus-only reason" do
+  test "Hip Shaker casts on a normal map" do
     dancer = start_dancer([@hip_shaker], whip?: true)
     state = get_player_state(dancer.pid)
     initial_sp = player_sp(dancer.pid)
 
-    assert {:error, :versus_map_only} =
-             DcUglydance.validate(state, :self, 1, DcUglydance.definition())
+    assert :ok = DcUglydance.validate(state, :self, 1, DcUglydance.definition())
 
     cast(dancer, @hip_shaker, dancer.character.id)
 
-    assert_receive {:packet_sent,
-                    %SkillCastFailed{
-                      skill_id: @hip_shaker,
-                      reason: :SKILL_CAST_FAILURE_REASON_VERSUS_MAP_ONLY
-                    }, _},
-                   1_000
-
-    assert player_sp(dancer.pid) == initial_sp
+    assert eventually(fn -> player_sp(dancer.pid) <= initial_sp - 23 end)
+    refute_received {:packet_sent, %SkillCastFailed{skill_id: @hip_shaker}, _}
   end
 
   @tag integration_pre_re: false

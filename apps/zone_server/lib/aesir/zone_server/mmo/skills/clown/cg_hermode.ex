@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermode do
       radius: 3,
       eligible?: &party_or_guild?(caster, &1),
       kind: :ensemble,
+      ignore_land_protector: true,
       layout_radius: 3,
       linger_ms: 0,
       reach: :party_or_guild,

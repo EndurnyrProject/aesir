@@ -33,6 +33,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   striking group keeps its in-pass state and takes only its remaining cells.
   A command wrapped as `{:after_cell, command}` waits until the cell has struck
   every unit it reaches this pass.
+
+  A group whose module exports `cell_profile/2` may make one cell act as
+  another skill for its pass (rAthena `skill_dance_switch`: a song cell
+  overlapping another song strikes as Dissonance): the cell's strike skill,
+  interval and NoOverlap key its strike intervals and are what the group's
+  callbacks see for that cell; `:none` makes the cell do nothing this pass. The
+  group keeps its own skill, interval and NoOverlap afterwards.
   """
 
   alias Aesir.ZoneServer.Geometry
@@ -92,11 +99,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
     {Map.values(by_id), ticksets}
   end
 
-  defp run_cell(%Cell{group_id: group_id} = cell, {by_id, ticksets} = acc, env) do
+  defp run_cell(%Cell{group_id: group_id} = cell, {by_id, _ticksets} = acc, env) do
     case Map.fetch(by_id, group_id) do
       {:ok, {group, module, :ok}} ->
         if {cell.x, cell.y} in group.cells and not protected?(group, cell),
-          do: strike_cell(group, module, {cell.x, cell.y}, {by_id, ticksets}, env),
+          do: profiled_cell(group, module, {cell.x, cell.y}, acc, env),
           else: acc
 
       _ended ->
@@ -108,7 +115,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
     not Group.ignores_land_protector?(group) and Storage.land_protected?(group.map_name, x, y)
   end
 
-  defp strike_cell(group, module, cell, {by_id, ticksets} = acc, %{now: now} = env) do
+  defp profiled_cell(group, module, cell, {by_id, ticksets} = acc, env) do
+    if function_exported?(module, :cell_profile, 2) do
+      case env.invoke.(module, :cell_profile, [group, cell]) do
+        {:ok, :none} ->
+          acc
+
+        {:ok, %{skill_id: _, interval: _, no_overlap: _} = profile} ->
+          strike_cell(group, module, cell, acc, Map.put(env, :profile, profile))
+
+        {:ok, other} ->
+          failed = {group, module, {:failed, :cell_profile, {:invalid_return, other}}}
+          {Map.put(by_id, group.group_id, failed), ticksets}
+
+        {:error, reason} ->
+          {Map.put(by_id, group.group_id, {group, module, {:failed, :cell_profile, reason}}),
+           ticksets}
+      end
+    else
+      strike_cell(group, module, cell, acc, env)
+    end
+  end
+
+  defp profiled(group, %{profile: profile}), do: Map.merge(group, profile)
+  defp profiled(group, _env), do: group
+
+  defp restore(%Group{} = struck, %Group{} = own),
+    do: %{struck | skill_id: own.skill_id, interval: own.interval, no_overlap: own.no_overlap}
+
+  defp strike_cell(own, module, cell, {by_id, ticksets} = acc, %{now: now} = env) do
+    group = profiled(own, env)
     due = Enum.filter(reached(group, cell), &(Map.get(ticksets, key(group, &1), now) <= now))
 
     case due do
@@ -124,11 +160,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
             {run_commands(Enum.uniq(deferred), by_id, group.group_id, env), ticksets}
 
           {:ok, other} ->
-            failed = {group, module, {:failed, :unit_targets, {:invalid_return, other}}}
+            failed = {own, module, {:failed, :unit_targets, {:invalid_return, other}}}
             {Map.put(by_id, group.group_id, failed), ticksets}
 
           {:error, reason} ->
-            failed = {group, module, {:failed, :unit_targets, reason}}
+            failed = {own, module, {:failed, :unit_targets, reason}}
             {Map.put(by_id, group.group_id, failed), ticksets}
         end
     end
@@ -136,15 +172,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
 
   defp strike_targets(group, module, cell, refs, {by_id, ticksets}, %{now: now} = env) do
     Enum.reduce_while(refs, {by_id, ticksets, []}, fn ref, {by_id, ticksets, deferred} ->
-      {group, _module, outcome} = Map.fetch!(by_id, group.group_id)
+      {own, _module, outcome} = Map.fetch!(by_id, group.group_id)
+      group = profiled(own, env)
       ticksets = Map.put(ticksets, key(group, ref), now + group.interval)
 
       case strike(env, module, [group, cell, ref, now], group.group_id) do
         {:failed, reason} ->
-          failed = {group, module, {:failed, :on_unit_hit, reason}}
+          failed = {own, module, {:failed, :on_unit_hit, reason}}
           {:halt, {Map.put(by_id, group.group_id, failed), ticksets, deferred}}
 
         {tag, struck, commands} ->
+          struck = restore(struck, own)
           {later, now_commands} = Enum.split_with(commands, &match?({:after_cell, _}, &1))
           by_id = Map.put(by_id, group.group_id, {struck, module, outcome(tag, outcome)})
           by_id = run_commands(now_commands, by_id, group.group_id, env)

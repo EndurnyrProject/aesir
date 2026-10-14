@@ -132,6 +132,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
               | {:expire, Group.t()}
               | {:ok | :expire, Group.t(), [command()]}
 
+  @doc """
+  The skill one footprint cell strikes as this pass: its skill id, strike
+  interval and NoOverlap, which key the units' strike intervals and are what
+  `unit_targets/3` and `on_unit_hit/4` see for that cell; `:none` when the cell
+  does nothing this pass. Optional; without it every cell strikes as the group.
+  """
+  @callback cell_profile(Group.t(), cell()) ::
+              %{skill_id: pos_integer(), interval: pos_integer(), no_overlap: boolean()} | :none
+
   @doc "Describes the source-owned status granted while a mover occupies the field."
   @callback field_support(Group.t()) :: %{
               optional(:linger_ms) => non_neg_integer(),
@@ -147,5 +156,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
                       on_out: 2,
                       field_support: 1,
                       unit_targets: 3,
+                      cell_profile: 2,
                       on_unit_hit: 4
 end

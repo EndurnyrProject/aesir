@@ -60,9 +60,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
     assert Catalog.performance?(325)
   end
 
-  test "is rejected on a map without a versus flag" do
-    assert {:error, :versus_map_only} =
-             DcUglydance.validate(player_state(), :self, 1, DcUglydance.definition())
+  test "casts on a map without a versus flag" do
+    caster = player_state()
+    stub(Combat, :splash_targets, fn "prontera", {10, 20}, 4, @caster_id -> [] end)
+    stub(Performance, :perform, fn ^caster, _definition, 1, nil, [], _opts -> {:ok, caster} end)
+
+    assert :ok = DcUglydance.validate(caster, :self, 1, DcUglydance.definition())
+    assert {:ok, _caster} = DcUglydance.cast(caster, :self, 1, DcUglydance.definition())
   end
 
   @tag game_mode: :renewal

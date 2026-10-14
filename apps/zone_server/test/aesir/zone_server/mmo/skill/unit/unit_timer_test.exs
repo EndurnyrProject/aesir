@@ -60,6 +60,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest.Burnout do
   end
 end
 
+defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest.Profiled do
+  @moduledoc false
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
+
+  def cell_profile(%Group{state: %{profile: profile}}, _cell), do: profile
+
+  def unit_targets(%Group{}, _cell, refs), do: refs
+
+  def on_unit_hit(%Group{state: %{test_pid: test_pid}} = group, _cell, ref, now) do
+    send(
+      test_pid,
+      {:struck_as, group.group_id, ref, now, Map.take(group, [:skill_id, :interval, :no_overlap])}
+    )
+
+    {:ok, group}
+  end
+end
+
 defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
   use ExUnit.Case, async: false
 
@@ -75,6 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
 
   alias __MODULE__.Burnout
   alias __MODULE__.Phase
+  alias __MODULE__.Profiled
   alias __MODULE__.Strike
 
   setup :setup_ets_tables
@@ -367,6 +388,65 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
     assert_received {:burned, {50, 50}, {:mob, 1}}
     refute_received {:burned, {53, 50}, _}
     assert %Group{cells: [{50, 50}, {56, 50}]} = Storage.get(1)
+  end
+
+  describe "cell_profile/2" do
+    @dissonance %{skill_id: 317, interval: 3_000, no_overlap: true}
+
+    test "a NoOverlap profile key is shared across groups: one strike per profile interval", %{
+      manager: manager
+    } do
+      profiled = [handler: Profiled, state: %{test_pid: self(), profile: @dissonance}]
+      :ok = Manager.register(manager, field(1, [{50, 50}], profiled))
+      :ok = Manager.register(manager, field(2, [{50, 50}], [skill_id: 90] ++ profiled))
+      mob_at(1, 50, 50)
+
+      :ok = Manager.tick(manager, 1_000)
+      assert_received {:struck_as, _group, {:mob, 1}, 1_000, @dissonance}
+      refute_received {:struck_as, _, _, _, _}
+
+      :ok = Manager.tick(manager, 2_000)
+      :ok = Manager.tick(manager, 3_999)
+      refute_received {:struck_as, _, _, _, _}
+
+      :ok = Manager.tick(manager, 4_000)
+      assert_received {:struck_as, _group, {:mob, 1}, 4_000, @dissonance}
+      refute_received {:struck_as, _, _, _, _}
+    end
+
+    test "a :none cell strikes nothing", %{manager: manager} do
+      :ok =
+        Manager.register(
+          manager,
+          field(1, [{50, 50}], handler: Profiled, state: %{test_pid: self(), profile: :none})
+        )
+
+      mob_at(1, 50, 50)
+
+      :ok = Manager.tick(manager, 1_000)
+
+      refute_received {:struck_as, _, _, _, _}
+    end
+
+    test "the stored group keeps its own skill, interval and NoOverlap after the pass", %{
+      manager: manager
+    } do
+      :ok =
+        Manager.register(
+          manager,
+          field(1, [{50, 50}],
+            handler: Profiled,
+            state: %{test_pid: self(), profile: @dissonance}
+          )
+        )
+
+      mob_at(1, 50, 50)
+
+      :ok = Manager.tick(manager, 1_000)
+
+      assert_received {:struck_as, 1, {:mob, 1}, 1_000, @dissonance}
+      assert %Group{skill_id: 89, interval: 450, no_overlap: false} = Storage.get(1)
+    end
   end
 
   test "cells run in skill-unit table order: id remainder by 283, then id" do

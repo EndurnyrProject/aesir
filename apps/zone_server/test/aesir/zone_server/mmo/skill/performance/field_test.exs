@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
@@ -20,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Resource
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -35,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "field start places a 7x7 song and locks only the performer" do
+  test "field start places a 7x7 per-cell song and locks only the performer" do
     caster = player(17)
     :ok = UnitRegistry.register_player(caster, self())
     {:ok, definition} = Catalog.by_name(:ba_whistle)
@@ -53,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     assert group.center == {10, 10}
     assert length(group.cells) == 49
     assert group.expires_at - group.created_at == 60_000
-    assert group.state.performance.next_overlap_at == 0
+    assert group.unit_range == 0
     skill_id = definition.id
 
     assert %{val1: ^skill_id, val2: group_id, val3: 10, val4: nil} =
@@ -88,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "field reach excludes the performer, marks dissonant cells, and unlocks on expiry" do
+  test "field reach excludes the performer and dissonant positions, and unlocks on expiry" do
     caster = player(17)
     :ok = UnitRegistry.register_player(caster, self())
     :ok = SpatialIndex.add_unit(:player, 17, 10, 10, "prontera")
@@ -104,8 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     assert support.linger_ms == 20_000
     assert support.params[:caster_id] == 17
 
-    marked = put_in(group.state.performance.dissonant_cells, MapSet.new([{11, 10}]))
-    refute Field.field_support(marked).target?.({:player, 18})
+    :ok = Storage.insert(%{group | group_id: 9_002, caster_id: 20, cells: [{11, 10}]})
+    refute Field.field_support(group).target?.({:player, 18})
     assert :ok = Field.on_expire(group)
     refute StatusStorage.has_status?(:player, 17, :sc_dancing)
   end
@@ -278,13 +280,209 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     refute support.target?.({:player, 17})
   end
 
-  defp player(id) do
+  @dissonance %{skill_id: 317, interval: 3_000, no_overlap: true}
+
+  @tag game_mode: :pre_renewal
+  test "a buff song cell is inert alone and strikes as Dissonance at the song's level when another song covers it" do
+    test_pid = self()
+
+    stub(Combat, :execute_misc_attack, fn _caster, target, opts ->
+      send(test_pid, {:hit, target, opts[:skill_id], opts[:skill_level]})
+      :ok
+    end)
+
+    :ok = UnitRegistry.register_player(player(17), self())
+    :ok = UnitRegistry.register_player(player(18, 13), self())
+    register_mob(42, 11, 10)
+    {:ok, whistle} = Catalog.by_name(:ba_whistle)
+    {:ok, _} = Field.start(player(17), whistle, 5, :sc_whistle, [], kind: :song, upkeep: 5)
+    [group] = Storage.get_groups_by_caster(:player, 17)
+
+    assert Field.cell_profile(group, {11, 10}) == :none
+    assert Field.unit_targets(group, {11, 10}, [{:mob, 42}]) == []
+
+    {:ok, _} = Field.start(player(18, 13), whistle, 1, :sc_whistle, [], kind: :song, upkeep: 5)
+
+    assert Field.cell_profile(group, {11, 10}) == @dissonance
+    assert Field.cell_profile(group, {7, 10}) == :none
+    # Whistle's unit carries NoMob, which the dance switch keeps.
+    assert Field.unit_targets(group, {11, 10}, [{:player, 17}, {:mob, 42}]) == []
+    assert {:ok, ^group} = Field.on_unit_hit(group, {11, 10}, {:mob, 42}, 1_000)
+    assert_received {:hit, {:mob, 42}, 317, 5}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "two overlapping dances strike enemies as Ugly Dance" do
+    Mimic.copy(Resource)
+    test_pid = self()
+
+    stub(Resource, :drain_sp, fn type, id, amount ->
+      send(test_pid, {:drained, type, id, amount})
+      :ok
+    end)
+
+    :ok = UnitRegistry.register_player(player(17), self())
+    :ok = UnitRegistry.register_player(player(18, 13), self())
+    register_mob(42, 11, 10)
+    {:ok, forget} = Catalog.by_name(:dc_dontforgetme)
+    {:ok, _} = Field.start(player(17), forget, 5, :sc_dontforgetme, [], kind: :dance, upkeep: 5)
+
+    {:ok, _} =
+      Field.start(player(18, 13), forget, 1, :sc_dontforgetme, [], kind: :dance, upkeep: 5)
+
+    [group] = Storage.get_groups_by_caster(:player, 17)
+
+    assert Field.cell_profile(group, {11, 10}) == %{@dissonance | skill_id: 325}
+    assert [{:mob, 42}] = Field.unit_targets(group, {11, 10}, [{:mob, 42}])
+    assert {:ok, _group} = Field.on_unit_hit(group, {11, 10}, {:mob, 42}, 1_000)
+    assert_received {:drained, :mob, 42, 30}
+  end
+
+  describe "on the unit pass" do
+    setup {Aesir.MimicMode, :global}
+
+    @describetag game_mode: :pre_renewal
+
+    test "two overlapping Dissonance fields share the 3 s interval for one target" do
+      test_pid = self()
+
+      stub(Combat, :execute_misc_attack, fn _caster, target, opts ->
+        send(test_pid, {:hit, target, opts[:skill_id]})
+        :ok
+      end)
+
+      :ok = UnitRegistry.register_player(player(17), self())
+      :ok = UnitRegistry.register_player(player(18, 13), self())
+      register_mob(42, 11, 10)
+      {:ok, dissonance} = Catalog.by_name(:ba_dissonance)
+
+      {:ok, _} =
+        Field.start(player(17), dissonance, 1, nil, [],
+          kind: :song,
+          reach: :enemy,
+          upkeep: 3,
+          tick: :dissonance,
+          tick_interval: 3_000,
+          no_overlap: true
+        )
+
+      {:ok, _} =
+        Field.start(player(18, 13), dissonance, 1, nil, [],
+          kind: :song,
+          reach: :enemy,
+          upkeep: 3,
+          tick: :dissonance,
+          tick_interval: 3_000,
+          no_overlap: true
+        )
+
+      [%Group{created_at: start}] = Storage.get_groups_by_caster(:player, 17)
+      manager = Process.get({Manager, :server})
+      :ok = Manager.tick(manager, start + 1_000)
+      assert_received {:hit, {:mob, 42}, 317}
+      refute_received {:hit, _, _}
+
+      :ok = Manager.tick(manager, start + 2_000)
+      :ok = Manager.tick(manager, start + 3_999)
+      refute_received {:hit, _, _}
+
+      :ok = Manager.tick(manager, start + 4_000)
+      assert_received {:hit, {:mob, 42}, 317}
+      refute_received {:hit, _, _}
+    end
+
+    test "a Lullaby cell on Land Protector strikes nobody while its other cells do" do
+      :ok = UnitRegistry.register_player(player(17), self())
+      :ok = UnitRegistry.register_player(player(18), self())
+      register_mob(42, 11, 10)
+      register_mob(43, 9, 10)
+      {:ok, lullaby} = Catalog.by_name(:bd_lullaby)
+
+      {:ok, _} =
+        Field.start(player(17), lullaby, 1, nil, [],
+          kind: :ensemble,
+          partners: [18],
+          layout_radius: 4,
+          linger_ms: 0,
+          reach: :enemy,
+          upkeep: 4,
+          tick: :lullaby,
+          tick_interval: 6_000
+        )
+
+      [group] = Storage.get_groups_by_caster(:player, 17)
+      refute Group.ignores_land_protector?(group)
+      :ok = Storage.insert(land_protector({11, 10}))
+      test_pid = self()
+
+      stub(StatusInterpreter, :apply_status, fn type, id, :sc_sleep, _opts ->
+        send(test_pid, {:slept, type, id})
+        :ok
+      end)
+
+      :ok = Manager.tick(Process.get({Manager, :server}), group.created_at + 1_000)
+
+      assert_received {:slept, :mob, 43}
+      refute_received {:slept, :mob, 42}
+    end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "Hermode's ensemble ignores Land Protector" do
+    :ok = UnitRegistry.register_player(player(17), self())
+    :ok = UnitRegistry.register_player(player(18), self())
+    {:ok, hermode} = Catalog.by_name(:cg_hermode)
+
+    {:ok, _} =
+      Field.start(player(17), hermode, 1, :sc_hermode, [val1: 1],
+        kind: :ensemble,
+        ignore_land_protector: true,
+        partners: [18],
+        upkeep: 5
+      )
+
+    [group] = Storage.get_groups_by_caster(:player, 17)
+    assert Group.ignores_land_protector?(group)
+  end
+
+  defp land_protector(cell) do
+    %Group{
+      group_id: 9_100,
+      skill_name: :sa_landprotector,
+      map_name: "prontera",
+      center: cell,
+      cells: [cell],
+      state: %{land_protector: true}
+    }
+  end
+
+  defp register_mob(id, x, y) do
+    mob = %MobState{
+      instance_id: id,
+      mob_id: 1002,
+      mob_data: nil,
+      spawn_ref: nil,
+      x: x,
+      y: y,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 0,
+      max_sp: 0,
+      spawned_at: 0
+    }
+
+    :ok = UnitRegistry.register_unit(:mob, id, MobState, mob, self())
+    :ok = SpatialIndex.add_unit(:mob, id, x, y, "prontera")
+  end
+
+  defp player(id, x \\ 10) do
     PlayerState.new(%Character{
       id: id,
       account_id: id,
       name: "Bard #{id}",
       last_map: "prontera",
-      last_x: 10,
+      last_x: x,
       last_y: 10,
       sex: "M",
       str: 1,

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Overlap
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -146,7 +147,7 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
     end)
   end
 
-  test "overlapping songs suppress field buffs, damage a mob, then restore the surviving song" do
+  test "overlapping songs suppress field buffs, spare a monster (NoMob), then restore the surviving song" do
     whistle = start_performer(:bard, "Whistle", @origin, %{"319" => 5, "304" => 1})
     bragi = start_performer(:bard, "Bragi", {154, 150}, %{"321" => 5, "304" => 1})
     guest = start_performer(:novice, "Crossing", {152, 150}, %{})
@@ -174,7 +175,11 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
 
     assert_eventually(fn -> not FieldSupport.field_owned?(:player, guest_id, :sc_whistle) end)
     assert_eventually(fn -> not FieldSupport.field_owned?(:player, guest_id, :sc_poembragi) end)
-    assert_eventually(fn -> get_mob_state(mob.pid).hp < before_mob_hp end, 4_000)
+
+    # The shared cells strike as Dissonance every 3 s, but both songs' units
+    # carry NoMob, which the dance switch keeps.
+    Process.sleep(3_200)
+    assert get_mob_state(mob.pid).hp == before_mob_hp
 
     for status <- [:sc_whistle, :sc_poembragi] do
       if entry = StatusStorage.get_status(:player, guest_id, status) do
@@ -219,14 +224,12 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
     assert_eventually(fn -> FieldSupport.field_owned?(:player, guest_id, :sc_whistle) end)
     assert_eventually(fn -> FieldSupport.field_owned?(:player, guest_id, :sc_humming) end)
 
-    assert_eventually(fn ->
-      groups =
-        Storage.get_groups_by_caster(:player, bard.character.id) ++
-          Storage.get_groups_by_caster(:player, dancer.character.id)
+    groups =
+      Storage.get_groups_by_caster(:player, bard.character.id) ++
+        Storage.get_groups_by_caster(:player, dancer.character.id)
 
-      length(groups) == 2 and
-        Enum.all?(groups, &(MapSet.size(&1.state.performance.dissonant_cells) == 0))
-    end)
+    assert length(groups) == 2
+    refute Enum.any?(groups, &Overlap.dissonant?(&1, {152, 150}))
   end
 
   defp cast(session, skill_id, level) do

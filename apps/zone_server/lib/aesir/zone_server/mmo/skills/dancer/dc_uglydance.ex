@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
   @moduledoc """
   Hip Shaker (DC_UGLYDANCE). A dance draining SP from every enemy within 4 cells
-  of the performer on versus maps, needing a whip.
+  of the performer, needing a whip.
 
   Renewal: drains 10 plus 2 per level SP, a 1 s cast plus 0.3 s fixed, a 0.3 s
   delay and a 5 s cooldown. Pre-renewal places a 30-second 7x7 enemy field
@@ -37,18 +37,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
-  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Resource
-
-  @impl Active
-  def validate(%{map_name: map_name}, _target, _level, _definition),
-    do: validate_versus_map(map_name, &Targeting.versus_map?/1)
-
-  defp validate_versus_map(map_name, versus_map?) do
-    if versus_map?.(map_name), do: :ok, else: {:error, :versus_map_only}
-  end
 
   @impl Active
   def cast(%PlayerState{} = caster, :self, level, definition) do
@@ -64,6 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
           upkeep: 3,
           tick: :ugly_dance,
           tick_interval: 3_000,
+          no_overlap: true,
           lesson_level: Caster.lesson_level(caster, @lesson_id)
         )
     end

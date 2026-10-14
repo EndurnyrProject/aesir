@@ -9,6 +9,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   A song or dance field follows its walking performer; an ensemble field stays
   where it was cast, even when Longing lets a performer walk. The per-entry
   root and SP upkeep amount are configurable for Moonlit and Hermode.
+
+  A song, a dance, and an ensemble with its own interval effect (Lullaby) act
+  per cell on the skill-unit pass (`cell_profile/2`, `unit_targets/3`,
+  `on_unit_hit/4`): a cell strikes with its skill's own Unit interval
+  (`:tick_interval`, and the shared NoOverlap interval for `no_overlap: true`).
+  A cell a song shares with another song (or a dance with another dance) is
+  dissonant: for as long as the overlap lasts it strikes as Dissonance (songs) or
+  Ugly Dance (dances) every 3 s at the field's level on enemies, with the
+  NoOverlap interval those skills share, even a buff song that otherwise never
+  strikes, and its occupants get no song status. Land Protector removes and
+  silences a performance's cells unless its skill ignores it (every solo song
+  and dance, and Hermode, do; the other ensembles do not).
   """
 
   require Logger
@@ -34,6 +46,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  @dissonant_skill %{song: 317, dance: 325}
+  @dissonant_effect %{song: :dissonance, dance: :ugly_dance}
+  @dissonant_interval 3_000
+
   @doc "Places a performance and locks its caster (and optional partners)."
   @spec start(PlayerState.t(), Definition.t(), pos_integer(), atom() | nil, keyword(), keyword()) ::
           {:ok, PlayerState.t()} | {:error, term()}
@@ -57,18 +73,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
         performers: [id | partners],
         tick: Keyword.get(opts, :tick),
         tick_interval: Keyword.get(opts, :tick_interval, 3_000),
-        next_effect_at: 0,
-        next_overlap_at: 0,
+        no_overlap: Keyword.get(opts, :no_overlap, false),
         lesson_level: Keyword.get(opts, :lesson_level, 0),
-        caster_vit: Keyword.get(opts, :caster_vit, 0),
-        dissonant_cells: MapSet.new()
+        caster_vit: Keyword.get(opts, :caster_vit, 0)
       }
 
       with {:ok, group} <-
              Unit.place(caster, definition.name, level, {caster.x, caster.y},
                state: %{
                  performance: perf,
-                 ignore_land_protector: true,
+                 ignore_land_protector:
+                   Keyword.get(opts, :ignore_land_protector, kind != :ensemble),
                  follows_caster: perf.kind != :ensemble
                }
              ) do
@@ -122,27 +137,78 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
       }) do
     {:ok, definition} = Catalog.by_id(skill_id)
 
-    {:ok,
-     %{
-       cells: Layout.square(center, perf.layout_radius),
-       state: %{},
-       interval: 1_000,
-       duration: Enum.fetch!(definition.duration, level - 1),
-       lifecycle_policy: %LifecyclePolicy{exclusive_family: :performance}
-     }}
+    placement = %{
+      cells: Layout.square(center, perf.layout_radius),
+      state: %{},
+      interval: 1_000,
+      duration: Enum.fetch!(definition.duration, level - 1),
+      lifecycle_policy: %LifecyclePolicy{exclusive_family: :performance}
+    }
+
+    if perf.kind in [:song, :dance] or perf.tick != nil,
+      do: {:ok, Map.put(placement, :unit_range, 0)},
+      else: {:ok, placement}
+  end
+
+  @doc """
+  The skill a cell strikes as this pass: Dissonance or Ugly Dance on a
+  dissonant cell, the performance's own interval effect otherwise, and nothing
+  for a buff field's undisturbed cell.
+  """
+  @spec cell_profile(Group.t(), Ground.cell()) ::
+          %{skill_id: pos_integer(), interval: pos_integer(), no_overlap: boolean()} | :none
+  def cell_profile(%Group{state: %{performance: perf}} = group, cell) do
+    case effect(group, cell) do
+      {:dissonant, _effect} ->
+        %{skill_id: @dissonant_skill[perf.kind], interval: @dissonant_interval, no_overlap: true}
+
+      {:own, _effect} ->
+        %{skill_id: group.skill_id, interval: perf.tick_interval, no_overlap: perf.no_overlap}
+
+      :none ->
+        :none
+    end
+  end
+
+  @doc "Keeps the living units one cell's effect may reach, never its performers."
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, cell, refs) do
+    case effect(group, cell) do
+      :none -> []
+      {_kind, effect} -> Enum.filter(refs, &Tick.target?(group, effect, &1))
+    end
+  end
+
+  @doc "Applies one cell's effect to one unit."
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, cell, target, _now) do
+    case effect(group, cell) do
+      :none -> :ok
+      {_kind, effect} -> Tick.apply(effect, group, target)
+    end
+
+    {:ok, group}
+  end
+
+  defp effect(%Group{state: %{performance: perf}} = group, cell) do
+    cond do
+      Overlap.dissonant?(group, cell) -> {:dissonant, @dissonant_effect[perf.kind]}
+      perf.tick != nil -> {:own, perf.tick}
+      true -> :none
+    end
   end
 
   @doc "Recomputes dissonance and applies due interval effects."
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
-  def on_interval(%Group{state: %{performance: %{kind: :ensemble} = perf}} = group, now) do
+  def on_interval(%Group{state: %{performance: %{kind: :ensemble} = perf}} = group, _now) do
     if Enum.all?(perf.performers, &performing?(&1, group)) do
-      Tick.run(group, now)
+      {:ok, group}
     else
       {:expire, group}
     end
   end
 
-  def on_interval(group, now), do: group |> Overlap.mark() |> Tick.run(now)
+  def on_interval(group, _now), do: {:ok, group}
 
   defp performing?(id, group) do
     with %{val2: group_id} when group_id == group.group_id <-

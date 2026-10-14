@@ -26,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
           | {:kind, :song | :dance | :ensemble}
           | {:tick, :dissonance | :ugly_dance | :idun_heal | :lullaby | nil}
           | {:tick_interval, pos_integer()}
+          | {:no_overlap, boolean()}
+          | {:ignore_land_protector, boolean()}
           | {:partners, [integer()]}
           | {:lesson_level, non_neg_integer()}
           | {:caster_vit, non_neg_integer()}
@@ -36,7 +38,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
   Pre-renewal options: `:kind` (`:song`, `:dance` or `:ensemble`) and positive
   `:upkeep` are required. `:reach` defaults to `:everyone`; `:layout_radius`
   defaults to 3 (use 4 for ensembles); `:linger_ms` defaults to 20 seconds;
-  `:tick` defaults to nil and `:tick_interval` to 3 seconds. `:partners`
+  `:tick` defaults to nil and `:tick_interval` (the Unit interval of the
+  field's own effect) to 3 seconds; `:no_overlap` (default false) shares that
+  interval across every field of the skill; `:ignore_land_protector` defaults to
+  true for songs and dances and false for ensembles. `:partners`
   defaults to `[]`, and the frozen `:lesson_level` and `:caster_vit` to zero.
   `:upkeep_sp` defaults to one; `:root` defaults to `:ensemble` for ensembles,
   else `:none`. Use `:always` for an unrelaxable root. `:party_or_guild` reach
@@ -93,6 +98,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
 
       @impl Aesir.ZoneServer.Mmo.Skill.Ground
       defdelegate on_expire(group), to: unquote(Field)
+
+      @impl Aesir.ZoneServer.Mmo.Skill.Ground
+      defdelegate cell_profile(group, cell), to: unquote(Field)
+
+      @impl Aesir.ZoneServer.Mmo.Skill.Ground
+      defdelegate unit_targets(group, cell, refs), to: unquote(Field)
+
+      @impl Aesir.ZoneServer.Mmo.Skill.Ground
+      defdelegate on_unit_hit(group, cell, target, now), to: unquote(Field)
 
       defoverridable on_place: 1, on_interval: 2, field_support: 1, on_expire: 1
     end
