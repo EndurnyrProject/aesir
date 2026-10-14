@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
 
   A hit is split at its single post-defense attribute step, which the
   coordinator owns: `pre_element/2` runs the base, its critical or positive
-  non-critical equipment bonus, skill ratio, defense, refine and mastery stages;
+  non-critical equipment bonus, skill ratio (with the status ratio adds), the
+  equipment skill rates, the ATK percent, defense, refine and mastery stages;
   `post_element/2` runs the cards and final reduction. The non-critical bonus
   belongs to the weapon base only, never to the shield replacement. After
   defense the right hand keeps at least 1 damage and the left hand at least 0.
@@ -57,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
     base = if parts.source == :shield, do: defend(base, context), else: base
 
     skilled =
-      div(base * Map.get(context, :skill_ratio, 100), 100) + Map.get(context, :bonus_atk, 0)
+      div(base * PhysicalAttack.skill_ratio(context), 100) + Map.get(context, :bonus_atk, 0)
 
     skilled =
       skilled

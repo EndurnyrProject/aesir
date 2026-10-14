@@ -66,6 +66,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                # DamageCalculator / MagicDamageCalculator / DamageShared
                :atk_bonus,
                :atk_rate,
+               :skill_ratio,
+               :bonus_atk_rate,
                :attack_element,
                :enchant_arms_element,
                :damage_bonus,

@@ -74,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:defense_mode) => :normal | :simple | :ignore | :soft_only,
           optional(:flat_bonus) => integer(),
           optional(:atk_rate) => integer(),
+          optional(:status_skill_ratio) => integer(),
           optional(:post_defense_atk) => integer(),
           optional(:base_atk_rate) => integer(),
           optional(:damage_multiplier) => number(),
@@ -120,14 +121,30 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
     MagicDamage.apply_factor(damage, factor)
   end
 
-  @doc "Applies shared status attack-rate and generic damage-multiplier channels."
+  @doc """
+  Applies the ATK percent (`:atk_rate`, its points over 100) as one truncating
+  product, then the generic damage-multiplier channel. Classic's stage after the
+  skill ratio; renewal folds the percent into the ratio instead.
+  """
   @spec status_damage(integer(), context()) :: integer()
   def status_damage(damage, context) do
     damage
     |> rate(Map.get(context, :atk_rate, 0))
-    |> Kernel.*(1 + Map.get(context, :damage_multiplier, 0))
-    |> trunc()
+    |> damage_multiplier(context)
   end
+
+  @doc "Applies the generic damage-multiplier channel."
+  @spec damage_multiplier(number(), context()) :: integer()
+  def damage_multiplier(damage, context),
+    do: trunc(damage * (1 + Map.get(context, :damage_multiplier, 0)))
+
+  @doc """
+  The skill ratio with the status ratio adds (Over Thrust, Frenzy) that the
+  source sums into it, for every attack including a normal one.
+  """
+  @spec skill_ratio(context()) :: integer()
+  def skill_ratio(context),
+    do: Map.get(context, :skill_ratio, 100) + Map.get(context, :status_skill_ratio, 0)
 
   @doc "Adds the short- and long-attack rates the hit's range selected, in that order."
   @spec range_damage(integer(), context()) :: integer()

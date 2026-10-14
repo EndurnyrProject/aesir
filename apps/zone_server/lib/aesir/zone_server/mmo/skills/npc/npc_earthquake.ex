@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.AtkPercent
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -78,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
         group.level,
         :neutral,
         100,
-        base_damage: base_damage(attack, caster, group.level, enemies),
+        base_damage: base_damage(attack, caster, group, enemies),
         ignore_mdef: true
       )
     end
@@ -86,25 +87,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
     {:ok, group}
   end
 
-  defp base_damage(attack, caster, level, enemies) do
+  defp base_damage(attack, caster, %Group{level: level} = group, enemies) do
     attack
-    |> attack_percent(caster, GameMode.mode())
+    |> attack_percent(caster, group.skill_id, GameMode.mode())
     |> Kernel.*(200 + 100 * level + 100 * div(level, 2) + if(level > 4, do: 100, else: 0))
     |> div(100)
     |> div(max(enemies, 1))
   end
 
-  defp attack_percent(attack, _caster, :renewal), do: attack
+  defp attack_percent(attack, _caster, _skill_id, :renewal), do: attack
 
-  defp attack_percent(attack, caster, :pre_renewal) do
-    rate =
-      Map.get(
-        ModifierCalculator.get_all_modifiers(caster.unit_type, caster.unit_id),
-        :atk_rate,
-        0
-      )
-
-    div(attack * max(100 + rate, 0), 100)
+  defp attack_percent(attack, caster, skill_id, :pre_renewal) do
+    modifiers = ModifierCalculator.get_all_modifiers(caster.unit_type, caster.unit_id)
+    div(attack * AtkPercent.percent(caster.unit_type, skill_id, modifiers), 100)
   end
 
   defp reach(level), do: Enum.at(@reach, level_index(level))

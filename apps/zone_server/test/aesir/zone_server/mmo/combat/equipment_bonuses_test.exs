@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
@@ -148,6 +149,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
                  ignore_element?: true,
                  ranged?: true
              }) == [8, 16, 32, 64, 3, 6, 7]
+    end
+  end
+
+  describe "percent_atk_rate/2" do
+    test "renewal sums the equipment rate with the status script rate; classic reads 0" do
+      attacker = with_equip_modifiers(CombatTestHelper.create_player_combatant(), %{atk_rate: 10})
+
+      assert EquipmentBonuses.percent_atk_rate(attacker, %{bonus_atk_rate: 15}) ==
+               mode_value(25, 0)
+
+      assert EquipmentBonuses.percent_atk_rate(attacker, %{}) == mode_value(10, 0)
     end
   end
 
@@ -990,6 +1002,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert EquipmentBonuses.add_skill_blow(CombatTestHelper.create_player_combatant(), 18) == 0
     end
   end
+
+  defp mode_value(renewal, classic),
+    do: if(GameMode.mode() == :renewal, do: renewal, else: classic)
 
   defp with_equip_modifiers(combatant, modifiers) do
     %{combatant | equip_modifiers: modifiers}

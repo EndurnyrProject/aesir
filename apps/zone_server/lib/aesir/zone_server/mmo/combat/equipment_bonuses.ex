@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   an empty `equip_modifiers` map, so every read is zero for them.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
@@ -312,6 +313,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
 
   defp range_defense_rate(defender, _opts),
     do: Map.get(defender.equip_modifiers, :near_atk_def, 0)
+
+  @doc """
+  The item-script ATK rate a renewal attacker takes on its weapon and equipment
+  ATK: its equipment's `bAtkRate` plus the rate its statuses grant as a script
+  bonus (`bonus_atk_rate`, the pills and Vitalize Potion). Classic rejects the
+  bonus, so it reads 0 there.
+  """
+  @spec percent_atk_rate(Combatant.t(), map()) :: integer()
+  def percent_atk_rate(%Combatant{} = attacker, status_modifiers) do
+    if GameMode.mode() == :renewal,
+      do:
+        Map.get(attacker.equip_modifiers, :atk_rate, 0) +
+          Map.get(status_modifiers, :bonus_atk_rate, 0),
+      else: 0
+  end
 
   @doc "Percent the attacker's equipment adds to its hits of the named skill."
   @spec skill_atk_rate(Combatant.t(), pos_integer() | nil) :: rate()

@@ -136,6 +136,80 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DamageStageOrderTest do
     end
   end
 
+  describe "the attacker's damage statuses" do
+    @attacker {:mob, 9_001}
+
+    setup do
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 9_001) end)
+      :ok
+    end
+
+    test "Add ATK Damage adds its percent to a weapon hit after the target's common stage" do
+      pid = player(sp: 100, max_sp: 100)
+      apply!(:sc_energycoat)
+      stub(PlayerSession, :consume_sp, fn ^pid, _amount -> :ok end)
+      :ok = StatusStorage.apply_status(:mob, 9_001, :sc_add_atk_damage, val1: 50)
+
+      # Energy Coat takes 100 to 70 first, then the attacker's 50% makes 105.
+      assert Interpreter.absorb_damage(
+               :player,
+               @target,
+               100,
+               Map.put(@melee, :attacker, @attacker)
+             ) ==
+               105
+    end
+
+    test "Add ATK Damage reaches weapon hits only and Add MATK Damage magic hits only" do
+      player(sp: 100, max_sp: 100)
+      :ok = StatusStorage.apply_status(:mob, 9_001, :sc_add_atk_damage, val1: 50)
+      :ok = StatusStorage.apply_status(:mob, 9_001, :sc_add_matk_damage, val1: 30)
+
+      assert Interpreter.absorb_damage(
+               :player,
+               @target,
+               100,
+               Map.put(@melee, :attacker, @attacker)
+             ) ==
+               150
+
+      assert Interpreter.absorb_damage(
+               :player,
+               @target,
+               100,
+               %{dmg_type: :magic, skill_id: 19, attacker: @attacker}
+             ) == 130
+
+      assert Interpreter.absorb_damage(
+               :player,
+               @target,
+               100,
+               %{dmg_type: :misc, is_short: false, skill_id: 152, attacker: @attacker}
+             ) == 100
+    end
+
+    test "the raised hit is what Kyrie Eleison absorbs, and nothing is raised from zero" do
+      player(sp: 100, max_sp: 100)
+      apply!(:sc_kyrie, val2: 1_000, val3: 5)
+      apply!(:sc_aeterna)
+      :ok = StatusStorage.apply_status(:mob, 9_001, :sc_add_atk_damage, val1: 50)
+
+      assert Interpreter.absorb_damage(
+               :player,
+               @target,
+               100,
+               Map.put(@melee, :attacker, @attacker)
+             ) ==
+               0
+
+      # Lex Aeterna doubled to 200, Add ATK Damage raised it to 300.
+      assert %{state: %{shield_hp: 700}} = StatusStorage.get_status(:player, @target, :sc_kyrie)
+
+      assert Interpreter.absorb_damage(:player, @target, 0, Map.put(@melee, :attacker, @attacker)) ==
+               0
+    end
+  end
+
   describe "blocking" do
     test "Kyrie Eleison spends its budget on the hit Energy Coat already reduced" do
       pid = player(sp: 100, max_sp: 100)

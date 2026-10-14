@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Berserk do
   @moduledoc """
   Berserk (SC_BERSERK) triples maximum HP, suppresses recovery and most player
   actions, grants an infinite Endure rider, and drains 5% maximum HP every ten
-  seconds. Renewal adds 200% ATK and 15 ASPD; pre-renewal adds 100% ATK and
-  30% ASPD rate. Natural expiry reduces HP to 100, but Dispel does not.
+  seconds. Renewal adds 200 to every weapon attack's skill ratio and 15 ASPD;
+  pre-renewal adds 100 to the ratio and 30% ASPD rate. Natural expiry reduces
+  HP to 100, but Dispel does not.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_berserk,
@@ -32,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Berserk do
   def modifiers(_instance, _context) do
     shared = %{
       max_hp_rate: 200,
-      atk_rate: if(GameMode.mode() == :renewal, do: 200, else: 100),
+      skill_ratio: if(GameMode.mode() == :renewal, do: 200, else: 100),
       flee_rate: -50,
       def_override: 0,
       mdef_override: 0,

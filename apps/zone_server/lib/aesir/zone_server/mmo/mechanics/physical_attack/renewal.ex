@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   `after_component_elements/2` derives the equipment percentage part and then
   adds Stave Crasher's rolled MATK (`:stave_matk`) to the weapon component,
   `calculate_components/2` runs component cards, the critical or signed
-  non-critical equipment bonus, the skill ratio and defense, and
+  non-critical equipment bonus, the skill ratio (started from the ATK percent,
+  with the status ratio adds) and defense, and
   `finish_attack/2` runs the critical tail after any post-defense attribute step.
   """
 
@@ -81,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     mastery = modified_component(components.mastery_atk, context, :status)
     weapon = modified_component(components.weapon_atk, context, :weapon)
     equipment = modified_component(components.flat_atk, context, :weapon)
-    percent_atk = PhysicalAttack.status_damage(components.percent_atk, context)
+    percent_atk = PhysicalAttack.damage_multiplier(components.percent_atk, context)
 
     core =
       PhysicalAttack.rate(status + weapon + equipment + percent_atk, Map.get(context, :patk, 0))
@@ -92,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
       |> PhysicalAttack.range_damage(context)
 
     skilled =
-      div(attack * Map.get(context, :skill_ratio, 100), 100) +
+      div(attack * (PhysicalAttack.skill_ratio(context) + Map.get(context, :atk_rate, 0)), 100) +
         Map.get(context, :bonus_atk, 0)
 
     skilled
@@ -120,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     damage
     |> attacker_component(context, channel)
     |> PhysicalAttack.defender_cardfix(defender_cards(Map.get(context, :defender_cards), channel))
-    |> PhysicalAttack.status_damage(context)
+    |> PhysicalAttack.damage_multiplier(context)
   end
 
   defp attacker_component(damage, _context, :status), do: damage

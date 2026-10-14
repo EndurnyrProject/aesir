@@ -171,8 +171,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       Strike) (default `false`)
     - `:ignore_defense` - when `true`, the target's DEF is skipped entirely
       (classic Asura Strike) (default `false`)
-    - `:skip_status_atk` - when `true`, the attacker's status ATK bonuses and
-      rate are not applied to this hit; the generic damage multiplier still is.
+    - `:skip_status_atk` - when `true`, the attacker's flat status ATK bonuses
+      are not applied to this hit; the ATK percent and the generic damage
+      multiplier still are.
       Only honoured by the ordinary pipeline, i.e. together with `:base_damage`
       (Sacrifice, whose base is a share of max HP) (default `false`)
     - `:base_distance` - native knockback cells (default `0`)

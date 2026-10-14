@@ -21,13 +21,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BerserkTest do
   @tag game_mode: :renewal
   test "Renewal uses +200% ATK and +15 ASPD alongside the full Berserk modifier set" do
     assert Berserk.modifiers(%StatusEntry{}, %{}) ==
-             Map.merge(shared_modifiers(), %{atk_rate: 200, aspd: 15})
+             Map.merge(shared_modifiers(), %{skill_ratio: 200, aspd: 15})
   end
 
   @tag game_mode: :pre_renewal
   test "classic uses +100% ATK and +30% ASPD rate alongside the same defenses" do
     assert Berserk.modifiers(%StatusEntry{}, %{}) ==
-             Map.merge(shared_modifiers(), %{atk_rate: 100, aspd_rate: 30})
+             Map.merge(shared_modifiers(), %{skill_ratio: 100, aspd_rate: 30})
   end
 
   test "on apply grants infinite Endure and queues full HP with zero SP" do

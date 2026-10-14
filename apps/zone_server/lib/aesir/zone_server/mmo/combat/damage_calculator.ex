@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   require Logger
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.AtkPercent
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Critical
@@ -50,13 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   @emperium_mob_id 1288
   @cart_revolution 153
-  @spiral_pierce 397
-
-  # Skills that take no mastery, refine, Star Crumb or spirit sphere bonus: Shield
-  # Chain, Shield Boomerang, Acid Terror, Investigate, Asura Strike, Sacrifice,
-  # both Dragon Breaths, Self Destruction, Shield Press, Earth Drive and the
-  # monster Dragon Breath.
-  @mastery_exempt_skills [480, 251, 230, 266, 271, 368, 2008, 5004, 2267, 2310, 2323, 731]
+  @sacrifice 368
 
   @typedoc """
   Result of damage calculation containing final damage and critical hit status.
@@ -422,12 +417,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
     modifiers = attacker_status_modifiers(attacker)
     classic_player? = classic?() and attacker.unit_type == :player
+    {ratio, atk_percent} = scalar_ratio(skill_ratio, attacker, opts, modifiers)
 
     with {:ok, base_atk} <- calculate_base_attack(attacker, opts),
          patk_atk = apply_patk_multiplier(base_atk, attacker),
-         skilled_atk = div(patk_atk * skill_ratio, 100) + bonus_atk,
+         skilled_atk = div(patk_atk * ratio, 100) + bonus_atk,
          modified_atk =
-           apply_attack_modifiers(skilled_atk, attacker, defender, opts, attack_path, modifiers),
+           apply_attack_modifiers(
+             skilled_atk,
+             attacker,
+             defender,
+             opts,
+             attack_path,
+             modifiers,
+             atk_percent
+           ),
          total_atk = modified_atk + scalar_banes(attacker, defender, classic_player?),
          total_atk = apply_res_reduction(total_atk, defender),
          {:ok, defended} <-
@@ -459,6 +463,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     end
   end
 
+  # The scalar hit's skill ratio and the ATK percent left for the modifier stage:
+  # classic scales by the ratio with its status adds and multiplies by the
+  # percent after; renewal starts the ratio from the percent and multiplies by
+  # nothing after.
+  defp scalar_ratio(skill_ratio, attacker, opts, modifiers) do
+    skill_id = Keyword.get(opts, :skill_id)
+    adds = status_skill_ratio(modifiers, skill_id)
+    delta = atk_percent_delta(attacker.unit_type, skill_id, modifiers)
+
+    if classic?(),
+      do: {skill_ratio + adds, 100 + delta},
+      else: {skill_ratio + adds + delta, 100}
+  end
+
   # The banes are a classic player's post-defense masteries; every other hit adds
   # them before DEF.
   defp scalar_banes(_attacker, _defender, true), do: 0
@@ -486,10 +504,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     skill_id = Keyword.get(hit.opts, :skill_id)
 
     refine =
-      if stacks_masteries?(skill_id, :refine), do: Keyword.get(hit.opts, :refine_atk, 0), else: 0
+      if AtkPercent.stacks_masteries?(skill_id, :refine),
+        do: Keyword.get(hit.opts, :refine_atk, 0),
+        else: 0
 
     mastery =
-      if stacks_masteries?(skill_id, :all),
+      if AtkPercent.stacks_masteries?(skill_id, :all),
         do: hand_mastery_atk(hit.attacker, hit.defender),
         else: 0
 
@@ -660,7 +680,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # weapon masteries with the banes, Envenom, Hilt Binding, its own Star Crumb,
   # the spirit spheres and the statuses counted as masteries.
   defp renewal_mastery_atk(hit, attacker, attack_path) do
-    if stacks_masteries?(Keyword.get(hit.opts, :skill_id), :all) do
+    if AtkPercent.stacks_masteries?(Keyword.get(hit.opts, :skill_id), :all) do
       hand = if attack_path == :secondary, do: :left_hand, else: :right_hand
 
       hand_mastery_atk(attacker, hit.defender, attack_path) + renewal_envenom_atk(hit.opts) +
@@ -679,21 +699,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     %{
       parts
       | mastery_atk:
-          if(stacks_masteries?(skill_id, :all),
+          if(AtkPercent.stacks_masteries?(skill_id, :all),
             do: hand_mastery_atk(attacker, hit.defender, attack_path),
             else: 0
           ),
-        refine_atk: if(stacks_masteries?(skill_id, :refine), do: parts.refine_atk, else: 0)
+        refine_atk:
+          if(AtkPercent.stacks_masteries?(skill_id, :refine), do: parts.refine_atk, else: 0)
     }
   end
-
-  # Whether a skill takes the mastery block (`:all`: renewal's whole mastery ATK,
-  # classic's post-defense masteries and spirit spheres), the classic refine bonus
-  # or the classic Star Crumb bonus. Classic Spiral Pierce keeps only the refine
-  # and Star Crumb bonuses.
-  defp stacks_masteries?(skill_id, _bonus) when skill_id in @mastery_exempt_skills, do: false
-  defp stacks_masteries?(@spiral_pierce, bonus), do: not classic?() or bonus in [:refine, :star]
-  defp stacks_masteries?(_skill_id, _bonus), do: true
 
   defp hand_context(hit, attacker, attack_path, parts) do
     player_damage_context(
@@ -776,9 +789,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
       damage
       |> Kernel.+(
-        if stacks_masteries?(skill_id, :star), do: star_atk(hit.attacker, hand), else: 0
+        if AtkPercent.stacks_masteries?(skill_id, :star),
+          do: star_atk(hit.attacker, hand),
+          else: 0
       )
-      |> Kernel.+(if stacks_masteries?(skill_id, :all), do: player_sphere_atk(hit), else: 0)
+      |> Kernel.+(
+        if AtkPercent.stacks_masteries?(skill_id, :all), do: player_sphere_atk(hit), else: 0
+      )
       |> classic_envenom(element, hit)
     else
       damage
@@ -861,15 +878,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     PreRenewalAttack.normal_base(parts, normal_attack_context(context, secondary, hit.defender))
   end
 
-  # A normal attack's context: no skill size override and no skill exemption from
-  # the non-critical equipment rate.
+  # A normal attack's context: no skill size override, no skill exemption from
+  # the non-critical equipment rate, and the ATK percent a normal attack takes.
   defp normal_attack_context(context, attacker, defender) do
     %{
       context
       | size_rate: trunc(apply_size_modifier(100, attacker, defender, [])),
-        ignore_noncrit_atk_bonus: false
+        ignore_noncrit_atk_bonus: false,
+        atk_rate: AtkPercent.delta(:player, nil, attacker_status_modifiers(attacker))
     }
   end
+
+  # The ATK percent's points over 100. Renewal's Sacrifice skips every status
+  # ratio stage, the percent included; classic applies the percent after the
+  # ratio regardless.
+  defp atk_percent_delta(unit_type, skill_id, modifiers) do
+    if skill_id == @sacrifice and not classic?(),
+      do: 0,
+      else: AtkPercent.delta(unit_type, skill_id, modifiers)
+  end
+
+  # The status adds to the skill ratio (Over Thrust, Frenzy), which Sacrifice skips.
+  defp status_skill_ratio(_modifiers, @sacrifice), do: 0
+  defp status_skill_ratio(modifiers, _skill_id), do: Map.get(modifiers, :skill_ratio, 0)
 
   # Classic Magnum Break (SC_WATK_ELEMENT): a player's hit, unless it ignores
   # elements or attack cards, gains `val2` percent of its normal-attack base taken
@@ -955,14 +986,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     do: 3 * Keyword.get(opts, :spirit_spheres, Map.get(attacker, :spirit_spheres, 0))
 
   # Classic Stave Crasher's base is the MATK roll in place of the weapon roll,
-  # sized like it; base ATK, overrefine and the status ATK rate (which only
-  # scales base and weapon ATK) do not apply to it, and the status weapon ATK
-  # lives in the weapon roll it replaces.
+  # sized like it; base ATK and overrefine do not apply to it, the status weapon
+  # ATK lives in the weapon roll it replaces, and the ATK percent still scales
+  # the skill-scaled damage as it does every weapon attack.
   defp classic_stave_base(parts, context, nil), do: {parts, context}
 
   defp classic_stave_base(parts, context, matk) do
     {%{parts | weapon_atk: matk, status_atk: 0, flat_atk: 0, overrefine_atk: 0},
-     %{context | flat_bonus: 0, atk_rate: 0}}
+     %{context | flat_bonus: 0}}
   end
 
   # Renewal attributes each component of both hands before the ratio and defense,
@@ -1196,9 +1227,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       skill_taken_rate: EquipmentBonuses.sub_skill_rate(defender, skill_id),
       flat_bonus:
         Map.get(attacker_modifiers, :damage_bonus, 0) + Map.get(attacker_modifiers, :atk_bonus, 0),
-      atk_rate: Map.get(attacker_modifiers, :atk_rate, 0),
+      atk_rate: atk_percent_delta(attacker_type, skill_id, attacker_modifiers),
+      status_skill_ratio: status_skill_ratio(attacker_modifiers, skill_id),
       damage_multiplier: Map.get(attacker_modifiers, :damage_multiplier, 0),
-      equipment_atk_rate: Map.get(attacker.equip_modifiers, :atk_rate, 0),
+      equipment_atk_rate: EquipmentBonuses.percent_atk_rate(attacker, attacker_modifiers),
       stave_matk: Keyword.get(opts, :stave_matk, 0),
       patk: Map.get(attacker.combat_stats, :patk, 0),
       res: Map.get(defender.combat_stats, :res, 0),
@@ -1461,9 +1493,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     hit = %{attacker: attacker, defender: defender, opts: opts, modifiers: modifiers}
     classic_player? = classic?() and attacker.unit_type == :player
 
+    atk_percent =
+      100 + atk_percent_delta(attacker.unit_type, Keyword.get(opts, :skill_id), modifiers)
+
     damage =
       base_damage
-      |> apply_attack_modifiers(attacker, defender, opts, :primary, modifiers)
+      |> apply_attack_modifiers(attacker, defender, opts, :primary, modifiers, atk_percent)
       |> renewal_skill_rates(hit)
       |> scalar_element(hit)
       |> classic_player_cards(hit, :primary, classic_player?)
@@ -1472,34 +1507,59 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, damage}
   end
 
-  # The scalar recipe's pre-defense modifiers: size and status ATK channels, then
-  # classic's equipment skill rates, or a renewal player's cards and range rate,
-  # which act on the whole scalar where its components would take them. Element
-  # and the rest of the cards follow DEF.
-  defp apply_attack_modifiers(base_damage, attacker, defender, opts, attack_path, modifiers) do
+  # The scalar recipe's pre-defense modifiers: size and the flat status channels,
+  # then classic's equipment skill rates and the ATK percent after them, or a
+  # renewal player's cards and range rate, which act on the whole scalar where
+  # its components would take them. Element and the rest of the cards follow DEF.
+  defp apply_attack_modifiers(
+         base_damage,
+         attacker,
+         defender,
+         opts,
+         attack_path,
+         modifiers,
+         atk_percent
+       ) do
     damage =
       base_damage
       |> apply_size_modifier(attacker, defender, opts)
-      |> apply_status_effect_damage_modifiers(
-        modifiers,
-        Keyword.get(opts, :skip_status_atk, false)
-      )
+      |> add_status_flats(modifiers, Keyword.get(opts, :skip_status_atk, false))
       |> trunc()
 
     cond do
       classic?() ->
-        skill_rates(damage, attacker, defender, opts)
+        damage
+        |> skill_rates(attacker, defender, opts)
+        |> atk_percent_stage(atk_percent, modifiers)
 
       attacker.unit_type == :player ->
         damage
+        |> atk_percent_stage(atk_percent, modifiers)
         |> PhysicalAttack.attacker_cardfix(
           attacker_cards(attacker, defender, opts, attack_path, modifiers)
         )
         |> PhysicalAttack.range_damage(range_rates(attacker, opts))
 
       true ->
-        damage
+        atk_percent_stage(damage, atk_percent, modifiers)
     end
+  end
+
+  # Status weapon ATK and status ATK live in the unit's base roll, which a
+  # replaced base does not have; only the flat channels act here, and
+  # `skip_status_atk` leaves even those out.
+  defp add_status_flats(damage, _modifiers, true), do: damage
+
+  defp add_status_flats(damage, modifiers, false),
+    do: damage + Map.get(modifiers, :damage_bonus, 0) + Map.get(modifiers, :atk_bonus, 0)
+
+  # The ATK percent as one truncating product, then the generic damage multiplier.
+  defp atk_percent_stage(damage, atk_percent, modifiers) do
+    damage
+    |> Kernel.*(atk_percent)
+    |> div(100)
+    |> DamageShared.apply_damage_multiplier(modifiers)
+    |> trunc()
   end
 
   # Renewal adds the equipment skill rates after the post-defense stage, before
@@ -1806,23 +1866,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       modifier = SizeModifiers.get_modifier(attacker.weapon.type, defender.size, attacker.riding)
       damage * modifier / 100
     end
-  end
-
-  defp apply_status_effect_damage_modifiers(damage, modifiers, true),
-    do: DamageShared.apply_damage_multiplier(damage, modifiers)
-
-  # Status weapon ATK and status ATK live in the unit's base roll, which a
-  # replaced base does not have; only the flat channels and the ATK rate
-  # (SC_INCATKRATE, Curse's -25, Provoke) act here, before the damage multiplier.
-  defp apply_status_effect_damage_modifiers(damage, modifiers, false) do
-    damage_bonus = Map.get(modifiers, :damage_bonus, 0)
-    atk_bonus = Map.get(modifiers, :atk_bonus, 0)
-    atk_rate = Map.get(modifiers, :atk_rate, 0)
-
-    flat_atk = damage_bonus + atk_bonus
-    scaled_atk = (damage + flat_atk) * (100 + atk_rate) / 100
-
-    DamageShared.apply_damage_multiplier(scaled_atk, modifiers)
   end
 
   defp get_unit_type_and_id(combatant) do

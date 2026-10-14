@@ -14,9 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CombatBuffsTest do
     {Effects.IncFlee2, "SC_INCFLEE2", :sc_incflee2, :plusavoidvalue, [:perfect_dodge]},
     {Effects.IncAtkRate, "SC_INCATKRATE", :sc_incatkrate, nil, [:atk_rate]},
     {Effects.IncMatkRate, "SC_INCMATKRATE", :sc_incmatkrate, nil, [:matk_rate]},
-    {Effects.AddAtkDamage, "SC_ADD_ATK_DAMAGE", :sc_add_atk_damage, :add_atk_damage, [:atk_rate]},
-    {Effects.AddMatkDamage, "SC_ADD_MATK_DAMAGE", :sc_add_matk_damage, :add_matk_damage,
-     [:matk_rate]},
     {Effects.DefRate, "SC_DEF_RATE", :sc_def_rate, :protect_def, [:phys_damage_reduction]},
     {Effects.MdefRate, "SC_MDEF_RATE", :sc_mdef_rate, :protect_mdef, [:magic_damage_reduction]},
     {Effects.ManaPlus, "SC_MANA_PLUS", :sc_mana_plus, :mana_plus, [:matk]},
@@ -48,10 +45,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CombatBuffsTest do
     test "percent atk/matk rate buffs emit rate-delta keys" do
       assert %{atk_rate: 10} == Effects.IncAtkRate.modifiers(entry(:sc_incatkrate, 10), %{})
       assert %{matk_rate: 10} == Effects.IncMatkRate.modifiers(entry(:sc_incmatkrate, 10), %{})
-      assert %{atk_rate: 5} == Effects.AddAtkDamage.modifiers(entry(:sc_add_atk_damage, 5), %{})
-
-      assert %{matk_rate: 5} ==
-               Effects.AddMatkDamage.modifiers(entry(:sc_add_matk_damage, 5), %{})
     end
 
     test "SC_DEF_RATE / SC_MDEF_RATE emit damage-reduction keys, not DEF/MDEF buffs" do

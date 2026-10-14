@@ -675,7 +675,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   The stages are, in order: the common damage arithmetic (Lex Aeterna, Raid,
   Assumptio, Defending Aura, Blinding Mist, Energy Coat, Mental Strength), each
   step running even when an earlier one left nothing; then, only for damage left
-  above zero, the blockers (Kyrie Eleison, Safety Wall, Pneuma, Basilica),
+  above zero, the attacker's Add ATK Damage (weapon hits) or Add MATK Damage
+  (magic hits) and the blockers (Kyrie Eleison, Safety Wall, Pneuma, Basilica),
   stopping at the first that leaves nothing. Storage order never matters.
 
   Status ticks and HP costs (`status_tick?: true`) are not attacks and skip both
@@ -700,7 +701,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     held = Map.new(StatusStorage.get_unit_statuses(unit_type, unit_id), &{&1.type, &1})
     run = &dispatch_absorb(unit_type, unit_id, Map.get(held, &1), &2, hit_info)
 
-    attack_stages(damage, Map.get(hit_info, :status_tick?, false), run)
+    attack_stages(damage, Map.get(hit_info, :status_tick?, false), run, hit_info)
   end
 
   @doc "Intercepts a same-source magic skill hit after ordinary reductions and blockers."
@@ -716,12 +717,39 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @spec absorb_stages() :: [atom()]
   def absorb_stages, do: @common_stage ++ @block_stage
 
-  defp attack_stages(damage, true, _run), do: {damage, :hit}
+  defp attack_stages(damage, true, _run, _hit_info), do: {damage, :hit}
 
-  defp attack_stages(damage, false, run) do
+  defp attack_stages(damage, false, run, hit_info) do
     case Enum.reduce(@common_stage, damage, run) do
-      0 -> {0, :hit}
-      remaining -> Enum.reduce_while(@block_stage, {remaining, :hit}, &block_step(&1, &2, run))
+      0 ->
+        {0, :hit}
+
+      remaining ->
+        remaining
+        |> attacker_damage(hit_info)
+        |> then(
+          &Enum.reduce_while(@block_stage, {&1, :hit}, fn id, acc -> block_step(id, acc, run) end)
+        )
+    end
+  end
+
+  # The attacker's own damage statuses, after the target's common stage and
+  # before the blockers: Add ATK Damage on a weapon hit and Add MATK Damage on a
+  # magic hit each add `val1` percent of the running damage.
+  defp attacker_damage(damage, %{attacker: {unit_type, unit_id}} = hit_info) do
+    case Map.get(hit_info, :dmg_type) do
+      :physical -> add_attacker_percent(damage, unit_type, unit_id, :sc_add_atk_damage)
+      :magic -> add_attacker_percent(damage, unit_type, unit_id, :sc_add_matk_damage)
+      _other -> damage
+    end
+  end
+
+  defp attacker_damage(damage, _hit_info), do: damage
+
+  defp add_attacker_percent(damage, unit_type, unit_id, status_id) do
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      %StatusEntry{val1: val1} -> damage + div(damage * val1, 100)
+      nil -> damage
     end
   end
 

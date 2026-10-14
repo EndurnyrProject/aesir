@@ -72,8 +72,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CookedFoodsTest do
   end
 
   describe "Vitalize Potion (val1-driven rates)" do
-    test "adds val1 to both atk_rate and matk_rate" do
-      assert %{atk_rate: 15, matk_rate: 15} ==
+    test "adds val1 to both the script ATK rate and matk_rate" do
+      assert %{bonus_atk_rate: 15, matk_rate: 15} ==
                Effects.VitalizePotion.modifiers(entry(:sc_vitalize_potion, 15), %{})
     end
   end
@@ -81,12 +81,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CookedFoodsTest do
   describe "Combat Pill (mixed val1 rate + fixed malus)" do
     for {module, type, maluses, _icon} <- @combat_pills do
       test "#{inspect(module)} combines the val1 rate with the fixed maluses" do
-        expected = Map.merge(%{atk_rate: 10, matk_rate: 10}, unquote(Macro.escape(maluses)))
+        expected = Map.merge(%{bonus_atk_rate: 10, matk_rate: 10}, unquote(Macro.escape(maluses)))
         assert expected == unquote(module).modifiers(entry(unquote(type), 10), %{})
       end
 
       test "#{inspect(module)} keeps the fixed maluses at val1: 0" do
-        expected = Map.merge(%{atk_rate: 0, matk_rate: 0}, unquote(Macro.escape(maluses)))
+        expected = Map.merge(%{bonus_atk_rate: 0, matk_rate: 0}, unquote(Macro.escape(maluses)))
         assert expected == unquote(module).modifiers(entry(unquote(type), 0), %{})
       end
     end

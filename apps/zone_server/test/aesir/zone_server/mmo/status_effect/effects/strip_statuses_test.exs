@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripStatusesTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripArmor
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripHelm
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripWeapon
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -35,6 +36,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripStatusesTest do
       assert %{id: ^status_id, metadata: %{strip_slot: ^strip_slot}, icon: ^icon} =
                Registry.get_definition(status_id)
     end)
+  end
+
+  test "Divest Weapon takes 25 ATK percent from a stripped non-player and nothing from a player" do
+    entry = %StatusEntry{type: :sc_stripweapon, state: %{}, val2: 0}
+
+    assert StripWeapon.modifiers(entry, %{unit_type: :mob}) == %{atk_rate: -25}
+    assert StripWeapon.modifiers(entry, %{unit_type: :homunculus}) == %{atk_rate: -25}
+    assert StripWeapon.modifiers(entry, %{unit_type: :player}) == %{}
   end
 
   test "Divest Armor and Helm reduce VIT and INT by val2 percent" do

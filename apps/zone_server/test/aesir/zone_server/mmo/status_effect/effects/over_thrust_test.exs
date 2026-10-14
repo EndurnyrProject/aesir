@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrustTest do
   test "uses the rate supplied by each application" do
     for rate <- [5, 25, 50] do
       entry = %StatusEntry{type: :sc_overthrust, val1: rate, state: %{}}
-      assert OverThrust.modifiers(entry, %{}) == %{atk_rate: rate}
+      assert OverThrust.modifiers(entry, %{}) == %{skill_ratio: rate}
     end
   end
 

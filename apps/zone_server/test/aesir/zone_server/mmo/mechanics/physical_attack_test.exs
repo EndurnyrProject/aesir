@@ -133,6 +133,22 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     assert classic(parts(), %{context | attacker_cards: [50, 20]}) == 347
   end
 
+  test "the ATK percent starts the renewal skill ratio and multiplies the classic one after it" do
+    context =
+      neutral_context()
+      |> Map.merge(%{skill_ratio: 200, status_skill_ratio: 50, atk_rate: 25})
+
+    # Renewal: 165 at (200 + 50 + 25)% = 453. Classic: 138 at 250% = 345, then
+    # at 125% = 431, the minimum soft DEF leaves 430, refine 10 and mastery 7.
+    assert renewal(parts(), context) == 453
+    assert classic(parts(), context) == 447
+
+    # Without the status adds the classic percent is the same product; renewal
+    # loses the 50 ratio points.
+    assert renewal(parts(), Map.delete(context, :status_skill_ratio)) == 371
+    assert classic(parts(), Map.delete(context, :status_skill_ratio)) == 361
+  end
+
   test "simple defense subtracts both DEF buckets and does not apply Renewal Res" do
     context =
       neutral_context()

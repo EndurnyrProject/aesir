@@ -471,7 +471,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       opts = [base_damage: 400, skill_ratio: 200, element: :fire, skip_crit: true]
       # A Homunculus basic attack takes no attribute step (attack_attr_none).
       baseline = if GameMode.mode() == :renewal, do: 739, else: 600
-      boosted = if GameMode.mode() == :renewal, do: 931, else: 760
+      # Renewal adds Fleet's 25 to the 200 ratio (225%); classic multiplies after it.
+      boosted = if GameMode.mode() == :renewal, do: 835, else: 760
 
       assert {:ok, %{damage: ^baseline, is_critical: false}} =
                DamageCalculator.calculate_damage(attacker, defender, opts)
@@ -621,7 +622,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert result > 100
     end
 
-    test "skip_status_atk ignores status ATK bonuses and rates but keeps the damage multiplier" do
+    test "skip_status_atk drops the flat status channels; the ATK percent still applies" do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)
       CombatTestHelper.stub_element_coefficient(fn _, _, _, _ -> 1.0 end)
@@ -635,7 +636,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:ok, 390} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
 
-      assert {:ok, 150} =
+      # 100 at the 200 percent is 200, then the 1.5 multiplier.
+      assert {:ok, 300} =
                DamageCalculator.apply_modifier_pipeline(100, attacker, defender,
                  skip_status_atk: true
                )
@@ -1792,6 +1794,115 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert {base.damage, boosted.damage} == mode_value({20, 40}, {6, 13})
     end
 
+    test "a status script ATK rate acts as the equipment bAtkRate in renewal and not at all in classic" do
+      attacker =
+        put_in(player_with_weapon(100), [Access.key(:combat_stats), :max_weapon_damage], true)
+
+      equipped = %{attacker | equip_modifiers: Map.put(attacker.equip_modifiers, :atk_rate, 50)}
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+      opts = [skip_crit: true]
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      {:ok, base} = DamageCalculator.calculate_damage(attacker, defender, opts)
+      {:ok, by_equipment} = DamageCalculator.calculate_damage(equipped, defender, opts)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{bonus_atk_rate: 50}
+        _, _ -> %{}
+      end)
+
+      {:ok, by_status} = DamageCalculator.calculate_damage(attacker, defender, opts)
+
+      assert by_status.damage == by_equipment.damage
+      # Renewal: the weapon's maximum roll 120 gains its 50%; classic takes none.
+      assert {base.damage, by_status.damage} == mode_value({120, 180}, {99, 99})
+    end
+
+    test "a player's non-mastery-stacking skill takes no ATK percent; a monster's always does" do
+      player = CombatTestHelper.create_player_combatant()
+      mob = CombatTestHelper.create_mob_combatant(unit_id: 2002)
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{atk_rate: 100}
+        :mob, 2002 -> %{atk_rate: 100}
+        _, _ -> %{}
+      end)
+
+      # Bash stacks masteries, Asura Strike does not. Classic's minimum soft DEF
+      # takes 1 from each.
+      bash = [base_damage: 100, skip_crit: true, skill_id: 5]
+      asura = Keyword.put(bash, :skill_id, 271)
+      {doubled, plain} = mode_value({200, 100}, {199, 99})
+
+      assert {:ok, %{damage: ^doubled}} =
+               DamageCalculator.calculate_damage(player, defender, bash)
+
+      assert {:ok, %{damage: ^plain}} = DamageCalculator.calculate_damage(player, defender, asura)
+      assert {:ok, %{damage: ^doubled}} = DamageCalculator.calculate_damage(mob, defender, bash)
+      assert {:ok, %{damage: ^doubled}} = DamageCalculator.calculate_damage(mob, defender, asura)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic applies the ATK percent after the equipment skill rates" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
+
+      defender =
+        CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+        |> Map.put(:equip_modifiers, %{{:sub_skill, 123} => 50})
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2002 -> %{atk_rate: 50}
+        _, _ -> %{}
+      end)
+
+      # 7 loses the target's 50% skill rate first (4), then takes 150% (6), then
+      # the minimum soft DEF 1. The reverse order would truncate to 4.
+      assert {:ok, %{damage: 5}} =
+               DamageCalculator.calculate_damage(attacker, defender,
+                 base_damage: 7,
+                 skip_crit: true,
+                 skill_id: 123
+               )
+    end
+
+    test "the ATK percent is capped at 0" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2002 -> %{atk_rate: -150}
+        _, _ -> %{}
+      end)
+
+      assert {:ok, %{damage: 0}} =
+               DamageCalculator.calculate_damage(attacker, defender,
+                 base_damage: 100,
+                 skip_crit: true
+               )
+    end
+
+    test "Over Thrust's ratio adds to the skill ratio, and renewal adds the ATK percent to it too" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 2002)
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001, def: 0, soft_def: 0)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :mob, 2002 -> %{skill_ratio: 50, atk_rate: 25}
+        _, _ -> %{}
+      end)
+
+      # Renewal: 100 at (200 + 50 + 25)% = 275. Classic: 100 at 250% = 250, then
+      # at 125% = 312, and the minimum soft DEF takes 1.
+      assert {:ok, %{damage: damage}} =
+               DamageCalculator.calculate_damage(attacker, defender,
+                 base_damage: 100,
+                 skill_ratio: 200,
+                 skip_crit: true
+               )
+
+      assert damage == mode_value(275, 311)
+    end
+
     test "def_rate lowers the defender's hard DEF and raises damage" do
       # Freeze's def_rate: -50 halves eDEF, so damage through the renewal formula rises.
       attacker = CombatTestHelper.create_player_combatant()
@@ -2939,6 +3050,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                )
 
       assert stave.damage == plain.damage
+    end
+
+    @tag game_mode: :pre_renewal
+    test "the classic MATK base still takes the ATK percent after the ratio" do
+      attacker = stave_caster(non_crit_atk_rate: 0)
+      mob = CombatTestHelper.create_mob_combatant(unit_id: 2002, atk: 100)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{atk_rate: 50}
+        :mob, 2002 -> %{atk_rate: 50}
+        _, _ -> %{}
+      end)
+
+      opts = [matk: 200, skill_id: 365, skip_crit: true]
+
+      # The player's 211 is 200 at 150% = 300 (minimum soft DEF 299) plus its
+      # refine and masteries; the monster's 199 becomes 300 - 1.
+      assert {:ok, %{damage: 311}} =
+               DamageCalculator.calculate_stave_crasher_damage(attacker, defender, opts)
+
+      assert {:ok, %{damage: 299}} =
+               DamageCalculator.calculate_stave_crasher_damage(mob, defender, opts)
     end
 
     @tag game_mode: :pre_renewal
