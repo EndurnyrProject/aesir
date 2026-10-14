@@ -256,74 +256,92 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   end
 
   describe "Grand Cross" do
+    @tag integration_re: false
     test "full cast: deducts 20% max HP, roots the caster, damages the cross with half self-damage and blinds an undead mob" do
-      # vit/luk 0: the self-root is applied through the resistance pipeline in
-      # the skill-unit manager process, so zeroed resist stats (100% infliction
-      # short-circuits the roll, full 950ms root window) keep it deterministic.
-      crusader =
-        start_solo_crusader(9_650, {150, 150}, %{
-          max_hp: 2_000,
-          hp: 2_000,
-          max_sp: 200,
-          sp: 200,
-          vit: 0,
-          luk: 0
-        })
+      %{crusader: crusader, post_cost_hp: post_cost_hp} = cast_grand_cross()
 
-      # vit/luk 0: the chance-based Blind resistance roll happens in a game
-      # process, so zeroed resist stats (100% infliction short-circuits the
-      # roll) are the only way to keep it deterministic under load.
-      undead =
-        spawn_mob(9_651, {151, 150},
-          hp: 100_000,
-          race: :undead,
-          element: {:undead, 1},
-          vit: 0,
-          luk: 0
-        )
+      assert eventually(fn -> current_hp(crusader.pid) < post_cost_hp end)
+    end
 
-      max_hp = max_hp(crusader.pid)
-      cost = div(current_hp(crusader.pid) * 20, 100)
-      mob_hp = current_mob_hp(undead.pid)
+    @tag integration_pre_re: false
+    test "renewal full cast: deducts 20% max HP, roots the caster, damages the cross without hitting its caster and blinds an undead mob" do
+      %{crusader: crusader, post_cost_hp: post_cost_hp} = cast_grand_cross()
 
-      flush_packets()
+      assert eventually(fn ->
+               not Enum.any?(SkillUnitStorage.all(), &(&1.skill_name == :cr_grandcross))
+             end)
 
-      simulate_incoming_message(crusader.pid, %SkillCast{
-        skill_id: @cr_grandcross,
-        level: 10,
-        target_id: crusader.character.id
+      assert current_hp(crusader.pid) >= post_cost_hp
+    end
+  end
+
+  defp cast_grand_cross do
+    # vit/luk 0: the self-root is applied through the resistance pipeline in
+    # the skill-unit manager process, so zeroed resist stats (100% infliction
+    # short-circuits the roll, full 950ms root window) keep it deterministic.
+    crusader =
+      start_solo_crusader(9_650, {150, 150}, %{
+        max_hp: 2_000,
+        hp: 2_000,
+        max_sp: 200,
+        sp: 200,
+        vit: 0,
+        luk: 0
       })
 
-      assert eventually(fn ->
-               match?(
-                 %{center: {150, 150}, origin: {150, 150}},
-                 Enum.find(SkillUnitStorage.all(), &(&1.skill_name == :cr_grandcross))
-               )
-             end)
+    # vit/luk 0: the chance-based Blind resistance roll happens in a game
+    # process, so zeroed resist stats (100% infliction short-circuits the
+    # roll) are the only way to keep it deterministic under load.
+    undead =
+      spawn_mob(9_651, {151, 150},
+        hp: 100_000,
+        race: :undead,
+        element: {:undead, 1},
+        vit: 0,
+        luk: 0
+      )
 
-      # The 950ms self-root is applied at the same completion instant that
-      # placed the skill unit above. Poll it immediately via the direct ETS
-      # read: gating it behind `current_hp` (a call into the busy caster
-      # session) can eat the whole root window under full-suite load.
-      assert eventually(fn ->
-               not StatusInterpreter.can_move?(:player, crusader.character.id)
-             end)
+    max_hp = max_hp(crusader.pid)
+    cost = div(current_hp(crusader.pid) * 20, 100)
+    mob_hp = current_mob_hp(undead.pid)
 
-      assert_packet_sent_with(GroundSkill, fn packet ->
-        assert packet.skill_id == @cr_grandcross
-        assert packet.src_id == crusader.character.id
-        assert packet.level == 10
-        assert packet.x == 150
-        assert packet.y == 150
-      end)
+    flush_packets()
 
-      assert eventually(fn -> current_hp(crusader.pid) <= max_hp - cost end, 6_000)
+    simulate_incoming_message(crusader.pid, %SkillCast{
+      skill_id: @cr_grandcross,
+      level: 10,
+      target_id: crusader.character.id
+    })
 
-      post_cost_hp = current_hp(crusader.pid)
-      assert eventually(fn -> current_hp(crusader.pid) < post_cost_hp end)
-      assert eventually(fn -> current_mob_hp(undead.pid) < mob_hp end)
-      assert eventually(fn -> StatusStorage.has_status?(:mob, undead.unit_id, :sc_blind) end)
-    end
+    assert eventually(fn ->
+             match?(
+               %{center: {150, 150}, origin: {150, 150}},
+               Enum.find(SkillUnitStorage.all(), &(&1.skill_name == :cr_grandcross))
+             )
+           end)
+
+    # The 950ms self-root is applied at the same completion instant that
+    # placed the skill unit above. Poll it immediately via the direct ETS
+    # read: gating it behind `current_hp` (a call into the busy caster
+    # session) can eat the whole root window under full-suite load.
+    assert eventually(fn ->
+             not StatusInterpreter.can_move?(:player, crusader.character.id)
+           end)
+
+    assert_packet_sent_with(GroundSkill, fn packet ->
+      assert packet.skill_id == @cr_grandcross
+      assert packet.src_id == crusader.character.id
+      assert packet.level == 10
+      assert packet.x == 150
+      assert packet.y == 150
+    end)
+
+    assert eventually(fn -> current_hp(crusader.pid) <= max_hp - cost end, 6_000)
+
+    post_cost_hp = current_hp(crusader.pid)
+    assert eventually(fn -> current_mob_hp(undead.pid) < mob_hp end)
+    assert eventually(fn -> StatusStorage.has_status?(:mob, undead.unit_id, :sc_blind) end)
+    %{crusader: crusader, post_cost_hp: post_cost_hp}
   end
 
   defp devoted_pair(opts \\ []) do

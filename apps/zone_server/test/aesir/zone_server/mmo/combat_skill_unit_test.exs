@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -413,7 +414,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       {:ok, %{damage: damage, is_critical: false}}
     end)
 
-    stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+    unless Keyword.get(opts, :coma, false),
+      do: stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
 
     stub(StatusInterpreter, :absorb_hit, fn :mob, @target_id, ^damage, _info ->
       {absorbed, :hit}
@@ -432,7 +434,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       10,
       :water,
       600,
-      [additional_effect: effect, report_hit: true] ++ opts
+      [additional_effect: effect, report_hit: true] ++ Keyword.delete(opts, :coma)
     )
   end
 
@@ -452,6 +454,43 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
       assert {:ok, %{hit?: true}} = ground_hit(mob_state, 40, 40, [])
       refute_received {:effect, _source, _ref}
+    end
+
+    test "reports the settled damage and whether the target survives it" do
+      mob_state = %{build_mob_state(0) | hp: 100}
+
+      assert {:ok, %{damage: 30, survives?: true, moved?: false}} =
+               ground_hit(mob_state, 40, 30, [])
+    end
+
+    test "counts damage dealt earlier in the same sequence toward survival" do
+      mob_state = %{build_mob_state(0) | hp: 100}
+
+      assert {:ok, %{damage: 40, survives?: false}} =
+               ground_hit(mob_state, 40, 40, prior_damage: 60)
+
+      refute_received {:effect, _source, _ref}
+    end
+
+    test "a Coma hit reports taking all but 1 of the HP left" do
+      mob_state = %{build_mob_state(0) | hp: 100}
+      stub(EquipComa, :trigger?, fn _attacker, _target -> true end)
+      stub(MobSession, :apply_coma, fn _pid, _attacker -> :ok end)
+
+      assert {:ok, %{damage: 69, survives?: true}} =
+               ground_hit(mob_state, 40, 40, prior_damage: 30, coma: true)
+    end
+
+    test "reports a knockback that moved the target" do
+      stub(Knockback, :skill, fn _attacker, _target, 89, _result, _opts -> {:ok, {153, 150}} end)
+
+      assert {:ok, %{moved?: true}} = ground_hit(build_mob_state(0), 40, 40, [])
+    end
+
+    test "reports a knockback the target resisted as no move" do
+      stub(Knockback, :skill, fn _attacker, _target, 89, _result, _opts -> {:ok, {150, 150}} end)
+
+      assert {:ok, %{moved?: false}} = ground_hit(build_mob_state(0), 40, 40, [])
     end
   end
 

@@ -3,6 +3,23 @@ defmodule Aesir.ZoneServer.GeometryTest do
 
   alias Aesir.ZoneServer.Geometry
 
+  describe "sector_step/2" do
+    test "a zero offset is east" do
+      assert Geometry.sector_step(0, 0) == {1, 0}
+    end
+
+    test "a cardinal direction covers offsets up to a 1:3 slope of its axis, diagonals the rest" do
+      assert Geometry.sector_step(3, 1) == {1, 0}
+      assert Geometry.sector_step(2, 1) == {1, 1}
+      assert Geometry.sector_step(1, 3) == {1, 1}
+      assert Geometry.sector_step(1, 4) == {0, 1}
+      assert Geometry.sector_step(-3, -1) == {-1, -1}
+      assert Geometry.sector_step(-4, -1) == {-1, 0}
+      assert Geometry.sector_step(-1, 3) == {0, 1}
+      assert Geometry.sector_step(1, -4) == {0, -1}
+    end
+  end
+
   describe "chebyshev_distance/4" do
     test "calculates correct distance for adjacent cells" do
       # Horizontal distance

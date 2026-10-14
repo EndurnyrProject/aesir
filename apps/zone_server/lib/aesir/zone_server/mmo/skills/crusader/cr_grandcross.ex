@@ -1,19 +1,24 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   @moduledoc """
-  Grand Cross (CR_GRANDCROSS). Plants a 9-cell holy cross on the caster's cell that
-  ticks every 300 ms for about 900 ms, costing 20% of current HP plus 37 to 100 SP
-  (a share of current HP always leaves the caster alive). A player's own cast holds
-  them in place (no walking or Teleport) and bars equipping a shield for 950 ms,
-  keeping the shield worn; every tick hits
-  each offensive target on the cross, the player caster included, through the
-  skill-owned hybrid recipe (renewal averages raw attack contributions before flat
-  defences; classic sums separately defended contributions). Enemy damage takes two
-  holy adjustments; self-damage one holy adjustment and one half-rate. Mob casters
-  skip the HP, lock, and self-damage rules. Demon-race and undead-element mobs on
-  the field are blinded.
+  Grand Cross (CR_GRANDCROSS). Plants a 29-cell holy diamond (a cross with arms of
+  four cells, widened next to its center) on the caster's cell for 950 ms,
+  costing 20% of current HP plus 37 to 100 SP (a share of current HP always
+  leaves the caster alive). A player's own cast holds them in place (no walking
+  or Teleport) and bars equipping a shield for 950 ms, keeping the shield worn.
 
-  Renewal: a 1 s cast plus 0.5 s fixed, a 0.5 s delay, a 1 s cooldown, blind 18 s.
-  Pre-renewal: a 3 s cast, a 1.5 s delay, no cooldown, blind 30 s.
+  Each cell is its own unit with three charges. On every 100 ms unit pass a cell
+  hits each enemy standing on it whose 300 ms strike interval ran out, spending
+  a charge per hit; a cell out of charges is removed once that pass is done.
+  Hits go through the skill-owned hybrid recipe (renewal averages raw attack
+  contributions before flat defences; classic sums separately defended
+  contributions). Enemy damage takes two holy adjustments. Non-player targets
+  that are undead-element or demon-race are blinded. A cell on Land Protector
+  hits nobody; nothing hits while the caster is gone.
+
+  Pre-renewal: the field also hits its own caster (one holy adjustment and one
+  half-rate for a player, nothing for a monster), a 3 s cast, a 1.5 s delay, no
+  cooldown, blind 30 s. Renewal: the caster is never hit, a 1 s cast plus 0.5 s
+  fixed, a 0.5 s delay, a 1 s cooldown, blind 18 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 254,
@@ -29,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     element: :holy,
     range: 9,
     hit_interval: 300,
-    unit_duration: List.duplicate(900, 10),
+    unit_duration: List.duplicate(950, 10),
     hp_cost_rate: List.duplicate(20, 10),
     sp_cost: [37, 44, 51, 58, 65, 72, 79, 86, 93, 100],
     cast_time: [renewal: List.duplicate(1_000, 10), pre_renewal: List.duplicate(3_000, 10)],
@@ -47,6 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastendStrip
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -57,12 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @behaviour Active
   @behaviour Ground
 
-  @arm_length 2
   @self_lock_ms 950
 
   @impl Active
@@ -86,21 +90,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   def on_place(%Group{} = group), do: placement(group)
 
   @impl Ground
-  def on_interval(%Group{origin: origin, map_name: map_name, level: level} = group, _now) do
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
+
+  # Pre-renewal's TargetSelf flag lets the field hit its own caster.
+  @impl Ground
+  def unit_targets(%Group{} = group, _cell, refs) do
     case Combat.resolve_combatant(group.caster_type, group.caster_id) do
       {:ok, caster} ->
         caster_ref = {caster.unit_type, caster.unit_id}
-        hits_caster? = Group.hits_caster?(group) and caster.unit_type == :player
-        footprint = MapSet.new(group.cells)
+        enemies = SplashTargets.eligible(refs, caster)
+        Enum.filter(refs, &(&1 in enemies or (&1 == caster_ref and Group.hits_caster?(group))))
 
-        map_name
-        |> Combat.splash_targets(origin, @arm_length, caster, hits_caster?)
-        |> Enum.filter(&on_footprint?(&1, footprint))
-        |> Enum.each(fn {unit_type, target_id} = target_ref ->
-          hit(caster, unit_type, target_id, level, target_ref == caster_ref)
-        end)
+      {:error, _reason} ->
+        []
+    end
+  end
 
-        {:ok, group}
+  # The charge is spent before the hit; a cell out of charges is removed after
+  # its pass.
+  @impl Ground
+  def on_unit_hit(%Group{state: %{cell_charges: charges} = state} = group, cell, target, _now) do
+    case Combat.resolve_combatant(group.caster_type, group.caster_id) do
+      {:ok, caster} ->
+        left = Map.fetch!(charges, cell) - 1
+        group = %{group | state: %{state | cell_charges: Map.put(charges, cell, left)}}
+        {unit_type, target_id} = target
+        hit(caster, unit_type, target_id, group.level)
+
+        if left <= 0,
+          do: {:ok, group, [{:after_cell, {:remove_cells, group.group_id, [cell]}}]},
+          else: {:ok, group}
 
       {:error, _reason} ->
         {:ok, group}
@@ -108,21 +127,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   end
 
   defp placement(%Group{origin: origin, level: level}) do
-    {ox, oy} = origin || {0, 0}
-    cells = Enum.map(Layout.cross(@arm_length), fn {dx, dy} -> {ox + dx, oy + dy} end)
+    cells = Layout.grand_cross(origin)
     definition = definition()
+    duration = Enum.at(definition.unit_duration, level - 1)
 
     {:ok,
      %{
        cells: cells,
-       state: %{hits_caster: true},
+       state: %{
+         hits_caster: GameMode.mode() == :pre_renewal,
+         cell_charges: Map.new(cells, &{&1, div(duration, definition.hit_interval)})
+       },
        interval: definition.hit_interval,
-       duration: Enum.at(definition.unit_duration, level - 1, 900),
+       duration: duration,
+       unit_range: 0,
+       path_check: true,
        lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 1}
      }}
   end
 
-  defp hit(caster, unit_type, target_id, level, self?) do
+  defp hit(caster, unit_type, target_id, level) do
     with {:ok, prepared} <-
            Combat.prepare_skill_unit_hit(caster, {unit_type, target_id}, definition().id),
          {:ok, physical} <- physical_input(caster) do
@@ -172,8 +196,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
       }
 
       amount = Damage.calculate(GameMode.mode(), inputs)
-      :ok = Combat.deliver_skill_unit_hit(prepared, amount, skill_level: level, element: :holy)
-      unless self?, do: maybe_blind(caster, unit_type, target_id)
+
+      :ok =
+        Combat.deliver_skill_unit_hit(prepared, amount,
+          skill_level: level,
+          element: :holy,
+          additional_effect: fn _source, {type, id} -> maybe_blind(caster, type, id, level) end
+        )
     end
 
     :ok
@@ -198,22 +227,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
       else: SizeModifiers.get_modifier(weapon_type, target.size, caster.riding)
   end
 
-  @spec on_footprint?({atom(), integer()}, MapSet.t()) :: boolean()
-  defp on_footprint?({unit_type, target_id}, footprint) do
-    case SpatialIndex.get_unit_position(unit_type, target_id) do
-      {:ok, {x, y, _map_name}} -> MapSet.member?(footprint, {x, y})
-      _ -> false
-    end
-  end
+  # Blind lands only on non-player targets that are undead-element or
+  # demon-race; players are never blinded by the field. A monster's hit on
+  # itself deals nothing, which is a miss, so it never blinds itself.
+  @spec maybe_blind(map(), atom(), integer(), pos_integer()) :: :ok
+  defp maybe_blind(_caster, :player, _target_id, _level), do: :ok
 
-  # Blind lands only on mob targets that are undead-element or undead/demon-race;
-  # players are never blinded by the field.
-  @spec maybe_blind(map(), atom(), integer()) :: :ok
-  defp maybe_blind(caster, :mob, target_id) do
-    case Combat.resolve_combatant(:mob, target_id) do
+  defp maybe_blind(caster, unit_type, target_id, level) do
+    case Combat.resolve_combatant(unit_type, target_id) do
       {:ok, %{race: race} = target} ->
         if race == :demon or RaceModifiers.undead_target?(target) do
-          StatusInterpreter.apply_status(:mob, target_id, :sc_blind,
+          StatusInterpreter.apply_status(unit_type, target_id, :sc_blind,
+            val1: level,
             duration: hd(definition().duration),
             caster_id: caster.unit_id,
             source_type: caster.unit_type
@@ -226,6 +251,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
         :ok
     end
   end
-
-  defp maybe_blind(_caster, _unit_type, _target_id), do: :ok
 end

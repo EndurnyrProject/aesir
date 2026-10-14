@@ -63,17 +63,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
         map_name: @map,
         center: @center,
         origin: @center,
-        cells: translated_cross(),
-        state: %{hits_caster: true}
+        cells: Layout.grand_cross(@center),
+        state: %{hits_caster: true, cell_charges: Map.new(Layout.grand_cross(@center), &{&1, 3})}
       },
       overrides
     )
   end
 
-  defp translated_cross do
-    {ox, oy} = @center
-    Enum.map(Layout.cross(2), fn {dx, dy} -> {ox + dx, oy + dy} end)
-  end
+  defp strike(group, target), do: CrGrandcross.on_unit_hit(group, @center, target, 0)
 
   describe "definition" do
     test "renewal adds a fixed cast, a short delay, and a cooldown; classic a long cast and delay" do
@@ -136,16 +133,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   end
 
   describe "on_place" do
-    test "places the 9-cell cross centered on the caster without rooting (root is applied in cast)" do
+    test "places the 29-cell diamond centered on the caster with three charges a cell, without rooting (root is applied in cast)" do
       reject(&StatusInterpreter.apply_status/4)
 
       {:ok, placement} = CrGrandcross.on_place(group([]))
 
-      assert length(placement.cells) == 9
-      assert MapSet.new(placement.cells) == MapSet.new(translated_cross())
-      assert placement.state == %{hits_caster: true}
+      assert length(placement.cells) == 29
+      assert placement.cells == Layout.grand_cross(@center)
+      assert placement.state.cell_charges == Map.new(placement.cells, &{&1, 3})
+      assert placement.state.hits_caster == (GameMode.mode() == :pre_renewal)
       assert placement.interval == 300
-      assert placement.duration == 900
+      assert placement.duration == 950
+      assert placement.unit_range == 0
+      assert placement.path_check
       assert placement.lifecycle_policy.max_instances_per_caster == 1
     end
 
@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
 
       {:ok, placement} = CrGrandcross.on_place(group(caster_type: :mob, caster_id: @mob_id))
 
-      assert length(placement.cells) == 9
+      assert length(placement.cells) == 29
     end
   end
 
@@ -209,8 +209,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
     end
   end
 
-  describe "on_interval" do
+  describe "unit_targets/3" do
     @tag game_mode: :renewal
+    test "renewal never offers the caster to its own field" do
+      caster = CombatTestHelper.create_mob_combatant(unit_id: @mob_id)
+      stub(Combat, :resolve_combatant, fn :mob, @mob_id -> {:ok, caster} end)
+      group = group(caster_type: :mob, caster_id: @mob_id, state: %{hits_caster: false})
+
+      assert CrGrandcross.unit_targets(group, @center, [{:mob, @mob_id}]) == []
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal offers the caster to its own field, a monster included" do
+      caster = CombatTestHelper.create_mob_combatant(unit_id: @mob_id)
+      stub(Combat, :resolve_combatant, fn :mob, @mob_id -> {:ok, caster} end)
+      group = group(caster_type: :mob, caster_id: @mob_id)
+
+      assert CrGrandcross.unit_targets(group, @center, [{:mob, @mob_id}]) == [{:mob, @mob_id}]
+    end
+
+    test "offers nobody while the caster is gone" do
+      stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:error, :not_found} end)
+
+      assert CrGrandcross.unit_targets(group([]), @center, [{:mob, @mob_id}]) == []
+    end
+  end
+
+  describe "on_unit_hit" do
+    @tag game_mode: :pre_renewal
     test "self damage has one half-rate, blinds an undead mob, full damage otherwise" do
       caster = combatant(:player, @caster_id)
 
@@ -219,45 +245,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
         :mob, @mob_id -> {:ok, undead_mob()}
       end)
 
-      expect(Combat, :splash_targets, fn @map, @center, 2, ^caster, true ->
-        [{:player, @caster_id}, {:mob, @mob_id}]
-      end)
-
-      stub(SpatialIndex, :get_unit_position, fn
-        :player, @caster_id -> {:ok, {100, 100, @map}}
-        :mob, @mob_id -> {:ok, {101, 100, @map}}
-      end)
-
       expect(Combat, :deliver_skill_unit_hit, 2, fn %{target: target}, damage, opts ->
-        assert opts == [skill_level: 3, element: :holy]
+        assert opts[:skill_level] == 3
+        assert opts[:element] == :holy
 
         case target.unit_type do
-          :player -> assert damage == mode_value(178, 255)
-          :mob -> assert damage == mode_value(445, 766)
+          :player -> assert damage == 255
+          :mob -> assert damage == 766
         end
 
+        opts[:additional_effect].(caster, {target.unit_type, target.unit_id})
         :ok
       end)
 
       expect(StatusInterpreter, :apply_status, fn :mob, @mob_id, :sc_blind, params ->
-        assert params[:duration] == 18_000
+        assert params[:duration] == 30_000
+        assert params[:val1] == 3
         :ok
       end)
 
-      assert {:ok, _group} = CrGrandcross.on_interval(group(level: 3), 0)
+      assert {:ok, group} = strike(group(level: 3), {:player, @caster_id})
+      assert {:ok, _group} = strike(group, {:mob, @mob_id})
     end
 
-    test "does not target the caster when a mob casts the field" do
-      caster = %{unit_type: :mob, unit_id: @mob_id}
-
+    @tag game_mode: :pre_renewal
+    test "a monster's own field hits it for nothing, a miss that never blinds it" do
+      # The fixture monster is undead-element.
+      caster = combatant(:mob, @mob_id)
       stub(Combat, :resolve_combatant, fn :mob, @mob_id -> {:ok, caster} end)
 
-      expect(Combat, :splash_targets, fn @map, @center, 2, ^caster, false -> [] end)
+      expect(Combat, :deliver_skill_unit_hit, fn _prepared, 0, _opts -> :ok end)
+      reject(&StatusInterpreter.apply_status/4)
 
-      reject(&Combat.deliver_skill_unit_hit/3)
-
-      assert {:ok, _group} =
-               CrGrandcross.on_interval(group(caster_type: :mob, caster_id: @mob_id), 0)
+      assert {:ok, %Group{state: %{cell_charges: %{@center => 2}}}} =
+               strike(group(caster_type: :mob, caster_id: @mob_id), {:mob, @mob_id})
     end
 
     test "does not blind a non-undead, non-demon mob" do
@@ -268,32 +289,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
         :mob, @mob_id -> {:ok, plant_mob()}
       end)
 
-      expect(Combat, :splash_targets, fn @map, @center, 2, ^caster, true ->
-        [{:mob, @mob_id}]
+      stub(Combat, :deliver_skill_unit_hit, fn _prepared, _damage, opts ->
+        opts[:additional_effect].(caster, {:mob, @mob_id})
+        :ok
       end)
-
-      stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id -> {:ok, {101, 100, @map}} end)
 
       reject(&StatusInterpreter.apply_status/4)
 
-      assert {:ok, _group} = CrGrandcross.on_interval(group([]), 0)
+      assert {:ok, _group} = strike(group([]), {:mob, @mob_id})
     end
 
-    test "excludes targets standing off the cross footprint (square corners)" do
+    test "spends a charge per hit and removes a cell out of charges after its pass" do
       caster = combatant(:player, @caster_id)
 
-      stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:ok, caster} end)
-
-      expect(Combat, :splash_targets, fn @map, @center, 2, ^caster, true ->
-        [{:mob, @mob_id}]
+      stub(Combat, :resolve_combatant, fn
+        :player, @caster_id -> {:ok, caster}
+        :mob, @mob_id -> {:ok, plant_mob()}
       end)
 
-      # {102, 102} sits inside the 5x5 splash square but not on a cross cell.
-      stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id -> {:ok, {102, 102, @map}} end)
+      assert {:ok, %Group{state: %{cell_charges: %{@center => 2}}} = group} =
+               strike(group([]), {:mob, @mob_id})
 
+      assert {:ok, group} = strike(group, {:mob, @mob_id})
+
+      assert {:ok, %Group{state: %{cell_charges: %{@center => 0}}},
+              [{:after_cell, {:remove_cells, 1, [@center]}}]} = strike(group, {:mob, @mob_id})
+    end
+
+    test "hits nothing while the caster is gone" do
+      stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:error, :not_found} end)
       reject(&Combat.deliver_skill_unit_hit/3)
 
-      assert {:ok, _group} = CrGrandcross.on_interval(group([]), 0)
+      assert {:ok, %Group{state: %{cell_charges: %{@center => 3}}}} =
+               strike(group([]), {:mob, @mob_id})
     end
   end
 
@@ -385,7 +413,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
     assert :rand.export_seed() == expected_state
   end
 
-  test "real PlayerState snapshots reach shared preparation and exact self/enemy delivery" do
+  test "real PlayerState snapshots reach shared preparation and exact enemy delivery, and classic self delivery" do
     states =
       Map.new([@caster_id, @mob_id], fn id ->
         stats =
@@ -414,10 +442,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
     caster = PlayerState.to_combatant(states[@caster_id])
     stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:ok, caster} end)
 
-    stub(Combat, :splash_targets, fn @map, @center, 2, ^caster, true ->
-      [{:player, @caster_id}, {:player, @mob_id}]
-    end)
-
     stub(TargetResolver, :resolve, fn :player, id ->
       {:ok, self(), Map.fetch!(states, id), :player}
     end)
@@ -442,13 +466,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       :ok
     end)
 
-    assert {:ok, _} = CrGrandcross.on_interval(group([]), 0)
-    self_damage = mode_value(82, 108)
+    assert {:ok, _} = strike(group([]), {:player, @mob_id})
     enemy_damage = mode_value(165, 217)
-    assert_received {:packet, @caster_id, ^self_damage}
     assert_received {:packet, @mob_id, ^enemy_damage}
-    assert_received {:hp_damage, ^self_damage}
     assert_received {:hp_damage, ^enemy_damage}
+
+    if GameMode.mode() == :pre_renewal do
+      assert {:ok, _} = strike(group([]), {:player, @caster_id})
+      assert_received {:packet, @caster_id, 108}
+      assert_received {:hp_damage, 108}
+    end
   end
 
   defp delivered_damage(caster) do
@@ -457,18 +484,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       :mob, @mob_id -> {:ok, undead_mob()}
     end)
 
-    stub(Combat, :splash_targets, fn @map, @center, 2, ^caster, true -> [{:mob, @mob_id}] end)
-    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id -> {:ok, {101, 100, @map}} end)
     stub(StatusInterpreter, :apply_status, fn :mob, @mob_id, :sc_blind, _ -> :ok end)
 
-    stub(Combat, :deliver_skill_unit_hit, fn _prepared,
-                                             damage,
-                                             [skill_level: 1, element: :holy] ->
+    stub(Combat, :deliver_skill_unit_hit, fn _prepared, damage, opts ->
+      assert opts[:skill_level] == 1
+      assert opts[:element] == :holy
       send(self(), {:skill_damage, damage})
       :ok
     end)
 
-    assert {:ok, _} = CrGrandcross.on_interval(group([]), 0)
+    assert {:ok, _} = strike(group([]), {:mob, @mob_id})
     assert_received {:skill_damage, damage}
     damage
   end

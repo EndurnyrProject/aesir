@@ -2,24 +2,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
   @moduledoc """
   Fire Wall (MG_FIREWALL). Ground-targeted skill-unit laid as a wall of cells.
 
-  As a `target_type: :ground` skill, `use Skill` auto-derives the `cast/4` that
-  places this unit at the target cell. The wall is a 3-cell line (renewal) laid
-  perpendicular to the caster->target facing: `on_place` reads the caster's cell
-  from the group's `origin`, takes the sign of the origin->center vector as the
-  facing, rotates it 90 degrees and lays the line through the center along that axis.
+  The wall is laid across the direction the caster looks toward the target cell
+  (rAthena's eight sectors; a caster on the target cell looks east): three cells
+  on a cardinal direction, a five-cell staircase on a diagonal. Cells on walls or
+  without a straight line to the caster are not laid.
 
-  Unlike a per-target counter, the wall shares a single hit budget of `4 + level`
-  hits across all of its cells. Each tick the unit hits every offensive target in
-  the footprint for half the caster's magic attack in fire and knocks the target
-  back two cells unless its defense element is fire or it is undead, decrementing
-  the shared budget by one per hit and stopping once the budget is spent. The unit
-  expires the moment the budget reaches zero. If the caster is gone the wall still
-  ticks but deals no damage and spends no budget that tick. SP and cooldown are
-  deducted by the interpreter from the definition.
+  Each cell is its own unit with its own budget of `4 + level` strikes. On every
+  100 ms unit pass a cell burns each enemy standing on it whose 20 ms strike
+  interval ran out, up to five times in a row while the enemy stays on the cell
+  and lives, each strike spending one of that cell's budget. A cell whose budget
+  runs out burns out at once; the rest of the wall stays. Each strike is a fire
+  hit at half the caster's magic attack that knocks the target two cells straight
+  back from where it faces, unless its defense element is fire or undead. A cell
+  on Land Protector burns nobody. Nothing burns while the caster is gone.
 
-  Renewal and pre-renewal agree on everything the wall does: same footprint, same
-  hit budget, same half-strength fire hit, same knockback rule, and the same
-  duration ladder from 5 seconds at level 1 to 14 seconds at level 10.
+  The wall lasts 5 s at level 1 up to 14 s at level 10, half again as long when
+  the caster stands in Violent Gale. Renewal and pre-renewal agree on everything
+  the wall does.
 
   The only difference is the cast. Renewal splits it into a variable part that
   falls from 1.6 seconds to 0.56 and a fixed part that only gear and buffs can
@@ -47,140 +46,142 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
     fixed_cast_time: [400, 360, 320, 280, 240, 220, 200, 180, 160, 140],
     sp_cost: List.duplicate(40, 10)
 
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Each hit lands at half the caster's magic attack, in both modes.
   @skill_ratio 50
 
-  # The wall never reaches past one cell from its center, in any facing, so a
-  # radius-1 square bounds the occupants worth testing against its cells.
-  @wall_half 1
+  # Aesir's sprite-frame direction for north (`Geometry.calculate_direction/4`).
+  @north 4
 
   @behaviour Ground
 
   @impl Ground
   def on_place(%Group{center: center, level: level} = group) do
     definition = definition()
+    cells = Layout.wall(center, facing(group))
 
     {:ok,
      %{
-       cells: Layout.wall(center, facing(group)),
-       state: %{hits_remaining: 4 + level},
+       cells: cells,
+       state: %{cell_budget: Map.new(cells, &{&1, 4 + level})},
        interval: definition.hit_interval,
-       duration: Enum.at(definition.unit_duration, level - 1),
+       duration: duration(group, Enum.at(definition.unit_duration, level - 1)),
+       unit_range: 0,
+       path_check: true,
        lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 3}
      }}
   end
 
   @impl Ground
-  def on_interval(%Group{center: {cx, cy} = center, map_name: map_name} = group, _now) do
-    definition = definition()
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
 
-    case Combat.resolve_combatant(group.caster_id) do
+  @impl Ground
+  def unit_targets(%Group{} = group, _cell, refs) do
+    case Combat.resolve_combatant(group.caster_type, group.caster_id) do
+      {:ok, caster} -> SplashTargets.eligible(refs, caster)
+      {:error, _reason} -> []
+    end
+  end
+
+  @impl Ground
+  def on_unit_hit(%Group{state: %{cell_budget: budgets} = state} = group, cell, target, _now) do
+    case Combat.resolve_combatant(group.caster_type, group.caster_id) do
       {:ok, caster} ->
-        remaining =
-          map_name
-          |> Combat.splash_targets(center, @wall_half, group.caster_id)
-          |> Enum.filter(&on_wall?(&1, group))
-          |> Enum.reduce_while(
-            group.state.hits_remaining,
-            &spend(&1, &2, group, definition, caster, cx, cy)
-          )
+        strikes = div(Manager.tick_interval(), group.interval)
+        left = burn(group, caster, target, Map.fetch!(budgets, cell), strikes, 0)
+        group = %{group | state: %{state | cell_budget: Map.put(budgets, cell, left)}}
 
-        finish(group, remaining)
+        if left <= 0,
+          do: {:ok, group, [{:remove_cells, group.group_id, [cell]}]},
+          else: {:ok, group}
 
       {:error, _reason} ->
         {:ok, group}
     end
   end
 
-  # The square the splash query covers is a superset of the wall: on a cardinal
-  # facing it includes the two rows beside the line, and on a diagonal the two
-  # corners the staircase skips. Only an occupant standing on a wall cell burns.
-  @spec on_wall?({atom(), integer()}, Group.t()) :: boolean()
-  defp on_wall?({unit_type, unit_id}, %Group{cells: cells}) do
-    case SpatialIndex.get_unit_position(unit_type, unit_id) do
-      {:ok, {x, y, _map_name}} -> {x, y} in cells
-      {:error, :not_found} -> false
+  # Strikes again while the cell has budget and strikes left this pass and the
+  # target was neither killed nor moved. Each strike spends one budget, even one
+  # the target was not open to.
+  defp burn(group, caster, target, budget, strikes, prior_damage) do
+    report = strike(group, caster, target, prior_damage)
+    budget = budget - 1
+
+    if budget > 0 and strikes > 1 and report.survives? and not report.moved?,
+      do: burn(group, caster, target, budget, strikes - 1, prior_damage + report.damage),
+      else: budget
+  end
+
+  defp strike(%Group{} = group, caster, {unit_type, target_id} = target, prior_damage) do
+    definition = definition()
+
+    case Combat.apply_skill_unit_damage(
+           caster,
+           unit_type,
+           target_id,
+           group.skill_id,
+           group.level,
+           definition.element,
+           @skill_ratio,
+           base_distance: definition.knockback,
+           origin: ahead_of(target),
+           native_enabled: knockback?(target),
+           report_hit: true,
+           prior_damage: prior_damage
+         ) do
+      {:ok, report} -> report
+      _refused -> %{damage: 0, survives?: true, moved?: false}
     end
   end
 
-  # Spends one shared-budget hit per target, stopping the fold once it runs out.
-  @spec spend(
-          {atom(), integer()},
-          non_neg_integer(),
-          Group.t(),
-          struct(),
-          struct(),
-          integer(),
-          integer()
-        ) :: {:cont, non_neg_integer()} | {:halt, 0}
-  defp spend(_target, 0, _group, _definition, _caster, _cx, _cy), do: {:halt, 0}
-
-  defp spend({unit_type, target_id}, budget, group, definition, caster, cx, cy) do
-    hit(group, definition, caster, unit_type, target_id, cx, cy)
-    {:cont, budget - 1}
-  end
-
-  @spec hit(Group.t(), struct(), struct(), atom(), integer(), integer(), integer()) :: :ok
-  defp hit(%Group{} = group, definition, caster, unit_type, target_id, cx, cy) do
-    Combat.apply_skill_unit_damage(
-      caster,
-      unit_type,
-      target_id,
-      group.skill_id,
-      group.level,
-      definition.element,
-      @skill_ratio,
-      base_distance: definition.knockback,
-      origin: {cx, cy},
-      native_enabled: knockback?(target_id)
-    )
-
-    :ok
-  end
-
-  # No knockback against a fire-element or undead target.
-  @spec knockback?(integer()) :: boolean()
-  defp knockback?(target_id) do
-    case Combat.resolve_combatant(target_id) do
-      {:ok, %{race: race, element: element}} ->
-        not (RaceModifiers.undead?(race) or immune_element?(element))
-
-      {:error, _reason} ->
-        true
+  # The push origin sits one cell ahead of the target's facing, so the blow
+  # travels straight back. A unit without a facing faces north.
+  defp ahead_of({unit_type, unit_id}) do
+    with {:ok, {x, y, _map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
+         {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(unit_type, unit_id) do
+      {dx, dy} = Geometry.facing_delta(Map.get(state, :dir, @north))
+      {x + dx, y + dy}
+    else
+      _gone -> nil
     end
   end
 
-  @spec immune_element?(tuple() | atom()) :: boolean()
-  defp immune_element?({element, _level}), do: element in [:fire, :undead]
-  defp immune_element?(element), do: element in [:fire, :undead]
-
-  @spec finish(Group.t(), non_neg_integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
-  defp finish(%Group{state: state} = group, remaining) do
-    updated = %{group | state: %{state | hits_remaining: remaining}}
-    if remaining <= 0, do: {:expire, updated}, else: {:ok, updated}
+  # No knockback against a fire-element or undead-element target.
+  defp knockback?({unit_type, unit_id}) do
+    case Combat.resolve_combatant(unit_type, unit_id) do
+      {:ok, target} -> not (fire?(target.element) or RaceModifiers.undead_target?(target))
+      {:error, _reason} -> true
+    end
   end
 
-  # The 8-way direction the caster looked along, as the sign of the origin->center
-  # vector; the layout turns it into the perpendicular footprint. The origin is
-  # read from the group (stamped at placement) because on_place runs inside the
-  # caster's own session process, where a caster lookup deadlocks. A caster
-  # standing on the center, or a group with no origin, has no facing and gets the
-  # layout's default wall.
+  defp fire?({element, _level}), do: element == :fire
+  defp fire?(element), do: element == :fire
+
+  defp duration(%Group{caster_type: type, caster_id: id}, duration) do
+    if StatusStorage.has_status?(type, id, :sc_violentgale),
+      do: div(duration * 3, 2),
+      else: duration
+  end
+
+  # The direction the caster looks toward the center by rAthena's eight
+  # sectors, read from the group's origin (stamped at placement) because
+  # on_place runs inside the caster's own session process, where a caster
+  # lookup deadlocks. A caster on the center looks east.
   @spec facing(Group.t()) :: {integer(), integer()}
-  defp facing(%Group{center: {cx, cy}, origin: {px, py}}), do: {sign(cx - px), sign(cy - py)}
+  defp facing(%Group{center: {cx, cy}, origin: {px, py}}),
+    do: Geometry.sector_step(cx - px, cy - py)
 
-  defp facing(%Group{origin: nil}), do: {0, 0}
-
-  @spec sign(integer()) :: -1 | 0 | 1
-  defp sign(n) when n > 0, do: 1
-  defp sign(n) when n < 0, do: -1
-  defp sign(_), do: 0
+  defp facing(%Group{origin: nil}), do: Geometry.sector_step(0, 0)
 end

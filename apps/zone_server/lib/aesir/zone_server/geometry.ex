@@ -56,6 +56,48 @@ defmodule Aesir.ZoneServer.Geometry do
   def facing_delta(dir), do: Map.fetch!(@facing_delta, dir)
 
   @doc """
+  The 8-way unit step toward `{dx, dy}` by rAthena's `map_calc_dir_xy` sectors:
+  a cardinal direction covers every offset within a 1:3 slope of its axis, a
+  diagonal the rest. A zero offset is east (`knockback_left`'s default).
+
+  `y` grows northward.
+  """
+  @spec sector_step(integer(), integer()) :: {-1..1, -1..1}
+  def sector_step(0, 0), do: {1, 0}
+
+  def sector_step(dx, dy) when dx >= 0 and dy >= 0 do
+    cond do
+      dx >= dy * 3 -> {1, 0}
+      dx * 3 < dy -> {0, 1}
+      true -> {1, 1}
+    end
+  end
+
+  def sector_step(dx, dy) when dx >= 0 and dy <= 0 do
+    cond do
+      dx >= -dy * 3 -> {1, 0}
+      dx * 3 < -dy -> {0, -1}
+      true -> {1, -1}
+    end
+  end
+
+  def sector_step(dx, dy) when dx <= 0 and dy <= 0 do
+    cond do
+      dx * 3 >= dy -> {0, -1}
+      dx < dy * 3 -> {-1, 0}
+      true -> {-1, -1}
+    end
+  end
+
+  def sector_step(dx, dy) do
+    cond do
+      -dx * 3 <= dy -> {0, 1}
+      -dx > dy * 3 -> {-1, 0}
+      true -> {-1, 1}
+    end
+  end
+
+  @doc """
   Circular distance, in 45-degree dir-steps, between two 8-way directions.
 
   Both directions use the 0-7 sprite-frame convention from

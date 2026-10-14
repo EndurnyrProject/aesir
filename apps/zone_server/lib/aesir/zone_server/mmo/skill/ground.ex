@@ -43,11 +43,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   armed traps in its blast area used, so detonations never recurse;
   `:remove_cells` deletes cells of the striking group itself (a Fire Wall cell
   whose hit budget ran out), running `on_out` for their occupants and ending
-  the group with its last cell.
+  the group with its last cell. `{:after_cell, command}` runs the command only
+  once the striking cell has struck every unit it reaches this pass (a Grand
+  Cross cell out of charges is deleted after its pass).
   """
   @type command ::
           {:spend_traps, String.t(), cell(), non_neg_integer()}
           | {:remove_cells, non_neg_integer(), [cell()]}
+          | {:after_cell, command()}
 
   @typedoc "A movement callback result serialized and persisted by the skill-unit manager."
   @type trigger_result :: {:ok, Group.t()} | :expire

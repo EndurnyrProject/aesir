@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   budget ran out). They run at once, so a group they change acts on the rest
   of the pass in its changed state, and a removed cell strikes nobody more. The
   striking group keeps its in-pass state and takes only its remaining cells.
+  A command wrapped as `{:after_cell, command}` waits until the cell has struck
+  every unit it reaches this pass.
   """
 
   alias Aesir.ZoneServer.Geometry
@@ -116,7 +118,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
       refs ->
         case env.invoke.(module, :unit_targets, [group, cell, refs]) do
           {:ok, kept} when is_list(kept) ->
-            strike_targets(group, module, cell, Enum.filter(refs, &(&1 in kept)), acc, env)
+            {by_id, ticksets, deferred} =
+              strike_targets(group, module, cell, Enum.filter(refs, &(&1 in kept)), acc, env)
+
+            {run_commands(Enum.uniq(deferred), by_id, group.group_id, env), ticksets}
 
           {:ok, other} ->
             failed = {group, module, {:failed, :unit_targets, {:invalid_return, other}}}
@@ -129,36 +134,37 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
     end
   end
 
-  defp strike_targets(group, module, cell, refs, acc, %{now: now} = env) do
-    Enum.reduce_while(refs, acc, fn ref, {by_id, ticksets} ->
+  defp strike_targets(group, module, cell, refs, {by_id, ticksets}, %{now: now} = env) do
+    Enum.reduce_while(refs, {by_id, ticksets, []}, fn ref, {by_id, ticksets, deferred} ->
       {group, _module, outcome} = Map.fetch!(by_id, group.group_id)
       ticksets = Map.put(ticksets, key(group, ref), now + group.interval)
 
       case strike(env, module, [group, cell, ref, now], group.group_id) do
-        {:ok, struck, commands} ->
-          by_id = Map.put(by_id, group.group_id, {struck, module, outcome})
-          by_id = run_commands(commands, by_id, group.group_id, env)
-          continue_cell(group, cell, by_id, ticksets)
-
-        {:expire, struck, commands} ->
-          by_id = Map.put(by_id, group.group_id, {struck, module, :expire})
-          by_id = run_commands(commands, by_id, group.group_id, env)
-          continue_cell(group, cell, by_id, ticksets)
-
         {:failed, reason} ->
           failed = {group, module, {:failed, :on_unit_hit, reason}}
-          {:halt, {Map.put(by_id, group.group_id, failed), ticksets}}
+          {:halt, {Map.put(by_id, group.group_id, failed), ticksets, deferred}}
+
+        {tag, struck, commands} ->
+          {later, now_commands} = Enum.split_with(commands, &match?({:after_cell, _}, &1))
+          by_id = Map.put(by_id, group.group_id, {struck, module, outcome(tag, outcome)})
+          by_id = run_commands(now_commands, by_id, group.group_id, env)
+          continue_cell(group, cell, by_id, ticksets, deferred ++ unwrap(later))
       end
     end)
   end
 
+  defp outcome(:expire, _outcome), do: :expire
+  defp outcome(:ok, outcome), do: outcome
+
+  defp unwrap(after_cell), do: Enum.map(after_cell, fn {:after_cell, command} -> command end)
+
   # A replaced or removed unit strikes nobody else in the cell.
-  defp continue_cell(group, cell, by_id, ticksets) do
+  defp continue_cell(group, cell, by_id, ticksets, deferred) do
     {struck, _module, _outcome} = Map.fetch!(by_id, group.group_id)
 
     if generation(struck) == generation(group) and cell in struck.cells,
-      do: {:cont, {by_id, ticksets}},
-      else: {:halt, {by_id, ticksets}}
+      do: {:cont, {by_id, ticksets, deferred}},
+      else: {:halt, {by_id, ticksets, deferred}}
   end
 
   defp strike(env, module, args, group_id) do

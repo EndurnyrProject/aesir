@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   publication.
   """
 
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -259,42 +260,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   # toward the source, reversed. A target on the source's own cell faces east
   # toward it, so it is pushed west.
   defp push_direction({x, y}, {from_x, from_y}) do
-    {toward_x, toward_y} = sector(from_x - x, from_y - y)
+    {toward_x, toward_y} = Geometry.sector_step(from_x - x, from_y - y)
     {-toward_x, -toward_y}
-  end
-
-  defp sector(0, 0), do: {1, 0}
-
-  defp sector(dx, dy) when dx >= 0 and dy >= 0 do
-    cond do
-      dx >= dy * 3 -> {1, 0}
-      dx * 3 < dy -> {0, 1}
-      true -> {1, 1}
-    end
-  end
-
-  defp sector(dx, dy) when dx >= 0 and dy <= 0 do
-    cond do
-      dx >= -dy * 3 -> {1, 0}
-      dx * 3 < -dy -> {0, -1}
-      true -> {1, -1}
-    end
-  end
-
-  defp sector(dx, dy) when dx <= 0 and dy <= 0 do
-    cond do
-      dx * 3 >= dy -> {0, -1}
-      dx < dy * 3 -> {-1, 0}
-      true -> {-1, -1}
-    end
-  end
-
-  defp sector(dx, dy) do
-    cond do
-      -dx * 3 <= dy -> {0, 1}
-      -dx > dy * 3 -> {-1, 0}
-      true -> {-1, 1}
-    end
   end
 
   defp blow_path(_map_name, x, y, 0, 0, _distance), do: {x, y}

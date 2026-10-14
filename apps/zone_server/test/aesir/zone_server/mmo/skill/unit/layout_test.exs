@@ -35,32 +35,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.LayoutTest do
     end
   end
 
-  describe "cross/1" do
-    test "arm length 2 returns exactly 9 cells" do
-      cells = Layout.cross(2)
+  describe "grand_cross/1" do
+    test "returns rAthena's 29 CR_GRANDCROSS cells in layout order around the center" do
+      dx =
+        [0, 0, -1, 0, 1, -2, -1, 0, 1, 2, -4, -3, -2, -1, 0, 1, 2, 3, 4, -2] ++
+          [-1, 0, 1, 2, -1, 0, 1, 0, 0]
 
-      assert length(cells) == 9
-      assert Enum.uniq(cells) == cells
-    end
+      dy =
+        [-4, -3, -2, -2, -2, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] ++
+          [1, 1, 1, 1, 2, 2, 2, 3, 4]
 
-    test "arm length 2 returns the center plus 2 cells per cardinal direction" do
-      expected = [
-        {0, 0},
-        {1, 0},
-        {2, 0},
-        {-1, 0},
-        {-2, 0},
-        {0, 1},
-        {0, 2},
-        {0, -1},
-        {0, -2}
-      ]
-
-      assert Enum.sort(Layout.cross(2)) == Enum.sort(expected)
-    end
-
-    test "arm length 0 returns only the center cell" do
-      assert Layout.cross(0) == [{0, 0}]
+      assert Layout.grand_cross({100, 100}) ==
+               Enum.zip_with(dx, dy, fn x, y -> {100 + x, 100 + y} end)
     end
   end
 end

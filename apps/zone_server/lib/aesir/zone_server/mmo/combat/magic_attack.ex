@@ -276,8 +276,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   total of at least 1 before Devotion forwarding, not blocked, not cancelled by
   Magic Rod, not a delayed Devotion-forwarded hit) on a target that survives it.
 
-  `:report_hit` (default `false`) returns `{:ok, %{hit?: boolean()}}` instead of
-  `:ok`, where `hit?` is that same `:hit` class.
+  `:report_hit` (default `false`) returns `{:ok, report}` instead of `:ok`:
+  `hit?` is that same `:hit` class, `damage` the HP the hit takes (the settled
+  damage; a Coma hit takes all but 1), `survives?` whether the target lives
+  through it and `moved?` whether its knockback moved the target. `:prior_damage` (default `0`) is damage this
+  target already took earlier in the same synchronous sequence and counts
+  toward `survives?` (and the knockback's survival rule): the target's own
+  session applies each hit later, so its snapshot has not seen them yet.
   """
   @spec apply_skill_unit_damage(
           struct(),
@@ -288,7 +293,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           atom(),
           non_neg_integer(),
           keyword()
-        ) :: :ok | {:ok, %{hit?: boolean()}} | {:error, atom()}
+        ) :: :ok | {:ok, hit_report()} | {:error, atom()}
   def apply_skill_unit_damage(
         caster,
         unit_type,
@@ -344,6 +349,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       )
     end
   end
+
+  @typedoc "What a ground hit did, when asked with `:report_hit`."
+  @type hit_report :: %{
+          hit?: boolean(),
+          damage: non_neg_integer(),
+          survives?: boolean(),
+          moved?: boolean()
+        }
 
   @typedoc """
   A skill's on-hit effect: called with the hit's effective source (the reflector
@@ -409,7 +422,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   documents.
   """
   @spec deliver_skill_unit_hit(prepared_ground_hit(), non_neg_integer(), keyword()) ::
-          :ok | {:ok, %{hit?: boolean()}}
+          :ok | {:ok, hit_report()}
   def deliver_skill_unit_hit(
         %{
           caster: caster,
@@ -481,7 +494,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         caster,
         {target_type, target_id},
         target_state,
-        damage,
+        {Keyword.get(opts, :prior_damage, 0), damage},
         hit_info,
         coma_decision == true
       )
@@ -491,24 +504,46 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       apply_walk_delay(target_type, target_pid, dst_delay)
     end
 
-    result = magic_result(target_state, [damage], coma_decision)
+    result =
+      magic_result(target_state, [damage], coma_decision, Keyword.get(opts, :prior_damage, 0))
 
-    maybe_apply_magic_knockback(
-      delivery,
-      caster,
-      target,
-      target_type,
-      skill_id,
-      result,
-      opts
-    )
+    knockback =
+      maybe_apply_magic_knockback(
+        delivery,
+        caster,
+        target,
+        target_type,
+        skill_id,
+        result,
+        opts
+      )
 
     EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
 
     if Keyword.get(opts, :report_hit, false),
-      do: {:ok, %{hit?: connected_hit?(hit_info, damage)}},
+      do:
+        {:ok,
+         %{
+           hit?: connected_hit?(hit_info, damage),
+           damage: hp_taken(result, target_state, damage, Keyword.get(opts, :prior_damage, 0)),
+           survives?: result.target_survives?,
+           moved?: moved?(knockback, {tx, ty})
+         }},
       else: :ok
   end
+
+  # A Coma hit leaves the target at 1 HP whatever its damage.
+  defp hp_taken(%{coma?: true}, target_state, _damage, prior_damage) do
+    case target_hp(target_state) do
+      hp when is_integer(hp) -> max(hp - prior_damage - 1, 0)
+      nil -> 0
+    end
+  end
+
+  defp hp_taken(_result, _target_state, damage, _prior_damage), do: damage
+
+  defp moved?({:ok, {x, y}}, position), do: {x, y} != position
+  defp moved?(_knockback, _position), do: false
 
   @doc """
   Executes one of the four canonical bolt skills without entering a player cast path.
@@ -842,14 +877,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   defp apply_walk_delay(:homunculus, _target_pid, _dst_delay), do: :ok
 
-  defp magic_result(target_state, damages, coma_decision) do
+  defp magic_result(target_state, damages, coma_decision, prior_damage \\ 0) do
     final_damage = damages |> Enum.filter(&(&1 > 0)) |> Enum.sum()
     hit? = final_damage > 0
     coma? = hit? and coma_decision == true
 
     %{
       hit?: hit?,
-      target_survives?: coma? or not hit? or known_target_survives?(target_state, final_damage),
+      target_survives?:
+        coma? or not hit? or known_target_survives?(target_state, prior_damage + final_damage),
       coma?: coma?
     }
   end
@@ -864,8 +900,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          opts
        )
        when target_type != :skill_unit do
-    _ = Knockback.skill(attacker, target, skill_id, result, knockback_options(opts))
-    :ok
+    Knockback.skill(attacker, target, skill_id, result, knockback_options(opts))
   end
 
   defp maybe_apply_magic_knockback(
@@ -935,10 +970,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     reflected_hit
   end
 
-  defp additional_effect?(target_state, damage, hit_info, coma?) do
+  # `{prior_damage, damage}` adds the damage the target already took earlier in
+  # the same synchronous sequence to its survival check.
+  defp additional_effect?(target_state, {prior_damage, damage}, hit_info, coma?) do
     connected_hit?(hit_info, damage) and
-      (coma? or known_target_survives?(target_state, damage))
+      (coma? or known_target_survives?(target_state, prior_damage + damage))
   end
+
+  defp additional_effect?(target_state, damage, hit_info, coma?),
+    do: additional_effect?(target_state, {0, damage}, hit_info, coma?)
 
   # The reference's ATK_DEF: `DamageShared.hit_class/3` of the prepared hit.
   defp connected_hit?(hit_info, damage) do

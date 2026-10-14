@@ -5,23 +5,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
   @caster_id 1000
+  @target {:mob, 2001}
   @map_name "prontera"
   # Caster south of the wall: caster->center faces north, wall lies east-west.
   @caster_pos {150, 148}
   @center {150, 150}
+  @cell {149, 150}
 
-  # Renewal MG_FIREWALL ratio: base 100 - 50 = 50% per hit.
+  # MG_FIREWALL ratio: base 100 - 50 = 50% per hit, both modes.
   @expected_ratio 50
 
   # The cardinal wall a caster at @caster_pos lays through @center.
   @wall_cells [{149, 150}, {150, 150}, {151, 150}]
 
-  defp group(level, state \\ %{hits_remaining: nil}, origin \\ @caster_pos) do
+  defp group(level, state \\ %{}, origin \\ @caster_pos) do
     %Group{
       group_id: 1,
       skill_id: 18,
@@ -38,23 +42,51 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
     }
   end
 
-  defp stub_caster(element \\ :neutral, race \\ :formless) do
+  defp burning(budget), do: group(3, %{cell_budget: %{@cell => budget}})
+
+  # The target stands on @cell facing north (Aesir dir 4).
+  defp stub_world(element \\ :neutral, race \\ :formless) do
     stub(Combat, :resolve_combatant, fn
-      @caster_id -> {:ok, %{unit_id: @caster_id, position: @caster_pos}}
-      _target -> {:ok, %{element: element, race: race}}
+      :player, @caster_id -> {:ok, %{unit_type: :player, unit_id: @caster_id}}
+      :mob, 2001 -> {:ok, %{element: element, race: race}}
     end)
 
-    stub_positions(%{2001 => {149, 150}, 2002 => {151, 150}})
+    stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {149, 150, @map_name}} end)
+    stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {nil, %{dir: 4}, self()}} end)
   end
 
-  defp stub_positions(by_id) do
-    stub(SpatialIndex, :get_unit_position, fn _unit_type, unit_id ->
-      case Map.fetch(by_id, unit_id) do
-        {:ok, {x, y}} -> {:ok, {x, y, @map_name}}
-        :error -> {:error, :not_found}
+  # Every strike reports the given outcome and records its options.
+  defp stub_strikes(report) do
+    test_pid = self()
+
+    stub(Combat, :apply_skill_unit_damage, fn caster,
+                                              :mob,
+                                              2001,
+                                              18,
+                                              3,
+                                              :fire,
+                                              @expected_ratio,
+                                              opts ->
+      assert caster.unit_id == @caster_id
+      send(test_pid, {:strike, opts})
+      report
+    end)
+  end
+
+  defp strikes do
+    Stream.repeatedly(fn ->
+      receive do
+        {:strike, opts} -> opts
+      after
+        0 -> nil
       end
     end)
+    |> Enum.take_while(& &1)
   end
+
+  defp report(attrs \\ []),
+    do:
+      {:ok, Map.merge(%{hit?: true, damage: 10, survives?: true, moved?: false}, Map.new(attrs))}
 
   describe "skill data" do
     test "classic casts slower at every level and the wall lasts the same" do
@@ -70,25 +102,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
   end
 
   describe "on_place/1" do
-    test "lays a 3-cell line perpendicular to caster->target facing and seeds the hit budget" do
+    setup do
+      stub(StatusStorage, :has_status?, fn _type, _id, :sc_violentgale -> false end)
+      :ok
+    end
+
+    test "lays a 3-cell line perpendicular to caster->target facing and seeds each cell's budget" do
       assert {:ok, placement} = MgFirewall.on_place(group(3))
       # Caster->center faces +y (north); wall runs along the x axis through center.
       assert Enum.sort(placement.cells) == [{149, 150}, {150, 150}, {151, 150}]
       assert placement.interval == 20
-      assert placement.state == %{hits_remaining: 7}
+      assert placement.unit_range == 0
+      assert placement.path_check
+      assert placement.state == %{cell_budget: Map.new(@wall_cells, &{&1, 7})}
       assert placement.duration == 7000
     end
 
-    test "defaults to a horizontal line when caster sits on the target cell" do
-      assert {:ok, %{cells: cells}} =
-               MgFirewall.on_place(group(1, %{hits_remaining: nil}, @center))
+    test "lays a north-south line when the caster sits on the target cell (it looks east)" do
+      assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(1, %{}, @center))
+      assert cells == [{150, 149}, {150, 150}, {150, 151}]
+    end
 
-      assert length(cells) == 3
+    test "faces by rAthena's sectors: a shallow diagonal offset looks along its axis" do
+      # dx 3, dy 1 is within the 1:3 slope of east, so the wall is a straight
+      # north-south line, not a staircase.
+      assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(3, %{}, {147, 149}))
+      assert cells == [{150, 149}, {150, 150}, {150, 151}]
     end
 
     test "lays a 5-cell staircase when the caster faces the target diagonally" do
-      assert {:ok, %{cells: cells}} =
-               MgFirewall.on_place(group(3, %{hits_remaining: nil}, {148, 148}))
+      assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(3, %{}, {148, 148}))
 
       # Caster->center faces {+1, +1}; the wall staircases along the other diagonal.
       assert Enum.sort(cells) ==
@@ -96,8 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
     end
 
     test "staircases the other way for the opposite diagonal facing" do
-      assert {:ok, %{cells: cells}} =
-               MgFirewall.on_place(group(3, %{hits_remaining: nil}, {148, 152}))
+      assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(3, %{}, {148, 152}))
 
       # Caster->center faces {+1, -1}.
       assert Enum.sort(cells) ==
@@ -109,172 +151,129 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
       assert placement.lifecycle_policy.max_instances_per_caster == 3
     end
 
-    test "defaults to a horizontal line when the group has no origin" do
-      assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(1, %{hits_remaining: nil}, nil))
-      assert cells == [{149, 150}, {150, 150}, {151, 150}]
+    test "lays a north-south line when the group has no origin" do
+      assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(1, %{}, nil))
+      assert cells == [{150, 149}, {150, 150}, {150, 151}]
+    end
+
+    test "lasts half again as long while the caster stands in Violent Gale" do
+      stub(StatusStorage, :has_status?, fn :player, @caster_id, :sc_violentgale -> true end)
+
+      assert {:ok, %{duration: 10_500}} = MgFirewall.on_place(group(3))
     end
   end
 
-  describe "on_interval/2" do
-    test "hits each in-footprint enemy at 50% fire, knocks neutral targets back, decrements budget" do
-      test_pid = self()
-      stub_caster()
+  describe "unit_targets/3" do
+    test "burns nobody while the caster is gone" do
+      stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:error, :not_found} end)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, _radius, @caster_id ->
-        [{:mob, 2001}, {:mob, 2002}]
-      end)
+      assert MgFirewall.unit_targets(burning(7), @cell, [@target]) == []
+    end
+  end
 
-      stub(Combat, :apply_skill_unit_damage, fn caster,
-                                                unit_type,
-                                                target_id,
-                                                18,
-                                                3,
-                                                :fire,
-                                                @expected_ratio,
-                                                opts ->
-        assert caster.unit_id == @caster_id
-        assert opts[:base_distance] == 2
-        assert opts[:origin] == @center
-        assert opts[:native_enabled]
-        send(test_pid, {:hit, unit_type, target_id})
-        :ok
-      end)
+  describe "on_unit_hit/4" do
+    test "strikes a target that is not moved up to five times in one pass, each spending budget" do
+      stub_world(:fire)
+      stub_strikes(report())
 
-      reject(&Combat.knockback/5)
+      assert {:ok, %Group{state: %{cell_budget: %{@cell => 2}}}} =
+               MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
 
-      assert {:ok, %Group{state: %{hits_remaining: 5}}} =
-               MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
-
-      assert_received {:hit, :mob, 2001}
-      assert_received {:hit, :mob, 2002}
+      opts = strikes()
+      assert length(opts) == 5
+      assert Enum.map(opts, & &1[:prior_damage]) == [0, 10, 20, 30, 40]
     end
 
-    test "spares an occupant standing diagonally off a straight wall" do
-      stub_caster()
-      stub_positions(%{2001 => {149, 150}, 2002 => {151, 151}})
+    test "stops striking a target its strike moved" do
+      stub_world()
+      stub_strikes(report(moved?: true))
 
-      test_pid = self()
+      assert {:ok, %Group{state: %{cell_budget: %{@cell => 6}}}} =
+               MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, _radius, @caster_id ->
-        [{:mob, 2001}, {:mob, 2002}]
-      end)
+      assert length(strikes()) == 1
+    end
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, unit_type, target_id, 18, 3, :fire, _r, _o ->
-        send(test_pid, {:hit, unit_type, target_id})
-        :ok
-      end)
+    test "stops striking a target its strike killed" do
+      stub_world(:fire)
+      stub_strikes(report(survives?: false))
 
-      assert {:ok, %Group{state: %{hits_remaining: 6}}} =
-               MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
+      assert {:ok, %Group{state: %{cell_budget: %{@cell => 6}}}} =
+               MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
 
-      assert_received {:hit, :mob, 2001}
-      refute_received {:hit, :mob, 2002}
+      assert length(strikes()) == 1
+    end
+
+    test "a refused strike still spends the cell's budget and the next one follows" do
+      stub_world(:fire)
+      stub_strikes({:error, :invalid_target})
+
+      assert {:ok, %Group{state: %{cell_budget: %{@cell => 2}}}} =
+               MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
+
+      assert length(strikes()) == 5
+    end
+
+    test "a cell whose budget runs out is removed at once" do
+      stub_world(:fire)
+      stub_strikes(report())
+
+      assert {:ok, %Group{state: %{cell_budget: %{@cell => 0}}}, [{:remove_cells, 1, [@cell]}]} =
+               MgFirewall.on_unit_hit(burning(2), @cell, @target, 0)
+
+      assert length(strikes()) == 2
+    end
+
+    test "knocks a neutral target two cells straight back from where it faces" do
+      stub_world()
+      stub_strikes(report(moved?: true))
+
+      MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
+
+      assert [opts] = strikes()
+      assert opts[:base_distance] == 2
+      # Facing north from {149, 150}: the push origin sits one cell north.
+      assert opts[:origin] == {149, 151}
+      assert opts[:native_enabled]
+      assert opts[:report_hit]
     end
 
     test "does not knock back a fire-element target" do
-      stub_caster(:fire)
+      stub_world({:fire, 1})
+      stub_strikes(report(survives?: false))
 
-      stub(Combat, :splash_targets, fn @map_name, @center, _radius, @caster_id ->
-        [{:mob, 2001}]
-      end)
+      MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, opts ->
-        refute opts[:native_enabled]
-        :ok
-      end)
-
-      reject(&Combat.knockback/5)
-
-      assert {:ok, %Group{}} = MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
+      assert [opts] = strikes()
+      refute opts[:native_enabled]
     end
 
     test "does not knock back an undead-element target" do
-      stub_caster(:undead)
+      stub_world({:undead, 1})
+      stub_strikes(report(survives?: false))
 
-      stub(Combat, :splash_targets, fn @map_name, @center, _radius, @caster_id ->
-        [{:mob, 2001}]
-      end)
+      MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, opts ->
-        refute opts[:native_enabled]
-        :ok
-      end)
-
-      reject(&Combat.knockback/5)
-
-      assert {:ok, %Group{}} = MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
+      assert [opts] = strikes()
+      refute opts[:native_enabled]
     end
 
-    test "does not knock back an undead-race target" do
-      stub_caster(:neutral, :undead)
+    test "knocks back an undead-race target of another element" do
+      stub_world(:neutral, :undead)
+      stub_strikes(report(moved?: true))
 
-      stub(Combat, :splash_targets, fn @map_name, @center, _radius, @caster_id ->
-        [{:mob, 2001}]
-      end)
+      MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, opts ->
-        refute opts[:native_enabled]
-        :ok
-      end)
-
-      reject(&Combat.knockback/5)
-
-      assert {:ok, %Group{}} = MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
+      assert [opts] = strikes()
+      assert opts[:native_enabled]
     end
 
-    test "skips the whole tick (no damage) when the caster cannot be resolved" do
-      stub(Combat, :resolve_combatant, fn @caster_id -> {:error, :target_not_found} end)
-
-      reject(&Combat.splash_targets/4)
+    test "strikes nothing when the caster cannot be resolved" do
+      stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:error, :target_not_found} end)
       reject(&Combat.apply_skill_unit_damage/8)
 
-      assert {:ok, %Group{state: %{hits_remaining: 7}}} =
-               MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
-    end
-
-    test "expires once the shared hit budget reaches 0" do
-      stub_caster()
-
-      stub(Combat, :splash_targets, fn @map_name, @center, _radius, @caster_id ->
-        [{:mob, 2001}]
-      end)
-
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, _opts ->
-        :ok
-      end)
-
-      reject(&Combat.knockback/5)
-
-      assert {:expire, %Group{state: %{hits_remaining: 0}}} =
-               MgFirewall.on_interval(group(3, %{hits_remaining: 1}), 0)
-    end
-
-    test "absorbs exactly 4 + level hits then disappears" do
-      stub_caster()
-
-      stub(Combat, :splash_targets, fn @map_name, @center, _radius, @caster_id ->
-        [{:mob, 2001}]
-      end)
-
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, _opts ->
-        :ok
-      end)
-
-      reject(&Combat.knockback/5)
-
-      level = 5
-      budget = 4 + level
-      {:ok, %{state: state}} = MgFirewall.on_place(group(level))
-
-      result =
-        Enum.reduce_while(1..(budget + 5), {group(level, state), 0}, fn _i, {g, count} ->
-          case MgFirewall.on_interval(g, 0) do
-            {:ok, updated} -> {:cont, {updated, count + 1}}
-            {:expire, _updated} -> {:halt, count + 1}
-          end
-        end)
-
-      assert result == budget
+      assert {:ok, %Group{state: %{cell_budget: %{@cell => 7}}}} =
+               MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
     end
   end
 end

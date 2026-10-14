@@ -49,8 +49,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest.Burnout do
     send(test_pid, {:burned, cell, ref})
     group = %{group | state: Map.update!(state, :strikes, &(&1 + 1))}
 
-    {Map.get(state, :tag, :ok), group,
-     [{:remove_cells, group.group_id, Map.get(state, :remove, [cell])}]}
+    removal = {:remove_cells, group.group_id, Map.get(state, :remove, [cell])}
+    removal = if Map.get(state, :after_cell, false), do: {:after_cell, removal}, else: removal
+    {Map.get(state, :tag, :ok), group, [removal]}
   end
 
   def on_expire(%Group{state: %{test_pid: test_pid}} = group) do
@@ -305,6 +306,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
     assert_received {:ended, 1}
     refute_received {:ended, 1}
     assert Storage.get(1) == nil
+  end
+
+  test "a removal deferred to the end of the cell strikes every unit on it first",
+       %{manager: manager} do
+    burnout = field(1, [{50, 50}, {53, 50}], unit_range: 0, handler: Burnout)
+
+    :ok =
+      Manager.register(manager, %{
+        burnout
+        | state: %{test_pid: self(), strikes: 0, after_cell: true}
+      })
+
+    mob_at(1, 50, 50)
+    mob_at(2, 50, 50)
+
+    :ok = Manager.tick(manager, 1_000)
+
+    assert_received {:burned, {50, 50}, {:mob, 1}}
+    assert_received {:burned, {50, 50}, {:mob, 2}}
+    assert %Group{cells: [{53, 50}], state: %{strikes: 2}} = Storage.get(1)
   end
 
   test "a cell removed earlier in the pass strikes nothing", %{manager: manager} do
