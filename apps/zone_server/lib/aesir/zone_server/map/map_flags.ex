@@ -10,6 +10,10 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   runtime (WoE's `gvg`). `get/2` merges overlay over static; `reload/0`
   rebuilds the static index after the castle or flag data changes.
 
+  Valued flags live beside them: `invincible_time/1` reads the per-map player
+  invincible time from the mode-scoped `map_invincible_time.yml`, loaded on
+  first use and again after `reload/0`.
+
   Only `@flags` are accepted. The WoE-consumed subset (`gvg`, `gvg_castle`,
   `nosave`, `noteleport`, `nowarp`, `noreturn`) drives behavior this phase;
   `pvp`, `pvp_noparty`, and `pvp_noguild` are consumed by the targeting layer to
@@ -19,13 +23,16 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
+  alias Aesir.ZoneServer.Db.Source
   alias Aesir.ZoneServer.Map.MapFlags.StaticFlags
+  alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @pt_key __MODULE__
+  @invincible_key {__MODULE__, :invincible_time}
 
   @typedoc """
   A map flag. The WoE set drives castle behavior; the PvP set drives
@@ -74,7 +81,28 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   @spec reload() :: :ok
   def reload do
     :persistent_term.put(@pt_key, build_static())
+    :persistent_term.erase(@invincible_key)
     :ok
+  end
+
+  @doc """
+  Returns the player invincible time the map sets, in milliseconds, or `nil`
+  when the map sets none.
+  """
+  @spec invincible_time(map_name()) :: non_neg_integer() | nil
+  def invincible_time(map_name) do
+    @invincible_key
+    |> :persistent_term.get(nil)
+    |> case do
+      nil ->
+        times = load_invincible_times()
+        :persistent_term.put(@invincible_key, times)
+        times
+
+      times ->
+        times
+    end
+    |> Map.get(map_name)
   end
 
   @doc """
@@ -153,6 +181,22 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
       fn _map, woe, extra -> Map.merge(woe, extra) end
     )
   end
+
+  @spec load_invincible_times() :: %{map_name() => non_neg_integer()}
+  defp load_invincible_times do
+    "map_invincible_time.yml"
+    |> Source.sources()
+    |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+    |> DataLoader.merge_by_key(& &1["map"])
+    |> Map.new(&invincible_time_row!/1)
+  end
+
+  defp invincible_time_row!(%{"map" => map_name, "time" => time})
+       when is_binary(map_name) and is_integer(time) and time >= 0,
+       do: {map_name, time}
+
+  defp invincible_time_row!(row),
+    do: raise(ArgumentError, "invalid map_invincible_time.yml row: #{inspect(row)}")
 
   @spec static_index() :: %{map_name() => %{flag() => true}}
   defp static_index do

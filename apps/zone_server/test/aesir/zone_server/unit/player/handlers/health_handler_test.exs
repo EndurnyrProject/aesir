@@ -1017,6 +1017,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert game_state.stats.current_state.hp == 10
     end
 
+    test "starts the revived player's invincibility" do
+      assert {:reply, :ok, %{game_state: game_state}} =
+               HealthHandler.resurrect(2_001, 10, build_state(0, :dead))
+
+      assert is_reference(game_state.invincible_timer)
+      Process.cancel_timer(game_state.invincible_timer)
+    end
+
     test "restores each rAthena Resurrection percentage" do
       for {percent, hp} <- [{10, 10}, {30, 30}, {50, 50}, {80, 80}] do
         assert {:reply, :ok, %{game_state: game_state}} =

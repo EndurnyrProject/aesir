@@ -34,6 +34,7 @@ All paths below are relative to `priv/db`. Base files load before import files; 
 | mob skills | `import/mob_skills/mob_skills.yml` | Map-merge by top-level mob id or global group |
 | arrow crafting | `import/arrows.yml` | Whole entry override by source item `id` |
 | map flags | `import/map_flags.yml` | Whole entry override by map name |
+| map invincible time | `import/map_invincible_time.yml` | Whole entry override by map name |
 | drop level penalty | `import/level_penalty.yml` | Map-merge by level-difference breakpoint |
 | EXP level penalty | `import/level_penalty_exp.yml` | Map-merge by level-difference breakpoint |
 | MVP drop level penalty | `import/level_penalty_mvp_drop.yml` | Map-merge by level-difference breakpoint |

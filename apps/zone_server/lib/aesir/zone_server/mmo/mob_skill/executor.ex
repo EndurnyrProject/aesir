@@ -223,7 +223,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
          :ok <- check_concealment(state, target, definition, phase),
          {:ok, adapted_target} <- adapt_target(target, definition, state),
          :ok <- module.validate(state, adapted_target, row.level, definition),
-         :ok <- check_fog(target, definition) do
+         :ok <- check_castend_target(target, definition) do
       module
       |> invoke(state, target, adapted_target, row, definition)
       |> collapse()
@@ -268,13 +268,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     }
   end
 
-  defp check_fog({:unit, type, id}, definition) do
-    if Targeting.fogged_out?({:unit, {type, id}}, definition),
-      do: {:error, :fogged_out},
-      else: :ok
+  defp check_castend_target({:unit, type, id}, definition) do
+    cond do
+      Targeting.castend_refused?({:unit, {type, id}}, definition) -> {:error, :target_invincible}
+      Targeting.fogged_out?({:unit, {type, id}}, definition) -> {:error, :fogged_out}
+      true -> :ok
+    end
   end
 
-  defp check_fog(_target, _definition), do: :ok
+  defp check_castend_target(_target, _definition), do: :ok
 
   defp invoke(module, state, raw_target, adapted_target, row, definition) do
     Origin.with_skill(definition.name, {:mob, state.instance_id}, @mob_scope, fn ->

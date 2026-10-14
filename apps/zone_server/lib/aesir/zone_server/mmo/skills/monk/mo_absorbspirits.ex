@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
   defp validate_target(caster, target, :player) do
     if coin_job?(target),
       do: {:error, :invalid_target},
-      else: Targeting.validate_enemy(caster, target)
+      else: Targeting.validate_enemy_relation(caster, target)
   end
 
   defp validate_target(_caster, %{mob_data: %{modes: modes}}, :mob) do

@@ -165,6 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.RequestProtocol do
   defp protocol_error(reason)
        when reason in [
               :invalid_target,
+              :target_invincible,
               :target_not_found,
               :target_unavailable,
               :target_dead,

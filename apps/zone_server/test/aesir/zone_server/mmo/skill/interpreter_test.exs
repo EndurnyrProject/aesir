@@ -1309,6 +1309,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 7001})
     end
 
+    test "a timed cast at an invincible player begins, then fails at completion unpaid" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :pvp) end)
+
+      stub(Catalog, :by_id, fn 6 -> {:ok, %{enemy_definition(9) | cast_time: [1_000]}} end)
+      register_player(7001, %{invincible_timer: make_ref()})
+      gs = game_state(100, %{6 => 1})
+
+      assert {:casting, started, _info} = Interpreter.begin_cast(gs, 6, 1, {:unit, 7001})
+
+      assert {:error, :target_invincible} =
+               Interpreter.complete_cast(started, 6, 1, {:unit, 7001})
+    end
+
     test "rejects a player on a non-versus map" do
       register_player(7001)
 

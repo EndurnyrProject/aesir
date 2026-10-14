@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -183,6 +184,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
     test "a player in Gangster Paradise is not acquired by an idle aggressive mob" do
       stub(StatusStorage, :has_status?, fn :player, 2, :sc_gangsterparadise -> true end)
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+
+      assert result.target_ref == nil
+      assert result.ai_state == :idle
+    end
+
+    test "an invincible player is not acquired by an idle aggressive mob" do
+      stub(Invincibility, :active?, fn %PlayerState{} -> true end)
 
       stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
         [2]
@@ -694,6 +708,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert result.target_ref == {:player, 2}
       assert result.ai_state == :combat
       assert result.initiated_by_self? == false
+    end
+
+    test "an invincible player attacker is not adopted" do
+      stub(Invincibility, :active?, fn {:player, 2} -> true end)
+      state = %MobState{base_mob_state() | ai_state: :idle}
+
+      result = AIStateMachine.handle_damage_reaction(state, 2)
+
+      assert result.target_ref == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a mob never switches to an invincible higher-aggro attacker" do
+      stub(Invincibility, :active?, fn {:player, id} -> id == 3 end)
+
+      state =
+        %MobState{base_mob_state() | ai_state: :alert, target_ref: {:player, 2}}
+        |> MobState.add_aggro(3, 100)
+
+      result = AIStateMachine.handle_damage_reaction(state, 4)
+
+      assert result.target_ref == {:player, 2}
     end
 
     test "switching to a higher-aggro attacker clears the self-initiated flag" do

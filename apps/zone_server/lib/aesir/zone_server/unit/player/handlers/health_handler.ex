@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
@@ -522,7 +523,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   @doc """
-  Revives a corpse in place at `hp_percent` of maximum HP.
+  Revives a corpse in place at `hp_percent` of maximum HP and starts its
+  invincibility.
 
   The session revalidates the corpse immediately before committing the state
   transition so a cast that completed after another resurrection cannot mutate
@@ -542,7 +544,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
         |> Map.put(:stats, updated_stats)
         |> PlayerState.transition_to(:idle)
 
-      state = StateCommit.commit(state, game_state)
+      state = state |> StateCommit.commit(game_state) |> Invincibility.start()
       StatusSync.send_param(state.connection_pid, StatusParams.hp(), hp)
       CharacterPersistence.update_stats(game_state.character_id, %{hp: hp}, async: true)
 

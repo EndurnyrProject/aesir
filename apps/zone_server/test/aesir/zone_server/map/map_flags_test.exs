@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Db.Layout
   alias Aesir.ZoneServer.Map.CacheLoader
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Map.MapFlags.StaticFlags
@@ -255,6 +257,40 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
       assert :ok = MapFlags.reload()
       assert MapFlags.flags("arena") == %{pvp_noparty: true}
       assert MapFlags.flags("untouched") == %{pvp_noparty: true}
+    end
+  end
+
+  describe "invincible_time/1" do
+    @tag :tmp_dir
+    test "reads the active mode's times, an import row overriding one map", %{tmp_dir: root} do
+      previous_root = Application.get_env(:zone_server, :db_root)
+
+      on_exit(fn ->
+        restore_root(previous_root)
+        MapFlags.reload()
+      end)
+
+      File.write!(Path.join(root, "map_flags.yml"), "[]\n")
+      mode_dir = Path.join(root, Layout.mode_dir(GameMode.mode()))
+      File.mkdir_p!(mode_dir)
+
+      File.write!(Path.join(mode_dir, "map_invincible_time.yml"), """
+      - map: castle
+        time: 10000
+      - map: other
+        time: 5000
+      """)
+
+      import = Path.join([root, "import", "map_invincible_time.yml"])
+      File.mkdir_p!(Path.dirname(import))
+      File.write!(import, "- map: other\n  time: 0\n")
+
+      Application.put_env(:zone_server, :db_root, root)
+      :ok = MapFlags.reload()
+
+      assert MapFlags.invincible_time("castle") == 10_000
+      assert MapFlags.invincible_time("other") == 0
+      assert MapFlags.invincible_time("prontera") == nil
     end
   end
 

@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   A cell under Land Protector does nothing unless its group ignores Land
   Protector. Otherwise the cell offers its group the combat units within
   `unit_range` cells of it (Chebyshev square, line of sight from the cell when
-  the group path-checks) whose strike interval has run out; the group keeps the
+  the group path-checks) whose strike interval has run out, never an
+  invincible player; the group keeps the
   ones it may affect (`unit_targets/3`) and strikes each once
   (`on_unit_hit/4`), and that unit's next strike moves to `now + interval`.
 
@@ -49,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -145,7 +147,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
 
   defp strike_cell(own, module, cell, {by_id, ticksets} = acc, %{now: now} = env) do
     group = profiled(own, env)
-    due = Enum.filter(reached(group, cell), &(Map.get(ticksets, key(group, &1), now) <= now))
+
+    due =
+      Enum.filter(
+        reached(group, cell),
+        &(Map.get(ticksets, key(group, &1), now) <= now and not Invincibility.active?(&1))
+      )
 
     case due do
       [] ->

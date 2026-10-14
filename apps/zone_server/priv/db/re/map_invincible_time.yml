@@ -1,0 +1,3 @@
+# Per-map player invincible time (milliseconds) after a map load or a revive.
+# Maps not listed use the default (3000 ms). Renewal ships no override.
+[]

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -87,29 +88,37 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         |> MobState.set_initiated(false)
         |> MobState.set_ai_state(:alert)
 
-      {:idle, {_type, _id} = attacker_ref} ->
-        state
-        |> MobState.set_target(attacker_ref)
-        |> MobState.set_initiated(false)
-        |> MobState.set_ai_state(:combat)
-
-      {_, {_type, _id}} ->
-        highest_aggro_target =
-          MobState.get_highest_typed_aggro_target(state) ||
-            legacy_aggro_target(state)
-
-        if highest_aggro_target != state.target_ref do
-          # Aggro targets only ever come from taking damage, so a switch here is
-          # always a retaliation against the new attacker.
-          state
-          |> MobState.set_target(highest_aggro_target)
-          |> MobState.set_initiated(false)
-        else
-          state
-        end
+      {_ai_state, {_type, _id} = attacker_ref} ->
+        if Invincibility.active?(attacker_ref),
+          do: state,
+          else: adopt_attacker(state, attacker_ref)
 
       _ ->
         state
+    end
+  end
+
+  # An invincible player attacker is never adopted as the target.
+  defp adopt_attacker(%MobState{ai_state: :idle} = state, attacker_ref) do
+    state
+    |> MobState.set_target(attacker_ref)
+    |> MobState.set_initiated(false)
+    |> MobState.set_ai_state(:combat)
+  end
+
+  defp adopt_attacker(state, _attacker_ref) do
+    highest_aggro_target =
+      MobState.get_highest_typed_aggro_target(state) || legacy_aggro_target(state)
+
+    if highest_aggro_target != state.target_ref and
+         not Invincibility.active?(highest_aggro_target) do
+      # Aggro targets only ever come from taking damage, so a switch here is
+      # always a retaliation against the new attacker.
+      state
+      |> MobState.set_target(highest_aggro_target)
+      |> MobState.set_initiated(false)
+    else
+      state
     end
   end
 
@@ -381,15 +390,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         Unit.living?(target) and
           not Relations.friendly?(state.guild_id, target.guild_id) and
           not StatusStorage.has_status?(:player, target_id, :sc_gangsterparadise) and
+          not Invincibility.active?(target) and
           Interpreter.targetable?(:player, target_id) and
           not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
-          Targeting.attack_visible?(
-            %{
-              class: if(MobState.is_boss?(state), do: :boss, else: :normal),
-              detector: MobState.detector?(state)
-            },
-            %{unit_type: :player, unit_id: target_id}
-          )
+          Targeting.attack_visible?(attack_viewer(state), %{
+            unit_type: :player,
+            unit_id: target_id
+          })
 
       {:error, :not_found} ->
         false
@@ -416,6 +423,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp can_target?(_state, _target_ref), do: false
+
+  defp attack_viewer(state) do
+    %{
+      class: if(MobState.is_boss?(state), do: :boss, else: :normal),
+      detector: MobState.detector?(state)
+    }
+  end
 
   defp living_enemy?(state, {type, id}) do
     case UnitRegistry.get_unit(type, id) do

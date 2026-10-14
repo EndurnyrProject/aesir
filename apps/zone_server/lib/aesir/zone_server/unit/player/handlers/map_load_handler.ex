@@ -5,7 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   On initial entry the full client sync runs (status params, inventory, cart,
   skill list) before the spawn; after a warp the client already holds that
   data, so only the respawn on the destination map fires. Both branches clear
-  the warp cooldown and run the on-spawn warp check.
+  the warp cooldown, run the on-spawn warp check and start the player's
+  invincibility.
   """
 
   require Logger
@@ -22,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestView
@@ -55,6 +57,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
             visible_skill_units: visible_skill_units
         }
     }
+
+    state = Invincibility.start_on_map_load(state)
 
     {:noreply, NavigationHandler.on_map_loaded(state)}
   end
@@ -105,8 +109,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     cleared_game_state = PlayerState.clear_warp_cooldown(game_state)
     maybe_fire_spawn_warp(cleared_game_state)
 
-    {:noreply,
-     %{state | game_state: %{cleared_game_state | visible_skill_units: visible_skill_units}}}
+    state = %{
+      state
+      | game_state: %{cleared_game_state | visible_skill_units: visible_skill_units}
+    }
+
+    {:noreply, Invincibility.start_on_map_load(state)}
   end
 
   # On-spawn entry trigger (rAthena `OnTouch` on-spawn): if the spawn cell sits

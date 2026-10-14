@@ -838,7 +838,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     with {:ok, definition} <- fetch_definition(skill_id),
          {:ok, module} <- validate_item_cast(caster, target, level, definition, true),
-         :ok <- check_fog(target, definition),
+         :ok <- check_castend_target(target, definition),
          {:ok, cost} <- Caster.Player.cost(caster, module, target, definition, level) do
       complete_resolved_cast(caster, module, target, level, definition, %{
         adapter: Caster.Player,
@@ -859,7 +859,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     with {:ok, definition} <- fetch_definition(skill_id),
          {:ok, module} <- validate_item_cast(caster, target, level, definition, false),
-         :ok <- check_fog(target, definition),
+         :ok <- check_castend_target(target, definition),
          {:ok, caster} <-
            run_unconditional(module, caster, target, level, definition, :item, false) do
       {:ok,
@@ -1161,7 +1161,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_target(caster, target, definition),
          :ok <- check_cast_end(caster, target, definition, false),
          :ok <- check_range(caster, target, definition, level),
-         :ok <- check_fog(target, definition),
+         :ok <- check_castend_target(target, definition),
          {:ok, _module} <- fetch_active_module(definition),
          context = CastContext.build(caster, definition, level, target, :completion),
          :ok <- check_context_cooldown(context, now) do
@@ -1176,7 +1176,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_target(caster, target, definition),
          :ok <- check_cast_end(caster, target, definition, false),
          :ok <- check_range(caster, target, definition, level),
-         :ok <- check_fog(target, definition),
+         :ok <- check_castend_target(target, definition),
          :ok <- check_context_cooldown(context, now) do
       validate_and_prepare(context, false)
     end
@@ -1192,8 +1192,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   # Blinding Mist: attack-type skills aimed at a fog holder fail at cast end
   # three times in four, before any requirement is spent.
-  defp check_fog(target, definition) do
-    if Targeting.fogged_out?(target, definition), do: {:error, :fogged_out}, else: :ok
+  # An attack skill completing on an invincible player fails before the fog
+  # roll and before any cost is spent.
+  defp check_castend_target(target, definition) do
+    cond do
+      Targeting.castend_refused?(target, definition) -> {:error, :target_invincible}
+      Targeting.fogged_out?(target, definition) -> {:error, :fogged_out}
+      true -> :ok
+    end
   end
 
   defp lifecycle_adapter(caster) do
@@ -1324,7 +1330,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared) do
     now = System.monotonic_time(:millisecond)
 
-    with :ok <- check_fog(target, prepared.definition) do
+    with :ok <- check_castend_target(target, prepared.definition) do
       started = cast_start(game_state, prepared.adapter, skill_id)
 
       case complete_instant_cast(started, skill_id, level, target, now, prepared) do
@@ -1657,8 +1663,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # rejects like a non-enemy instead of crashing.
   defp validate_enemy_player(game_state, target_id) do
     case TargetResolver.resolve(:player, target_id) do
-      {:ok, _pid, target_state, :player} -> Targeting.validate_enemy(game_state, target_state)
-      _ -> {:error, :invalid_target}
+      {:ok, _pid, target_state, :player} ->
+        Targeting.validate_enemy_relation(game_state, target_state)
+
+      _ ->
+        {:error, :invalid_target}
     end
   end
 

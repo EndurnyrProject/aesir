@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestInfoView
@@ -992,6 +993,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_info({:equip_autobonus_expire, key, generation}, state) do
     EquipProcHandler.expire(state, key, generation)
+  end
+
+  @impl true
+  def handle_info({:invincibility, event}, state) do
+    Invincibility.handle_info(event, state)
   end
 
   @impl true

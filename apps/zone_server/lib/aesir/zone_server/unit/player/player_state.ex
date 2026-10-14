@@ -110,6 +110,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           spirit_sphere_timer_plan: %{generation: non_neg_integer(), expires_at: integer()} | nil,
           spirit_sphere_timer_generation: non_neg_integer(),
           spirit_sphere_revision: non_neg_integer(),
+          invincible_timer: reference() | nil,
+          invincible_generation: non_neg_integer(),
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
           equip_regen_accumulators: %{{atom(), pos_integer()} => non_neg_integer()},
@@ -238,6 +240,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     spirit_sphere_timer_plan: nil,
     spirit_sphere_timer_generation: 0,
     spirit_sphere_revision: 0,
+    # Post-map-load and revive invincibility (`Unit.Player.Invincibility`).
+    invincible_timer: nil,
+    invincible_generation: 0,
     vars: %{},
     temp_vars: %{},
     # Quest log keyed by quest id, restored from character_quests on spawn

@@ -91,7 +91,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   alias __MODULE__.Burnout
   alias __MODULE__.Phase
@@ -135,6 +137,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
   end
 
   defp mob_at(id, x, y), do: SpatialIndex.add_unit(:mob, id, x, y, @map)
+
+  defp register_player(id, invincible_timer) do
+    state = %PlayerState{character_id: id, map_name: @map, invincible_timer: invincible_timer}
+    UnitRegistry.register_unit(:player, id, PlayerState, state, self())
+  end
 
   test "a field reaches its cells dilated by the unit range", %{manager: manager} do
     :ok = Manager.register(manager, field(1, [{50, 50}]))
@@ -193,6 +200,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
     :ok = Manager.tick(manager, 1_000)
 
     assert_received {:struck, 2, _cell, {:mob, 1}, 1_000}
+  end
+
+  test "an invincible player is not offered and keeps its interval", %{manager: manager} do
+    :ok = Manager.register(manager, field(1, [{50, 50}]))
+    SpatialIndex.add_player(8_652, 50, 50, @map)
+    register_player(8_652, make_ref())
+
+    :ok = Manager.tick(manager, 1_000)
+    refute_received {:struck, _, _, {:player, 8_652}, _}
+
+    register_player(8_652, nil)
+    :ok = Manager.tick(manager, 1_100)
+    assert_received {:struck, 1, _cell, {:player, 8_652}, 1_100}
   end
 
   test "groups without NoOverlap each strike the target", %{manager: manager} do

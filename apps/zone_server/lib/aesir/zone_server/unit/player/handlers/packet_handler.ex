@@ -121,6 +121,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -219,7 +220,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   # MoveRequest - Player movement request (protobuf analogue of CZ_REQUEST_MOVE 0x035F)
   def handle_message(%MoveRequest{dest_x: dest_x, dest_y: dest_y}, state) do
-    MovementHandler.handle_request_move(state, dest_x, dest_y)
+    state
+    |> Invincibility.end_on_request(:walk)
+    |> MovementHandler.handle_request_move(dest_x, dest_y)
   end
 
   # ActionRequest - Player action request (protobuf analogue of CZ_REQUEST_ACT 0x0437)
@@ -232,7 +235,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   #   - party create >= 7  (clif.cpp:13806) -- NOTE: no party handler yet
   def handle_message(%ActionRequest{target_id: target_id, action: action}, state)
       when action in [0, 7] do
-    CombatActionHandler.handle_attack_request(state, target_id, action)
+    state
+    |> Invincibility.end_on_request(:attack)
+    |> CombatActionHandler.handle_attack_request(target_id, action)
   end
 
   # NV_BASIC >= 3 gate (rAthena clif.cpp:11739, gated by basic_skill_check).
@@ -272,23 +277,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         %SkillCast{skill_id: skill_id, level: level, target_id: target_id},
         %{pending_item_skill: %{skill_id: skill_id, level: level}} = state
       ) do
-    SkillHandler.handle_use_skill(state, skill_id, level, target_id)
+    state
+    |> Invincibility.end_on_request({:skill, skill_id})
+    |> SkillHandler.handle_use_skill(skill_id, level, target_id)
   end
 
   # SkillCast - Player casts a targeted skill (protobuf analogue of CZ_USE_SKILL 0x0113)
   def handle_message(%SkillCast{skill_id: 231, level: level, target_id: target_id}, state) do
     target = potion_pitcher_target(target_id)
-    SkillHandler.handle_use_skill(state, 231, level, target)
+
+    state
+    |> Invincibility.end_on_request({:skill, 231})
+    |> SkillHandler.handle_use_skill(231, level, target)
   end
 
   def handle_message(%SkillCast{skill_id: skill_id, level: level, target_id: target_id}, state) do
-    SkillHandler.handle_use_skill(state, skill_id, level, target_id)
+    state
+    |> Invincibility.end_on_request({:skill, skill_id})
+    |> SkillHandler.handle_use_skill(skill_id, level, target_id)
   end
 
   # GroundSkillCast - Player casts a ground-targeted skill (protobuf analogue of
   # CZ_USE_SKILL_TOGROUND 0x0AF4)
   def handle_message(%GroundSkillCast{skill_id: skill_id, level: level, x: x, y: y}, state) do
-    SkillHandler.handle_use_skill_ground(state, skill_id, level, x, y)
+    state
+    |> Invincibility.end_on_request({:ground_skill, skill_id})
+    |> SkillHandler.handle_use_skill_ground(skill_id, level, x, y)
   end
 
   # SkillTextInputReply - response to a capability-gated staged skill cast.

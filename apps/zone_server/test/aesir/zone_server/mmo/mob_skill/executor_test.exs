@@ -374,6 +374,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert Executor.check_target(mob(), row, :cast_end) == :ok
     end
 
+    test "an invincible player aborts a finished attack cast, never its begin" do
+      stub_skill(9001, :fake_skill, CastOnly, %{target_type: :target_enemy})
+      invincible = %{player_state(42) | invincible_timer: make_ref()}
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 42 -> {:ok, {PlayerState, invincible, self()}}
+        :mob, _id -> {:error, :not_found}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn 42 -> {:ok, self()} end)
+      row = row(%{skill_id: 9001})
+
+      assert Executor.check_target(mob(), row, :cast_begin) == :ok
+      assert Executor.execute(mob(), row, :cast_end) == {:error, :target_invincible}
+      refute_received {:cast, _, _, _, _}
+    end
+
     test "a hidden target aborts the finished cast without casting, unless the mob detects it" do
       :ok = StatusStorage.apply_status(:player, 42, :sc_hiding)
       row = row(%{skill_id: 9001})

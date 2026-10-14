@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
          :ok <- reject_boss(target),
          {:ok, combatant} <- Combat.resolve_combatant(target_id),
          :ok <- validate_race(combatant.race) do
-      Targeting.validate_enemy(caster, target)
+      Targeting.validate_enemy_relation(caster, target)
     end
   end
 

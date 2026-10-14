@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Concealment
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -73,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
 
   @pressure 367
   @lex_aeterna 78
+  @lex_divina 76
   @trick_dead 143
   @adaptation 304
   @gospel 369
@@ -96,9 +98,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     369 => :pa_gospel
   }
 
-  @doc "Validates that `target` is a living enemy of `attacker`."
+  @doc """
+  Validates that `target` is a living enemy of `attacker` that can be targeted:
+  an invincible player cannot (`Unit.Player.Invincibility`).
+  """
   @spec validate_enemy(map(), map()) :: :ok | {:error, atom()}
   def validate_enemy(attacker, target) do
+    if alive?(target) and Invincibility.active?(target),
+      do: {:error, :target_invincible},
+      else: validate_enemy_relation(attacker, target)
+  end
+
+  @doc """
+  Validates that `target` is a living enemy of `attacker`, invincible or not.
+
+  For a skill's checks when its cast begins: an attack skill aimed at an
+  invincible player still starts, and fails when it completes
+  (`castend_refused?/2`).
+  """
+  @spec validate_enemy_relation(map(), map()) :: :ok | {:error, atom()}
+  def validate_enemy_relation(attacker, target) do
     if alive?(target) do
       attacker_combatant = relationship_combatant(attacker)
       target_combatant = relationship_combatant(target)
@@ -129,18 +148,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   """
   @spec validate_field_target(Group.t(), map(), map()) :: :ok | {:error, atom()}
   def validate_field_target(%Group{} = group, attacker, target) do
-    if alive?(target) do
-      attacker = relationship_combatant(attacker)
-      target = relationship_combatant(target)
+    cond do
+      not alive?(target) -> {:error, :target_dead}
+      Invincibility.active?(target) -> {:error, :target_invincible}
+      true -> validate_live_field_target(group, attacker, target)
+    end
+  end
 
-      with :ok <- validate_field_source(group, attacker),
-           :ok <- validate_field_target_map(group, target),
-           :ok <- validate_field_self(group, target),
-           :ok <- validate_field_relationship(group, attacker, target) do
-        Rules.validate_target(attacker, target, %{skill_id: group.skill_id})
-      end
-    else
-      {:error, :target_dead}
+  defp validate_live_field_target(group, attacker, target) do
+    attacker = relationship_combatant(attacker)
+    target = relationship_combatant(target)
+
+    with :ok <- validate_field_source(group, attacker),
+         :ok <- validate_field_target_map(group, target),
+         :ok <- validate_field_self(group, target),
+         :ok <- validate_field_relationship(group, attacker, target) do
+      Rules.validate_target(attacker, target, %{skill_id: group.skill_id})
     end
   end
 
@@ -196,6 +219,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
 
   defp bare_id({_type, id}), do: id
   defp bare_id(id), do: id
+
+  @doc """
+  Whether an attack-type skill completing on `target` fails because the target
+  is an invincible player. Lex Divina still reaches a silenced one. Checked
+  when the skill completes, never when its cast begins.
+  """
+  @spec castend_refused?(term(), map()) :: boolean()
+  def castend_refused?({:unit, target_id}, %{target_type: type, name: name} = definition)
+      when type == :target_enemy or name in @attack_type_any do
+    case TargetResolver.resolve(target_id) do
+      {:ok, _pid, state, :player} ->
+        Invincibility.active?(state) and not silenced_lex_divina?(definition, bare_id(target_id))
+
+      _not_player ->
+        false
+    end
+  end
+
+  def castend_refused?(_target, _definition), do: false
+
+  defp silenced_lex_divina?(%{id: @lex_divina}, id),
+    do: StatusStorage.has_status?(:player, id, :sc_silence)
+
+  defp silenced_lex_divina?(_definition, _id), do: false
 
   @doc "Returns whether `map` is a versus map."
   @spec versus_map?(term()) :: boolean()

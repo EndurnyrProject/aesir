@@ -254,6 +254,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     end
   end
 
+  describe "invincible players" do
+    alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
+    alias Aesir.ZoneServer.Mmo.Skills.Mage.MgColdbolt
+    alias Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
+    setup do
+      target = %PlayerState{
+        character_id: 9_951,
+        action_state: :idle,
+        stats: %{current_state: %{hp: 100}},
+        invincible_timer: make_ref()
+      }
+
+      :ok = UnitRegistry.register_unit(:player, 9_951, PlayerState, target, self())
+      %{target: target}
+    end
+
+    test "are refused as enemies, though the relation alone holds", %{target: target} do
+      assert {:error, :target_invincible} = Targeting.validate_enemy(mob(1000), target)
+      assert :ok = Targeting.validate_enemy_relation(mob(1000), target)
+    end
+
+    test "fail an attack skill at its completion, never a support skill" do
+      assert Targeting.castend_refused?({:unit, 9_951}, MgColdbolt.definition())
+      refute Targeting.castend_refused?({:unit, 9_951}, AlHeal.definition())
+      assert Targeting.castend_refused?({:unit, 9_951}, PrLexdivina.definition())
+    end
+
+    test "Lex Divina still reaches a silenced one" do
+      :ok = StatusStorage.apply_status(:player, 9_951, :sc_silence)
+
+      refute Targeting.castend_refused?({:unit, 9_951}, PrLexdivina.definition())
+    end
+  end
+
   describe "fogged_out?/3" do
     alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
     alias Aesir.ZoneServer.Mmo.Skills.Mage.MgColdbolt
