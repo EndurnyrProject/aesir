@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.TrapTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.ZoneServer.TrapTestHelper
+
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
@@ -99,5 +101,53 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.TrapTest do
     assert Trap.base_damage(2, stats, :ht_landmine) == 700
     assert Trap.base_damage(2, stats, :ht_blastmine) == 400
     assert Trap.base_damage(2, stats, :ht_claymoretrap) == 500
+  end
+
+  @hidden [
+    :ht_skidtrap,
+    :ht_landmine,
+    :ht_anklesnare,
+    :ht_shockwave,
+    :ht_sandman,
+    :ht_flasher,
+    :ht_freezingtrap,
+    :ht_talkiebox
+  ]
+
+  @tag game_mode: :renewal
+  test "renewal hides the flagged traps from all but the caster's party" do
+    for skill_name <- @hidden, do: assert(Trap.visibility(skill_name) == :party_only)
+    assert Trap.visibility(:ht_blastmine) == :public
+    assert Trap.visibility(:ht_claymoretrap) == :public
+  end
+
+  @tag game_mode: :pre_renewal
+  test "pre-renewal shows every trap" do
+    for skill_name <- [:ht_blastmine, :ht_claymoretrap | @hidden],
+        do: assert(Trap.visibility(skill_name) == :public)
+  end
+
+  test "a sprung trap is used for 1.5 seconds, never past its own lifetime" do
+    armed = %{group(:player, :normal) | expires_at: 20_000, state: %{trap: armed_trap()}}
+
+    assert %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}} =
+             Trap.spring(armed, 10_000)
+
+    assert %Group{expires_at: 20_000, state: %{trap: %TrapState{phase: :used}}} =
+             Trap.spring(armed, 19_000)
+  end
+
+  test "only an armed trap with a present caster keeps living enemies" do
+    armed = %{group(:player, :normal) | state: %{trap: armed_trap()}}
+    dead = %{mob(21) | hp: 0, is_dead: true}
+    stub_units([player(10), mob(20), dead])
+
+    assert [{:mob, 20}] = Trap.unit_targets(armed, [{:mob, 20}, {:mob, 21}])
+
+    used = %{armed | state: %{trap: armed_trap(phase: :used)}}
+    assert [] = Trap.unit_targets(used, [{:mob, 20}])
+
+    stub_units([mob(20)])
+    assert [] = Trap.unit_targets(armed, [{:mob, 20}])
   end
 end

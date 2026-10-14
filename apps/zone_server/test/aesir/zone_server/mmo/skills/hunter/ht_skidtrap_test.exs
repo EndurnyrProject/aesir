@@ -1,16 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.TrapTestHelper
 
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrap
-  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -18,16 +16,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
   setup do
     Mimic.copy(Knockback)
     Mimic.copy(StatusInterpreter)
-    Mimic.copy(Trap)
-
-    stub(Trap, :enemy?, fn
-      %Group{caster_type: :player}, {:mob, _id} -> true
-      %Group{caster_type: :mob}, {type, _id} when type in [:player, :homunculus] -> true
-      %Group{}, {_type, _id} -> false
-    end)
-
     :ok
   end
+
+  @cell {50, 50}
+  @now 10_000
 
   defp group(attrs \\ []) do
     struct!(
@@ -43,137 +36,130 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
         origin: {40, 50},
         cells: [{50, 50}],
         next_tick_at: 0,
-        expires_at: 0,
+        expires_at: 180_000,
         interval: 1_000,
-        state: %{}
+        state: %{trap: armed_trap()}
       },
       attrs
     )
   end
 
+  @tag game_mode: :renewal
   test "places a hidden single-cell trap with typed lifecycle state" do
     stub(UnitRegistry, :get_unit_info, fn :player, 1000 ->
       {:ok, %{stats: %{dex: 1, int: 1, base_level: 1}}}
     end)
 
-    assert {:ok, placement} = HtSkidtrap.on_place(group())
+    assert {:ok, placement} = HtSkidtrap.on_place(group(state: %{}))
     assert placement.cells == [{50, 50}]
     assert placement.visibility == :party_only
     assert placement.duration == 180_000
     assert placement.state.trap.phase == :armed
   end
 
-  test "a player trap stops and pushes eligible monsters at every level from its placement origin" do
-    target = mob_state()
-    stub(UnitRegistry, :get_unit, fn :mob, 2000 -> {:ok, {MobState, target, self()}} end)
+  describe "renewal" do
+    @describetag game_mode: :renewal
 
-    for level <- 1..5 do
-      expect(StatusInterpreter, :apply_status, fn :mob, 2000, :sc_stop, options ->
-        assert options[:duration] == 3_000
-        assert options[:bypass_resistance] == true
-        assert options[:caster_id] == 1000
-        assert options[:source_type] == :player
-        :ok
-      end)
+    test "a player trap pushes eligible monsters from its placement origin at every level, then stops them" do
+      stub_units([player(1000)])
+      test_pid = self()
 
-      expect(Knockback, :knockback, fn :mob, 2000, 40, 50, distance ->
-        assert distance == level + 5
-        :ok
-      end)
+      for level <- 1..5 do
+        expect(Knockback, :knockback, fn :mob, 2000, 40, 50, distance ->
+          send(test_pid, {:pushed, distance})
+          :ok
+        end)
 
-      assert :expire = HtSkidtrap.on_touch(group(level: level), {:mob, 2000})
+        expect(StatusInterpreter, :apply_status, fn :mob, 2000, :sc_stop, options ->
+          assert options[:duration] == 3_000
+          assert options[:bypass_resistance] == true
+          assert options[:caster_id] == 1000
+          assert options[:source_type] == :player
+          send(test_pid, :stopped)
+          :ok
+        end)
+
+        assert {:ok, %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}}} =
+                 HtSkidtrap.on_unit_hit(group(level: level), @cell, {:mob, 2000}, @now)
+
+        expected = level + 5
+        assert {:messages, [{:pushed, ^expected}, :stopped]} = Process.info(self(), :messages)
+        assert_received {:pushed, _}
+        assert_received :stopped
+      end
+    end
+
+    test "a target rejecting Stop is still pushed and the trap is spent" do
+      stub_units([player(1000)])
+      expect(Knockback, :knockback, fn :mob, 2000, 40, 50, 8 -> :ok end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, 2000, :sc_stop, _ -> {:error, :immune} end)
+
+      assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+               HtSkidtrap.on_unit_hit(group(), @cell, {:mob, 2000}, @now)
+    end
+
+    test "bosses do not set the trap off" do
+      stub_units([player(1000), mob(2000, modes: [:boss]), mob(2001)])
+
+      assert [{:mob, 2001}] =
+               HtSkidtrap.unit_targets(group(), @cell, [{:mob, 2000}, {:mob, 2001}])
+    end
+
+    test "status-immune targets do not set the trap off" do
+      stub_units([player(1000), mob(2000, modes: [:status_immune]), mob(2001)])
+
+      assert [{:mob, 2001}] =
+               HtSkidtrap.unit_targets(group(), @cell, [{:mob, 2000}, {:mob, 2001}])
     end
   end
 
-  test "same-cell mob placement uses the deterministic eastward fallback" do
-    target = %PlayerState{character_id: 3000}
-    stub(UnitRegistry, :get_unit, fn :player, 3000 -> {:ok, {PlayerState, target, self()}} end)
-    expect(StatusInterpreter, :apply_status, fn :player, 3000, :sc_stop, _ -> :ok end)
-    expect(Knockback, :knockback, fn :player, 3000, 49, 50, 8 -> :ok end)
+  describe "pre-renewal" do
+    @describetag game_mode: :pre_renewal
 
-    assert :expire =
-             HtSkidtrap.on_touch(group(caster_type: :mob, origin: {50, 50}), {:player, 3000})
+    test "a boss sets the trap off" do
+      stub_units([player(1000), mob(2000, modes: [:boss])])
+
+      assert [{:mob, 2000}] = HtSkidtrap.unit_targets(group(), @cell, [{:mob, 2000}])
+    end
+
+    test "pushes a monster without Stop and makes it forget its target" do
+      stub_units([player(1000), mob(2000)])
+      test_pid = self()
+      expect(Knockback, :knockback, fn :mob, 2000, 40, 50, 8 -> :ok end)
+      reject(&StatusInterpreter.apply_status/4)
+      expect(MobSession, :set_target, fn ^test_pid, nil -> :ok end)
+
+      assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+               HtSkidtrap.on_unit_hit(group(), @cell, {:mob, 2000}, @now)
+    end
   end
 
-  test "bosses leave the trap armed" do
-    boss = mob_state([:boss])
+  test "a target standing on the placement cell is pushed from that cell" do
+    stub_units([mob(1000)])
+    stub(StatusInterpreter, :apply_status, fn :player, 3000, :sc_stop, _ -> :ok end)
+    expect(Knockback, :knockback, fn :player, 3000, 50, 50, 8 -> :ok end)
 
-    stub(UnitRegistry, :get_unit, fn :mob, 2000 -> {:ok, {MobState, boss, self()}} end)
-    reject(&StatusInterpreter.apply_status/4)
-    reject(&Knockback.knockback/5)
-
-    assert {:ok, %Group{}} = HtSkidtrap.on_touch(group(), {:mob, 2000})
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtSkidtrap.on_unit_hit(
+               group(caster_type: :mob, origin: {50, 50}),
+               @cell,
+               {:player, 3000},
+               @now
+             )
   end
 
-  test "status-immune targets leave the trap armed" do
-    immune = mob_state([:status_immune])
-
-    stub(UnitRegistry, :get_unit, fn :mob, 2000 -> {:ok, {MobState, immune, self()}} end)
-    reject(&StatusInterpreter.apply_status/4)
-    reject(&Knockback.knockback/5)
-
-    assert {:ok, %Group{}} = HtSkidtrap.on_touch(group(), {:mob, 2000})
-  end
-
-  test "a target rejecting Stop leaves the trap armed" do
-    target = mob_state()
-    stub(UnitRegistry, :get_unit, fn :mob, 2000 -> {:ok, {MobState, target, self()}} end)
-    expect(StatusInterpreter, :apply_status, fn :mob, 2000, :sc_stop, _ -> {:error, :immune} end)
-    reject(&Knockback.knockback/5)
-
-    assert {:ok, %Group{}} = HtSkidtrap.on_touch(group(), {:mob, 2000})
-  end
-
-  test "a mob trap affects players and same-side contacts remain armed" do
-    target = %PlayerState{character_id: 3000}
-    stub(UnitRegistry, :get_unit, fn :player, 3000 -> {:ok, {PlayerState, target, self()}} end)
-    expect(StatusInterpreter, :apply_status, fn :player, 3000, :sc_stop, _ -> :ok end)
+  test "a mob trap affects players and same-side contacts do not set it off" do
+    stub_units([mob(1000), player(3000), mob(2000)])
+    stub(StatusInterpreter, :apply_status, fn :player, 3000, :sc_stop, _ -> :ok end)
     expect(Knockback, :knockback, fn :player, 3000, 40, 50, 8 -> :ok end)
 
-    assert :expire = HtSkidtrap.on_touch(group(caster_type: :mob), {:player, 3000})
-    assert {:ok, %Group{}} = HtSkidtrap.on_touch(group(), {:player, 3000})
-  end
+    mob_trap = group(caster_type: :mob)
 
-  defp mob_state(modes \\ []) do
-    definition = %MobDefinition{
-      id: 1,
-      aegis_name: "TEST_MOB",
-      name: "Test Mob",
-      level: 1,
-      hp: 1,
-      stats: %{},
-      attack_range: 1,
-      size: :small,
-      race: :formless,
-      element: {:neutral, 1},
-      walk_speed: 200,
-      attack_delay: 1_000,
-      attack_motion: 500,
-      client_attack_motion: 500,
-      damage_motion: 400,
-      modes: modes
-    }
+    assert [{:player, 3000}] =
+             HtSkidtrap.unit_targets(mob_trap, @cell, [{:player, 3000}, {:mob, 2000}])
 
-    spawn = %MobSpawn{
-      mob: 1,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %MobSpawn.SpawnArea{x: 50, y: 50}
-    }
-
-    %MobState{
-      instance_id: 2000,
-      mob_id: 1,
-      spawn_ref: spawn,
-      x: 50,
-      y: 50,
-      map_name: "prontera",
-      hp: 1,
-      max_hp: 1,
-      sp: 1,
-      max_sp: 1,
-      spawned_at: 0,
-      mob_data: definition
-    }
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtSkidtrap.on_unit_hit(mob_trap, @cell, {:player, 3000}, @now)
   end
 end

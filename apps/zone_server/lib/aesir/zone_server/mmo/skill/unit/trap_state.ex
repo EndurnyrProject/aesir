@@ -3,8 +3,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapState do
   Typed lifecycle metadata embedded at `Skill.Unit.Group.state.trap`.
   """
 
-  @typedoc "A manager-owned trap lifecycle phase."
-  @type phase :: :armed | :used | :sprung | :captured
+  @typedoc """
+  A trap lifecycle phase. Only an armed trap acts. `:spent` is a trap that
+  went off without effect (an Ankle Snare that failed to catch): inert, but
+  it still returns its trap item when its time runs out, as an armed one does.
+  """
+  @type phase :: :armed | :used | :sprung | :captured | :spent
 
   @typedoc "The action taken when an armed trap reaches its natural deadline."
   @type natural_expiry :: :drop_item | :become_used
@@ -13,16 +17,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapState do
             reclaim_item_id: nil,
             claymore_spendable?: false,
             natural_expiry: :drop_item,
-            return_item_on_expiry?: false,
-            link_id: nil
+            return_item_on_expiry?: false
 
   @type t() :: %__MODULE__{
           phase: phase(),
           reclaim_item_id: pos_integer() | nil,
           claymore_spendable?: boolean(),
           natural_expiry: natural_expiry(),
-          return_item_on_expiry?: boolean(),
-          link_id: non_neg_integer() | nil
+          return_item_on_expiry?: boolean()
         }
 
   @fields [
@@ -30,8 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapState do
     :reclaim_item_id,
     :claymore_spendable?,
     :natural_expiry,
-    :return_item_on_expiry?,
-    :link_id
+    :return_item_on_expiry?
   ]
 
   @doc "Builds validated trap lifecycle metadata."
@@ -49,18 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapState do
 
   defp valid?(%__MODULE__{} = state) do
     valid_phase?(state.phase) and valid_natural_expiry?(state.natural_expiry) and
-      valid_reclaim_item?(state.reclaim_item_id) and valid_flags?(state) and
-      valid_link?(state.link_id)
+      valid_reclaim_item?(state.reclaim_item_id) and valid_flags?(state)
   end
 
-  defp valid_phase?(phase), do: phase in [:armed, :used, :sprung, :captured]
+  defp valid_phase?(phase), do: phase in [:armed, :used, :sprung, :captured, :spent]
   defp valid_natural_expiry?(expiry), do: expiry in [:drop_item, :become_used]
   defp valid_reclaim_item?(nil), do: true
   defp valid_reclaim_item?(id), do: is_integer(id) and id > 0
 
   defp valid_flags?(state),
     do: is_boolean(state.claymore_spendable?) and is_boolean(state.return_item_on_expiry?)
-
-  defp valid_link?(nil), do: true
-  defp valid_link?(id), do: is_integer(id) and id >= 0
 end

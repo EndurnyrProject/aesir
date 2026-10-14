@@ -2,12 +2,15 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
   @moduledoc """
   Real-session coverage of the Hunter trap lifecycle now that the whole trap
   branch is published: catalyst accounting on cast, the PvE activation gate,
-  activator-centered area traps, the linked Ankle Snare teardown in both
-  directions, and the three natural-expiry policies (item drop, become used,
-  Claymore spending its neighbours).
+  activator-centered area traps, the Ankle Snare's end releasing its hold,
+  the natural-expiry policies (item drop, become used), and Claymore spending
+  its neighbours.
 
   Timing-sensitive assertions run against a supervised, manually ticked manager
-  so no assertion depends on wall-clock expiry.
+  so no assertion depends on wall-clock expiry; each `pass/1` is one manager
+  tick, the skill-unit timer pass that sets traps off. The case's own manager
+  also passes every 100 ms over the same tables, so a unit only comes within
+  one cell of a trap when the test means it to set the trap off.
   """
   use Aesir.ZoneServer.IntegrationCase
 
@@ -15,9 +18,11 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
 
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.GroundSkillCast
+  alias Aesir.Net.MoveRequest
   alias Aesir.Repo
   alias Aesir.ZoneServer.Map.MapManager
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
@@ -31,6 +36,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
 
   @map "prontera"
   @hunter_class 11
@@ -54,7 +60,11 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
 
   setup {Aesir.MimicMode, :global}
 
+  # The case's self-ticking manager would pass over the same tables; only this
+  # manually ticked one may set the traps off.
   setup do
+    stop_supervised!({:integration_default, Manager})
+
     manager =
       start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
 
@@ -83,21 +93,24 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
              find_group(:ht_sandman)
   end
 
-  test "a player trap ignores a player mover and detonates on a mob" do
+  test "a player trap ignores a player mover and detonates on a mob", %{manager: manager} do
     caster = start_hunter(insert_hunter([]), {150, 160})
-    bystander = start_hunter(insert_hunter([]), {151, 160})
-    mob = spawn_test_mob(@map, {152, 160}, unit_id: 99_301, max_hp: 10_000, hp: 10_000)
+    bystander = start_hunter(insert_hunter([]), {151, 163})
+    mob = spawn_test_mob(@map, {155, 160}, unit_id: 99_301, max_hp: 10_000, hp: 10_000)
 
     assert :ok = Manager.register(trap_group(20_001, :ht_landmine, @landmine, caster, {151, 160}))
 
-    assert :ok = Manager.trigger(20_001, {:player, bystander.character.id}, :on_touch)
+    simulate_incoming_message(bystander.pid, %MoveRequest{dest_x: 151, dest_y: 161})
+    assert :ok = wait_for_position(:player, bystander.character.id, {151, 161})
+    assert :ok = pass(manager)
 
     assert %Group{visibility: :party_only, state: %{trap: %TrapState{phase: :armed}}} =
              Storage.get(20_001)
 
     assert get_player_state(bystander.pid).stats.current_state.hp == 500
 
-    assert :ok = Manager.trigger(20_001, {:mob, mob.unit_id}, :on_touch)
+    walk_mob(mob, {152, 160})
+    assert :ok = pass(manager)
 
     assert %Group{visibility: :party_only, state: %{trap: %TrapState{phase: :used}}} =
              Storage.get(20_001)
@@ -105,11 +118,13 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     assert eventually(fn -> get_mob_state(mob.pid).hp < 10_000 end)
   end
 
-  test "Freezing Trap centres its splash on the activator instead of the trap cell" do
+  test "Freezing Trap centres its splash on the activator instead of the trap cell", %{
+    manager: manager
+  } do
     caster = start_hunter(insert_hunter([]), {150, 170})
-    activator = spawn_test_mob(@map, {158, 170}, unit_id: 99_311, max_hp: 100_000, hp: 100_000)
-    neighbour = spawn_test_mob(@map, {159, 170}, unit_id: 99_312, max_hp: 100_000, hp: 100_000)
-    distant = spawn_test_mob(@map, {161, 170}, unit_id: 99_313, max_hp: 100_000, hp: 100_000)
+    activator = spawn_test_mob(@map, {155, 173}, unit_id: 99_311, max_hp: 100_000, hp: 100_000)
+    neighbour = spawn_test_mob(@map, {156, 170}, unit_id: 99_312, max_hp: 100_000, hp: 100_000)
+    distant = spawn_test_mob(@map, {158, 170}, unit_id: 99_313, max_hp: 100_000, hp: 100_000)
 
     on_exit(fn ->
       for id <- [activator.unit_id, neighbour.unit_id, distant.unit_id],
@@ -119,7 +134,8 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     group = trap_group(20_002, :ht_freezingtrap, @freezingtrap, caster, {154, 170})
     assert :ok = Manager.register(group)
 
-    assert :ok = Manager.trigger(20_002, {:mob, activator.unit_id}, :on_touch)
+    walk_mob(activator, {155, 170})
+    assert :ok = pass(manager)
 
     assert %Group{state: %{trap: %TrapState{phase: :used}}} = Storage.get(20_002)
     assert StatusStorage.has_status?(:mob, activator.unit_id, :sc_freeze)
@@ -127,10 +143,12 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     refute StatusStorage.has_status?(:mob, distant.unit_id, :sc_freeze)
   end
 
-  test "an Ankle Snare group and its capture status release each other", %{manager: manager} do
+  test "an Ankle Snare's end releases its hold, and the hold ending leaves the snare", %{
+    manager: manager
+  } do
     caster = start_hunter(insert_hunter([]), {150, 180})
-    first = spawn_test_mob(@map, {152, 180}, unit_id: 99_321, max_hp: 10_000, hp: 10_000)
-    second = spawn_test_mob(@map, {154, 180}, unit_id: 99_322, max_hp: 10_000, hp: 10_000)
+    first = spawn_test_mob(@map, {152, 183}, unit_id: 99_321, max_hp: 10_000, hp: 10_000)
+    second = spawn_test_mob(@map, {155, 183}, unit_id: 99_322, max_hp: 10_000, hp: 10_000)
 
     on_exit(fn ->
       for id <- [first.unit_id, second.unit_id],
@@ -143,25 +161,25 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     assert :ok =
              Manager.register(trap_group(20_004, :ht_anklesnare, @anklesnare, caster, {154, 180}))
 
-    assert :ok = Manager.trigger(20_003, {:mob, first.unit_id}, :on_touch)
-    assert :ok = Manager.trigger(20_004, {:mob, second.unit_id}, :on_touch)
+    walk_mob(first, {152, 181})
+    walk_mob(second, {155, 181})
+    assert :ok = pass(manager)
 
     assert %Group{expires_at: expires_at, state: %{trap: %TrapState{phase: :captured}}} =
              Storage.get(20_003)
 
     assert %Group{state: %{trap: %TrapState{phase: :captured}}} = Storage.get(20_004)
-    assert StatusStorage.has_status?(:mob, first.unit_id, :sc_anklesnare)
-    assert StatusStorage.has_status?(:mob, second.unit_id, :sc_anklesnare)
+    assert StatusStorage.has_status?(:mob, first.unit_id, :sc_ankle)
+    assert StatusStorage.has_status?(:mob, second.unit_id, :sc_ankle)
+
+    assert :ok = StatusInterpreter.remove_status(:mob, second.unit_id, :sc_ankle)
+    assert :ok = pass(manager)
+    assert %Group{state: %{trap: %TrapState{phase: :captured}}} = Storage.get(20_004)
 
     assert :ok = Manager.tick(manager, expires_at)
 
     assert nil == Storage.get(20_003)
-    refute StatusStorage.has_status?(:mob, first.unit_id, :sc_anklesnare)
-
-    assert :ok = StatusInterpreter.remove_status(:mob, second.unit_id, :sc_anklesnare)
-
-    assert eventually(fn -> Storage.get(20_004) == nil end)
-    refute StatusStorage.has_status?(:mob, second.unit_id, :sc_anklesnare)
+    refute StatusStorage.has_status?(:mob, first.unit_id, :sc_ankle)
   end
 
   test "a paid trap returns exactly one floor item on natural expiry", %{manager: manager} do
@@ -193,28 +211,44 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
              GroundItemStore.query_in_range(@map, 151, 150, 0)
   end
 
-  test "Blast Mine and Claymore Trap become used on natural expiry", %{manager: manager} do
+  test "Blast Mine always, and Claymore Trap in renewal, become used on natural expiry", %{
+    manager: manager
+  } do
     caster = start_hunter(insert_hunter([]), {160, 160})
 
     blast = paid_trap_group(20_005, :ht_blastmine, @blastmine, caster, {161, 160})
     claymore = paid_trap_group(20_006, :ht_claymoretrap, @claymoretrap, caster, {163, 160})
 
+    assert eventually(fn -> match?({:ok, _pid}, MapManager.get_coordinator(@map)) end)
     assert :ok = Manager.register(blast)
     assert :ok = Manager.register(claymore)
     assert :ok = Manager.tick(manager, blast.expires_at)
 
-    for group_id <- [20_005, 20_006] do
-      assert %Group{visibility: :public, state: %{trap: %TrapState{phase: :used}}} =
-               Storage.get(group_id)
-    end
+    assert %Group{visibility: :public, state: %{trap: %TrapState{phase: :used}}} =
+             Storage.get(20_005)
 
-    assert [] == GroundItemStore.query_in_range(@map, 161, 160, 3)
+    assert [] == GroundItemStore.query_in_range(@map, 161, 160, 1)
+
+    if GameMode.mode() == :renewal do
+      assert %Group{visibility: :public, state: %{trap: %TrapState{phase: :used}}} =
+               Storage.get(20_006)
+
+      assert [] == GroundItemStore.query_in_range(@map, 163, 160, 1)
+    else
+      assert nil == Storage.get(20_006)
+      assert eventually(fn -> GroundItemStore.query_in_range(@map, 163, 160, 0) != [] end)
+
+      assert [%GroundItem{nameid: @trap_item, amount: 1}] =
+               GroundItemStore.query_in_range(@map, 163, 160, 0)
+    end
   end
 
-  test "Claymore Trap spends nearby armed eligible traps without firing their effects" do
+  test "Claymore Trap spends nearby armed eligible traps without firing their effects", %{
+    manager: manager
+  } do
     caster = start_hunter(insert_hunter([]), {150, 190})
-    activator = spawn_test_mob(@map, {160, 190}, unit_id: 99_331, max_hp: 100_000, hp: 100_000)
-    neighbour = spawn_test_mob(@map, {162, 190}, unit_id: 99_332, max_hp: 100_000, hp: 100_000)
+    activator = spawn_test_mob(@map, {160, 194}, unit_id: 99_331, max_hp: 100_000, hp: 100_000)
+    neighbour = spawn_test_mob(@map, {163, 194}, unit_id: 99_332, max_hp: 100_000, hp: 100_000)
 
     on_exit(fn ->
       for id <- [activator.unit_id, neighbour.unit_id],
@@ -227,15 +261,19 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
              )
 
     assert :ok = Manager.register(trap_group(20_008, :ht_sandman, @sandman, caster, {162, 190}))
-    assert :ok = Manager.register(trap_group(20_009, :ht_skidtrap, @skidtrap, caster, {161, 190}))
+    assert :ok = Manager.register(trap_group(20_009, :ht_skidtrap, @skidtrap, caster, {158, 189}))
     assert :ok = Manager.register(trap_group(20_010, :ht_sandman, @sandman, caster, {166, 190}))
 
-    assert :ok = Manager.trigger(20_007, {:mob, activator.unit_id}, :on_touch)
+    walk_mob(activator, {160, 191})
+    assert :ok = pass(manager)
 
     assert %Group{state: %{trap: %TrapState{phase: :used}}} = Storage.get(20_007)
     assert %Group{state: %{trap: %TrapState{phase: :used}}} = Storage.get(20_008)
     assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(20_009)
     assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(20_010)
+
+    walk_mob(neighbour, {163, 190})
+    assert :ok = pass(manager)
 
     refute StatusStorage.has_status?(:mob, neighbour.unit_id, :sc_sleep)
     refute StatusStorage.has_status?(:mob, activator.unit_id, :sc_sleep)
@@ -259,6 +297,13 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     get_player_state(session.pid)
   end
 
+  defp pass(manager), do: Manager.tick(manager, System.monotonic_time(:millisecond))
+
+  defp walk_mob(mob, {x, y} = position) do
+    :ok = MobSession.move_to(mob.pid, x, y)
+    assert :ok = wait_for_position(:mob, mob.unit_id, position)
+  end
+
   defp find_group(skill_name) do
     assert eventually(fn -> Enum.any?(Storage.all(), &(&1.skill_name == skill_name)) end)
     Enum.find(Storage.all(), &(&1.skill_name == skill_name))
@@ -280,6 +325,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
       next_tick_at: now + 60_000,
       expires_at: now + 60_000,
       interval: 1_000,
+      unit_range: 1,
       visibility: :party_only,
       state: Map.merge(%{base_damage: 500, trap: trap_state(skill_name)}, state)
     }
@@ -308,8 +354,10 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     }
   end
 
-  defp natural_expiry(skill_name) when skill_name in [:ht_blastmine, :ht_claymoretrap],
-    do: :become_used
+  defp natural_expiry(:ht_blastmine), do: :become_used
+
+  defp natural_expiry(:ht_claymoretrap),
+    do: if(GameMode.mode() == :renewal, do: :become_used, else: :drop_item)
 
   defp natural_expiry(_skill_name), do: :drop_item
 

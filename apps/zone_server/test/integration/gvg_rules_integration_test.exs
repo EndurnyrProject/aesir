@@ -352,8 +352,8 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     end
   end
 
-  test "paid Land Mine delivers misc damage to a guildmate through real movement contact" do
-    manual_fields()
+  test "paid Land Mine delivers misc damage to a guildmate walking next to it" do
+    manager = manual_fields()
 
     {caster, friendly} =
       guild_pair(@map,
@@ -370,8 +370,10 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     before_hp = hp(friendly)
     flush_packets()
 
-    simulate_incoming_message(friendly.pid, %MoveRequest{dest_x: 214, dest_y: 175})
+    simulate_incoming_message(friendly.pid, %MoveRequest{dest_x: 213, dest_y: 175})
     friendly_id = friendly.character.id
+    assert :ok = wait_for_position(:player, friendly_id, {213, 175})
+    assert :ok = FieldManager.tick(manager, System.monotonic_time(:millisecond))
 
     assert_receive {:packet_sent,
                     %SkillDamage{target_id: ^friendly_id, skill_id: 116, damage: damage}, _},

@@ -1,8 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
   @moduledoc """
-  Shockwave Trap (HT_SHOCKWAVE), a hidden contact trap that drains maximum SP.
+  Shockwave Trap (HT_SHOCKWAVE), a trap that drains SP.
 
-  Renewal and pre-renewal agree: drains SP from whoever steps on it, lasting 200 s down to 40 s by level, for 45 SP and two traps.
+  Renewal and pre-renewal agree: drains 5% plus 15% per level of the SP of the
+  first enemy within one cell, lasting 200 s down to 40 s by level, for 45 SP
+  and two traps.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 118,
@@ -38,7 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
        state: Trap.place_state(level, %{dex: 0, int: 0, base_level: 0}, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visibility: :party_only
+       unit_range: 1,
+       visibility: Trap.visibility(:ht_shockwave)
      }}
   end
 
@@ -47,13 +50,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
-  @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
-  def on_touch(%Group{} = group, mover) do
-    if Trap.enemy?(group, mover) do
-      Resource.drain_sp_percent(mover, percentage(group.level))
-      :expire
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs), do: Trap.unit_targets(group, refs)
+
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, target, now) do
+    with true <- Trap.armed?(group),
+         {:ok, _caster} <- Trap.resolve_caster(group) do
+      Resource.drain_sp_percent(target, percentage(group.level))
+      {:ok, Trap.spring(group, now)}
     else
-      {:ok, group}
+      _inert -> {:ok, group}
     end
   end
 

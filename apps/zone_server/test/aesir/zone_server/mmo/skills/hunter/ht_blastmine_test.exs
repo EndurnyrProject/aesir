@@ -1,12 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Mimic
+  import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.TrapTestHelper
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -17,6 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
   end
 
   @caster_id 1000
+  @cell {50, 50}
+  @now 10_000
 
   defp group(state, attrs \\ []) do
     base = %Group{
@@ -37,6 +42,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
 
     struct(base, attrs)
   end
+
+  defp armed,
+    do: group(%{base_damage: 500, trap: armed_trap()}, expires_at: 25_000)
 
   describe "registration & metadata" do
     @tag game_mode: :renewal
@@ -86,14 +94,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
   end
 
   describe "detonation" do
-    test "enemy contact applies one split Wind misc roll and requests the used transition" do
-      caster = %PlayerState{character_id: @caster_id, map_name: "prontera"}
-      target = %{instance_id: 2001, map_name: "prontera", hp: 100}
-
-      stub(UnitRegistry, :get_unit, fn
-        :player, @caster_id -> {:ok, {PlayerState, caster, self()}}
-        :mob, 2001 -> {:ok, {Map, target, self()}}
-      end)
+    @tag game_mode: :renewal
+    test "enemy contact applies one split Wind misc roll and springs the mine" do
+      stub_units([player(@caster_id)])
 
       expect(SkillAttack, :execute_field_misc_splash, fn caster, {50, 50}, 1, %Group{}, opts ->
         assert caster.character_id == @caster_id
@@ -103,32 +106,74 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmineTest do
         [2001]
       end)
 
-      assert :expire = HtBlastmine.on_touch(group(%{base_damage: 500}), {:mob, 2001})
+      assert {:ok, %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}}} =
+               HtBlastmine.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
     end
 
-    test "natural armed expiry applies the same one-roll split effect once" do
-      caster = %PlayerState{character_id: @caster_id, map_name: "prontera"}
+    @tag game_mode: :pre_renewal
+    test "a pre-renewal blast deals the full roll to every enemy" do
+      stub_units([player(@caster_id)])
 
-      stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
-        {:ok, {PlayerState, caster, self()}}
+      expect(SkillAttack, :execute_field_misc_splash, fn _caster, {50, 50}, 1, %Group{}, opts ->
+        assert opts[:base_damage] == 500
+        refute opts[:split]
+        [2001]
       end)
 
-      expect(SkillAttack, :execute_field_misc_splash, 1, fn caster, {50, 50}, 1, %Group{}, opts ->
-        assert caster.character_id == @caster_id
-        assert opts[:base_damage] >= 450 and opts[:base_damage] <= 545
-        assert opts[:element] == :wind
-        assert opts[:split]
-        [2001, 2002]
-      end)
-
-      assert :ok = HtBlastmine.on_natural_expiry(group(%{base_damage: 500}))
+      assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+               HtBlastmine.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
     end
 
     test "the owner does not trigger their own trap" do
-      reject(&SkillAttack.execute_field_misc_splash/5)
+      stub_units([player(@caster_id), mob(2001)])
 
-      assert {:ok, %Group{}} =
-               HtBlastmine.on_touch(group(%{base_damage: 500}), {:player, @caster_id})
+      assert [{:mob, 2001}] =
+               HtBlastmine.unit_targets(armed(), @cell, [{:player, @caster_id}, {:mob, 2001}])
+    end
+  end
+
+  # The manager runs the expiry in its own process, so the stubs go global.
+  describe "natural expiry" do
+    setup {Aesir.MimicMode, :global}
+
+    test "natural expiry turns the armed mine into a used trap without damage" do
+      setup_ets_tables(%{})
+      test_pid = self()
+      stub_units([player(@caster_id), mob(2001)])
+
+      stub(SkillAttack, :execute_field_misc_splash, fn _caster, _center, _radius, _group, _opts ->
+        send(test_pid, :detonated)
+        []
+      end)
+
+      manager =
+        start_supervised!(
+          {Manager,
+           name: nil,
+           clock: fn -> @now end,
+           schedule_tick: fn _pid, _interval -> :ok end,
+           unit_available?: fn _unit_type, _unit_id, _map_name -> true end}
+        )
+
+      trap = armed_trap(natural_expiry: :become_used)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(%{base_damage: 500, trap: trap},
+            handler: HtBlastmine,
+            visibility: :public,
+            unit_range: 1,
+            expires_at: @now
+          )
+        )
+
+      assert :ok = Manager.tick(manager, @now)
+
+      assert %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}} =
+               Storage.get(1)
+
+      refute_received :detonated
     end
   end
 end

@@ -2,11 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
   @moduledoc """
   Blast Mine (HT_BLASTMINE), a visible single-cell Wind BF_MISC trap.
 
-  Enemy contact or natural armed expiry rolls one placement-stamped damage
-  value and splits it across living enemies in the trap-centered 3x3 area. The
-  manager owns the visible used phase after either detonation path.
+  The first enemy within one cell sets it off: one roll of the damage stamped
+  at placement hits every enemy within one cell of the mine. When its time runs
+  out it turns into a used trap without going off.
 
-  Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35), two traps, a 0.5 s cast plus 0.3 s fixed and a 1 s delay. Pre-renewal: level × (DEX/2 + 50) × (100 + INT)/100, one trap, and an instant cast with no delay.
+  Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35), split across the enemies hit, two traps, a 0.5 s cast plus 0.3 s fixed and a 1 s delay. Pre-renewal: level × (DEX/2 + 50) × (100 + INT)/100, dealt in full to each, one trap, and an instant cast with no delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 122,
@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
     item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]],
     damage_splash: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -50,7 +51,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
        state: Trap.place_state(level, stats, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visibility: :public
+       unit_range: 1,
+       visibility: Trap.visibility(:ht_blastmine)
      }}
   end
 
@@ -59,19 +61,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
-  @spec on_natural_expiry(Group.t()) :: :ok | {:error, :caster_unavailable}
-  def on_natural_expiry(%Group{} = group), do: detonate(group)
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs), do: Trap.unit_targets(group, refs)
 
   @impl Ground
-  @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
-  def on_touch(%Group{} = group, mover) do
-    if Trap.enemy?(group, mover) do
-      case detonate(group) do
-        :ok -> :expire
-        {:error, :caster_unavailable} -> {:ok, group}
-      end
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, _target, now) do
+    with true <- Trap.armed?(group),
+         :ok <- detonate(group) do
+      {:ok, Trap.spring(group, now)}
     else
-      {:ok, group}
+      _inert -> {:ok, group}
     end
   end
 
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
           skill_level: group.level,
           base_damage: Trap.roll_damage(base_damage),
           element: definition.element,
-          split: true
+          split: GameMode.mode() == :renewal
         )
 
         :ok

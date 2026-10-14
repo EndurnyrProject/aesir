@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
@@ -29,11 +30,11 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
 
   setup {Aesir.MimicMode, :global}
 
-  test "mob Executor places Land Mine through a real MobSession and PlayerSession movement fires it" do
+  test "a player walking next to a mob's Land Mine sets it off on the manager's own pass" do
     player =
-      start_player_session(character: player_character(), map_name: @map, position: @trap)
+      start_player_session(character: player_character(), map_name: @map, position: {156, 150})
 
-    mob = start_mob_session(unit_id: @mob_id, map_name: @map, position: {150, 150})
+    mob = start_mob_session(unit_id: @mob_id, map_name: @map, position: @trap)
     caster = %{get_mob_state(mob.pid) | target_ref: {:player, @player_id}}
 
     assert :ok = Executor.execute(caster, land_protector_row())
@@ -41,7 +42,7 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
 
     assert :ok = Executor.execute(caster, landmine_row())
 
-    assert %Group{state: %{ignore_land_protector: true}} =
+    assert %Group{center: @trap, state: %{ignore_land_protector: true}} =
              mine = Enum.find(Storage.all(), &(&1.skill_name == :ht_landmine))
 
     initial_hp = get_player_state(player.pid).stats.current_state.hp
@@ -49,19 +50,19 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
     simulate_incoming_message(player.pid, %MoveRequest{dest_x: 153, dest_y: 150})
     assert eventually(fn -> position(player.pid) == {153, 150} end)
 
-    simulate_incoming_message(player.pid, %MoveRequest{dest_x: 152, dest_y: 150})
-
     assert eventually(fn -> get_player_state(player.pid).stats.current_state.hp < initial_hp end)
+    assert position(player.pid) == {153, 150}
     assert StatusStorage.has_status?(:player, @player_id, :sc_stun)
 
     assert %Group{
-             visibility: :party_only,
+             visibility: visibility,
              expires_at: expires_at,
              state: %{trap: %TrapState{phase: :used}}
            } = Storage.get(mine.group_id)
 
+    assert visibility == Trap.visibility(:ht_landmine)
     remaining = expires_at - System.monotonic_time(:millisecond)
-    assert remaining in 1_200..1_500
+    assert remaining in 1_000..1_500
 
     assert :ok = Manager.tick(Manager, expires_at)
     assert nil == Storage.get(mine.group_id)
@@ -73,11 +74,11 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
   end
 
   defp landmine_row do
-    %{skill: "HT_LANDMINE", skill_id: 116, target: :target, level: 1}
+    %{skill: "HT_LANDMINE", skill_id: 116, target: :self, level: 1}
   end
 
   defp land_protector_row do
-    %{skill: "SA_LANDPROTECTOR", skill_id: 288, target: :target, level: 5}
+    %{skill: "SA_LANDPROTECTOR", skill_id: 288, target: :self, level: 5}
   end
 
   defp player_character do
@@ -100,8 +101,8 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
       sp: 100,
       max_sp: 100,
       last_map: @map,
-      last_x: elem(@trap, 0),
-      last_y: elem(@trap, 1),
+      last_x: 156,
+      last_y: 150,
       save_map: @map,
       save_x: 150,
       save_y: 150,

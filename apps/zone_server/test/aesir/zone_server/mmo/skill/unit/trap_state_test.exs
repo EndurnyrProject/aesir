@@ -10,13 +10,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapStateTest do
               reclaim_item_id: nil,
               claymore_spendable?: false,
               natural_expiry: :drop_item,
-              return_item_on_expiry?: false,
-              link_id: nil
+              return_item_on_expiry?: false
             }} = TrapState.new()
   end
 
   test "accepts every lifecycle phase and natural-expiry policy" do
-    for phase <- [:armed, :used, :sprung, :captured],
+    for phase <- [:armed, :used, :sprung, :captured, :spent],
         natural_expiry <- [:drop_item, :become_used] do
       assert {:ok, %TrapState{phase: ^phase, natural_expiry: ^natural_expiry}} =
                TrapState.new(%{phase: phase, natural_expiry: natural_expiry})
@@ -27,7 +26,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapStateTest do
     assert {:error, :invalid_trap_state} = TrapState.new(%{phase: :invalid})
     assert {:error, :invalid_trap_state} = TrapState.new(%{natural_expiry: :remove})
     assert {:error, :invalid_trap_state} = TrapState.new(%{reclaim_item_id: 0})
-    assert {:error, :invalid_trap_state} = TrapState.new(%{link_id: -1})
   end
 
   test "rejects unknown keys instead of silently dropping typos" do

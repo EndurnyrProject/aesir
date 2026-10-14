@@ -11,8 +11,10 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @map "prontera"
@@ -42,7 +44,7 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
 
   test "a boss immunity rejection still spends a legitimately activated trap" do
     player = start_player_session(id: 98_120, name: "SandmanCaster", position: {160, 160})
-    boss = spawn_test_mob(@map, {161, 160}, unit_id: 99_120, modes: [:boss])
+    boss = spawn_test_mob(@map, {164, 160}, unit_id: 99_120, modes: [:boss])
     on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, boss.unit_id) end)
 
     now = System.monotonic_time(:millisecond)
@@ -60,23 +62,33 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
       next_tick_at: now + 60_000,
       expires_at: now + 60_000,
       interval: 1_000,
+      unit_range: 1,
       visibility: :party_only,
       state: %{trap: %TrapState{reclaim_item_id: 1065, claymore_spendable?: true}}
     }
 
     assert :ok = Manager.register(group)
-    assert :ok = Manager.trigger(group.group_id, {:mob, boss.unit_id}, :on_touch)
-    refute StatusStorage.has_status?(:mob, boss.unit_id, :sc_sleep)
+    Process.sleep(200)
+    assert %Group{state: %{trap: %TrapState{phase: :armed}}} = Storage.get(group.group_id)
 
-    assert %Group{visibility: :party_only, state: %{trap: %TrapState{phase: :used}}} =
-             Storage.get(group.group_id)
+    :ok = MobSession.move_to(boss.pid, 162, 160)
+    assert :ok = wait_for_position(:mob, boss.unit_id, {162, 160})
+
+    assert eventually(fn ->
+             match?(
+               %Group{state: %{trap: %TrapState{phase: :used}}},
+               Storage.get(group.group_id)
+             )
+           end)
+
+    refute StatusStorage.has_status?(:mob, boss.unit_id, :sc_sleep)
   end
 
-  test "mob Executor placement is activated by real player movement and stores Sleep" do
-    player = start_player_session(id: 98_119, name: "SandmanTarget", position: {150, 150})
+  test "mob Executor placement is set off by a player walking next to it and stores Sleep" do
+    player = start_player_session(id: 98_119, name: "SandmanTarget", position: {155, 150})
     inside = start_player_session(id: 98_118, name: "InsideArea", position: {152, 152})
-    outside = start_player_session(id: 98_117, name: "OutsideArea", position: {153, 150})
-    mob = spawn_test_mob(@map, {145, 150}, unit_id: 99_119)
+    outside = start_player_session(id: 98_117, name: "OutsideArea", position: {154, 150})
+    mob = spawn_test_mob(@map, {150, 150}, unit_id: 99_119)
 
     on_exit(fn ->
       for id <- [player.character.id, inside.character.id, outside.character.id],
@@ -87,7 +99,7 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
       skill: "HT_SANDMAN",
       skill_id: 119,
       level: 5,
-      target: :target,
+      target: :self,
       emotion: nil
     }
 
@@ -105,12 +117,11 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
            } = trap = Enum.find(Storage.all(), &(&1.skill_name == :ht_sandman))
 
     move_to(player, {151, 150})
-    move_to(player, {150, 150})
 
-    assert %Group{
-             visibility: :party_only,
-             state: %{trap: %TrapState{phase: :used}}
-           } = Storage.get(trap.group_id)
+    assert %Group{visibility: visibility, state: %{trap: %TrapState{phase: :used}}} =
+             Storage.get(trap.group_id)
+
+    assert visibility == Trap.visibility(:ht_sandman)
 
     refute StatusStorage.has_status?(:player, outside.character.id, :sc_sleep)
     assert eventually_sleeping?(inside.character.id, player, caster, row)
@@ -141,10 +152,10 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
         {:halt, true}
       else
         StatusInterpreter.remove_status(:player, player.character.id, :sc_sleep)
+        move_to(player, {153, 150})
         assert :ok = Manager.tick(Manager, System.monotonic_time(:millisecond) + 2_000)
         assert :ok = Executor.execute(caster, row)
         move_to(player, {151, 150})
-        move_to(player, {150, 150})
         {:cont, StatusStorage.has_status?(:player, target_id, :sc_sleep)}
       end
     end)

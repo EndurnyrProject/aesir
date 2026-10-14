@@ -9,6 +9,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest.Strike do
 
   def on_unit_hit(%Group{state: %{test_pid: test_pid}} = group, cell, ref, now) do
     send(test_pid, {:struck, group.group_id, cell, ref, now})
+    strike_result(group)
+  end
+
+  defp strike_result(%Group{state: %{commands: commands}} = group),
+    do: {:ok, group, commands}
+
+  defp strike_result(%Group{state: %{replace_unit: true} = state} = group) do
+    generation = Map.get(state, :unit_generation, 0)
+
+    {:ok,
+     %{group | state: %{state | replace_unit: false} |> Map.put(:unit_generation, generation + 1)}}
+  end
+
+  defp strike_result(%Group{} = group), do: {:ok, group}
+end
+
+defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest.Phase do
+  @moduledoc false
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+  def on_interval(%Group{} = group, _now), do: {:ok, group}
+  def unit_targets(%Group{}, _cell, refs), do: refs
+
+  def on_unit_hit(%Group{state: %{test_pid: test_pid, trap: trap}} = group, _cell, ref, _now) do
+    send(test_pid, {:struck_in_phase, group.group_id, ref, trap.phase})
     {:ok, group}
   end
 end
@@ -22,9 +47,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
+  alias __MODULE__.Phase
   alias __MODULE__.Strike
 
   setup :setup_ets_tables
@@ -164,6 +191,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
     :ok = Manager.tick(manager, 1_000)
 
     refute_received {:struck, _, _, _, _}
+  end
+
+  test "a strike's command runs at once and the group it changes acts changed for the rest of the pass",
+       %{manager: manager} do
+    spender =
+      field(1, [{50, 50}],
+        state: %{test_pid: self(), commands: [{:spend_traps, @map, {50, 50}, 2}]}
+      )
+
+    {:ok, armed} = TrapState.new(%{claymore_spendable?: true})
+    trap = field(2, [{51, 50}], handler: Phase, state: %{test_pid: self(), trap: armed})
+
+    :ok = Manager.register(manager, spender)
+    :ok = Manager.register(manager, trap)
+    mob_at(1, 50, 50)
+
+    :ok = Manager.tick(manager, 1_000)
+
+    assert_received {:struck, 1, {50, 50}, {:mob, 1}, 1_000}
+    assert_received {:struck_in_phase, 2, {:mob, 1}, :used}
+    assert %Group{state: %{trap: %TrapState{phase: :used}}} = Storage.get(2)
+  end
+
+  test "a unit_generation bump stops the cell's remaining strikes and the new unit starts fresh",
+       %{manager: manager} do
+    :ok =
+      Manager.register(
+        manager,
+        field(1, [{50, 50}], state: %{test_pid: self(), replace_unit: true})
+      )
+
+    mob_at(1, 50, 50)
+    mob_at(2, 50, 50)
+
+    :ok = Manager.tick(manager, 1_000)
+
+    assert_received {:struck, 1, {50, 50}, _first, 1_000}
+    refute_received {:struck, _, _, _, _}
+    assert %Group{state: %{unit_generation: 1}} = Storage.get(1)
+
+    :ok = Manager.tick(manager, 1_100)
+
+    assert_received {:struck, 1, {50, 50}, {:mob, 1}, 1_100}
+    assert_received {:struck, 1, {50, 50}, {:mob, 2}, 1_100}
   end
 
   test "cells run in skill-unit table order: id remainder by 283, then id" do

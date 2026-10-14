@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.TrapTestHelper
 
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -14,6 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @cell {50, 50}
+  @now 10_000
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -62,9 +66,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
         center: {50, 50},
         cells: [{50, 50}],
         next_tick_at: 0,
-        expires_at: 0,
+        expires_at: 90_000,
         interval: 1_000,
-        state: %{}
+        state: %{trap: armed_trap()}
       },
       attrs
     )
@@ -87,6 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
              placement.state.trap
   end
 
+  @tag game_mode: :renewal
   test "damages an activator-centered 3x3 area before freezing connected targets" do
     test_pid = self()
     caster = %PlayerState{character_id: 1000, map_name: "prontera", x: 50, y: 50}
@@ -121,7 +126,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
       :ok
     end)
 
-    assert :expire = HtFreezingtrap.on_touch(group(), {:mob, 2001})
+    assert {:ok, %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}}} =
+             HtFreezingtrap.on_unit_hit(group(), @cell, {:mob, 2001}, @now)
+
     assert_received :damage_connected
     assert_received {:freeze_attempt, 2001}
     assert_received {:freeze_attempt, 2002}
@@ -146,7 +153,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_freeze, _params -> :ok end)
 
-    assert :expire = HtFreezingtrap.on_touch(group(), {:mob, 2001})
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtFreezingtrap.on_unit_hit(group(), @cell, {:mob, 2001}, @now)
   end
 
   test "mob-owned trap damages players and freezes only connected hits" do
@@ -178,8 +186,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
       :ok
     end)
 
-    assert :expire =
-             HtFreezingtrap.on_touch(group(caster_type: :mob, level: 5), {:player, 2001})
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtFreezingtrap.on_unit_hit(
+               group(caster_type: :mob, level: 5),
+               @cell,
+               {:player, 2001},
+               @now
+             )
+  end
+
+  @tag game_mode: :pre_renewal
+  test "a pre-renewal strike can be dodged" do
+    caster = player(1000)
+    stub_units([caster])
+    stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {51, 50, "prontera"}} end)
+
+    expect(SkillAttack, :execute_field_splash_attack, fn ^caster, {51, 50}, 1, %Group{}, opts ->
+      refute opts[:ignore_flee]
+      []
+    end)
+
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtFreezingtrap.on_unit_hit(group(), @cell, {:mob, 2001}, @now)
   end
 
   test "same-side contact and unavailable combatants leave the trap armed" do
@@ -187,9 +215,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
     reject(&SkillAttack.execute_splash_attack/4)
     reject(&StatusInterpreter.apply_status/4)
 
-    assert {:ok, %Group{}} = HtFreezingtrap.on_touch(group(), {:player, 2001})
+    stub_units([player(1000), player(2001), mob(2002)])
 
-    stub(UnitRegistry, :get_unit, fn :player, 1000 -> :error end)
-    assert {:ok, %Group{}} = HtFreezingtrap.on_touch(group(), {:mob, 2001})
+    assert [{:mob, 2002}] =
+             HtFreezingtrap.unit_targets(group(), @cell, [{:player, 2001}, {:mob, 2002}])
+
+    stub_units([])
+    armed = group()
+    assert {:ok, ^armed} = HtFreezingtrap.on_unit_hit(armed, @cell, {:mob, 2001}, @now)
   end
 end

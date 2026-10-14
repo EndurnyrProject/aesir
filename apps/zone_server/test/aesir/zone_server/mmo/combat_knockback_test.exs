@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -419,6 +420,55 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     assert {:ok, {8, 5}} = Combat.pull_to(:mob, @mob_id, 8, 5)
 
     assert_received {:"$gen_cast", {:movement, {:displace, 1, 5, @map_name, 8, 5}}}
+  end
+
+  describe "a pull with blown immunity" do
+    setup do
+      map_data = MapData.new(@map_name, 10, 10)
+      stub(MapCache, :get, fn @map_name -> {:ok, map_data} end)
+      :ok
+    end
+
+    test "leaves a unit on siege ground in place while a plain pull still moves it" do
+      stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id -> {:ok, {1, 5, @map_name}} end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+        {:ok, {MobState, mob_state(1, 5), self()}}
+      end)
+
+      :ok = MapFlags.set_runtime(@map_name, :gvg, true)
+      on_exit(fn -> MapFlags.clear_runtime(@map_name, :gvg) end)
+
+      assert {:ok, {1, 5}} = Knockback.pull_to(:mob, @mob_id, 8, 5, blown_immunity: true)
+      refute_received {:"$gen_cast", {:movement, _movement}}
+
+      assert {:ok, {8, 5}} = Knockback.pull_to(:mob, @mob_id, 8, 5)
+      assert_received {:"$gen_cast", {:movement, {:displace, 1, 5, @map_name, 8, 5}}}
+    end
+
+    test "leaves a no-knockback player in place while a plain pull still moves it" do
+      player_id = 3001
+
+      player =
+        PlayerStateFixture.build(%{
+          character_id: player_id,
+          stats: %{modifiers: %{equipment: %{no_knockback: 1}}}
+        })
+
+      stub(SpatialIndex, :get_unit_position, fn :player, ^player_id ->
+        {:ok, {1, 5, @map_name}}
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, ^player_id ->
+        {:ok, {PlayerState, player, self()}}
+      end)
+
+      assert {:ok, {1, 5}} = Knockback.pull_to(:player, player_id, 8, 5, blown_immunity: true)
+      refute_received {:"$gen_cast", {:movement, _movement}}
+
+      assert {:ok, {8, 5}} = Knockback.pull_to(:player, player_id, 8, 5)
+      assert_received {:"$gen_cast", {:movement, {:displace, 1, 5, @map_name, 8, 5}}}
+    end
   end
 
   test "pull-to does not cut through a blocked diagonal corner" do

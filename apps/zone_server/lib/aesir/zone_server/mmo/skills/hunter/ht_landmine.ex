@@ -2,10 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
   @moduledoc """
   Land Mine (HT_LANDMINE), a hidden single-cell Earth BF_MISC trap.
 
-  Enemy contact deals placement-stamped damage, attempts Stun, and lets the
-  ground-unit manager transition the mine to its visible used phase.
+  An enemy within one cell sets it off: the blast deals the damage stamped at
+  placement to that enemy alone, and a blast that hits stuns it at 10%. The
+  mine is spent whatever the blast does.
 
-  Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35), a 10% stun, one trap, a 0.5 s cast plus 0.3 s fixed and a 1 s delay. Pre-renewal: level × (DEX + 75) × (100 + INT)/100 and an instant cast.
+  Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35), a 4.5 s stun, one trap, a 0.5 s cast plus 0.3 s fixed and a 1 s delay. Pre-renewal: level × (DEX + 75) × (100 + INT)/100, a 5 s stun and an instant cast.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 116,
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
     sp_cost: List.duplicate(10, 5),
     item_cost: [%{id: 1065, amount: 1}]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -35,9 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
-
-  # A sprung mine is spent even when its hit is refused at delivery.
-  @refused [:caster_restricted, :target_restricted, :target_concealed]
 
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
@@ -51,70 +50,68 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
        state: Trap.place_state(level, stats, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visibility: :party_only
+       unit_range: 1,
+       visibility: Trap.visibility(:ht_landmine)
      }}
   end
 
-  # Traps have no periodic effect; they only react to on_touch and expire on
-  # their duration. NOTE: a no-op tick at hit_interval; harmless until the trap
-  # triggers or expires.
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
-  @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
-  def on_touch(%Group{} = group, mover) do
-    if Trap.enemy?(group, mover) do
-      fire(group, mover)
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs), do: Trap.unit_targets(group, refs)
+
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, target, now) do
+    with true <- Trap.armed?(group),
+         {:ok, caster_state} <- Trap.resolve_caster(group) do
+      fire(group, caster_state, target)
+      {:ok, Trap.spring(group, now)}
     else
-      {:ok, group}
+      _inert -> {:ok, group}
     end
   end
 
-  defp fire(%Group{state: %{base_damage: base_damage}} = group, {mover_type, mover_id} = mover) do
+  # The mine is spent whatever its blast does.
+  defp fire(%Group{state: %{base_damage: base_damage}} = group, caster_state, {type, id} = target) do
     definition = definition()
 
-    case Trap.resolve_caster(group) do
-      {:ok, caster_state} ->
-        case execute_attack(caster_state, mover, group,
-               skill_id: definition.id,
-               skill_level: group.level,
-               base_damage: Trap.roll_damage(base_damage),
-               element: definition.element,
-               report_hit: true
-             ) do
-          {:ok, %{hit?: hit?}} ->
-            stun(hit?, group, mover_type, mover_id)
-            :expire
+    result =
+      execute_attack(caster_state, target, group,
+        skill_id: definition.id,
+        skill_level: group.level,
+        base_damage: Trap.roll_damage(base_damage),
+        element: definition.element,
+        report_hit: true
+      )
 
-          {:error, reason} when reason in @refused ->
-            :expire
-
-          {:error, _reason} ->
-            {:ok, group}
-        end
-
-      :error ->
-        {:ok, group}
-    end
+    with {:ok, %{hit?: true}} <- result, do: stun(group, type, id)
+    :ok
   end
 
   # The Stun roll is the blast's additional effect.
-  defp stun(false, _group, _mover_type, _mover_id), do: :ok
-
-  defp stun(true, group, mover_type, mover_id) do
-    StatusInterpreter.apply_status(mover_type, mover_id, :sc_stun,
+  defp stun(group, type, id) do
+    StatusInterpreter.apply_status(type, id, :sc_stun,
       source_id: group.caster_id,
       source_type: group.caster_type,
       success_rate: 10,
-      duration: 4_500
+      duration: stun_duration()
     )
   end
 
-  defp execute_attack(caster_state, mover, %Group{caster_type: :player} = group, opts),
-    do: SkillAttack.execute_field_misc_attack(caster_state, mover, group, opts)
+  defp stun_duration do
+    case GameMode.mode() do
+      :renewal -> 4_500
+      :pre_renewal -> 5_000
+    end
+  end
 
-  defp execute_attack(caster_state, mover, %Group{caster_type: :mob}, opts),
-    do: SkillAttack.execute_misc_attack(caster_state, mover, Keyword.put(opts, :delivery, :unit))
+  defp execute_attack(caster_state, target, %Group{caster_type: :player} = group, opts),
+    do: SkillAttack.execute_field_misc_attack(caster_state, target, group, opts)
+
+  defp execute_attack(caster_state, target, %Group{caster_type: :mob}, opts),
+    do: SkillAttack.execute_misc_attack(caster_state, target, Keyword.put(opts, :delivery, :unit))
 end

@@ -1,24 +1,47 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   @moduledoc """
-  Shared helpers for Hunter trap ground-units (HT_LANDMINE, HT_BLASTMINE).
+  Shared helpers for the Hunter traps.
 
-  Not a skill itself - it factors out the bits the traps share: the placer-time
-  damage stamping, the per-trigger variance roll, the hostility check, and
-  resolving the placer's live state for the misc execute path.
+  Not a skill itself - it factors out what the traps share: the placer-time
+  damage stamping, the per-trigger variance roll, the hostility check, the
+  visibility, and the sprung transition.
 
-  Traps are live immediately (no arming delay) and fire on the first enemy
-  contact.
+  A trap is one cell that acts on the skill-unit timer: every pass, any unit
+  within one cell of it that the trap may affect sets it off, however the unit
+  got there. An armed trap goes off once; afterwards it lingers as a used trap
+  for 1.5 s, never past its own lifetime, and affects nobody. A trap whose
+  caster is gone does nothing.
+
+  In renewal the traps flagged as hidden are seen only by their caster and the
+  caster's party until revealed; Blast Mine and Claymore Trap are always seen.
+  Every trap is seen in pre-renewal.
   """
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
+  alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # the trap item (Booby Trap): the item returned when reclaiming one
   # placed Hunter trap.
   @trap_item_id 1065
+
+  @sprung_lifetime 1_500
+
+  @hidden_traps [
+    :ht_skidtrap,
+    :ht_landmine,
+    :ht_anklesnare,
+    :ht_shockwave,
+    :ht_sandman,
+    :ht_flasher,
+    :ht_freezingtrap,
+    :ht_talkiebox
+  ]
 
   @doc """
   Builds the initial group state: the deterministic base damage stamped from the
@@ -123,10 +146,92 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
         :ht_claymoretrap
       ]
 
-  defp natural_expiry(skill_name) when skill_name in [:ht_blastmine, :ht_claymoretrap],
-    do: :become_used
+  # Blast Mine (and renewal's Claymore Trap) turns into a used trap when its
+  # time runs out, without going off; the other traps return their item.
+  defp natural_expiry(:ht_blastmine), do: :become_used
+
+  defp natural_expiry(:ht_claymoretrap) do
+    case GameMode.mode() do
+      :renewal -> :become_used
+      :pre_renewal -> :drop_item
+    end
+  end
 
   defp natural_expiry(_skill_name), do: :drop_item
+
+  @doc """
+  Who sees a newly placed trap: in renewal a hidden trap is seen only by its
+  caster and the caster's party; otherwise everyone.
+  """
+  @spec visibility(atom()) :: Group.visibility()
+  def visibility(skill_name) do
+    if GameMode.mode() == :renewal and skill_name in @hidden_traps,
+      do: :party_only,
+      else: :public
+  end
+
+  @doc "Whether the trap is armed (can still go off)."
+  @spec armed?(Group.t()) :: boolean()
+  def armed?(%Group{state: %{trap: %TrapState{phase: :armed}}}), do: true
+  def armed?(%Group{}), do: false
+
+  @doc """
+  Keeps the units an armed trap may go off on: those its caster may target
+  with it (`enemy?/2`), while the caster is present. A used, caught or spent
+  trap affects nobody.
+  """
+  @spec unit_targets(Group.t(), [Ref.t()]) :: [Ref.t()]
+  def unit_targets(%Group{} = group, refs) do
+    if armed?(group) and match?({:ok, _caster}, resolve_caster(group)),
+      do: Enum.filter(refs, &(living?(&1) and enemy?(group, &1))),
+      else: []
+  end
+
+  defp living?({unit_type, unit_id}) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> Unit.living?(state)
+      _gone -> false
+    end
+  end
+
+  @doc """
+  The trap after going off: used for 1.5 s from `now`, never past its own
+  lifetime.
+  """
+  @spec spring(Group.t(), integer()) :: Group.t()
+  def spring(%Group{} = group, now), do: transition(group, :used, now, @sprung_lifetime)
+
+  @doc """
+  Moves the trap to `phase` for `lifetime` ms from `now`, never past its own
+  lifetime.
+  """
+  @spec transition(Group.t(), TrapState.phase(), integer(), non_neg_integer()) :: Group.t()
+  def transition(%Group{state: %{trap: %TrapState{} = trap}} = group, phase, now, lifetime) do
+    %{
+      group
+      | expires_at: capped_expiry(group.expires_at, now + lifetime),
+        state: %{group.state | trap: %{trap | phase: phase}}
+    }
+  end
+
+  defp capped_expiry(expires_at, deadline) when is_integer(expires_at),
+    do: min(expires_at, deadline)
+
+  defp capped_expiry(_expires_at, deadline), do: deadline
+
+  @doc "Whether the unit is immune to statuses: a boss or status-immune monster."
+  @spec status_immune?(Ref.t()) :: boolean()
+  def status_immune?({:mob, mob_id}) do
+    case UnitRegistry.get_unit(:mob, mob_id) do
+      {:ok, {MobState, mob, _pid}} ->
+        MobState.is_boss?(mob) or :status_immune in (mob.mob_data.modes || [])
+
+      _other ->
+        false
+    end
+  end
+
+  def status_immune?(_ref), do: false
 
   @doc """
   Resolves the placer's live state struct (needed by `Combat.execute_misc_*`),

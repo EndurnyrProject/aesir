@@ -5,7 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
 
   Invoked from the single `Aesir.ZoneServer.Unit.Movement.set_position/4`
   chokepoint after a unit's cell changes, so both player and mob movers
-  trigger ground units (traps, Warp Portal, Pneuma). `on_enter_cell/4` fires
+  trigger ground units (Warp Portal, Pneuma). Traps and Fire Pillar act only on
+  the skill-unit timer, never on a step or an arrival. `on_enter_cell/4` fires
   `on_touch/2` for every group covering the new cell; `on_leave_cell/7` fires
   `on_out/2` for every group whose footprint covered the old cell but not the new
   one (i.e. the mover stepped off the footprint entirely — moving between cells of

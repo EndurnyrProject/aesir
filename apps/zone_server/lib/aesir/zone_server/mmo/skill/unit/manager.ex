@@ -115,18 +115,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     GenServer.call(server, {:spring_trap, map_name, x, y})
   end
 
-  @doc "Asynchronously releases a captured trap only when its link still matches."
-  @spec release_trap_link(non_neg_integer(), non_neg_integer()) :: :ok
-  def release_trap_link(group_id, link_id),
-    do: release_trap_link(default_server(), group_id, link_id)
-
-  @doc false
-  @spec release_trap_link(server(), non_neg_integer(), non_neg_integer()) :: :ok
-  def release_trap_link(server, group_id, link_id)
-      when is_integer(group_id) and group_id >= 0 and is_integer(link_id) and link_id >= 0 do
-    GenServer.cast(server, {:release_trap_link, group_id, link_id})
-  end
-
   @doc "Merges skill-owned state into a live group without resurrecting a deleted one."
   @spec update_state(non_neg_integer(), map()) :: :ok
   def update_state(group_id, state), do: update_state(default_server(), group_id, state)
@@ -455,7 +443,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:trigger, group_id, mover, callback}, _from, state) do
-    if group = Storage.get(group_id), do: run_trigger(group, mover, callback, state.clock.())
+    if group = Storage.get(group_id), do: run_trigger(group, mover, callback)
     {:reply, :ok, state}
   end
 
@@ -477,11 +465,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     if group = Storage.get(group_id),
       do: cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
 
-    {:noreply, state}
-  end
-
-  def handle_cast({:release_trap_link, group_id, link_id}, state) do
-    release_trap_link_now(group_id, link_id)
     {:noreply, state}
   end
 
@@ -584,22 +567,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         %{state | ticksets: Map.reject(state.ticksets, fn {_key, next} -> next <= now end)}
 
       fields ->
-        {results, ticksets} = UnitTimer.run(fields, state.ticksets, now, &invoke/3)
-        Enum.each(results, &finish_unit_pass(&1, fields))
+        {results, ticksets} =
+          UnitTimer.run(fields, state.ticksets, now, &invoke/3, &run_manager_command(&1, now))
+
+        Enum.each(results, &finish_unit_pass/1)
         %{state | ticksets: ticksets}
     end
   end
 
-  defp finish_unit_pass({group, module, outcome}, fields) do
+  defp finish_unit_pass({group, module, outcome}) do
     case outcome do
-      :ok -> if {group, module} not in fields, do: persist_unit_pass(group)
+      :ok -> persist_unit_pass(group, module)
       :expire -> cleanup(group, module)
       {:failed, callback, reason} -> callback_failed(group, callback, reason, module)
     end
   end
 
-  defp persist_unit_pass(%Group{group_id: group_id} = group) do
-    if Storage.get(group_id), do: Storage.update(group)
+  # A trap sprung during the pass persists through its lifecycle transition,
+  # which also republishes its changed view.
+  defp persist_unit_pass(%Group{group_id: group_id} = group, module) do
+    case Storage.get(group_id) do
+      nil ->
+        :ok
+
+      ^group ->
+        :ok
+
+      %Group{} = stored ->
+        case persist_callback_update(stored, group) do
+          :ok -> :ok
+          {:error, reason} -> callback_failed(stored, :on_unit_hit, reason, module)
+        end
+    end
   end
 
   defp run_interval(%Group{} = group, now, unit_available?) do
@@ -771,11 +770,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp run_trigger(%Group{} = group, mover, callback, now) do
+  defp run_trigger(%Group{} = group, mover, callback) do
     if triggerable?(group) do
       case handler_for(group) do
         {:ok, module} ->
-          run_callback_trigger(group, mover, callback, module, now)
+          run_callback_trigger(group, mover, callback, module)
 
         _ ->
           apply_field_support_action(group, mover, callback)
@@ -783,15 +782,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp run_callback_trigger(group, mover, callback, module, now) do
+  defp run_callback_trigger(group, mover, callback, module) do
     if function_exported?(module, callback, 2) do
-      invoke_trigger(group, mover, callback, module, now)
+      invoke_trigger(group, mover, callback, module)
     else
       apply_field_support_action(group, mover, callback)
     end
   end
 
-  defp invoke_trigger(group, mover, callback, module, now) do
+  defp invoke_trigger(group, mover, callback, module) do
     case invoke(module, callback, [group, mover]) do
       {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
         case persist_callback_update(group, updated) do
@@ -803,11 +802,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         callback_failed(group, callback, {:foreign_group_id, group_id}, module)
 
       {:ok, :expire} ->
-        expire_from_trigger(group, module, now)
-
-      {:ok, {:expire, commands}} when is_list(commands) ->
-        expire_from_trigger(group, module, now)
-        Enum.each(commands, &run_manager_command(&1, now))
+        cleanup(group, module)
 
       {:ok, result} ->
         callback_failed(group, callback, {:invalid_return, result}, module)
@@ -817,26 +812,37 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
+  # Returns the groups the command changed, as stored.
   defp run_manager_command({:spend_traps, map_name, {x, y}, radius}, now) do
     map_name
     |> groups_in_area(x, y, radius)
-    |> Enum.each(&spend_trap(&1, now))
+    |> Enum.flat_map(&spend_trap(&1, now))
   end
 
   defp spend_trap(%Group{} = group, now) do
     case trap_state(group) do
       {:ok, %TrapState{phase: :armed, claymore_spendable?: true}} ->
-        used = transition_trap(group, :used, now + @sprung_trap_lifetime)
+        used = transition_trap(group, :used, sprung_expiry(group, now))
 
         case persist_trap_update(group, used) do
-          :ok -> :ok
-          {:error, reason} -> log_spend_trap_failure(group, reason)
+          :ok ->
+            [used]
+
+          {:error, reason} ->
+            log_spend_trap_failure(group, reason)
+            []
         end
 
       _ineligible ->
-        :ok
+        []
     end
   end
+
+  # A sprung trap lingers as a used trap, never past its own lifetime.
+  defp sprung_expiry(%Group{expires_at: expires_at}, now) when is_integer(expires_at),
+    do: min(now + @sprung_trap_lifetime, expires_at)
+
+  defp sprung_expiry(%Group{}, now), do: now + @sprung_trap_lifetime
 
   defp log_spend_trap_failure(group, reason) do
     Logger.error(
@@ -897,16 +903,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp log_field_support_failure(result, _group, _action), do: result
-
-  defp release_trap_link_now(group_id, link_id) do
-    case Storage.get(group_id) do
-      %Group{state: %{trap: %TrapState{phase: :captured, link_id: ^link_id}}} = group ->
-        cleanup(group)
-
-      _stale_or_absent ->
-        :ok
-    end
-  end
 
   defp cleanup(%Group{} = group) do
     module =
@@ -1560,21 +1556,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp expire_from_trigger(%Group{} = group, module, now) do
-    case trap_state(group) do
-      {:ok, %TrapState{phase: :armed}} ->
-        used = transition_trap(group, :used, now + @sprung_trap_lifetime)
-
-        case persist_trap_update(group, used) do
-          :ok -> :ok
-          {:error, reason} -> callback_failed(group, :on_touch, reason, module)
-        end
-
-      _non_trap ->
-        cleanup(group, module)
-    end
-  end
-
   defp persist_callback_update(%Group{} = original, %Group{} = updated) do
     case {trap_state(original), trap_state(updated)} do
       {{:ok, %TrapState{}}, {:ok, %TrapState{}}} -> persist_trap_update(original, updated)
@@ -1715,7 +1696,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
             cleanup(group)
         end
 
-      {:ok, %TrapState{phase: :armed} = trap} ->
+      {:ok, %TrapState{phase: phase} = trap} when phase in [:armed, :spent] ->
         maybe_drop_expired_trap(group, trap, unit_available?)
         cleanup(group)
 

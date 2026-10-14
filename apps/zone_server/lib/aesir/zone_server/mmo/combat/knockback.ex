@@ -79,8 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
          {:ok, {module, state, pid}} <- displacement_owner(unit_type, unit_id),
          :ok <- ensure_living(state),
          {:ok, _map} <- MapCache.get(map_name) do
-      if Rules.ground?(map_name) or module.is_boss?(state) or knockback_immune?(module, state) or
-           anchored_by_basilica?(unit_type, unit_id, opts) do
+      if blown_immune?({unit_type, unit_id}, map_name, module, state, opts) do
         {:ok, {x, y}}
       else
         {dx, dy} = push_direction({x, y}, {from_x, from_y})
@@ -92,16 +91,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
   @doc """
   Requests collision-aware movement toward `{target_x, target_y}`.
-  """
-  @spec pull_to(atom(), integer(), integer(), integer()) :: result()
-  def pull_to(:skill_unit, _unit_id, _target_x, _target_y), do: :ok
 
-  def pull_to(unit_type, unit_id, target_x, target_y) do
+  A boss is never pulled. `blown_immunity: true` instead applies the same
+  resistance as a knockback (a siege map, a knockback-immune monster,
+  no-knockback gear, a pre-renewal Basilica caster).
+  """
+  @spec pull_to(atom(), integer(), integer(), integer(), keyword()) :: result()
+  def pull_to(unit_type, unit_id, target_x, target_y, opts \\ [])
+
+  def pull_to(:skill_unit, _unit_id, _target_x, _target_y, _opts), do: :ok
+
+  def pull_to(unit_type, unit_id, target_x, target_y, opts) do
     with {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
          {:ok, {module, state, pid}} <- displacement_owner(unit_type, unit_id),
          :ok <- ensure_living(state),
          {:ok, map_data} <- MapCache.get(map_name) do
-      if module.is_boss?(state) do
+      immune? =
+        if Keyword.get(opts, :blown_immunity, false),
+          do: blown_immune?({unit_type, unit_id}, map_name, module, state, []),
+          else: module.is_boss?(state)
+
+      if immune? do
         {:ok, {x, y}}
       else
         destination = pull_path(map_data, {x, y}, {target_x, target_y})
@@ -136,6 +146,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
         nil -> indexed
       end
     end
+  end
+
+  defp blown_immune?({unit_type, unit_id}, map_name, module, state, opts) do
+    Rules.ground?(map_name) or module.is_boss?(state) or knockback_immune?(module, state) or
+      anchored_by_basilica?(unit_type, unit_id, opts)
   end
 
   # A unit carrying the `:no_knockback` equipment flag resists being blown away,

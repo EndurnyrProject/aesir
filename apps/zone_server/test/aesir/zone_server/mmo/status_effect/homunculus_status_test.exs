@@ -209,12 +209,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
     session: session,
     gid: gid
   } do
-    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_anklesnare)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_ankle, duration: 5_000)
     assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_increaseagi)
 
     :sys.replace_state(session.pid, &CommandHandler.detach_for_warp(&1, false))
 
-    refute StatusStorage.has_status?(:homunculus, gid, :sc_anklesnare)
+    refute StatusStorage.has_status?(:homunculus, gid, :sc_ankle)
     assert StatusStorage.has_status?(:homunculus, gid, :sc_increaseagi)
   end
 

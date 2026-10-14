@@ -1,28 +1,17 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.TrapTestHelper
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher
-  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
-  setup do
-    Mimic.copy(Trap)
-
-    stub(Trap, :enemy?, fn
-      %Group{caster_type: :player}, {:mob, _id} -> true
-      %Group{caster_type: :mob}, {type, _id} when type in [:player, :homunculus] -> true
-      %Group{}, {_type, _id} -> false
-    end)
-
-    :ok
-  end
+  @cell {50, 50}
+  @now 10_000
 
   defp group(attrs \\ []) do
     struct(
@@ -45,6 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
     )
   end
 
+  defp armed(attrs \\ []),
+    do: group(Keyword.merge([expires_at: 90_000, state: %{trap: armed_trap()}], attrs))
+
   @tag game_mode: :renewal
   test "registers canonical costs and armed durations" do
     definition = HtFlasher.definition()
@@ -54,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
     assert definition.unit_duration == [150_000, 120_000, 90_000, 60_000, 30_000]
   end
 
+  @tag game_mode: :renewal
   test "places a hidden armed trap with typed natural-reclaim lifecycle" do
     assert {:ok, placement} = HtFlasher.on_place(group())
     assert placement.cells == [{50, 50}]
@@ -67,7 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
            } = placement.state.trap
   end
 
+  @tag game_mode: :renewal
   test "blinds only the eligible activator for 18 seconds before resistance" do
+    stub_units([player(1000)])
+
     expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_blind, params ->
       assert params[:duration] == 18_000
       assert params[:success_rate] == 100
@@ -76,46 +72,48 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
       :ok
     end)
 
-    assert :expire = HtFlasher.on_touch(group(), {:mob, 2001})
+    assert {:ok, %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}}} =
+             HtFlasher.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "a pre-renewal flash blinds for 30 seconds" do
+    stub_units([player(1000)])
+
+    expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_blind, params ->
+      assert params[:duration] == 30_000
+      :ok
+    end)
+
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtFlasher.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
   end
 
   test "does not trigger for same-side contacts" do
-    reject(&StatusInterpreter.apply_status/4)
-    assert {:ok, %Group{}} = HtFlasher.on_touch(group(), {:player, 2001})
-  end
+    stub_units([player(1000), player(2001), mob(2002)])
 
-  defp plant_boss do
-    %MobState{
-      instance_id: 2001,
-      mob_id: 1002,
-      mob_data: %{race: :plant, modes: [:boss]},
-      spawn_ref: nil,
-      x: 50,
-      y: 50,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    assert [{:mob, 2002}] =
+             HtFlasher.unit_targets(armed(), @cell, [{:player, 2001}, {:mob, 2002}])
   end
 
   test "plant bosses do not activate the trap" do
-    plant_boss = plant_boss()
-    stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {MobState, plant_boss, self()}} end)
+    stub_units([player(1000), mob(2001, race: :plant, modes: [:boss])])
     reject(&StatusInterpreter.apply_status/4)
 
-    assert {:ok, %Group{}} = HtFlasher.on_touch(group(), {:mob, 2001})
+    armed = armed()
+    assert {:ok, ^armed} = HtFlasher.on_unit_hit(armed, @cell, {:mob, 2001}, @now)
   end
 
   test "mob-owned traps attempt Blind on player activators with a mob source" do
+    stub_units([mob(1000)])
+
     expect(StatusInterpreter, :apply_status, fn :player, 2001, :sc_blind, params ->
       assert params[:source_type] == :mob
       assert params[:caster_id] == 1000
       :ok
     end)
 
-    assert :expire = HtFlasher.on_touch(group(caster_type: :mob), {:player, 2001})
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtFlasher.on_unit_hit(armed(caster_type: :mob), @cell, {:player, 2001}, @now)
   end
 end

@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
@@ -69,19 +70,36 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
              ) == 9
 
       trap = Enum.find(Storage.all(), &(&1.skill_name == :ht_talkiebox))
-      assert %{visibility: :party_only, state: %{trap: %{phase: :armed}}} = trap
+      assert %{visibility: visibility, state: %{trap: %{phase: :armed}}} = trap
+      assert visibility == Trap.visibility(:ht_talkiebox)
+      seen_at_placement = if visibility == :public, do: assert_unit_spawn()
       refute_received {:packet_sent, %ChatMessage{}, _}
 
-      move_to(walker, {151, 150})
+      move_to(walker, {150, 150})
 
-      assert_receive {:packet_sent, %SkillUnitSpawn{group: %{group_id: group_id, cells: [cell]}},
-                      _},
-                     500
+      assert eventually(fn ->
+               {:messages, messages} = Process.info(self(), :messages)
+               Enum.any?(messages, &match?({:packet_sent, %ChatMessage{}, _}, &1))
+             end)
 
+      {:messages, mailbox} = Process.info(self(), :messages)
+      chat_at = Enum.find_index(mailbox, &match?({:packet_sent, %ChatMessage{}, _}, &1))
+
+      spawn_at =
+        Enum.find_index(
+          mailbox,
+          &match?(
+            {:packet_sent, %SkillUnitSpawn{group: %{group_id: id}}, _} when id == trap.group_id,
+            &1
+          )
+        )
+
+      if is_nil(seen_at_placement), do: assert(spawn_at < chat_at)
+
+      {group_id, cell} = seen_at_placement || assert_unit_spawn()
       assert group_id == trap.group_id
-      refute_received {:packet_sent, %ChatMessage{}, _}
 
-      assert_receive {:packet_sent, %ChatMessage{gid: cell_id, message: "hello there"}, _}, 1_500
+      assert_receive {:packet_sent, %ChatMessage{gid: cell_id, message: "hello there"}, _}
       assert cell_id == cell.cell_id
 
       assert %{visibility: :public, state: %{trap: %{phase: :used}}} = Storage.get(group_id)
@@ -100,8 +118,10 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
       move_to(caster, {151, 150})
       Process.sleep(1_100)
 
-      assert %{visibility: :party_only, state: %{trap: %{phase: :armed}}} =
+      assert %{visibility: visibility, state: %{trap: %{phase: :armed}}} =
                Storage.get(trap.group_id)
+
+      assert visibility == Trap.visibility(:ht_talkiebox)
 
       refute_received {:packet_sent, %ChatMessage{}, _}
     end
@@ -371,6 +391,14 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
     state = PlayerSession.get_state(caster.pid).game_state
     assert state.stats.current_state.sp == 50
     assert Inventory.held_amount(state.inventory, @item_id) == 10
+  end
+
+  defp assert_unit_spawn do
+    assert_receive {:packet_sent, %SkillUnitSpawn{group: %{group_id: group_id, cells: [cell]}},
+                    _},
+                   500
+
+    {group_id, cell}
   end
 
   defp move_to(player, {x, y} = position) do

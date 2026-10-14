@@ -6,15 +6,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(SplashTargets)
+    :ok
+  end
 
   @caster_id 1_000
   @map_name "prontera"
@@ -97,6 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
 
     assert {:ok, level_one} = WzFirepillar.on_place(group(1))
     assert level_one.cells == [@center]
+    assert level_one.unit_range == 1
     assert level_one.state == %{phase: :waiting, hit_budget: 3, target_delay: 600}
     assert level_one.interval == 2_000
     assert level_one.duration == 30_000
@@ -133,53 +141,61 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     assert updated_inventory == updated.inventory
   end
 
-  test "an early non-enemy entry leaves the waiting pillar armed" do
+  test "a non-enemy in reach does not wake the waiting pillar" do
     stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
-    stub(Combat, :splash_targets, fn @map_name, @center, 1, @caster_id -> [] end)
+
+    stub(SplashTargets, :eligible, fn refs, %{unit_id: @caster_id} ->
+      Enum.filter(refs, &match?({:mob, _id}, &1))
+    end)
+
+    assert [{:mob, 2_001}] =
+             WzFirepillar.unit_targets(group(1), @center, [{:player, 2_000}, {:mob, 2_001}])
+  end
+
+  test "an enemy in reach turns the waiting pillar into an active one without damage" do
+    stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
     reject(&Combat.apply_skill_unit_damage/7)
 
-    assert {:ok, %Group{state: %{phase: :waiting, hit_budget: 3}}} =
-             WzFirepillar.on_touch(group(1), {:player, 2_000})
+    assert {:ok, %Group{expires_at: 6_000} = active} =
+             WzFirepillar.on_unit_hit(group(1), @center, {:mob, 2_001}, 5_000)
+
+    assert %{phase: :active, activated_at: 5_000, unit_generation: 1, hit_budget: 3} =
+             active.state
   end
 
-  test "a waiting pillar scans its Range-1 activation area for a stationary adjacent enemy" do
-    test_pid = self()
-
+  test "a waiting pillar on Land Protector ends without becoming active" do
     stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
+    reject(&Combat.apply_skill_unit_damage/7)
 
-    stub(Combat, :splash_targets, fn @map_name, @center, 1, @caster_id ->
-      [{:mob, 2_001}]
-    end)
+    :ok =
+      Storage.insert(%Group{
+        group_id: 9,
+        skill_name: :sa_landprotector,
+        map_name: @map_name,
+        center: @center,
+        cells: [@center],
+        state: %{land_protector: true}
+      })
 
-    stub(Combat, :apply_skill_unit_damage, fn _caster,
-                                              :mob,
-                                              2_001,
-                                              80,
-                                              1,
-                                              :fire,
-                                              60,
-                                              bonus_matk: 150,
-                                              hit_divisions: 3,
-                                              dst_delay: 600,
-                                              divide_hits_for_player?: true ->
-      send(test_pid, :hit)
-      :ok
-    end)
-
-    assert {:ok, %Group{state: %{phase: :active, hit_budget: 0}, expires_at: 3_000}} =
-             WzFirepillar.on_interval(group(1), 2_000)
-
-    assert_receive :hit
+    waiting = group(1)
+    assert {:expire, ^waiting} = WzFirepillar.on_unit_hit(waiting, @center, {:mob, 2_001}, 5_000)
   end
 
-  test "a trigger hits every target in the canonical activation area and starts the active lifetime" do
+  test "an active pillar does nothing in the pass that activated it" do
+    reject(&Combat.splash_targets/4)
+    reject(&Combat.apply_skill_unit_damage/7)
+
+    active = group(1, %{phase: :active, activated_at: 5_000, hit_budget: 3, target_delay: 600})
+    assert {:ok, ^active} = WzFirepillar.on_unit_hit(active, @center, {:mob, 2_001}, 5_000)
+  end
+
+  test "an active pillar bursts on every enemy in its splash area once, then is used" do
     test_pid = self()
     level = 6
 
     stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
-    stub(Combat, :splash_targets, fn @map_name, @center, radius, @caster_id
-                                     when radius in [1, 2] ->
+    stub(Combat, :splash_targets, fn @map_name, @center, 2, %{unit_id: @caster_id} ->
       [{:mob, 2_001}, {:player, 2_002}]
     end)
 
@@ -199,24 +215,57 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
       :ok
     end)
 
-    activated_at = System.monotonic_time(:millisecond)
+    active =
+      group(level, %{phase: :active, activated_at: 5_000, hit_budget: 8, target_delay: 1_600})
 
-    assert {:ok, %Group{state: %{phase: :active, hit_budget: 0}, next_tick_at: nil} = active} =
-             WzFirepillar.on_touch(group(level), {:mob, 2_001})
+    assert {:ok, %Group{state: %{phase: :used}}} =
+             WzFirepillar.on_unit_hit(active, @center, {:mob, 2_001}, 5_100)
 
-    assert active.expires_at >= activated_at + 1_000
     hits = received_hits()
     assert Enum.count(hits, &(&1 == {:mob, 2_001})) == 1
     assert Enum.count(hits, &(&1 == {:player, 2_002})) == 1
   end
 
-  test "an exhausted active pillar cannot deal a second burst" do
+  test "a used pillar strikes nobody" do
     reject(&Combat.resolve_combatant/1)
     reject(&Combat.splash_targets/4)
     reject(&Combat.apply_skill_unit_damage/7)
 
-    assert {:ok, %Group{state: %{phase: :active, hit_budget: 0}}} =
-             WzFirepillar.on_touch(group(1, %{phase: :active, hit_budget: 0}), {:mob, 2_001})
+    used = group(1, %{phase: :used, activated_at: 5_000, hit_budget: 3, target_delay: 600})
+
+    assert [] = WzFirepillar.unit_targets(used, @center, [{:mob, 2_001}])
+    assert {:ok, ^used} = WzFirepillar.on_unit_hit(used, @center, {:mob, 2_001}, 6_000)
+  end
+
+  test "the unit pass wakes a pillar beside an enemy and bursts it on the next pass" do
+    test_pid = self()
+    stub(Catalog, :ground_module_for, fn :wz_firepillar -> {:ok, WzFirepillar} end)
+    stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
+    stub(SplashTargets, :eligible, fn refs, _caster -> refs end)
+    stub(Combat, :splash_targets, fn @map_name, @center, 1, _caster -> [{:mob, 2_001}] end)
+
+    stub(Combat, :apply_skill_unit_damage, fn _caster, :mob, 2_001, 80, 1, :fire, 60, _opts ->
+      send(test_pid, :hit)
+      :ok
+    end)
+
+    manager = start_manager(2_000)
+    allow(Combat, self(), manager)
+    allow(SplashTargets, self(), manager)
+
+    :ok = Manager.register(manager, group(1, nil, unit_range: 1, visibility: :public))
+    :ok = SpatialIndex.add_unit(:mob, 2_001, 151, 150, @map_name)
+
+    assert :ok = Manager.tick(manager, 2_000)
+    refute_received :hit
+
+    assert %Group{expires_at: 3_000, state: %{phase: :active, unit_generation: 1}} =
+             Storage.get(1)
+
+    assert :ok = Manager.tick(manager, 2_100)
+    assert_received :hit
+    refute_received :hit
+    assert %Group{state: %{phase: :used}} = Storage.get(1)
   end
 
   test "the manager expires an untriggered pillar at its natural lifetime boundary" do

@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Integration.BlastmineIntegrationTest do
   @moduledoc """
-  End-to-end Blast Mine coverage against real player/mob sessions: contact
-  detonation and natural-expiry detonation both leave exactly one 1.5-second
-  used phase, driven through a deterministic fixed-clock skill-unit manager.
+  End-to-end Blast Mine coverage against real player/mob sessions: a player
+  walking next to the mine sets it off on the skill-unit manager's own pass, and
+  a mine whose time runs out turns into a used trap without going off. Both
+  leave exactly one 1.5-second used phase.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -25,26 +26,25 @@ defmodule Aesir.ZoneServer.Integration.BlastmineIntegrationTest do
   setup :set_mimic_private
   setup :verify_on_exit!
 
+  # Only this manually ticked manager may pass over the mine.
   setup do
+    stop_supervised!({:integration_default, Manager})
+
     manager =
-      start_supervised!(
-        {Manager,
-         name: nil, clock: fn -> 10_000 end, schedule_tick: fn _pid, _interval -> :ok end}
-      )
+      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
 
     Process.put({Manager, :server}, manager)
     %{manager: manager}
   end
 
-  test "MobSkill.Executor contact detonation damages a real PlayerSession for one used phase", %{
-    manager: manager
-  } do
+  test "MobSkill.Executor mine set off by a walking PlayerSession damages it for one used phase",
+       %{manager: manager} do
     player =
       start_player_session(
         id: @caster_id,
         name: "Blast Contact",
         map_name: @map,
-        position: {49, 50},
+        position: {46, 50},
         hp: 5_000,
         max_hp: 5_000
       )
@@ -55,22 +55,27 @@ defmodule Aesir.ZoneServer.Integration.BlastmineIntegrationTest do
     assert :ok = Executor.execute(MobSession.get_state(mob.pid), blastmine_row())
     assert [%Group{group_id: group_id}] = Storage.get_groups_at_cell(@map, 50, 50)
 
-    simulate_incoming_message(player.pid, %MoveRequest{dest_x: 50, dest_y: 50})
+    simulate_incoming_message(player.pid, %MoveRequest{dest_x: 49, dest_y: 50})
+    assert eventually(fn -> position(player.pid) == {49, 50} end)
 
+    now = System.monotonic_time(:millisecond)
+    assert :ok = Manager.tick(manager, now)
     assert eventually(fn -> current_hp(player.pid) < initial_hp end)
 
     assert %Group{
-             expires_at: 11_500,
+             expires_at: used_until,
              state: %{trap: %TrapState{phase: :used}}
            } = Storage.get(group_id)
 
-    assert :ok = Manager.tick(manager, 11_499)
+    assert used_until == now + 1_500
+
+    assert :ok = Manager.tick(manager, used_until - 1)
     assert %Group{} = Storage.get(group_id)
-    assert :ok = Manager.tick(manager, 11_500)
+    assert :ok = Manager.tick(manager, used_until)
     assert nil == Storage.get(group_id)
   end
 
-  test "MobSkill.Executor natural expiry detonates once before one exact used phase", %{
+  test "MobSkill.Executor mine whose time runs out becomes used without going off", %{
     manager: manager
   } do
     reject(&Coordinator.drop_items/4)
@@ -80,7 +85,7 @@ defmodule Aesir.ZoneServer.Integration.BlastmineIntegrationTest do
         id: @caster_id,
         name: "Blast Timeout",
         map_name: @map,
-        position: {49, 50},
+        position: {46, 50},
         hp: 5_000,
         max_hp: 5_000
       )
@@ -92,12 +97,6 @@ defmodule Aesir.ZoneServer.Integration.BlastmineIntegrationTest do
     assert [%Group{} = armed] = Storage.get_groups_at_cell(@map, 50, 50)
 
     assert :ok = Manager.tick(manager, armed.expires_at)
-    assert eventually(fn -> current_hp(player.pid) < initial_hp end)
-    hp_after_detonation = current_hp(player.pid)
-
-    assert :ok = Manager.tick(manager, armed.expires_at)
-    Process.sleep(25)
-    assert current_hp(player.pid) == hp_after_detonation
 
     assert %Group{
              expires_at: used_until,
@@ -105,6 +104,9 @@ defmodule Aesir.ZoneServer.Integration.BlastmineIntegrationTest do
            } = Storage.get(armed.group_id)
 
     assert used_until == armed.expires_at + 1_500
+    Process.sleep(25)
+    assert current_hp(player.pid) == initial_hp
+
     assert :ok = Manager.tick(manager, used_until - 1)
     assert %Group{} = Storage.get(armed.group_id)
     assert :ok = Manager.tick(manager, used_until)
@@ -113,6 +115,11 @@ defmodule Aesir.ZoneServer.Integration.BlastmineIntegrationTest do
 
   defp blastmine_row do
     %{skill: "HT_BLASTMINE", skill_id: 122, target: :around1, level: 3}
+  end
+
+  defp position(pid) do
+    state = get_player_state(pid)
+    {state.x, state.y}
   end
 
   defp current_hp(player_pid) do

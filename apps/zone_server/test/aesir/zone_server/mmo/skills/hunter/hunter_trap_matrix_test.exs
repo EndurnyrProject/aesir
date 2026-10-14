@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
 
   One canonical row per trap holds the values the renewal skill tables specify:
   catalog identity, level cap, SP and catalyst cost, the armed duration table,
-  placement visibility, cast timing, effect radius and the manager-owned trap
+  placement visibility (renewal; every trap is public in pre-renewal), cast timing, effect radius and the manager-owned trap
   lifecycle metadata. Every value is read back from `Skill.Catalog` and from the
   module's own `on_place/1` placement, so a silent edit to any single trap
   module fails here instead of only in that trap's own test.
@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
 
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
@@ -238,7 +239,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
           assert {:ok, placement} = @trap.module.on_place(group(@trap.name, level))
 
           assert placement.cells == [@center]
-          assert placement.visibility == @trap.visibility
+          assert placement.visibility == mode_visibility(@trap)
+          assert placement.unit_range == 1
           assert placement.interval == 1_000
           assert placement.duration == Enum.at(@trap.durations, level - 1)
           assert placement.state.ignore_land_protector == true
@@ -252,15 +254,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
                  phase: :armed,
                  reclaim_item_id: @trap_item,
                  natural_expiry: natural_expiry,
-                 claymore_spendable?: claymore_spendable?,
-                 link_id: nil
+                 claymore_spendable?: claymore_spendable?
                } = placement.state.trap
 
-        assert natural_expiry == @trap.natural_expiry
+        assert natural_expiry == mode_natural_expiry(@trap)
         assert claymore_spendable? == @trap.claymore_spendable?
       end
     end
   end
+
+  # Pre-renewal shows every trap, and its Claymore Trap returns its item
+  # when its time runs out.
+  defp mode_visibility(trap) do
+    if GameMode.mode() == :renewal, do: trap.visibility, else: :public
+  end
+
+  defp mode_natural_expiry(%{name: :ht_claymoretrap}) do
+    if GameMode.mode() == :renewal, do: :become_used, else: :drop_item
+  end
+
+  defp mode_natural_expiry(trap), do: trap.natural_expiry
 
   defp group(skill_name, level) do
     %Group{

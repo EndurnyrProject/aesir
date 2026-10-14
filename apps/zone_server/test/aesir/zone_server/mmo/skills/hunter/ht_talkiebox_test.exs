@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.TrapTestHelper
 
   alias Aesir.Net.ChatMessage
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
@@ -16,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
   setup :verify_on_exit!
 
   @caster_id 1000
+  @cell {50, 50}
+  @now 10_000
 
   defp trap(phase \\ :armed) do
     {:ok, trap} =
@@ -50,6 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
 
     struct(base, attrs)
   end
+
+  defp armed, do: group(%{trap: trap(), message: "hi"}, expires_at: 600_000)
 
   describe "cast/4" do
     test "always requires the staged text-input reply" do
@@ -121,6 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
   end
 
   describe "on_place/1" do
+    @tag game_mode: :renewal
     test "arms a single hidden cell with a non-claymore-spendable trap" do
       stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
         {:ok, %{stats: %{dex: 50, int: 40, base_level: 50}}}
@@ -142,33 +148,59 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
     end
   end
 
-  describe "on_touch/2" do
-    test "a non-owner player activates the trap: visible, used, expires in five seconds" do
-      before = System.monotonic_time(:millisecond)
+  describe "unit pass" do
+    test "a non-owner player activates the trap: visible, used, due now, expires in five seconds" do
+      stub_units([player(@caster_id), player(2000)])
+      armed = armed()
+
+      assert [{:player, 2000}] = HtTalkiebox.unit_targets(armed, @cell, [{:player, 2000}])
 
       assert {:ok, %Group{} = updated} =
-               HtTalkiebox.on_touch(group(%{trap: trap(), message: "hi"}), {:player, 2000})
+               HtTalkiebox.on_unit_hit(armed, @cell, {:player, 2000}, @now)
 
       assert updated.visibility == :public
       assert updated.state.trap.phase == :used
-      assert updated.expires_at >= before + 5_000
-      assert updated.expires_at <= System.monotonic_time(:millisecond) + 5_000
+      assert updated.expires_at == @now + 5_000
+      assert updated.next_tick_at == @now
       assert updated.state.message == "hi"
     end
 
+    test "a used trap never lingers past its own lifetime" do
+      armed = %{armed() | expires_at: @now + 2_000}
+
+      assert {:ok, %Group{expires_at: expires_at}} =
+               HtTalkiebox.on_unit_hit(armed, @cell, {:player, 2000}, @now)
+
+      assert expires_at == @now + 2_000
+    end
+
+    test "a homunculus sets it off" do
+      stub_units([player(@caster_id), homunculus(2000, 3000)])
+
+      assert [{:homunculus, 2000}] =
+               HtTalkiebox.unit_targets(armed(), @cell, [{:homunculus, 2000}])
+    end
+
     test "the owner does not trigger their own trap" do
-      armed = group(%{trap: trap(), message: "hi"})
-      assert {:ok, ^armed} = HtTalkiebox.on_touch(armed, {:player, @caster_id})
+      stub_units([player(@caster_id), player(2000)])
+
+      assert [{:player, 2000}] =
+               HtTalkiebox.unit_targets(armed(), @cell, [{:player, @caster_id}, {:player, 2000}])
     end
 
     test "a mob mover does not trigger the trap" do
-      armed = group(%{trap: trap(), message: "hi"})
-      assert {:ok, ^armed} = HtTalkiebox.on_touch(armed, {:mob, 2000})
+      stub_units([player(@caster_id), mob(2001), player(2000)])
+
+      assert [{:player, 2000}] =
+               HtTalkiebox.unit_targets(armed(), @cell, [{:mob, 2001}, {:player, 2000}])
     end
 
     test "an already-used trap ignores further touches" do
-      used = group(%{trap: trap(:used), message: nil}, visibility: :public)
-      assert {:ok, ^used} = HtTalkiebox.on_touch(used, {:player, 2000})
+      stub_units([player(@caster_id), player(2000)])
+      used = group(%{trap: trap(:used), message: nil}, visibility: :public, expires_at: 600_000)
+
+      assert [] = HtTalkiebox.unit_targets(used, @cell, [{:player, 2000}])
+      assert {:ok, ^used} = HtTalkiebox.on_unit_hit(used, @cell, {:player, 2000}, @now)
     end
   end
 

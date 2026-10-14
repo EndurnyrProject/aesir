@@ -18,15 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   so self-calls the Manager process and deadlocks.
 
   `on_touch/2` and `on_out/2` are optional movement-pipeline hooks fired when a
-  unit steps onto / off a footprint cell (traps, Warp Portal, Fire Wall); the
+  unit steps onto / off a footprint cell (Warp Portal, Fire Wall); the
   movement chokepoint invokes them only when the skill module exports them.
-
-  `on_touch/2` may also return `{:expire, [command()]}`: like plain `:expire`,
-  the manager transitions the triggering group itself, but the tuple carries no
-  group of its own - only a list of manager commands run afterward against a
-  fresh snapshot (Claymore Trap's spend command, which marks the fixed set of
-  eligible armed traps in its blast area used without invoking their own
-  `on_touch`/`on_natural_expiry`, so detonations never recurse).
 
   ## Documented extension points (not part of this contract yet)
 
@@ -45,13 +38,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   @type cell :: {integer(), integer()}
 
   @typedoc """
-  A serialized action the manager runs against a fresh group snapshot after a
-  callback's own transition, without invoking any group's own callbacks.
+  An action a unit strike asks the manager to run on other groups at once,
+  without invoking their own callbacks: Claymore Trap's spend command marks the
+  armed traps in its blast area used, so detonations never recurse.
   """
   @type command :: {:spend_traps, String.t(), cell(), non_neg_integer()}
 
   @typedoc "A movement callback result serialized and persisted by the skill-unit manager."
-  @type trigger_result :: {:ok, Group.t()} | :expire | {:expire, [command()]}
+  @type trigger_result :: {:ok, Group.t()} | :expire
 
   @typedoc "The placement result: footprint, initial per-skill state, timing, and optional lifecycle policy."
   @type placement :: %{
@@ -121,10 +115,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
   Strikes one unit from one footprint cell of a `unit_range` field.
 
   Required for a placement with `unit_range`. `{:expire, group}` ends the field
-  after this cell's remaining strikes.
+  after this cell's remaining strikes. A third element lists `command()`s the
+  manager runs at once on other groups.
   """
   @callback on_unit_hit(Group.t(), cell(), Ref.t(), now :: integer()) ::
-              {:ok, Group.t()} | {:expire, Group.t()}
+              {:ok, Group.t()}
+              | {:expire, Group.t()}
+              | {:ok | :expire, Group.t(), [command()]}
 
   @doc "Describes the source-owned status granted while a mover occupies the field."
   @callback field_support(Group.t()) :: %{

@@ -2,13 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
   @moduledoc """
   Claymore Trap (HT_CLAYMORETRAP), a visible trap-centered Fire BF_MISC mine.
 
-  Enemy contact rolls one placement-stamped damage value and splits it across
-  living enemies in the trap-centered 5x5 area, then asks the manager to mark
-  every other armed eligible trap in that same area used (visible, inert, for
-  1.5 seconds) without invoking any of their own detonation callbacks. Natural
-  armed expiry only transitions this trap itself to its used phase.
+  The first enemy within one cell sets it off: one roll of the damage stamped
+  at placement hits every enemy within two cells of the mine, and every other
+  armed trap in that area that a Claymore spends turns into a used trap without
+  going off.
 
-  Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35) over a 2-cell splash, with a 0.5 s cast plus 0.3 s fixed and a 1 s delay. Pre-renewal: level × (DEX/2 + 75) × (100 + INT)/100 and an instant cast. Both cost two traps.
+  Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35), split across the enemies hit, with a 0.5 s cast plus 0.3 s fixed and a 1 s delay; when its time runs out it turns into a used trap. Pre-renewal: level × (DEX/2 + 75) × (100 + INT)/100, dealt in full to each, and an instant cast; when its time runs out its trap item returns. Both cost two traps.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 123,
@@ -32,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
     item_cost: [%{id: 1065, amount: 2}],
     damage_splash: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -52,7 +52,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
        state: Trap.place_state(level, stats, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visibility: :public
+       unit_range: 1,
+       visibility: Trap.visibility(:ht_claymoretrap)
      }}
   end
 
@@ -61,21 +62,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
-  @spec on_natural_expiry(Group.t()) :: :ok
-  def on_natural_expiry(%Group{}), do: :ok
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs), do: Trap.unit_targets(group, refs)
 
   @impl Ground
-  @spec on_touch(Group.t(), {atom(), integer()}) :: Ground.trigger_result()
-  def on_touch(%Group{} = group, mover) do
-    if Trap.enemy?(group, mover) do
-      detonate(group)
-    else
-      {:ok, group}
-    end
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) ::
+          {:ok, Group.t()} | {:ok, Group.t(), [Ground.command()]}
+  def on_unit_hit(%Group{} = group, _cell, _target, now) do
+    if Trap.armed?(group), do: detonate(group, now), else: {:ok, group}
   end
 
   defp detonate(
-         %Group{map_name: map_name, center: center, state: %{base_damage: base_damage}} = group
+         %Group{map_name: map_name, center: center, state: %{base_damage: base_damage}} = group,
+         now
        ) do
     definition = definition()
 
@@ -86,10 +85,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
           skill_level: group.level,
           base_damage: Trap.roll_damage(base_damage),
           element: definition.element,
-          split: true
+          split: GameMode.mode() == :renewal
         )
 
-        {:expire, [{:spend_traps, map_name, center, definition.splash_radius}]}
+        {:ok, Trap.spring(group, now),
+         [{:spend_traps, map_name, center, definition.splash_radius}]}
 
       :error ->
         {:ok, group}

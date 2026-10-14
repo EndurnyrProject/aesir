@@ -1,13 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.TrapTestHelper
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman
-  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -17,18 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
   setup do
     Mimic.copy(SplashTargets)
     Mimic.copy(StatusInterpreter)
-    Mimic.copy(Trap)
-
-    stub(Trap, :enemy?, fn
-      %Group{caster_type: :player}, {:mob, _id} -> true
-      %Group{caster_type: :mob}, {type, _id} when type in [:player, :homunculus] -> true
-      %Group{}, {_type, _id} -> false
-    end)
-
     :ok
   end
 
   @caster_id 1000
+  @cell {50, 50}
+  @now 10_000
 
   defp group(attrs \\ []) do
     base = %Group{
@@ -42,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
       center: {50, 50},
       cells: [{50, 50}],
       next_tick_at: 0,
-      expires_at: 0,
+      expires_at: 90_000,
       interval: 1_000,
       state: %{trap: %TrapState{reclaim_item_id: 1065}}
     }
@@ -50,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
     struct(base, attrs)
   end
 
+  @tag game_mode: :renewal
   test "places a hidden typed trap with the level-scaled armed lifetime" do
     stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
       {:ok, %{stats: %{dex: 50, int: 40, base_level: 50}}}
@@ -85,11 +80,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
     end)
 
     for {chance, level} <- Enum.with_index([50, 60, 70, 80, 90], 1) do
-      assert :expire = HtSandman.on_touch(group(level: level), {:mob, 2001})
+      assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+               HtSandman.on_unit_hit(group(level: level), @cell, {:mob, 2001}, @now)
+
       assert_receive {:chance, ^chance}
     end
   end
 
+  @tag game_mode: :renewal
   test "centers independent Sleep attempts on the triggering mob's 5x5 area" do
     activator = {:mob, 2001}
     caster = %{unit_type: :player, unit_id: @caster_id}
@@ -111,8 +109,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
       :ok
     end)
 
-    assert Trap.enemy?(group(), activator)
-    assert :expire = HtSandman.on_touch(group(), activator)
+    assert {:ok, %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}}} =
+             HtSandman.on_unit_hit(group(), @cell, activator, @now)
 
     for target_id <- [2001, 2002] do
       assert_receive {:sleep_attempt, :mob, ^target_id, params}
@@ -147,16 +145,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
       {:error, :immune}
     end)
 
-    assert Trap.enemy?(mob_group, activator)
-    assert :expire = HtSandman.on_touch(mob_group, activator)
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtSandman.on_unit_hit(mob_group, @cell, activator, @now)
+
     assert_receive {:sleep_attempt, params}
     assert params[:success_rate] == 90
     assert params[:source_type] == :mob
   end
 
-  test "does not activate for a same-side contact" do
-    reject(&Combat.resolve_combatant/2)
+  @tag game_mode: :pre_renewal
+  test "a pre-renewal Sleep lasts 30 seconds" do
+    caster = %{unit_type: :player, unit_id: @caster_id}
+    stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:ok, caster} end)
+    stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {50, 51, "prontera"}} end)
+    stub(SplashTargets, :select_field, fn %Group{}, {50, 51}, 2, ^caster -> [{:mob, 2001}] end)
 
-    assert {:ok, %Group{group_id: 1}} = HtSandman.on_touch(group(), {:player, 3001})
+    expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_sleep, params ->
+      assert params[:duration] == 30_000
+      :ok
+    end)
+
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtSandman.on_unit_hit(group(), @cell, {:mob, 2001}, @now)
+  end
+
+  test "does not activate for a same-side contact" do
+    stub_units([player(@caster_id), player(3001), mob(2001)])
+
+    assert [{:mob, 2001}] =
+             HtSandman.unit_targets(group(), @cell, [{:player, 3001}, {:mob, 2001}])
   end
 end

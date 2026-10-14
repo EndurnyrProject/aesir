@@ -1,15 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ankle do
   @moduledoc """
-  Ankle (SC_ANKLE), the immobilise Glacier Fist inflicts and a player's own Grand
-  Cross puts on its caster.
+  Ankle (SC_ANKLE), the hold of an Ankle Snare, Glacier Fist and Spiral
+  Pierce, and the lock a player's own Grand Cross puts on its caster.
 
-  The holder cannot move or teleport but can still attack and cast. Glacier
-  Fist rolls the chance and the duration itself (shorter against high AGI, a
-  fifth of the base against a boss), so the status ignores resistance and boss
-  immunity. Identical in renewal and pre-renewal.
-
-  Distinct from the trap-linked Ankle Snare status (`sc_anklesnare`), which a
-  Hunter trap owns and releases.
+  The holder cannot move or teleport but can still attack and cast. Each
+  applier rolls the chance and the duration itself, so the status ignores
+  resistance and boss immunity; a new hold replaces one of no higher level.
+  An Ankle Snare ends its target's hold when the snare ends. Identical in
+  renewal and pre-renewal.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_ankle,

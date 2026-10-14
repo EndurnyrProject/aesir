@@ -1,7 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
   @moduledoc """
-  Fire Pillar (WZ_FIREPILLAR). A single-cell fire field that waits up to 30 s for an
-  enemy to enter its activation area, then bursts for one second over the splash area.
+  Fire Pillar (WZ_FIREPILLAR). A single-cell fire field that waits up to 30 s
+  for an enemy to come within one cell of it, then becomes an active pillar for
+  one second. The active pillar bursts once, on the first pass that finds an
+  enemy within one cell of it, over the splash area (one cell up to level 5,
+  two above); an active pillar that finds nobody fades unused. A waiting pillar
+  on Land Protector ends without becoming active.
 
   The burst strikes level plus 2 times at 40% plus 20% per level MATK (a player's damage
   is split across the hits) for 75 SP, needing a Blue Gemstone from level 6. The
@@ -33,13 +37,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
     sp_cost: List.duplicate(75, 10)
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.ItemContainer
 
   @blue_gemstone 717
-  @activation_radius 1
   @active_duration 1_000
   @behaviour Ground
 
@@ -77,66 +82,74 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
          target_delay: target_delay(level)
        },
        interval: definition.hit_interval,
-       duration: Enum.at(definition.unit_duration, level - 1)
+       duration: Enum.at(definition.unit_duration, level - 1),
+       unit_range: 1
      }}
   end
 
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
-  def on_interval(%Group{state: %{phase: :waiting}} = group, now) do
-    with {:ok, caster} <- Combat.resolve_combatant(group.caster_id),
-         [_ | _] <- activation_targets(group) do
-      activate(group, caster, now)
-    else
-      _ -> {:ok, group}
-    end
-  end
-
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
-  @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()}
-  def on_touch(%Group{state: %{phase: :waiting}} = group, mover) do
-    with {:ok, caster} <- Combat.resolve_combatant(group.caster_id),
-         true <- mover in activation_targets(group) do
-      activate(group, caster, System.monotonic_time(:millisecond))
-    else
-      _ -> {:ok, group}
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{state: %{phase: phase}} = group, _cell, refs)
+      when phase in [:waiting, :active] do
+    case Combat.resolve_combatant(group.caster_id) do
+      {:ok, caster} -> SplashTargets.eligible(refs, caster)
+      {:error, _reason} -> []
     end
   end
 
-  def on_touch(%Group{} = group, _mover), do: {:ok, group}
+  def unit_targets(%Group{}, _cell, _refs), do: []
 
-  @spec activate(Group.t(), struct(), integer()) :: {:ok, Group.t()}
-  defp activate(%Group{state: %{hit_budget: hits}} = group, caster, now) do
-    definition = definition()
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) ::
+          {:ok, Group.t()} | {:expire, Group.t()}
+  def on_unit_hit(%Group{state: %{phase: :waiting}} = group, _cell, _target, now) do
+    {x, y} = group.center
 
-    group
-    |> impact_targets()
-    |> Enum.each(&hit_target(&1, hits, caster, group, definition))
-
-    {:ok,
-     %{
-       group
-       | state: %{group.state | phase: :active, hit_budget: 0},
-         next_tick_at: nil,
-         expires_at: now + @active_duration
-     }}
+    cond do
+      not match?({:ok, _caster}, Combat.resolve_combatant(group.caster_id)) -> {:ok, group}
+      Storage.land_protected?(group.map_name, x, y) -> {:expire, group}
+      true -> {:ok, activate(group, now)}
+    end
   end
 
-  @spec activation_targets(Group.t()) :: [{atom(), integer()}]
-  defp activation_targets(%Group{} = group) do
-    Combat.splash_targets(group.map_name, group.center, @activation_radius, group.caster_id)
+  # The active pillar is a new unit: it acts from the next pass on.
+  def on_unit_hit(%Group{state: %{phase: :active, activated_at: at}} = group, _cell, _target, now)
+      when now > at do
+    case Combat.resolve_combatant(group.caster_id) do
+      {:ok, caster} ->
+        group
+        |> impact_targets(caster)
+        |> Enum.each(&hit_target(&1, group.state.hit_budget, caster, group, definition()))
+
+        {:ok, %{group | state: %{group.state | phase: :used}}}
+
+      {:error, _reason} ->
+        {:ok, group}
+    end
   end
 
-  @spec impact_targets(Group.t()) :: [{atom(), integer()}]
-  defp impact_targets(%Group{} = group) do
-    Combat.splash_targets(
-      group.map_name,
-      group.center,
-      splash_radius(group.level),
-      group.caster_id
-    )
+  def on_unit_hit(%Group{} = group, _cell, _target, _now), do: {:ok, group}
+
+  defp activate(%Group{state: state} = group, now) do
+    %{
+      group
+      | expires_at: now + @active_duration,
+        state:
+          Map.merge(state, %{
+            phase: :active,
+            activated_at: now,
+            unit_generation: Map.get(state, :unit_generation, 0) + 1
+          })
+    }
+  end
+
+  @spec impact_targets(Group.t(), struct()) :: [{atom(), integer()}]
+  defp impact_targets(%Group{} = group, caster) do
+    Combat.splash_targets(group.map_name, group.center, splash_radius(group.level), caster)
   end
 
   @spec hit_target({atom(), integer()}, pos_integer(), struct(), Group.t(), struct()) :: :ok

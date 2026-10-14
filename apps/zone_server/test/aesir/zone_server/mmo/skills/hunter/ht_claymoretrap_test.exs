@@ -1,13 +1,17 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import Mimic
+  import Aesir.TestEtsSetup
+  import Aesir.ZoneServer.TrapTestHelper
 
+  alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -18,6 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
   end
 
   @caster_id 1000
+  @cell {50, 50}
+  @now 10_000
 
   defp group(state, attrs \\ []) do
     base = %Group{
@@ -38,6 +44,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
 
     struct(base, attrs)
   end
+
+  defp armed,
+    do:
+      group(%{base_damage: 500, trap: armed_trap(claymore_spendable?: true)}, expires_at: 60_000)
 
   describe "registration & metadata" do
     @tag game_mode: :renewal
@@ -85,14 +95,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
   end
 
   describe "detonation" do
+    @tag game_mode: :renewal
     test "enemy contact applies one split Fire misc roll and requests self-used plus a spend command" do
-      caster = %PlayerState{character_id: @caster_id, map_name: "prontera"}
-      target = %{instance_id: 2001, map_name: "prontera", hp: 100}
-
-      stub(UnitRegistry, :get_unit, fn
-        :player, @caster_id -> {:ok, {PlayerState, caster, self()}}
-        :mob, 2001 -> {:ok, {Map, target, self()}}
-      end)
+      stub_units([player(@caster_id)])
 
       expect(SkillAttack, :execute_field_misc_splash, fn caster, {50, 50}, 2, %Group{}, opts ->
         assert caster.character_id == @caster_id
@@ -102,30 +107,84 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
         [2001, 2002]
       end)
 
-      assert {:expire, [{:spend_traps, "prontera", {50, 50}, 2}]} =
-               HtClaymoretrap.on_touch(group(%{base_damage: 500}), {:mob, 2001})
+      assert {:ok, %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}},
+              [{:spend_traps, "prontera", {50, 50}, 2}]} =
+               HtClaymoretrap.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a pre-renewal blast deals the full roll to every enemy" do
+      stub_units([player(@caster_id)])
+
+      expect(SkillAttack, :execute_field_misc_splash, fn _caster, {50, 50}, 2, %Group{}, opts ->
+        assert opts[:base_damage] == 500
+        refute opts[:split]
+        [2001]
+      end)
+
+      assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}, [{:spend_traps, _, _, 2}]} =
+               HtClaymoretrap.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
     end
 
     test "the owner does not trigger their own trap" do
-      reject(&SkillAttack.execute_field_misc_splash/5)
+      stub_units([player(@caster_id), mob(2001)])
 
-      assert {:ok, %Group{}} =
-               HtClaymoretrap.on_touch(group(%{base_damage: 500}), {:player, @caster_id})
+      assert [{:mob, 2001}] =
+               HtClaymoretrap.unit_targets(armed(), @cell, [{:player, @caster_id}, {:mob, 2001}])
     end
 
     test "an unavailable caster leaves the trap armed without damage or a spend command" do
-      stub(UnitRegistry, :get_unit, fn :player, @caster_id -> {:error, :not_found} end)
+      stub_units([])
       reject(&SkillAttack.execute_field_misc_splash/5)
 
-      assert {:ok, %Group{}} =
-               HtClaymoretrap.on_touch(group(%{base_damage: 500}), {:mob, 2001})
+      armed = armed()
+      assert {:ok, ^armed} = HtClaymoretrap.on_unit_hit(armed, @cell, {:mob, 2001}, @now)
     end
 
-    test "natural armed expiry only transitions the trap itself, without damage or a spend command" do
-      reject(&SkillAttack.execute_field_misc_splash/5)
-      reject(&UnitRegistry.get_unit/2)
+    @tag game_mode: :pre_renewal
+    test "a pre-renewal Claymore returns its trap item when its time runs out" do
+      setup_ets_tables(%{})
+      test_pid = self()
 
-      assert :ok = HtClaymoretrap.on_natural_expiry(group(%{base_damage: 500}))
+      stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
+        {:ok, %{stats: %{dex: 50, int: 40, base_level: 50}}}
+      end)
+
+      stub(Coordinator, :drop_items, fn map_name, items, x, y ->
+        send(test_pid, {:dropped, map_name, items, x, y})
+        :ok
+      end)
+
+      reject(&SkillAttack.execute_field_misc_splash/5)
+
+      placed = group(%{cast_origin: :normal, paid_return?: true})
+      assert {:ok, placement} = HtClaymoretrap.on_place(placed)
+
+      manager =
+        start_supervised!(
+          {Manager,
+           name: nil,
+           clock: fn -> @now end,
+           schedule_tick: fn _pid, _interval -> :ok end,
+           unit_available?: fn _unit_type, _unit_id, _map_name -> true end}
+        )
+
+      allow(Coordinator, self(), manager)
+
+      :ok =
+        Manager.register(manager, %{
+          placed
+          | handler: HtClaymoretrap,
+            visibility: placement.visibility,
+            unit_range: placement.unit_range,
+            expires_at: @now,
+            state: placement.state
+        })
+
+      assert :ok = Manager.tick(manager, @now)
+
+      assert_received {:dropped, "prontera", [{1065, 1, 50, 50, true}], 50, 50}
+      assert nil == Storage.get(1)
     end
   end
 

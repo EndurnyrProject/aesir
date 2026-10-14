@@ -16,8 +16,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.StatusParams
-  alias Aesir.Net.MoveRequest
   alias Aesir.Net.ParamChange
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -385,7 +386,6 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
                group = Enum.find(Storage.all(), &(&1.skill_name == :ht_shockwave))
 
       on_exit(fn -> Storage.delete(group.group_id) end)
-      assert :ok = Manager.trigger(group.group_id, {:player, char_id}, :on_touch)
 
       assert_receive {:packet_sent, %ParamChange{var_id: ^sp_param, value: ^expected_sp}, _},
                      1_000
@@ -606,7 +606,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   end
 
   describe "HT_SKIDTRAP around2 effect" do
-    test "Executor mob cast moves and stops a real PlayerSession from the same cell" do
+    test "Executor mob cast pushes a real PlayerSession on its origin cell west, stopped in renewal" do
       player =
         start_player_session(id: 9_815, name: "Skidded", position: {150, 150}, map_name: @map)
 
@@ -619,22 +619,23 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       assert [%Group{center: {150, 150}, origin: {150, 150}} = group] =
                Storage.get_groups_by_skill_and_caster(:ht_skidtrap, :mob, mob.unit_id)
 
-      assert :ok = Manager.trigger(group.group_id, {:player, player.character.id}, :on_touch)
-
       assert eventually(fn ->
                %{game_state: %{x: x, y: y}} = PlayerSession.get_state(player.pid)
-               {x, y} == {160, 150}
+               {x, y} == {140, 150}
              end)
 
-      assert StatusStorage.has_status?(:player, player.character.id, :sc_stop)
+      assert StatusStorage.has_status?(:player, player.character.id, :sc_stop) ==
+               (GameMode.mode() == :renewal)
 
-      assert %Group{visibility: :party_only, state: %{trap: %{phase: :used}}} =
+      assert %Group{visibility: visibility, state: %{trap: %{phase: :used}}} =
                Storage.get(group.group_id)
+
+      assert visibility == Trap.visibility(:ht_skidtrap)
     end
   end
 
   describe "HT_FREEZINGTRAP ground lifecycle" do
-    test "MobSession places it and PlayerSession movement triggers Water splash and Freeze" do
+    test "MobSession places it under its target and the next pass sets off Water splash and Freeze" do
       activator =
         start_player_session(
           id: 9_815,
@@ -663,7 +664,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
         start_player_session(
           id: 9_817,
           name: "Outside",
-          position: {150, 152},
+          position: {152, 150},
           map_name: @map,
           hp: 2_000,
           max_hp: 2_000,
@@ -692,17 +693,6 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       group = Enum.find(Storage.all(), &(&1.skill_name == :ht_freezingtrap))
       assert group.center == {150, 150}
       assert group.caster_type == :mob
-
-      simulate_incoming_message(activator.pid, %MoveRequest{dest_x: 149, dest_y: 150})
-
-      assert eventually(fn ->
-               match?(
-                 {:ok, {149, 150, @map}},
-                 SpatialIndex.get_unit_position(:player, activator.character.id)
-               )
-             end)
-
-      simulate_incoming_message(activator.pid, %MoveRequest{dest_x: 151, dest_y: 150})
 
       assert eventually(fn -> Storage.get(group.group_id) == nil end)
       assert get_player_state(activator.pid).stats.current_state.hp < 2_000

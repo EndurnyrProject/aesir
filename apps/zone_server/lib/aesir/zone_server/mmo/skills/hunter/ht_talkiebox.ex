@@ -1,19 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   @moduledoc """
-  Talkie Box (HT_TALKIEBOX), a hidden single-cell trap that speaks its
-  caster-supplied text when a non-owner player steps on it.
+  Talkie Box (HT_TALKIEBOX), a single-cell trap that speaks its
+  caster-supplied text.
 
   Placement requires the client's staged text-input reply (`cast_with_input/5`);
   every other cast entry point (`cast/4`, hit by direct/item/auto/mob attempts)
   refuses with `:skill_input_required` and places no group. Not claymore
-  spendable and not a harmful trap: any non-owner player triggers it, monsters
-  and the owner do not.
+  spendable and not a harmful trap: the first player or homunculus within one
+  cell other than its caster sets it off (monsters never do), friend or foe.
 
-  Activation materializes the trap's visible used cell first (the manager's
-  ordinary hidden -> visible transition), then the next interval tick
-  broadcasts the stored text as a `ChatMessage` keyed on that cell's freshly
-  allocated id, and the used cell is removed five seconds later through the
-  same `expires_at` timing index every trap already uses - no new timer.
+  Going off turns it into a visible used trap for 5 s (never past its own
+  lifetime) and makes it due at once, so its interval in the same manager tick,
+  right after the used trap is published, broadcasts the stored text as a
+  `ChatMessage` keyed on its cell.
 
   Renewal and pre-renewal agree: a message trap lasting 10 minutes for 1 SP and one trap.
   """
@@ -41,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -90,7 +90,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
        state: Trap.place_state(level, stats, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visibility: :party_only
+       unit_range: 1,
+       visibility: Trap.visibility(:ht_talkiebox)
      }}
   end
 
@@ -107,28 +108,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
-  @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
-  def on_touch(
-        %Group{
-          caster_type: :player,
-          caster_id: caster_id,
-          state: %{trap: %TrapState{phase: :armed}}
-        } = group,
-        {:player, mover_id}
-      )
-      when mover_id != caster_id do
-    {:ok, activate(group)}
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs) do
+    if Trap.armed?(group) and match?({:ok, _caster}, Trap.resolve_caster(group)),
+      do: Enum.filter(refs, &triggers?(group, &1)),
+      else: []
   end
 
-  def on_touch(%Group{} = group, _mover), do: {:ok, group}
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, _target, now) do
+    if Trap.armed?(group), do: {:ok, activate(group, now)}, else: {:ok, group}
+  end
 
-  defp activate(%Group{state: %{trap: trap} = state} = group) do
-    %{
-      group
-      | visibility: :public,
-        expires_at: System.monotonic_time(:millisecond) + @used_duration,
-        state: %{state | trap: %{trap | phase: :used}}
-    }
+  defp triggers?(%Group{caster_type: type, caster_id: id}, {type, id}), do: false
+
+  defp triggers?(%Group{}, {unit_type, unit_id}) when unit_type in [:player, :homunculus] do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> Unit.living?(state)
+      _gone -> false
+    end
+  end
+
+  defp triggers?(%Group{}, _ref), do: false
+
+  defp activate(%Group{} = group, now) do
+    %{Trap.transition(group, :used, now, @used_duration) | visibility: :public, next_tick_at: now}
   end
 
   defp announce(group, message) do

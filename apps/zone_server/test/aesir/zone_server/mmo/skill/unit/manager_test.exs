@@ -152,36 +152,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
   defmodule TrapUnit do
     alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+    alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
 
-    def on_touch(%Group{state: %{test_pid: test_pid}} = group, mover) do
-      send(test_pid, {:trap_triggered, mover})
+    def unit_targets(%Group{} = group, _cell, refs),
+      do: if(Trap.armed?(group), do: refs, else: [])
 
-      if group.state[:capture?] do
-        trap = %{group.state.trap | phase: :captured, link_id: 7}
-
-        {:ok,
-         %{
-           group
-           | visibility: :public,
-             target_type: elem(mover, 0),
-             target_id: elem(mover, 1),
-             state: %{group.state | trap: trap}
-         }}
+    def on_unit_hit(%Group{state: %{test_pid: test_pid}} = group, _cell, mover, now) do
+      if Trap.armed?(group) do
+        send(test_pid, {:trap_triggered, mover})
+        {:ok, go_off(group, mover, now)}
       else
-        :expire
+        {:ok, group}
       end
     end
 
+    defp go_off(%Group{state: %{capture?: true, hold_ms: hold_ms}} = group, mover, now) do
+      captured = Trap.transition(group, :captured, now, hold_ms)
+      %{captured | visibility: :public, state: Map.put(captured.state, :caught, mover)}
+    end
+
+    defp go_off(%Group{} = group, _mover, now), do: Trap.spring(group, now)
+
     def on_interval(group, _now), do: {:ok, group}
-    def on_expire(_group), do: :ok
+
+    def on_expire(%Group{state: %{test_pid: test_pid} = state}) do
+      send(test_pid, {:trap_ended, Map.get(state, :caught)})
+      :ok
+    end
   end
 
   defmodule ClaymoreUnit do
     alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+    alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
 
-    def on_touch(%Group{state: %{test_pid: test_pid}} = group, mover) do
+    def unit_targets(%Group{} = group, _cell, refs),
+      do: if(Trap.armed?(group), do: refs, else: [])
+
+    def on_unit_hit(%Group{state: %{test_pid: test_pid}} = group, _cell, mover, now) do
       send(test_pid, {:claymore_touch, mover})
-      {:expire, [{:spend_traps, group.map_name, group.center, 2}]}
+      {:ok, Trap.spring(group, now), [{:spend_traps, group.map_name, group.center, 2}]}
     end
 
     def on_interval(group, _now), do: {:ok, group}
@@ -193,6 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
     alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+    alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
 
     @impl Ground
     def on_place(%Group{center: center}) do
@@ -203,9 +213,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     def on_interval(group, _now), do: {:ok, group}
 
     @impl Ground
-    def on_touch(%Group{state: %{test_pid: test_pid}} = group, _mover) do
+    def unit_targets(%Group{} = group, _cell, refs),
+      do: if(Trap.armed?(group), do: refs, else: [])
+
+    @impl Ground
+    def on_unit_hit(%Group{state: %{test_pid: test_pid}} = group, _cell, _mover, now) do
       send(test_pid, {:detonated, :contact, group.group_id})
-      :expire
+      {:ok, Trap.spring(group, now)}
     end
 
     @impl Ground
@@ -530,7 +544,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       end)
 
       manager = start_manager(10_000)
-      :ok = SpatialIndex.add_unit(:player, 99, 100, 100, "prontera")
+      :ok = SpatialIndex.add_unit(:player, 99, 105, 100, "prontera")
 
       assert :ok =
                Manager.register(
@@ -538,12 +552,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  trap_group(1,
                    skill_name: :trap_unit,
                    visibility: :party_only,
+                   unit_range: 1,
                    state: %{base_damage: 100, test_pid: self(), trap: trap_state()}
                  )
                )
 
-      assert :ok = Manager.trigger(manager, 1, {:mob, 20}, :on_touch)
-      assert :ok = Manager.trigger(manager, 1, {:mob, 21}, :on_touch)
+      :ok = SpatialIndex.add_unit(:mob, 20, 101, 100, "prontera")
+      assert :ok = Manager.tick(manager, 10_000)
+      :ok = SpatialIndex.add_unit(:mob, 21, 100, 101, "prontera")
+      assert :ok = Manager.tick(manager, 11_000)
 
       assert_received {:trap_triggered, {:mob, 20}}
       refute_received {:trap_triggered, {:mob, 21}}
@@ -558,7 +575,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       refute_receive {:published, 99, %Aesir.Net.SkillUnitSpawn{}}
     end
 
-    test "persists captured indexes and releases only a matching link" do
+    test "persists a captured trap until its capped expiry, then ends it through on_expire" do
       manager = start_manager(10_000)
 
       assert :ok =
@@ -566,38 +583,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  manager,
                  trap_group(1,
                    skill_name: :trap_unit,
+                   visibility: :party_only,
+                   unit_range: 1,
+                   expires_at: 14_000,
                    state: %{
                      base_damage: 100,
                      test_pid: self(),
                      capture?: true,
+                     hold_ms: 8_000,
                      trap: trap_state()
                    }
                  )
                )
 
-      assert :ok = Manager.trigger(manager, 1, {:mob, 20}, :on_touch)
+      :ok = SpatialIndex.add_unit(:mob, 20, 100, 100, "prontera")
+      assert :ok = Manager.tick(manager, 10_000)
+
+      assert_received {:trap_triggered, {:mob, 20}}
 
       assert %Group{
                visibility: :public,
-               target_type: :mob,
-               target_id: 20,
-               state: %{trap: %TrapState{phase: :captured, link_id: 7}}
+               expires_at: 14_000,
+               state: %{caught: {:mob, 20}, trap: %TrapState{phase: :captured}}
              } = Storage.get(1)
 
-      assert [%Group{group_id: 1}] = Storage.get_groups_by_target(:mob, 20)
+      assert :ok = Manager.tick(manager, 13_999)
+      assert %Group{} = Storage.get(1)
+      refute_received {:trap_triggered, _}
+      refute_received {:trap_ended, _}
 
-      assert :ok = Manager.release_trap_link(manager, 1, 8)
-      assert :ok = Manager.tick(manager, 10_000)
-      assert %Group{group_id: 1} = Storage.get(1)
-
-      assert :ok = Manager.release_trap_link(manager, 1, 7)
-      assert :ok = Manager.tick(manager, 10_000)
+      assert :ok = Manager.tick(manager, 14_000)
       assert nil == Storage.get(1)
-      assert [] == Storage.get_groups_by_target(:mob, 20)
-
-      assert :ok = Manager.release_trap_link(manager, 1, 7)
-      assert :ok = Manager.tick(manager, 10_000)
-      assert nil == Storage.get(1)
+      assert_received {:trap_ended, {:mob, 20}}
     end
 
     test "returns one floor trap only on paid live-player natural expiry" do
@@ -617,6 +634,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                Manager.register(
                  manager,
                  trap_group(1, expires_at: 10_000, state: %{base_damage: 100, trap: paid})
+               )
+
+      assert :ok = Manager.tick(manager, 10_000)
+      assert_received {:dropped, "prontera", [{1065, 1, 100, 100, true}], 100, 100}
+      assert nil == Storage.get(1)
+    end
+
+    test "a spent trap returns its item on paid live-player natural expiry, as an armed one does" do
+      test_pid = self()
+
+      stub(Coordinator, :drop_items, fn map_name, items, x, y ->
+        send(test_pid, {:dropped, map_name, items, x, y})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+      spent = trap_state(phase: :spent, return_item_on_expiry?: true, natural_expiry: :drop_item)
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(1, expires_at: 10_000, state: %{base_damage: 100, trap: spent})
                )
 
       assert :ok = Manager.tick(manager, 10_000)
@@ -782,16 +821,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
 
     test "serializes contact and timeout so only the winning path detonates" do
-      manager = start_manager(10_000)
+      manager = start_manager(9_000)
       trap = trap_state(natural_expiry: :become_used)
 
-      for group_id <- [1, 2] do
+      for {group_id, center} <- [{1, {100, 100}}, {2, {110, 100}}] do
         assert :ok =
                  Manager.register(
                    manager,
                    trap_group(group_id,
                      skill_name: :natural_expiry_unit,
                      visibility: :public,
+                     unit_range: 1,
+                     center: center,
+                     cells: [center],
                      expires_at: 10_000,
                      state: %{
                        base_damage: 100,
@@ -803,21 +845,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  )
       end
 
-      assert :ok = Manager.trigger(manager, 1, {:mob, 20}, :on_touch)
+      :ok = SpatialIndex.add_unit(:mob, 20, 101, 100, "prontera")
+      assert :ok = Manager.tick(manager, 9_000)
+      :ok = SpatialIndex.add_unit(:mob, 21, 111, 100, "prontera")
       assert :ok = Manager.tick(manager, 10_000)
-      assert :ok = Manager.trigger(manager, 2, {:mob, 20}, :on_touch)
+      assert :ok = Manager.tick(manager, 10_100)
 
       assert_received {:detonated, :contact, 1}
       refute_received {:detonated, :natural, 1, _, _}
       assert_received {:detonated, :natural, 2, :armed, 10_000}
       refute_received {:detonated, :contact, 2}
 
-      for group_id <- [1, 2] do
-        assert %Group{
-                 expires_at: 11_500,
-                 state: %{trap: %TrapState{phase: :used}}
-               } = Storage.get(group_id)
-      end
+      assert nil == Storage.get(1)
+
+      assert %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}} =
+               Storage.get(2)
     end
 
     test "reveals a hidden supported trap and materializes it once" do
@@ -1337,6 +1379,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
           skill_name: :ht_claymoretrap,
           handler: ClaymoreUnit,
           visibility: :public,
+          unit_range: 1,
           center: {100, 100},
           cells: [{100, 100}],
           state: %{
@@ -1405,7 +1448,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         assert :ok = Manager.register(manager, g)
       end
 
-      assert :ok = Manager.trigger(manager, 1, {:mob, 500}, :on_touch)
+      :ok = SpatialIndex.add_unit(:mob, 500, 100, 100, "prontera")
+      assert :ok = Manager.tick(manager, 10_000)
 
       assert_received {:claymore_touch, {:mob, 500}}
       refute_received {:trap_triggered, _}

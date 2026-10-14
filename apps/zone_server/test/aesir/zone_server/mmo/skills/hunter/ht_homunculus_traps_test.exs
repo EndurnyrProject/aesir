@@ -1,9 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.TrapTestHelper
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine
@@ -24,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
   end
 
   @gid 1_500_001
+  @cell {50, 50}
+  @now 10_000
   @caster %MobState{
     instance_id: 1000,
     mob_id: 1002,
@@ -40,6 +44,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
   }
 
   test "mob Land Mine uses the real hostile relation for Homunculus damage and Stun" do
+    stub_units([mob(1000), homunculus(@gid, 3000)])
+    mine = group(116, :ht_landmine, %{base_damage: 500})
+    assert [{:homunculus, @gid}] = HtLandmine.unit_targets(mine, @cell, [{:homunculus, @gid}])
+
     stub(Trap, :resolve_caster, fn _group -> {:ok, @caster} end)
     stub(Trap, :roll_damage, fn 500 -> 500 end)
 
@@ -53,11 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
       :ok
     end)
 
-    assert :expire =
-             HtLandmine.on_touch(
-               group(116, :ht_landmine, %{base_damage: 500}),
-               {:homunculus, @gid}
-             )
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtLandmine.on_unit_hit(mine, @cell, {:homunculus, @gid}, @now)
   end
 
   test "mob Freezing Trap retains the exact typed connected Homunculus" do
@@ -75,26 +80,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
       :ok
     end)
 
-    assert :expire = HtFreezingtrap.on_touch(group(121, :ht_freezingtrap), {:homunculus, @gid})
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtFreezingtrap.on_unit_hit(
+               group(121, :ht_freezingtrap),
+               @cell,
+               {:homunculus, @gid},
+               @now
+             )
   end
 
   test "mob Flasher and Shockwave use the real hostile relation for a living Homunculus" do
+    stub_units([mob(1000), homunculus(@gid, 3000)])
+
     expect(StatusInterpreter, :apply_status, fn :homunculus, @gid, :sc_blind, opts ->
       assert opts[:source_type] == :mob
       :ok
     end)
 
-    assert :expire = HtFlasher.on_touch(group(120, :ht_flasher), {:homunculus, @gid})
+    flasher = group(120, :ht_flasher)
+    assert [{:homunculus, @gid}] = HtFlasher.unit_targets(flasher, @cell, [{:homunculus, @gid}])
+
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtFlasher.on_unit_hit(flasher, @cell, {:homunculus, @gid}, @now)
 
     expect(Resource, :drain_sp_percent, fn {:homunculus, @gid}, 50 -> :ok end)
-    assert :expire = HtShockwave.on_touch(group(118, :ht_shockwave), {:homunculus, @gid})
+    shockwave = group(118, :ht_shockwave)
+
+    assert [{:homunculus, @gid}] =
+             HtShockwave.unit_targets(shockwave, @cell, [{:homunculus, @gid}])
+
+    assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+             HtShockwave.on_unit_hit(shockwave, @cell, {:homunculus, @gid}, @now)
   end
 
-  test "player-side Homunculus contact leaves every trap armed" do
-    reject(&SkillAttack.execute_field_misc_attack/4)
-    reject(&SkillAttack.execute_field_splash_attack/5)
-    reject(&StatusInterpreter.apply_status/4)
-    reject(&Resource.drain_sp_percent/2)
+  test "the caster's own Homunculus sets off none of its traps" do
+    stub_units([player(1000), homunculus(@gid, 1000), mob(2001)])
 
     for {module, group} <- [
           {HtLandmine, group(116, :ht_landmine, %{base_damage: 500}, :player)},
@@ -102,7 +122,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
           {HtFlasher, group(120, :ht_flasher, %{}, :player)},
           {HtShockwave, group(118, :ht_shockwave, %{}, :player)}
         ] do
-      assert {:ok, %Group{}} = module.on_touch(group, {:homunculus, @gid})
+      group = %{group | map_name: "prontera"}
+
+      assert [{:mob, 2001}] =
+               module.unit_targets(group, @cell, [{:homunculus, @gid}, {:mob, 2001}])
     end
   end
 
@@ -117,7 +140,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
       map_name: "trap_hom",
       center: {50, 50},
       cells: [{50, 50}],
-      state: state
+      expires_at: 90_000,
+      state: Map.put(state, :trap, armed_trap())
     }
   end
 end

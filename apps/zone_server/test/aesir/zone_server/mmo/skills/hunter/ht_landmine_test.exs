@@ -1,13 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
   use ExUnit.Case, async: true
   import Mimic
+  import Aesir.ZoneServer.TrapTestHelper
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
   end
 
   @caster_id 1000
+  @cell {50, 50}
+  @now 10_000
 
   defp group(state, attrs \\ []) do
     base = %Group{
@@ -38,6 +40,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
 
     struct(base, attrs)
   end
+
+  defp armed(attrs \\ []),
+    do:
+      group(%{base_damage: 500, trap: armed_trap()}, Keyword.merge([expires_at: 120_000], attrs))
 
   describe "registration & metadata" do
     @tag game_mode: :renewal
@@ -84,15 +90,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
     end
   end
 
-  describe "on_touch/2" do
-    test "fires misc damage on an enemy mob (within the +/- variance band) and expires" do
-      caster = %PlayerState{character_id: @caster_id, map_name: "prontera"}
-      target = %{instance_id: 2001, map_name: "prontera", hp: 100}
-
-      stub(UnitRegistry, :get_unit, fn
-        :player, @caster_id -> {:ok, {PlayerState, caster, self()}}
-        :mob, 2001 -> {:ok, {Map, target, self()}}
-      end)
+  describe "unit pass" do
+    @tag game_mode: :renewal
+    test "fires misc damage on an enemy mob (within the +/- variance band) and is spent" do
+      stub_units([player(@caster_id), mob(2001)])
 
       expect(SkillAttack, :execute_field_misc_attack, fn caster, {:mob, 2001}, %Group{}, opts ->
         assert caster.character_id == @caster_id
@@ -111,17 +112,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
         :ok
       end)
 
-      assert :expire = HtLandmine.on_touch(group(%{base_damage: 500}), {:mob, 2001})
+      assert [{:mob, 2001}] = HtLandmine.unit_targets(armed(), @cell, [{:mob, 2001}])
+
+      assert {:ok, %Group{expires_at: 11_500, state: %{trap: %TrapState{phase: :used}}}} =
+               HtLandmine.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a pre-renewal blast stuns for 5 seconds" do
+      stub_units([player(@caster_id)])
+
+      stub(SkillAttack, :execute_field_misc_attack, fn _caster, {:mob, 2001}, %Group{}, opts ->
+        assert opts[:base_damage] == 500
+        {:ok, %{hit?: true}}
+      end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_stun, params ->
+        assert params[:duration] == 5_000
+        :ok
+      end)
+
+      assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+               HtLandmine.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
     end
 
     test "a blast that deals nothing stuns nobody but still spends the mine" do
-      caster = %PlayerState{character_id: @caster_id, map_name: "prontera"}
-      target = %{instance_id: 2001, map_name: "prontera", hp: 100}
-
-      stub(UnitRegistry, :get_unit, fn
-        :player, @caster_id -> {:ok, {PlayerState, caster, self()}}
-        :mob, 2001 -> {:ok, {Map, target, self()}}
-      end)
+      stub_units([player(@caster_id)])
 
       stub(SkillAttack, :execute_field_misc_attack, fn _caster, {:mob, 2001}, %Group{}, _opts ->
         {:ok, %{hit?: false}}
@@ -129,17 +145,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
 
       reject(&StatusInterpreter.apply_status/4)
 
-      assert :expire = HtLandmine.on_touch(group(%{base_damage: 500}), {:mob, 2001})
+      assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+               HtLandmine.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
     end
 
-    test "failed damage delivery applies no Stun and keeps the trap armed" do
-      caster = %PlayerState{character_id: @caster_id, map_name: "prontera"}
-      target = %{instance_id: 2001, map_name: "prontera", hp: 100}
-
-      stub(UnitRegistry, :get_unit, fn
-        :player, @caster_id -> {:ok, {PlayerState, caster, self()}}
-        :mob, 2001 -> {:ok, {Map, target, self()}}
-      end)
+    test "failed damage delivery applies no Stun and still spends the mine" do
+      stub_units([player(@caster_id)])
 
       for reason <- [:target_dead, :not_found, :failed_delivery] do
         expect(SkillAttack, :execute_field_misc_attack, fn _caster,
@@ -151,30 +162,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
 
         reject(&StatusInterpreter.apply_status/4)
 
-        armed = group(%{base_damage: 500})
-        assert {:ok, ^armed} = HtLandmine.on_touch(armed, {:mob, 2001})
+        assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+                 HtLandmine.on_unit_hit(armed(), @cell, {:mob, 2001}, @now)
       end
     end
 
     test "the owner does not trigger their own trap" do
-      reject(&SkillAttack.execute_field_misc_attack/4)
+      stub_units([player(@caster_id), mob(2001)])
 
-      assert {:ok, %Group{}} =
-               HtLandmine.on_touch(group(%{base_damage: 500}), {:player, @caster_id})
+      assert [{:mob, 2001}] =
+               HtLandmine.unit_targets(armed(), @cell, [{:player, @caster_id}, {:mob, 2001}])
     end
 
     test "an allied player does not trigger the trap" do
-      reject(&SkillAttack.execute_field_misc_attack/4)
+      stub_units([player(@caster_id), player(3000), mob(2001)])
 
-      assert {:ok, %Group{}} = HtLandmine.on_touch(group(%{base_damage: 500}), {:player, 3000})
+      assert [{:mob, 2001}] =
+               HtLandmine.unit_targets(armed(), @cell, [{:player, 3000}, {:mob, 2001}])
     end
 
     test "a mob-owned mine targets a player but not another mob" do
-      mob_caster = %{instance_id: 4000}
-
-      stub(UnitRegistry, :get_unit, fn :mob, 4000 ->
-        {:ok, {Map, mob_caster, self()}}
-      end)
+      mob_caster = mob(4000)
+      stub_units([mob_caster, player(3000), mob(4001)])
 
       expect(SkillAttack, :execute_misc_attack, fn ^mob_caster, {:player, 3000}, _opts ->
         {:ok, %{hit?: true}}
@@ -186,9 +195,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
         :ok
       end)
 
-      mob_group = group(%{base_damage: 500}, caster_type: :mob, caster_id: 4000)
-      assert :expire = HtLandmine.on_touch(mob_group, {:player, 3000})
-      assert {:ok, %Group{}} = HtLandmine.on_touch(mob_group, {:mob, 4001})
+      mob_group = armed(caster_type: :mob, caster_id: 4000)
+
+      assert [{:player, 3000}] =
+               HtLandmine.unit_targets(mob_group, @cell, [{:player, 3000}, {:mob, 4001}])
+
+      assert {:ok, %Group{state: %{trap: %TrapState{phase: :used}}}} =
+               HtLandmine.on_unit_hit(mob_group, @cell, {:player, 3000}, @now)
     end
   end
 

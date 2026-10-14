@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
 
   @moduletag :capture_log
 
+  import Mimic
+
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.MoveRequest
@@ -11,6 +13,8 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @map "prontera"
@@ -18,12 +22,21 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
   @player_id 91_202
   @trap_cell {152, 150}
 
-  test "mob Flasher placement blinds a player through movement contact and becomes inert" do
+  setup do
+    Mimic.copy(Resistance)
+    stub(Resistance, :roll_success, fn _effective_rate -> true end)
+    stub(Resistance, :roll_rate, fn _effective_rate -> true end)
+    :ok
+  end
+
+  setup {Aesir.MimicMode, :global}
+
+  test "mob Flasher placement blinds a player walking next to it and becomes inert" do
     player =
       start_player_session(
         character: player_character(),
         map_name: @map,
-        position: {151, 150}
+        position: {155, 150}
       )
 
     mob = start_mob_session(unit_id: @mob_id, map_name: @map, position: @trap_cell)
@@ -33,32 +46,35 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
     assert [
              %Group{
                group_id: group_id,
-               visibility: :party_only,
+               visibility: visibility,
                state: %{trap: %TrapState{phase: :armed}}
              }
            ] =
              Storage.get_groups_at_cell(@map, 152, 150)
 
-    walk(player.pid, @trap_cell)
+    assert visibility == Trap.visibility(:ht_flasher)
+
+    walk(player.pid, {153, 150})
 
     assert eventually(fn -> StatusStorage.has_status?(:player, @player_id, :sc_blind) end)
 
     blind = StatusStorage.get_status(:player, @player_id, :sc_blind)
     assert blind.source_id == @mob_id
     assert blind.source_type == :mob
-    expected = if GameMode.mode() == :renewal, do: 20_000, else: 18_000
+    expected = if GameMode.mode() == :renewal, do: 20_000, else: 30_000
     assert_in_delta blind.expires_at - blind.started_at, expected, 100
 
     assert %Group{
-             visibility: :party_only,
+             visibility: ^visibility,
              expires_at: used_expires_at,
              state: %{trap: %TrapState{phase: :used}}
            } = Storage.get(group_id)
 
     assert_in_delta used_expires_at - System.monotonic_time(:millisecond), 1_500, 200
 
-    walk(player.pid, {151, 150})
-    walk(player.pid, @trap_cell)
+    walk(player.pid, {155, 150})
+    walk(player.pid, {153, 150})
+    Process.sleep(200)
 
     assert StatusStorage.get_status(:player, @player_id, :sc_blind).started_at == blind.started_at
 
@@ -102,7 +118,7 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
       sp: 50,
       max_sp: 50,
       last_map: @map,
-      last_x: 151,
+      last_x: 155,
       last_y: 150,
       save_map: @map,
       save_x: 151,

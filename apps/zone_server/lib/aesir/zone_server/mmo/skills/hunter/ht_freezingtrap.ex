@@ -1,8 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
   @moduledoc """
-  Freezing Trap (HT_FREEZINGTRAP), an activator-centered Water weapon trap.
+  Freezing Trap (HT_FREEZINGTRAP), a Water weapon trap.
 
-  Renewal: two traps. Pre-renewal: one trap. Both freeze the first enemy on contact for 3 s per level after a water-element hit.
+  The first enemy within one cell sets it off: a Water weapon strike hits every
+  enemy within one cell of that enemy and freezes each one it connects with for
+  3 s per level. Renewal: the strike ignores flee and the trap costs two traps.
+  Pre-renewal: flee applies and it costs one trap.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 121,
@@ -23,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
     item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]],
     damage_splash: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -44,7 +48,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
        state: Trap.place_state(level, %{dex: 0, int: 0, base_level: 0}, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visibility: :party_only
+       unit_range: 1,
+       visibility: Trap.visibility(:ht_freezingtrap)
      }}
   end
 
@@ -53,16 +58,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
   def on_interval(%Group{} = group, _now), do: {:ok, group}
 
   @impl Ground
-  @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
-  def on_touch(%Group{} = group, {mover_type, mover_id} = mover) do
-    if Trap.enemy?(group, mover) do
-      fire(group, mover_type, mover_id)
-    else
-      {:ok, group}
-    end
+  @spec unit_targets(Group.t(), Ground.cell(), [{atom(), integer()}]) :: [{atom(), integer()}]
+  def unit_targets(%Group{} = group, _cell, refs), do: Trap.unit_targets(group, refs)
+
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, {type, id}, now) do
+    if Trap.armed?(group), do: fire(group, type, id, now), else: {:ok, group}
   end
 
-  defp fire(group, mover_type, mover_id) do
+  defp fire(group, mover_type, mover_id, now) do
     map_name = group.map_name
 
     with {:ok, caster} <- Trap.resolve_caster(group),
@@ -75,13 +80,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
         skill_level: group.level,
         skill_ratio: 100,
         element: :water,
-        ignore_flee: true,
+        ignore_flee: GameMode.mode() == :renewal,
         skip_crit: true,
         typed_results: true
       )
       |> Enum.each(&freeze(group, &1))
 
-      :expire
+      {:ok, Trap.spring(group, now)}
     else
       _ -> {:ok, group}
     end

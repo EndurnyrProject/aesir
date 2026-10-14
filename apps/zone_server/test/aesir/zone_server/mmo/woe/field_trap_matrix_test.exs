@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -21,9 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @traps [
-    {HtSkidtrap, :ht_skidtrap, 115, {:status, :sc_stop}},
+    {HtSkidtrap, :ht_skidtrap, 115, :skid},
     {HtLandmine, :ht_landmine, 116, {:damage_status, :sc_stun}},
-    {HtAnklesnare, :ht_anklesnare, 117, {:status, :sc_anklesnare}},
+    {HtAnklesnare, :ht_anklesnare, 117, {:status, :sc_ankle}},
     {HtShockwave, :ht_shockwave, 118, :sp},
     {HtSandman, :ht_sandman, 119, {:status, :sc_sleep}},
     {HtFlasher, :ht_flasher, 120, {:status, :sc_blind}},
@@ -60,7 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
         group = trap_group(@skill_name, @skill_id, caster.character.id, target_position)
         before = get_player_state(target.pid)
 
-        assert triggered?(@module.on_touch(group, target_ref))
+        assert [^target_ref] = @module.unit_targets(group, target_position, [target_ref])
+        assert triggered?(@module.on_unit_hit(group, target_position, target_ref, now()))
         assert_effect(@effect, target, before)
       end
     end
@@ -127,8 +129,13 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
     :ok = MapFlags.set_runtime("prontera", :gvg_castle, true)
     :ok = MapFlags.set_runtime("prontera", :gvg, true)
 
-    assert triggered?(HtSkidtrap.on_touch(group, {:player, friendly.character.id}))
-    assert StatusStorage.has_status?(:player, friendly.character.id, :sc_stop)
+    friendly_ref = {:player, friendly.character.id}
+    assert [^friendly_ref] = HtSkidtrap.unit_targets(group, friendly.position, [friendly_ref])
+    assert triggered?(HtSkidtrap.on_unit_hit(group, friendly.position, friendly_ref, now()))
+
+    assert StatusStorage.has_status?(:player, friendly.character.id, :sc_stop) ==
+             (GameMode.mode() == :renewal)
+
     assert_eventually(fn -> position(friendly) == friendly.position end)
   end
 
@@ -167,7 +174,13 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
   defp trap_group(skill_name, skill_id, caster_id, center) do
     group = group(skill_name, skill_id, caster_id, center)
     state = Trap.place_state(1, %{dex: 20, int: 20, base_level: 50}, group)
-    %{group | origin: {elem(center, 0) - 1, elem(center, 1)}, state: state}
+
+    %{
+      group
+      | origin: {elem(center, 0) - 1, elem(center, 1)},
+        expires_at: now() + 60_000,
+        state: state
+    }
   end
 
   defp live_quagmire_group(caster_id, cells) do
@@ -199,10 +212,18 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
     }
   end
 
-  defp triggered?(:expire), do: true
-  defp triggered?({:expire, _commands}), do: true
-  defp triggered?({:ok, %Group{target_id: target_id}}) when not is_nil(target_id), do: true
+  defp triggered?({:ok, %Group{} = group}), do: not Trap.armed?(group)
+  defp triggered?({:ok, %Group{} = group, _commands}), do: not Trap.armed?(group)
   defp triggered?(_result), do: false
+
+  defp now, do: System.monotonic_time(:millisecond)
+
+  # Renewal holds the slid target in place; pre-renewal only slides it.
+  defp assert_effect(:skid, target, _before) do
+    if GameMode.mode() == :renewal,
+      do: assert(StatusStorage.has_status?(:player, target.character.id, :sc_stop)),
+      else: assert_eventually(fn -> position(target) != target.position end)
+  end
 
   defp assert_effect({:status, status}, target, _before) do
     assert StatusStorage.has_status?(:player, target.character.id, status)
