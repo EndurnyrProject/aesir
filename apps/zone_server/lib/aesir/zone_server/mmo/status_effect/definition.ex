@@ -230,6 +230,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @callback on_timeout(target(), StatusEntry.t(), context()) :: [{atom(), keyword()}]
 
+  @typedoc """
+  How a status meets a request to end it: `{:end, after_end}` ends it,
+  `{:keep, instance, after_end}` keeps it as `instance`. `after_end` runs once
+  the outcome is stored.
+  """
+  @type end_request_result ::
+          {:end, (-> any())} | {:keep, StatusEntry.t(), (-> any())}
+
+  @doc """
+  Invoked when something ends the status before it runs out (a cure, a cleanse,
+  death, another effect ending it); never when its duration runs out.
+
+  The engine stores the outcome only while the instance it read is still the
+  current one, asking again otherwise, so the callback must not have side
+  effects of its own: it returns them as `after_end`. `on_expire` still runs
+  when the status ends. Defaults to `{:end, fn -> :ok end}`.
+  """
+  @callback on_end_request(target(), StatusEntry.t(), context()) :: end_request_result()
+
   @doc "Invoked when the unit holding this status takes damage."
   @callback on_damage(target(), StatusEntry.t(), map(), context()) :: hook_result()
 
@@ -466,6 +485,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
           | :on_movement_intent
           | :on_committed_action
           | :on_timeout
+          | :on_end_request
           | :absorb_damage
 
   defmacro __using__(opts) do
@@ -566,6 +586,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     movement_intent? = Module.defines?(env.module, {:on_movement_intent, 4})
     committed_action? = Module.defines?(env.module, {:on_committed_action, 4})
     timeout? = Module.defines?(env.module, {:on_timeout, 3})
+    end_request? = Module.defines?(env.module, {:on_end_request, 3})
     absorb? = Module.defines?(env.module, {:absorb_damage, 4})
 
     damage_default = damage_default(damage?)
@@ -601,6 +622,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     committed_action_default = committed_action_default(committed_action?)
 
     timeout_default = timeout_default(timeout?)
+    end_request_default = end_request_default(end_request?)
     absorb_default = absorb_default(absorb?)
 
     capabilities =
@@ -614,6 +636,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       |> maybe_add_capability(movement_intent?, :on_movement_intent)
       |> maybe_add_capability(committed_action?, :on_committed_action)
       |> maybe_add_capability(timeout?, :on_timeout)
+      |> maybe_add_capability(end_request?, :on_end_request)
       |> maybe_add_capability(absorb?, :absorb_damage)
 
     quote do
@@ -626,6 +649,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       unquote(movement_intent_default)
       unquote(committed_action_default)
       unquote(timeout_default)
+      unquote(end_request_default)
       unquote(absorb_default)
 
       @doc false
@@ -679,6 +703,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       @impl true
       def absorb_damage(_target, instance, %{damage: damage}, _context),
         do: {:ok, damage, instance}
+    end
+  end
+
+  defp end_request_default(true), do: nil
+
+  defp end_request_default(false) do
+    quote do
+      @impl true
+      def on_end_request(_target, _instance, _context), do: {:end, fn -> :ok end}
     end
   end
 

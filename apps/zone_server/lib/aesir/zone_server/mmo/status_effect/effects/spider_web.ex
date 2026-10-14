@@ -1,12 +1,20 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWeb do
   @moduledoc """
-  Fiber Lock (SC_SPIDERWEB). The holder is rooted by up to three webs (their
-  group ids in `state.groups`) and loses half its FLEE.
+  Fiber Lock (SC_SPIDERWEB). The holder is rooted and loses half its FLEE.
+
+  `val1` counts the webs that caught the holder during this hold; it never drops
+  when a web goes. `state.slots` are the three web slots: each catch takes the
+  first free slot, and a web leaving frees its slot for the next one.
+
+  Ending the hold early (a fire attribute step, a cleanse, anything but running
+  out) burns one web instead: slots whose web is gone are freed, the web with
+  the least time left is torn down (the earliest slot on a tie), and the hold
+  lasts while a slot still holds a web, unless the holder is dead. Running out
+  ends the hold and leaves the webs standing. Death does not end it.
 
   Every fire element attribute step against the holder gains 100 element ratio
   points (renewal adds them to the ratio, pre-renewal doubles the damage) and
-  burns the web closest to running out through `consume/2`; the hold lasts while
-  a web remains. Identical in both modes.
+  ends the hold early as above. Identical in both modes.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_spiderweb,
@@ -14,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWeb do
     no_clear_buff: false,
     clear_buff_flags: [:debuff],
     no_save: true,
+    remove_on_death: false,
     bypass_resistance: true,
     properties: [:debuff, :prevents_movement],
     flags: [:no_move],
@@ -26,47 +35,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWeb do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
   def modifiers(_instance, _context), do: %{flee_rate: -50}
 
   @doc """
-  Burns the holder's web closest to running out, ending the hold with the last one.
+  An application never meets a held hold: only a unit not yet held is applied
+  the status, and a web catching a held unit restarts its hold in place.
+  """
+  @impl true
+  def overlap(_target, _held, _incoming), do: :fail
 
-  Returns whether the unit was held, which is when a fire attribute step gains the
-  web bonus. Webs already gone are dropped.
+  @doc """
+  Ends the holder's hold early for a fire attribute step, burning one web.
+
+  Returns whether the unit was held, which is when the step gains the web bonus.
   """
   @spec consume(atom(), integer()) :: boolean()
   def consume(unit_type, unit_id) do
-    case StatusStorage.get_status(unit_type, unit_id, :sc_spiderweb) do
-      %StatusEntry{state: %{groups: groups}} = entry ->
-        if claim(unit_type, unit_id, entry, burn_plan(groups)),
-          do: true,
-          else: consume(unit_type, unit_id)
-
-      _not_held ->
-        false
-    end
-  end
-
-  # Claims the burn against the read entry, so concurrent fire steps each burn
-  # their own web; a lost race reads the entry again. The burned web is torn
-  # down only after the claim, and the last web ends the hold through its
-  # expiry lifecycle, which tears down every web.
-  defp claim(unit_type, unit_id, entry, :end_hold),
-    do: Interpreter.remove_status_if_current(unit_type, unit_id, :sc_spiderweb, entry)
-
-  defp claim(unit_type, unit_id, entry, {:burn, burned, left}) do
-    replacement = %{entry | state: Map.put(entry.state, :groups, left)}
-
-    if StatusStorage.replace_status_if_current(
-         unit_type,
-         unit_id,
-         :sc_spiderweb,
-         entry,
-         replacement
-       ) do
-      Manager.destroy_async(burned)
+    if StatusStorage.has_status?(unit_type, unit_id, :sc_spiderweb) do
+      Interpreter.remove_status(unit_type, unit_id, :sc_spiderweb)
       true
     else
       false
@@ -74,23 +64,40 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWeb do
   end
 
   @impl true
-  def on_expire(_target, %{state: %{groups: groups}}, _context) do
-    Enum.each(groups, &Manager.destroy_async/1)
-    :ok
+  def on_end_request({unit_type, unit_id}, %StatusEntry{state: %{slots: slots}} = entry, _ctx) do
+    webs = Enum.map(slots, &live_web/1)
+    slots = Enum.map(webs, &(&1 && &1.group_id))
+
+    {slots, burned} =
+      case burn_pick(webs) do
+        nil -> {slots, nil}
+        {%Group{group_id: group_id}, index} -> {List.replace_at(slots, index, nil), group_id}
+      end
+
+    tear_down = fn -> if burned, do: Manager.destroy_async(burned) end
+
+    if living?(unit_type, unit_id) and Enum.any?(slots),
+      do: {:keep, %{entry | state: %{entry.state | slots: slots}}, tear_down},
+      else: {:end, tear_down}
   end
 
-  def on_expire(_target, _instance, _context), do: :ok
+  def on_end_request(_target, _entry, _context), do: {:end, fn -> :ok end}
 
-  # Picks the live web with the least time left to burn; with one web or none
-  # left the hold ends. Webs already gone are dropped.
-  defp burn_plan(groups) do
-    case Enum.filter(groups, &match?(%Group{}, Storage.get(&1))) do
-      many when length(many) > 1 ->
-        shortest = Enum.min_by(many, &Storage.get(&1).expires_at)
-        {:burn, shortest, many -- [shortest]}
+  defp live_web(nil), do: nil
+  defp live_web(group_id), do: Storage.get(group_id)
 
-      _one_or_none ->
-        :end_hold
+  # The web with the least time left; `min_by` keeps the earliest slot on a tie.
+  defp burn_pick(webs) do
+    webs
+    |> Enum.with_index()
+    |> Enum.reject(fn {web, _index} -> is_nil(web) end)
+    |> Enum.min_by(fn {%Group{expires_at: expires_at}, _index} -> expires_at end, fn -> nil end)
+  end
+
+  defp living?(unit_type, unit_id) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> Unit.living?(state)
+      _gone -> false
     end
   end
 end

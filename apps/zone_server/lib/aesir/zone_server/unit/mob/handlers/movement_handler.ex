@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @doc """
   Forces the mob to path toward `{x, y}`, or drops the request if the mob is
@@ -93,6 +94,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
           |> MobState.stop_movement()
           |> MobState.set_target(nil)
           |> MobState.set_ai_state(:idle)
+
+        SpatialIndex.reenter_block(:mob, updated_state.instance_id)
 
         Movement.set_position(
           :mob,

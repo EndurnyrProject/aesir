@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Integration.ProfessorSkillsTest do
 
     assert eventually(fn ->
              match?(
-               %{state: %{groups: [_gid]}},
+               %{state: %{slots: [_gid, nil, nil]}},
                StatusStorage.get_status(:mob, mob.unit_id, :sc_spiderweb)
              )
            end)
@@ -145,6 +145,31 @@ defmodule Aesir.ZoneServer.Integration.ProfessorSkillsTest do
              end,
              8_000
            )
+  end
+
+  test "Fiber Lock catches every monster on the web's cell and keeps the last one caught" do
+    professor = start_caster(@professor, %{"#{@spiderweb}" => 1}, [{1025, 1}])
+    first = start_target({153, 150})
+    second = start_target({153, 150})
+
+    cast(professor, @spiderweb, 1, first.unit_id)
+
+    assert eventually(fn ->
+             Enum.all?([first, second], fn mob ->
+               StatusStorage.has_status?(:mob, mob.unit_id, :sc_spiderweb)
+             end)
+           end)
+
+    # Monsters are caught most recent to enter the block first, so the first
+    # spawned is caught last and kept.
+    first_ref = {:mob, first.unit_id}
+
+    assert eventually(fn ->
+             match?(
+               [%{state: %{victim: ^first_ref}}],
+               SkillUnitStorage.get_groups_by_caster(:player, professor.character.id)
+             )
+           end)
   end
 
   test "Double Casting echoes a landed bolt once" do

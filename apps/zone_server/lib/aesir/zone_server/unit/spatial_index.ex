@@ -2,6 +2,11 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   @moduledoc """
   ETS-based spatial indexing for O(1) player lookups.
   Uses grid cells for efficient range queries.
+
+  Each grid cell is a map block of 8x8 cells and remembers when every unit in
+  it entered: placing a unit, or moving it into another block, stamps a new
+  entry; moving within the block keeps it. `units_in_cell/3` lists a cell's
+  units in the map's block order.
   """
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
@@ -29,13 +34,32 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
 
     case :ets.lookup(unit_positions_table(), key) do
       [{^key, {old_map, old_x, old_y}}] ->
-        cell_remove(cell_key(old_map, old_x, old_y), unit_type, unit_id)
-        cell_add(cell_key(new_map, new_x, new_y), unit_type, unit_id)
+        old_cell = cell_key(old_map, old_x, old_y)
+        new_cell = cell_key(new_map, new_x, new_y)
+
+        if old_cell != new_cell do
+          cell_remove(old_cell, unit_type, unit_id)
+          cell_add(new_cell, unit_type, unit_id)
+        end
+
         :ets.insert(unit_positions_table(), {key, {new_map, new_x, new_y}})
         move_map_membership(unit_type, unit_id, old_map, new_map)
 
       _ ->
         add_unit(unit_type, unit_id, new_x, new_y, new_map)
+    end
+  end
+
+  @doc """
+  Stamps a new block entry for a unit where it stands, as a warp does: the unit
+  leaves the map and is put back, so it becomes the block's most recent entry
+  even when it lands in the same block. A no-op for an unindexed unit.
+  """
+  @spec reenter_block(atom(), integer()) :: :ok
+  def reenter_block(unit_type, unit_id) do
+    case :ets.lookup(unit_positions_table(), {unit_type, unit_id}) do
+      [{_key, {map_name, x, y}}] -> cell_add(cell_key(map_name, x, y), unit_type, unit_id)
+      [] -> :ok
     end
   end
 
@@ -58,8 +82,9 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     end
   end
 
-  # Grid cells hold `%{unit_type => MapSet.t(unit_id)}`; empty sets and empty
-  # cells are dropped so range scans never visit stale keys.
+  # Grid cells hold `%{unit_type => %{unit_id => entry}}`, `entry` being when
+  # the unit entered the block; empty types and empty cells are dropped so range
+  # scans never visit stale keys.
   defp cell_add(cell, unit_type, unit_id) do
     units =
       case :ets.lookup(spatial_index_table(), cell) do
@@ -67,7 +92,8 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
         [] -> %{}
       end
 
-    updated = Map.update(units, unit_type, MapSet.new([unit_id]), &MapSet.put(&1, unit_id))
+    entry = :erlang.unique_integer([:monotonic])
+    updated = Map.update(units, unit_type, %{unit_id => entry}, &Map.put(&1, unit_id, entry))
     :ets.insert(spatial_index_table(), {cell, updated})
     :ok
   end
@@ -75,10 +101,10 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   defp cell_remove(cell, unit_type, unit_id) do
     case :ets.lookup(spatial_index_table(), cell) do
       [{^cell, units}] ->
-        remaining = units |> Map.get(unit_type, MapSet.new()) |> MapSet.delete(unit_id)
+        remaining = units |> Map.get(unit_type, %{}) |> Map.delete(unit_id)
 
         updated =
-          if MapSet.size(remaining) == 0,
+          if map_size(remaining) == 0,
             do: Map.delete(units, unit_type),
             else: Map.put(units, unit_type, remaining)
 
@@ -143,6 +169,37 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     |> Enum.filter(fn {unit_type, unit_id} -> at?(unit_type, unit_id, map_name, in_range?) end)
   end
 
+  @doc """
+  The units standing exactly on cell `{x, y}`, in the order the map's block
+  lists them: every unit other than a monster first, then the monsters, each
+  group with the unit that entered the cell's 8x8 block most recently first.
+  """
+  @spec units_in_cell(String.t(), integer(), integer()) :: [{atom(), integer()}]
+  def units_in_cell(map_name, x, y) do
+    cell = cell_key(map_name, x, y)
+
+    entries =
+      case :ets.lookup(spatial_index_table(), cell) do
+        [{^cell, units_map}] ->
+          for {unit_type, ids} <- units_map,
+              {unit_id, entry} <- ids,
+              at?(unit_type, unit_id, map_name, &(&1 == x and &2 == y)),
+              do: {unit_type, unit_id, entry}
+
+        [] ->
+          []
+      end
+
+    {mobs, others} =
+      Enum.split_with(entries, fn {unit_type, _id, _entry} -> unit_type == :mob end)
+
+    Enum.map(newest_first(others) ++ newest_first(mobs), fn {unit_type, unit_id, _entry} ->
+      {unit_type, unit_id}
+    end)
+  end
+
+  defp newest_first(entries), do: Enum.sort_by(entries, &elem(&1, 2), :desc)
+
   # Candidate ids of `unit_type` across `cells`; cells are coarse, so callers
   # still confirm each unit's exact position with `at?/4`.
   defp units_in_cells(cells, unit_type) do
@@ -156,7 +213,7 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   defp cell_units(cell) do
     case :ets.lookup(spatial_index_table(), cell) do
       [{^cell, units_map}] ->
-        Enum.map(units_map, fn {type, set} -> {type, MapSet.to_list(set)} end)
+        Enum.map(units_map, fn {type, ids} -> {type, Map.keys(ids)} end)
 
       [] ->
         []

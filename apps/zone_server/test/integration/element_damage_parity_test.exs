@@ -59,8 +59,9 @@ defmodule Aesir.ZoneServer.Integration.ElementDamageParityTest do
 
     :ok =
       StatusInterpreter.apply_status(:mob, mob.unit_id, :sc_spiderweb,
+        val1: webs,
         duration: 60_000,
-        state: %{groups: groups},
+        state: %{slots: groups ++ List.duplicate(nil, 3 - webs)},
         bypass_resistance: true
       )
 
@@ -69,7 +70,7 @@ defmodule Aesir.ZoneServer.Integration.ElementDamageParityTest do
 
   defp webs(mob) do
     case StatusStorage.get_status(:mob, mob.unit_id, :sc_spiderweb) do
-      %{state: %{groups: groups}} -> length(groups)
+      %{state: %{slots: slots}} -> Enum.count(slots, & &1)
       nil -> 0
     end
   end

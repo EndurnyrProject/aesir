@@ -736,6 +736,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @doc """
   Removes a status effect, running its on_expire callback first.
 
+  A status implementing `on_end_request/3` decides whether it ends; this holds
+  for every removal below that goes through `remove_statuses/4` too.
+
   `owner_refresh: :notify` publishes the player's asynchronous refresh after a
   real removal. `owner_refresh: :defer` is for an owning session that will
   synchronously recalculate and commit the state in the same handler. The
@@ -764,6 +767,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Restarts a held status as `replacement` only while `held` is still its current
+  entry: stores it, arms its new deadline and refreshes its icon. Returns whether
+  `replacement` was stored; a caller losing the race reads the status again.
+  """
+  @spec restart_status_if_current(
+          unit_type(),
+          integer(),
+          atom(),
+          StatusEntry.t(),
+          StatusEntry.t()
+        ) ::
+          boolean()
+  def restart_status_if_current(unit_type, unit_id, status_id, held, replacement) do
+    if StatusStorage.replace_status_if_current(unit_type, unit_id, status_id, held, replacement) do
+      StatusTickManager.arm(unit_type, unit_id, replacement)
+      StatusDisplay.on_applied(unit_type, unit_id, status_id, replacement)
+      true
+    else
+      false
+    end
+  end
+
+  @doc """
   Removes the supplied statuses through the normal expiration lifecycle and
   applies the selected owner-refresh policy once after the batch.
   """
@@ -778,6 +804,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   defp remove_status_without_refresh(unit_type, unit_id, status_id) do
+    if MapSet.member?(Registry.statuses_implementing(:on_end_request), status_id),
+      do: request_end(unit_type, unit_id, status_id),
+      else: end_status(unit_type, unit_id, status_id)
+  end
+
+  defp end_status(unit_type, unit_id, status_id) do
     active? =
       not is_nil(Registry.get_definition(status_id)) and
         not is_nil(StatusStorage.get_status(unit_type, unit_id, status_id))
@@ -791,6 +823,51 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end)
 
     active?
+  end
+
+  # A status deciding how it ends (`on_end_request/3`): its outcome is stored
+  # only over the entry it was asked about, asking again after a lost race.
+  # Returns whether the status ended.
+  defp request_end(unit_type, unit_id, status_id) do
+    %{module: module} = Registry.get_definition(status_id)
+
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      nil ->
+        false
+
+      instance ->
+        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+        outcome = module.on_end_request({unit_type, unit_id}, instance, context)
+
+        case store_end_outcome(outcome, unit_type, unit_id, status_id, instance) do
+          :lost_race -> request_end(unit_type, unit_id, status_id)
+          :kept -> false
+          :ended -> finish_requested_end(module, unit_type, unit_id, instance, context, outcome)
+        end
+    end
+  end
+
+  defp store_end_outcome({:keep, kept, after_end}, unit_type, unit_id, status_id, instance) do
+    if StatusStorage.replace_status_if_current(unit_type, unit_id, status_id, instance, kept) do
+      after_end.()
+      :kept
+    else
+      :lost_race
+    end
+  end
+
+  defp store_end_outcome({:end, _after_end}, unit_type, unit_id, status_id, instance) do
+    if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance),
+      do: :ended,
+      else: :lost_race
+  end
+
+  defp finish_requested_end(module, unit_type, unit_id, instance, context, {:end, after_end}) do
+    module.on_expire({unit_type, unit_id}, instance, context)
+    StatusDisplay.on_removed(unit_type, unit_id, instance.type, instance)
+    notify_unit_status_removed(unit_type, unit_id, instance.type)
+    after_end.()
+    true
   end
 
   @doc """

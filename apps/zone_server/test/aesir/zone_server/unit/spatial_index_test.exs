@@ -239,6 +239,40 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
     end
   end
 
+  describe "units_in_cell" do
+    test "lists non-monsters, then monsters, each most recent to enter the block first" do
+      SpatialIndex.add_unit(:mob, 5001, 50, 50, "prontera")
+      SpatialIndex.add_player(1001, 50, 50, "prontera")
+      SpatialIndex.add_unit(:mob, 5002, 50, 50, "prontera")
+      SpatialIndex.add_unit(:homunculus, 7001, 50, 50, "prontera")
+      SpatialIndex.add_unit(:mob, 5003, 51, 50, "prontera")
+
+      assert SpatialIndex.units_in_cell("prontera", 50, 50) ==
+               [{:homunculus, 7001}, {:player, 1001}, {:mob, 5002}, {:mob, 5001}]
+    end
+
+    test "a move within the block keeps the unit's entry; leaving and coming back renews it" do
+      SpatialIndex.add_unit(:mob, 5001, 51, 51, "prontera")
+      SpatialIndex.add_unit(:mob, 5002, 50, 50, "prontera")
+
+      SpatialIndex.update_unit_position(:mob, 5001, 50, 50, "prontera")
+      assert SpatialIndex.units_in_cell("prontera", 50, 50) == [{:mob, 5002}, {:mob, 5001}]
+
+      SpatialIndex.update_unit_position(:mob, 5001, 41, 50, "prontera")
+      SpatialIndex.update_unit_position(:mob, 5001, 50, 50, "prontera")
+      assert SpatialIndex.units_in_cell("prontera", 50, 50) == [{:mob, 5001}, {:mob, 5002}]
+    end
+
+    test "re-entering the block, as a warp does, makes the unit its most recent entry" do
+      SpatialIndex.add_unit(:mob, 5001, 50, 50, "prontera")
+      SpatialIndex.add_unit(:mob, 5002, 50, 50, "prontera")
+
+      SpatialIndex.reenter_block(:mob, 5001)
+
+      assert SpatialIndex.units_in_cell("prontera", 50, 50) == [{:mob, 5001}, {:mob, 5002}]
+    end
+  end
+
   describe "get_players_in_area" do
     test "returns players inside the rectangle, excluding those outside" do
       SpatialIndex.add_player(1001, 50, 50, "prontera")
