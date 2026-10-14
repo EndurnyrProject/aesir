@@ -252,7 +252,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
 
         case Manager.register(group) do
           :ok ->
-            broadcast_groundskill(group)
+            maybe_announce(group, Map.get(placement, :announce, true))
             {:ok, group}
 
           {:error, _reason} = error ->
@@ -265,6 +265,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     do: Map.put(state, :cell_attrs, cell_attrs)
 
   defp placement_state(%{state: state}), do: state
+
+  defp maybe_announce(group, true), do: broadcast_groundskill(group)
+  defp maybe_announce(_group, false), do: :ok
 
   defp broadcast_groundskill(%Group{center: {x, y}} = group) do
     packet = %GroundSkill{

@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Effects do
   def afflict_table, do: @afflict
 
   @doc "Applies one random blessing to a party member."
-  @spec bless(Group.t(), {:player, integer()}) :: :ok
+  @spec bless(Group.t(), {atom(), integer()}) :: :ok
   def bless(%Group{} = group, target), do: apply(Enum.random(@bless), group, nil, target)
 
   @doc "Applies one random affliction to an enemy standing in the field."

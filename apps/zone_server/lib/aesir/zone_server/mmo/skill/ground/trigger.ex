@@ -31,7 +31,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   @typedoc "The unit that entered the cell: `{unit_type, unit_id}`."
   @type mover :: {atom(), integer()}
 
-  @never_on_move [:pf_spiderweb]
+  # Spider Web and classic Basilica never act on a unit's step: an interval
+  # unit without DualMode acts only on its own timer.
+  @never_on_move [:pf_spiderweb, :hp_basilica]
 
   # Ground units with an interval and no DualMode flag (Lullaby aside) act on
   # their own timer, never on a unit's arrival. Hunter traps carry trap state.
@@ -77,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   def on_leave_cell(mover, old_map, old_x, old_y, new_map, new_x, new_y) do
     old_map
     |> Storage.get_groups_at_cell(old_x, old_y)
-    |> Enum.reject(&still_inside?(&1, new_map, new_x, new_y))
+    |> Enum.reject(&(&1.skill_name in @never_on_move or still_inside?(&1, new_map, new_x, new_y)))
     |> Enum.each(&maybe_out(&1, mover))
   end
 

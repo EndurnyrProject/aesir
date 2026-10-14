@@ -9,18 +9,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
-  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.TrapTestHelper
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -31,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
   @ally_id 36_302
   @mob_id 36_303
   @boss_id 36_304
+  @homunculus_id 36_305
 
   setup :setup_ets_tables
   setup :set_mimic_private
@@ -44,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
     caster = player(@caster_id)
     :ok = UnitRegistry.register_player(caster, self())
     :ok = SpatialIndex.add_player(@caster_id, 20, 20, "prontera")
-    %{caster: caster}
+    %{caster: caster, manager: manager}
   end
 
   defp definition do
@@ -74,6 +79,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
       entry = StatusStorage.get_status(:player, @caster_id, :sc_basilica_buff)
       assert entry.val1 == 4
       assert entry.expires_at - entry.started_at == 150_000
+    end
+  end
+
+  describe "renewal cell sync" do
+    @describetag game_mode: :renewal
+
+    test "a player on a sanctuary cell is left alone", %{caster: caster} do
+      :ok = Storage.insert(group(9_302, :hp_basilica, [{20, 20}], %{basilica: true}))
+
+      assert :ok = Basilica.sync_cell_status(caster)
+
+      refute StatusStorage.has_status?(:player, @caster_id, :sc_basilica)
     end
   end
 
@@ -201,77 +218,144 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
       assert :ok = HpBasilica.validate(caster, :self, 3, definition)
     end
 
-    test "grants the occupant status to everyone on it except the caster", %{caster: caster} do
+    test "grants non-enemies on it the status for the sanctuary's full lifetime, never the caster",
+         %{caster: caster, manager: manager} do
       {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
       [group] = Storage.get_groups_by_caster(:player, @caster_id)
-      support = HpBasilica.field_support(group)
+      place_player(@ally_id, {21, 20})
 
-      assert support.status_type == :sc_basilica
-      refute support.target?.({:player, @caster_id})
-      assert support.target?.({:player, @ally_id})
-      assert support.target?.({:mob, @boss_id})
-      assert support.params[:val1] == 1
+      :ok = Manager.tick(manager, group.next_tick_at)
+
+      assert %{val3: group_id, val4: @caster_id} =
+               entry =
+               StatusStorage.get_status(:player, @ally_id, :sc_basilica)
+
+      assert group_id == group.group_id
+      assert entry.expires_at - entry.started_at == 20_000
+      refute StatusStorage.has_status?(:player, @caster_id, :sc_basilica)
     end
 
-    test "a unit entering gets the occupant status; destroying the field clears everything",
-         %{caster: caster} do
+    test "a homunculus that is no enemy is granted the status by the unit pass",
+         %{caster: caster, manager: manager} do
       {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
       [group] = Storage.get_groups_by_caster(:player, @caster_id)
+      homunculus = %{TrapTestHelper.homunculus(@homunculus_id, @caster_id) | x: 21, y: 20}
 
-      :ok = UnitRegistry.register_player(player(@ally_id), self())
-      :ok = SpatialIndex.add_player(@ally_id, 21, 20, "prontera")
-      :ok = Manager.reconcile_unit({:player, @ally_id})
+      :ok =
+        UnitRegistry.register_unit(
+          :homunculus,
+          @homunculus_id,
+          HomunculusState,
+          homunculus,
+          self()
+        )
 
+      :ok = SpatialIndex.add_unit(:homunculus, @homunculus_id, 21, 20, "prontera")
+
+      :ok = Manager.tick(manager, group.next_tick_at)
+
+      assert StatusStorage.has_status?(:homunculus, @homunculus_id, :sc_basilica)
+    end
+
+    test "destroying the field strips the status from units standing on its cells",
+         %{caster: caster, manager: manager} do
+      {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
+      [group] = Storage.get_groups_by_caster(:player, @caster_id)
+      place_player(@ally_id, {21, 20})
+      :ok = Manager.tick(manager, group.next_tick_at)
       assert StatusStorage.has_status?(:player, @ally_id, :sc_basilica)
-      refute StatusStorage.has_status?(:player, @caster_id, :sc_basilica)
 
-      :ok = Manager.destroy(group.group_id)
+      register_mob(@mob_id, [], {19, 19})
+      :ok = timer_grant(:mob, @mob_id, group)
+
+      :ok = Manager.destroy(manager, group.group_id)
 
       refute StatusStorage.has_status?(:player, @ally_id, :sc_basilica)
+      refute StatusStorage.has_status?(:mob, @mob_id, :sc_basilica)
       refute StatusStorage.has_status?(:player, @caster_id, :sc_basilica_caster)
       refute Storage.basilica?("prontera", 20, 20)
     end
 
-    test "walking off the field releases the occupant status", %{caster: caster} do
+    test "walking off releases a player through the cell sync but not a mob",
+         %{caster: caster, manager: manager} do
       {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
-      :ok = UnitRegistry.register_player(player(@ally_id), self())
-      :ok = SpatialIndex.add_player(@ally_id, 21, 20, "prontera")
-      :ok = Manager.reconcile_unit({:player, @ally_id})
-      assert StatusStorage.has_status?(:player, @ally_id, :sc_basilica)
+      [group] = Storage.get_groups_by_caster(:player, @caster_id)
+      ally = place_player(@ally_id, {21, 20})
+      :ok = Manager.tick(manager, group.next_tick_at)
+      register_mob(@mob_id, [], {19, 19})
+      :ok = timer_grant(:mob, @mob_id, group)
 
       :ok = SpatialIndex.update_position(@ally_id, 30, 30, "prontera")
-      :ok = Manager.reconcile_unit({:player, @ally_id})
+      :ok = Basilica.sync_cell_status(%{ally | x: 30, y: 30})
+      :ok = SpatialIndex.update_unit_position(:mob, @mob_id, 30, 30, "prontera")
+      :ok = Manager.reconcile_unit({:mob, @mob_id})
+
+      refute StatusStorage.has_status?(:player, @ally_id, :sc_basilica)
+      assert StatusStorage.has_status?(:mob, @mob_id, :sc_basilica)
+    end
+
+    test "a unit leaving a sanctuary cell does not run its on_out", %{caster: caster} do
+      {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
+      [group] = Storage.get_groups_by_caster(:player, @caster_id)
+      register_mob(@mob_id, [], {19, 19})
+      :ok = timer_grant(:mob, @mob_id, group)
+
+      :ok = SpatialIndex.update_unit_position(:mob, @mob_id, 30, 30, "prontera")
+      :ok = Trigger.on_leave_cell({:mob, @mob_id}, "prontera", 19, 19, "prontera", 30, 30)
+
+      assert StatusStorage.has_status?(:mob, @mob_id, :sc_basilica)
+    end
+
+    test "an enemy boss on it is neither pushed nor granted the status",
+         %{caster: caster, manager: manager} do
+      {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
+      [group] = Storage.get_groups_by_caster(:player, @caster_id)
+      register_mob(@boss_id, [:boss], {21, 21})
+
+      :ok = Manager.tick(manager, group.next_tick_at)
+
+      assert {:ok, {21, 21, "prontera"}} = SpatialIndex.get_unit_position(:mob, @boss_id)
+      refute StatusStorage.has_status?(:mob, @boss_id, :sc_basilica)
+      refute_received {:"$gen_cast", {:movement, {:knockback, _, _, _, _, _}}}
+    end
+
+    test "each pass pushes an enemy 2 cells straight back and grants a non-enemy the status",
+         %{caster: caster, manager: manager} do
+      {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
+      [group] = Storage.get_groups_by_caster(:player, @caster_id)
+      place_player(@ally_id, {19, 20})
+      register_mob(@mob_id, [], {21, 21})
+
+      :ok = Manager.tick(manager, group.next_tick_at)
+
+      assert_received {:"$gen_cast", {:movement, {:knockback, 21, 21, "prontera", 21, 23}}}
+      refute_received {:"$gen_cast", {:movement, {:knockback, _, _, _, _, _}}}
+      refute StatusStorage.has_status?(:mob, @mob_id, :sc_basilica)
+      assert StatusStorage.has_status?(:player, @ally_id, :sc_basilica)
+    end
+
+    test "the cell sync grants a player stepping on indefinitely and releases one stepping off",
+         %{caster: caster} do
+      {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
+      ally = place_player(@ally_id, {21, 20})
+
+      :ok = Basilica.sync_cell_status(ally)
+
+      assert %{val4: 0, expires_at: nil} =
+               StatusStorage.get_status(:player, @ally_id, :sc_basilica)
+
+      :ok = Basilica.sync_cell_status(%{ally | x: 30, y: 30})
 
       refute StatusStorage.has_status?(:player, @ally_id, :sc_basilica)
     end
 
-    test "a boss inside cannot be pushed and keeps the occupant status", %{caster: caster} do
+    test "the cell sync ends the sanctuary of a caster moved off it", %{caster: caster} do
       {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
-      [group] = Storage.get_groups_by_caster(:player, @caster_id)
-      register_mob(@boss_id, [:boss], {21, 21})
-      :ok = Manager.reconcile_unit({:mob, @boss_id})
+      assert StatusStorage.has_status?(:player, @caster_id, :sc_basilica_caster)
 
-      assert {:ok, _} = HpBasilica.on_interval(group, 0)
+      :ok = Basilica.sync_cell_status(%{caster | x: 30, y: 30})
 
-      assert {:ok, {21, 21, "prontera"}} = SpatialIndex.get_unit_position(:mob, @boss_id)
-      assert StatusStorage.has_status?(:mob, @boss_id, :sc_basilica)
-      refute_received {:"$gen_cast", {:movement, {:knockback, _, _, _, _, _}}}
-    end
-
-    test "every interval pushes enemies 2 cells backwards and leaves allies", %{caster: caster} do
-      {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
-      [group] = Storage.get_groups_by_caster(:player, @caster_id)
-
-      ally = %{player(@ally_id) | dir: 0}
-      :ok = UnitRegistry.register_player(ally, self())
-      :ok = SpatialIndex.add_player(@ally_id, 19, 20, "prontera")
-      register_mob(@mob_id, [], {21, 21})
-
-      Mimic.copy(Knockback)
-
-      expect(Knockback, :knockback, fn :mob, @mob_id, 21, 20, 2 -> {:ok, {21, 23}} end)
-
-      assert {:ok, ^group} = HpBasilica.on_interval(group, 0)
+      refute StatusStorage.has_status?(:player, @caster_id, :sc_basilica_caster)
     end
 
     test "ending the field releases the caster lock", %{caster: caster} do
@@ -306,6 +390,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
       interval: 1_000,
       state: state
     }
+  end
+
+  defp place_player(id, {x, y}) do
+    state = %{player(id) | x: x, y: y}
+    :ok = UnitRegistry.register_player(state, self())
+    :ok = SpatialIndex.add_player(id, x, y, "prontera")
+    state
+  end
+
+  # No path grants an enemy mob the timer status, so the test gives it one.
+  defp timer_grant(type, id, %Group{} = group) do
+    StatusInterpreter.apply_status(type, id, :sc_basilica,
+      val1: 0,
+      val3: group.group_id,
+      val4: @caster_id,
+      duration: 20_000,
+      caster_id: @caster_id,
+      source_type: :player
+    )
   end
 
   defp register_mob(id, modes, {x, y}) do
@@ -349,6 +452,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
   end
 
   defp player(id) do
+    state = character_player(id)
+    put_in(state.stats.current_state.hp, 100)
+  end
+
+  defp character_player(id) do
     PlayerState.new(%Character{
       id: id,
       account_id: id,

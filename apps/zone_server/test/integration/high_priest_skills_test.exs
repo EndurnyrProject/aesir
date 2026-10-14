@@ -257,6 +257,32 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
              end)
     end
 
+    test "a player walking onto a sanctuary cell gets the occupant status and loses it walking off" do
+      stop_supervised!({:integration_default, SkillUnitManager})
+
+      manager =
+        start_supervised!(
+          {SkillUnitManager, name: nil, schedule_tick: fn _pid, _interval -> :ok end}
+        )
+
+      Process.put({SkillUnitManager, :server}, manager)
+      %{priest: priest, ally: ally} = party_pair(catalysts: true)
+      raise_sanctuary(priest)
+      id = ally.character.id
+
+      walk_in(ally, {152, 150})
+      assert %{val4: 0} = StatusStorage.get_status(:player, id, :sc_basilica)
+
+      simulate_incoming_message(ally.pid, %MoveRequest{dest_x: 160, dest_y: 150})
+
+      assert eventually(fn ->
+               state = get_player_state(ally.pid)
+
+               {state.x, state.y} == {160, 150} and
+                 not StatusStorage.has_status?(:player, id, :sc_basilica)
+             end)
+    end
+
     test "expiry ends the field, the caster lock and every occupant status" do
       %{priest: priest, ally: ally} = party_pair(catalysts: true)
       group_id = raise_sanctuary(priest)

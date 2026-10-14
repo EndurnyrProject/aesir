@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.WaitingRoom
@@ -179,6 +180,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       updated_game_state,
       updated_game_state.map_name
     )
+
+    Basilica.sync_cell_status(updated_game_state)
 
     destination_groups =
       SkillUnitStorage.get_groups_at_cell(

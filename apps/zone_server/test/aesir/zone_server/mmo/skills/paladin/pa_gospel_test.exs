@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @caster_id 45_001
 
@@ -62,8 +63,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
   test "on_place describes a 60 s field ticking every 10 s", %{caster: _caster} do
     group = %Group{group_id: 1, skill_name: :pa_gospel, center: {120, 80}, level: 3}
 
-    assert {:ok, %{cells: cells, interval: 10_000, duration: 60_000, state: %{}}} =
-             PaGospel.on_place(group)
+    assert {:ok,
+            %{
+              cells: cells,
+              interval: 10_000,
+              duration: 60_000,
+              state: %{},
+              unit_range: 0,
+              no_overlap: true
+            }} = PaGospel.on_place(group)
 
     assert length(cells) == 33
   end
@@ -135,6 +143,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
     end)
 
     assert :ok = PaGospel.on_expire(group)
+  end
+
+  test "the field stays while its Paladin is in the world and expires once they are gone", %{
+    caster: caster
+  } do
+    group = %Group{
+      group_id: 505,
+      skill_name: :pa_gospel,
+      caster_type: :player,
+      caster_id: @caster_id
+    }
+
+    assert {:expire, ^group} = PaGospel.on_interval(group, 10_000)
+
+    :ok = UnitRegistry.register_player(%{caster | account_id: @caster_id}, self())
+
+    assert {:ok, ^group} = PaGospel.on_interval(group, 10_000)
   end
 
   test "a mob caster is refused", %{definition: definition} do

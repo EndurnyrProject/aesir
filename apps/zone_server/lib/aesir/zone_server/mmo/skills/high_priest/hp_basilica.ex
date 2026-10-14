@@ -7,12 +7,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
   `3 * level` percent. 3 s cast plus 1 s fixed, 1 s after-cast delay, 30 s
   cooldown, 40 to 80 SP, no catalysts.
 
-  Pre-renewal: a 5x5 sanctuary placed on the caster for 20 to 40 s. Every unit
-  standing in it except the caster carries `sc_basilica`: shielded from all
-  non-boss damage, unable to attack or cast. Every 300 ms, units in it that are
-  enemies of the caster are pushed 2 cells backwards (a boss cannot be pushed
-  and stays, unable to act); song statuses are not granted on its cells. The
-  caster carries `sc_basilica_caster`: rooted, shielded the same way, not knocked
+  Pre-renewal: a 5x5 sanctuary placed on the caster for 20 to 40 s; its holders
+  carry `sc_basilica`: shielded from all non-boss damage, unable to attack or
+  cast. Each cell is a unit acting every 300 ms on the unit pass: an enemy of
+  the caster standing on it is pushed 2 cells backwards (a boss cannot be
+  pushed and stays, still able to act); any other unit but the caster that
+  does not hold `sc_basilica` receives it for the sanctuary's full lifetime and
+  keeps it after leaving. A player also receives it, enemy or not, on any step
+  or warp onto a sanctuary cell (indefinitely), and loses it on any step or warp
+  onto another cell (`StatusEffect.Effects.Basilica.sync_cell_status/1`). A
+  cell that ends takes the status from every unit standing on it. Song
+  statuses are not granted on its cells. The caster carries `sc_basilica_caster`: rooted, shielded the same way, not knocked
   back by non-boss sources, and only able to recast Basilica, which ends the
   field instantly with no SP or catalysts but with the after-cast delay
   (creating it has none). Casting costs 80 to 120 SP plus a Yellow, Red, and
@@ -77,8 +82,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit, as: AesirUnit
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -175,33 +182,76 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
        cells: Layout.square(center, @field_radius),
        state: %{basilica: true},
        interval: @interval,
-       duration: duration(level)
+       duration: duration(level),
+       unit_range: 0
      }}
   end
 
-  @impl Ground
-  @spec field_support(Group.t()) :: map()
-  def field_support(%Group{} = group) do
-    %{
-      status_type: :sc_basilica,
-      params: [val1: group.level, caster_id: group.caster_id, source_type: group.caster_type],
-      target?: fn unit -> unit != {group.caster_type, group.caster_id} end
-    }
-  end
-
+  # A sanctuary whose caster is gone ends.
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
   def on_interval(%Group{caster_type: caster_type, caster_id: caster_id} = group, _now) do
     case UnitRegistry.get_unit(caster_type, caster_id) do
-      {:ok, {_module, caster_state, _pid}} ->
-        group
-        |> enemies_inside(caster_state)
-        |> Enum.each(&push_out/1)
+      {:ok, _caster} -> {:ok, group}
+      _gone -> {:expire, group}
+    end
+  end
 
-        {:ok, group}
+  @impl Ground
+  @spec unit_targets(Group.t(), Ground.cell(), [Ref.t()]) :: [Ref.t()]
+  def unit_targets(%Group{caster_type: type, caster_id: id}, _cell, refs),
+    do: Enum.filter(refs, &(&1 != {type, id} and living?(&1)))
 
-      _gone ->
-        {:expire, group}
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), Ref.t(), integer()) :: {:ok, Group.t()}
+  def on_unit_hit(
+        %Group{caster_type: caster_type, caster_id: caster_id} = group,
+        _cell,
+        ref,
+        _now
+      ) do
+    with {:ok, {_module, caster_state, _pid}} <- UnitRegistry.get_unit(caster_type, caster_id),
+         {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(elem(ref, 0), elem(ref, 1)) do
+      if Targeting.validate_enemy(caster_state, state) == :ok,
+        do: push_out({ref, state}),
+        else: shelter(group, ref)
+    end
+
+    {:ok, group}
+  end
+
+  # A cell that ends takes the status from the units standing on it. Units
+  # stepping off never trigger this: the sanctuary acts on its own timer.
+  @impl Ground
+  @spec on_out(Group.t(), Ref.t()) :: {:ok, Group.t()}
+  def on_out(%Group{} = group, {type, id}) do
+    if StatusStorage.has_status?(type, id, :sc_basilica),
+      do: StatusInterpreter.remove_status(type, id, :sc_basilica, owner_refresh: :notify)
+
+    {:ok, group}
+  end
+
+  # A non-enemy without the status receives it for the sanctuary's full
+  # lifetime, counted from now.
+  defp shelter(%Group{} = group, {type, id}) do
+    unless StatusStorage.has_status?(type, id, :sc_basilica) do
+      StatusInterpreter.apply_status(type, id, :sc_basilica,
+        val1: 0,
+        val3: group.group_id,
+        val4: group.caster_id,
+        duration: group.expires_at - group.created_at,
+        caster_id: group.caster_id,
+        source_type: group.caster_type
+      )
+    end
+
+    :ok
+  end
+
+  defp living?({type, id}) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, state, _pid}} -> AesirUnit.living?(state)
+      _gone -> false
     end
   end
 
@@ -287,21 +337,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
 
     SpatialIndex.get_units_in_area(:mob, map_name, x1, y1, x2, y2) == [] and
       SpatialIndex.get_units_in_area(:player, map_name, x1, y1, x2, y2) -- [caster_id] == []
-  end
-
-  defp enemies_inside(%Group{map_name: map_name, cells: cells} = group, caster_state) do
-    cells
-    |> Enum.flat_map(fn {x, y} -> SpatialIndex.get_all_units_in_range(map_name, x, y, 0) end)
-    |> Enum.uniq()
-    |> Enum.reject(&(&1 == {group.caster_type, group.caster_id}))
-    |> Enum.flat_map(fn {type, id} = unit ->
-      with {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(type, id),
-           :ok <- Targeting.validate_enemy(caster_state, state) do
-        [{unit, state}]
-      else
-        _ally_or_gone -> []
-      end
-    end)
   end
 
   # Pushed directly backwards: the push origin sits one cell ahead of the

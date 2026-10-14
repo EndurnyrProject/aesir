@@ -4,22 +4,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.TickTest do
   import Aesir.TestEtsSetup
   import Mimic
 
-  alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Effects
   alias Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Tick
+  alias Aesir.ZoneServer.TrapTestHelper
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @caster_id 49_001
   @ally_id 49_002
   @stranger_id 49_003
   @mob_id 49_004
+  @homunculus_id 49_005
   @party 77
-  @cell {40, 40}
+  @map "prontera"
 
   setup :setup_ets_tables
   setup :set_mimic_private
@@ -27,23 +29,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.TickTest do
 
   setup do
     Mimic.copy(Effects)
-
-    caster = player(@caster_id, @party)
-    :ok = UnitRegistry.register_player(caster, self())
-    :ok = SpatialIndex.add_unit(:player, @caster_id, 40, 40, "prontera")
+    test_pid = self()
 
     stub(Combat, :resolve_combatant, fn :player, @caster_id ->
-      {:ok, %{unit_type: :player, unit_id: @caster_id, map_name: "prontera", party_id: @party}}
+      {:ok, %{unit_type: :player, unit_id: @caster_id, map_name: @map, party_id: @party}}
     end)
-
-    %{caster: caster}
-  end
-
-  test "blesses a party member, afflicts an enemy, and skips the caster and strangers" do
-    place_player(@ally_id, @party)
-    place_player(@stranger_id, 0)
-    place_mob(@mob_id)
-    test_pid = self()
 
     stub(Effects, :bless, fn _group, target ->
       send(test_pid, {:bless, target})
@@ -55,39 +45,68 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.TickTest do
       :ok
     end)
 
-    group = group(5, fn _ -> 1 end)
+    :ok
+  end
 
-    assert {:ok, ^group} = Tick.run(group, 10_000)
+  test "blesses a party member, afflicts an enemy, and leaves a stranger alone" do
+    register_player(@caster_id, @party)
+    register_player(@ally_id, @party)
+    register_player(@stranger_id, 0)
+    register_mob(@mob_id)
+    group = group(5, fn 100 -> 1 end)
+
+    assert :ok = Tick.strike(group, {:player, @ally_id})
+    assert :ok = Tick.strike(group, {:mob, @mob_id})
+    assert :ok = Tick.strike(group, {:player, @stranger_id})
 
     assert_received {:bless, {:player, @ally_id}}
     assert_received {:afflict, {:mob, @mob_id}}
-    refute_received {:bless, {:player, @caster_id}}
-    refute_received {:afflict, {:player, @caster_id}}
     refute_received {:bless, {:player, @stranger_id}}
     refute_received {:afflict, {:player, @stranger_id}}
   end
 
   test "the per-unit roll passes at 50 + 5 * level and fails above it" do
-    place_player(@ally_id, @party)
-    test_pid = self()
+    register_player(@caster_id, @party)
+    register_player(@ally_id, @party)
 
-    stub(Effects, :bless, fn _group, target ->
-      send(test_pid, {:bless, target})
-      :ok
-    end)
-
-    assert {:ok, _} = Tick.run(group(4, fn 100 -> 70 end), 10_000)
+    assert :ok = Tick.strike(group(4, fn 100 -> 70 end), {:player, @ally_id})
     assert_received {:bless, {:player, @ally_id}}
 
-    assert {:ok, _} = Tick.run(group(4, fn 100 -> 71 end), 10_000)
+    assert :ok = Tick.strike(group(4, fn 100 -> 71 end), {:player, @ally_id})
     refute_received {:bless, _}
   end
 
-  test "a vanished caster expires the field" do
-    stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:error, :target_not_found} end)
-    group = group(1, fn _ -> 1 end)
+  test "the caster's own homunculus is blessed without a party" do
+    register_player(@caster_id, 0)
 
-    assert {:expire, ^group} = Tick.run(group, 10_000)
+    :ok =
+      UnitRegistry.register_unit(
+        :homunculus,
+        @homunculus_id,
+        HomunculusState,
+        TrapTestHelper.homunculus(@homunculus_id, @caster_id),
+        self()
+      )
+
+    assert :ok = Tick.strike(group(1, fn 100 -> 1 end), {:homunculus, @homunculus_id})
+
+    assert_received {:bless, {:homunculus, @homunculus_id}}
+  end
+
+  test "on a PvP no-party map a party member is neither blessed nor afflicted" do
+    :ok = MapFlags.set_runtime(@map, :pvp, true)
+    :ok = MapFlags.set_runtime(@map, :pvp_noparty, true)
+    register_player(@caster_id, @party)
+    register_player(@ally_id, @party)
+
+    stub(Targeting, :validate_enemy, fn _caster, _target ->
+      {:error, :not_enemy}
+    end)
+
+    assert :ok = Tick.strike(group(1, fn 100 -> 1 end), {:player, @ally_id})
+
+    refute_received {:bless, _}
+    refute_received {:afflict, _}
   end
 
   defp group(level, rng) do
@@ -99,59 +118,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.TickTest do
       caster_id: @caster_id,
       caster_type: :player,
       party_id: @party,
-      map_name: "prontera",
-      center: @cell,
-      cells: [@cell],
+      map_name: @map,
+      center: {50, 50},
+      cells: [{50, 50}],
       state: %{rng: rng}
     }
   end
 
-  defp place_player(id, party_id) do
-    :ok = UnitRegistry.register_player(player(id, party_id), self())
-    :ok = SpatialIndex.add_unit(:player, id, 40, 40, "prontera")
+  defp register_player(id, party_id) do
+    :ok = UnitRegistry.register_player(TrapTestHelper.player(id, %{party_id: party_id}), self())
   end
 
-  defp place_mob(id) do
-    mob = %MobState{
-      instance_id: id,
-      mob_id: 1002,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: 40,
-      y: 40,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
-
-    :ok = UnitRegistry.register_unit(:mob, id, MobState, mob, self())
-    :ok = SpatialIndex.add_unit(:mob, id, 40, 40, "prontera")
-  end
-
-  defp player(id, party_id) do
-    state =
-      PlayerState.new(%Character{
-        id: id,
-        account_id: id,
-        name: "Unit #{id}",
-        last_map: "prontera",
-        last_x: 40,
-        last_y: 40,
-        sex: "M",
-        str: 1,
-        agi: 1,
-        vit: 1,
-        int: 1,
-        dex: 1,
-        luk: 1,
-        base_level: 90,
-        job_level: 50,
-        class: 4015
-      })
-
-    %{state | party_id: party_id}
+  defp register_mob(id) do
+    :ok = UnitRegistry.register_unit(:mob, id, MobState, TrapTestHelper.mob(id), self())
   end
 end

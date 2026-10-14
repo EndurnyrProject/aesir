@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Rules
@@ -116,6 +117,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         StatusInterpreter.remove_status(:player, game_state.character_id, :sc_endure)
       end
 
+      Basilica.sync_cell_status(state.game_state)
       :ok = PlayerSession.recalculate_stats(self(), false)
 
       MessageRouter.send_to(connection_pid, %MapMove{map_name: dest_map, x: fx, y: fy})

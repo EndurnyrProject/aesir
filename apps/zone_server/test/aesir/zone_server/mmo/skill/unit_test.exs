@@ -108,6 +108,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
     def on_interval(group, _now), do: {:ok, group}
   end
 
+  defmodule SilentFakeUnit do
+    @behaviour Ground
+
+    @impl Ground
+    def on_place(%Group{center: center}) do
+      {:ok, %{cells: [center], state: %{}, interval: 450, duration: 5_000, announce: false}}
+    end
+
+    @impl Ground
+    def on_interval(group, _now), do: {:ok, group}
+  end
+
   defmodule PathCheckedUnit do
     @behaviour Ground
 
@@ -406,6 +418,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       assert_received {:broadcast, "prontera", 100, 120, %Aesir.Net.SkillUnitSpawn{}}
       refute_received {:broadcast, "prontera", 100, 120, %GroundSkill{}}
+    end
+
+    test "a placement with announce: false broadcasts no GroundSkill" do
+      stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, SilentFakeUnit} end)
+      test_pid = self()
+      stub(Broadcast, :to_in_range, fn _, _, _, _, packet -> send(test_pid, packet) end)
+
+      {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
+
+      assert_receive %Aesir.Net.SkillUnitSpawn{group: %{group_id: group_id}}
+      assert group_id == group.group_id
+      refute_received %GroundSkill{}
     end
 
     test "resolves the skill_id from the catalog and renders a valid ground-cast packet" do

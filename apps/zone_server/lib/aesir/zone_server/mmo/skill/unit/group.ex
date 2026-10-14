@@ -152,6 +152,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   def follows_caster?(%__MODULE__{}), do: false
 
   @doc """
+  Whether this group's units act only on the unit pass that finds them expired,
+  just before the group is reaped (Meteor Storm lands as its unit ends).
+  """
+  @spec strikes_on_expiry?(t()) :: boolean()
+  def strikes_on_expiry?(%__MODULE__{state: %{strike_on_expiry: true}}), do: true
+  def strikes_on_expiry?(%__MODULE__{}), do: false
+
+  @doc """
   Whether this group's ground unit may damage its own caster (Grand Cross),
   overriding the default targeting exclusion of the caster from its own unit.
   """

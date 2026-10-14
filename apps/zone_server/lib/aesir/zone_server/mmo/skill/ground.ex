@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
           optional(:cell_attrs) => %{cell() => map()},
           optional(:path_check) => boolean(),
           optional(:visibility) => Group.visibility(),
+          optional(:announce) => boolean(),
           cells: [cell()],
           state: map(),
           interval: pos_integer(),

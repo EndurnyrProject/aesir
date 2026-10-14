@@ -52,7 +52,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
     end
 
     assert Basilica.metadata().bypass_boss_immunity
-    assert Basilica.metadata().target_types == [:player, :mob]
+    assert Basilica.metadata().target_types == [:player, :mob, :homunculus]
+    assert Basilica.metadata().tick_interval == nil
     assert BasilicaCaster.metadata().target_types == [:player]
   end
 
@@ -168,23 +169,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
     end
   end
 
-  describe "occupant tick" do
-    test "keeps the status while its holder stands on a Basilica cell" do
-      :ok = Storage.insert(basilica_group([{100, 100}]))
-      entry = %StatusEntry{type: :sc_basilica, val1: 1}
+  describe "duration" do
+    test "a grant from stepping onto a sanctuary never runs out; a timer grant keeps its own" do
+      stepped = %StatusEntry{type: :sc_basilica, val4: 0}
+      timed = %StatusEntry{type: :sc_basilica, val4: 1}
 
-      assert {:ok, ^entry} = Basilica.on_tick({:player, @holder_id}, entry, %{})
+      assert {nil, ^stepped} = Basilica.resolve_duration(stepped, 1)
+      assert {20_000, ^timed} = Basilica.resolve_duration(timed, 20_000)
     end
 
-    test "drops the status once its holder is off every Basilica cell" do
+    @tag game_mode: :pre_renewal
+    test "drops the status once its holder steps off every Basilica cell" do
       :ok = Storage.insert(basilica_group([{110, 110}]))
+      :ok = apply_occupant(:player, @holder_id)
 
-      assert :remove =
-               Basilica.on_tick(
-                 {:player, @holder_id},
-                 %StatusEntry{type: :sc_basilica, val1: 1},
-                 %{}
-               )
+      :ok = Basilica.sync_cell_status(player(@holder_id))
+
+      refute StatusStorage.has_status?(:player, @holder_id, :sc_basilica)
     end
   end
 

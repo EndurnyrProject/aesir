@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -726,6 +727,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Publish our full state to the registry before visibility runs so players
     # we enter view of can read it to build our spawn packet.
     state = StateCommit.commit(state, game_state)
+    Basilica.sync_cell_status(game_state)
 
     # Show the map's quest-icon bubbles for this player after they load in.
     QuestInfoView.request_refresh()

@@ -216,6 +216,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
     refute_received {:struck, _, _, _, _}
   end
 
+  test "a strike-on-expiry field strikes only on the pass that finds it expired, then ends", %{
+    manager: manager
+  } do
+    on_expiry = field(1, [{50, 50}], expires_at: 1_000)
+
+    :ok =
+      Manager.register(manager, %{
+        on_expiry
+        | state: Map.put(on_expiry.state, :strike_on_expiry, true)
+      })
+
+    mob_at(1, 50, 50)
+
+    :ok = Manager.tick(manager, 900)
+    refute_received {:struck, _, _, _, _}
+    assert %Group{} = Storage.get(1)
+
+    :ok = Manager.tick(manager, 1_000)
+    assert_received {:struck, 1, {50, 50}, {:mob, 1}, 1_000}
+    assert Storage.get(1) == nil
+  end
+
   test "a strike's command runs at once and the group it changes acts changed for the rest of the pass",
        %{manager: manager} do
     spender =

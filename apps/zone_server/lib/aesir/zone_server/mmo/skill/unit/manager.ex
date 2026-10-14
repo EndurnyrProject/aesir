@@ -557,8 +557,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   # Interval fields acting per cell; an expired field is reaped below instead.
   defp run_unit_pass(state, now) do
     fields =
-      for %Group{unit_range: range, expires_at: expires_at} = group <- Storage.all(),
-          is_integer(range) and is_integer(expires_at) and expires_at > now,
+      for %Group{unit_range: range} = group <- Storage.all(),
+          is_integer(range) and unit_pass?(group, now),
           {:ok, module} <- [handler_for(group)],
           do: {group, module}
 
@@ -574,6 +574,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         %{state | ticksets: ticksets}
     end
   end
+
+  # A live field acts until it expires; one that strikes on expiry acts only
+  # on the pass that finds it expired, and is reaped right after.
+  defp unit_pass?(%Group{expires_at: expires_at} = group, now) when is_integer(expires_at) do
+    if Group.strikes_on_expiry?(group), do: expires_at <= now, else: expires_at > now
+  end
+
+  defp unit_pass?(%Group{}, _now), do: false
 
   defp finish_unit_pass({group, module, outcome}) do
     case outcome do

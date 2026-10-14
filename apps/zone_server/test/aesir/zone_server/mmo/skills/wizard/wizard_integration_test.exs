@@ -89,20 +89,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
 
     assert {:ok, ^caster} = WzMeteor.cast(caster, {:ground, 150, 150}, 1, WzMeteor.definition())
 
-    assert_receive {:packet, 1_001, %SkillUnitSpawn{group: %{group_id: meteor_id, cells: [_]}}}
-    refute_receive {:packet, 1_002, %SkillUnitSpawn{group: %{group_id: ^meteor_id}}}
-    assert %SkillUnitSnapshot{groups: [%{group_id: ^meteor_id}]} = SkillUnit.snapshot(@map)
+    meteors = Storage.all()
+    meteor_ids = Enum.map(meteors, & &1.group_id)
+    assert length(meteors) == 2
 
-    assert MapSet.new([meteor_id]) == Manager.snapshot_for(manager, 1_001, @map, 151, 150, 1)
-    assert_receive {:packet, 1_001, %SkillUnitSnapshot{groups: [%{group_id: ^meteor_id}]}}
+    for meteor_id <- meteor_ids do
+      assert_receive {:packet, 1_001, %SkillUnitSpawn{group: %{group_id: ^meteor_id, cells: [_]}}}
+      refute_receive {:packet, 1_002, %SkillUnitSpawn{group: %{group_id: ^meteor_id}}}
+    end
 
-    meteor = Storage.get(meteor_id)
-    assert meteor.visibility == :public
+    assert %SkillUnitSnapshot{groups: groups} = SkillUnit.snapshot(@map)
+    assert Enum.sort(Enum.map(groups, & &1.group_id)) == Enum.sort(meteor_ids)
 
-    assert :ok = Manager.tick(manager, meteor.expires_at)
-    assert Storage.get(meteor_id) == nil
-    assert_receive {:packet, 1_001, %{group_id: ^meteor_id}}
-    refute_receive {:packet, 1_002, %{group_id: ^meteor_id}}
+    assert MapSet.new(meteor_ids) == Manager.snapshot_for(manager, 1_001, @map, 151, 150, 5)
+    assert_receive {:packet, 1_001, %SkillUnitSnapshot{groups: [_, _]}}
+
+    assert Enum.all?(meteors, &(&1.visibility == :public))
+
+    assert :ok = Manager.tick(manager, meteors |> Enum.map(& &1.expires_at) |> Enum.max())
+
+    for meteor_id <- meteor_ids do
+      assert Storage.get(meteor_id) == nil
+      assert_receive {:packet, 1_001, %{group_id: ^meteor_id}}
+      refute_receive {:packet, 1_002, %{group_id: ^meteor_id}}
+    end
   end
 
   test "Quagmire reconciles a real occupant and releases it after the final overlapping field", %{

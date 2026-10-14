@@ -4,17 +4,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
+  alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(SplashTargets)
+    :ok
+  end
 
   @caster_id 1000
   @map_name "prontera"
@@ -40,6 +48,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     )
   end
 
+  defp meteor(meteor) do
+    {:ok, placement} = WzMeteor.on_place(group(state: %{meteor: meteor}))
+
+    group(
+      state: Map.put(placement.state, :meteor, meteor),
+      next_tick_at: placement.initial_delay,
+      expires_at: placement.duration,
+      unit_range: placement.unit_range,
+      path_check: placement.path_check,
+      lifecycle_policy: placement.lifecycle_policy,
+      handler: WzMeteor
+    )
+  end
+
   defp start_manager(opts) do
     manager =
       start_supervised!(
@@ -54,9 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
          )}
       )
 
-    allow(Catalog, self(), manager)
-    allow(Combat, self(), manager)
-    allow(StatusInterpreter, self(), manager)
+    Process.put({Manager, :server}, manager)
     manager
   end
 
@@ -89,89 +109,56 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     assert definition.fixed_cast_time == List.duplicate(1_500, 10)
   end
 
-  test "places one manager-owned schedule with the rAthena first-impact timing" do
-    assert {:ok, placement} = WzMeteor.on_place(group([]))
+  test "each meteor is its own silent single-cell unit falling in turn" do
+    assert {:ok, placement} = WzMeteor.on_place(group(state: %{meteor: 3}))
 
     assert placement.cells == [@center]
+    assert placement.state == %{falling: false, strike_on_expiry: true}
     assert placement.interval == 1_000
-    assert placement.initial_delay == 700
-    assert placement.duration == 2_000
+    assert placement.initial_delay == 2_000
+    assert placement.duration == 3_000
+    assert placement.unit_range == 3
+    assert placement.path_check == true
+    assert placement.announce == false
     assert placement.lifecycle_policy.on_caster_loss == :skip_action
-    assert placement.state == %{ignore_land_protector: true}
+    refute Map.has_key?(placement, :visibility)
   end
 
-  @tag game_mode: :renewal
+  test "the first interval shows the fall once and lands the meteor 700 ms later" do
+    test_pid = self()
 
-  test "skips impacts scheduled onto land protector cells" do
-    :ok =
-      Storage.insert(
-        group(
-          group_id: 99,
-          skill_id: 288,
-          skill_name: :sa_landprotector,
-          cells: [{151, 149}],
-          expires_at: 10_000,
-          state: %{land_protector: true}
-        )
-      )
-
-    stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
-    stub(Combat, :splash_targets, fn @map_name, {148, 148}, 3, @caster_id -> [{:mob, 2001}] end)
-
-    expect(Combat, :apply_skill_unit_damage, fn
-      %{unit_id: @caster_id}, :mob, 2001, 83, 1, :fire, 125, opts ->
-        assert opts[:hit_divisions] == 2
-        :ok
+    stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
+      send(test_pid, packet)
+      :ok
     end)
 
-    stub(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_stun, _params -> :ok end)
+    group = group(level: 4, state: %{meteor: 2, falling: false, strike_on_expiry: true})
 
-    group =
-      group(
-        state: %{
-          meteor_schedule: [
-            %{at: 700, position: {151, 149}},
-            %{at: 700, position: {148, 148}}
-          ]
-        }
-      )
+    assert {:ok, falling} = WzMeteor.on_interval(group, 1_000)
+    assert falling.expires_at == 1_700
+    assert falling.state.falling == true
+    assert_received %GroundSkill{skill_id: 83, src_id: @caster_id, level: 4, x: 150, y: 150}
 
-    assert {:ok, %Group{state: %{meteor_schedule: []}}} = WzMeteor.on_interval(group, 700)
+    assert {:ok, ^falling} = WzMeteor.on_interval(falling, 1_100)
+    refute_received %GroundSkill{}
+  end
+
+  test "only a falling meteor picks targets, through the splash eligibility" do
+    stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:ok, %{unit_id: @caster_id}} end)
+
+    stub(SplashTargets, :eligible, fn [{:mob, 2001}, {:mob, 2002}], %{unit_id: @caster_id} ->
+      [{:mob, 2001}]
+    end)
+
+    refs = [{:mob, 2001}, {:mob, 2002}]
+
+    assert [] == WzMeteor.unit_targets(group(state: %{falling: false}), @center, refs)
+    assert [{:mob, 2001}] == WzMeteor.unit_targets(group(state: %{falling: true}), @center, refs)
   end
 
   @tag game_mode: :renewal
-  test "uses the exact Renewal HitCount table for each level" do
-    for {count, level} <- Enum.with_index([2, 3, 3, 4, 4, 5, 5, 6, 6, 7], 1) do
-      assert {:ok, %Group{state: %{meteor_schedule: schedule}}} =
-               WzMeteor.schedule(group(level: level), fn _upper -> 0 end)
-
-      assert length(schedule) == count
-    end
-  end
-
-  @tag game_mode: :renewal
-
-  test "the manager owns a deterministic schedule of random Meteor impacts" do
-    stub(Catalog, :ground_module_for, fn :wz_meteor -> {:ok, WzMeteor} end)
-    manager = start_manager(rng: fn upper -> upper - 1 end)
-
-    assert :ok = Manager.register(manager, group(expires_at: 2_000, next_tick_at: 700))
-
-    assert %Group{
-             state: %{
-               meteor_schedule: [
-                 %{at: 700, position: {153, 153}},
-                 %{at: 1_700, position: {153, 153}}
-               ]
-             }
-           } = Storage.get(1)
-  end
-
-  @tag game_mode: :renewal
-
-  test "each due impact deals Fire damage and attempts level-scaled Stun after damage" do
-    stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
-    stub(Combat, :splash_targets, fn @map_name, {151, 149}, 3, @caster_id -> [{:mob, 2001}] end)
+  test "each impact deals Fire damage in HitCount divisions and attempts level-scaled Stun" do
+    stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
     expect(Combat, :apply_skill_unit_damage, fn
       %{unit_id: @caster_id} = caster, :mob, 2001, 83, 1, :fire, 125, opts ->
@@ -188,14 +175,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
         :ok
     end)
 
-    group = group(state: %{meteor_schedule: [%{at: 700, position: {151, 149}}]})
+    group = group(state: %{falling: true})
 
-    assert {:ok, %Group{state: %{meteor_schedule: []}}} = WzMeteor.on_interval(group, 700)
+    assert {:ok, ^group} = WzMeteor.on_unit_hit(group, @center, {:mob, 2001}, 700)
   end
 
   test "does not attempt Stun when an impact cannot damage its target" do
-    stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
-    stub(Combat, :splash_targets, fn @map_name, {151, 149}, 3, @caster_id -> [{:mob, 2001}] end)
+    stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
     stub(Combat, :apply_skill_unit_damage, fn _caster,
                                               _type,
@@ -210,72 +196,132 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
 
     reject(&StatusInterpreter.apply_status/4)
 
-    group = group(state: %{meteor_schedule: [%{at: 700, position: {151, 149}}]})
+    group = group(state: %{falling: true})
 
-    assert {:ok, %Group{state: %{meteor_schedule: []}}} = WzMeteor.on_interval(group, 700)
+    assert {:ok, ^group} = WzMeteor.on_unit_hit(group, @center, {:mob, 2001}, 700)
   end
 
-  @tag game_mode: :renewal
-
-  test "late manager cadence applies every missed impact once without spawning meteor processes" do
+  test "cast places one unit per meteor in falling order and ignores a refused one" do
     test_pid = self()
-    stub(Catalog, :ground_module_for, fn :wz_meteor -> {:ok, WzMeteor} end)
-    stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
-    stub(Combat, :splash_targets, fn @map_name, _position, 3, @caster_id -> [{:mob, 2001}] end)
-
-    stub(Combat, :apply_skill_unit_damage, fn _caster, :mob, 2001, 83, 1, :fire, 125, _opts ->
-      send(test_pid, :impact)
-      :ok
+    stub(Unit, :place, fn _caster, :wz_meteor, 3, {x, y}, [state: %{meteor: meteor}] ->
+      send(test_pid, {:placed, meteor, {x, y}})
+      if meteor == 1, do: {:error, :no_walkable_cells}, else: {:ok, group([])}
     end)
 
-    stub(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_stun, _params -> :ok end)
+    caster = %{unit_id: @caster_id}
 
-    manager = start_manager(rng: fn _upper -> 0 end)
-    assert :ok = Manager.register(manager, group(expires_at: 2_000, next_tick_at: 700))
+    assert {:ok, ^caster} =
+             WzMeteor.cast(caster, {:ground, 150, 150}, 3, WzMeteor.definition())
 
-    assert :ok = Manager.tick(manager, 1_700)
-    assert_received :impact
-    assert_received :impact
-    refute_received :impact
-    assert Process.alive?(manager)
-    assert %Group{state: %{meteor_schedule: []}} = Storage.get(1)
+    for meteor <- 1..3 do
+      assert_received {:placed, ^meteor, {x, y}}
+      assert x in 147..153 and y in 147..153
+    end
+
+    refute_received {:placed, _, _}
   end
 
-  @tag game_mode: :renewal
+  test "meteor cells scatter within 3 cells, 16 at level 11, one per meteor" do
+    rolls = [0, 6, 3, 3]
+    Process.put(:rolls, rolls)
 
-  test "skips impacts after caster loss while preserving the schedule through expiry" do
-    stub(Catalog, :ground_module_for, fn :wz_meteor -> {:ok, WzMeteor} end)
+    rng = fn 7 ->
+      [roll | rest] = Process.get(:rolls)
+      Process.put(:rolls, rest)
+      roll
+    end
 
-    manager =
-      start_manager(
-        rng: fn _upper -> 0 end,
-        unit_available?: fn _unit_type, _unit_id, _map_name -> false end
-      )
+    assert WzMeteor.meteor_cells({150, 150}, 1, rng) == [{147, 153}, {150, 150}]
 
-    assert {:ok, placement} = WzMeteor.on_place(group([]))
+    assert WzMeteor.meteor_cells({150, 150}, 11, fn 33 -> 32 end) ==
+             List.duplicate({166, 166}, 10)
 
-    assert :ok =
-             Manager.register(
-               manager,
-               group(
-                 expires_at: 2_000,
-                 next_tick_at: 700,
-                 lifecycle_policy: placement.lifecycle_policy
-               )
-             )
+    assert WzMeteor.meteor_count(11) == 10
+    assert WzMeteor.hits_per_meteor(11) == 15
+    assert Enum.map(1..11, &WzMeteor.scatter/1) == List.duplicate(3, 10) ++ [16]
+  end
 
-    reject(&Combat.resolve_combatant/1)
-    reject(&Combat.splash_targets/4)
-    reject(&Combat.apply_skill_unit_damage/8)
+  describe "on the real unit pass" do
+    setup {Aesir.MimicMode, :global}
 
-    assert :ok = Manager.tick(manager, 700)
+    setup do
+      test_pid = self()
 
-    assert %Group{
-             next_tick_at: 1_700,
-             lifecycle_policy: %LifecyclePolicy{on_caster_loss: :skip_action},
-             state: %{meteor_schedule: [_first, _second]}
-           } = Storage.get(1)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, packet)
+        :ok
+      end)
+
+      stub(Combat, :resolve_combatant, fn :player, @caster_id ->
+        {:ok, %{unit_type: :player, unit_id: @caster_id}}
+      end)
+
+      stub(SplashTargets, :eligible, fn refs, _caster -> refs end)
+
+      stub(Combat, :apply_skill_unit_damage, fn _caster, type, id, 83, _l, :fire, _r, _opts ->
+        send(test_pid, {:impact, {type, id}})
+        :ok
+      end)
+
+      :ok = SpatialIndex.add_unit(:mob, 2001, 150, 150, @map_name)
+      :ok
+    end
+
+    test "a meteor falls on its interval and strikes only on the pass that finds it landed" do
+      manager = start_manager([])
+      :ok = Manager.register(manager, meteor(1))
+
+      :ok = Manager.tick(manager, 0)
+      assert_received %GroundSkill{skill_id: 83, x: 150, y: 150}
+      assert %Group{expires_at: 700, state: %{falling: true}} = Storage.get(1)
+      refute_received {:impact, _}
+
+      :ok = Manager.tick(manager, 600)
+      refute_received {:impact, _}
+
+      :ok = Manager.tick(manager, 700)
+      assert_received {:impact, {:mob, 2001}}
+      refute_received {:impact, _}
+      assert Storage.get(1) == nil
+    end
+
+    test "a meteor landing on Land Protector strikes nobody" do
+      manager = start_manager([])
+      :ok = Manager.register(manager, meteor(1))
+
+      :ok =
+        Storage.insert(
+          group(
+            group_id: 99,
+            skill_id: 288,
+            skill_name: :sa_landprotector,
+            expires_at: 10_000,
+            state: %{land_protector: true}
+          )
+        )
+
+      :ok = Manager.tick(manager, 0)
+      :ok = Manager.tick(manager, 700)
+
+      refute_received {:impact, _}
+      assert Storage.get(1) == nil
+    end
+
+    test "a meteor whose caster is gone never falls and ends at its full duration unstruck" do
+      manager = start_manager(unit_available?: fn _type, _id, _map -> false end)
+      :ok = Manager.register(manager, meteor(2))
+
+      :ok = Manager.tick(manager, 1_000)
+      :ok = Manager.tick(manager, 1_700)
+      assert %Group{state: %{falling: false}} = Storage.get(1)
+
+      :ok = Manager.tick(manager, 2_000)
+
+      refute_received %GroundSkill{}
+      refute_received {:impact, _}
+      assert Storage.get(1) == nil
+    end
   end
 
   @tag game_mode: :pre_renewal

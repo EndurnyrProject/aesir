@@ -8,14 +8,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   nothing. 80 SP at
   levels 1-5, 100 SP at 6-10.
 
-  Every 10 seconds each unit on the field other than the caster has a
-  `50 + 5 * level` percent chance to receive one random effect: party members a
-  blessing, enemies an affliction (`PaGospel.Tick` and `PaGospel.Effects`).
-  Two Gospels may not overlap; the skill-unit manager refuses the second.
+  Each field cell is a unit acting on the 100 ms unit pass: a unit standing on
+  the field other than the caster is struck once every 10 seconds, starting
+  from the first pass, and has a `50 + 5 * level` percent chance to receive one
+  random effect: party members (and party homunculi) a blessing, enemies an
+  affliction (`PaGospel.Tick` and `PaGospel.Effects`). The interval is shared
+  by every Gospel. A cell on Land Protector does nothing. Two Gospels may not
+  overlap; the skill-unit manager refuses the second.
 
   Identical in both game modes except the enemy slow's attack-speed magnitude
-  (`StatusEffect.Effects.GospelSlow`). Player-only: the blessings key off party
-  membership, which mobs do not have.
+  (`StatusEffect.Effects.GospelSlow`). Player-only: no monster casts it.
 
   Accepted deviation: a magic-immune caster keeps their statuses (the wipe is
   skipped) but still chants; the reference wipes regardless.
@@ -41,8 +43,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit, as: AesirUnit
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
   @behaviour Ground
@@ -84,12 +89,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
   def on_place(%Group{center: center}) do
-    {:ok, %{cells: thick_cross(center), state: %{}, interval: @interval, duration: @duration}}
+    {:ok,
+     %{
+       cells: thick_cross(center),
+       state: %{},
+       interval: @interval,
+       duration: @duration,
+       unit_range: 0,
+       no_overlap: true
+     }}
+  end
+
+  # A field whose Paladin is gone ends; one standing empty is still checked.
+  @impl Ground
+  @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
+  def on_interval(%Group{caster_type: type, caster_id: id} = group, _now) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, _caster} -> {:ok, group}
+      _gone -> {:expire, group}
+    end
   end
 
   @impl Ground
-  @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
-  def on_interval(%Group{} = group, now), do: Tick.run(group, now)
+  @spec unit_targets(Group.t(), Ground.cell(), [Ref.t()]) :: [Ref.t()]
+  def unit_targets(%Group{caster_type: type, caster_id: id}, _cell, refs),
+    do: Enum.filter(refs, &(&1 != {type, id} and living?(&1)))
+
+  defp living?({type, id}) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, state, _pid}} -> AesirUnit.living?(state)
+      _gone -> false
+    end
+  end
+
+  @impl Ground
+  @spec on_unit_hit(Group.t(), Ground.cell(), Ref.t(), integer()) :: {:ok, Group.t()}
+  def on_unit_hit(%Group{} = group, _cell, target, _now) do
+    Tick.strike(group, target)
+    {:ok, group}
+  end
 
   @impl Ground
   @spec on_expire(Group.t()) :: :ok
