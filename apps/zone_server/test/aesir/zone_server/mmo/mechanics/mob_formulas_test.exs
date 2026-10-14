@@ -33,6 +33,25 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulasTest do
     assert shared_leaves(PreRenewal, mob) === expected
   end
 
+  test "status ATK takes the flat statuses, then the rate's truncated share" do
+    mob = mob_fixture()
+    modifiers = %{batk: 7, batk_rate: 20}
+
+    # Renewal: STR 10 + level 50 + Guard Up 0 + 7 = 67, plus 67 * 20 / 100 = 13.
+    assert Renewal.status_attack(mob, 10, 0, modifiers) === 80
+    # A classic guardian: Guard Up 10 + 7 = 17, plus 17 * 20 / 100 = 3.
+    assert PreRenewal.status_attack(mob, 10, 10, modifiers) === 20
+    # A classic monster without Guard Up has no status ATK to scale.
+    assert PreRenewal.status_attack(mob, 10, 0, modifiers) === 0
+  end
+
+  test "a negative status ATK rate truncates its share toward zero" do
+    mob = mob_fixture()
+
+    # 67 - 67 * 50 / 100 = 67 - 33.
+    assert Renewal.status_attack(mob, 10, 0, %{batk: 7, batk_rate: -50}) === 34
+  end
+
   defp shared_leaves(formulas, mob) do
     {
       formulas.calculate_perfect_dodge(mob),

@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal do
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
 
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
-
+  alias Aesir.ZoneServer.Mmo.Mechanics.StatusAttack
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
 
   @impl true
@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal do
   def status_attack(%MobDefinition{}, _str, 0, _modifiers), do: 0
 
   def status_attack(%MobDefinition{}, _str, guard_up, modifiers),
-    do: guard_up + Map.get(modifiers, :batk, 0)
+    do: StatusAttack.modify(guard_up, modifiers)
 
   @impl true
   def magic_attack_bounds(%MobDefinition{}, int, modifiers) do

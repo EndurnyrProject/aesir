@@ -110,6 +110,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulasTest do
     assert %{combat_stats: %{atk: 49, atk_min: 60, atk_max: 91}} = PreRenewal.derive(inputs)
   end
 
+  test "the status ATK rate scales status ATK after the flat statuses in both modes" do
+    inputs = %{input() | modifiers: %{batk: 9, batk_rate: 20}}
+
+    # Renewal 120 + 120 * 20 / 100 = 144; classic 49 + 49 * 20 / 100 = 49 + 9.
+    assert %{combat_stats: %{atk: 144}} = Renewal.derive(inputs)
+    assert %{combat_stats: %{atk: 58}} = PreRenewal.derive(inputs)
+  end
+
   test "classic excessive DEX collapses the weapon interval without inflating ATK" do
     inputs = %{input() | effective: %{stats() | dex: 500}}
     assert %{combat_stats: %{atk: 40, atk_min: 71, atk_max: 71}} = PreRenewal.derive(inputs)

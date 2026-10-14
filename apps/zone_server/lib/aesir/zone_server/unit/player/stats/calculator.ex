@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.Mechanics.StatusAttack
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbinding
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponresearch
@@ -322,8 +323,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
     status_atk =
       values
       |> formulas.base_atk(equipped_weapon_type(stats) in @ranged_weapons)
-      |> Kernel.+(Stats.get_status_modifier(stats, :batk))
-      |> apply_batk_rate(Stats.get_status_modifier(stats, :batk_rate))
+      |> StatusAttack.modify(stats.modifiers.status_effects)
 
     base_atk = apply_rate(status_atk, Stats.get_equipment_modifier(stats, :atk_rate))
 
@@ -454,10 +454,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
 
   defp hand_attack(nil), do: 0
   defp hand_attack(hand), do: hand.base_atk + hand.refine_atk
-
-  # A status percentage of status ATK, truncated on the rate's share.
-  defp apply_batk_rate(status_atk, 0), do: status_atk
-  defp apply_batk_rate(status_atk, rate), do: status_atk + div(status_atk * rate, 100)
 
   defp calculate_critical(
          %{strategy: :exact_tenths, base_rate: base_rate},

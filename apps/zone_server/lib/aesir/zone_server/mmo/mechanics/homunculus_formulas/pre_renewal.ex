@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas.PreRenewal do
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas
 
   alias Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas
+  alias Aesir.ZoneServer.Mmo.Mechanics.StatusAttack
 
   @impl true
   @spec derive(HomunculusFormulas.input()) :: HomunculusFormulas.result()
@@ -20,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas.PreRenewal do
     hard_mdef = (div(level, 10) + div(raw.int, 5)) |> max(0) |> min(99)
 
     combat = %{
-      atk: stats.str + div(stats.str, 10) * div(stats.str, 10) + Map.get(mods, :batk, 0),
+      atk: StatusAttack.modify(stats.str + div(stats.str, 10) * div(stats.str, 10), mods),
       atk_min: min(stats.dex + status_watk, weapon_max),
       atk_max: weapon_max,
       def:
