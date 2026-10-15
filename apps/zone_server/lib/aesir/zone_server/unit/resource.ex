@@ -5,10 +5,12 @@ defmodule Aesir.ZoneServer.Unit.Resource do
   Homunculi require typed references. Aggregate-local callers build a local
   effect and apply it through the owning Homunculus handler instead of sending
   to their own session process.
+
+  A monster's SP is never drained: SP drains on a monster do nothing, though
+  its SP can still be read.
   """
 
   alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -112,10 +114,7 @@ defmodule Aesir.ZoneServer.Unit.Resource do
     :ok
   end
 
-  defp drain_sp({:mob, _unit_id}, state, pid, amount) do
-    if Unit.living?(state), do: MobSession.zap_sp(pid, amount)
-    :ok
-  end
+  defp drain_sp({:mob, _unit_id}, _state, _pid, _amount), do: :ok
 
   defp drain_sp({:homunculus, world_gid}, state, pid, amount) do
     if Unit.living?(state) do

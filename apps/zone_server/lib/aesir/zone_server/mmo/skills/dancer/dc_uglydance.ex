@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
   @moduledoc """
   Hip Shaker (DC_UGLYDANCE). A dance draining SP from every enemy within 4 cells
-  of the performer, needing a whip.
+  of the performer, needing a whip. A monster loses no SP to it.
 
   Renewal: drains 10 plus 2 per level SP, a 1 s cast plus 0.3 s fixed, a 0.3 s
   delay and a 5 s cooldown. Pre-renewal places a 30-second 7x7 enemy field

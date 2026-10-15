@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.AutospellForceFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
@@ -15,6 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   @cold_bolt 14
   @heal 28
   @grand_cross 254
+  @demonstration 229
+  @gravitation 484
   @target_force 1
 
   setup do
@@ -241,6 +244,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
       EquipProcDispatch.when_hit(wearer, {:player, 7}, hit(skill_id: @heal))
 
       refute_received {:"$gen_cast", _}
+    end
+
+    test "Demonstration, and classic Gravitation Field, deal no-damage hits" do
+      wearer = player(1001, [autocast(:when_hit, BattleFlags.fill_battle(0))])
+
+      EquipProcDispatch.when_hit(wearer, {:player, 7}, hit(skill_id: @demonstration))
+      refute_received {:"$gen_cast", _}
+
+      EquipProcDispatch.when_hit(wearer, {:player, 7}, hit(skill_id: @gravitation))
+
+      if GameMode.mode() == :renewal,
+        do: assert_received({:"$gen_cast", {:skill, {:equip_proc, _}}}),
+        else: refute_received({:"$gen_cast", _})
     end
 
     test "when-hit autobonuses activate on the recipient" do

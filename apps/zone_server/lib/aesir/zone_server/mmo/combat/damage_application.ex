@@ -406,8 +406,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     PlayerSession.apply_vanish(target_pid, hp_percent, sp_percent, source)
   end
 
-  def apply_vanish(:mob, target_pid, hp_percent, sp_percent, source) do
-    MobSession.apply_vanish(target_pid, hp_percent, sp_percent, source)
+  def apply_vanish(:mob, target_pid, hp_percent, _sp_percent, source) do
+    MobSession.apply_vanish(target_pid, hp_percent, source)
   end
 
   def apply_vanish(_target_type, _target_pid, _hp_percent, _sp_percent, _source), do: :ok

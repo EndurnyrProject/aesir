@@ -35,8 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     :all_resurrection,
     :cr_grandcross,
     :hlif_heal,
+    :hp_meditatio,
     :hvan_caprice,
     :hvan_chaotic,
+    :hw_souldrain,
     :mg_coldbolt,
     :mg_energycoat,
     :mg_fireball,
@@ -52,7 +54,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     :mg_thunderstorm,
     :npc_darkstrike,
     :npc_earthquake,
-    :npc_selfdestruction,
     :npc_summonslave,
     :pr_aspersio,
     :pr_benedictio,
@@ -130,7 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
 
   describe "magic-type skills" do
     test "all implemented magic-type skills declare magic damage" do
-      assert length(@magic_skills) == 82
+      assert length(@magic_skills) == 83
 
       for skill <- @magic_skills do
         assert {:ok, %Definition{damage_kind: :magic}} = Catalog.by_name(skill)

@@ -492,7 +492,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
     end
 
-    test "an SP-only Vellum replacement drains SP without coma or HP damage" do
+    test "an SP-only Vellum replacement against a monster takes no SP and deals no coma or HP damage" do
       attacker =
         1001
         |> combatant(:player)
@@ -520,16 +520,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       reject(&MobSession.apply_coma/2)
       reject(&MobSession.apply_damage/4)
 
-      expect(MobSession, :zap_sp, fn pid, 100 ->
-        assert pid == self()
-        :ok
-      end)
-
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
       capture_log(fn ->
         assert :ok = Combat.execute_attack(attacker, player_state, 2001)
       end)
+
+      refute_received {:"$gen_cast", {:unit, _sp_message}}
     end
 
     test "a landed player swing carries coma to a player owner" do

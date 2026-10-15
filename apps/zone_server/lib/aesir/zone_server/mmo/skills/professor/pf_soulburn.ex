@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   to twice the SP it had, ignoring element and cards. On a failed roll the same
   happens to the Professor instead: their SP empties and, at level 5, they take
   twice the SP they have left after paying the cost as damage, which can kill
-  them.
+  them. A monster's SP never empties.
 
   Identical in both modes: 80 to 120 SP, 9 cells, a 10 s cooldown (15 s at
   level 5). Monsters cast it through `mob_cast/5`.
@@ -111,10 +111,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   defp empty_sp(%PlayerState{stats: %{current_state: current} = stats} = caster),
     do: %{caster | stats: %{stats | current_state: %{current | sp: 0}}}
 
-  # A mob caster's state is not returned through `mob_cast/5`, so its own SP is
-  # emptied through its session like any other drain.
-  defp empty_sp(%MobState{instance_id: id} = caster) do
-    Resource.drain_sp_percent({:mob, id}, 100)
-    caster
-  end
+  # A monster's SP is never drained.
+  defp empty_sp(%MobState{} = caster), do: caster
 end

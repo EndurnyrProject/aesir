@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
 
   Renewal and pre-renewal agree: drains 5% plus 15% per level of the SP of the
   first enemy within one cell, lasting 200 s down to 40 s by level, for 45 SP
-  and two traps.
+  and two traps. A monster loses no SP to it.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 118,

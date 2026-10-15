@@ -167,23 +167,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
-  @doc "Applies nonlethal equipment vanish from max-HP/SP percentages."
-  @spec handle_vanish(non_neg_integer(), non_neg_integer(), tuple(), MobState.t()) ::
-          {:noreply, MobState.t()}
-  def handle_vanish(_hp_percent, _sp_percent, _source, %{is_dead: true} = state),
-    do: {:noreply, state}
+  @doc "Applies nonlethal equipment vanish from a max-HP percentage."
+  @spec handle_vanish(non_neg_integer(), tuple(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_vanish(_hp_percent, _source, %{is_dead: true} = state), do: {:noreply, state}
 
-  def handle_vanish(hp_percent, sp_percent, source, state) do
+  def handle_vanish(hp_percent, source, state) do
     hp_amount = div(state.max_hp * max(hp_percent, 0), 100)
-    sp_amount = div(state.max_sp * max(sp_percent, 0), 100)
     hp_damage = min(hp_amount, max(state.hp - 1, 0))
 
-    {:noreply, state} =
-      if hp_damage > 0,
-        do: handle_apply_damage(hp_damage, source, %{passive?: true}, state),
-        else: {:noreply, state}
-
-    {:noreply, StateCommit.commit(%{state | sp: max(0, state.sp - sp_amount)})}
+    if hp_damage > 0,
+      do: handle_apply_damage(hp_damage, source, %{passive?: true}, state),
+      else: {:noreply, state}
   end
 
   @doc """
@@ -204,19 +198,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   def handle_heal(_amount, state), do: {:noreply, state}
-
-  @doc """
-  Drains `amount` SP, floored at 0. Broadcasts nothing (mobs have no
-  client-visible SP) and no-ops on a dead mob or a non-positive amount.
-  """
-  @spec handle_drain_sp(integer(), MobState.t()) :: {:noreply, MobState.t()}
-  def handle_drain_sp(_amount, %{is_dead: true} = state), do: {:noreply, state}
-
-  def handle_drain_sp(amount, state) when is_integer(amount) and amount > 0 do
-    {:noreply, StateCommit.commit(%{state | sp: max(0, state.sp - amount)})}
-  end
-
-  def handle_drain_sp(_amount, state), do: {:noreply, state}
 
   @doc """
   Takes `amount` HP without source, aggro, damage log or kill: applied only

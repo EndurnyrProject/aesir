@@ -296,9 +296,13 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamagePathsTest do
                NpcSelfdestruction.definition()
              )
 
+    # 100 HP of Fire misc damage against Water 1 (90% renewal, 50% classic),
+    # doubled by Lex Aeterna, then the 60% castle rate.
+    expected_hp = if GameMode.mode() == :renewal, do: 892, else: 940
+
     assert_eventually(fn ->
       state = get_mob_state(target.pid)
-      state.hp == 880 and Map.has_key?(state.typed_aggro_list, {:mob, caster.unit_id})
+      state.hp == expected_hp and Map.has_key?(state.typed_aggro_list, {:mob, caster.unit_id})
     end)
 
     assert_eventually(fn -> get_mob_state(caster.pid).hp == 0 end)

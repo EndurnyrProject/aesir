@@ -44,16 +44,12 @@ defmodule Aesir.ZoneServer.Unit.ResourceTest do
       end
     end
 
-    test "drains a mob's maximum SP through its owning session" do
+    test "never drains a monster's SP" do
       mob = mob(max_sp: 101)
       stub(UnitRegistry, :get_unit, fn :mob, @unit_id -> {:ok, {MobState, mob, self()}} end)
 
-      expect(MobSession, :zap_sp, fn pid, 35 ->
-        assert pid == self()
-        :ok
-      end)
-
       assert Resource.drain_sp_percent(:mob, @unit_id, 35) == :ok
+      refute_received {:"$gen_cast", _message}
     end
 
     test "does nothing for missing or dead units" do
@@ -67,7 +63,6 @@ defmodule Aesir.ZoneServer.Unit.ResourceTest do
       end)
 
       reject(&PlayerSession.consume_sp/2)
-      reject(&MobSession.zap_sp/2)
 
       assert Resource.drain_sp_percent(:player, 1, 20) == :ok
       assert Resource.drain_sp_percent(:player, 2, 20) == :ok
@@ -101,20 +96,16 @@ defmodule Aesir.ZoneServer.Unit.ResourceTest do
         {:ok, {MobState, mob(max_sp: max_sp), self()}}
       end)
 
-      stub(MobSession, :zap_sp, fn pid, amount ->
-        assert pid == self()
-        assert amount == 0
-        :ok
-      end)
-
       for unit_id <- 1..length(invalid_values) do
         assert Resource.drain_sp_percent(:mob, unit_id, 20) == :ok
       end
+
+      refute_received {:"$gen_cast", _message}
     end
   end
 
   describe "drain_sp/3" do
-    test "drains a fixed amount from live players and mobs" do
+    test "drains a fixed amount from a live player and nothing from a monster" do
       player = player(max_sp: 100)
       mob = mob(max_sp: 100)
 
@@ -128,13 +119,9 @@ defmodule Aesir.ZoneServer.Unit.ResourceTest do
         :ok
       end)
 
-      expect(MobSession, :zap_sp, fn pid, 20 ->
-        assert pid == self()
-        :ok
-      end)
-
       assert :ok = Resource.drain_sp(:player, 1, 12)
       assert :ok = Resource.drain_sp(:mob, 2, 20)
+      refute_received {:"$gen_cast", _message}
     end
   end
 

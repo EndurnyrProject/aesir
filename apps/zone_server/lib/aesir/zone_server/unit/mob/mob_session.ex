@@ -46,10 +46,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:combat, {:apply_damage, damage, attacker_id, metadata}})
   end
 
-  @doc "Applies equipment vanish as nonlethal max-HP/SP percentage loss."
-  @spec apply_vanish(pid(), non_neg_integer(), non_neg_integer(), tuple()) :: :ok
-  def apply_vanish(pid, hp_percent, sp_percent, source) do
-    GenServer.cast(pid, {:combat, {:apply_vanish, hp_percent, sp_percent, source}})
+  @doc """
+  Applies equipment vanish as nonlethal max-HP percentage loss. A monster's SP
+  is never drained, so the SP part of a vanish does not reach it.
+  """
+  @spec apply_vanish(pid(), non_neg_integer(), tuple()) :: :ok
+  def apply_vanish(pid, hp_percent, source) do
+    GenServer.cast(pid, {:combat, {:apply_vanish, hp_percent, source}})
   end
 
   @doc """
@@ -90,19 +93,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @spec heal(pid(), integer()) :: :ok
   def heal(pid, amount) do
     GenServer.cast(pid, {:unit, {:heal, amount}})
-  end
-
-  @doc """
-  Drains `amount` SP from the mob, clamped at 0.
-
-  Mobs spend no SP to cast; their SP pool exists only so drains
-  (`SA_SPELLBREAKER`) have something real to take. A dead mob is skipped, like
-  `apply_damage/3`. Shares the converged `{:unit, {:drain_sp, _}}` tag with
-  `PlayerSession.consume_sp/2`.
-  """
-  @spec zap_sp(pid(), non_neg_integer()) :: :ok
-  def zap_sp(pid, amount) do
-    GenServer.cast(pid, {:unit, {:drain_sp, amount}})
   end
 
   @doc """
@@ -404,22 +394,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     CombatHandler.handle_passive_hp_loss(amount, state)
   end
 
-  def handle_cast({:combat, {:apply_vanish, hp_percent, sp_percent, source}}, state) do
-    CombatHandler.handle_vanish(hp_percent, sp_percent, source, state)
+  def handle_cast({:combat, {:apply_vanish, hp_percent, source}}, state) do
+    CombatHandler.handle_vanish(hp_percent, source, state)
   end
 
   def handle_cast({:combat, {:note_hit_type, attacker, bf, skill_id}}, state) do
     {:noreply, MobState.note_hit_type(state, attacker, bf, skill_id)}
   end
 
-  # Unit: heal and SP drain (vitals handled in CombatHandler).
+  # Unit: heal (vitals handled in CombatHandler).
   @impl GenServer
   def handle_cast({:unit, {:heal, amount}}, state) do
     CombatHandler.handle_heal(amount, state)
-  end
-
-  def handle_cast({:unit, {:drain_sp, amount}}, state) do
-    CombatHandler.handle_drain_sp(amount, state)
   end
 
   @impl GenServer

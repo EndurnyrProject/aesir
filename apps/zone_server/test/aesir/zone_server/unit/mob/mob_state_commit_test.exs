@@ -51,17 +51,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.StateCommitTest do
     refute Unit.living?(snapshot)
   end
 
-  test "heal and SP drain republish" do
+  test "heal republishes" do
     pid = start_registered_mob(hp: 500, sp: 50)
 
     MobSession.heal(pid, 100)
-    MobSession.zap_sp(pid, 20)
     _ = MobSession.get_state(pid)
 
-    assert %{hp: 600, sp: 30} = registry_state()
+    assert %{hp: 600, sp: 50} = registry_state()
   end
 
-  test "coma and vanish republish both HP and SP" do
+  test "coma republishes HP and SP, vanish HP and leaves SP" do
     pid = start_registered_mob(hp: 500, sp: 50)
 
     MobSession.apply_coma(pid, {:player, 42})
@@ -69,9 +68,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.StateCommitTest do
     assert %{hp: 1, sp: 1} = registry_state()
 
     pid2 = start_registered_mob(hp: 500, sp: 50, instance_id: 2)
-    MobSession.apply_vanish(pid2, 10, 20, {:player, 42})
+    MobSession.apply_vanish(pid2, 10, {:player, 42})
     _ = MobSession.get_state(pid2)
-    assert %{hp: 400, sp: 32} = registry_state(2)
+    assert %{hp: 400, sp: 50} = registry_state(2)
   end
 
   defp registry_state(instance_id \\ 1) do

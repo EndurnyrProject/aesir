@@ -1,10 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
   @moduledoc """
   Spell Breaker (SA_SPELLBREAKER). Interrupts an enemy's cast at 9 cells for 10 SP:
-  the target loses the interrupted skill's SP cost and the caster regains 25% per
-  level above one of it. A target that is not casting costs the SP for nothing. A
-  player under Magic Rod absorbs the attempt instead and drains 20% of the
-  caster's max SP. A status-immune monster resists nine times in ten. At level 5
+  the target loses the interrupted skill's SP cost (a monster loses none) and the
+  caster regains 25% per level above one of it. A target that is not casting
+  costs the SP for nothing. A player under Magic Rod absorbs the attempt instead
+  and drains 20% of the caster's max SP. A status-immune monster resists nine times in ten. At level 5
   the caster also siphons 2% of the target's max HP, healing half of it, never
   when the hit would be lethal; players are siphoned only on versus maps.
 
@@ -118,7 +118,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
          :ok <- roll_against_immunity(immune?, rng),
          {:ok, %{skill_id: skill_id, level: cast_level}} <- MobSession.interrupt_cast(pid) do
       sp = interrupted_sp_cost(skill_id, cast_level)
-      MobSession.zap_sp(pid, sp)
 
       caster
       |> adjust_sp(div(sp * (25 * (level - 1)), 100))

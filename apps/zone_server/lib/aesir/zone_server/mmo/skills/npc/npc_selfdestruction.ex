@@ -2,10 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   @moduledoc """
   NPC Self Destruction (NPC_SELFDESTRUCTION).
 
-  Deals the mob caster's current HP as fixed Fire damage in a five-cell radius,
-  knocks enemies back three cells, then routes lethal damage through the
-  caster's normal mob death path. Player-owned casters use their owner's PvM
-  faction and never damage players or other player-owned summons.
+  Deals the mob caster's current HP as Fire misc damage in a five-cell radius
+  (adjusted by each target's element, never missing), knocks enemies back three
+  cells, then routes lethal damage through the caster's normal mob death path.
+  Player-owned casters use their owner's PvM faction and never damage players or
+  other player-owned summons.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 173,
@@ -15,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     max_level: 1,
     target_type: :self,
     damage_type: :damage,
-    damage_kind: :magic,
+    damage_kind: :misc,
     element: :fire,
     range: 0,
     knockback: 3,
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
+  alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -85,9 +87,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   defp damage_target(caster, definition, {unit_type, target_id}) do
     with {:ok, target_pid, target_state, ^unit_type} <-
            TargetResolver.resolve(unit_type, target_id),
+         {:ok, %{damage: damage}} <- misc_damage(caster, target_state, definition),
          range = hit_range(caster, target_state, definition.id),
          hit_info = %{
-           dmg_type: :magic,
+           dmg_type: :misc,
            is_short: range == :short,
            element: definition.element,
            skill_id: definition.id,
@@ -99,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
              unit_type,
              target_pid,
              target_id,
-             caster.hp,
+             damage,
              Map.put(
                hit_info,
                :proc,
@@ -109,6 +112,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
            ) do
       Combat.knockback(unit_type, target_id, caster.x, caster.y, definition.knockback)
     end
+  end
+
+  defp misc_damage(caster, target_state, definition) do
+    MiscDamageCalculator.calculate_misc_damage(
+      MobState.to_combatant(caster),
+      target_state.__struct__.to_combatant(target_state),
+      base_damage: caster.hp,
+      element: definition.element
+    )
   end
 
   # The monster's distance to each victim decides the hit's range class.

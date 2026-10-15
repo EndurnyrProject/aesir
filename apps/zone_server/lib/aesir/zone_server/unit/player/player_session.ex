@@ -151,8 +151,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @doc """
   Drains SP from this player (fire-and-forget), clamping at zero.
 
-  Used by SP-costing status effects such as Energy Coat. Shares the converged
-  `{:unit, {:drain_sp, _}}` tag with `MobSession.zap_sp/2`.
+  Used by SP-costing status effects such as Energy Coat.
   """
   @spec consume_sp(pid(), non_neg_integer()) :: :ok
   def consume_sp(pid, amount) do

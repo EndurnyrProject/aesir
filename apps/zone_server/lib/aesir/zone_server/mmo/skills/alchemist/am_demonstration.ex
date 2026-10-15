@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   reaches the 3x3 area around it. Each enemy there receives a normal physical
   weapon attack every tick, timed from when the field first reached it; the
   attack may miss. A confirmed hit attempts to break a player target's weapon.
+  It is a no-damage skill: its hits never set off the target's when-hit
+  equipment procs.
 
   A player's cast fails before anything is spent when another Demonstration
   stands within one cell of the target, or any character other than the
@@ -27,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
     display_name: "Demonstration",
     max_level: 5,
     target_type: :ground,
-    damage_type: :damage,
+    damage_type: :no_damage,
     damage_kind: :weapon,
     element: :fire,
     range: 9,

@@ -57,16 +57,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionHpTest do
     assert {:noreply, ^state} = MobSession.handle_cast({:unit, {:heal, -5}}, state)
   end
 
-  test "an SP drain floors at 0 and publishes nothing" do
-    reject(&Broadcast.to_in_range/5)
-
-    state = %{build_mob_state(hp: 500, max_hp: 1000) | sp: 5, max_sp: 90}
-
-    {:noreply, drained} = MobSession.handle_cast({:unit, {:drain_sp, 20}}, state)
-
-    assert drained.sp == 0
-  end
-
   test "an HP zap below current HP takes it without killing; a lethal one is a no-op" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     state = build_mob_state(hp: 500, max_hp: 1000)
@@ -76,12 +66,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionHpTest do
     assert zapped.is_dead == false
 
     assert {:noreply, ^state} = MobSession.handle_cast({:unit, {:zap_hp, 500}}, state)
-  end
-
-  test "an SP drain on a dead mob is a no-op" do
-    state = %{build_mob_state(hp: 0, max_hp: 1000) | is_dead: true, sp: 50}
-
-    assert {:noreply, ^state} = MobSession.handle_cast({:unit, {:drain_sp, 10}}, state)
   end
 
   test "a dead mob ignores further damage and does not re-run the death path" do

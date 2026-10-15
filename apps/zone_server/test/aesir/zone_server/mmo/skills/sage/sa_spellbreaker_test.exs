@@ -142,11 +142,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
         {:ok, @firebolt}
       end)
 
-      stub(MobSession, :zap_sp, fn _pid, amount ->
-        send(test_pid, {:zapped_sp, amount})
-        :ok
-      end)
-
       stub(MobSession, :zap_hp, fn _pid, damage ->
         send(test_pid, {:damaged, damage})
         :ok
@@ -155,14 +150,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       :ok
     end
 
-    test "interrupts the cast and zaps the interrupted skill's SP cost" do
-      # MG_FIREBOLT lv5 costs 20 SP in the player catalog.
+    test "interrupts the cast and leaves the monster's SP untouched" do
       pid = stub_mob(mob_state(casting: %{row: @firebolt}))
 
       assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 1, nil)
 
       assert_received {:interrupted, ^pid}
-      assert_received {:zapped_sp, 20}
+      refute_received {:"$gen_cast", _message}
     end
 
     test "heals the caster sp * 25*(lv-1) / 100" do
@@ -195,7 +189,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
 
       assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
 
-      assert_received {:zapped_sp, 0}
       assert caster.stats.current_state.sp == 100
     end
 
@@ -207,8 +200,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       stub_mob(mob_state(casting: %{row: overlevelled}))
       stub(MobSession, :interrupt_cast, fn _pid -> {:ok, overlevelled} end)
 
-      assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 500), {:unit, @target_id}, 5, nil)
-      assert_received {:zapped_sp, 110}
+      # Level 5 returns the whole cost: 110 SP.
+      assert {:ok, caster} = SaSpellbreaker.cast(caster(100, 500), {:unit, @target_id}, 5, nil)
+      assert caster.stats.current_state.sp == 210
     end
   end
 
@@ -218,7 +212,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       test_pid = self()
 
       stub(MobSession, :interrupt_cast, fn _pid -> {:ok, @firebolt} end)
-      stub(MobSession, :zap_sp, fn _pid, _amount -> :ok end)
 
       stub(MobSession, :zap_hp, fn _pid, damage ->
         send(test_pid, {:damaged, damage})
@@ -298,8 +291,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
         send(test_pid, {:interrupted, pid})
         {:ok, @firebolt}
       end)
-
-      stub(MobSession, :zap_sp, fn _pid, _amount -> :ok end)
 
       stub(MobSession, :zap_hp, fn _pid, damage ->
         send(test_pid, {:damaged, damage})
@@ -417,7 +408,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
     test "a monster holding Magic Rod is broken as usual" do
       stub_mob(mob_state(casting: %{row: @firebolt}))
       stub(StatusStorage, :has_status?, fn _type, _id, status -> status == MagicRod.id() end)
-      stub(MobSession, :zap_sp, fn _pid, _amount -> :ok end)
       expect(MobSession, :interrupt_cast, fn _pid -> {:ok, @firebolt} end)
       reject(&Helpers.restore_sp/2)
 

@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
   `:sc_gravitation`. The caster holds the same status bound to the field: they
   cannot walk or use items while it lasts, taking damage collapses it, and no
   other skill of theirs deals damage (`StatusInterpreter.can_deal_skill_damage?/4`;
-  the field's own ticks and equipment procs still do). 20 to 100 SP, one
+  the field's own ticks and equipment procs still do). It is a no-damage skill:
+  its hits never set off the target's when-hit equipment procs. 20 to 100 SP, one
   Blue Gemstone, 5 s cast and a 5 to 9 s after-cast delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
@@ -24,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
     display_name: "Gravitation Field",
     max_level: 5,
     target_type: :ground,
-    damage_type: :damage,
+    damage_type: [renewal: :damage, pre_renewal: :no_damage],
     damage_kind: [renewal: :magic, pre_renewal: :misc],
     element: [renewal: :neutral, pre_renewal: :earth],
     range: 18,

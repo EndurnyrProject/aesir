@@ -363,6 +363,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :target_type,
     :range,
     :element,
+    :damage_type,
     :damage_kind,
     :knockback,
     :hit_count,
