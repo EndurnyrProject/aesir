@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
   @moduledoc """
   Static mob data: the core attributes and properties of a mob type.
+
+  A monster always has at least 1 SP; one without an SP value has exactly 1.
   """
 
   alias Aesir.ZoneServer.Mmo.Element
@@ -50,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
             name: nil,
             level: nil,
             hp: nil,
-            sp: 0,
+            sp: 1,
             base_exp: 0,
             job_exp: 0,
             atk: 0,

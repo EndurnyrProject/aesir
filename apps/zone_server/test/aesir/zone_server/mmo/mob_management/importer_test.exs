@@ -19,6 +19,14 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
     end
   end
 
+  describe "to_definition/1 Sp" do
+    test "a monster has at least 1 SP, and exactly 1 without a value" do
+      assert {:ok, %{sp: 1}} = Importer.to_definition(entry(%{}))
+      assert {:ok, %{sp: 1}} = Importer.to_definition(entry(%{"Sp" => 0}))
+      assert {:ok, %{sp: 50}} = Importer.to_definition(entry(%{"Sp" => 50}))
+    end
+  end
+
   describe "to_definition/1 mode derivation" do
     test "an Ai type that decodes to MD_AGGRESSIVE yields :aggressive" do
       {:ok, definition} = Importer.to_definition(entry(%{"Ai" => 4}))

@@ -438,23 +438,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert Executor.execute(caster, row(%{skill_id: 19, target: :target})) == :ok
     end
 
-    test "dispatches BA_DISSONANCE self rows through its real one-shot splash" do
-      caster = mob()
-
-      expect(Combat, :execute_magic_splash, fn passed_caster, {100, 100}, 4, opts ->
-        assert passed_caster.instance_id == caster.instance_id
-        assert opts[:skill_id] == 317
-        assert opts[:skill_level] == 5
-        assert opts[:skill_ratio] == 360
-        assert opts[:element] == :neutral
-        assert opts[:split] == false
-        []
-      end)
+    @tag game_mode: :renewal
+    test "dispatches BA_DISSONANCE self rows to the real skill, which does nothing for a monster" do
+      reject(&Combat.execute_magic_splash/4)
 
       dissonance_row =
         row(%{skill: "BA_DISSONANCE", skill_id: 317, level: 5, target: :self})
 
-      assert Executor.execute(caster, dissonance_row) == :ok
+      assert Executor.execute(mob(), dissonance_row) == :ok
     end
 
     @tag game_mode: :renewal

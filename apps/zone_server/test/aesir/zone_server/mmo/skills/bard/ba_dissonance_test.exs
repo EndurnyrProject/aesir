@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
 
     assert definition.max_level == 5
     assert definition.target_type == :self
-    assert definition.damage_type == :damage
+    assert definition.damage_type == :no_damage
     assert definition.damage_kind == :magic
     assert definition.element == :neutral
     assert definition.range == 0
@@ -88,22 +88,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
     end
   end
 
-  test "mob casting accepts only its executor-shaped self target without player song memory" do
+  @tag game_mode: :renewal
+  test "a monster's renewal Dissonance does nothing" do
     caster = mob_state()
+    reject(&Combat.execute_magic_splash/4)
+    reject(&Performance.perform/6)
 
-    expect(Combat, :execute_magic_splash, fn ^caster, {10, 20}, 4, opts ->
-      assert opts[:skill_ratio] == 360
-      assert opts[:element] == :neutral
-      []
+    assert {:ok, ^caster} =
+             BaDissonance.cast(caster, {:unit, caster.instance_id}, 5, BaDissonance.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "a monster's classic Dissonance performs the song field without a lesson" do
+    caster = mob_state()
+    reject(&Combat.execute_magic_splash/4)
+
+    expect(Performance, :perform, fn ^caster, %{id: 317}, 5, nil, [], opts ->
+      assert opts[:kind] == :song
+      assert opts[:tick] == :dissonance
+      assert opts[:lesson_level] == 0
+      {:ok, caster}
     end)
 
     assert {:ok, ^caster} =
-             BaDissonance.cast(
-               caster,
-               {:unit, caster.instance_id},
-               5,
-               BaDissonance.definition()
-             )
+             BaDissonance.cast(caster, {:unit, caster.instance_id}, 5, BaDissonance.definition())
   end
 
   test "weapon validation failure preserves memory and ordinary commitment" do
@@ -181,8 +189,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic carries the source's instant cast and SP" do
+  test "classic carries the source's instant cast, SP and misc type" do
     {:ok, definition} = Catalog.by_id(317)
+    assert definition.damage_kind == :misc
     assert definition.sp_cost == [18, 21, 24, 27, 30]
     assert definition.cast_time == []
     assert definition.fixed_cast_time == []

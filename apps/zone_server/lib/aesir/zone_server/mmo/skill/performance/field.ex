@@ -21,6 +21,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   strikes, and its occupants get no song status. Land Protector removes and
   silences a performance's cells unless its skill ignores it (every solo song
   and dance, and Hermode, do; the other ensembles do not).
+
+  A monster may perform a solo song or dance: it is the field's only performer
+  and carries the performing lock like a player.
   """
 
   require Logger
@@ -41,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit, as: GameUnit
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -51,10 +55,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   @dissonant_interval 3_000
 
   @doc "Places a performance and locks its caster (and optional partners)."
-  @spec start(PlayerState.t(), Definition.t(), pos_integer(), atom() | nil, keyword(), keyword()) ::
-          {:ok, PlayerState.t()} | {:error, term()}
-  def start(%PlayerState{character_id: id} = caster, definition, level, status_id, params, opts) do
-    if StatusStorage.has_status?(:player, id, :sc_dancing) do
+  @spec start(
+          PlayerState.t() | MobState.t(),
+          Definition.t(),
+          pos_integer(),
+          atom() | nil,
+          keyword(),
+          keyword()
+        ) ::
+          {:ok, PlayerState.t() | MobState.t()} | {:error, term()}
+  def start(caster, definition, level, status_id, params, opts) do
+    {type, id} = performer(caster)
+
+    if StatusStorage.has_status?(type, id, :sc_dancing) do
       {:error, :already_performing}
     else
       partners = Keyword.get(opts, :partners, [])
@@ -70,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
         linger_ms: Keyword.get(opts, :linger_ms, 20_000),
         layout_radius: Keyword.get(opts, :layout_radius, 3),
         kind: kind,
-        performers: [id | partners],
+        performers: player_performers(type, id, partners),
         tick: Keyword.get(opts, :tick),
         tick_interval: Keyword.get(opts, :tick_interval, 3_000),
         no_overlap: Keyword.get(opts, :no_overlap, false),
@@ -92,21 +105,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
     end
   end
 
+  defp performer(%PlayerState{character_id: id}), do: {:player, id}
+  defp performer(%MobState{instance_id: id}), do: {:mob, id}
+
+  defp player_performers(:player, id, partners), do: [id | partners]
+  defp player_performers(_type, _id, _partners), do: []
+
   defp finish_start(caster, definition, level, perf, group, partners) do
-    case lock(caster.character_id, definition.id, group, perf, List.first(partners)) do
+    {_type, caster_id} = ref = performer(caster)
+
+    case lock(ref, definition.id, group, perf, List.first(partners)) do
       :ok ->
         Enum.each(partners, fn partner ->
-          lock_partner(partner, caster.character_id, definition.id, group, perf)
+          lock_partner(partner, caster_id, definition.id, group, perf)
           remember_for_partner(partner, definition.id, level)
         end)
 
-        {:ok, Snapshot.remember(caster, definition.id, level)}
+        {:ok, remember(caster, definition.id, level)}
 
       {:error, _reason} = error ->
         Unit.destroy_async(group.group_id)
         error
     end
   end
+
+  defp remember(%PlayerState{} = caster, skill_id, level),
+    do: Snapshot.remember(caster, skill_id, level)
+
+  defp remember(caster, _skill_id, _level), do: caster
 
   # The partner's Encore replays the ensemble at the caster's level, even when
   # the partner's own lock failed.
@@ -121,7 +147,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   end
 
   defp lock_partner(partner, caster_id, skill_id, group, perf) do
-    case lock(partner, skill_id, group, perf, caster_id) do
+    case lock({:player, partner}, skill_id, group, perf, caster_id) do
       :ok -> :ok
       {:error, reason} -> Logger.warning("Performance partner lock failed: #{inspect(reason)}")
     end
@@ -229,7 +255,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
       params: perf.status_params ++ [caster_id: group.caster_id, source_type: group.caster_type],
       linger_ms: perf.linger_ms,
       target?: fn {type, id} = mover ->
-        not (id in perf.performers and type == :player) and
+        mover != {group.caster_type, group.caster_id} and
+          not (id in perf.performers and type == :player) and
           eligible?(perf.reach, group, mover) and
           not dissonant_position?(group, mover) and
           not on_basilica?(group, mover)
@@ -239,14 +266,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
 
   @doc "Unlocks all performers when their group ends."
   @spec on_expire(Group.t()) :: :ok
-  def on_expire(%Group{state: %{performance: %{performers: performers}}}) do
-    Enum.each(performers, fn id ->
-      StatusInterpreter.remove_status(:player, id, :sc_dancing, owner_refresh: :notify)
+  def on_expire(%Group{state: %{performance: %{performers: performers}}} = group) do
+    group
+    |> performer_refs(performers)
+    |> Enum.each(fn {type, id} ->
+      StatusInterpreter.remove_status(type, id, :sc_dancing, owner_refresh: :notify)
     end)
   end
 
-  defp lock(id, skill_id, group, perf, partner_id) do
-    StatusInterpreter.apply_status(:player, id, :sc_dancing,
+  defp performer_refs(%Group{caster_type: :player}, performers),
+    do: Enum.map(performers, &{:player, &1})
+
+  defp performer_refs(%Group{caster_type: type, caster_id: id}, _performers), do: [{type, id}]
+
+  defp lock({type, id}, skill_id, group, perf, partner_id) do
+    StatusInterpreter.apply_status(type, id, :sc_dancing,
       caster_id: id,
       val1: skill_id,
       val2: group.group_id,

@@ -12,10 +12,12 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Overlap
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -59,6 +61,43 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
     after_second = get_mob_state(mob.pid).hp
     assert_eventually(fn -> get_mob_state(mob.pid).hp < after_second end, 5_000)
     assert get_player_state(bard.pid).stats.current_state.hp >= initial_bard_hp
+  end
+
+  test "a monster's Dissonance damages a player every three seconds and locks the monster" do
+    victim = start_performer(:novice, "Listener", {152, 150}, %{})
+
+    mob =
+      start_mob_session(
+        unit_id: System.unique_integer([:positive]),
+        map_name: @map,
+        position: @origin,
+        awake: false
+      )
+
+    initial_hp = get_player_state(victim.pid).stats.current_state.hp
+    row = %{skill: "BA_DISSONANCE", skill_id: 317, level: 5, target: :self}
+
+    assert :ok = Executor.execute(get_mob_state(mob.pid), row)
+    assert [group] = Storage.get_groups_by_caster(:mob, mob.unit_id)
+    assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_dancing)
+    refute StatusInterpreter.can_attack?(:mob, mob.unit_id)
+
+    assert_eventually(
+      fn -> get_player_state(victim.pid).stats.current_state.hp < initial_hp end,
+      4_000
+    )
+
+    after_first = get_player_state(victim.pid).stats.current_state.hp
+
+    assert_eventually(
+      fn -> get_player_state(victim.pid).stats.current_state.hp < after_first end,
+      5_000
+    )
+
+    assert initial_hp - after_first == 30 + 10 * 5
+
+    assert :ok = Field.on_expire(group)
+    refute StatusStorage.has_status?(:mob, mob.unit_id, :sc_dancing)
   end
 
   test "Apple of Idun heals an occupant every six seconds but not the Bard" do

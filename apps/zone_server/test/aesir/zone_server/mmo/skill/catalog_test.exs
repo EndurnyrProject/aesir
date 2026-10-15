@@ -33,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     :al_teleport,
     :al_warp,
     :all_resurrection,
-    :ba_dissonance,
     :cr_grandcross,
     :hlif_heal,
     :hvan_caprice,
@@ -131,7 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
 
   describe "magic-type skills" do
     test "all implemented magic-type skills declare magic damage" do
-      assert length(@magic_skills) == 83
+      assert length(@magic_skills) == 82
 
       for skill <- @magic_skills do
         assert {:ok, %Definition{damage_kind: :magic}} = Catalog.by_name(skill)

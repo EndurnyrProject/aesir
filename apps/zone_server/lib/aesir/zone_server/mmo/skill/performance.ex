@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @typedoc "Options for a maintained performance field in either mode."
@@ -47,16 +48,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
   else `:none`. Use `:always` for an unrelaxable root. `:party_or_guild` reach
   includes same-party, same-guild and allied-guild players.
   Renewal only forwards `:scope`, `:radius`, `:duration` and `:eligible?`.
+
+  A monster may start a pre-renewal song or dance field; renewal performances
+  are players' only.
   """
   @spec perform(
-          PlayerState.t(),
+          PlayerState.t() | MobState.t(),
           Definition.t(),
           pos_integer(),
           atom() | nil,
           keyword(),
           keyword()
         ) ::
-          {:ok, PlayerState.t()} | {:error, term()}
+          {:ok, PlayerState.t() | MobState.t()} | {:error, term()}
   def perform(caster, definition, level, status_id, status_params, opts) do
     case GameMode.mode() do
       :renewal ->

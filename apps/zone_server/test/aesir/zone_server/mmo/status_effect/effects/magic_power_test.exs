@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicPowerTest do
   @cold_bolt 14
   @bash 5
   @cast_cancel 275
+  @dissonance 317
 
   defp fresh, do: %StatusEntry{type: :sc_magicpower, val1: 4, state: %{}}
 
@@ -33,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicPowerTest do
 
   @tag game_mode: :pre_renewal
   test "weapon, no-damage casts and normal attacks neither arm nor end it" do
-    for action <- [{:skill, @bash}, {:skill, @cast_cancel}, :normal_attack] do
+    for action <- [{:skill, @bash}, {:skill, @cast_cancel}, {:skill, @dissonance}, :normal_attack] do
       assert MagicPower.on_committed_action(@target, fresh(), action, %{}) == {:ok, fresh()}
     end
   end

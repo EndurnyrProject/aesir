@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
@@ -110,6 +111,65 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     refute Field.field_support(group).target?.({:player, 18})
     assert :ok = Field.on_expire(group)
     refute StatusStorage.has_status?(:player, 17, :sc_dancing)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "a monster performs a song field as its only performer and is unlocked when it ends" do
+    mob = %MobState{
+      instance_id: 42,
+      mob_id: 1002,
+      mob_data: %MobDefinition{
+        id: 1002,
+        aegis_name: "PORING",
+        name: "Poring",
+        level: 1,
+        hp: 100,
+        stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+        attack_range: 1,
+        size: :medium,
+        race: :plant,
+        element: {:water, 1},
+        walk_speed: 400,
+        attack_delay: 1_000,
+        attack_motion: 500,
+        client_attack_motion: 500,
+        damage_motion: 400,
+        modes: []
+      },
+      spawn_ref: nil,
+      x: 10,
+      y: 10,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 1,
+      max_sp: 1,
+      spawned_at: 0
+    }
+
+    :ok = UnitRegistry.register_unit(:mob, 42, MobState, mob, self())
+    {:ok, definition} = Catalog.by_name(:ba_dissonance)
+
+    assert {:ok, ^mob} =
+             Field.start(mob, definition, 5, nil, [],
+               kind: :song,
+               reach: :enemy,
+               upkeep: 3,
+               tick: :dissonance
+             )
+
+    assert [group] = Storage.get_groups_by_caster(:mob, 42)
+    assert group.state.performance.performers == []
+    assert Group.follows_caster?(group)
+    group_id = group.group_id
+    assert %{val2: ^group_id} = StatusStorage.get_status(:mob, 42, :sc_dancing)
+    refute Field.field_support(group).target?.({:mob, 42})
+
+    assert {:error, :already_performing} =
+             Field.start(mob, definition, 5, nil, [], kind: :song, upkeep: 3)
+
+    assert :ok = Field.on_expire(group)
+    refute StatusStorage.has_status?(:mob, 42, :sc_dancing)
   end
 
   @tag game_mode: :pre_renewal

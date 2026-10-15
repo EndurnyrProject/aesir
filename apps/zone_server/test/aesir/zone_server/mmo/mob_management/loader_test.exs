@@ -66,4 +66,11 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.LoaderTest do
 
     assert %{by_id: %{1 => %MobDefinition{race_groups: []}}} = Loader.load()
   end
+
+  @tag :tmp_dir
+  test "a monster without SP, or with SP below 1, loads with 1 SP", %{tmp_dir: dir} do
+    write_yaml(dir, @mob_yaml <> String.replace(@mob_yaml, "id: 1\n", "id: 2\n") <> "  sp: 0\n")
+
+    assert %{by_id: %{1 => %MobDefinition{sp: 1}, 2 => %MobDefinition{sp: 1}}} = Loader.load()
+  end
 end

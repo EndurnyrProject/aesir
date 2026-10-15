@@ -107,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
          name: Map.fetch!(entry, "Name"),
          level: Map.get(entry, "Level", 1),
          hp: Map.get(entry, "Hp", 1),
-         sp: Map.get(entry, "Sp", 0),
+         sp: max(Map.get(entry, "Sp", 1), 1),
          base_exp: Map.get(entry, "BaseExp", 0),
          job_exp: Map.get(entry, "JobExp", 0),
          atk: Map.get(entry, "Attack", 0),

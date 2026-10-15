@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -140,6 +141,33 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     assert %{movement_speed: 100} = Dancing.modifiers(%StatusEntry{val3: 10}, %{})
   end
 
+  test "a monster performer is not slowed" do
+    assert %{movement_speed: 0} =
+             Dancing.modifiers(%StatusEntry{val3: 0}, %{unit_type: :mob, target_id: 42})
+  end
+
+  test "a player whose upkeep leaves no SP stops performing" do
+    player = put_in(player(17).stats.current_state.sp, 0)
+    :ok = UnitRegistry.register_player(player, self())
+    stub(PlayerSession, :try_consume_sp, fn _pid, 1 -> :ok end)
+
+    entry = %StatusEntry{type: :sc_dancing, state: %{upkeep: 1, ticks: 0}}
+    assert :remove = Dancing.on_tick({:player, 17}, entry, %{})
+  end
+
+  test "a monster pays no upkeep and stops on the upkeep beat only without SP" do
+    reject(&PlayerSession.try_consume_sp/2)
+    entry = %StatusEntry{type: :sc_dancing, state: %{upkeep: 3, ticks: 0}}
+
+    :ok = UnitRegistry.register_unit(:mob, 42, MobState, mob(42, 0), self())
+    assert {:ok, first} = Dancing.on_tick({:mob, 42}, entry, %{})
+    assert {:ok, second} = Dancing.on_tick({:mob, 42}, first, %{})
+    assert :remove = Dancing.on_tick({:mob, 42}, second, %{})
+
+    :ok = UnitRegistry.update_unit_state(:mob, 42, mob(42, 1))
+    assert {:ok, %{state: %{ticks: 3}}} = Dancing.on_tick({:mob, 42}, second, %{})
+  end
+
   test "configured upkeep pays four SP on the tenth tick" do
     :ok = UnitRegistry.register_player(player(17), self())
 
@@ -217,6 +245,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     :ok = StatusStorage.apply_status(:player, 17, :sc_stun)
     refute Interpreter.can_move?(:player, 17)
     refute Interpreter.can_use_skill?(:player, 17, 1)
+  end
+
+  defp mob(id, sp) do
+    %MobState{
+      instance_id: id,
+      mob_id: 1002,
+      mob_data: nil,
+      spawn_ref: nil,
+      x: 100,
+      y: 100,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: sp,
+      max_sp: 1,
+      spawned_at: 0
+    }
   end
 
   defp player(id) do

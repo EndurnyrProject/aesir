@@ -181,7 +181,7 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
     assert before - get_player_state(bard.pid).stats.current_state.sp == 20
   end
 
-  test "upkeep charges on cadence and ends the field when the next payment fails", %{
+  test "upkeep charges on cadence and ends the field when a payment leaves no SP", %{
     bard: bard,
     listener: listener
   } do
@@ -203,11 +203,8 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
     tick_dancing(bard_id, 5)
     assert_eventually(fn -> get_player_state(bard.pid).stats.current_state.sp == 1 end)
     for tick <- 6..9, do: tick_dancing(bard_id, tick)
-    tick_dancing(bard_id, 10)
-    assert_eventually(fn -> get_player_state(bard.pid).stats.current_state.sp == 0 end)
-    assert StatusStorage.has_status?(:player, bard_id, :sc_dancing)
-    for tick <- 11..14, do: tick_dancing(bard_id, tick)
-    tick_dancing(bard_id, 15, :removed)
+    tick_dancing(bard_id, 10, :removed)
+    assert get_player_state(bard.pid).stats.current_state.sp == 0
 
     assert_eventually(fn -> Storage.get_groups_by_caster(:player, bard_id) == [] end)
 
