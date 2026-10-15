@@ -60,6 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   self cast (classic Basilica) never reads them. `is_trap` mirrors the IsTrap
   flag. All are mode-keyable.
 
+  `ranged_single_unit` mirrors the RangedSingleUnit unit flag: Land Protector
+  or Ganbantein removes the whole field only when it covers the field's centre
+  cell, and leaves every other cell standing. It is mode-keyable.
+
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
   declared range for a player caster. It is mode-invariant.
@@ -166,6 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             unit_layout: 0,
             unit_range: 0,
             is_trap: false,
+            ranged_single_unit: false,
             after_cast_delay: [],
             cooldown: [],
             damage_kind: :weapon,
@@ -223,6 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           unit_layout: non_neg_integer(),
           unit_range: non_neg_integer(),
           is_trap: boolean(),
+          ranged_single_unit: boolean(),
           after_cast_delay: [non_neg_integer()],
           cooldown: [non_neg_integer()],
           damage_kind: damage_kind(),
@@ -288,6 +294,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     unit_layout: {:integer, {:gte, 0}},
     unit_range: {:integer, {:gte, 0}},
     is_trap: :boolean,
+    ranged_single_unit: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
@@ -337,6 +344,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     unit_layout: 0,
     unit_range: 0,
     is_trap: false,
+    ranged_single_unit: false,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
@@ -383,6 +391,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :unit_layout,
     :unit_range,
     :is_trap,
+    :ranged_single_unit,
     :after_cast_delay,
     :cooldown,
     :item_cost,

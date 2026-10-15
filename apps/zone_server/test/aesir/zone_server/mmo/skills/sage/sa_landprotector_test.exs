@@ -21,6 +21,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.PlayerStateFixture
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -136,6 +140,49 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
       assert %Group{group_id: 1} = Storage.get(1)
     end
 
+    test "keeps a Pneuma whose centre it misses and removes one whose centre it covers" do
+      manager = start_manager()
+
+      assert :ok = place(manager, AlPneuma, 1, 1, {104, 100})
+      assert :ok = place(manager, AlPneuma, 2, 1, {103, 103})
+      assert :ok = place(manager, SaLandprotector, 3, 1)
+
+      assert %Group{cells: kept} = Storage.get(1)
+      assert length(kept) == 9
+      assert nil == Storage.get(2)
+      assert {103, 100} in Storage.get(3).cells
+    end
+
+    test "a covered Pneuma cell grants nobody stepping onto it" do
+      manager = start_manager()
+      :ok = place(manager, AlPneuma, 1, 1, {104, 100})
+      :ok = place(manager, SaLandprotector, 2, 1)
+
+      player =
+        PlayerStateFixture.build(%{
+          character_id: 7,
+          map_name: "prontera",
+          x: 103,
+          y: 100,
+          stats: %{}
+        })
+
+      :ok = UnitRegistry.register_unit(:player, 7, PlayerState, player, self())
+      :ok = SpatialIndex.add_unit(:player, 7, 103, 100, "prontera")
+      test_pid = self()
+
+      stub(StatusInterpreter, :apply_status, fn :player, 7, :sc_pneuma, _params ->
+        send(test_pid, :granted)
+        {:ok, :applied}
+      end)
+
+      allow(StatusInterpreter, self(), manager)
+
+      assert :ok = Manager.trigger(manager, 1, {:player, 7}, :on_touch)
+      refute_received :granted
+      assert %Group{} = Storage.get(1)
+    end
+
     test "placing land protector destroys an ice wall immediately, clearing its terrain" do
       stub_placement_dependencies()
       manager = start_manager()
@@ -178,8 +225,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
     manager
   end
 
-  defp place(manager, module, group_id, level) do
-    group = base_group(module, group_id, level)
+  defp place(manager, module, group_id, level, center \\ @center) do
+    group = %{base_group(module, group_id, level) | center: center}
     {:ok, placement} = module.on_place(group)
 
     Manager.register(manager, %{

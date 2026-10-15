@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
     name: :al_pneuma,
     no_reiteration: true,
     unit_layout: 1,
+    ranged_single_unit: true,
     requires: [],
     display_name: "Pneuma",
     max_level: 1,

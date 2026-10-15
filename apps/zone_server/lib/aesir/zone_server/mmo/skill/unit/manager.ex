@@ -156,7 +156,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   Land Protector and traps included; a group left without cells is destroyed.
 
   A caster-following group (a pre-renewal song or dance) is destroyed whole when
-  its centre lies inside `cells` and is otherwise left untouched.
+  its centre lies inside `cells` and is otherwise left untouched. So is a
+  RangedSingleUnit field (Pneuma, pre-renewal Basilica), when its centre cell
+  is still laid.
   """
   @spec clear_area(String.t(), [Group.cell()]) :: :ok
   def clear_area(map_name, cells), do: clear_area(default_server(), map_name, cells)
@@ -369,14 +371,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> Enum.uniq_by(& &1.group_id)
     |> Enum.each(fn group ->
       cond do
-        not Group.follows_caster?(group) ->
-          remove_group_cells(group, area)
-
-        MapSet.member?(area, group.center) ->
+        Group.follows_caster?(group) and MapSet.member?(area, group.center) ->
           cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
 
-        true ->
+        Group.follows_caster?(group) ->
           :ok
+
+        ranged_single_unit?(group) ->
+          remove_ranged_single_unit(group, area)
+
+        true ->
+          remove_group_cells(group, area)
       end
     end)
 
@@ -783,7 +788,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp run_trigger(%Group{} = group, mover, callback) do
-    if triggerable?(group) do
+    if triggerable?(group) and not suppressed_touch?(group, mover, callback) do
       case handler_for(group) do
         {:ok, module} ->
           run_callback_trigger(group, mover, callback, module)
@@ -793,6 +798,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       end
     end
   end
+
+  # A magic field's cell left under Land Protector (a RangedSingleUnit field
+  # whose centre survived) acts on nobody stepping onto it.
+  defp suppressed_touch?(%Group{} = group, {unit_type, unit_id}, :on_touch) do
+    with false <- Group.land_protector?(group),
+         {:ok, %{damage_kind: :magic}} <- Catalog.by_id(group.skill_id),
+         {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id) do
+      map_name == group.map_name and Storage.land_protected?(map_name, x, y)
+    else
+      _acts -> false
+    end
+  end
+
+  defp suppressed_touch?(_group, _mover, _callback), do: false
 
   defp run_callback_trigger(group, mover, callback, module) do
     if function_exported?(module, callback, 2) do
@@ -1066,11 +1085,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp inherit_family_duration(%Group{} = group, %Group{}, _now), do: group
 
-  # Land Protector's central placement rules (rAthena skill_cell_overlap /
-  # skill_unitsetting): a Land Protector group destroys overlapping foreign
-  # cells per cell (mutually with an existing Land Protector), and any other
-  # placement drops candidate cells that fall on a Land Protector. A group
-  # reduced to zero cells fails registration with `:land_protector`.
+  # Land Protector's central placement rules: a Land Protector group destroys
+  # overlapping foreign cells per cell (mutually with an existing Land
+  # Protector), and any other placement drops candidate cells that fall on a
+  # Land Protector. A RangedSingleUnit field goes whole only when its centre
+  # cell is covered and otherwise keeps its covered cells beside the new Land
+  # Protector cell. A group reduced to zero cells fails registration with
+  # `:land_protector`.
   defp apply_land_protector(%Group{} = group) do
     cond do
       Group.land_protector?(group) -> sweep_protected_overlap(group)
@@ -1096,10 +1117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
           |> Storage.get_groups_at_cell(x, y)
           |> Enum.reject(&Group.ignores_land_protector?/1)
 
-        removals =
-          Enum.reduce(overlapping, removals, fn victim, acc ->
-            Map.update(acc, victim.group_id, [cell], &[cell | &1])
-          end)
+        removals = Enum.reduce(overlapping, removals, &mark_removal(&2, &1, cell))
 
         if Enum.any?(overlapping, &Group.land_protector?/1),
           do: {kept, removals},
@@ -1113,6 +1131,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     case kept do
       [] -> {:error, :land_protector}
       kept -> {:ok, %{group | cells: Enum.reverse(kept)}}
+    end
+  end
+
+  defp mark_removal(removals, %Group{} = victim, cell) do
+    cond do
+      not ranged_single_unit?(victim) ->
+        Map.update(removals, victim.group_id, [cell], &[cell | &1])
+
+      centre_unit_in?(victim, MapSet.new([cell])) ->
+        Map.put(removals, victim.group_id, victim.cells)
+
+      true ->
+        removals
+    end
+  end
+
+  # A RangedSingleUnit field goes whole when its centre cell is removed and
+  # keeps every other cell. A centre cell that was never laid (a wall, Land
+  # Protector at placement) leaves the field unremovable this way.
+  defp remove_ranged_single_unit(%Group{} = group, area) do
+    if centre_unit_in?(group, area),
+      do: cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED),
+      else: :ok
+  end
+
+  defp centre_unit_in?(%Group{center: center, cells: cells}, area),
+    do: MapSet.member?(area, center) and center in cells
+
+  defp ranged_single_unit?(%Group{skill_id: skill_id}) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> definition.ranged_single_unit
+      :error -> false
     end
   end
 

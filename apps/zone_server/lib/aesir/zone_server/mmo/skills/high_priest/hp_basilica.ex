@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 362,
     name: :hp_basilica,
+    ranged_single_unit: [renewal: false, pre_renewal: true],
     requires: [],
     display_name: "Basilica",
     max_level: 5,

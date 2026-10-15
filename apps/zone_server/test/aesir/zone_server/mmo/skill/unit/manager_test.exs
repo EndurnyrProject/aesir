@@ -3188,6 +3188,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert nil == Storage.get(2)
     end
 
+    test "removes a Pneuma whole only when its centre cell lies inside the area" do
+      manager = start_manager(10_000)
+
+      pneuma = fn id, {cx, cy} ->
+        cells = for dx <- -1..1, dy <- -1..1, do: {cx + dx, cy + dy}
+        group(id, skill_id: 25, skill_name: :fake_unit, center: {cx, cy}, cells: cells)
+      end
+
+      :ok = Manager.register(manager, pneuma.(1, {103, 100}))
+      :ok = Manager.register(manager, pneuma.(2, {101, 104}))
+
+      assert :ok = Manager.clear_area(manager, "prontera", @area ++ [{101, 104}])
+
+      assert %Group{cells: cells} = Storage.get(1)
+      assert length(cells) == 9
+      assert nil == Storage.get(2)
+    end
+
     test "an empty area is a no-op" do
       manager = start_manager(10_000)
       :ok = Manager.register(manager, group(1, cells: [{100, 100}]))
