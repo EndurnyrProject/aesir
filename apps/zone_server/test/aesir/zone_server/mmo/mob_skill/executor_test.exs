@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -401,6 +403,21 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       detector = mob(mob_data: mob_data(modes: [:detector]))
       assert Executor.execute(detector, row, :cast_end) == :ok
       assert_received {:cast, 5001, {:unit, 42}, 3, 9001}
+    end
+  end
+
+  describe "ground unit placement" do
+    test "a monster's ground cast on a cell its skill already holds is refused without casting" do
+      stub_skill(117, :ht_anklesnare, CastOnly, %{target_type: :ground, no_reiteration: true})
+
+      stub(Storage, :get_visible_groups_in_range, fn @map, 100, 100, 0 ->
+        [%Group{group_id: 1, skill_id: 117, skill_name: :ht_anklesnare}]
+      end)
+
+      assert {:error, :unit_placement_refused} =
+               Executor.execute(mob(), row(%{skill_id: 117, target: :around}))
+
+      refute_received {:cast, _, _, _, _}
     end
   end
 

@@ -17,8 +17,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
   on Land Protector burns nobody. Nothing burns while the caster is gone.
 
   The wall lasts 5 s at level 1 up to 14 s at level 10, half again as long when
-  the caster stands in Violent Gale. Renewal and pre-renewal agree on everything
-  the wall does.
+  the caster stands in Violent Gale. A player keeps at most three walls: a
+  fourth cast fails before anything is spent, already when it starts. Renewal
+  and pre-renewal agree on everything the wall does.
 
   The only difference is the cast. Renewal splits it into a variable part that
   falls from 1.6 seconds to 0.56 and a fixed part that only gear and buffs can
@@ -28,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 18,
     name: :mg_firewall,
+    active_instance: 3,
     requires: [],
     display_name: "Fire Wall",
     max_level: 10,
@@ -53,7 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -79,8 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
        interval: definition.hit_interval,
        duration: duration(group, Enum.at(definition.unit_duration, level - 1)),
        unit_range: 0,
-       path_check: true,
-       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 3}
+       path_check: true
      }}
   end
 

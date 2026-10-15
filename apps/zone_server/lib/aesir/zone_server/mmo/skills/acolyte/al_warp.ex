@@ -13,8 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
       touches before it are ignored, and the group's total lifetime is the two
       seconds plus the portal's own duration.
     - A portal closes after `level + 6` warps.
-    - A caster keeps at most three live portals; placing a fourth removes the
-      earliest-expiring one first.
+    - A caster keeps at most three live portals; a fourth cast fails before
+      anything is spent. So does a cast whose cell holds a portal, a trap or
+      Venom Dust, or anyone, dead or alive.
     - Only players are warped. The caster is warped like anyone else.
 
   ## Renewal
@@ -40,6 +41,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 27,
     name: :al_warp,
+    active_instance: 3,
+    no_reiteration: true,
+    no_footset: true,
     display_name: "Warp Portal",
     max_level: 4,
     target_type: :ground,
@@ -60,7 +64,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -86,8 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
          opens_at: now + @open_delay
        },
        interval: definition.hit_interval,
-       duration: @open_delay + Enum.at(definition.unit_duration, level - 1),
-       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 3}
+       duration: @open_delay + Enum.at(definition.unit_duration, level - 1)
      }}
   end
 

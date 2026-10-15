@@ -470,6 +470,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       refute StatusStorage.has_status?(:mob, mob_id, :sc_stop)
       assert %{x: 50, y: 50} = MobSession.get_state(mob_pid)
       SpatialIndex.remove_unit(:mob, mob_id)
+      :ok = Manager.destroy(manager, group_id)
     end
   end
 

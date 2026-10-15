@@ -478,7 +478,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                    skill_id: 123,
                    skill_name: :ht_claymoretrap,
                    handler: FakeUnit,
-                   visibility: :public
+                   visibility: :public,
+                   center: {103, 100},
+                   cells: [{103, 100}]
                  )
                )
 
@@ -987,13 +989,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert :ok =
                Manager.register(
                  manager,
-                 trap_group(1, visibility: :party_only, cells: [{99, 100}])
+                 trap_group(1, visibility: :party_only, center: {99, 100}, cells: [{99, 100}])
                )
 
       assert :ok =
                Manager.register(
                  manager,
-                 trap_group(2, visibility: :party_only, cells: [{100, 100}])
+                 trap_group(2, visibility: :party_only, center: {101, 100}, cells: [{101, 100}])
                )
 
       assert {:ok, [1, 2]} = Manager.reveal_traps(manager, "prontera", 100, 100, 1)
@@ -1378,6 +1380,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
           skill_id: 123,
           skill_name: :ht_claymoretrap,
           handler: ClaymoreUnit,
+          caster_type: :mob,
           visibility: :public,
           unit_range: 1,
           center: {100, 100},
@@ -1402,6 +1405,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
           trap_group(group_id,
             skill_name: skill_name,
             handler: TrapUnit,
+            caster_type: :mob,
             visibility: visibility,
             center: {x, y},
             cells: [{x, y}],
@@ -1426,6 +1430,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
           trap_group(group_id,
             skill_name: skill_name,
             handler: TrapUnit,
+            caster_type: :mob,
             center: {x, y},
             cells: [{x, y}],
             state: %{
@@ -1715,65 +1720,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
-  describe "Gospel admission" do
-    test "rejects a Gospel touching another caster's Gospel and admits a separate one" do
-      manager = start_manager(10_000)
-
-      assert :ok = Manager.register(manager, group(1, skill_id: 369, cells: [{100, 100}]))
-
-      assert {:error, :skill_unit_overlap} =
-               Manager.register(
-                 manager,
-                 group(2, skill_id: 369, caster_id: 2, cells: [{101, 100}, {100, 100}])
-               )
-
-      assert :ok =
-               Manager.register(
-                 manager,
-                 group(3, skill_id: 369, caster_id: 2, cells: [{110, 100}])
-               )
-    end
-  end
-
   describe "Venom Dust admission" do
-    test "rejects the whole group when any cell overlaps another Venom Dust" do
-      manager = start_manager(10_000)
-
-      assert :ok =
-               Manager.register(
-                 manager,
-                 group(1, skill_id: 140, cells: [{100, 100}])
-               )
-
-      assert {:error, :skill_unit_overlap} =
-               Manager.register(
-                 manager,
-                 group(2, skill_id: 140, cells: [{101, 100}, {100, 100}])
-               )
-
-      assert nil == Storage.get(2)
-      assert [] == Storage.get_cells_by_group(2)
-    end
-
-    test "rejects Venom Dust overlapping a trap group" do
-      manager = start_manager(10_000)
-
-      assert :ok = Manager.register(manager, trap_group(1))
-
-      assert {:error, :skill_unit_overlap} =
-               Manager.register(manager, group(2, skill_id: 140))
-
-      assert nil == Storage.get(2)
-    end
-
-    test "rejects Venom Dust overlapping seeded Poison Mist" do
-      manager = start_manager(10_000)
-
-      assert :ok = Manager.register(manager, group(1, skill_id: 8020))
-      assert {:error, :skill_unit_overlap} = Manager.register(manager, group(2, skill_id: 140))
-      assert nil == Storage.get(2)
-    end
-
     test "keeps ordinary groups stackable and marks admitted Venom Dust" do
       manager = start_manager(10_000)
 
@@ -1799,17 +1746,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         |> Enum.map(&Task.async(fn -> Manager.register(manager, &1) end))
         |> Task.await_many()
 
-      assert Enum.frequencies(results) == %{:ok => 1, {:error, :safetywall_overlap} => 1}
+      assert Enum.frequencies(results) == %{:ok => 1, {:error, :unit_placement_refused} => 1}
       assert [%Group{skill_id: 12}] = Storage.all()
-    end
-
-    test "rejects an overlapping Magnus Exorcismus field" do
-      manager = start_manager(10_000)
-
-      assert :ok = Manager.register(manager, group(1, skill_id: 79, skill_name: :pr_magnus))
-
-      assert {:error, :skill_unit_overlap} =
-               Manager.register(manager, group(2, skill_id: 79, skill_name: :pr_magnus))
     end
 
     test "keeps Magnus visibility and expiry authoritative in the unit manager" do
@@ -2060,188 +1998,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       assert Enum.count(results, &match?({:ok, _}, &1)) == 1
       assert Enum.count(results, &(&1 == {:error, :no_water_source})) == 1
-    end
-  end
-
-  describe "per-caster instance limits" do
-    test "removes the oldest matching group when a fourth group is registered" do
-      manager = start_manager(10_000)
-      policy = %LifecyclePolicy{max_instances_per_caster: 3}
-
-      for {group_id, expires_at} <- [{1, 1_000}, {2, 2_000}, {3, 3_000}, {4, 4_000}] do
-        assert :ok =
-                 Manager.register(
-                   manager,
-                   group(group_id,
-                     skill_name: :fake_unit,
-                     expires_at: expires_at,
-                     lifecycle_policy: policy
-                   )
-                 )
-      end
-
-      assert Storage.get(1) == nil
-
-      assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
-               2,
-               3,
-               4
-             ]
-    end
-
-    test "a caster's fourth Fire Wall removes their first" do
-      manager = start_manager(10_000)
-      policy = %LifecyclePolicy{max_instances_per_caster: 3}
-
-      for group_id <- 1..4 do
-        assert :ok =
-                 Manager.register(
-                   manager,
-                   group(group_id,
-                     skill_id: 18,
-                     skill_name: :mg_firewall,
-                     created_at: group_id * 1_000,
-                     center: {100 + group_id, 100},
-                     cells: [{100 + group_id, 100}],
-                     lifecycle_policy: policy
-                   )
-                 )
-      end
-
-      assert Storage.get(1) == nil
-
-      assert Storage.get_groups_by_caster(:player, 1)
-             |> Enum.map(& &1.group_id)
-             |> Enum.sort() == [2, 3, 4]
-    end
-
-    test "keeps the newly cast group and evicts the oldest existing one on overflow" do
-      manager = start_manager(10_000)
-      policy = %LifecyclePolicy{max_instances_per_caster: 2}
-
-      for {group_id, created_at, expires_at} <- [
-            {10, 1_000, 9_000},
-            {20, 2_000, 8_000},
-            {30, 3_000, 7_000}
-          ] do
-        assert :ok =
-                 Manager.register(
-                   manager,
-                   group(group_id,
-                     skill_name: :fake_unit,
-                     created_at: created_at,
-                     expires_at: expires_at,
-                     lifecycle_policy: policy
-                   )
-                 )
-      end
-
-      assert Storage.get(10) == nil
-
-      assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
-               20,
-               30
-             ]
-    end
-
-    test "keeps a short-lived new cast and destroys the oldest long-lived instance" do
-      manager = start_manager(10_000)
-      policy = %LifecyclePolicy{max_instances_per_caster: 3}
-
-      for {group_id, created_at} <- [{1, 1_000}, {2, 2_000}, {3, 3_000}] do
-        assert :ok =
-                 Manager.register(
-                   manager,
-                   group(group_id,
-                     skill_name: :fake_unit,
-                     created_at: created_at,
-                     expires_at: 1_000_000,
-                     lifecycle_policy: policy
-                   )
-                 )
-      end
-
-      assert :ok =
-               Manager.register(
-                 manager,
-                 group(4,
-                   skill_name: :fake_unit,
-                   created_at: 4_000,
-                   expires_at: 20_000,
-                   lifecycle_policy: policy
-                 )
-               )
-
-      assert %Group{} = Storage.get(4)
-      assert Storage.get(1) == nil
-
-      assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
-               2,
-               3,
-               4
-             ]
-    end
-
-    test "does not evict groups from another caster or skill" do
-      manager = start_manager(10_000)
-      policy = %LifecyclePolicy{max_instances_per_caster: 1}
-
-      assert :ok =
-               Manager.register(
-                 manager,
-                 group(1, skill_name: :fake_unit, expires_at: 1_000, lifecycle_policy: policy)
-               )
-
-      assert :ok =
-               Manager.register(
-                 manager,
-                 group(2,
-                   skill_name: :serialized_unit,
-                   expires_at: 1_000,
-                   lifecycle_policy: policy
-                 )
-               )
-
-      assert :ok =
-               Manager.register(
-                 manager,
-                 group(3,
-                   skill_name: :fake_unit,
-                   caster_id: 2,
-                   expires_at: 1_000,
-                   lifecycle_policy: policy
-                 )
-               )
-
-      assert :ok =
-               Manager.register(
-                 manager,
-                 group(4, skill_name: :fake_unit, expires_at: 2_000, lifecycle_policy: policy)
-               )
-
-      assert Storage.get(1) == nil
-      assert %Group{} = Storage.get(2)
-      assert %Group{} = Storage.get(3)
-      assert %Group{} = Storage.get(4)
-    end
-
-    test "leaves uncapped groups active" do
-      manager = start_manager(10_000)
-
-      for group_id <- 1..4 do
-        assert :ok =
-                 Manager.register(
-                   manager,
-                   group(group_id, skill_name: :fake_unit, expires_at: group_id * 1_000)
-                 )
-      end
-
-      assert Enum.map(Storage.get_groups_by_caster(:player, 1), & &1.group_id) |> Enum.sort() == [
-               1,
-               2,
-               3,
-               4
-             ]
     end
   end
 

@@ -406,7 +406,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       stub(Interpreter, :check_proc_usable, fn ^game_state, 29 -> :ok end)
 
-      expect(Interpreter, :proc_cast, fn ^game_state, 29, 1, :self, [act_delay?: false] ->
+      expect(Interpreter, :proc_cast, fn ^game_state,
+                                         29,
+                                         1,
+                                         :self,
+                                         [act_delay?: false, placement_skill: _] ->
         {:ok, game_state}
       end)
 
@@ -444,7 +448,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       stub(Interpreter, :check_proc_usable, fn ^game_state, 29 -> :ok end)
 
-      expect(Interpreter, :proc_cast, fn ^game_state, 29, 1, :self, [act_delay?: false] ->
+      expect(Interpreter, :proc_cast, fn ^game_state,
+                                         29,
+                                         1,
+                                         :self,
+                                         [act_delay?: false, placement_skill: _] ->
         {:ok, game_state}
       end)
 

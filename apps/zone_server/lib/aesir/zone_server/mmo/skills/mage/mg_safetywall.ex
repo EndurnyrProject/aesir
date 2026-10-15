@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   @moduledoc """
   Safety Wall (MG_SAFETYWALL). Ground-targeted, no-damage defensive skill-unit.
 
-  A cast rejects a cell already occupied by Safety Wall before it can consume a
-  Blue Gemstone. The wall grants the `sc_safetywall` marker to every unit on its
+  A cast ending on a cell that holds a Safety Wall or Pneuma unit fails before
+  anything is spent. The wall grants the `sc_safetywall` marker to every unit on its
   cell - allies and the caster included, since it is defensive - when it is
   placed and to each unit that steps onto it, as
   `Aesir.ZoneServer.Mmo.Skills.Shared.CellStatus` describes; stepping off or the
@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 12,
     name: :mg_safetywall,
+    no_reiteration: true,
     # Mob-castable: this is a ground placement (`Unit.place/4`) that works for any
     # caster. The Blue Gemstone (`item_cost` below) is a player-side catalyst charged
     # by the cost pipeline, not a requirement for the mob ground cast; declaring
@@ -54,29 +55,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Shared.CellStatus
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Ground
 
-  def validate(%{map_name: map_name}, {:ground, x, y}, _level, _definition) do
-    if safetywall_at?(map_name, x, y), do: {:error, :safetywall_overlap}, else: :ok
-  end
-
   def cast(caster, {:ground, x, y}, level, _definition) do
-    if safetywall_at?(caster.map_name, x, y) do
-      {:error, :safetywall_overlap}
-    else
-      case Unit.place(caster, :mg_safetywall, level, {x, y}) do
-        {:ok, group} ->
-          CellStatus.grant_occupants(group, definition(), :sc_safetywall, grant_params(group))
-          {:ok, caster}
+    case Unit.place(caster, :mg_safetywall, level, {x, y}) do
+      {:ok, group} ->
+        CellStatus.grant_occupants(group, definition(), :sc_safetywall, grant_params(group))
+        {:ok, caster}
 
-        {:error, _reason} = error ->
-          error
-      end
+      {:error, _reason} = error ->
+        error
     end
   end
 
@@ -124,10 +116,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
       val2: group_id,
       duration: Enum.at(definition().unit_duration, level - 1)
     ]
-  end
-
-  defp safetywall_at?(map_name, x, y) do
-    Enum.any?(Storage.get_groups_at_cell(map_name, x, y), &(&1.skill_id == 12))
   end
 
   @doc """

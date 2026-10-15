@@ -101,7 +101,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       assert placement.state.opens_at <= now_ms() + 2_000
       # 2s opening phase + the level 2 portal lifetime
       assert placement.duration == 2_000 + 15_000
-      assert placement.lifecycle_policy.max_instances_per_caster == 3
     end
 
     @tag game_mode: :pre_renewal

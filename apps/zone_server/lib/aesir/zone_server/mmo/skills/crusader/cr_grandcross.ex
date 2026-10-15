@@ -59,7 +59,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -141,8 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
        interval: definition.hit_interval,
        duration: duration,
        unit_range: 0,
-       path_check: true,
-       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 1}
+       path_check: true
      }}
   end
 

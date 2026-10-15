@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 125,
     name: :ht_talkiebox,
+    is_trap: true,
     display_name: "Talkie Box",
     max_level: 1,
     target_type: :ground,

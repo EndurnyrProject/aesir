@@ -146,11 +146,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
                Enum.sort([{151, 151}, {151, 150}, {150, 150}, {150, 149}, {149, 149}])
     end
 
-    test "caps the caster at three live walls" do
-      assert {:ok, placement} = MgFirewall.on_place(group(3))
-      assert placement.lifecycle_policy.max_instances_per_caster == 3
-    end
-
     test "lays a north-south line when the group has no origin" do
       assert {:ok, %{cells: cells}} = MgFirewall.on_place(group(1, %{}, nil))
       assert cells == [{150, 149}, {150, 150}, {150, 151}]

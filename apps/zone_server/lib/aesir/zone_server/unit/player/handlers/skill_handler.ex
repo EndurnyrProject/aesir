@@ -1620,9 +1620,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp run_equip_proc(state, %{branch: :skill} = candidate, level) do
     %{skill_id: skill_id, target: target, entry: entry} = candidate
     entry = EquipAutocast.current_identity(state.game_state.stats.modifiers.equipment, entry)
+    {_trigger, _index, %{trigger_skill: trigger_skill}} = entry
+    opts = [act_delay?: false, placement_skill: trigger_skill]
 
     EquipProcDispatch.with_on_skill_lock(state.game_state.character_id, entry, fn ->
-      result = Interpreter.proc_cast(state.game_state, skill_id, level, target, act_delay?: false)
+      result = Interpreter.proc_cast(state.game_state, skill_id, level, target, opts)
       run_proc_cast(state, skill_id, level, target, result)
     end)
   end

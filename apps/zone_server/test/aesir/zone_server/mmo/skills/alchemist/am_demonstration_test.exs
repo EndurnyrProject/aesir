@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -46,6 +47,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
       interval: 500,
       state: %{}
     }
+  end
+
+  defp check({:ground, x, y}) do
+    PlacementCheck.check(
+      AmDemonstration.definition(),
+      {:player, @caster_id},
+      @map_name,
+      {x, y},
+      :player
+    )
   end
 
   defp caster_with_bottle do
@@ -131,28 +142,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
   describe "NoReiteration" do
     test "rejects a target whose 3x3 area overlaps an existing Demonstration" do
       existing = %{group(1) | center: {151, 151}, cells: [{151, 151}]}
+      stub(Storage, :get_visible_groups_in_range, fn @map_name, 150, 150, 1 -> [existing] end)
 
-      stub(Storage, :get_groups_at_cell, fn
-        @map_name, 151, 151 -> [existing]
-        _map_name, _x, _y -> []
-      end)
-
-      assert {:error, :skill_unit_overlap} =
-               AmDemonstration.validate(%{map_name: @map_name}, {:ground, 150, 150}, 1, %{})
+      assert {:error, :unit_placement_refused} = check({:ground, 150, 150})
     end
 
     test "rejects an overlap before consuming the Fire Bottle" do
       caster = caster_with_bottle()
       existing = %{group(1) | cells: [{150, 150}]}
-
-      stub(Storage, :get_groups_at_cell, fn
-        @map_name, 150, 150 -> [existing]
-        _map_name, _x, _y -> []
-      end)
-
+      stub(Storage, :get_visible_groups_in_range, fn @map_name, 150, 150, 1 -> [existing] end)
       reject(&Unit.place/4)
 
-      assert {:error, :skill_unit_overlap} =
+      assert {:error, :unit_placement_refused} =
                Interpreter.complete_cast(caster, 229, 3, {:ground, 150, 150})
 
       assert caster.inventory == %{0 => %InventoryItem{nameid: 7135, amount: 1, equip: 0}}
@@ -160,14 +161,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
 
     test "allows overlap with other ground skills" do
       existing = %{group(1) | skill_id: 18, skill_name: :mg_firewall, cells: [{150, 150}]}
+      stub(Storage, :get_visible_groups_in_range, fn @map_name, 150, 150, 1 -> [existing] end)
 
-      stub(Storage, :get_groups_at_cell, fn
-        @map_name, 150, 150 -> [existing]
-        _map_name, _x, _y -> []
-      end)
-
-      assert :ok =
-               AmDemonstration.validate(%{map_name: @map_name}, {:ground, 150, 150}, 1, %{})
+      assert :ok = check({:ground, 150, 150})
     end
   end
 

@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
   @moduledoc """
   Quagmire (WZ_QUAGMIRE). A 3x3 enemy ground field with a 9-cell range, 5 to 25 s
-  duration, 5 to 25 SP, and at most three fields per caster (the fourth cast removes
-  the oldest).
+  duration, 5 to 25 SP, and at most three fields per caster (a fourth cast fails
+  before anything is spent).
 
   Occupants lose 5 AGI and DEX per level (10 per level for non-players) and move at
   half speed. The 1 s manager interval only reconciles support for stationary
@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 92,
     name: :wz_quagmire,
+    active_instance: 3,
     requires: [],
     display_name: "Quagmire",
     max_level: 5,
@@ -30,7 +31,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @reconcile_interval 1_000
@@ -48,8 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
        state: %{},
        interval: @reconcile_interval,
        initial_delay: 0,
-       duration: Enum.at(definition.unit_duration, level - 1),
-       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 3}
+       duration: Enum.at(definition.unit_duration, level - 1)
      }}
   end
 

@@ -326,8 +326,16 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
         PlayerState.act_ready?(get_player_state(caster.pid), System.monotonic_time(:millisecond))
       end)
 
-      cast_ground(caster, 229, {x + 1, y})
+      # Nobody may stand next to a Demonstration's cell when it is placed.
+      cast_ground(caster, 229, {x + 2, y})
       demonstration = field(229)
+      simulate_incoming_message(friendly.pid, %MoveRequest{dest_x: x + 1, dest_y: y})
+
+      assert_eventually(fn ->
+        %PlayerState{x: fx, y: fy} = get_player_state(friendly.pid)
+        {fx, fy} == {x + 1, y}
+      end)
+
       before_hp = hp(friendly)
       assert inventory_amount(caster, 7135) == 0
       flush_packets()

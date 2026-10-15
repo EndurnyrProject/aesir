@@ -238,7 +238,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     assert_receive :observer_broadcast
   end
 
-  test "two concurrent casts admit one visible field and consume one Blue Gemstone" do
+  test "two concurrent casts on one cell each place a field and spend their own Blue Gemstone" do
     test_pid = self()
     manager = start_supervised!({Manager, name: nil, schedule_tick: fn _, _ -> :ok end})
 
@@ -292,16 +292,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     Enum.each(placing, &send(&1, :place))
     results = Task.await_many(tasks)
 
-    assert Enum.count(results, &match?({:ok, %PlayerState{}}, &1)) == 1
-    assert Enum.count(results, &(&1 == {:error, :skill_unit_overlap})) == 1
+    assert [
+             {:ok, %PlayerState{inventory: %{}, pending_inventory_persist: [_first]}},
+             {:ok, %PlayerState{inventory: %{}, pending_inventory_persist: [_second]}}
+           ] = results
 
-    assert {:ok,
-            %PlayerState{
-              inventory: %{},
-              pending_inventory_persist: [_catalyst_change]
-            }} = Enum.find(results, &match?({:ok, %PlayerState{}}, &1))
-
-    assert [%Group{skill_id: 70, visibility: :public}] = Storage.all()
+    assert [%Group{skill_id: 70}, %Group{skill_id: 70}] = Storage.all()
   end
 
   test "heals a living injured Homunculus through typed delivery regardless of caster ownership" do

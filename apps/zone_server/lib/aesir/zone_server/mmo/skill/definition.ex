@@ -50,6 +50,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   return a deferred result, whose settlement would spend the cost again. It is
   mode-invariant.
 
+  `active_instance`, `no_reiteration`, `no_footset`, `unit_layout` and
+  `unit_range` mirror the source's ActiveInstance, the NoReiteration and
+  NoFootSet unit flags, and the unit Layout and Range. They decide whether a
+  ground placement is refused at cast end (see `Skill.Unit.PlacementCheck`):
+  a caster holding `active_instance` groups of the skill, another unit too
+  close, or a character standing on the area. A skill declares them only when
+  its cast reaches the ground cast end; a skill that places its unit from a
+  self cast (classic Basilica) never reads them. `is_trap` mirrors the IsTrap
+  flag. All are mode-keyable.
+
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
   declared range for a player caster. It is mode-invariant.
@@ -150,6 +160,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             damage_splash: false,
             allow_when_hidden: false,
             cost_before_effect: false,
+            active_instance: 0,
+            no_reiteration: false,
+            no_footset: false,
+            unit_layout: 0,
+            unit_range: 0,
+            is_trap: false,
             after_cast_delay: [],
             cooldown: [],
             damage_kind: :weapon,
@@ -201,6 +217,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           damage_splash: boolean(),
           allow_when_hidden: boolean(),
           cost_before_effect: boolean(),
+          active_instance: non_neg_integer(),
+          no_reiteration: boolean(),
+          no_footset: boolean(),
+          unit_layout: non_neg_integer(),
+          unit_range: non_neg_integer(),
+          is_trap: boolean(),
           after_cast_delay: [non_neg_integer()],
           cooldown: [non_neg_integer()],
           damage_kind: damage_kind(),
@@ -260,6 +282,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_splash: :boolean,
     allow_when_hidden: :boolean,
     cost_before_effect: :boolean,
+    active_instance: {:integer, {:gte, 0}},
+    no_reiteration: :boolean,
+    no_footset: :boolean,
+    unit_layout: {:integer, {:gte, 0}},
+    unit_range: {:integer, {:gte, 0}},
+    is_trap: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
     damage_kind: {:enum, [:weapon, :magic, :misc]},
@@ -303,6 +331,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_splash: false,
     allow_when_hidden: false,
     cost_before_effect: false,
+    active_instance: 0,
+    no_reiteration: false,
+    no_footset: false,
+    unit_layout: 0,
+    unit_range: 0,
+    is_trap: false,
     after_cast_delay: [],
     cooldown: [],
     damage_kind: :weapon,
@@ -343,6 +377,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :is_npc,
     :damage_splash,
     :allow_when_hidden,
+    :active_instance,
+    :no_reiteration,
+    :no_footset,
+    :unit_layout,
+    :unit_range,
+    :is_trap,
     :after_cast_delay,
     :cooldown,
     :item_cost,

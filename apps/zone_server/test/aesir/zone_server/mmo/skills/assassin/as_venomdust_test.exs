@@ -132,10 +132,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
                             @center,
                             origin: :normal,
                             state: %{paid_return?: true} ->
-      {:error, :skill_unit_overlap}
+      {:error, :land_protector}
     end)
 
-    assert {:error, :skill_unit_overlap} =
+    assert {:error, :land_protector} =
              Interpreter.complete_cast(caster, 140, 3, {:ground, 100, 100})
 
     assert caster.stats.current_state.sp == 100

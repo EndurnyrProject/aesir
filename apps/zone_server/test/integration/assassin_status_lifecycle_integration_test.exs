@@ -219,7 +219,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     assert_sessions_responsive(holder.pid, poison_mob.pid)
   end
 
-  test "Venom Dust commits one catalyst and the real manager owns overlap, poison, metadata, mob placement, and expiry" do
+  test "Venom Dust commits one catalyst, stacks on another cloud, and the real manager owns poison, metadata, mob placement, and expiry" do
     caster_character = insert_character(12, %{@venom_dust => 10}, [])
     seed_item(caster_character.id, @red_gemstone, 1)
     caster = start_character(caster_character, {29, 30})
@@ -256,13 +256,17 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     assert StatusStorage.get_status(:mob, already_poisoned.unit_id, :sc_poison).generation ==
              existing_poison
 
-    rejected_character = insert_character(12, %{@venom_dust => 1}, [])
-    seed_item(rejected_character.id, @red_gemstone, 1)
-    rejected = start_character(rejected_character, {29, 31})
-    cast_ground(rejected.pid, @venom_dust, 1, {30, 30})
+    # Venom Dust has no placement restriction: a second cloud stacks on the first.
+    stacked_character = insert_character(12, %{@venom_dust => 1}, [])
+    seed_item(stacked_character.id, @red_gemstone, 1)
+    stacked = start_character(stacked_character, {29, 31})
+    cast_ground(stacked.pid, @venom_dust, 1, {30, 30})
 
-    assert Inventory.held_amount(get_player_state(rejected.pid).inventory, @red_gemstone) == 1
-    assert Enum.count(SkillUnitStorage.all(), &(&1.skill_name == :as_venomdust)) == 1
+    assert eventually(fn ->
+             Inventory.held_amount(get_player_state(stacked.pid).inventory, @red_gemstone) == 0
+           end)
+
+    assert Enum.count(SkillUnitStorage.all(), &(&1.skill_name == :as_venomdust)) == 2
 
     mob_caster = start_real_mob(26_303, {9, 35}, mob_id: 2_783)
 

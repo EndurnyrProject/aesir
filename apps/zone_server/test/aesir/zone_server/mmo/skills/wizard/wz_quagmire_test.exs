@@ -36,7 +36,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
       assert placement.interval == 1_000
       assert placement.initial_delay == 0
       assert placement.duration == 25_000
-      assert placement.lifecycle_policy.max_instances_per_caster == 3
     end
   end
 

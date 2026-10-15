@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -222,6 +223,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
          :ok <- check_completion_caster(state, definition, phase),
          :ok <- check_concealment(state, target, definition, phase),
          {:ok, adapted_target} <- adapt_target(target, definition, state),
+         :ok <- check_placement(state, definition, adapted_target),
          :ok <- module.validate(state, adapted_target, row.level, definition),
          :ok <- check_castend_target(target, definition) do
       module
@@ -267,6 +269,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       detector: :detector in modes
     }
   end
+
+  # A ground cast end checks the unit placement as a monster: only a unit
+  # already reiterated in the area refuses it.
+  defp check_placement(%MobState{} = state, definition, {:ground, x, y}),
+    do: PlacementCheck.check(definition, {:mob, state.instance_id}, state.map_name, {x, y}, :mob)
+
+  defp check_placement(_state, _definition, _target), do: :ok
 
   defp check_castend_target({:unit, type, id}, definition) do
     cond do

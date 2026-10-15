@@ -59,8 +59,8 @@ defmodule Aesir.ZoneServer.Integration.HunterDetectingIntegrationTest do
     :ok =
       StatusInterpreter.apply_status(:player, outside.character.id, :sc_hiding, duration: 60_000)
 
-    place_trap(detector.pid, @land_mine_id, 153, 150)
-    assert hidden_trap?(@land_mine_id, 153, 150)
+    place_trap(detector.pid, @land_mine_id, 154, 148)
+    assert hidden_trap?(@land_mine_id, 154, 148)
 
     # Blast Mine is one of the two traps that place visible, so Detecting has
     # nothing to reveal on it.
@@ -87,7 +87,7 @@ defmodule Aesir.ZoneServer.Integration.HunterDetectingIntegrationTest do
            end)
 
     assert StatusStorage.has_status?(:player, outside.character.id, :sc_hiding)
-    assert eventually(fn -> visible_trap?(@land_mine_id, 153, 150) end)
+    assert eventually(fn -> visible_trap?(@land_mine_id, 154, 148) end)
     assert eventually(fn -> visible_trap?(@blast_mine_id, 155, 150) end)
     assert hidden_trap?(@land_mine_id, 150, 151)
     assert current_sp(detector.pid) == initial_sp - 8
@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Integration.HunterDetectingIntegrationTest do
 
     assert eventually(fn -> current_sp(detector.pid) == initial_sp - 16 end)
     assert StatusStorage.has_status?(:player, outside.character.id, :sc_hiding)
-    assert visible_trap?(@land_mine_id, 153, 150)
+    assert visible_trap?(@land_mine_id, 154, 148)
     assert visible_trap?(@blast_mine_id, 155, 150)
     assert hidden_trap?(@land_mine_id, 150, 151)
   end

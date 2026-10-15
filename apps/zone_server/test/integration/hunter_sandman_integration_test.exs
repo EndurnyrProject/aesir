@@ -24,8 +24,8 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
     now = System.monotonic_time(:millisecond)
 
     spring = sandman_group(119_121, player.character.id, {171, 170}, now + 60_000)
-    reclaim = sandman_group(119_122, player.character.id, {172, 170}, now + 60_000)
-    natural = sandman_group(119_123, player.character.id, {173, 170}, now + 100)
+    reclaim = sandman_group(119_122, player.character.id, {173, 170}, now + 60_000)
+    natural = sandman_group(119_123, player.character.id, {175, 170}, now + 100)
 
     assert :ok = Manager.register(spring)
     assert :ok = Manager.register(reclaim)
@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
     assert %Group{state: %{trap: %TrapState{phase: :sprung}}} = Storage.get(119_121)
 
     assert {:ok, %{group_id: 119_122, item_id: 1065}} =
-             Manager.reclaim_trap({:player, player.character.id}, @map, 172, 170)
+             Manager.reclaim_trap({:player, player.character.id}, @map, 173, 170)
 
     assert nil == Storage.get(119_122)
     assert :ok = Manager.tick(Manager, now + 100)

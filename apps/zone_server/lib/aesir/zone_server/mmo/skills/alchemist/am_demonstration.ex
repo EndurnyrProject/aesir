@@ -7,6 +7,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   weapon attack every tick, timed from when the field first reached it; the
   attack may miss. A confirmed hit attempts to break a player target's weapon.
 
+  A player's cast fails before anything is spent when another Demonstration
+  stands within one cell of the target, or any character other than the
+  Emperium stands within one cell of it.
+
   Both modes cost 10 SP and a Fire Bottle and deal 100 plus 20 per level percent
   fire weapon damage. Renewal: ticks every 0.5 s, a 0.8 s cast plus 0.2 s fixed,
   a 0.5 s delay, and a 3 per level percent weapon break. Pre-renewal: ticks every
@@ -15,6 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 229,
     name: :am_demonstration,
+    no_reiteration: true,
+    no_footset: true,
+    unit_range: 1,
     ignore_atk_card: true,
     requires: [],
     display_name: "Demonstration",
@@ -39,8 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -49,23 +54,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   @behaviour Ground
 
   @doc false
-  @spec validate(map(), {:ground, integer(), integer()}, pos_integer(), struct()) ::
-          :ok | {:error, :skill_unit_overlap}
-  def validate(%{map_name: map_name}, {:ground, x, y}, _level, _definition) do
-    if demonstration_at?(map_name, x, y), do: {:error, :skill_unit_overlap}, else: :ok
-  end
-
-  @doc false
   @spec cast(PlayerState.t(), {:ground, integer(), integer()}, pos_integer(), struct()) ::
           {:ok, PlayerState.t()} | {:error, term()}
   def cast(caster, {:ground, x, y}, level, _definition) do
-    if demonstration_at?(caster.map_name, x, y) do
-      {:error, :skill_unit_overlap}
-    else
-      case Unit.place(caster, :am_demonstration, level, {x, y}) do
-        {:ok, _group} -> {:ok, caster}
-        {:error, _reason} = error -> error
-      end
+    case Unit.place(caster, :am_demonstration, level, {x, y}) do
+      {:ok, _group} -> {:ok, caster}
+      {:error, _reason} = error -> error
     end
   end
 
@@ -159,13 +153,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
       :renewal -> 300 * level
       :pre_renewal -> 100 * level
     end
-  end
-
-  @spec demonstration_at?(String.t(), integer(), integer()) :: boolean()
-  defp demonstration_at?(map_name, x, y) do
-    Layout.square({x, y}, @radius)
-    |> Enum.any?(fn {cell_x, cell_y} ->
-      Enum.any?(Storage.get_groups_at_cell(map_name, cell_x, cell_y), &(&1.skill_id == 229))
-    end)
   end
 end

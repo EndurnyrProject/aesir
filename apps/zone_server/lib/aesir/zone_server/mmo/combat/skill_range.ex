@@ -29,9 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillRange do
   @typedoc "Whether a hit lands at melee or ranged distance."
   @type range :: :short | :long
 
-  # Hunter traps in both modes; classic Fire Pillar is a trap too.
-  @trap_skills [115, 116, 117, 118, 119, 120, 121, 122, 123, 125]
-  @classic_trap_skills [80 | @trap_skills]
   # Arrow Shower and Bomb cast by a monster.
   @monster_short_skills [47, 229]
   @brandish_spear 57
@@ -60,7 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillRange do
 
   defp override(attacker, skill_id) do
     cond do
-      skill_id in trap_skills() -> :short
+      trap_skill?(skill_id) -> :short
       attacker.unit_type == :mob and skill_id in @monster_short_skills -> :short
       skill_id == @brandish_spear and GameMode.mode() == :renewal -> :long
       skill_id == @spiral_pierce and attacker.unit_type != :player -> :long
@@ -104,8 +101,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillRange do
     |> min(@max_server_range)
   end
 
-  defp trap_skills do
-    if GameMode.mode() == :renewal, do: @trap_skills, else: @classic_trap_skills
+  defp trap_skill?(skill_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, %Definition{is_trap: is_trap}} -> is_trap
+      :error -> false
+    end
   end
 
   defp by_distance(%{position: {x1, y1}}, %{position: {x2, y2}}, _skill_id, _skill_level) do

@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.SkillCaster
@@ -54,6 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   # Vulture's Eye: the passive whose learned level widens a `vulture_range` skill.
   @vulture_skill_id 44
+  @fire_wall_skill_id 18
   # Monk and Champion combo skills: delay reduced by AGI and DEX, floored at attack motion.
   @combo_delay_skill_ids [272, 273, 371, 372]
   # How much an ordinary or item cast may shorten an act delay already armed.
@@ -648,15 +650,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   charges itself on success (Tarot Card of Fate) still does. The proc never
   arms the skill's cooldown, only its after-cast delay.
 
-  A skill on cooldown or banned on the map returns `{:error, reason}` and runs
-  nothing. An effect that fails after the requirement was spent returns
-  `{:error, reason, charged}` so the owner commits the spent resources; both
-  are dropped silently. The effect runs as an `:auto` invocation with the
+  A skill on cooldown or banned on the map, or a ground skill whose unit may not
+  be placed (`Skill.Unit.PlacementCheck`, checked as a player), returns
+  `{:error, reason}` and runs nothing. An effect that fails after the
+  requirement was spent returns `{:error, reason, charged}` so the owner
+  commits the spent resources; both are dropped silently. The effect runs as an `:auto` invocation with the
   wearer's autocast flag set for exactly its execution.
 
   ## Options
     - `:act_delay?` - arm the after-cast delay (default `true`). On-skill procs
       arm none.
+    - `:placement_skill` - the skill id whose unit placement a ground proc
+      checks (default: the proc's own). An on-skill proc checks the skill whose
+      use fired it.
   """
   @spec proc_cast(Active.caster(), integer(), pos_integer(), Active.target(), keyword()) ::
           {:ok, Active.caster()} | {:error, atom()} | {:error, atom(), Active.caster()}
@@ -671,6 +677,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_proc_usable(game_state, skill_id),
          {:ok, resolved} <- resolve_auto_cast_target(definition, target),
+         :ok <- check_proc_placement(game_state, definition, resolved, opts),
          {:ok, charged} <-
            Caster.Player.charge_proc_requirement(game_state, module, resolved, definition, level) do
       case run_unconditional(module, charged, resolved, level, definition, :auto, true) do
@@ -688,6 +695,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   def proc_cast(%PlayerState{}, _skill_id, _level, _target, _opts), do: {:error, :invalid_level}
   def proc_cast(_game_state, _skill_id, _level, _target, _opts), do: {:error, :unsupported_caster}
+
+  # A ground proc checks its placement as a player before anything is spent. An
+  # on-skill proc checks the skill whose use fired it rather than its own.
+  defp check_proc_placement(game_state, %{target_type: :ground} = definition, target, opts) do
+    with {:ok, checked} <- proc_placement_definition(definition, opts) do
+      check_placement(game_state, checked, target, :player)
+    end
+  end
+
+  defp check_proc_placement(_game_state, _definition, _target, _opts), do: :ok
+
+  defp proc_placement_definition(definition, opts) do
+    case Keyword.fetch(opts, :placement_skill) do
+      {:ok, skill_id} -> fetch_definition(skill_id)
+      :error -> {:ok, definition}
+    end
+  end
 
   # The effect ran and failed: the requirement stays spent and the after-cast
   # delay still arms, so the owner commits the changed state silently.
@@ -781,6 +805,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     case on_ready.(caster) do
       {:ok, ready} ->
         with :ok <- item_requirement_ready(ready, module, target, level, definition, keep?),
+             :ok <- check_begin_placement(ready, definition, target),
              :ok <- validate_item_range(ready, module, target, level, definition) do
           finish_item_attempt(ready, definition, level, target, early, keep?)
         else
@@ -837,6 +862,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     now = System.monotonic_time(:millisecond)
 
     with {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_placement(caster, definition, target),
          {:ok, module} <- validate_item_cast(caster, target, level, definition, true),
          :ok <- check_castend_target(target, definition),
          {:ok, cost} <- Caster.Player.cost(caster, module, target, definition, level) do
@@ -858,6 +884,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     now = System.monotonic_time(:millisecond)
 
     with {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_placement(caster, definition, target),
          {:ok, module} <- validate_item_cast(caster, target, level, definition, false),
          :ok <- check_castend_target(target, definition),
          {:ok, caster} <-
@@ -1129,13 +1156,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_learned(caster, adapter, definition, level, :begin),
          :ok <- check_target(caster, target, definition),
          :ok <- check_concealment(caster, target, definition, phase),
+         :ok <- check_end_placement(caster, definition, target, phase),
          :ok <- check_range(caster, target, definition, level),
          {:ok, _module} <- fetch_active_module(definition),
          :ok <- :erlang.apply(adapter, :castable_status, [caster, skill_id]),
          context = CastContext.build(caster, definition, level, target, :begin),
          :ok <- check_context_cooldown(context, now),
-         :ok <- check_context_act_delay(context, now) do
-      validate_and_prepare(context, phase == :cast_begin)
+         :ok <- check_context_act_delay(context, now),
+         {:ok, prepared} <- validate_and_prepare(context, phase == :cast_begin),
+         :ok <- check_start_placement(prepared.caster, definition, target, phase) do
+      {:ok, prepared}
     end
   end
 
@@ -1159,6 +1189,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_castable(definition),
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
          :ok <- check_target(caster, target, definition),
+         :ok <- check_placement(caster, definition, target),
          :ok <- check_cast_end(caster, target, definition, false),
          :ok <- check_range(caster, target, definition, level),
          :ok <- check_castend_target(target, definition),
@@ -1174,6 +1205,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          context = CastContext.build(caster, definition, level, target, :completion),
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
          :ok <- check_target(caster, target, definition),
+         :ok <- check_placement(caster, definition, target),
          :ok <- check_cast_end(caster, target, definition, false),
          :ok <- check_range(caster, target, definition, level),
          :ok <- check_castend_target(target, definition),
@@ -1181,6 +1213,52 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       validate_and_prepare(context, false)
     end
   end
+
+  # A cast reaching the ground cast end checks its unit placement as its own
+  # kind before anything else there. Fire Wall alone also checks it, as a
+  # player, when a player's cast starts, once its starting requirements pass.
+  defp check_end_placement(caster, definition, target, :cast_end),
+    do: check_placement(caster, definition, target)
+
+  defp check_end_placement(_caster, _definition, _target, _phase), do: :ok
+
+  defp check_start_placement(caster, definition, target, :cast_begin),
+    do: check_begin_placement(caster, definition, target)
+
+  defp check_start_placement(_caster, _definition, _target, _phase), do: :ok
+
+  defp check_begin_placement(
+         %PlayerState{} = caster,
+         %{id: @fire_wall_skill_id} = definition,
+         target
+       ),
+       do: check_placement(caster, definition, target, :player)
+
+  defp check_begin_placement(_caster, _definition, _target), do: :ok
+
+  defp check_placement(caster, definition, target),
+    do: check_placement(caster, definition, target, elem(caster_ref(caster), 0))
+
+  defp check_placement(caster, definition, target, as) do
+    with true <- placement_checked?(definition),
+         {:ok, cell} <- placement_cell(caster, target) do
+      PlacementCheck.check(definition, caster_ref(caster), caster.map_name, cell, as)
+    else
+      _unchecked -> :ok
+    end
+  end
+
+  defp placement_checked?(definition),
+    do: definition.active_instance > 0 or definition.no_reiteration or definition.no_footset
+
+  defp placement_cell(_caster, {:ground, x, y}), do: {:ok, {x, y}}
+  defp placement_cell(%{x: x, y: y}, :self), do: {:ok, {x, y}}
+
+  defp placement_cell(_caster, {:unit, target_id}) do
+    with {:ok, {x, y, _map}} <- resolve_unit_position(target_id), do: {:ok, {x, y}}
+  end
+
+  defp placement_cell(_caster, _target), do: :error
 
   defp check_support_status(caster, %{target_type: target_type})
        when target_type in [:target_ally, :target_any] do
@@ -1330,7 +1408,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared) do
     now = System.monotonic_time(:millisecond)
 
-    with :ok <- check_castend_target(target, prepared.definition) do
+    with :ok <- check_placement(game_state, prepared.definition, target),
+         :ok <- check_castend_target(target, prepared.definition) do
       started = cast_start(game_state, prepared.adapter, skill_id)
 
       case complete_instant_cast(started, skill_id, level, target, now, prepared) do

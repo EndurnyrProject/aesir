@@ -146,7 +146,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       assert placement.duration == 950
       assert placement.unit_range == 0
       assert placement.path_check
-      assert placement.lifecycle_policy.max_instances_per_caster == 1
     end
 
     test "a mob caster placement is not rooted" do

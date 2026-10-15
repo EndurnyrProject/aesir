@@ -78,18 +78,18 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     assert {:ok, _item} = Persistence.insert_item(character.id, %{nameid: @trap_item, amount: 1})
     session = start_hunter(character, {150, 150})
 
-    rejected = cast_ground(session, @flasher, 1, {151, 150})
+    rejected = cast_ground(session, @flasher, 1, {152, 150})
 
     assert Inventory.held_amount(rejected.inventory, @trap_item) == 1
     assert rejected.stats.current_state.sp == 100
     assert [] == Enum.filter(Storage.all(), &(&1.skill_name == :ht_flasher))
 
-    accepted = cast_ground(session, @sandman, 1, {151, 150})
+    accepted = cast_ground(session, @sandman, 1, {152, 150})
 
     assert Inventory.held_amount(accepted.inventory, @trap_item) == 0
     assert accepted.stats.current_state.sp == 88
 
-    assert %Group{center: {151, 150}, state: %{trap: %TrapState{phase: :armed}}} =
+    assert %Group{center: {152, 150}, state: %{trap: %TrapState{phase: :armed}}} =
              find_group(:ht_sandman)
   end
 
@@ -187,7 +187,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     assert {:ok, _item} = Persistence.insert_item(character.id, %{nameid: @trap_item, amount: 1})
     session = start_hunter(character, {150, 150})
 
-    state = cast_ground(session, @skidtrap, 1, {151, 150})
+    state = cast_ground(session, @skidtrap, 1, {152, 150})
     assert Inventory.held_amount(state.inventory, @trap_item) == 0
 
     assert %Group{
@@ -205,10 +205,10 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     assert nil == Storage.get(group_id)
 
     # The manager hands the returned catalyst to the map coordinator asynchronously.
-    assert eventually(fn -> GroundItemStore.query_in_range(@map, 151, 150, 0) != [] end)
+    assert eventually(fn -> GroundItemStore.query_in_range(@map, 152, 150, 0) != [] end)
 
-    assert [%GroundItem{nameid: @trap_item, amount: 1, x: 151, y: 150}] =
-             GroundItemStore.query_in_range(@map, 151, 150, 0)
+    assert [%GroundItem{nameid: @trap_item, amount: 1, x: 152, y: 150}] =
+             GroundItemStore.query_in_range(@map, 152, 150, 0)
   end
 
   test "Blast Mine always, and Claymore Trap in renewal, become used on natural expiry", %{

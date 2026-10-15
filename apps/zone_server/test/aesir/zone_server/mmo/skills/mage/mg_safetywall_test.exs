@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -40,6 +41,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
       interval: 1_000,
       state: %{}
     }
+  end
+
+  defp wall_caster do
+    Aesir.ZoneServer.PlayerStateFixture.build(%{
+      character_id: @caster_id,
+      map_name: @map_name,
+      x: 150,
+      y: 150,
+      inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
+      pending_inventory_persist: [],
+      stats: %{current_state: %{sp: 100}}
+    })
   end
 
   defp stub_living_units do
@@ -120,51 +133,56 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
   end
 
   describe "placement overlap" do
-    test "rejects a Safety Wall already occupying the target cell" do
-      stub(Storage, :get_groups_at_cell, fn @map_name, 150, 150 -> [group(5)] end)
+    test "a Safety Wall or Pneuma on the target cell refuses the wall" do
+      for skill_name <- [:mg_safetywall, :al_pneuma] do
+        stub(Storage, :get_visible_groups_in_range, fn @map_name, 150, 150, 0 ->
+          [%{group(5) | skill_name: skill_name}]
+        end)
 
-      assert {:error, :safetywall_overlap} =
-               MgSafetywall.validate(%{map_name: @map_name}, {:ground, 150, 150}, 5, %{})
+        assert {:error, :unit_placement_refused} =
+                 PlacementCheck.check(
+                   MgSafetywall.definition(),
+                   {:player, @caster_id},
+                   @map_name,
+                   @center,
+                   :player
+                 )
+      end
     end
 
-    test "rejects an overlap again at cast completion before attempting placement" do
-      stub(Storage, :get_groups_at_cell, fn @map_name, 150, 150 -> [group(5)] end)
+    test "refuses an overlap at cast completion before attempting placement" do
+      :ets.insert(EtsTable.table_for(:map_cache), {@map_name, MapData.new(@map_name, 200, 200)})
+      stub(Storage, :get_visible_groups_in_range, fn @map_name, 150, 150, 0 -> [group(5)] end)
       reject(&Unit.place/4)
 
-      assert {:error, :safetywall_overlap} =
-               MgSafetywall.cast(
-                 %{map_name: @map_name},
-                 {:ground, 150, 150},
-                 5,
-                 MgSafetywall.definition()
-               )
+      assert {:error, :unit_placement_refused} =
+               Interpreter.complete_cast(wall_caster(), 12, 5, {:ground, 150, 150})
     end
 
     test "leaves the Blue Gemstone untouched when cast completion finds an overlap" do
       :ets.insert(EtsTable.table_for(:map_cache), {@map_name, MapData.new(@map_name, 200, 200)})
-      stub(Storage, :get_groups_at_cell, fn @map_name, 150, 150 -> [group(5)] end)
+      stub(Storage, :get_visible_groups_in_range, fn @map_name, 150, 150, 0 -> [group(5)] end)
+      caster = wall_caster()
 
-      caster =
-        Aesir.ZoneServer.PlayerStateFixture.build(%{
-          character_id: @caster_id,
-          map_name: @map_name,
-          x: 150,
-          y: 150,
-          inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
-          pending_inventory_persist: [],
-          stats: %{current_state: %{sp: 100}}
-        })
-
-      assert {:error, :safetywall_overlap} =
+      assert {:error, :unit_placement_refused} =
                Interpreter.complete_cast(caster, 12, 5, {:ground, 150, 150})
+
+      assert caster.inventory == %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}}
     end
 
-    test "does not reject another ground skill on the target cell" do
-      stub(Storage, :get_groups_at_cell, fn @map_name, 150, 150 ->
-        [%{group(5) | skill_id: 11, skill_name: :mg_firewall}]
+    test "does not refuse the wall over another ground skill on the target cell" do
+      stub(Storage, :get_visible_groups_in_range, fn @map_name, 150, 150, 0 ->
+        [%{group(5) | skill_id: 18, skill_name: :mg_firewall}]
       end)
 
-      assert :ok = MgSafetywall.validate(%{map_name: @map_name}, {:ground, 150, 150}, 5, %{})
+      assert :ok =
+               PlacementCheck.check(
+                 MgSafetywall.definition(),
+                 {:player, @caster_id},
+                 @map_name,
+                 @center,
+                 :player
+               )
     end
 
     test "two simultaneous casters cannot stack walls or consume both gemstones" do
@@ -224,7 +242,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
       results = Task.await_many(tasks)
 
       assert Enum.count(results, &match?({:ok, %PlayerState{}}, &1)) == 1
-      assert Enum.count(results, &(&1 == {:error, :safetywall_overlap})) == 1
+      assert Enum.count(results, &(&1 == {:error, :unit_placement_refused})) == 1
 
       assert {:ok, %PlayerState{inventory: inventory, pending_inventory_persist: pending}} =
                Enum.find(results, &match?({:ok, %PlayerState{}}, &1))

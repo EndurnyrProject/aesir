@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGraffiti do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 220,
     name: :rg_graffiti,
+    no_reiteration: true,
     requires: [:inventory],
     display_name: "Scribble",
     max_level: 1,

@@ -102,8 +102,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
         stub_placement_dependencies()
         manager = start_manager()
 
+        # Pneuma's own reiteration rule refuses it next to Land Protector first.
+        reason = if @module == AlPneuma, do: :unit_placement_refused, else: :land_protector
+
         assert :ok = place(manager, SaLandprotector, 1, 5)
-        assert {:error, :land_protector} = place(manager, @module, 2, 1)
+        assert {:error, ^reason} = place(manager, @module, 2, 1)
 
         assert nil == Storage.get(2)
         assert %Group{group_id: 1} = Storage.get(1)

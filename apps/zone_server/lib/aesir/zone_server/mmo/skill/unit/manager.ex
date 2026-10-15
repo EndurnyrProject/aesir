@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer
@@ -45,9 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @trap_item_id 1065
   @safetywall_skill_id 12
   @venom_dust_skill_id 140
-  @poison_mist_skill_id 8020
-  @gospel_skill_id 369
-  @no_overlap_skill_ids [@safetywall_skill_id, 70, 79, 229, @gospel_skill_id]
 
   @type server :: GenServer.server()
   @type mover :: {atom(), integer()}
@@ -310,14 +308,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @impl true
   def handle_call({:register, group}, _from, state) do
-    with {:ok, group} <- apply_exclusive_family(group, state.clock.()),
-         :ok <- ensure_no_overlap_admission(group),
+    with :ok <- ensure_not_reiterated(group),
+         {:ok, group} <- apply_exclusive_family(group, state.clock.()),
          {:ok, group} <- add_venom_dust_metadata(group),
          {:ok, group} <- apply_land_protector(group),
          {:ok, group} <- schedule_group(group, state.rng),
          {:ok, group} <- register_group(group) do
-      :ok = enforce_instance_limit(group)
-
       if Storage.get(group.group_id) do
         group
         |> reconcile_group()
@@ -995,49 +991,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp ensure_no_overlap_admission(%Group{skill_id: skill_id} = group)
-       when skill_id in @no_overlap_skill_ids do
-    overlap? =
-      Enum.any?(group.cells, fn {x, y} ->
-        group.map_name
-        |> Storage.get_groups_at_cell(x, y)
-        |> Enum.any?(fn existing ->
-          existing.skill_id == skill_id and existing.group_id != group.group_id
-        end)
-      end)
-
-    if overlap?, do: {:error, overlap_error(skill_id)}, else: :ok
+  # The cast already checked its placement, but another caster may have placed
+  # a reiterated unit since; registrations run one at a time here, so the
+  # second of two racing placements is refused as the source's serial cast end
+  # would refuse it.
+  defp ensure_not_reiterated(%Group{} = group) do
+    with {:ok, definition} <- Catalog.by_id(group.skill_id),
+         true <-
+           PlacementCheck.reiteration_blocked?(
+             definition,
+             group.caster_type,
+             group.map_name,
+             group.center
+           ) do
+      {:error, :unit_placement_refused}
+    else
+      _placeable -> :ok
+    end
   end
-
-  defp ensure_no_overlap_admission(%Group{skill_id: @venom_dust_skill_id} = group) do
-    overlap? =
-      Enum.any?(group.cells, fn {x, y} ->
-        group.map_name
-        |> Storage.get_groups_at_cell(x, y)
-        |> Enum.any?(&venom_dust_blocker?(&1, group))
-      end)
-
-    if overlap?, do: {:error, :skill_unit_overlap}, else: :ok
-  end
-
-  defp ensure_no_overlap_admission(%Group{}), do: :ok
-
-  defp venom_dust_blocker?(%Group{group_id: group_id}, %Group{group_id: group_id}), do: false
-
-  defp venom_dust_blocker?(%Group{skill_id: skill_id}, _group)
-       when skill_id in [@venom_dust_skill_id, @poison_mist_skill_id],
-       do: true
-
-  defp venom_dust_blocker?(%Group{state: %{trap: %TrapState{}}}, _group), do: true
-  defp venom_dust_blocker?(%Group{}, _group), do: false
 
   defp add_venom_dust_metadata(%Group{skill_id: @venom_dust_skill_id} = group),
     do: {:ok, %{group | state: Map.put(group.state, :removed_by_fire_rain, true)}}
 
   defp add_venom_dust_metadata(%Group{} = group), do: {:ok, group}
-
-  defp overlap_error(@safetywall_skill_id), do: :safetywall_overlap
-  defp overlap_error(_skill_id), do: :skill_unit_overlap
 
   defp absorb_safetywall_hit_now(group_id, damage) do
     case Storage.get(group_id) do
@@ -2088,28 +2064,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     if Group.materialized?(group),
       do: register_visible_group(group),
       else: register_invisible_group(group)
-  end
-
-  defp enforce_instance_limit(%Group{
-         lifecycle_policy: %{max_instances_per_caster: nil}
-       }),
-       do: :ok
-
-  defp enforce_instance_limit(
-         %Group{
-           group_id: new_group_id,
-           lifecycle_policy: %{max_instances_per_caster: max_instances_per_caster}
-         } = group
-       )
-       when is_integer(max_instances_per_caster) and max_instances_per_caster > 0 do
-    group.skill_name
-    |> Storage.get_groups_by_skill_and_caster(group.caster_type, group.caster_id)
-    |> Enum.reject(&(&1.group_id == new_group_id))
-    |> Enum.sort_by(&{&1.created_at, &1.group_id})
-    |> Enum.drop(-(max_instances_per_caster - 1))
-    |> Enum.each(&cleanup_with_reason(&1, :SKILL_UNIT_DESPAWN_REASON_CANCELED))
-
-    :ok
   end
 
   defp register_visible_group(%Group{} = group) do

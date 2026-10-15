@@ -21,7 +21,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
@@ -1640,6 +1642,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:error, _reason} = Interpreter.begin_cast(gs, 14, 1, {:unit, 99_999})
       assert StatusStorage.get_status(:player, 1000, :sc_memorize).state.charges == 5
+    end
+  end
+
+  describe "ground unit placement" do
+    defp store_groups(skill_name, skill_id, count) do
+      for index <- 1..count do
+        :ok =
+          Storage.insert(%Group{
+            group_id: skill_id * 100 + index,
+            skill_id: skill_id,
+            skill_name: skill_name,
+            level: 1,
+            caster_type: :player,
+            caster_id: 1000,
+            map_name: "prontera",
+            center: {index * 3, 2},
+            cells: [{index * 3, 2}],
+            visibility: :public,
+            expires_at: 1_000_000,
+            state: %{}
+          })
+      end
+    end
+
+    test "a player holding three Fire Walls is refused when the cast starts" do
+      put_walkable_map()
+      store_groups(:mg_firewall, 18, 3)
+      gs = game_state(100, %{18 => 10})
+
+      assert {:error, :unit_placement_refused} =
+               Interpreter.begin_cast(gs, 18, 1, {:ground, 12, 12})
+    end
+
+    test "an instant ground cast past its limit is refused before anything is spent" do
+      put_walkable_map()
+      store_groups(:wz_quagmire, 92, 3)
+      gs = game_state(100, %{92 => 5})
+
+      assert {:error, :unit_placement_refused} =
+               Interpreter.begin_cast(gs, 92, 1, {:ground, 12, 12})
+    end
+
+    test "an on-skill ground proc checks the skill whose use fired it" do
+      store_groups(:mg_firewall, 18, 3)
+      gs = game_state(100, %{})
+
+      assert {:error, :unit_placement_refused} =
+               Interpreter.proc_cast(gs, 92, 1, {:ground, 12, 12}, placement_skill: 18)
     end
   end
 

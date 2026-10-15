@@ -18,13 +18,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
   slot on that unit only, ending that unit's hold with its last slot. Every other
   caught unit stays held until its hold runs out or is burned. A web standing
   with no catch lives 16 s. Fire against a webbed unit is strengthened and burns
-  one web at a time. A caster keeps at most three webs.
+  one web at a time. A caster keeps at most three webs: a fourth cast fails
+  before anything is spent.
 
   Renewal: 30 SP. Pre-renewal: 50 SP. Monsters cast it through `mob_cast/5`.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 405,
     name: :pf_spiderweb,
+    active_instance: 3,
     requires: [],
     display_name: "Fiber Lock",
     max_level: 1,
@@ -46,7 +48,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -57,7 +58,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
   @behaviour Active
   @behaviour Ground
 
-  @max_webs 3
   @hold_ms 8_000
   @failed_catch_ms 3_000
 
@@ -227,8 +227,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
        cells: [center],
        state: %{},
        interval: 1_000,
-       duration: hd(definition().unit_duration),
-       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: @max_webs}
+       duration: hd(definition().unit_duration)
      }}
   end
 

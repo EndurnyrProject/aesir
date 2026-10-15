@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     character = insert_hunter(%{learned_skills: skills(%{@land_mine => 1})})
     assert {:ok, _item} = Persistence.insert_item(character.id, %{nameid: @trap_item, amount: 1})
     session = start_hunter_session(character, @origin)
-    target = {151, 150}
+    target = {152, 150}
 
     cast_and_sync(session, @land_mine, 1, target)
 
@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     assert group.state.paid_return?
     assert :ok = Manager.tick(Manager, group.expires_at)
     assert nil == Storage.get(group.group_id)
-    assert [_item] = GroundItemStore.query_in_range(@map, 151, 150, 0)
+    assert [_item] = GroundItemStore.query_in_range(@map, 152, 150, 0)
   end
 
   test "concurrent Remove Trap requests reward one owned armed trap exactly once" do
@@ -76,11 +76,11 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     armed = armed_state()
     spent = %{armed | trap: %{armed.trap | phase: :used}}
 
-    assert :ok = Manager.register(trap_group(10, character.id + 1, {151, 150}))
-    assert :ok = Manager.register(trap_group(11, character.id, {150, 151}, spent))
-    assert :ok = Manager.register(trap_group(12, character.id, {149, 150}, %{base_damage: 100}))
+    assert :ok = Manager.register(trap_group(10, character.id + 1, {152, 150}))
+    assert :ok = Manager.register(trap_group(11, character.id, {150, 152}, spent))
+    assert :ok = Manager.register(trap_group(12, character.id, {148, 150}, %{base_damage: 100}))
 
-    for target <- [{150, 149}, {151, 150}, {150, 151}, {149, 150}] do
+    for target <- [{150, 148}, {152, 150}, {150, 152}, {148, 150}] do
       cast_and_sync(session, @remove_trap, 1, target)
     end
 

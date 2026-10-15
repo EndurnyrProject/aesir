@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
   @moduledoc """
-  Blinding Mist (PF_FOGWALL). A 5x3 fog lasting 20 s, at most two per caster.
+  Blinding Mist (PF_FOGWALL). A 5x3 fog lasting 20 s, at most two per caster (a third
+  cast fails before anything is spent).
   Cells that would fall on a Volcano or Violent Gale are not raised; cells over
   a Deluge last 40 s while the rest end at 20 s. A fog with no cell left still
   spends the cast.
@@ -15,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 404,
     name: :pf_fogwall,
+    active_instance: 2,
     requires: [],
     display_name: "Blinding Mist",
     max_level: 5,
@@ -33,7 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -92,8 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
 
     {:ok,
      Map.merge(timing, %{
-       cells: cells,
-       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 2}
+       cells: cells
      })}
   end
 
