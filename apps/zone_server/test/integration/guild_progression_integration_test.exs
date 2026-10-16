@@ -215,6 +215,44 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
       refute StatusStorage.has_status?(:player, master_id, :sc_battleorder)
     end
 
+    test "the master's cooldown survives a relog" do
+      {master_session, guild_id} = create_guild("Relogers", "RelogMaster")
+      seed_learned_skills(guild_id, %{"10010" => 1})
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+      lift_guild_skill_block(master_session.pid)
+      master_id = master_session.character.id
+      cast = %SkillCast{skill_id: @gd_battleorder, level: 1, target_id: master_id}
+
+      simulate_incoming_message(master_session.pid, cast)
+
+      assert eventually(fn ->
+               get_player_state(master_session.pid).skill_cooldowns[@gd_battleorder]
+             end)
+
+      end_player_session(master_session)
+      StatusStorage.remove_status(:player, master_id, :sc_battleorder)
+
+      relog =
+        start_player_session(
+          character: Repo.get(Character, master_id),
+          map_name: "prontera",
+          position: {150, 150}
+        )
+
+      on_exit(fn -> end_player_session(relog) end)
+      flush_packets()
+      simulate_incoming_message(relog.pid, cast)
+
+      assert_receive {:packet_sent,
+                      %SkillCastFailed{
+                        skill_id: @gd_battleorder,
+                        reason: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
+                      }, _},
+                     1_000
+
+      refute StatusStorage.has_status?(:player, master_id, :sc_battleorder)
+    end
+
     test "a non-master member's guild cast is dropped silently end-to-end" do
       {master_session, guild_id} = create_guild("NoCastPeons", "NoCastMaster")
       seed_learned_skills(guild_id, %{"10010" => 1})

@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SessionState.PendingSkillTextInput
+  alias Aesir.ZoneServer.Unit.Player.SkillCooldownPersistence
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -155,6 +156,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     stub(Persistence, :load_inventory, fn _char_id -> [] end)
     stub(StatusPersistence, :restore_on_spawn, fn state -> state end)
     stub(StatusPersistence, :save_statuses, fn _char_id -> :ok end)
+    stub(SkillCooldownPersistence, :restore_on_spawn, fn state -> state end)
+    stub(SkillCooldownPersistence, :save_cooldowns, fn _game_state -> :ok end)
     stub(QuestPersistence, :load_on_spawn, fn state -> state end)
 
     character = %Character{

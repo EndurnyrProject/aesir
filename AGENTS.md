@@ -217,7 +217,34 @@ run, so test logic, not data or wiring.
   `mix format` and `mix credo --strict`.
 - The full four-command matrix below is required only for changes to the mode seam
   (`Mmo.Mechanics`, `GameMode`, `Db.Layout`), shared formulas and combat orchestration, test
-  support, or data layout. For everything else, do not run it.
+  support, or data layout. For everything else, do not run it. "Test support" means a change to
+  shared helpers or `IntegrationCase` behaviour; adding a `Mimic.copy` line or a stub in
+  `test_helper.exs` does not count.
+
+### Running integration tests efficiently
+
+The integration suites take about 10 minutes per mode. Treat a full run as expensive.
+
+- **Waves: integrations only at the end of the wave.** When implementing a task list in
+  execution waves, run no integration tests while implementing a wave's tasks (unit tests,
+  format and credo only). Once every task in the wave is done, run the integrations once
+  (targeted, then the full suite if required), and fix any fallout before the wave is closed.
+- **Targeted first.** Find the integrations that exercise the change (`rg -l` for the touched
+  module, message or skill under `apps/zone_server/test/integration`) and run only those files,
+  in both modes: `mix test.integration.re <files>`, then `mix test.integration.pre_re <files>`.
+- **Full suite at most once per wave or change**, and only when the gate above requires it or
+  the user asks. Run it last, after the targeted files are green.
+- **After a full run fails, never re-run the full suite to check a fix.** Re-run only the failing
+  files, in the failing mode. A green targeted re-run is enough; do not repeat the full suite
+  unless the fix touched shared code again.
+- **Run one mode, then the other**, never both at once (shared `aesir_test` database). The run
+  exceeds the 600 s tool timeout: start it in the background writing to a log file, wait with a
+  single blocking loop on a completion marker, then filter the log with the `rg` filter in
+  "Reading umbrella results" below. Do not poll repeatedly or re-run because a call timed out.
+- **Check flakes in isolation**: re-run the one failing file 2-3 times before treating a
+  failure as real, and compare against the known flakes in the aesir-workflow skill.
+- **A new migration** needs `MIX_ENV=test mix ecto.migrate` once before app-level `mix test`
+  runs (the umbrella aliases migrate; app-level runs do not).
 
 ### Mechanics
 

@@ -70,6 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.QuestInfoView
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.SkillCooldownPersistence
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
@@ -678,6 +679,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Restore the statuses persisted at logout (rAthena sc_data), consuming
     # the saved rows. Runs after registration for the same reason as the cart.
     state = StatusPersistence.restore_on_spawn(state)
+    state = SkillCooldownPersistence.restore_on_spawn(state)
     {:noreply, state} = EquipProcHandler.reconcile_statuses(state)
 
     # Load the quest log (rAthena quest table). Non-consuming: the rows stay
@@ -1573,6 +1575,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # leaving entries behind for an unregistered unit would orphan them and
     # the tick manager would have to garbage-collect them.
     StatusPersistence.save_statuses(game_state.character_id)
+    SkillCooldownPersistence.save_cooldowns(game_state)
     StatusStorage.clear_unit_statuses(:player, game_state.character_id)
 
     # Clean up player data (only if this process still owns the registry entry)

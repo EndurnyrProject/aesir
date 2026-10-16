@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkBerserkTest do
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
+  alias Aesir.ZoneServer.Unit.Player.SkillCooldownPersistence
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
 
   setup :set_mimic_from_context
@@ -31,6 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkBerserkTest do
     stub(CharacterPersistence, :update_stats, fn _id, _changes, _opts -> {:ok, %Character{}} end)
     stub(StatusPersistence, :restore_on_spawn, fn state -> state end)
     stub(StatusPersistence, :save_statuses, fn _ -> :ok end)
+    stub(SkillCooldownPersistence, :restore_on_spawn, fn state -> state end)
+    stub(SkillCooldownPersistence, :save_cooldowns, fn _game_state -> :ok end)
     stub(QuestPersistence, :load_on_spawn, fn state -> state end)
     :ok
   end
