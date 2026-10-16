@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
     metadata = Assumptio.metadata()
 
     refute metadata.no_dispel
-    assert metadata.bypass_boss_immunity
+    refute :boss in metadata.immunity
     assert metadata.calc_flags == [:def]
     assert metadata.icon == :assumptio2
   end

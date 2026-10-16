@@ -1036,10 +1036,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
                  bypass_resistance: true
                )
 
-      setup_player_mock(23, boss_flag: true)
+      setup_player_mock(23, custom_immunities: [:status_immune])
 
-      assert {:error, :boss_immune} =
-               Interpreter.apply_status(:player, 23, :sc_hiding,
+      assert {:error, :immune} =
+               Interpreter.apply_status(:player, 23, :sc_stun,
                  duration: 3_000,
                  bypass_resistance: true,
                  caster_id: 1
@@ -1048,7 +1048,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
     test "Freeze rejects bosses through status immunity" do
       target_id = 14
-      setup_player_mock(target_id, boss_flag: true)
+      setup_player_mock(target_id, custom_immunities: [:status_immune])
 
       assert {:error, :immune} =
                Interpreter.apply_status(:player, target_id, :sc_freeze,

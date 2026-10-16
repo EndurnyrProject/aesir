@@ -192,7 +192,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
     Enum.any?(immunity_list, &immune_to?(entity_info, &1))
   end
 
-  defp immune_to?(entity_info, :boss), do: entity_info[:boss_flag] == true
+  # `:boss` is the BossResist flag: it holds against a status-immune unit
+  # (MD_STATUSIMMUNE: the boss, guardian and battlefield classes), whoever the
+  # source.
+  defp immune_to?(entity_info, :boss),
+    do: :status_immune in (entity_info[:custom_immunities] || [])
 
   defp immune_to?(entity_info, :undead) do
     entity_info[:race] == :undead or entity_info[:element] == :undead

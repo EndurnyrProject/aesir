@@ -37,7 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStop do
     no_save: true,
     remove_on_map_change: true,
     bypass_resistance: true,
-    bypass_boss_immunity: true,
     properties: [:prevents_movement, :prevents_attack, :prevents_skills],
     flags: [:no_move, :no_attack, :no_skill],
     allow_skills: [266, 267, 271, 272],

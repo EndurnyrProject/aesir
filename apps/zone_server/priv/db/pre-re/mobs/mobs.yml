@@ -1609,6 +1609,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -1675,6 +1676,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -2006,6 +2008,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -2674,6 +2677,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -3958,6 +3962,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - looter
     - assist
@@ -4019,6 +4024,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4140,6 +4146,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4197,6 +4204,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4254,6 +4262,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4311,6 +4320,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4368,6 +4378,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4529,6 +4540,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5372,6 +5384,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5534,6 +5547,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5809,6 +5823,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7133,6 +7148,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7310,6 +7326,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7693,6 +7710,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7807,6 +7825,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9097,6 +9116,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9547,6 +9567,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - assist
@@ -9815,6 +9836,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9873,6 +9895,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9931,6 +9954,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -11757,6 +11781,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -11821,6 +11846,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12205,6 +12231,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12366,6 +12393,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12892,6 +12920,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13476,6 +13505,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13515,6 +13545,7 @@
   level: 74
   mdef: 60
   modes:
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -13551,6 +13582,7 @@
   level: 86
   mdef: 30
   modes:
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -13585,6 +13617,7 @@
   job_exp: 1
   level: 56
   modes:
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -13618,6 +13651,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Emperium
   race: angel
   race_groups:
@@ -13670,6 +13704,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14011,6 +14046,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14411,6 +14447,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14696,6 +14733,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14978,6 +15016,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15426,6 +15465,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15639,6 +15679,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15684,6 +15725,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15729,6 +15771,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15774,6 +15817,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15819,6 +15863,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15864,6 +15909,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15909,6 +15955,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15954,6 +16001,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15999,6 +16047,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16044,6 +16093,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16089,6 +16139,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16134,6 +16185,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16179,6 +16231,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16224,6 +16277,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16269,6 +16323,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16314,6 +16369,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16359,6 +16415,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16404,6 +16461,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16449,6 +16507,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16494,6 +16553,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16539,6 +16599,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16584,6 +16645,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16629,6 +16691,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16674,6 +16737,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16719,6 +16783,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16764,6 +16829,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16809,6 +16875,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16854,6 +16921,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16899,6 +16967,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16944,6 +17013,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16989,6 +17059,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17034,6 +17105,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17079,6 +17151,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17124,6 +17197,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17169,6 +17243,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17214,6 +17289,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17259,6 +17335,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17304,6 +17381,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17349,6 +17427,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17394,6 +17473,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17894,6 +17974,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18671,6 +18752,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18727,6 +18809,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -19012,6 +19095,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Wind Crystal
   race: formless
@@ -19059,6 +19143,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Earth Crystal
   race: formless
@@ -19106,6 +19191,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Fire Crystal
   race: formless
@@ -19153,6 +19239,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Water Crystal
   race: formless
@@ -19204,6 +19291,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -20049,6 +20137,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -21036,6 +21125,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -21107,6 +21197,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -21349,6 +21440,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -22330,6 +22422,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -22366,6 +22459,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -22402,6 +22496,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -22595,6 +22690,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -23029,6 +23125,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -23516,6 +23613,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -24260,6 +24358,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -24298,6 +24397,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -24704,6 +24804,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -25579,6 +25680,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -25843,6 +25945,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26068,6 +26171,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26126,6 +26230,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26488,6 +26593,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -26535,6 +26641,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - assist
     - can_attack
@@ -26572,6 +26679,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -26988,6 +27096,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27147,6 +27256,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - looter
     - can_attack
@@ -27186,6 +27296,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -27228,6 +27339,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27272,6 +27384,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -27846,6 +27959,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27977,6 +28091,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28168,6 +28283,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -28695,6 +28811,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28739,6 +28856,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28783,6 +28901,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28827,6 +28946,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28871,6 +28991,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28915,6 +29036,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28973,6 +29095,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29039,6 +29162,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29105,6 +29229,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29171,6 +29296,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29237,6 +29363,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29303,6 +29430,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29693,6 +29821,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -30395,6 +30524,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - aggressive
     - can_attack
   name: Monemus
@@ -30750,6 +30880,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -30928,6 +31059,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31096,6 +31228,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -31138,6 +31271,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31692,6 +31826,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31747,6 +31882,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31804,6 +31940,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31861,6 +31998,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31916,6 +32054,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31972,6 +32111,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32028,6 +32168,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32084,6 +32225,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32142,6 +32284,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32197,6 +32340,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32243,6 +32387,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32289,6 +32434,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32335,6 +32481,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32698,6 +32845,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32764,6 +32912,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33142,6 +33291,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33178,6 +33328,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   size: small
@@ -33210,6 +33361,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33268,6 +33420,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33949,6 +34102,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34125,6 +34279,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34183,6 +34338,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34221,6 +34377,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -34472,6 +34629,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -34511,6 +34669,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -34556,6 +34715,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34594,6 +34754,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34639,6 +34800,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34702,6 +34864,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35287,6 +35450,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35489,6 +35653,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - looter
     - assist
@@ -35593,6 +35758,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35842,6 +36008,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - looter
     - assist
@@ -35989,6 +36156,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36128,6 +36296,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   size: small
@@ -36163,6 +36332,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36206,6 +36376,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36249,6 +36420,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36292,6 +36464,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36335,6 +36508,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36377,6 +36551,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36420,6 +36595,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36463,6 +36639,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36506,6 +36683,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36549,6 +36727,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36592,6 +36771,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36635,6 +36815,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36720,6 +36901,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Delightful Lude
   race: formless
   size: small
@@ -36765,6 +36947,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36805,6 +36988,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36860,6 +37044,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Rice Cake
   race: formless
   size: medium
@@ -36892,6 +37077,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Gourd
   race: formless
   size: medium
@@ -36937,6 +37123,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37360,6 +37547,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -37412,6 +37600,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37468,6 +37657,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37528,6 +37718,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37586,6 +37777,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37652,6 +37844,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37690,6 +37883,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37728,6 +37922,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37936,6 +38131,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37995,6 +38191,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - can_attack
   name: Golden Savage
@@ -38036,6 +38233,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -38077,6 +38275,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -38119,6 +38318,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38164,6 +38364,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38213,6 +38414,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Box
   race: formless
   size: small
@@ -38247,6 +38449,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Dream Metal
   race: formless
   size: small
@@ -38279,6 +38482,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38319,6 +38523,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38359,6 +38564,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38399,6 +38605,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38439,6 +38646,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38477,6 +38685,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38515,6 +38724,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39369,6 +39579,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39424,6 +39635,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39470,6 +39682,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39509,6 +39722,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39567,6 +39781,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39658,6 +39873,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39699,6 +39915,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Crystal
   race: formless
@@ -39769,6 +39986,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40072,6 +40290,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40239,6 +40458,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40314,6 +40534,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40426,6 +40647,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - looter
     - assist
@@ -40531,6 +40753,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40606,6 +40829,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -40677,6 +40901,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Box
   race: formless
   size: small
@@ -40706,6 +40931,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Box
   race: formless
   size: small
@@ -40738,6 +40964,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - assist
@@ -40769,6 +40996,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Barricade
   race: formless
   race_groups:
@@ -40798,6 +41026,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Barricade
   race: formless
   size: large
@@ -40827,6 +41056,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Guardian Stone
   race: formless
   race_groups:
@@ -40858,6 +41088,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Guardian Stone
   race: formless
   race_groups:
@@ -40886,6 +41117,9 @@
   id: 1909
   level: 90
   mdef: 99
+  modes:
+    - status_immune
+    - skill_immune
   name: Food Storage
   race: formless
   size: large
@@ -40912,6 +41146,9 @@
   id: 1910
   level: 90
   mdef: 99
+  modes:
+    - status_immune
+    - skill_immune
   name: Food Depot
   race: formless
   size: large
@@ -40938,6 +41175,9 @@
   id: 1911
   level: 90
   mdef: 99
+  modes:
+    - status_immune
+    - skill_immune
   name: Neutrality Flag
   race: formless
   size: large
@@ -40964,6 +41204,9 @@
   id: 1912
   level: 90
   mdef: 99
+  modes:
+    - status_immune
+    - skill_immune
   name: Lion Flag
   race: formless
   size: large
@@ -40990,6 +41233,9 @@
   id: 1913
   level: 90
   mdef: 99
+  modes:
+    - status_immune
+    - skill_immune
   name: Eagle Flag
   race: formless
   size: large
@@ -41016,6 +41262,9 @@
   id: 1914
   level: 90
   mdef: 99
+  modes:
+    - status_immune
+    - skill_immune
   name: Blue Crystal
   race: formless
   size: large
@@ -41042,6 +41291,9 @@
   id: 1915
   level: 90
   mdef: 99
+  modes:
+    - status_immune
+    - skill_immune
   name: Pink Crystal
   race: formless
   size: large
@@ -41074,6 +41326,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41127,6 +41380,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41190,6 +41444,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41243,6 +41498,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41298,6 +41554,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41351,6 +41608,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41389,6 +41647,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41427,6 +41686,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41465,6 +41725,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41503,6 +41764,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41689,6 +41951,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41727,6 +41990,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41765,6 +42029,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41806,6 +42071,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - can_attack
   name: Garden Keeper
@@ -41838,6 +42104,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41875,6 +42142,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Blue Flower
   race: plant
   size: medium
@@ -41904,6 +42172,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Red Flower
   race: plant
   size: medium
@@ -41933,6 +42202,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Yellow Flower
   race: plant
   size: medium
@@ -42010,6 +42280,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42055,6 +42326,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42100,6 +42372,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42145,6 +42418,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42190,6 +42464,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42235,6 +42510,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42280,6 +42556,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42325,6 +42602,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42370,6 +42648,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42402,6 +42681,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42475,6 +42755,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -42511,6 +42792,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - can_attack
@@ -42560,6 +42842,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Crystal
   race: formless
@@ -42605,6 +42888,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Crystal
   race: formless
@@ -42650,6 +42934,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Crystal
   race: formless
@@ -42695,6 +42980,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
   name: Crystal
   race: formless
@@ -42726,6 +43012,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Treasure Chest
   race: formless
   size: small
@@ -42773,6 +43060,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42832,6 +43120,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - aggressive
     - can_attack
   name: Entweihen Crothen
@@ -42866,6 +43155,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - aggressive
     - can_attack
     - random_target
@@ -42901,6 +43191,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - aggressive
     - can_attack
     - random_target
@@ -42936,6 +43227,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - aggressive
     - can_attack
     - random_target
@@ -42971,6 +43263,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - aggressive
     - can_attack
   name: Thorn of Purification
@@ -43080,6 +43373,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Nightmare
   race: brute
   size: large
@@ -43135,6 +43429,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Doppelganger
   race: demon
   size: medium
@@ -43165,6 +43460,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Egnigem Cenia
   race: demi_human
   size: medium
@@ -43795,6 +44091,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44254,6 +44551,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44311,6 +44609,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44778,6 +45077,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Ox
   race: demon
   size: large
@@ -45228,6 +45528,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45470,6 +45771,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45510,6 +45812,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45775,6 +46078,7 @@
   modes:
     - boss
     - detector
+    - status_immune
   name: Cramp
   race: plant
   size: medium
@@ -45822,6 +46126,7 @@
   modes:
     - boss
     - detector
+    - status_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -46259,6 +46564,8 @@
   id: 2081
   level: 14
   mdef: 100
+  modes:
+    - status_immune
   name: Strange Hydra
   race: plant
   size: small

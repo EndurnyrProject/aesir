@@ -75,12 +75,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   the application), or `{:error, reason}` when the status is unknown or the
   target is immune, protected or resisted it.
 
-  A boss-flagged target rejects every status that did not originate from itself
-  with `{:error, :boss_immune}`. Self-origin must be positively identified: the
-  caster id has to equal the target's id and its type, resolved through
-  `StatusEntry.resolve_source_type/4`, has to match the target's. An application
-  carrying no caster identity at all is therefore external, which is what blocks
-  the offensive skills that apply crowd control without naming their caster.
+  A status-immune target (a monster of the boss, guardian or battlefield class)
+  rejects a status whose definition carries the `:boss` immunity (status.yml
+  `BossResist`), whoever its source, with `{:error, :immune}`; every other
+  status reaches it like any unit.
 
   Passing `loaded: true` (rAthena `SCFLAG_LOADED`) marks the application as
   the restore of a persisted status: it already passed every gate when first
@@ -155,7 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp apply_new_status(unit_type, unit_id, status_id, status_params, definition) do
     entity_info = get_entity_info(unit_type, unit_id)
 
-    with :ok <- check_resisted(entity_info, unit_type, unit_id, status_params, definition) do
+    with :ok <- check_resisted(entity_info, status_params, definition) do
       case Enum.filter(definition.end_return, &StatusStorage.has_status?(unit_type, unit_id, &1)) do
         [] ->
           apply_unreturned_status(
@@ -201,13 +199,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp check_resisted(entity_info, unit_type, unit_id, status_params, definition) do
+  defp check_resisted(entity_info, status_params, definition) do
     if Keyword.get(status_params, :no_avoid, false) do
       :ok
     else
-      with :ok <- check_immunity(entity_info, immunities(definition, &(&1 == :boss))) do
-        check_boss_immunity(entity_info, unit_type, unit_id, status_params, definition)
-      end
+      check_immunity(entity_info, immunities(definition, &(&1 == :boss)))
     end
   end
 
@@ -1396,31 +1392,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       _ -> :ok
     end
   end
-
-  defp check_boss_immunity(
-         %{boss_flag: true},
-         _unit_type,
-         _unit_id,
-         _status_params,
-         %{bypass_boss_immunity: true}
-       ),
-       do: :ok
-
-  defp check_boss_immunity(%{boss_flag: true}, unit_type, unit_id, status_params, _definition) do
-    {_val1, _val2, _val3, _val4, _tick, _flag, caster_id, _duration, _state, _phase} =
-      StatusEntry.extract_params(status_params)
-
-    source_type = StatusEntry.resolve_source_type(unit_type, unit_id, caster_id, status_params)
-
-    if source_type == unit_type and caster_id == unit_id do
-      :ok
-    else
-      {:error, :boss_immune}
-    end
-  end
-
-  defp check_boss_immunity(_entity_info, _unit_type, _unit_id, _status_params, _definition),
-    do: :ok
 
   # The Fail list (`prevented_by` and `conflicts_with`) also fails on the status
   # damage last broke on the unit, while that record lasts.

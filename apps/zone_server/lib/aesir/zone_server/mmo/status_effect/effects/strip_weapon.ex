@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripWeapon do
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_stripweapon,
+    immunity: [:boss],
     metadata: %{strip_slot: :right_hand},
     no_dispel: true,
     no_clear_buff: false,

@@ -276,7 +276,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
 
     boss = %{
       target
-      | mob_data: %{target.mob_data | modes: Enum.uniq([:boss | target.mob_data.modes])}
+      | mob_data: %{
+          target.mob_data
+          | modes: Enum.uniq([:boss, :status_immune | target.mob_data.modes])
+        }
     }
 
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, boss, self())

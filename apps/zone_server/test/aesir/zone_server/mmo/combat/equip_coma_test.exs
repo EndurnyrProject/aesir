@@ -75,6 +75,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComaTest do
     refute EquipComa.trigger?(attacker, target, roll: fn _rate -> flunk("unexpected roll") end)
   end
 
+  test "a status-immune target still takes the class coma, without its race share" do
+    attacker =
+      CombatTestHelper.create_player_combatant()
+      |> with_modifiers(%{{:coma_race, :all} => 10_000, {:coma_class, :boss} => 300})
+
+    target = %{CombatTestHelper.create_mob_combatant(class: :boss) | status_immune: true}
+
+    assert EquipComa.trigger?(attacker, target, roll: fn 300 -> true end)
+  end
+
   test "competitive mob classifications suppress coma without rolling" do
     attacker =
       CombatTestHelper.create_player_combatant()

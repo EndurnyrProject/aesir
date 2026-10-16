@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SoulChangeMarker do
     no_save: true,
     permanent: true,
     bypass_resistance: true,
-    bypass_boss_immunity: true,
     properties: [:debuff],
     prevented_by: [:sc_soulchange_marker],
     target_types: [:mob]

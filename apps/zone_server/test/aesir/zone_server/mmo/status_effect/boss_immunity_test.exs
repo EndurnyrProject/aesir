@@ -1,9 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.BossImmunityTest do
   @moduledoc """
-  Boss monsters reject every externally-applied status while still accepting
-  their own self-buffs. The origin of a status is resolved through
-  `StatusEntry.resolve_source_type/4`, so a foreign caster is rejected even when
-  its id coincides with the boss' instance id.
+  A status-immune monster (boss, guardian and battlefield classes) rejects a
+  status whose definition carries the BossResist `:boss` immunity, whoever its
+  source, and receives every other status like any unit.
   """
 
   use ExUnit.Case, async: true
@@ -16,43 +15,56 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.BossImmunityTest do
 
   setup :setup_ets_tables
 
-  defp start_mob(opts) do
-    %{unit_id: unit_id} = start_mob_session(opts)
+  defp start_mob(modes) do
+    %{unit_id: unit_id} = start_mob_session(modes: modes)
     unit_id
   end
 
-  test "a foreign caster id with no source_type is rejected on a boss and stores nothing" do
-    unit_id = start_mob(modes: [:boss])
+  test "a boss rejects a BossResist status from a foreign caster and stores nothing" do
+    unit_id = start_mob([:boss, :status_immune])
 
-    assert {:error, :boss_immune} =
+    assert {:error, :immune} =
              Interpreter.apply_status(:mob, unit_id, :sc_stun, caster_id: 12_345)
 
     refute StatusStorage.has_status?(:mob, unit_id, :sc_stun)
   end
 
-  test "a foreign caster of the boss' own unit type is rejected" do
-    unit_id = start_mob(modes: [:boss])
-
-    assert {:error, :boss_immune} =
-             Interpreter.apply_status(:mob, unit_id, :sc_stun,
-               source_id: unit_id + 1,
-               source_type: :mob
-             )
-
-    refute StatusStorage.has_status?(:mob, unit_id, :sc_stun)
-  end
-
-  test "declared :boss immunity still short-circuits ahead of the gate" do
-    unit_id = start_mob(modes: [:boss])
+  test "a boss rejects a BossResist status it is itself the source of" do
+    unit_id = start_mob([:boss, :status_immune])
 
     assert {:error, :immune} =
-             Interpreter.apply_status(:mob, unit_id, :sc_freeze, caster_id: 12_345)
-
-    refute StatusStorage.has_status?(:mob, unit_id, :sc_freeze)
+             Interpreter.apply_status(:mob, unit_id, :sc_stun,
+               source_id: unit_id,
+               source_type: :mob
+             )
   end
 
-  test "the same application against a non-boss mob succeeds" do
-    unit_id = start_mob(modes: [])
+  test "a status-immune monster of another class rejects it too" do
+    unit_id = start_mob([:status_immune])
+
+    assert {:error, :immune} = Interpreter.apply_status(:mob, unit_id, :sc_stun, duration: 4_500)
+  end
+
+  test "a boss receives a status without BossResist from any source" do
+    unit_id = start_mob([:boss, :status_immune])
+
+    assert :ok = Interpreter.apply_status(:mob, unit_id, :sc_increaseagi, val1: 3)
+    assert StatusStorage.has_status?(:mob, unit_id, :sc_increaseagi)
+  end
+
+  test "an unavoidable application reaches a boss" do
+    unit_id = start_mob([:boss, :status_immune])
+
+    assert :ok =
+             Interpreter.apply_status(:mob, unit_id, :sc_stun,
+               duration: 4_500,
+               no_avoid: true,
+               bypass_resistance: true
+             )
+  end
+
+  test "a monster that is not status-immune receives a BossResist status" do
+    unit_id = start_mob([])
 
     assert :ok =
              Interpreter.apply_status(:mob, unit_id, :sc_stun,
@@ -61,48 +73,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.BossImmunityTest do
              )
 
     assert StatusStorage.has_status?(:mob, unit_id, :sc_stun)
-  end
-
-  test "a self-originated buff is applied to a boss" do
-    unit_id = start_mob(modes: [:boss])
-
-    assert :ok =
-             Interpreter.apply_status(:mob, unit_id, :sc_increaseagi,
-               val1: 3,
-               caster_id: unit_id,
-               source_id: unit_id
-             )
-
-    assert StatusStorage.has_status?(:mob, unit_id, :sc_increaseagi)
-  end
-
-  test "a caster id colliding with the boss instance id is still rejected when typed :player" do
-    unit_id = start_mob(modes: [:boss])
-
-    assert {:error, :boss_immune} =
-             Interpreter.apply_status(:mob, unit_id, :sc_stun,
-               source_id: unit_id,
-               source_type: :player
-             )
-
-    refute StatusStorage.has_status?(:mob, unit_id, :sc_stun)
-  end
-
-  test "a status carrying no caster identity at all is rejected on a boss" do
-    unit_id = start_mob(modes: [:boss])
-
-    assert {:error, :boss_immune} =
-             Interpreter.apply_status(:mob, unit_id, :sc_increaseagi, val1: 3)
-
-    refute StatusStorage.has_status?(:mob, unit_id, :sc_increaseagi)
-  end
-
-  test "an offensive skill applying crowd control without a caster is rejected on a boss" do
-    unit_id = start_mob(modes: [:boss])
-
-    assert {:error, :boss_immune} =
-             Interpreter.apply_status(:mob, unit_id, :sc_stun, duration: 4_500)
-
-    refute StatusStorage.has_status?(:mob, unit_id, :sc_stun)
   end
 end

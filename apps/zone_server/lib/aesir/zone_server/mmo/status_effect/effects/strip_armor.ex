@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripArmor do
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_striparmor,
+    immunity: [:boss],
     metadata: %{strip_slot: :armor},
     no_dispel: true,
     no_clear_buff: false,

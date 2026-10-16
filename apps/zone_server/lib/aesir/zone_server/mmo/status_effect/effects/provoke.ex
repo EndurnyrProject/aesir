@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Provoke do
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:debuff, :remove_on_hermode],
-    immunity: [:undead, :status_immune],
+    immunity: [:boss, :undead],
     properties: [:debuff],
     calc_flags: [:atk, :def, :def2, :hit],
     end_on_start: [:sc_freeze, :sc_stone, :sc_sleep, :sc_trickdead],

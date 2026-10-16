@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gravitation do
     no_save: true,
     properties: [:debuff],
     calc_flags: [:aspd_rate],
-    immunity: [:boss],
+    immunity: [renewal: [], pre_renewal: [:boss]],
     icon: :gravitation
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group

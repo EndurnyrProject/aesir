@@ -281,6 +281,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     :boss in (mob_data.modes || [])
   end
 
+  @doc """
+  Whether the monster is status-immune (MD_STATUSIMMUNE): the boss, guardian
+  and battlefield classes.
+  """
+  @spec status_immune?(t()) :: boolean()
+  def status_immune?(%__MODULE__{mob_data: mob_data}),
+    do: :status_immune in (mob_data.modes || [])
+
   @doc "Whether the monster has detector mode, seeing through Hiding and Cloaking."
   @spec detector?(t()) :: boolean()
   def detector?(%__MODULE__{mob_data: mob_data}), do: :detector in (mob_data.modes || [])

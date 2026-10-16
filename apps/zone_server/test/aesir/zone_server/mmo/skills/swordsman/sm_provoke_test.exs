@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvokeTest do
     immunity = StatusRegistry.get_definition(:sc_provoke).immunity
 
     assert :undead in immunity
-    assert :status_immune in immunity
+    assert :boss in immunity
   end
 
   test "always lands when the caster far outlevels the target" do

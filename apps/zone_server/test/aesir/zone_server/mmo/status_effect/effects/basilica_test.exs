@@ -51,7 +51,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
       assert metadata.icon == :basilica
     end
 
-    assert Basilica.metadata().bypass_boss_immunity
     assert Basilica.metadata().target_types == [:player, :mob, :homunculus]
     assert Basilica.metadata().tick_interval == nil
     assert BasilicaCaster.metadata().target_types == [:player]

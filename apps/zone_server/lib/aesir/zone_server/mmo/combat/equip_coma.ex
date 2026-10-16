@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.EquipComa do
   @moduledoc """
-  Pure equipment coma eligibility and chance policy.
+  Pure equipment coma eligibility and chance policy (`battle_check_coma`).
+
+  The class bonuses count against every eligible target; the race bonuses only
+  against one that is not status-immune.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -15,8 +18,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComa do
   @spec trigger?(Combatant.t(), Combatant.t(), keyword()) :: boolean()
   def trigger?(attacker, target, opts \\ [])
 
-  def trigger?(%Combatant{}, %Combatant{status_immune: true}, _opts), do: false
-
   def trigger?(
         %Combatant{unit_type: :player} = attacker,
         %Combatant{unit_type: target_type} = target,
@@ -28,9 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComa do
     else
       roll = Keyword.get(opts, :roll, &default_roll/1)
 
-      rate =
-        EquipmentBonuses.coma_race_rate(attacker, target) +
-          EquipmentBonuses.coma_class_rate(attacker, target)
+      rate = race_rate(attacker, target) + EquipmentBonuses.coma_class_rate(attacker, target)
 
       rate = clamp_rate(rate)
       successful?(rate, roll)
@@ -38,6 +37,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComa do
   end
 
   def trigger?(_attacker, _target, _opts), do: false
+
+  defp race_rate(_attacker, %Combatant{status_immune: true}), do: 0
+  defp race_rate(attacker, target), do: EquipmentBonuses.coma_race_rate(attacker, target)
 
   defp competitive_mob?(%Combatant{unit_type: :mob, race2: race2}),
     do: :gvg in race2 or :battlefield in race2

@@ -96,7 +96,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
     assert metadata.no_dispel == false
     assert metadata.no_save == false
     assert metadata.remove_on_map_change == false
-    assert metadata.bypass_boss_immunity == false
   end
 
   defp apply_charm(mob_id) do

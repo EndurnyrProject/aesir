@@ -16,7 +16,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Ankle do
     no_save: true,
     remove_on_map_change: true,
     bypass_resistance: true,
-    bypass_boss_immunity: true,
     properties: [:debuff, :prevents_movement],
     flags: [:no_move],
     blocked_skills: [26],

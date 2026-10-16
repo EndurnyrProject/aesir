@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
     remove_on_map_change: true,
-    bypass_boss_immunity: true,
     bypass_resistance: true,
     target_types: [:player, :mob, :homunculus],
     properties: [:prevents_attack, :prevents_skills],

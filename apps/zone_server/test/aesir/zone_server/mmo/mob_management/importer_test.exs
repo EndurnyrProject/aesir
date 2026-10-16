@@ -50,6 +50,28 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
       refute :detector in cleared.modes
     end
 
+    test "the boss, guardian and battlefield classes are status-immune" do
+      for {class, expected} <- [
+            {"Boss", [:boss, :detector, :status_immune]},
+            {"Guardian", [:status_immune]},
+            {"Battlefield", [:status_immune, :skill_immune]},
+            {"Normal", []}
+          ] do
+        {:ok, definition} = Importer.to_definition(entry(%{"Class" => class}))
+        assert Enum.sort(definition.modes) == Enum.sort(expected), class
+      end
+    end
+
+    test "explicit StatusImmune and SkillImmune modes are kept" do
+      {:ok, definition} =
+        Importer.to_definition(
+          entry(%{"Modes" => %{"StatusImmune" => true, "SkillImmune" => true}})
+        )
+
+      assert :status_immune in definition.modes
+      assert :skill_immune in definition.modes
+    end
+
     test "boss + aggressive-decoding Ai + explicit aggressive dedup" do
       {:ok, definition} =
         Importer.to_definition(

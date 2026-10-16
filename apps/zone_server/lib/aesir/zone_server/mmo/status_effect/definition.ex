@@ -61,10 +61,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:remove_on_death` - when true (the default), death ends the status through
       the ordinary removal path. Set it to false only for finite statuses designed
       to keep their remaining duration through death
-    - `:bypass_boss_immunity` - when true, the status applies to a boss-flagged
-      target even from an external caster; use it for a status a boss must be able
-      to receive by design (e.g. Root locking a boss attacker), where the usual
-      "boss rejects externally-sourced statuses" gate would otherwise block it
     - `:target_types` - unit types eligible to hold the status. Defaults to
       players, mobs, and Homunculi; narrow it only when the callback depends on
       player-only state such as equipment or player SP delivery.
@@ -110,7 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       `status.yml`); otherwise `c:overlap/3` decides
 
   `:end_on_start`, `:end_return`, `:prevented_by`, `:no_save`, `:duration`,
-  `:no_dispel`, `:no_clear_buff` and `:clear_buff_flags` also accept `[renewal: value, pre_renewal: value]` for mode-specific values.
+  `:no_dispel`, `:no_clear_buff`, `:clear_buff_flags` and `:immunity` also accept `[renewal: value, pre_renewal: value]` for mode-specific values.
   """
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
@@ -421,7 +417,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     no_save: false,
     remove_on_map_change: false,
     remove_on_death: true,
-    bypass_boss_immunity: false,
     engine_only: false,
     icon: nil,
     opt1: nil,
@@ -456,7 +451,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     no_save: :boolean,
     remove_on_map_change: :boolean,
     remove_on_death: :boolean,
-    bypass_boss_immunity: :boolean,
     no_dispel: {:required, :boolean},
     no_clear_buff: {:required, :boolean},
     clear_buff_flags: {:list, {:enum, @clear_buff_flags}},
@@ -742,7 +736,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :duration,
     :no_dispel,
     :no_clear_buff,
-    :clear_buff_flags
+    :clear_buff_flags,
+    :immunity
   ]
 
   @doc "Resolves the mode-keyable metadata options for the selected mode."

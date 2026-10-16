@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripShield do
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_stripshield,
+    immunity: [:boss],
     metadata: %{strip_slot: :left_hand},
     no_dispel: true,
     no_clear_buff: false,

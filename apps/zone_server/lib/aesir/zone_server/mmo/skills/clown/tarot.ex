@@ -111,9 +111,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   end
 
   def apply(:death, caster, {type, id} = target, _level) do
-    with {:ok, {module, unit, pid}} when is_pid(pid) <- UnitRegistry.get_unit(type, id),
+    with {:ok, {_module, unit, pid}} when is_pid(pid) <- UnitRegistry.get_unit(type, id),
          true <- Unit.living?(unit),
-         false <- module.is_boss?(unit) do
+         false <- status_immune?(unit) do
       coma(type, pid, caster_ref(caster))
     end
 
@@ -139,6 +139,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   defp coma(:player, pid, source), do: PlayerSession.apply_coma(pid, source)
   defp coma(:mob, pid, source), do: MobSession.apply_coma(pid, source)
   defp coma(_type, _pid, _source), do: :ok
+
+  # SC_COMA is BossResist: a status-immune monster resists it.
+  defp status_immune?(%MobState{} = mob), do: MobState.status_immune?(mob)
+  defp status_immune?(_unit), do: false
 
   defp caster_ref(caster) do
     adapter = Caster.for(caster)

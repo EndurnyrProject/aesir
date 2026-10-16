@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange do
   @moduledoc """
   Shared behaviour of the four Elemental Change quest skills: the target monster's
-  defence element becomes the skill's element for the status duration.
+  defence element becomes the skill's element for the status duration. A
+  status-immune monster (boss, guardian, battlefield) is left as it is.
 
   Renewal and pre-renewal agree on the effect; only the cast type differs per
   skill.
@@ -39,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange do
   @spec overridable_mob?(integer()) :: boolean()
   defp overridable_mob?(target_id) do
     case UnitRegistry.get_unit(:mob, target_id) do
-      {:ok, {MobState, mob_state, _pid}} -> not MobState.is_boss?(mob_state)
+      {:ok, {MobState, mob_state, _pid}} -> not MobState.status_immune?(mob_state)
       {:error, :not_found} -> false
     end
   end

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DecreaseAgi do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_decreaseagi,
+    immunity: [:boss],
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:debuff, :remove_on_hermode],

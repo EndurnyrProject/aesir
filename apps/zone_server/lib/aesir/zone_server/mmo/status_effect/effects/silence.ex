@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Silence do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_silence,
+    immunity: [:boss],
     no_dispel: false,
     no_clear_buff: false,
     properties: [:debuff, :prevents_skills],

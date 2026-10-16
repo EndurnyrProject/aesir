@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloseConfine2 do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_closeconfine2,
+    immunity: [:boss],
     no_dispel: true,
     no_clear_buff: false,
     no_save: true,

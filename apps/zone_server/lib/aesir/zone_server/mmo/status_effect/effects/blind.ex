@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Blind do
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_blind,
+    immunity: [:boss],
     no_dispel: false,
     no_clear_buff: false,
     properties: [:debuff],

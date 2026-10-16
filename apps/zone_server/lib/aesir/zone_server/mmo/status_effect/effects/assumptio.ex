@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Assumptio do
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
-    bypass_boss_immunity: true,
     properties: [:buff],
     calc_flags: [:def],
     end_on_start: [renewal: [], pre_renewal: [:sc_kyrie]],
