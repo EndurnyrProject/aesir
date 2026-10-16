@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # AI tick interval in milliseconds
   @ai_tick_interval 1000
@@ -48,8 +50,66 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         {:noreply, schedule_ai_tick(state, min(max(rest, 1), @ai_tick_interval))}
 
       true ->
-        updated_state = state |> run_skill_or_ai() |> schedule_ai_tick()
+        updated_state = state |> think() |> schedule_ai_tick()
         {:noreply, updated_state}
+    end
+  end
+
+  @doc """
+  Processes an `{:ai, {:attacked, attacker_ref, norm?}}` event, the end of a
+  landed hit's walk delay: stores the retaliation target (a slave's or a
+  player summon's master, else the attacker) as the pending attacked event,
+  leaves the aggressive mode, and thinks at once through the same gates as a
+  tick, without moving the tick schedule. A dormant mob wakes its AI loop, so
+  the mob keeps acting after the think. A dead, casting or resting mob keeps
+  the event for its next think; an attacker gone from the world delivers
+  nothing.
+  """
+  @spec handle_attacked(MobState.t(), Ref.t(), boolean()) :: {:noreply, MobState.t()}
+  def handle_attacked(state, attacker_ref, norm?) do
+    case retaliation_target(attacker_ref) do
+      nil ->
+        {:noreply, state}
+
+      target_ref ->
+        state = state |> MobState.set_attacked(target_ref, norm?) |> wake_for_attacked()
+
+        if think_now?(state),
+          do: {:noreply, think(state)},
+          else: {:noreply, state}
+    end
+  end
+
+  defp wake_for_attacked(%MobState{ai_awake: false, is_dead: false} = state),
+    do: schedule_ai_tick(%{state | ai_awake: true})
+
+  defp wake_for_attacked(state), do: state
+
+  defp think_now?(state) do
+    not state.is_dead and is_nil(state.casting) and
+      MobState.thinking?(state, System.system_time(:millisecond))
+  end
+
+  defp retaliation_target({:mob, id} = attacker_ref) do
+    case UnitRegistry.get_unit(:mob, id) do
+      {:ok, {_module, %MobState{master_id: master_id}, _pid}} when is_integer(master_id) ->
+        {:mob, master_id}
+
+      {:ok, {_module, %MobState{owner_player_id: owner_id}, _pid}} when is_integer(owner_id) ->
+        {:player, owner_id}
+
+      {:ok, _unit} ->
+        attacker_ref
+
+      {:error, :not_found} ->
+        nil
+    end
+  end
+
+  defp retaliation_target({type, id} = attacker_ref) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, _unit} -> attacker_ref
+      {:error, :not_found} -> nil
     end
   end
 
@@ -128,12 +188,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     {:noreply, updated_state}
   end
 
-  @doc "Reacts to an `{:attack_intent, ref}` nudge as if hit by `target_ref`; dead mobs ignore it."
+  @doc """
+  Attacks `target_ref` once for an `{:attack_intent, ref}` nudge (Poison
+  React's counter) without changing the mob's target; dead mobs ignore it.
+  """
   @spec handle_attack_intent(MobState.t(), tuple()) :: {:noreply, MobState.t()}
   def handle_attack_intent(%MobState{is_dead: true} = state, _target_ref), do: {:noreply, state}
 
   def handle_attack_intent(%MobState{} = state, target_ref),
-    do: {:noreply, AIStateMachine.handle_damage_reaction(state, target_ref)}
+    do: {:noreply, AIStateMachine.attack_once(state, target_ref)}
 
   @doc """
   Schedules the next `{:ai, :tick}` after `interval` milliseconds (defaults to
@@ -157,34 +220,59 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     AIStateMachine.process_ai(state)
   end
 
-  # Skill selection runs before the melee/movement state machine: a tick that
-  # picks a row either starts a cast (locking the mob until {:casting, :complete})
-  # or fires it instantly; only a nil selection falls through to the normal AI.
-  # The very first tick after spawn selects with the :spawn event so `onspawn`
-  # rows can fire. `now` is System.system_time(:millisecond), the same clock
-  # the melee path uses for last_attack_time, so cooldown expiry lines up.
-  defp run_skill_or_ai(state) do
-    now = System.system_time(:millisecond)
-    event = if state.spawn_tick_pending?, do: :spawn, else: :tick
-    state = %{state | spawn_tick_pending?: false}
+  # One AI think. A status-locked mob drops its target and attacked event and
+  # does nothing else. Otherwise skill selection runs first: a tick that picks a
+  # row starts a cast (locking the mob until {:casting, :complete}) or fires it
+  # instantly, and ends the think. Then the target-change step consumes a
+  # pending attacked event, possibly firing the rude-attacked event use, and
+  # the state machine runs its step. The very first think after spawn selects
+  # with the :spawn event so `onspawn` rows can fire. `now` is
+  # System.system_time(:millisecond), the same clock the melee path uses for
+  # last_attack_time, so cooldown expiry lines up.
+  defp think(state) do
+    if StatusInterpreter.loses_target?(:mob, state.instance_id) do
+      state |> MobState.set_target(nil) |> MobState.clear_attacked()
+    else
+      now = System.system_time(:millisecond)
+      event = if state.spawn_tick_pending?, do: :spawn, else: :tick
 
-    case MobSkillSelector.select(state, MobSkillDb.rows_for(state.mob_id), now: now, event: event) do
-      {:cast, row} ->
-        start_selected_skill(state, row, now)
-
-      nil ->
-        process_ai(state)
+      case use_skill(%{state | spawn_tick_pending?: false}, event, now) do
+        {:used, state} -> state
+        {:none, state} -> state |> AIStateMachine.process_attacked() |> after_attacked(now)
+      end
     end
   end
+
+  defp after_attacked({state, true}, now) do
+    case use_skill(state, :rudeattacked, now) do
+      {:used, state} -> state
+      {:none, state} -> process_ai(state)
+    end
+  end
+
+  defp after_attacked({state, false}, _now), do: process_ai(state)
+
+  defp use_skill(state, event, now) do
+    case MobSkillSelector.select(state, MobSkillDb.rows_for(state.mob_id), now: now, event: event) do
+      {:cast, row} -> state |> consume_rude_attacks(row, event) |> start_selected_skill(row, now)
+      nil -> {:none, state}
+    end
+  end
+
+  # A periodic pick of a rude-attacked row consumes the rude-attack count.
+  defp consume_rude_attacks(state, %{condition: %{type: :rudeattacked}}, :tick),
+    do: %{state | attacked_count: 0}
+
+  defp consume_rude_attacks(state, _row, _event), do: state
 
   defp start_selected_skill(state, row, now) do
     if StatusInterpreter.can_use_skill?(:mob, state.instance_id, row.skill_id) do
       case CastingHandler.begin_cast(state, row, now) do
-        {:ok, updated} -> updated
-        {:rejected, unchanged} -> process_ai(unchanged)
+        {:ok, updated} -> {:used, updated}
+        {:rejected, unchanged} -> {:none, unchanged}
       end
     else
-      process_ai(state)
+      {:none, state}
     end
   end
 end

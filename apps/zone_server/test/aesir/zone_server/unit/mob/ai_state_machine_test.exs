@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -82,6 +83,103 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       assert AIStateMachine.move_toward(state, 105, 105) == state
       assert_received {:moved, 105, 105}
+    end
+  end
+
+  describe "idle random walk" do
+    test "only a mob that can move and is not barred from random walks wanders" do
+      wanders? = fn modes ->
+        :rand.seed(:exsss, {1, 2, 3})
+        state = base_mob_state(modes: modes)
+
+        Enum.any?(1..60, fn _ ->
+          AIStateMachine.process_ai(state).last_idle_movement_time != nil
+        end)
+      end
+
+      assert wanders?.([:can_move])
+      refute wanders?.([])
+      refute wanders?.([:can_move, :no_random_walk])
+    end
+  end
+
+  describe "settling the pending exit from aggressive mode" do
+    setup do
+      stub(MobSession, :move_to, fn _pid, _x, _y -> :ok end)
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range -> [] end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
+      :ok
+    end
+
+    test "an idle mob settles it when a random walk starts, so a later aggro is self-initiated" do
+      :rand.seed(:exsss, {1, 2, 3})
+
+      state = %{
+        movable_mob_state()
+        | mob_data: %{base_mob_state().mob_data | modes: [:can_move, :aggressive]},
+          left_aggressive?: true
+      }
+
+      walked =
+        Enum.reduce_while(1..60, state, fn _, acc ->
+          next = AIStateMachine.process_ai(acc)
+          if next.last_idle_movement_time, do: {:halt, next}, else: {:cont, next}
+        end)
+
+      assert walked.last_idle_movement_time
+      refute walked.left_aggressive?
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range -> [2] end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {101, 101, "prontera"}} end)
+
+      assert AIStateMachine.check_aggro(walked).initiated_by_self?
+    end
+
+    test "an idle mob that does not walk keeps it" do
+      state = %{base_mob_state(modes: [:aggressive]) | left_aggressive?: true}
+
+      assert AIStateMachine.process_ai(state).left_aggressive?
+    end
+
+    test "a chasing mob already walking keeps it" do
+      state = %{
+        chase_mob_state()
+        | movement_state: :moving,
+          initiated_by_self?: true,
+          left_aggressive?: true
+      }
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.left_aggressive?
+      assert MobState.skill_state(result) == :follow
+    end
+
+    test "a chasing mob settles it when it starts a walk" do
+      state = %{chase_mob_state() | initiated_by_self?: true, left_aggressive?: true}
+
+      result = AIStateMachine.process_ai(state)
+
+      assert MobState.skill_state(result) == :rush
+    end
+
+    test "a swing the combat system refuses keeps it" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
+      stub(Combat, :execute_mob_attack, fn _state, _target -> {:error, :invalid_target} end)
+      state = %{combat_mob_state() | initiated_by_self?: true, left_aggressive?: true}
+
+      result = AIStateMachine.process_ai(state)
+
+      assert result.left_aggressive?
+      assert MobState.skill_state(result) == :angry
+    end
+
+    test "a swing that lands settles it" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
+      stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
+      state = %{combat_mob_state() | initiated_by_self?: true, left_aggressive?: true}
+
+      assert MobState.skill_state(AIStateMachine.process_ai(state)) == :berserk
     end
   end
 
@@ -196,7 +294,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
 
     test "an invincible player is not acquired by an idle aggressive mob" do
-      stub(Invincibility, :active?, fn %PlayerState{} -> true end)
+      stub(Invincibility, :active?, fn _unit -> true end)
 
       stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
         [2]
@@ -699,53 +797,129 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
   end
 
-  describe "handle_damage_reaction/2 initiator tagging" do
-    test "an idle mob attacked by a specific entity retaliates (not self-initiated)" do
-      state = %MobState{base_mob_state() | ai_state: :idle, initiated_by_self?: true}
+  describe "process_attacked/1 target change" do
+    setup do
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {101, 100, "prontera"}}
+        :player, 3 -> {:ok, {100, 101, "prontera"}}
+        :player, 4 -> {:ok, {115, 100, "prontera"}}
+        :player, 5 -> {:ok, {113, 100, "prontera"}}
+        :mob, 1 -> {:ok, {100, 100, "prontera"}}
+      end)
 
-      result = AIStateMachine.handle_damage_reaction(state, 2)
-
-      assert result.target_ref == {:player, 2}
-      assert result.ai_state == :combat
-      assert result.initiated_by_self? == false
+      :ok
     end
 
-    test "an invincible player attacker is not adopted" do
-      stub(Invincibility, :active?, fn {:player, 2} -> true end)
-      state = %MobState{base_mob_state() | ai_state: :idle}
+    test "an idle mob adopts an attacker it can fight back and takes back one rude attack" do
+      state = %{attacked_mob(:idle, {:player, 2}) | attacked_count: 1}
 
-      result = AIStateMachine.handle_damage_reaction(state, 2)
+      {result, rude?} = AIStateMachine.process_attacked(state)
 
-      assert result.target_ref == nil
-      assert result.ai_state == :idle
+      refute rude?
+
+      assert {result.target_ref, result.ai_state, result.attacked_count} ==
+               {{:player, 2}, :combat, 0}
+
+      assert {result.attacked_ref, result.norm_attacked_ref} == {nil, nil}
     end
 
-    test "a mob never switches to an invincible higher-aggro attacker" do
-      stub(Invincibility, :active?, fn {:player, id} -> id == 3 end)
+    test "a mob in its attack state without change_target_melee keeps its target" do
+      state = %{attacked_mob(:combat, {:player, 2}) | target_ref: {:player, 3}}
 
-      state =
-        %MobState{base_mob_state() | ai_state: :alert, target_ref: {:player, 2}}
-        |> MobState.add_aggro(3, 100)
-
-      result = AIStateMachine.handle_damage_reaction(state, 4)
-
-      assert result.target_ref == {:player, 2}
-    end
-
-    test "switching to a higher-aggro attacker clears the self-initiated flag" do
-      state =
-        %MobState{
-          base_mob_state()
-          | ai_state: :alert,
-            target_ref: {:player, 2},
-            initiated_by_self?: true
-        }
-        |> MobState.add_aggro(3, 100)
-
-      result = AIStateMachine.handle_damage_reaction(state, 3)
+      {result, false} = AIStateMachine.process_attacked(state)
 
       assert result.target_ref == {:player, 3}
-      assert result.initiated_by_self? == false
+      assert result.attacked_ref == nil
+    end
+
+    test "with change_target_melee the attack state switches only to the norm attacker" do
+      modes = [:can_move, :can_attack, :change_target_melee]
+      state = %{attacked_mob(:combat, {:player, 2}, modes) | target_ref: {:player, 3}}
+
+      {kept, false} = AIStateMachine.process_attacked(state)
+
+      {switched, false} =
+        AIStateMachine.process_attacked(%{state | norm_attacked_ref: {:player, 2}})
+
+      assert kept.target_ref == {:player, 3}
+      assert switched.target_ref == {:player, 2}
+    end
+
+    test "an attacker beyond the visual area counts rude attacks and the second fires the event" do
+      {first, false} = AIStateMachine.process_attacked(attacked_mob(:idle, {:player, 4}))
+      {second, true} = AIStateMachine.process_attacked(%{first | attacked_ref: {:player, 4}})
+
+      assert first.attacked_count == 1
+      assert second.attacked_count == 2
+      assert second.target_ref == nil
+    end
+
+    test "an invincible attacker is never adopted and counts a rude attack" do
+      stub(Invincibility, :active?, fn _unit -> true end)
+
+      {result, false} = AIStateMachine.process_attacked(attacked_mob(:idle, {:player, 2}))
+
+      assert result.target_ref == nil
+      assert result.attacked_count == 1
+    end
+
+    test "self-inflicted damage never counts a rude attack" do
+      {result, false} = AIStateMachine.process_attacked(attacked_mob(:idle, {:mob, 1}))
+
+      assert {result.target_ref, result.attacked_count} == {nil, 0}
+    end
+
+    test "the current target hitting from beyond reach counts a rude attack" do
+      state = %{attacked_mob(:combat, {:player, 5}) | target_ref: {:player, 5}}
+
+      {result, false} = AIStateMachine.process_attacked(state)
+
+      assert result.target_ref == {:player, 5}
+      assert result.attacked_count == 1
+    end
+
+    test "an aggressive mob switches to a second attacker in the think of the event" do
+      for ai_state <- [:combat, :chase] do
+        state = %{
+          base_mob_state(modes: [:can_move, :can_attack])
+          | ai_state: ai_state,
+            target_ref: {:player, 3},
+            initiated_by_self?: true
+        }
+
+        {result, false} =
+          state |> MobState.set_attacked({:player, 2}, false) |> AIStateMachine.process_attacked()
+
+        assert result.target_ref == {:player, 2}
+      end
+    end
+
+    test "an immobile mob held by a reach-blocking status is not reach-blocked during its walk delay" do
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 6 -> {:ok, {104, 100, "prontera"}}
+        _type, _id -> {:error, :not_found}
+      end)
+
+      stub(StatusStorage, :has_status?, fn _type, _id, status -> status == :sc_spiderweb end)
+
+      stub(Pathfinding, :find_path, fn _map, {100, 100}, {103, 100}, _opts ->
+        {:ok, [{101, 100}, {102, 100}, {103, 100}]}
+      end)
+
+      held = %{attacked_mob(:combat, {:player, 6}, [:can_attack]) | target_ref: {:player, 6}}
+      delayed = %{held | walk_delay_until: System.monotonic_time(:millisecond) + 60_000}
+
+      {walk_delayed, false} = AIStateMachine.process_attacked(delayed)
+      {blocked, false} = AIStateMachine.process_attacked(held)
+
+      assert walk_delayed.attacked_count == 0
+      assert blocked.attacked_count == 1
+    end
+
+    test "a mob that cannot attack keeps the attacked event pending" do
+      state = attacked_mob(:idle, {:player, 2}, [:can_move])
+
+      assert AIStateMachine.process_attacked(state) == {state, false}
     end
   end
 
@@ -1063,6 +1237,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         soft_mdef: 0
       }
     }
+  end
+
+  defp attacked_mob(ai_state, attacker, modes \\ [:can_move, :can_attack]) do
+    %MobState{base_mob_state(modes: modes) | ai_state: ai_state, attacked_ref: attacker}
   end
 
   defp base_mob_state(opts \\ []) do

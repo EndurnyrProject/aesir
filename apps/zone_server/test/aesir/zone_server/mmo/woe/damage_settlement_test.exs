@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     :ok = StatusInterpreter.apply_status(:player, 14, :sc_reflectshield, val1: 10)
 
     expect_damage(target.pid, 56, {:player, 14})
-    expect_damage(attacker.pid, 41, nil)
+    expect_damage(attacker.pid, 41, {:player, 24})
 
     assert {56, hit_info} = prepare(24, 100, ordinary_hit(), {:player, 14})
     assert :ok = deliver(target, 56, hit_info, {:player, 14})
@@ -173,7 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
       :ok
     end)
 
-    expect_damage(attacker.pid, 27, nil)
+    expect_damage(attacker.pid, 27, {:player, 33})
 
     assert {42, hit_info} = prepare(33, 100, skill_hit(:physical), {:player, 32})
     assert :ok = deliver(target, 42, hit_info, {:player, 32})
@@ -184,7 +184,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     target = register_player(35, @castle_map, %{short_weapon_damage_return: 20})
     :ok = StatusInterpreter.apply_status(:player, 35, :sc_reflectshield, val1: 10)
     expect_damage(target.pid, 4, {:player, 34})
-    expect_damage(attacker.pid, 2, nil)
+    expect_damage(attacker.pid, 2, {:player, 35})
     assert :ok = deliver(target, 5, ordinary_hit(), {:player, 34})
 
     expect_damage(target.pid, 1, {:player, 34})
@@ -197,7 +197,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     :ok = StatusInterpreter.apply_status(:player, 37, :sc_kyrie, val2: 1_000, val3: 5)
     :ok = StatusInterpreter.apply_status(:player, 37, :sc_reflectshield, val1: 10)
     expect_damage(target.pid, 0, {:player, 36})
-    expect_damage(attacker.pid, 24, nil)
+    expect_damage(attacker.pid, 24, {:player, 37})
 
     assert :ok = deliver(target, 100, ordinary_hit(), {:player, 36})
 
@@ -233,7 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     :ok = StatusInterpreter.apply_status(:player, 68, :sc_aeterna)
     :ok = StatusInterpreter.apply_status(:player, 68, :sc_reflectshield, val1: 10)
     expect_damage(target.pid, 17, {:player, 67})
-    expect_damage(attacker.pid, 12, nil)
+    expect_damage(attacker.pid, 12, {:player, 68})
 
     assert {settled, :ok} =
              DamageApplication.apply_weapon_swing(
@@ -391,7 +391,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     :ok = StatusInterpreter.apply_status(:player, 54, :sc_reflectshield, val1: 10)
     :ok = StatusInterpreter.apply_status(:player, 53, :sc_aeterna)
     expect_damage(target.pid, 70, {:player, 53})
-    expect_damage(attacker.pid, 98, nil)
+    expect_damage(attacker.pid, 98, {:player, 54})
     assert {70, hit_info} = prepare(54, 100, ordinary_hit(), {:player, 53})
     assert :ok = deliver(target, 70, hit_info, {:player, 53})
     refute StatusStorage.has_status?(:player, 53, :sc_aeterna)
@@ -536,7 +536,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     :ok = StatusInterpreter.apply_status(:homunculus, 62, :sc_aeterna)
     expect_damage(target.pid, 80, {:homunculus, 62})
 
-    assert {:local_effects, [{:homunculus, {:apply_damage, 62, 24, returned, nil}}]} =
+    assert {:local_effects, [{:homunculus, {:apply_damage, 62, 24, returned, {:player, 64}}}]} =
              deliver(target, 100, ordinary_hit(), {:homunculus, 62})
 
     assert returned.pre_delivery_prepared?

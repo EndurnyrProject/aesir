@@ -1241,12 +1241,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_id: skill_id,
         skill_level: skill_level,
         coma?: coma?,
-        bypass_reductions: Map.get(misc_opts, :bypass_reductions?, false)
+        bypass_reductions: Map.get(misc_opts, :bypass_reductions?, false),
+        div: divisions
       }
 
       hit_info =
         if Map.get(misc_opts, :fix_damage?, false),
-          do: Map.put(hit_info, :walk_delay?, false),
+          do: Map.merge(hit_info, %{walk_delay?: false, div: 0}),
           else:
             Map.put(
               hit_info,
@@ -1783,6 +1784,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       skill_id: skill_id,
       skill_level: skill_level,
       coma?: coma?,
+      div: divisions,
       proc:
         EquipProcDispatch.spec(attacker, target, hit_metadata.target_state, attack_flag,
           divisions: divisions,

@@ -124,8 +124,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
     MobSession.apply_damage(mob.pid, 5, {:homunculus, homunculus.world_gid})
     damaged = MobSession.get_state(mob.pid)
 
-    assert damaged.target_ref == {:player, homunculus.world_gid}
-
     assert Aesir.ZoneServer.Unit.Mob.MobState.typed_damage_log(damaged) == [
              %{
                contributor: {:homunculus, homunculus.world_gid},

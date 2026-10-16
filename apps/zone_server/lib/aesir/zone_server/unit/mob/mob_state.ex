@@ -78,11 +78,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # target that has not hit it), false when acquired by taking damage. Reads
     # the `angry` vs `attack` skill-state distinction.
     initiated_by_self?: false,
-    # Cumulative count of hits taken from beyond chase_range, plus a transient
-    # per-reaction flag. Phase 2's `rudeattacked` skill condition consumes them;
-    # Phase 1 only records the signal (no teleport/flee).
-    rude_attack_count: 0,
-    rude_attacked?: false,
+    # true once an attacked event has taken the mob out of its aggressive mode:
+    # its skill state keeps `initiated_by_self?` until its next state change or
+    # attack (`settle_skill_state/1`), which then clears it.
+    left_aggressive?: false,
+    # The pending attacked event: the retaliation target of the last landed hit
+    # (and of the last "norm" hit, a normal attack on the mob in its attack
+    # state from within its attack range + 1), consumed by the next AI think.
+    attacked_ref: nil,
+    norm_attacked_ref: nil,
+    # Rude attacks counted by the AI's target-change step; the `rudeattacked`
+    # skill condition reads it.
+    attacked_count: 0,
     # Per-skill cooldown gate: `skill_id => expires_at` in the same
     # millisecond timestamp domain as the melee `last_attack_time` delay. The
     # `casting` map (`%{row: row, complete_at: ms, timer_ref: ref}`) marks an
@@ -178,8 +185,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           spawn_point: {integer(), integer()} | nil,
           target_ref: Ref.t() | nil,
           initiated_by_self?: boolean(),
-          rude_attack_count: integer(),
-          rude_attacked?: boolean(),
+          left_aggressive?: boolean(),
+          attacked_ref: Ref.t() | nil,
+          norm_attacked_ref: Ref.t() | nil,
+          attacked_count: non_neg_integer(),
           skill_cooldowns: %{optional(integer()) => integer()},
           casting: map() | nil,
           master_id: integer() | nil,
@@ -584,12 +593,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   defp active_walk_delay(until, _now), do: until
 
   @doc """
-  Sets the AI state.
+  Sets the AI state, settling the skill state (`settle_skill_state/1`).
   """
   @spec set_ai_state(t(), ai_state()) :: t()
   def set_ai_state(%__MODULE__{} = state, new_ai_state) do
-    %{state | ai_state: new_ai_state, last_ai_tick: System.system_time(:second)}
+    settle_skill_state(%{
+      state
+      | ai_state: new_ai_state,
+        last_ai_tick: System.system_time(:second)
+    })
   end
+
+  @doc """
+  Applies a pending exit from the aggressive mode: a mob that was attacked
+  since its last state change or attack is no longer self-initiated. Called on
+  every AI state change and every attack the mob orders.
+  """
+  @spec settle_skill_state(t()) :: t()
+  def settle_skill_state(%__MODULE__{left_aggressive?: true} = state),
+    do: %{state | initiated_by_self?: false, left_aggressive?: false}
+
+  def settle_skill_state(%__MODULE__{} = state), do: state
 
   @doc """
   Sets the combat target.
@@ -611,13 +635,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @doc """
-  Records a rude attack: a hit taken from beyond `chase_range`. Increments the
-  cumulative counter and raises the transient per-reaction flag.
+  Stores an attacked event: `attacker_ref` becomes the pending attacker (and the
+  norm attacker when `norm?`), and the mob leaves its aggressive mode. Its
+  skill state stays as it is until it next changes state or attacks
+  (`settle_skill_state/1`), so the think of the event still sees it.
   """
-  @spec note_rude_attack(t()) :: t()
-  def note_rude_attack(%__MODULE__{rude_attack_count: count} = state) do
-    %{state | rude_attack_count: count + 1, rude_attacked?: true}
+  @spec set_attacked(t(), Ref.t(), boolean()) :: t()
+  def set_attacked(%__MODULE__{} = state, attacker_ref, norm?) do
+    norm_ref = if norm?, do: attacker_ref, else: state.norm_attacked_ref
+    %{state | attacked_ref: attacker_ref, norm_attacked_ref: norm_ref, left_aggressive?: true}
   end
+
+  @doc """
+  The mob skill state the AI state stands for: combat is `:angry` when the mob
+  initiated it, else `:berserk` (the attack state); chase is `:follow` or
+  `:rush` the same way; idle and alert are `:idle`; return is `:walk`.
+  """
+  @spec skill_state(t()) :: :berserk | :angry | :rush | :follow | :idle | :walk
+  def skill_state(%__MODULE__{ai_state: :combat, initiated_by_self?: true}), do: :angry
+  def skill_state(%__MODULE__{ai_state: :combat}), do: :berserk
+  def skill_state(%__MODULE__{ai_state: :chase, initiated_by_self?: true}), do: :follow
+  def skill_state(%__MODULE__{ai_state: :chase}), do: :rush
+  def skill_state(%__MODULE__{ai_state: :return}), do: :walk
+  def skill_state(%__MODULE__{}), do: :idle
+
+  @doc "Clears the pending attacked event."
+  @spec clear_attacked(t()) :: t()
+  def clear_attacked(%__MODULE__{} = state),
+    do: %{state | attacked_ref: nil, norm_attacked_ref: nil}
 
   @doc """
   Records the attack-type classification and skill id (`nil` for a basic

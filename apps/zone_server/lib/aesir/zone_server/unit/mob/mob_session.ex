@@ -438,6 +438,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     AiHandler.handle_ai_tick(state)
   end
 
+  # AI: a landed hit's attacked event, at the end of its walk delay.
+  def handle_info({:ai, {:attacked, attacker_ref, norm?}}, state) do
+    AiHandler.handle_attacked(state, attacker_ref, norm?)
+  end
+
   def handle_info({:attack_intent, target_ref}, state) do
     AiHandler.handle_attack_intent(state, target_ref)
   end

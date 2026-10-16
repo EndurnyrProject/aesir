@@ -1,13 +1,12 @@
 defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   @moduledoc """
-  Handles a mob's combat orchestration: damage application, aggro/rude-attack
+  Handles a mob's combat orchestration: damage application, damage-log
   bookkeeping, and the death/kill-announcement pipeline. Extracted from
   MobSession to improve modularity and maintainability.
   """
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
-  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
@@ -20,7 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Lifecycle
-  alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
+  alias Aesir.ZoneServer.Unit.Mob.AttackedEvent
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.KillExp
@@ -30,7 +29,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -40,9 +38,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   A dead mob is no longer a valid target: dropping the hit (the first clause)
   prevents re-running the death path (and re-awarding experience) during the
   ~1s window between death and process termination, while it is still in the
-  registry/index. A live mob gets aggro/rude-attack bookkeeping, an AI
-  reaction to the hit, and an HP broadcast to nearby players, then falls
-  through to the death path if the hit was lethal.
+  registry/index. A live mob gets its damage log entry, the attacked event of a
+  landed battle hit (`AttackedEvent.schedule/4`), and an HP broadcast to nearby
+  players, then falls through to the death path if the hit was lethal.
   """
   @spec handle_apply_damage(integer(), tuple() | integer() | nil, MobState.t()) ::
           {:noreply, MobState.t()}
@@ -69,10 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       if Map.get(metadata, :passive?, false) or Map.get(metadata, :status_tick?, false) do
         updated_mob
       else
-        updated_mob
-        |> Map.put(:last_damage_time, current_time)
-        |> AIStateMachine.handle_damage_reaction(attacker_ref)
-        |> maybe_note_rude_attack(attacker_ref)
+        Map.put(updated_mob, :last_damage_time, current_time)
       end
 
     StatusInterpreter.on_damage(
@@ -93,6 +88,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
     case status do
       :alive ->
+        AttackedEvent.schedule(updated_mob, damage, attacker_ref, metadata)
         {:noreply, updated_mob |> maybe_hit_stop(metadata) |> StateCommit.commit()}
 
       :dead ->
@@ -128,9 +124,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       else: {:noreply, StateCommit.commit(%{state | sp: 1})}
   end
 
-  # A coma hit keeps only what the mob's statuses need from the prepared hit.
+  # A coma hit keeps what the mob's statuses and its attacked event need from
+  # the prepared hit.
   defp coma_metadata(metadata),
-    do: metadata |> Map.take([:damage_broken, :walk_delay?]) |> Map.put(:coma?, true)
+    do:
+      metadata
+      |> Map.take([:damage_broken, :walk_delay?, :div, :weapon_attack?])
+      |> Map.put(:coma?, true)
 
   # A damaging battle hit stops the mob walking unless it endures the hit or is
   # on an escape walk.
@@ -157,12 +157,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       })
     )
 
+    AttackedEvent.schedule(state, 0, typed_attacker(source), metadata)
     {:noreply, maybe_hit_stop(state, metadata)}
   end
 
   @doc """
   Applies passive HP loss that never kills: the loss stops at 1 HP. No aggro,
-  AI reaction or rude-attack bookkeeping follows, since no attacker hit the mob.
+  AI reaction or attacked event follows, since no attacker hit the mob.
   """
   @spec handle_passive_hp_loss(pos_integer(), MobState.t()) :: {:noreply, MobState.t()}
   def handle_passive_hp_loss(_amount, %{is_dead: true} = state), do: {:noreply, state}
@@ -281,34 +282,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
       {:error, :not_found} ->
         nil
-    end
-  end
-
-  # Records a rude attack when the hit came from beyond the mob's chase range
-  # (an attacker it cannot path to). Phase 1 only counts the signal; Phase 2's
-  # `rudeattacked` condition consumes it. An attacker whose position can't be
-  # resolved is skipped silently.
-  defp maybe_note_rude_attack(state, {_type, _id} = attacker_ref) do
-    case resolve_attacker_position(attacker_ref) do
-      {:ok, {x, y}} ->
-        if Geometry.chebyshev_distance(x, y, state.x, state.y) >
-             MobState.get_chase_range(state) do
-          MobState.note_rude_attack(state)
-        else
-          state
-        end
-
-      :error ->
-        state
-    end
-  end
-
-  defp maybe_note_rude_attack(state, _attacker_id), do: state
-
-  defp resolve_attacker_position({type, attacker_id}) do
-    case SpatialIndex.get_unit_position(type, attacker_id) do
-      {:ok, {x, y, _map}} -> {:ok, {x, y}}
-      {:error, :not_found} -> :error
     end
   end
 

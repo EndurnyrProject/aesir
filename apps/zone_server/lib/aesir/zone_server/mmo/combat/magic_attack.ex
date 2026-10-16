@@ -456,7 +456,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
     hit_info =
       Map.put(
-        hit_info,
+        Map.put(hit_info, :div, packet_divisions),
         :proc,
         EquipProcDispatch.spec(caster, target, target_state, magic_attack_flag(hit_info),
           divisions: packet_divisions,
@@ -1218,6 +1218,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     hit_info =
       hit_info
       |> Map.put(:coma?, coma_decision == true)
+      |> Map.put(:div, packet_divisions)
       |> Map.put(
         :proc,
         EquipProcDispatch.spec(attacker, target, target_state, magic_attack_flag(hit_info),
@@ -1339,7 +1340,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          divisions
        ) do
     attacker_modifiers = DamageShared.attacker_modifiers(attacker)
-    hit_info = Map.put(hit_info, :reflected, true)
+    hit_info = Map.merge(hit_info, %{reflected: true, div: divisions})
     source = damage_source(reflector, attacker.unit_type)
 
     prepared_hits =
@@ -1475,6 +1476,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     hit_info =
       hit_info
       |> Map.put(:coma?, coma_decision == true)
+      |> Map.put(:div, Keyword.get(opts, :packet_divisions, 1))
       |> Map.put(
         :proc,
         EquipProcDispatch.spec(attacker, target, target_state, magic_attack_flag(hit_info),

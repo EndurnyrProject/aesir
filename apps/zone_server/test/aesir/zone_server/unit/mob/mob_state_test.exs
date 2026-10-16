@@ -200,26 +200,31 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
-  describe "rude attacks" do
-    test "a freshly built mob state has no rude attacks recorded" do
+  describe "attacked events" do
+    test "set_attacked/3 stores the attacker and keeps the norm attacker of a non-norm hit" do
       state = build_mob_state()
 
-      assert state.rude_attack_count == 0
-      assert state.rude_attacked? == false
+      norm = MobState.set_attacked(state, {:player, 1}, true)
+      assert {norm.attacked_ref, norm.norm_attacked_ref} == {{:player, 1}, {:player, 1}}
+
+      later = MobState.set_attacked(norm, {:player, 2}, false)
+      assert {later.attacked_ref, later.norm_attacked_ref} == {{:player, 2}, {:player, 1}}
+
+      cleared = MobState.clear_attacked(later)
+      assert {cleared.attacked_ref, cleared.norm_attacked_ref} == {nil, nil}
     end
+  end
 
-    test "note_rude_attack/1 increments the count and raises the flag" do
-      state = build_mob_state()
+  describe "leaving the self-initiated skill state" do
+    test "an attacked mob keeps its skill state until its next state change or attack" do
+      angry = %{build_mob_state() | ai_state: :combat, initiated_by_self?: true}
+      attacked = MobState.set_attacked(angry, {:player, 1}, false)
 
-      updated = MobState.note_rude_attack(state)
-
-      assert updated.rude_attack_count == 1
-      assert updated.rude_attacked? == true
-
-      again = MobState.note_rude_attack(updated)
-
-      assert again.rude_attack_count == 2
-      assert again.rude_attacked? == true
+      assert MobState.skill_state(attacked) == :angry
+      assert MobState.skill_state(MobState.settle_skill_state(attacked)) == :berserk
+      assert MobState.skill_state(MobState.set_ai_state(attacked, :chase)) == :rush
+      assert MobState.skill_state(MobState.set_ai_state(angry, :chase)) == :follow
+      assert MobState.settle_skill_state(angry) == angry
     end
   end
 

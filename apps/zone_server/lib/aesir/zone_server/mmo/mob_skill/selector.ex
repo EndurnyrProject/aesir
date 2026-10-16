@@ -28,7 +28,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     * `:rng` - a 1-arg fun `(pos_integer -> pos_integer)` for the rate roll
       (default `&:rand.uniform/1`); injected so tests are deterministic.
     * `:event` - the AI event driving this selection (default `:tick`); set to
-      `:spawn` on the spawn tick so `onspawn` rows can fire.
+      `:spawn` on the spawn tick so `onspawn` rows can fire, and to
+      `:rudeattacked` for the rude-attacked event use, where only `rudeattacked`
+      rows fire. On a `:tick`, a `rudeattacked` row needs a rude-attack count of
+      at least 1; the caller resets the count when such a row is picked.
     * `:count_living_slaves` - a 1-arg fun `(master instance id -> count)` for
       the `slavele` gate (default `SlaveSummon.count_living_slaves/1`). Like
       `:rng`, this is the escape hatch keeping the module testable: the default
@@ -109,6 +112,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   end
 
   @spec condition_holds?(row(), MobState.t(), map()) :: boolean()
+  defp condition_holds?(%{condition: %{type: type}}, _mob_state, %{event: :rudeattacked})
+       when type != :rudeattacked,
+       do: false
+
   defp condition_holds?(%{condition: condition}, mob_state, env) do
     evaluate(condition.type, condition, mob_state, env)
   end
@@ -130,7 +137,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     owner_player_id != nil and hp < max_hp
   end
 
-  defp evaluate(:rudeattacked, _condition, %MobState{rude_attacked?: flag}, _env), do: flag
+  defp evaluate(:rudeattacked, _condition, _mob_state, %{event: :rudeattacked}), do: true
+
+  defp evaluate(:rudeattacked, _condition, %MobState{attacked_count: count}, %{event: :tick}),
+    do: count >= 1
+
+  defp evaluate(:rudeattacked, _condition, _mob_state, _env), do: false
 
   defp evaluate(:onspawn, _condition, _mob_state, env), do: env.event == :spawn
 

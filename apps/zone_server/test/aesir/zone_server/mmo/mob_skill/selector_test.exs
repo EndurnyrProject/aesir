@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       hp: 100,
       max_hp: 100,
       target_ref: {:player, 1},
-      rude_attacked?: false,
+      attacked_count: 0,
       skill_cooldowns: %{}
     }
 
@@ -142,11 +142,20 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(%{ai_state: :combat, owner_player_id: nil}), [r], opts()) == nil
     end
 
-    test "rudeattacked reads the transient flag" do
+    test "a periodic rudeattacked row needs at least one counted rude attack" do
       r = row(%{condition: %{type: :rudeattacked}})
 
-      assert Selector.select(mob(%{rude_attacked?: true}), [r], opts()) == {:cast, r}
-      assert Selector.select(mob(%{rude_attacked?: false}), [r], opts()) == nil
+      assert Selector.select(mob(%{attacked_count: 1}), [r], opts()) == {:cast, r}
+      assert Selector.select(mob(%{attacked_count: 0}), [r], opts()) == nil
+    end
+
+    test "the rude-attacked event fires only rudeattacked rows, whatever the count" do
+      rude = row(%{condition: %{type: :rudeattacked}})
+      always = row(%{condition: %{type: :always}})
+      event = Keyword.put(opts(), :event, :rudeattacked)
+
+      assert Selector.select(mob(%{attacked_count: 0}), [always, rude], event) == {:cast, rude}
+      assert Selector.select(mob(%{attacked_count: 0}), [always], event) == nil
     end
 
     test "onspawn fires only on the spawn event" do

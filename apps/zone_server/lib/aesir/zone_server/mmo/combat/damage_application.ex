@@ -739,8 +739,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
     amount = apply_ground_rate(status_return, rate) + apply_ground_rate(equipment_return, rate)
 
-    apply_reflected_damage(amount, reflection_target(attacker), %{
+    apply_reflected_damage(amount, reflection_target(attacker), {target_type, target_id}, %{
       reflected: true,
+      div: 1,
       pre_delivery_prepared?: true
     })
   end
@@ -755,15 +756,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     status_reflect = StatusInterpreter.after_damage_taken(target_type, target_id, delivered_hit)
     equip_reflect = equipment_damage_return(target_type, target_id, delivered_hit)
 
-    apply_reflected_damage(status_reflect + equip_reflect, reflection_target(attacker))
+    apply_reflected_damage(
+      status_reflect + equip_reflect,
+      reflection_target(attacker),
+      {target_type, target_id}
+    )
   end
 
   defp after_damage_taken(_delivery, _target_type, _target_id, _damage, _hit_info, _attacker),
     do: :ok
 
-  defp apply_reflected_damage(amount, attacker, hit_info \\ %{reflected: true})
+  # Returned damage lands on the original attacker as a one-division battle
+  # hit whose attacker is the unit that returned it.
+  defp apply_reflected_damage(
+         amount,
+         attacker,
+         reflector,
+         hit_info \\ %{reflected: true, div: 1}
+       )
 
-  defp apply_reflected_damage(amount, attacker_id, hit_info)
+  defp apply_reflected_damage(amount, attacker_id, reflector, hit_info)
        when amount > 0 and is_integer(attacker_id) do
     case TargetResolver.resolve(attacker_id) do
       {:ok, attacker_pid, _state, attacker_type} ->
@@ -773,7 +785,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
           attacker_id,
           amount,
           hit_info,
-          nil
+          reflector
         )
 
       {:error, _reason} ->
@@ -781,7 +793,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     end
   end
 
-  defp apply_reflected_damage(amount, {attacker_type, attacker_id} = attacker_ref, hit_info)
+  defp apply_reflected_damage(
+         amount,
+         {attacker_type, attacker_id} = attacker_ref,
+         reflector,
+         hit_info
+       )
        when amount > 0 do
     case TargetResolver.resolve(attacker_ref) do
       {:ok, attacker_pid, _state, ^attacker_type} ->
@@ -791,7 +808,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
           attacker_id,
           amount,
           hit_info,
-          nil
+          reflector
         )
 
       {:error, _reason} ->
@@ -799,7 +816,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     end
   end
 
-  defp apply_reflected_damage(_amount, _attacker, _hit_info), do: :ok
+  defp apply_reflected_damage(_amount, _attacker, _reflector, _hit_info), do: :ok
 
   # Equipment-granted melee damage reflect (`bShortWeaponDamageReturn`): the
   # defender's gear returns a percent of the supplied basis to the attacker on

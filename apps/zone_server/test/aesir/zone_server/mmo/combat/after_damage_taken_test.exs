@@ -124,7 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
       )
 
       assert_receive {:victim, 100, {:player, @attacker_id}}
-      assert_receive {:attacker, 50, nil}
+      assert_receive {:attacker, 50, {:player, @victim_id}}
     end
 
     test "does not dispatch for a hit already flagged reflected" do
@@ -220,7 +220,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
                )
 
       assert_receive {:unit, 100, {:player, @attacker_id}}
-      assert_receive {:unit, 50, nil}
+      assert_receive {:unit, 50, {:player, @attacker_id}}
     end
 
     test "a victim status not implementing the hook reflects nothing" do

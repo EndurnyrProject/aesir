@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
@@ -25,10 +26,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Invincibility
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -74,52 +77,183 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     end
   end
 
+  @rude_attacked_count 1
+  @area_size 14
+  @reach_blocking_statuses [
+    :sc_spiderweb,
+    :sc_bite,
+    :sc_vacuum_extreme,
+    :sc_thornstrap,
+    :sc__manhole
+  ]
+
   @doc """
-  Handles when a mob takes damage and should react.
+  The AI's target-change step for a pending attacked event (`attacked_ref`),
+  run after skill selection and before the state's own step. Returns the
+  updated state and whether the rude-attacked event skill use fires.
+
+  A mob that cannot attack keeps the event pending. When the attacker is the
+  current (valid) target and the mob can neither hit it from where it stands
+  nor reach it within its chase range, it counts a rude attack. Otherwise,
+  when the mob has no valid target or may change it (`can_change_target?/2`),
+  an attacker it cannot fight back (off its map, beyond the visual area, not an
+  enemy, or out of range and unreachable) counts a rude attack, unless the hit
+  was self-inflicted; an attacker it can see is adopted as the target, taking
+  one rude attack back off the count. A count above 1 fires the event. The
+  event is consumed either way.
   """
-  @spec handle_damage_reaction(MobState.t(), tuple() | integer() | nil) :: MobState.t()
-  def handle_damage_reaction(state, attacker) do
-    attacker_ref = if is_integer(attacker), do: {:player, attacker}, else: attacker
+  @spec process_attacked(MobState.t()) :: {MobState.t(), boolean()}
+  def process_attacked(%MobState{attacked_ref: nil} = state), do: {state, false}
 
-    case {state.ai_state, attacker_ref} do
-      {:idle, nil} ->
-        # Damaged but no attacker info, become alert (retaliation, not self-initiated)
-        state
-        |> MobState.set_initiated(false)
-        |> MobState.set_ai_state(:alert)
-
-      {_ai_state, {_type, _id} = attacker_ref} ->
-        if Invincibility.active?(attacker_ref),
-          do: state,
-          else: adopt_attacker(state, attacker_ref)
-
-      _ ->
-        state
-    end
-  end
-
-  # An invincible player attacker is never adopted as the target.
-  defp adopt_attacker(%MobState{ai_state: :idle} = state, attacker_ref) do
-    state
-    |> MobState.set_target(attacker_ref)
-    |> MobState.set_initiated(false)
-    |> MobState.set_ai_state(:combat)
-  end
-
-  defp adopt_attacker(state, _attacker_ref) do
-    highest_aggro_target =
-      MobState.get_highest_typed_aggro_target(state) || legacy_aggro_target(state)
-
-    if highest_aggro_target != state.target_ref and
-         not Invincibility.active?(highest_aggro_target) do
-      # Aggro targets only ever come from taking damage, so a switch here is
-      # always a retaliation against the new attacker.
-      state
-      |> MobState.set_target(highest_aggro_target)
-      |> MobState.set_initiated(false)
+  def process_attacked(%MobState{} = state) do
+    if :can_attack in (state.mob_data.modes || []) do
+      {state, rude?} = change_target(state, valid_target(state))
+      {MobState.clear_attacked(state), rude?}
     else
-      state
+      {state, false}
     end
+  end
+
+  defp valid_target(%MobState{target_ref: nil}), do: nil
+
+  defp valid_target(%MobState{target_ref: target_ref} = state) do
+    if can_target?(state, target_ref), do: target_ref, else: nil
+  end
+
+  defp change_target(%MobState{attacked_ref: attacker} = state, attacker) do
+    if not target_in_attack_range?(state, attacker) and
+         not reachable?(state, attacker, MobState.get_chase_range(state)),
+       do: count_rude_attack(state),
+       else: {state, false}
+  end
+
+  defp change_target(%MobState{attacked_ref: attacker} = state, current) do
+    cond do
+      not (is_nil(current) or can_change_target?(state, attacker)) ->
+        {state, false}
+
+      not can_fight_back?(state, attacker) ->
+        if attacker == {:mob, state.instance_id},
+          do: {state, false},
+          else: count_rude_attack(state)
+
+      not attack_visible?(state, attacker) ->
+        {state, false}
+
+      true ->
+        {adopt_attacker(state, attacker), false}
+    end
+  end
+
+  defp count_rude_attack(%MobState{attacked_count: count} = state) do
+    count = count + 1
+    {%{state | attacked_count: count}, count > @rude_attacked_count}
+  end
+
+  defp adopt_attacker(%MobState{} = state, attacker) do
+    state = %{state | target_ref: attacker, attacked_count: max(state.attacked_count - 1, 0)}
+
+    if state.ai_state in [:combat, :chase],
+      do: MobState.settle_skill_state(state),
+      else: MobState.set_ai_state(state, :combat)
+  end
+
+  @doc """
+  Whether a mob may switch its target to `attacker` in its skill state: in its
+  attack state only with `change_target_melee` and only for the norm attacker;
+  in rush only with `change_target_chase`; always in follow, angry, idle and
+  walk.
+  """
+  @spec can_change_target?(MobState.t(), Ref.t()) :: boolean()
+  def can_change_target?(%MobState{} = state, attacker) do
+    modes = state.mob_data.modes || []
+
+    case MobState.skill_state(state) do
+      :berserk -> :change_target_melee in modes and state.norm_attacked_ref == attacker
+      :rush -> :change_target_chase in modes
+      _other -> true
+    end
+  end
+
+  defp can_fight_back?(state, {type, id} = attacker) do
+    case SpatialIndex.get_unit_position(type, id) do
+      {:ok, {x, y, map_name}} when map_name == state.map_name ->
+        distance = Geometry.chebyshev_distance(state.x, state.y, x, y)
+
+        distance <= @area_size and enemy?(state, attacker) and
+          (distance <= MobState.get_attack_range(state) or
+             reachable?(state, attacker, distance + MobState.get_chase_range(state)))
+
+      _other ->
+        false
+    end
+  end
+
+  # Whether the mob can reach a cell next to `target` within `range`: an
+  # immobile mob held in place by a reach-blocking status, once its walk delay
+  # has passed, cannot, nor can a mob
+  # with no walk path to that cell, or with a long one around an obstacle.
+  defp reachable?(state, {type, id}, range) do
+    with true <- not reach_blocked?(state),
+         {:ok, {x, y, map_name}} when map_name == state.map_name <-
+           SpatialIndex.get_unit_position(type, id) do
+      walk_reachable?(state, {x, y}, range)
+    else
+      _ -> false
+    end
+  end
+
+  defp reach_blocked?(state) do
+    not (:can_move in (state.mob_data.modes || []) and
+           Interpreter.can_move?(:mob, state.instance_id)) and
+      not MobState.walk_delayed?(state, System.monotonic_time(:millisecond)) and
+      Enum.any?(@reach_blocking_statuses, &StatusStorage.has_status?(:mob, state.instance_id, &1))
+  end
+
+  defp walk_reachable?(%MobState{x: x, y: y}, {x, y}, _range), do: true
+
+  defp walk_reachable?(state, {tx, ty}, range) do
+    with true <- Geometry.chebyshev_distance(state.x, state.y, tx, ty) <= range,
+         {:ok, cell} <- adjoining_cell(state, {tx, ty}),
+         {:ok, map_data} <- MapCache.get(state.map_name),
+         {:ok, path} <- Pathfinding.find_path(map_data, {state.x, state.y}, cell, profile: :mob) do
+      length(path) <= @area_size or
+        LineOfSight.passable?(state.map_name, {state.x, state.y}, cell)
+    else
+      _ -> false
+    end
+  end
+
+  @dirs [{0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}, {1, 0}, {1, 1}]
+
+  defp adjoining_cell(state, {tx, ty}) do
+    toward = {tx - sign(tx - state.x), ty - sign(ty - state.y)}
+
+    [toward | Enum.map(@dirs, fn {dx, dy} -> {tx - dx, ty - dy} end)]
+    |> Enum.find(fn {x, y} -> Cell.traversable?(state.map_name, x, y) end)
+    |> case do
+      nil -> :error
+      cell -> {:ok, cell}
+    end
+  end
+
+  defp sign(n) when n > 0, do: 1
+  defp sign(n) when n < 0, do: -1
+  defp sign(_n), do: 0
+
+  @doc """
+  Attacks `target_ref` once if it is in attack range, without changing the
+  mob's target (an attack order such as Poison React's counter). A mob with a
+  target enters its attack state.
+  """
+  @spec attack_once(MobState.t(), Ref.t()) :: MobState.t()
+  def attack_once(%MobState{} = state, target_ref) do
+    state =
+      if target_in_attack_range?(state, target_ref),
+        do: execute_mob_attack(state, target_ref),
+        else: state
+
+    if state.target_ref, do: MobState.set_ai_state(state, :combat), else: state
   end
 
   @doc """
@@ -127,28 +261,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   """
   @spec move_toward(MobState.t(), integer(), integer()) :: MobState.t()
   def move_toward(%MobState{} = state, target_x, target_y) do
+    if walk_ready?(state), do: MobSession.move_to(state.process_pid, target_x, target_y)
+
+    state
+  end
+
+  # A mob starts a walk only from a live session, when it may move (no no_move
+  # status), is not already moving and has not just stopped (300 ms cooldown).
+  defp walk_ready?(%MobState{process_pid: nil}), do: false
+
+  defp walk_ready?(%MobState{} = state) do
     current_time = System.system_time(:millisecond)
 
-    cond do
-      # Can't move while carrying a no_move status (frozen/stunned/slept)
-      not Interpreter.can_move?(:mob, state.instance_id) ->
-        state
+    Interpreter.can_move?(:mob, state.instance_id) and state.movement_state != :moving and
+      (state.last_movement_end_time == nil or current_time - state.last_movement_end_time >= 300)
+  end
 
-      # Don't start new movement if already moving
-      state.movement_state == :moving ->
-        state
-
-      # Don't start new movement if we just finished moving (300ms cooldown)
-      state.last_movement_end_time != nil and current_time - state.last_movement_end_time < 300 ->
-        state
-
-      true ->
-        if state.process_pid do
-          MobSession.move_to(state.process_pid, target_x, target_y)
-        end
-
-        state
-    end
+  # A walk the AI starts settles the skill state: the source's unit_walktobl
+  # (chase -> RUSH) and mob_randomwalk (-> WALK) each reach mob_setstate.
+  defp start_walk(%MobState{} = state, target_x, target_y) do
+    if walk_ready?(state),
+      do: state |> move_toward(target_x, target_y) |> MobState.settle_skill_state(),
+      else: state
   end
 
   # Picks the cell the mob should path to while chasing: an adjacent, unoccupied
@@ -331,7 +465,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
             case target_position(target_ref) do
               {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
                 {dest_x, dest_y} = chase_destination(state, {target_x, target_y})
-                move_toward(state, dest_x, dest_y)
+                start_walk(state, dest_x, dest_y)
 
               _ ->
                 # Target not found or on different map
@@ -384,23 +518,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     Enum.filter(players ++ homunculi, &can_target?(state, &1))
   end
 
-  defp can_target?(%MobState{} = state, {:player, target_id}) do
-    case UnitRegistry.get_unit(:player, target_id) do
-      {:ok, {_module, target, _pid}} ->
-        Unit.living?(target) and
-          not Relations.friendly?(state.guild_id, target.guild_id) and
-          not StatusStorage.has_status?(:player, target_id, :sc_gangsterparadise) and
-          not Invincibility.active?(target) and
-          Interpreter.targetable?(:player, target_id) and
-          not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
-          Targeting.attack_visible?(attack_viewer(state), %{
-            unit_type: :player,
-            unit_id: target_id
-          })
-
-      {:error, :not_found} ->
-        false
-    end
+  defp can_target?(%MobState{} = state, {:player, target_id} = target_ref) do
+    enemy?(state, target_ref) and
+      not StatusStorage.has_status?(:player, target_id, :sc_gangsterparadise) and
+      attack_visible?(state, target_ref)
   end
 
   defp can_target?(%MobState{guild_id: 0} = state, {:homunculus, _id} = target_ref) do
@@ -423,6 +544,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp can_target?(_state, _target_ref), do: false
+
+  # Whether the mob may fight `target_ref` at all: a living, non-allied unit
+  # that is not invincible.
+  defp enemy?(%MobState{} = state, {:player, target_id}) do
+    case UnitRegistry.get_unit(:player, target_id) do
+      {:ok, {_module, target, _pid}} ->
+        Unit.living?(target) and
+          not Relations.friendly?(state.guild_id, target.guild_id) and
+          not Invincibility.active?(target)
+
+      {:error, :not_found} ->
+        false
+    end
+  end
+
+  defp enemy?(state, {:homunculus, _id} = target_ref), do: can_target?(state, target_ref)
+  defp enemy?(_state, _target_ref), do: false
+
+  # Whether the mob can act on an enemy it may fight: the enemy is targetable,
+  # visible to it and not its charmer.
+  defp attack_visible?(%MobState{} = state, {:player, target_id}) do
+    Interpreter.targetable?(:player, target_id) and
+      not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
+      Targeting.attack_visible?(attack_viewer(state), %{unit_type: :player, unit_id: target_id})
+  end
+
+  defp attack_visible?(_state, _target_ref), do: true
 
   defp attack_viewer(state) do
     %{
@@ -459,13 +607,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp inactive_unit?(_unit), do: false
-
-  defp legacy_aggro_target(state) do
-    case MobState.get_highest_aggro_target(state) do
-      nil -> nil
-      target_id -> {:player, target_id}
-    end
-  end
 
   defp select_closest_target(state, targets) when is_list(targets) do
     targets
@@ -509,7 +650,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     current_time = System.system_time(:second)
 
     # Check if we can attempt idle movement
-    can_move = state.movement_state == :standing
+    modes = state.mob_data.modes || []
+
+    can_move =
+      state.movement_state == :standing and :can_move in modes and
+        :no_random_walk not in modes
+
     random_value = :rand.uniform(100)
     random_chance = random_value <= 20
 
@@ -532,7 +678,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
       # Update last idle movement attempt time and move
       updated_state = %{state | last_idle_movement_time: current_time}
-      move_toward(updated_state, target_x, target_y)
+      start_walk(updated_state, target_x, target_y)
     else
       state
     end
@@ -552,9 +698,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
     if can_attack do
       # Execute attack using the Combat system. An intercepted swing (a target
-      # status caught it, dealing no damage) still advances the attack cadence.
+      # status caught it, dealing no damage) still advances the attack cadence
+      # and, like the source's unit_attack, settles the skill state; a refused
+      # one returns before it.
       case Combat.execute_mob_attack(state, target_ref) do
         result when result in [:ok, :intercepted] ->
+          state = MobState.settle_skill_state(state)
           MobState.rest(%{state | last_attack_time: current_time}, current_time)
 
         {:error, reason} ->

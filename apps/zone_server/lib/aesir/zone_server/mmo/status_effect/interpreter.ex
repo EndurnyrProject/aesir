@@ -1266,6 +1266,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
+  @lose_target_statuses [:sc_bladestop, :sc_cursedcircle_target, :sc__manhole]
+
+  @doc """
+  Returns whether a monster's statuses make it drop its target and pending
+  attacked event: a body state other than the petrification wait or burning,
+  or a status that loses the target (Blade Stop, Cursed Circle, Manhole).
+  """
+  @spec loses_target?(unit_type(), integer()) :: boolean()
+  def loses_target?(unit_type, unit_id) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.any?(&(locking_body_state?(&1) or &1.type in @lose_target_statuses))
+  end
+
   @doc "Returns whether a unit may send area chat while status effects are active."
   @spec can_chat?(unit_type(), integer()) :: boolean()
   def can_chat?(unit_type, unit_id),

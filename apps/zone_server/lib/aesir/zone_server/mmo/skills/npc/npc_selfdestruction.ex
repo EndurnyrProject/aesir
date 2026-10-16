@@ -97,6 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
            skill_id: definition.id,
            skill_level: 1,
            from_caster?: true,
+           div: 1,
            proc: proc_spec(caster, {unit_type, target_id}, target_state, {definition.id, range})
          },
          :ok <-

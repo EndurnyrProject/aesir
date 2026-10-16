@@ -51,14 +51,22 @@ defmodule Aesir.ZoneServer.Unit.AttackIntentTest do
     assert {:noreply, ^state} = PlayerSession.handle_info({:attack_intent, {:mob, 2_001}}, state)
   end
 
-  test "mob routing uses the existing typed damage-reaction boundary" do
-    state = struct(MobState, instance_id: 2_001, is_dead: false)
+  test "mob routing orders one attack without adopting the target" do
+    state =
+      struct(MobState,
+        instance_id: 2_001,
+        is_dead: false,
+        mob_data: %{attack_range: 1},
+        map_name: "attack_intent_test",
+        x: 0,
+        y: 0
+      )
 
     assert {:noreply, reacted} =
              MobSession.handle_info({:attack_intent, {:player, 1_001}}, state)
 
-    assert reacted.target_ref == {:player, 1_001}
-    assert reacted.ai_state == :combat
+    assert reacted.target_ref == nil
+    assert reacted.ai_state == :idle
   end
 
   test "dead mob rejects an attack intent without changing state" do

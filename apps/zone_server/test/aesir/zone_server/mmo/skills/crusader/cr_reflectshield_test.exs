@@ -210,7 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       )
 
       assert_receive {:victim, 100, {:player, @attacker_id}}
-      assert_receive {:attacker, 13, nil}
+      assert_receive {:attacker, 13, {:player, @victim_id}}
     end
 
     test "lv10 reflects 40% of the delivered damage back to the attacker" do
@@ -229,7 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       )
 
       assert_receive {:victim, 100, {:player, @attacker_id}}
-      assert_receive {:attacker, 40, nil}
+      assert_receive {:attacker, 40, {:player, @victim_id}}
     end
 
     test "a ranged weapon hit reflects nothing" do
@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       )
 
       assert_receive {:victim, 100, {:player, @attacker_id}}
-      assert_receive {:attacker, 25, nil}
+      assert_receive {:attacker, 25, {:player, @victim_id}}
       refute_receive {:victim, _, _}
     end
   end

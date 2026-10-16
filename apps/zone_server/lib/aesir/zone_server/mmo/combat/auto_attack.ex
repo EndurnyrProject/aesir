@@ -826,6 +826,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       skill_level: nil,
       from_caster?: true,
       basic_attack?: true,
+      weapon_attack?: true,
+      div: swing.display_divisions,
       coma?: coma?,
       proc: EquipProcDispatch.spec(attacker, target, target_state, attack_flag)
     }
@@ -1167,6 +1169,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           skill_level: nil,
           from_caster?: true,
           basic_attack?: true,
+          div: 1,
           coma?: coma?,
           proc: proc
         }
@@ -1479,6 +1482,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       skill_level: nil,
       from_caster?: true,
       basic_attack?: true,
+      weapon_attack?: true,
+      div: 1,
       proc: EquipProcDispatch.spec(attacker, target, target_hp, normal_attack_flag(attacker))
     }
 
