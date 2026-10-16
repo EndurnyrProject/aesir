@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Guild.Storage.Lock
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -234,8 +235,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
 
   @doc """
   Drops the player from its current map: vanishes it for every observer with the
-  given despawn `reason`, removes it from the spatial index and clears its
-  visibility pairs. Shared by the warp and disconnect paths.
+  given despawn `reason`, runs the leave events of the ground fields on its
+  cell, removes it from the spatial index and clears its visibility pairs.
+  Shared by the warp and disconnect paths.
   """
   @spec leave_current_map(PlayerState.t(), non_neg_integer()) :: :ok
   def leave_current_map(%PlayerState{character_id: char_id} = _game_state, reason) do
@@ -245,6 +247,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
     |> SpatialIndex.get_visible_players()
     |> Broadcast.to_players(vanish, exclude_id: char_id)
 
+    Trigger.on_removed({:player, char_id})
     SpatialIndex.remove_player(char_id)
     SpatialIndex.clear_visibility(char_id)
     :ok = SkillUnitManager.clear_observer(char_id)

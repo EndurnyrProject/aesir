@@ -99,6 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlitTest do
                root: :always,
                upkeep: 10,
                upkeep_sp: 8,
+               linger_ms: 0,
                layout_radius: 4
              )
 
@@ -118,6 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlitTest do
                root: :always,
                upkeep: 10,
                upkeep_sp: 8,
+               linger_ms: 0,
                layout_radius: 4
              )
 

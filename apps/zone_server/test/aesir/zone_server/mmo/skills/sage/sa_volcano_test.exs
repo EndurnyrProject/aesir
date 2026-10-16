@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -105,27 +104,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
       :ok = Manager.register(manager, live_group())
 
       assert :ok = Manager.trigger(manager, 1, {:player, 101}, :on_touch)
-      assert FieldSupport.supported?(:player, 101, :sc_volcano)
+      assert StatusStorage.has_status?(:player, 101, :sc_volcano)
 
       assert :ok = Manager.trigger(manager, 1, {:player, 101}, :on_out)
-      refute FieldSupport.supported?(:player, 101, :sc_volcano)
+      refute StatusStorage.has_status?(:player, 101, :sc_volcano)
     end
 
     test "acquires on entry and releases on exit for a mob occupant", %{manager: manager} do
       :ok = Manager.register(manager, live_group())
 
       assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_touch)
-      assert FieldSupport.supported?(:mob, 200, :sc_volcano)
+      assert StatusStorage.has_status?(:mob, 200, :sc_volcano)
 
       assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_out)
-      refute FieldSupport.supported?(:mob, 200, :sc_volcano)
+      refute StatusStorage.has_status?(:mob, 200, :sc_volcano)
     end
 
     test "supports the caster standing in their own field", %{manager: manager} do
       :ok = Manager.register(manager, live_group())
 
       assert :ok = Manager.trigger(manager, 1, {:player, 100}, :on_touch)
-      assert FieldSupport.supported?(:player, 100, :sc_volcano)
+      assert StatusStorage.has_status?(:player, 100, :sc_volcano)
     end
 
     # rAthena skill_db.yml gives the field Interval: -1, so it never ticks.
@@ -144,12 +143,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
 
       :ok = Manager.register(manager, live_group(expires_at: 2_000))
-      assert FieldSupport.supported?(:mob, 200, :sc_volcano)
+      assert StatusStorage.has_status?(:mob, 200, :sc_volcano)
 
       assert :ok = Manager.tick(manager, 2_000)
 
       assert Storage.get(1) == nil
-      refute FieldSupport.supported?(:mob, 200, :sc_volcano)
+      refute StatusStorage.has_status?(:mob, 200, :sc_volcano)
     end
   end
 
@@ -214,12 +213,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
 
       :ok = Manager.register(manager, live_group())
-      assert FieldSupport.supported?(:mob, 200, :sc_volcano)
+      assert StatusStorage.has_status?(:mob, 200, :sc_volcano)
 
       :ok = Manager.register(manager, deluge_group())
 
-      refute FieldSupport.supported?(:mob, 200, :sc_volcano)
-      assert FieldSupport.supported?(:mob, 200, :sc_deluge)
+      refute StatusStorage.has_status?(:mob, 200, :sc_volcano)
+      assert StatusStorage.has_status?(:mob, 200, :sc_deluge)
     end
 
     test "Land Protector inherits the replaced element field's remaining duration", %{
@@ -298,6 +297,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
       Keyword.merge(
         [
           cells: [{10, 20}],
+          created_at: 1_000,
           expires_at: 61_000,
           visibility: :public,
           lifecycle_policy: ElementField.policy(true)

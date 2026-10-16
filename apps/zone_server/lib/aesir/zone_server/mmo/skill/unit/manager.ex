@@ -20,7 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Origin
-  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -37,7 +36,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -258,28 +256,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def register_water_ball_sequence(server, %Group{} = group, cells),
     do: GenServer.call(server, {:register_water_ball_sequence, group, cells})
 
+  @typedoc """
+  A movement event: a step onto the footprint, a step off it, or the mover's
+  removal from play (the leave events with no step bookkeeping).
+  """
+  @type trigger_callback :: :on_touch | :on_out | :on_removed
+
   @doc "Serially invokes a movement callback against the latest live group."
-  @spec trigger(non_neg_integer(), mover(), :on_touch | :on_out) :: :ok
+  @spec trigger(non_neg_integer(), mover(), trigger_callback()) :: :ok
   def trigger(group_id, mover, callback), do: trigger(default_server(), group_id, mover, callback)
 
   @doc false
-  @spec trigger(server(), non_neg_integer(), mover(), :on_touch | :on_out) :: :ok
-  def trigger(server, group_id, mover, callback) when callback in [:on_touch, :on_out] do
+  @spec trigger(server(), non_neg_integer(), mover(), trigger_callback()) :: :ok
+  def trigger(server, group_id, mover, callback)
+      when callback in [:on_touch, :on_out, :on_removed] do
     GenServer.call(server, {:trigger, group_id, mover, callback})
   end
-
-  @doc "Reconciles field support for a unit at its current indexed position."
-  @spec reconcile_unit(mover()) :: :ok
-  def reconcile_unit(mover) do
-    case ProcessTree.get({__MODULE__, :server}) || Process.whereis(__MODULE__) do
-      nil -> :ok
-      server -> reconcile_unit(server, mover)
-    end
-  end
-
-  @doc false
-  @spec reconcile_unit(server(), mover()) :: :ok
-  def reconcile_unit(server, mover), do: GenServer.call(server, {:reconcile_unit, mover})
 
   @doc "Processes one cadence tick using the configured clock."
   @spec tick(server()) :: :ok
@@ -318,9 +310,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
          {:ok, group} <- schedule_group(group, state.rng),
          {:ok, group} <- register_group(group) do
       if Storage.get(group.group_id) do
-        group
-        |> reconcile_group()
-        |> publish_spawn()
+        FieldSupport.place(group, group.cells)
+        publish_spawn(group)
       end
 
       {:reply, :ok, state}
@@ -446,11 +437,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:trigger, group_id, mover, callback}, _from, state) do
     if group = Storage.get(group_id), do: run_trigger(group, mover, callback)
-    {:reply, :ok, state}
-  end
-
-  def handle_call({:reconcile_unit, mover}, _from, state) do
-    reconcile_unit_support(mover)
     {:reply, :ok, state}
   end
 
@@ -612,8 +598,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp run_interval(%Group{} = group, now, unit_available?) do
-    group = reconcile_group(group)
-
     case lifecycle_action(group, unit_available?) do
       :continue -> run_sequence_interval(group, now)
       :expire -> cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_LIFECYCLE)
@@ -788,31 +772,95 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  # A ground unit never acts on an invincible player stepping on or off it.
-  # Releasing a field status it already holds is not gated here.
+  # A ground unit acts only on a unit its target check reaches; an invincible
+  # player is never reached. The field status follows the handler callback.
   defp run_trigger(%Group{} = group, mover, :on_out) do
-    cond do
-      not Invincibility.active?(mover) -> run_live_trigger(group, mover, :on_out)
-      triggerable?(group) -> apply_field_support_action(group, mover, :on_out)
-      true -> :ok
-    end
+    if FieldSupport.target?(group, mover), do: run_live_trigger(group, mover, :on_out)
+    :ok
+  end
+
+  # A unit removed from play (map removal, death) leaves every field on its
+  # cell for good: the handler's `on_out`, then the field's `onleft`.
+  defp run_trigger(%Group{} = group, mover, :on_removed) do
+    if FieldSupport.target?(group, mover) and triggerable?(group),
+      do: FieldSupport.leave(group, mover, &run_out_callback(group, handler_or_nil(group), &1))
+
+    :ok
   end
 
   defp run_trigger(%Group{} = group, mover, :on_touch) do
-    if not Invincibility.active?(mover), do: run_live_trigger(group, mover, :on_touch)
-  end
-
-  defp run_live_trigger(%Group{} = group, mover, callback) do
-    if triggerable?(group) and not suppressed_touch?(group, mover, callback) do
-      case handler_for(group) do
-        {:ok, module} ->
-          run_callback_trigger(group, mover, callback, module)
-
-        _ ->
-          apply_field_support_action(group, mover, callback)
-      end
+    cond do
+      not FieldSupport.target?(group, mover) -> :skipped
+      not triggerable?(group) or suppressed_touch?(group, mover, :on_touch) -> :skipped
+      true -> run_live_trigger(group, mover, :on_touch)
     end
   end
+
+  # Stepping off a footprint ends the field status unless another unit of the
+  # same skill on the mover's new cell places it (the source's step keeps the
+  # status for every skill still placed).
+  defp run_live_trigger(%Group{} = group, mover, :on_out) do
+    if triggerable?(group) do
+      case handler_for(group) do
+        {:ok, module} -> run_out_callback(group, module, mover)
+        :error -> :ok
+      end
+
+      if not placed_elsewhere?(group, mover), do: FieldSupport.onleft(group, mover)
+    end
+
+    :ok
+  end
+
+  defp run_live_trigger(%Group{} = group, mover, :on_touch) do
+    with {:ok, module} <- handler_for(group),
+         true <- function_exported?(module, :on_touch, 2) do
+      case invoke_trigger(group, mover, :on_touch, module) do
+        {:ok, updated} -> FieldSupport.onplace(updated, mover)
+        :ended -> :skipped
+      end
+    else
+      _ -> FieldSupport.onplace(group, mover)
+    end
+  end
+
+  defp placed_elsewhere?(%Group{} = group, {unit_type, unit_id} = mover) do
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {x, y, map_name}} ->
+        map_name
+        |> Storage.get_groups_at_cell(x, y)
+        |> Enum.any?(fn other ->
+          other.group_id != group.group_id and other.skill_id == group.skill_id and
+            FieldSupport.target?(other, mover) and FieldSupport.places?(other, mover)
+        end)
+
+      _ ->
+        false
+    end
+  end
+
+  defp handler_or_nil(%Group{} = group) do
+    case handler_for(group) do
+      {:ok, module} -> module
+      :error -> nil
+    end
+  end
+
+  defp run_out_callback(%Group{} = group, module, mover) do
+    if module && function_exported?(module, :on_out, 2),
+      do: apply_out_result(group, invoke(module, :on_out, [group, mover]))
+
+    :ok
+  end
+
+  defp apply_out_result(group, {:ok, {:ok, %Group{group_id: group_id} = updated}})
+       when group_id == group.group_id do
+    if Storage.get(group_id), do: persist_callback_update(group, updated)
+    :ok
+  end
+
+  defp apply_out_result(_group, {:ok, _result}), do: :ok
+  defp apply_out_result(group, {:error, reason}), do: log_callback_error(group, :on_out, reason)
 
   # A magic field's cell left under Land Protector (a RangedSingleUnit field
   # whose centre survived) acts on nobody stepping onto it.
@@ -828,33 +876,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp suppressed_touch?(_group, _mover, _callback), do: false
 
-  defp run_callback_trigger(group, mover, callback, module) do
-    if function_exported?(module, callback, 2) do
-      invoke_trigger(group, mover, callback, module)
-    else
-      apply_field_support_action(group, mover, callback)
-    end
-  end
-
   defp invoke_trigger(group, mover, callback, module) do
     case invoke(module, callback, [group, mover]) do
       {:ok, {:ok, %Group{group_id: group_id} = updated}} when group_id == group.group_id ->
         case persist_callback_update(group, updated) do
-          :ok -> apply_field_support_action(updated, mover, callback)
-          {:error, reason} -> callback_failed(group, callback, reason, module)
+          :ok ->
+            {:ok, updated}
+
+          {:error, reason} ->
+            callback_failed(group, callback, reason, module)
+            :ended
         end
 
       {:ok, {:ok, %Group{group_id: group_id}}} ->
         callback_failed(group, callback, {:foreign_group_id, group_id}, module)
+        :ended
 
       {:ok, :expire} ->
         cleanup(group, module)
+        :ended
 
       {:ok, result} ->
         callback_failed(group, callback, {:invalid_return, result}, module)
+        :ended
 
       {:error, reason} ->
         callback_failed(group, callback, reason, module)
+        :ended
     end
   end
 
@@ -908,60 +956,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     )
   end
 
-  # A hidden occupant does not acquire a field status it lacks (unless the skill
-  # is TargetHidden) but keeps one it already holds.
-  defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_touch) do
-    with {:ok, spec} <- field_support_spec(group) do
-      cond do
-        not (living_combat_unit?({unit_type, unit_id}) and
-                 supports_target?(spec, {unit_type, unit_id})) ->
-          FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id,
-            linger_ms: Map.get(spec, :linger_ms, 0)
-          )
-          |> log_field_support_failure(group, :release)
-
-        Targeting.placement_reaches?(group.skill_id, {unit_type, unit_id}) ->
-          FieldSupport.acquire(
-            unit_type,
-            unit_id,
-            spec.status_type,
-            group.group_id,
-            params_for(spec, unit_type, unit_id)
-          )
-          |> log_field_support_failure(group, :acquire)
-
-        true ->
-          :ok
-      end
-    end
-
-    :ok
-  end
-
-  defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_out) do
-    with {:ok, spec} <- field_support_spec(group) do
-      FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id,
-        linger_ms: Map.get(spec, :linger_ms, 0)
-      )
-      |> log_field_support_failure(group, :release)
-    end
-
-    :ok
-  end
-
-  defp apply_field_support_action(_group, _mover, _callback), do: :ok
-
-  defp log_field_support_failure({:error, reason} = result, group, action) do
-    Logger.error(
-      "Skill.Unit.Manager field_support=#{action} failed skill=#{group.skill_name} " <>
-        "group_id=#{group.group_id}: #{inspect(reason)}"
-    )
-
-    result
-  end
-
-  defp log_field_support_failure(result, _group, _action), do: result
-
   defp cleanup(%Group{} = group) do
     module =
       case handler_for(group) do
@@ -987,8 +981,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp cleanup(%Group{group_id: group_id} = group, module, despawn_reason) do
-    FieldSupport.release_group(group_id, linger_ms: field_linger_ms(group))
-    out_occupants(group, group.cells, module)
+    FieldSupport.overlap_removed(group, group.cells)
+    FieldSupport.out(group, group.cells, &run_out_callback(group, module, &1))
     cells = Storage.get_cells_by_group(group_id)
     Enum.each(cells, &remove_cell_indexes/1)
 
@@ -1192,10 +1186,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp shrink_group(%Group{} = group, removed) do
     coordinates = MapSet.new(removed)
 
-    case handler_for(group) do
-      {:ok, module} -> out_occupants(group, removed, module)
-      :error -> :ok
-    end
+    module =
+      case handler_for(group) do
+        {:ok, module} -> module
+        :error -> nil
+      end
+
+    FieldSupport.overlap_removed(group, removed)
+    FieldSupport.out(group, removed, &run_out_callback(group, module, &1))
 
     cells =
       group.group_id
@@ -1204,48 +1202,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
     Enum.each(cells, &remove_cell/1)
 
-    group
-    |> Storage.remove_cells(removed)
-    |> reconcile_group()
+    Storage.remove_cells(group, removed)
 
     publish_cells_despawn(group, Enum.map(cells, & &1.cell_id))
   end
 
-  # Deleting a unit cell runs the group's `on_out` for every unit standing on it,
-  # as a unit stepping off would, except an invincible player. The group is
-  # ending or losing those cells, so the callback's returned group is not kept.
-  defp out_occupants(%Group{map_name: map_name} = group, cells, module) do
-    if module && function_exported?(module, :on_out, 2) do
-      cells
-      |> Enum.flat_map(fn {x, y} -> SpatialIndex.get_all_units_in_range(map_name, x, y, 0) end)
-      |> Enum.uniq()
-      |> Enum.reject(&Invincibility.active?/1)
-      |> Enum.each(&out_occupant(group, module, &1))
-    end
-
-    :ok
-  end
-
-  defp out_occupant(group, module, mover) do
-    case invoke(module, :on_out, [group, mover]) do
-      {:ok, _result} -> :ok
-      {:error, reason} -> log_callback_error(group, :on_out, reason)
-    end
-  end
-
   # Shifts every cell by the caster's displacement, keeping cell IDs. Each
-  # cell's terrain and target indexes follow it, occupants are reconciled
-  # against the new footprint, and dissonance marks catch up on the next
-  # interval.
+  # cell's terrain and target indexes follow it; occupants of vacated cells
+  # leave the field and occupants of newly covered cells are placed on it.
   defp move_group(%Group{center: {cx, cy}} = group, {x, y} = center) do
     shift = fn {cell_x, cell_y} -> {cell_x + x - cx, cell_y + y - cy} end
     moved = %{group | center: center, origin: center, cells: Enum.map(group.cells, shift)}
+    vacated = group.cells -- moved.cells
+
+    module =
+      case handler_for(group) do
+        {:ok, module} -> module
+        :error -> nil
+      end
+
+    FieldSupport.overlap_removed(group, vacated)
+    FieldSupport.out(group, vacated, &run_out_callback(group, module, &1))
     :ok = Storage.update(moved)
     group.group_id |> Storage.get_cells_by_group() |> Enum.each(&move_cell(&1, shift))
-
-    moved
-    |> reconcile_group()
-    |> publish_move()
+    FieldSupport.place(moved, moved.cells -- group.cells)
+    publish_move(moved)
   end
 
   defp move_cell(%Cell{} = cell, shift) do
@@ -1659,7 +1640,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
         case materialize_visible_cells(updated, []) do
           {:ok, _cells} ->
-            updated |> reconcile_group() |> publish_tracked_spawn()
+            publish_tracked_spawn(updated)
 
           {:error, _reason} = error ->
             rollback_trap_materialization(original)
@@ -1955,7 +1936,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
 
     group
-    |> reconcile_group()
     |> players_in_range()
     |> then(&eligible_recipients(group, &1))
     |> Enum.reject(tracked)
@@ -2260,7 +2240,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         :ok
 
       group ->
-        :ok = FieldSupport.release_group(group_id)
+        module =
+          case handler_for(group) do
+            {:ok, module} -> module
+            :error -> nil
+          end
+
+        FieldSupport.overlap_removed(group, group.cells)
+        FieldSupport.out(group, group.cells, &run_out_callback(group, module, &1))
         cells = Storage.get_cells_by_group(group_id)
         Enum.each(cells, &remove_cell_indexes/1)
         :ok = Storage.delete(group_id)
@@ -2381,148 +2368,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp maybe_put(traits, key, true), do: Keyword.put(traits, key, true)
   defp maybe_put(traits, key, true, value), do: Keyword.put(traits, key, value)
   defp maybe_put(traits, _key, false, _value), do: traits
-
-  defp reconcile_group(%Group{} = group) do
-    case field_support_spec(group) do
-      {:ok, spec} ->
-        occupants = occupants(group, spec)
-
-        if not field_support_current?(group, spec, occupants) do
-          acquire_occupants(group, spec, occupants)
-          release_missing(group, spec, occupants)
-        end
-
-        group
-
-      :error ->
-        group
-    end
-  end
-
-  defp occupants(%Group{} = group, spec) do
-    group.cells
-    |> Enum.flat_map(fn {x, y} ->
-      SpatialIndex.get_all_units_in_range(group.map_name, x, y, 0)
-    end)
-    |> Enum.filter(&(living_combat_unit?(&1) and supports_target?(spec, &1)))
-    |> MapSet.new()
-  end
-
-  defp living_combat_unit?({unit_type, unit_id})
-       when unit_type in [:player, :mob, :homunculus] do
-    case UnitRegistry.get_unit(unit_type, unit_id) do
-      {:ok, {_module, state, _pid}} -> Unit.living?(state)
-      _ -> false
-    end
-  end
-
-  defp living_combat_unit?(_unit), do: false
-
-  defp field_support_current?(group, spec, occupants) do
-    expected = MapSet.new(occupants, &{elem(&1, 0), elem(&1, 1), spec.status_type})
-
-    actual =
-      group.group_id
-      |> FieldSupport.sources_for_group()
-      |> MapSet.new(fn {unit_type, unit_id, status_type, _params} ->
-        {unit_type, unit_id, status_type}
-      end)
-
-    expected == actual
-  end
-
-  defp acquire_occupants(group, spec, occupants) do
-    Enum.each(occupants, fn {unit_type, unit_id} ->
-      if supports_target?(spec, {unit_type, unit_id}) and
-           Targeting.placement_reaches?(group.skill_id, {unit_type, unit_id}) do
-        FieldSupport.acquire(
-          unit_type,
-          unit_id,
-          spec.status_type,
-          group.group_id,
-          params_for(spec, unit_type, unit_id)
-        )
-      end
-    end)
-  end
-
-  defp release_missing(group, spec, occupants) do
-    occupied = MapSet.new(occupants)
-
-    group.group_id
-    |> FieldSupport.sources_for_group()
-    |> Enum.each(fn {unit_type, unit_id, status_type, _params} ->
-      if not MapSet.member?(occupied, {unit_type, unit_id}) or
-           not supports_target?(spec, {unit_type, unit_id}) do
-        FieldSupport.release(unit_type, unit_id, status_type, group.group_id,
-          linger_ms: Map.get(spec, :linger_ms, 0)
-        )
-      end
-    end)
-  end
-
-  defp reconcile_unit_support({unit_type, unit_id}) do
-    current_groups =
-      case SpatialIndex.get_unit_position(unit_type, unit_id) do
-        {:ok, {x, y, map_name}} -> Storage.get_groups_at_cell(map_name, x, y)
-        _ -> []
-      end
-
-    current_ids =
-      current_groups
-      |> Enum.filter(fn group ->
-        case field_support_spec(group) do
-          {:ok, spec} ->
-            living_combat_unit?({unit_type, unit_id}) and
-              supports_target?(spec, {unit_type, unit_id})
-
-          :error ->
-            false
-        end
-      end)
-      |> MapSet.new(& &1.group_id)
-
-    Enum.each(current_groups, fn group ->
-      apply_field_support_action(group, {unit_type, unit_id}, :on_touch)
-    end)
-
-    FieldSupport.sources_for_unit(unit_type, unit_id)
-    |> Enum.each(fn {_, _, status_type, group_id, _params} ->
-      if not MapSet.member?(current_ids, group_id) do
-        FieldSupport.release(unit_type, unit_id, status_type, group_id,
-          linger_ms: field_linger_ms(Storage.get(group_id))
-        )
-      end
-    end)
-  end
-
-  defp field_linger_ms(nil), do: 0
-
-  defp field_linger_ms(%Group{} = group) do
-    case field_support_spec(group) do
-      {:ok, spec} -> Map.get(spec, :linger_ms, 0)
-      :error -> 0
-    end
-  end
-
-  defp field_support_spec(%Group{} = group) do
-    with {:ok, module} <- handler_for(group),
-         true <- function_exported?(module, :field_support, 1) do
-      case module.field_support(group) do
-        %{status_type: nil} -> :error
-        spec -> {:ok, %{status_type: _, params: _, target?: _} = spec}
-      end
-    else
-      _ -> :error
-    end
-  end
-
-  defp params_for(%{params: params}, unit_type, unit_id) when is_function(params, 2),
-    do: params.(unit_type, unit_id)
-
-  defp params_for(%{params: params}, _unit_type, _unit_id), do: params
-
-  defp supports_target?(%{target?: target?}, target), do: target?.(target)
 
   defp handler_for(%Group{handler: handler}) when not is_nil(handler), do: {:ok, handler}
   defp handler_for(%Group{skill_name: skill_name}), do: Catalog.ground_module_for(skill_name)

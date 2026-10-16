@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
@@ -498,6 +499,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
       Lifecycle.publish_departure(:mob, state.instance_id, state.map_name, :termination)
     end
 
+    Trigger.on_removed({:mob, state.instance_id})
     SpatialIndex.remove_unit(:mob, state.instance_id)
     Broadcast.publish_mob_despawn(state.map_name, state.instance_id)
     :ok

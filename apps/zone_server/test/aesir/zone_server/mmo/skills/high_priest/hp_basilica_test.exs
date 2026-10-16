@@ -288,7 +288,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
       :ok = SpatialIndex.update_position(@ally_id, 30, 30, "prontera")
       :ok = Basilica.sync_cell_status(%{ally | x: 30, y: 30})
       :ok = SpatialIndex.update_unit_position(:mob, @mob_id, 30, 30, "prontera")
-      :ok = Manager.reconcile_unit({:mob, @mob_id})
+      :ok = Trigger.on_leave_cell({:mob, @mob_id}, "prontera", 19, 19, "prontera", 30, 30)
 
       refute StatusStorage.has_status?(:player, @ally_id, :sc_basilica)
       assert StatusStorage.has_status?(:mob, @mob_id, :sc_basilica)

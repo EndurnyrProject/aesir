@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
         upkeep: Keyword.fetch!(opts, :upkeep),
         upkeep_sp: Keyword.get(opts, :upkeep_sp, 1),
         root: Keyword.get(opts, :root, if(kind == :ensemble, do: :ensemble, else: :none)),
-        linger_ms: Keyword.get(opts, :linger_ms, 20_000),
+        linger_ms: Keyword.fetch!(opts, :linger_ms),
         layout_radius: Keyword.get(opts, :layout_radius, 3),
         kind: kind,
         performers: player_performers(type, id, partners),
@@ -247,7 +247,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
     end
   end
 
-  @doc "Describes the field-owned status and who may receive it."
+  @doc """
+  Describes the field-owned status: who the field targets (its reach, never a
+  performer) and which placement grants it (never on a Basilica cell; a
+  dissonant cell is handled by the manager).
+  """
   @spec field_support(Group.t()) :: map()
   def field_support(%Group{state: %{performance: perf}} = group) do
     %{
@@ -257,10 +261,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
       target?: fn {type, id} = mover ->
         mover != {group.caster_type, group.caster_id} and
           not (id in perf.performers and type == :player) and
-          eligible?(perf.reach, group, mover) and
-          not dissonant_position?(group, mover) and
-          not on_basilica?(group, mover)
-      end
+          eligible?(perf.reach, group, mover)
+      end,
+      grants?: fn mover -> not on_basilica?(group, mover) end
     }
   end
 
@@ -334,16 +337,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
     case SpatialIndex.get_unit_position(type, id) do
       {:ok, {x, y, map_name}} when map_name == group.map_name -> Storage.basilica?(map_name, x, y)
       _ -> false
-    end
-  end
-
-  defp dissonant_position?(group, {type, id}) do
-    case SpatialIndex.get_unit_position(type, id) do
-      {:ok, {x, y, map_name}} when map_name == group.map_name ->
-        Overlap.dissonant?(group, {x, y})
-
-      _ ->
-        false
     end
   end
 end

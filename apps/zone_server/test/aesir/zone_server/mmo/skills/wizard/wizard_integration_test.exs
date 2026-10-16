@@ -115,9 +115,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     end
   end
 
-  test "Quagmire reconciles a real occupant and releases it after the final overlapping field", %{
-    manager: manager
-  } do
+  test "Quagmire reconciles a real occupant and a monster keeps it after the final overlapping field",
+       %{
+         manager: manager
+       } do
     :ok = UnitRegistry.register_unit(:player, @caster_id, __MODULE__, caster(), self())
 
     :ok =
@@ -149,7 +150,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     assert StatusStorage.has_status?(:mob, @target_id, :sc_quagmire)
 
     assert :ok = Manager.destroy(manager, second.group_id)
-    refute StatusStorage.has_status?(:mob, @target_id, :sc_quagmire)
+    assert StatusStorage.has_status?(:mob, @target_id, :sc_quagmire)
   end
 
   test "Water Ball turns real water into an invisible sequence rather than visible field protocol" do

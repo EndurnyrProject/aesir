@@ -1,339 +1,20 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
   use ExUnit.Case, async: false
+  use Mimic
 
   import Aesir.TestEtsSetup
-  import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
+  setup :set_mimic_private
+
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
-
-  defmodule StationaryField do
-    def field_support(_group),
-      do: %{status_type: :sc_quagmire, params: [level: 2, val2: 10], target?: fn _ -> true end}
-
-    def on_interval(group, _now), do: {:ok, group}
-  end
-
-  defmodule CombatOnlyField do
-    def field_support(_group),
-      do: %{status_type: :sc_quagmire, params: [level: 1, val2: 5], target?: &combat_target?/1}
-
-    def on_interval(group, _now), do: {:ok, group}
-
-    defp combat_target?({unit_type, _unit_id}) when unit_type in [:player, :mob], do: true
-  end
-
-  setup :setup_ets_tables
-  setup :verify_on_exit!
-
-  setup do
-    player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
-    :ok = UnitRegistry.register_unit(:player, 11, __MODULE__, player)
-    :ok
-  end
-
-  setup do
-    Mimic.copy(Interpreter)
-
-    stub(Interpreter, :remove_status, fn unit_type, unit_id, status_type ->
-      StatusStorage.remove_status(unit_type, unit_id, status_type)
-      :ok
-    end)
-
-    :ok
-  end
-
-  test "duplicate acquisition is idempotent and the strongest source wins" do
-    test_pid = self()
-
-    stub(Interpreter, :apply_status, fn :player, 7, :sc_quagmire, params ->
-      send(test_pid, {:apply, params})
-      StatusStorage.apply_status(:player, 7, :sc_quagmire, params)
-      :ok
-    end)
-
-    params = [level: 1, val2: 5]
-    assert :ok = FieldSupport.acquire(:player, 7, :sc_quagmire, 10, params)
-    assert :ok = FieldSupport.acquire(:player, 7, :sc_quagmire, 10, params)
-    assert :ok = FieldSupport.acquire(:player, 7, :sc_quagmire, 11, level: 5, val2: 25)
-
-    assert FieldSupport.sources(:player, 7, :sc_quagmire) |> length() == 2
-    assert_received {:apply, first_apply}
-    assert first_apply[:level] == 1 and first_apply[:duration] == 0
-    assert_received {:apply, second_apply}
-    assert second_apply[:level] == 5 and second_apply[:duration] == 0
-    refute_received {:apply, _}
-  end
-
-  test "reconciliation restores a materialized status that disappeared" do
-    test_pid = self()
-
-    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
-      send(test_pid, {:apply, params})
-      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
-      :ok
-    end)
-
-    stub(Interpreter, :remove_status, fn unit_type, unit_id, status_type ->
-      StatusStorage.remove_status(unit_type, unit_id, status_type)
-      :ok
-    end)
-
-    assert :ok = FieldSupport.acquire(:player, 8, :sc_quagmire, 30, level: 2, val2: 10)
-    :ok = StatusStorage.remove_status(:player, 8, :sc_quagmire)
-    assert :ok = FieldSupport.acquire(:player, 8, :sc_quagmire, 30, level: 2, val2: 10)
-    assert_received {:apply, restored}
-    assert restored[:level] == 2 and restored[:duration] == 0
-  end
-
-  test "overlap refresh removes the owned status before reapplying changed parameters" do
-    test_pid = self()
-
-    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
-      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
-      send(test_pid, {:applied, params})
-      :ok
-    end)
-
-    assert :ok = FieldSupport.acquire(:player, 12, :sc_quagmire, 60, level: 1, val2: 5)
-    assert :ok = FieldSupport.acquire(:player, 12, :sc_quagmire, 61, level: 5, val2: 25)
-
-    assert_received {:applied, first_apply}
-    assert first_apply[:level] == 1
-    assert_received {:applied, refreshed}
-    assert refreshed[:level] == 5 and refreshed[:duration] == 0
-  end
-
-  test "releasing one source retains the status and the last release removes it" do
-    test_pid = self()
-
-    stub(Interpreter, :apply_status, fn _, _, _, params ->
-      send(test_pid, {:apply, params})
-      StatusStorage.apply_status(:mob, 3, :sc_quagmire, params)
-      :ok
-    end)
-
-    stub(Interpreter, :remove_status, fn unit_type, unit_id, status_type ->
-      send(test_pid, {:remove, unit_type, unit_id, status_type})
-      :ok
-    end)
-
-    assert :ok = FieldSupport.acquire(:mob, 3, :sc_quagmire, 20, level: 2, val2: 10)
-    assert :ok = FieldSupport.acquire(:mob, 3, :sc_quagmire, 21, level: 4, val2: 20)
-    assert :ok = FieldSupport.release(:mob, 3, :sc_quagmire, 20)
-
-    assert FieldSupport.supported?(:mob, 3, :sc_quagmire)
-    assert_received {:apply, _initial}
-    assert_received {:apply, refreshed}
-    assert refreshed[:level] == 4 and refreshed[:duration] == 0
-
-    assert :ok = FieldSupport.release(:mob, 3, :sc_quagmire, 21)
-    refute FieldSupport.supported?(:mob, 3, :sc_quagmire)
-    assert_received {:remove, :mob, 3, :sc_quagmire}
-  end
-
-  test "releasing the last field source preserves an independently owned status" do
-    test_pid = self()
-
-    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
-      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
-      :ok
-    end)
-
-    stub(Interpreter, :remove_status, fn unit_type, unit_id, status_type ->
-      send(test_pid, {:remove, unit_type, unit_id, status_type})
-      :ok
-    end)
-
-    assert :ok = FieldSupport.acquire(:player, 9, :sc_quagmire, 40, level: 1, val2: 5)
-    :ok = StatusStorage.apply_status(:player, 9, :sc_quagmire, state: %{ordinary: true})
-    assert :ok = FieldSupport.release(:player, 9, :sc_quagmire, 40)
-
-    refute_received {:remove, :player, 9, :sc_quagmire}
-    refute FieldSupport.field_owned?(:player, 9, :sc_quagmire)
-  end
-
-  test "release_group is idempotent and only removes its own sources" do
-    test_pid = self()
-
-    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
-      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
-      :ok
-    end)
-
-    stub(Interpreter, :remove_status, fn unit_type, unit_id, status_type ->
-      send(test_pid, {:remove, unit_type, unit_id, status_type})
-      StatusStorage.remove_status(unit_type, unit_id, status_type)
-      :ok
-    end)
-
-    assert :ok = FieldSupport.acquire(:player, 10, :sc_quagmire, 50, level: 1, val2: 5)
-    assert :ok = FieldSupport.acquire(:player, 10, :sc_quagmire, 51, level: 2, val2: 10)
-    assert :ok = FieldSupport.release_group(50)
-    assert FieldSupport.supported?(:player, 10, :sc_quagmire)
-    assert :ok = FieldSupport.release_group(50)
-    assert :ok = FieldSupport.release_group(51)
-    assert_received {:remove, :player, 10, :sc_quagmire}
-  end
-
-  test "manager registration seeds stationary occupants and reconciliation restores support" do
-    test_pid = self()
-    Mimic.copy(Catalog)
-    Mimic.copy(SpatialIndex)
-    Mimic.copy(Interpreter)
-
-    stub(Catalog, :ground_module_for, fn :stationary_field -> {:ok, StationaryField} end)
-    stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 5, 5, 0 -> [{:player, 11}] end)
-
-    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
-      send(test_pid, {:apply, params})
-      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
-      :ok
-    end)
-
-    manager =
-      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
-
-    Process.put({Manager, :server}, manager)
-    allow(Catalog, self(), manager)
-    allow(SpatialIndex, self(), manager)
-    allow(Interpreter, self(), manager)
-
-    group = %Group{
-      group_id: 99,
-      skill_id: 999,
-      skill_name: :stationary_field,
-      level: 2,
-      caster_id: 1,
-      caster_type: :player,
-      map_name: "prontera",
-      center: {5, 5},
-      cells: [{5, 5}],
-      next_tick_at: 1_000,
-      expires_at: System.monotonic_time(:millisecond) + 100_000,
-      interval: 1_000
-    }
-
-    assert :ok = Manager.register(manager, group)
-    assert FieldSupport.supported?(:player, 11, :sc_quagmire)
-  end
-
-  test "reconciliation skips a targetable skill-unit cell sharing the footprint" do
-    Mimic.copy(Catalog)
-    stub(Catalog, :ground_module_for, fn :combat_only_field -> {:ok, CombatOnlyField} end)
-
-    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
-      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
-      :ok
-    end)
-
-    manager =
-      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
-
-    allow(Catalog, self(), manager)
-    allow(Interpreter, self(), manager)
-
-    :ok = SpatialIndex.add_unit(:player, 11, 5, 5, "prontera")
-
-    :ok =
-      SpatialIndex.add_skill_unit(%Cell{
-        cell_id: 500,
-        group_id: 0,
-        map_name: "prontera",
-        x: 5,
-        y: 5
-      })
-
-    group = %Group{
-      group_id: 101,
-      skill_id: 999,
-      skill_name: :combat_only_field,
-      level: 1,
-      caster_id: 1,
-      caster_type: :player,
-      map_name: "prontera",
-      center: {5, 5},
-      cells: [{5, 5}],
-      next_tick_at: 1_000,
-      expires_at: System.monotonic_time(:millisecond) + 100_000,
-      interval: 1_000
-    }
-
-    assert :ok = Manager.register(manager, group)
-    assert Process.alive?(manager)
-    assert FieldSupport.supported?(:player, 11, :sc_quagmire)
-    refute FieldSupport.supported?(:skill_unit, 500, :sc_quagmire)
-  end
-
-  test "movement reconciliation acquires and releases support as a unit enters and leaves" do
-    Mimic.copy(Catalog)
-    stub(Catalog, :ground_module_for, fn :stationary_field -> {:ok, StationaryField} end)
-
-    stub(Interpreter, :apply_status, fn unit_type, unit_id, status_type, params ->
-      StatusStorage.apply_status(unit_type, unit_id, status_type, params)
-      :ok
-    end)
-
-    manager =
-      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
-
-    allow(Catalog, self(), manager)
-    allow(Interpreter, self(), manager)
-
-    :ok = SpatialIndex.add_unit(:player, 11, 8, 8, "prontera")
-
-    group = %Group{
-      group_id: 100,
-      skill_id: 999,
-      skill_name: :stationary_field,
-      level: 2,
-      caster_id: 1,
-      caster_type: :player,
-      map_name: "prontera",
-      center: {5, 5},
-      cells: [{5, 5}],
-      next_tick_at: 1_000,
-      expires_at: System.monotonic_time(:millisecond) + 100_000,
-      interval: 1_000
-    }
-
-    assert :ok = Manager.register(manager, group)
-    refute FieldSupport.supported?(:player, 11, :sc_quagmire)
-
-    assert :ok = SpatialIndex.remove_unit(:player, 11)
-    assert :ok = SpatialIndex.add_unit(:player, 11, 5, 5, "prontera")
-    assert :ok = Manager.reconcile_unit(manager, {:player, 11})
-    assert FieldSupport.supported?(:player, 11, :sc_quagmire)
-
-    assert FieldSupport.sources_for_group(100) == [
-             {:player, 11, :sc_quagmire, [level: 2, val2: 10]}
-           ]
-
-    assert :ok = SpatialIndex.remove_unit(:player, 11)
-    assert :ok = SpatialIndex.add_unit(:player, 11, 8, 8, "prontera")
-    assert :ok = Manager.reconcile_unit(manager, {:player, 11})
-    refute FieldSupport.supported?(:player, 11, :sc_quagmire)
-    assert FieldSupport.sources_for_group(100) == []
-  end
-end
-
-defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportRealInterpreterTest do
-  use ExUnit.Case, async: false
-
-  import Aesir.TestEtsSetup
-
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -342,85 +23,316 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportRealInterpreterTest do
     def get_entity_info(_state), do: %{stats: %{}}
   end
 
+  defmodule QuagmireField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{level: level}),
+      do: %{
+        status_type: :sc_quagmire,
+        params: [level: level, val1: level, val2: 5 * level],
+        target?: fn _ -> true end
+      }
+  end
+
+  defmodule VolcanoField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{level: level}),
+      do: %{
+        status_type: :sc_volcano,
+        params: [level: level, val1: level],
+        target?: fn _ -> true end
+      }
+  end
+
   setup :setup_ets_tables
 
-  defp living_player do
-    %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+  setup do
+    manager = start_supervised!({Manager, name: nil, schedule_tick: fn _, _ -> :ok end})
+    Process.put({Manager, :server}, manager)
+    :ok
   end
 
-  test "real status materialization stays alive through overlap and removes after the last source" do
-    :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
+  @now 100_000
 
-    first = [level: 1, val1: 1, val2: 5]
-    second = [level: 5, val1: 5, val2: 25]
+  defp player(id, {x, y}) do
+    state = %PlayerState{
+      character_id: id,
+      action_state: :idle,
+      map_name: "prontera",
+      x: x,
+      y: y,
+      stats: %{current_state: %{hp: 100}}
+    }
 
-    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, first)
-    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, first)
-
-    assert %{val1: 1, val2: 5, expires_at: nil} =
-             StatusStorage.get_status(:player, 77, :sc_quagmire)
-
-    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 71, second)
-
-    assert %{val1: 5, val2: 25, expires_at: nil} =
-             StatusStorage.get_status(:player, 77, :sc_quagmire)
-
-    assert :ok = FieldSupport.release(:player, 77, :sc_quagmire, 70)
-    assert StatusStorage.has_status?(:player, 77, :sc_quagmire)
-    assert :ok = FieldSupport.release(:player, 77, :sc_quagmire, 71)
-    refute StatusStorage.has_status?(:player, 77, :sc_quagmire)
-
-    assert Interpreter.can_move?(:player, 77)
+    :ok = UnitRegistry.register_unit(:player, id, Entity, state)
+    :ok = SpatialIndex.add_unit(:player, id, x, y, "prontera")
+    {:player, id}
   end
 
-  test "a released player status lingers and re-entry restores field ownership" do
-    :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
-    params = [level: 3, val1: 3, val2: 15, state: %{source: :song}]
+  defp mob(id, {x, y}) do
+    state = %MobState{
+      instance_id: id,
+      mob_id: 1002,
+      mob_data: %MobDefinition{
+        id: 1002,
+        aegis_name: "PORING",
+        name: "Poring",
+        level: 1,
+        hp: 100,
+        stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+        attack_range: 1,
+        size: :medium,
+        race: :plant,
+        element: {:water, 1},
+        walk_speed: 400,
+        attack_delay: 1_000,
+        attack_motion: 500,
+        client_attack_motion: 500,
+        damage_motion: 400,
+        modes: []
+      },
+      spawn_ref: nil,
+      x: x,
+      y: y,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 0,
+      max_sp: 0,
+      spawned_at: 0
+    }
 
-    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, params)
-    assert :ok = FieldSupport.release(:player, 77, :sc_quagmire, 70, linger_ms: 20_000)
-
-    lingering = StatusStorage.get_status(:player, 77, :sc_quagmire)
-    refute FieldSupport.field_owned?(:player, 77, :sc_quagmire)
-    assert lingering.state == %{source: :song}
-    assert lingering.val2 == 15
-    assert_in_delta lingering.expires_at - System.monotonic_time(:millisecond), 20_000, 500
-
-    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, params)
-    assert FieldSupport.field_owned?(:player, 77, :sc_quagmire)
-    assert StatusStorage.get_status(:player, 77, :sc_quagmire).expires_at == nil
-    assert :ok = FieldSupport.release(:player, 77, :sc_quagmire, 70)
-    refute StatusStorage.has_status?(:player, 77, :sc_quagmire)
+    :ok = UnitRegistry.register_unit(:mob, id, MobState, state)
+    :ok = SpatialIndex.add_unit(:mob, id, x, y, "prontera")
+    {:mob, id}
   end
 
-  test "group release lingers for each player but not for a mob" do
-    :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
-    :ok = UnitRegistry.register_unit(:player, 78, Entity, living_player())
-    :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, val2: 5)
-    :ok = FieldSupport.acquire(:player, 78, :sc_quagmire, 70, val2: 10)
-    assert :ok = FieldSupport.release_group(70, linger_ms: 20_000)
+  defp group(id, handler, attrs) do
+    base = %Group{
+      group_id: id,
+      skill_id: 92,
+      skill_name: :wz_quagmire,
+      level: 1,
+      caster_id: 1,
+      caster_type: :player,
+      map_name: "prontera",
+      center: {5, 5},
+      cells: [{5, 5}],
+      created_at: @now,
+      next_tick_at: @now + 1_000,
+      expires_at: @now + 10_000,
+      interval: 1_000,
+      handler: handler
+    }
 
-    for id <- [77, 78] do
-      refute FieldSupport.field_owned?(:player, id, :sc_quagmire)
-
-      assert_in_delta StatusStorage.get_status(:player, id, :sc_quagmire).expires_at -
-                        System.monotonic_time(:millisecond),
-                      20_000,
-                      500
-    end
+    group = struct(base, attrs)
+    :ok = Storage.insert(group)
+    group
   end
 
-  test "manager reconciliation releases Quagmire support after leaving for an empty cell" do
-    :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
-    :ok = SpatialIndex.add_unit(:player, 77, 20, 20, "prontera")
-    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, level: 1, val2: 5)
-    assert StatusStorage.has_status?(:player, 77, :sc_quagmire)
+  defp move(mover, from, {x, y}) do
+    {type, id} = mover
+    :ok = SpatialIndex.remove_unit(type, id)
+    :ok = SpatialIndex.add_unit(type, id, x, y, "prontera")
 
-    manager =
-      start_supervised!({Manager, name: nil, schedule_tick: fn _pid, _interval -> :ok end})
+    Trigger.on_leave_cell(
+      mover,
+      "prontera",
+      elem(from, 0),
+      elem(from, 1),
+      "prontera",
+      x,
+      y
+    )
 
-    assert :ok = Manager.reconcile_unit(manager, {:player, 77})
-    assert FieldSupport.sources_for_unit(:player, 77) == []
-    refute StatusStorage.has_status?(:player, 77, :sc_quagmire)
+    Trigger.on_enter_cell(mover, "prontera", x, y)
+  end
+
+  test "onplace starts the status for the group's whole lifetime only when the unit lacks it" do
+    mover = player(11, {5, 5})
+    weak = group(1, QuagmireField, level: 1, expires_at: @now + 10_000)
+    strong = group(2, QuagmireField, level: 5, expires_at: @now + 25_000, cells: [{5, 5}])
+
+    before = System.monotonic_time(:millisecond)
+    assert :placed = FieldSupport.onplace(weak, mover)
+
+    assert %{val1: 1, val2: 5, expires_at: expires_at} =
+             StatusStorage.get_status(:player, 11, :sc_quagmire)
+
+    assert expires_at >= before + 10_000
+    assert expires_at <= System.monotonic_time(:millisecond) + 10_000
+
+    assert :placed = FieldSupport.onplace(strong, mover)
+
+    assert %{val1: 1, expires_at: ^expires_at} =
+             StatusStorage.get_status(:player, 11, :sc_quagmire)
+  end
+
+  test "onleft ends the status for a player but Quagmire lets a monster keep it" do
+    walker = player(11, {5, 5})
+    beast = mob(21, {5, 5})
+    quagmire = group(1, QuagmireField, [])
+
+    FieldSupport.place(quagmire, quagmire.cells)
+    assert StatusStorage.has_status?(:player, 11, :sc_quagmire)
+    assert StatusStorage.has_status?(:mob, 21, :sc_quagmire)
+
+    FieldSupport.onleft(quagmire, walker)
+    FieldSupport.onleft(quagmire, beast)
+    refute StatusStorage.has_status?(:player, 11, :sc_quagmire)
+    assert StatusStorage.has_status?(:mob, 21, :sc_quagmire)
+  end
+
+  test "stepping between two fields of the same skill never ends the status, leaving does" do
+    mover = player(11, {5, 5})
+    _first = group(1, VolcanoField, skill_id: 83, skill_name: :sa_volcano, cells: [{5, 5}])
+
+    _second =
+      group(2, VolcanoField, skill_id: 83, skill_name: :sa_volcano, cells: [{6, 5}], caster_id: 2)
+
+    manager = Process.get({Manager, :server})
+    assert :ok = Manager.trigger(manager, 1, mover, :on_touch)
+    assert %{expires_at: expires_at} = StatusStorage.get_status(:player, 11, :sc_volcano)
+
+    move(mover, {5, 5}, {6, 5})
+    assert %{expires_at: ^expires_at} = StatusStorage.get_status(:player, 11, :sc_volcano)
+
+    move(mover, {6, 5}, {7, 5})
+    refute StatusStorage.has_status?(:player, 11, :sc_volcano)
+  end
+
+  test "an invincible player neither gains nor loses a field status through the unit events" do
+    mover = player(11, {5, 5})
+    :ok = StatusStorage.apply_status(:player, 11, :sc_volcano, val1: 1, duration: 60_000)
+
+    invincible = %PlayerState{
+      character_id: 11,
+      action_state: :idle,
+      map_name: "prontera",
+      x: 5,
+      y: 5,
+      invincible_timer: make_ref(),
+      stats: %{current_state: %{hp: 100}}
+    }
+
+    :ok = UnitRegistry.update_unit_state(:player, 11, invincible)
+    volcano = group(1, VolcanoField, skill_id: 83, skill_name: :sa_volcano, cells: [{5, 5}])
+    quagmire = group(2, QuagmireField, cells: [{5, 5}])
+
+    FieldSupport.place(quagmire, quagmire.cells)
+    refute StatusStorage.has_status?(:player, 11, :sc_quagmire)
+
+    FieldSupport.out(volcano, volcano.cells, fn _ -> :ok end)
+    assert StatusStorage.has_status?(:player, 11, :sc_volcano)
+    refute FieldSupport.target?(volcano, mover)
+  end
+
+  test "a cell vanishing under a target runs its leave events while the group lives on" do
+    player(11, {5, 5})
+    quagmire = group(1, QuagmireField, cells: [{5, 5}, {6, 5}])
+    FieldSupport.place(quagmire, quagmire.cells)
+    assert StatusStorage.has_status?(:player, 11, :sc_quagmire)
+
+    FieldSupport.out(quagmire, [{5, 5}], fn _ -> :ok end)
+    refute StatusStorage.has_status?(:player, 11, :sc_quagmire)
+  end
+
+  defmodule WhistleField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{}),
+      do: %{
+        status_type: :sc_whistle,
+        params: [val2: 5, val3: 1],
+        target?: fn _ -> true end,
+        linger_ms: 20_000
+      }
+  end
+
+  test "a solo song lasts one unit pass past its field and lingers 20 s once on a player who leaves" do
+    mover = player(11, {5, 5})
+    beast = mob(21, {5, 5})
+
+    song =
+      group(1, WhistleField,
+        skill_id: 319,
+        skill_name: :ba_whistle,
+        expires_at: @now + 60_000,
+        state: %{performance: %{kind: :song, performers: [1]}}
+      )
+
+    before = System.monotonic_time(:millisecond)
+    FieldSupport.place(song, song.cells)
+    assert %{val4: 0, expires_at: full} = StatusStorage.get_status(:player, 11, :sc_whistle)
+    assert full >= before + 60_100
+
+    FieldSupport.onleft(song, mover)
+    assert %{val4: 1, expires_at: linger} = StatusStorage.get_status(:player, 11, :sc_whistle)
+    assert linger >= before + 20_000
+    assert linger <= System.monotonic_time(:millisecond) + 20_000
+
+    assert :placed = FieldSupport.onplace(song, mover)
+    FieldSupport.onleft(song, mover)
+    assert %{val4: 1, expires_at: ^linger} = StatusStorage.get_status(:player, 11, :sc_whistle)
+
+    FieldSupport.onleft(song, beast)
+    refute StatusStorage.has_status?(:mob, 21, :sc_whistle)
+  end
+
+  test "a unit removed from play leaves every field on its cell" do
+    walker = player(11, {5, 5})
+    beast = mob(21, {5, 5})
+    volcano = group(1, VolcanoField, skill_id: 83, skill_name: :sa_volcano, cells: [{5, 5}])
+
+    song =
+      group(2, WhistleField,
+        skill_id: 319,
+        skill_name: :ba_whistle,
+        expires_at: @now + 60_000,
+        state: %{performance: %{kind: :song, performers: [1]}}
+      )
+
+    FieldSupport.place(volcano, volcano.cells)
+    FieldSupport.place(song, song.cells)
+    assert StatusStorage.has_status?(:player, 11, :sc_volcano)
+    assert %{val4: 0} = StatusStorage.get_status(:player, 11, :sc_whistle)
+    assert StatusStorage.has_status?(:mob, 21, :sc_whistle)
+
+    before = System.monotonic_time(:millisecond)
+    assert :ok = Trigger.on_removed(walker)
+    assert :ok = Trigger.on_removed(beast)
+
+    refute StatusStorage.has_status?(:player, 11, :sc_volcano)
+    assert %{val4: 1, expires_at: linger} = StatusStorage.get_status(:player, 11, :sc_whistle)
+    assert linger >= before + 20_000
+    assert linger <= System.monotonic_time(:millisecond) + 20_000
+    refute StatusStorage.has_status?(:mob, 21, :sc_whistle)
+  end
+
+  test "a unit without a position has nothing to leave" do
+    assert :ok = Trigger.on_removed({:player, 404})
+  end
+
+  test "the linger leaves a status that ended meanwhile ended" do
+    mover = player(11, {5, 5})
+
+    song =
+      group(1, WhistleField,
+        skill_id: 319,
+        skill_name: :ba_whistle,
+        expires_at: @now + 60_000,
+        state: %{performance: %{kind: :song, performers: [1]}}
+      )
+
+    FieldSupport.place(song, song.cells)
+    %StatusEntry{} = held = StatusStorage.get_status(:player, 11, :sc_whistle)
+    :ok = StatusStorage.remove_status(:player, 11, :sc_whistle)
+
+    expect(StatusStorage, :get_status, fn :player, 11, :sc_whistle -> held end)
+    stub(StatusStorage, :get_status, &call_original(StatusStorage, :get_status, [&1, &2, &3]))
+
+    FieldSupport.onleft(song, mover)
+    refute StatusStorage.has_status?(:player, 11, :sc_whistle)
   end
 end

@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerFreecastTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -47,7 +46,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerFreecastTest do
     Mimic.copy(SkillUnit)
     Mimic.copy(SkillUnitManager)
     Mimic.copy(Storage)
-    Mimic.copy(FieldSupport)
     Mimic.copy(Movement)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
@@ -62,7 +60,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerFreecastTest do
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
     stub(SkillUnit, :in_range, fn _map, _x, _y, _range -> [] end)
     stub(Storage, :get_groups_at_cell, fn _map, _x, _y -> [] end)
-    stub(FieldSupport, :sources_for_unit, fn _type, _id -> [] end)
     stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
 
     stub(SkillUnitManager, :sync_view, fn _observer_id, _enter_ids, _leave_ids ->

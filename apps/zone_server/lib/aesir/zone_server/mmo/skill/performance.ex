@@ -36,9 +36,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
   @doc """
   Runs the renewal snapshot or starts a pre-renewal ground field.
 
-  Pre-renewal options: `:kind` (`:song`, `:dance` or `:ensemble`) and positive
-  `:upkeep` are required. `:reach` defaults to `:everyone`; `:layout_radius`
-  defaults to 3 (use 4 for ensembles); `:linger_ms` defaults to 20 seconds;
+  Pre-renewal options: `:kind` (`:song`, `:dance` or `:ensemble`), positive
+  `:upkeep` and `:linger_ms` (the time a recipient keeps a solo song or dance
+  after leaving it, zero when it never lingers) are required. `:reach`
+  defaults to `:everyone`; `:layout_radius` defaults to 3 (use 4 for ensembles);
   `:tick` defaults to nil and `:tick_interval` (the Unit interval of the
   field's own effect) to 3 seconds; `:no_overlap` (default false) shares that
   interval across every field of the skill; `:ignore_land_protector` defaults to

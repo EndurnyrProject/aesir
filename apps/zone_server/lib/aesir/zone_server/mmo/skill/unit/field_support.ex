@@ -1,272 +1,307 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   @moduledoc """
-  Tracks statuses granted by individual ground-field groups.
+  The status a ground field grants to the units standing in it, driven by the
+  field's unit events and run inside `Skill.Unit.Manager`.
 
-  A support row is owned by exactly one field group. Releasing a row therefore
-  cannot remove another field's contribution; the effective status is rebuilt
-  from the remaining rows after every change.
+  A field describes its status through the handler's `field_support/1`
+  (`status_type`, `params`, `target?`, optional `linger_ms` and `grants?`).
+  `target?/2` is the unit's target check: the handler's predicate on a unit
+  that is not an invincible player. The events:
+
+    * `onplace/2` - a target entering a cell, standing on a cell being placed,
+      or standing where a song cell arrives: the status starts only when the
+      unit lacks it, for the group's whole lifetime (a solo song or dance adds
+      one unit pass so the field is gone before the status). A dissonant song
+      cell never grants; it ends the song as a step off would.
+    * `onleft/2` - a unit that left the field entirely: Quagmire lets monsters
+      keep it; a solo song or dance restarts a player's status once as the
+      skill's linger (`val4` marks it, re-entry never refreshes it) and ends it
+      on anyone else; an ensemble ends a performer's own performing lock and,
+      Lullaby aside, the status; every other field ends the status.
+    * `leave/3` - a target leaving the field for good (its removal from play,
+      a cell vanishing under it): the handler's `on_out`, then `onleft`.
+    * `out/3` - `leave/3` for every target standing on vanishing cells
+      (deletion, a cell lost, a song moving on).
+
+  The linger restarts the held entry only while it is still the one that was
+  read, so a status ended or dispelled meanwhile stays ended.
   """
-
-  import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Overlap
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @type unit :: {atom(), integer()}
-  @type params :: keyword() | map()
-  @type aggregator :: ([params()] -> params())
+  @type mover :: {atom(), integer()}
+  @type spec :: %{
+          optional(:linger_ms) => non_neg_integer(),
+          optional(:grants?) => (mover() -> boolean()),
+          status_type: atom(),
+          params: keyword() | map() | (atom(), integer() -> keyword() | map()),
+          target?: (mover() -> boolean())
+        }
 
-  @doc "Adds or replaces one source contribution and applies its effective status."
-  @spec acquire(atom(), integer(), atom(), integer(), params(), keyword()) ::
-          :ok | {:error, atom()}
-  def acquire(unit_type, unit_id, status_type, source_group_id, params, opts \\ []) do
-    key = {unit_type, unit_id, status_type, source_group_id}
-    aggregate = Keyword.get(opts, :aggregate)
+  @lullaby 306
 
-    case :ets.lookup(table_for(:field_supports), key) do
-      [{^key, %{params: ^params, aggregate: ^aggregate}}] ->
-        if field_owned?(unit_type, unit_id, status_type) do
-          :ok
-        else
-          reconcile(unit_type, unit_id, status_type, opts)
-        end
-
-      _ ->
-        put_row(key, %{params: params, aggregate: aggregate})
-        reconcile(unit_type, unit_id, status_type, opts)
+  @doc "The field's status description, when its handler grants one."
+  @spec spec(Group.t()) :: {:ok, spec()} | :error
+  def spec(%Group{} = group) do
+    with {:ok, module} <- handler_for(group),
+         true <- function_exported?(module, :field_support, 1) do
+      case module.field_support(group) do
+        %{status_type: nil} -> :error
+        spec -> {:ok, %{status_type: _, params: _, target?: _} = spec}
+      end
+    else
+      _ -> :error
     end
   end
 
-  @doc "Releases one source contribution and recalculates the effective status."
-  @spec release(atom(), integer(), atom(), integer(), keyword()) :: :ok | {:error, atom()}
-  def release(unit_type, unit_id, status_type, source_group_id, opts \\ []) do
-    key = {unit_type, unit_id, status_type, source_group_id}
-    released = lookup_rows([key])
-    delete_row(key)
-
-    opts =
-      case released do
-        [{_, %{params: params}}] -> Keyword.put(opts, :released_params, params)
-        [] -> opts
+  @doc """
+  Whether the field's unit events reach `mover` (the unit's target check): never
+  an invincible player, and only the handler's targets when it grants a status.
+  """
+  @spec target?(Group.t(), mover()) :: boolean()
+  def target?(%Group{} = group, mover) do
+    not Invincibility.active?(mover) and
+      case spec(group) do
+        {:ok, spec} -> spec.target?.(mover)
+        :error -> true
       end
-
-    reconcile(unit_type, unit_id, status_type, opts)
   end
 
-  @doc "Releases all contributions owned by a field group."
-  @spec release_group(integer(), keyword()) :: :ok
-  def release_group(source_group_id, opts \\ []) do
-    rows = source_group_id |> group_keys() |> lookup_rows()
-    Enum.each(rows, fn {key, _row} -> delete_row(key) end)
+  @doc """
+  Places a target on one of the field's cells. Returns `:placed` when the
+  event ran to its end (the status started or was already held) and
+  `:skipped` when the cell refused it (dissonance, a Basilica cell, hiding).
+  """
+  @spec onplace(Group.t(), mover(), [non_neg_integer()]) :: :placed | :skipped
+  def onplace(%Group{} = group, {unit_type, unit_id} = mover, except \\ []) do
+    case spec(group) do
+      {:ok, spec} ->
+        cond do
+          not living?(mover) ->
+            :skipped
 
-    rows
-    |> Enum.uniq_by(fn {{unit_type, unit_id, status_type, _}, _row} ->
-      {unit_type, unit_id, status_type}
-    end)
-    |> Enum.each(fn {{unit_type, unit_id, status_type, _}, %{params: params}} ->
-      reconcile(unit_type, unit_id, status_type, Keyword.put(opts, :released_params, params))
-    end)
+          dissonant_cell?(group, mover, except) ->
+            group |> songs_at(mover) |> Enum.each(&onleft(&1, mover))
+            :skipped
+
+          not Targeting.placement_reaches?(group.skill_id, mover) or not grants?(spec, mover) ->
+            :skipped
+
+          StatusStorage.has_status?(unit_type, unit_id, spec.status_type) ->
+            :placed
+
+          true ->
+            start(group, spec, mover)
+            :placed
+        end
+
+      :error ->
+        :placed
+    end
+  end
+
+  @doc "A unit that left the field entirely."
+  @spec onleft(Group.t(), mover()) :: :ok
+  def onleft(%Group{} = group, {unit_type, unit_id} = mover) do
+    case spec(group) do
+      {:ok, spec} -> onleft(kind(group), group, spec, mover, unit_type, unit_id)
+      :error -> if ensemble?(group), do: end_own_dancing(group, mover)
+    end
 
     :ok
   end
 
-  @doc "Reconciles the status from all currently stored source contributions."
-  @spec reconcile(atom(), integer(), atom(), keyword()) :: :ok | {:error, atom()}
-  def reconcile(unit_type, unit_id, status_type, opts \\ []) do
-    stored_rows = stored_rows(unit_type, unit_id, status_type)
-    rows = Enum.map(stored_rows, & &1.params)
+  defp onleft(:quagmire, _group, _spec, _mover, :mob, _unit_id), do: :ok
 
-    case rows do
-      [] ->
-        cond do
-          not field_owned?(unit_type, unit_id, status_type) ->
-            :ok
+  defp onleft(:solo, _group, spec, _mover, :player, unit_id),
+    do: linger(unit_id, spec.status_type, Map.fetch!(spec, :linger_ms))
 
-          unit_type == :player and Keyword.get(opts, :linger_ms, 0) > 0 and
-              Keyword.has_key?(opts, :released_params) ->
-            params =
-              opts
-              |> Keyword.fetch!(:released_params)
-              |> normalize_params()
-              |> Keyword.update(:state, %{}, &Map.delete(&1 || %{}, :field_support))
-              |> Keyword.put(:duration, Keyword.fetch!(opts, :linger_ms))
+  defp onleft(:ensemble, group, spec, mover, unit_type, unit_id) do
+    end_own_dancing(group, mover)
 
-            Interpreter.apply_status(unit_type, unit_id, status_type, params)
+    if group.skill_id != @lullaby,
+      do: Interpreter.remove_status(unit_type, unit_id, spec.status_type)
+  end
 
-          true ->
-            Interpreter.remove_status(unit_type, unit_id, status_type)
-        end
+  defp onleft(_kind, _group, spec, _mover, unit_type, unit_id),
+    do: Interpreter.remove_status(unit_type, unit_id, spec.status_type)
 
-      _ ->
-        params = effective_params(rows, opts, Enum.map(stored_rows, & &1.aggregate))
-        materialize(unit_type, unit_id, status_type, params)
+  # Restarts a held, not yet lingering entry at the linger; a lost replace
+  # reads again, so an entry ended meanwhile is left ended.
+  defp linger(unit_id, status_type, linger_ms) do
+    case StatusStorage.get_status(:player, unit_id, status_type) do
+      %StatusEntry{val4: val4} = held when val4 in [nil, 0] ->
+        lingering = %{held | val4: 1, expires_at: System.monotonic_time(:millisecond) + linger_ms}
+
+        if Interpreter.restart_status_if_current(:player, unit_id, status_type, held, lingering),
+          do: :ok,
+          else: linger(unit_id, status_type, linger_ms)
+
+      _lingering_or_absent ->
+        :ok
     end
   end
 
-  @doc "Returns source rows for a unit/status pair."
-  @spec sources(atom(), integer(), atom()) :: [params()]
-  def sources(unit_type, unit_id, status_type) do
-    unit_type
-    |> unit_status_rows(unit_id, status_type)
-    |> Enum.map(fn {_key, %{params: params}} -> params end)
+  @doc """
+  A target leaving the field for good: `on_out` (the handler's callback, run
+  by the caller) and then `onleft`.
+  """
+  @spec leave(Group.t(), mover(), (mover() -> :ok)) :: :ok
+  def leave(%Group{} = group, mover, on_out) do
+    on_out.(mover)
+    onleft(group, mover)
   end
 
-  @doc "Returns all support keys owned by a field group."
-  @spec sources_for_group(integer()) :: [{atom(), integer(), atom(), params()}]
-  def sources_for_group(source_group_id) do
-    source_group_id
-    |> group_keys()
-    |> lookup_rows()
-    |> Enum.map(fn {{unit_type, unit_id, status_type, _}, %{params: params}} ->
-      {unit_type, unit_id, status_type, params}
+  @doc "Runs `leave/3` for every target standing on `cells` as those cells vanish."
+  @spec out(Group.t(), [Group.cell()], (mover() -> :ok)) :: :ok
+  def out(%Group{} = group, cells, on_out) do
+    group
+    |> occupants(cells)
+    |> Enum.each(fn mover -> if target?(group, mover), do: leave(group, mover, on_out) end)
+  end
+
+  @doc "Places every target standing on `cells` (a placement or a song's new cells)."
+  @spec place(Group.t(), [Group.cell()], [non_neg_integer()]) :: :ok
+  def place(%Group{} = group, cells, except \\ []) do
+    group
+    |> occupants(cells)
+    |> Enum.each(fn mover -> if target?(group, mover), do: onplace(group, mover, except) end)
+  end
+
+  @doc """
+  A song or dance stopped covering `cells`: an occupant of a song cell that is
+  no longer dissonant is placed on it again.
+  """
+  @spec overlap_removed(Group.t(), [Group.cell()]) :: :ok
+  def overlap_removed(%Group{state: %{performance: %{kind: kind}}} = group, cells)
+      when kind in [:song, :dance] do
+    Enum.each(cells, fn {x, y} = cell ->
+      group.map_name
+      |> Storage.get_groups_at_cell(x, y)
+      |> Enum.filter(&match?(%{performance: %{kind: ^kind}}, &1.state))
+      |> Enum.reject(
+        &(&1.group_id == group.group_id or Overlap.dissonant?(&1, cell, [group.group_id]))
+      )
+      |> Enum.each(&place(&1, [cell], [group.group_id]))
     end)
   end
 
-  @doc "Returns all support keys owned for a unit."
-  @spec sources_for_unit(atom(), integer()) :: [{atom(), integer(), atom(), integer(), params()}]
-  def sources_for_unit(unit_type, unit_id) do
-    unit_type
-    |> unit_keys(unit_id)
-    |> lookup_rows()
-    |> Enum.map(fn {{^unit_type, ^unit_id, status_type, source_group_id}, %{params: params}} ->
-      {unit_type, unit_id, status_type, source_group_id, params}
-    end)
+  def overlap_removed(%Group{}, _cells), do: :ok
+
+  @doc "Whether placing `mover` on one of the field's cells would run to its end."
+  @spec places?(Group.t(), mover()) :: boolean()
+  def places?(%Group{} = group, mover) do
+    case spec(group) do
+      {:ok, spec} ->
+        not dissonant_cell?(group, mover, []) and
+          Targeting.placement_reaches?(group.skill_id, mover) and grants?(spec, mover)
+
+      :error ->
+        false
+    end
   end
 
-  @doc "Returns whether at least one source supports the status."
-  @spec supported?(atom(), integer(), atom()) :: boolean()
-  def supported?(unit_type, unit_id, status_type) do
-    unit_status_rows(unit_type, unit_id, status_type) != []
+  @doc "The combat units standing on any of `cells`."
+  @spec occupants(Group.t(), [Group.cell()]) :: [mover()]
+  def occupants(%Group{map_name: map_name}, cells) do
+    cells
+    |> Enum.flat_map(fn {x, y} -> SpatialIndex.get_all_units_in_range(map_name, x, y, 0) end)
+    |> Enum.uniq()
+    |> Enum.filter(&(elem(&1, 0) in [:player, :mob, :homunculus]))
   end
 
-  @doc "Returns whether the materialized status is owned by this registry."
-  @spec field_owned?(atom(), integer(), atom()) :: boolean()
-  def field_owned?(unit_type, unit_id, status_type) do
-    case StatusStorage.get_status(unit_type, unit_id, status_type) do
-      %{state: %{field_support: true}} -> true
+  defp start(group, spec, {unit_type, unit_id} = mover) do
+    params =
+      spec
+      |> params_for(mover)
+      |> normalize()
+      |> Keyword.put(:duration, group.expires_at - group.created_at + extra_ms(group))
+
+    case Interpreter.apply_status(unit_type, unit_id, spec.status_type, params) do
+      :ok ->
+        :ok
+
+      {:error, _reason} = error ->
+        Logger.error(
+          "Field status #{spec.status_type} failed for #{unit_type}:#{unit_id} " <>
+            "skill=#{group.skill_name}: #{inspect(error)}"
+        )
+    end
+  end
+
+  defp extra_ms(group), do: if(kind(group) == :solo, do: Manager.tick_interval(), else: 0)
+
+  defp end_own_dancing(%Group{skill_id: skill_id}, {unit_type, unit_id}) do
+    case StatusStorage.get_status(unit_type, unit_id, :sc_dancing) do
+      %StatusEntry{val1: ^skill_id} ->
+        Interpreter.remove_status(unit_type, unit_id, :sc_dancing, owner_refresh: :notify)
+
+      _other ->
+        :ok
+    end
+  end
+
+  defp dissonant_cell?(group, {unit_type, unit_id}, except) do
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {x, y, map_name}} when map_name == group.map_name ->
+        Overlap.dissonant?(group, {x, y}, except)
+
+      _ ->
+        false
+    end
+  end
+
+  defp songs_at(%Group{state: %{performance: %{kind: kind}}} = group, {unit_type, unit_id}) do
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {x, y, map_name}} when map_name == group.map_name ->
+        map_name
+        |> Storage.get_groups_at_cell(x, y)
+        |> Enum.filter(&match?(%{performance: %{kind: ^kind}}, &1.state))
+
+      _ ->
+        [group]
+    end
+  end
+
+  defp kind(%Group{skill_name: :wz_quagmire}), do: :quagmire
+  defp kind(%Group{state: %{performance: %{kind: :ensemble}}}), do: :ensemble
+  defp kind(%Group{state: %{performance: %{kind: kind}}}) when kind in [:song, :dance], do: :solo
+  defp kind(%Group{}), do: :field
+
+  defp ensemble?(group), do: kind(group) == :ensemble
+
+  defp grants?(%{grants?: grants?}, mover), do: grants?.(mover)
+  defp grants?(_spec, _mover), do: true
+
+  defp params_for(%{params: params}, {unit_type, unit_id}) when is_function(params, 2),
+    do: params.(unit_type, unit_id)
+
+  defp params_for(%{params: params}, _mover), do: params
+
+  defp normalize(params) when is_list(params), do: params
+  defp normalize(params) when is_map(params), do: Map.to_list(params)
+
+  defp living?({unit_type, unit_id}) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, state, _pid}} -> Unit.living?(state)
       _ -> false
     end
   end
 
-  defp effective_params(rows, opts, stored_aggregates) do
-    aggregate =
-      Keyword.get(opts, :aggregate) || Enum.find(stored_aggregates, &is_function(&1, 1)) ||
-        aggregate_from_rows(rows)
-
-    if is_function(aggregate, 1) do
-      aggregate.(rows)
-    else
-      Enum.max_by(rows, &strength/1)
-    end
-  end
-
-  defp stored_rows(unit_type, unit_id, status_type) do
-    unit_type
-    |> unit_status_rows(unit_id, status_type)
-    |> Enum.map(fn {_key, row} -> row end)
-  end
-
-  defp put_row({unit_type, unit_id, _status_type, source_group_id} = key, row) do
-    :ets.insert(table_for(:field_supports), {key, row})
-    :ets.insert(table_for(:field_support_unit_index), {{unit_type, unit_id}, key})
-    :ets.insert(table_for(:field_support_group_index), {source_group_id, key})
-    :ok
-  end
-
-  defp delete_row({unit_type, unit_id, _status_type, source_group_id} = key) do
-    :ets.delete(table_for(:field_supports), key)
-    :ets.delete_object(table_for(:field_support_unit_index), {{unit_type, unit_id}, key})
-    :ets.delete_object(table_for(:field_support_group_index), {source_group_id, key})
-    :ok
-  end
-
-  defp unit_keys(unit_type, unit_id) do
-    table_for(:field_support_unit_index)
-    |> :ets.lookup({unit_type, unit_id})
-    |> Enum.map(fn {_identity, key} -> key end)
-  end
-
-  defp group_keys(source_group_id) do
-    table_for(:field_support_group_index)
-    |> :ets.lookup(source_group_id)
-    |> Enum.map(fn {_source_group_id, key} -> key end)
-  end
-
-  defp unit_status_rows(unit_type, unit_id, status_type) do
-    unit_type
-    |> unit_keys(unit_id)
-    |> Enum.filter(fn {_unit_type, _unit_id, key_status_type, _} ->
-      key_status_type == status_type
-    end)
-    |> lookup_rows()
-  end
-
-  defp lookup_rows(keys) do
-    Enum.flat_map(keys, fn key ->
-      case :ets.lookup(table_for(:field_supports), key) do
-        [{^key, row}] -> [{key, row}]
-        [] -> []
-      end
-    end)
-  end
-
-  defp aggregate_from_rows(rows) do
-    rows
-    |> Enum.find_value(fn params ->
-      case get_param(params, :aggregate) do
-        aggregate when is_function(aggregate, 1) -> aggregate
-        _ -> nil
-      end
-    end)
-  end
-
-  defp strength(params) do
-    {get_param(params, :level, 0), get_param(params, :val1, 0)}
-  end
-
-  defp normalize_params(params) when is_list(params), do: params
-  defp normalize_params(params) when is_map(params), do: Map.to_list(params)
-
-  defp materialize(unit_type, unit_id, status_type, params) do
-    result =
-      Interpreter.apply_status(
-        unit_type,
-        unit_id,
-        status_type,
-        params |> with_field_marker() |> normalize_params()
-      )
-
-    if match?({:error, _}, result) do
-      Logger.error(
-        "Field support status #{status_type} failed for #{unit_type}:#{unit_id}: #{inspect(result)}"
-      )
-    end
-
-    result
-  end
-
-  defp with_field_marker(params) when is_list(params) do
-    Keyword.update(
-      params,
-      :state,
-      %{field_support: true},
-      &Map.put(&1 || %{}, :field_support, true)
-    )
-    |> Keyword.put(:duration, 0)
-  end
-
-  defp with_field_marker(params) when is_map(params) do
-    params
-    |> Map.update(:state, %{field_support: true}, &Map.put(&1 || %{}, :field_support, true))
-    |> Map.put(:duration, 0)
-  end
-
-  defp get_param(params, key, default \\ nil)
-
-  defp get_param(params, key, default) when is_list(params),
-    do: Keyword.get(params, key, default)
-
-  defp get_param(params, key, default) when is_map(params), do: Map.get(params, key, default)
+  defp handler_for(%Group{handler: handler}) when not is_nil(handler), do: {:ok, handler}
+  defp handler_for(%Group{skill_name: skill_name}), do: Catalog.ground_module_for(skill_name)
 end

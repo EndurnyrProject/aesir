@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -52,7 +51,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(SkillUnit)
     Mimic.copy(SkillUnitManager)
     Mimic.copy(Storage)
-    Mimic.copy(FieldSupport)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
@@ -78,7 +76,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     stub(StatusManager, :recalculate_after_status_change, fn state -> state end)
     stub(SkillUnit, :in_range, fn _map, _x, _y, _range, _observer_id, _party_id -> [] end)
     stub(Storage, :get_groups_at_cell, fn _map, _x, _y -> [] end)
-    stub(FieldSupport, :sources_for_unit, fn _type, _id -> [] end)
 
     stub(SkillUnitManager, :sync_view, fn _observer_id, _enter_ids, _leave_ids ->
       MapSet.new()
@@ -299,53 +296,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
 
       refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
-    end
-
-    test "makes no manager calls when the destination has no groups or support" do
-      Mimic.copy(Movement)
-      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
-      expect(Storage, :get_groups_at_cell, fn "prontera", 51, 50 -> [] end)
-      expect(FieldSupport, :sources_for_unit, fn :player, 1 -> [] end)
-      reject(&SkillUnitManager.reconcile_unit/1)
-      reject(&SkillUnitManager.sync_view/3)
-
-      {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
-    end
-
-    test "reconciles support when leaving its group for an empty destination" do
-      test_pid = self()
-      Mimic.copy(Movement)
-      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
-      expect(Storage, :get_groups_at_cell, fn "prontera", 51, 50 -> [] end)
-
-      expect(FieldSupport, :sources_for_unit, fn :player, 1 ->
-        [{:player, 1, :sc_quagmire, 77, []}]
-      end)
-
-      expect(SkillUnitManager, :reconcile_unit, fn {:player, 1} ->
-        send(test_pid, :reconciled)
-        :ok
-      end)
-
-      {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
-
-      assert_received :reconciled
-    end
-
-    test "reconciles field support when the destination has skill-unit groups" do
-      test_pid = self()
-      Mimic.copy(Movement)
-      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
-      expect(Storage, :get_groups_at_cell, fn "prontera", 51, 50 -> [:group] end)
-
-      expect(SkillUnitManager, :reconcile_unit, fn {:player, 1} ->
-        send(test_pid, :reconciled)
-        :ok
-      end)
-
-      {:noreply, _new_state} = MovementHandler.handle_movement_tick(moving_state())
-
-      assert_received :reconciled
     end
 
     test "a dynamic movement blocker stops the player before it steps into the cell" do

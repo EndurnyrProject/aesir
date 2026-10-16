@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Overlap
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -161,7 +160,6 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
 
     [group] = Storage.get_groups_by_caster(:player, dancer.character.id)
     assert Field.field_support(group).target?.({:mob, mob.unit_id})
-    assert_eventually(fn -> FieldSupport.supported?(:mob, mob.unit_id, :sc_dontforgetme) end)
     assert_eventually(fn -> StatusStorage.has_status?(:mob, mob.unit_id, :sc_dontforgetme) end)
 
     assert_eventually(fn ->
@@ -203,7 +201,7 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
 
     guest_id = guest.character.id
     cast(whistle, 319, 5)
-    assert_eventually(fn -> FieldSupport.field_owned?(:player, guest_id, :sc_whistle) end)
+    assert_eventually(fn -> held?(guest_id, :sc_whistle) end)
     before_mob_hp = get_mob_state(mob.pid).hp
 
     cast(bragi, 321, 5)
@@ -212,8 +210,8 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
       match?([_], Storage.get_groups_by_caster(:player, bragi.character.id))
     end)
 
-    assert_eventually(fn -> not FieldSupport.field_owned?(:player, guest_id, :sc_whistle) end)
-    assert_eventually(fn -> not FieldSupport.field_owned?(:player, guest_id, :sc_poembragi) end)
+    assert_eventually(fn -> lingering?(guest_id, :sc_whistle) end)
+    refute StatusStorage.has_status?(:player, guest_id, :sc_poembragi)
 
     # The shared cells strike as Dissonance every 3 s, but both songs' units
     # carry NoMob, which the dance switch keeps.
@@ -240,7 +238,7 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
 
     cast(bragi, 304, 1)
     assert_eventually(fn -> Storage.get_groups_by_caster(:player, bragi.character.id) == [] end)
-    assert_eventually(fn -> FieldSupport.field_owned?(:player, guest_id, :sc_whistle) end, 2_000)
+    assert_eventually(fn -> held?(guest_id, :sc_whistle) end, 2_000)
   end
 
   test "a song and dance share cells without suppressing either occupant buff" do
@@ -260,8 +258,8 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
       match?([_], Storage.get_groups_by_caster(:player, dancer.character.id))
     end)
 
-    assert_eventually(fn -> FieldSupport.field_owned?(:player, guest_id, :sc_whistle) end)
-    assert_eventually(fn -> FieldSupport.field_owned?(:player, guest_id, :sc_humming) end)
+    assert_eventually(fn -> held?(guest_id, :sc_whistle) end)
+    assert_eventually(fn -> held?(guest_id, :sc_humming) end)
 
     groups =
       Storage.get_groups_by_caster(:player, bard.character.id) ++
@@ -339,5 +337,27 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceFieldsIntegrationTest do
     session = start_player_session(character: character, map_name: map, position: {x, y})
     on_exit(fn -> if Process.alive?(session.pid), do: end_player_session(session) end)
     session
+  end
+
+  # A held song runs for the field's whole minute; a lingering one is marked
+  # in `val4` and runs out within 20 s.
+  defp held?(player_id, status) do
+    case StatusStorage.get_status(:player, player_id, status) do
+      %{val4: 0, expires_at: expires_at} when is_integer(expires_at) ->
+        expires_at - System.monotonic_time(:millisecond) > 20_000
+
+      _ ->
+        false
+    end
+  end
+
+  defp lingering?(player_id, status) do
+    case StatusStorage.get_status(:player, player_id, status) do
+      %{val4: 1, expires_at: expires_at} when is_integer(expires_at) ->
+        (expires_at - System.monotonic_time(:millisecond)) in 1..20_000
+
+      _ ->
+        false
+    end
   end
 end

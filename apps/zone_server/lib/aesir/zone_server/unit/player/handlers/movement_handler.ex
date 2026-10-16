@@ -22,9 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport, as: SkillUnitFieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -184,18 +182,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     )
 
     Basilica.sync_cell_status(updated_game_state)
-
-    destination_groups =
-      SkillUnitStorage.get_groups_at_cell(
-        updated_game_state.map_name,
-        updated_game_state.x,
-        updated_game_state.y
-      )
-
-    if destination_groups != [] or
-         SkillUnitFieldSupport.sources_for_unit(:player, updated_game_state.character_id) != [] do
-      SkillUnitManager.reconcile_unit({:player, updated_game_state.character_id})
-    end
 
     # Handle visibility updates
     updated_game_state = handle_visibility_update(updated_game_state)

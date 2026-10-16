@@ -48,10 +48,11 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
     refute StatusStorage.has_status?(:player, bard_id, :sc_whistle)
   end
 
-  test "entering grants the song, leaving starts a 20-second linger, and re-entry restores it", %{
-    bard: bard,
-    listener: listener
-  } do
+  test "entering grants the song, leaving starts a 20-second linger, and re-entry does not refresh it",
+       %{
+         bard: bard,
+         listener: listener
+       } do
     cast(bard, @whistle, 5)
 
     assert_eventually(fn ->
@@ -61,36 +62,20 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
     move(listener, {152, 150})
     assert_eventually(fn -> position(listener) == {152, 150} end)
 
-    assert_eventually(fn ->
-      match?(
-        %{expires_at: nil, state: %{field_support: true}},
-        StatusStorage.get_status(:player, listener.character.id, :sc_whistle)
-      )
-    end)
+    assert_eventually(fn -> held?(listener) end)
 
     move(listener, {155, 150})
     assert_eventually(fn -> position(listener) == {155, 150} end)
+    assert_eventually(fn -> lingering?(listener) end)
 
-    assert_eventually(fn ->
-      case StatusStorage.get_status(:player, listener.character.id, :sc_whistle) do
-        %{expires_at: expires_at, state: state} when is_integer(expires_at) ->
-          not Map.get(state, :field_support, false) and
-            (expires_at - System.monotonic_time(:millisecond)) in 1..20_000
-
-        _ ->
-          false
-      end
-    end)
+    %{expires_at: linger_deadline} =
+      StatusStorage.get_status(:player, listener.character.id, :sc_whistle)
 
     move(listener, {152, 150})
     assert_eventually(fn -> position(listener) == {152, 150} end)
 
-    assert_eventually(fn ->
-      match?(
-        %{expires_at: nil, state: %{field_support: true}},
-        StatusStorage.get_status(:player, listener.character.id, :sc_whistle)
-      )
-    end)
+    assert %{val4: 1, expires_at: ^linger_deadline} =
+             StatusStorage.get_status(:player, listener.character.id, :sc_whistle)
   end
 
   test "a walking performer is slowed and the field follows, moving its occupancy", %{
@@ -116,12 +101,7 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
     assert [] == Storage.get_groups_at_cell("prontera", 147, 150)
     assert [_] = Storage.get_groups_at_cell("prontera", 155, 150)
 
-    assert_eventually(fn ->
-      match?(
-        %{state: %{field_support: true}},
-        StatusStorage.get_status(:player, listener_id, :sc_whistle)
-      )
-    end)
+    assert_eventually(fn -> held?(listener) end)
   end
 
   test "the performer cannot attack or Encore, but may cast Musical Strike", %{bard: bard} do
@@ -243,6 +223,38 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
     assert_lingering(listener)
   end
 
+  test "a listener who warps off the song lingers", %{bard: bard, listener: listener} do
+    cast(bard, @whistle, 5)
+
+    assert_eventually(fn ->
+      StatusStorage.has_status?(:player, bard.character.id, :sc_dancing)
+    end)
+
+    occupy(listener)
+
+    PlayerSession.warp(listener.pid, "prontera", 100, 100)
+    assert_eventually(fn -> position(listener) == {100, 100} end)
+    assert_lingering(listener)
+  end
+
+  test "a listener who dies inside the song lingers", %{bard: bard, listener: listener} do
+    cast(bard, @whistle, 5)
+
+    assert_eventually(fn ->
+      StatusStorage.has_status?(:player, bard.character.id, :sc_dancing)
+    end)
+
+    occupy(listener)
+
+    PlayerSession.apply_damage(
+      listener.pid,
+      get_player_state(listener.pid).stats.current_state.hp
+    )
+
+    assert_eventually(fn -> get_player_state(listener.pid).action_state == :dead end)
+    assert_lingering(listener)
+  end
+
   test "exactly a quarter MaxHP leaves the lock, but a larger hit ends it", %{
     bard: bard,
     listener: listener
@@ -277,22 +289,31 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
 
   defp occupy(listener) do
     move(listener, {152, 150})
-
-    assert_eventually(fn ->
-      match?(
-        %{state: %{field_support: true}},
-        StatusStorage.get_status(:player, listener.character.id, :sc_whistle)
-      )
-    end)
+    assert_eventually(fn -> held?(listener) end)
   end
 
-  defp assert_lingering(listener) do
-    assert_eventually(fn ->
-      match?(
-        %{expires_at: expires_at} when is_integer(expires_at),
-        StatusStorage.get_status(:player, listener.character.id, :sc_whistle)
-      )
-    end)
+  defp assert_lingering(listener), do: assert_eventually(fn -> lingering?(listener) end)
+
+  # A held song runs for the field's whole minute (plus one unit pass); a
+  # lingering one is marked in `val4` and runs out within 20 s.
+  defp held?(listener) do
+    case StatusStorage.get_status(:player, listener.character.id, :sc_whistle) do
+      %{val4: 0, expires_at: expires_at} when is_integer(expires_at) ->
+        expires_at - System.monotonic_time(:millisecond) > 20_000
+
+      _ ->
+        false
+    end
+  end
+
+  defp lingering?(listener) do
+    case StatusStorage.get_status(:player, listener.character.id, :sc_whistle) do
+      %{val4: 1, expires_at: expires_at} when is_integer(expires_at) ->
+        (expires_at - System.monotonic_time(:millisecond)) in 1..20_000
+
+      _ ->
+        false
+    end
   end
 
   defp tick_dancing(id, count, outcome \\ :active) do

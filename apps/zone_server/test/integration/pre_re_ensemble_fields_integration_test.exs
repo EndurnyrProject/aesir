@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
 
     assert_eventually(fn ->
       match?(
-        %{val1: 5, expires_at: nil},
+        %{val1: 5, expires_at: expires_at} when is_integer(expires_at),
         StatusStorage.get_status(:player, guest.character.id, :sc_drumbattle)
       )
     end)

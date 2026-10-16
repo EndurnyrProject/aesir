@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -48,6 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
                kind: :song,
                reach: :everyone,
                upkeep: 5,
+               linger_ms: 20_000,
                lesson_level: 10
              )
 
@@ -67,7 +69,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     refute StatusStorage.has_status?(:player, 17, :sc_whistle)
 
     assert {:error, :already_performing} =
-             Field.start(caster, definition, 5, :sc_whistle, [], kind: :song, upkeep: 5)
+             Field.start(caster, definition, 5, :sc_whistle, [],
+               kind: :song,
+               upkeep: 5,
+               linger_ms: 20_000
+             )
   end
 
   @tag game_mode: :pre_renewal
@@ -81,6 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
       Field.start(caster, definition, 5, :sc_whistle, [],
         kind: :ensemble,
         upkeep: 5,
+        linger_ms: 0,
         partners: [18]
       )
 
@@ -91,14 +98,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "field reach excludes the performer and dissonant positions, and unlocks on expiry" do
+  test "field reach excludes the performer, a dissonant cell grants nothing, and expiry unlocks" do
     caster = player(17)
     :ok = UnitRegistry.register_player(caster, self())
     :ok = SpatialIndex.add_unit(:player, 17, 10, 10, "prontera")
     :ok = UnitRegistry.register_player(player(18), self())
     :ok = SpatialIndex.add_unit(:player, 18, 11, 10, "prontera")
     {:ok, definition} = Catalog.by_name(:ba_whistle)
-    {:ok, _} = Field.start(caster, definition, 5, :sc_whistle, [], kind: :song, upkeep: 5)
+
+    {:ok, _} =
+      Field.start(caster, definition, 5, :sc_whistle, [],
+        kind: :song,
+        upkeep: 5,
+        linger_ms: 20_000
+      )
+
     [group] = Storage.get_groups_by_caster(:player, 17)
 
     support = Field.field_support(group)
@@ -108,7 +122,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     assert support.params[:caster_id] == 17
 
     :ok = Storage.insert(%{group | group_id: 9_002, caster_id: 20, cells: [{11, 10}]})
-    refute Field.field_support(group).target?.({:player, 18})
+    assert Field.field_support(group).target?.({:player, 18})
+    refute FieldSupport.places?(group, {:player, 18})
     assert :ok = Field.on_expire(group)
     refute StatusStorage.has_status?(:player, 17, :sc_dancing)
   end
@@ -155,6 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
                kind: :song,
                reach: :enemy,
                upkeep: 3,
+               linger_ms: 0,
                tick: :dissonance
              )
 
@@ -166,7 +182,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     refute Field.field_support(group).target?.({:mob, 42})
 
     assert {:error, :already_performing} =
-             Field.start(mob, definition, 5, nil, [], kind: :song, upkeep: 3)
+             Field.start(mob, definition, 5, nil, [], kind: :song, upkeep: 3, linger_ms: 0)
 
     assert :ok = Field.on_expire(group)
     refute StatusStorage.has_status?(:mob, 42, :sc_dancing)
@@ -182,7 +198,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     :ok = UnitRegistry.register_player(player(19), self())
     :ok = SpatialIndex.add_unit(:player, 19, 9, 10, "prontera")
     {:ok, definition} = Catalog.by_name(:ba_whistle)
-    {:ok, _} = Field.start(caster, definition, 5, :sc_whistle, [], kind: :song, upkeep: 5)
+
+    {:ok, _} =
+      Field.start(caster, definition, 5, :sc_whistle, [],
+        kind: :song,
+        upkeep: 5,
+        linger_ms: 20_000
+      )
+
     [group] = Storage.get_groups_by_caster(:player, 17)
 
     :ok =
@@ -203,8 +226,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
       })
 
     support = Field.field_support(group)
-    refute support.target?.({:player, 18})
-    assert support.target?.({:player, 19})
+    assert support.target?.({:player, 18})
+    refute support.grants?.({:player, 18})
+    assert support.grants?.({:player, 19})
   end
 
   @tag game_mode: :pre_renewal
@@ -236,7 +260,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, mob, self())
     :ok = SpatialIndex.add_unit(:mob, 42, 10, 10, "prontera")
     {:ok, definition} = Catalog.by_name(:ba_whistle)
-    {:ok, _} = Field.start(caster, definition, 5, :sc_whistle, [], kind: :song, upkeep: 5)
+
+    {:ok, _} =
+      Field.start(caster, definition, 5, :sc_whistle, [],
+        kind: :song,
+        upkeep: 5,
+        linger_ms: 20_000
+      )
+
     [group] = Storage.get_groups_by_caster(:player, 17)
 
     party = put_in(group.state.performance.reach, :party) |> Field.field_support()
@@ -283,6 +314,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
                kind: :ensemble,
                upkeep: 10,
                upkeep_sp: 8,
+               linger_ms: 0,
                root: :always,
                partners: [18]
              )
@@ -300,7 +332,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
       caster = player(id)
       :ok = UnitRegistry.register_player(caster, self())
       {:ok, definition} = Catalog.by_name(:ba_whistle)
-      assert {:ok, _} = Field.start(caster, definition, 5, nil, [], kind: kind, upkeep: 5)
+
+      assert {:ok, _} =
+               Field.start(caster, definition, 5, nil, [], kind: kind, upkeep: 5, linger_ms: 0)
 
       assert %{state: %{root: ^root, upkeep_sp: 1}} =
                StatusStorage.get_status(:player, id, :sc_dancing)
@@ -330,6 +364,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
              Field.start(caster, definition, 5, :sc_whistle, [],
                kind: :ensemble,
                upkeep: 5,
+               linger_ms: 0,
                reach: :party_or_guild
              )
 
@@ -355,13 +390,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     :ok = UnitRegistry.register_player(player(18, 13), self())
     register_mob(42, 11, 10)
     {:ok, whistle} = Catalog.by_name(:ba_whistle)
-    {:ok, _} = Field.start(player(17), whistle, 5, :sc_whistle, [], kind: :song, upkeep: 5)
+
+    {:ok, _} =
+      Field.start(player(17), whistle, 5, :sc_whistle, [],
+        kind: :song,
+        upkeep: 5,
+        linger_ms: 20_000
+      )
+
     [group] = Storage.get_groups_by_caster(:player, 17)
 
     assert Field.cell_profile(group, {11, 10}) == :none
     assert Field.unit_targets(group, {11, 10}, [{:mob, 42}]) == []
 
-    {:ok, _} = Field.start(player(18, 13), whistle, 1, :sc_whistle, [], kind: :song, upkeep: 5)
+    {:ok, _} =
+      Field.start(player(18, 13), whistle, 1, :sc_whistle, [],
+        kind: :song,
+        upkeep: 5,
+        linger_ms: 20_000
+      )
 
     assert Field.cell_profile(group, {11, 10}) == @dissonance
     assert Field.cell_profile(group, {7, 10}) == :none
@@ -385,10 +432,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     :ok = UnitRegistry.register_player(player(18, 13), self())
     register_mob(42, 11, 10)
     {:ok, forget} = Catalog.by_name(:dc_dontforgetme)
-    {:ok, _} = Field.start(player(17), forget, 5, :sc_dontforgetme, [], kind: :dance, upkeep: 5)
 
     {:ok, _} =
-      Field.start(player(18, 13), forget, 1, :sc_dontforgetme, [], kind: :dance, upkeep: 5)
+      Field.start(player(17), forget, 5, :sc_dontforgetme, [],
+        kind: :dance,
+        upkeep: 5,
+        linger_ms: 20_000
+      )
+
+    {:ok, _} =
+      Field.start(player(18, 13), forget, 1, :sc_dontforgetme, [],
+        kind: :dance,
+        upkeep: 5,
+        linger_ms: 20_000
+      )
 
     [group] = Storage.get_groups_by_caster(:player, 17)
 
@@ -421,6 +478,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
           kind: :song,
           reach: :enemy,
           upkeep: 3,
+          linger_ms: 0,
           tick: :dissonance,
           tick_interval: 3_000,
           no_overlap: true
@@ -431,6 +489,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
           kind: :song,
           reach: :enemy,
           upkeep: 3,
+          linger_ms: 0,
           tick: :dissonance,
           tick_interval: 3_000,
           no_overlap: true
@@ -498,7 +557,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
         kind: :ensemble,
         ignore_land_protector: true,
         partners: [18],
-        upkeep: 5
+        upkeep: 5,
+        linger_ms: 0
       )
 
     [group] = Storage.get_groups_by_caster(:player, 17)

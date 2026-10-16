@@ -12,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
@@ -370,6 +369,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       map_name: "prontera",
       center: {100, 100},
       cells: [{100, 100}],
+      created_at: 10_000,
       next_tick_at: 0,
       expires_at: 1_000_000,
       interval: 450,
@@ -2527,8 +2527,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       send(test_pid, {observer_id, packet})
     end)
 
-    reject(&Interpreter.apply_status/4)
-
     :ok = SpatialIndex.add_unit(:player, 43, 100, 100, "prontera")
 
     :ok =
@@ -2554,7 +2552,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                )
              )
 
-    assert [] == FieldSupport.sources_for_group(1)
+    refute StatusStorage.has_status?(:player, 43, :sc_quagmire)
     assert MapSet.new([1]) == Manager.snapshot_for(manager, 43, "prontera", 100, 100, 0)
     assert_receive {43, %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1}]}}
   end
@@ -2864,7 +2862,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     refute_received {:expired, 1}
   end
 
-  test "natural field expiry lingers for a player but removes a mob's status" do
+  test "natural field expiry ends the status of every occupant" do
     player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
 
     mob = %MobState{
@@ -2898,17 +2896,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     manager = start_manager(10_000)
     allow(Interpreter, self(), manager)
     assert :ok = Manager.register(manager, group(1, handler: LingerField, expires_at: 11_000))
-    assert FieldSupport.field_owned?(:player, 21, :sc_quagmire)
-    assert FieldSupport.field_owned?(:mob, 22, :sc_quagmire)
+    assert StatusStorage.has_status?(:player, 21, :sc_quagmire)
+    assert StatusStorage.has_status?(:mob, 22, :sc_quagmire)
 
     assert :ok = Manager.tick(manager, 11_000)
     assert Storage.get(1) == nil
-    assert StatusStorage.get_status(:player, 21, :sc_quagmire).expires_at != nil
-    refute FieldSupport.field_owned?(:player, 21, :sc_quagmire)
+    refute StatusStorage.has_status?(:player, 21, :sc_quagmire)
     refute StatusStorage.has_status?(:mob, 22, :sc_quagmire)
   end
 
-  test "moving out of a field retains the player status for its linger" do
+  test "stepping off a field ends the status" do
     player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
     :ok = UnitRegistry.register_unit(:player, 21, PlayerState, player)
     :ok = SpatialIndex.add_unit(:player, 21, 100, 100, "prontera")
@@ -2917,16 +2914,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       StatusStorage.apply_status(type, id, status, params)
     end)
 
+    stub(Interpreter, :remove_status, fn type, id, status ->
+      StatusStorage.remove_status(type, id, status)
+    end)
+
     manager = start_manager(10_000)
     allow(Interpreter, self(), manager)
     assert :ok = Manager.register(manager, group(1, handler: LingerField))
-    assert FieldSupport.field_owned?(:player, 21, :sc_quagmire)
+    assert StatusStorage.has_status?(:player, 21, :sc_quagmire)
 
     :ok = SpatialIndex.remove_unit(:player, 21)
     :ok = SpatialIndex.add_unit(:player, 21, 105, 105, "prontera")
-    assert :ok = Manager.reconcile_unit(manager, {:player, 21})
-    refute FieldSupport.field_owned?(:player, 21, :sc_quagmire)
-    assert StatusStorage.get_status(:player, 21, :sc_quagmire).expires_at != nil
+    assert :ok = Manager.trigger(manager, 1, {:player, 21}, :on_out)
+    refute StatusStorage.has_status?(:player, 21, :sc_quagmire)
   end
 
   test "a hidden occupant gains a field status only from a TargetHidden skill, and keeps one it holds" do
@@ -2947,39 +2947,46 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     allow(Interpreter, self(), manager)
 
     assert :ok = Manager.register(manager, group(1, handler: FieldUnit, skill_id: 285))
-    assert [{:player, 21, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
-    refute FieldSupport.field_owned?(:player, 22, :sc_quagmire)
+    assert StatusStorage.has_status?(:player, 21, :sc_quagmire)
+    refute StatusStorage.has_status?(:player, 22, :sc_quagmire)
 
     :ok = StatusStorage.apply_status(:player, 21, :sc_hiding)
-    assert :ok = Manager.reconcile_unit(manager, {:player, 21})
-    assert [{:player, 21, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+    assert :ok = Manager.trigger(manager, 1, {:player, 21}, :on_touch)
+    assert StatusStorage.has_status?(:player, 21, :sc_quagmire)
 
     assert :ok = Manager.register(manager, group(2, handler: FieldUnit, skill_id: 92))
-    assert {:player, 22, :sc_quagmire, []} in FieldSupport.sources_for_group(2)
+    assert StatusStorage.has_status?(:player, 22, :sc_quagmire)
   end
 
   test "a field without an occupant status does not grant one on touch" do
     manager = start_manager(10_000)
     assert :ok = Manager.register(manager, group(2, handler: EmptyField))
     assert :ok = Manager.trigger(manager, 2, {:player, 21}, :on_touch)
-    assert FieldSupport.sources_for_group(2) == []
+    refute StatusStorage.has_status?(:player, 21, :sc_quagmire)
   end
 
-  test "re-registering releases field support owned by the replaced group" do
+  test "re-registering a group ends the field status of the replaced group's occupants" do
+    player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+    :ok = UnitRegistry.register_unit(:player, 99, PlayerState, player)
+    :ok = SpatialIndex.add_unit(:player, 99, 100, 100, "prontera")
+
+    stub(Interpreter, :apply_status, fn type, id, status, params ->
+      StatusStorage.apply_status(type, id, status, params)
+    end)
+
+    stub(Interpreter, :remove_status, fn type, id, status ->
+      StatusStorage.remove_status(type, id, status)
+    end)
+
     manager = start_manager(10_000)
-    original = group(1, visibility: :none, cells: [{100, 100}])
-    replacement = group(1, visibility: :none, cells: [{101, 100}])
+    allow(Interpreter, self(), manager)
+    original = group(1, handler: FieldUnit, visibility: :none, cells: [{100, 100}])
+    replacement = group(1, handler: FieldUnit, visibility: :none, cells: [{101, 100}])
 
     assert :ok = Manager.register(manager, original)
-
-    key = {:player, 99, :sc_quagmire, 1}
-    :ets.insert(EtsTable.table_for(:field_supports), {key, %{params: [], aggregate: nil}})
-    :ets.insert(EtsTable.table_for(:field_support_unit_index), {{:player, 99}, key})
-    :ets.insert(EtsTable.table_for(:field_support_group_index), {1, key})
-
-    assert FieldSupport.sources_for_group(1) != []
+    assert StatusStorage.has_status?(:player, 99, :sc_quagmire)
     assert :ok = Manager.register(manager, replacement)
-    assert [] == FieldSupport.sources_for_group(1)
+    refute StatusStorage.has_status?(:player, 99, :sc_quagmire)
   end
 
   test "commits, removes, and reconciles terrain contributions owned by groups" do
@@ -3129,9 +3136,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
     end
 
-    test "releases field support for occupants of removed cells only" do
-      stub(Interpreter, :apply_status, fn _unit_type, _unit_id, _status_type, _params -> :ok end)
-      stub(Interpreter, :remove_status, fn _unit_type, _unit_id, _status_type -> :ok end)
+    test "ends the field status for occupants of removed cells only" do
+      stub(Interpreter, :apply_status, fn type, id, status, params ->
+        StatusStorage.apply_status(type, id, status, params)
+      end)
+
+      stub(Interpreter, :remove_status, fn type, id, status ->
+        StatusStorage.remove_status(type, id, status)
+      end)
 
       manager = start_manager(10_000)
       allow(Interpreter, self(), manager)
@@ -3167,11 +3179,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
           group(1, skill_name: :field_unit, cells: [{100, 100}, {101, 100}])
         )
 
-      assert [{:player, 42, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+      assert StatusStorage.has_status?(:player, 42, :sc_quagmire)
+      refute StatusStorage.has_status?(:player, 43, :sc_quagmire)
 
       assert :ok = Manager.remove_cells(manager, 1, [{101, 100}])
 
-      assert [{:player, 42, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+      assert StatusStorage.has_status?(:player, 42, :sc_quagmire)
     end
 
     test "ignores coordinates the group does not own and leaves the group untouched" do
@@ -3276,8 +3289,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   describe "follow_caster/4" do
     test "shifts the footprint, moves field support and publishes the move by observer" do
       test_pid = self()
-      stub(Interpreter, :apply_status, fn _unit_type, _unit_id, _status_type, _params -> :ok end)
-      stub(Interpreter, :remove_status, fn _unit_type, _unit_id, _status_type -> :ok end)
+
+      stub(Interpreter, :apply_status, fn type, id, status, params ->
+        StatusStorage.apply_status(type, id, status, params)
+      end)
+
+      stub(Interpreter, :remove_status, fn type, id, status ->
+        StatusStorage.remove_status(type, id, status)
+      end)
+
       stub(SpatialIndex, :get_players_in_range, fn _map_name, _x, _y, _range -> [43, 99] end)
       stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, _packet -> :ok end)
       stub(Broadcast, :to_player, fn player_id, packet -> send(test_pid, {player_id, packet}) end)
@@ -3313,7 +3333,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok = Storage.add_observer_group(99, 1)
       ids_by_x = Map.new(Storage.get_cells_by_group(1), &{&1.x, &1.cell_id})
       ids = ids_by_x |> Map.values() |> Enum.sort()
-      assert [{:player, 42, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+      assert StatusStorage.has_status?(:player, 42, :sc_quagmire)
+      refute StatusStorage.has_status?(:player, 43, :sc_quagmire)
 
       :ok = Manager.follow_caster(manager, 1, "prontera", {101, 100})
       _ = :sys.get_state(manager)
@@ -3326,7 +3347,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
       assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 102, 100)
-      assert [{:player, 43, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+      refute StatusStorage.has_status?(:player, 42, :sc_quagmire)
+      assert StatusStorage.has_status?(:player, 43, :sc_quagmire)
 
       assert_receive {43, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1, center_x: 101}}}
 

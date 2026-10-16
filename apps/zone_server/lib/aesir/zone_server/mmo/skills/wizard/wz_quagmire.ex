@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
   before anything is spent).
 
   Occupants lose 5 AGI and DEX per level (10 per level for non-players) and move at
-  half speed. The 1 s manager interval only reconciles support for stationary
-  occupants and adds no combat tick. Renewal and pre-renewal agree.
+  half speed. A unit entering the field holds the status for the field's whole
+  duration; a player leaving loses it at once, a monster keeps it. The field has
+  no combat tick. Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 92,

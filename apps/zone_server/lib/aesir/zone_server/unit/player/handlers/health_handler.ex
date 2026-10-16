@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.PlagiarismCopyable
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -742,6 +743,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     :ok =
       StatusInterpreter.remove_on_death(:player, game_state.character_id, owner_refresh: :defer)
+
+    Trigger.on_removed({:player, game_state.character_id})
 
     state =
       if had_statuses?, do: StatusManager.recalculate_after_status_change(state), else: state

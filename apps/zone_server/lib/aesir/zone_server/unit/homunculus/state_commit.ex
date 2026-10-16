@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Homunculus.LifecycleSkills
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -376,6 +377,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
       {:ok, {x, y, map_name}} ->
         observers = SpatialIndex.get_players_in_range(map_name, x, y, Config.view_range())
         Movement.clear_dirty(map_name, :homunculus, gid)
+        Trigger.on_removed({:homunculus, gid})
         SpatialIndex.remove_unit(:homunculus, gid)
         notify_removed(observers, gid, reason)
 

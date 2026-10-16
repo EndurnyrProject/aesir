@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -67,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
   end
 
   describe "manager-backed support" do
-    test "seeds enemies and preserves overlapping support until its final field expires" do
+    test "a second field never restarts a held status; the status outlives the field it came from" do
       test_pid = self()
       stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
@@ -93,57 +92,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
       allow(StatusInterpreter, self(), manager)
       allow(UnitRegistry, self(), manager)
 
-      :ok =
-        Manager.register(
-          manager,
-          group(cells: [{10, 20}], next_tick_at: 1_000, expires_at: 10_000, interval: 1_000)
-        )
+      :ok = Manager.register(manager, live_group(created_at: 0, expires_at: 10_000))
 
-      assert FieldSupport.sources(:mob, 200, :sc_quagmire) == [[level: 1, val1: 1, val2: 10]]
       assert_received {:apply, first_params}
       assert first_params[:level] == 1
       assert first_params[:val2] == 10
+      assert first_params[:duration] == 10_000
 
-      :ok =
-        Manager.register(
-          manager,
-          group(
-            group_id: 2,
-            level: 5,
-            cells: [{10, 20}],
-            next_tick_at: 1_000,
-            expires_at: 10_000,
-            interval: 1_000
-          )
-        )
-
-      assert Enum.sort(FieldSupport.sources(:mob, 200, :sc_quagmire)) ==
-               Enum.sort([
-                 [level: 1, val1: 1, val2: 10],
-                 [level: 5, val1: 5, val2: 50]
-               ])
-
-      assert_received {:apply, second_params}
-      assert second_params[:level] == 5
-      assert second_params[:val2] == 50
+      :ok = Manager.register(manager, live_group(group_id: 2, level: 5, expires_at: 25_000))
+      refute_received {:apply, _}
+      assert %{val1: 1, val2: 10} = StatusStorage.get_status(:mob, 200, :sc_quagmire)
 
       :ok = Manager.destroy(manager, 1)
-
-      assert FieldSupport.sources(:mob, 200, :sc_quagmire) == [[level: 5, val1: 5, val2: 50]]
-      assert_received {:apply, retained_params}
-      assert retained_params[:level] == 5
-      assert retained_params[:val2] == 50
       refute_received :remove
+      assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
 
       :ok = Manager.destroy(manager, 2)
-
-      assert FieldSupport.sources(:mob, 200, :sc_quagmire) == []
-      assert_received :remove
+      refute_received :remove
+      assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
     end
   end
 
   describe "manager trigger and lifecycle flow" do
-    test "acquires and releases mob support through on_touch and on_out while excluding players" do
+    test "grants a mob through on_touch, excludes players, and lets the mob keep it on on_out" do
       stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
       stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, 0 -> [] end)
 
@@ -160,15 +131,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
       assert :ok = Manager.trigger(manager, 1, {:player, 101}, :on_touch)
       assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_touch)
 
-      refute FieldSupport.supported?(:player, 101, :sc_quagmire)
-      assert FieldSupport.supported?(:mob, 200, :sc_quagmire)
+      refute StatusStorage.has_status?(:player, 101, :sc_quagmire)
+      assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
 
       assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_out)
 
-      refute FieldSupport.supported?(:mob, 200, :sc_quagmire)
+      assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
     end
 
-    test "reconciles a stationary occupant on its due tick and releases support at natural expiry" do
+    test "natural expiry keeps a monster's Quagmire while removing the field" do
       stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
       stub_unit_registry(%{{:player, 100} => player(100), {:mob, 200} => mob(200)})
@@ -176,46 +147,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
       manager = start_manager()
 
       :ok = Manager.register(manager, live_group(next_tick_at: 1_000, expires_at: 2_000))
-      :ok = FieldSupport.release(:mob, 200, :sc_quagmire, 1)
-      refute FieldSupport.supported?(:mob, 200, :sc_quagmire)
-
-      assert :ok = Manager.tick(manager, 1_000)
-      assert FieldSupport.supported?(:mob, 200, :sc_quagmire)
+      assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
 
       assert :ok = Manager.tick(manager, 2_000)
-      refute FieldSupport.supported?(:mob, 200, :sc_quagmire)
+      assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
       assert Storage.get(1) == nil
     end
 
-    test "skips field support acquisition when interval occupants are unchanged" do
-      test_pid = self()
-      {:ok, sources} = Agent.start_link(fn -> [] end)
-      Mimic.copy(FieldSupport)
-      stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
-      stub_unit_registry(%{{:player, 100} => player(100), {:mob, 200} => mob(200)})
-
-      stub(FieldSupport, :acquire, fn type, id, status, _group_id, params ->
-        Agent.update(sources, &[{type, id, status, params} | &1])
-        send(test_pid, :acquire)
-        :ok
-      end)
-
-      stub(FieldSupport, :sources_for_group, fn _group_id ->
-        Agent.get(sources, & &1)
-      end)
-
-      manager = start_manager()
-      allow(FieldSupport, self(), manager)
-
-      assert :ok = Manager.register(manager, live_group(next_tick_at: 1_000))
-      assert_received :acquire
-
-      assert :ok = Manager.tick(manager, 1_000)
-      refute_received :acquire
-    end
-
-    test "expires the field and releases its support when its caster changes maps" do
+    test "expires the field when its caster changes maps; the monster keeps its Quagmire" do
       stub(Catalog, :ground_module_for, fn :wz_quagmire -> {:ok, WzQuagmire} end)
       stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 10, 20, 0 -> [{:mob, 200}] end)
       stub_unit_registry(%{{:player, 100} => player(100), {:mob, 200} => mob(200)})
@@ -223,13 +162,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
       manager = start_manager()
 
       :ok = Manager.register(manager, live_group())
-      assert FieldSupport.supported?(:mob, 200, :sc_quagmire)
+      assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
 
       assert :ok = Lifecycle.publish_transition(:player, 100, "prontera", "geffen")
       assert :ok = Manager.tick(manager, 0)
 
       assert Storage.get(1) == nil
-      refute FieldSupport.supported?(:mob, 200, :sc_quagmire)
+      assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
     end
   end
 
@@ -252,7 +191,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
   defp live_group(attrs \\ []) do
     group(
       Keyword.merge(
-        [cells: [{10, 20}], next_tick_at: 1_000, expires_at: 10_000, interval: 1_000],
+        [
+          cells: [{10, 20}],
+          created_at: 0,
+          next_tick_at: 1_000,
+          expires_at: 10_000,
+          interval: 1_000
+        ],
         attrs
       )
     )

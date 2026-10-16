@@ -304,10 +304,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         {:noreply, state}
 
       {:ok, {module, mob, _pid}} ->
-        # Unregister from UnitRegistry
+        Trigger.on_removed({:mob, instance_id})
         UnitRegistry.unregister_unit(:mob, instance_id)
-
-        # Remove from spatial index
         SpatialIndex.remove_unit(:mob, instance_id)
 
         dispatch_owner_event(mob.owner_event, killer_char_id)

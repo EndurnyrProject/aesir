@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   `on_out/2` for every group whose footprint covered the old cell but not the new
   one (i.e. the mover stepped off the footprint entirely — moving between cells of
   the same footprint does not count). `on_appear/4` places a unit that appears
-  on a cell without stepping onto it (a mob spawn, a homunculus call). Spider
+  on a cell without stepping onto it (a mob spawn, a homunculus call);
+  `on_removed/1` runs the leave events of every group on the cell of a unit
+  removed from play (a warp, a logout, a despawn, a vaporize, a death). Spider
   Web never acts on a step or an arrival: it catches only the units standing on
   its cell when it is placed. All only invoke modules that export the matching
   callback, and apply its result:
@@ -27,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @typedoc "The unit that entered the cell: `{unit_type, unit_id}`."
   @type mover :: {atom(), integer()}
@@ -81,6 +84,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
     |> Storage.get_groups_at_cell(old_x, old_y)
     |> Enum.reject(&(&1.skill_name in @never_on_move or still_inside?(&1, new_map, new_x, new_y)))
     |> Enum.each(&maybe_out(&1, mover))
+  end
+
+  @doc """
+  Runs the leave events (`on_out`, then the field's `onleft`) of every ground
+  unit covering the mover's cell when it is removed from play: a map removal
+  (call it before the mover leaves the spatial index) or a death (the source's
+  `skill_unit_move` flag 4, with no step bookkeeping). A unit without an
+  indexed position runs nothing. Returns `:ok`.
+  """
+  @spec on_removed(mover()) :: :ok
+  def on_removed({unit_type, unit_id} = mover) do
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {x, y, map_name}} ->
+        map_name
+        |> Storage.get_groups_at_cell(x, y)
+        |> Enum.reject(&(&1.skill_name in @never_on_move))
+        |> Enum.each(&maybe_dispatch(&1, mover, :on_removed))
+
+      {:error, _not_placed} ->
+        :ok
+    end
   end
 
   @doc """
