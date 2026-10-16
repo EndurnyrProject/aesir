@@ -2803,8 +2803,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                group(1, handler: TouchOutUnit, state: %{test_pid: self()})
              )
 
-    for mover <- [{:player, 504}, {:player, 505}], callback <- [:on_touch, :on_out] do
-      assert :ok = Manager.trigger(manager, 1, mover, callback)
+    for mover <- [{:player, 504}, {:player, 505}] do
+      assert :ok = Manager.trigger(manager, 1, mover, :on_touch)
+
+      assert :ok =
+               Manager.step(manager, mover, {"prontera", 100, 100}, {"prontera", 105, 105})
     end
 
     assert :ok = Manager.destroy(manager, 1)
@@ -2925,7 +2928,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     :ok = SpatialIndex.remove_unit(:player, 21)
     :ok = SpatialIndex.add_unit(:player, 21, 105, 105, "prontera")
-    assert :ok = Manager.trigger(manager, 1, {:player, 21}, :on_out)
+
+    assert :ok =
+             Manager.step(manager, {:player, 21}, {"prontera", 100, 100}, {"prontera", 105, 105})
+
     refute StatusStorage.has_status?(:player, 21, :sc_quagmire)
   end
 

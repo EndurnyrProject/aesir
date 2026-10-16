@@ -60,29 +60,23 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     )
   end
 
-  @spec fire_on_leave(
+  # A step onto another cell runs the old and new cells' units as one pass, a
+  # unit with no previous position appears there, and staying on the same
+  # cell runs nothing.
+  @spec fire_step(
           {atom(), unit_id()},
           {:ok, {integer(), integer(), String.t()}} | {:error, term()},
           String.t(),
           integer(),
           integer()
         ) :: :ok
-  defp fire_on_leave(mover, {:ok, {old_x, old_y, old_map}}, new_map, new_x, new_y)
-       when old_map != new_map or old_x != new_x or old_y != new_y do
-    Trigger.on_leave_cell(mover, old_map, old_x, old_y, new_map, new_x, new_y)
-  end
-
-  defp fire_on_leave(_mover, _previous, _new_map, _new_x, _new_y), do: :ok
-
-  # A step onto another cell runs the cell's units, a unit with no previous
-  # position appears there, and staying on the same cell runs nothing.
-  defp fire_on_enter(mover, {:ok, {old_x, old_y, old_map}}, map_name, x, y)
+  defp fire_step(mover, {:ok, {old_x, old_y, old_map}}, map_name, x, y)
        when old_map != map_name or old_x != x or old_y != y,
-       do: Trigger.on_enter_cell(mover, map_name, x, y)
+       do: Trigger.on_step(mover, old_map, old_x, old_y, map_name, x, y)
 
-  defp fire_on_enter(_mover, {:ok, _same_cell}, _map_name, _x, _y), do: :ok
+  defp fire_step(_mover, {:ok, _same_cell}, _map_name, _x, _y), do: :ok
 
-  defp fire_on_enter(mover, {:error, _not_placed}, map_name, x, y),
+  defp fire_step(mover, {:error, _not_placed}, map_name, x, y),
     do: Trigger.on_appear(mover, map_name, x, y)
 
   defp fire_movement_contact(
@@ -187,8 +181,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     mark_dirty(map_name, unit_type, unit_id, move_state)
 
     mover = {unit_type, unit_id}
-    fire_on_leave(mover, previous, map_name, updated_state.x, updated_state.y)
-    fire_on_enter(mover, previous, map_name, updated_state.x, updated_state.y)
+    fire_step(mover, previous, map_name, updated_state.x, updated_state.y)
     Trigger.on_caster_moved(mover, map_name, updated_state.x, updated_state.y)
     fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
   end

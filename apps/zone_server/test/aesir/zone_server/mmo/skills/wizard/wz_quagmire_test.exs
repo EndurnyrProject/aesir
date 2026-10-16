@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
       refute StatusStorage.has_status?(:player, 101, :sc_quagmire)
       assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
 
-      assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_out)
+      assert :ok = Manager.step(manager, {:mob, 200}, {"prontera", 10, 20}, {"prontera", 11, 20})
 
       assert StatusStorage.has_status?(:mob, 200, :sc_quagmire)
     end

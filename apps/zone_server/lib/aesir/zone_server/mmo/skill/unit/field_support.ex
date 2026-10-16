@@ -4,24 +4,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   field's unit events and run inside `Skill.Unit.Manager`.
 
   A field describes its status through the handler's `field_support/1`
-  (`status_type`, `params`, `target?`, optional `linger_ms` and `grants?`).
-  `target?/2` is the unit's target check: the handler's predicate on a unit
-  that is not an invincible player. The events:
+  (`status_type`, `params`, `target?`, optional `linger_ms`, `grants?` and
+  `on_place`). `target?/2` is the unit's target check: the handler's predicate
+  on a unit that is not an invincible player; a performer is a target like
+  anyone else, the performer rules live here. The events:
 
     * `onplace/2` - a target entering a cell, standing on a cell being placed,
       or standing where a song cell arrives: the status starts only when the
       unit lacks it, for the group's whole lifetime (a solo song or dance adds
       one unit pass so the field is gone before the status). A dissonant song
-      cell never grants; it ends the song as a step off would.
+      cell never grants; it ends the song as a step off would. The handler's
+      `on_place` runs first (Hermode strips its allies' buffs on every
+      placement). A solo performer is never placed on its own song; an
+      ensemble's caster counts as placed but gets nothing, its partner is
+      placed like any ally.
+    * `onout/2` - a target leaving a cell: `:left` when the step remembers the
+      field, `:performing` for a solo performer (its own song never ends on
+      it).
     * `onleft/2` - a unit that left the field entirely: Quagmire lets monsters
       keep it; a solo song or dance restarts a player's status once as the
       skill's linger (`val4` marks it, re-entry never refreshes it) and ends it
       on anyone else; an ensemble ends a performer's own performing lock and,
       Lullaby aside, the status; every other field ends the status.
-    * `leave/3` - a target leaving the field for good (its removal from play,
-      a cell vanishing under it): the handler's `on_out`, then `onleft`.
-    * `out/3` - `leave/3` for every target standing on vanishing cells
-      (deletion, a cell lost, a song moving on).
+    * `dissonance_step/2` - a unit stepping on or off a dissonant song cell:
+      the song leaves it there and then (no target check).
+    * `leave/3` - a unit removed from play: a target runs the handler's
+      `on_out`, then `onleft`; a non-target ensemble performer runs `onleft`.
+    * `out/3` - cells vanishing under their occupants (deletion, a cell lost,
+      a song moving on): a target runs `on_out` and, unless `onout` says
+      `:performing`, `onleft`; a non-target still gets `onleft` from a solo
+      song or dance, or from its own ensemble.
 
   The linger restarts the held entry only while it is still the one that was
   read, so a status ended or dispelled meanwhile stays ended.
@@ -47,12 +59,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   @type spec :: %{
           optional(:linger_ms) => non_neg_integer(),
           optional(:grants?) => (mover() -> boolean()),
+          optional(:on_place) => (mover() -> :ok),
           status_type: atom(),
           params: keyword() | map() | (atom(), integer() -> keyword() | map()),
           target?: (mover() -> boolean())
         }
 
   @lullaby 306
+  @hermode 488
 
   @doc "The field's status description, when its handler grants one."
   @spec spec(Group.t()) :: {:ok, spec()} | :error
@@ -83,11 +97,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
 
   @doc """
   Places a target on one of the field's cells. Returns `:placed` when the
-  event ran to its end (the status started or was already held) and
-  `:skipped` when the cell refused it (dissonance, a Basilica cell, hiding).
+  event ran to its end (the status started, was already held, or the ensemble
+  caster was counted) and `:skipped` when the cell refused it (dissonance, a
+  Basilica cell, hiding, a solo performer on its own song).
   """
   @spec onplace(Group.t(), mover(), [non_neg_integer()]) :: :placed | :skipped
-  def onplace(%Group{} = group, {unit_type, unit_id} = mover, except \\ []) do
+  def onplace(%Group{} = group, mover, except \\ []) do
     case spec(group) do
       {:ok, spec} ->
         cond do
@@ -95,18 +110,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
             :skipped
 
           dissonant_cell?(group, mover, except) ->
-            group |> songs_at(mover) |> Enum.each(&onleft(&1, mover))
+            group |> songs_at(mover) |> Enum.each(&dissonance_step(&1, mover))
             :skipped
 
           not Targeting.placement_reaches?(group.skill_id, mover) or not grants?(spec, mover) ->
             :skipped
 
-          StatusStorage.has_status?(unit_type, unit_id, spec.status_type) ->
-            :placed
-
           true ->
-            start(group, spec, mover)
-            :placed
+            on_place(spec, mover)
+            grant(group, spec, mover)
         end
 
       :error ->
@@ -114,12 +126,63 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
     end
   end
 
+  defp grant(group, spec, {unit_type, unit_id} = mover) do
+    case {kind(group), caster?(group, mover)} do
+      {:solo, true} ->
+        :skipped
+
+      {:ensemble, true} ->
+        :placed
+
+      _ ->
+        if not StatusStorage.has_status?(unit_type, unit_id, spec.status_type),
+          do: start(group, spec, mover)
+
+        :placed
+    end
+  end
+
+  @doc """
+  A target leaving one of the field's cells: `:performing` for a solo
+  performer on its own song (nothing follows), `:left` otherwise.
+  """
+  @spec onout(Group.t(), mover()) :: :left | :performing
+  def onout(%Group{} = group, mover) do
+    if kind(group) == :solo and caster?(group, mover), do: :performing, else: :left
+  end
+
+  @doc """
+  A unit stepping on or off a dissonant cell of this song or dance leaves it
+  there and then, whether or not the cell targets it; the performer's own song
+  never ends on it.
+  """
+  @spec dissonance_step(Group.t(), mover()) :: :ok
+  def dissonance_step(%Group{} = group, mover) do
+    if onout(group, mover) == :left, do: onleft(group, mover)
+    :ok
+  end
+
+  @doc "Whether `cell` of this song or dance is dissonant."
+  @spec dissonant?(Group.t(), Group.cell()) :: boolean()
+  def dissonant?(%Group{} = group, cell), do: Overlap.dissonant?(group, cell)
+
+  @doc """
+  Whether `mover` performs this ensemble (its caster or a partner) without
+  being one of its targets, the one case a non-target still leaves a field.
+  """
+  @spec ensemble_performer?(Group.t(), mover()) :: boolean()
+  def ensemble_performer?(%Group{} = group, mover),
+    do: kind(group) == :ensemble and performer?(group, mover)
+
   @doc "A unit that left the field entirely."
   @spec onleft(Group.t(), mover()) :: :ok
   def onleft(%Group{} = group, {unit_type, unit_id} = mover) do
     case spec(group) do
-      {:ok, spec} -> onleft(kind(group), group, spec, mover, unit_type, unit_id)
-      :error -> if ensemble?(group), do: end_own_dancing(group, mover)
+      {:ok, spec} ->
+        onleft(kind(group), group, spec, mover, unit_type, unit_id)
+
+      :error ->
+        if ensemble?(group) and group.skill_id != @hermode, do: end_own_dancing(group, mover)
     end
 
     :ok
@@ -131,7 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
     do: linger(unit_id, spec.status_type, Map.fetch!(spec, :linger_ms))
 
   defp onleft(:ensemble, group, spec, mover, unit_type, unit_id) do
-    end_own_dancing(group, mover)
+    if group.skill_id != @hermode, do: end_own_dancing(group, mover)
 
     if group.skill_id != @lullaby,
       do: Interpreter.remove_status(unit_type, unit_id, spec.status_type)
@@ -157,21 +220,49 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   end
 
   @doc """
-  A target leaving the field for good: `on_out` (the handler's callback, run
-  by the caller) and then `onleft`.
+  A unit removed from play while on the field: a target runs `on_out` (the
+  handler's callback, run by the caller) and then `onleft`; a non-target that
+  performs this ensemble runs `onleft` alone.
   """
   @spec leave(Group.t(), mover(), (mover() -> :ok)) :: :ok
   def leave(%Group{} = group, mover, on_out) do
-    on_out.(mover)
-    onleft(group, mover)
+    cond do
+      target?(group, mover) ->
+        on_out.(mover)
+        onleft(group, mover)
+
+      ensemble_performer?(group, mover) ->
+        onleft(group, mover)
+
+      true ->
+        :ok
+    end
   end
 
-  @doc "Runs `leave/3` for every target standing on `cells` as those cells vanish."
+  @doc """
+  Cells vanishing under their occupants: a target runs `on_out` and, unless it
+  is a solo performer on its own song, `onleft`; a non-target runs `onleft`
+  when the field is a solo song or dance, or its own ensemble.
+  """
   @spec out(Group.t(), [Group.cell()], (mover() -> :ok)) :: :ok
   def out(%Group{} = group, cells, on_out) do
     group
     |> occupants(cells)
-    |> Enum.each(fn mover -> if target?(group, mover), do: leave(group, mover, on_out) end)
+    |> Enum.each(&vanish(group, &1, on_out))
+  end
+
+  defp vanish(group, mover, on_out) do
+    cond do
+      target?(group, mover) ->
+        on_out.(mover)
+        if onout(group, mover) == :left, do: onleft(group, mover)
+
+      kind(group) == :solo or (kind(group) == :ensemble and caster?(group, mover)) ->
+        onleft(group, mover)
+
+      true ->
+        :ok
+    end
   end
 
   @doc "Places every target standing on `cells` (a placement or a song's new cells)."
@@ -201,19 +292,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   end
 
   def overlap_removed(%Group{}, _cells), do: :ok
-
-  @doc "Whether placing `mover` on one of the field's cells would run to its end."
-  @spec places?(Group.t(), mover()) :: boolean()
-  def places?(%Group{} = group, mover) do
-    case spec(group) do
-      {:ok, spec} ->
-        not dissonant_cell?(group, mover, []) and
-          Targeting.placement_reaches?(group.skill_id, mover) and grants?(spec, mover)
-
-      :error ->
-        false
-    end
-  end
 
   @doc "The combat units standing on any of `cells`."
   @spec occupants(Group.t(), [Group.cell()]) :: [mover()]
@@ -284,8 +362,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
 
   defp ensemble?(group), do: kind(group) == :ensemble
 
+  defp caster?(%Group{caster_type: type, caster_id: id}, mover), do: mover == {type, id}
+
+  defp performer?(%Group{state: %{performance: %{performers: performers}}} = group, mover) do
+    case mover do
+      {:player, id} -> id in performers or caster?(group, mover)
+      _ -> caster?(group, mover)
+    end
+  end
+
+  defp performer?(group, mover), do: caster?(group, mover)
+
   defp grants?(%{grants?: grants?}, mover), do: grants?.(mover)
   defp grants?(_spec, _mover), do: true
+
+  defp on_place(%{on_place: on_place}, mover), do: on_place.(mover)
+  defp on_place(_spec, _mover), do: :ok
 
   defp params_for(%{params: params}, {unit_type, unit_id}) when is_function(params, 2),
     do: params.(unit_type, unit_id)

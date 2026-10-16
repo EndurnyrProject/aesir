@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "field reach excludes the performer, a dissonant cell grants nothing, and expiry unlocks" do
+  test "field reach includes the performer, never placed on its own song; a dissonant cell grants nothing; expiry unlocks" do
     caster = player(17)
     :ok = UnitRegistry.register_player(caster, self())
     :ok = SpatialIndex.add_unit(:player, 17, 10, 10, "prontera")
@@ -116,14 +116,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     [group] = Storage.get_groups_by_caster(:player, 17)
 
     support = Field.field_support(group)
-    refute support.target?.({:player, 17})
+    assert support.target?.({:player, 17})
     assert support.target?.({:player, 18})
     assert support.linger_ms == 20_000
     assert support.params[:caster_id] == 17
 
     :ok = Storage.insert(%{group | group_id: 9_002, caster_id: 20, cells: [{11, 10}]})
     assert Field.field_support(group).target?.({:player, 18})
-    refute FieldSupport.places?(group, {:player, 18})
+    assert :skipped = FieldSupport.onplace(group, {:player, 18})
+    assert :skipped = FieldSupport.onplace(group, {:player, 17})
     assert :ok = Field.on_expire(group)
     refute StatusStorage.has_status?(:player, 17, :sc_dancing)
   end
@@ -232,7 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "reach can select party members or enemies without selecting the performer" do
+  test "reach can select party members, the performer included, or enemies" do
     caster = %{player(17) | party_id: 2}
     ally = %{player(18) | party_id: 2}
     stranger = %{player(19) | party_id: 3}
@@ -273,7 +274,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     party = put_in(group.state.performance.reach, :party) |> Field.field_support()
     assert party.target?.({:player, 18})
     refute party.target?.({:player, 19})
-    refute party.target?.({:player, 17})
+    assert party.target?.({:player, 17})
 
     enemy = put_in(group.state.performance.reach, :enemy) |> Field.field_support()
     assert enemy.target?.({:mob, 42})
@@ -341,7 +342,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     end
   end
 
-  test "party-or-guild reach accepts a party member, guildmate and ally but not a stranger" do
+  test "party-or-guild reach accepts the performer, a party member, guildmate and ally but not a stranger" do
     Mimic.copy(Relations)
     stub(Relations, :allied?, fn a, b -> {a, b} == {10, 20} end)
     caster = %{player(17) | party_id: 2, guild_id: 10}
@@ -372,7 +373,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     support = Field.field_support(group)
     for id <- [18, 19, 20], do: assert(support.target?.({:player, id}))
     refute support.target?.({:player, 21})
-    refute support.target?.({:player, 17})
+    assert support.target?.({:player, 17})
   end
 
   @dissonance %{skill_id: 317, interval: 3_000, no_overlap: true}

@@ -8,9 +8,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermode do
   Allies lose the Hermode removal-set buffs; the caster keeps theirs.
 
   Pre-renewal requires a warp or NPC touch area within one cell, costs twenty
-  to sixty SP and maintains a seven-by-seven party/guild field. The caster is
-  always rooted and pays one SP every five seconds. Allies gain immunity on
-  entry and lose it immediately on exit. No partner is required.
+  to sixty SP and maintains a seven-by-seven field that grants immunity to
+  every unit standing in it, players and monsters alike, lost immediately on
+  exit; the caster gets none. Every placement strips the Hermode removal-set
+  buffs from party and guild allies. The caster is always rooted and pays one
+  SP every five seconds. No partner is required.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 488,
@@ -31,7 +33,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermode do
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Performance
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs
   alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -57,10 +63,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermode do
       ignore_land_protector: true,
       layout_radius: 3,
       linger_ms: 0,
-      reach: :party_or_guild,
+      reach: :all,
       upkeep: 5,
       root: :always
     )
+  end
+
+  @impl Ground
+  @spec field_support(Group.t()) :: map()
+  def field_support(%Group{} = group) do
+    group
+    |> Field.field_support()
+    |> Map.put(:on_place, &strip_ally_buffs(group, &1))
+  end
+
+  defp strip_ally_buffs(%Group{caster_type: type, caster_id: id} = group, mover) do
+    if mover != {type, id} and Field.reaches?(:party_or_guild, group, mover),
+      do: ClearBuffs.clear(mover, [:hermode])
+
+    :ok
   end
 
   defp party_or_guild?(caster, target) do

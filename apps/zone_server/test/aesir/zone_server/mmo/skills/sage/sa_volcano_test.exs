@@ -106,7 +106,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
       assert :ok = Manager.trigger(manager, 1, {:player, 101}, :on_touch)
       assert StatusStorage.has_status?(:player, 101, :sc_volcano)
 
-      assert :ok = Manager.trigger(manager, 1, {:player, 101}, :on_out)
+      assert :ok =
+               Manager.step(manager, {:player, 101}, {"prontera", 10, 20}, {"prontera", 11, 20})
+
       refute StatusStorage.has_status?(:player, 101, :sc_volcano)
     end
 
@@ -116,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
       assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_touch)
       assert StatusStorage.has_status?(:mob, 200, :sc_volcano)
 
-      assert :ok = Manager.trigger(manager, 1, {:mob, 200}, :on_out)
+      assert :ok = Manager.step(manager, {:mob, 200}, {"prontera", 10, 20}, {"prontera", 11, 20})
       refute StatusStorage.has_status?(:mob, 200, :sc_volcano)
     end
 

@@ -101,14 +101,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
     struct(base, attrs)
   end
 
-  describe "on_enter_cell/4" do
+  describe "on_step/7 onto a cell" do
     test "fails loudly when field support omits the target predicate" do
       stub(Catalog, :ground_module_for, fn :test_trap -> {:ok, MalformedFieldSupport} end)
       assert %{status_type: :sc_quagmire} = MalformedFieldSupport.field_support(group(1))
       :ok = Storage.insert(group(1))
 
       capture_log(fn ->
-        assert catch_exit(Trigger.on_enter_cell(@mover, "prontera", 5, 5))
+        assert catch_exit(Trigger.on_step(@mover, "prontera", 50, 50, "prontera", 5, 5))
       end)
     end
 
@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       stub(Catalog, :ground_module_for, fn :test_trap -> {:ok, TouchPersist} end)
       :ok = Storage.insert(group(1))
 
-      assert :ok = Trigger.on_enter_cell(@mover, "prontera", 5, 5)
+      assert :ok = Trigger.on_step(@mover, "prontera", 50, 50, "prontera", 5, 5)
 
       assert_received {:touched, 1, {:player, 1000}}
       assert %Group{state: %{touched: {:player, 1000}}} = Storage.get(1)
@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       stub(Catalog, :ground_module_for, fn :test_trap -> {:ok, TouchExpire} end)
       :ok = Storage.insert(group(1))
 
-      assert :ok = Trigger.on_enter_cell(@mover, "prontera", 5, 5)
+      assert :ok = Trigger.on_step(@mover, "prontera", 50, 50, "prontera", 5, 5)
 
       assert_received {:touched, 1, {:player, 1000}}
       assert_received {:expired, 1}
@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       # wz_stormgust is a real ground skill with no on_touch hook
       :ok = Storage.insert(group(1, skill_name: :wz_stormgust))
 
-      assert :ok = Trigger.on_enter_cell(@mover, "prontera", 5, 5)
+      assert :ok = Trigger.on_step(@mover, "prontera", 50, 50, "prontera", 5, 5)
 
       assert %Group{group_id: 1} = Storage.get(1)
       refute_received {:touched, _, _}
@@ -147,7 +147,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       stub(Catalog, :ground_module_for, fn _ -> {:ok, TouchPersist} end)
       :ok = Storage.insert(group(1, skill_name: :pf_spiderweb))
 
-      assert :ok = Trigger.on_enter_cell(@mover, "prontera", 5, 5)
+      assert :ok = Trigger.on_step(@mover, "prontera", 50, 50, "prontera", 5, 5)
 
       refute_received {:touched, _, _}
     end
@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       stub(Catalog, :ground_module_for, fn _ -> {:ok, TouchExpire} end)
       :ok = Storage.insert(group(1, cells: [{5, 5}]))
 
-      assert :ok = Trigger.on_enter_cell(@mover, "prontera", 9, 9)
+      assert :ok = Trigger.on_step(@mover, "prontera", 50, 50, "prontera", 9, 9)
 
       refute_received {:touched, _, _}
       assert %Group{group_id: 1} = Storage.get(1)
@@ -179,14 +179,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
     end
   end
 
-  describe "on_leave_cell/7" do
+  describe "on_step/7 off a cell" do
     @footprint for x <- 4..6, y <- 4..6, do: {x, y}
 
     test "invokes on_out when the mover steps off the footprint entirely" do
       stub(Catalog, :ground_module_for, fn :test_field -> {:ok, OutPersist} end)
       :ok = Storage.insert(group(1, skill_name: :test_field, cells: @footprint))
 
-      assert :ok = Trigger.on_leave_cell(@mover, "prontera", 5, 5, "prontera", 9, 9)
+      assert :ok = Trigger.on_step(@mover, "prontera", 5, 5, "prontera", 9, 9)
 
       assert_received {:out, 1, {:player, 1000}}
     end
@@ -195,7 +195,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       stub(Catalog, :ground_module_for, fn :test_field -> {:ok, OutPersist} end)
       :ok = Storage.insert(group(1, skill_name: :test_field, cells: @footprint))
 
-      assert :ok = Trigger.on_leave_cell(@mover, "prontera", 5, 5, "prontera", 6, 6)
+      assert :ok = Trigger.on_step(@mover, "prontera", 5, 5, "prontera", 6, 6)
 
       refute_received {:out, _, _}
     end
@@ -204,7 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
       stub(Catalog, :ground_module_for, fn :test_field -> {:ok, OutPersist} end)
       :ok = Storage.insert(group(1, skill_name: :test_field, cells: @footprint))
 
-      assert :ok = Trigger.on_leave_cell(@mover, "prontera", 5, 5, "morocc", 5, 5)
+      assert :ok = Trigger.on_step(@mover, "prontera", 5, 5, "morocc", 5, 5)
 
       assert_received {:out, 1, {:player, 1000}}
     end
@@ -212,7 +212,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.TriggerTest do
     test "ignores ground units whose module does not export on_out/2" do
       :ok = Storage.insert(group(1, skill_name: :wz_stormgust, cells: @footprint))
 
-      assert :ok = Trigger.on_leave_cell(@mover, "prontera", 5, 5, "prontera", 9, 9)
+      assert :ok = Trigger.on_step(@mover, "prontera", 5, 5, "prontera", 9, 9)
 
       assert %Group{group_id: 1} = Storage.get(1)
       refute_received {:out, _, _}

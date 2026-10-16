@@ -8,10 +8,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.Clown.CgHermode
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -136,17 +138,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
     :ok = SpatialIndex.remove_unit(type, id)
     :ok = SpatialIndex.add_unit(type, id, x, y, "prontera")
 
-    Trigger.on_leave_cell(
-      mover,
-      "prontera",
-      elem(from, 0),
-      elem(from, 1),
-      "prontera",
-      x,
-      y
-    )
-
-    Trigger.on_enter_cell(mover, "prontera", x, y)
+    Trigger.on_step(mover, "prontera", elem(from, 0), elem(from, 1), "prontera", x, y)
   end
 
   test "onplace starts the status for the group's whole lifetime only when the unit lacks it" do
@@ -334,5 +326,345 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
 
     FieldSupport.onleft(song, mover)
     refute StatusStorage.has_status?(:player, 11, :sc_whistle)
+  end
+
+  defmodule AllyWhistleField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{}),
+      do: %{
+        status_type: :sc_whistle,
+        params: [val2: 5, val3: 1],
+        target?: fn {_type, id} -> id != 12 end,
+        linger_ms: 20_000
+      }
+  end
+
+  test "a vanishing solo song lingers on a non-target too, its performer's own copy is untouched" do
+    bystander = player(12, {5, 5})
+    singer = player(1, {5, 5})
+    volcano = group(1, VolcanoField, skill_id: 83, skill_name: :sa_volcano, cells: [{5, 5}])
+
+    song =
+      group(2, AllyWhistleField,
+        skill_id: 319,
+        skill_name: :ba_whistle,
+        expires_at: @now + 60_000,
+        state: %{performance: %{kind: :song, performers: [1]}}
+      )
+
+    :ok = StatusStorage.apply_status(:player, 12, :sc_whistle, val2: 5, val4: 0, duration: 60_000)
+    :ok = StatusStorage.apply_status(:player, 12, :sc_volcano, val1: 1, duration: 60_000)
+    :ok = StatusStorage.apply_status(:player, 1, :sc_whistle, val2: 5, val4: 0, duration: 60_000)
+    refute FieldSupport.target?(song, bystander)
+    assert FieldSupport.target?(song, singer)
+    assert :performing = FieldSupport.onout(song, singer)
+    assert :left = FieldSupport.onout(song, bystander)
+
+    :ok =
+      UnitRegistry.update_unit_state(:player, 12, %PlayerState{
+        character_id: 12,
+        action_state: :idle,
+        map_name: "prontera",
+        x: 5,
+        y: 5,
+        invincible_timer: make_ref(),
+        stats: %{current_state: %{hp: 100}}
+      })
+
+    FieldSupport.out(song, song.cells, fn _ -> :ok end)
+    FieldSupport.out(volcano, volcano.cells, fn _ -> :ok end)
+
+    assert %{val4: 1} = StatusStorage.get_status(:player, 12, :sc_whistle)
+    assert StatusStorage.has_status?(:player, 12, :sc_volcano)
+    assert %{val4: 0} = StatusStorage.get_status(:player, 1, :sc_whistle)
+  end
+
+  defmodule RichmanField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{}),
+      do: %{
+        status_type: :sc_richmankim,
+        params: [val1: 1, val2: 25],
+        target?: fn {_type, id} -> id != 13 end
+      }
+  end
+
+  test "an ensemble places its caster without the status, its partner with it, and ends a non-target performer's lock" do
+    caster = player(1, {5, 5})
+    partner = player(12, {5, 5})
+    hidden_partner = player(13, {5, 5})
+
+    ensemble =
+      group(1, RichmanField,
+        skill_id: 307,
+        skill_name: :bd_richmankim,
+        expires_at: @now + 60_000,
+        state: %{performance: %{kind: :ensemble, performers: [1, 12, 13]}}
+      )
+
+    for {id, val4} <- [{1, 12}, {12, 1}, {13, 1}] do
+      :ok =
+        StatusStorage.apply_status(:player, id, :sc_dancing,
+          val1: 307,
+          val2: 1,
+          val4: val4,
+          duration: 61_000
+        )
+    end
+
+    assert :placed = FieldSupport.onplace(ensemble, caster)
+    refute StatusStorage.has_status?(:player, 1, :sc_richmankim)
+
+    assert :placed = FieldSupport.onplace(ensemble, partner)
+    assert StatusStorage.has_status?(:player, 12, :sc_richmankim)
+    assert :left = FieldSupport.onout(ensemble, caster)
+
+    refute FieldSupport.target?(ensemble, hidden_partner)
+    assert FieldSupport.ensemble_performer?(ensemble, hidden_partner)
+    refute FieldSupport.ensemble_performer?(ensemble, {:player, 99})
+    FieldSupport.leave(ensemble, hidden_partner, fn _ -> flunk("on_out ran for a non-target") end)
+    refute StatusStorage.has_status?(:player, 13, :sc_dancing)
+    assert StatusStorage.has_status?(:player, 12, :sc_dancing)
+  end
+
+  defmodule HermodeField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{state: %{test_pid: test_pid}}),
+      do: %{
+        status_type: :sc_hermode,
+        params: [val1: 1],
+        target?: fn _ -> true end,
+        on_place: fn mover -> send(test_pid, {:on_place, mover}) end
+      }
+  end
+
+  test "the handler's on_place runs on every placement, before the grant and even when the status is held" do
+    ally = player(12, {5, 5})
+
+    hermode =
+      group(1, HermodeField,
+        skill_id: 488,
+        skill_name: :cg_hermode,
+        expires_at: @now + 30_000,
+        state: %{test_pid: self(), performance: %{kind: :ensemble, performers: [1]}}
+      )
+
+    assert :placed = FieldSupport.onplace(hermode, ally)
+    assert_received {:on_place, {:player, 12}}
+    assert StatusStorage.has_status?(:player, 12, :sc_hermode)
+
+    assert :placed = FieldSupport.onplace(hermode, ally)
+    assert_received {:on_place, {:player, 12}}
+
+    :ok = StatusStorage.remove_status(:player, 12, :sc_hermode)
+    {:ok, {_module, state, _pid}} = UnitRegistry.get_unit(:player, 12)
+    :ok = UnitRegistry.update_unit_state(:player, 12, %{state | action_state: :dead})
+    assert :skipped = FieldSupport.onplace(hermode, ally)
+    refute_received {:on_place, _}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Hermode reaches every unit in the field and strips buffs from party allies only" do
+    caster = player(1, {5, 5})
+    ally = player(12, {5, 5})
+    stranger = player(13, {5, 5})
+    beast = mob(21, {5, 5})
+
+    for id <- [1, 12, 13] do
+      {:ok, {_module, state, _pid}} = UnitRegistry.get_unit(:player, id)
+
+      :ok =
+        UnitRegistry.update_unit_state(:player, id, %{
+          state
+          | party_id: if(id == 13, do: 9, else: 7)
+        })
+
+      :ok = StatusStorage.apply_status(:player, id, :sc_blessing, val1: 10, duration: 60_000)
+    end
+
+    hermode =
+      group(1, CgHermode,
+        skill_id: 488,
+        skill_name: :cg_hermode,
+        expires_at: @now + 30_000,
+        party_id: 7,
+        state: %{
+          performance: %{
+            kind: :ensemble,
+            performers: [1],
+            status_id: :sc_hermode,
+            status_params: [val1: 1],
+            reach: :all,
+            linger_ms: 0
+          }
+        }
+      )
+
+    support = CgHermode.field_support(hermode)
+    assert support.target?.(caster)
+    assert support.target?.(ally)
+    assert support.target?.(stranger)
+    assert support.target?.(beast)
+
+    FieldSupport.place(hermode, hermode.cells)
+
+    refute StatusStorage.has_status?(:player, 1, :sc_hermode)
+    assert StatusStorage.has_status?(:player, 12, :sc_hermode)
+    assert StatusStorage.has_status?(:player, 13, :sc_hermode)
+    assert StatusStorage.has_status?(:mob, 21, :sc_hermode)
+    assert StatusStorage.has_status?(:player, 1, :sc_blessing)
+    refute StatusStorage.has_status?(:player, 12, :sc_blessing)
+    assert StatusStorage.has_status?(:player, 13, :sc_blessing)
+  end
+
+  defmodule OriginOnlyVolcanoField do
+    alias Aesir.ZoneServer.Unit.SpatialIndex
+
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{level: level}),
+      do: %{
+        status_type: :sc_volcano,
+        params: [level: level, val1: level],
+        target?: fn _ -> true end,
+        grants?: fn {type, id} ->
+          match?({:ok, {5, 5, _map}}, SpatialIndex.get_unit_position(type, id))
+        end
+      }
+  end
+
+  test "a step is one pass: a cell that refuses the placement ends the status inside the footprint" do
+    mover = player(11, {5, 5})
+
+    _volcano =
+      group(1, OriginOnlyVolcanoField,
+        skill_id: 83,
+        skill_name: :sa_volcano,
+        cells: [{5, 5}, {6, 5}]
+      )
+
+    FieldSupport.place(Storage.get(1), [{5, 5}])
+    assert StatusStorage.has_status?(:player, 11, :sc_volcano)
+
+    move(mover, {5, 5}, {6, 5})
+    refute StatusStorage.has_status?(:player, 11, :sc_volcano)
+
+    move(mover, {6, 5}, {5, 5})
+    assert StatusStorage.has_status?(:player, 11, :sc_volcano)
+  end
+
+  defmodule BragiField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{}),
+      do: %{
+        status_type: :sc_poembragi,
+        params: [val1: 1, val2: 3],
+        target?: fn _ -> true end,
+        linger_ms: 20_000
+      }
+  end
+
+  test "stepping onto a dissonant cell lingers the song on a non-target, the singer's own copy untouched" do
+    bystander = player(12, {4, 5})
+    singer = player(1, {4, 5})
+
+    song =
+      group(1, AllyWhistleField,
+        skill_id: 319,
+        skill_name: :ba_whistle,
+        expires_at: @now + 60_000,
+        cells: [{4, 5}, {5, 5}],
+        state: %{performance: %{kind: :song, performers: [1]}}
+      )
+
+    _other_song =
+      group(2, BragiField,
+        skill_id: 321,
+        skill_name: :ba_poembragi,
+        caster_id: 2,
+        expires_at: @now + 60_000,
+        cells: [{5, 5}],
+        state: %{performance: %{kind: :song, performers: [2]}}
+      )
+
+    :ok = StatusStorage.apply_status(:player, 12, :sc_whistle, val2: 5, val4: 0, duration: 60_000)
+    :ok = StatusStorage.apply_status(:player, 1, :sc_whistle, val2: 5, val4: 0, duration: 60_000)
+    assert FieldSupport.dissonant?(song, {5, 5})
+    refute FieldSupport.dissonant?(song, {4, 5})
+
+    move(bystander, {4, 5}, {5, 5})
+    assert %{val4: 1} = StatusStorage.get_status(:player, 12, :sc_whistle)
+
+    move(singer, {4, 5}, {5, 5})
+    assert %{val4: 0} = StatusStorage.get_status(:player, 1, :sc_whistle)
+  end
+
+  defmodule EnsembleStepField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(%Group{}),
+      do: %{
+        status_type: :sc_richmankim,
+        params: [val1: 1, val2: 25],
+        target?: fn _ -> true end
+      }
+  end
+
+  test "a performer stepping off its ensemble ends its lock through the step, with no interval poll" do
+    partner = player(12, {5, 5})
+
+    ensemble =
+      group(1, EnsembleStepField,
+        skill_id: 307,
+        skill_name: :bd_richmankim,
+        expires_at: @now + 60_000,
+        state: %{performance: %{kind: :ensemble, performers: [1, 12]}}
+      )
+
+    :ok =
+      StatusStorage.apply_status(:player, 12, :sc_dancing,
+        val1: 307,
+        val2: 1,
+        val4: 1,
+        duration: 61_000
+      )
+
+    assert {:ok, ^ensemble} = Field.on_interval(ensemble, @now + 1_000)
+
+    FieldSupport.place(ensemble, ensemble.cells)
+    assert StatusStorage.has_status?(:player, 12, :sc_richmankim)
+
+    move(partner, {5, 5}, {9, 9})
+    refute StatusStorage.has_status?(:player, 12, :sc_dancing)
+    refute StatusStorage.has_status?(:player, 12, :sc_richmankim)
+  end
+
+  test "a Hermode performer stepping off its field keeps performing" do
+    partner = player(12, {5, 5})
+
+    hermode =
+      group(1, EnsembleStepField,
+        skill_id: 488,
+        skill_name: :cg_hermode,
+        expires_at: @now + 60_000,
+        state: %{performance: %{kind: :ensemble, performers: [1, 12]}}
+      )
+
+    :ok =
+      StatusStorage.apply_status(:player, 12, :sc_dancing,
+        val1: 488,
+        val2: 1,
+        val4: 1,
+        duration: 61_000
+      )
+
+    FieldSupport.place(hermode, hermode.cells)
+    move(partner, {5, 5}, {9, 9})
+
+    assert StatusStorage.has_status?(:player, 12, :sc_dancing)
   end
 end

@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
     refute StatusStorage.has_status?(:player, bard_id, :sc_ensemblefatigue)
     refute StatusStorage.has_status?(:player, dancer_id, :sc_ensemblefatigue)
     refute StatusStorage.has_status?(:player, bard_id, :sc_drumbattle)
-    refute StatusStorage.has_status?(:player, dancer_id, :sc_drumbattle)
+    assert_eventually(fn -> StatusStorage.has_status?(:player, dancer_id, :sc_drumbattle) end)
 
     assert_eventually(fn ->
       match?(
@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
           PlayerSession.warp(dancer.pid, @map, 170, 170)
 
         :logout ->
-          end_player_session(dancer)
+          GenServer.stop(dancer.pid, :normal)
 
         :exhaustion ->
           PlayerSession.set_vitals(dancer.pid, sp: 0)
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
     end
   end
 
-  test "Roki blocks allied players and mobs, but leaves its performers able to stop" do
+  test "Roki blocks allied players, mobs and the partner, but leaves its performers able to stop" do
     %{bard: bard, dancer: dancer, guest: guest} = start_party(311, 1, 1)
 
     mob =
@@ -248,7 +248,11 @@ defmodule Aesir.ZoneServer.Integration.PreReEnsembleFieldsIntegrationTest do
 
     assert_eventually(fn -> StatusStorage.has_status?(:mob, mob.unit_id, :sc_rokisweil) end)
     refute StatusStorage.has_status?(:player, bard.character.id, :sc_rokisweil)
-    refute StatusStorage.has_status?(:player, dancer.character.id, :sc_rokisweil)
+
+    assert_eventually(fn ->
+      StatusStorage.has_status?(:player, dancer.character.id, :sc_rokisweil)
+    end)
+
     cast(dancer, 304, 1)
     assert_eventually(fn -> Storage.get_groups_by_caster(:player, bard.character.id) == [] end)
   end

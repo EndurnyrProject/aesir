@@ -40,7 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HermodeTest do
     :ok
   end
 
-  test "Hermode strips Blessing from allies, keeps Endure, and resolves full immunity" do
+  @tag game_mode: :renewal
+  test "renewal Hermode strips Blessing from allies, keeps Endure, and resolves full immunity" do
     assert :ok = Interpreter.apply_status(:player, 18, :sc_blessing, caster_id: 18, val1: 10)
     assert :ok = Interpreter.apply_status(:player, 18, :sc_endure, caster_id: 18, val1: 1)
 
@@ -63,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HermodeTest do
     assert Interpreter.support_blocked?(:player, 18)
   end
 
+  @tag game_mode: :renewal
   test "the caster keeps Blessing" do
     assert :ok = Interpreter.apply_status(:player, 17, :sc_blessing, caster_id: 17, val1: 10)
 
@@ -74,5 +76,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HermodeTest do
              )
 
     assert StatusStorage.has_status?(:player, 17, :sc_blessing)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Hermode leaves the stripping to the field: applying it keeps Blessing" do
+    assert :ok = Interpreter.apply_status(:player, 18, :sc_blessing, caster_id: 18, val1: 10)
+
+    assert :ok =
+             Interpreter.apply_status(:player, 18, :sc_hermode,
+               caster_id: 17,
+               val1: 1,
+               duration: 10_000
+             )
+
+    assert StatusStorage.has_status?(:player, 18, :sc_blessing)
   end
 end

@@ -6,10 +6,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   Invoked from the single `Aesir.ZoneServer.Unit.Movement.set_position/4`
   chokepoint after a unit's cell changes, so both player and mob movers
   trigger ground units (Warp Portal, Pneuma). Traps and Fire Pillar act only on
-  the skill-unit timer, never on a step or an arrival. `on_enter_cell/4` fires
-  `on_touch/2` for every group covering the new cell; `on_leave_cell/7` fires
-  `on_out/2` for every group whose footprint covered the old cell but not the new
-  one (i.e. the mover stepped off the footprint entirely — moving between cells of
+  the skill-unit timer, never on a step or an arrival. `on_step/7` runs the
+  whole step as one manager pass (`Manager.step/3`): the old cell's groups
+  leave the mover, the new cell's groups place it (`on_touch/2`), and the
+  fields the mover is no longer placed on end their statuses; `on_out/2` fires
+  once per footprint the mover stepped off entirely (moving between cells of
   the same footprint does not count). `on_appear/4` places a unit that appears
   on a cell without stepping onto it (a mob spawn, a homunculus call);
   `on_removed/1` runs the leave events of every group on the cell of a unit
@@ -43,18 +44,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   @timer_units [:wz_firepillar, :hp_basilica, :ba_dissonance, :dc_uglydance]
 
   @doc """
-  Fires `on_touch` for every ground unit whose footprint covers `(x, y)`.
-
-  Returns `:ok`. When no ground unit covers the cell the lookup returns `[]`
-  cheaply, so the common case is a no-op.
+  Runs a step from `(old_x, old_y)` on `old_map` to `(new_x, new_y)` on
+  `new_map` as one manager pass. Returns `:ok`; a step between two bare cells
+  costs two cell lookups.
   """
-  @spec on_enter_cell(mover(), String.t(), integer(), integer()) :: :ok
-  def on_enter_cell(mover, map_name, x, y) do
-    map_name
-    |> Storage.get_groups_at_cell(x, y)
-    |> Enum.reject(&(&1.skill_name in @never_on_move))
-    |> Enum.each(&maybe_touch(&1, mover))
-  end
+  @spec on_step(mover(), String.t(), integer(), integer(), String.t(), integer(), integer()) ::
+          :ok
+  def on_step(mover, old_map, old_x, old_y, new_map, new_x, new_y),
+    do: Manager.step(mover, {old_map, old_x, old_y}, {new_map, new_x, new_y})
+
+  @doc "Whether a ground unit acts on a unit's step at all (Spider Web and classic Basilica never do)."
+  @spec acts_on_step?(Group.t()) :: boolean()
+  def acts_on_step?(%Group{skill_name: skill_name}), do: skill_name not in @never_on_move
 
   @doc """
   Fires `on_touch` for a unit appearing on `(x, y)` without stepping onto it.
@@ -68,22 +69,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
     |> Storage.get_groups_at_cell(x, y)
     |> Enum.filter(&acts_on_arrival?/1)
     |> Enum.each(&maybe_touch(&1, mover))
-  end
-
-  @doc """
-  Fires `on_out` for every ground unit the mover stepped off.
-
-  A group qualifies when its footprint covered `(old_x, old_y)` but does not cover
-  the mover's new cell `(new_x, new_y)` on `new_map` - so moving between cells of
-  the same footprint is not a leave. Returns `:ok`.
-  """
-  @spec on_leave_cell(mover(), String.t(), integer(), integer(), String.t(), integer(), integer()) ::
-          :ok
-  def on_leave_cell(mover, old_map, old_x, old_y, new_map, new_x, new_y) do
-    old_map
-    |> Storage.get_groups_at_cell(old_x, old_y)
-    |> Enum.reject(&(&1.skill_name in @never_on_move or still_inside?(&1, new_map, new_x, new_y)))
-    |> Enum.each(&maybe_out(&1, mover))
   end
 
   @doc """
@@ -127,16 +112,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   defp acts_on_arrival?(%Group{skill_name: skill_name}),
     do: skill_name not in @never_on_move and skill_name not in @timer_units
 
-  @spec still_inside?(Group.t(), String.t(), integer(), integer()) :: boolean()
-  defp still_inside?(%Group{map_name: map_name, cells: cells}, new_map, new_x, new_y) do
-    new_map == map_name and {new_x, new_y} in cells
-  end
-
   @spec maybe_touch(Group.t(), mover()) :: :ok
   defp maybe_touch(group, mover), do: maybe_dispatch(group, mover, :on_touch)
-
-  @spec maybe_out(Group.t(), mover()) :: :ok
-  defp maybe_out(group, mover), do: maybe_dispatch(group, mover, :on_out)
 
   @spec maybe_dispatch(Group.t(), mover(), atom()) :: :ok
   defp maybe_dispatch(%Group{group_id: group_id}, mover, callback) do

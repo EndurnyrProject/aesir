@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweil do
   Renewal: cast, fixed cast, delay, cooldown, SP, and duration as declared, applied
   to enemies within its area. Pre-renewal: an adjacent partner maintains a
   stationary 9x9 field for one minute, with 1 SP upkeep every 4 seconds each.
-  All player and monster occupants except the performers are skill-blocked
-  only while inside, including allies.
+  All player and monster occupants but the caster, the partner and allies
+  included, are skill-blocked only while inside; the partner may still use
+  Adaptation to end it.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

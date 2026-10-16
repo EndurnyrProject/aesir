@@ -43,7 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit, as: GameUnit
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -224,33 +223,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
     end
   end
 
-  @doc "Recomputes dissonance and applies due interval effects."
-  @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
-  def on_interval(%Group{state: %{performance: %{kind: :ensemble} = perf}} = group, _now) do
-    if Enum.all?(perf.performers, &performing?(&1, group)) do
-      {:ok, group}
-    else
-      {:expire, group}
-    end
-  end
-
+  @doc """
+  The field's cells act on their own pass; a performer stepping off an
+  ensemble, dying or leaving the map ends its lock through the field's leave
+  events, which tear the group down.
+  """
+  @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
   def on_interval(group, _now), do: {:ok, group}
 
-  defp performing?(id, group) do
-    with %{val2: group_id} when group_id == group.group_id <-
-           StatusStorage.get_status(:player, id, :sc_dancing),
-         {:ok, {_module, player, _pid}} <- UnitRegistry.get_unit(:player, id) do
-      GameUnit.living?(player) and player.map_name == group.map_name and
-        {player.x, player.y} in group.cells
-    else
-      _ -> false
-    end
-  end
-
   @doc """
-  Describes the field-owned status: who the field targets (its reach, never a
-  performer) and which placement grants it (never on a Basilica cell; a
-  dissonant cell is handled by the manager).
+  Describes the field-owned status: who the field targets (its reach, the
+  performers included wherever the reach lets a unit target itself) and which
+  placement grants it (never on a Basilica cell; a dissonant cell and the
+  performers' own placement are handled by the manager).
   """
   @spec field_support(Group.t()) :: map()
   def field_support(%Group{state: %{performance: perf}} = group) do
@@ -258,11 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
       status_type: perf.status_id,
       params: perf.status_params ++ [caster_id: group.caster_id, source_type: group.caster_type],
       linger_ms: perf.linger_ms,
-      target?: fn {type, id} = mover ->
-        mover != {group.caster_type, group.caster_id} and
-          not (id in perf.performers and type == :player) and
-          eligible?(perf.reach, group, mover)
-      end,
+      target?: &reaches?(perf.reach, group, &1),
       grants?: fn mover -> not on_basilica?(group, mover) end
     }
   end
@@ -295,7 +276,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
     )
   end
 
-  defp eligible?(reach, group, {type, id}) do
+  @doc "Whether the field's `reach` lets it target `mover`."
+  @spec reaches?(atom(), Group.t(), {atom(), integer()}) :: boolean()
+  def reaches?(reach, %Group{} = group, {type, id}) do
     case UnitRegistry.get_unit(type, id) do
       {:ok, {_module, target, _pid}} -> eligible_unit?(reach, group, type, target)
       _ -> false
