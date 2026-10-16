@@ -180,11 +180,13 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
   describe "boss status immunity" do
     test "a boss rejects externally applied stun, freeze and sleep" do
       attacker = start_attacker("BossCaster")
-      boss = start_mob_session(map_name: @map, position: {150, 151}, modes: [:boss])
 
-      assert {:error, :boss_immune} = cast_status(boss, attacker, :sc_stun)
+      boss =
+        start_mob_session(map_name: @map, position: {150, 151}, modes: [:boss, :status_immune])
+
+      assert {:error, :immune} = cast_status(boss, attacker, :sc_stun)
       assert {:error, :immune} = cast_status(boss, attacker, :sc_freeze)
-      assert {:error, :boss_immune} = cast_status(boss, attacker, :sc_sleep)
+      assert {:error, :immune} = cast_status(boss, attacker, :sc_sleep)
 
       refute StatusStorage.has_status?(:mob, boss.unit_id, :sc_stun)
       refute StatusStorage.has_status?(:mob, boss.unit_id, :sc_freeze)
@@ -205,9 +207,11 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
 
     test "a boss self-buff still applies while external crowd control is rejected" do
       attacker = start_attacker("BuffedFight")
-      boss = start_mob_session(map_name: @map, position: {150, 151}, modes: [:boss])
 
-      assert {:error, :boss_immune} = cast_status(boss, attacker, :sc_stun)
+      boss =
+        start_mob_session(map_name: @map, position: {150, 151}, modes: [:boss, :status_immune])
+
+      assert {:error, :immune} = cast_status(boss, attacker, :sc_stun)
 
       assert :ok = Executor.execute(get_mob_state(boss.pid), self_buff_row())
 

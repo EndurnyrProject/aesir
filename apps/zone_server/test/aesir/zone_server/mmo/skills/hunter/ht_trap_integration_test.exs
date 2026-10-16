@@ -28,6 +28,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest.FakeMob do
     send(test_pid, {:applied, damage, attacker_id})
     {:noreply, state}
   end
+
+  # A status notification (the delayed stun's) needs no reaction from the fake.
+  def handle_cast({:casting, {:status_changed, _status, _change}}, state), do: {:noreply, state}
 end
 
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
@@ -525,6 +528,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     remaining = expires_at - System.monotonic_time(:millisecond)
     assert remaining in 1_300..1_500
     assert [_cell] = Storage.get_cells_by_group(999)
+
+    # The stun starts 1 s after the blast.
+    assert eventually(fn -> StatusStorage.has_status?(:mob, @mob_id, :sc_stun) end)
 
     assert %{source_id: @caster_id, source_type: :player} =
              StatusStorage.get_status(:mob, @mob_id, :sc_stun)

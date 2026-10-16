@@ -107,8 +107,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       packet = assert_packet_sent(DamageDealt, 200)
       # Miss shows as 0 damage
       assert packet.damage == 0
-      # Attack type
-      assert packet.type == 10
+      # A miss is a zero-damage normal hit (DMG_NORMAL)
+      assert packet.type == 0
     end
 
     test "multiple players can attack the same mob" do

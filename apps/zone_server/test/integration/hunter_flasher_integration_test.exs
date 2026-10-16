@@ -56,13 +56,9 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
 
     walk(player.pid, {153, 150})
 
-    assert eventually(fn -> StatusStorage.has_status?(:player, @player_id, :sc_blind) end)
-
-    blind = StatusStorage.get_status(:player, @player_id, :sc_blind)
-    assert blind.source_id == @mob_id
-    assert blind.source_type == :mob
-    expected = if GameMode.mode() == :renewal, do: 20_000, else: 30_000
-    assert_in_delta blind.expires_at - blind.started_at, expected, 100
+    assert eventually(fn ->
+             match?(%Group{state: %{trap: %TrapState{phase: :used}}}, Storage.get(group_id))
+           end)
 
     assert %Group{
              visibility: ^visibility,
@@ -71,6 +67,16 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
            } = Storage.get(group_id)
 
     assert_in_delta used_expires_at - System.monotonic_time(:millisecond), 1_500, 200
+
+    # The blindness starts 1 s after the trap fires.
+    assert eventually(fn -> StatusStorage.has_status?(:player, @player_id, :sc_blind) end)
+
+    blind = StatusStorage.get_status(:player, @player_id, :sc_blind)
+    assert blind.source_id == @mob_id
+    assert blind.source_type == :mob
+    # Renewal takes the 1 s delay off the duration.
+    expected = if GameMode.mode() == :renewal, do: 19_000, else: 30_000
+    assert_in_delta blind.expires_at - blind.started_at, expected, 100
 
     walk(player.pid, {155, 150})
     walk(player.pid, {153, 150})

@@ -41,13 +41,6 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
   end
 
   @doc """
-  Creates a basic player combatant with explicit physical attack components.
-
-  `:flat_atk` and `:passive_atk` arrange independent equipment and mastery
-  contributions; the status contribution uses the booted player formula.
-  """
-  @spec create_player_combatant(keyword()) :: Combatant.t()
-  @doc """
   Equipment modifiers as the equipment fold leaves them: the on-hit status
   bonuses among `mods` (`{:add_eff, ...}`-style destinations and their `bonus4`
   durations) registered into `EquipAddEff`'s ordered lists, everything else kept.
@@ -75,6 +68,13 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
     plain |> Map.new() |> EquipAddEff.register(registered)
   end
 
+  @doc """
+  Creates a basic player combatant with explicit physical attack components.
+
+  `:flat_atk` and `:passive_atk` arrange independent equipment and mastery
+  contributions; the status contribution uses the booted player formula.
+  """
+  @spec create_player_combatant(keyword()) :: Combatant.t()
   def create_player_combatant(opts \\ []) do
     defaults = [
       unit_id: 1001,

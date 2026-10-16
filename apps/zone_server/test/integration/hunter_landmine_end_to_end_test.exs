@@ -52,7 +52,6 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
 
     assert eventually(fn -> get_player_state(player.pid).stats.current_state.hp < initial_hp end)
     assert position(player.pid) == {153, 150}
-    assert StatusStorage.has_status?(:player, @player_id, :sc_stun)
 
     assert %Group{
              visibility: visibility,
@@ -63,6 +62,9 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
     assert visibility == Trap.visibility(:ht_landmine)
     remaining = expires_at - System.monotonic_time(:millisecond)
     assert remaining in 1_000..1_500
+
+    # The stun starts 1 s after the blast.
+    assert eventually(fn -> StatusStorage.has_status?(:player, @player_id, :sc_stun) end)
 
     assert :ok = Manager.tick(Manager, expires_at)
     assert nil == Storage.get(mine.group_id)

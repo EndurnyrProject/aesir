@@ -138,8 +138,9 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     assert :ok = pass(manager)
 
     assert %Group{state: %{trap: %TrapState{phase: :used}}} = Storage.get(20_002)
-    assert StatusStorage.has_status?(:mob, activator.unit_id, :sc_freeze)
-    assert StatusStorage.has_status?(:mob, neighbour.unit_id, :sc_freeze)
+    # The freeze starts the trapper's attack motion plus 100 ms after the blast.
+    assert eventually(fn -> StatusStorage.has_status?(:mob, activator.unit_id, :sc_freeze) end)
+    assert eventually(fn -> StatusStorage.has_status?(:mob, neighbour.unit_id, :sc_freeze) end)
     refute StatusStorage.has_status?(:mob, distant.unit_id, :sc_freeze)
   end
 

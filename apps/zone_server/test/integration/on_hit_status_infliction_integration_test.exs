@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
   alias Aesir.Net.DamageDealt
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -42,9 +43,10 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
       flush_packets()
 
       stats =
-        with_stats_equip_modifiers(get_player_stats(player.pid), %{
-          {:add_eff, :sc_stun} => 10_000
-        })
+        with_stats_equip_modifiers(
+          get_player_stats(player.pid),
+          CombatTestHelper.equip_modifiers(%{{:add_eff, :sc_stun} => 10_000})
+        )
 
       player_state = get_player_state(player.pid)
 
@@ -52,12 +54,12 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
       # `Combat.execute_attack/3` does not expose the `OnHitEffects` `:roll`
       # injection point, so a maxed-out per-10000 rate makes the real
       # `:rand`-based roll a guaranteed attempt on the first landed hit.
+      # The status starts 100 ms after the hit.
       landed =
         Enum.reduce_while(1..30, false, fn _, _acc ->
           assert Combat.execute_attack(stats, player_state, mob.unit_id) == :ok
-          Process.sleep(20)
 
-          if StatusStorage.has_status?(:mob, mob.unit_id, :sc_stun) do
+          if eventually(fn -> StatusStorage.has_status?(:mob, mob.unit_id, :sc_stun) end, 200) do
             {:halt, true}
           else
             {:cont, false}
@@ -71,7 +73,6 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
 
   describe "res_eff in the status defense" do
     test "full res_eff refuses an on-hit proc and a skill-sourced apply_status alike" do
-      mob = start_mob_session(position: {151, 150})
       player = start_player_session(position: {150, 150})
       player_state = get_player_state(player.pid)
 
@@ -80,14 +81,21 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
 
       :ok = UnitRegistry.update_unit_state(:player, player.character.id, geared_state)
 
+      wearer = start_player_session(position: {151, 150})
+
       attacker =
-        CombatTestHelper.create_mob_combatant(unit_id: mob.unit_id)
-        |> with_combatant_equip_modifiers(%{{:add_eff_when_hit, :sc_stun} => 10_000})
+        CombatTestHelper.create_player_combatant(unit_id: wearer.character.id)
+        |> with_combatant_equip_modifiers(%{{:add_eff, :sc_stun} => 10_000})
 
       victim = CombatTestHelper.create_player_combatant(unit_id: player.character.id)
       landed = %{hit_class: :hit, attack_effects?: true, counter_effects?: true}
 
-      assert :ok = OnHitEffects.after_hit(victim, attacker, landed)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, victim, landed,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      Process.sleep(200)
       refute StatusStorage.has_status?(:player, player.character.id, :sc_stun)
 
       assert {:error, :resisted} =
@@ -105,5 +113,6 @@ defmodule Aesir.ZoneServer.Integration.OnHitStatusInflictionIntegrationTest do
     %{stats | modifiers: %{stats.modifiers | equipment: mods}}
   end
 
-  defp with_combatant_equip_modifiers(combatant, mods), do: %{combatant | equip_modifiers: mods}
+  defp with_combatant_equip_modifiers(combatant, mods),
+    do: %{combatant | equip_modifiers: CombatTestHelper.equip_modifiers(mods)}
 end

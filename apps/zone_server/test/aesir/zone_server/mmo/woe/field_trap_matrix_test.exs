@@ -225,13 +225,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldTrapMatrixTest do
       else: assert_eventually(fn -> position(target) != target.position end)
   end
 
+  # Sandman's, Flasher's, Land Mine's and Freezing Trap's statuses start after a delay.
   defp assert_effect({:status, status}, target, _before) do
-    assert StatusStorage.has_status?(:player, target.character.id, status)
+    assert_eventually(fn -> StatusStorage.has_status?(:player, target.character.id, status) end)
   end
 
   defp assert_effect({:damage_status, status}, target, before) do
     assert_eventually(fn -> hp(target) < before.stats.current_state.hp end)
-    assert StatusStorage.has_status?(:player, target.character.id, status)
+    assert_eventually(fn -> StatusStorage.has_status?(:player, target.character.id, status) end)
   end
 
   defp assert_effect(:damage, target, before) do
