@@ -114,19 +114,14 @@ defmodule Aesir.ZoneServer.Integration.CastSweepTest do
       level = min(row.level, definition.max_level)
       target = spawn_test_mob(@map, {151, 150}, mob_id: @caster_mob_id, max_hp: 1_000_000)
 
-      player =
-        start_player_session(
-          map_name: @map,
-          position: {150, 150},
-          base_level: 99,
-          job_level: 70,
-          hp: 1_000_000,
-          max_hp: 1_000_000,
-          sp: 1_000_000,
-          max_sp: 1_000_000,
+      character =
+        insert_character(%{
+          class: 0,
           zeny: 1_000_000,
           learned_skills: %{Integer.to_string(definition.id) => level}
-        )
+        })
+
+      player = start_player_session(character: character, map_name: @map, position: {150, 150})
 
       packet =
         if definition.target_type == :ground do
@@ -169,7 +164,7 @@ defmodule Aesir.ZoneServer.Integration.CastSweepTest do
     end)
   end
 
-  defp start_homunculus_owner do
+  defp insert_character(attrs) do
     suffix = System.unique_integer([:positive])
 
     account =
@@ -181,25 +176,31 @@ defmodule Aesir.ZoneServer.Integration.CastSweepTest do
       })
       |> Repo.insert!()
 
-    character =
-      %Character{}
-      |> Character.changeset(%{
-        account_id: account.id,
-        char_num: 0,
-        name: "Sweep#{suffix}",
-        class: 5,
-        base_level: 99,
-        job_level: 70,
-        hp: 1_000_000,
-        max_hp: 1_000_000,
-        sp: 1_000_000,
-        max_sp: 1_000_000,
-        learned_skills: %{},
-        last_map: @map,
-        last_x: 150,
-        last_y: 150
-      })
-      |> Repo.insert!()
+    %Character{}
+    |> Character.changeset(
+      Map.merge(
+        %{
+          account_id: account.id,
+          char_num: 0,
+          name: "Sweep#{suffix}",
+          base_level: 99,
+          job_level: 70,
+          hp: 1_000_000,
+          max_hp: 1_000_000,
+          sp: 1_000_000,
+          max_sp: 1_000_000,
+          last_map: @map,
+          last_x: 150,
+          last_y: 150
+        },
+        attrs
+      )
+    )
+    |> Repo.insert!()
+  end
+
+  defp start_homunculus_owner do
+    character = insert_character(%{class: 5, learned_skills: %{}})
 
     %Homunculus{}
     |> Homunculus.changeset(%{
