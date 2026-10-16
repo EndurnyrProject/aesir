@@ -26,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
     item_cost: [%{id: 1065, amount: 2}],
     damage_splash: true
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
@@ -61,7 +63,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
   @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
   def on_unit_hit(%Group{} = group, _cell, target, now) do
     with true <- Trap.armed?(group),
-         {:ok, _caster} <- Trap.resolve_caster(group) do
+         {:ok, caster} <- Trap.resolve_caster(group) do
+      OnHitEffects.direct(caster, target, BattleFlags.type_bit(:misc), group.skill_id)
       Resource.drain_sp_percent(target, percentage(group.level))
       {:ok, Trap.spring(group, now)}
     else

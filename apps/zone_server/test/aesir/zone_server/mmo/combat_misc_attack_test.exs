@@ -196,6 +196,46 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       assert_received :knockback_requested
     end
 
+    test "a fixed hit stops no walk and carries no equipment procs" do
+      caster = build_caster()
+
+      caster =
+        put_in(caster.stats.modifiers.equipment, %{{:add_eff_on_skill, 489, :sc_stun} => 10_000})
+
+      test_pid = self()
+      stub_single_target_mob()
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 1_000, is_critical: false}}
+      end)
+
+      stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+
+      stub(StatusInterpreter, :absorb_hit, fn :mob, @target_id, damage, _hit -> {damage, :hit} end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      reject(&StatusInterpreter.apply_status/4)
+
+      expect(MobSession, :apply_damage, fn _pid, 1_000, _source, metadata ->
+        send(test_pid, {:metadata, metadata})
+        :ok
+      end)
+
+      assert {:ok, _report} =
+               Combat.execute_misc_attack(caster, @target_id,
+                 skill_id: 489,
+                 skill_level: 5,
+                 base_damage: 1_000,
+                 ignore_element: true,
+                 fix_damage: true,
+                 report_hit: true
+               )
+
+      assert_received {:metadata, metadata}
+      refute metadata.walk_delay?
+      refute Map.has_key?(metadata, :proc_event)
+    end
+
     test "zero misc damage never decides or delivers coma" do
       caster = build_caster()
       stub_single_target_mob()

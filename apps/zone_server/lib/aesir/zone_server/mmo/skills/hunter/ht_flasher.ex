@@ -25,6 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
     damage_splash: true
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
@@ -63,8 +65,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
   @spec on_unit_hit(Group.t(), Ground.cell(), {atom(), integer()}, integer()) :: {:ok, Group.t()}
   def on_unit_hit(%Group{} = group, _cell, {type, id} = target, now) do
     with true <- Trap.armed?(group),
-         {:ok, _caster} <- Trap.resolve_caster(group),
+         {:ok, caster} <- Trap.resolve_caster(group),
          false <- plant_boss?(target) do
+      OnHitEffects.direct(caster, target, BattleFlags.type_bit(:misc), group.skill_id)
       blind(group, type, id)
       {:ok, Trap.spring(group, now)}
     else

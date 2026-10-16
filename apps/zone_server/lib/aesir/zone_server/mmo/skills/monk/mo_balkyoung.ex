@@ -31,7 +31,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
     damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
@@ -72,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
         source_boss?: combatant.class == :boss
       )
 
+      OnHitEffects.direct(combatant, target_ref, BattleFlags.type_bit(:misc), definition.id)
       apply_splash_effects(caster, target_ref)
     end)
   end

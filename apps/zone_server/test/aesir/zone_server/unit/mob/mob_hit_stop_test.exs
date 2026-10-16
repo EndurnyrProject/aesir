@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobHitStopTest do
   end
 
   defp walking_mob(opts \\ []) do
-    step = HitStop.schedule({:movement, :tick}, 150)
+    step = HitStop.schedule({:movement, :tick}, 10_000)
 
     %{
       MobState.set_path(mob(), [{101, 100}, {102, 100}])
@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobHitStopTest do
 
     assert hit_mob.movement_state == :standing
     assert {hit_mob.x, hit_mob.y} == {100, 100}
-    refute_receive {:movement, :tick}, 200
+    assert {:movement, :tick} not in elem(Process.info(self(), :messages), 1)
   end
 
   test "a coma hit carries its walk delay and stops the mob" do

@@ -989,8 +989,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       without waiting for the target's asynchronous HP mutation
     - `:delivery` - how the hit reached the target (default `:direct`, see
       `execute_skill_attack/3`)
-    - `:walk_delay` - whether the hit stops a walking target (default `true`);
-      a fixed hit dealt without divisions passes `false`
+    - `:fix_damage` - deal it as `battle_fix_damage` does (default `false`): it
+      stops no walking target and runs no additional or counter effects, so it
+      carries no equipment procs
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
@@ -1049,7 +1050,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              bypass_reductions?: Keyword.get(opts, :bypass_reductions, false),
              knockback_options: knockback_options(opts),
              delivery: Keyword.get(opts, :delivery, :direct),
-             walk_delay?: Keyword.get(opts, :walk_delay, true)
+             fix_damage?: Keyword.get(opts, :fix_damage, false)
            }
          ) do
       :suppressed -> suppressed_result(report_hit?)
@@ -1240,15 +1241,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_id: skill_id,
         skill_level: skill_level,
         coma?: coma?,
-        bypass_reductions: Map.get(misc_opts, :bypass_reductions?, false),
-        walk_delay?: Map.get(misc_opts, :walk_delay?, true),
-        proc:
-          EquipProcDispatch.spec(attacker, target, target_state, attack_flag,
-            divisions: divisions,
-            skill_id: skill_id,
-            immediate?: immediate?
-          )
+        bypass_reductions: Map.get(misc_opts, :bypass_reductions?, false)
       }
+
+      hit_info =
+        if Map.get(misc_opts, :fix_damage?, false),
+          do: Map.put(hit_info, :walk_delay?, false),
+          else:
+            Map.put(
+              hit_info,
+              :proc,
+              EquipProcDispatch.spec(attacker, target, target_state, attack_flag,
+                divisions: divisions,
+                skill_id: skill_id,
+                immediate?: immediate?
+              )
+            )
 
       source = damage_source(attacker, target_type)
 
@@ -1286,6 +1294,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           hit_info,
           source
         )
+
+      if delivered?(delivery), do: OnHitEffects.after_hit(hit_info, damage)
 
       hit = connected_hit(damage, hit_info, divisions, immediate?)
       result = logical_skill_result(hit, target_state, coma?)
@@ -1819,14 +1829,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         source
       )
 
-    OnHitEffects.after_hit(attacker, target, EquipProcDispatch.hit_event(hit_info, damage),
-      attack_flag: attack_flag,
-      skill_id: skill_id
-    )
+    if delivered?(delivery) do
+      OnHitEffects.after_hit(attacker, target, EquipProcDispatch.hit_event(hit_info, damage),
+        attack_flag: attack_flag,
+        skill_id: skill_id
+      )
+    end
 
     EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
     connected_hit(damage, hit_info, divisions, immediate?)
   end
+
+  defp delivered?(delivery), do: delivery == :ok or match?({:local_effects, _effects}, delivery)
 
   defp flag_type(:physical), do: :weapon
   defp flag_type(:misc), do: :misc

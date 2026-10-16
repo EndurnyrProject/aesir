@@ -34,7 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullaby do
   @impl Active
   def cast(caster, :self, level, definition) do
     Perform.perform(caster, definition, level, :sc_sleep, fn _ -> [success_rate: 100] end,
-      scope: :enemy
+      scope: :enemy,
+      additional_effect: true
     )
   end
 end

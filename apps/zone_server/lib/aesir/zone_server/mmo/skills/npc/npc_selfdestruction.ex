@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -95,7 +96,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
            element: definition.element,
            skill_id: definition.id,
            skill_level: 1,
-           from_caster?: true
+           from_caster?: true,
+           proc: proc_spec(caster, {unit_type, target_id}, target_state, {definition.id, range})
          },
          :ok <-
            DamageApplication.apply_unit_damage(
@@ -103,13 +105,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
              target_pid,
              target_id,
              damage,
-             Map.put(
-               hit_info,
-               :proc,
-               proc_spec(caster, {unit_type, target_id}, target_state, {definition.id, range})
-             ),
+             hit_info,
              damage_source(caster, unit_type)
            ) do
+      OnHitEffects.counter_stage(hit_info, damage)
       Combat.knockback(unit_type, target_id, caster.x, caster.y, definition.knockback)
     end
   end

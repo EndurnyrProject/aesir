@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
@@ -547,6 +548,49 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       MagicAttack.execute_magic_attack(caster, {:player, @target_id}, opts)
       assert_received {:effect, @caster_id, {:player, @target_id}}
+    end
+
+    test "a magic hit rolls the caster's bAddEff before the on-hit effect" do
+      test_pid = self()
+      magic_target = Bitwise.bor(AutoTriggerFlag.id(:magic), AutoTriggerFlag.id(:target))
+
+      caster =
+        build_player(
+          @caster_id,
+          150,
+          %{{:add_eff, {:sc_stun, BattleFlags.fill_trigger(magic_target)}} => 10_000},
+          %{}
+        )
+
+      target = put_in(build_player(@target_id, 151, %{}, %{}).stats.current_state.hp, 1_000)
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(target, self())
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, _damage, _source, _metadata -> :ok end)
+
+      stub(StatusInterpreter, :apply_status, fn :player, @target_id, sc, params ->
+        send(test_pid, {:step, {:add_eff, sc, params[:val1]}})
+        :ok
+      end)
+
+      MagicAttack.execute_magic_attack(caster, {:player, @target_id},
+        skill_id: 15,
+        skill_level: 1,
+        element: :water,
+        skip_range: true,
+        additional_effect: fn _source, _ref -> send(test_pid, {:step, :rider}) end
+      )
+
+      assert_received {:step, first}
+      assert_received {:step, second}
+      assert [first, second] == [{:add_eff, :sc_stun, 7}, :rider]
     end
 
     test "the hit report carries the damage dealt, 0 for a magic-immune miss or a reflection" do

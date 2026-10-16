@@ -2066,8 +2066,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert :ok = Combat.execute_mob_attack(mob_state, 2001)
 
       assert_received {:on_hit, params}
-      assert params[:caster_id] == 2001
-      assert params[:source_type] == :player
+      assert params[:caster_id] == 3001
+      assert params[:source_type] == :mob
     end
   end
 end

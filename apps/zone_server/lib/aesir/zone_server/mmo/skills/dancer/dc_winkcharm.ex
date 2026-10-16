@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -40,6 +42,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
 
   @eligible_races [:demon, :demi_human, :angel, :player_human, :player_doram]
   @charm_duration 10_000
+
+  # A charmed monster takes a zero-damage normal ranged weapon hit.
+  @charm_hit_flag BattleFlags.build(:weapon, :long, false)
 
   @impl Active
   def validate(caster, {:unit, target_id}, _level, _definition) do
@@ -66,14 +71,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
          {:ok, target} <- Combat.resolve_combatant(target_id) do
       duration = Enum.at(definition.duration, level - 1)
 
-      apply_effect(
-        target_type,
-        target_id,
-        target,
-        caster_id,
-        caster.stats.progression.base_level,
-        duration
-      )
+      charmed =
+        apply_effect(
+          target_type,
+          target_id,
+          target,
+          caster_id,
+          caster.stats.progression.base_level,
+          duration
+        )
+
+      if target_type == :mob and charmed == :ok,
+        do: OnHitEffects.direct(caster, {:mob, target_id}, @charm_hit_flag, nil)
 
       {:ok, caster}
     end

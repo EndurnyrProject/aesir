@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -17,6 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  # A song reaching its targets as an additional effect is a long-range misc skill.
+  @song_flag BattleFlags.build(:misc, :long, true)
 
   @type recipient :: PlayerState.t() | {atom(), integer()}
   @type eligibility :: (recipient() -> boolean())
@@ -44,11 +49,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
       Keyword.get_lazy(opts, :duration, fn -> Enum.fetch!(definition.duration, level - 1) end)
 
     eligible? = Keyword.get(opts, :eligible?, fn _recipient -> true end)
+    direct? = Keyword.get(opts, :additional_effect, false)
 
     caster
     |> recipients(scope, radius)
     |> Enum.filter(eligible?)
-    |> Enum.each(&apply_status(&1, caster.character_id, status_id, status_params, duration))
+    |> Enum.each(fn recipient ->
+      if direct?, do: OnHitEffects.direct(caster, recipient, @song_flag, definition.id)
+      apply_status(recipient, caster.character_id, status_id, status_params, duration)
+    end)
 
     {:ok, remember(caster, definition.id, level)}
   end

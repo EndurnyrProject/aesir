@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   setup :verify_on_exit!
 
   @landed %{hit_class: :hit, attack_effects?: true, counter_effects?: true}
+  @weapon_short BattleFlags.build(:weapon, :short, false)
 
   defp always_hit(_effective), do: true
   defp never_hit(_effective), do: false
@@ -41,7 +42,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
       defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: @weapon_short
+               )
 
       assert_received {:applied, :mob, 2001, :sc_stun, params}
       assert params[:caster_id] == 1001
@@ -58,7 +63,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
       defender = CombatTestHelper.create_mob_combatant()
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &never_hit/1)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &never_hit/1,
+                 attack_flag: @weapon_short
+               )
 
       assert_received {:applied, :mob, _id, :sc_stun, params}
       assert params[:success_rate] == 5.0
@@ -77,7 +86,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
         CombatTestHelper.create_mob_combatant()
         |> with_mods(%{{:res_eff, :sc_stun} => 500})
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: roll)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: roll,
+                 attack_flag: @weapon_short
+               )
 
       assert_received {:applied, :mob, _id, :sc_stun, params}
       assert params[:success_rate] == 5.0
@@ -97,19 +110,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   end
 
   describe "after_hit/4 add_eff_when_hit (defender -> attacker)" do
-    test "targets the attacker with the defender as source" do
+    test "targets the attacker with the attacker as source" do
       record_applications()
 
-      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001)
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 1001)
 
       defender =
-        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        CombatTestHelper.create_player_combatant(unit_id: 2001)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 400})
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: @weapon_short
+               )
 
-      assert_received {:applied, :player, 1001, :sc_freeze, params}
-      assert params[:caster_id] == 2001
+      assert_received {:applied, :mob, 1001, :sc_freeze, params}
+      assert params[:caster_id] == 1001
       assert params[:source_type] == :mob
     end
 
@@ -117,16 +134,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       record_applications()
 
       attacker =
-        CombatTestHelper.create_player_combatant()
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
         |> with_mods(%{{:res_eff, :sc_freeze} => 150})
 
       defender =
-        CombatTestHelper.create_mob_combatant()
+        CombatTestHelper.create_player_combatant(unit_id: 2001)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 400})
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: @weapon_short
+               )
 
-      assert_received {:applied, :player, _id, :sc_freeze, params}
+      assert_received {:applied, :player, 1001, :sc_freeze, params}
       assert params[:success_rate] == 4.0
     end
   end
@@ -141,7 +162,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
       defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: @weapon_short
+               )
 
       assert_received {:applied, :player, 1001, :sc_curse, params}
       assert params[:caster_id] == 1001
@@ -157,7 +182,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
       defender = CombatTestHelper.create_mob_combatant()
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &never_hit/1)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &never_hit/1,
+                 attack_flag: @weapon_short
+               )
 
       assert_received {:applied, :player, 1001, :sc_curse, params}
       assert params[:success_rate] == 5.0
@@ -216,14 +245,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
         |> with_mods(%{{:add_eff, :sc_stun} => 10_000})
 
       defender =
-        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        CombatTestHelper.create_player_combatant(unit_id: 2001)
         |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
 
       killed = %{hit_class: :hit, attack_effects?: false, counter_effects?: true}
-      assert :ok = OnHitEffects.after_hit(attacker, defender, killed, roll: &always_hit/1)
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, killed,
+                 roll: &always_hit/1,
+                 attack_flag: @weapon_short
+               )
 
       assert_received {:applied, :player, 1001, :sc_freeze, _params}
-      refute_received {:applied, :mob, 2001, :sc_stun, _params}
+      refute_received {:applied, :player, 2001, :sc_stun, _params}
     end
 
     test "a skill-unit defender is skipped" do
@@ -252,7 +286,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
       defender = CombatTestHelper.create_boss_mob(unit_id: 2999)
 
-      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: @weapon_short
+               )
+
       assert_received {:applied, :mob, 2999, :sc_stun, _params}
     end
   end
@@ -572,6 +611,152 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       assert params[:duration] == 10_000
       assert params[:resistance_roll].(10_000)
       refute Keyword.has_key?(params, :val1)
+    end
+  end
+
+  describe "pc_bonus_addeff reading" do
+    @magic_long BattleFlags.build(:magic, :long, true)
+    @weapon_long BattleFlags.build(:weapon, :long, true)
+
+    defp mob_target, do: CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+    defp player_with(mods),
+      do: CombatTestHelper.create_player_combatant(unit_id: 1001) |> with_mods(mods)
+
+    test "an unflagged bAddEff is a weapon proc: it never rolls on a magic hit" do
+      record_applications()
+      attacker = player_with(%{{:add_eff, :sc_stun} => 10_000})
+
+      OnHitEffects.after_hit(attacker, mob_target(), @landed, attack_flag: @magic_long)
+      refute_received {:applied, _type, _id, _sc, _params}
+    end
+
+    test "entries of one status and one flag roll once at their summed rate, at level 7" do
+      record_applications()
+      weapon_target = Bitwise.bor(AutoTriggerFlag.id(:weapon), AutoTriggerFlag.id(:target))
+
+      attacker =
+        player_with(%{
+          {:add_eff, :sc_stun} => 300,
+          {:add_eff, {:sc_stun, BattleFlags.fill_trigger(weapon_target)}} => 200
+        })
+
+      OnHitEffects.after_hit(attacker, mob_target(), @landed,
+        roll: &always_hit/1,
+        attack_flag: @weapon_short
+      )
+
+      assert_received {:applied, :mob, 2001, :sc_stun, params}
+      assert params[:success_rate] == 5.0
+      assert params[:val1] == 7
+      refute_received {:applied, _type, _id, _sc, _params}
+    end
+
+    test "the ammunition's chance counts only for a ranged attack" do
+      record_applications()
+      attacker = player_with(%{{:arrow_add_eff, :sc_stun} => 400, {:add_eff, :sc_stun} => 100})
+
+      OnHitEffects.after_hit(attacker, mob_target(), @landed, attack_flag: @weapon_short)
+      assert_received {:applied, :mob, 2001, :sc_stun, short}
+      assert short[:success_rate] == 1.0
+
+      OnHitEffects.after_hit(attacker, mob_target(), @landed, attack_flag: @weapon_long)
+      assert_received {:applied, :mob, 2001, :sc_stun, long}
+      assert long[:success_rate] == 5.0
+    end
+
+    test "Cart Termination rolls no bAddEff but its own bAddEffOnSkill" do
+      record_applications()
+
+      attacker =
+        player_with(%{
+          {:add_eff, :sc_stun} => 10_000,
+          {:add_eff_on_skill, 485, :sc_bleeding} => 500
+        })
+
+      OnHitEffects.after_hit(attacker, mob_target(), @landed,
+        attack_flag: BattleFlags.build(:weapon, :short, true),
+        skill_id: 485
+      )
+
+      assert_received {:applied, :mob, 2001, :sc_bleeding, _params}
+      refute_received {:applied, _type, _id, _sc, _params}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Soul Breaker rolls no bAddEff" do
+      record_applications()
+      attacker = player_with(%{{:add_eff, :sc_stun} => 10_000})
+
+      OnHitEffects.after_hit(attacker, mob_target(), @landed,
+        attack_flag: BattleFlags.build(:weapon, :long, true),
+        skill_id: 379
+      )
+
+      refute_received {:applied, _type, _id, _sc, _params}
+    end
+  end
+
+  describe "counter stage" do
+    test "a monster's when-hit entries roll nothing" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001)
+
+      defender =
+        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        |> with_mods(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
+
+      OnHitEffects.after_hit(attacker, defender, @landed, attack_flag: @weapon_short)
+    end
+
+    test "a when-hit enemy entry spares a wearer that hit itself; its self entry lands" do
+      record_applications()
+      self_target = Bitwise.bor(AutoTriggerFlag.id(:self), AutoTriggerFlag.id(:weapon))
+
+      wearer =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{
+          {:add_eff_when_hit, :sc_freeze} => 10_000,
+          {:add_eff_when_hit, {:sc_curse, BattleFlags.fill_trigger(self_target)}} => 10_000
+        })
+
+      OnHitEffects.after_hit(wearer, wearer, @landed,
+        roll: &always_hit/1,
+        attack_flag: @weapon_short
+      )
+
+      assert_received {:applied, :player, 1001, :sc_curse, params}
+      assert params[:caster_id] == 1001
+      refute_received {:applied, _type, _id, :sc_freeze, _params}
+    end
+  end
+
+  describe "direct/5" do
+    test "a no-damage misc effect rolls a misc proc that names both ranges" do
+      record_applications()
+      misc_target = Bitwise.bor(AutoTriggerFlag.id(:misc), AutoTriggerFlag.id(:target))
+      misc_short = Bitwise.bor(misc_target, AutoTriggerFlag.id(:short))
+
+      attacker =
+        player_with(%{
+          {:add_eff, {:sc_blind, BattleFlags.fill_trigger(misc_target)}} => 10_000,
+          {:add_eff, {:sc_stun, BattleFlags.fill_trigger(misc_short)}} => 10_000
+        })
+
+      OnHitEffects.direct(attacker, {:mob, 2001}, BattleFlags.type_bit(:misc), 119,
+        roll: &always_hit/1
+      )
+
+      assert_received {:applied, :mob, 2001, :sc_blind, _params}
+      refute_received {:applied, _type, _id, :sc_stun, _params}
+    end
+
+    test "a monster attacker rolls nothing" do
+      reject(&StatusInterpreter.apply_status/4)
+      mob = CombatTestHelper.create_mob_combatant(unit_id: 3001)
+
+      OnHitEffects.direct(mob, {:player, 1001}, BattleFlags.type_bit(:misc), 119)
     end
   end
 end

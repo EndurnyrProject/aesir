@@ -33,6 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
@@ -68,7 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
     amount = drain_amount(caster, level)
 
     Combat.splash_targets(map_name, {x, y}, definition.splash_radius, caster_id)
-    |> Enum.each(fn {unit_type, target_id} ->
+    |> Enum.each(fn {unit_type, target_id} = target ->
+      OnHitEffects.direct(caster, target, BattleFlags.build(:misc, :long, true), definition.id)
       Resource.drain_sp(unit_type, target_id, amount)
     end)
 

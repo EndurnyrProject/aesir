@@ -471,7 +471,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   an ordinary item puts its per-monster damage bonus on the left hand. The
   ammunition accumulates none of the resist, defense-rate and range-rate
   channels nor the non-critical rate, and its critical bonuses feed only
-  arrow attacks.
+  arrow attacks. Its bAddEff and bAddEff2 chances count only for a ranged
+  attack (`arrow_add_eff`, `arrow_add_eff2`); it arms no bAddEffWhenHit or
+  bAddEffOnSkill.
   """
   @spec slot_destination(destination() | tuple(), lr_flag()) :: destination() | tuple() | nil
   def slot_destination(dest, nil), do: dest
@@ -485,6 +487,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   end
 
   def slot_destination({:addrace2, group}, :arrow), do: {:left_addrace2, group}
+  def slot_destination({:add_eff, param}, :arrow), do: {:arrow_add_eff, param}
+  def slot_destination({:add_eff2, param}, :arrow), do: {:arrow_add_eff2, param}
+
+  def slot_destination({family, _param}, :arrow)
+      when family in [:add_eff_when_hit, :add_eff_when_hit_duration],
+      do: nil
+
+  def slot_destination({:add_eff_on_skill, _skill_id, _sc}, :arrow), do: nil
   def slot_destination({:add_damage_class, monster}, _lr), do: {:left_add_damage_class, monster}
 
   def slot_destination({family, _param}, :arrow) when family in @ammunition_excluded_families,

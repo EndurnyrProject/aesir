@@ -1032,25 +1032,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          splash_target <- target_state.__struct__.to_combatant(target_state),
          {:ok, {:hit, damage_result}} <-
-           check_hit_and_calculate_damage(attacker, splash_target) do
-      handle_player_attack_hit(
-        damage_result,
-        attacker,
-        splash_target,
-        target_pid,
-        target_type,
-        target_id,
-        1,
-        %{
-          coma?: equipment_coma?(attacker, splash_target, target_type, damage_result.damage),
-          proc:
-            EquipProcDispatch.spec(
-              attacker,
-              splash_target,
-              target_state,
-              normal_attack_flag(attacker)
-            )
-        }
+           check_hit_and_calculate_damage(attacker, splash_target),
+         {:ok, stages} <-
+           handle_player_attack_hit(
+             damage_result,
+             attacker,
+             splash_target,
+             target_pid,
+             target_type,
+             target_id,
+             1,
+             %{
+               coma?: equipment_coma?(attacker, splash_target, target_type, damage_result.damage),
+               proc:
+                 EquipProcDispatch.spec(
+                   attacker,
+                   splash_target,
+                   target_state,
+                   normal_attack_flag(attacker)
+                 )
+             }
+           ) do
+      OnHitEffects.after_hit(attacker, splash_target, stages,
+        attack_flag: normal_attack_flag(attacker)
       )
     end
 
@@ -1506,6 +1510,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         source
       )
 
+    if delivered?(delivery), do: OnHitEffects.after_hit(hit_info, damage)
+
     proc_effects =
       :homunculus
       |> StatusInterpreter.on_dealt_damage(attacker.unit_id, %{
@@ -1518,6 +1524,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     append_local_effects(delivery, proc_effects)
   end
+
+  defp delivered?(delivery), do: delivery == :ok or match?({:local_effects, _effects}, delivery)
 
   # A drain (Bloodlust) heal, which Frenzy does not stop.
   defp homunculus_proc_effect({:local_heal, target, amount, source}) do

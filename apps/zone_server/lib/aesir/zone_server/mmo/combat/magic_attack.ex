@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
@@ -144,6 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         :reflect ->
           attacker
           |> deliver_reflected_hits(target, [damage], hit_info, {skill_id, skill_level}, 1)
+          |> Enum.map(&run_reflected_stages/1)
           |> dispatch_reflected_procs()
 
           {:ok, {attacker.unit_type, attacker.unit_id}}
@@ -487,6 +489,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     delivery = apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
 
     if delivery == :ok do
+      OnHitEffects.attack_stage(hit_info, damage)
+
       run_additional_effect(
         Keyword.get(opts, :additional_effect),
         caster,
@@ -496,6 +500,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         hit_info,
         coma_decision == true
       )
+
+      OnHitEffects.counter_stage(hit_info, damage)
     end
 
     result =
@@ -946,6 +952,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          reflector,
          caster_ref
        ) do
+    OnHitEffects.attack_stage(settled_info, settled)
+
     run_additional_effect(
       splash.additional_effect,
       reflector,
@@ -956,6 +964,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       false
     )
 
+    OnHitEffects.counter_stage(settled_info, settled)
+    reflected_hit
+  end
+
+  # A reflected hit that carries no on-hit effect still runs its equipment stages.
+  defp run_reflected_stages({settled, settled_info} = reflected_hit) do
+    OnHitEffects.after_hit(settled_info, settled)
     reflected_hit
   end
 
@@ -1246,6 +1261,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       )
 
     if delivery == :ok or match?({:local_effects, _effects}, delivery) do
+      OnHitEffects.attack_stage(hit_info, damage)
+
       run_additional_effect(
         additional_effect,
         attacker,
@@ -1255,6 +1272,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         hit_info,
         hit_info[:coma?] == true
       )
+
+      OnHitEffects.counter_stage(hit_info, damage)
     end
 
     EquipProcDispatch.dispatch_delivered(delivery, hit_info, damage)
@@ -1361,6 +1380,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   defp run_reflected_bolt_effect({settled, settled_info} = reflected_hit, opts, reflector, caster) do
     caster_ref = {caster.__struct__.get_unit_type(caster), caster.__struct__.get_unit_id(caster)}
 
+    OnHitEffects.attack_stage(settled_info, settled)
+
     run_additional_effect(
       Keyword.get(opts, :additional_effect),
       reflector,
@@ -1371,6 +1392,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       false
     )
 
+    OnHitEffects.counter_stage(settled_info, settled)
     reflected_hit
   end
 
@@ -1503,6 +1525,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       )
 
     if delivery == :ok or match?({:local_effects, _effects}, delivery) do
+      OnHitEffects.attack_stage(prepared_hit_info, damage)
+
       run_additional_effect(
         Keyword.get(opts, :additional_effect),
         attacker,
@@ -1512,6 +1536,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         prepared_hit_info,
         prepared_hit_info[:coma?] == true
       )
+
+      OnHitEffects.counter_stage(prepared_hit_info, damage)
     end
 
     final_damages = [damage]

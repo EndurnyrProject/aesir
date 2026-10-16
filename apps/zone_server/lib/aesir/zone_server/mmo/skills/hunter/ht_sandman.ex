@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -69,7 +71,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
          {:ok, {x, y, _map}} <- SpatialIndex.get_unit_position(type, id) do
       group
       |> splash_targets({x, y}, definition().splash_radius, caster)
-      |> Enum.each(&apply_sleep(&1, group))
+      |> Enum.each(fn target ->
+        OnHitEffects.direct(caster, target, BattleFlags.type_bit(:misc), group.skill_id)
+        apply_sleep(target, group)
+      end)
 
       {:ok, Trap.spring(group, now)}
     else

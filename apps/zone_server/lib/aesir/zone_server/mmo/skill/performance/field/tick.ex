@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
   @moduledoc """
   The per-unit effects of a performance cell on the skill-unit pass:
   Dissonance damage, Ugly Dance SP drain, Apple of Idun healing and Lullaby
-  sleep, and who each may reach.
+  sleep, and who each may reach. Ugly Dance and Lullaby run the performer's
+  bAddEff entries on each target first (`OnHitEffects.direct/5`).
 
   Dissonance, Ugly Dance and Lullaby reach the caster's living enemies, Apple of
   Idun every living unit. None reaches a performer. Which unit types a cell can
@@ -13,7 +14,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -36,6 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
     :dc_fortunekiss,
     :dc_serviceforyou
   ]
+
+  # Lullaby and Ugly Dance reach their targets as a long-range misc skill.
+  @song_flag BattleFlags.build(:misc, :long, true)
 
   @music_lessons 315
   @apple_of_idun 322
@@ -98,7 +104,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
   @spec ugly_dance(Group.t(), struct(), [{atom(), integer()}]) :: :ok
   def ugly_dance(group, caster, targets) do
     amount = 5 + 5 * group.level + group.level * Caster.lesson_level(caster, @dancing_lessons)
-    Enum.each(targets, fn {type, id} -> Resource.drain_sp(type, id, amount) end)
+
+    Enum.each(targets, fn {type, id} = target ->
+      OnHitEffects.direct(caster, target, @song_flag, group.skill_id)
+      Resource.drain_sp(type, id, amount)
+    end)
   end
 
   @doc """
@@ -127,7 +137,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
         end
       end)
 
-    Enum.each(targets, fn {type, id} ->
+    Enum.each(targets, fn {type, id} = target ->
+      OnHitEffects.direct(caster, target, @song_flag, group.skill_id)
+
       StatusInterpreter.apply_status(type, id, :sc_sleep,
         val1: group.level,
         caster_id: caster.character_id,

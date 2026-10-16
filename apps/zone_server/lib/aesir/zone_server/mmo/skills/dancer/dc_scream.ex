@@ -28,6 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill
@@ -40,6 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @behaviour Active
+
+  @skill_id 326
 
   @delay_ms 3_000
   @invisible_option Option.id(:invisible)
@@ -128,6 +132,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
       with {:ok, _pid, target, ^unit_type} <- TargetResolver.resolve(unit_type, unit_id),
            false <- excluded_player?(target),
            {:ok, success_rate, duration} <- eligibility(caster, target, level) do
+        OnHitEffects.direct(caster, {unit_type, unit_id}, BattleFlags.type_bit(:misc), @skill_id)
+
         _ =
           StatusInterpreter.apply_status(unit_type, unit_id, :sc_stun,
             duration: duration,

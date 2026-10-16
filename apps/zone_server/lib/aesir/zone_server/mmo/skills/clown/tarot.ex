@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
            skill_level: level,
            base_damage: damage,
            ignore_element: true,
-           walk_delay: false,
+           fix_damage: true,
            report_hit: true
          ) do
       {:ok, %{target_survives?: true}} -> true

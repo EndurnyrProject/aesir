@@ -308,6 +308,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
   end
 
+  describe "ammunition on-hit statuses" do
+    test "bAddEff and bAddEff2 count for ranged attacks only; the rest are not armed" do
+      assert BonusKeys.slot_destination({:add_eff, :sc_stun}, :arrow) ==
+               {:arrow_add_eff, :sc_stun}
+
+      assert BonusKeys.slot_destination({:add_eff2, :sc_curse}, :arrow) ==
+               {:arrow_add_eff2, :sc_curse}
+
+      assert BonusKeys.slot_destination({:add_eff_when_hit, :sc_stun}, :arrow) == nil
+      assert BonusKeys.slot_destination({:add_eff_on_skill, 5, :sc_stun}, :arrow) == nil
+      assert BonusKeys.slot_destination({:add_eff, :sc_stun}, :weapon) == {:add_eff, :sc_stun}
+    end
+  end
+
   describe "destinations/0" do
     test "returns exactly the documented section-3 destination set" do
       assert Enum.sort(Enum.uniq(BonusKeys.destinations())) ==
