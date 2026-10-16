@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -77,7 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
     |> party_recipients(radius)
     |> then(fn party -> [caster | party] end)
     |> Enum.uniq_by(& &1.character_id)
-    |> Enum.filter(&Unit.living?/1)
+    |> Enum.filter(&reachable?/1)
   end
 
   defp recipients(%PlayerState{} = caster, :players, radius) do
@@ -98,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
 
     [caster | nearby]
     |> Enum.uniq_by(& &1.character_id)
-    |> Enum.filter(&Unit.living?/1)
+    |> Enum.filter(&reachable?/1)
   end
 
   defp recipients(%PlayerState{} = caster, :enemy, radius) do
@@ -109,6 +110,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
       caster.character_id
     )
   end
+
+  defp reachable?(player), do: Unit.living?(player) and not Invincibility.active?(player)
 
   defp party_recipients(%PlayerState{party_id: party_id}, _radius) when party_id in [nil, 0],
     do: []

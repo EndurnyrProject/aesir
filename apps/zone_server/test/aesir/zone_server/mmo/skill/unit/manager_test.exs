@@ -81,6 +81,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  defmodule TouchOutUnit do
+    @behaviour Ground
+
+    alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+    @impl Ground
+    def on_place(%Group{cells: cells}),
+      do: {:ok, %{cells: cells, state: %{}, interval: 450, duration: 5_000}}
+
+    @impl Ground
+    def on_interval(%Group{} = group, _now), do: {:ok, group}
+
+    @impl Ground
+    def on_touch(%Group{group_id: group_id, state: %{test_pid: test_pid}} = group, mover) do
+      send(test_pid, {:touch, group_id, mover})
+      {:ok, group}
+    end
+
+    @impl Ground
+    def on_out(%Group{group_id: group_id, state: %{test_pid: test_pid}} = group, mover) do
+      send(test_pid, {:out, group_id, mover})
+      {:ok, group}
+    end
+  end
+
   defmodule FieldUnit do
     @behaviour Ground
 
@@ -2757,6 +2782,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert :ok = Manager.destroy(manager, 1)
     assert_received {:out, 1, {:player, 501}}
     refute_received {:out, _, _}
+  end
+
+  test "a ground unit never acts on an invincible player stepping on, off or under it" do
+    manager = start_manager(10_000)
+    player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+
+    :ok =
+      UnitRegistry.register_unit(:player, 504, PlayerState, %{
+        player
+        | character_id: 504,
+          invincible_timer: make_ref()
+      })
+
+    :ok = UnitRegistry.register_unit(:player, 505, PlayerState, %{player | character_id: 505})
+    SpatialIndex.add_player(504, 100, 100, "prontera")
+    SpatialIndex.add_player(505, 100, 100, "prontera")
+
+    assert :ok =
+             Manager.register(
+               manager,
+               group(1, handler: TouchOutUnit, state: %{test_pid: self()})
+             )
+
+    for mover <- [{:player, 504}, {:player, 505}], callback <- [:on_touch, :on_out] do
+      assert :ok = Manager.trigger(manager, 1, mover, callback)
+    end
+
+    assert :ok = Manager.destroy(manager, 1)
+
+    assert_received {:touch, 1, {:player, 505}}
+    assert_received {:out, 1, {:player, 505}}
+    assert_received {:out, 1, {:player, 505}}
+    refute_received {_event, 1, {:player, 504}}
   end
 
   test "a Safety Wall broken by its last hit runs on_out for every unit on it" do

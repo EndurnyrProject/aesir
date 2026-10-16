@@ -46,6 +46,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.PartySplashTest do
     assert PartySplash.nearby_member_ids(%{caster | party_id: 0}, 14) == []
   end
 
+  test "leaves out an invincible member" do
+    caster = player(1, "prontera", 100, 100)
+    :ok = UnitRegistry.register_unit(:player, 2, PlayerState, player(2, "prontera", 101, 100))
+
+    invincible = %{player(3, "prontera", 101, 100) | invincible_timer: make_ref()}
+    :ok = UnitRegistry.register_unit(:player, 3, PlayerState, invincible, self())
+
+    party = %PartyState{
+      party_id: 10,
+      name: "Splash",
+      leader_char_id: 1,
+      exp_share: false,
+      item_pickup_share: false,
+      members: Map.new(1..3, &{&1, Member.new(&1, "Char#{&1}", 50, true, "prontera")})
+    }
+
+    stub(PartyManager, :get, fn 10 -> {:ok, party} end)
+
+    assert PartySplash.nearby_member_ids(caster, 14) == [2]
+  end
+
   defp player(id, map, x, y) do
     PlayerState.new(%Character{
       id: id,

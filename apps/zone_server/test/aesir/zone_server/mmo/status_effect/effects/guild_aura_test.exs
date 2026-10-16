@@ -91,6 +91,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GuildAuraTest do
     assert :sc_gd_leadership in active_statuses(@master_id)
   end
 
+  test "an invincible guildmate is not buffed" do
+    register_player(@master_id, @guild_id, {10, 10})
+    member = register_player(@member_id, @guild_id, {11, 10})
+    :ok = UnitRegistry.register_player(%{member | invincible_timer: make_ref()}, self())
+
+    {:ok, _} = tick(aura_instance())
+
+    assert active_statuses(@member_id) == []
+  end
+
   test "a guildmate outside the 2-cell radius is not buffed" do
     register_player(@master_id, @guild_id, {10, 10})
     register_player(@member_id, @guild_id, {13, 10})

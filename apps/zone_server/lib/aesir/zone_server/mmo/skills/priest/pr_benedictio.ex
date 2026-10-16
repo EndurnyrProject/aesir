@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -132,6 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     |> Enum.each(fn {:player, target_id} ->
       with {:ok, {module, state, _pid}} <- UnitRegistry.get_unit(:player, target_id),
            true <- Unit.living?(state),
+           false <- Invincibility.active?(state),
            false <- undead_or_demon?(module, state) do
         StatusInterpreter.apply_status(:player, target_id, :sc_benedictio, params)
       else

@@ -6,9 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GuildAuraSource do
   (Great Leadership / Glorious Wounds / Cold Heart / Sharp Gaze); vals carry
   the four levels (`val1`-`val4`). Each 1s tick scans radius 2 around the
   master's current cell and applies short-lived flat stat buffs to same-guild
-  players; leaving the radius self-heals via buff expiry, so no removal
-  bookkeeping exists. The master is excluded unless `guild_aura_affects_master`
-  is enabled. Permanent while carried and never persisted - the social handler
+  players that are not invincible; leaving the radius self-heals via buff
+  expiry, so no removal bookkeeping exists. The master is excluded unless
+  `guild_aura_affects_master` is enabled. Permanent while carried and never persisted - the social handler
   re-applies it on login and on guild skill changes.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GuildAuraSource do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -64,13 +65,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GuildAuraSource do
     end
   end
 
-  defp aura_target?(master_id, master_id, _guild_id), do: Config.guild_aura_affects_master()
+  defp aura_target?(master_id, master_id, _guild_id),
+    do: Config.guild_aura_affects_master() and not Invincibility.active?({:player, master_id})
+
   defp aura_target?(char_id, _master_id, guild_id), do: member_of?(char_id, guild_id)
 
   defp member_of?(char_id, guild_id) do
     case UnitRegistry.get_unit(:player, char_id) do
-      {:ok, {_module, %PlayerState{guild_id: ^guild_id}, _pid}} -> true
-      _other -> false
+      {:ok, {_module, %PlayerState{guild_id: ^guild_id} = member, _pid}} ->
+        not Invincibility.active?(member)
+
+      _other ->
+        false
     end
   end
 

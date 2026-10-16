@@ -196,6 +196,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   # `:target_any` because they also accept allies.
   @attack_type_any [:pf_soulchange, :sa_dispell, :dc_winkcharm]
 
+  # Support skills with the source's PartyOnly or GuildOnly flag (the same in
+  # both modes): at cast end they check the target's relation, which refuses an
+  # invincible player other than the caster.
+  @party_or_guild_only_support [
+    :as_enchantpoison,
+    :am_potionpitcher,
+    :cr_devotion,
+    :sa_flamelauncher,
+    :sa_frostweapon,
+    :sa_lightningloader,
+    :sa_seismicweapon,
+    :cg_marionette,
+    :mo_kitranslation
+  ]
+
   @doc """
   Whether an attack-type skill aimed at a unit standing in Blinding Mist fails
   at cast end: three times in four. Support, self and ground skills, and targets
@@ -221,23 +236,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   defp bare_id(id), do: id
 
   @doc """
-  Whether an attack-type skill completing on `target` fails because the target
-  is an invincible player. Lex Divina still reaches a silenced one. Checked
-  when the skill completes, never when its cast begins.
+  Whether a skill completing on `target` fails because the target is an
+  invincible player, for a `caster` that is not the target (see
+  `castend_refused?/3`).
   """
   @spec castend_refused?(term(), map()) :: boolean()
-  def castend_refused?({:unit, target_id}, %{target_type: type, name: name} = definition)
-      when type == :target_enemy or name in @attack_type_any do
+  def castend_refused?(target, definition), do: castend_refused?(nil, target, definition)
+
+  @doc """
+  Whether a skill `caster` (a typed reference) completes on `target` fails
+  because the target is an invincible player. Attack-type skills fail on one,
+  though Lex Divina still reaches a silenced one. Party-only and guild-only
+  support skills fail on one unless it is the caster. Every other support skill
+  reaches it. Checked when the skill completes, never when its cast begins.
+  """
+  @spec castend_refused?(Ref.t() | nil, term(), map()) :: boolean()
+  def castend_refused?(caster, {:unit, target_id}, %{target_type: type, name: name} = definition)
+      when type == :target_enemy or name in @attack_type_any or
+             name in @party_or_guild_only_support do
     case TargetResolver.resolve(target_id) do
       {:ok, _pid, state, :player} ->
-        Invincibility.active?(state) and not silenced_lex_divina?(definition, bare_id(target_id))
+        Invincibility.active?(state) and
+          refused_on_invincible?(caster, definition, bare_id(target_id))
 
       _not_player ->
         false
     end
   end
 
-  def castend_refused?(_target, _definition), do: false
+  def castend_refused?(_caster, _target, _definition), do: false
+
+  defp refused_on_invincible?(caster, %{name: name}, target_id)
+       when name in @party_or_guild_only_support,
+       do: caster != {:player, target_id}
+
+  defp refused_on_invincible?(_caster, definition, target_id),
+    do: not silenced_lex_divina?(definition, target_id)
 
   defp silenced_lex_divina?(%{id: @lex_divina}, id),
     do: StatusStorage.has_status?(:player, id, :sc_silence)
@@ -386,25 +420,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
 
   @doc """
   Whether a ground unit's on-enter effect (a field status, a web, a portal)
-  reaches the unit `ref`: a Hiding unit is out of reach unless the skill is
-  TargetHidden. Only acquiring the effect is gated; a unit that already holds
-  it keeps it while it hides. An unknown skill id always reaches.
+  reaches the unit `ref`. An invincible player is never reached. A Hiding unit
+  is out of reach unless the skill is TargetHidden; only acquiring the effect
+  is gated by Hiding, so a unit that already holds it keeps it while it hides.
+  An unknown skill id reaches every other unit.
   """
   @spec placement_reaches?(integer() | Definition.t(), Ref.t()) :: boolean()
   def placement_reaches?(skill_id, ref) when is_integer(skill_id) do
     case Catalog.by_id(skill_id) do
       {:ok, definition} -> placement_reaches?(definition, ref)
-      :error -> true
+      :error -> not Invincibility.active?(ref)
     end
   end
 
-  def placement_reaches?(%Definition{} = definition, {unit_type, unit_id}) do
-    validate_skill_use(
-      nil,
-      %{unit_type: unit_type, unit_id: unit_id},
-      definition,
-      :unit_place
-    ) == :ok
+  def placement_reaches?(%Definition{} = definition, {unit_type, unit_id} = ref) do
+    not Invincibility.active?(ref) and
+      validate_skill_use(
+        nil,
+        %{unit_type: unit_type, unit_id: unit_id},
+        definition,
+        :unit_place
+      ) == :ok
   end
 
   defp primary?(%{unit_type: type, unit_id: id}, {type, id}), do: true

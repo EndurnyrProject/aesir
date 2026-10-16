@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -145,8 +146,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
     end
   end
 
-  defp excluded_player?(%PlayerState{option: option}) do
-    (option &&& (@invisible_option ||| @mado_option)) != 0
+  defp excluded_player?(%PlayerState{option: option} = target) do
+    (option &&& (@invisible_option ||| @mado_option)) != 0 or Invincibility.active?(target)
   end
 
   defp excluded_player?(_target), do: false

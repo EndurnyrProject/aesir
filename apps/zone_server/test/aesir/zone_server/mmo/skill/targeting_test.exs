@@ -283,6 +283,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
       assert Targeting.castend_refused?({:unit, 9_951}, PrLexdivina.definition())
     end
 
+    test "fail a party-only or guild-only support skill unless cast on oneself" do
+      alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher
+      alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncher
+
+      assert Targeting.castend_refused?(
+               {:player, 1},
+               {:unit, 9_951},
+               AmPotionpitcher.definition()
+             )
+
+      assert Targeting.castend_refused?(
+               {:mob, 9_951},
+               {:unit, 9_951},
+               SaFlamelauncher.definition()
+             )
+
+      refute Targeting.castend_refused?(
+               {:player, 9_951},
+               {:unit, 9_951},
+               AmPotionpitcher.definition()
+             )
+
+      refute Targeting.castend_refused?({:player, 1}, {:unit, 9_951}, AlHeal.definition())
+    end
+
+    test "are out of reach of a ground unit's on-enter effect" do
+      alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma
+
+      refute Targeting.placement_reaches?(AlPneuma.definition(), {:player, 9_951})
+      refute Targeting.placement_reaches?(-1, {:player, 9_951})
+    end
+
     test "Lex Divina still reaches a silenced one" do
       :ok = StatusStorage.apply_status(:player, 9_951, :sc_silence)
 

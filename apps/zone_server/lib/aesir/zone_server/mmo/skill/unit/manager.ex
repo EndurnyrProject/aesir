@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -787,7 +788,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
-  defp run_trigger(%Group{} = group, mover, callback) do
+  # A ground unit never acts on an invincible player stepping on or off it.
+  # Releasing a field status it already holds is not gated here.
+  defp run_trigger(%Group{} = group, mover, :on_out) do
+    cond do
+      not Invincibility.active?(mover) -> run_live_trigger(group, mover, :on_out)
+      triggerable?(group) -> apply_field_support_action(group, mover, :on_out)
+      true -> :ok
+    end
+  end
+
+  defp run_trigger(%Group{} = group, mover, :on_touch) do
+    if not Invincibility.active?(mover), do: run_live_trigger(group, mover, :on_touch)
+  end
+
+  defp run_live_trigger(%Group{} = group, mover, callback) do
     if triggerable?(group) and not suppressed_touch?(group, mover, callback) do
       case handler_for(group) do
         {:ok, module} ->
@@ -1197,13 +1212,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   # Deleting a unit cell runs the group's `on_out` for every unit standing on it,
-  # as a unit stepping off would. The group is ending or losing those cells, so
-  # the callback's returned group is not kept.
+  # as a unit stepping off would, except an invincible player. The group is
+  # ending or losing those cells, so the callback's returned group is not kept.
   defp out_occupants(%Group{map_name: map_name} = group, cells, module) do
     if module && function_exported?(module, :on_out, 2) do
       cells
       |> Enum.flat_map(fn {x, y} -> SpatialIndex.get_all_units_in_range(map_name, x, y, 0) end)
       |> Enum.uniq()
+      |> Enum.reject(&Invincibility.active?/1)
       |> Enum.each(&out_occupant(group, module, &1))
     end
 

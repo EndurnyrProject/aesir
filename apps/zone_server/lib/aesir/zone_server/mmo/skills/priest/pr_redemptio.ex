@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -101,6 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   defp nearby_corpse?(target_state, caster, splash_radius) do
     target_state.map_name == caster.map_name and
       Unit.corpse?(target_state) and
+      not Invincibility.active?(target_state) and
       Geometry.in_tile_range?(
         caster.x,
         caster.y,

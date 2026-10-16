@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildCooldown
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -44,8 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
 
   @doc """
   Char ids of same-guild players (caster included) within `radius` cells of
-  the caster's live position, counted as a square. Empty for a guildless
-  caster.
+  the caster's live position, counted as a square, leaving out invincible
+  players. Empty for a guildless caster.
   """
   @spec guildmates_in_range(PlayerState.t(), pos_integer()) :: [non_neg_integer()]
   def guildmates_in_range(%PlayerState{guild_id: guild_id}, _radius)
@@ -63,7 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
           x + radius,
           y + radius
         )
-        |> Enum.filter(&same_guild?(&1, guild_id))
+        |> Enum.filter(&(same_guild?(&1, guild_id) and not Invincibility.active?({:player, &1})))
 
       _missing ->
         []

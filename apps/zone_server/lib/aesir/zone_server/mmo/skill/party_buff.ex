@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PartyBuff do
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -77,6 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PartyBuff do
       {:ok, {_module, %PlayerState{} = candidate, _pid}} ->
         candidate.map_name == caster.map_name and
           Unit.living?(candidate) and
+          not Invincibility.active?(candidate) and
           Geometry.in_tile_range?(caster.x, caster.y, candidate.x, candidate.y, range) and
           eligible?.(candidate)
 
