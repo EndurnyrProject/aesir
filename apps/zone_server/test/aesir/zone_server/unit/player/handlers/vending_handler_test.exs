@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
   alias Aesir.Net.VendingList
@@ -14,6 +15,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Npc.Placement
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Shops
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -40,6 +45,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       send(test_pid, {:board, packet})
       :ok
     end)
+
+    stub(NpcRegistry, :entries, fn -> [] end)
+    stub(Warps, :for_map, fn _map -> :error end)
+    stub(Shops, :for_map, fn _map -> :error end)
 
     :ok
   end
@@ -149,6 +158,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert :error = Registry.get(@char_id)
       refute_received {:board, _}
+
+      vending = %{base | game_state: %{base.game_state | action_state: :vending}}
+
+      assert {:noreply, ^vending} = VendingHandler.handle_open(vending, "Shop", [{0, 5, 100}])
+      refute_received {:to_player, %SkillCastFailed{}}
     end
 
     test "without MC_VENDING learned returns an error and changes nothing" do
@@ -178,6 +192,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   end
 
   describe "handle_open/3" do
+    test "an NPC within three cells refuses an idle merchant's shop, nothing spent" do
+      mount_cart()
+      test_pid = self()
+      npc = %Placement{map: "prontera", x: 153, y: 147, sprite: 1, name: "n", unique_name: "n"}
+      stub(NpcRegistry, :entries, fn -> [{__MODULE__, npc}] end)
+
+      stub(Broadcast, :to_player, fn @char_id, packet ->
+        send(test_pid, {:to_player, packet})
+        :ok
+      end)
+
+      base = state(learned_skills: learned(@vending_level))
+
+      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
+
+      assert_received {:to_player,
+                       %SkillCastFailed{
+                         skill_id: 41,
+                         reason: :SKILL_CAST_FAILURE_REASON_NPC_NEARBY
+                       }}
+
+      assert_received {:send, :gameplay,
+                       {:vending_open_result,
+                        %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
+
+      assert :error = Registry.get(@char_id)
+      refute_received {:board, _}
+    end
+
     test "reports VEND_INSUFFICIENT_SP when the caster cannot pay the skill" do
       mount_cart()
       base = state(learned_skills: learned(@vending_level), sp: 10)

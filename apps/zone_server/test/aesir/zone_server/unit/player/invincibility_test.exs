@@ -8,6 +8,10 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Npc.Placement
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Shops
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -20,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
   @thunderstorm 21
   @sword_mastery 2
   @teleport 26
+  @vending 41
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -143,6 +148,21 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
 
       stub(MapFlags, :get, fn "prontera", :noteleport -> true end)
       refute ended?(Invincibility.end_on_request(started, {:skill, @teleport}))
+    end
+
+    test "a vending request ends it unless an NPC stands within three cells", %{
+      started: started
+    } do
+      far = %Placement{map: "prontera", x: 54, y: 54, sprite: 1, name: "far", unique_name: "far"}
+      near = %{far | x: 53, y: 47, unique_name: "near"}
+
+      stub(Warps, :for_map, fn _map -> :error end)
+      stub(Shops, :for_map, fn _map -> :error end)
+      stub(NpcRegistry, :entries, fn -> [{__MODULE__, far}] end)
+      assert ended?(Invincibility.end_on_request(started, {:skill, @vending}))
+
+      stub(NpcRegistry, :entries, fn -> [{__MODULE__, far}, {__MODULE__, near}] end)
+      refute ended?(Invincibility.end_on_request(started, {:skill, @vending}))
     end
 
     test "an unlearned skill request still ends it", %{started: started} do

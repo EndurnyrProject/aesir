@@ -1738,6 +1738,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:busy), do: :SKILL_CAST_FAILURE_REASON_BUSY
   defp failure_reason(:wrong_weapon), do: :SKILL_CAST_FAILURE_REASON_WRONG_WEAPON
   defp failure_reason(:versus_map_only), do: :SKILL_CAST_FAILURE_REASON_VERSUS_MAP_ONLY
+  defp failure_reason(:npc_nearby), do: :SKILL_CAST_FAILURE_REASON_NPC_NEARBY
   defp failure_reason(_reason), do: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
 
   defp resolve_target(%{character_id: caster_id}, target_id) when target_id == caster_id,

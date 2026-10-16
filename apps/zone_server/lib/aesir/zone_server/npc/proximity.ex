@@ -1,14 +1,41 @@
 defmodule Aesir.ZoneServer.Npc.Proximity do
   @moduledoc """
-  Touch-area proximity lookup over the NPC and warp indexes in both game modes.
+  Proximity lookups over the NPC, warp and shop indexes in both game modes.
 
-  Checks rectangle edges, including single-cell warps, rather than requiring
-  the NPC's center to lie inside the search box.
+  `touch_area_within?/4` checks rectangle edges, including single-cell warps,
+  rather than requiring the NPC's center to lie inside the search box.
+  `npc_near?/3` checks the NPC's own cell.
   """
 
   alias Aesir.ZoneServer.Npc.Registry
+  alias Aesir.ZoneServer.Npc.Session
+  alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
+
+  @vend_chat_distance 3
+
+  @doc """
+  True when an NPC stands within 3 cells of `{x, y}` on `map`, counted as a
+  square: a script NPC that is neither disabled nor hidden, a warp portal or a
+  shop. No vending stall or chat room may be opened there.
+  """
+  @spec npc_near?(String.t(), integer(), integer()) :: boolean()
+  def npc_near?(map, x, y) do
+    near? = fn nx, ny ->
+      abs(nx - x) <= @vend_chat_distance and abs(ny - y) <= @vend_chat_distance
+    end
+
+    Enum.any?(Registry.entries(), fn {_module, placement} ->
+      placement.map == map and near?.(placement.x, placement.y) and
+        Session.visible?(Registry.entity_id(placement))
+    end) or
+      Enum.any?(on_map(Warps.for_map(map)), &near?.(&1.x, &1.y)) or
+      Enum.any?(on_map(Shops.for_map(map)), &near?.(&1.x, &1.y))
+  end
+
+  defp on_map({:ok, list}), do: list
+  defp on_map(:error), do: []
 
   @doc "True when a warp portal or NPC touch area covers any cell within `range` of `{x, y}`."
   @spec touch_area_within?(String.t(), integer(), integer(), non_neg_integer()) :: boolean()

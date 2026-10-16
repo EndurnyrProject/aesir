@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
+  alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -31,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @default_time 3000
+  @vending 41
   @teleport 26
   @warp 27
   @cast_cancel 275
@@ -218,6 +220,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
       skill_id == @warp -> MapFlags.get(map_name, :nowarp)
       skill_id == @teleport -> MapFlags.get(map_name, :noteleport)
       skill_id in @emergency_calls -> not Rules.ground?(map_name)
+      skill_id == @vending -> npc_near?(state.game_state)
       true -> false
     end
   end
@@ -269,7 +272,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
   defp item_skill?(%{pending_item_skill: %{skill_id: skill_id}}, skill_id), do: true
   defp item_skill?(_state, _skill_id), do: false
 
+  defp npc_near?(%PlayerState{map_name: map_name, x: x, y: y}),
+    do: Proximity.npc_near?(map_name, x, y)
+
   defp self_skill?(skill_id), do: target_type(skill_id) == :self
+
+  # Vending is a self skill whose use the shop-open request carries.
+  defp target_type(@vending), do: :self
 
   defp target_type(skill_id) do
     case Catalog.by_id(skill_id) do

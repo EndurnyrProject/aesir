@@ -34,8 +34,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McVending
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Inventory
@@ -44,6 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -57,6 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Zeny
 
   @push_cart_status :sc_push_cart
+  @burning 7
 
   @typedoc "The live shop carried in `:vending` `state_context` and the registry."
   @type shop :: %{title: String.t(), owner_char_id: integer(), items: [ShopItem.t()]}
@@ -83,7 +87,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   Opens a vending shop selling `entries` (`{cart_index, amount, price}` lines)
   from the mounted cart under `title`.
 
-  Requires the cart mounted (`SC_PUSHCART` active) and `MC_VENDING` learned; the
+  Refused first when an NPC stands within 3 cells (`Npc.Proximity.npc_near?/3`),
+  before any other check or cost, unless the player is already busy (vending,
+  trading, sitting, in a chat room or dialog, or held by a body state). Requires the cart mounted (`SC_PUSHCART` active)
+  and `MC_VENDING` learned; the
   learned level caps the line count via `McVending.max_slots/1`. On success it
   validates through `Vending.validate_open/3`, transitions to `:vending` with the
   shop in `state_context`, registers the shop, broadcasts `VendingBoardShown` to
@@ -93,7 +100,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   @spec open_shop(state(), String.t(), [Vending.entry()]) ::
           {:ok, state()}
           | {:error,
-             :no_cart
+             :npc_nearby
+             | :no_cart
              | :skill_not_learned
              | :too_many_slots
              | :invalid_amount
@@ -106,7 +114,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   def open_shop(%{game_state: gs} = state, title, entries) do
     char_id = gs.character_id
 
-    with :ok <- ensure_cart_mounted(char_id),
+    with :ok <- ensure_no_npc_near(state),
+         :ok <- ensure_cart_mounted(char_id),
          {:ok, level} <- ensure_vending_learned(gs),
          {:ok, shop_items} <- Vending.validate_open(gs.cart, entries, McVending.max_slots(level)),
          shop = %{title: title, owner_char_id: char_id, items: shop_items},
@@ -159,6 +168,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
       {:ok, new_state} ->
         MessageRouter.send_to(state.connection_pid, %VendingOpenResult{result: :VEND_OK})
         {:noreply, sync_game_state(new_state)}
+
+      {:error, :npc_nearby} ->
+        SkillHandler.report_cast_failure(
+          McVending.definition().id,
+          state.game_state.character_id,
+          :npc_nearby
+        )
+
+        MessageRouter.send_to(state.connection_pid, %VendingOpenResult{
+          result: open_code(:npc_nearby)
+        })
+
+        {:noreply, state}
 
       {:error, reason} ->
         Logger.debug(
@@ -634,6 +656,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
         MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
       end)
     end)
+  end
+
+  # A player who is vending, trading, sitting, in a chat room or a dialog, or
+  # held by a body state other than Burning has the skill request dropped before
+  # the NPC check; an open storage window does not stop it.
+  @spec ensure_no_npc_near(state()) :: :ok | {:error, :npc_nearby}
+  defp ensure_no_npc_near(%{game_state: %PlayerState{} = gs} = state) do
+    if not busy?(state) and Proximity.npc_near?(gs.map_name, gs.x, gs.y),
+      do: {:error, :npc_nearby},
+      else: :ok
+  end
+
+  defp busy?(%{game_state: gs} = state) do
+    gs.action_state in [:vending, :trading, :sitting] or gs.waiting_room != nil or
+      Map.get(state, :trade) != nil or Map.get(state, :interaction_lock) != nil or
+      StatusDisplay.spawn_state(:player, gs.character_id).body_state not in [0, @burning]
   end
 
   @spec ensure_cart_mounted(integer()) :: :ok | {:error, :no_cart}

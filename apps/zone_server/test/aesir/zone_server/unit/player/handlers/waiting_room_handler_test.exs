@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandlerTest do
 
   alias Aesir.Commons.Auth
   alias Aesir.Net.MoveStop
+  alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.WaitingRoomChat
   alias Aesir.Net.WaitingRoomCreateResult
   alias Aesir.Net.WaitingRoomInfo
@@ -13,6 +14,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandlerTest do
   alias Aesir.Net.WaitingRoomRoleChanged
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.WaitingRoom
+  alias Aesir.ZoneServer.Npc.Placement
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
@@ -268,6 +271,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandlerTest do
 
       assert_receive {:send, :world,
                       {:waiting_room_create_result, %WaitingRoomCreateResult{result: 1}}}
+    end
+
+    test "an NPC within three cells refuses with the NV_BASIC NPC-nearby failure" do
+      test_pid = self()
+      npc = %Placement{map: "test_map", x: 97, y: 103, sprite: 1, name: "n", unique_name: "n"}
+      stub(NpcRegistry, :entries, fn -> [{__MODULE__, npc}] end)
+
+      stub(Broadcast, :to_player, fn 1, packet ->
+        send(test_pid, {:to_player, packet})
+        :ok
+      end)
+
+      state = player()
+      assert {:noreply, ^state} = WaitingRoomHandler.create(state, "T", "", 5, true)
+
+      assert_receive {:to_player,
+                      %SkillCastFailed{skill_id: 1, reason: :SKILL_CAST_FAILURE_REASON_NPC_NEARBY}}
+
+      assert_receive {:send, :world,
+                      {:waiting_room_create_result, %WaitingRoomCreateResult{result: 1}}}
+
+      low_basic = player(learned: %{1 => 3})
+      assert {:noreply, ^low_basic} = WaitingRoomHandler.create(low_basic, "T", "", 5, true)
+      refute_receive {:to_player, %SkillCastFailed{}}
     end
 
     test "opens a room owned by the creator and shows it nearby" do

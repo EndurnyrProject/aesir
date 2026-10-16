@@ -426,12 +426,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   # VendingOpenRequest - Merchant opens a vending shop selling cart items. The
   # wire `VendingEntry` lines are flattened to `{cart_index, amount, price}`
-  # tuples the pure `Vending` core consumes.
+  # tuples the pure `Vending` core consumes. The request is also the use of
+  # MC_VENDING, so it may end the invincibility.
   def handle_message(%VendingOpenRequest{title: title, entries: entries}, state) do
     lines =
       Enum.map(entries, fn %VendingEntry{cart_index: i, amount: a, price: p} -> {i, a, p} end)
 
-    VendingHandler.handle_open(state, title, lines)
+    state
+    |> Invincibility.end_on_request({:skill, 41})
+    |> VendingHandler.handle_open(title, lines)
   end
 
   # VendingCloseRequest - Merchant closes its own vending shop.

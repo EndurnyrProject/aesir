@@ -2314,6 +2314,8 @@ enum SkillCastFailureReason {
   SKILL_CAST_FAILURE_REASON_BUSY = 9;
   SKILL_CAST_FAILURE_REASON_WRONG_WEAPON = 10;
   SKILL_CAST_FAILURE_REASON_VERSUS_MAP_ONLY = 11;
+  // An NPC stands within 3 cells: no vending stall or chat room here.
+  SKILL_CAST_FAILURE_REASON_NPC_NEARBY = 12;
 }
 
 // Server -> client, caster-only feedback when an attempted skill cast is rejected.

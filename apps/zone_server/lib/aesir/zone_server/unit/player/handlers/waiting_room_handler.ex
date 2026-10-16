@@ -32,9 +32,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
+  alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -50,12 +52,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   @doc """
   Opens a player chat room owned by the caller. Refused (create result 1) when
   the player is already in a room, trading, vending, below NV_BASIC 4, or on a
-  `nochat` map. On success the player stops walking and attacking, becomes the
-  owner and sole member, and nearby players see the bubble.
+  `nochat` map. With NV_BASIC 4, an NPC within 3 cells refuses it first with the
+  NV_BASIC skill failure "NPC nearby" (`Npc.Proximity.npc_near?/3`). On success
+  the player stops walking and attacking, becomes the owner and sole member, and
+  nearby players see the bubble.
   """
   @spec create(session_state(), String.t(), String.t(), non_neg_integer(), boolean()) ::
           {:noreply, session_state()}
-  def create(%{connection_pid: pid} = state, title, pass, limit, public?) do
+  def create(%{connection_pid: pid, game_state: game_state} = state, title, pass, limit, public?) do
+    if basic_skill_allows?(game_state) and
+         Proximity.npc_near?(game_state.map_name, game_state.x, game_state.y) do
+      SkillHandler.report_cast_failure(
+        NvBasic.definition().id,
+        game_state.character_id,
+        :npc_nearby
+      )
+
+      MessageRouter.send_to(pid, %WaitingRoomCreateResult{result: 1})
+      {:noreply, state}
+    else
+      create_room(state, title, pass, limit, public?)
+    end
+  end
+
+  defp create_room(%{connection_pid: pid} = state, title, pass, limit, public?) do
     if can_create?(state) do
       %{game_state: game_state} = state = settle(state)
 
@@ -81,9 +101,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
 
   defp can_create?(%{game_state: game_state, trade: trade}) do
     game_state.waiting_room == nil and trade == nil and game_state.action_state != :vending and
-      NvBasic.allows_action?(game_state.stats.progression.learned_skills, :chat_room) == :ok and
-      not MapFlags.get(game_state.map_name, :nochat)
+      basic_skill_allows?(game_state) and not MapFlags.get(game_state.map_name, :nochat)
   end
+
+  defp basic_skill_allows?(game_state),
+    do: NvBasic.allows_action?(game_state.stats.progression.learned_skills, :chat_room) == :ok
 
   @doc """
   Joins the room `room_id` with `pass` (only checked for private rooms). A GM at
