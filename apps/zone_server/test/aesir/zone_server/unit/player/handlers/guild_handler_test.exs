@@ -220,6 +220,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
     end
   end
 
+  describe "the master's guild skill block" do
+    @guild_skills [10_010, 10_011, 10_012, 10_013]
+
+    defp blocked?(game_state, before) do
+      game_state.skill_cooldowns |> Map.keys() |> Enum.sort() == @guild_skills and
+        Enum.all?(Map.values(game_state.skill_cooldowns), &(&1 >= before + 300_000))
+    end
+
+    defp create_guild(master) do
+      stub(InventoryOps, :remove, fn _char_id, inventory, 0, 1 ->
+        {:ok, Map.delete(inventory, 0), {:removed, 0}}
+      end)
+
+      {:noreply, state} =
+        GuildHandler.handle_create_request(
+          %GuildCreateRequest{name: "Blocked#{master.id}"},
+          with_emperium(state_for(master))
+        )
+
+      state.game_state
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal blocks it when the guild is created and when the master logs in" do
+      before = System.monotonic_time(:millisecond)
+      assert blocked?(create_guild(character_fixture("Blocker", %{})), before)
+
+      {master, guild} = guild_fixture("Relogger")
+      member = add_member(guild.guild_id, "Follower")
+
+      assert blocked?(SocialHandler.subscribe_guild(state_for(master)).game_state, before)
+      assert SocialHandler.subscribe_guild(state_for(member)).game_state.skill_cooldowns == %{}
+    end
+
+    @tag game_mode: :renewal
+    test "renewal blocks nothing" do
+      assert create_guild(character_fixture("NoBlocker", %{})).skill_cooldowns == %{}
+
+      {master, _guild} = guild_fixture("NoRelogger")
+      assert SocialHandler.subscribe_guild(state_for(master)).game_state.skill_cooldowns == %{}
+    end
+  end
+
   describe "handle_invite_request/2" do
     test "the master invites an online target, delivers, and acks success" do
       {master, guild} = guild_fixture("Fiona")

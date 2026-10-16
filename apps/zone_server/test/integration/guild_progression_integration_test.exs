@@ -184,46 +184,26 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
     end
   end
 
-  describe "guild-scoped cast cooldowns" do
-    test "a Battle Orders cooldown survives the master's relog" do
+  describe "guild skill cast cooldowns" do
+    test "a Battle Orders cast puts the master's own Battle Orders on cooldown" do
       {master_session, guild_id} = create_guild("Orderers", "OrderMaster")
+      lift_guild_skill_block(master_session.pid)
       seed_learned_skills(guild_id, %{"10010" => 1})
       :ok = MapFlags.set_runtime("prontera", :gvg, true)
-
-      simulate_incoming_message(master_session.pid, %SkillCast{
-        skill_id: @gd_battleorder,
-        level: 1,
-        target_id: master_session.character.id
-      })
-
       master_id = master_session.character.id
+
+      cast = %SkillCast{skill_id: @gd_battleorder, level: 1, target_id: master_id}
+      simulate_incoming_message(master_session.pid, cast)
 
       assert eventually(fn ->
                StatusStorage.has_status?(:player, master_id, :sc_battleorder)
              end)
 
-      {:ok, armed} = GuildManager.get(guild_id)
-      assert is_integer(armed.skill_cooldowns[@gd_battleorder])
+      assert get_player_state(master_session.pid).skill_cooldowns[@gd_battleorder]
 
-      # Relog: a fresh session must still be blocked by the guild cooldown.
-      end_player_session(master_session)
       StatusStorage.remove_status(:player, master_id, :sc_battleorder)
-
-      relog =
-        start_player_session(
-          character: Repo.get(Character, master_id),
-          map_name: "prontera",
-          position: {150, 150}
-        )
-
-      on_exit(fn -> end_player_session(relog) end)
       flush_packets()
-
-      simulate_incoming_message(relog.pid, %SkillCast{
-        skill_id: @gd_battleorder,
-        level: 1,
-        target_id: master_id
-      })
+      simulate_incoming_message(master_session.pid, cast)
 
       assert_receive {:packet_sent,
                       %SkillCastFailed{
@@ -233,12 +213,9 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
                      1_000
 
       refute StatusStorage.has_status?(:player, master_id, :sc_battleorder)
-
-      {:ok, still_armed} = GuildManager.get(guild_id)
-      assert is_integer(still_armed.skill_cooldowns[@gd_battleorder])
     end
 
-    test "a non-master member's guild cast is refused end-to-end" do
+    test "a non-master member's guild cast is dropped silently end-to-end" do
       {master_session, guild_id} = create_guild("NoCastPeons", "NoCastMaster")
       seed_learned_skills(guild_id, %{"10010" => 1})
 
@@ -252,7 +229,7 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
         target_id: member.id
       })
 
-      assert_receive {:packet_sent, %SkillCastFailed{skill_id: @gd_battleorder}, _}, 1_000
+      refute_receive {:packet_sent, %SkillCastFailed{skill_id: @gd_battleorder}, _}, 300
       refute StatusStorage.has_status?(:player, member.id, :sc_battleorder)
     end
   end
@@ -408,5 +385,13 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
       |> Repo.insert()
 
     account
+  end
+
+  # A pre-renewal master's guild skills are blocked for 5 minutes once the guild
+  # is created; the arrangement lifts the block.
+  defp lift_guild_skill_block(pid) do
+    :sys.replace_state(pid, fn state ->
+      %{state | game_state: %{state.game_state | skill_cooldowns: %{}}}
+    end)
   end
 end

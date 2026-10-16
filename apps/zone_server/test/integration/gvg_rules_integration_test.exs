@@ -616,6 +616,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
 
     :ok = ClusterTestHelper.clear_all()
     {:ok, _guild} = GuildManager.ensure_started(guild_id)
+    lift_guild_skill_block(master.pid)
 
     for id <- skills do
       simulate_incoming_message(master.pid, %SkillCast{
@@ -626,9 +627,6 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
 
       assert_receive {:packet_sent, %SkillCastFailed{skill_id: ^id}, _}, 1000
     end
-
-    assert {:error, :not_gvg_ground} =
-             SkillInterpreter.item_cast(get_player_state(master.pid), 10_015, 1, :self)
 
     :ok = PlayerSession.warp(master.pid, @map, 212, 175)
     simulate_incoming_message(master.pid, %MapLoaded{})
@@ -648,7 +646,10 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
         target_id: member.character.id
       })
 
-      assert_receive {:packet_sent, %SkillCastFailed{skill_id: ^id}, _}, 1000
+      refute_receive {:packet_sent, %SkillCastFailed{skill_id: ^id}, _}, 200
+      refute StatusStorage.has_status?(:player, member.character.id, status)
+
+      lift_guild_skill_block(master.pid)
 
       simulate_incoming_message(master.pid, %SkillCast{
         skill_id: id,
@@ -663,6 +664,8 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     :ok = PlayerSession.apply_damage(member.pid, hp(member) - div(max_hp, 2), nil)
     wounded_hp = hp(member)
 
+    lift_guild_skill_block(master.pid)
+
     simulate_incoming_message(master.pid, %SkillCast{
       skill_id: 10_012,
       level: 1,
@@ -675,6 +678,8 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     simulate_incoming_message(member.pid, %MapLoaded{})
     :ok = MapFlags.set_runtime("prontera", :nowarp, true)
     flush_packets()
+
+    lift_guild_skill_block(master.pid)
 
     simulate_incoming_message(master.pid, %SkillCast{
       skill_id: 10_013,
@@ -1039,5 +1044,13 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
       character: character,
       connection_pid: Keyword.get(opts, :connection_pid)
     )
+  end
+
+  # A pre-renewal master's guild skills are blocked for 5 minutes once the guild
+  # is created; the arrangement lifts the block.
+  defp lift_guild_skill_block(pid) do
+    :sys.replace_state(pid, fn state ->
+      %{state | game_state: %{state.game_state | skill_cooldowns: %{}}}
+    end)
   end
 end

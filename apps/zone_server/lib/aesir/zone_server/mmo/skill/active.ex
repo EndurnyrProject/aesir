@@ -177,7 +177,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               %{id: integer(), amount: pos_integer()}
             ]
 
+  @doc """
+  Optionally scales this cast's cast time after its early stage (the DEX and
+  equipment stage) and before its status stage. Used by a skill whose cast
+  time grows with the caster's state (Urgent Call with Leap). A skill without
+  it keeps the early time.
+  """
+  @callback scale_cast_time(caster(), target(), pos_integer(), number()) :: number()
+
+  @doc """
+  Optionally rewrites the caster's cooldowns after the cast's own cooldown is
+  armed, for a skill whose effect arms cooldowns itself (the guild skills). A
+  skill without it keeps the generic cooldown only.
+  """
+  @callback rearm_cooldowns(caster(), pos_integer(), Definition.t(), integer()) :: caster()
+
   @optional_callbacks cast_with_origin: 5,
+                      scale_cast_time: 4,
+                      rearm_cooldowns: 4,
                       cast_with_input: 5,
                       validate: 4,
                       begin_attempt: 4,

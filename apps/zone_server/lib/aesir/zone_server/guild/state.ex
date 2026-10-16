@@ -28,7 +28,6 @@ defmodule Aesir.ZoneServer.Guild.State do
             exp: 0,
             skill_points: 0,
             learned_skills: %{},
-            skill_cooldowns: %{},
             relations: %{}
 
   @type t() :: %__MODULE__{
@@ -43,7 +42,6 @@ defmodule Aesir.ZoneServer.Guild.State do
           exp: non_neg_integer(),
           skill_points: non_neg_integer(),
           learned_skills: %{non_neg_integer() => pos_integer()},
-          skill_cooldowns: %{non_neg_integer() => integer()},
           relations: %{pos_integer() => Relation.t()}
         }
 
@@ -60,6 +58,18 @@ defmodule Aesir.ZoneServer.Guild.State do
   @doc "Whether the guild is at its current member capacity."
   @spec full?(t()) :: boolean()
   def full?(%__MODULE__{} = state), do: member_count(state) >= max_members(state)
+
+  @doc "Members in slot order, the order the guild's member list is walked in."
+  @spec members_by_slot(t()) :: [Member.t()]
+  def members_by_slot(%__MODULE__{members: members}),
+    do: members |> Map.values() |> Enum.sort_by(& &1.slot)
+
+  @doc "The lowest slot no member holds."
+  @spec free_slot(t()) :: non_neg_integer()
+  def free_slot(%__MODULE__{members: members}) do
+    taken = MapSet.new(members, fn {_char_id, member} -> member.slot end)
+    Enum.find(Stream.iterate(0, &(&1 + 1)), &(not MapSet.member?(taken, &1)))
+  end
 
   @doc "The guild's learned level for a guild skill, `0` when unlearned."
   @spec skill_level(t(), non_neg_integer()) :: non_neg_integer()

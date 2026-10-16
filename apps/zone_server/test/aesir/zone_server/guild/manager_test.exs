@@ -208,7 +208,6 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert rebuilt.exp == 500_000
       assert rebuilt.skill_points == 2
       assert rebuilt.learned_skills == %{10_004 => 3}
-      assert rebuilt.skill_cooldowns == %{}
     end
   end
 
@@ -263,6 +262,40 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert Enum.count([ra, rb], &match?({:error, :guild_full}, &1)) == 1
     end
   end
+
+  describe "member slots" do
+    test "a rebuilt entry numbers members by position, a joiner takes the lowest free slot" do
+      {master, created} = guild_fixture("Slots")
+      first = char_fixture("SlotsFirst")
+      second = char_fixture("SlotsSecond")
+      {:ok, _} = Manager.add_member(created.guild_id, first)
+      {:ok, _} = Manager.add_member(created.guild_id, second)
+
+      from(c in Character, where: c.id == ^second.id) |> Repo.update_all(set: [guild_position: 5])
+      ClusterTestHelper.clear_all()
+      {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+
+      assert slots(rebuilt) == %{master.id => 0, second.id => 1, first.id => 2}
+
+      {:ok, left} = Manager.remove_member(created.guild_id, second.id)
+      assert slots(left) == %{master.id => 0, first.id => 2}
+
+      third = char_fixture("SlotsThird")
+      {:ok, joined} = Manager.add_member(created.guild_id, third)
+      assert slots(joined) == %{master.id => 0, third.id => 1, first.id => 2}
+    end
+
+    test "a member's presence update keeps its slot" do
+      {master, created} = guild_fixture("SlotsSync")
+      pushed = Member.new(master.id, master.name, 99, true, 0)
+
+      {:ok, state} = Manager.sync_member(created.guild_id, master.id, pushed)
+
+      assert state.members[master.id].slot == 0
+    end
+  end
+
+  defp slots(state), do: Map.new(state.members, fn {id, member} -> {id, member.slot} end)
 
   describe "remove_member/2" do
     test "drops a non-master member and resets its row" do

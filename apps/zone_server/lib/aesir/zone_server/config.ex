@@ -252,16 +252,6 @@ defmodule Aesir.ZoneServer.Config do
   @spec guild_exp_limit() :: non_neg_integer()
   def guild_exp_limit, do: Application.get_env(:zone_server, :guild_exp_limit, 50)
 
-  @doc """
-  Whether guild active skills require GvG ground.
-
-  Defaults to `true`. An explicit `false` keeps the custom ground relaxation;
-  all other skill, item, and status restrictions still apply.
-  """
-  @spec guild_skills_gvg_only() :: boolean()
-  def guild_skills_gvg_only,
-    do: Application.get_env(:zone_server, :guild_skills_gvg_only, true)
-
   @doc "Whether guild auras also buff the guild master (excluded by default)."
   @spec guild_aura_affects_master() :: boolean()
   def guild_aura_affects_master,

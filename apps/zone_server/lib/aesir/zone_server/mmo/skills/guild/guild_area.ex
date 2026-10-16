@@ -1,17 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
   @moduledoc """
-  Shared helpers for master-cast guild area skills.
+  Shared helpers for master-cast guild area skills (Battle Orders,
+  Regeneration, Restore, Emergency Move).
 
-  `validate_master/1` re-asserts guild-master-ness and the GvG-only config
-  gate inside the skill module so every entry point (including item and auto
-  casts, which skip the learned check by contract) enforces them.
-  `guildmates_in_range/2` resolves the same-guild players (caster included,
-  matching the reference splash) around the caster's current cell.
+  `validate_master/1` is the cast-begin check: GvG ground first, which fails
+  the cast, then the caster being his guild's master, which drops it silently.
+  The effect needs only the caster's guild: `guildmates_in_range/2` resolves
+  the same-guild players (caster included) in the square around the caster's
+  current cell. `rearm_cooldowns/4` arms the cooldowns the effect sets.
   """
 
-  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildCooldown
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -19,42 +21,67 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @doc "Validates that the caster is his guild's master and the GvG gate allows the cast."
-  @spec validate_master(PlayerState.t()) :: :ok | {:error, :not_guild_master | :not_gvg_ground}
-  def validate_master(%PlayerState{guild_id: guild_id}) when guild_id in [nil, 0],
-    do: {:error, :not_guild_master}
+  @doc """
+  Refuses the cast off GvG ground (`:not_gvg_ground`, a reported failure) and
+  drops it silently (`:guild_skill_unavailable`) when the caster is not his
+  guild's master.
+  """
+  @spec validate_master(PlayerState.t()) ::
+          :ok | {:error, :not_gvg_ground | :guild_skill_unavailable}
+  def validate_master(%PlayerState{map_name: map_name} = caster) do
+    if Rules.ground?(map_name), do: master(caster), else: {:error, :not_gvg_ground}
+  end
 
-  def validate_master(%PlayerState{guild_id: guild_id, character_id: char_id, map_name: map_name}) do
-    cond do
-      Config.guild_skills_gvg_only() and not Rules.ground?(map_name) ->
-        {:error, :not_gvg_ground}
+  defp master(%PlayerState{guild_id: guild_id}) when guild_id in [nil, 0],
+    do: {:error, :guild_skill_unavailable}
 
-      match?({:ok, %{master_char_id: ^char_id}}, GuildManager.get(guild_id)) ->
-        :ok
-
-      true ->
-        {:error, :not_guild_master}
+  defp master(%PlayerState{guild_id: guild_id, character_id: char_id}) do
+    case GuildManager.get(guild_id) do
+      {:ok, %{master_char_id: ^char_id}} -> :ok
+      _not_master_or_missing -> {:error, :guild_skill_unavailable}
     end
   end
 
   @doc """
   Char ids of same-guild players (caster included) within `radius` cells of
-  the caster's live position.
+  the caster's live position, counted as a square. Empty for a guildless
+  caster.
   """
   @spec guildmates_in_range(PlayerState.t(), pos_integer()) :: [non_neg_integer()]
-  def guildmates_in_range(
-        %PlayerState{character_id: char_id, guild_id: guild_id} = caster,
-        radius
-      ) do
-    with :ok <- validate_master(caster),
-         {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(:player, char_id) do
-      :player
-      |> SpatialIndex.get_units_in_range(map_name, x, y, radius)
-      |> Enum.filter(&same_guild?(&1, guild_id))
-    else
-      _not_allowed_or_missing -> []
+  def guildmates_in_range(%PlayerState{guild_id: guild_id}, _radius)
+      when guild_id in [nil, 0],
+      do: []
+
+  def guildmates_in_range(%PlayerState{character_id: char_id, guild_id: guild_id}, radius) do
+    case SpatialIndex.get_unit_position(:player, char_id) do
+      {:ok, {x, y, map_name}} ->
+        :player
+        |> SpatialIndex.get_units_in_area(
+          map_name,
+          x - radius,
+          y - radius,
+          x + radius,
+          y + radius
+        )
+        |> Enum.filter(&same_guild?(&1, guild_id))
+
+      _missing ->
+        []
     end
   end
+
+  @doc """
+  Arms the cooldowns of a guild area skill's effect (`GuildCooldown.rearm/4`),
+  which runs only for a caster in a guild.
+  """
+  @spec rearm_cooldowns(PlayerState.t(), pos_integer(), Definition.t(), integer()) ::
+          PlayerState.t()
+  def rearm_cooldowns(%PlayerState{guild_id: guild_id} = caster, _level, _definition, _now)
+      when guild_id in [nil, 0],
+      do: caster
+
+  def rearm_cooldowns(caster, level, definition, now),
+    do: GuildCooldown.rearm(caster, definition, level, now)
 
   @doc """
   Applies a timed status to every guildmate in range of the caster.

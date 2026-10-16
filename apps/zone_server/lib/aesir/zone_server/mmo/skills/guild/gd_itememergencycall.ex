@@ -1,9 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdItememergencycall do
   @moduledoc """
-  Item Emergency Call (GD_ITEMEMERGENCYCALL). Item-granted variant of Urgent
-  Call - not in the learnable tree; the granting item consumes itself and
-  casts through the item entry point. Recalls at most 7/12/20 members by
-  level. 5s fixed cast; guild cooldown 300s.
+  Item Emergency Call (GD_ITEMEMERGENCYCALL). The Emergency Scroll variant of
+  Urgent Call, not in the learnable tree: recalls at most 7/12/20 members by
+  level (`Recall`), on GvG ground only.
+
+  Renewal: 5s fixed cast, 300s cooldown. Pre-renewal: no cast time, and the
+  cast blocks the guild skills (not itself) for 300s (`GuildCooldown`).
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -12,8 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdItememergencycall do
     display_name: "Item Emergency Call",
     max_level: 3,
     target_type: :self,
-    fixed_cast_time: List.duplicate(5_000, 3),
-    cooldown: List.duplicate(300_000, 3),
+    fixed_cast_time: [renewal: List.duplicate(5_000, 3), pre_renewal: []],
+    cooldown: [renewal: List.duplicate(300_000, 3), pre_renewal: []],
     damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -23,6 +25,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdItememergencycall do
 
   @impl Active
   def validate(caster, _target, _level, _definition), do: Recall.validate_master(caster)
+
+  @impl Active
+  def rearm_cooldowns(caster, level, definition, now),
+    do: Recall.rearm_cooldowns(caster, level, definition, now)
 
   @impl Active
   def cast(caster, :self, level, _definition) do

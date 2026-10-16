@@ -2,7 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRegeneration do
   @moduledoc """
   Regeneration (GD_REGENERATION). Master-cast guild area buff: same-guild
   players within 15 cells regenerate faster for 60s - HP rate +200/+200/+300
-  percent and SP rate +100/+200/+300 percent by level. Guild cooldown 180s.
+  percent and SP rate +100/+200/+300 percent by level. Renewal: 180s
+  cooldown. Pre-renewal: 1 SP, and the cast blocks the guild skills for 300s
+  (`GuildCooldown`).
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -14,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRegeneration do
     ignore_status_cast: true,
     target_type: :self,
     splash_radius: 15,
-    cooldown: List.duplicate(180_000, 3),
+    sp_cost: [renewal: [], pre_renewal: [1, 1, 1]],
+    cooldown: [renewal: List.duplicate(180_000, 3), pre_renewal: []],
     damage_splash: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -24,6 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRegeneration do
 
   @impl Active
   def validate(caster, _target, _level, _definition), do: GuildArea.validate_master(caster)
+
+  @impl Active
+  def rearm_cooldowns(caster, level, definition, now),
+    do: GuildArea.rearm_cooldowns(caster, level, definition, now)
 
   @impl Active
   def cast(caster, :self, level, definition) do

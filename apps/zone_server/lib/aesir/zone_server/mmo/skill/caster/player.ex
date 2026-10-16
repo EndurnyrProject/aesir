@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle
 
-  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
@@ -29,10 +28,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @gem_floor_skills [:hw_ganbantein, :sa_abracadabra]
   @holy_light 156
 
-  # Guild skills (GD_*) are learned by the guild, not the character: rank and
-  # cooldowns resolve against the guild entry, never against the caster's
-  # progression or per-character cooldown map.
+  # Guild skills (GD_*) are learned by the guild, not the character: their rank
+  # resolves against the guild entry, never against the caster's progression.
   @guild_skill_range 10_000..10_019
+  @emergency_calls [10_013, 10_015]
 
   @impl true
   def kind, do: :player
@@ -68,13 +67,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     %{caster | stats: %{stats | current_state: current_state}}
   end
 
+  # A guild skill is known by the guild's master at the guild's learned level;
+  # anyone else's request is dropped silently. Nothing is checked again when
+  # the cast ends.
+  #
   # A skill granted by worn equipment is authoritative while equipped: it is
   # castable at its granted level without a learned entry or quest lineage.
   @impl true
-  def knows?(caster, %{id: skill_id} = _definition, level, _phase)
+  def knows?(caster, %{id: skill_id} = _definition, level, :begin)
       when skill_id in @guild_skill_range do
     guild_knows?(caster, skill_id, level)
   end
+
+  def knows?(_caster, %{id: skill_id} = _definition, _level, :completion)
+      when skill_id in @guild_skill_range,
+      do: :ok
 
   def knows?(caster, definition, level, :begin) do
     cond do
@@ -102,32 +109,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   defp guild_knows?(%PlayerState{guild_id: guild_id}, _skill_id, _level)
        when guild_id in [nil, 0],
-       do: {:error, :skill_not_learned}
+       do: {:error, :guild_skill_unavailable}
 
-  defp guild_knows?(%PlayerState{} = caster, skill_id, level) do
-    with {:ok, guild} <- fetch_guild(caster.guild_id),
-         :ok <- check_guild_master(guild, caster.character_id),
-         :ok <- check_gvg_gate(caster) do
-      if GuildState.skill_level(guild, skill_id) >= level,
-        do: :ok,
-        else: {:error, :skill_not_learned}
-    end
-  end
-
-  defp fetch_guild(guild_id) do
+  defp guild_knows?(%PlayerState{guild_id: guild_id, character_id: char_id}, skill_id, level) do
     case GuildManager.get(guild_id) do
-      {:ok, guild} -> {:ok, guild}
-      {:error, :not_found} -> {:error, :skill_not_learned}
+      {:ok, %GuildState{master_char_id: ^char_id} = guild} ->
+        if GuildState.skill_level(guild, skill_id) >= level,
+          do: :ok,
+          else: {:error, :guild_skill_unavailable}
+
+      _not_master_or_missing ->
+        {:error, :guild_skill_unavailable}
     end
-  end
-
-  defp check_guild_master(%GuildState{master_char_id: char_id}, char_id), do: :ok
-  defp check_guild_master(%GuildState{}, _char_id), do: {:error, :not_guild_master}
-
-  defp check_gvg_gate(%PlayerState{map_name: map_name}) do
-    if Config.guild_skills_gvg_only() and not Rules.ground?(map_name),
-      do: {:error, :not_gvg_ground},
-      else: :ok
   end
 
   # Reads the equipment-granted level, tolerating the bare-map `stats` shape used
@@ -142,10 +135,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @impl true
   def castable_state(%PlayerState{map_name: map_name}, skill_id, phase)
       when phase in [:begin, :completion] do
-    if Rules.skill_allowed?(skill_id, map_name),
-      do: :ok,
-      else: {:error, :skill_not_allowed}
+    cond do
+      not Rules.skill_allowed?(skill_id, map_name) -> {:error, :skill_not_allowed}
+      phase == :begin and emergency_call_refused?(skill_id, map_name) -> {:error, :not_gvg_ground}
+      true -> :ok
+    end
   end
+
+  # Urgent Call works in and out of War of Emperium, on GvG ground only.
+  defp emergency_call_refused?(skill_id, map_name),
+    do: skill_id in @emergency_calls and not Rules.ground?(map_name)
 
   @impl true
   def castable_status(%PlayerState{}, _skill_id), do: :ok
@@ -249,20 +248,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   @impl true
-  def cooldown_ready?(%PlayerState{guild_id: guild_id}, skill_id, now, :begin)
-      when skill_id in @guild_skill_range do
-    case GuildManager.get(guild_id || 0) do
-      {:ok, %GuildState{skill_cooldowns: cooldowns}} ->
-        case Map.get(cooldowns, skill_id) do
-          expiry when is_integer(expiry) -> expiry <= now
-          nil -> true
-        end
-
-      {:error, :not_found} ->
-        true
-    end
-  end
-
   def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id, now, :begin) do
     Cooldown.ready?(cooldowns, skill_id, now)
   end
@@ -271,17 +256,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   @impl true
   def put_cooldown(caster, _skill_id, 0), do: caster
-
-  def put_cooldown(%PlayerState{guild_id: guild_id} = caster, skill_id, expires_at)
-      when skill_id in @guild_skill_range do
-    duration = max(expires_at - System.monotonic_time(:millisecond), 0)
-
-    # The arm result is deliberately ignored: only one master exists per guild
-    # and a session serializes its own casts, so a concurrent losing arm has no
-    # real interleaving - and effects have already run by cooldown-write time.
-    _result = GuildManager.check_and_arm_skill_cooldown(guild_id || 0, skill_id, duration)
-    caster
-  end
 
   def put_cooldown(%PlayerState{skill_cooldowns: cooldowns} = caster, skill_id, expires_at) do
     %{caster | skill_cooldowns: Cooldown.put(cooldowns, skill_id, expires_at)}
@@ -345,6 +319,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   defp effective_skill?(caster, skill_id), do: effective_skill_level(caster, skill_id) > 0
+
+  @doc """
+  The caster's level in a skill: the higher of its learned and equipment-granted
+  levels, or the guild's level for a guild skill.
+  """
+  @spec skill_level(PlayerState.t(), integer()) :: non_neg_integer()
+  def skill_level(%PlayerState{} = caster, skill_id), do: effective_skill_level(caster, skill_id)
 
   defp effective_skill_level(caster, skill_id) when skill_id in @guild_skill_range do
     with guild_id when guild_id not in [nil, 0] <- caster.guild_id,

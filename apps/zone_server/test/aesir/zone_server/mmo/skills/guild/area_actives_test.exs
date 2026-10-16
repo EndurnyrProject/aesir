@@ -5,8 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdBattleorder
@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
   setup :setup_ets_tables
 
   setup do
-    stub(Config, :guild_skills_gvg_only, fn -> false end)
     stub_guild_master(1)
     :ok
   end
@@ -70,23 +69,51 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
   end
 
   describe "validate/4" do
-    test "rejects a non-master and a guildless caster on every entry point" do
-      stub_guild_master(@master_id)
+    setup do
+      stub(MapFlags, :get, fn
+        "castle", :gvg_castle -> true
+        _map, _flag -> false
+      end)
+
       {:ok, definition} = Catalog.by_id(10_010)
-
-      non_master = %PlayerState{character_id: 99, account_id: 99, guild_id: @guild_id}
-      guildless = %PlayerState{character_id: 99, account_id: 99, guild_id: 0}
-
-      assert {:error, :not_guild_master} =
-               GdBattleorder.validate(non_master, :self, 1, definition)
-
-      assert {:error, :not_guild_master} = GdBattleorder.validate(guildless, :self, 1, definition)
+      %{definition: definition}
     end
 
-    test "accepts the guild master" do
-      stub_guild_master(@master_id)
-      {:ok, definition} = Catalog.by_id(10_010)
+    test "fails off GvG ground before looking at the caster", %{definition: definition} do
       master = %PlayerState{character_id: @master_id, account_id: 1, guild_id: @guild_id}
+      guildless = %{master | guild_id: 0}
+
+      for caster <- [master, guildless] do
+        assert {:error, :not_gvg_ground} =
+                 GdBattleorder.validate(%{caster | map_name: "prontera"}, :self, 1, definition)
+      end
+    end
+
+    test "drops a non-master or a guildless caster silently on GvG ground", %{
+      definition: definition
+    } do
+      non_master = %PlayerState{
+        character_id: 99,
+        account_id: 99,
+        guild_id: @guild_id,
+        map_name: "castle"
+      }
+
+      guildless = %{non_master | guild_id: 0}
+
+      for caster <- [non_master, guildless] do
+        assert {:error, :guild_skill_unavailable} =
+                 GdBattleorder.validate(caster, :self, 1, definition)
+      end
+    end
+
+    test "accepts the guild master on GvG ground", %{definition: definition} do
+      master = %PlayerState{
+        character_id: @master_id,
+        account_id: 1,
+        guild_id: @guild_id,
+        map_name: "castle"
+      }
 
       assert :ok = GdBattleorder.validate(master, :self, 1, definition)
     end
@@ -109,14 +136,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
       assert StatusStorage.get_unit_statuses(:player, @outsider_id) == []
     end
 
-    test "an out-of-radius guildmate is not buffed" do
-      master = register_player(@master_id, @guild_id, {10, 10})
-      register_player(@member_id, @guild_id, {40, 10})
+    test "the area is a square: a corner guildmate is buffed, one cell beyond is not" do
+      master = register_player(@master_id, @guild_id, {20, 20})
+      register_player(@member_id, @guild_id, {35, 35})
+      register_player(4, @guild_id, {36, 20})
 
       {:ok, definition} = Catalog.by_id(10_010)
       assert {:ok, _caster} = GdBattleorder.cast(master, :self, 1, definition)
 
-      assert StatusStorage.get_unit_statuses(:player, @member_id) == []
+      assert [%StatusEntry{type: :sc_battleorder}] =
+               StatusStorage.get_unit_statuses(:player, @member_id)
+
+      assert StatusStorage.get_unit_statuses(:player, 4) == []
+    end
+
+    test "the effect needs only a guild, not the master" do
+      peon = register_player(@member_id, @guild_id, {10, 10})
+
+      {:ok, definition} = Catalog.by_id(10_010)
+      assert {:ok, _caster} = GdBattleorder.cast(peon, :self, 1, definition)
+
+      assert [%StatusEntry{type: :sc_battleorder}] =
+               StatusStorage.get_unit_statuses(:player, @member_id)
     end
   end
 
@@ -148,6 +189,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
       assert_received {:healed, @member_id, _amount_member}
       assert_received {:sp, sp_amount}
       assert sp_amount == div(max_sp * 90, 100)
+    end
+  end
+
+  describe "cooldowns the effect arms" do
+    @tag game_mode: :renewal
+    test "renewal re-arms the cast skill's own cooldown" do
+      master = register_player(@master_id, @guild_id, {10, 10})
+      {:ok, definition} = Catalog.by_id(10_010)
+
+      assert GdBattleorder.rearm_cooldowns(master, 1, definition, 1_000).skill_cooldowns ==
+               %{10_010 => 181_000}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal blocks Battle Orders, Regeneration, Restore and Urgent Call" do
+      master = register_player(@master_id, @guild_id, {10, 10})
+      {:ok, definition} = Catalog.by_id(10_012)
+
+      assert GdRestore.rearm_cooldowns(master, 1, definition, 1_000).skill_cooldowns ==
+               Map.new([10_010, 10_011, 10_012, 10_013], &{&1, 301_000})
+    end
+
+    test "a guildless caster arms nothing" do
+      caster = register_player(@outsider_id, 0, {10, 10})
+      {:ok, definition} = Catalog.by_id(10_010)
+
+      assert GdBattleorder.rearm_cooldowns(caster, 1, definition, 1_000).skill_cooldowns == %{}
     end
   end
 

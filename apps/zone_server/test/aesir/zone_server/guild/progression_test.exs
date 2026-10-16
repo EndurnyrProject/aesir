@@ -246,31 +246,6 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
     end
   end
 
-  describe "check_and_arm_skill_cooldown/3" do
-    test "arms once and rejects until expiry" do
-      {_master, state} = guild_fixture("Cooldown")
-
-      assert :ok = Manager.check_and_arm_skill_cooldown(state.guild_id, 10_013, 60_000)
-
-      assert {:error, {:cooldown, remaining}} =
-               Manager.check_and_arm_skill_cooldown(state.guild_id, 10_013, 60_000)
-
-      assert remaining > 0 and remaining <= 60_000
-    end
-
-    test "frees after expiry" do
-      {_master, state} = guild_fixture("CooldownExpiry")
-
-      assert :ok = Manager.check_and_arm_skill_cooldown(state.guild_id, 10_013, 1)
-      Process.sleep(5)
-      assert :ok = Manager.check_and_arm_skill_cooldown(state.guild_id, 10_013, 60_000)
-    end
-
-    test "unknown guild reports not_found" do
-      assert {:error, :not_found} = Manager.check_and_arm_skill_cooldown(999_999, 10_013, 1)
-    end
-  end
-
   describe "edit_position tax clamp" do
     test "clamps tax to guild_exp_limit and stores in-range values" do
       {master, state} = guild_fixture("TaxClamp")

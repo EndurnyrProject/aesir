@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
@@ -3548,6 +3550,72 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       refute_received :completion_validation_effect
       assert state.skill_cooldowns == %{}
+    end
+  end
+
+  describe "guild skills" do
+    setup do
+      stub(MapFlags, :get, fn
+        "prontera", :gvg_castle -> true
+        _map, _flag -> false
+      end)
+
+      guild = %GuildState{
+        guild_id: 7,
+        name: "G",
+        master_char_id: 1000,
+        learned_skills: %{10_010 => 1, 10_013 => 1}
+      }
+
+      stub(GuildManager, :get, fn 7 -> {:ok, guild} end)
+      :ok
+    end
+
+    defp guild_master(equipment \\ %{}), do: %{game_state(10, %{}, equipment) | guild_id: 7}
+
+    @tag game_mode: :renewal
+    test "renewal Battle Orders ends on its plain cooldown, replacing the equipment-shortened one" do
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, cast} =
+               Interpreter.cast(
+                 guild_master(%{{:skill_cooldown, 10_010} => -60_000}),
+                 10_010,
+                 1,
+                 :self
+               )
+
+      expires_at = cast.skill_cooldowns[10_010]
+      assert expires_at >= before + 180_000
+      assert expires_at <= System.monotonic_time(:millisecond) + 180_000
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal Battle Orders costs 1 SP and blocks the four guild skills for 300s" do
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, cast} = Interpreter.cast(guild_master(), 10_010, 1, :self)
+
+      assert cast.stats.current_state.sp == 9
+      assert cast.skill_cooldowns |> Map.keys() |> Enum.sort() == [10_010, 10_011, 10_012, 10_013]
+      assert Enum.all?(Map.values(cast.skill_cooldowns), &(&1 >= before + 300_000))
+    end
+
+    test "Urgent Call off GvG ground fails before anything is spent" do
+      master = %{guild_master() | map_name: "geffen"}
+
+      assert {:error, :not_gvg_ground} = Interpreter.begin_cast(master, 10_013, 1, :self)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal Urgent Call casts twice as long with Leap" do
+      leaper = put_in(guild_master().stats.progression.learned_skills, %{426 => 1})
+
+      assert {:casting, _caster, %{total: 5_000}} =
+               Interpreter.begin_cast(guild_master(), 10_013, 1, :self)
+
+      assert {:casting, _caster, %{total: 10_000}} =
+               Interpreter.begin_cast(leaper, 10_013, 1, :self)
     end
   end
 end

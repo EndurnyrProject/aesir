@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencyMove do
   @moduledoc """
   Emergency Move (GD_EMERGENCY_MOVE). Master-cast guild area buff: same-guild
-  players within 15 cells gain +25% movement speed for 10s. Guild cooldown 60s.
+  players within 15 cells gain +25% movement speed for 10s. 60s cooldown.
+  Renewal only: the pre-renewal guild skill tree does not have it.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -21,6 +22,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencyMove do
 
   @impl Active
   def validate(caster, _target, _level, _definition), do: GuildArea.validate_master(caster)
+
+  @impl Active
+  def rearm_cooldowns(caster, level, definition, now),
+    do: GuildArea.rearm_cooldowns(caster, level, definition, now)
 
   @impl Active
   def cast(caster, :self, _level, definition) do

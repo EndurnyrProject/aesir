@@ -5,6 +5,11 @@ defmodule Aesir.ZoneServer.Guild.Member do
   Mirrors the durable membership on `characters.guild_id`/`guild_position`
   plus the runtime presence fields (`online`, `map_name`) pushed by each
   member's `PlayerSession`.
+
+  `slot` is the member's index in the guild's member list, owned by the guild
+  entry: a rebuilt entry numbers its members by position index (then character
+  id), a joining member takes the lowest free slot, and a leaving member leaves
+  its slot empty. Snapshots pushed by a session carry `nil`.
   """
 
   alias Aesir.Commons.Models.Character
@@ -24,7 +29,8 @@ defmodule Aesir.ZoneServer.Guild.Member do
             ap: 0,
             max_ap: 0,
             online: nil,
-            map_name: nil
+            map_name: nil,
+            slot: nil
 
   @type t() :: %__MODULE__{
           char_id: non_neg_integer(),
@@ -39,7 +45,8 @@ defmodule Aesir.ZoneServer.Guild.Member do
           ap: non_neg_integer(),
           max_ap: non_neg_integer(),
           online: boolean(),
-          map_name: String.t() | nil
+          map_name: String.t() | nil,
+          slot: non_neg_integer() | nil
         }
 
   @doc """

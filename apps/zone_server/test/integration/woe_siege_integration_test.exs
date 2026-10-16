@@ -179,44 +179,44 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
 
   describe "map-aware guild-skill GvG gate" do
     test "a guild active is rejected off-castle and permitted on a gvg-active castle map" do
-      with_env(:guild_skills_gvg_only, true, fn ->
-        {master_session, guild_id} = create_guild("GvgGuild", "GvgMaster")
-        master_id = master_session.character.id
+      {master_session, guild_id} = create_guild("GvgGuild", "GvgMaster")
+      lift_guild_skill_block(master_session.pid)
+      master_id = master_session.character.id
 
-        seed_learned_skills(guild_id, %{"#{@gd_battleorder}" => 1})
+      seed_learned_skills(guild_id, %{"#{@gd_battleorder}" => 1})
 
-        # Off-castle (prontera, not gvg): the gate rejects the cast.
-        simulate_incoming_message(master_session.pid, %SkillCast{
-          skill_id: @gd_battleorder,
-          level: 1,
-          target_id: master_id
-        })
+      # Off-castle (prontera, not gvg): the gate rejects the cast.
+      simulate_incoming_message(master_session.pid, %SkillCast{
+        skill_id: @gd_battleorder,
+        level: 1,
+        target_id: master_id
+      })
 
-        assert_receive {:packet_sent,
-                        %SkillCastFailed{
-                          skill_id: @gd_battleorder,
-                          reason: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
-                        }, _},
-                       1_000
+      assert_receive {:packet_sent,
+                      %SkillCastFailed{
+                        skill_id: @gd_battleorder,
+                        reason: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
+                      }, _},
+                     1_000
 
-        refute StatusStorage.has_status?(:player, master_id, :sc_battleorder)
+      refute StatusStorage.has_status?(:player, master_id, :sc_battleorder)
 
-        # On a gvg-active castle map: the same cast is permitted.
-        :ok = MapFlags.set_runtime(castle().map, :gvg, true)
+      # On a gvg-active castle map: the same cast is permitted.
+      :ok = MapFlags.set_runtime(castle().map, :gvg, true)
 
-        master_on_castle = relocate_character(master_session, castle().map, castle().respawn)
+      master_on_castle = relocate_character(master_session, castle().map, castle().respawn)
 
-        assert get_player_state(master_on_castle.pid).map_name == castle().map
+      assert get_player_state(master_on_castle.pid).map_name == castle().map
+      lift_guild_skill_block(master_on_castle.pid)
 
-        simulate_incoming_message(master_on_castle.pid, %SkillCast{
-          skill_id: @gd_battleorder,
-          level: 1,
-          target_id: master_id
-        })
+      simulate_incoming_message(master_on_castle.pid, %SkillCast{
+        skill_id: @gd_battleorder,
+        level: 1,
+        target_id: master_id
+      })
 
-        assert_eventually(fn ->
-          StatusStorage.has_status?(:player, master_id, :sc_battleorder)
-        end)
+      assert_eventually(fn ->
+        StatusStorage.has_status?(:player, master_id, :sc_battleorder)
       end)
     end
   end
@@ -395,5 +395,13 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
         _ -> Application.put_env(:zone_server, key, previous)
       end
     end
+  end
+
+  # A pre-renewal master's guild skills are blocked for 5 minutes once the guild
+  # is created; the arrangement lifts the block.
+  defp lift_guild_skill_block(pid) do
+    :sys.replace_state(pid, fn state ->
+      %{state | game_state: %{state.game_state | skill_cooldowns: %{}}}
+    end)
   end
 end

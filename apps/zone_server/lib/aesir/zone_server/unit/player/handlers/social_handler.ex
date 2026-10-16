@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   alias Aesir.ZoneServer.Guild.Member, as: GuildMember
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Guild.View, as: GuildView
+  alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildCooldown
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
@@ -327,6 +328,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
     }
   end
 
+  # A master logging in, or creating his guild, has his guild skills blocked
+  # (pre-renewal).
+  defp block_master_guild_skills(
+         %{game_state: %{character_id: char_id} = game_state} = state,
+         %GuildState{master_char_id: char_id}
+       ) do
+    case GuildCooldown.relog_block(game_state, System.monotonic_time(:millisecond)) do
+      ^game_state -> state
+      blocked -> StateCommit.commit(state, blocked)
+    end
+  end
+
+  defp block_master_guild_skills(state, _guild_state), do: state
+
   # Commits the member's current position tax (clamped by config) onto
   # PlayerState.guild_tax so the EXP tax seam reads a local cache.
   defp refresh_guild_tax(%{game_state: game_state} = state, %GuildState{} = guild_state) do
@@ -476,7 +491,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
       {:ok, guild_state} ->
         MessageRouter.send_to(state.connection_pid, GuildView.guild_info(guild_state))
         refresh_guild_aura(state, guild_state)
-        refresh_guild_tax(state, guild_state)
+
+        state
+        |> refresh_guild_tax(guild_state)
+        |> block_master_guild_skills(guild_state)
 
       {:error, _reason} ->
         state

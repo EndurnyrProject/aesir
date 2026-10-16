@@ -282,7 +282,11 @@ defmodule Aesir.ZoneServer.Guild.Manager do
     else
       case persist_member_join(state.guild_id, character) do
         :ok ->
-          member = Member.from_character(character, true, @newbie_position)
+          member = %{
+            Member.from_character(character, true, @newbie_position)
+            | slot: State.free_slot(state)
+          }
+
           new_state = %State{state | members: Map.put(state.members, character.id, member)}
           {{:ok, new_state}, new_state}
 
@@ -637,46 +641,6 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   end
 
   @doc """
-  Atomically checks and arms the guild-scoped cooldown for a guild skill.
-
-  Cooldowns live in the entry's runtime state (never persisted; a master relog
-  must not reset them, but an entry restart forgives them). Returns
-  `{:error, {:cooldown, remaining_ms}}` while armed.
-  """
-  @spec check_and_arm_skill_cooldown(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          :ok | {:error, {:cooldown, pos_integer()} | :not_found}
-  def check_and_arm_skill_cooldown(guild_id, skill_id, duration_ms) do
-    case lookup_pid({:guild, guild_id}) do
-      {:ok, pid} ->
-        try do
-          Entry.get_and_update(pid, &cooldown_reply(skill_id, duration_ms, &1))
-        catch
-          :exit, _ -> {:error, :not_found}
-        end
-
-      :error ->
-        {:error, :not_found}
-    end
-  end
-
-  defp cooldown_reply(skill_id, duration_ms, %State{} = state) do
-    now = System.monotonic_time(:millisecond)
-
-    case Map.get(state.skill_cooldowns, skill_id) do
-      expiry when is_integer(expiry) and expiry > now ->
-        {{:error, {:cooldown, expiry - now}}, state}
-
-      _expired_or_absent ->
-        new_state = %State{
-          state
-          | skill_cooldowns: Map.put(state.skill_cooldowns, skill_id, now + duration_ms)
-        }
-
-        {:ok, new_state}
-    end
-  end
-
-  @doc """
   Master-only (`:notice`) guild-notice update. Persists `notice_subject`/
   `notice_body`, updates the entry's `notice`, and broadcasts
   `{:social, {:guild_updated, state}}`.
@@ -921,7 +885,11 @@ defmodule Aesir.ZoneServer.Guild.Manager do
         {{:error, :not_member}, state}
 
       {:ok, %Member{} = old_member} ->
-        merged = %Member{member | position_index: old_member.position_index}
+        merged = %Member{
+          member
+          | position_index: old_member.position_index,
+            slot: old_member.slot
+        }
 
         if merged == old_member do
           {{:ok, :unchanged, state}, state}
@@ -1026,13 +994,20 @@ defmodule Aesir.ZoneServer.Guild.Manager do
       emblem_id: guild.emblem_id,
       notice: %{subject: guild.notice_subject || "", body: guild.notice_body || ""},
       positions: positions,
-      members: Map.new(members, &{&1.char_id, &1}),
+      members: numbered_members(members),
       level: guild.level,
       exp: guild.exp,
       skill_points: guild.skill_points,
       learned_skills: decode_learned_skills(guild.learned_skills),
       relations: Relations.load(guild.id)
     }
+  end
+
+  defp numbered_members(members) do
+    members
+    |> Enum.sort_by(&{&1.position_index, &1.char_id})
+    |> Enum.with_index()
+    |> Map.new(fn {member, slot} -> {member.char_id, %{member | slot: slot}} end)
   end
 
   # jsonb map keys come back as strings; runtime state keys skills by integer id.

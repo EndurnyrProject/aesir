@@ -191,6 +191,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         do: early.time,
         else: Enum.at(timing_definition.cast_time, level - 1, 0)
 
+    time = scale_cast_time(context.module, caster, target, level, time)
+
     %{timing: timing, reactions: reactions} =
       CastTime.late(timing_definition, level, context.stats, time)
 
@@ -892,6 +894,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:ok,
        caster
        |> put_cooldown(skill_id, definition, level, now)
+       |> rearm_cooldowns(module, level, definition, now)
        |> put_act_delay(definition, level, now)}
     end
   end
@@ -1082,6 +1085,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           game_state
           |> then(&adapter.commit(&1, prepared_cost))
           |> put_cooldown(adapter, skill_id, definition, level, now)
+          |> rearm_cooldowns(module, level, definition, now)
           |> put_resolved_act_delay(apply_act_delay, after_cast_delay, now)
 
         if result == :local_effects,
@@ -1945,16 +1949,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       0 ->
         game_state
 
-      duration when skill_id in 10_000..10_019 ->
-        # Guild skills are guild-cooldown-scoped on every entry point,
-        # including item casts; the adapter arms the guild entry and leaves
-        # the per-character map untouched.
-        Caster.Player.put_cooldown(game_state, skill_id, now + duration)
-
       duration ->
         cooldowns = Cooldown.put(game_state.skill_cooldowns, skill_id, now + duration)
         %{game_state | skill_cooldowns: cooldowns}
     end
+  end
+
+  defp rearm_cooldowns(game_state, module, level, definition, now) do
+    if function_exported?(module, :rearm_cooldowns, 4),
+      do: module.rearm_cooldowns(game_state, level, definition, now),
+      else: game_state
+  end
+
+  defp scale_cast_time(module, caster, target, level, time) do
+    if function_exported?(module, :scale_cast_time, 4),
+      do: module.scale_cast_time(caster, target, level, time),
+      else: time
   end
 
   defp put_cooldown(game_state, adapter, skill_id, definition, level, now) do

@@ -1708,7 +1708,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @doc false
   @spec report_cast_failure(integer(), non_neg_integer(), atom()) :: :ok
   def report_cast_failure(skill_id, character_id, reason)
-      when reason in [:target_concealed, :target_restricted, :caster_restricted] do
+      when reason in [
+             :target_concealed,
+             :target_restricted,
+             :caster_restricted,
+             :guild_skill_unavailable
+           ] do
     Logger.debug("Skill #{skill_id} cast by #{character_id} silently refused: #{reason}")
   end
 

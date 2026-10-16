@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GuildSeamTest do
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.Manager
-  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -16,13 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GuildSeamTest do
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
-    previous = Application.fetch_env!(:zone_server, :guild_skills_gvg_only)
-    Application.put_env(:zone_server, :guild_skills_gvg_only, false)
-
-    on_exit(fn ->
-      Application.put_env(:zone_server, :guild_skills_gvg_only, previous)
-      ClusterTestHelper.clear_all()
-    end)
+    on_exit(fn -> ClusterTestHelper.clear_all() end)
 
     :ok
   end
@@ -64,19 +57,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GuildSeamTest do
   end
 
   describe "knows?/4 for guild-band skills" do
-    test "the master casts at up to the guild's learned rank" do
+    test "the master casts at up to the guild's learned rank, on any ground" do
       {master, guild} = guild_fixture("SeamMaster", %{"10004" => 3})
-      me = caster(master.id, guild.guild_id)
+      me = %{caster(master.id, guild.guild_id) | map_name: "prontera"}
 
       assert :ok = PlayerCaster.knows?(me, @gd_extension, 3, :begin)
-      assert :ok = PlayerCaster.knows?(me, @gd_extension, 1, :completion)
-      assert {:error, :skill_not_learned} = PlayerCaster.knows?(me, @gd_extension, 4, :begin)
+
+      assert {:error, :guild_skill_unavailable} =
+               PlayerCaster.knows?(me, @gd_extension, 4, :begin)
     end
 
-    test "an unlearned guild skill is rejected" do
+    test "an unlearned guild skill is dropped silently" do
       {master, guild} = guild_fixture("SeamUnlearned", %{})
 
-      assert {:error, :skill_not_learned} =
+      assert {:error, :guild_skill_unavailable} =
                PlayerCaster.knows?(
                  caster(master.id, guild.guild_id),
                  @gd_emergencycall,
@@ -85,40 +79,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GuildSeamTest do
                )
     end
 
-    test "a non-master guild member is rejected" do
+    test "a non-master guild member is dropped silently" do
       {_master, guild} = guild_fixture("SeamPeon", %{"10004" => 3})
 
-      assert {:error, :not_guild_master} =
+      assert {:error, :guild_skill_unavailable} =
                PlayerCaster.knows?(caster(999_999, guild.guild_id), @gd_extension, 1, :begin)
     end
 
-    test "a guildless caster is rejected" do
-      assert {:error, :skill_not_learned} =
+    test "a guildless caster is dropped silently" do
+      assert {:error, :guild_skill_unavailable} =
                PlayerCaster.knows?(caster(1, 0), @gd_extension, 1, :begin)
 
-      assert {:error, :skill_not_learned} =
+      assert {:error, :guild_skill_unavailable} =
                PlayerCaster.knows?(caster(1, nil), @gd_extension, 1, :begin)
     end
 
-    test "the guild ground gate is map-aware and supports an explicit relaxation" do
-      {master, guild} = guild_fixture("SeamGvg", %{"10004" => 3})
-      me = %{caster(master.id, guild.guild_id) | map_name: "prontera"}
-      Application.put_env(:zone_server, :guild_skills_gvg_only, false)
-      assert :ok = PlayerCaster.knows?(me, @gd_extension, 1, :begin)
-
-      Application.put_env(:zone_server, :guild_skills_gvg_only, true)
-      assert {:error, :not_gvg_ground} = PlayerCaster.knows?(me, @gd_extension, 1, :begin)
-
-      :ok = MapFlags.set_runtime("prontera", :gvg_castle, true)
-      assert :ok = PlayerCaster.knows?(me, @gd_extension, 1, :begin)
-
-      Application.put_env(:zone_server, :guild_skills_gvg_only, false)
-      assert :ok = PlayerCaster.knows?(me, @gd_extension, 1, :begin)
+    test "nothing is checked again when the cast ends" do
+      assert :ok = PlayerCaster.knows?(caster(1, 0), @gd_emergencycall, 1, :completion)
     end
   end
 
-  describe "guild-scoped cooldowns" do
-    test "put_cooldown arms on the guild entry, leaving the character map untouched" do
+  describe "guild skill cooldowns" do
+    test "live on the caster's own cooldown map" do
       {master, guild} = guild_fixture("SeamCooldown", %{"10004" => 3})
       me = caster(master.id, guild.guild_id)
       now = System.monotonic_time(:millisecond)
@@ -126,30 +108,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GuildSeamTest do
       assert PlayerCaster.cooldown_ready?(me, 10_013, now, :begin)
 
       after_cast = PlayerCaster.put_cooldown(me, 10_013, now + 300_000)
-      assert after_cast.skill_cooldowns == %{}
 
-      refute PlayerCaster.cooldown_ready?(me, 10_013, now, :begin)
-
-      {:ok, live} = Manager.get(guild.guild_id)
-      assert is_integer(live.skill_cooldowns[10_013])
-    end
-
-    test "a relogged master still sees the armed cooldown" do
-      {master, guild} = guild_fixture("SeamRelog", %{"10004" => 3})
-      me = caster(master.id, guild.guild_id)
-      now = System.monotonic_time(:millisecond)
-
-      PlayerCaster.put_cooldown(me, 10_013, now + 300_000)
-
-      fresh_session_caster = caster(master.id, guild.guild_id)
-      refute PlayerCaster.cooldown_ready?(fresh_session_caster, 10_013, now, :begin)
-    end
-
-    test "non-guild skills keep using the per-character cooldown map" do
-      me = caster(1, 0)
-      after_cast = PlayerCaster.put_cooldown(me, 28, 12_345)
-
-      assert after_cast.skill_cooldowns == %{28 => 12_345}
+      assert after_cast.skill_cooldowns == %{10_013 => now + 300_000}
+      refute PlayerCaster.cooldown_ready?(after_cast, 10_013, now, :begin)
+      assert PlayerCaster.cooldown_ready?(me, 10_013, now, :begin)
     end
   end
 end

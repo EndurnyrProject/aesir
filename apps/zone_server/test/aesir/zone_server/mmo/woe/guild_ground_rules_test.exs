@@ -4,19 +4,19 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuildGroundRulesTest do
 
   import Aesir.TestEtsSetup
 
-  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
-  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Guild.Member
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdBattleorder
-  alias Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencycall
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencyMove
-  alias Aesir.ZoneServer.Mmo.Skills.Guild.GdItememergencycall
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdRegeneration
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdRestore
+  alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea
   alias Aesir.ZoneServer.Mmo.Skills.Guild.Recall
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -36,13 +36,27 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuildGroundRulesTest do
   setup :setup_ets_tables
 
   setup do
-    stub(Config, :guild_skills_gvg_only, fn -> true end)
-
-    stub(GuildManager, :get, fn @guild_id ->
-      {:ok, %{master_char_id: @master_id, members: %{}}}
-    end)
-
+    stub_guild([@master_id])
     :ok
+  end
+
+  # Members take slots in list order.
+  defp stub_guild(member_ids) do
+    members =
+      member_ids
+      |> Enum.with_index()
+      |> Map.new(fn {id, slot} ->
+        {id, %{Member.new(id, "m#{id}", 50, true, 19) | slot: slot}}
+      end)
+
+    guild = %GuildState{
+      guild_id: @guild_id,
+      name: "G",
+      master_char_id: @master_id,
+      members: members
+    }
+
+    stub(GuildManager, :get, fn @guild_id -> {:ok, guild} end)
   end
 
   defp caster(map_name) do
@@ -88,68 +102,54 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuildGroundRulesTest do
     for {skill, skill_id} <- @area_skills, do: assert_valid(skill, skill_id, caster("active"))
   end
 
-  test "both recall variants use the same ordinary, active, and off-hours ground matrix" do
+  test "both Urgent Calls are refused off GvG ground before the cast begins, never at its end" do
     :ok = MapFlags.set_runtime("active", :gvg, true)
     :ok = MapFlags.set_runtime("castle", :gvg_castle, true)
 
-    for {skill, skill_id} <- [{GdEmergencycall, 10_013}, {GdItememergencycall, 10_015}] do
-      {:ok, definition} = Catalog.by_id(skill_id)
-      assert {:error, :not_gvg_ground} = skill.validate(caster("ordinary"), :self, 1, definition)
-      assert :ok = skill.validate(caster("active"), :self, 1, definition)
-      assert :ok = skill.validate(caster("castle"), :self, 1, definition)
+    for skill_id <- [10_013, 10_015] do
+      assert {:error, :not_gvg_ground} =
+               PlayerCaster.castable_state(caster("ordinary"), skill_id, :begin)
+
+      assert :ok = PlayerCaster.castable_state(caster("active"), skill_id, :begin)
+      assert :ok = PlayerCaster.castable_state(caster("castle"), skill_id, :begin)
+      assert :ok = PlayerCaster.castable_state(caster("ordinary"), skill_id, :completion)
     end
+
+    for {_skill, skill_id} <- @area_skills,
+        do: assert(:ok = PlayerCaster.castable_state(caster("ordinary"), skill_id, :begin))
   end
 
-  test "an explicit false override relaxes only destination ground eligibility" do
-    stub(Config, :guild_skills_gvg_only, fn -> false end)
-
-    for {skill, skill_id} <- @area_skills, do: assert_valid(skill, skill_id, caster("ordinary"))
-
-    assert_valid(GdEmergencycall, 10_013, caster("ordinary"))
-    assert_valid(GdItememergencycall, 10_015, caster("ordinary"))
-
-    assert {:error, :not_guild_master} =
-             Recall.validate_master(%{caster("ordinary") | character_id: 99})
-  end
-
-  test "raw area casts cannot bypass the shared ground gate" do
+  test "the area effect does not check the ground again" do
     caster = caster("ordinary")
     :ok = SpatialIndex.add_unit(:player, @master_id, 10, 10, "ordinary")
     register_member(2, "ordinary")
     :ok = SpatialIndex.add_unit(:player, 2, 11, 10, "ordinary")
 
-    for {skill, skill_id} <- @area_skills do
-      {:ok, definition} = Catalog.by_id(skill_id)
-      assert {:ok, ^caster} = skill.cast(caster, :self, 1, definition)
-    end
-
-    assert StatusStorage.get_unit_statuses(:player, @master_id) == []
-    assert StatusStorage.get_unit_statuses(:player, 2) == []
+    assert GuildArea.guildmates_in_range(caster, 15) == [2]
   end
 
-  test "direct recall entry has no effect away from guild ground" do
-    caster = caster("ordinary")
+  test "the recall effect does not check the ground again" do
     register_member(2, "source")
     :ok = SpatialIndex.add_unit(:player, @master_id, 10, 10, "ordinary")
+    stub_guild([@master_id, 2])
+    stub(MapData, :walkable?, fn _map, _x, _y -> true end)
+    test_pid = self()
 
-    stub(GuildManager, :get, fn @guild_id ->
-      {:ok, %{master_char_id: @master_id, members: %{@master_id => %{}, 2 => %{}}}}
+    stub(PlayerSession, :warp, fn _pid, map, _x, _y ->
+      send(test_pid, {:warped, map})
+      :ok
     end)
 
-    stub(PlayerSession, :warp, fn _pid, _map, _x, _y ->
-      flunk("recall must not warp from an unpermitted destination")
-    end)
-
-    assert :ok = Recall.summon_members(caster, :all)
+    assert :ok = Recall.summon_members(caster("ordinary"), :all)
+    assert_received {:warped, "ordinary"}
   end
 
-  test "recall filters nowarp sources before the recipient cap, even with ground relaxation" do
-    stub(Config, :guild_skills_gvg_only, fn -> false end)
+  test "recall skips nowarp sources without counting them toward the cap" do
     :ok = SpatialIndex.add_unit(:player, @master_id, 10, 10, "destination")
     :ok = MapFlags.set_runtime("blocked_source", :nowarp, true)
 
-    members = Map.new([@master_id | Enum.to_list(2..16)], &{&1, %{}})
-    candidate_ids = members |> Map.keys() |> Enum.reject(&(&1 == @master_id))
+    member_ids = [@master_id | Enum.to_list(2..16)]
+    candidate_ids = Enum.reject(member_ids, &(&1 == @master_id))
     blocked_id = Enum.at(candidate_ids, 2)
     expected_ids = candidate_ids |> Enum.reject(&(&1 == blocked_id)) |> Enum.take(7)
     later_eligible_id = Enum.at(candidate_ids, 7)
@@ -171,11 +171,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuildGroundRulesTest do
 
     on_exit(fn -> Enum.each(member_pids, fn {_id, pid} -> Process.exit(pid, :kill) end) end)
 
-    stub(GuildManager, :get, fn @guild_id ->
-      {:ok, %{master_char_id: @master_id, members: members}}
-    end)
-
-    stub(MapCache, :walkable?, fn _map, _x, _y -> true end)
+    stub_guild(member_ids)
+    stub(MapData, :walkable?, fn _map, _x, _y -> true end)
 
     stub(PlayerSession, :warp, fn pid, map, _x, _y ->
       send(pid, {:warp, map})
@@ -196,11 +193,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuildGroundRulesTest do
     :ok = SpatialIndex.add_unit(:player, @master_id, 10, 10, "destination")
     register_member(2, "source_castle")
 
-    stub(GuildManager, :get, fn @guild_id ->
-      {:ok, %{master_char_id: @master_id, members: %{@master_id => %{}, 2 => %{}}}}
-    end)
-
-    stub(MapCache, :walkable?, fn _map, _x, _y -> true end)
+    stub_guild([@master_id, 2])
+    stub(MapData, :walkable?, fn _map, _x, _y -> true end)
     test_pid = self()
 
     stub(PlayerSession, :warp, fn _pid, map, _x, _y ->
