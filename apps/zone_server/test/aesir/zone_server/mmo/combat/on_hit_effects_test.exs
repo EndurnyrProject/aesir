@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
@@ -21,7 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   defp always_hit(_effective), do: true
   defp never_hit(_effective), do: false
 
-  defp with_mods(combatant, mods), do: %{combatant | equip_modifiers: mods}
+  defp with_mods(combatant, mods),
+    do: %{combatant | equip_modifiers: CombatTestHelper.equip_modifiers(mods)}
 
   defp record_applications do
     pid = self()
@@ -415,7 +417,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       assert params[:duration] == 5_000
     end
 
-    test "zero duration keeps the status definition default" do
+    test "zero duration takes the status's lookup default" do
       record_applications()
       flag = trigger_flag([:target])
 
@@ -435,7 +437,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
                )
 
       assert_received {:applied, :mob, 2001, :sc_stun, params}
-      refute Keyword.has_key?(params, :duration)
+      assert params[:duration] == if(GameMode.mode() == :renewal, do: 4_500, else: 5_000)
+      assert params[:start_delay] == 100
     end
 
     test "the self bit inflicts on the wearer instead of the victim" do

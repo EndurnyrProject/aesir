@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   @moduletag :capture_log
 
   alias Aesir.Net.SkillDamage
+  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
   alias Aesir.ZoneServer.Mmo.Combat
@@ -558,7 +559,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         build_player(
           @caster_id,
           150,
-          %{{:add_eff, {:sc_stun, BattleFlags.fill_trigger(magic_target)}} => 10_000},
+          CombatTestHelper.equip_modifiers(%{
+            {:add_eff, {:sc_stun, BattleFlags.fill_trigger(magic_target)}} => 10_000
+          }),
           %{}
         )
 

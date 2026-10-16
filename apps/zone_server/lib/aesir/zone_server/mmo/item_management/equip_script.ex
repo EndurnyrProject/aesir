@@ -85,6 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     a comparison as an integer term, e.g. `bonus bDef,2+3*(getrefine()>5)`.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAddEff
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript.Result
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
@@ -295,6 +296,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
       result
       | auto_casts: Enum.reverse(result.auto_casts),
         autobonuses: Enum.reverse(result.autobonuses),
+        add_effs: Enum.reverse(result.add_effs),
         effects: Enum.reverse(result.effects)
     }
   end
@@ -750,7 +752,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
     case BonusKeys.slot_destination(key, Map.get(inputs, :lr_flag)) do
       nil -> result
-      dest -> accumulate_bonus(dest, value, result)
+      dest -> add_bonus(dest, value, result)
     end
   end
 
@@ -839,6 +841,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp eval_instr(other, _inputs, _acc), do: malformed!("instruction", other)
+
+  # An on-hit status bonus is an ordered registration (`EquipAddEff`), its
+  # `bonus4` duration the duration of the bonus just before it.
+  defp add_bonus(dest, value, %Result{} = result) do
+    with nil <- EquipAddEff.bonus(dest, value),
+         :error <- EquipAddEff.duration_list(dest) do
+      accumulate_bonus(dest, value, result)
+    else
+      %{} = bonus -> %{result | add_effs: [bonus | result.add_effs]}
+      {:ok, list} -> put_add_eff_duration(result, list, value)
+    end
+  end
+
+  defp put_add_eff_duration(
+         %Result{add_effs: [%{list: list} = last | rest]} = result,
+         list,
+         value
+       ),
+       do: %{result | add_effs: [%{last | duration: value} | rest]}
+
+  defp put_add_eff_duration(%Result{} = result, _list, _value), do: result
 
   defp accumulate_bonus(key, value, %Result{modifiers: modifiers} = result) do
     modifiers =

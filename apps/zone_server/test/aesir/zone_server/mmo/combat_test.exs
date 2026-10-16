@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.SkillDamage
+  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
@@ -2000,7 +2001,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       attacker =
         1001
         |> combatant(:player)
-        |> Map.put(:equip_modifiers, %{{:add_eff, :sc_stun} => 10_000})
+        |> Map.put(
+          :equip_modifiers,
+          CombatTestHelper.equip_modifiers(%{{:add_eff, :sc_stun} => 10_000})
+        )
 
       target = combatant(2001, :mob)
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
@@ -2037,7 +2041,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       target =
         2001
         |> combatant(:player, position: {151, 150})
-        |> Map.put(:equip_modifiers, %{{:add_eff_when_hit, :sc_freeze} => 10_000})
+        |> Map.put(
+          :equip_modifiers,
+          CombatTestHelper.equip_modifiers(%{{:add_eff_when_hit, :sc_freeze} => 10_000})
+        )
 
       target_state = %FakeUnit{combatant: target, stats: target, x: 151, y: 150}
 

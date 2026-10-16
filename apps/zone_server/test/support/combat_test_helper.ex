@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAddEff
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -46,6 +47,34 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
   contributions; the status contribution uses the booted player formula.
   """
   @spec create_player_combatant(keyword()) :: Combatant.t()
+  @doc """
+  Equipment modifiers as the equipment fold leaves them: the on-hit status
+  bonuses among `mods` (`{:add_eff, ...}`-style destinations and their `bonus4`
+  durations) registered into `EquipAddEff`'s ordered lists, everything else kept.
+  """
+  def equip_modifiers(mods) do
+    {durations, rest} =
+      Enum.split_with(mods, fn {dest, _value} -> EquipAddEff.duration_list(dest) != :error end)
+
+    {bonuses, plain} =
+      Enum.split_with(rest, fn {dest, value} -> EquipAddEff.bonus(dest, value) end)
+
+    registered =
+      Enum.map(bonuses, fn {dest, value} ->
+        bonus = EquipAddEff.bonus(dest, value)
+        param = elem(dest, tuple_size(dest) - 1)
+
+        case Enum.find(durations, fn {{_family, duration_param}, _ms} ->
+               duration_param == param
+             end) do
+          {_dest, ms} -> %{bonus | duration: ms}
+          nil -> bonus
+        end
+      end)
+
+    plain |> Map.new() |> EquipAddEff.register(registered)
+  end
+
   def create_player_combatant(opts \\ []) do
     defaults = [
       unit_id: 1001,

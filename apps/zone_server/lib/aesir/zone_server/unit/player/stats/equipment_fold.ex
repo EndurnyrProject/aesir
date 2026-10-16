@@ -11,12 +11,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   card in the left hand's `:weapon`, a shield's own script `:shield`, so
   `BonusKeys.slot_destination/2` routes its bonuses. Autocasts register into the per-trigger lists of
   `EquipAutocast.register/3` in the order the worn scripts run, each carrying
-  the id of the card that armed it.
+  the id of the card that armed it; on-hit status bonuses register into
+  `EquipAddEff`'s ordered lists the same way.
   Pure: it reads the item and refine catalogs and writes only to
   the struct it is given.
   """
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAddEff
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
@@ -142,6 +144,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       end)
 
     auto_casts = active_auto_casts(active_results, worn_items) ++ fold.auto_casts
+    add_effs = active_add_effs(active_results, worn_items) ++ fold.add_effs
 
     bonuses =
       active_results
@@ -149,6 +152,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         merge_equip_modifiers(acc, result.modifiers)
       end)
       |> register_auto_casts(auto_casts)
+      |> register_add_effs(add_effs)
       |> finalize_equipment_bonuses()
 
     Map.put(fold, :active, active) |> Map.put(:bonuses, bonuses)
@@ -167,6 +171,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     end)
   end
 
+  # On-hit status bonuses register in the order `status_calc_pc` runs the
+  # scripts: the active autobonus programs, each worn item's own script by
+  # equipment slot, the ammunition's after every other item, then every worn
+  # item's cards by equipment slot and card slot.
+  defp register_add_effs(bonuses, add_effs) do
+    registered =
+      add_effs
+      |> Enum.sort_by(fn {order, _bonuses} -> order end)
+      |> Enum.flat_map(fn {_order, bonuses} -> bonuses end)
+
+    EquipAddEff.register(bonuses, registered)
+  end
+
+  defp active_add_effs(active_results, worn_items) do
+    Enum.flat_map(active_results, fn
+      {_registration, %{add_effs: []}} -> []
+      {registration, result} -> [{active_order(registration, worn_items), result.add_effs}]
+    end)
+  end
+
+  defp source_add_effs([], _item, _card_slot), do: []
+
+  defp source_add_effs(add_effs, item, nil) do
+    phase = if :ammo in EquipLocation.bitmask_to_location_atoms(item.equip), do: 2, else: 1
+    [{{phase, {equip_index!(item), -1}}, add_effs}]
+  end
+
+  defp source_add_effs(add_effs, item, card_slot),
+    do: [{{3, {equip_index!(item), card_slot}}, add_effs}]
+
+  defp active_order(registration, worn_items) do
+    {worn_ordinal, lexical_slot} = registration.source_order
+    list = autobonus_list(registration.trigger)
+    phase = source_phase(registration.source_identity)
+    slot = equip_index!(Enum.at(worn_items, worn_ordinal))
+    {0, {list, phase, slot, lexical_slot}}
+  end
+
   defp active_auto_casts(active_results, worn_items) do
     Enum.flat_map(active_results, fn
       {_registration, %{auto_casts: []}} -> []
@@ -175,12 +217,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   end
 
   defp active_auto_casts(registration, result, worn_items) do
-    {worn_ordinal, lexical_slot} = registration.source_order
-    list = autobonus_list(registration.trigger)
-    phase = source_phase(registration.source_identity)
-    slot = equip_index!(Enum.at(worn_items, worn_ordinal))
-    order = {0, {list, phase, slot, lexical_slot}}
-
+    order = active_order(registration, worn_items)
     Enum.map(result.auto_casts, &{order, &1, 0})
   end
 
@@ -353,6 +390,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       %{
         bonuses: empty_equipment_bonuses(),
         auto_casts: [],
+        add_effs: [],
         registrations: %{},
         statuses: %{},
         card_cleanups: %{}
@@ -434,6 +472,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
        fold
        | bonuses: merge_equip_modifiers(fold.bonuses, result.modifiers),
          auto_casts: fold.auto_casts ++ auto_casts,
+         add_effs: fold.add_effs ++ source_add_effs(result.add_effs, item, card_slot),
          registrations: registrations,
          statuses: install_equip_statuses(fold.statuses, result.effects),
          card_cleanups: card_cleanups

@@ -13,14 +13,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
     * the counter stage (`counter_stage/4`, `skill_counter_additional_effect`)
       rolls the bAddEffWhenHit entries of a player that was hit.
 
-  Each entry is read as `pc_bonus_addeff` stores it: a flag naming its attack
-  types (weapon unless named), ranges (both unless named) and victims (the
-  enemy unless named), entries of one status and one flag merged into one rate.
-  A bonus from the equipped ammunition counts only for a ranged attack. A type
-  or range the entry narrows must match the attack. The status starts at level
-  7 with the attacker as its source, whose status defense makes the one roll at
-  the entry's per-10000 rate; the roll is injectable through `:roll` (the
-  interpreter's `resistance_roll`) so tests are deterministic.
+  The entries are read in registration order from `EquipAddEff`'s lists, which
+  complete each flag and duration as `pc_bonus_addeff` does. A bonus from the
+  equipped ammunition counts only for a ranged attack. A type or range the
+  entry narrows must match the attack. The status starts at level 7, 100 ms
+  after the hit, with the attacker as its source, whose status defense makes
+  the one roll at the entry's per-10000 rate; the roll is injectable through
+  `:roll` (the interpreter's `resistance_roll`) so tests are deterministic.
   """
 
   import Bitwise
@@ -30,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAddEff
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
@@ -61,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   @classic_no_add_eff_skills [379]
 
   @add_eff_level 7
+  @add_eff_delay_ms 100
 
   @defender_procs [
     %{
@@ -102,15 +103,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   (`EquipProcDispatch.party_ref/0`), which wears nothing.
   """
   @type party :: Combatant.t() | %{unit_type: atom(), unit_id: integer()}
-
-  @typedoc "One merged bAddEff entry: its status, full flag, rates and duration."
-  @type entry :: %{
-          sc: atom(),
-          flag: BattleFlags.flag(),
-          rate: integer(),
-          arrow_rate: integer(),
-          duration: non_neg_integer()
-        }
 
   @doc """
   Runs both stages of one settled hit, the additional-effect stage first.
@@ -209,7 +201,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
 
     if (attack_flag &&& (@bf_weapon ||| @bf_magic ||| @bf_misc)) != 0 do
       wearer
-      |> entries(:add_eff_when_hit)
+      |> entries(:when_hit)
       |> Enum.each(&roll_when_hit(&1, attacker, wearer, roll, attack_flag))
     end
 
@@ -263,56 +255,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   defp party(%PlayerState{character_id: id}), do: %{unit_type: :player, unit_id: id}
   defp party(%{unit_type: _, unit_id: _} = party), do: party
 
-  @doc """
-  The merged entries of one family (`:add_eff`, which also reads `:add_eff2`
-  and the ammunition's entries, or `:add_eff_when_hit`) carried by `source`.
-  """
-  @spec entries(party(), :add_eff | :add_eff_when_hit) :: [entry()]
-  def entries(source, family) do
-    modifiers = Map.get(source, :equip_modifiers, %{})
-
-    modifiers
-    |> Enum.flat_map(&entry(&1, family))
-    |> Enum.group_by(&{&1.sc, &1.flag})
-    |> Enum.sort()
-    |> Enum.map(fn {{sc, flag}, parts} ->
-      %{
-        sc: sc,
-        flag: flag,
-        rate: parts |> Enum.map(& &1.rate) |> Enum.sum(),
-        arrow_rate: parts |> Enum.map(& &1.arrow_rate) |> Enum.sum(),
-        duration: duration(modifiers, family, sc, flag)
-      }
-    end)
-  end
-
-  defp entry({{family, param}, rate}, family) when is_integer(rate),
-    do: normalized(param, 0, rate, 0)
-
-  defp entry({{:add_eff2, param}, rate}, :add_eff) when is_integer(rate),
-    do: normalized(param, @atf_self, rate, 0)
-
-  defp entry({{:arrow_add_eff, param}, rate}, :add_eff) when is_integer(rate),
-    do: normalized(param, 0, 0, rate)
-
-  defp entry({{:arrow_add_eff2, param}, rate}, :add_eff) when is_integer(rate),
-    do: normalized(param, @atf_self, 0, rate)
-
-  defp entry(_modifier, _family), do: []
-
-  defp normalized({sc, flag}, _implied, rate, arrow_rate) when is_atom(sc) and is_integer(flag),
-    do: [%{sc: sc, flag: BattleFlags.fill_trigger(flag), rate: rate, arrow_rate: arrow_rate}]
-
-  defp normalized(sc, implied, rate, arrow_rate) when is_atom(sc),
-    do: [%{sc: sc, flag: BattleFlags.fill_trigger(implied), rate: rate, arrow_rate: arrow_rate}]
-
-  defp normalized(_param, _implied, _rate, _arrow_rate), do: []
-
-  defp duration(modifiers, family, sc, flag),
-    do: max(Map.get(modifiers, {duration_family(family), {sc, flag}}, 0), 0)
-
-  defp duration_family(:add_eff), do: :add_eff_duration
-  defp duration_family(:add_eff_when_hit), do: :add_eff_when_hit_duration
+  defp entries(party, list), do: EquipAddEff.entries(Map.get(party, :equip_modifiers, %{}), list)
 
   defp add_eff_skill?(nil), do: true
 
@@ -324,7 +267,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
 
   defp inflict_add_eff(attacker, defender, roll, attack_flag) do
     attacker
-    |> entries(:add_eff)
+    |> entries(:attack)
     |> Enum.each(&roll_add_eff(&1, attacker, defender, roll, attack_flag))
   end
 
@@ -378,9 +321,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   defp inflict_on_skill(_attacker, _defender, nil, _roll), do: :ok
 
   defp inflict_on_skill(attacker, defender, skill_id, roll) do
-    Enum.each(Map.get(attacker, :equip_modifiers, %{}), fn
-      {{:add_eff_on_skill, ^skill_id, sc}, rate} when is_atom(sc) and rate != 0 ->
-        try_inflict(attacker, defender, sc, rate, roll, 0)
+    attacker
+    |> entries(:on_skill)
+    |> Enum.each(fn
+      %{skill_id: ^skill_id, rate: rate} = entry when rate != 0 ->
+        try_inflict(attacker, defender, entry.sc, rate, roll, entry.duration)
 
       _entry ->
         :ok
@@ -388,13 +333,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   end
 
   # Hands `sc` to the status system for `victim` at the entry's rate at level
-  # 7, naming `source` as its source; the status defense makes the one roll.
+  # 7, naming `source` as its source; the status defense makes the one roll and
+  # the status starts 100 ms later. A status without a duration never starts.
+  defp try_inflict(_source, _victim, _sc, _rate, _roll, 0), do: :ok
+
   defp try_inflict(source, victim, sc, rate, roll, duration) do
     params =
       source
       |> chance_params(rate, roll)
-      |> Keyword.put(:val1, @add_eff_level)
-      |> maybe_duration(duration)
+      |> Keyword.merge(val1: @add_eff_level, duration: duration, start_delay: @add_eff_delay_ms)
 
     StatusInterpreter.apply_status(victim.unit_type, victim.unit_id, sc, params)
     :ok
@@ -408,11 +355,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
       resistance_roll: roll
     ]
   end
-
-  defp maybe_duration(params, duration) when is_integer(duration) and duration > 0,
-    do: Keyword.put(params, :duration, duration)
-
-  defp maybe_duration(params, _duration), do: params
 
   defp inflict_defender_procs(
          %Combatant{unit_type: :player} = source,

@@ -2458,6 +2458,43 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
                [{1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 90_213}, {6, 90_215}, {7, 90_214}]
     end
 
+    test "registers on-hit status bonuses in script order, merging a repeated status and flag" do
+      add_eff = fn sc, rate -> {:bonus, {:add_eff, sc}, rate} end
+
+      armor =
+        scripted_item(90_230, type: :armor, slots: 1, on_equip: [add_eff.(:sc_stun, 100)])
+
+      garment =
+        scripted_item(90_231,
+          type: :armor,
+          on_equip: [add_eff.(:sc_stun, 300), add_eff.(:sc_blind, 50)]
+        )
+
+      card = scripted_item(90_232, type: :card, on_equip: [add_eff.(:sc_freeze, 200)])
+      arrow = scripted_item(90_233, type: :ammo, on_equip: [add_eff.(:sc_curse, 400)])
+
+      definitions = Map.new([armor, garment, card, arrow], &{&1.id, &1})
+      stub(ItemManagement, :get_item_by_id, &Map.fetch(definitions, &1))
+
+      rows = [
+        %{equipped_row(71, 90_230, @armor_pos) | card0: 90_232},
+        equipped_row(72, 90_231, @garment_pos),
+        equipped_row(73, 90_233, @ammo_pos)
+      ]
+
+      result = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+
+      assert Enum.map(
+               result.modifiers.equipment[{:add_eff_list, :attack}],
+               &{&1.sc, &1.rate, &1.arrow_rate, &1.duration}
+             ) == [
+               {:sc_stun, 400, 0, mode_value(4_500, 5_000)},
+               {:sc_blind, 50, 0, mode_value(18_000, 30_000)},
+               {:sc_curse, 0, 400, mode_value(18_000, 30_000)},
+               {:sc_freeze, 200, 0, mode_value(27_000, 12_000)}
+             ]
+    end
+
     test "the worn ammunition registers no autocast" do
       arrow =
         scripted_item(90_216,

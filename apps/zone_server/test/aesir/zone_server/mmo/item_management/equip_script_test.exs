@@ -789,6 +789,33 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
              }
     end
 
+    test "on-hit status bonuses are ordered registrations, a bonus4 duration on its bonus" do
+      program = [
+        {:bonus, {:add_eff, {:sc_stun, 93}}, 500},
+        {:bonus, {:add_eff_duration, {:sc_stun, 93}}, 5_000},
+        {:bonus, {:add_eff_when_hit, :sc_poison}, 300}
+      ]
+
+      result = EquipScript.evaluate(program, on(0))
+
+      assert result.modifiers == %{}
+
+      assert [
+               %{list: :attack, sc: :sc_stun, rate: 500, duration: 5_000},
+               %{list: :when_hit, sc: :sc_poison, rate: 300, duration: 0}
+             ] = result.add_effs
+    end
+
+    test "the ammunition's bAddEff is a ranged-only chance" do
+      result =
+        EquipScript.evaluate(
+          [{:bonus, {:add_eff, :sc_stun}, 500}],
+          Map.put(on(0), :lr_flag, :arrow)
+        )
+
+      assert [%{list: :attack, rate: 0, arrow_rate: 500}] = result.add_effs
+    end
+
     test "an ammunition script drops the non-critical and short-attack rates" do
       program =
         EquipScript.parse!("""
