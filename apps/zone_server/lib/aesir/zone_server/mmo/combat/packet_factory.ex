@@ -31,17 +31,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
 
-  # e_damage_type: single-hit skill display (rAthena DMG_SINGLE).
-  @dmg_single 6
-
-  # e_damage_type: splash/area skill hit display (rAthena DMG_SPLASH).
+  # The client's damage display types (e_damage_type).
+  @dmg_normal 0
+  @dmg_endure 4
   @dmg_splash 5
-
-  # ZC_NOTIFY_ACT attack types (rAthena clif e_damage_type for basic attacks).
-  @attack_type_normal 0
-  @attack_type_multi_hit 4
-  @attack_type_critical 8
-  @attack_type_lucky_dodge 10
+  @dmg_single 6
+  @dmg_multi_hit 8
+  @dmg_multi_hit_endure 9
+  @dmg_critical 10
+  @dmg_lucky_dodge 11
+  @dmg_multi_hit_critical 13
+  @dmg_splash_endure 14
 
   @typedoc """
   Result of damage calculation containing final damage and critical hit status.
@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
 
-    type = if damage_result.is_critical, do: @attack_type_critical, else: @attack_type_normal
+    type = if damage_result.is_critical, do: @dmg_critical, else: @dmg_normal
 
     %DamageDealt{
       src_id: attacker_id,
@@ -105,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       dmg_speed: 500,
       damage: total_damage,
       div: hits,
-      type: @attack_type_multi_hit,
+      type: @dmg_multi_hit,
       damage2: 0,
       is_sp_damage: false
     }
@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
 
-    build_miss(attacker_id, defender_id, attacker.attack_delay_ms)
+    build_miss(attacker_id, defender_id, attacker.attack_delay_ms, @dmg_normal)
   end
 
   @doc """
@@ -264,8 +264,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     attacker_id = attacker.unit_id
     defender_id = defender.unit_id
 
-    # Perfect dodge uses the same packet structure as miss.
-    build_miss(attacker_id, defender_id, attacker.attack_delay_ms)
+    # Perfect dodge uses the same packet structure as miss, shown as a lucky dodge.
+    build_miss(attacker_id, defender_id, attacker.attack_delay_ms, @dmg_lucky_dodge)
   end
 
   @doc """
@@ -281,8 +281,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
     build_attack_packet(attacker, defender, %{damage: 0, is_critical: false})
   end
 
-  @spec build_miss(integer(), integer(), integer()) :: DamageDealt.t()
-  defp build_miss(src_id, target_id, delay_ms) do
+  @spec build_miss(integer(), integer(), integer(), non_neg_integer()) :: DamageDealt.t()
+  defp build_miss(src_id, target_id, delay_ms, type) do
     %DamageDealt{
       src_id: src_id,
       target_id: target_id,
@@ -291,18 +291,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       dmg_speed: 0,
       damage: 0,
       div: 1,
-      type: @attack_type_lucky_dodge,
+      type: type,
       damage2: 0,
       is_sp_damage: false
     }
   end
 
-  defp weapon_swing_type(%HandedAttack{outcome: :critical}), do: @attack_type_critical
+  defp weapon_swing_type(%HandedAttack{outcome: :perfect_dodge}), do: @dmg_lucky_dodge
+
+  defp weapon_swing_type(%HandedAttack{outcome: :critical, display_divisions: divisions})
+       when divisions > 1,
+       do: @dmg_multi_hit_critical
+
+  defp weapon_swing_type(%HandedAttack{outcome: :critical}), do: @dmg_critical
 
   defp weapon_swing_type(%HandedAttack{display_divisions: divisions}) when divisions > 1,
-    do: @attack_type_multi_hit
+    do: @dmg_multi_hit
 
-  defp weapon_swing_type(%HandedAttack{}), do: @attack_type_normal
+  defp weapon_swing_type(%HandedAttack{}), do: @dmg_normal
+
+  @doc """
+  The display type a damage packet takes when its target endures the hit, from
+  its own `type` and division count `div`.
+
+  A one-division multi-hit shows as a single hit and a several-division single
+  hit as a multi-hit first; then every damaging kind shows its endure form.
+  """
+  @spec endure_type(non_neg_integer(), integer()) :: non_neg_integer()
+  def endure_type(type, div), do: type |> by_divisions(div) |> endure_form(div)
+
+  defp by_divisions(@dmg_single, div) when div > 1, do: @dmg_multi_hit
+  defp by_divisions(@dmg_multi_hit, div) when div < 2, do: @dmg_single
+  defp by_divisions(type, _div), do: type
+
+  defp endure_form(type, _div)
+       when type in [@dmg_endure, @dmg_multi_hit_endure, @dmg_splash_endure],
+       do: type
+
+  defp endure_form(type, _div)
+       when type in [@dmg_normal, @dmg_critical, @dmg_single, @dmg_multi_hit_critical],
+       do: @dmg_endure
+
+  defp endure_form(@dmg_multi_hit, _div), do: @dmg_multi_hit_endure
+  defp endure_form(@dmg_splash, _div), do: @dmg_splash_endure
+  defp endure_form(_type, div) when div > 1, do: @dmg_multi_hit_endure
+  defp endure_form(_type, _div), do: @dmg_endure
 
   defp secondary_damage(nil), do: 0
   defp secondary_damage(secondary), do: secondary.damage

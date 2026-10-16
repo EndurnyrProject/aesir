@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Concealment
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
@@ -151,14 +152,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   defp stop_restricted_walk(state, game_state) do
-    stopped = PlayerState.stop_walking(game_state)
+    stopped = %{state | game_state: PlayerState.stop_walking(game_state)}
+    publish_stop(stopped)
+    {:noreply, stopped}
+  end
 
-    packet = %MoveStop{gid: stopped.character_id, x: stopped.x, y: stopped.y}
+  defp publish_stop(%{game_state: game_state} = state) do
+    packet = %MoveStop{gid: game_state.character_id, x: game_state.x, y: game_state.y}
     MessageRouter.send_to(state.connection_pid, packet)
-
-    broadcast_stop_to_nearby(stopped, packet)
-
-    {:noreply, %{state | game_state: stopped}}
+    broadcast_stop_to_nearby(game_state, packet)
   end
 
   defp step_player(state, game_state, {next_x, next_y}, remaining_path) do
@@ -214,8 +216,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           interval =
             step_delay(touched_state.game_state, {next_x, next_y}, hd(remaining_path))
 
-          Process.send_after(self(), {:movement, :movement_tick}, interval)
-          {:noreply, touched_state}
+          {:noreply,
+           %{touched_state | game_state: schedule_step(touched_state.game_state, interval)}}
         else
           # Path completed: stop and broadcast the standing transition so the
           # client's last snapshot sample flips move_state back to idle.
@@ -340,8 +342,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       game_state = PlayerState.set_path(game_state, path)
 
       first_delay = step_delay(game_state, {game_state.x, game_state.y}, hd(path))
-      Process.send_after(self(), {:movement, :movement_tick}, first_delay)
-      {:noreply, %{state | game_state: game_state}}
+      {:noreply, %{state | game_state: schedule_step(game_state, first_delay)}}
     else
       _ ->
         game_state = PlayerState.stop_walking(game_state)
@@ -354,6 +355,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         {:noreply, %{state | game_state: game_state}}
     end
   end
+
+  defp schedule_step(game_state, delay),
+    do: %{game_state | pending_step: HitStop.schedule({:movement, :movement_tick}, delay)}
 
   defp segment_traversable?(_map_name, {x, y}, {x, y}), do: true
 
@@ -462,9 +466,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       # unit enters a cell when the step completes, keeping the server position
       # in lockstep with the client's interpolation instead of one cell ahead.
       first_delay = step_delay(game_state, {game_state.x, game_state.y}, hd(path))
-      Process.send_after(self(), {:movement, :movement_tick}, first_delay)
 
-      {:noreply, %{state | game_state: game_state}}
+      {:noreply, %{state | game_state: schedule_step(game_state, first_delay)}}
     else
       {:ok, []} ->
         # Already at destination
@@ -547,15 +550,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   @doc """
-  Applies a post-hit walk delay then stops the walk through the same
-  conditional, client-visible stop as a skill or stun interrupt.
+  Stops a walking player that a damaging hit stopped (`HitStop`): it finishes
+  the step it is taking when at most half of it is left, else it stays on its
+  cell. The caller has already ruled out endure.
   """
-  @spec handle_apply_walk_delay(non_neg_integer(), map()) :: {:noreply, map()}
-  def handle_apply_walk_delay(duration, %{game_state: game_state} = state) do
-    now = System.monotonic_time(:millisecond)
-    delayed = PlayerState.apply_walk_delay(game_state, duration, now)
-    handle_force_stop_movement(%{state | game_state: delayed})
+  @spec handle_hit_stop(SessionState.t()) :: {:noreply, SessionState.t()}
+  def handle_hit_stop(%{game_state: %{movement_state: :moving} = game_state} = state) do
+    HitStop.cancel(game_state.pending_step)
+
+    with {:finish_step, [next | _rest]} <-
+           {HitStop.plan(game_state.pending_step, HitStop.now()), game_state.walk_path},
+         true <- segment_traversable?(game_state.map_name, {game_state.x, game_state.y}, next) do
+      {:noreply, stepped} = step_player(state, game_state, next, [])
+      publish_stop(stepped)
+      {:noreply, stepped}
+    else
+      _stay -> handle_force_stop_movement(state)
+    end
   end
+
+  def handle_hit_stop(state), do: {:noreply, state}
 
   @doc """
   Forces a player to stop moving immediately.

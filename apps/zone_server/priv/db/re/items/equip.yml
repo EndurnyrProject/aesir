@@ -82494,6 +82494,16 @@
   locations:
     - armor
   name: Whiteknight Armor
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :player_human}, 1)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 1)
+    ctx = bonus(ctx, :delay_rate, (-5 - (min(10, refine(ctx)) * 2)))
+    ctx = if (refine(ctx) >= 12) do
+      bonus(ctx, :no_walk_delay, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -122567,6 +122577,29 @@
   locations:
     - garment
   name: Witch's Cloak
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :fire}, (5 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, {:subele, :wind}, (5 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = bonus(ctx, :varcast_rate, -5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = bonus(ctx, :varcast_rate, -5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 15) do
+      bonus(ctx, :no_walk_delay, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor

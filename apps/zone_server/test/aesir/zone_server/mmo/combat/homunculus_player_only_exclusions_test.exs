@@ -41,12 +41,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HomunculusPlayerOnlyExclusionsTest do
     assert source =~ "defp shield_base_opts(_caster_state, _opts), do: []"
   end
 
-  test "Homunculus ground hits invoke the exact no-session walk-delay branch" do
-    source = combat_source("magic_attack.ex")
-
-    assert source =~ "defp apply_walk_delay(:homunculus, _target_pid, _dst_delay), do: :ok"
-  end
-
   defp function_slice(source, start_marker, end_marker) do
     [_before, tail] = String.split(source, start_marker, parts: 2)
     [body | _] = String.split(tail, end_marker, parts: 2)

@@ -11,8 +11,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.DamageDisplay
+  alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
-  alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -313,6 +315,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       hit_info
       |> attach_proc_event(final_damage)
       |> capture_damage_broken(target_type, target_id)
+      |> stamp_walk_delay(final_damage, target_type, target_id)
 
     delivery =
       deliver_unit_damage(target_type, target_pid, target_id, final_damage, hit_info, attacker)
@@ -346,6 +349,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp capture_damage_broken(hit_info, _target_type, _target_id), do: hit_info
 
+  # Whether the hit asks the target's own handler to stop it walking, decided
+  # on the settled damage before its HP clamps it, and on the target's endure
+  # time as the hit is dealt, before the attack's own effects may set it.
+  defp stamp_walk_delay(hit_info, damage, target_type, target_id) do
+    walk_delay? =
+      DamageShared.walk_delay?(hit_info, damage) and
+        not Endure.tick_active?(target_type, target_id)
+
+    Map.put(hit_info, :walk_delay?, walk_delay?)
+  end
+
   @doc "Builds aggregate-local Homunculus damage without sending to its owner process."
   @spec local_damage_effect(Ref.t(), integer(), map(), Ref.t() | nil) :: tuple()
   def local_damage_effect({:homunculus, world_gid} = target_ref, damage, hit_info, attacker)
@@ -354,7 +368,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       {final_damage, hit_info} =
         prepare_delivery(:homunculus, world_gid, damage, hit_info, attacker)
 
-      hit_info = capture_damage_broken(hit_info, :homunculus, world_gid)
+      hit_info =
+        hit_info
+        |> capture_damage_broken(:homunculus, world_gid)
+        |> stamp_walk_delay(final_damage, :homunculus, world_gid)
+
       {:homunculus, {:apply_damage, world_gid, final_damage, hit_info, attacker}}
     else
       raise ArgumentError, "invalid typed Homunculus damage effect"
@@ -485,7 +503,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   @spec broadcast_nearby(map(), struct()) :: :ok
   def broadcast_nearby(target, packet) do
     {x, y} = target.position
-    packet = Hallucination.maybe_garble(packet, Map.get(target, :unit_type))
+    packet = DamageDisplay.finalize(packet, Map.get(target, :unit_type))
     Broadcast.to_in_range(target.map_name, x, y, Config.view_range(), packet)
   end
 
@@ -944,7 +962,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp homunculus_coma(target_id, hit_info, attacker) do
-    metadata = Map.take(hit_info, [:damage_broken])
+    metadata = Map.take(hit_info, [:damage_broken, :walk_delay?])
     {:homunculus, {:apply_coma, target_id, typed_attacker(attacker), metadata}}
   end
 

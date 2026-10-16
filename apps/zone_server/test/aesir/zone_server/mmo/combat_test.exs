@@ -889,7 +889,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert packet.div == 2
       assert packet.damage == 100
       assert packet.damage2 == 0
-      assert packet.type == 4
+      assert packet.type == 8
     end
 
     test "a consuming pre-delivery modifier sees Double Attack once",
@@ -936,7 +936,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_received {:packet, %DamageDealt{damage: 0, damage2: 0, div: 1, type: 4}}
+      assert_received {:packet, %DamageDealt{damage: 0, damage2: 0, div: 1, type: 8}}
       refute_received {:packet, %DamageDealt{div: 2}}
     end
 

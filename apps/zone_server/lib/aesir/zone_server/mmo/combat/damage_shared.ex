@@ -77,6 +77,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   def active_damage?(_info), do: true
 
   @doc """
+  Whether delivering `damage` with `hit_info` stops a walking target that does
+  not endure it: a battle hit (an attack, or damage reflected back at its
+  attacker) that deals at least 1. Status ticks, passive HP loss, the damage
+  Devotion forwards to the Crusader and a fixed hit marked `walk_delay?: false`
+  never do.
+  """
+  @spec walk_delay?(map(), integer()) :: boolean()
+  def walk_delay?(_hit_info, damage) when damage < 1, do: false
+  def walk_delay?(%{walk_delay?: false}, _damage), do: false
+  def walk_delay?(%{passive?: true}, _damage), do: false
+  def walk_delay?(%{status_tick?: true}, _damage), do: false
+  def walk_delay?(%{redirected: true}, _damage), do: false
+  def walk_delay?(%{dmg_type: _}, _damage), do: true
+  def walk_delay?(%{reflected: true}, _damage), do: true
+  def walk_delay?(_hit_info, _damage), do: false
+
+  @doc """
   A settled hit's total before Devotion forwarding: the forwarded amount for a
   rerouted hit (the devotee itself takes 0), else `damage`.
   """

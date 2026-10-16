@@ -3302,6 +3302,10 @@
   locations:
     - shoes
   name: Eddga Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, -25)
+    ctx = bonus(ctx, :no_walk_delay, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Medusa_Card

@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
   and lives, each strike spending one of that cell's budget. A cell whose budget
   runs out burns out at once; the rest of the wall stays. Each strike is a fire
   hit at half the caster's magic attack that knocks the target two cells straight
-  back from where it faces, unless its defense element is fire or undead. A cell
+  back from where it faces, unless its defense element is fire or undead. Such a
+  target is instead left unstoppable by damage for 2 s by each strike it lives
+  through, so the wall does not halt it as it walks through. A cell
   on Land Protector burns nobody. Nothing burns while the caster is gone.
 
   The wall lasts 5 s at level 1 up to 14 s at level 10, half again as long when
@@ -50,6 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -62,6 +65,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
 
   # Each hit lands at half the caster's magic attack, in both modes.
   @skill_ratio 50
+
+  @endure_ms 2000
 
   # Aesir's sprite-frame direction for north (`Geometry.calculate_direction/4`).
   @north 4
@@ -137,7 +142,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
            @skill_ratio,
            base_distance: definition.knockback,
            origin: ahead_of(target),
-           native_enabled: knockback?(target),
+           native_enabled: not fire_or_undead?(target),
+           additional_effect: &endure_fire_or_undead/2,
            report_hit: true,
            prior_damage: prior_damage
          ) do
@@ -158,12 +164,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
     end
   end
 
-  # No knockback against a fire-element or undead-element target.
-  defp knockback?({unit_type, unit_id}) do
+  # A fire-element or undead-element target takes no knockback, and each strike
+  # it lives through leaves it unstoppable by damage for 2 s.
+  defp fire_or_undead?({unit_type, unit_id}) do
     case Combat.resolve_combatant(unit_type, unit_id) do
-      {:ok, target} -> not (fire?(target.element) or RaceModifiers.undead_target?(target))
-      {:error, _reason} -> true
+      {:ok, target} -> fire?(target.element) or RaceModifiers.undead_target?(target)
+      {:error, _reason} -> false
     end
+  end
+
+  defp endure_fire_or_undead(_source, {unit_type, unit_id} = target) do
+    if fire_or_undead?(target), do: Endure.put_tick(unit_type, unit_id, @endure_ms)
   end
 
   defp fire?({element, _level}), do: element == :fire

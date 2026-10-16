@@ -306,6 +306,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
     Enum.each(keys, &:ets.delete(table_for(:player_statuses), &1))
     reset_storm_gust_counter(unit_type, unit_id)
     :ets.delete(table_for(:status_counters), {unit_type, unit_id, :last_effect})
+    :ets.delete(table_for(:status_counters), {unit_type, unit_id, :endure_tick})
     :ok
   end
 
@@ -474,6 +475,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
     case :ets.lookup(table_for(:status_counters), {unit_type, unit_id, :last_effect}) do
       [{_key, status_id, until}] when now_ms < until -> status_id
       _none -> nil
+    end
+  end
+
+  @doc """
+  Sets the time (monotonic milliseconds) until which damage cannot stop a unit
+  walking, whatever it held before. It is the unit's own endure time, apart from
+  the Endure status. Death keeps it; only the unit's removal
+  (`clear_unit_statuses/2`) drops it.
+  """
+  @spec put_endure_tick(unit_type(), integer(), integer()) :: :ok
+  def put_endure_tick(unit_type, unit_id, until_ms) do
+    :ets.insert(table_for(:status_counters), {{unit_type, unit_id, :endure_tick}, until_ms})
+    :ok
+  end
+
+  @doc "Returns a unit's endure time (`put_endure_tick/3`), or nil when it never had one."
+  @spec endure_tick(unit_type(), integer()) :: integer() | nil
+  def endure_tick(unit_type, unit_id) do
+    case :ets.lookup(table_for(:status_counters), {unit_type, unit_id, :endure_tick}) do
+      [{_key, until_ms}] -> until_ms
+      [] -> nil
     end
   end
 

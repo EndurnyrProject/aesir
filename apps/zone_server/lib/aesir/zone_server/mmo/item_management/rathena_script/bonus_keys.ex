@@ -168,6 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bfixedcastrate" => :fixcast_rate,
     "badditemhealrate" => :item_heal_rate,
     "bnoknockback" => :no_knockback,
+    "bnowalkdelay" => :no_walk_delay,
     "bnocastcancel" => :no_cast_cancel,
     "bnocastcancel2" => :no_cast_cancel2
   }

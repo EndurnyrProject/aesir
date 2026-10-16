@@ -83,8 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
        cells: [center],
        state: %{
          phase: :waiting,
-         hit_budget: hit_count(level),
-         target_delay: target_delay(level)
+         hit_budget: hit_count(level)
        },
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
@@ -169,7 +168,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
       skill_ratio(group.level),
       bonus_matk: 100 + 50 * group.level,
       hit_divisions: hits,
-      dst_delay: group.state.target_delay,
       divide_hits_for_player?: true
     )
   end
@@ -183,9 +181,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
 
   @spec skill_ratio(pos_integer()) :: pos_integer()
   defp skill_ratio(level), do: 40 + 20 * level
-
-  @spec target_delay(pos_integer()) :: pos_integer()
-  defp target_delay(level), do: 400 + 200 * level
 
   defp consume_blue_gemstone(caster, level) when level < 6, do: caster
 

@@ -12,6 +12,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
+  describe "walk_delay?/2" do
+    test "an attack or a reflected hit dealing at least 1 stops a walk" do
+      assert DamageShared.walk_delay?(%{dmg_type: :magic}, 1)
+      assert DamageShared.walk_delay?(%{reflected: true}, 5)
+      refute DamageShared.walk_delay?(%{dmg_type: :physical}, 0)
+    end
+
+    test "ticks, passive loss, Devotion's forward and plain notifications never do" do
+      refute DamageShared.walk_delay?(%{dmg_type: :magic, status_tick?: true}, 10)
+      refute DamageShared.walk_delay?(%{passive?: true}, 10)
+      refute DamageShared.walk_delay?(%{dmg_type: :physical, redirected: true}, 10)
+      refute DamageShared.walk_delay?(%{}, 10)
+      refute DamageShared.walk_delay?(%{dmg_type: :misc, walk_delay?: false}, 1_000)
+    end
+  end
+
   describe "active_damage?/1" do
     test "passive losses and status ticks are never active" do
       refute DamageShared.active_damage?(%{damage: 10, passive?: true})

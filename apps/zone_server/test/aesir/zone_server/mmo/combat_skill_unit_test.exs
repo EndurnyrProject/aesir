@@ -155,7 +155,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     expect(MobSession, :apply_damage, fn ^test_pid, 97, @caster_id, _metadata -> :ok end)
-    expect(MobSession, :apply_walk_delay, fn ^test_pid, 60 -> :ok end)
 
     assert {:ok, prepared} = Combat.prepare_skill_unit_hit(attacker, {:mob, @target_id}, 85)
     assert prepared.target.unit_id == @target_id
@@ -164,8 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     assert :ok =
              Combat.deliver_skill_unit_hit(prepared, 103,
                skill_level: 1,
-               element: :holy,
-               dst_delay: 60
+               element: :holy
              )
 
     assert_received :absorbed
@@ -185,7 +183,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
              Combat.prepare_skill_unit_hit(caster(100), {:mob, @target_id}, 85)
   end
 
-  test "player-owned ground damage applies equipment blow after delivery and walk delay" do
+  test "player-owned ground damage applies equipment blow after delivery" do
     test_pid = self()
     mob_state = %{build_mob_state(0) | x: 151}
 
@@ -219,18 +217,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    expect(MobSession, :apply_walk_delay, fn ^test_pid, 600 ->
-      send(test_pid, {:event, :walk_delay})
-      :ok
-    end)
-
-    assert :ok =
-             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 80, 1, :fire, 100,
-               dst_delay: 600
-             )
+    assert :ok = Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 80, 1, :fire, 100)
 
     assert_receive {:event, :damage}
-    assert_receive {:event, :walk_delay}
 
     assert_receive {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 153, 150}}}
     refute_receive {:"$gen_cast", {:movement, _movement}}
@@ -950,7 +939,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     refute_receive {:"$gen_cast", {:movement, _movement}}
   end
 
-  test "supports Fire Pillar's flat MATK, multi-hit, and target walk delay" do
+  test "supports Fire Pillar's flat MATK and multi-hit without a target delay" do
     test_pid = self()
     mob_state = build_mob_state(0)
 
@@ -966,21 +955,18 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id, _metadata -> :ok end)
-    stub(MobSession, :apply_walk_delay, fn ^test_pid, 600 -> send(test_pid, :walk_delayed) end)
 
     assert :ok =
              Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 80, 1, :fire, 60,
                bonus_matk: 150,
                hit_divisions: 3,
-               dst_delay: 600,
                divide_hits_for_player?: true
              )
 
     # One roll: 100 MATK at 60% plus the flat 150, against a Water 1 mob. Renewal
     # takes Fire->Water 90 (189); classic takes soft MDEF 5 first, then 50 (102).
     # A player's divisions are negative, so the total floors to a multiple of 3.
-    assert_received {:broadcast, damage, 3, 600}
-    assert_received :walk_delayed
+    assert_received {:broadcast, damage, 3, 0}
     assert damage == if(GameMode.mode() == :renewal, do: 189, else: 102)
   end
 end

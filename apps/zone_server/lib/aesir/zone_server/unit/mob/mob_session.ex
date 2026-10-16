@@ -83,10 +83,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:combat, {:note_hit_type, attacker, bf, skill_id}})
   end
 
-  @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
-  def apply_walk_delay(pid, duration),
-    do: GenServer.cast(pid, {:movement, {:apply_walk_delay, duration}})
-
   @doc """
   Heals the mob.
   """
@@ -128,6 +124,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @spec move_to(pid(), integer(), integer()) :: :ok
   def move_to(pid, x, y) do
     GenServer.cast(pid, {:movement, {:move_to, x, y}})
+  end
+
+  @doc """
+  Forces the mob to escape to a target position: damage cannot stop the walk
+  until it ends.
+  """
+  @spec escape_to(pid(), integer(), integer()) :: :ok
+  def escape_to(pid, x, y) do
+    GenServer.cast(pid, {:movement, {:escape_to, x, y}})
   end
 
   @doc """
@@ -348,16 +353,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     MovementHandler.handle_move_to(state, x, y)
   end
 
+  def handle_cast({:movement, {:escape_to, x, y}}, state) do
+    MovementHandler.handle_move_to(state, x, y, true)
+  end
+
   def handle_cast({:movement, :teleport}, state) do
     MovementHandler.handle_teleport(state)
   end
 
   def handle_cast({:movement, {:warp, map_name, x, y}}, state) do
     MovementHandler.handle_relocation(state, state.x, state.y, map_name, x, y)
-  end
-
-  def handle_cast({:movement, {:apply_walk_delay, duration}}, state) do
-    MovementHandler.handle_apply_walk_delay(state, duration)
   end
 
   def handle_cast({:movement, {:knockback, expected_x, expected_y, map_name, x, y}}, state) do

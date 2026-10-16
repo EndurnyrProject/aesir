@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -283,6 +284,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                        dmg_type: :magic,
                        is_short: false
                      }}
+  end
+
+  test "a hit is marked to stop its walking target unless the target's endure time runs" do
+    target_id = 22
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+    stub_unit_info(target_id)
+    test_pid = self()
+
+    stub(PlayerSession, :apply_damage, fn ^target_pid, 40, nil, metadata ->
+      send(test_pid, {:walk_delay?, metadata.walk_delay?})
+      :ok
+    end)
+
+    hit = %{dmg_type: :magic, is_short: false, element: :fire}
+
+    DamageApplication.apply_unit_damage(:player, target_pid, target_id, 40, hit, nil)
+    assert_received {:walk_delay?, true}
+
+    Endure.put_tick(:player, target_id, 2_000)
+
+    DamageApplication.apply_unit_damage(:player, target_pid, target_id, 40, hit, nil)
+    assert_received {:walk_delay?, false}
   end
 
   test "delivers the skill id and level to a player victim" do

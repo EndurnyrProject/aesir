@@ -8,6 +8,43 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
 
+  describe "endure_type/2" do
+    test "every damaging kind shows its endure form" do
+      assert PacketFactory.endure_type(0, 1) == 4
+      assert PacketFactory.endure_type(10, 1) == 4
+      assert PacketFactory.endure_type(13, 2) == 4
+      assert PacketFactory.endure_type(5, 1) == 14
+      assert PacketFactory.endure_type(4, 1) == 4
+      assert PacketFactory.endure_type(9, 3) == 9
+      assert PacketFactory.endure_type(14, 1) == 14
+    end
+
+    test "the division count decides between single and multi-hit first" do
+      assert PacketFactory.endure_type(6, 1) == 4
+      assert PacketFactory.endure_type(6, 3) == 9
+      assert PacketFactory.endure_type(8, 2) == 9
+      assert PacketFactory.endure_type(8, 1) == 4
+    end
+
+    test "any other kind becomes single or multi-hit endure by its divisions" do
+      assert PacketFactory.endure_type(7, 1) == 4
+      assert PacketFactory.endure_type(7, 2) == 9
+    end
+  end
+
+  describe "build_miss_packet/2 and build_perfect_dodge_packet/2" do
+    test "a miss is a zero-damage normal hit and a perfect dodge a lucky dodge" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 44)
+      defender = CombatTestHelper.create_player_combatant()
+
+      assert %DamageDealt{damage: 0, type: 0} =
+               PacketFactory.build_miss_packet(attacker, defender)
+
+      assert %DamageDealt{damage: 0, type: 11} =
+               PacketFactory.build_perfect_dodge_packet(attacker, defender)
+    end
+  end
+
   describe "build_guard_packet/2" do
     test "publishes a zero-damage normal hit so the blocked swing still lands" do
       attacker = CombatTestHelper.create_mob_combatant(unit_id: 44)
@@ -55,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
       attacker = CombatTestHelper.create_player_combatant()
       defender = CombatTestHelper.create_mob_combatant()
 
-      assert %DamageDealt{damage: 100, damage2: 0, div: 2, type: 4} =
+      assert %DamageDealt{damage: 100, damage2: 0, div: 2, type: 8} =
                PacketFactory.build_weapon_swing_packet(
                  attacker,
                  defender,
@@ -67,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
       attacker = CombatTestHelper.create_player_combatant()
       defender = CombatTestHelper.create_mob_combatant()
 
-      assert %DamageDealt{damage: 200, damage2: 20, div: 1, type: 8} =
+      assert %DamageDealt{damage: 200, damage2: 20, div: 1, type: 10} =
                PacketFactory.build_weapon_swing_packet(
                  attacker,
                  defender,

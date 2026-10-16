@@ -3374,6 +3374,10 @@
   locations:
     - shoes
   name: Eddga Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, -25)
+    ctx = bonus(ctx, :no_walk_delay, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Medusa_Card
@@ -7895,6 +7899,10 @@
   locations:
     - shoes
   name: Sealed Eddga Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, if((refine(ctx) > 14), do: -35, else: -50))
+    ctx = bonus(ctx, :no_walk_delay, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Scaraba_Card
@@ -8809,6 +8817,7 @@
   locations:
     - shoes
   name: Rudo Card
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :agi, 44}, {:bonus, :no_walk_delay, 1}, {:heal, 0, -40}], trigger: :when_hit, secondary: [{:status_start, :sc_speedup1, 3000, 50}], battle_flag: 849}, 50, 3000)'
   type: card
   weight: 10
 - aegis_name: Bungisngis_Card
@@ -39425,6 +39434,7 @@
 - aegis_name: Fortitude
   id: 300306
   name: Fortitude
+  on_equip: bonus(ctx, :no_walk_delay, 1)
   subtype: enchant
   type: card
 - aegis_name: Meyer_Card

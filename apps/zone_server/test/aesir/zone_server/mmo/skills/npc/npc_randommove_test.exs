@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommoveTest do
     stub(Cell, :traversable?, fn "test_map", x, y -> {x, y} == {53, 58} end)
     stub(UnitRegistry, :get_unit, fn :mob, 10 -> {:ok, {MobState, caster, caster_pid}} end)
 
-    stub(MobSession, :move_to, fn ^caster_pid, 53, 58 ->
+    stub(MobSession, :escape_to, fn ^caster_pid, 53, 58 ->
       send(test_pid, :movement_requested)
       :ok
     end)

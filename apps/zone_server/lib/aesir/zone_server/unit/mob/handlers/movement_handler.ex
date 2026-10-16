@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
@@ -24,7 +25,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   already moving.
   """
   @spec handle_move_to(MobState.t(), integer(), integer()) :: {:noreply, MobState.t()}
-  def handle_move_to(state, x, y) do
+  def handle_move_to(state, x, y), do: handle_move_to(state, x, y, false)
+
+  @doc """
+  Like `handle_move_to/3`. An escape request (`escape?`) makes the mob
+  unstoppable by damage whether or not it starts a walk, until a walk ends.
+  """
+  @spec handle_move_to(MobState.t(), integer(), integer(), boolean()) ::
+          {:noreply, MobState.t()}
+  def handle_move_to(state, x, y, escape?) do
+    state = if escape?, do: %{state | can_escape: true}, else: state
+
     if state.movement_state == :moving do
       {:noreply, state}
     else
@@ -42,9 +53,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
         # cell when the step completes, keeping the server position in
         # lockstep with the clients' interpolation instead of one cell ahead.
         first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
-        Process.send_after(self(), {:movement, :tick}, first_delay)
 
-        {:noreply, updated_state}
+        {:noreply, schedule_step(updated_state, first_delay)}
       else
         {:ok, []} ->
           # Already at destination
@@ -112,14 +122,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   end
 
   @doc """
-  Applies a post-hit walk delay and unconditionally resets the walk. Unlike
-  knockback this publishes nothing: the mob simply stops where it is.
+  Stops a walking mob that a damaging hit stopped (`HitStop`): it finishes the
+  step it is taking when at most half of it is left, else it stays on its cell.
+  The caller has already ruled out endure and an escape walk.
   """
-  @spec handle_apply_walk_delay(MobState.t(), non_neg_integer()) :: {:noreply, MobState.t()}
-  def handle_apply_walk_delay(%MobState{} = state, duration) do
-    now = System.monotonic_time(:millisecond)
-    {:noreply, state |> MobState.apply_walk_delay(duration, now) |> MobState.stop_movement()}
+  @spec handle_hit_stop(MobState.t()) :: MobState.t()
+  def handle_hit_stop(%MobState{movement_state: :moving} = state) do
+    HitStop.cancel(state.pending_step)
+
+    with {:finish_step, [next | _rest]} <-
+           {HitStop.plan(state.pending_step, HitStop.now()), state.walk_path},
+         true <-
+           Cell.step_traversable?(state.map_name, {state.x, state.y}, next, profile: :mob) do
+      step_mob(state, next, [])
+    else
+      _stay ->
+        stopped_state = MobState.stop_movement(state)
+        Movement.set_position(:mob, stopped_state.instance_id, stopped_state, state.map_name)
+        stopped_state
+    end
   end
+
+  def handle_hit_stop(%MobState{} = state), do: state
 
   @doc "Rejects offensive knockback on current castle ground before displacement commit."
   @spec handle_knockback(
@@ -242,12 +266,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       interval =
         MovementEngine.step_delay(state.walk_speed, {next_x, next_y}, hd(remaining_path))
 
-      Process.send_after(self(), {:movement, :tick}, interval)
-      updated_state
+      schedule_step(updated_state, interval)
     else
       # Path completed: stop and broadcast the standing transition so the
-      # client's last snapshot sample flips move_state back to idle.
-      stopped_state = MobState.stop_movement(updated_state)
+      # client's last snapshot sample flips move_state back to idle. An
+      # escape walk ends here.
+      stopped_state = %{MobState.stop_movement(updated_state) | can_escape: false}
 
       Movement.set_position(
         :mob,
@@ -260,6 +284,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     end
   end
 
+  defp schedule_step(state, delay),
+    do: %{state | pending_step: HitStop.schedule({:movement, :tick}, delay)}
+
   defp handle_blocked_mob(state, destination) do
     with {:ok, map_data} <- MapCache.get(state.map_name),
          {:ok, [_ | _] = path} <-
@@ -267,8 +294,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       updated_state = MobState.set_path(state, path)
 
       first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
-      Process.send_after(self(), {:movement, :tick}, first_delay)
-      updated_state
+      schedule_step(updated_state, first_delay)
     else
       _ ->
         stopped_state = MobState.stop_movement(state)

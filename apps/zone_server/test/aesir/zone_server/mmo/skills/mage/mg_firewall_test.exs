@@ -253,6 +253,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
       refute opts[:native_enabled]
     end
 
+    test "a strike leaves a fire or undead-element target unstoppable by damage for 2 s" do
+      Aesir.TestEtsSetup.setup_ets_tables(%{})
+
+      for element <- [{:fire, 1}, {:undead, 1}] do
+        stub_world(element)
+        stub_strikes(report(survives?: false))
+        MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
+        [opts] = strikes()
+
+        before = System.monotonic_time(:millisecond)
+        opts[:additional_effect].(%{unit_id: @caster_id}, @target)
+        later = System.monotonic_time(:millisecond)
+
+        assert StatusStorage.endure_tick(:mob, 2001) in (before + 2000)..(later + 2000)
+        StatusStorage.clear_unit_statuses(:mob, 2001)
+      end
+    end
+
+    test "a strike leaves any other target stoppable" do
+      Aesir.TestEtsSetup.setup_ets_tables(%{})
+      stub_world(:neutral, :undead)
+      stub_strikes(report(moved?: true))
+
+      MgFirewall.on_unit_hit(burning(7), @cell, @target, 0)
+
+      assert [opts] = strikes()
+      opts[:additional_effect].(%{unit_id: @caster_id}, @target)
+      assert StatusStorage.endure_tick(:mob, 2001) == nil
+    end
+
     test "knocks back an undead-race target of another element" do
       stub_world(:neutral, :undead)
       stub_strikes(report(moved?: true))

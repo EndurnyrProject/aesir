@@ -63,6 +63,28 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     assert advanced.homunculus.y == 2
   end
 
+  test "a hit stop leaves a Homunculus early in its step on its cell" do
+    moving = active_session() |> MovementHandler.move_to({6, 2})
+
+    stopped = MovementHandler.hit_stop(moving)
+
+    assert {stopped.homunculus.x, stopped.homunculus.y} == {2, 2}
+    assert stopped.homunculus.movement_state == :standing
+    assert stopped.homunculus_runtime.movement_timer_ref == nil
+  end
+
+  test "a hit stop lets a Homunculus at least half through its step finish it" do
+    moving = active_session() |> MovementHandler.move_to({6, 2})
+    {_due_at, duration} = moving.homunculus_runtime.movement_step
+    runtime = %{moving.homunculus_runtime | movement_step: {Clock.now_ms() - 1_000, duration}}
+
+    stopped = MovementHandler.hit_stop(%{moving | homunculus_runtime: runtime})
+
+    assert {stopped.homunculus.x, stopped.homunculus.y} == {3, 2}
+    assert stopped.homunculus.movement_state == :standing
+    assert stopped.homunculus_runtime.movement_timer_ref == nil
+  end
+
   test "displacement commits only for the exact living Homunculus endpoint" do
     moving = active_session() |> MovementHandler.move_to({4, 2})
 

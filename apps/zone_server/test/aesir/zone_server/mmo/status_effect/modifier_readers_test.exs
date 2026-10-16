@@ -80,6 +80,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :ignore_size_penalty,
                :magic_damage_reduction,
                :no_magic_damage,
+               # Endure.endure?/5
+               :no_walk_delay,
                :max_weapon_damage,
                :mdef_rate,
                :post_defense_atk,

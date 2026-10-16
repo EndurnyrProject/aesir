@@ -26,7 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CookedFoodsTest do
     {Effects.CupOfBoza, :sc_cup_of_boza, %{vit: 10}, :cup_of_boza},
     {Effects.PorkRibStew, :sc_pork_rib_stew, %{aspd_rate: 5, sp_cost_rate: -2}, :pork_rib_stew},
     {Effects.Mysticpowder, :sc_mysticpowder, %{flee: 20, luk: 10}, :mysticpowder},
-    {Effects.SparkCandy, :sc_sparkcandy, %{atk: 20, aspd_rate: 25}, :steampack},
+    {Effects.SparkCandy, :sc_sparkcandy, %{atk: 20, aspd_rate: 25, no_walk_delay: true},
+     :steampack},
     {Effects.MagicCandy, :sc_magiccandy, %{matk: 30}, :magic_candy},
     {Effects.Rwc2011Scroll, :sc_2011rwc_scroll,
      %{

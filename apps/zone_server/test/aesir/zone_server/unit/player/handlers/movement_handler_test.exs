@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
@@ -231,6 +232,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       assert new_state.game_state.combat_target_id == nil
       assert new_state.game_state.action_state == :moving
       refute_received {:auto_attack, _}
+    end
+  end
+
+  describe "handle_hit_stop/1" do
+    setup do
+      Mimic.copy(Movement)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      :ok
+    end
+
+    defp walking(step) do
+      state = moving_state()
+      game_state = PlayerState.set_path(state.game_state, [{51, 50}, {52, 50}])
+      %{state | game_state: %{game_state | pending_step: step}}
+    end
+
+    test "with at most half the step left, finishes it and ends the walk there" do
+      step = HitStop.schedule({:movement, :movement_tick}, 0)
+
+      {:noreply, stopped} = MovementHandler.handle_hit_stop(walking(step))
+
+      assert {stopped.game_state.x, stopped.game_state.y} == {51, 50}
+      assert stopped.game_state.movement_state == :standing
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1, x: 51, y: 50}}}
+    end
+
+    test "with more than half the step left, stays on its cell and drops the step's timer" do
+      step = HitStop.schedule({:movement, :movement_tick}, 150)
+
+      {:noreply, stopped} = MovementHandler.handle_hit_stop(walking(step))
+
+      assert {stopped.game_state.x, stopped.game_state.y} == {50, 50}
+      assert stopped.game_state.movement_state == :standing
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1, x: 50, y: 50}}}
+      refute_receive {:movement, :movement_tick}, 200
+    end
+
+    test "a standing player is untouched" do
+      state = %{game_state: PlayerState.new(character()), connection_pid: self()}
+
+      assert {:noreply, ^state} = MovementHandler.handle_hit_stop(state)
     end
   end
 

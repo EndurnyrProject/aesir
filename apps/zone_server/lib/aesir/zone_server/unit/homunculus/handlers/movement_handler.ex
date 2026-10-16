@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -171,6 +172,39 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
       session
     end
   end
+
+  @doc """
+  Stops a walking Homunculus that a damaging hit stopped (`HitStop`): it
+  finishes the step it is taking when at most half of it is left, else it stays
+  on its cell, keeping its target. The caller has already ruled out endure.
+  """
+  @spec hit_stop(SessionState.t()) :: SessionState.t()
+  def hit_stop(
+        %SessionState{
+          homunculus_runtime: %{
+            movement_timer_ref: ref,
+            movement_path: [next | _rest],
+            movement_step: {due_at, duration}
+          }
+        } = session
+      )
+      when is_reference(ref) do
+    homunculus = session.homunculus
+
+    with %HomunculusState{} <- homunculus,
+         :finish_step <- HitStop.plan({due_at, duration, ref}, HitStop.now()),
+         true <- Cell.step_traversable?(homunculus.map_name, {homunculus.x, homunculus.y}, next) do
+      runtime = Clock.cancel_field(session.homunculus_runtime, :movement_timer_ref)
+
+      %{session | homunculus_runtime: %{runtime | movement_path: [next]}}
+      |> take_step()
+      |> sync_separation()
+    else
+      _stay -> stop(session, false)
+    end
+  end
+
+  def hit_stop(%SessionState{} = session), do: session
 
   @doc "Cancels all movement-owned timers and path bookkeeping."
   @spec cancel(SessionState.t()) :: SessionState.t()
@@ -354,7 +388,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
 
     interval = Stats.movement_delay_ms(@movement_interval, modifiers)
     ref = Clock.arm(interval, :movement_tick)
-    runtime = %{session.homunculus_runtime | movement_timer_ref: ref}
+
+    runtime = %{
+      session.homunculus_runtime
+      | movement_timer_ref: ref,
+        movement_step: {HitStop.now() + interval, interval}
+    }
+
     %{session | homunculus_runtime: runtime}
   end
 

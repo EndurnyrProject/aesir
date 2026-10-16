@@ -12,12 +12,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
@@ -70,9 +72,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
         notify_statuses(homunculus, homunculus.hp - 1, 1, coma, source)
         updated = %{homunculus | hp: 1, sp: 1}
 
-        if updated == homunculus,
-          do: {:noreply, session},
-          else: commit_damage(session, homunculus, updated)
+        {:noreply, session} =
+          if updated == homunculus,
+            do: {:noreply, session},
+            else: commit_damage(session, homunculus, updated)
+
+        {:noreply, maybe_hit_stop(session, metadata)}
 
       {:error, :stale_target} ->
         {:noreply, session}
@@ -337,16 +342,29 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   defp take_damage(session, homunculus, 0, hit_info, attacker) do
     notify_statuses(homunculus, 0, homunculus.hp, hit_info, attacker)
-    {:noreply, session}
+    {:noreply, maybe_hit_stop(session, hit_info)}
   end
 
   defp take_damage(session, homunculus, damage, hit_info, attacker) do
     new_hp = max(homunculus.hp - damage, 0)
     notify_statuses(homunculus, min(damage, homunculus.hp), new_hp, hit_info, attacker)
 
-    if new_hp == 0,
-      do: die(session),
-      else: commit_damage(session, homunculus, %{homunculus | hp: new_hp})
+    if new_hp == 0 do
+      die(session)
+    else
+      {:noreply, session} = commit_damage(session, homunculus, %{homunculus | hp: new_hp})
+      {:noreply, maybe_hit_stop(session, hit_info)}
+    end
+  end
+
+  # A damaging battle hit stops the Homunculus walking unless it endures the hit.
+  defp maybe_hit_stop(%SessionState{} = session, metadata) do
+    homunculus = session.homunculus
+
+    if HitStop.stops_walk?(metadata) and
+         not Endure.holds?(:homunculus, homunculus.world_gid, homunculus, false),
+       do: MovementHandler.hit_stop(session),
+       else: session
   end
 
   defp notify_statuses(homunculus, damage, hp_after, hit_info, attacker) do

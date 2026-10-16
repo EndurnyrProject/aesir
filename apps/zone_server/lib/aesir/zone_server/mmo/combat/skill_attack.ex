@@ -989,6 +989,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       without waiting for the target's asynchronous HP mutation
     - `:delivery` - how the hit reached the target (default `:direct`, see
       `execute_skill_attack/3`)
+    - `:walk_delay` - whether the hit stops a walking target (default `true`);
+      a fixed hit dealt without divisions passes `false`
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
       `:native_requires_survival` - combined knockback options documented by
       `execute_skill_attack/3`
@@ -1046,7 +1048,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              report_hit?: report_hit?,
              bypass_reductions?: Keyword.get(opts, :bypass_reductions, false),
              knockback_options: knockback_options(opts),
-             delivery: Keyword.get(opts, :delivery, :direct)
+             delivery: Keyword.get(opts, :delivery, :direct),
+             walk_delay?: Keyword.get(opts, :walk_delay, true)
            }
          ) do
       :suppressed -> suppressed_result(report_hit?)
@@ -1238,6 +1241,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_level: skill_level,
         coma?: coma?,
         bypass_reductions: Map.get(misc_opts, :bypass_reductions?, false),
+        walk_delay?: Map.get(misc_opts, :walk_delay?, true),
         proc:
           EquipProcDispatch.spec(attacker, target, target_state, attack_flag,
             divisions: divisions,

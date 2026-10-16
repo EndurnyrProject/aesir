@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
       next_tick_at: 2_000,
       expires_at: 30_000,
       interval: 2_000,
-      state: state || %{phase: :waiting, hit_budget: level + 2, target_delay: 400 + 200 * level}
+      state: state || %{phase: :waiting, hit_budget: level + 2}
     }
 
     struct(base, attrs)
@@ -105,12 +105,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     assert {:ok, level_one} = WzFirepillar.on_place(group(1))
     assert level_one.cells == [@center]
     assert level_one.unit_range == 1
-    assert level_one.state == %{phase: :waiting, hit_budget: 3, target_delay: 600}
+    assert level_one.state == %{phase: :waiting, hit_budget: 3}
     assert level_one.interval == 2_000
     assert level_one.duration == 30_000
 
     assert {:ok, level_ten} = WzFirepillar.on_place(group(10))
-    assert level_ten.state == %{phase: :waiting, hit_budget: 12, target_delay: 2400}
+    assert level_ten.state == %{phase: :waiting, hit_budget: 12}
   end
 
   test "missing Blue Gemstone rejects a level-six cast before placement" do
@@ -185,7 +185,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     reject(&Combat.splash_targets/4)
     reject(&Combat.apply_skill_unit_damage/7)
 
-    active = group(1, %{phase: :active, activated_at: 5_000, hit_budget: 3, target_delay: 600})
+    active = group(1, %{phase: :active, activated_at: 5_000, hit_budget: 3})
     assert {:ok, ^active} = WzFirepillar.on_unit_hit(active, @center, {:mob, 2_001}, 5_000)
   end
 
@@ -208,7 +208,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
                                               160,
                                               bonus_matk: 400,
                                               hit_divisions: 8,
-                                              dst_delay: 1600,
                                               divide_hits_for_player?: true ->
       assert caster.unit_id == @caster_id
       send(test_pid, {:hit, unit_type, target_id})
@@ -216,7 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     end)
 
     active =
-      group(level, %{phase: :active, activated_at: 5_000, hit_budget: 8, target_delay: 1_600})
+      group(level, %{phase: :active, activated_at: 5_000, hit_budget: 8})
 
     assert {:ok, %Group{state: %{phase: :used}}} =
              WzFirepillar.on_unit_hit(active, @center, {:mob, 2_001}, 5_100)
@@ -231,7 +230,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     reject(&Combat.splash_targets/4)
     reject(&Combat.apply_skill_unit_damage/7)
 
-    used = group(1, %{phase: :used, activated_at: 5_000, hit_budget: 3, target_delay: 600})
+    used = group(1, %{phase: :used, activated_at: 5_000, hit_budget: 3})
 
     assert [] = WzFirepillar.unit_targets(used, @center, [{:mob, 2_001}])
     assert {:ok, ^used} = WzFirepillar.on_unit_hit(used, @center, {:mob, 2_001}, 6_000)
@@ -276,7 +275,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     :ok =
       Manager.register(
         manager,
-        group(1, %{phase: :waiting, hit_budget: 3, target_delay: 600}, expires_at: now)
+        group(1, %{phase: :waiting, hit_budget: 3}, expires_at: now)
       )
 
     assert :ok = Manager.tick(manager, now)

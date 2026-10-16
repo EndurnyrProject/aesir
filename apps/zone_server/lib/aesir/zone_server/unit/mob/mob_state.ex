@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Ref
 
   @behaviour Aesir.ZoneServer.Unit
@@ -60,6 +61,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     walk_speed: 200,
     walk_delay_until: 0,
     target_position: nil,
+    # The step the walk scheduled last, read by the hit stop (`HitStop`).
+    pending_step: nil,
+    # An escape walk that damage cannot stop; it ends when the walk does.
+    can_escape: false,
 
     # AI state machine
     ai_state: :idle,
@@ -165,6 +170,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           walk_speed: integer(),
           walk_delay_until: integer(),
           target_position: {integer(), integer()} | nil,
+          pending_step: HitStop.step(),
+          can_escape: boolean(),
           ai_state: ai_state(),
           ai_awake: boolean(),
           ai_timer_ref: reference() | nil,
@@ -547,6 +554,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       | walk_path: [],
         movement_state: :standing,
         target_position: nil,
+        pending_step: nil,
         last_movement_end_time: System.system_time(:millisecond)
     }
   end

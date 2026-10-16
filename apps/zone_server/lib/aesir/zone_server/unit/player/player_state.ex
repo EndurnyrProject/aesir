@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
@@ -77,6 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           movement_state: movement_state(),
           walk_path: list({integer(), integer()}),
           walk_speed: integer(),
+          pending_step: HitStop.step(),
           movement_intent: :none | :normal | :combat | :skill | :pickup,
           view_range: integer(),
           visible_players: MapSet.t(),
@@ -191,6 +193,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :walk_path,
     :walk_speed,
     :walk_delay_until,
+    # The step the walk scheduled last, read by the hit stop (`HitStop`).
+    :pending_step,
 
     # Movement intent - why are we moving?
     # :none | :normal | :combat | :skill | :pickup
@@ -572,7 +576,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     %{
       state
       | walk_path: [],
-        movement_state: :standing
+        movement_state: :standing,
+        pending_step: nil
     }
   end
 

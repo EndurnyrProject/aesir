@@ -90,6 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :fixcast_rate,
     :item_heal_rate,
     :no_knockback,
+    :no_walk_delay,
     :no_cast_cancel,
     :no_cast_cancel2,
     :sp_drain_rate,

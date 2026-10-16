@@ -8,9 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
   player hits never use it up. It survives its holder's death, and a
   player's Endure starts and ends its devotees' copies (`DevotionMirror`).
 
-  The no-flinch half of the status has no modifier: Aesir has no hit-stun
-  mechanic yet, so there is nothing for an `endure` flag to disable. Wire a
-  flag through `modifiers/2` when hit-stun lands.
+  Holding it is what keeps damage from stopping the unit walking and shows its
+  hits as endured (`Combat.Endure`).
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_endure,

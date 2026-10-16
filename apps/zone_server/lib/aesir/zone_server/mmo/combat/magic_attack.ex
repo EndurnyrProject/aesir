@@ -17,11 +17,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.DamageDisplay
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
-  alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
@@ -441,7 +441,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     skill_level = Keyword.fetch!(opts, :skill_level)
     element = Keyword.fetch!(opts, :element)
     packet_divisions = Keyword.get(opts, :packet_divisions, 1)
-    dst_delay = Keyword.get(opts, :dst_delay, 0)
     coma_decision = decide_coma(caster, target, [damage])
 
     hit_info =
@@ -480,11 +479,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         skill_id,
         skill_level,
         damage,
-        div: DamageShared.display_divisions(caster, hit_info, damage, packet_divisions),
-        dst_delay: dst_delay
+        div: DamageShared.display_divisions(caster, hit_info, damage, packet_divisions)
       )
 
-    packet = Hallucination.maybe_garble(packet, target_type)
+    packet = DamageDisplay.finalize(packet, target_type)
     Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
     delivery = apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
 
@@ -498,10 +496,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         hit_info,
         coma_decision == true
       )
-    end
-
-    if dst_delay > 0 do
-      apply_walk_delay(target_type, target_pid, dst_delay)
     end
 
     result =
@@ -872,11 +866,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     :ok
   end
 
-  defp apply_walk_delay(unit_type, target_pid, dst_delay) when unit_type in [:player, :mob],
-    do: DamageApplication.unit_session(unit_type).apply_walk_delay(target_pid, dst_delay)
-
-  defp apply_walk_delay(:homunculus, _target_pid, _dst_delay), do: :ok
-
   defp magic_result(target_state, damages, coma_decision, prior_damage \\ 0) do
     final_damage = damages |> Enum.filter(&(&1 > 0)) |> Enum.sum()
     hit? = final_damage > 0
@@ -1053,7 +1042,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
        ) do
     with :ok <- apply_magic_damage(:skill_unit, target_pid, target_id, damage, hit_info, attacker) do
       {tx, ty} = target.position
-      packet = Hallucination.maybe_garble(packet, :skill_unit)
+      packet = DamageDisplay.finalize(packet, :skill_unit)
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
     end
   end
@@ -1069,7 +1058,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          packet
        ) do
     {tx, ty} = target.position
-    packet = Hallucination.maybe_garble(packet, target_type)
+    packet = DamageDisplay.finalize(packet, target_type)
     Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
     apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, attacker)
   end
@@ -1243,7 +1232,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         missed: hit_info[:magic_rod_miss?] == true
       )
 
-    packet = Hallucination.maybe_garble(packet, target_type)
+    packet = DamageDisplay.finalize(packet, target_type)
     Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
 
     delivery =

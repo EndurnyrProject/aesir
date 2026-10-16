@@ -144,10 +144,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:unit, {:record_skill_hit, skill_id, skill_level}})
   end
 
-  @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
-  def apply_walk_delay(pid, duration),
-    do: GenServer.cast(pid, {:movement, {:apply_walk_delay, duration}})
-
   @doc """
   Drains SP from this player (fire-and-forget), clamping at zero.
 
@@ -1138,11 +1134,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:movement, :force_stop_movement}, state) do
     MovementHandler.handle_force_stop_movement(state)
-  end
-
-  @impl true
-  def handle_cast({:movement, {:apply_walk_delay, duration}}, state) do
-    MovementHandler.handle_apply_walk_delay(duration, state)
   end
 
   @impl true

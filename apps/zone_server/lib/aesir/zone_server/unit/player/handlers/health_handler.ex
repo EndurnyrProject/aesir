@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Leveling
@@ -38,6 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -124,7 +126,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       handle_death(normalize_attacker(attacker_id), state)
     else
       dispatch_when_hit(state, attacker_id, metadata)
-      {:noreply, maybe_interrupt_cast(state, metadata, damage)}
+      {:noreply, state |> maybe_interrupt_cast(metadata, damage) |> maybe_hit_stop(metadata)}
     end
   end
 
@@ -145,7 +147,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     )
 
     dispatch_when_hit(state, attacker_id, metadata)
-    {:noreply, maybe_interrupt_cast(state, metadata, 0)}
+    {:noreply, state |> maybe_interrupt_cast(metadata, 0) |> maybe_hit_stop(metadata)}
   end
 
   def apply_damage(_damage, _attacker_id, _metadata, state), do: {:noreply, state}
@@ -161,6 +163,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   defp dispatch_when_hit(_state, _attacker, _metadata), do: :ok
+
+  # A damaging battle hit stops the player walking unless it endures the hit.
+  defp maybe_hit_stop(%{game_state: game_state} = state, metadata) do
+    if HitStop.stops_walk?(metadata) and
+         not Endure.holds?(:player, game_state.character_id, game_state, false) do
+      {:noreply, state} = MovementHandler.handle_hit_stop(state)
+      state
+    else
+      state
+    end
+  end
 
   defp maybe_interrupt_cast(state, metadata, damage) do
     if DamageShared.active_damage?(Map.put(metadata, :damage, damage)),
@@ -219,7 +232,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def apply_coma(source, metadata, state) do
     hp_damage = max(current_hp(state) - 1, 0)
-    coma = metadata |> Map.take([:damage_broken]) |> Map.put(:coma?, true)
+    coma = metadata |> Map.take([:damage_broken, :walk_delay?]) |> Map.put(:coma?, true)
     {:noreply, state} = apply_damage(hp_damage, source, coma, state)
 
     state = if current_sp(state) == 1, do: state, else: put_sp(state, 1)

@@ -10,16 +10,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MvpReward
@@ -90,7 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
     case status do
       :alive ->
-        {:noreply, StateCommit.commit(updated_mob)}
+        {:noreply, updated_mob |> maybe_hit_stop(metadata) |> StateCommit.commit()}
 
       :dead ->
         handle_death(
@@ -127,7 +130,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   # A coma hit keeps only what the mob's statuses need from the prepared hit.
   defp coma_metadata(metadata),
-    do: metadata |> Map.take([:damage_broken]) |> Map.put(:coma?, true)
+    do: metadata |> Map.take([:damage_broken, :walk_delay?]) |> Map.put(:coma?, true)
+
+  # A damaging battle hit stops the mob walking unless it endures the hit or is
+  # on an escape walk.
+  defp maybe_hit_stop(%MobState{} = mob, metadata) do
+    if HitStop.stops_walk?(metadata) and not mob.can_escape and
+         not Endure.holds?(:mob, mob.instance_id, mob, false),
+       do: MovementHandler.handle_hit_stop(mob),
+       else: mob
+  end
 
   # A coma hit on a mob already at 1 HP takes nothing but is still active damage.
   defp notify_coma(source, metadata, state) do
@@ -145,7 +157,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       })
     )
 
-    {:noreply, state}
+    {:noreply, maybe_hit_stop(state, metadata)}
   end
 
   @doc """

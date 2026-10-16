@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfBackslidingTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfBacksliding
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   setup :verify_on_exit!
 
@@ -27,6 +28,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfBackslidingTest do
     6 => {151, 150},
     7 => {151, 149}
   }
+
+  describe "endure" do
+    setup do
+      Aesir.TestEtsSetup.setup_ets_tables(%{})
+      stub(Combat, :knockback, fn :player, 1000, _x, _y, 5 -> {:ok, {145, 145}} end)
+      :ok
+    end
+
+    test "leaves the caster unstoppable by damage for 200 ms" do
+      before = System.monotonic_time(:millisecond)
+      TfBacksliding.cast(caster(0), :self, 1, definition())
+      later = System.monotonic_time(:millisecond)
+
+      assert StatusStorage.endure_tick(:player, 1000) in (before + 200)..(later + 200)
+    end
+
+    test "a caster already showing endure keeps it as it is" do
+      StatusStorage.apply_status(:player, 1000, :sc_endure, val1: 1)
+
+      TfBacksliding.cast(caster(0), :self, 1, definition())
+
+      assert StatusStorage.endure_tick(:player, 1000) == nil
+    end
+  end
 
   for {dir, {fx, fy}} <- @facing_cells do
     test "cast/4 blows the caster 5 cells away from facing cell {#{fx}, #{fy}} at dir #{dir}" do

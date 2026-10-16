@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommove do
   NPC Random Move (NPC_RANDOMMOVE).
 
   Requests a short walk to a random traversable cell through the mob session's
-  normal movement path.
+  movement path, as an escape walk that damage cannot stop.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 331,
@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommove do
     with {:ok, destination} <- destination(caster),
          {:ok, {_module, _state, pid}} <- UnitRegistry.get_unit(:mob, caster.instance_id) do
       {x, y} = destination
-      MobSession.move_to(pid, x, y)
+      MobSession.escape_to(pid, x, y)
     end
 
     {:ok, caster}
