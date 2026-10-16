@@ -61,6 +61,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AttackSpeed do
     calculate_delay(aspd)
   end
 
+  @doc "A player's attack motion (status amotion): half its attack delay."
+  @spec amotion_from_stats(map()) :: integer()
+  def amotion_from_stats(stats), do: div(calculate_delay_from_stats(stats), 2)
+
   @doc """
   Checks if enough time has passed since the last attack.
 

@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
   that enemy is put to sleep at 40% plus 10% per level. Renewal sleeps for 18 s,
   pre-renewal for 30 s. Both last 150 s down to 30 s by level, for 12 SP and
   one trap.
+
+  The sleep starts 1 s after the trap fires.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -96,7 +98,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
       duration: sleep_duration(),
       success_rate: 40 + group.level * 10,
       caster_id: group.caster_id,
-      source_type: group.caster_type
+      source_type: group.caster_type,
+      start_delay: 1_000
     )
   end
 

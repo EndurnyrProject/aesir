@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
   enemy within one cell of that enemy and freezes each one it connects with for
   3 s per level. Renewal: the strike ignores flee and the trap costs two traps.
   Pre-renewal: flee applies and it costs one trap.
+
+  The freeze starts the trapper's attack motion plus 100 ms after the blast.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 121,
@@ -88,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
         skip_crit: true,
         typed_results: true
       )
-      |> Enum.each(&freeze(group, &1))
+      |> Enum.each(&freeze(group, &1, caster))
 
       {:ok, Trap.spring(group, now)}
     else
@@ -108,11 +110,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
         Keyword.put(opts, :delivery, :unit)
       )
 
-  defp freeze(group, {unit_type, unit_id}) do
+  # The freeze starts the trapper's attack motion plus 100 ms after the hit.
+  defp freeze(group, {unit_type, unit_id}, caster) do
     StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,
       duration: Enum.at(@freeze_durations, group.level - 1),
       caster_id: group.caster_id,
-      source_type: group.caster_type
+      source_type: group.caster_type,
+      start_delay: Trap.amotion(caster) + 100
     )
   end
 end

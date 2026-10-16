@@ -97,6 +97,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # animation duration matches real attack speed.
     attack_delay_ms: nil,
 
+    # The attack animation length in milliseconds (status amotion): half the
+    # attack delay for a player, the whole delay for a Homunculus, the
+    # monster's own attack motion for a monster.
+    amotion: nil,
+
     # Position data (optional for some combat operations)
     position: nil,
 
@@ -194,6 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           left_hand: WeaponHand.t() | nil,
           attack_range: integer(),
           attack_delay_ms: integer(),
+          amotion: non_neg_integer() | nil,
           position: {integer(), integer()} | nil,
           map_name: String.t() | nil,
           divine_protection_level: integer(),

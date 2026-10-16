@@ -248,7 +248,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         combat_result
         |> apply_poison_rider_on_hit(
           modifier,
-          {:player, attacker.unit_id},
+          attacker,
           {target_type, target_id}
         )
         |> apply_damage_modifier(modifier)
@@ -281,7 +281,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         swing
         |> apply_poison_rider_on_hit(
           modifier,
-          {:player, attacker.unit_id},
+          attacker,
           {target_type, target_id}
         )
         |> apply_damage_modifier(modifier)
@@ -434,7 +434,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         combat_result
         |> apply_poison_rider_on_hit(
           modifier,
-          {:homunculus, attacker.unit_id},
+          attacker,
           {target_type, target.unit_id}
         )
         |> apply_damage_modifier(modifier)
@@ -467,7 +467,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
             combat_result
             |> apply_poison_rider_on_hit(
               modifier,
-              {:mob, attacker.unit_id},
+              attacker,
               {target_type, target_id}
             )
             |> apply_damage_modifier(modifier)
@@ -591,36 +591,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp apply_poison_rider_on_hit(
          {:hit, _damage_result} = result,
          modifier,
-         source,
+         attacker,
          target
        ) do
-    apply_poison_rider(modifier, source, target)
+    apply_poison_rider(modifier, attacker, target)
     result
   end
 
   defp apply_poison_rider_on_hit(
          %HandedAttack{outcome: outcome} = result,
          modifier,
-         source,
+         attacker,
          target
        )
        when outcome in [:hit, :critical] do
-    apply_poison_rider(modifier, source, target)
+    apply_poison_rider(modifier, attacker, target)
     result
   end
 
-  defp apply_poison_rider_on_hit(result, _modifier, _source, _target), do: result
+  defp apply_poison_rider_on_hit(result, _modifier, _attacker, _target), do: result
 
-  defp apply_poison_rider(%{poison: poison}, source, {target_type, target_id})
+  # Poison React's poison starts after the attacker's attack motion.
+  defp apply_poison_rider(%{poison: poison}, attacker, {target_type, target_id})
        when target_type != :skill_unit do
-    {source_type, source_id} = source
-
     case StatusInterpreter.apply_status(target_type, target_id, :sc_poison,
-           caster_id: source_id,
-           source_type: source_type,
+           caster_id: attacker.unit_id,
+           source_type: attacker.unit_type,
            duration: poison.duration,
            val1: poison.level,
-           success_rate: poison.chance
+           success_rate: poison.chance,
+           start_delay: attacker.amotion
          ) do
       :ok ->
         :ok

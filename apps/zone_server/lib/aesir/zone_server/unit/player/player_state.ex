@@ -1041,6 +1041,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       left_hand: state.stats.left_hand,
       attack_range: PlayerStats.attack_range(state.stats),
       attack_delay_ms: AttackSpeed.calculate_delay_from_stats(state.stats),
+      amotion: AttackSpeed.amotion_from_stats(state.stats),
       position: {state.x, state.y},
       map_name: state.map_name,
       divine_protection_level: Learned.learned_level(learned, 22),

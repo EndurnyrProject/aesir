@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
   @caster %MobState{
     instance_id: 1000,
     mob_id: 1002,
-    mob_data: %{element: {:neutral, 1}, race: :formless, modes: []},
+    mob_data: %{element: {:neutral, 1}, race: :formless, modes: [], attack_motion: 500},
     spawn_ref: nil,
     map_name: "trap_hom",
     x: 50,

@@ -18,11 +18,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   """
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -244,4 +246,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
       _ -> :error
     end
   end
+
+  @doc """
+  The trapper's attack motion (status amotion) in milliseconds: half a
+  player's attack delay, a monster's own attack motion.
+  """
+  @spec amotion(PlayerState.t() | MobState.t()) :: non_neg_integer()
+  def amotion(%PlayerState{stats: stats}), do: AttackSpeed.amotion_from_stats(stats)
+
+  def amotion(%MobState{} = mob), do: MobState.get_attack_motion(mob)
 end

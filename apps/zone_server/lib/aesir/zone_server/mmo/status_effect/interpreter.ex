@@ -106,6 +106,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   `no_avoid: true` additionally skips the immunity gates (race, element, boss and
   magic immunity): the application cannot be avoided, only prevented.
 
+  `start_delay: ms` starts the status that many milliseconds later, as
+  `status_change_start`'s delay: the immunity, Fail-list and defense checks run
+  now and the application returns `:ok`; the rest (body-state replacement,
+  end-on-start, overlap, storing) runs at the end of the delay if the target is
+  still in the world and alive. Renewal shortens the duration by the delay.
+  Bleeding ignores it and Stonewait's own wait is its delay.
+
   When a status listed in the definition's `end_return` is active, the
   application ends every such status instead and returns `:ok` without storing.
   """
@@ -195,6 +202,55 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
              duration_override,
              status_params
            ) do
+      start(unit_type, unit_id, status_id, status_params, definition, duration)
+    end
+  end
+
+  # A `start_delay` defers everything after the status defense by that many
+  # milliseconds (status_change_start's `delay`): the application reports
+  # success now, and the status starts at the end of the delay if its target
+  # still lives. Renewal shortens the duration by the delay. Bleeding always
+  # starts at once, and Stonewait's wait is already its own delay.
+  defp start(unit_type, unit_id, status_id, status_params, definition, duration) do
+    case start_delay(status_id, status_params) do
+      0 ->
+        create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
+
+      delay ->
+        duration = delayed_duration(duration, delay)
+        # The caller refreshed before the status existed: the start notifies.
+        status_params = Keyword.put(status_params, :owner_refresh, :notify)
+
+        {:ok, _task} =
+          Task.start(fn ->
+            Process.sleep(delay)
+            start_delayed(unit_type, unit_id, status_id, status_params, duration)
+          end)
+
+        :ok
+    end
+  end
+
+  defp start_delay(status_id, _params) when status_id in [:sc_bleeding, :sc_stonewait], do: 0
+
+  defp start_delay(_status_id, params) do
+    case Keyword.get(params, :start_delay, 0) do
+      delay when is_integer(delay) and delay > 0 -> delay
+      _none -> 0
+    end
+  end
+
+  defp delayed_duration(nil, _delay), do: nil
+
+  defp delayed_duration(duration, delay) do
+    if GameMode.mode() == :renewal, do: max(1, duration - delay), else: duration
+  end
+
+  # The target must still be in the world and alive when the delay ends.
+  defp start_delayed(unit_type, unit_id, status_id, status_params, duration) do
+    with %{} = definition <- Registry.get_definition(status_id),
+         {:ok, {_module, target_state, _pid}} <- UnitRegistry.get_unit(unit_type, unit_id),
+         true <- Unit.living?(target_state) do
       create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
     end
   end

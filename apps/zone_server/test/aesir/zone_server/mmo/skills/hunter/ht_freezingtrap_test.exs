@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -94,7 +95,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   @tag game_mode: :renewal
   test "damages an activator-centered 3x3 area before freezing connected targets" do
     test_pid = self()
-    caster = %PlayerState{character_id: 1000, map_name: "prontera", x: 50, y: 50}
+
+    caster = %PlayerState{
+      character_id: 1000,
+      map_name: "prontera",
+      x: 50,
+      y: 50,
+      stats: %Stats{derived_stats: %{aspd: 150}}
+    }
 
     target = %{instance_id: 2001, map_name: "prontera", hp: 100}
 
@@ -123,6 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
       assert params[:duration] == 9_000
       assert params[:caster_id] == 1000
       assert params[:source_type] == :player
+      assert params[:start_delay] == 600
       :ok
     end)
 
@@ -135,7 +144,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   end
 
   test "same-number mob and Homunculus collision freezes only the typed connected hit" do
-    caster = %PlayerState{character_id: 1000, map_name: "prontera", x: 50, y: 50}
+    caster = %PlayerState{
+      character_id: 1000,
+      map_name: "prontera",
+      x: 50,
+      y: 50,
+      stats: %Stats{derived_stats: %{aspd: 150}}
+    }
 
     target = %{instance_id: 2001, map_name: "prontera", hp: 100}
 
@@ -161,7 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
     caster = %MobState{
       instance_id: 1000,
       mob_id: 1002,
-      mob_data: %{element: {:neutral, 1}, race: :formless, modes: []},
+      mob_data: %{element: {:neutral, 1}, race: :formless, modes: [], attack_motion: 500},
       spawn_ref: nil,
       map_name: "prontera",
       x: 50,

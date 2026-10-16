@@ -272,6 +272,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
       weapon: %{type: :fist, element: elem(state.element, 0), size: state.size},
       attack_range: state.attack_range,
       attack_delay_ms: state.attack_delay_ms,
+      amotion: state.attack_delay_ms,
       position: {state.x, state.y},
       map_name: state.map_name,
       class: :normal,

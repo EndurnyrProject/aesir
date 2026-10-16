@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
   mine is spent whatever the blast does.
 
   Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35), a 4.5 s stun, one trap, a 0.5 s cast plus 0.3 s fixed and a 1 s delay. Pre-renewal: level × (DEX + 75) × (100 + INT)/100, a 5 s stun and an instant cast.
+
+  The stun starts 1 s after the blast.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 116,
@@ -102,7 +104,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
       source_id: group.caster_id,
       source_type: group.caster_type,
       success_rate: 10,
-      duration: stun_duration()
+      duration: stun_duration(),
+      start_delay: 1_000
     )
   end
 

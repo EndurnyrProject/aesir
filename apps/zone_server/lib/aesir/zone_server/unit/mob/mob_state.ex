@@ -470,6 +470,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       },
       attack_range: mob_data.attack_range,
       attack_delay_ms: get_attack_delay(mob_state),
+      amotion: get_attack_motion(mob_state),
       position: {mob_state.x, mob_state.y},
       map_name: mob_state.map_name,
       class: if(is_boss?(mob_state), do: :boss, else: :normal),

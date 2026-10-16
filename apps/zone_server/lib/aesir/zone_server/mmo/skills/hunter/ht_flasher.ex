@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
   A plant boss never sets it off. Renewal: blinds for 18 s, costs two traps.
   Pre-renewal: blinds for 30 s, costs one trap. Both last 150 s down to 30 s by
   level.
+
+  The blindness starts 1 s after the trap fires.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 120,
@@ -80,7 +82,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
       duration: blind_duration(),
       success_rate: 100,
       caster_id: group.caster_id,
-      source_type: group.caster_type
+      source_type: group.caster_type,
+      start_delay: 1_000
     )
   end
 
