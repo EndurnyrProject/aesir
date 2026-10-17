@@ -245,15 +245,15 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
   end
 
   defp prepare_state(state, row_state, target_ref) do
-    {ai_state, initiated_by_self?} =
+    skill_state =
       case row_state do
-        :attack -> {:combat, false}
-        :angry -> {:combat, true}
-        :chase -> {:chase, false}
-        :idle -> {:idle, false}
+        :attack -> :berserk
+        :angry -> :angry
+        :chase -> :rush
+        :idle -> :idle
       end
 
-    state = %{state | ai_state: ai_state, initiated_by_self?: initiated_by_self?}
+    state = %{state | skill_state: skill_state}
 
     case target_ref do
       nil ->

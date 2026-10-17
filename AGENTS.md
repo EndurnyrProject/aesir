@@ -131,9 +131,10 @@ scripts, NPC registry/verifier, warps) and then starts the runtime supervisors.
   - **`unit/player/`** - `PlayerSession` (GenServer) is the **single writer** for a player; all
     mutations route through it via cast/call handlers (movement, combat, skills, inventory, status,
     health, experience, stats, warp, script effects). `PlayerState` is an immutable snapshot.
-  - **`unit/mob/`** - `MobSession` (GenServer, AI tick loop) per mob instance; `AIStateMachine` is a
-    plain functional state machine (patrol/aggro/chase/attack/flee). Note: `gen_state_machine` is a
-    listed dep but is **not** currently used.
+  - **`unit/mob/`** - `MobSession` (GenServer, 1 s lazy AI tick) per mob instance; the map's
+    `Coordinator` drives the hard think per nearby player every 100 ms; `AIStateMachine` is the pure
+    hard-think body over the mob's skill state (idle/walk/berserk/angry/rush/follow). Note: `gen_state_machine` is a listed dep but is
+    **not** currently used.
 - **`mmo/`** - Game mechanics. `combat/` (melee + magic damage, hit/crit, element/race/size mods),
   `skill/` + `skills/` (skill behaviour, catalog, cast/cooldown interpreter, ground units, and the
   individual skill modules), `status_effect/` (definition behaviour, interpreter, registry, ETS

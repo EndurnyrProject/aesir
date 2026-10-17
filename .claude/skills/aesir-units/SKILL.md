@@ -75,9 +75,11 @@ observe another unit without messaging its process:
   sleep-wake / targeting), **`CastingHandler`** (cast lifecycle), **`CombatHandler`**
   (damage/death), **`MovementHandler`** (path/ticks/teleport/displacement). Put logic in
   handlers, never new inline session clauses.
-- The AI loop is self-armed: `{:ai, :tick}` is rescheduled by `AiHandler`; `AiStateMachine`
-  (`unit/mob/ai_state_machine.ex`) is a pure functional patrol/aggro/chase/attack/flee FSM
-  (`gen_state_machine` is a listed dep but intentionally unused).
+- The mob's own `{:ai, :tick}` (1 s, lazy think) is self-armed by `AiHandler`; the hard
+  think is driven per player by `Map.Coordinator` (100 ms); `AIStateMachine`
+  (`unit/mob/ai_state_machine.ex`) is the pure hard-think body over the mob's skill state
+  (`MobState.skill_state`, see `aesir-mobs`; `gen_state_machine` is a listed dep but
+  intentionally unused).
 - Mob cast state is real: `CastingHandler.begin_cast/3` stores the row + timer, completion
   executes through the cast-end check or fails silently, `abort_cast/1` (forced interrupts)
   cancels the timer, broadcasts cancel, applies cooldown, and clears the descriptor. No

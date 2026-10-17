@@ -194,6 +194,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     ServerPubSub.subscribe_to_announcements()
     schedule_item_sweep()
     schedule_broadcast(idle_broadcast_interval())
+    schedule_hard_ai()
 
     {:ok, state}
   end
@@ -465,6 +466,20 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     schedule_broadcast(
       if has_observers, do: broadcast_interval(), else: idle_broadcast_interval()
     )
+
+    {:noreply, state}
+  end
+
+  # The monster hard AI pass, every 100 ms per player on the map
+  # (`MobSupervisor.drive_hard_ai/2`); the mobs' own 1 s tick runs the lazy AI.
+  @impl true
+  def handle_info(:hard_ai_tick, state) do
+    if state.mobs_awake do
+      MobSupervisor.drive_hard_ai(state.map_name, SpatialIndex.get_players_on_map(state.map_name))
+      schedule_hard_ai()
+    else
+      schedule_hard_ai(idle_broadcast_interval())
+    end
 
     {:noreply, state}
   end
@@ -942,6 +957,10 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     do: Process.send_after(self(), :expire_ground_items, @ground_item_sweep_ms)
 
   defp schedule_broadcast(interval), do: Process.send_after(self(), :broadcast_tick, interval)
+
+  @hard_ai_interval 100
+  defp schedule_hard_ai(interval \\ @hard_ai_interval),
+    do: Process.send_after(self(), :hard_ai_tick, interval)
 
   @doc "The per-map delta-snapshot flush interval in milliseconds."
   @spec broadcast_interval() :: pos_integer()

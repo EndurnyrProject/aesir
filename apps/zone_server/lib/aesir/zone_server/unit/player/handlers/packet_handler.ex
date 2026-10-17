@@ -222,7 +222,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   def handle_message(%MoveRequest{dest_x: dest_x, dest_y: dest_y}, state) do
     state
     |> Invincibility.end_on_request(:walk)
-    |> MovementHandler.handle_request_move(dest_x, dest_y)
+    |> MovementHandler.handle_walk_request(dest_x, dest_y)
   end
 
   # ActionRequest - Player action request (protobuf analogue of CZ_REQUEST_ACT 0x0437)

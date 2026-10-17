@@ -211,23 +211,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           |> maybe_trigger_touch()
           |> NavigationHandler.on_moved()
 
-        cond do
-          touched_state.game_state.walk_target != nil ->
-            redirect_walk(touched_state)
-
-          # Schedule the next tick priced by the step it will take, so entering
-          # each cell lines up with the client's per-cell interpolation.
-          remaining_path != [] ->
-            interval =
-              step_delay(touched_state.game_state, {next_x, next_y}, hd(remaining_path))
-
-            {:noreply,
-             %{touched_state | game_state: schedule_step(touched_state.game_state, interval)}}
-
-          true ->
-            finish_walk(touched_state)
-        end
+        continue_walk(touched_state, {next_x, next_y})
     end
+  end
+
+  # The walk goes on from the state the touch and navigation hooks left: a
+  # hook that stopped it schedules nothing; the next tick is priced by the
+  # step it will take, so entering each cell lines up with the client's
+  # per-cell interpolation.
+  defp continue_walk(%{game_state: game_state} = state, from) do
+    cond do
+      game_state.movement_state != :moving -> {:noreply, state}
+      game_state.walk_target != nil -> redirect_walk(state)
+      game_state.walk_path == [] -> finish_walk(state)
+      true -> schedule_next_step(state, from)
+    end
+  end
+
+  defp schedule_next_step(%{game_state: game_state} = state, from) do
+    interval = step_delay(game_state, from, hd(game_state.walk_path))
+    {:noreply, %{state | game_state: schedule_step(game_state, interval)}}
   end
 
   # Path completed: stop and broadcast the standing transition so the client's
@@ -474,6 +477,40 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       MessageRouter.send_to(connection_pid, packet)
       {:noreply, state}
     end
+  end
+
+  @walk_delay_retry_window 2000
+
+  @doc """
+  Handles the client's walk request: a request while the walk delay has less
+  than 2 s left is re-issued one millisecond after the delay ends
+  (`{:movement, {:delayed_walk, x, y}}`, `handle_delayed_walk/3`); otherwise
+  it is `handle_request_move/3`.
+  """
+  @spec handle_walk_request(map(), integer(), integer()) :: {:noreply, map()}
+  def handle_walk_request(%{game_state: game_state} = state, dest_x, dest_y) do
+    mono = System.monotonic_time(:millisecond)
+    remaining = (game_state.walk_delay_until || 0) - mono
+
+    if Interpreter.can_move?(:player, game_state.character_id) and
+         PlayerState.walk_delayed?(game_state, mono) and remaining < @walk_delay_retry_window do
+      Process.send_after(self(), {:movement, {:delayed_walk, dest_x, dest_y}}, remaining + 1)
+      {:noreply, state}
+    else
+      handle_request_move(state, dest_x, dest_y)
+    end
+  end
+
+  @doc """
+  Walks a delayed walk request: the walk starts if the player may move now,
+  else nothing happens.
+  """
+  @spec handle_delayed_walk(map(), integer(), integer()) :: {:noreply, map()}
+  def handle_delayed_walk(%{game_state: game_state} = state, dest_x, dest_y) do
+    if Interpreter.can_move?(:player, game_state.character_id) and
+         not PlayerState.walk_delayed?(game_state, System.monotonic_time(:millisecond)),
+       do: do_request_move(state, game_state, dest_x, dest_y, []),
+       else: {:noreply, state}
   end
 
   defp do_request_move(state, game_state, dest_x, dest_y, opts) do

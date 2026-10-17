@@ -72,12 +72,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedEventTest do
     end
 
     test "a normal attack on a mob attacking someone else from within its range + 1 is norm" do
-      attacking = %{mob_state() | ai_state: :combat, target_ref: {:player, 7}}
+      attacking = %{mob_state() | skill_state: :berserk, target_ref: {:player, 7}}
       normal = Map.put(@hit, :weapon_attack?, true)
 
       hit(10, normal, attacking)
       hit(10, Map.put(@hit, :basic_attack?, true), attacking)
-      hit(10, normal, %{attacking | initiated_by_self?: true})
+      hit(10, normal, %{attacking | skill_state: :angry})
 
       assert_receive {:ai, {:attacked, @attacker, true}}, 400
       assert_receive {:ai, {:attacked, @attacker, false}}, 400

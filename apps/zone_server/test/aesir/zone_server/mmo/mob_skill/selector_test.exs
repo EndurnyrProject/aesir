@@ -15,8 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
 
   defp mob(overrides \\ %{}) do
     base = %{
-      ai_state: :combat,
-      initiated_by_self?: false,
+      skill_state: :berserk,
       hp: 100,
       max_hp: 100,
       target_ref: {:player, 1},
@@ -44,47 +43,59 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
   defp opts(extra \\ []), do: Keyword.merge([now: 0, rng: hit()], extra)
 
   describe "state filter" do
-    test "an :attack-state row fires in :combat when not self-initiated" do
-      mob = mob(%{ai_state: :combat, initiated_by_self?: false})
-
-      assert Selector.select(mob, [row(%{state: :attack})], opts()) ==
+    test "an :attack-state row fires in the berserk state only" do
+      assert Selector.select(mob(%{skill_state: :berserk}), [row(%{state: :attack})], opts()) ==
                {:cast, row(%{state: :attack})}
+
+      assert Selector.select(mob(%{skill_state: :angry}), [row(%{state: :attack})], opts()) == nil
     end
 
-    test "an :attack-state row does NOT fire in :combat when self-initiated (wants :angry)" do
-      mob = mob(%{ai_state: :combat, initiated_by_self?: true})
-
-      assert Selector.select(mob, [row(%{state: :attack})], opts()) == nil
-    end
-
-    test "an :angry-state row fires in :combat when self-initiated" do
-      mob = mob(%{ai_state: :combat, initiated_by_self?: true})
-
-      assert Selector.select(mob, [row(%{state: :angry})], opts()) ==
+    test "an :angry-state row fires in the angry state only" do
+      assert Selector.select(mob(%{skill_state: :angry}), [row(%{state: :angry})], opts()) ==
                {:cast, row(%{state: :angry})}
+
+      assert Selector.select(mob(%{skill_state: :berserk}), [row(%{state: :angry})], opts()) ==
+               nil
     end
 
-    test "an :idle-state row fires in both :idle and :alert" do
-      idle_row = row(%{state: :idle})
+    test "chase, follow, idle, walk, loot and dead rows fire in their own state" do
+      for {row_state, skill_state} <- [
+            chase: :rush,
+            follow: :follow,
+            idle: :idle,
+            walk: :walk,
+            loot: :loot,
+            dead: :dead
+          ] do
+        r = row(%{state: row_state})
+        assert Selector.select(mob(%{skill_state: skill_state}), [r], opts()) == {:cast, r}
+      end
 
-      assert Selector.select(mob(%{ai_state: :idle}), [idle_row], opts()) == {:cast, idle_row}
-      assert Selector.select(mob(%{ai_state: :alert}), [idle_row], opts()) == {:cast, idle_row}
+      assert Selector.select(mob(%{skill_state: :follow}), [row(%{state: :chase})], opts()) ==
+               nil
     end
 
-    test "an :any-state row fires regardless of AI state" do
+    test "an :any-state row fires in every state but dead" do
       any_row = row(%{state: :any})
 
-      for ai_state <- [:idle, :alert, :combat, :chase, :return] do
-        assert Selector.select(mob(%{ai_state: ai_state}), [any_row], opts()) ==
+      for skill_state <- [:idle, :walk, :loot, :berserk, :angry, :rush, :follow] do
+        assert Selector.select(mob(%{skill_state: skill_state}), [any_row], opts()) ==
                  {:cast, any_row}
       end
+
+      assert Selector.select(mob(%{skill_state: :dead}), [any_row], opts()) == nil
     end
 
-    test "a :chase-state row fires in :chase" do
-      chase_row = row(%{state: :chase})
+    test "an :anytarget row fires with a target in every state but dead and loot" do
+      r = row(%{state: :anytarget})
 
-      assert Selector.select(mob(%{ai_state: :chase}), [chase_row], opts()) ==
-               {:cast, chase_row}
+      for skill_state <- [:idle, :walk, :berserk, :angry, :rush, :follow] do
+        assert Selector.select(mob(%{skill_state: skill_state}), [r], opts()) == {:cast, r}
+      end
+
+      assert Selector.select(mob(%{skill_state: :loot}), [r], opts()) == nil
+      assert Selector.select(mob(%{skill_state: :dead}), [r], opts()) == nil
+      assert Selector.select(mob(%{skill_state: :berserk, target_ref: nil}), [r], opts()) == nil
     end
   end
 
@@ -125,6 +136,120 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(%{hp: 30, max_hp: 100}), [r], opts()) == {:cast, r}
     end
 
+    test "HP rates are rounded down before the comparison" do
+      r = row(%{condition: %{type: :myhpltmaxrate, value: 33}})
+
+      assert Selector.select(mob(%{hp: 1, max_hp: 3}), [r], opts()) == {:cast, r}
+    end
+
+    test "myhpinrate fires when the HP rate lies in the band" do
+      r = row(%{condition: %{type: :myhpinrate, value: 20, val1: 40}})
+
+      assert Selector.select(mob(%{hp: 20, max_hp: 100}), [r], opts()) == {:cast, r}
+      assert Selector.select(mob(%{hp: 40, max_hp: 100}), [r], opts()) == {:cast, r}
+      assert Selector.select(mob(%{hp: 19, max_hp: 100}), [r], opts()) == nil
+      assert Selector.select(mob(%{hp: 41, max_hp: 100}), [r], opts()) == nil
+    end
+
+    test "mystatuson/off read the mob's statuses; a mob with none is never off" do
+      on = row(%{condition: %{type: :mystatuson, value: :hiding}})
+      off = row(%{condition: %{type: :mystatusoff, value: :hiding}})
+      anybad_on = row(%{condition: %{type: :mystatuson, value: :anybad}})
+      anybad_off = row(%{condition: %{type: :mystatusoff, value: :anybad}})
+      stone = row(%{condition: %{type: :mystatuson, value: 0}})
+      with_statuses = fn statuses -> opts(mob_statuses: fn %MobState{} -> statuses end) end
+
+      assert Selector.select(mob(), [on], with_statuses.([:sc_hiding])) == {:cast, on}
+      assert Selector.select(mob(), [on], with_statuses.([:sc_blind])) == nil
+      assert Selector.select(mob(), [off], with_statuses.([:sc_blind])) == {:cast, off}
+      assert Selector.select(mob(), [off], with_statuses.([])) == nil
+
+      assert Selector.select(mob(), [anybad_on], with_statuses.([:sc_blind])) ==
+               {:cast, anybad_on}
+
+      assert Selector.select(mob(), [anybad_on], with_statuses.([:sc_hiding])) == nil
+
+      assert Selector.select(mob(), [anybad_off], with_statuses.([:sc_hiding])) ==
+               {:cast, anybad_off}
+
+      assert Selector.select(mob(), [stone], with_statuses.([:sc_stone])) == {:cast, stone}
+    end
+
+    test "friendstatuson/off fire when a friend with/without the status is found" do
+      on = row(%{condition: %{type: :friendstatuson, value: :anybad}})
+      off = row(%{condition: %{type: :friendstatusoff, value: :hiding}})
+      mob = mob(%{instance_id: 9001})
+
+      found = fn expected ->
+        opts(
+          status_friend: fn %MobState{instance_id: 9001}, on?, status ->
+            if {on?, status} == expected, do: {:mob, 9002}
+          end
+        )
+      end
+
+      assert Selector.select(mob, [on], found.({true, :anybad})) == {:cast, on}
+      assert Selector.select(mob, [off], found.({false, :hiding})) == {:cast, off}
+      assert Selector.select(mob, [on], found.(:none)) == nil
+    end
+
+    test "slavelt fires when the living-slave count is below the value" do
+      r = row(%{condition: %{type: :slavelt, value: 3}})
+      mob = mob(%{instance_id: 9001})
+
+      counts = fn count -> opts(count_living_slaves: fn 9001 -> count end) end
+
+      assert Selector.select(mob, [r], counts.(2)) == {:cast, r}
+      assert Selector.select(mob, [r], counts.(3)) == nil
+    end
+
+    test "attackpcgt/ge count the units attacking the mob" do
+      gt = row(%{condition: %{type: :attackpcgt, value: 2}})
+      ge = row(%{condition: %{type: :attackpcge, value: 2}})
+      mob = mob(%{instance_id: 9001})
+
+      attacked_by = fn count -> opts(targeted_count: fn {:mob, 9001} -> count end) end
+
+      assert Selector.select(mob, [gt], attacked_by.(3)) == {:cast, gt}
+      assert Selector.select(mob, [gt], attacked_by.(2)) == nil
+      assert Selector.select(mob, [ge], attacked_by.(2)) == {:cast, ge}
+      assert Selector.select(mob, [ge], attacked_by.(1)) == nil
+    end
+
+    test "masterattacked fires when someone attacks a living master, never without a master" do
+      r = row(%{condition: %{type: :masterattacked}})
+
+      attacked_by = fn count ->
+        opts(
+          targeted_count: fn {:mob, 7} -> count end,
+          living_unit: fn {:mob, 7} -> true end
+        )
+      end
+
+      assert Selector.select(mob(%{master_id: 7}), [r], attacked_by.(1)) == {:cast, r}
+      assert Selector.select(mob(%{master_id: 7}), [r], attacked_by.(0)) == nil
+      assert Selector.select(mob(%{master_id: nil}), [r], attacked_by.(1)) == nil
+
+      gone = opts(targeted_count: fn _ -> 1 end, living_unit: fn {:mob, 7} -> false end)
+      assert Selector.select(mob(%{master_id: 7}), [r], gone) == nil
+    end
+
+    test "mobnearbygt counts the monsters within the visual area, the mob included" do
+      r = row(%{condition: %{type: :mobnearbygt, value: 2}})
+      nearby = fn count -> opts(nearby_mobs: fn %MobState{} -> count end) end
+
+      assert Selector.select(mob(), [r], nearby.(3)) == {:cast, r}
+      assert Selector.select(mob(), [r], nearby.(2)) == nil
+    end
+
+    test "afterskill fires when the mob's last skill use is the given skill" do
+      r = row(%{condition: %{type: :afterskill, value: 19}})
+
+      assert Selector.select(mob(%{last_skill_id: 19}), [r], opts()) == {:cast, r}
+      assert Selector.select(mob(%{last_skill_id: 20}), [r], opts()) == nil
+      assert Selector.select(mob(%{last_skill_id: nil}), [r], opts()) == nil
+    end
+
     test "alchemist fires only for damaged player-owned mobs" do
       r = row(%{condition: %{type: :alchemist}})
 
@@ -136,10 +261,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     test "idle rows stay eligible in combat for player-owned mobs" do
       r = row(%{state: :idle})
 
-      assert Selector.select(mob(%{ai_state: :combat, owner_player_id: 42}), [r], opts()) ==
+      assert Selector.select(mob(%{skill_state: :berserk, owner_player_id: 42}), [r], opts()) ==
                {:cast, r}
 
-      assert Selector.select(mob(%{ai_state: :combat, owner_player_id: nil}), [r], opts()) == nil
+      assert Selector.select(mob(%{skill_state: :berserk, owner_player_id: nil}), [r], opts()) ==
+               nil
     end
 
     test "a periodic rudeattacked row needs at least one counted rude attack" do
@@ -166,11 +292,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(), [r], opts()) == nil
     end
 
-    test "casttargeted fires only when a target exists" do
-      r = row(%{condition: %{type: :casttargeted}})
+    test "the spawn event fires only onspawn rows" do
+      assert Selector.select(mob(), [row()], opts(event: :spawn)) == nil
+    end
 
-      assert Selector.select(mob(%{target_ref: {:player, 42}}), [r], opts()) == {:cast, r}
-      assert Selector.select(mob(%{target_ref: nil}), [r], opts()) == nil
+    test "event conditions never fire on a periodic check" do
+      for type <- [
+            :casttargeted,
+            :skillused,
+            :closedattacked,
+            :longrangeattacked,
+            :groundattacked,
+            :damagedgt,
+            :trickcasting
+          ] do
+        r = row(%{condition: %{type: type, value: 100}})
+        assert Selector.select(mob(%{target_ref: {:player, 42}}), [r], opts()) == nil
+      end
     end
 
     test "slavele fires when the master's living-slave count is at or below the value" do
@@ -202,8 +340,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob, [lt], found.(:none)) == nil
     end
 
-    test "an unsupported condition type never fires" do
-      r = row(%{condition: %{type: :skillused, value: 100}})
+    test "an unknown condition type never fires" do
+      r = row(%{condition: %{type: :no_such_condition, value: 100}})
 
       assert Selector.select(mob(), [r], opts()) == nil
     end

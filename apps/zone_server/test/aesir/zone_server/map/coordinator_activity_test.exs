@@ -174,6 +174,29 @@ defmodule Aesir.ZoneServer.Map.CoordinatorActivityTest do
     end
   end
 
+  describe "hard AI pass" do
+    test "an awake map drives the per-player hard AI every 100 ms, a dormant one every idle tick" do
+      test_pid = self()
+      register_player(:idle, 100)
+
+      stub(MobSupervisor, :drive_hard_ai, fn @map_name, players ->
+        send(test_pid, {:drove, players})
+        :ok
+      end)
+
+      {:noreply, _state} =
+        Coordinator.handle_info(:hard_ai_tick, base_state(mobs_spawned: true, mobs_awake: true))
+
+      assert_received {:drove, [1001]}
+      assert_receive :hard_ai_tick, 200
+
+      {:noreply, _state} =
+        Coordinator.handle_info(:hard_ai_tick, base_state(mobs_spawned: true, mobs_awake: false))
+
+      refute_received {:drove, _players}
+    end
+  end
+
   describe "spawn position" do
     test "an all-zero spawn area lands on a random walkable cell of the map" do
       # rAthena semantics: x/y = 0,0 means anywhere on the map. Cell (0, 0) is a

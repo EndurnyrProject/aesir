@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
     state =
       MobState.new(1, mob_data, spawn_ref, "prontera", 100, 100)
       |> MobState.set_target(@target_id)
-      |> MobState.set_ai_state(:combat)
+      |> MobState.set_state(:berserk)
 
     struct(state, Map.new(overrides))
   end
@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
     assert updated.x == 150
     assert updated.y == 160
     assert updated.target_ref == nil
-    assert updated.ai_state == :idle
+    assert updated.skill_state == :idle
     assert updated.movement_state == :standing
     assert updated.deferred_epoch == 1
 

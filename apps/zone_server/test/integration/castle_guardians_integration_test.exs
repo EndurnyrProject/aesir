@@ -109,8 +109,8 @@ defmodule Aesir.ZoneServer.Integration.CastleGuardiansIntegrationTest do
     assert {:error, :owner_guild} = attack(owner, unit_id)
     assert get_mob_state(mob_pid).hp == mob.hp
 
-    refute AIStateMachine.check_aggro(get_mob_state(mob_pid)).target_ref
-    refute AIStateMachine.check_aggro(get_mob_state(mob_pid)).target_ref
+    refute scan(get_mob_state(mob_pid)).target_ref
+    refute scan(get_mob_state(mob_pid)).target_ref
 
     {outsider, outsider_guild} = guild_player(castle, {x - 1, y})
     :ok = grant_guild_skills(outsider_guild, %{"#{@approval_skill_id}" => 1})
@@ -263,6 +263,9 @@ defmodule Aesir.ZoneServer.Integration.CastleGuardiansIntegrationTest do
            end),
            "eligible combat did not break the guardian"
   end
+
+  # The target search of one hard think, run here on a snapshot of the mob.
+  defp scan(state), do: AIStateMachine.process_ai(state, System.system_time(:millisecond))
 
   defp attack(player, unit_id) do
     state = get_player_state(player.pid)

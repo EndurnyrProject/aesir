@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.AttackIntentTest do
              MobSession.handle_info({:attack_intent, {:player, 1_001}}, state)
 
     assert reacted.target_ref == nil
-    assert reacted.ai_state == :idle
+    assert reacted.skill_state == :idle
   end
 
   test "dead mob rejects an attack intent without changing state" do

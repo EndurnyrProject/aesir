@@ -19,7 +19,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
   @behaviour Aesir.ZoneServer.Unit
 
-  @type ai_state :: :idle | :alert | :combat | :chase | :return
+  @typedoc """
+  The mob skill state: `:berserk`/`:angry` attack (angry when aggressive),
+  `:rush`/`:follow` chase (follow when aggressive), `:idle`, `:walk` (random
+  walk), `:loot` and `:dead`.
+  """
+  @type skill_state :: :idle | :walk | :loot | :dead | :berserk | :angry | :rush | :follow
   @type movement_state :: :standing | :moving | :returning
   @type stat_bonus :: %{
           optional(:def) => integer(),
@@ -69,22 +74,44 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # An escape walk that damage cannot stop; it ends when the walk does.
     can_escape: false,
 
-    # AI state machine
-    ai_state: :idle,
+    # AI state
+    skill_state: :idle,
+    # Whether the mob is in its aggressive (angry) mode: set from the angry
+    # mode on every entry into a non-attack, non-chase state, cleared by an
+    # attacked event, a provoke and a search that finds a target in attack
+    # range. Picks `:angry`/`:follow` over `:berserk`/`:rush` in `set_state/2`.
+    aggressive: false,
+    # The target of the mob's standing attack order and the time (ms) its
+    # attack timer fires; set when the AI orders an attack, cleared when it
+    # stops attacking (target unlock, chase start, a refused order).
+    attack_target: nil,
+    attack_timer_at: nil,
+    # The target the mob is walking to in a chase, and the monotonic time (ms)
+    # a chase walk held by the walk delay resumes at.
+    chase_target: nil,
+    chase_resume_at: nil,
+    # The unit whose provoke last locked the mob's target; a lock onto any
+    # other unit clears it.
+    provoke_flag: nil,
+    # The skill of the mob's last cast, until its next swing (the `afterskill`
+    # condition).
+    last_skill_id: nil,
+    # The AI does not start a random walk before this time (ms).
+    next_walktime: nil,
+    # The last think (ms) at which the mob could move; an immobile mob unlocks
+    # its target 2 s after it.
+    last_canmove: nil,
+    # The last think (ms) that ran the periodic skill check in a non-attack state.
+    last_skillcheck: nil,
+    # The players that have had the mob in their active range since it was
+    # placed on its map; a mob no player has spotted neither wanders nor uses
+    # idle skills under the lazy AI.
+    spotted_by: MapSet.new(),
     ai_awake: true,
     ai_timer_ref: nil,
-    # The cell the mob actually spawned on. AI wander/return anchors here, not
-    # on `spawn_ref.spawn_area`, whose 0,0 means "random cell anywhere".
+    # The cell the mob actually spawned on.
     spawn_point: nil,
     target_ref: nil,
-    # true when aggro was acquired by the aggressive scan (mob walked up to a
-    # target that has not hit it), false when acquired by taking damage. Reads
-    # the `angry` vs `attack` skill-state distinction.
-    initiated_by_self?: false,
-    # true once an attacked event has taken the mob out of its aggressive mode:
-    # its skill state keeps `initiated_by_self?` until its next state change or
-    # attack (`settle_skill_state/1`), which then clears it.
-    left_aggressive?: false,
     # The pending attacked event: the retaliation target of the last landed hit
     # (and of the last "norm" hit, a normal attack on the mob in its attack
     # state from within its attack range + 1), consumed by the next AI think.
@@ -116,8 +143,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     typed_aggro_list: %{},
     typed_aggro_order: [],
     last_action_time: nil,
-    last_movement_end_time: nil,
-    last_idle_movement_time: nil,
     last_attack_time: nil,
     # The AI does not think before this time (ms): after an attack or a cast's
     # end it rests for its attack motion.
@@ -182,13 +207,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           walk_target: {integer(), integer()} | nil,
           pending_step: HitStop.step(),
           can_escape: boolean(),
-          ai_state: ai_state(),
+          skill_state: skill_state(),
+          aggressive: boolean(),
+          attack_target: Ref.t() | nil,
+          attack_timer_at: integer() | nil,
+          chase_target: Ref.t() | nil,
+          chase_resume_at: integer() | nil,
+          provoke_flag: Ref.t() | nil,
+          last_skill_id: integer() | nil,
+          next_walktime: integer() | nil,
+          last_canmove: integer() | nil,
+          last_skillcheck: integer() | nil,
+          spotted_by: MapSet.t(integer()),
           ai_awake: boolean(),
           ai_timer_ref: reference() | nil,
           spawn_point: {integer(), integer()} | nil,
           target_ref: Ref.t() | nil,
-          initiated_by_self?: boolean(),
-          left_aggressive?: boolean(),
           attacked_ref: Ref.t() | nil,
           norm_attacked_ref: Ref.t() | nil,
           attacked_count: non_neg_integer(),
@@ -215,8 +249,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           },
           typed_aggro_order: [Ref.t()],
           last_action_time: integer() | nil,
-          last_movement_end_time: integer() | nil,
-          last_idle_movement_time: integer() | nil,
           last_attack_time: integer() | nil,
           next_think_at: integer() | nil,
           hp: integer(),
@@ -264,7 +296,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       status_effects: %{},
       walk_speed: mob_data.walk_speed,
       view_range: mob_data.skill_range,
-      respawn_delay: spawn_ref.respawn_time
+      respawn_delay: spawn_ref.respawn_time,
+      aggressive: :angry in (mob_data.modes || [])
     }
   end
 
@@ -582,8 +615,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       | walk_path: [],
         movement_state: :standing,
         walk_target: nil,
-        pending_step: nil,
-        last_movement_end_time: System.system_time(:millisecond)
+        pending_step: nil
     }
   end
 
@@ -603,27 +635,67 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   defp active_walk_delay(until, _now), do: until
 
   @doc """
-  Sets the AI state, settling the skill state (`settle_skill_state/1`).
+  Sets the skill state: an attack state (`:berserk`/`:angry`) or a chase state
+  (`:rush`/`:follow`) resolves to its angry form when the mob is aggressive;
+  any other state first resets `aggressive` from the angry mode.
   """
-  @spec set_ai_state(t(), ai_state()) :: t()
-  def set_ai_state(%__MODULE__{} = state, new_ai_state) do
-    settle_skill_state(%{
-      state
-      | ai_state: new_ai_state,
-        last_ai_tick: System.system_time(:second)
-    })
+  @spec set_state(t(), skill_state()) :: t()
+  def set_state(%__MODULE__{aggressive: aggressive} = state, attack)
+      when attack in [:berserk, :angry],
+      do: %{state | skill_state: if(aggressive, do: :angry, else: :berserk)}
+
+  def set_state(%__MODULE__{aggressive: aggressive} = state, chase)
+      when chase in [:rush, :follow],
+      do: %{state | skill_state: if(aggressive, do: :follow, else: :rush)}
+
+  def set_state(%__MODULE__{mob_data: mob_data} = state, skill_state)
+      when skill_state in [:idle, :walk, :loot, :dead] do
+    %{state | skill_state: skill_state, aggressive: :angry in modes(mob_data)}
   end
 
-  @doc """
-  Applies a pending exit from the aggressive mode: a mob that was attacked
-  since its last state change or attack is no longer self-initiated. Called on
-  every AI state change and every attack the mob orders.
-  """
-  @spec settle_skill_state(t()) :: t()
-  def settle_skill_state(%__MODULE__{left_aggressive?: true} = state),
-    do: %{state | initiated_by_self?: false, left_aggressive?: false}
+  defp modes(%{modes: modes}), do: modes || []
+  defp modes(_mob_data), do: []
 
-  def settle_skill_state(%__MODULE__{} = state), do: state
+  @doc """
+  Resets the mob as it leaves its map for a warp: the target, the attack and
+  chase orders, the attacked event and the spotting players are dropped and
+  the mob goes idle.
+  """
+  @spec leave_map(t()) :: t()
+  def leave_map(%__MODULE__{} = state) do
+    %{
+      set_state(state, :idle)
+      | target_ref: nil,
+        attack_target: nil,
+        attack_timer_at: nil,
+        chase_target: nil,
+        chase_resume_at: nil,
+        attacked_ref: nil,
+        norm_attacked_ref: nil,
+        spotted_by: MapSet.new()
+    }
+  end
+
+  @doc "Whether the mob is in a chase state."
+  @spec chasing?(t()) :: boolean()
+  def chasing?(%__MODULE__{skill_state: skill_state}), do: skill_state in [:rush, :follow]
+
+  @doc "Whether the mob's attack timer is armed."
+  @spec attacking?(t()) :: boolean()
+  def attacking?(%__MODULE__{attack_timer_at: at}), do: at != nil
+
+  @doc "Records the attack order on `target_ref`."
+  @spec set_attack_target(t(), Ref.t()) :: t()
+  def set_attack_target(%__MODULE__{} = state, target_ref),
+    do: %{state | attack_target: target_ref}
+
+  @doc "Arms the attack timer to fire at `at` (ms)."
+  @spec arm_attack_timer(t(), integer()) :: t()
+  def arm_attack_timer(%__MODULE__{} = state, at), do: %{state | attack_timer_at: at}
+
+  @doc "Drops the standing attack order and its timer."
+  @spec stop_attack(t()) :: t()
+  def stop_attack(%__MODULE__{} = state), do: %{state | attack_target: nil, attack_timer_at: nil}
 
   @doc """
   Sets the combat target.
@@ -635,39 +707,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   def set_target(%__MODULE__{} = state, target_ref), do: %{state | target_ref: target_ref}
 
   @doc """
-  Records whether the mob initiated combat itself (aggressive scan) or is
-  retaliating after taking damage.
-  """
-  @spec set_initiated(t(), boolean()) :: t()
-  def set_initiated(%__MODULE__{} = state, initiated_by_self?)
-      when is_boolean(initiated_by_self?) do
-    %{state | initiated_by_self?: initiated_by_self?}
-  end
-
-  @doc """
   Stores an attacked event: `attacker_ref` becomes the pending attacker (and the
-  norm attacker when `norm?`), and the mob leaves its aggressive mode. Its
-  skill state stays as it is until it next changes state or attacks
-  (`settle_skill_state/1`), so the think of the event still sees it.
+  norm attacker when `norm?`), and the mob leaves its aggressive mode; its
+  skill state stays as it is until it next changes.
   """
   @spec set_attacked(t(), Ref.t(), boolean()) :: t()
   def set_attacked(%__MODULE__{} = state, attacker_ref, norm?) do
     norm_ref = if norm?, do: attacker_ref, else: state.norm_attacked_ref
-    %{state | attacked_ref: attacker_ref, norm_attacked_ref: norm_ref, left_aggressive?: true}
+    %{state | attacked_ref: attacker_ref, norm_attacked_ref: norm_ref, aggressive: false}
   end
 
-  @doc """
-  The mob skill state the AI state stands for: combat is `:angry` when the mob
-  initiated it, else `:berserk` (the attack state); chase is `:follow` or
-  `:rush` the same way; idle and alert are `:idle`; return is `:walk`.
-  """
-  @spec skill_state(t()) :: :berserk | :angry | :rush | :follow | :idle | :walk
-  def skill_state(%__MODULE__{ai_state: :combat, initiated_by_self?: true}), do: :angry
-  def skill_state(%__MODULE__{ai_state: :combat}), do: :berserk
-  def skill_state(%__MODULE__{ai_state: :chase, initiated_by_self?: true}), do: :follow
-  def skill_state(%__MODULE__{ai_state: :chase}), do: :rush
-  def skill_state(%__MODULE__{ai_state: :return}), do: :walk
-  def skill_state(%__MODULE__{}), do: :idle
+  @doc "The mob's skill state."
+  @spec skill_state(t()) :: skill_state()
+  def skill_state(%__MODULE__{skill_state: skill_state}), do: skill_state
 
   @doc "Clears the pending attacked event."
   @spec clear_attacked(t()) :: t()
@@ -899,7 +951,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       state
       | is_dead: true,
         hp: 0,
-        ai_state: :idle,
+        skill_state: :dead,
+        attack_target: nil,
+        attack_timer_at: nil,
+        chase_target: nil,
         target_ref: nil,
         aggro_list: %{},
         aggro_order: [],

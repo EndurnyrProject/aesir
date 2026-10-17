@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
@@ -148,11 +149,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
-  Sets the mob's AI target.
+  Locks the mob's AI target onto `target_ref` (a taunt; the lock follows the
+  mob's target-change rules), or drops it when `nil`.
   """
   @spec set_target(pid(), tuple() | integer() | nil) :: :ok
   def set_target(pid, target_ref) do
     GenServer.cast(pid, {:ai, {:set_target, target_ref}})
+  end
+
+  @doc """
+  Runs one hard AI think for `player_id`, who has the mob within the active
+  range (the map's per-player pass).
+  """
+  @spec hard_think(pid(), integer()) :: :ok
+  def hard_think(pid, player_id) do
+    GenServer.cast(pid, {:ai, {:hard, player_id}})
+  end
+
+  @doc "Locks the mob's AI target onto its provoker."
+  @spec provoke(pid(), tuple()) :: :ok
+  def provoke(pid, target_ref) do
+    GenServer.cast(pid, {:ai, {:provoke, target_ref}})
   end
 
   @doc "Redirects a current live target atomically inside the mob session."
@@ -275,10 +292,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     schedule_despawn(Map.get(args, :lifetime_ms))
 
     # Set this process as the mob's process
+    now = System.system_time(:millisecond)
+
     updated_state =
       mob_state
       |> MobState.set_process_pid(self())
-      |> Map.put(:ai_awake, awake)
+      |> Map.merge(%{
+        ai_awake: awake,
+        next_walktime: AIStateMachine.next_walktime(now),
+        last_canmove: now,
+        last_skillcheck: now
+      })
 
     # Register in spatial index
     :ok =
@@ -352,6 +376,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   def handle_cast({:ai, {:set_target, target_ref}}, state) do
     AiHandler.handle_set_target(state, target_ref)
+  end
+
+  def handle_cast({:ai, {:provoke, target_ref}}, state) do
+    AiHandler.handle_provoke(state, target_ref)
+  end
+
+  def handle_cast({:ai, {:hard, player_id}}, state) do
+    AiHandler.handle_hard_think(state, player_id)
   end
 
   # Casting: a status apply/tick/expiry, which may recompute the mob's HP
@@ -452,7 +484,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     AiHandler.handle_ai_tick(state)
   end
 
-  # AI: a landed hit's attacked event, at the end of its walk delay.
+  # AI: the attack timer's end (its next swing or skill check).
+  def handle_info({:ai, {:attack_timer, at}}, state) do
+    AiHandler.handle_attack_timer(state, at)
+  end
+
+  def handle_info({:ai, {:chase_resume, at}}, state) do
+    AiHandler.handle_chase_resume(state, at)
+  end
+
   def handle_info({:ai, {:attacked, attacker_ref, norm?}}, state) do
     AiHandler.handle_attacked(state, attacker_ref, norm?)
   end

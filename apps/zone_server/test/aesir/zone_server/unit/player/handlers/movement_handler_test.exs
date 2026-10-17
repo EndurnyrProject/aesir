@@ -205,6 +205,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end
   end
 
+  describe "handle_walk_request/3 walk delay" do
+    test "a request under two seconds of walk delay is re-issued when the delay ends" do
+      mono = System.monotonic_time(:millisecond)
+      state = put_in(idle_state().game_state.walk_delay_until, mono + 30)
+
+      {:noreply, waiting} = MovementHandler.handle_walk_request(state, 51, 50)
+
+      assert waiting.game_state.movement_state == :standing
+      refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
+      assert_receive {:movement, {:delayed_walk, 51, 50}}, 500
+
+      {:noreply, walking} = MovementHandler.handle_delayed_walk(waiting, 51, 50)
+      assert walking.game_state.movement_state == :moving
+    end
+
+    test "a delayed walk that is still delayed does nothing" do
+      mono = System.monotonic_time(:millisecond)
+      state = put_in(idle_state().game_state.walk_delay_until, mono + 60_000)
+
+      {:noreply, unchanged} = MovementHandler.handle_delayed_walk(state, 51, 50)
+
+      assert unchanged.game_state.movement_state == :standing
+      refute_received {:send, :gameplay, {:move_stop, %MoveStop{}}}
+    end
+
+    test "a request two seconds or more before the delay ends is refused at once" do
+      mono = System.monotonic_time(:millisecond)
+      state = put_in(idle_state().game_state.walk_delay_until, mono + 2500)
+
+      {:noreply, refused} = MovementHandler.handle_walk_request(state, 51, 50)
+
+      assert refused.game_state.movement_state == :standing
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1, x: 50, y: 50}}}
+      refute_received {:movement, {:delayed_walk, 51, 50}}
+    end
+
+    test "a request with no delay walks at once" do
+      {:noreply, walking} = MovementHandler.handle_walk_request(idle_state(), 51, 50)
+
+      assert walking.game_state.movement_state == :moving
+    end
+  end
+
   describe "handle_request_move/4 combat disengage" do
     test "a manual move cancels a locked auto-attack loop and clears the timer" do
       stub(Pathfinding, :find_path, fn _map, _from, _to ->

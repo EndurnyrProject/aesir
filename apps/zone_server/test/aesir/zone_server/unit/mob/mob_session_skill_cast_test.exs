@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     state =
       MobState.new(1, mob_data, spawn_ref, "prontera", 100, 100)
       |> MobState.set_target(@target_id)
-      |> MobState.set_ai_state(:combat)
+      |> MobState.set_state(:berserk)
 
     struct(state, Map.new(overrides))
   end
@@ -139,7 +139,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     end
   end
 
-  describe "{:ai, :tick} skill selection" do
+  describe "hard think skill selection" do
     for status <- [:sc_sleep, :sc_freeze, :sc_silence, :sc_stun] do
       test "#{status} blocks a selected timed cast" do
         mob_id = System.unique_integer([:positive])
@@ -150,7 +150,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         reject(&Combat.execute_magic_attack/3)
 
         state = build_mob_state(%{instance_id: mob_id}) |> MobState.set_target(nil)
-        {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
+        {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, state)
 
         assert updated.casting == nil
         assert updated.skill_cooldowns == %{}
@@ -198,7 +198,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       end)
 
       {:noreply, updated} =
-        MobSession.handle_info({:ai, :tick}, build_mob_state(%{instance_id: mob_id}))
+        MobSession.handle_cast(
+          {:ai, {:hard, @target_id}},
+          build_mob_state(%{instance_id: mob_id})
+        )
 
       assert updated.casting == nil
       assert is_integer(updated.skill_cooldowns[19])
@@ -224,11 +227,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :intercepted
       end)
 
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, build_mob_state())
 
       assert_received :melee
       assert updated.last_attack_time != nil
-      assert updated.ai_timer_ref
     end
 
     test "a status applied during timed-cast preparation rejects the commit and falls back to melee" do
@@ -253,7 +255,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       reject(&Combat.execute_magic_attack/3)
       on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
 
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, build_mob_state())
 
       assert updated.casting == nil
       assert updated.last_attack_time != nil
@@ -285,12 +287,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok
       end)
 
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, build_mob_state())
 
       assert %{row: ^row, complete_at: complete_at} = updated.casting
       assert is_integer(complete_at)
       assert updated.skill_cooldowns == %{}
-      assert updated.ai_timer_ref
 
       assert_received {:packet, %SkillCasting{src_id: 1, skill_id: 19, cast_time: 50}}
       assert_receive {:casting, :complete}, 500
@@ -312,7 +313,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       end)
 
       before = System.system_time(:millisecond)
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, build_mob_state())
 
       assert updated.casting == nil
       assert updated.skill_cooldowns[19] >= before + 5_000
@@ -339,7 +340,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok
       end)
 
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, build_mob_state())
 
       assert updated.casting == nil
       assert_received :melee
@@ -351,11 +352,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       reject(&Combat.execute_mob_attack/2)
       reject(&Combat.execute_magic_attack/3)
 
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, state)
 
       assert updated.casting == state.casting
-      assert updated.ai_state == state.ai_state
-      assert updated.ai_timer_ref
+      assert updated.skill_state == state.skill_state
     end
   end
 
@@ -376,7 +376,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
       assert updated.casting == nil
       assert updated.skill_cooldowns[19] >= before + 5_000
-      assert updated.ai_timer_ref
     end
 
     test "an invalidated target aborts cleanly but still sets the cooldown" do
@@ -434,7 +433,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
       assert updated.casting == nil
       assert updated.skill_cooldowns[19] >= before + 5_000
-      assert updated.ai_timer_ref
     end
   end
 
@@ -552,20 +550,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       end)
 
       before = System.system_time(:millisecond)
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, build_mob_state())
 
       assert updated.last_attack_time >= before
     end
 
-    test "a resting mob skips its AI tick and wakes when the rest ends" do
+    test "a resting mob skips its hard think" do
       reject(&MobSkillDb.rows_for/1)
       reject(&Combat.execute_mob_attack/2)
 
       resting = %{build_mob_state() | next_think_at: System.system_time(:millisecond) + 300}
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, resting)
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, resting)
 
-      assert updated.ai_timer_ref
-      assert Process.read_timer(updated.ai_timer_ref) <= 300
+      assert updated.next_think_at == resting.next_think_at
     end
 
     test "a cast's end starts the attack delay" do
@@ -667,7 +664,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       assert updated.casting == nil
     end
 
-    test "an {:ai, :tick} on a generically blocked mid-cast mob leaves the cast running" do
+    test "a hard think on a generically blocked mid-cast mob leaves the cast running" do
       ref = Process.send_after(self(), {:casting, :complete}, 10_000)
 
       state =
@@ -679,10 +676,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
 
       reject(&Combat.execute_magic_attack/3)
 
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, state)
 
       assert updated.casting == state.casting
-      assert updated.ai_timer_ref
       assert is_integer(Process.read_timer(ref))
       Process.cancel_timer(ref)
     end
@@ -711,7 +707,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok
       end)
 
-      {:noreply, updated} = MobSession.handle_info({:ai, :tick}, build_mob_state())
+      {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, @target_id}}, build_mob_state())
 
       assert updated.casting == nil
       assert_received :melee

@@ -246,7 +246,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
 
     assert eventually(fn ->
              state = get_mob_state(mob.pid)
-             state.target_ref == {:player, first.character.id} and state.ai_state == :combat
+             state.target_ref == {:player, first.character.id} and state.skill_state == :berserk
            end)
   end
 

@@ -218,12 +218,12 @@ defmodule Aesir.ZoneServer.Integration.GuildAlliancesIntegrationTest do
 
     {:ok, {_module, _mob, guardian_pid}} = UnitRegistry.get_unit(:mob, guardian_unit_id)
 
-    refute AIStateMachine.check_aggro(get_mob_state(guardian_pid)).target_ref
+    refute scan(get_mob_state(guardian_pid)).target_ref
 
     bystander_char = character_fixture("Bystander", castle.map, {gx - 1, gy})
     _bystander = start_player_session(character: bystander_char)
 
-    scanned = AIStateMachine.check_aggro(get_mob_state(guardian_pid))
+    scanned = scan(get_mob_state(guardian_pid))
     assert scanned.target_ref == {:player, bystander_char.id}
   end
 
@@ -375,6 +375,9 @@ defmodule Aesir.ZoneServer.Integration.GuildAlliancesIntegrationTest do
     b_info = Enum.find(infos, &(&1.guild_id == guild_b))
     assert b_info.relations == []
   end
+
+  # The target search of one hard think, run here on a snapshot of the mob.
+  defp scan(state), do: AIStateMachine.process_ai(state, System.system_time(:millisecond))
 
   defp attack(player, target_id) do
     state = get_player_state(player.pid)

@@ -101,8 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
           |> MobState.advance_deferred_epoch()
           |> MobState.update_position(x, y)
           |> MobState.stop_movement()
-          |> MobState.set_target(nil)
-          |> MobState.set_ai_state(:idle)
+          |> MobState.leave_map()
 
         SpatialIndex.reenter_block(:mob, updated_state.instance_id)
 
@@ -187,6 +186,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       state =
         state
         |> MobState.stop_movement()
+        |> MobState.leave_map()
         |> MobState.update_position(x, y)
 
       Movement.warp_position(:mob, state.instance_id, state, map_name)

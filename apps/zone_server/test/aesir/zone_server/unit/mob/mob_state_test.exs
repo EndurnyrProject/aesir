@@ -64,9 +64,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     def modifiers(_instance, _context), do: %{matk_rate: 100, mdef2_rate: -60}
   end
 
-  defp build_mob_state do
+  defp build_mob_state(opts \\ []) do
     mob_data = %MobDefinition{
       id: 1001,
+      modes: Keyword.get(opts, :modes, []),
       aegis_name: "test_mob",
       name: "Test Mob",
       level: 25,
@@ -150,18 +151,46 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
-  describe "initiated_by_self?" do
-    test "a freshly built mob state did not initiate combat itself" do
+  describe "skill state and aggressive mode" do
+    test "a fresh mob is idle, aggressive only with the angry mode" do
       state = build_mob_state()
+      assert {state.skill_state, state.aggressive} == {:idle, false}
 
-      assert state.initiated_by_self? == false
+      angry = build_mob_state(modes: [:angry])
+      assert angry.aggressive == true
     end
 
-    test "set_initiated/2 toggles the initiated_by_self? flag" do
-      state = build_mob_state()
+    test "set_state/2 resolves the attack and chase states by the aggressive mode" do
+      angry = build_mob_state(modes: [:angry])
+      calm = build_mob_state()
 
-      assert MobState.set_initiated(state, true).initiated_by_self? == true
-      assert MobState.set_initiated(state, false).initiated_by_self? == false
+      assert MobState.set_state(angry, :berserk).skill_state == :angry
+      assert MobState.set_state(angry, :rush).skill_state == :follow
+      assert MobState.set_state(calm, :berserk).skill_state == :berserk
+      assert MobState.set_state(calm, :follow).skill_state == :rush
+    end
+
+    test "entering any other state resets aggressive from the angry mode" do
+      angry = %{build_mob_state(modes: [:angry]) | aggressive: false}
+      assert MobState.set_state(angry, :idle).aggressive == true
+      assert MobState.set_state(angry, :walk).skill_state == :walk
+
+      calm = %{build_mob_state() | aggressive: true}
+      assert MobState.set_state(calm, :idle).aggressive == false
+    end
+
+    test "an attacked event leaves the aggressive mode and keeps the state" do
+      angry = build_mob_state(modes: [:angry]) |> MobState.set_state(:angry)
+      attacked = MobState.set_attacked(angry, {:player, 1}, false)
+
+      assert {attacked.skill_state, attacked.aggressive} == {:angry, false}
+      assert MobState.set_state(attacked, :rush).skill_state == :rush
+    end
+
+    test "death enters the dead state and drops the attack order" do
+      dead = build_mob_state() |> MobState.set_attack_target({:player, 1}) |> MobState.set_dead()
+
+      assert {dead.skill_state, dead.attack_target} == {:dead, nil}
     end
   end
 
@@ -213,19 +242,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
       cleared = MobState.clear_attacked(later)
       assert {cleared.attacked_ref, cleared.norm_attacked_ref} == {nil, nil}
-    end
-  end
-
-  describe "leaving the self-initiated skill state" do
-    test "an attacked mob keeps its skill state until its next state change or attack" do
-      angry = %{build_mob_state() | ai_state: :combat, initiated_by_self?: true}
-      attacked = MobState.set_attacked(angry, {:player, 1}, false)
-
-      assert MobState.skill_state(attacked) == :angry
-      assert MobState.skill_state(MobState.settle_skill_state(attacked)) == :berserk
-      assert MobState.skill_state(MobState.set_ai_state(attacked, :chase)) == :rush
-      assert MobState.skill_state(MobState.set_ai_state(angry, :chase)) == :follow
-      assert MobState.settle_skill_state(angry) == angry
     end
   end
 

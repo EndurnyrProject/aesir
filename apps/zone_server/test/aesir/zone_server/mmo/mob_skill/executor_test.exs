@@ -200,6 +200,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     :rand.seed(:exsss, {seed, seed + 1, seed + 2})
   end
 
+  # MG_FIREBOLT (range 9): a real skill the random target searches by.
+  defp random_row, do: row(%{target: :randomtarget, skill: "MG_FIREBOLT", skill_id: 19})
+
+  defp living_player(id),
+    do: PlayerStateFixture.build(%{character_id: id, map_name: @map, x: 101, y: 100, stats: %{}})
+
   defp player_state(id, action_state \\ :idle, hp \\ 100) do
     %PlayerState{
       character_id: id,
@@ -312,6 +318,34 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert Executor.resolve_target(fighter(%{}), friend_row) == {:ok, {:unit, :mob, 6003}}
     end
 
+    test ":friend under friendstatuson is the last non-enemy living mob in block order with the status" do
+      stub(SpatialIndex, :units_in_area, fn @map, 92, 92, 108, 108 ->
+        [{:player, 42}, {:mob, 5001}, {:mob, 6001}, {:mob, 6002}, {:mob, 6003}, {:mob, 6004}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 5001 -> {:ok, {MobState, fighter(%{}), self()}}
+        :mob, 6001 -> {:ok, {MobState, fighter(%{instance_id: 6001}), self()}}
+        :mob, 6002 -> {:ok, {MobState, fighter(%{instance_id: 6002}), self()}}
+        :mob, 6003 -> {:ok, {MobState, fighter(%{instance_id: 6003}), self()}}
+        :mob, 6004 -> {:ok, {MobState, fighter(%{instance_id: 6004}), self()}}
+      end)
+
+      for id <- [6001, 6002] do
+        :ok = UnitRegistry.register_unit(:mob, id, MobState, fighter(%{instance_id: id}), self())
+        :ok = StatusStorage.apply_status(:mob, id, :sc_blind)
+      end
+
+      on_exit(fn -> Enum.each([6001, 6002], &StatusStorage.clear_unit_statuses(:mob, &1)) end)
+
+      on = row(%{target: :friend, condition: %{type: :friendstatuson, value: :anybad}})
+      off = row(%{target: :friend, condition: %{type: :friendstatusoff, value: :anybad}})
+
+      assert Executor.resolve_target(fighter(%{}), on) == {:ok, {:unit, :mob, 6002}}
+      assert Executor.resolve_target(fighter(%{}), off) == {:ok, {:unit, :mob, 6004}}
+      assert Executor.status_friend(fighter(%{}), true, :hiding) == nil
+    end
+
     test ":friend under friendhpltmaxrate lets a summon pick a dead player at 0%" do
       stub(SpatialIndex, :units_in_area, fn @map, 92, 92, 108, 108 ->
         [{:mob, 6001}, {:player, 77}, {:player, 78}]
@@ -368,46 +402,68 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     test ":randomtarget rolls over living enemies in block order, at most the first 30" do
       ids = Enum.to_list(1..31)
 
-      stub(SpatialIndex, :units_in_area, fn @map, 90, 90, 110, 110 ->
-        [{:mob, 6001} | Enum.map(ids, &{:player, &1})]
+      stub(SpatialIndex, :units_in_area, fn @map, 91, 91, 109, 109 ->
+        [{:mob, 5001}, {:mob, 6001} | Enum.map(ids, &{:player, &1})]
       end)
 
-      stub(UnitRegistry, :get_unit, fn :player, id ->
-        {:ok, {PlayerState, player_state(id), self()}}
+      stub(UnitRegistry, :get_unit, fn
+        :player, id -> {:ok, {PlayerState, living_player(id), self()}}
+        :mob, 6001 -> {:ok, {MobState, fighter(%{instance_id: 6001}), self()}}
       end)
 
       seed_rolls([{30, 30}])
 
-      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
-               {:ok, {:unit, :player, 30}}
+      assert Executor.resolve_target(fighter(%{}), random_row()) == {:ok, {:unit, :player, 30}}
 
       seed_rolls([{30, 1}])
 
-      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
-               {:ok, {:unit, :player, 1}}
+      assert Executor.resolve_target(fighter(%{}), random_row()) == {:ok, {:unit, :player, 1}}
     end
 
-    test ":randomtarget resolves to a player in skill range" do
-      stub(SpatialIndex, :units_in_area, fn @map, 90, 90, 110, 110 -> [{:player, 7}] end)
+    test ":randomtarget searches the skill's own cast range, not the mob's" do
+      stub(SpatialIndex, :units_in_area, fn @map, 91, 91, 109, 109 -> [{:player, 7}] end)
 
       stub(UnitRegistry, :get_unit, fn :player, 7 ->
-        {:ok, {PlayerState, player_state(7), self()}}
+        {:ok, {PlayerState, living_player(7), self()}}
       end)
 
-      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
-               {:ok, {:unit, :player, 7}}
+      assert Executor.resolve_target(fighter(%{}), random_row()) == {:ok, {:unit, :player, 7}}
+      assert Executor.skill_cast_range(random_row()) == {:ok, 9}
+
+      assert Executor.resolve_target(fighter(%{}), row(%{target: :randomtarget})) ==
+               {:error, :unknown_skill}
+    end
+
+    test ":randomtarget skips a concealed player and a non-enemy" do
+      stub(SpatialIndex, :units_in_area, fn @map, 91, 91, 109, 109 ->
+        [{:player, 7}, {:mob, 6001}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 7 -> {:ok, {PlayerState, living_player(7), self()}}
+        :mob, 6001 -> {:ok, {MobState, fighter(%{instance_id: 6001}), self()}}
+      end)
+
+      :ok = StatusStorage.apply_status(:player, 7, :sc_hiding)
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, 7) end)
+
+      assert Executor.resolve_target(fighter(%{}), random_row()) == {:error, :no_target}
+
+      :ok = StatusStorage.remove_status(:player, 7, :sc_hiding)
+
+      assert Executor.resolve_target(fighter(%{}), random_row()) == {:ok, {:unit, :player, 7}}
     end
 
     test ":randomtarget selects a living Homunculus when it is the only candidate" do
       gid = 1_500_007
 
-      stub(SpatialIndex, :units_in_area, fn @map, 90, 90, 110, 110 -> [{:homunculus, gid}] end)
+      stub(SpatialIndex, :units_in_area, fn @map, 91, 91, 109, 109 -> [{:homunculus, gid}] end)
 
       stub(UnitRegistry, :get_unit, fn :homunculus, ^gid ->
         {:ok, {HomunculusState, homunculus_state(gid, 100), self()}}
       end)
 
-      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
+      assert Executor.resolve_target(fighter(%{}), random_row()) ==
                {:ok, {:unit, :homunculus, gid}}
     end
 
@@ -415,7 +471,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       dead_gid = 1_500_008
       stale_gid = 1_500_009
 
-      stub(SpatialIndex, :units_in_area, fn @map, 90, 90, 110, 110 ->
+      stub(SpatialIndex, :units_in_area, fn @map, 91, 91, 109, 109 ->
         [{:homunculus, dead_gid}, {:homunculus, stale_gid}]
       end)
 
@@ -427,25 +483,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
           {:error, :not_found}
       end)
 
-      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
-               {:error, :no_target}
+      assert Executor.resolve_target(fighter(%{}), random_row()) == {:error, :no_target}
     end
 
     test ":randomtarget excludes an indexed corpse in skill range" do
-      stub(SpatialIndex, :units_in_area, fn @map, 90, 90, 110, 110 -> [{:player, 7}] end)
+      stub(SpatialIndex, :units_in_area, fn @map, 91, 91, 109, 109 -> [{:player, 7}] end)
 
       stub(UnitRegistry, :get_unit, fn :player, 7 ->
-        {:ok, {PlayerState, player_state(7, :dead, 0), self()}}
+        {:ok, {PlayerState, %{living_player(7) | action_state: :dead}, self()}}
       end)
 
-      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) == {:error, :no_target}
+      assert Executor.resolve_target(fighter(%{}), random_row()) == {:error, :no_target}
     end
 
     test ":randomtarget errors when no player is in range" do
-      stub(SpatialIndex, :units_in_area, fn @map, 90, 90, 110, 110 -> [] end)
+      stub(SpatialIndex, :units_in_area, fn @map, 91, 91, 109, 109 -> [] end)
 
-      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
-               {:error, :no_target}
+      assert Executor.resolve_target(fighter(%{}), random_row()) == {:error, :no_target}
     end
 
     test ":around resolves to a ground cell at the caster" do
@@ -478,6 +532,42 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     test ":around5 with no target errors" do
       assert Executor.resolve_target(mob(%{target_ref: nil}), row(%{target: :around5})) ==
                {:error, :no_target}
+    end
+  end
+
+  describe "count_targeting/1 and count_nearby_mobs/1" do
+    test "counts players, monsters and homunculi with an attack order on the unit" do
+      stub(UnitRegistry, :list_units_by_type, fn
+        :player -> [1, 2]
+        :mob -> [6001, 6002]
+        :homunculus -> [1_500_007]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 1 ->
+          {:ok, {PlayerState, %{living_player(1) | combat_target_id: 5001}, self()}}
+
+        :player, 2 ->
+          {:ok, {PlayerState, living_player(2), self()}}
+
+        :mob, 6001 ->
+          {:ok, {MobState, fighter(%{instance_id: 6001, attack_target: {:mob, 5001}}), self()}}
+
+        :mob, 6002 ->
+          {:ok, {MobState, fighter(%{instance_id: 6002, attack_target: {:player, 1}}), self()}}
+
+        :homunculus, gid ->
+          {:ok, {HomunculusState, %{homunculus_state(gid, 100) | target: {:mob, 5001}}, self()}}
+      end)
+
+      assert Executor.count_targeting({:mob, 5001}) == 3
+      assert Executor.count_targeting({:mob, 7}) == 0
+    end
+
+    test "counts the monsters within 14 cells, the mob included" do
+      stub(SpatialIndex, :get_units_in_area, fn :mob, @map, 86, 86, 114, 114 -> [5001, 6001] end)
+
+      assert Executor.count_nearby_mobs(fighter(%{})) == 2
     end
   end
 

@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Pathfinding do
   """
 
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Unit.MovementEngine
 
   defmodule Node do
@@ -29,7 +30,8 @@ defmodule Aesir.ZoneServer.Pathfinding do
   or {:error, :no_path} if no valid path exists.
 
   Options are forwarded to `Cell.step_traversable?/4`, e.g. `profile: :mob`
-  fences a mob against icewall band crossings.
+  fences a mob against icewall band crossings. `cells: :walls` paths through
+  every cell but walls (a reach check), instead of walkable cells only.
   """
   @spec find_path(
           Aesir.ZoneServer.Map.MapData.t(),
@@ -46,7 +48,7 @@ defmodule Aesir.ZoneServer.Pathfinding do
       not valid_position?(map_data, goal_x, goal_y) ->
         {:error, :invalid_goal}
 
-      not walkable?(map_data, goal_x, goal_y) ->
+      not walkable?(map_data, goal_x, goal_y, opts) ->
         {:error, :goal_not_walkable}
 
       start_x == goal_x and start_y == goal_y ->
@@ -114,8 +116,28 @@ defmodule Aesir.ZoneServer.Pathfinding do
   defp should_skip_neighbor?(neighbor_pos, closed_set, map_data, current, nx, ny, opts) do
     MapSet.member?(closed_set, neighbor_pos) or
       not valid_position?(map_data, nx, ny) or
-      not Cell.step_traversable?(map_data.name, {current.x, current.y}, {nx, ny}, opts)
+      not step_open?(map_data, {current.x, current.y}, {nx, ny}, opts)
   end
+
+  defp step_open?(map_data, from, to, opts) do
+    case Keyword.get(opts, :cells) do
+      :walls -> wall_step?(map_data, from, to)
+      _walkable -> Cell.step_traversable?(map_data.name, from, to, opts)
+    end
+  end
+
+  # A step blocked by walls only; a diagonal step also needs both cells it cuts
+  # across to be free of walls.
+  defp wall_step?(map_data, {from_x, from_y}, {to_x, to_y}) do
+    dx = to_x - from_x
+    dy = to_y - from_y
+
+    not wall?(map_data, to_x, to_y) and
+      (dx == 0 or dy == 0 or
+         (not wall?(map_data, from_x + dx, from_y) and not wall?(map_data, from_x, from_y + dy)))
+  end
+
+  defp wall?(map_data, x, y), do: MapData.check_cell(map_data, x, y, :chk_wall)
 
   defp update_neighbor_if_better(
          {nx, ny},
@@ -195,8 +217,11 @@ defmodule Aesir.ZoneServer.Pathfinding do
     x >= 0 and x < map_data.xs and y >= 0 and y < map_data.ys
   end
 
-  defp walkable?(map_data, x, y) do
-    Cell.traversable?(map_data.name, x, y)
+  defp walkable?(map_data, x, y, opts) do
+    case Keyword.get(opts, :cells) do
+      :walls -> not wall?(map_data, x, y)
+      _walkable -> Cell.traversable?(map_data.name, x, y)
+    end
   end
 
   @doc """

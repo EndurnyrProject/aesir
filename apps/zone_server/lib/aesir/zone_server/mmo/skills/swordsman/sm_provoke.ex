@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -52,15 +53,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
       duration: duration
     ]
 
-    with {:ok, _pid, target, unit_type} <- TargetResolver.resolve(target_id),
+    with {:ok, pid, target, unit_type} <- TargetResolver.resolve(target_id),
          true <- lands?(caster, target, level),
          :ok <- StatusInterpreter.apply_status(unit_type, target_id, :sc_provoke, params) do
+      taunt(unit_type, pid, caster)
       {:ok, caster}
     else
       false -> {:ok, caster}
       {:error, _reason} = error -> error
     end
   end
+
+  # A provoked monster locks its target onto the provoker.
+  defp taunt(:mob, pid, caster) do
+    caster_ref = {caster.__struct__.get_unit_type(caster), caster.__struct__.get_unit_id(caster)}
+    MobSession.provoke(pid, caster_ref)
+  end
+
+  defp taunt(_unit_type, _pid, _caster), do: :ok
 
   # The taunt has to out-roll the level gap between caster and victim: a caster
   # far above its target effectively never misses, one far below effectively

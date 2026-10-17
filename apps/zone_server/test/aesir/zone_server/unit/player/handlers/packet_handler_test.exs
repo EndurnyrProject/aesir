@@ -153,7 +153,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
 
     test "a player outside any room moves normally", %{state: state} do
       free = put_in(state.game_state.waiting_room, nil)
-      expect(MovementHandler, :handle_request_move, fn s, 50, 50 -> {:noreply, s} end)
+      expect(MovementHandler, :handle_walk_request, fn s, 50, 50 -> {:noreply, s} end)
 
       assert {:noreply, ^free} =
                PacketHandler.handle_message(%MoveRequest{dest_x: 50, dest_y: 50}, free)

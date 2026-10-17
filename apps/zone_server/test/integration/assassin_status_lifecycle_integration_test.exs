@@ -581,7 +581,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
         |> Map.put(:spawn_tick_pending?, false)
         |> Map.put(:last_attack_time, nil)
         |> Map.put(:target_ref, {:player, target.character.id})
-        |> Map.put(:ai_state, :combat)
+        |> Map.put(:skill_state, :berserk)
       end)
 
     :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)

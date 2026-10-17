@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
 
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Starts the mob supervisor for a specific map.
@@ -94,6 +96,43 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
     map_name
     |> get_mob_processes()
     |> Enum.each(&MobSession.sleep/1)
+  end
+
+  @active_ai_range 18
+
+  @doc """
+  The map's per-player hard AI pass (`MobSession.hard_think/2`): for each of
+  `player_ids` on `map_name`, every mob within the square of the visual area
+  plus the active range (14 + 4 cells) around the player gets one hard think
+  from that player.
+  A mob near several players thinks once per player.
+  """
+  @spec drive_hard_ai(String.t(), [integer()]) :: :ok
+  def drive_hard_ai(map_name, player_ids) do
+    Enum.each(player_ids, fn player_id ->
+      case SpatialIndex.get_unit_position(:player, player_id) do
+        {:ok, {x, y, ^map_name}} ->
+          :mob
+          |> SpatialIndex.get_units_in_area(
+            map_name,
+            x - @active_ai_range,
+            y - @active_ai_range,
+            x + @active_ai_range,
+            y + @active_ai_range
+          )
+          |> Enum.each(&hard_think(&1, player_id))
+
+        _other ->
+          :ok
+      end
+    end)
+  end
+
+  defp hard_think(instance_id, player_id) do
+    case UnitRegistry.get_unit(:mob, instance_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) -> MobSession.hard_think(pid, player_id)
+      _other -> :ok
+    end
   end
 
   @doc """

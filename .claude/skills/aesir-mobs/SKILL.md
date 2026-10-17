@@ -18,12 +18,22 @@ Parity"). A mob row naming a skill with no module is skipped, which is itself a 
   (two-axis: boss-flag vs MVP).
 - Spawns: `priv/db/<mode>/spawns/<map>.yml` (`mix aesir.import.spawns`); map `Coordinator` owns
   spawning and the death path.
-- Runtime: `unit/mob/mob_session.ex` — one GenServer per mob instance with a self-armed AI
-  tick loop; `AiStateMachine` is a pure functional state machine (patrol/aggro/chase/attack/
-  flee). MobSession is a routing shell over the handlers in `unit/mob/handlers/` — `AiHandler`
-  (tick/sleep-wake/targeting), `CastingHandler` (cast lifecycle), `CombatHandler` (damage/
-  death), `MovementHandler` (path/ticks/teleport/displacement). Put logic in handlers, never
-  new inline session clauses (`session_hygiene_test` guards this). See `aesir-units` for the
+- Runtime: `unit/mob/mob_session.ex` — one GenServer per mob instance. The hard think
+  (`AIStateMachine.process_ai/3`) is driven per player by the map: `Map.Coordinator`'s
+  100 ms `:hard_ai_tick` runs `MobSupervisor.drive_hard_ai/2`, sending `{:ai, {:hard,
+  player_id}}` to every mob within 18 cells of each player (a mob near two players
+  thinks twice). The mob's own 1 s `{:ai, :tick}` runs the lazy think (unlock, random walk
+  and idle skills for a spotted mob); the attack timer and a walk-delayed chase resume are
+  self-armed messages; the attacked event thinks once. The mob carries its skill state (`MobState.skill_state`:
+  `idle/walk/loot/dead/berserk/angry/rush/follow`, set only through `MobState.set_state/2`,
+  which resolves attack/chase to their angry forms from `aggressive`) and the AI body is
+  one ordered pass: target validity, attacked event, search, random walk or attack/chase/
+  immobile fallback. MobSession is a routing shell over the handlers in `unit/mob/handlers/`
+  — `AiHandler` (tick/sleep-wake/targeting), `CastingHandler` (cast lifecycle),
+  `CombatHandler` (damage/death), `MovementHandler` (path/ticks/teleport/displacement). Put
+  logic in handlers, never new inline session clauses (`session_hygiene_test` guards this).
+  Tests build mob states with `awake: false` (no tick at all); a test that wants one hard
+  think sends `{:ai, {:hard, player_id}}` (`AiHandler.handle_hard_think/2`). See `aesir-units` for the
   full shell/handler + single-writer model shared with `PlayerSession`.
 - Mob statuses share the player `StatusStorage`; mob vitals never touch `UnitRegistry`.
 - Mobs have real cast state via `CastingHandler`: `begin_cast/3` / `abort_cast/1` (forced

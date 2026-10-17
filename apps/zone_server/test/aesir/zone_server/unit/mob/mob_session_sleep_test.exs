@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
         | movement_state: :moving,
           walk_path: [{51, 50}],
           target_ref: {:player, 99},
-          ai_state: :chase
+          skill_state: :rush
       }
 
       assert {:noreply, slept, :hibernate} = MobSession.handle_cast({:ai, :sleep}, state)
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
       assert slept.movement_state == :standing
       assert slept.walk_path == []
       assert slept.target_ref == nil
-      assert slept.ai_state == :idle
+      assert slept.skill_state == :idle
     end
 
     test "{:ai, :sleep} on an already-sleeping mob is a no-op" do

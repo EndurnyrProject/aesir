@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedThinkTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -25,6 +27,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedThinkTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  # A private seeded status table keeps another async test's status on the
+  # same mob instance id from leaking into this file.
+  setup :setup_ets_tables
 
   @first {:player, 42}
   @second {:player, 43}
@@ -97,9 +103,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedThinkTest do
 
     stub(StatusInterpreter, :can_use_skill?, fn :mob, 1, 19 -> false end)
     stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
-    state = %{mob_state() | ai_state: :combat, target_ref: @first, attacked_count: 1}
+    state = %{mob_state() | skill_state: :berserk, target_ref: @first, attacked_count: 1}
 
-    {:noreply, updated} = MobSession.handle_info({:ai, :tick}, state)
+    {:noreply, updated} = MobSession.handle_cast({:ai, {:hard, 42}}, state)
 
     assert updated.casting == nil
     assert updated.attacked_count == 0
@@ -108,11 +114,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedThinkTest do
   test "the event think and a tick within one attack delay attack once" do
     stub(MobSkillDb, :rows_for, fn 1001 -> [] end)
     expect(Combat, :execute_mob_attack, 1, fn _state, @first -> :ok end)
-    state = %{mob_state() | ai_state: :combat, target_ref: @first}
+    state = %{mob_state() | skill_state: :berserk, target_ref: @first}
 
     {:noreply, after_event} = attacked(state, @first)
-    {:noreply, resting} = MobSession.handle_info({:ai, :tick}, after_event)
-    {:noreply, _rested} = MobSession.handle_info({:ai, :tick}, %{resting | next_think_at: nil})
+    {:noreply, resting} = MobSession.handle_cast({:ai, {:hard, 42}}, after_event)
+
+    {:noreply, _rested} =
+      MobSession.handle_cast({:ai, {:hard, 42}}, %{resting | next_think_at: nil})
 
     assert is_integer(after_event.last_attack_time)
   end
@@ -121,7 +129,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedThinkTest do
     do: MobSession.handle_info({:ai, {:attacked, attacker, false}}, state)
 
   defp aggressive_mob do
-    %{mob_state() | ai_state: :combat, target_ref: @first, initiated_by_self?: true}
+    %{mob_state() | skill_state: :angry, aggressive: true, target_ref: @first}
   end
 
   defp angry_row do

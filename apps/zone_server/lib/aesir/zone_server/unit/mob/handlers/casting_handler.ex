@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
       MobSkillExecutor.execute(state, row)
 
       {:ok,
-       state
+       %{state | last_skill_id: row.skill_id}
        |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
        |> start_attack_delay()
        |> MobState.rest(now)}
@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
         timer_ref: timer_ref
       }
 
-      {:ok, MobState.set_casting(state, casting)}
+      {:ok, MobState.set_casting(%{state | last_skill_id: row.skill_id}, casting)}
     else
       MobSkillExecutor.broadcast_cast_cancel(state)
       {:rejected, state}

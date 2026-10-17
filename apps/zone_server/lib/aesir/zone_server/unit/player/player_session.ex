@@ -839,6 +839,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     MovementHandler.handle_step(timer, state)
   end
 
+  def handle_info({:movement, {:delayed_walk, x, y}}, state) do
+    MovementHandler.handle_delayed_walk(state, x, y)
+  end
+
   def handle_info({:movement, :movement_completed}, %{game_state: game_state} = state) do
     # Save position to database asynchronously
     CharacterPersistence.update_position(

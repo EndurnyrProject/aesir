@@ -1,8 +1,10 @@
 defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   @moduledoc """
-  Handles a mob's AI loop: the periodic `{:ai, :tick}`, sleep/wake suspension
-  of the loop while its map has no players, and AI target assignment.
-  Extracted from MobSession to improve modularity and maintainability.
+  Handles a mob's AI loop: the hard think the map sends per nearby player
+  (`{:ai, {:hard, player_id}}`), the mob's own 1 s `{:ai, :tick}` (the lazy
+  think), the attack timer and chase resume messages the thinks arm, the
+  attacked event's think, sleep/wake suspension of the loop while its map has
+  no players, and AI target locks.
 
   Cross-references `Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler` to gate
   and abort a locked AI tick and to start a cast picked by skill selection;
@@ -19,48 +21,147 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  # AI tick interval in milliseconds
+  # The lazy AI runs once per second on the mob's own tick; the hard AI is
+  # driven per player by the map (`Map.Coordinator`), which sends a hard think
+  # to every mob within the visual area plus the active range of each player.
   @ai_tick_interval 1000
+  @skill_interval 1000
+  @hard_think_guard 200
 
   @doc """
-  Processes a periodic `{:ai, :tick}`: dead and dormant mobs drop it, a
-  casting mob stays locked, a resting mob (`MobState.thinking?/2`) waits until
-  its rest ends, and otherwise runs skill selection/AI and reschedules the next
-  tick.
+  Processes the periodic `{:ai, :tick}`: dead and dormant mobs drop it, any
+  other mob runs the lazy think (`lazy_think/1`) and reschedules the tick a
+  second later.
   """
   @spec handle_ai_tick(MobState.t()) :: {:noreply, MobState.t()}
   def handle_ai_tick(state) do
     cond do
-      state.is_dead ->
-        # Dead mobs don't process AI
-        {:noreply, state}
+      state.is_dead -> {:noreply, state}
+      not state.ai_awake -> {:noreply, state}
+      true -> {:noreply, state |> timed(&lazy_think/1) |> schedule_ai_tick()}
+    end
+  end
 
-      not state.ai_awake ->
-        # A tick that raced a {:ai, :sleep}; drop it without rescheduling
-        {:noreply, state}
+  @doc """
+  Processes an `{:ai, {:hard, player_id}}` cast from the map's per-player pass:
+  the player spots the mob, which runs the hard think (`think/1`); a mob near
+  several players thinks once per player. Dead and dormant mobs drop it.
+  """
+  @spec handle_hard_think(MobState.t(), integer()) :: {:noreply, MobState.t()}
+  def handle_hard_think(%MobState{is_dead: true} = state, _player_id), do: {:noreply, state}
+  def handle_hard_think(%MobState{ai_awake: false} = state, _player_id), do: {:noreply, state}
 
-      state.casting != nil ->
-        # A casting mob is locked: no movement, no melee, no re-selection.
-        # Completion is driven by the separate {:casting, :complete} timer.
-        {:noreply, schedule_ai_tick(state)}
+  def handle_hard_think(state, player_id),
+    do: {:noreply, timed(state, &(&1 |> spot(player_id) |> think()))}
 
-      not MobState.thinking?(state, System.system_time(:millisecond)) ->
-        # Resting after an attack or a cast's end: think again once it passes.
-        rest = state.next_think_at - System.system_time(:millisecond)
-        {:noreply, schedule_ai_tick(state, min(max(rest, 1), @ai_tick_interval))}
+  @doc """
+  Processes the `{:ai, {:attack_timer, at}}` message of the attack timer armed
+  for `at`; a stale one (the timer was re-armed or dropped since) is ignored.
+  The end of the attack timer cancels the attack and unlocks a target that is
+  gone or no longer visible; otherwise the whole hard think runs, whether or
+  not a player is near.
+  """
+  @spec handle_attack_timer(MobState.t(), integer()) :: {:noreply, MobState.t()}
+  def handle_attack_timer(%MobState{attack_timer_at: at} = state, at) do
+    state = %{state | attack_timer_at: nil}
+
+    if AIStateMachine.attack_target_visible?(state),
+      do: {:noreply, timed(state, &think/1)},
+      else: {:noreply, AIStateMachine.unlock_target(MobState.stop_attack(state), now())}
+  end
+
+  def handle_attack_timer(state, _at), do: {:noreply, state}
+
+  @doc """
+  Processes the `{:ai, {:chase_resume, at}}` message of a chase walk waiting
+  for the walk delay that ends at `at`; a stale one is ignored. The walk starts
+  once the delay has passed and the mob may move; a still-running delay books
+  the resume again.
+  """
+  @spec handle_chase_resume(MobState.t(), integer()) :: {:noreply, MobState.t()}
+  def handle_chase_resume(%MobState{chase_resume_at: at} = state, at),
+    do: {:noreply, timed(state, &AIStateMachine.resume_chase/1)}
+
+  def handle_chase_resume(state, _at), do: {:noreply, state}
+
+  # Runs `fun` on the state and arms the attack timer and chase resume
+  # messages it booked.
+  defp timed(state, fun) do
+    state |> fun.() |> arm_timers(state)
+  end
+
+  defp arm_timers(state, before) do
+    state
+    |> arm(:attack_timer_at, before, now(), fn at -> {:ai, {:attack_timer, at}} end)
+    |> arm(:chase_resume_at, before, System.monotonic_time(:millisecond), fn at ->
+      {:ai, {:chase_resume, at}}
+    end)
+  end
+
+  defp arm(state, key, before, clock_now, message) do
+    at = Map.fetch!(state, key)
+
+    if at != nil and at != Map.fetch!(before, key),
+      do: Process.send_after(self(), message.(at), max(at - clock_now, 0))
+
+    state
+  end
+
+  defp now, do: System.system_time(:millisecond)
+
+  defp spot(state, player_id), do: %{state | spotted_by: MapSet.put(state.spotted_by, player_id)}
+
+  # The lazy think, once per second on the mob's own tick: nothing within
+  # 200 ms of a hard think or within the skill interval; a slave does nothing
+  # else; otherwise the target is dropped, then a mob a player has spotted
+  # takes a due random walk, or checks its skills while standing.
+  defp lazy_think(state), do: lazy_attempt(state, now())
+
+  defp lazy_attempt(state, now) do
+    state = clean_spotted(state)
+
+    cond do
+      now - (state.next_think_at || 0) < @hard_think_guard -> state
+      state.last_skillcheck != nil and now - state.last_skillcheck < @skill_interval -> state
+      state.master_id != nil -> state
+      true -> lazy_act(AIStateMachine.unlock_target(state, now), now)
+    end
+  end
+
+  # A spotted mob takes a due random walk, or checks its skills while standing.
+  defp lazy_act(state, now) do
+    mono = System.monotonic_time(:millisecond)
+    spotted? = MapSet.size(state.spotted_by) > 0
+
+    cond do
+      state.next_walktime != nil and state.next_walktime < now and
+          AIStateMachine.can_move?(state, mono) ->
+        if spotted?, do: state |> AIStateMachine.random_walk(now, mono) |> elem(1), else: state
+
+      state.movement_state != :moving and spotted? and state.casting == nil ->
+        state |> use_skill(:tick, now) |> elem(1)
 
       true ->
-        updated_state = state |> think() |> schedule_ai_tick()
-        {:noreply, updated_state}
+        state
     end
+  end
+
+  # Players who left the world no longer count as having spotted the mob.
+  defp clean_spotted(state) do
+    spotted =
+      state.spotted_by
+      |> Enum.filter(&match?({:ok, _unit}, UnitRegistry.get_unit(:player, &1)))
+      |> MapSet.new()
+
+    %{state | spotted_by: spotted}
   end
 
   @doc """
   Processes an `{:ai, {:attacked, attacker_ref, norm?}}` event, the end of a
   landed hit's walk delay: stores the retaliation target (a slave's or a
   player summon's master, else the attacker) as the pending attacked event,
-  leaves the aggressive mode, and thinks at once through the same gates as a
-  tick, without moving the tick schedule. A dormant mob wakes its AI loop, so
+  leaves the aggressive mode, and runs the hard think at once through its own
+  gates, without moving the tick schedule. A dormant mob wakes its AI loop, so
   the mob keeps acting after the think. A dead, casting or resting mob keeps
   the event for its next think; an attacker gone from the world delivers
   nothing.
@@ -74,9 +175,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
       target_ref ->
         state = state |> MobState.set_attacked(target_ref, norm?) |> wake_for_attacked()
 
-        if think_now?(state),
-          do: {:noreply, think(state)},
-          else: {:noreply, state}
+        if state.is_dead, do: {:noreply, state}, else: {:noreply, timed(state, &think/1)}
     end
   end
 
@@ -84,11 +183,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     do: schedule_ai_tick(%{state | ai_awake: true})
 
   defp wake_for_attacked(state), do: state
-
-  defp think_now?(state) do
-    not state.is_dead and is_nil(state.casting) and
-      MobState.thinking?(state, System.system_time(:millisecond))
-  end
 
   defp retaliation_target({:mob, id} = attacker_ref) do
     case UnitRegistry.get_unit(:mob, id) do
@@ -135,8 +229,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     updated_state =
       state
       |> MobState.stop_movement()
+      |> MobState.stop_attack()
       |> MobState.set_target(nil)
-      |> MobState.set_ai_state(:idle)
+      |> MobState.clear_attacked()
+      |> MobState.set_state(:idle)
       |> Map.merge(%{ai_awake: false, ai_timer_ref: nil})
 
     {:noreply, updated_state, :hibernate}
@@ -160,12 +256,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         expected_ref,
         new_ref
       ) do
-    updated =
-      state
-      |> MobState.set_target(new_ref)
-      |> MobState.set_ai_state(:combat)
-
-    {:reply, :ok, updated}
+    {:reply, :ok, MobState.set_target(state, new_ref)}
   end
 
   def handle_redirect_target(%MobState{is_dead: true} = state, _expected_ref, _new_ref),
@@ -175,18 +266,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     do: {:reply, {:error, :target_changed}, state}
 
   @doc """
-  Sets the mob's typed AI target for an `{:ai, {:set_target, target_ref}}` cast,
-  entering combat if a target is given or returning to idle if cleared.
+  Locks the mob's AI target for an `{:ai, {:set_target, target_ref}}` cast (a
+  taunt, `AIStateMachine.lock_target/3`), or drops it when cleared; the next
+  think acts on it.
   """
-  @spec handle_set_target(MobState.t(), tuple() | integer() | nil) :: {:noreply, MobState.t()}
-  def handle_set_target(state, target_ref) do
-    updated_state =
-      state
-      |> MobState.set_target(target_ref)
-      |> MobState.set_ai_state(if target_ref, do: :combat, else: :idle)
+  @spec handle_set_target(MobState.t(), Ref.t() | integer() | nil) :: {:noreply, MobState.t()}
+  def handle_set_target(state, nil),
+    do: {:noreply, AIStateMachine.unlock_target(state, System.system_time(:millisecond))}
 
-    {:noreply, updated_state}
-  end
+  def handle_set_target(state, target_id) when is_integer(target_id),
+    do: handle_set_target(state, {:player, target_id})
+
+  def handle_set_target(state, target_ref),
+    do: {:noreply, AIStateMachine.lock_target(state, target_ref, false)}
+
+  @doc """
+  Locks the mob's AI target onto its provoker for an `{:ai, {:provoke,
+  target_ref}}` cast (`AIStateMachine.lock_target/3` with the provoke flag).
+  """
+  @spec handle_provoke(MobState.t(), Ref.t()) :: {:noreply, MobState.t()}
+  def handle_provoke(state, target_ref),
+    do: {:noreply, AIStateMachine.lock_target(state, target_ref, true)}
 
   @doc """
   Attacks `target_ref` once for an `{:attack_intent, ref}` nudge (Poison
@@ -200,7 +300,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
 
   @doc """
   Schedules the next `{:ai, :tick}` after `interval` milliseconds (defaults to
-  the tick interval), stamping the new timer ref on the state.
+  the lazy tick interval), stamping the new timer ref on the state.
   """
   @spec schedule_ai_tick(MobState.t(), non_neg_integer()) :: MobState.t()
   def schedule_ai_tick(state, interval \\ @ai_tick_interval) do
@@ -216,43 +316,65 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     schedule_ai_tick(state, :rand.uniform(@ai_tick_interval))
   end
 
-  defp process_ai(state) do
-    AIStateMachine.process_ai(state)
-  end
-
-  # One AI think. A status-locked mob drops its target and attacked event and
-  # does nothing else. Otherwise skill selection runs first: a tick that picks a
-  # row starts a cast (locking the mob until {:casting, :complete}) or fires it
-  # instantly, and ends the think. Then the target-change step consumes a
-  # pending attacked event, possibly firing the rude-attacked event use, and
-  # the state machine runs its step. The very first think after spawn selects
-  # with the :spawn event so `onspawn` rows can fire. `now` is
-  # System.system_time(:millisecond), the same clock the melee path uses for
-  # last_attack_time, so cooldown expiry lines up.
+  # One hard AI think. A mob resting (`MobState.thinking?/2`) or casting does
+  # nothing; the think stamps its time so the lazy AI stays off for 200 ms. A
+  # status-locked mob drops its target and attacked event and does nothing
+  # else. Otherwise a standing mob checks its skills first (in the attack
+  # state once its attack delay has ended, else once per skill interval): a
+  # pick starts a cast (locking the mob until {:casting, :complete}) or fires
+  # it instantly, and ends the think. Then the AI body runs, with the
+  # rude-attacked event use fired from its target-change step. The very first
+  # think after spawn selects with the :spawn event so `onspawn` rows can fire.
+  # `now` is System.system_time(:millisecond), the same clock the melee path
+  # uses for last_attack_time, so cooldown expiry lines up.
   defp think(state) do
-    if StatusInterpreter.loses_target?(:mob, state.instance_id) do
-      state |> MobState.set_target(nil) |> MobState.clear_attacked()
-    else
-      now = System.system_time(:millisecond)
-      event = if state.spawn_tick_pending?, do: :spawn, else: :tick
+    now = System.system_time(:millisecond)
 
-      case use_skill(%{state | spawn_tick_pending?: false}, event, now) do
-        {:used, state} -> state
-        {:none, state} -> state |> AIStateMachine.process_attacked() |> after_attacked(now)
+    cond do
+      not MobState.thinking?(state, now) ->
+        state
+
+      state.casting != nil ->
+        %{state | next_think_at: now}
+
+      StatusInterpreter.loses_target?(:mob, state.instance_id) ->
+        %{state | next_think_at: now} |> MobState.set_target(nil) |> MobState.clear_attacked()
+
+      true ->
+        state = %{state | next_think_at: now}
+
+        with {:none, state} <- spawn_event(state, now),
+             {:none, state} <- skill_check(state, now) do
+          AIStateMachine.process_ai(state, now,
+            on_rude: &(&1 |> use_skill(:rudeattacked, now) |> elem(1))
+          )
+        else
+          {:used, state} -> state
+        end
+    end
+  end
+
+  defp spawn_event(%MobState{spawn_tick_pending?: true} = state, now),
+    do: use_skill(%{state | spawn_tick_pending?: false}, :spawn, now)
+
+  defp spawn_event(state, _now), do: {:none, state}
+
+  defp skill_check(%MobState{movement_state: :moving} = state, _now), do: {:none, state}
+
+  defp skill_check(state, now) do
+    ready? =
+      case state.skill_state do
+        :berserk -> AIStateMachine.attack_delay_over?(state, now)
+        _other -> state.last_skillcheck == nil or now - state.last_skillcheck >= @skill_interval
       end
-    end
+
+    if ready?, do: use_skill(state, :tick, now), else: {:none, state}
   end
 
-  defp after_attacked({state, true}, now) do
-    case use_skill(state, :rudeattacked, now) do
-      {:used, state} -> state
-      {:none, state} -> process_ai(state)
-    end
-  end
-
-  defp after_attacked({state, false}, _now), do: process_ai(state)
-
+  # A periodic skill check (not an event use) stamps `last_skillcheck`.
   defp use_skill(state, event, now) do
+    state = if event == :tick, do: %{state | last_skillcheck: now}, else: state
+
     case MobSkillSelector.select(state, MobSkillDb.rows_for(state.mob_id), now: now, event: event) do
       {:cast, row} -> state |> consume_rude_attacks(row, event) |> start_selected_skill(row, now)
       nil -> {:none, state}

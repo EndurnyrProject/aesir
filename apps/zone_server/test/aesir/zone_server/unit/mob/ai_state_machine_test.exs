@@ -1,7 +1,9 @@
 defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   @moduledoc """
-  Verifies mob self-gating: a mob carrying a `no_move` / `no_attack` status does
-  not issue movement or attack on its AI tick (design §4 mob self-gating rows).
+  Verifies the hard AI think: the move gate, random walks and their timing,
+  the skill state each step sets, the aggressive mode, target search and
+  validity, the attacked event's target change, the chase destination and the
+  immobile fallback.
   """
 
   use ExUnit.Case, async: true
@@ -9,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Map.Cell
@@ -22,7 +25,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
-  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -40,7 +42,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   setup do
     Mimic.copy(Interpreter)
     Mimic.copy(StatusStorage)
-    Mimic.copy(MobSession)
     Mimic.copy(Combat)
     Mimic.copy(SpatialIndex)
     Mimic.copy(MapCache)
@@ -55,6 +56,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     stub(MapCache, :get, fn _map -> {:ok, :map_data} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
     stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range -> [] end)
+    stub(SpatialIndex, :units_in_area, fn _map, _x1, _y1, _x2, _y2 -> [] end)
+    stub(Pathfinding, :find_path, fn _map, from, to, _opts -> {:ok, line_path(from, to)} end)
+    stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
 
     stub(UnitRegistry, :get_unit, fn :player, _id ->
       {:ok, {PlayerState, living_player_state(), nil}}
@@ -63,127 +67,324 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     :ok
   end
 
-  describe "move_toward/3 status gating" do
-    test "a no_move mob does not issue movement and its state is unchanged" do
-      test_pid = self()
-      stub(MobSession, :move_to, fn _pid, _x, _y -> send(test_pid, :moved) end)
+  describe "can_move?/2" do
+    test "needs the move mode, no movement-blocking status and no walk delay" do
+      mono = System.monotonic_time(:millisecond)
+
+      assert AIStateMachine.can_move?(movable_mob_state(), mono)
+      refute AIStateMachine.can_move?(base_mob_state(), mono)
+
+      stub(Interpreter, :can_move?, fn :mob, 1 -> false end)
+      refute AIStateMachine.can_move?(movable_mob_state(), mono)
+      stub(Interpreter, :can_move?, fn :mob, 1 -> true end)
+
+      delayed = %{movable_mob_state() | walk_delay_until: mono + 500}
+      refute AIStateMachine.can_move?(delayed, mono)
+      assert AIStateMachine.can_move?(delayed, mono + 500)
+    end
+  end
+
+  describe "random walk" do
+    test "a due walk starts in the walk state and books the next one past the walk" do
+      now = 10_000
+      state = %{movable_mob_state() | next_walktime: now}
+
+      {:ok, walked} = AIStateMachine.random_walk(state, now, System.monotonic_time(:millisecond))
+
+      assert walked.skill_state == :walk
+      assert walked.movement_state == :moving
+      assert walked.walk_path != []
+      {dx, dy} = List.last(walked.walk_path)
+      assert {dx, dy} != {100, 100}
+      assert max(abs(dx - 100), abs(dy - 100)) <= 7
+      assert walked.next_walktime >= now + 4000 + walk_time(walked)
+      assert walked.next_walktime <= now + 4999 + walk_time(walked)
+    end
+
+    test "no walk before its time, without the move mode, barred from random walks or blocked" do
+      now = 10_000
+      mono = System.monotonic_time(:millisecond)
+
+      assert {:error, _} =
+               AIStateMachine.random_walk(
+                 %{movable_mob_state() | next_walktime: now + 1},
+                 now,
+                 mono
+               )
+
+      assert {:error, _} =
+               AIStateMachine.random_walk(%{base_mob_state() | next_walktime: now}, now, mono)
+
+      barred = %{movable_mob_state(modes: [:can_move, :no_random_walk]) | next_walktime: now}
+      assert {:error, _} = AIStateMachine.random_walk(barred, now, mono)
+
       stub(Interpreter, :can_move?, fn :mob, 1 -> false end)
 
-      state = movable_mob_state()
-
-      assert AIStateMachine.move_toward(state, 105, 105) == state
-      refute_received :moved
+      assert {:error, _} =
+               AIStateMachine.random_walk(%{movable_mob_state() | next_walktime: now}, now, mono)
     end
 
-    test "an unafflicted mob issues movement as before" do
-      test_pid = self()
-      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
+    test "every candidate cell being impassable fails the walk" do
+      stub(Cell, :traversable?, fn "prontera", _x, _y -> false end)
+      now = 10_000
 
-      state = movable_mob_state()
+      assert {:error, state} =
+               AIStateMachine.random_walk(%{movable_mob_state() | next_walktime: now}, now, 0)
 
-      assert AIStateMachine.move_toward(state, 105, 105) == state
-      assert_received {:moved, 105, 105}
+      assert state.movement_state == :standing
+    end
+
+    test "the think walks an idle mob with no target when the walk is due, slaves never" do
+      now = System.system_time(:millisecond)
+
+      walked = think(%{movable_mob_state() | next_walktime: now}, now)
+      assert walked.skill_state == :walk
+
+      later = think(%{movable_mob_state() | next_walktime: now + 1}, now)
+      assert later.skill_state == :idle
+      assert later.movement_state == :standing
+
+      slave = think(%{movable_mob_state() | next_walktime: now, master_id: 7}, now)
+      assert slave.movement_state == :standing
+    end
+
+    test "a failed walk is retried within a second, or once the walk delay ends" do
+      stub(Cell, :traversable?, fn "prontera", _x, _y -> false end)
+      now = System.system_time(:millisecond)
+
+      retried = think(%{movable_mob_state() | next_walktime: now}, now)
+      assert retried.next_walktime >= now and retried.next_walktime < now + 1000
+
+      mono = System.monotonic_time(:millisecond)
+      delayed = %{movable_mob_state() | next_walktime: now, walk_delay_until: mono + 3000}
+      waited = think(delayed, now)
+      assert_in_delta waited.next_walktime, now + 3000, 50
+
+      past = %{movable_mob_state() | next_walktime: now - 500, walk_delay_until: mono - 100}
+      booked = think(past, now)
+      assert_in_delta booked.next_walktime, now - 100, 50
     end
   end
 
-  describe "idle random walk" do
-    test "only a mob that can move and is not barred from random walks wanders" do
-      wanders? = fn modes ->
-        :rand.seed(:exsss, {1, 2, 3})
-        state = base_mob_state(modes: modes)
+  describe "unlock_target/2" do
+    test "an attack or chase state stops the attack, goes idle and books a walk in 4-5 s" do
+      now = 10_000
 
-        Enum.any?(1..60, fn _ ->
-          AIStateMachine.process_ai(state).last_idle_movement_time != nil
-        end)
+      for skill_state <- [:berserk, :angry, :rush, :follow] do
+        state = %{combat_mob_state() | skill_state: skill_state, chase_target: {:player, 2}}
+        result = AIStateMachine.unlock_target(state, now)
+
+        assert {result.skill_state, result.target_ref, result.attack_target, result.chase_target} ==
+                 {:idle, nil, nil, nil}
+
+        assert result.next_walktime in (now + 4000)..(now + 4999)
       end
+    end
 
-      assert wanders?.([:can_move])
-      refute wanders?.([])
-      refute wanders?.([:can_move, :no_random_walk])
+    test "idle and an ongoing walk keep their state and walk time; a finished walk goes idle" do
+      idle = %{base_mob_state() | next_walktime: 5, target_ref: {:player, 2}}
+
+      assert %{skill_state: :idle, next_walktime: 5, target_ref: nil} =
+               AIStateMachine.unlock_target(idle, 10_000)
+
+      walking = %{
+        base_mob_state()
+        | skill_state: :walk,
+          movement_state: :moving,
+          next_walktime: 5
+      }
+
+      assert %{skill_state: :walk, next_walktime: 5} =
+               AIStateMachine.unlock_target(walking, 10_000)
+
+      stopped = %{walking | movement_state: :standing}
+
+      assert %{skill_state: :idle, next_walktime: 5} =
+               AIStateMachine.unlock_target(stopped, 10_000)
     end
   end
 
-  describe "settling the pending exit from aggressive mode" do
+  describe "skill states set by the think" do
     setup do
-      stub(MobSession, :move_to, fn _pid, _x, _y -> :ok end)
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range -> [] end)
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 -> [] end)
+      :ok
+    end
+
+    test "an attack order enters berserk, or angry for an aggressive mob" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
+
+      assert think(combat_mob_state()).skill_state == :berserk
+      assert think(%{combat_mob_state() | aggressive: true}).skill_state == :angry
+    end
+
+    test "a refused swing still enters the attack state" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
+      stub(Combat, :execute_mob_attack, fn _state, _target -> {:error, :invalid_target} end)
+
+      result = think(%{combat_mob_state() | skill_state: :idle})
+
+      assert {result.skill_state, result.attack_target} == {:berserk, {:player, 2}}
+      assert result.last_attack_time == nil
+    end
+
+    test "a hidden mob in range enters the attack state without swinging" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
+
+      stub(StatusStorage, :has_status?, fn type, _id, status ->
+        type == :mob and status == :sc_hiding
+      end)
+
+      reject(&Combat.execute_mob_attack/2)
+
+      result = think(%{combat_mob_state() | skill_state: :idle})
+
+      assert {result.skill_state, result.attack_target} == {:berserk, nil}
+    end
+
+    test "a chase walk enters rush, or follow for an aggressive mob" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
+
+      assert think(chase_mob_state()).skill_state == :rush
+      assert think(%{chase_mob_state() | aggressive: true}).skill_state == :follow
+    end
+
+    test "an attacked aggressive mob leaves its angry states on its next state change" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
+      angry = %{chase_mob_state(modes: [:can_move, :can_attack, :angry]) | skill_state: :angry}
+
+      assert think(angry).skill_state == :follow
+      assert think(MobState.set_attacked(angry, {:player, 2}, false)).skill_state == :rush
+    end
+
+    test "a chasing mob already walking keeps walking" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
+
+      walking = %{
+        chase_mob_state()
+        | movement_state: :moving,
+          walk_path: [{101, 101}],
+          aggressive: true
+      }
+
+      result = think(walking)
+
+      assert {result.skill_state, result.movement_state, result.walk_path} ==
+               {:rush, :moving, [{101, 101}]}
+    end
+
+    test "an angry mob chases only a reachable target" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
+      stub(Pathfinding, :find_path, fn _map, _from, _to, _opts -> {:error, :no_path} end)
+
+      result = think(%{chase_mob_state() | skill_state: :angry})
+
+      assert {result.skill_state, result.target_ref} == {:idle, nil}
+    end
+  end
+
+  describe "lock_target/3" do
+    setup do
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {101, 100, "prontera"}}
+        :player, 3 -> {:ok, {100, 101, "prontera"}}
+      end)
+
+      :ok
+    end
+
+    test "a taunt takes a target the mob may change to, and an unattackable unit is not taken" do
+      assert AIStateMachine.lock_target(base_mob_state(), {:player, 2}, false).target_ref ==
+               {:player, 2}
+
+      kept = AIStateMachine.lock_target(combat_mob_state(), {:player, 3}, false)
+      assert kept.target_ref == {:player, 2}
+
+      stub(Interpreter, :targetable?, fn :player, 3 -> false end)
+      assert AIStateMachine.lock_target(base_mob_state(), {:player, 3}, false).target_ref == nil
+    end
+
+    test "a provoke stamps the provoker and takes an aggressive mob out of its mode" do
+      angry = %{base_mob_state(modes: [:angry]) | aggressive: true}
+
+      provoked = AIStateMachine.lock_target(angry, {:player, 2}, true)
+
+      assert {provoked.target_ref, provoked.provoke_flag, provoked.aggressive} ==
+               {{:player, 2}, {:player, 2}, false}
+
+      other = AIStateMachine.lock_target(%{provoked | aggressive: true}, {:player, 3}, false)
+      assert {other.target_ref, other.provoke_flag, other.aggressive} == {{:player, 3}, nil, true}
+    end
+  end
+
+  describe "immobile mob with a target out of range" do
+    setup do
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 -> [] end)
       stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
       :ok
     end
 
-    test "an idle mob settles it when a random walk starts, so a later aggro is self-initiated" do
-      :rand.seed(:exsss, {1, 2, 3})
+    test "without the move mode it goes idle and keeps its target for 2 s, then unlocks it" do
+      now = System.system_time(:millisecond)
 
       state = %{
-        movable_mob_state()
-        | mob_data: %{base_mob_state().mob_data | modes: [:can_move, :aggressive]},
-          left_aggressive?: true
+        combat_mob_state(modes: [:can_attack])
+        | skill_state: :rush,
+          last_canmove: now - 1000
       }
 
-      walked =
-        Enum.reduce_while(1..60, state, fn _, acc ->
-          next = AIStateMachine.process_ai(acc)
-          if next.last_idle_movement_time, do: {:halt, next}, else: {:cont, next}
-        end)
+      kept = think(state, now)
+      assert {kept.skill_state, kept.target_ref} == {:idle, {:player, 2}}
 
-      assert walked.last_idle_movement_time
-      refute walked.left_aggressive?
-
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range -> [2] end)
-      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {101, 101, "prontera"}} end)
-
-      assert AIStateMachine.check_aggro(walked).initiated_by_self?
+      unlocked = think(%{state | last_canmove: now - 2001}, now)
+      assert {unlocked.skill_state, unlocked.target_ref} == {:idle, nil}
     end
 
-    test "an idle mob that does not walk keeps it" do
-      state = %{base_mob_state(modes: [:aggressive]) | left_aggressive?: true}
+    test "an attacking mob keeps its state while held" do
+      now = System.system_time(:millisecond)
 
-      assert AIStateMachine.process_ai(state).left_aggressive?
-    end
-
-    test "a chasing mob already walking keeps it" do
       state = %{
-        chase_mob_state()
-        | movement_state: :moving,
-          initiated_by_self?: true,
-          left_aggressive?: true
+        combat_mob_state(modes: [:can_attack])
+        | attack_target: {:player, 2},
+          attack_timer_at: now + 500,
+          last_canmove: now - 5000
       }
 
-      result = AIStateMachine.process_ai(state)
-
-      assert result.left_aggressive?
-      assert MobState.skill_state(result) == :follow
+      assert think(state, now) == state
     end
 
-    test "a chasing mob settles it when it starts a walk" do
-      state = %{chase_mob_state() | initiated_by_self?: true, left_aggressive?: true}
+    test "a movement-blocking status holds a mob that can move" do
+      stub(Interpreter, :can_move?, fn :mob, 1 -> false end)
+      now = System.system_time(:millisecond)
 
-      result = AIStateMachine.process_ai(state)
+      held = think(%{chase_mob_state() | last_canmove: now}, now)
 
-      assert MobState.skill_state(result) == :rush
+      assert {held.skill_state, held.target_ref, held.movement_state} ==
+               {:idle, {:player, 2}, :standing}
     end
 
-    test "a swing the combat system refuses keeps it" do
-      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
-      stub(Combat, :execute_mob_attack, fn _state, _target -> {:error, :invalid_target} end)
-      state = %{combat_mob_state() | initiated_by_self?: true, left_aggressive?: true}
+    test "a walk-delayed mob keeps the chase target and starts the walk once the delay ends" do
+      now = System.system_time(:millisecond)
+      mono = System.monotonic_time(:millisecond)
+      delayed = %{chase_mob_state() | walk_delay_until: mono + 60_000}
 
-      result = AIStateMachine.process_ai(state)
+      waiting = think(delayed, now)
 
-      assert result.left_aggressive?
-      assert MobState.skill_state(result) == :angry
+      assert {waiting.skill_state, waiting.chase_target, waiting.movement_state} ==
+               {:rush, {:player, 2}, :standing}
+
+      walking = think(%{waiting | walk_delay_until: 0}, now)
+      assert {walking.skill_state, walking.movement_state} == {:rush, :moving}
     end
 
-    test "a swing that lands settles it" do
-      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
-      stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
-      state = %{combat_mob_state() | initiated_by_self?: true, left_aggressive?: true}
+    test "the think stamps the last time the mob could move" do
+      now = System.system_time(:millisecond)
 
-      assert MobState.skill_state(AIStateMachine.process_ai(state)) == :berserk
+      assert think(chase_mob_state(), now).last_canmove == now
+      assert think(base_mob_state(), now).last_canmove == nil
     end
   end
 
-  describe "execute_mob_attack via process_ai status gating" do
+  describe "attack status gating" do
     test "a no_attack mob does not attack and last_attack_time is unchanged" do
       test_pid = self()
       stub(Interpreter, :can_attack?, fn :mob, 1 -> false end)
@@ -199,7 +400,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = combat_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       refute_received :attacked
       assert result.last_attack_time == state.last_attack_time
@@ -219,7 +420,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = combat_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert_received :attacked
       assert result.last_attack_time != nil
@@ -230,85 +431,100 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
       state = combat_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.next_think_at == result.last_attack_time + MobState.get_attack_motion(state)
     end
   end
 
-  describe "find_nearby_targets/1 targeting filter via process_ai aggro" do
+  describe "target search filter" do
     test "an untargetable (trick-dead) player is not acquired by an idle aggressive mob" do
       stub(Interpreter, :targetable?, fn :player, 2 -> false end)
 
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       state = aggressive_idle_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a corpse is not acquired by an idle aggressive mob" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(UnitRegistry, :get_unit, fn :player, 2 ->
         {:ok, {PlayerState, corpse_player_state(), nil}}
       end)
 
-      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+      result = think(aggressive_idle_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a player missing its authoritative snapshot is not acquired" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(UnitRegistry, :get_unit, fn :player, 2 -> {:error, :not_found} end)
 
-      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+      result = think(aggressive_idle_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a player in Gangster Paradise is not acquired by an idle aggressive mob" do
-      stub(StatusStorage, :has_status?, fn :player, 2, :sc_gangsterparadise -> true end)
-
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(StatusStorage, :has_status?, fn type, _id, status ->
+        type == :player and status == :sc_gangsterparadise
       end)
 
-      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
+      end)
+
+      result = think(aggressive_idle_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "an invincible player is not acquired by an idle aggressive mob" do
       stub(Invincibility, :active?, fn _unit -> true end)
 
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
-      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+      result = think(aggressive_idle_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
+    end
+
+    test "the search covers the square of the view range: a player on its corner is acquired" do
+      state = aggressive_idle_mob_state()
+
+      {x1, y1, x2, y2} =
+        {100 - state.view_range, 100 - state.view_range, 100 + state.view_range,
+         100 + state.view_range}
+
+      stub(SpatialIndex, :units_in_area, fn "prontera", ^x1, ^y1, ^x2, ^y2 -> [{:player, 2}] end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {x2, y2, "prontera"}} end)
+
+      assert think(state).target_ref == {:player, 2}
     end
 
     test "a targetable player is acquired by an idle aggressive mob" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
@@ -317,35 +533,141 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = aggressive_idle_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == {:player, 2}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
 
-    test "aggro acquired by scan marks the combat as self-initiated" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+    test "an angry mob follows a target it finds out of attack range" do
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 -> [{:player, 2}] end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
+
+      result = think(aggressive_idle_mob_state(modes: [:aggressive, :angry, :can_move]))
+
+      assert {result.target_ref, result.skill_state, result.aggressive} ==
+               {{:player, 2}, :follow, true}
+    end
+
+    test "a target found in attack range takes an angry mob out of its aggressive mode" do
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 -> [{:player, 2}] end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {101, 101, "prontera"}} end)
+
+      result = think(aggressive_idle_mob_state(modes: [:aggressive, :angry, :can_move]))
+
+      assert {result.target_ref, result.skill_state, result.aggressive} ==
+               {{:player, 2}, :berserk, false}
+    end
+
+    test "the closest candidate wins, and a current target is kept unless one is closer" do
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}, {:player, 3}]
       end)
 
-      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
-        {:ok, {101, 101, "prontera"}}
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {106, 100, "prontera"}}
+        :player, 3 -> {:ok, {104, 100, "prontera"}}
       end)
 
-      state = aggressive_idle_mob_state()
+      assert think(aggressive_idle_mob_state(modes: [:aggressive, :can_move])).target_ref ==
+               {:player, 3}
 
-      result = AIStateMachine.check_aggro(state)
+      following = %{
+        aggressive_idle_mob_state(modes: [:aggressive, :can_move])
+        | skill_state: :follow,
+          target_ref: {:player, 2},
+          aggressive: true
+      }
 
-      assert result.target_ref == {:player, 2}
-      assert result.ai_state == :alert
-      assert result.initiated_by_self? == true
+      assert think(following).target_ref == {:player, 3}
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {104, 100, "prontera"}}
+        :player, 3 -> {:ok, {106, 100, "prontera"}}
+      end)
+
+      assert think(following).target_ref == {:player, 2}
+    end
+
+    test "a target-weak mob skips candidates within five levels of it, out of sight or out of path" do
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 -> [{:player, 2}] end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {104, 100, "prontera"}} end)
+      weak = aggressive_idle_mob_state(modes: [:aggressive, :target_weak, :can_move])
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, leveled_player(20), nil}}
+      end)
+
+      assert think(weak).target_ref == nil
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, leveled_player(19), nil}}
+      end)
+
+      assert think(weak).target_ref == {:player, 2}
+
+      stub(Pathfinding, :find_path, fn _map, _from, _to, _opts ->
+        {:ok, Enum.map(1..13, &{100 + &1, 100})}
+      end)
+
+      assert think(weak).target_ref == nil
+    end
+
+    test "a homunculus pick is never replaced by a player" do
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}, {:homunculus, 501}]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {101, 100, "prontera"}}
+        :homunculus, 501 -> {:ok, {105, 100, "prontera"}}
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :homunculus, 501 -> {:ok, {HomunculusState, homunculus_state(42), nil}}
+        :player, 2 -> {:ok, {PlayerState, living_player_state(), nil}}
+      end)
+
+      following = %{
+        aggressive_idle_mob_state(modes: [:aggressive, :can_move])
+        | skill_state: :follow,
+          target_ref: {:homunculus, 501},
+          aggressive: true
+      }
+
+      assert think(following).target_ref == {:homunculus, 501}
+    end
+
+    test "a chasing mob with change_chase takes an enemy that is already in attack range" do
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 -> [{:player, 3}] end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {106, 100, "prontera"}}
+        :player, 3 -> {:ok, {101, 100, "prontera"}}
+      end)
+
+      chasing = chase_mob_state(modes: [:can_move, :can_attack, :change_chase])
+      assert think(chasing).target_ref == {:player, 3}
+      assert think(chase_mob_state()).target_ref == {:player, 2}
+
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 3}, {:player, 4}]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {106, 100, "prontera"}}
+        :player, 3 -> {:ok, {101, 100, "prontera"}}
+        :player, 4 -> {:ok, {100, 101, "prontera"}}
+      end)
+
+      assert think(chasing).target_ref == {:player, 4}
     end
   end
 
   describe "owner-aware hostility in the aggro scan" do
     test "a mob does not acquire a living player from its own guild" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(UnitRegistry, :get_unit, fn :player, 2 ->
@@ -354,15 +676,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 
-      result = AIStateMachine.check_aggro(state)
+      result = think(state)
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a mob acquires a living player from a different guild" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
@@ -375,15 +697,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 
-      result = AIStateMachine.check_aggro(state)
+      result = think(state)
 
       assert result.target_ref == {:player, 2}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
 
     test "a mob does not acquire a living player from an allied guild" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(UnitRegistry, :get_unit, fn :player, 2 ->
@@ -394,15 +716,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 
-      result = AIStateMachine.check_aggro(state)
+      result = think(state)
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a mob still acquires a living player from an unrelated guild" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
@@ -417,15 +739,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 
-      result = AIStateMachine.check_aggro(state)
+      result = think(state)
 
       assert result.target_ref == {:player, 2}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
 
     test "a guildless mob still acquires a player belonging to a guild" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
@@ -436,16 +758,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 7}, nil}}
       end)
 
-      result = AIStateMachine.check_aggro(aggressive_idle_mob_state())
+      result = think(aggressive_idle_mob_state())
 
       assert result.target_ref == {:player, 2}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
 
     test "a mob does not acquire a homunculus whose owner shares its guild" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
-
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
         [{:homunculus, 501}]
       end)
 
@@ -459,16 +779,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 
-      result = AIStateMachine.check_aggro(state)
+      result = think(state)
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a mob acquires a homunculus whose owner belongs to a different guild" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
-
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
         [{:homunculus, 501}]
       end)
 
@@ -486,16 +804,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 
-      result = AIStateMachine.check_aggro(state)
+      result = think(state)
 
       assert result.target_ref == {:homunculus, 501}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
 
     test "a guild-owned mob does not acquire a homunculus whose owner's guild is allied" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
-
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
         [{:homunculus, 501}]
       end)
 
@@ -511,16 +827,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 
-      result = AIStateMachine.check_aggro(state)
+      result = think(state)
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a guild-owned mob acquires a homunculus whose owner's guild is unrelated" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
-
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
         [{:homunculus, 501}]
       end)
 
@@ -540,16 +854,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 
-      result = AIStateMachine.check_aggro(state)
+      result = think(state)
 
       assert result.target_ref == {:homunculus, 501}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
 
     test "an ordinary mob acquiring a homunculus never resolves the owner's guild" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
-
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
         [{:homunculus, 501}]
       end)
 
@@ -565,32 +877,32 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
           flunk("an ordinary mob must not resolve the homunculus owner's guild")
       end)
 
-      result = AIStateMachine.check_aggro(aggressive_idle_mob_state())
+      result = think(aggressive_idle_mob_state())
 
       assert result.target_ref == {:homunculus, 501}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
   end
 
-  describe "find_nearby_targets/1 concealment filter" do
+  describe "target search concealment filter" do
     test "a concealed player is not acquired by a normal mob" do
       :ok = StatusStorage.apply_status(:player, 2, :sc_cloaking)
 
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
-      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+      result = think(aggressive_idle_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a concealed player is acquired by a boss mob, which acts as a detector" do
       :ok = StatusStorage.apply_status(:player, 2, :sc_cloaking)
 
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
@@ -598,19 +910,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       end)
 
       base = base_mob_state(modes: [:aggressive, :detector, :status_immune, :knockback_immune])
-      state = %MobState{base | x: 100, y: 100, ai_state: :idle, target_ref: nil}
+      state = %MobState{base | x: 100, y: 100, skill_state: :idle, target_ref: nil}
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == {:player, 2}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
 
     test "a concealed player is acquired by a non-boss detector mob" do
       :ok = StatusStorage.apply_status(:player, 2, :sc_cloaking)
 
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
@@ -618,16 +930,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       end)
 
       base = base_mob_state(modes: [:aggressive, :detector])
-      state = %MobState{base | x: 100, y: 100, ai_state: :idle, target_ref: nil}
+      state = %MobState{base | x: 100, y: 100, skill_state: :idle, target_ref: nil}
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == {:player, 2}
     end
 
     test "a player who un-conceals is acquirable again by a normal mob" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}]
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
@@ -636,16 +948,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       :ok = StatusStorage.apply_status(:player, 2, :sc_hiding)
 
-      concealed = AIStateMachine.process_ai(aggressive_idle_mob_state())
+      concealed = think(aggressive_idle_mob_state())
 
       assert concealed.target_ref == nil
 
       :ok = StatusStorage.remove_status(:player, 2, :sc_hiding)
 
-      revealed = AIStateMachine.process_ai(aggressive_idle_mob_state())
+      revealed = think(aggressive_idle_mob_state())
 
       assert revealed.target_ref == {:player, 2}
-      assert revealed.ai_state == :alert
+      assert revealed.skill_state == :berserk
     end
   end
 
@@ -659,27 +971,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
 
-      result = AIStateMachine.process_ai(combat_mob_state())
+      result = think(combat_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a charmed mob acquires a different player" do
       stub(Interpreter, :charmed_against?, fn :mob, 1, target_id -> target_id == 2 end)
 
-      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
-        [2, 3]
+      stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
+        [{:player, 2}, {:player, 3}]
       end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 3 ->
         {:ok, {101, 101, "prontera"}}
       end)
 
-      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+      result = think(aggressive_idle_mob_state())
 
       assert result.target_ref == {:player, 3}
-      assert result.ai_state == :alert
+      assert result.skill_state == :berserk
     end
 
     test "a charmed mob attacks a different player normally" do
@@ -698,7 +1010,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       result =
         combat_mob_state()
         |> MobState.set_target(3)
-        |> AIStateMachine.process_ai()
+        |> think()
 
       assert_received :attacked
       assert result.target_ref == {:player, 3}
@@ -719,10 +1031,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         :ok
       end)
 
-      result = AIStateMachine.process_ai(combat_mob_state())
+      result = think(combat_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
       refute_received :attacked
     end
 
@@ -733,12 +1045,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {105, 105, "prontera"}}
       end)
 
-      stub(MobSession, :move_to, fn _pid, _x, _y -> :ok end)
-
-      result = AIStateMachine.process_ai(chase_mob_state())
+      result = think(chase_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :return
+      assert result.skill_state == :idle
     end
 
     test "a boss in combat keeps a target that concealed itself" do
@@ -756,12 +1066,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         base
         | x: 100,
           y: 100,
-          ai_state: :combat,
+          skill_state: :berserk,
           target_ref: {:player, 2},
           last_attack_time: nil
       }
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == {:player, 2}
     end
@@ -777,12 +1087,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {101, 101, "prontera"}}
       end)
 
-      state = %MobState{base_mob_state() | ai_state: :alert, target_ref: {:player, 2}}
+      state = %MobState{base_mob_state() | skill_state: :idle, target_ref: {:player, 2}}
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
     end
 
     test "a chasing mob drops a target that died after acquisition" do
@@ -790,10 +1100,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {PlayerState, corpse_player_state(), nil}}
       end)
 
-      result = AIStateMachine.process_ai(chase_mob_state())
+      result = think(chase_mob_state())
 
       assert result.target_ref == nil
-      assert result.ai_state == :return
+      assert result.skill_state == :idle
     end
   end
 
@@ -817,14 +1127,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       refute rude?
 
-      assert {result.target_ref, result.ai_state, result.attacked_count} ==
-               {{:player, 2}, :combat, 0}
+      assert {result.target_ref, result.skill_state, result.attacked_count} ==
+               {{:player, 2}, :idle, 0}
 
       assert {result.attacked_ref, result.norm_attacked_ref} == {nil, nil}
     end
 
     test "a mob in its attack state without change_target_melee keeps its target" do
-      state = %{attacked_mob(:combat, {:player, 2}) | target_ref: {:player, 3}}
+      state = %{attacked_mob(:berserk, {:player, 2}) | target_ref: {:player, 3}}
 
       {result, false} = AIStateMachine.process_attacked(state)
 
@@ -834,7 +1144,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
     test "with change_target_melee the attack state switches only to the norm attacker" do
       modes = [:can_move, :can_attack, :change_target_melee]
-      state = %{attacked_mob(:combat, {:player, 2}, modes) | target_ref: {:player, 3}}
+      state = %{attacked_mob(:berserk, {:player, 2}, modes) | target_ref: {:player, 3}}
 
       {kept, false} = AIStateMachine.process_attacked(state)
 
@@ -870,7 +1180,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
 
     test "the current target hitting from beyond reach counts a rude attack" do
-      state = %{attacked_mob(:combat, {:player, 5}) | target_ref: {:player, 5}}
+      state = %{attacked_mob(:berserk, {:player, 5}) | target_ref: {:player, 5}}
 
       {result, false} = AIStateMachine.process_attacked(state)
 
@@ -879,12 +1189,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
 
     test "an aggressive mob switches to a second attacker in the think of the event" do
-      for ai_state <- [:combat, :chase] do
+      for skill_state <- [:angry, :follow] do
         state = %{
           base_mob_state(modes: [:can_move, :can_attack])
-          | ai_state: ai_state,
+          | skill_state: skill_state,
             target_ref: {:player, 3},
-            initiated_by_self?: true
+            aggressive: true
         }
 
         {result, false} =
@@ -906,7 +1216,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, [{101, 100}, {102, 100}, {103, 100}]}
       end)
 
-      held = %{attacked_mob(:combat, {:player, 6}, [:can_attack]) | target_ref: {:player, 6}}
+      held = %{attacked_mob(:berserk, {:player, 6}, [:can_attack]) | target_ref: {:player, 6}}
       delayed = %{held | walk_delay_until: System.monotonic_time(:millisecond) + 60_000}
 
       {walk_delayed, false} = AIStateMachine.process_attacked(delayed)
@@ -923,8 +1233,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
   end
 
-  describe "process_combat/1 sheds aggro on untargetable target" do
-    test "a mob in combat drops a target that became untargetable (return to idle)" do
+  describe "an attacking mob sheds an untargetable target" do
+    test "a mob in combat drops a target that became untargetable" do
       test_pid = self()
       stub(Interpreter, :targetable?, fn :player, 2 -> false end)
 
@@ -939,10 +1249,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = combat_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == nil
-      assert result.ai_state == :idle
+      assert result.skill_state == :idle
       refute_received :attacked
     end
 
@@ -955,28 +1265,46 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       state = combat_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == {:player, 2}
     end
   end
 
-  describe "process_chase/1 sheds aggro on untargetable target" do
-    test "a mob in chase drops a target that became untargetable (return to spawn)" do
+  describe "a target gone from the world" do
+    test "is dropped at once even while walking, and the think goes on" do
+      stub(SpatialIndex, :get_unit_position, fn _type, _id -> {:error, :not_found} end)
+      stub(UnitRegistry, :get_unit, fn :player, 2 -> {:error, :not_found} end)
+      walking = %{chase_mob_state() | movement_state: :moving, walk_path: [{101, 101}]}
+
+      result = think(walking)
+
+      assert {result.target_ref, result.skill_state} == {nil, :idle}
+    end
+
+    test "an invalid target that is still in the world is kept while walking" do
+      stub(Interpreter, :targetable?, fn :player, 2 -> false end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
+      walking = %{chase_mob_state() | movement_state: :moving, walk_path: [{101, 101}]}
+
+      assert think(walking).target_ref == {:player, 2}
+    end
+  end
+
+  describe "a chasing mob sheds an untargetable target" do
+    test "a mob in chase drops a target that became untargetable" do
       stub(Interpreter, :targetable?, fn :player, 2 -> false end)
 
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
         {:ok, {105, 105, "prontera"}}
       end)
 
-      stub(MobSession, :move_to, fn _pid, _x, _y -> :ok end)
-
       state = chase_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == nil
-      assert result.ai_state == :return
+      assert result.skill_state == :idle
     end
 
     test "a mob in chase retains a still-targetable target" do
@@ -984,37 +1312,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {105, 105, "prontera"}}
       end)
 
-      stub(MobSession, :move_to, fn _pid, _x, _y -> :ok end)
-
       state = chase_mob_state()
 
-      result = AIStateMachine.process_ai(state)
+      result = think(state)
 
       assert result.target_ref == {:player, 2}
-      assert result.ai_state in [:chase, :combat, :alert]
     end
   end
 
-  describe "process_chase/1 targets an adjacent, unoccupied cell" do
+  describe "the chase targets an adjacent, unoccupied cell" do
     test "a chasing mob paths to a cell adjacent to the player, never the player's cell" do
-      test_pid = self()
-
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
         {:ok, {105, 105, "prontera"}}
       end)
 
-      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
-
-      AIStateMachine.process_ai(chase_mob_state())
-
-      assert_received {:moved, dest_x, dest_y}
+      {dest_x, dest_y} = destination(think(chase_mob_state()))
       assert {dest_x, dest_y} != {105, 105}
       assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
     end
 
     test "re-picks another adjacent cell when the best cell is occupied" do
-      test_pid = self()
-
       stub(SpatialIndex, :get_unit_position, fn
         :player, 2 -> {:ok, {105, 105, "prontera"}}
         :mob, 55 -> {:ok, {103, 103, "prontera"}}
@@ -1026,19 +1343,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         [{:mob, 55}]
       end)
 
-      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
-
-      AIStateMachine.process_ai(chase_mob_state())
-
-      assert_received {:moved, dest_x, dest_y}
+      {dest_x, dest_y} = destination(think(chase_mob_state()))
       assert {dest_x, dest_y} != {103, 103}
       assert {dest_x, dest_y} != {105, 105}
       assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
     end
 
     test "uses a corpse cell as an available chase destination" do
-      test_pid = self()
-
       stub(SpatialIndex, :get_unit_position, fn
         :player, 2 -> {:ok, {105, 105, "prontera"}}
         :player, 5000 -> {:ok, {103, 103, "prontera"}}
@@ -1053,16 +1364,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         :player, 5000 -> {:ok, {PlayerState, corpse_player_state(), nil}}
       end)
 
-      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
-
-      AIStateMachine.process_ai(chase_mob_state())
-
-      assert_received {:moved, 103, 103}
+      assert destination(think(chase_mob_state())) == {103, 103}
     end
 
     test "uses an inconsistent player cell as an available chase destination" do
-      test_pid = self()
-
       stub(SpatialIndex, :get_unit_position, fn
         :player, 2 -> {:ok, {105, 105, "prontera"}}
         :player, 5000 -> {:ok, {103, 103, "prontera"}}
@@ -1082,94 +1387,80 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
             nil}}
       end)
 
-      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
-
-      AIStateMachine.process_ai(chase_mob_state())
-
-      assert_received {:moved, 103, 103}
+      assert destination(think(chase_mob_state())) == {103, 103}
     end
 
     test "re-picks another adjacent cell when dynamic terrain blocks the nearest cell" do
-      test_pid = self()
-
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
         {:ok, {105, 105, "prontera"}}
       end)
 
       stub(Cell, :traversable?, fn "prontera", x, y -> {x, y} != {103, 103} end)
-      stub(MobSession, :move_to, fn _pid, x, y -> send(test_pid, {:moved, x, y}) end)
-
-      AIStateMachine.process_ai(chase_mob_state())
-
-      assert_received {:moved, dest_x, dest_y}
+      {dest_x, dest_y} = destination(think(chase_mob_state()))
       assert {dest_x, dest_y} != {103, 103}
       assert {dest_x, dest_y} != {105, 105}
       assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
     end
   end
 
-  describe "spawn anchoring" do
-    test "spawn checks anchor on the cell the mob spawned at, not the raw spawn config" do
-      # Imported rAthena spawn lines use x/y 0,0 ("random cell anywhere"); the
-      # AI must anchor on the resolved spawn_point or every mob would try to
-      # wander to and return toward the map corner.
-      state = %MobState{
-        base_mob_state()
-        | spawn_ref: %MobSpawn{
-            mob: 1001,
-            amount: 1,
-            respawn_time: 5000,
-            spawn_area: %SpawnArea{x: 0, y: 0}
-          }
-      }
+  defp think(state, now \\ System.system_time(:millisecond)),
+    do: AIStateMachine.process_ai(state, now)
 
-      assert AIStateMachine.at_spawn_area?(state)
-      refute AIStateMachine.should_return_to_spawn?(state)
-    end
+  defp destination(%MobState{walk_path: path}), do: List.last(path)
 
-    test "a mob far from its spawn point wants to return to it" do
-      state = %MobState{base_mob_state() | x: 200, y: 200}
+  # A straight path, one cell per step along each axis.
+  defp line_path({fx, fy}, {tx, ty}) do
+    steps = max(abs(tx - fx), abs(ty - fy))
 
-      refute AIStateMachine.at_spawn_area?(state)
-      assert AIStateMachine.should_return_to_spawn?(state)
-    end
+    Enum.map(1..steps//1, fn i ->
+      {fx + sign(tx - fx) * min(i, abs(tx - fx)), fy + sign(ty - fy) * min(i, abs(ty - fy))}
+    end)
   end
 
-  defp aggressive_idle_mob_state do
-    base = base_mob_state(modes: [:aggressive])
+  defp sign(n) when n > 0, do: 1
+  defp sign(n) when n < 0, do: -1
+  defp sign(_n), do: 0
 
-    %MobState{base | x: 100, y: 100, ai_state: :idle, target_ref: nil}
+  defp walk_time(%MobState{walk_path: path, walk_speed: speed, x: x, y: y}) do
+    [{x, y} | path]
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.reduce(0, fn [{x1, y1}, {x2, y2}], acc ->
+      if x1 != x2 and y1 != y2, do: acc + div(speed * 14, 10), else: acc + speed
+    end)
   end
 
-  defp chase_mob_state do
+  defp aggressive_idle_mob_state(opts \\ [modes: [:aggressive]]) do
+    %MobState{base_mob_state(opts) | x: 100, y: 100, skill_state: :idle, target_ref: nil}
+  end
+
+  defp chase_mob_state(opts \\ [modes: [:can_move, :can_attack]]) do
     %MobState{
-      base_mob_state()
+      base_mob_state(opts)
       | x: 100,
         y: 100,
-        ai_state: :chase,
+        skill_state: :rush,
         target_ref: {:player, 2},
         movement_state: :standing,
         process_pid: self()
     }
   end
 
-  defp movable_mob_state do
+  defp movable_mob_state(opts \\ [modes: [:can_move]]) do
     %MobState{
-      base_mob_state()
+      base_mob_state(opts)
       | process_pid: self(),
         x: 100,
         y: 100,
-        movement_state: :standing,
-        last_movement_end_time: nil
+        movement_state: :standing
     }
   end
 
-  defp combat_mob_state do
+  defp combat_mob_state(opts \\ [modes: [:can_move, :can_attack]]) do
     %MobState{
-      base_mob_state()
+      base_mob_state(opts)
       | x: 100,
         y: 100,
-        ai_state: :combat,
+        skill_state: :berserk,
         target_ref: {:player, 2},
         last_attack_time: nil
     }
@@ -1181,6 +1472,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
   defp living_player_state do
     %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+  end
+
+  defp leveled_player(base_level) do
+    PlayerState.new(%Character{
+      id: 2,
+      account_id: 100,
+      name: "Target",
+      last_map: "prontera",
+      last_x: 104,
+      last_y: 100,
+      sex: "M",
+      hair: 1,
+      hair_color: 0,
+      clothes_color: 0,
+      head_mid: 0,
+      head_bottom: 0,
+      robe: 0,
+      str: 1,
+      agi: 1,
+      vit: 1,
+      int: 1,
+      dex: 1,
+      luk: 1,
+      base_level: base_level,
+      job_level: 1,
+      class: 0
+    })
   end
 
   defp homunculus_state(owner_character_id) do
@@ -1239,8 +1557,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     }
   end
 
-  defp attacked_mob(ai_state, attacker, modes \\ [:can_move, :can_attack]) do
-    %MobState{base_mob_state(modes: modes) | ai_state: ai_state, attacked_ref: attacker}
+  defp attacked_mob(skill_state, attacker, modes \\ [:can_move, :can_attack]) do
+    %MobState{base_mob_state(modes: modes) | skill_state: skill_state, attacked_ref: attacker}
   end
 
   defp base_mob_state(opts \\ []) do

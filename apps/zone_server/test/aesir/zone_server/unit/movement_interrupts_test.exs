@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
   setup :set_mimic_from_context
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -106,78 +107,58 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
   end
 
   describe "chase stop-at-target (mob)" do
-    test "a mob already in attack range switches to combat and does not path toward the target" do
-      collector = start_move_collector()
-      target_id = 5001
-
-      register_living_target(target_id, 101, 100)
-
-      mob_state = %{
-        chasing_mob_state(collector)
-        | x: 100,
-          y: 100,
-          ai_state: :chase,
-          target_ref: {:player, target_id},
-          movement_state: :standing,
-          last_movement_end_time: nil
-      }
-
-      result = AIStateMachine.process_ai(mob_state)
-
-      assert result.ai_state == :combat
-      assert collected_moves() == []
+    setup do
+      stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
+      :ok
     end
 
-    test "after the target moves out of attack range the mob re-paths toward the target's new cell" do
-      collector = start_move_collector()
+    test "a mob already in attack range orders the attack and does not path toward the target" do
+      target_id = 5001
+
+      register_living_target(target_id, 151, 150)
+
+      mob_state = %{
+        chasing_mob_state()
+        | skill_state: :rush,
+          target_ref: {:player, target_id}
+      }
+
+      result = AIStateMachine.process_ai(mob_state, System.system_time(:millisecond))
+
+      assert result.skill_state == :berserk
+      assert result.attack_target == {:player, target_id}
+      assert result.movement_state == :standing
+    end
+
+    test "after the target moves out of attack range the mob paths to a cell next to it" do
       target_id = 5002
 
       mob_state = %{
-        chasing_mob_state(collector)
-        | x: 100,
-          y: 100,
-          ai_state: :chase,
-          target_ref: {:player, target_id},
-          movement_state: :standing,
-          last_movement_end_time: nil
+        chasing_mob_state()
+        | skill_state: :rush,
+          target_ref: {:player, target_id}
       }
 
       # Target starts adjacent (in attack range): the mob stops and engages.
-      register_living_target(target_id, 101, 100)
-      in_range = AIStateMachine.process_ai(mob_state)
+      register_living_target(target_id, 151, 150)
+      in_range = AIStateMachine.process_ai(mob_state, System.system_time(:millisecond))
 
-      assert in_range.ai_state == :combat
-      assert collected_moves() == []
+      assert in_range.skill_state == :berserk
+      assert in_range.movement_state == :standing
 
       # Target flees out of attack range but stays within chase range: the
-      # mob must re-path toward the target's new cell.
-      SpatialIndex.update_position(target_id, 108, 100, @map_name)
-      chasing = AIStateMachine.process_ai(%{mob_state | ai_state: :chase})
+      # mob walks to a cell within attack range of the target, never its cell.
+      SpatialIndex.update_position(target_id, 158, 150, @map_name)
+      chasing = AIStateMachine.process_ai(in_range, System.system_time(:millisecond))
 
-      assert chasing.ai_state == :chase
-      assert collected_moves() == [{108, 100}]
+      assert chasing.skill_state == :rush
+      assert chasing.movement_state == :moving
+      assert chasing.chase_target == {:player, target_id}
+      assert chasing.attack_target == nil
+      {dest_x, dest_y} = List.last(chasing.walk_path)
+      assert {dest_x, dest_y} != {158, 150}
+      assert max(abs(dest_x - 158), abs(dest_y - 150)) == 1
     end
-  end
-
-  defp start_move_collector do
-    test_pid = self()
-
-    spawn_link(fn -> move_collector_loop(test_pid) end)
-  end
-
-  defp move_collector_loop(test_pid) do
-    receive do
-      {:"$gen_cast", {:movement, {:move_to, x, y}}} ->
-        send(test_pid, {:move_to, x, y})
-        move_collector_loop(test_pid)
-
-      _ ->
-        move_collector_loop(test_pid)
-    end
-  end
-
-  defp collected_moves do
-    collect_moves([])
   end
 
   defp register_living_target(target_id, x, y) do
@@ -194,15 +175,7 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
     :ok = SpatialIndex.add_unit(:player, target_id, x, y, @map_name)
   end
 
-  defp collect_moves(acc) do
-    receive do
-      {:move_to, x, y} -> collect_moves([{x, y} | acc])
-    after
-      50 -> Enum.reverse(acc)
-    end
-  end
-
-  defp chasing_mob_state(process_pid) do
+  defp chasing_mob_state do
     mob_data = %MobDefinition{
       id: 1002,
       aegis_name: "PORING",
@@ -227,7 +200,7 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
       client_attack_motion: 500,
       damage_motion: 480,
       ai_type: 0,
-      modes: [],
+      modes: [:can_move, :can_attack],
       drops: []
     }
 
@@ -236,10 +209,10 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
       mob_id: mob_data.id,
       mob_data: mob_data,
       spawn_ref: nil,
-      process_pid: process_pid,
+      process_pid: self(),
       map_name: @map_name,
-      x: 100,
-      y: 100,
+      x: 150,
+      y: 150,
       dir: 0,
       hp: mob_data.hp,
       max_hp: mob_data.hp,

@@ -43,14 +43,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
+  alias Aesir.ZoneServer.Mmo.MobSkill.Selector
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -61,6 +65,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   @mob_scope %{invocation: :mob, autocast_flag?: false}
   @friend_range 8
   @max_random_targets 30
+  @max_cast_range 14
+  @self_skill_range 9
+  @area_size 14
 
   @typedoc "A resolved cast target: a concrete unit or a ground cell."
   @type target ::
@@ -73,10 +80,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   `around`/`around1..4` anchor the ground cell on the caster, `around5..8` on
   the current target's cell (rAthena semantics); the `area` atom is passed
   through for the ground-target skill to size the AoE. `friend` is the friend
-  the row's `friendhpltmaxrate`/`friendhpinrate` condition finds
-  (`hp_rate_friend/3`), otherwise the caster itself. `randomtarget` rolls one
-  of the first 30 living player-side units in the skill-range square, taken in
-  the map's block order.
+  the row's `friendhpltmaxrate`/`friendhpinrate` (`hp_rate_friend/3`) or
+  `friendstatuson`/`friendstatusoff` (`status_friend/3`) condition finds,
+  otherwise the caster itself. `randomtarget` rolls one
+  of the first 30 living, visible enemies within the skill's own cast range
+  (`skill_cast_range/1`), in the map's block order.
   """
   @spec resolve_target(MobState.t(), map()) :: {:ok, target()} | {:error, atom()}
   def resolve_target(%MobState{target_ref: nil}, %{target: :target}), do: {:error, :no_target}
@@ -102,14 +110,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     end
   end
 
-  def resolve_target(%MobState{} = state, %{target: :randomtarget}) do
-    case random_targets(state) do
-      [] ->
-        {:error, :no_target}
-
-      targets ->
-        {unit_type, unit_id} = Enum.at(targets, :rand.uniform(length(targets)) - 1)
-        {:ok, {:unit, unit_type, unit_id}}
+  def resolve_target(%MobState{} = state, %{target: :randomtarget} = row) do
+    with {:ok, range} <- skill_cast_range(row),
+         [_ | _] = targets <- random_targets(state, range) do
+      {unit_type, unit_id} = Enum.at(targets, :rand.uniform(length(targets)) - 1)
+      {:ok, {:unit, unit_type, unit_id}}
+    else
+      [] -> {:error, :no_target}
+      :error -> {:error, :unknown_skill}
     end
   end
 
@@ -352,6 +360,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   defp condition_friend(state, %{type: :friendhpinrate, value: min_rate, val1: max_rate}),
     do: hp_rate_friend(state, min_rate, max_rate)
 
+  defp condition_friend(state, %{type: type, value: status})
+       when type in [:friendstatuson, :friendstatusoff],
+       do: status_friend(state, type == :friendstatuson, status)
+
   defp condition_friend(_state, _condition), do: nil
 
   @doc """
@@ -411,10 +423,26 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   defp rate_within?(nil, _min_rate, _max_rate), do: false
   defp rate_within?(rate, min_rate, max_rate), do: rate >= min_rate and rate <= max_rate
 
-  # The living enemies the random roll indexes: the player side within the
-  # skill range square, in the map's block order, at most the first 30.
-  defp random_targets(%MobState{} = state) do
-    range = skill_range(state)
+  @doc """
+  The cast range a mob skill row searches and casts at: the skill's declared
+  range for the row's level, a negative one taken as its magnitude, capped at
+  14, and 9 for a self-ranged skill. `:error` for a skill missing from the
+  catalog.
+  """
+  @spec skill_cast_range(map()) :: {:ok, pos_integer()} | :error
+  def skill_cast_range(%{skill_id: skill_id, level: level}) do
+    with {:ok, definition} <- SkillCatalog.by_id(skill_id) do
+      range = definition |> Definition.range_at_level(level) |> abs() |> min(@max_cast_range)
+      {:ok, if(range == 0, do: @self_skill_range, else: range)}
+    end
+  end
+
+  # The enemies the random roll indexes: living units in the square of `range`
+  # cells around the mob it can see and may attack, in the map's block order,
+  # at most the first 30.
+  defp random_targets(%MobState{} = state, range) do
+    caster = MobState.to_combatant(state)
+    viewer = concealment_caster(state)
 
     state.map_name
     |> SpatialIndex.units_in_area(
@@ -423,11 +451,121 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       state.x + range,
       state.y + range
     )
-    |> Enum.filter(fn {unit_type, unit_id} ->
-      unit_type in [:player, :homunculus] and living_unit?(unit_type, unit_id)
-    end)
+    |> Enum.reject(&(&1 == {:mob, state.instance_id}))
+    |> Enum.filter(&random_target?(caster, viewer, &1))
     |> Enum.take(@max_random_targets)
   end
+
+  defp random_target?(caster, viewer, {unit_type, unit_id} = ref) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {module, unit, _pid}} ->
+        Unit.living?(unit) and visible?(viewer, ref) and
+          Relationship.enemy?(caster, module.to_combatant(unit))
+
+      {:error, :not_found} ->
+        false
+    end
+  end
+
+  defp visible?(viewer, {:player, id}),
+    do: Targeting.attack_visible?(viewer, %{unit_type: :player, unit_id: id})
+
+  defp visible?(_viewer, _ref), do: true
+
+  @doc """
+  The friend a `friendstatuson`/`friendstatusoff` row finds: within 8 cells of
+  the caster in the map's block order, the last monster other than the caster
+  that is not its enemy and has (`on?`) or lacks the status
+  (`Selector.status_matches?/3`). `nil` when none qualifies.
+  """
+  @spec status_friend(MobState.t(), boolean(), atom() | integer()) :: {:mob, integer()} | nil
+  def status_friend(%MobState{} = state, on?, status) do
+    caster = MobState.to_combatant(state)
+
+    state.map_name
+    |> SpatialIndex.units_in_area(
+      state.x - @friend_range,
+      state.y - @friend_range,
+      state.x + @friend_range,
+      state.y + @friend_range
+    )
+    |> Enum.filter(fn {type, id} = ref ->
+      type == :mob and ref != {:mob, state.instance_id} and
+        friend_with_status?(caster, id, on?, status)
+    end)
+    |> List.last()
+  end
+
+  defp friend_with_status?(caster, id, on?, status) do
+    case UnitRegistry.get_unit(:mob, id) do
+      {:ok, {module, unit, _pid}} ->
+        Unit.living?(unit) and not Relationship.enemy?(caster, module.to_combatant(unit)) and
+          :mob
+          |> StatusStorage.get_unit_statuses(id)
+          |> Enum.map(& &1.type)
+          |> Selector.status_matches?(on?, status)
+
+      {:error, :not_found} ->
+        false
+    end
+  end
+
+  @doc """
+  Counts the units with a standing attack order on `ref`: players attacking
+  it, monsters with it as their attack target and homunculi targeting it.
+  """
+  @spec count_targeting({atom(), integer()}) :: non_neg_integer()
+  def count_targeting({_type, id} = ref) do
+    players =
+      :player
+      |> UnitRegistry.list_units_by_type()
+      |> Enum.count(fn player_id ->
+        match?(
+          {:ok, {_module, %PlayerState{combat_target_id: ^id}, _pid}},
+          UnitRegistry.get_unit(:player, player_id)
+        )
+      end)
+
+    mobs =
+      :mob
+      |> UnitRegistry.list_units_by_type()
+      |> Enum.count(fn mob_id ->
+        match?(
+          {:ok, {_module, %MobState{attack_target: ^ref}, _pid}},
+          UnitRegistry.get_unit(:mob, mob_id)
+        )
+      end)
+
+    homunculi =
+      :homunculus
+      |> UnitRegistry.list_units_by_type()
+      |> Enum.count(fn hom_id ->
+        match?(
+          {:ok, {_module, %HomunculusState{target: ^ref}, _pid}},
+          UnitRegistry.get_unit(:homunculus, hom_id)
+        )
+      end)
+
+    players + mobs + homunculi
+  end
+
+  @doc "Counts the monsters within the square visual area of the mob, itself included."
+  @spec count_nearby_mobs(MobState.t()) :: non_neg_integer()
+  def count_nearby_mobs(%MobState{} = state) do
+    :mob
+    |> SpatialIndex.get_units_in_area(
+      state.map_name,
+      state.x - @area_size,
+      state.y - @area_size,
+      state.x + @area_size,
+      state.y + @area_size
+    )
+    |> length()
+  end
+
+  @doc "Whether the unit `ref` is in the world and living."
+  @spec living_unit?({atom(), integer()}) :: boolean()
+  def living_unit?({unit_type, unit_id}), do: living_unit?(unit_type, unit_id)
 
   defp living_unit?(unit_type, unit_id) do
     case UnitRegistry.get_unit(unit_type, unit_id) do
@@ -435,6 +573,4 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       _ -> false
     end
   end
-
-  defp skill_range(%MobState{mob_data: mob_data}), do: mob_data.skill_range
 end
