@@ -319,7 +319,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
       assert opts[:skill_id] == 489
       assert opts[:skill_level] == 5
       assert opts[:base_damage] == damage
-      assert opts[:ignore_element]
+      assert opts[:fix_damage]
+      refute Keyword.has_key?(opts, :ignore_element)
       assert opts[:report_hit]
       {:ok, %{hit?: true, damage: damage, target_survives?: survives, coma?: false}}
     end)

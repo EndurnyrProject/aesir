@@ -253,8 +253,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
                    SkillAttack.execute_misc_attack(state, {:mob, victim.unit_id},
                      skill_id: 116,
                      skill_level: 1,
-                     base_damage: 1000,
-                     ignore_element: true
+                     base_damage: 1000
                    )
 
         :ground ->

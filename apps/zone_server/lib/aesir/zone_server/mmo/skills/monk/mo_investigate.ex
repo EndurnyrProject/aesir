@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_flee: true,
     range: 2,
     sp_cost: @sp_costs,
     sphere_cost: List.duplicate(1, 5),

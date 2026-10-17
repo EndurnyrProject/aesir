@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   hits/splashes.
   """
 
+  import Bitwise
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
@@ -970,7 +972,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   Executes a single-target BF_MISC skill (trap) from a caster against a target.
 
   Routes the caller-supplied `:base_damage` through `MiscDamageCalculator`
-  (element + hard-DEF, soft-DEF/MDEF ignored), broadcasts a `ZC_NOTIFY_SKILL`
+  (the target's cards, the skill rates and the element step; no DEF or MDEF), broadcasts a `ZC_NOTIFY_SKILL`
   packet, then applies the misc damage. Unlike the magic path there is no
   caster-target range check: a trap fires on contact regardless of where its
   owner stands. Hostility (owner/ally exclusion) is decided by the trap's
@@ -982,14 +984,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:element` - the skill's attack element (default `:neutral`)
     - `:hit_divisions` - signed divisions of the one calculated hit (default `1`);
       the packet shows the normalized count
-    - `:ignore_element` - bypass the element table (default `false`)
+    - `:weapon_flag` - the hit also counts as a weapon attack (Throw Stone), for
+      every check that reads its battle flag (default `false`)
     - `:bypass_reductions` - deliver without magic reduction or absorbing
       statuses (pre-renewal Gravitation Field, Gloria Domini) (default `false`)
     - `:report_hit` - return settled damage and logical target survival (default `false`),
       without waiting for the target's asynchronous HP mutation
     - `:delivery` - how the hit reached the target (default `:direct`, see
       `execute_skill_attack/3`)
-    - `:fix_damage` - deal it as `battle_fix_damage` does (default `false`): it
+    - `:fix_damage` - deal it as `battle_fix_damage` does (default `false`): the
+      base is dealt as is, without the misc card, skill-rate and element steps; it
       stops no walking target and runs no additional or counter effects, so it
       carries no equipment procs
     - `:base_distance`, `:origin`, `:native_enabled`, `:native_target_types`, and
@@ -1044,7 +1048,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            Keyword.get(opts, :hit_divisions, 1),
            %{
              authorize_target: authorize_target,
-             ignore_element?: Keyword.get(opts, :ignore_element, false),
+             weapon_flag?: Keyword.get(opts, :weapon_flag, false),
              owner_derived_trap?: false,
              report_hit?: report_hit?,
              bypass_reductions?: Keyword.get(opts, :bypass_reductions, false),
@@ -1074,7 +1078,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       (default `1`); the packet shows the normalized count
     - `:split` - divide one supplied base by the selected living-enemy count
       before target-specific damage processing (default `false`)
-    - `:ignore_element` - bypass the element table (default `false`)
     - `:target_skill_units` - include only live targetable traps (default `false`)
     - `:shoot_range_los` - require projectile line of sight from the splash center
     - `:delivery` - how the splash reached each target (default `:direct`, see
@@ -1101,7 +1104,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       )
 
     base_damage = split_base_damage(base_damage, targets, Keyword.get(opts, :split, false))
-    ignore_element? = Keyword.get(opts, :ignore_element, false)
 
     Enum.flat_map(targets, fn {_unit_type, target_id} = target_ref ->
       case apply_misc_hit(
@@ -1114,7 +1116,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              Keyword.get(opts, :hit_divisions, 1),
              %{
                authorize_target: &Targeting.validate_enemy/2,
-               ignore_element?: ignore_element?,
                owner_derived_trap?: target_skill_units?,
                knockback_options: knockback_options(opts),
                delivery: Keyword.get(opts, :delivery, :direct)
@@ -1172,7 +1173,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           Keyword.get(opts, :hit_divisions, 1),
           %{
             authorize_target: authorize_target,
-            ignore_element?: Keyword.get(opts, :ignore_element, false),
             owner_derived_trap?: false,
             knockback_options: knockback_options(opts),
             delivery: Keyword.get(opts, :delivery, :unit)
@@ -1221,17 +1221,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- Targeting.validate_delivery(attacker, target, skill_id, misc_opts.delivery),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id),
+         range = SkillRange.classify(attacker, target, skill_id, skill_level),
+         attack_flag = misc_attack_flag(range, misc_opts),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(
              attacker,
              target,
-             misc_damage_opts(base_damage, element, misc_opts.ignore_element?)
+             misc_damage_opts(base_damage, element, skill_id, attack_flag, misc_opts)
            ) do
       {damage, divisions} = DamageShared.normalize_damage_divisions(damage, hit_divisions)
       coma? = decide_coma(attacker, target, damage)
 
-      range = SkillRange.classify(attacker, target, skill_id, skill_level)
-      attack_flag = BattleFlags.build(:misc, range, true)
       immediate? = EquipProcDispatch.immediate?(skill_id, misc_opts.delivery)
 
       hit_info = %{
@@ -1388,11 +1388,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   defp misc_target_combatant(target_state, _owner_derived_trap?),
     do: {:ok, target_state.__struct__.to_combatant(target_state)}
 
-  defp misc_damage_opts(base_damage, element, false),
-    do: [base_damage: base_damage, element: element]
+  defp misc_damage_opts(base_damage, element, skill_id, attack_flag, misc_opts) do
+    opts = [
+      base_damage: base_damage,
+      element: element,
+      skill_id: skill_id,
+      attack_flag: attack_flag
+    ]
 
-  defp misc_damage_opts(base_damage, element, true),
-    do: [base_damage: base_damage, element: element, ignore_element: true]
+    if Map.get(misc_opts, :fix_damage?, false),
+      do: Keyword.put(opts, :fixed_damage, base_damage),
+      else: opts
+  end
+
+  # A weapon-flagged misc hit (Throw Stone) also counts as a weapon attack.
+  defp misc_attack_flag(range, %{weapon_flag?: true}),
+    do: BattleFlags.build(:misc, range, true) ||| BattleFlags.type_bit(:weapon)
+
+  defp misc_attack_flag(range, _misc_opts), do: BattleFlags.build(:misc, range, true)
 
   # Resolves one logical attack: the target's weapon interceptions, one
   # hit/flee roll, one damage calculation normalized over the attack's signed

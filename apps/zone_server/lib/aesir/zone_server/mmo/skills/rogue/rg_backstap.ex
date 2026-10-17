@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_flee: [renewal: false, pre_renewal: true],
     range: 1,
     hit_count: 1,
     sp_cost: List.duplicate(16, 10),

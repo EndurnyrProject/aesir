@@ -154,7 +154,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
            skill_id: 489,
            skill_level: level,
            base_damage: damage,
-           ignore_element: true,
            fix_damage: true,
            report_hit: true
          ) do

@@ -65,7 +65,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
                  skill_id: 489,
                  skill_level: 5,
                  base_damage: 1000,
-                 ignore_element: true,
                  report_hit: true
                )
     end
@@ -86,7 +85,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
                  skill_id: 489,
                  skill_level: 5,
                  base_damage: 101,
-                 ignore_element: true,
                  hit_divisions: divisions,
                  report_hit: true
                )
@@ -107,7 +105,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
                skill_id: 489,
                skill_level: 5,
                base_damage: 1000,
-               ignore_element: true,
                report_hit: true
              )
   end

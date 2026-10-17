@@ -28,6 +28,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_def_card: [renewal: false, pre_renewal: true],
+    ignore_element: [renewal: false, pre_renewal: true],
+    ignore_flee: [renewal: false, pre_renewal: true],
     damage_kind: [renewal: :magic, pre_renewal: :misc],
     hit_count: [renewal: 3, pre_renewal: 1],
     element: [renewal: :holy, pre_renewal: :neutral],
@@ -90,7 +93,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
              skill_id: definition.id,
              skill_level: level,
              base_damage: 500 + 300 * level,
-             ignore_element: true,
              bypass_reductions: true
            ) do
       drain_sp(target, 15 + 5 * level)

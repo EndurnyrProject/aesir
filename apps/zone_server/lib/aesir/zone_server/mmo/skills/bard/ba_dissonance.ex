@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance do
     max_level: 5,
     target_type: :self,
     damage_type: :no_damage,
+    ignore_flee: true,
     damage_kind: [renewal: :magic, pre_renewal: :misc],
     element: :neutral,
     range: 0,

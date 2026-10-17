@@ -23,6 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
     ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :ground,
     damage_type: :damage,
+    ignore_def_card: true,
+    ignore_flee: true,
     damage_kind: :misc,
     element: :earth,
     range: 3,

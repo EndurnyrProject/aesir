@@ -132,7 +132,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
     stub(SkillAttack, :execute_misc_attack, fn ^caster, ref, opts ->
       send(
         test_pid,
-        {:hit, ref, opts[:base_damage], opts[:ignore_element] and opts[:bypass_reductions]}
+        {:hit, ref, opts[:base_damage],
+         opts[:bypass_reductions] and not Keyword.has_key?(opts, :ignore_element)}
       )
 
       :ok

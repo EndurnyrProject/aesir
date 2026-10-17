@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
       assert opts[:skill_level] == 1
       assert opts[:base_damage] == 50
       assert opts[:element] == :neutral
+      assert opts[:weapon_flag]
       assert opts[:report_hit]
       {:ok, %{hit?: true}}
     end)

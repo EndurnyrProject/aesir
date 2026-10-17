@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   an empty `equip_modifiers` map, so every read is zero for them.
   """
 
+  import Bitwise
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -302,6 +304,61 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
       ]
   end
 
+  @typedoc """
+  How a misc hit reads the target's cards: the hit's element, whether the
+  element resists are skipped, the target's status modifiers, and the battle
+  flag the trigger-conditioned entries are matched against.
+  """
+  @type misc_defense_cardfix_opts :: %{
+          element: atom(),
+          ignore_element?: boolean(),
+          status_modifiers: map(),
+          attack_flag: BattleFlags.flag()
+        }
+
+  @doc """
+  The target's card reductions against a misc hit, in the order they multiply
+  into one per-mille factor: the element resists with the attacker's defensive
+  element (unless `ignore_element?`), race, size, the secondary monster groups
+  summed, class, the misc defense rate, and the near or long defense the hit's
+  range selects.
+
+  Unlike the weapon resists, a trigger-conditioned element resist applies to a
+  misc hit only when it names the hit's exact element: an all-elements entry
+  does not.
+  """
+  @spec misc_defense_cardfix(Combatant.t(), Combatant.t(), misc_defense_cardfix_opts()) ::
+          [rate()]
+  def misc_defense_cardfix(defender, attacker, opts) do
+    %{element: element, status_modifiers: modifiers, attack_flag: flag} = opts
+
+    element_resist =
+      if opts.ignore_element?,
+        do: [],
+        else: [
+          read(defender, :subele, element) +
+            flagged_sum(defender.equip_modifiers, :subele, [element], flag) +
+            status_subele(modifiers, element) + faith_resist_rate(defender, element) +
+            skin_temper_resist_rate(defender, element) +
+            read(defender, :sub_def_ele, element_atom(attacker.element))
+        ]
+
+    range_rate =
+      if (BattleFlags.range_bit(:short) &&& flag) != 0,
+        do: Map.get(defender.equip_modifiers, :near_atk_def, 0),
+        else: long_range_defense_rate(defender, modifiers, true)
+
+    element_resist ++
+      [
+        read(defender, :subrace, attacker.race, flag) + status_subrace(modifiers, attacker.race),
+        read(defender, :subsize, attacker.size),
+        race2_sum(defender, :subrace2, attacker.race2),
+        read(defender, :subclass, attacker.class),
+        Map.get(defender.equip_modifiers, :misc_atk_def, 0),
+        range_rate
+      ]
+  end
+
   defp element_resist(defender, element, opts) do
     read(defender, :subele, element, opts.attack_flag) +
       status_subele(opts.status_modifiers, element) + faith_resist_rate(defender, element) +
@@ -585,14 +642,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @spec read(Combatant.t(), atom(), atom(), BattleFlags.flag()) :: rate()
   defp read(combatant, family, param, attack_flag) do
     read(combatant, family, param) +
-      flagged_sum(combatant.equip_modifiers, family, param, attack_flag)
+      flagged_sum(combatant.equip_modifiers, family, [param, :all], attack_flag)
   end
 
-  @spec flagged_sum(map(), atom(), atom(), BattleFlags.flag()) :: rate()
-  defp flagged_sum(equip_modifiers, family, param, attack_flag) do
+  @spec flagged_sum(map(), atom(), [atom()], BattleFlags.flag()) :: rate()
+  defp flagged_sum(equip_modifiers, family, params, attack_flag) do
     Enum.reduce(equip_modifiers, 0, fn
       {{^family, {entry_param, flag}}, rate}, acc when is_integer(flag) ->
-        if entry_param in [param, :all] and BattleFlags.matches_battle?(flag, attack_flag),
+        if entry_param in params and BattleFlags.matches_battle?(flag, attack_flag),
           do: acc + rate,
           else: acc
 

@@ -1,385 +1,388 @@
-# Skill DB Type and NoDamage columns for every catalog skill, both modes.
-# Extracted from the reference skill database (renewal and pre-renewal) at the
-# pinned reference commit. Columns: id, name, renewal type, renewal no_damage,
-# pre-renewal type, pre-renewal no_damage ("-" when the mode has no row).
-1	NV_BASIC	None	false	None	false
-2	SM_SWORD	Weapon	false	Weapon	false
-3	SM_TWOHAND	Weapon	false	Weapon	false
-4	SM_RECOVERY	None	false	None	false
-5	SM_BASH	Weapon	false	Weapon	false
-6	SM_PROVOKE	None	true	None	true
-7	SM_MAGNUM	Weapon	false	Weapon	false
-8	SM_ENDURE	Weapon	true	Weapon	true
-9	MG_SRECOVERY	None	false	None	false
-10	MG_SIGHT	Magic	true	Magic	true
-11	MG_NAPALMBEAT	Magic	false	Magic	false
-12	MG_SAFETYWALL	Magic	true	Magic	true
-13	MG_SOULSTRIKE	Magic	false	Magic	false
-14	MG_COLDBOLT	Magic	false	Magic	false
-15	MG_FROSTDIVER	Magic	false	Magic	false
-16	MG_STONECURSE	Magic	true	Magic	true
-17	MG_FIREBALL	Magic	false	Magic	false
-18	MG_FIREWALL	Magic	false	Magic	false
-19	MG_FIREBOLT	Magic	false	Magic	false
-20	MG_LIGHTNINGBOLT	Magic	false	Magic	false
-21	MG_THUNDERSTORM	Magic	false	Magic	false
-22	AL_DP	Weapon	false	Weapon	false
-23	AL_DEMONBANE	Weapon	false	Weapon	false
-24	AL_RUWACH	Magic	true	Magic	true
-25	AL_PNEUMA	Magic	true	Magic	true
-26	AL_TELEPORT	Magic	true	Magic	true
-27	AL_WARP	Magic	true	Magic	true
-28	AL_HEAL	Magic	true	Magic	true
-29	AL_INCAGI	Magic	true	Magic	true
-30	AL_DECAGI	Magic	true	Magic	true
-31	AL_HOLYWATER	Magic	true	Magic	true
-32	AL_CRUCIS	Magic	true	Magic	true
-33	AL_ANGELUS	Magic	true	Magic	true
-34	AL_BLESSING	Magic	true	Magic	true
-35	AL_CURE	Magic	true	Magic	true
-36	MC_INCCARRY	None	false	None	false
-37	MC_DISCOUNT	None	false	None	false
-38	MC_OVERCHARGE	None	false	None	false
-39	MC_PUSHCART	None	false	None	false
-40	MC_IDENTIFY	None	true	None	true
-41	MC_VENDING	None	true	None	true
-42	MC_MAMMONITE	Weapon	false	Weapon	false
-43	AC_OWL	None	false	None	false
-44	AC_VULTURE	None	false	None	false
-45	AC_CONCENTRATION	Weapon	true	Weapon	true
-46	AC_DOUBLE	Weapon	false	Weapon	false
-47	AC_SHOWER	Weapon	false	Weapon	false
-48	TF_DOUBLE	Weapon	false	Weapon	false
-49	TF_MISS	Weapon	false	Weapon	false
-50	TF_STEAL	Weapon	true	Weapon	true
-51	TF_HIDING	None	true	None	true
-52	TF_POISON	Weapon	false	Weapon	false
-53	TF_DETOXIFY	Weapon	true	Weapon	true
-54	ALL_RESURRECTION	Magic	true	Magic	true
-55	KN_SPEARMASTERY	Weapon	false	Weapon	false
-56	KN_PIERCE	Weapon	false	Weapon	false
-57	KN_BRANDISHSPEAR	Weapon	true	Weapon	true
-58	KN_SPEARSTAB	Weapon	false	Weapon	false
-59	KN_SPEARBOOMERANG	Weapon	false	Weapon	false
-60	KN_TWOHANDQUICKEN	Weapon	true	Weapon	true
-61	KN_AUTOCOUNTER	Weapon	false	Weapon	false
-62	KN_BOWLINGBASH	Weapon	false	Weapon	false
-63	KN_RIDING	Weapon	false	Weapon	false
-64	KN_CAVALIERMASTERY	Weapon	false	Weapon	false
-65	PR_MACEMASTERY	Weapon	false	Weapon	false
-66	PR_IMPOSITIO	Magic	true	Magic	true
-67	PR_SUFFRAGIUM	Magic	true	Magic	true
-68	PR_ASPERSIO	Magic	true	Magic	true
-69	PR_BENEDICTIO	Magic	true	Magic	true
-70	PR_SANCTUARY	Magic	true	Magic	true
-71	PR_SLOWPOISON	Magic	true	Magic	true
-72	PR_STRECOVERY	Magic	true	Magic	true
-73	PR_KYRIE	Magic	true	Magic	true
-74	PR_MAGNIFICAT	Magic	true	Magic	true
-75	PR_GLORIA	Magic	true	Magic	true
-76	PR_LEXDIVINA	Magic	true	Magic	true
-77	PR_TURNUNDEAD	Magic	false	Magic	false
-78	PR_LEXAETERNA	Magic	true	Magic	true
-79	PR_MAGNUS	Magic	false	Magic	false
-80	WZ_FIREPILLAR	Magic	false	Magic	false
-81	WZ_SIGHTRASHER	Magic	false	Magic	false
-83	WZ_METEOR	Magic	false	Magic	false
-84	WZ_JUPITEL	Magic	false	Magic	false
-85	WZ_VERMILION	Magic	false	Magic	false
-86	WZ_WATERBALL	Magic	false	Magic	false
-87	WZ_ICEWALL	Magic	true	Magic	true
-88	WZ_FROSTNOVA	Magic	false	Magic	false
-89	WZ_STORMGUST	Magic	false	Magic	false
-90	WZ_EARTHSPIKE	Magic	false	Magic	false
-91	WZ_HEAVENDRIVE	Magic	false	Magic	false
-92	WZ_QUAGMIRE	Magic	true	Magic	true
-93	WZ_ESTIMATION	Magic	true	Magic	true
-94	BS_IRON	Weapon	false	Weapon	false
-95	BS_STEEL	Weapon	false	Weapon	false
-96	BS_ENCHANTEDSTONE	Weapon	false	Weapon	false
-97	BS_ORIDEOCON	Weapon	false	Weapon	false
-98	BS_DAGGER	Weapon	false	Weapon	false
-99	BS_SWORD	Weapon	false	Weapon	false
-100	BS_TWOHANDSWORD	Weapon	false	Weapon	false
-101	BS_AXE	Weapon	false	Weapon	false
-102	BS_MACE	Weapon	false	Weapon	false
-103	BS_KNUCKLE	Weapon	false	Weapon	false
-104	BS_SPEAR	Weapon	false	Weapon	false
-105	BS_HILTBINDING	Weapon	false	Weapon	false
-106	BS_FINDINGORE	Weapon	false	Weapon	false
-107	BS_WEAPONRESEARCH	Weapon	false	Weapon	false
-108	BS_REPAIRWEAPON	Weapon	true	Weapon	true
-109	BS_SKINTEMPER	Weapon	false	Weapon	false
-110	BS_HAMMERFALL	Weapon	true	Weapon	true
-111	BS_ADRENALINE	Weapon	true	Weapon	true
-112	BS_WEAPONPERFECT	Weapon	true	Weapon	true
-113	BS_OVERTHRUST	Weapon	true	Weapon	true
-114	BS_MAXIMIZE	Weapon	true	Weapon	true
-115	HT_SKIDTRAP	Misc	true	Misc	true
-116	HT_LANDMINE	Misc	false	Misc	false
-117	HT_ANKLESNARE	Misc	true	Misc	true
-118	HT_SHOCKWAVE	Misc	true	Misc	true
-119	HT_SANDMAN	Misc	true	Misc	true
-120	HT_FLASHER	Misc	true	Misc	true
-121	HT_FREEZINGTRAP	Weapon	false	Weapon	false
-122	HT_BLASTMINE	Misc	false	Misc	false
-123	HT_CLAYMORETRAP	Misc	false	Misc	false
-124	HT_REMOVETRAP	Misc	true	Misc	true
-125	HT_TALKIEBOX	Misc	true	Misc	true
-126	HT_BEASTBANE	Weapon	false	Weapon	false
-127	HT_FALCON	Misc	false	Misc	false
-128	HT_STEELCROW	Misc	false	Misc	false
-129	HT_BLITZBEAT	Misc	false	Misc	false
-130	HT_DETECTING	Misc	true	Misc	true
-131	HT_SPRINGTRAP	Misc	true	Misc	true
-132	AS_RIGHT	Weapon	false	Weapon	false
-133	AS_LEFT	Weapon	false	Weapon	false
-134	AS_KATAR	Weapon	false	Weapon	false
-135	AS_CLOAKING	Weapon	true	Weapon	true
-136	AS_SONICBLOW	Weapon	false	Weapon	false
-137	AS_GRIMTOOTH	Weapon	false	Weapon	false
-138	AS_ENCHANTPOISON	Weapon	true	Weapon	true
-139	AS_POISONREACT	Weapon	false	Weapon	false
-140	AS_VENOMDUST	Weapon	true	Weapon	true
-141	AS_SPLASHER	Weapon	true	Weapon	true
-142	NV_FIRSTAID	None	true	None	true
-143	NV_TRICKDEAD	None	true	None	true
-144	SM_MOVINGRECOVERY	None	false	None	false
-145	SM_FATALBLOW	Weapon	false	Weapon	false
-146	SM_AUTOBERSERK	Weapon	true	Weapon	true
-147	AC_MAKINGARROW	Weapon	true	Weapon	true
-148	AC_CHARGEARROW	Weapon	false	Weapon	false
-149	TF_SPRINKLESAND	Weapon	false	Weapon	false
-150	TF_BACKSLIDING	Weapon	true	Weapon	true
-151	TF_PICKSTONE	None	true	None	true
-152	TF_THROWSTONE	Misc	false	Misc	false
-153	MC_CARTREVOLUTION	Weapon	false	Weapon	false
-154	MC_CHANGECART	None	true	None	true
-155	MC_LOUD	Weapon	true	Weapon	true
-156	AL_HOLYLIGHT	Magic	false	Magic	false
-157	MG_ENERGYCOAT	Magic	true	Magic	true
-173	NPC_SELFDESTRUCTION	Misc	false	Misc	false
-176	NPC_POISON	Weapon	false	Weapon	false
-177	NPC_BLINDATTACK	Weapon	false	Weapon	false
-178	NPC_SILENCEATTACK	Weapon	false	Weapon	false
-179	NPC_STUNATTACK	Weapon	false	Weapon	false
-181	NPC_CURSEATTACK	Weapon	false	Weapon	false
-182	NPC_SLEEPATTACK	Weapon	false	Weapon	false
-184	NPC_WATERATTACK	Weapon	false	Weapon	false
-185	NPC_GROUNDATTACK	Weapon	false	Weapon	false
-186	NPC_FIREATTACK	Weapon	false	Weapon	false
-187	NPC_WINDATTACK	Weapon	false	Weapon	false
-188	NPC_POISONATTACK	Weapon	false	Weapon	false
-189	NPC_HOLYATTACK	Weapon	false	Weapon	false
-190	NPC_DARKNESSATTACK	Weapon	false	Weapon	false
-191	NPC_TELEKINESISATTACK	Weapon	false	Weapon	false
-196	NPC_SUMMONSLAVE	Magic	true	Magic	true
-210	RG_SNATCHER	Weapon	false	Weapon	false
-211	RG_STEALCOIN	Weapon	true	Weapon	true
-212	RG_BACKSTAP	Weapon	false	Weapon	false
-213	RG_TUNNELDRIVE	None	false	None	false
-214	RG_RAID	Weapon	false	Weapon	false
-215	RG_STRIPWEAPON	Weapon	true	Weapon	true
-216	RG_STRIPSHIELD	Weapon	true	Weapon	true
-217	RG_STRIPARMOR	Weapon	true	Weapon	true
-218	RG_STRIPHELM	Weapon	true	Weapon	true
-219	RG_INTIMIDATE	Weapon	false	Weapon	false
-220	RG_GRAFFITI	None	true	None	true
-221	RG_FLAGGRAFFITI	None	true	None	true
-222	RG_CLEANER	None	true	None	true
-223	RG_GANGSTER	None	false	None	false
-224	RG_COMPULSION	None	false	None	false
-225	RG_PLAGIARISM	None	false	None	false
-226	AM_AXEMASTERY	Weapon	false	Weapon	false
-227	AM_LEARNINGPOTION	None	false	None	false
-228	AM_PHARMACY	None	true	None	true
-229	AM_DEMONSTRATION	Weapon	true	Weapon	true
-230	AM_ACIDTERROR	Weapon	false	Weapon	false
-231	AM_POTIONPITCHER	None	true	None	true
-232	AM_CANNIBALIZE	None	true	None	true
-233	AM_SPHEREMINE	None	true	None	true
-234	AM_CP_WEAPON	Weapon	true	Weapon	true
-235	AM_CP_SHIELD	Weapon	true	Weapon	true
-236	AM_CP_ARMOR	Weapon	true	Weapon	true
-237	AM_CP_HELM	Weapon	true	Weapon	true
-238	AM_BIOETHICS	None	false	None	false
-243	AM_CALLHOMUN	None	true	None	true
-244	AM_REST	None	true	None	true
-247	AM_RESURRECTHOMUN	None	true	None	true
-248	CR_TRUST	None	false	None	false
-249	CR_AUTOGUARD	Weapon	true	Weapon	true
-250	CR_SHIELDCHARGE	Weapon	false	Weapon	false
-251	CR_SHIELDBOOMERANG	Weapon	false	Weapon	false
-252	CR_REFLECTSHIELD	Weapon	true	Weapon	true
-253	CR_HOLYCROSS	Weapon	false	Weapon	false
-254	CR_GRANDCROSS	Magic	false	Magic	false
-255	CR_DEVOTION	None	true	None	true
-256	CR_PROVIDENCE	None	true	None	true
-257	CR_DEFENDER	Weapon	true	Weapon	true
-258	CR_SPEARQUICKEN	Weapon	true	Weapon	true
-259	MO_IRONHAND	Weapon	false	Weapon	false
-260	MO_SPIRITSRECOVERY	Weapon	false	Weapon	false
-261	MO_CALLSPIRITS	None	true	None	true
-262	MO_ABSORBSPIRITS	Weapon	true	Weapon	true
-263	MO_TRIPLEATTACK	Weapon	false	Weapon	false
-264	MO_BODYRELOCATION	None	true	None	true
-265	MO_DODGE	Weapon	false	Weapon	false
-266	MO_INVESTIGATE	Weapon	false	Weapon	false
-267	MO_FINGEROFFENSIVE	Weapon	false	Weapon	false
-268	MO_STEELBODY	Weapon	true	Weapon	true
-269	MO_BLADESTOP	Weapon	true	Weapon	true
-270	MO_EXPLOSIONSPIRITS	Weapon	true	Weapon	true
-271	MO_EXTREMITYFIST	Weapon	false	Weapon	false
-272	MO_CHAINCOMBO	Weapon	false	Weapon	false
-273	MO_COMBOFINISH	Weapon	false	Weapon	false
-274	SA_ADVANCEDBOOK	Weapon	false	Weapon	false
-275	SA_CASTCANCEL	Magic	true	Magic	true
-276	SA_MAGICROD	Magic	true	Magic	true
-277	SA_SPELLBREAKER	Magic	true	Magic	true
-278	SA_FREECAST	Magic	false	Magic	false
-279	SA_AUTOSPELL	Magic	true	Magic	true
-280	SA_FLAMELAUNCHER	Magic	true	Magic	true
-281	SA_FROSTWEAPON	Magic	true	Magic	true
-282	SA_LIGHTNINGLOADER	Magic	true	Magic	true
-283	SA_SEISMICWEAPON	Magic	true	Magic	true
-284	SA_DRAGONOLOGY	Weapon	false	Weapon	false
-285	SA_VOLCANO	Magic	true	Magic	true
-286	SA_DELUGE	Magic	true	Magic	true
-287	SA_VIOLENTGALE	Magic	true	Magic	true
-288	SA_LANDPROTECTOR	Magic	true	Magic	true
-289	SA_DISPELL	Magic	true	Magic	true
-304	BD_ADAPTATION	None	true	None	true
-305	BD_ENCORE	None	true	None	true
-306	BD_LULLABY	Misc	true	Misc	true
-307	BD_RICHMANKIM	Misc	true	Misc	true
-308	BD_ETERNALCHAOS	Misc	true	Misc	true
-309	BD_DRUMBATTLEFIELD	Misc	true	Misc	true
-310	BD_RINGNIBELUNGEN	Misc	true	Misc	true
-311	BD_ROKISWEIL	Misc	true	Misc	true
-312	BD_INTOABYSS	Misc	true	Misc	true
-313	BD_SIEGFRIED	Misc	true	Misc	true
-315	BA_MUSICALLESSON	Weapon	false	Weapon	false
-316	BA_MUSICALSTRIKE	Weapon	false	Weapon	false
-317	BA_DISSONANCE	Magic	true	Misc	true
-318	BA_FROSTJOKER	Misc	true	Misc	true
-319	BA_WHISTLE	Misc	true	Misc	true
-320	BA_ASSASSINCROSS	Misc	true	Misc	true
-321	BA_POEMBRAGI	Misc	true	Misc	true
-322	BA_APPLEIDUN	Misc	true	Misc	true
-323	DC_DANCINGLESSON	Weapon	false	Weapon	false
-324	DC_THROWARROW	Weapon	false	Weapon	false
-325	DC_UGLYDANCE	Misc	true	Misc	true
-326	DC_SCREAM	Misc	true	Misc	true
-327	DC_HUMMING	Misc	true	Misc	true
-328	DC_DONTFORGETME	Misc	true	Misc	true
-329	DC_FORTUNEKISS	Misc	true	Misc	true
-330	DC_SERVICEFORYOU	Misc	true	Misc	true
-331	NPC_RANDOMMOVE	None	true	None	true
-340	NPC_DARKSTRIKE	Magic	false	Magic	false
-347	NPC_UNDEADATTACK	Weapon	false	Weapon	false
-350	NPC_AGIUP	None	true	None	true
-352	NPC_CALLSLAVE	None	true	None	true
-355	LK_AURABLADE	Weapon	true	Weapon	true
-356	LK_PARRYING	Weapon	true	Weapon	true
-357	LK_CONCENTRATION	Weapon	true	Weapon	true
-358	LK_TENSIONRELAX	Weapon	true	Weapon	true
-359	LK_BERSERK	Weapon	true	Weapon	true
-361	HP_ASSUMPTIO	Magic	true	Magic	true
-362	HP_BASILICA	Magic	true	Magic	true
-363	HP_MEDITATIO	Magic	false	Magic	false
-364	HW_SOULDRAIN	Magic	false	Magic	false
-365	HW_MAGICCRASHER	Weapon	false	Weapon	false
-366	HW_MAGICPOWER	Magic	true	Magic	true
-367	PA_PRESSURE	Magic	false	Misc	false
-368	PA_SACRIFICE	Weapon	true	Weapon	true
-369	PA_GOSPEL	Misc	true	Misc	true
-370	CH_PALMSTRIKE	Weapon	false	Weapon	false
-371	CH_TIGERFIST	Weapon	false	Weapon	false
-372	CH_CHAINCRUSH	Weapon	false	Weapon	false
-373	PF_HPCONVERSION	Magic	true	Magic	true
-374	PF_SOULCHANGE	None	true	None	true
-375	PF_SOULBURN	Magic	false	Magic	false
-380	SN_SIGHT	Weapon	true	Weapon	true
-381	SN_FALCONASSAULT	Misc	false	Misc	false
-382	SN_SHARPSHOOTING	Weapon	false	Weapon	false
-383	SN_WINDWALK	Weapon	true	Weapon	true
-394	CG_ARROWVULCAN	Weapon	false	Weapon	false
-395	CG_MOONLIT	Misc	true	Misc	true
-396	CG_MARIONETTE	None	true	None	true
-397	LK_SPIRALPIERCE	Weapon	false	Weapon	false
-398	LK_HEADCRUSH	Weapon	false	Weapon	false
-399	LK_JOINTBEAT	Weapon	false	Weapon	false
-400	HW_NAPALMVULCAN	Magic	false	Magic	false
-401	CH_SOULCOLLECT	None	true	None	true
-402	PF_MINDBREAKER	None	true	None	true
-403	PF_MEMORIZE	Magic	true	Magic	true
-404	PF_FOGWALL	Magic	true	Magic	true
-405	PF_SPIDERWEB	Magic	true	Magic	true
-459	BS_ADRENALINE2	Weapon	true	Weapon	true
-480	PA_SHIELDCHAIN	Weapon	false	Weapon	false
-481	HP_MANARECHARGE	None	false	None	false
-482	PF_DOUBLECASTING	Magic	true	Magic	true
-483	HW_GANBANTEIN	None	true	None	true
-484	HW_GRAVITATION	Magic	false	Misc	true
-487	CG_LONGINGFREEDOM	-	-	None	true
-488	CG_HERMODE	Misc	true	Misc	true
-489	CG_TAROTCARD	Misc	true	Misc	true
-492	ITEM_ENCHANTARMS	None	true	None	true
-653	NPC_EARTHQUAKE	Magic	false	Magic	false
-660	NPC_BLEEDING	Weapon	false	Weapon	false
-687	NPC_ALLHEAL	None	true	None	true
-1001	KN_CHARGEATK	Weapon	false	Weapon	false
-1002	CR_SHRINK	Weapon	true	Weapon	true
-1003	AS_SONICACCEL	Weapon	false	Weapon	false
-1004	AS_VENOMKNIFE	Weapon	false	Weapon	false
-1005	RG_CLOSECONFINE	Weapon	true	Weapon	true
-1006	WZ_SIGHTBLASTER	Magic	false	Magic	false
-1007	SA_CREATECON	None	true	None	true
-1008	SA_ELEMENTWATER	Magic	true	Magic	true
-1009	HT_PHANTASMIC	Weapon	false	Weapon	false
-1010	BA_PANGVOICE	Misc	true	Misc	true
-1011	DC_WINKCHARM	Misc	true	Misc	true
-1012	BS_UNFAIRLYTRICK	Weapon	false	Weapon	false
-1013	BS_GREED	Weapon	true	Weapon	true
-1014	PR_REDEMPTIO	Magic	true	Magic	true
-1015	MO_KITRANSLATION	Weapon	true	Weapon	true
-1016	MO_BALKYOUNG	Weapon	false	Weapon	false
-1017	SA_ELEMENTGROUND	Magic	true	Magic	true
-1018	SA_ELEMENTFIRE	Magic	true	Magic	true
-1019	SA_ELEMENTWIND	Magic	true	Magic	true
-5068	CG_SPECIALSINGER	None	true	-	-
-8001	HLIF_HEAL	Magic	true	Magic	true
-8002	HLIF_AVOID	None	true	None	true
-8003	HLIF_BRAIN	None	false	None	false
-8004	HLIF_CHANGE	None	true	None	true
-8005	HAMI_CASTLE	None	true	None	true
-8006	HAMI_DEFENCE	None	true	None	true
-8007	HAMI_SKIN	None	false	None	false
-8008	HAMI_BLOODLUST	None	true	None	true
-8009	HFLI_MOON	Weapon	false	Weapon	false
-8010	HFLI_FLEET	None	true	None	true
-8011	HFLI_SPEED	Misc	true	Misc	true
-8012	HFLI_SBR44	Weapon	false	Weapon	false
-8013	HVAN_CAPRICE	Magic	false	Magic	false
-8014	HVAN_CHAOTIC	Magic	true	Magic	true
-8015	HVAN_INSTRUCT	None	false	None	false
-8016	HVAN_EXPLOSION	Misc	false	Misc	false
-10000	GD_APPROVAL	None	false	None	false
-10001	GD_KAFRACONTRACT	None	false	None	false
-10002	GD_GUARDRESEARCH	None	false	None	false
-10003	GD_GUARDUP	None	false	None	false
-10004	GD_EXTENSION	None	false	None	false
-10006	GD_LEADERSHIP	None	false	None	false
-10007	GD_GLORYWOUNDS	None	false	None	false
-10008	GD_SOULCOLD	None	false	None	false
-10009	GD_HAWKEYES	None	false	None	false
-10010	GD_BATTLEORDER	None	true	None	true
-10011	GD_REGENERATION	None	true	None	true
-10012	GD_RESTORE	None	true	None	true
-10013	GD_EMERGENCYCALL	None	true	None	true
-10014	GD_DEVELOPMENT	None	false	None	false
-10015	GD_ITEMEMERGENCYCALL	None	true	None	true
-10016	GD_GUILD_STORAGE	None	false	-	-
-10017	GD_CHARGESHOUT_FLAG	None	true	-	-
-10018	GD_CHARGESHOUT_BEATING	None	true	-	-
-10019	GD_EMERGENCY_MOVE	None	true	-	-
+# Skill DB Type, NoDamage and Ignore damage flags for every catalog skill, both
+# modes. Extracted from the reference skill database (renewal and pre-renewal)
+# at the pinned reference commit. Columns: id, name, renewal type, renewal
+# no_damage, pre-renewal type, pre-renewal no_damage, renewal ignore flags,
+# pre-renewal ignore flags. The ignore flags column lists the set ones among
+# IgnoreDefCard, IgnoreElement and IgnoreFlee ("none" when none is set); every
+# column is "-" when the mode has no row.
+1	NV_BASIC	None	false	None	false	none	none
+2	SM_SWORD	Weapon	false	Weapon	false	none	none
+3	SM_TWOHAND	Weapon	false	Weapon	false	none	none
+4	SM_RECOVERY	None	false	None	false	none	none
+5	SM_BASH	Weapon	false	Weapon	false	none	none
+6	SM_PROVOKE	None	true	None	true	none	none
+7	SM_MAGNUM	Weapon	false	Weapon	false	none	none
+8	SM_ENDURE	Weapon	true	Weapon	true	none	none
+9	MG_SRECOVERY	None	false	None	false	none	none
+10	MG_SIGHT	Magic	true	Magic	true	none	none
+11	MG_NAPALMBEAT	Magic	false	Magic	false	none	none
+12	MG_SAFETYWALL	Magic	true	Magic	true	none	none
+13	MG_SOULSTRIKE	Magic	false	Magic	false	none	none
+14	MG_COLDBOLT	Magic	false	Magic	false	none	none
+15	MG_FROSTDIVER	Magic	false	Magic	false	none	none
+16	MG_STONECURSE	Magic	true	Magic	true	none	none
+17	MG_FIREBALL	Magic	false	Magic	false	none	none
+18	MG_FIREWALL	Magic	false	Magic	false	none	none
+19	MG_FIREBOLT	Magic	false	Magic	false	none	none
+20	MG_LIGHTNINGBOLT	Magic	false	Magic	false	none	none
+21	MG_THUNDERSTORM	Magic	false	Magic	false	none	none
+22	AL_DP	Weapon	false	Weapon	false	none	none
+23	AL_DEMONBANE	Weapon	false	Weapon	false	none	none
+24	AL_RUWACH	Magic	true	Magic	true	none	none
+25	AL_PNEUMA	Magic	true	Magic	true	none	none
+26	AL_TELEPORT	Magic	true	Magic	true	none	none
+27	AL_WARP	Magic	true	Magic	true	none	none
+28	AL_HEAL	Magic	true	Magic	true	none	none
+29	AL_INCAGI	Magic	true	Magic	true	none	none
+30	AL_DECAGI	Magic	true	Magic	true	none	none
+31	AL_HOLYWATER	Magic	true	Magic	true	none	none
+32	AL_CRUCIS	Magic	true	Magic	true	none	none
+33	AL_ANGELUS	Magic	true	Magic	true	none	none
+34	AL_BLESSING	Magic	true	Magic	true	none	none
+35	AL_CURE	Magic	true	Magic	true	none	none
+36	MC_INCCARRY	None	false	None	false	none	none
+37	MC_DISCOUNT	None	false	None	false	none	none
+38	MC_OVERCHARGE	None	false	None	false	none	none
+39	MC_PUSHCART	None	false	None	false	none	none
+40	MC_IDENTIFY	None	true	None	true	none	none
+41	MC_VENDING	None	true	None	true	none	none
+42	MC_MAMMONITE	Weapon	false	Weapon	false	none	none
+43	AC_OWL	None	false	None	false	none	none
+44	AC_VULTURE	None	false	None	false	none	none
+45	AC_CONCENTRATION	Weapon	true	Weapon	true	none	none
+46	AC_DOUBLE	Weapon	false	Weapon	false	none	none
+47	AC_SHOWER	Weapon	false	Weapon	false	none	none
+48	TF_DOUBLE	Weapon	false	Weapon	false	none	none
+49	TF_MISS	Weapon	false	Weapon	false	none	none
+50	TF_STEAL	Weapon	true	Weapon	true	none	none
+51	TF_HIDING	None	true	None	true	none	none
+52	TF_POISON	Weapon	false	Weapon	false	none	none
+53	TF_DETOXIFY	Weapon	true	Weapon	true	none	none
+54	ALL_RESURRECTION	Magic	true	Magic	true	none	none
+55	KN_SPEARMASTERY	Weapon	false	Weapon	false	none	none
+56	KN_PIERCE	Weapon	false	Weapon	false	none	none
+57	KN_BRANDISHSPEAR	Weapon	true	Weapon	true	none	none
+58	KN_SPEARSTAB	Weapon	false	Weapon	false	none	none
+59	KN_SPEARBOOMERANG	Weapon	false	Weapon	false	none	none
+60	KN_TWOHANDQUICKEN	Weapon	true	Weapon	true	none	none
+61	KN_AUTOCOUNTER	Weapon	false	Weapon	false	none	none
+62	KN_BOWLINGBASH	Weapon	false	Weapon	false	none	none
+63	KN_RIDING	Weapon	false	Weapon	false	none	none
+64	KN_CAVALIERMASTERY	Weapon	false	Weapon	false	none	none
+65	PR_MACEMASTERY	Weapon	false	Weapon	false	none	none
+66	PR_IMPOSITIO	Magic	true	Magic	true	none	none
+67	PR_SUFFRAGIUM	Magic	true	Magic	true	none	none
+68	PR_ASPERSIO	Magic	true	Magic	true	IgnoreElement	IgnoreElement
+69	PR_BENEDICTIO	Magic	true	Magic	true	none	none
+70	PR_SANCTUARY	Magic	true	Magic	true	none	none
+71	PR_SLOWPOISON	Magic	true	Magic	true	none	none
+72	PR_STRECOVERY	Magic	true	Magic	true	none	none
+73	PR_KYRIE	Magic	true	Magic	true	none	none
+74	PR_MAGNIFICAT	Magic	true	Magic	true	none	none
+75	PR_GLORIA	Magic	true	Magic	true	none	none
+76	PR_LEXDIVINA	Magic	true	Magic	true	none	none
+77	PR_TURNUNDEAD	Magic	false	Magic	false	none	none
+78	PR_LEXAETERNA	Magic	true	Magic	true	none	none
+79	PR_MAGNUS	Magic	false	Magic	false	none	none
+80	WZ_FIREPILLAR	Magic	false	Magic	false	none	none
+81	WZ_SIGHTRASHER	Magic	false	Magic	false	none	none
+83	WZ_METEOR	Magic	false	Magic	false	none	none
+84	WZ_JUPITEL	Magic	false	Magic	false	none	none
+85	WZ_VERMILION	Magic	false	Magic	false	none	none
+86	WZ_WATERBALL	Magic	false	Magic	false	none	none
+87	WZ_ICEWALL	Magic	true	Magic	true	none	none
+88	WZ_FROSTNOVA	Magic	false	Magic	false	none	none
+89	WZ_STORMGUST	Magic	false	Magic	false	none	none
+90	WZ_EARTHSPIKE	Magic	false	Magic	false	none	none
+91	WZ_HEAVENDRIVE	Magic	false	Magic	false	none	none
+92	WZ_QUAGMIRE	Magic	true	Magic	true	none	none
+93	WZ_ESTIMATION	Magic	true	Magic	true	none	none
+94	BS_IRON	Weapon	false	Weapon	false	none	none
+95	BS_STEEL	Weapon	false	Weapon	false	none	none
+96	BS_ENCHANTEDSTONE	Weapon	false	Weapon	false	none	none
+97	BS_ORIDEOCON	Weapon	false	Weapon	false	none	none
+98	BS_DAGGER	Weapon	false	Weapon	false	none	none
+99	BS_SWORD	Weapon	false	Weapon	false	none	none
+100	BS_TWOHANDSWORD	Weapon	false	Weapon	false	none	none
+101	BS_AXE	Weapon	false	Weapon	false	none	none
+102	BS_MACE	Weapon	false	Weapon	false	none	none
+103	BS_KNUCKLE	Weapon	false	Weapon	false	none	none
+104	BS_SPEAR	Weapon	false	Weapon	false	none	none
+105	BS_HILTBINDING	Weapon	false	Weapon	false	none	none
+106	BS_FINDINGORE	Weapon	false	Weapon	false	none	none
+107	BS_WEAPONRESEARCH	Weapon	false	Weapon	false	none	none
+108	BS_REPAIRWEAPON	Weapon	true	Weapon	true	none	none
+109	BS_SKINTEMPER	Weapon	false	Weapon	false	none	none
+110	BS_HAMMERFALL	Weapon	true	Weapon	true	none	none
+111	BS_ADRENALINE	Weapon	true	Weapon	true	none	none
+112	BS_WEAPONPERFECT	Weapon	true	Weapon	true	none	none
+113	BS_OVERTHRUST	Weapon	true	Weapon	true	none	none
+114	BS_MAXIMIZE	Weapon	true	Weapon	true	none	none
+115	HT_SKIDTRAP	Misc	true	Misc	true	none	none
+116	HT_LANDMINE	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreDefCard,IgnoreFlee
+117	HT_ANKLESNARE	Misc	true	Misc	true	none	none
+118	HT_SHOCKWAVE	Misc	true	Misc	true	none	none
+119	HT_SANDMAN	Misc	true	Misc	true	none	none
+120	HT_FLASHER	Misc	true	Misc	true	none	none
+121	HT_FREEZINGTRAP	Weapon	false	Weapon	false	IgnoreFlee	none
+122	HT_BLASTMINE	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreDefCard,IgnoreFlee
+123	HT_CLAYMORETRAP	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreDefCard,IgnoreFlee
+124	HT_REMOVETRAP	Misc	true	Misc	true	none	none
+125	HT_TALKIEBOX	Misc	true	Misc	true	none	none
+126	HT_BEASTBANE	Weapon	false	Weapon	false	none	none
+127	HT_FALCON	Misc	false	Misc	false	none	none
+128	HT_STEELCROW	Misc	false	Misc	false	none	none
+129	HT_BLITZBEAT	Misc	false	Misc	false	IgnoreFlee	IgnoreFlee
+130	HT_DETECTING	Misc	true	Misc	true	none	none
+131	HT_SPRINGTRAP	Misc	true	Misc	true	none	none
+132	AS_RIGHT	Weapon	false	Weapon	false	none	none
+133	AS_LEFT	Weapon	false	Weapon	false	none	none
+134	AS_KATAR	Weapon	false	Weapon	false	none	none
+135	AS_CLOAKING	Weapon	true	Weapon	true	none	none
+136	AS_SONICBLOW	Weapon	false	Weapon	false	none	none
+137	AS_GRIMTOOTH	Weapon	false	Weapon	false	none	none
+138	AS_ENCHANTPOISON	Weapon	true	Weapon	true	none	none
+139	AS_POISONREACT	Weapon	false	Weapon	false	none	none
+140	AS_VENOMDUST	Weapon	true	Weapon	true	none	none
+141	AS_SPLASHER	Weapon	true	Weapon	true	IgnoreFlee	IgnoreFlee
+142	NV_FIRSTAID	None	true	None	true	none	none
+143	NV_TRICKDEAD	None	true	None	true	none	none
+144	SM_MOVINGRECOVERY	None	false	None	false	none	none
+145	SM_FATALBLOW	Weapon	false	Weapon	false	none	none
+146	SM_AUTOBERSERK	Weapon	true	Weapon	true	none	none
+147	AC_MAKINGARROW	Weapon	true	Weapon	true	none	none
+148	AC_CHARGEARROW	Weapon	false	Weapon	false	none	none
+149	TF_SPRINKLESAND	Weapon	false	Weapon	false	none	none
+150	TF_BACKSLIDING	Weapon	true	Weapon	true	none	none
+151	TF_PICKSTONE	None	true	None	true	none	none
+152	TF_THROWSTONE	Misc	false	Misc	false	IgnoreFlee	IgnoreFlee
+153	MC_CARTREVOLUTION	Weapon	false	Weapon	false	none	none
+154	MC_CHANGECART	None	true	None	true	none	none
+155	MC_LOUD	Weapon	true	Weapon	true	none	none
+156	AL_HOLYLIGHT	Magic	false	Magic	false	none	none
+157	MG_ENERGYCOAT	Magic	true	Magic	true	none	none
+173	NPC_SELFDESTRUCTION	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreDefCard,IgnoreFlee
+176	NPC_POISON	Weapon	false	Weapon	false	none	none
+177	NPC_BLINDATTACK	Weapon	false	Weapon	false	none	none
+178	NPC_SILENCEATTACK	Weapon	false	Weapon	false	none	none
+179	NPC_STUNATTACK	Weapon	false	Weapon	false	none	none
+181	NPC_CURSEATTACK	Weapon	false	Weapon	false	none	none
+182	NPC_SLEEPATTACK	Weapon	false	Weapon	false	none	none
+184	NPC_WATERATTACK	Weapon	false	Weapon	false	none	none
+185	NPC_GROUNDATTACK	Weapon	false	Weapon	false	none	none
+186	NPC_FIREATTACK	Weapon	false	Weapon	false	none	none
+187	NPC_WINDATTACK	Weapon	false	Weapon	false	none	none
+188	NPC_POISONATTACK	Weapon	false	Weapon	false	none	none
+189	NPC_HOLYATTACK	Weapon	false	Weapon	false	none	none
+190	NPC_DARKNESSATTACK	Weapon	false	Weapon	false	none	none
+191	NPC_TELEKINESISATTACK	Weapon	false	Weapon	false	none	none
+196	NPC_SUMMONSLAVE	Magic	true	Magic	true	none	none
+210	RG_SNATCHER	Weapon	false	Weapon	false	none	none
+211	RG_STEALCOIN	Weapon	true	Weapon	true	none	none
+212	RG_BACKSTAP	Weapon	false	Weapon	false	none	IgnoreFlee
+213	RG_TUNNELDRIVE	None	false	None	false	none	none
+214	RG_RAID	Weapon	false	Weapon	false	none	none
+215	RG_STRIPWEAPON	Weapon	true	Weapon	true	none	none
+216	RG_STRIPSHIELD	Weapon	true	Weapon	true	none	none
+217	RG_STRIPARMOR	Weapon	true	Weapon	true	none	none
+218	RG_STRIPHELM	Weapon	true	Weapon	true	none	none
+219	RG_INTIMIDATE	Weapon	false	Weapon	false	none	none
+220	RG_GRAFFITI	None	true	None	true	none	none
+221	RG_FLAGGRAFFITI	None	true	None	true	none	none
+222	RG_CLEANER	None	true	None	true	none	none
+223	RG_GANGSTER	None	false	None	false	none	none
+224	RG_COMPULSION	None	false	None	false	none	none
+225	RG_PLAGIARISM	None	false	None	false	none	none
+226	AM_AXEMASTERY	Weapon	false	Weapon	false	none	none
+227	AM_LEARNINGPOTION	None	false	None	false	none	none
+228	AM_PHARMACY	None	true	None	true	none	none
+229	AM_DEMONSTRATION	Weapon	true	Weapon	true	none	none
+230	AM_ACIDTERROR	Weapon	false	Weapon	false	IgnoreFlee	IgnoreFlee
+231	AM_POTIONPITCHER	None	true	None	true	none	none
+232	AM_CANNIBALIZE	None	true	None	true	none	none
+233	AM_SPHEREMINE	None	true	None	true	none	none
+234	AM_CP_WEAPON	Weapon	true	Weapon	true	none	none
+235	AM_CP_SHIELD	Weapon	true	Weapon	true	none	none
+236	AM_CP_ARMOR	Weapon	true	Weapon	true	none	none
+237	AM_CP_HELM	Weapon	true	Weapon	true	none	none
+238	AM_BIOETHICS	None	false	None	false	none	none
+243	AM_CALLHOMUN	None	true	None	true	none	none
+244	AM_REST	None	true	None	true	none	none
+247	AM_RESURRECTHOMUN	None	true	None	true	none	none
+248	CR_TRUST	None	false	None	false	none	none
+249	CR_AUTOGUARD	Weapon	true	Weapon	true	none	none
+250	CR_SHIELDCHARGE	Weapon	false	Weapon	false	none	none
+251	CR_SHIELDBOOMERANG	Weapon	false	Weapon	false	none	none
+252	CR_REFLECTSHIELD	Weapon	true	Weapon	true	none	none
+253	CR_HOLYCROSS	Weapon	false	Weapon	false	none	none
+254	CR_GRANDCROSS	Magic	false	Magic	false	none	none
+255	CR_DEVOTION	None	true	None	true	none	none
+256	CR_PROVIDENCE	None	true	None	true	none	none
+257	CR_DEFENDER	Weapon	true	Weapon	true	none	none
+258	CR_SPEARQUICKEN	Weapon	true	Weapon	true	none	none
+259	MO_IRONHAND	Weapon	false	Weapon	false	none	none
+260	MO_SPIRITSRECOVERY	Weapon	false	Weapon	false	none	none
+261	MO_CALLSPIRITS	None	true	None	true	none	none
+262	MO_ABSORBSPIRITS	Weapon	true	Weapon	true	none	none
+263	MO_TRIPLEATTACK	Weapon	false	Weapon	false	none	none
+264	MO_BODYRELOCATION	None	true	None	true	none	none
+265	MO_DODGE	Weapon	false	Weapon	false	none	none
+266	MO_INVESTIGATE	Weapon	false	Weapon	false	IgnoreFlee	IgnoreFlee
+267	MO_FINGEROFFENSIVE	Weapon	false	Weapon	false	none	none
+268	MO_STEELBODY	Weapon	true	Weapon	true	none	none
+269	MO_BLADESTOP	Weapon	true	Weapon	true	none	none
+270	MO_EXPLOSIONSPIRITS	Weapon	true	Weapon	true	none	none
+271	MO_EXTREMITYFIST	Weapon	false	Weapon	false	IgnoreFlee	IgnoreFlee
+272	MO_CHAINCOMBO	Weapon	false	Weapon	false	none	none
+273	MO_COMBOFINISH	Weapon	false	Weapon	false	none	none
+274	SA_ADVANCEDBOOK	Weapon	false	Weapon	false	none	none
+275	SA_CASTCANCEL	Magic	true	Magic	true	none	none
+276	SA_MAGICROD	Magic	true	Magic	true	none	none
+277	SA_SPELLBREAKER	Magic	true	Magic	true	none	none
+278	SA_FREECAST	Magic	false	Magic	false	none	none
+279	SA_AUTOSPELL	Magic	true	Magic	true	none	none
+280	SA_FLAMELAUNCHER	Magic	true	Magic	true	none	none
+281	SA_FROSTWEAPON	Magic	true	Magic	true	none	none
+282	SA_LIGHTNINGLOADER	Magic	true	Magic	true	none	none
+283	SA_SEISMICWEAPON	Magic	true	Magic	true	none	none
+284	SA_DRAGONOLOGY	Weapon	false	Weapon	false	none	none
+285	SA_VOLCANO	Magic	true	Magic	true	none	none
+286	SA_DELUGE	Magic	true	Magic	true	none	none
+287	SA_VIOLENTGALE	Magic	true	Magic	true	none	none
+288	SA_LANDPROTECTOR	Magic	true	Magic	true	none	none
+289	SA_DISPELL	Magic	true	Magic	true	none	none
+304	BD_ADAPTATION	None	true	None	true	none	none
+305	BD_ENCORE	None	true	None	true	none	none
+306	BD_LULLABY	Misc	true	Misc	true	none	none
+307	BD_RICHMANKIM	Misc	true	Misc	true	none	none
+308	BD_ETERNALCHAOS	Misc	true	Misc	true	none	none
+309	BD_DRUMBATTLEFIELD	Misc	true	Misc	true	none	none
+310	BD_RINGNIBELUNGEN	Misc	true	Misc	true	none	none
+311	BD_ROKISWEIL	Misc	true	Misc	true	none	none
+312	BD_INTOABYSS	Misc	true	Misc	true	none	none
+313	BD_SIEGFRIED	Misc	true	Misc	true	none	none
+315	BA_MUSICALLESSON	Weapon	false	Weapon	false	none	none
+316	BA_MUSICALSTRIKE	Weapon	false	Weapon	false	none	none
+317	BA_DISSONANCE	Magic	true	Misc	true	IgnoreFlee	IgnoreFlee
+318	BA_FROSTJOKER	Misc	true	Misc	true	none	none
+319	BA_WHISTLE	Misc	true	Misc	true	none	none
+320	BA_ASSASSINCROSS	Misc	true	Misc	true	none	none
+321	BA_POEMBRAGI	Misc	true	Misc	true	none	none
+322	BA_APPLEIDUN	Misc	true	Misc	true	none	none
+323	DC_DANCINGLESSON	Weapon	false	Weapon	false	none	none
+324	DC_THROWARROW	Weapon	false	Weapon	false	none	none
+325	DC_UGLYDANCE	Misc	true	Misc	true	none	none
+326	DC_SCREAM	Misc	true	Misc	true	none	none
+327	DC_HUMMING	Misc	true	Misc	true	none	none
+328	DC_DONTFORGETME	Misc	true	Misc	true	none	none
+329	DC_FORTUNEKISS	Misc	true	Misc	true	none	none
+330	DC_SERVICEFORYOU	Misc	true	Misc	true	none	none
+331	NPC_RANDOMMOVE	None	true	None	true	none	none
+340	NPC_DARKSTRIKE	Magic	false	Magic	false	none	none
+347	NPC_UNDEADATTACK	Weapon	false	Weapon	false	none	none
+350	NPC_AGIUP	None	true	None	true	none	none
+352	NPC_CALLSLAVE	None	true	None	true	none	none
+355	LK_AURABLADE	Weapon	true	Weapon	true	none	none
+356	LK_PARRYING	Weapon	true	Weapon	true	none	none
+357	LK_CONCENTRATION	Weapon	true	Weapon	true	none	none
+358	LK_TENSIONRELAX	Weapon	true	Weapon	true	none	none
+359	LK_BERSERK	Weapon	true	Weapon	true	none	none
+361	HP_ASSUMPTIO	Magic	true	Magic	true	none	none
+362	HP_BASILICA	Magic	true	Magic	true	none	none
+363	HP_MEDITATIO	Magic	false	Magic	false	none	none
+364	HW_SOULDRAIN	Magic	false	Magic	false	none	none
+365	HW_MAGICCRASHER	Weapon	false	Weapon	false	none	none
+366	HW_MAGICPOWER	Magic	true	Magic	true	none	none
+367	PA_PRESSURE	Magic	false	Misc	false	none	IgnoreDefCard,IgnoreElement,IgnoreFlee
+368	PA_SACRIFICE	Weapon	true	Weapon	true	IgnoreFlee	IgnoreFlee
+369	PA_GOSPEL	Misc	true	Misc	true	IgnoreFlee	IgnoreFlee
+370	CH_PALMSTRIKE	Weapon	false	Weapon	false	none	none
+371	CH_TIGERFIST	Weapon	false	Weapon	false	none	none
+372	CH_CHAINCRUSH	Weapon	false	Weapon	false	none	none
+373	PF_HPCONVERSION	Magic	true	Magic	true	none	none
+374	PF_SOULCHANGE	None	true	None	true	none	none
+375	PF_SOULBURN	Magic	false	Magic	false	IgnoreDefCard,IgnoreElement	IgnoreDefCard,IgnoreElement
+380	SN_SIGHT	Weapon	true	Weapon	true	none	none
+381	SN_FALCONASSAULT	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreFlee
+382	SN_SHARPSHOOTING	Weapon	false	Weapon	false	none	none
+383	SN_WINDWALK	Weapon	true	Weapon	true	none	none
+394	CG_ARROWVULCAN	Weapon	false	Weapon	false	none	none
+395	CG_MOONLIT	Misc	true	Misc	true	none	none
+396	CG_MARIONETTE	None	true	None	true	none	none
+397	LK_SPIRALPIERCE	Weapon	false	Weapon	false	none	none
+398	LK_HEADCRUSH	Weapon	false	Weapon	false	none	none
+399	LK_JOINTBEAT	Weapon	false	Weapon	false	none	none
+400	HW_NAPALMVULCAN	Magic	false	Magic	false	none	none
+401	CH_SOULCOLLECT	None	true	None	true	none	none
+402	PF_MINDBREAKER	None	true	None	true	none	none
+403	PF_MEMORIZE	Magic	true	Magic	true	none	none
+404	PF_FOGWALL	Magic	true	Magic	true	none	none
+405	PF_SPIDERWEB	Magic	true	Magic	true	none	none
+459	BS_ADRENALINE2	Weapon	true	Weapon	true	none	none
+480	PA_SHIELDCHAIN	Weapon	false	Weapon	false	none	none
+481	HP_MANARECHARGE	None	false	None	false	none	none
+482	PF_DOUBLECASTING	Magic	true	Magic	true	none	none
+483	HW_GANBANTEIN	None	true	None	true	none	none
+484	HW_GRAVITATION	Magic	false	Misc	true	none	IgnoreDefCard,IgnoreElement,IgnoreFlee
+487	CG_LONGINGFREEDOM	-	-	None	true	-	none
+488	CG_HERMODE	Misc	true	Misc	true	none	none
+489	CG_TAROTCARD	Misc	true	Misc	true	IgnoreFlee	IgnoreFlee
+492	ITEM_ENCHANTARMS	None	true	None	true	none	none
+653	NPC_EARTHQUAKE	Magic	false	Magic	false	none	none
+660	NPC_BLEEDING	Weapon	false	Weapon	false	none	none
+687	NPC_ALLHEAL	None	true	None	true	none	none
+1001	KN_CHARGEATK	Weapon	false	Weapon	false	none	none
+1002	CR_SHRINK	Weapon	true	Weapon	true	none	none
+1003	AS_SONICACCEL	Weapon	false	Weapon	false	none	none
+1004	AS_VENOMKNIFE	Weapon	false	Weapon	false	none	none
+1005	RG_CLOSECONFINE	Weapon	true	Weapon	true	none	none
+1006	WZ_SIGHTBLASTER	Magic	false	Magic	false	none	none
+1007	SA_CREATECON	None	true	None	true	none	none
+1008	SA_ELEMENTWATER	Magic	true	Magic	true	none	none
+1009	HT_PHANTASMIC	Weapon	false	Weapon	false	none	none
+1010	BA_PANGVOICE	Misc	true	Misc	true	none	none
+1011	DC_WINKCHARM	Misc	true	Misc	true	none	none
+1012	BS_UNFAIRLYTRICK	Weapon	false	Weapon	false	none	none
+1013	BS_GREED	Weapon	true	Weapon	true	none	none
+1014	PR_REDEMPTIO	Magic	true	Magic	true	none	none
+1015	MO_KITRANSLATION	Weapon	true	Weapon	true	none	none
+1016	MO_BALKYOUNG	Weapon	false	Weapon	false	none	none
+1017	SA_ELEMENTGROUND	Magic	true	Magic	true	none	none
+1018	SA_ELEMENTFIRE	Magic	true	Magic	true	none	none
+1019	SA_ELEMENTWIND	Magic	true	Magic	true	none	none
+5068	CG_SPECIALSINGER	None	true	-	-	none	-
+8001	HLIF_HEAL	Magic	true	Magic	true	none	none
+8002	HLIF_AVOID	None	true	None	true	none	none
+8003	HLIF_BRAIN	None	false	None	false	none	none
+8004	HLIF_CHANGE	None	true	None	true	none	none
+8005	HAMI_CASTLE	None	true	None	true	none	none
+8006	HAMI_DEFENCE	None	true	None	true	none	none
+8007	HAMI_SKIN	None	false	None	false	none	none
+8008	HAMI_BLOODLUST	None	true	None	true	none	none
+8009	HFLI_MOON	Weapon	false	Weapon	false	none	none
+8010	HFLI_FLEET	None	true	None	true	none	none
+8011	HFLI_SPEED	Misc	true	Misc	true	none	none
+8012	HFLI_SBR44	Weapon	false	Weapon	false	none	none
+8013	HVAN_CAPRICE	Magic	false	Magic	false	none	none
+8014	HVAN_CHAOTIC	Magic	true	Magic	true	none	none
+8015	HVAN_INSTRUCT	None	false	None	false	none	none
+8016	HVAN_EXPLOSION	Misc	false	Misc	false	IgnoreDefCard,IgnoreElement,IgnoreFlee	IgnoreDefCard,IgnoreElement,IgnoreFlee
+10000	GD_APPROVAL	None	false	None	false	none	none
+10001	GD_KAFRACONTRACT	None	false	None	false	none	none
+10002	GD_GUARDRESEARCH	None	false	None	false	none	none
+10003	GD_GUARDUP	None	false	None	false	none	none
+10004	GD_EXTENSION	None	false	None	false	none	none
+10006	GD_LEADERSHIP	None	false	None	false	none	none
+10007	GD_GLORYWOUNDS	None	false	None	false	none	none
+10008	GD_SOULCOLD	None	false	None	false	none	none
+10009	GD_HAWKEYES	None	false	None	false	none	none
+10010	GD_BATTLEORDER	None	true	None	true	none	none
+10011	GD_REGENERATION	None	true	None	true	none	none
+10012	GD_RESTORE	None	true	None	true	none	none
+10013	GD_EMERGENCYCALL	None	true	None	true	none	none
+10014	GD_DEVELOPMENT	None	false	None	false	none	none
+10015	GD_ITEMEMERGENCYCALL	None	true	None	true	none	none
+10016	GD_GUILD_STORAGE	None	false	-	-	none	-
+10017	GD_CHARGESHOUT_FLAG	None	true	-	-	none	-
+10018	GD_CHARGESHOUT_BEATING	None	true	-	-	none	-
+10019	GD_EMERGENCY_MOVE	None	true	-	-	none	-

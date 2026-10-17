@@ -4,8 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
 
   Toggled by CR_REFLECTSHIELD while a shield is equipped, for 300 seconds.
   Implements `after_damage_taken/4`: `val1` carries the skill level, and every
-  short-range physical hit that is neither reflected nor redirected reflects
-  `(10 + 3 * val1)` percent of the delivered damage back to the attacker. A copy
+  short-range physical or misc hit that is neither reflected nor redirected
+  reflects `(10 + 3 * val1)` percent of the delivered damage back to the
+  attacker. A short trap hit on a player whose equipment returns melee damage
+  (`trap_return?`) is returned by that equipment instead. A copy
   inherited through Devotion (`state.inherited`) reflects skills only, and a
   devotee standing out of its Crusader's Devotion range reflects nothing.
 
@@ -66,8 +68,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
   defp inherited?(%StatusEntry{state: %{inherited: true}}), do: true
   defp inherited?(_entry), do: false
 
+  defp reflectable_type?(%{dmg_type: :physical}), do: true
+
+  defp reflectable_type?(%{dmg_type: :misc} = hit_info),
+    do: not Map.get(hit_info, :trap_return?, false)
+
+  defp reflectable_type?(_hit_info), do: false
+
   defp reflectable?(hit_info) do
-    Map.get(hit_info, :dmg_type) == :physical and
+    reflectable_type?(hit_info) and
       Map.get(hit_info, :is_short, false) == true and
       not Map.get(hit_info, :reflected, false) and
       not Map.get(hit_info, :redirected, false)

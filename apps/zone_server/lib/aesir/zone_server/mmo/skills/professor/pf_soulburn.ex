@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_def_card: true,
+    ignore_element: true,
     damage_kind: :magic,
     range: 9,
     sp_cost: [80, 90, 100, 110, 120],

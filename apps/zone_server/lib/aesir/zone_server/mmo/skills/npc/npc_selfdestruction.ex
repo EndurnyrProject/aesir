@@ -3,7 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   NPC Self Destruction (NPC_SELFDESTRUCTION).
 
   Deals the mob caster's current HP as Fire misc damage in a five-cell radius
-  (adjusted by each target's element, never missing), knocks enemies back three
+  (through the shared misc tail: no target cards, the skill rates and each
+  target's element; it never misses), knocks enemies back three
   cells, then routes lethal damage through the caster's normal mob death path.
   Player-owned casters use their owner's PvM faction and never damage players or
   other player-owned summons.
@@ -16,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     max_level: 1,
     target_type: :self,
     damage_type: :damage,
+    ignore_def_card: true,
+    ignore_flee: true,
     damage_kind: :misc,
     element: :fire,
     range: 0,
@@ -88,8 +91,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   defp damage_target(caster, definition, {unit_type, target_id}) do
     with {:ok, target_pid, target_state, ^unit_type} <-
            TargetResolver.resolve(unit_type, target_id),
-         {:ok, %{damage: damage}} <- misc_damage(caster, target_state, definition),
          range = hit_range(caster, target_state, definition.id),
+         {:ok, %{damage: damage}} <- misc_damage(caster, target_state, definition, range),
          hit_info = %{
            dmg_type: :misc,
            is_short: range == :short,
@@ -114,12 +117,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     end
   end
 
-  defp misc_damage(caster, target_state, definition) do
+  defp misc_damage(caster, target_state, definition, range) do
     MiscDamageCalculator.calculate_misc_damage(
       MobState.to_combatant(caster),
       target_state.__struct__.to_combatant(target_state),
       base_damage: caster.hp,
-      element: definition.element
+      element: definition.element,
+      skill_id: definition.id,
+      attack_flag: BattleFlags.build(:misc, range, true)
     )
   end
 

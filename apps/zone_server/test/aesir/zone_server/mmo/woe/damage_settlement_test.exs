@@ -397,6 +397,53 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     refute StatusStorage.has_status?(:player, 53, :sc_aeterna)
   end
 
+  describe "misc hit returns" do
+    setup do
+      attacker = register_player(71, "prontera")
+      target = register_player(72, "prontera", %{short_weapon_damage_return: 30})
+      :ok = StatusInterpreter.apply_status(:player, 72, :sc_reflectshield, val1: 10)
+      %{attacker: attacker, target: target}
+    end
+
+    test "a short trap hit returns only the target's equipment return", ctx do
+      expect_damage(ctx.target.pid, 100, {:player, 71})
+      expect_damage(ctx.attacker.pid, 30, {:player, 72})
+
+      assert :ok = deliver(ctx.target, 100, misc_hit(116, true), {:player, 71})
+    end
+
+    test "any other short misc hit returns only Reflect Shield", ctx do
+      expect_damage(ctx.target.pid, 100, {:player, 71})
+      expect_damage(ctx.attacker.pid, 40, {:player, 72})
+
+      assert :ok = deliver(ctx.target, 100, misc_hit(129, true), {:player, 71})
+    end
+
+    test "a short trap hit on a target without equipment return takes Reflect Shield", ctx do
+      bare = register_player(73, "prontera")
+      :ok = StatusInterpreter.apply_status(:player, 73, :sc_reflectshield, val1: 10)
+      expect_damage(bare.pid, 100, {:player, 71})
+      expect_damage(ctx.attacker.pid, 40, {:player, 73})
+
+      assert :ok = deliver(bare, 100, misc_hit(116, true), {:player, 71})
+    end
+
+    test "a redirected short trap hit returns nothing", ctx do
+      expect_damage(ctx.target.pid, 100, {:player, 71})
+      reject(&PlayerSession.apply_damage/4)
+      redirected = Map.put(misc_hit(116, true), :redirected, true)
+
+      assert :ok = deliver(ctx.target, 100, redirected, {:player, 71})
+    end
+
+    test "a long misc hit returns nothing", ctx do
+      expect_damage(ctx.target.pid, 100, {:player, 71})
+      reject(&PlayerSession.apply_damage/4)
+
+      assert :ok = deliver(ctx.target, 100, misc_hit(116, false), {:player, 71})
+    end
+  end
+
   test "ineligible Emperium settlement leaves shields and Lex untouched in both entry shapes" do
     _attacker = register_player(55, @castle_map)
     {:ok, mob_data} = Mobs.by_id(1288)
@@ -626,6 +673,17 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
       display_divisions: 1,
       outcome: :hit,
       primary_element: :neutral
+    }
+  end
+
+  defp misc_hit(skill_id, short?) do
+    %{
+      dmg_type: :misc,
+      is_short: short?,
+      element: :neutral,
+      skill_id: skill_id,
+      skill_level: 1,
+      div: 1
     }
   end
 

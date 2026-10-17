@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
     max_level: 5,
     target_type: :ground,
     damage_type: :damage,
+    ignore_flee: [renewal: true, pre_renewal: false],
     damage_kind: :weapon,
     element: :water,
     range: 3,

@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgTarotcard do
     requires: [],
     target_type: :target_enemy,
     damage_type: :no_damage,
+    ignore_flee: true,
     range: 9,
     sp_cost: List.duplicate(40, 5),
     cast_time: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1000, 5)],

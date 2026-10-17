@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressureTest do
       assert opts[:skill_id] == 367
       assert opts[:skill_level] == 3
       assert opts[:base_damage] == 1_400
-      assert opts[:ignore_element] == true
+      refute Keyword.has_key?(opts, :ignore_element)
       :ok
     end)
 

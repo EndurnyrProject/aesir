@@ -10,6 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanExplosion do
     max_level: 3,
     target_type: :self,
     damage_type: :damage,
+    ignore_def_card: true,
+    ignore_element: true,
+    ignore_flee: true,
     damage_kind: :misc,
     element: :neutral,
     splash_radius: 5,
@@ -50,7 +53,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanExplosion do
       delay_ms: @delay_ms,
       required_intimacy: @required_intimacy,
       reset_intimacy: @reset_intimacy,
-      ignore_element: true,
       target_skill_units: true,
       shoot_range_los: true
     }

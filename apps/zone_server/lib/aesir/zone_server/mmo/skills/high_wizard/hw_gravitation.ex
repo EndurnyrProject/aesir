@@ -26,6 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
     max_level: 5,
     target_type: :ground,
     damage_type: [renewal: :damage, pre_renewal: :no_damage],
+    ignore_def_card: [renewal: false, pre_renewal: true],
+    ignore_element: [renewal: false, pre_renewal: true],
+    ignore_flee: [renewal: false, pre_renewal: true],
     damage_kind: [renewal: :magic, pre_renewal: :misc],
     element: [renewal: :neutral, pre_renewal: :earth],
     range: 18,
@@ -160,7 +163,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
         skill_id: group.skill_id,
         skill_level: group.level,
         base_damage: tick_damage(target, group.level),
-        ignore_element: true,
         bypass_reductions: true,
         delivery: :unit
       )

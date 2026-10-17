@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -724,6 +725,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       hit_info
       |> Map.put(:damage, hit_info.status_return_basis)
       |> Map.put(:attacker, typed_attacker(attacker))
+      |> mark_trap_return(target_type, target_id)
 
     status_return =
       if status_hit.damage > 0,
@@ -752,6 +754,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       hit_info
       |> Map.put(:damage, damage)
       |> Map.put(:attacker, typed_attacker(attacker))
+      |> mark_trap_return(target_type, target_id)
 
     status_reflect = StatusInterpreter.after_damage_taken(target_type, target_id, delivered_hit)
     equip_reflect = equipment_damage_return(target_type, target_id, delivered_hit)
@@ -820,11 +823,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   # Equipment-granted melee damage reflect (`bShortWeaponDamageReturn`): the
   # defender's gear returns a percent of the supplied basis to the attacker on
-  # a short-range physical hit. Shares Reflect Shield's hit-shape filter, so an
-  # already-reflected, redirected, ranged, or magic hit reflects nothing. Only
-  # players carry equipment, so mobs and other unit types never reflect here.
+  # a short-range physical hit, or on a short-range trap hit (`trap_return?`,
+  # which then keeps Reflect Shield out). Shares Reflect Shield's hit-shape
+  # filter, so an already-reflected, redirected, ranged, or magic hit reflects
+  # nothing. Only players carry equipment, so mobs and other unit types never
+  # reflect here.
   defp equipment_damage_return(:player, target_id, hit_info) do
-    if melee_reflectable?(hit_info) do
+    if melee_reflectable?(hit_info) or Map.get(hit_info, :trap_return?, false) do
       div(hit_info.damage * short_weapon_return_percent(target_id), 100)
     else
       0
@@ -839,6 +844,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       _ -> 0
     end
   end
+
+  # A short trap hit on a player whose equipment returns melee damage is
+  # returned by that equipment alone; any other short misc hit is left to
+  # Reflect Shield, and a long one returns nothing.
+  # Only the original target returns: a redirected (Devotion) or already
+  # reflected hit returns nothing.
+  defp mark_trap_return(%{dmg_type: :misc} = hit_info, :player, target_id) do
+    trap_return? =
+      Map.get(hit_info, :is_short, false) == true and
+        not Map.get(hit_info, :reflected, false) and
+        not Map.get(hit_info, :redirected, false) and
+        trap_skill?(hit_info.skill_id) and
+        short_weapon_return_percent(target_id) > 0
+
+    Map.put(hit_info, :trap_return?, trap_return?)
+  end
+
+  defp mark_trap_return(hit_info, _target_type, _target_id), do: hit_info
+
+  defp trap_skill?(skill_id), do: match?({:ok, %{is_trap: true}}, Catalog.by_id(skill_id))
 
   defp melee_reflectable?(hit_info) do
     Map.get(hit_info, :dmg_type) == :physical and

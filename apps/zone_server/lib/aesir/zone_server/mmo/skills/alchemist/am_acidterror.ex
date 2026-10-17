@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_flee: true,
     damage_kind: :weapon,
     element: :neutral,
     range: 9,

@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestructionTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -165,6 +166,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestructionTest do
     stub(MiscDamageCalculator, :calculate_misc_damage, fn %{unit_id: 10}, %{unit_id: 21}, opts ->
       assert opts[:base_damage] == 400
       assert opts[:element] == :fire
+      assert opts[:skill_id] == 173
+
+      assert opts[:attack_flag] in [
+               BattleFlags.build(:misc, :short, true),
+               BattleFlags.build(:misc, :long, true)
+             ]
+
       {:ok, %{damage: 600, is_critical: false}}
     end)
 

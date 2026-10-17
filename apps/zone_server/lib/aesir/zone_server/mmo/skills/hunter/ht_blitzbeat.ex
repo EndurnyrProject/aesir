@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_flee: true,
     damage_kind: :misc,
     element: :neutral,
     range: 5,

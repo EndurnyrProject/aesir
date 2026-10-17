@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
     status: :sc_gospel,
     display_name: "Battle Chant",
     max_level: 10,
+    ignore_flee: true,
     target_type: :self,
     sp_cost: [80, 80, 80, 80, 80, 100, 100, 100, 100, 100],
     duration: List.duplicate(60_000, 10),

@@ -15,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
     ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_def_card: [renewal: true, pre_renewal: false],
+    ignore_flee: true,
     damage_kind: :misc,
     element: :neutral,
     range: 9,

@@ -1,9 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
   use ExUnit.Case, async: true
+  import Bitwise
   import Mimic
 
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
@@ -226,7 +228,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
                  skill_id: 489,
                  skill_level: 5,
                  base_damage: 1_000,
-                 ignore_element: true,
                  fix_damage: true,
                  report_hit: true
                )
@@ -425,6 +426,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
         assert opts[:base_damage] == 250
         assert opts[:element] == :fire
+        assert opts[:skill_id] == 122
+        assert opts[:attack_flag] == BattleFlags.build(:misc, :short, true)
+        refute Keyword.has_key?(opts, :fixed_damage)
         {:ok, %{damage: 80, is_critical: false}}
       end)
 
@@ -449,6 +453,48 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       assert_received {:packet, %SkillDamage{damage: 80, skill_id: 122, level: 5}}
       assert_received {:damage, 80}
     end
+
+    test "a weapon-flagged misc hit also carries the weapon battle flag" do
+      stub_single_target_mob()
+
+      expect(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
+        assert opts[:attack_flag] ==
+                 (BattleFlags.build(:misc, :long, true) ||| BattleFlags.type_bit(:weapon))
+
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, 50, @caster_id, _metadata -> :ok end)
+
+      assert :ok =
+               Combat.execute_misc_attack(build_caster(), @target_id,
+                 skill_id: 152,
+                 skill_level: 1,
+                 base_damage: 50,
+                 weapon_flag: true
+               )
+    end
+
+    test "a fixed misc hit deals its base without the misc tail" do
+      stub_single_target_mob()
+
+      expect(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
+        assert opts[:fixed_damage] == 1_000
+        {:ok, %{damage: 1_000, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, 1_000, @caster_id, _metadata -> :ok end)
+
+      assert :ok =
+               Combat.execute_misc_attack(build_caster(), @target_id,
+                 skill_id: 489,
+                 skill_level: 5,
+                 base_damage: 1_000,
+                 fix_damage: true
+               )
+    end
   end
 
   describe "execute_misc_splash/4" do
@@ -467,7 +513,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
       stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
         assert opts[:base_damage] == 200
-        assert opts[:ignore_element]
         {:ok, %{damage: 40, is_critical: false}}
       end)
 
@@ -486,8 +531,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
           skill_id: 122,
           skill_level: 5,
           base_damage: 200,
-          element: :neutral,
-          ignore_element: true
+          element: :neutral
         )
 
       assert Enum.sort(hits) == [2001, 2002]
@@ -535,8 +579,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
                  split: true
                )
 
-      assert_received {:calculated, [base_damage: 100, element: :wind]}
-      assert_received {:calculated, [base_damage: 100, element: :wind]}
+      assert_received {:calculated,
+                       [base_damage: 100, element: :wind, skill_id: _, attack_flag: _]}
+
+      assert_received {:calculated,
+                       [base_damage: 100, element: :wind, skill_id: _, attack_flag: _]}
+
       assert_received {:packet, %SkillDamage{damage: 500, div: 5}}
       assert_received {:packet, %SkillDamage{damage: 500, div: 5}}
       assert_received {:damage, 500}
@@ -596,8 +644,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         )
 
       assert Enum.sort(hits) == [2001, 2002]
-      assert_received {:calculated, [base_damage: 500, element: :neutral]}
-      assert_received {:calculated, [base_damage: 500, element: :neutral]}
+
+      assert_received {:calculated,
+                       [base_damage: 500, element: :neutral, skill_id: _, attack_flag: _]}
+
+      assert_received {:calculated,
+                       [base_damage: 500, element: :neutral, skill_id: _, attack_flag: _]}
+
       assert_received {:packet, %SkillDamage{damage: 40, div: 5}}
       assert_received {:packet, %SkillDamage{damage: 40, div: 5}}
       assert_received {:damage, 40}

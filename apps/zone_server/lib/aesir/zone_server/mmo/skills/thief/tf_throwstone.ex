@@ -11,6 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
   3% stun and, only when that fails, a 3% blind; a monster caster rolls a 5% stun
   and never blinds. Stun lasts 4.5 s and blind 20 s in renewal; 5 s and 30 s in
   pre-renewal. Renewal adds a 0.1 s after-cast delay.
+
+  The hit is misc but also counts as a weapon attack, so the target's
+  weapon-conditioned cards and modes match it.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 152,
@@ -21,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
     ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_flee: true,
     damage_kind: :misc,
     element: :neutral,
     range: 7,
@@ -51,6 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
       skill_level: level,
       base_damage: base_damage(caster),
       element: :neutral,
+      weapon_flag: true,
       report_hit: true
     ]
 

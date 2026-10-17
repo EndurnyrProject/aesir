@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldAuthorizationTest do
     target_ref = {:player, ally.character.id}
     group = group(:ht_landmine, 116, caster.character.id)
     initial_hp = player_hp(ally)
-    opts = [skill_id: 116, skill_level: 1, base_damage: 100, ignore_element: true]
+    opts = [skill_id: 116, skill_level: 1, base_damage: 100]
 
     :ok = MapFlags.set_runtime("prontera", :pvp, true)
 
@@ -128,7 +128,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FieldAuthorizationTest do
                skill_level: 1,
                base_damage: 200,
                element: :wind,
-               ignore_element: true,
                split: true
              )
 

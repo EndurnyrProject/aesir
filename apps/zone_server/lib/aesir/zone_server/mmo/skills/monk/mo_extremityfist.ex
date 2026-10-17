@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
+    ignore_flee: true,
     range: -2,
     element: :neutral,
     sp_cost: [1, 1, 1, 1, 1],

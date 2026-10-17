@@ -283,7 +283,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
                     delay_ms: 1_500,
                     required_intimacy: 45_000,
                     reset_intimacy: 100,
-                    ignore_element: true,
                     target_skill_units: true,
                     shoot_range_los: true
                   }}}

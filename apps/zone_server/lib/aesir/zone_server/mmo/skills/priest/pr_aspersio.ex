@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
     max_level: 5,
     target_type: :target_ally,
     damage_type: :no_damage,
+    ignore_element: true,
     damage_kind: :magic,
     element: :holy,
     range: 9,

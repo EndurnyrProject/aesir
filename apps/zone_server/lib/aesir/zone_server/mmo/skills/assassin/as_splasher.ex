@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :no_damage,
+    ignore_flee: true,
     range: 1,
     cast_time: [renewal: List.duplicate(500, 10), pre_renewal: List.duplicate(1_000, 10)],
     fixed_cast_time: [renewal: List.duplicate(500, 10), pre_renewal: []],

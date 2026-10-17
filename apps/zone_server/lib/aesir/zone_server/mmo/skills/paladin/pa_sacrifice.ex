@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaSacrifice do
     id: 368,
     name: :pa_sacrifice,
     ignore_atk_card: [renewal: true, pre_renewal: false],
+    ignore_flee: true,
     requires: [],
     status: :sc_sacrifice,
     display_name: "Martyr's Reckoning",

@@ -344,7 +344,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
       skill_level: descriptor.skill_level,
       base_damage: descriptor.base_damage,
       element: :neutral,
-      ignore_element: descriptor.ignore_element,
       target_skill_units: descriptor.target_skill_units,
       shoot_range_los: descriptor.shoot_range_los
     )
