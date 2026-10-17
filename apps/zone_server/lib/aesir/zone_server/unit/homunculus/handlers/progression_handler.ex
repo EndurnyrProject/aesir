@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
 
   defp advance_levels(%HomunculusState{} = state, species, opts) do
     case ExpTable.exp_for(state.level) do
-      {:ok, required} when state.exp >= required ->
+      {:ok, required} when state.exp > required ->
         next_level = state.level + 1
         growth = Growth.level(species, opts)
 
@@ -132,6 +132,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
         |> apply_bonuses(growth)
         |> fully_restore()
         |> advance_levels(species, opts)
+
+      {:ok, required} when state.exp == required ->
+        {:ok, fully_restore(state)}
 
       {:ok, _required} ->
         {:ok, state}

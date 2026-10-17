@@ -7,16 +7,20 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.Net.HomunculusRequest
+  alias Aesir.Net.SpecialEffect
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
+  alias Aesir.ZoneServer.Mmo.EffectId
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config, as: AiConfig
+  alias Aesir.ZoneServer.Mmo.Homunculus.ExpTable
   alias Aesir.ZoneServer.Mmo.Homunculus.LifecycleSkills
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
@@ -159,8 +163,27 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
       when is_integer(amount) and amount > 0 do
     if HomunculusState.living?(homunculus) do
       case ProgressionHandler.gain_exp(homunculus, amount) do
-        {:ok, progressed} -> {:noreply, StateCommit.commit(session, progressed)}
-        {:error, reason} -> {:noreply, log_error(session, :gain_exp, reason)}
+        {:ok, progressed} ->
+          progressed =
+            if progressed.level > homunculus.level or
+                 ExpTable.exp_for(progressed.level) == {:ok, progressed.exp} do
+              Broadcast.to_in_range(
+                progressed.map_name,
+                progressed.x,
+                progressed.y,
+                Config.view_range(),
+                %SpecialEffect{source_id: gid, effect_id: EffectId.id(:ho_up)}
+              )
+
+              StateCommit.copy_owner_walk_speed(progressed, session)
+            else
+              progressed
+            end
+
+          {:noreply, StateCommit.commit(session, progressed)}
+
+        {:error, reason} ->
+          {:noreply, log_error(session, :gain_exp, reason)}
       end
     else
       {:noreply, session}

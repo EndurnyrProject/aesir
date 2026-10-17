@@ -100,6 +100,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
     end
   end
 
+  test "exact threshold recalculates and heals without leveling or rolling growth", %{
+    character: character
+  } do
+    row = insert_homunculus(character.id, %{level: 1, exp: 0, hp: 1, sp: 2})
+    {:ok, required} = ExpTable.exp_for(1)
+
+    assert {:ok, unchanged_level} =
+             ProgressionHandler.gain_exp(state(row), required,
+               roll: fn _, _ -> flunk("equality must not roll growth") end
+             )
+
+    assert unchanged_level.level == 1
+    assert unchanged_level.exp == required
+    assert unchanged_level.hp == unchanged_level.max_hp
+    assert unchanged_level.sp == unchanged_level.max_sp
+  end
+
   test "one EXP gain crosses multiple thresholds, rolls every level, heals, and persists", %{
     character: character
   } do
@@ -111,12 +128,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
     assert {:ok, progressed} =
              ProgressionHandler.gain_exp(
                state,
-               level_one_exp - 100 + level_two_exp,
+               level_one_exp - 100 + level_two_exp + 1,
                roll: fn min, _max -> min end
              )
 
     assert progressed.level == 3
-    assert progressed.exp == 0
+    assert progressed.exp == 1
     assert progressed.skill_points == 1
     assert progressed.max_hp == 220
     assert progressed.max_sp == 58
@@ -139,7 +156,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
     amount = Enum.reduce(1..9, 0, fn level, total -> total + elem(ExpTable.exp_for(level), 1) end)
 
     assert {:ok, progressed} =
-             ProgressionHandler.gain_exp(state(row), amount, roll: fn min, _max -> min end)
+             ProgressionHandler.gain_exp(state(row), amount + 1, roll: fn min, _max -> min end)
 
     assert progressed.level == 10
     assert progressed.skill_points == 5

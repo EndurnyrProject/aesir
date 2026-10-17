@@ -68,6 +68,20 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     assert advanced.homunculus.y == 2
   end
 
+  test "redirecting a walk keeps its pending step and timer until the cell lands" do
+    moving = active_session() |> MovementHandler.move_to({6, 2})
+    ref = moving.homunculus_runtime.movement_timer_ref
+    redirected = MovementHandler.move_to(moving, {2, 6})
+
+    assert redirected.homunculus_runtime.movement_timer_ref == ref
+    assert hd(redirected.homunculus_runtime.movement_path) == {3, 2}
+
+    landed = MovementHandler.tick(ref, redirected)
+    assert {landed.homunculus.x, landed.homunculus.y} == {3, 2}
+    assert List.last(landed.homunculus_runtime.movement_path) == {2, 6}
+    refute landed.homunculus_runtime.movement_timer_ref == ref
+  end
+
   test "a hit stop leaves a Homunculus early in its step on its cell" do
     moving = active_session() |> MovementHandler.move_to({6, 2})
 
@@ -221,6 +235,29 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     assert entered.homunculus.owner_walk_speed == 112
   end
 
+  test "EXP equality recopies the owner's current speed without gaining a level" do
+    character = insert_character()
+    row = insert_homunculus(character.id, %{level: 1, exp: 0})
+    {:ok, required} = Aesir.ZoneServer.Mmo.Homunculus.ExpTable.exp_for(1)
+    owner = %{player() | character_id: character.id, walk_speed: 112}
+
+    companion = %{
+      homunculus()
+      | id: row.id,
+        owner_character_id: character.id,
+        level: 1,
+        exp: required - 1,
+        owner_walk_speed: 150
+    }
+
+    session = active_session(owner: owner, homunculus: companion)
+
+    assert {:noreply, progressed} = CommandHandler.cast({:gain_exp, 700, 1, @map}, session)
+    assert progressed.homunculus.level == 1
+    assert progressed.homunculus.exp == required
+    assert progressed.homunculus.owner_walk_speed == 112
+  end
+
   test "a Homunculus warp lands only for the exact living endpoint, even on its own cell" do
     session = active_session()
     test_pid = self()
@@ -304,6 +341,73 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
 
     assert warped.homunculus.casting == nil
     assert_received {:broadcast, @map, 2, 2, %CastCancel{gid: 700}}
+  end
+
+  test "cancelling a cast without a warp broadcasts its cancel exactly once" do
+    session = active_session()
+
+    casting = %{
+      token: make_ref(),
+      skill_id: 8_001,
+      level: 1,
+      target: :self,
+      fixed: 0,
+      total: 1_000
+    }
+
+    session = %{
+      session
+      | homunculus: %{session.homunculus | action_state: :casting, casting: casting}
+    }
+
+    test_pid = self()
+
+    stub(Broadcast, :to_in_range, fn @map, 2, 2, _, packet ->
+      send(test_pid, {:cast_packet, packet})
+      :ok
+    end)
+
+    cancelled = CastingHandler.cancel(session)
+    assert cancelled.homunculus.casting == nil
+    assert_received {:cast_packet, %CastCancel{gid: 700}}
+    CastingHandler.cancel(cancelled)
+    refute_received {:cast_packet, %CastCancel{}}
+  end
+
+  test "a timed cast broadcasts its homunculus identity, target and duration" do
+    session = active_session()
+
+    info = %{
+      skill_id: 8_001,
+      level: 1,
+      target: {:unit, 910},
+      fixed: 0,
+      total: 1_000,
+      element: :neutral
+    }
+
+    stub(Aesir.ZoneServer.Mmo.Skill.Interpreter, :begin_cast, fn _, 8_001, 1, {:unit, 910} ->
+      {:casting, session.homunculus, info}
+    end)
+
+    test_pid = self()
+
+    stub(Broadcast, :to_in_range, fn @map, 2, 2, _, packet ->
+      send(test_pid, {:cast_packet, packet})
+      :ok
+    end)
+
+    assert {:ok, casting} = CastingHandler.begin(session, 8_001, 1, {:unit, 910})
+
+    assert_received {:cast_packet,
+                     %Aesir.Net.SkillCasting{
+                       src_id: 700,
+                       target_id: 910,
+                       skill_id: 8_001,
+                       cast_time: 1_000
+                     }}
+
+    CastingHandler.cancel(casting)
   end
 
   test "missing food falls through to aggressive combat instead of selecting feed forever" do

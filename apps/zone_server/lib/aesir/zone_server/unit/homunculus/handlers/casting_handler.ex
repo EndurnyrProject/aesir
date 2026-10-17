@@ -9,8 +9,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
 
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.Net.CastCancel
+  alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -82,9 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     %{session | homunculus_runtime: %{runtime | bio_explosion_descriptor: nil}}
   end
 
-  @doc "Cancels the current cast without settling SP or cooldown."
-  @spec cancel(SessionState.t()) :: SessionState.t()
-  def cancel(%SessionState{} = session) do
+  defp clear_cast(%SessionState{} = session) do
     Clock.cancel(session.homunculus_runtime.cast_timer_ref)
     session = clear_runtime_cast(session)
 
@@ -101,8 +101,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   Cancels the current cast and tells the players in view, as a unit leaving
   its map does; without a cast nothing is sent.
   """
-  @spec interrupt(SessionState.t()) :: SessionState.t()
-  def interrupt(%SessionState{} = session) do
+  @spec cancel(SessionState.t()) :: SessionState.t()
+  def cancel(%SessionState{} = session) do
     case session.homunculus do
       %HomunculusState{casting: casting} = homunculus when not is_nil(casting) ->
         packet = %CastCancel{gid: homunculus.world_gid}
@@ -119,8 +119,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
         :ok
     end
 
-    cancel(session)
+    clear_cast(session)
   end
+
+  @doc "Interrupts the current cast, broadcasting the same cancel as an explicit cancellation."
+  @spec interrupt(SessionState.t()) :: SessionState.t()
+  defdelegate interrupt(session), to: __MODULE__, as: :cancel
 
   defp begin_current(session, _homunculus, _id, _level, _target)
        when not is_nil(session.homunculus_runtime.bio_explosion_timer_ref),
@@ -145,7 +149,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
          ) do
       {:ok, updated} -> finish_completed(session, updated, [])
       {:local_effects, updated, effects} -> finish_completed(session, updated, effects)
-      {:error, _reason} -> {:noreply, cancel(session)}
+      {:error, _reason} -> {:noreply, clear_cast(session)}
     end
   end
 
@@ -155,7 +159,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
 
     case finish(cleared, updated, effects) do
       {:ok, completed} -> {:noreply, completed}
-      {:error, _reason, restored} -> {:noreply, cancel(restored)}
+      {:error, _reason, restored} -> {:noreply, clear_cast(restored)}
       {:stop, _reason, _state} = stop -> stop
     end
   end
@@ -186,8 +190,35 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     runtime = %{session.homunculus_runtime | cast_timer_ref: timer_ref}
     homunculus = %{homunculus | action_state: :casting, casting: casting}
     session = %{session | homunculus_runtime: runtime}
+    broadcast_cast_start(homunculus, info)
     {:ok, StateCommit.commit(session, homunculus)}
   end
+
+  defp broadcast_cast_start(homunculus, info) do
+    {target_id, x, y} = cast_target(homunculus, info.target)
+
+    packet = %SkillCasting{
+      src_id: homunculus.world_gid,
+      target_id: target_id,
+      x: x,
+      y: y,
+      skill_id: info.skill_id,
+      property: ElementModifiers.id(info.element),
+      cast_time: info.total
+    }
+
+    Broadcast.to_in_range(
+      homunculus.map_name,
+      homunculus.x,
+      homunculus.y,
+      Config.view_range(),
+      packet
+    )
+  end
+
+  defp cast_target(homunculus, :self), do: {homunculus.world_gid, 0, 0}
+  defp cast_target(_homunculus, {:unit, id}), do: {id, 0, 0}
+  defp cast_target(_homunculus, {:ground, x, y}), do: {0, x, y}
 
   defp finish(
          session,

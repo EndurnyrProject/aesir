@@ -223,7 +223,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
 
     with %HomunculusState{} <- homunculus,
          :finish_step <- HitStop.plan({due_at, duration, ref}, HitStop.now()),
-         true <- Cell.step_traversable?(homunculus.map_name, {homunculus.x, homunculus.y}, next) do
+         true <- Cell.traversable?(homunculus.map_name, elem(next, 0), elem(next, 1)) do
       runtime = Clock.cancel_field(session.homunculus_runtime, :movement_timer_ref)
 
       %{session | homunculus_runtime: %{runtime | movement_path: [next]}}
@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
       |> Clock.cancel_field(:movement_timer_ref)
       |> Clock.cancel_field(:separation_timer_ref)
 
-    %{session | homunculus_runtime: %{runtime | movement_path: []}}
+    %{session | homunculus_runtime: %{runtime | movement_path: [], movement_redirect: nil}}
   end
 
   defp tick_current(%SessionState{} = session) do
@@ -253,6 +253,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
       session
       |> refresh_chase()
       |> take_step()
+      |> apply_redirect()
       |> sync_separation()
     else
       stop(session, true)
@@ -284,9 +285,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   defp take_step(%SessionState{} = session) do
     [next | rest] = session.homunculus_runtime.movement_path
     homunculus = session.homunculus
-    current = {homunculus.x, homunculus.y}
 
-    if Cell.step_traversable?(homunculus.map_name, current, next) do
+    if Cell.traversable?(homunculus.map_name, elem(next, 0), elem(next, 1)) do
       runtime = %{session.homunculus_runtime | movement_path: rest}
       moving? = rest != []
 
@@ -317,6 +317,38 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
           {:error, _reason} -> stop(session, true)
         end
     end
+  end
+
+  defp apply_redirect(%SessionState{homunculus_runtime: %{movement_redirect: nil}} = session),
+    do: session
+
+  defp apply_redirect(session) do
+    destination = session.homunculus_runtime.movement_redirect
+    session = cancel_movement(session)
+    homunculus = session.homunculus
+
+    with {:ok, map} <- MapCache.get(homunculus.map_name),
+         {:ok, cells} <- Pathfinding.rewalk_path(map, {homunculus.x, homunculus.y}, destination) do
+      start_path(session, cells, homunculus.target, homunculus.standby?)
+    else
+      _blocked -> stop(session, true)
+    end
+  end
+
+  defp start_path(
+         %SessionState{homunculus_runtime: %{movement_timer_ref: ref}} = session,
+         cells,
+         target,
+         standby?
+       )
+       when is_reference(ref) do
+    homunculus = session.homunculus
+    destination = List.last(cells) || {homunculus.x, homunculus.y}
+    runtime = %{session.homunculus_runtime | movement_redirect: destination}
+
+    session
+    |> Map.put(:homunculus_runtime, runtime)
+    |> StateCommit.commit(%{homunculus | target: target, standby?: standby?})
   end
 
   defp start_path(session, [], target, standby?) do
@@ -406,7 +438,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
 
   defp cancel_movement(session) do
     runtime = Clock.cancel_field(session.homunculus_runtime, :movement_timer_ref)
-    %{session | homunculus_runtime: %{runtime | movement_path: []}}
+    %{session | homunculus_runtime: %{runtime | movement_path: [], movement_redirect: nil}}
   end
 
   defp stopped_action(:moving), do: :idle
