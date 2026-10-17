@@ -131,6 +131,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
       position: {cell.x, cell.y},
       map_name: cell.map_name
     }
-    |> Map.put(:hp, cell.hp)
+    |> Map.put(
+      :hp,
+      if(Map.get(cell.state, :trap_target, false), do: max(cell.hp, 1), else: cell.hp)
+    )
   end
 end

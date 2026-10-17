@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id
   alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombat
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
@@ -618,10 +619,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
       fields ->
         {results, ticksets} =
-          UnitTimer.run(fields, state.ticksets, now, &invoke/3, &run_manager_command(&1, now))
+          UnitTimer.run(
+            fields,
+            state.ticksets,
+            now,
+            &invoke/3,
+            &run_manager_command(&1, now),
+            &prepare_unit_cell/3
+          )
 
         Enum.each(results, &finish_unit_pass/1)
         %{state | ticksets: ticksets}
+    end
+  end
+
+  defp prepare_unit_cell(cell, group, now) do
+    current = Storage.get_cell(cell.cell_id) || cell
+
+    case TrapCombat.exhaustion(current, group) do
+      :none ->
+        group
+
+      :expire ->
+        cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
+        nil
+
+      :used ->
+        used = transition_trap(group, :used, now + @sprung_trap_lifetime)
+
+        case persist_trap_update(group, used) do
+          :ok ->
+            used
+
+          {:error, reason} ->
+            log_callback_error(group, :trap_durability, reason)
+            cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+            nil
+        end
     end
   end
 
@@ -1427,6 +1461,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       nil ->
         {:error, :not_found}
 
+      %Cell{state: %{trap_target: true}} = cell ->
+        damage_trap_cell(cell, amount, source, reason)
+
       %Cell{max_hp: 0} ->
         {:error, :not_destructible}
 
@@ -1446,6 +1483,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
+  defp damage_trap_cell(cell, amount, source, reason) do
+    case TrapCombat.damage_mode(cell) do
+      :ignore ->
+        {:ok, cell}
+
+      :durability ->
+        updated = %{cell | hp: max(cell.hp - amount, 0)}
+        :ok = Storage.update_cell(updated)
+        publish_update(updated, -min(amount, cell.hp), source, reason)
+        {:ok, updated}
+    end
+  end
+
   # Destroying a group's last cell must expire the group immediately, matching
   # the structural-removal path (`remove_group_cells`); otherwise the empty
   # group lingers until the next interval tick reaps it.
@@ -1460,6 +1510,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp fetch_targetable_cell(cell_id) do
     case Storage.get_cell(cell_id) do
+      %Cell{state: %{trap_target: true}} = cell ->
+        if Cell.flag?(cell, :targetable) and TrapCombat.targetable?(cell),
+          do: {:ok, cell},
+          else: {:error, :not_targetable}
+
       %Cell{} = cell when cell.hp > 0 ->
         if Cell.flag?(cell, :targetable), do: {:ok, cell}, else: {:error, :not_targetable}
 
@@ -1932,7 +1987,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
          unit_available?
        )
        when is_integer(item_id) and item_id > 0 do
-    if unit_available?.(:player, caster_id, group.map_name) do
+    if unit_available?.(:player, caster_id, group.map_name) and TrapCombat.intact?(group) do
       {x, y} = group.center
       Coordinator.drop_items(group.map_name, [{item_id, 1, x, y, true}], x, y)
     end
@@ -2354,11 +2409,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp decay_cells(_group), do: :ok
 
-  defp cell_attrs(%Group{state: %{cell_attrs: attrs}}, cell) when is_map(attrs) do
-    Map.get(attrs, cell, %{})
-  end
+  defp cell_attrs(%Group{state: state} = group, cell) do
+    defaults = TrapCombat.cell_attrs(group)
+    attrs = state |> Map.get(:cell_attrs, %{}) |> Map.get(cell, %{})
 
-  defp cell_attrs(_group, _cell), do: %{}
+    Map.merge(defaults, attrs)
+    |> Map.put(:state, Map.merge(Map.get(defaults, :state, %{}), Map.get(attrs, :state, %{})))
+  end
 
   defp ensure_cell_available(%Group{} = group, x, y) do
     if exclusive_terrain?(group) and MapCell.exclusive_contribution?(group.map_name, x, y) do

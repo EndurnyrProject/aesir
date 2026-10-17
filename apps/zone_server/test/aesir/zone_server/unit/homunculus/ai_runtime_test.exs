@@ -380,13 +380,16 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     info = %{
       skill_id: 8_001,
       level: 1,
-      target: {:unit, 910},
+      target: {:unit, {:mob, 910}},
       fixed: 0,
       total: 1_000,
       element: :neutral
     }
 
-    stub(Aesir.ZoneServer.Mmo.Skill.Interpreter, :begin_cast, fn _, 8_001, 1, {:unit, 910} ->
+    stub(Aesir.ZoneServer.Mmo.Skill.Interpreter, :begin_cast, fn _,
+                                                                 8_001,
+                                                                 1,
+                                                                 {:unit, {:mob, 910}} ->
       {:casting, session.homunculus, info}
     end)
 
@@ -397,7 +400,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
       :ok
     end)
 
-    assert {:ok, casting} = CastingHandler.begin(session, 8_001, 1, {:unit, 910})
+    assert {:ok, casting} = CastingHandler.begin(session, 8_001, 1, {:unit, {:mob, 910}})
 
     assert_received {:cast_packet,
                      %Aesir.Net.SkillCasting{

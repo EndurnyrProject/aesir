@@ -217,6 +217,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   end
 
   defp cast_target(homunculus, :self), do: {homunculus.world_gid, 0, 0}
+  defp cast_target(_homunculus, {:unit, {_type, id}}), do: {id, 0, 0}
   defp cast_target(_homunculus, {:unit, id}), do: {id, 0, 0}
   defp cast_target(_homunculus, {:ground, x, y}), do: {0, x, y}
 

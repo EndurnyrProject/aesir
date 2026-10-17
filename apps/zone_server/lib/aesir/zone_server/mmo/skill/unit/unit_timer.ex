@@ -73,6 +73,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   @typedoc "Runs a manager command now and returns the groups it changed, as stored."
   @type run_command :: (Ground.command() -> [Group.t()])
 
+  @typedoc "Prepares a cell's current group before it acts, or removes it."
+  @type prepare_cell :: (Cell.t(), Group.t(), integer() -> Group.t() | nil)
+
   @doc """
   Orders cells as the skill-unit table iterates them: by id remainder over its
   283 buckets, then by id.
@@ -84,14 +87,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   Runs one pass over `fields` (`{group, module}` pairs) at `now`.
 
   Returns every group as it left the pass with its outcome, and the updated
-  strike intervals.
+  strike intervals. The optional pre-cell callback settles durability before
+  that cell acts, in the same table order as its other timer work.
   """
   @spec run([{Group.t(), module()}], ticksets(), integer(), invoke(), run_command()) ::
           {[{Group.t(), module(), outcome()}], ticksets()}
-  def run(fields, ticksets, now, invoke, run_command \\ fn _command -> [] end) do
+  @spec run(
+          [{Group.t(), module()}],
+          ticksets(),
+          integer(),
+          invoke(),
+          run_command(),
+          prepare_cell()
+        ) ::
+          {[{Group.t(), module(), outcome()}], ticksets()}
+  def run(
+        fields,
+        ticksets,
+        now,
+        invoke,
+        run_command \\ fn _command -> [] end,
+        prepare_cell \\ fn _cell, group, _now -> group end
+      ) do
     ticksets = Map.reject(ticksets, fn {_key, next} -> next <= now end)
     by_id = Map.new(fields, fn {group, module} -> {group.group_id, {group, module, :ok}} end)
-    env = %{now: now, invoke: invoke, run_command: run_command}
+    env = %{now: now, invoke: invoke, run_command: run_command, prepare_cell: prepare_cell}
 
     {by_id, ticksets} =
       fields
@@ -105,12 +125,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   defp run_cell(%Cell{group_id: group_id} = cell, {by_id, _ticksets} = acc, env) do
     case Map.fetch(by_id, group_id) do
       {:ok, {group, module, :ok}} ->
-        if {cell.x, cell.y} in group.cells and not protected?(group, cell),
-          do: profiled_cell(group, module, {cell.x, cell.y}, acc, env),
-          else: acc
+        prepare_cell(cell, group, module, acc, env)
 
       _ended ->
         acc
+    end
+  end
+
+  defp prepare_cell(cell, group, module, {by_id, ticksets}, env) do
+    case env.prepare_cell.(cell, group, env.now) do
+      nil ->
+        {Map.delete(by_id, group.group_id), ticksets}
+
+      %Group{} = prepared ->
+        acc = {Map.put(by_id, group.group_id, {prepared, module, :ok}), ticksets}
+
+        if {cell.x, cell.y} in prepared.cells and not protected?(prepared, cell),
+          do: profiled_cell(prepared, module, {cell.x, cell.y}, acc, env),
+          else: acc
     end
   end
 

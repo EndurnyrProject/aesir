@@ -184,6 +184,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   # otherwise reject the caster as its own target.
   defp splash_hittable?(_caster, _target, target_ref, target_ref), do: true
 
+  defp splash_hittable?(_caster, %{unit_type: :skill_unit}, _target_ref, _caster_ref), do: true
+
   defp splash_hittable?(caster, target, _target_ref, _caster_ref),
     do: splash_enemy?(caster, target)
 

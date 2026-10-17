@@ -1125,7 +1125,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              base_damage,
              Keyword.get(opts, :hit_divisions, 1),
              %{
-               authorize_target: &Targeting.validate_enemy/2,
+               authorize_target: &validate_trap_splash_enemy/2,
                owner_derived_trap?: target_skill_units?,
                knockback_options: knockback_options(opts),
                delivery: Keyword.get(opts, :delivery, :direct)
@@ -1397,6 +1397,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp misc_target_combatant(target_state, _owner_derived_trap?),
     do: {:ok, target_state.__struct__.to_combatant(target_state)}
+
+  defp validate_trap_splash_enemy(_attacker, %{unit_type: :skill_unit}), do: :ok
+
+  defp validate_trap_splash_enemy(attacker, target),
+    do: Targeting.validate_enemy(attacker, target)
 
   defp misc_damage_opts(base_damage, element, skill_id, attack_flag, misc_opts) do
     opts = [

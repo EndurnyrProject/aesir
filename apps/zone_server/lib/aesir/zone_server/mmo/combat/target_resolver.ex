@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Ref
@@ -105,6 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TargetResolver do
     if Unit.living?(target_state), do: :ok, else: {:error, :target_dead}
   end
 
+  def ensure_targetable(%SkillUnitCell{state: %{trap_target: true}}, :skill_unit), do: :ok
   def ensure_targetable(%{hp: hp}, :skill_unit) when hp > 0, do: :ok
   def ensure_targetable(_target_state, :skill_unit), do: {:error, :target_dead}
 
