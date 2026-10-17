@@ -67,53 +67,44 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoberserkTest do
     end
   end
 
-  describe "on_damage/4 — follow-up SC_PROVOKE when below 25% HP" do
-    test "requests sc_provoke follow-up when hp_after drops below 25% of max_hp" do
-      unit_id = 1
-      :ok = Interpreter.apply_status(:player, unit_id, :sc_autoberserk)
+  test "its tick starts flagged infinite Provoke at the quarter-HP boundary and warp removes it" do
+    :ok = Interpreter.apply_status(:player, 1, :sc_autoberserk)
+    entry = StatusStorage.get_status(:player, 1, :sc_autoberserk)
 
-      damage_info = %{damage: 800, element: :neutral, hp_after: 200, max_hp: 1_000}
+    assert {:ok, ^entry} =
+             Autoberserk.on_tick({:player, 1}, entry, %{target: %{hp: 250, max_hp: 1_000}})
 
-      Interpreter.on_damage(:player, unit_id, damage_info)
+    assert %{val1: 10, val2: 32, val3: 55, val4: 1, expires_at: nil} =
+             StatusStorage.get_status(:player, 1, :sc_provoke)
 
-      assert StatusStorage.has_status?(:player, unit_id, :sc_provoke)
-    end
+    Interpreter.remove_on_map_change(:player, 1)
+    refute StatusStorage.has_status?(:player, 1, :sc_provoke)
+  end
 
-    test "does not request sc_provoke when hp_after is exactly 25% of max_hp" do
-      unit_id = 2
-      :ok = Interpreter.apply_status(:player, unit_id, :sc_autoberserk)
+  test "the next tick removes its own Provoke after healing, but not an ordinary Provoke" do
+    :ok = Interpreter.apply_status(:player, 2, :sc_autoberserk)
+    entry = StatusStorage.get_status(:player, 2, :sc_autoberserk)
+    Autoberserk.on_tick({:player, 2}, entry, %{target: %{hp: 200, max_hp: 1_000}})
+    assert StatusStorage.has_status?(:player, 2, :sc_provoke)
+    Autoberserk.on_tick({:player, 2}, entry, %{target: %{hp: 251, max_hp: 1_000}})
+    refute StatusStorage.has_status?(:player, 2, :sc_provoke)
 
-      damage_info = %{damage: 250, element: :neutral, hp_after: 250, max_hp: 1_000}
+    :ok = Interpreter.apply_status(:player, 2, :sc_provoke, val1: 5, val2: 17, val3: 30, val4: 0)
+    Autoberserk.on_tick({:player, 2}, entry, %{target: %{hp: 600, max_hp: 1_000}})
+    assert %{val4: 0} = StatusStorage.get_status(:player, 2, :sc_provoke)
+  end
 
-      Interpreter.on_damage(:player, unit_id, damage_info)
+  test "ending Auto Berserk removes only the Provoke it created" do
+    :ok = Interpreter.apply_status(:player, 3, :sc_autoberserk)
+    entry = StatusStorage.get_status(:player, 3, :sc_autoberserk)
+    Autoberserk.on_tick({:player, 3}, entry, %{target: %{hp: 200, max_hp: 1_000}})
+    Interpreter.remove_status(:player, 3, :sc_autoberserk)
+    refute StatusStorage.has_status?(:player, 3, :sc_provoke)
+  end
 
-      refute StatusStorage.has_status?(:player, unit_id, :sc_provoke)
-    end
-
-    test "does not request sc_provoke when hp_after is above 25% of max_hp" do
-      unit_id = 3
-      :ok = Interpreter.apply_status(:player, unit_id, :sc_autoberserk)
-
-      damage_info = %{damage: 100, element: :neutral, hp_after: 600, max_hp: 1_000}
-
-      Interpreter.on_damage(:player, unit_id, damage_info)
-
-      refute StatusStorage.has_status?(:player, unit_id, :sc_provoke)
-    end
-
-    test "does not double-apply sc_provoke when already provoked" do
-      unit_id = 4
-
-      :ok = Interpreter.apply_status(:player, unit_id, :sc_autoberserk)
-      :ok = Interpreter.apply_status(:player, unit_id, :sc_provoke, val1: 10, val2: 32, val3: 55)
-
-      assert StatusStorage.has_status?(:player, unit_id, :sc_provoke)
-
-      damage_info = %{damage: 800, element: :neutral, hp_after: 200, max_hp: 1_000}
-
-      Interpreter.on_damage(:player, unit_id, damage_info)
-
-      assert StatusStorage.has_status?(:player, unit_id, :sc_provoke)
-    end
+  test "damage does not apply Provoke before the next status tick" do
+    :ok = Interpreter.apply_status(:player, 4, :sc_autoberserk)
+    Interpreter.on_damage(:player, 4, %{damage: 800, hp_after: 200, max_hp: 1_000})
+    refute StatusStorage.has_status?(:player, 4, :sc_provoke)
   end
 end

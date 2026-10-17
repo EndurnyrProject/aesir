@@ -13,8 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
   Longing, or `:always` for Moonlit and Hermode. Older entries infer the root
   from a positive partner character id in `val4`. A player walking without
   Longing (pre-renewal) or Ensemble Fatigue (renewal) is slowed by
-  `500 - 40 * Lesson` percent, with the lesson frozen in
-  `val3`; a monster is not slowed.
+  `500 - 40 * Lesson` percent, reading the performer's current sex-specific
+  Lesson level; a monster is not slowed.
   """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     icon: :bdplaying
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -42,13 +43,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
 
   @impl true
   @spec modifiers(StatusEntry.t(), Definition.context()) :: map()
-  def modifiers(%StatusEntry{val3: lesson}, context) do
+  def modifiers(_entry, context) do
     unit_type = Map.get(context, :unit_type)
 
     slow =
       if unit_type == :mob or slow_lifted?(unit_type, Map.get(context, :target_id)),
         do: 0,
-        else: 500 - 40 * (lesson || 0)
+        else: 500 - 40 * lesson(Map.get(context, :target_id))
 
     %{sp_regen: -100, skill_sp_regen_rate: -100, movement_speed: slow}
   end
@@ -106,6 +107,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     do: Unit.destroy_async(group_id)
 
   def on_expire(_target, _entry, _context), do: :ok
+
+  defp lesson(id) do
+    case UnitRegistry.get_unit(:player, id) do
+      {:ok, {_module, %{sex: sex, stats: %{progression: %{learned_skills: learned}}}, _pid}} ->
+        Learned.learned_level(learned, if(sex == "M", do: 315, else: 323))
+
+      _unavailable ->
+        0
+    end
+  end
 
   defp longing?(type, id), do: StatusStorage.has_status?(type, id, :sc_longing)
 

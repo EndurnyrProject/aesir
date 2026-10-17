@@ -137,9 +137,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     refute Interpreter.can_move?(:player, 17)
   end
 
-  test "walking slows by 500% less 40 per Lesson level" do
-    assert %{movement_speed: 500} = Dancing.modifiers(%StatusEntry{val3: 0}, %{})
-    assert %{movement_speed: 100} = Dancing.modifiers(%StatusEntry{val3: 10}, %{})
+  test "walking uses the live sex-specific Lesson rather than its start-time value" do
+    dancer = put_in(player(17).stats.progression.learned_skills, %{323 => 2, 315 => 10})
+    :ok = UnitRegistry.register_player(dancer, self())
+    entry = %StatusEntry{val3: 10}
+    context = %{unit_type: :player, target_id: 17}
+    assert %{movement_speed: 420} = Dancing.modifiers(entry, context)
+
+    dancer = put_in(dancer.stats.progression.learned_skills, %{323 => 5, 315 => 10})
+    :ok = UnitRegistry.update_unit_state(:player, 17, dancer)
+    assert %{movement_speed: 300} = Dancing.modifiers(entry, context)
+
+    :ok = UnitRegistry.update_unit_state(:player, 17, %{dancer | sex: "M"})
+    assert %{movement_speed: 100} = Dancing.modifiers(entry, context)
   end
 
   test "a monster performer is not slowed" do
@@ -189,7 +199,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
   end
 
   test "Longing triples upkeep and removes the lock's walk slow in pre-renewal" do
-    :ok = UnitRegistry.register_player(player(17), self())
+    dancer = put_in(player(17).stats.progression.learned_skills, %{323 => 10})
+    :ok = UnitRegistry.register_player(dancer, self())
     :ok = StatusStorage.apply_status(:player, 17, :sc_longing, val1: 1)
 
     expect(PlayerSession, :try_consume_sp, fn _pid, amount ->

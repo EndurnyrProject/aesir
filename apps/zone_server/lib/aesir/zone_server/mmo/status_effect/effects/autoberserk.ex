@@ -1,10 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoberserk do
   @moduledoc """
-  Auto Berserk (SC_AUTOBERSERK).
+  Auto Berserk checks HP every 100 ms in both modes.
 
-  Passive buff toggled by SM_AUTOBERSERK. Whenever the carrier takes damage
-  and post-damage HP falls below 25% of max HP, automatically applies
-  SC_PROVOKE at level 10 if not already provoked.
+  At or below a quarter of maximum HP it grants level 10 infinite Provoke,
+  marked as automatic. Healing above that threshold, ending Auto Berserk, or
+  leaving the map removes that Provoke, not an ordinary taunt.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_autoberserk,
@@ -12,22 +12,47 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoberserk do
     no_clear_buff: false,
     properties: [:buff],
     permanent: true,
+    tick_interval: 100,
     icon: :autoberserk
 
-  import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @impl true
-  def on_damage(target, instance, %{hp_after: hp_after, max_hp: max_hp}, _context)
-      when hp_after * 4 < max_hp do
-    if has_status?(target, :sc_provoke) do
-      {:ok, instance}
-    else
-      params = [val1: 10, val2: 32, val3: 55]
-      {:ok, instance, [{:sc_provoke, params}]}
+  @spec on_tick(Definition.target(), StatusEntry.t(), Definition.context()) :: {:ok, StatusEntry.t()}
+  def on_tick({type, id}, instance, %{target: %{hp: hp, max_hp: max_hp}}) do
+    case StatusStorage.get_status(type, id, :sc_provoke) do
+      %{val4: 1} ->
+        if hp > div(max_hp, 4), do: Interpreter.remove_status(type, id, :sc_provoke)
+
+      _ordinary_or_missing ->
+        if hp <= div(max_hp, 4) do
+          {atk, defense} = if type == :player, do: {32, 55}, else: {0, 100}
+
+          Interpreter.apply_status(type, id, :sc_provoke,
+            val1: 10,
+            val2: atk,
+            val3: defense,
+            val4: 1,
+            caster_id: id,
+            source_type: type,
+            duration: -1,
+            no_avoid: true
+          )
+        end
     end
+
+    {:ok, instance}
   end
 
-  def on_damage(_target, instance, _damage_info, _context) do
-    {:ok, instance}
+  @impl true
+  @spec on_expire(Definition.target(), StatusEntry.t(), Definition.context()) :: :ok
+  def on_expire({type, id}, _instance, _context) do
+    if match?(%{val4: 1}, StatusStorage.get_status(type, id, :sc_provoke)),
+      do: Interpreter.remove_status(type, id, :sc_provoke)
+
+    :ok
   end
 end
