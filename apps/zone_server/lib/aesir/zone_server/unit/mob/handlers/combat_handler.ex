@@ -129,7 +129,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   defp coma_metadata(metadata),
     do:
       metadata
-      |> Map.take([:damage_broken, :walk_delay?, :div, :weapon_attack?])
+      |> Map.take([
+        :damage_broken,
+        :walk_delay?,
+        :div,
+        :weapon_attack?,
+        :hit_damage,
+        :passive?,
+        :blocked?,
+        :magic_rod_miss?,
+        :connected?,
+        :reflected
+      ])
       |> Map.put(:coma?, true)
 
   # A damaging battle hit stops the mob walking unless it endures the hit or is

@@ -339,7 +339,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_attack/3" do
-    test "full magic immunity broadcasts a miss without target-side effects" do
+    test "full magic immunity broadcasts a miss and only rolls coma on the target" do
       flag = BattleFlags.build(:magic, :long, true)
       attacker_key = {70, 0}
       defender_key = {71, 0}
@@ -373,7 +373,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       end)
 
       reject(&EquipVanish.after_hit/4)
-      reject(&EquipComa.trigger?/2)
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
       reject(&PlayerSession.apply_damage/4)
       reject(&Knockback.skill/5)
 
@@ -1185,7 +1185,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received :coma_delivered
     end
 
-    test "zero calculated magic never decides or delivers coma" do
+    test "zero calculated magic rolls coma and delivers nothing on a failed roll" do
       caster = build_caster()
       stub_single_target_mob()
 
@@ -1193,7 +1193,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         {:ok, %{damage: 0, is_critical: false}}
       end)
 
-      reject(&EquipComa.trigger?/2)
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
 
       reject(&StatusInterpreter.absorb_hit/4)
 

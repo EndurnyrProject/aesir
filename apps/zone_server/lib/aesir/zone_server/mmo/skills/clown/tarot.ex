@@ -136,8 +136,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   defp warp(:mob, _unit, pid), do: MobSession.teleport(pid)
   defp warp(_type, _unit, _pid), do: :ok
 
-  defp coma(:player, pid, source), do: PlayerSession.apply_coma(pid, source)
-  defp coma(:mob, pid, source), do: MobSession.apply_coma(pid, source)
+  # Death zaps HP and SP down to 1 as passive loss: nothing breaks on it.
+  defp coma(:player, pid, source), do: PlayerSession.apply_coma(pid, source, %{passive?: true})
+  defp coma(:mob, pid, source), do: MobSession.apply_coma(pid, source, %{passive?: true})
   defp coma(_type, _pid, _source), do: :ok
 
   # SC_COMA is BossResist: a status-immune monster resists it.

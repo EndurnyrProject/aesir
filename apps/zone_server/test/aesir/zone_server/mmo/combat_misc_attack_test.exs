@@ -237,7 +237,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       refute Map.has_key?(metadata, :proc_event)
     end
 
-    test "zero misc damage never decides or delivers coma" do
+    test "zero misc damage rolls coma and delivers nothing on a failed roll" do
       caster = build_caster()
       stub_single_target_mob()
 
@@ -245,7 +245,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         {:ok, %{damage: 0, is_critical: false}}
       end)
 
-      reject(&EquipComa.trigger?/2)
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
       reject(&MobSession.apply_coma/2)
 
       expect(MobSession, :apply_damage, fn _pid, 0, @caster_id, _metadata ->

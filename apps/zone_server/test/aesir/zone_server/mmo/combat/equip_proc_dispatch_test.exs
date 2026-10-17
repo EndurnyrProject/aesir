@@ -136,6 +136,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
     end
   end
 
+  describe "hit_event/2" do
+    defp proc_spec(target_hp),
+      do: %{target: %{unit_type: :mob}, target_hp: target_hp, attack_flag: melee()}
+
+    # battle_damage runs skill_additional_effect only when the target is still
+    # alive after status_fix_damage (battle.cpp:337): a killing blow skips it.
+    test "a killing blow skips the additional-effect stage; a surviving or coma'd target keeps it" do
+      assert %{hit_class: :hit, attack_effects?: false} =
+               EquipProcDispatch.hit_event(%{proc: proc_spec(40)}, 40)
+
+      assert %{hit_class: :hit, attack_effects?: true} =
+               EquipProcDispatch.hit_event(%{proc: proc_spec(41)}, 40)
+
+      assert %{attack_effects?: true} =
+               EquipProcDispatch.hit_event(%{proc: proc_spec(40), coma?: true}, 40)
+    end
+  end
+
   describe "dispatch/3" do
     test "a connected hit on a surviving target sends the attack autocast to its wearer" do
       attacker = player(1001, [autocast(:attack, BattleFlags.fill_autospell(0))])

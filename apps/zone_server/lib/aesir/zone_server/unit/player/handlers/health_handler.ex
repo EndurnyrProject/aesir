@@ -232,7 +232,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def apply_coma(source, metadata, state) do
     hp_damage = max(current_hp(state) - 1, 0)
-    coma = metadata |> Map.take([:damage_broken, :walk_delay?]) |> Map.put(:coma?, true)
+
+    coma =
+      metadata |> Map.take([:damage_broken, :walk_delay?, :passive?]) |> Map.put(:coma?, true)
+
     {:noreply, state} = apply_damage(hp_damage, source, coma, state)
 
     state = if current_sp(state) == 1, do: state, else: put_sp(state, 1)

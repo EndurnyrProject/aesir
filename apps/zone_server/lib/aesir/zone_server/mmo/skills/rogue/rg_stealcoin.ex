@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
 
   Both modes roll 10 times level plus DEX/2 plus LUK/2 plus twice the level gap
   per mille for 8 to 10 times the target level zeny, 15 SP, and a 0.5 s delay.
+  A success then deals the monster a zero-damage long weapon hit (aggro, coma,
+  and the normal-attack additional effects such as Enchant Poison).
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -18,6 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
     sp_cost: List.duplicate(15, 10),
     after_cast_delay: List.duplicate(500, 10)
 
+  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -27,6 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
   alias Aesir.ZoneServer.Unit.Zeny
 
   @behaviour Active
+
+  @mug_hit_flag BattleFlags.build(:weapon, :long, false)
 
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -43,7 +49,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
   def cast(%PlayerState{} = caster, {:unit, target_id}, level, _definition) do
     with {:ok, {_module, _state, pid}} <- UnitRegistry.get_unit(:mob, target_id),
          {:ok, zeny} <- MobSession.attempt_mug(pid, mug_caster(caster), level) do
-      {:ok, %{caster | zeny: min(caster.zeny + zeny, Zeny.max_zeny())}}
+      mugged = %{caster | zeny: min(caster.zeny + zeny, Zeny.max_zeny())}
+      {:ok, Combat.execute_zero_damage_hit(mugged, target_id, @mug_hit_flag)}
     end
   end
 

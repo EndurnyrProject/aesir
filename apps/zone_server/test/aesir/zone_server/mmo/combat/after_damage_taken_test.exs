@@ -5,9 +5,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @victim_id 1
@@ -43,6 +45,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  setup do
+    Mimic.copy(EquipComa)
+    :ok
+  end
 
   defp stub_unit_info(char_id) do
     stub(UnitRegistry, :get_unit_info, fn :player, ^char_id ->
@@ -89,6 +96,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
         send(test_pid, {label, damage, attacker_id})
         session_loop(test_pid, label)
 
+      {:"$gen_cast", {:unit, {:apply_coma, source, _metadata}}} ->
+        send(test_pid, {label, :coma, source})
+        session_loop(test_pid, label)
+
       _other ->
         session_loop(test_pid, label)
     end
@@ -100,11 +111,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
     :ok = Interpreter.apply_status(:player, @victim_id, :sc_test_reflect)
 
     stub(TargetResolver, :resolve, fn @attacker_id ->
-      {:ok, attacker_pid, %{}, :player}
+      {:ok, attacker_pid, player_state(@attacker_id), :player}
     end)
 
     %{victim_pid: victim_pid, attacker_pid: attacker_pid}
   end
+
+  defp player_state(char_id), do: PlayerStateFixture.build(%{character_id: char_id, stats: %{}})
 
   defp melee_hit, do: %{dmg_type: :physical, is_short: true, element: :neutral}
 
@@ -125,6 +138,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
 
       assert_receive {:victim, 100, {:player, @attacker_id}}
       assert_receive {:attacker, 50, {:player, @victim_id}}
+    end
+
+    test "a return whose reflector is gone lets a player victim roll its own coma on itself" do
+      victim = spawn_session(:victim)
+      attacker = spawn_session(:attacker)
+      arm_reflect(victim, attacker)
+
+      expect(EquipComa, :trigger?, fn %{unit_id: @attacker_id} = owner, owner -> true end)
+
+      DamageApplication.apply_unit_damage(
+        :player,
+        victim,
+        @victim_id,
+        100,
+        melee_hit(),
+        @attacker_id
+      )
+
+      assert_receive {:victim, 100, {:player, @attacker_id}}
+      assert_receive {:attacker, :coma, {:player, @victim_id}}
     end
 
     test "does not dispatch for a hit already flagged reflected" do
@@ -207,7 +240,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
       Registry.register_module(ReflectStatus)
       :ok = Interpreter.apply_status(:player, @attacker_id, :sc_test_reflect)
 
-      stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, unit, %{}, :player} end)
+      stub(TargetResolver, :resolve, fn @attacker_id ->
+        {:ok, unit, player_state(@attacker_id), :player}
+      end)
 
       assert :ok =
                DamageApplication.apply_unit_damage(

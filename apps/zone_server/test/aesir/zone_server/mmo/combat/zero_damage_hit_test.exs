@@ -14,10 +14,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ZeroDamageHitTest do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -30,6 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ZeroDamageHitTest do
 
   setup do
     Mimic.copy(OnHitEffects)
+    Mimic.copy(EquipComa)
+    Mimic.copy(EnchantPoison)
     :ok
   end
 
@@ -125,6 +129,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ZeroDamageHitTest do
     refute Map.has_key?(metadata, :dmg_type)
     assert %{hit_class: :hit, damage: 0, attack_flag: flag} = metadata.proc_event
     assert flag == charm_flag()
+  end
+
+  test "rolls Enchant Poison on the monster though the hit dealt nothing" do
+    register_mob()
+    stub(MobSession, :apply_damage, fn _pid, 0, _source, _metadata -> :ok end)
+    expect(EnchantPoison, :roll_poison, fn {:player, @caster_id}, {:mob, @mob_id} -> :ok end)
+
+    AutoAttack.execute_zero_damage_hit(caster(), @mob_id, charm_flag())
+  end
+
+  test "rolls the equipment coma for the hit of no damage" do
+    register_mob()
+    test_pid = self()
+    expect(EquipComa, :trigger?, fn %{unit_id: @caster_id}, %{unit_id: @mob_id} -> true end)
+    reject(&MobSession.apply_damage/4)
+
+    expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id}, metadata ->
+      send(test_pid, {:coma, metadata})
+      :ok
+    end)
+
+    AutoAttack.execute_zero_damage_hit(caster(), @mob_id, charm_flag())
+
+    assert_received {:coma, %{hit_damage: 0, connected?: true}}
   end
 
   test "rolls only the attack autospells and autobonuses of a ranged normal weapon hit" do

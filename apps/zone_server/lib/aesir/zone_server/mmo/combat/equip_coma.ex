@@ -18,6 +18,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComa do
   @typedoc "A per-10,000 roll predicate receiving the effective chance."
   @type roll_fun :: (pos_integer() -> boolean())
 
+  @doc """
+  Whether the attacker carries any coma bonus (a class or race coma rate), the
+  gate the coma check opens with before it reads the target.
+  """
+  @spec bonus?(Combatant.t()) :: boolean()
+  def bonus?(%Combatant{equip_modifiers: modifiers}) do
+    Enum.any?(modifiers || %{}, fn
+      {{family, _param}, _rate} -> family in [:coma_class, :coma_race]
+      _other -> false
+    end)
+  end
+
   @doc "Decides whether equipment coma triggers for one eligible target."
   @spec trigger?(Combatant.t(), Combatant.t(), keyword()) :: boolean()
   def trigger?(attacker, target, opts \\ [])

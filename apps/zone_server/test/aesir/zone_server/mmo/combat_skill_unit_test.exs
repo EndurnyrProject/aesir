@@ -356,7 +356,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
              Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :water, 600)
   end
 
-  test "zero ground damage never decides or delivers coma" do
+  test "zero ground damage rolls coma and delivers nothing on a failed roll" do
     test_pid = self()
     mob_state = build_mob_state(0)
     attacker = caster(100)
@@ -373,7 +373,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       {:ok, %{damage: 0, is_critical: false}}
     end)
 
-    reject(&EquipComa.trigger?/2)
+    expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
 
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
       assert packet.damage == 0

@@ -16,6 +16,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
   `70 + 3 * level + caster base level - target base level` percent. A failed
   roll still completes the cast and still costs the caster SP; it simply leaves
   the target untaunted.
+
+  A landed taunt deals no damage, yet a player caster still rolls its coma
+  bonuses against the victim; a coma zaps the victim's HP and SP to 1 as
+  passive loss.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 6,
@@ -30,6 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
     duration: List.duplicate(30_000, 10),
     damage_kind: :none
 
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster
@@ -57,6 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
          true <- lands?(caster, target, level),
          :ok <- StatusInterpreter.apply_status(unit_type, target_id, :sc_provoke, params) do
       taunt(unit_type, pid, caster)
+      coma(caster, unit_type, pid, target)
       {:ok, caster}
     else
       false -> {:ok, caster}
@@ -71,6 +78,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
   end
 
   defp taunt(_unit_type, _pid, _caster), do: :ok
+
+  defp coma(%PlayerState{} = caster, unit_type, pid, target) when unit_type in [:player, :mob] do
+    attacker = PlayerState.to_combatant(caster)
+
+    if EquipComa.bonus?(attacker) and
+         EquipComa.trigger?(attacker, target.__struct__.to_combatant(target)) do
+      DamageApplication.unit_session(unit_type).apply_coma(
+        pid,
+        {:player, caster.character_id},
+        %{passive?: true}
+      )
+    end
+  end
+
+  defp coma(_caster, _unit_type, _pid, _target), do: :ok
 
   # The taunt has to out-roll the level gap between caster and victim: a caster
   # far above its target effectively never misses, one far below effectively

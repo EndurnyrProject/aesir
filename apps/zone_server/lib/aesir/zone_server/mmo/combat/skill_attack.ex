@@ -368,14 +368,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     calc_opts = physical_skill_calc_opts(caster_state, opts)
     validator_opts = physical_skill_validator_opts(opts)
 
-    with {:ok, _target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
          :ok <- Targeting.validate_enemy(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
-      if weapon_hit_intercepted?(attacker, target_type, target, %{}) do
+      interception = weapon_hit_intercepted?(attacker, target_type, target, %{})
+
+      if interception == :blocked,
+        do: missed_coma(attacker, {target_type, target_pid, target})
+
+      if interception != :continue do
         {:ok, :miss}
       else
         prepare_staged_skill_hit(
@@ -1431,7 +1436,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
        ) do
     case fled_damage(:miss, attacker, target, {skill_id, skill_level}, calc_context, hit_opts) do
       :none ->
-        {missed_hit(hit_opts), false}
+        {missed_hit(hit_opts), missed_coma(attacker, target_context)}
 
       {:ok, _fled} ->
         intercept_or_resolve(
@@ -1471,25 +1476,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_context,
          hit_opts
        ) do
-    if Map.get(hit_opts, :dmg_type, :physical) == :physical and
-         weapon_hit_intercepted?(
-           attacker,
-           target_type,
-           target,
-           Map.fetch!(hit_opts, :weapon_hit_metadata)
-         ) do
-      {missed_hit(hit_opts), false}
-    else
-      resolve_skill_hit(
-        attacker,
-        target_context,
-        skill_id,
-        skill_level,
-        calc_context,
-        hit_opts
-      )
+    case weapon_interception(attacker, target_type, target, hit_opts) do
+      :blocked ->
+        {missed_hit(hit_opts), missed_coma(attacker, target_context)}
+
+      :intercepted ->
+        {missed_hit(hit_opts), false}
+
+      :continue ->
+        resolve_skill_hit(
+          attacker,
+          target_context,
+          skill_id,
+          skill_level,
+          calc_context,
+          hit_opts
+        )
     end
   end
+
+  defp weapon_interception(attacker, target_type, target, hit_opts) do
+    if Map.get(hit_opts, :dmg_type, :physical) == :physical,
+      do:
+        weapon_hit_intercepted?(
+          attacker,
+          target_type,
+          target,
+          Map.fetch!(hit_opts, :weapon_hit_metadata)
+        ),
+      else: :continue
+  end
+
+  # An attack that reaches the target for nothing (a miss, a perfect dodge, a
+  # shield block) still rolls the attacker's coma; returns that decision.
+  defp missed_coma(attacker, {target_type, target_pid, target}),
+    do:
+      DamageApplication.apply_missed_coma(
+        attacker,
+        target,
+        target_pid,
+        damage_source(attacker, target_type)
+      )
 
   defp missed_hit(%{hit_divisions: hit_divisions}) do
     {0, divisions} = DamageShared.normalize_damage_divisions(0, hit_divisions)
@@ -1513,8 +1540,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # `basic_attack?: false` so basic-attack-only stances (Auto Counter, Blade
   # Stop) stay inert. An interception cancels this hit entirely: no hit roll and
   # no damage. A shield block (Guard) still broadcasts a zero-damage "guarded"
-  # packet so the attacker sees the swing land for 0; other interceptions own
-  # their own feedback effect and stay silent.
+  # packet so the attacker sees the swing land for 0 and returns `:blocked`;
+  # other interceptions own their own feedback effect, stay silent and return
+  # `:intercepted`.
   # Magic and misc skills never call this path, nor does a weapon-calculated hit
   # delivered as misc, so they can never be blocked.
   @spec weapon_hit_intercepted?(
@@ -1522,7 +1550,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           :player | :mob | :homunculus | :skill_unit,
           struct(),
           map()
-        ) :: boolean()
+        ) :: :blocked | :intercepted | :continue
   defp weapon_hit_intercepted?(attacker, target_type, target, metadata) do
     attack_info =
       Map.merge(
@@ -1546,13 +1574,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           PacketFactory.build_guard_packet(attacker, target)
         )
 
-        true
+        :blocked
 
       {:intercept, _result} ->
-        true
+        :intercepted
 
       :continue ->
-        false
+        :continue
     end
   end
 
@@ -1596,7 +1624,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           )
         end
 
-        {missed_hit(hit_opts), false}
+        {missed_hit(hit_opts), missed_coma(attacker, target_context)}
 
       {:perfect_dodge, _fled} ->
         DamageApplication.broadcast_nearby(
@@ -1604,7 +1632,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           PacketFactory.build_perfect_dodge_packet(attacker, target)
         )
 
-        {missed_hit(hit_opts), false}
+        {missed_hit(hit_opts), missed_coma(attacker, target_context)}
 
       {:hit, _fled} ->
         deliver_skill_hit(
@@ -1878,10 +1906,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       ) || attacker.weapon.element
   end
 
-  defp decide_coma(attacker, target, damage) when damage > 0,
-    do: EquipComa.trigger?(attacker, target)
-
-  defp decide_coma(_attacker, _target, _damage), do: false
+  defp decide_coma(attacker, target, _damage), do: EquipComa.trigger?(attacker, target)
 
   # Whether the target outlives a connected hit; the knockback stage's view.
   defp logical_skill_result(%{hit?: hit?, taken: taken}, target_state, coma?) do

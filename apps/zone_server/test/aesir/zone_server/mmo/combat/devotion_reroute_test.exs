@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -136,6 +137,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
       assert_receive {:crusader, 150, {:player, @attacker_id}}
       refute_receive {:crusader, _, _}
       refute_receive {:devotee, _, _}
+    end
+
+    # battle_delay_damage (battle.cpp:445-450) turns the devotee's ATK_DEF into
+    # ATK_BLOCK, so skill_additional_effect returns (skill.cpp:1333) and the
+    # normal attack's Enchant Poison never rolls on the devotee.
+    test "a forwarded normal swing is a block, so its connected stage never runs on the devotee" do
+      devotee = spawn_session(:devotee)
+      crusader = spawn_session(:crusader)
+      arm_devotion(make_ref())
+      stub_alive_crusader(crusader)
+      stub_positions(in_range_pos())
+
+      proc = %{
+        attacker: %{unit_type: :mob},
+        target: %{unit_type: :player},
+        target_hp: 1_000,
+        attack_flag: BattleFlags.build(:weapon, :short, false)
+      }
+
+      {settled, :ok} =
+        DamageApplication.apply_weapon_swing(
+          :player,
+          devotee,
+          @devotee_id,
+          swing(100, 0),
+          Map.put(melee_hit(), :proc, proc),
+          @attacker_id
+        )
+
+      assert %{hit_class: :block, attack_effects?: true} = settled.stages
+      assert_receive {:crusader, 100, {:player, @attacker_id}}
     end
 
     test "tears down one stale link and delivers one aggregate to the devotee" do

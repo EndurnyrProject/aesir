@@ -1079,7 +1079,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     assert_received {:knockback, 2002}
   end
 
-  test "a missed attack never decides or delivers coma" do
+  test "a missed attack rolls coma and delivers nothing when the roll fails" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
 
     target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
@@ -1098,7 +1098,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
     stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
     reject(&DamageCalculator.calculate_damage/3)
-    reject(&EquipComa.trigger?/2)
+    expect(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
     reject(&Knockback.skill/5)
     reject(&MobSession.apply_damage/4)
     reject(&MobSession.apply_coma/2)
@@ -1182,7 +1182,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end
   end
 
-  test "a connected attack quantized to zero never decides coma" do
+  test "a connected attack quantized to zero still rolls coma" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
     target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
     caster_state = %TestUnit{combatant: attacker, hp: 100}
@@ -1200,7 +1200,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       {:ok, %{damage: 7, is_critical: false}}
     end)
 
-    reject(&EquipComa.trigger?/2)
+    expect(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
     reject(&MobSession.apply_coma/2)
 
     assert {:ok, %{hit?: false, connected?: true, damage: 0, coma?: false}} =

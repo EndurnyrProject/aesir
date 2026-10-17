@@ -378,7 +378,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   Active damage (`DamageShared.active_damage?/1`) first ends every held
   `:remove_on_damaged` status, even when it took no HP, except that a non-player
-  keeps Wink of Charm unless HP was dealt (`:damage` above 0, or a coma hit).
+  keeps Wink of Charm unless the hit dealt damage (`:damage` above 0, or a coma
+  hit's own `:hit_damage` above 0).
   When the unit held a body state (an `opt1` status), the first status ended is
   recorded for 10 ms (`StatusStorage.note_last_effect/4`), so the same attack
   cannot start a status whose Fail list names it. Active damage then runs the
@@ -502,9 +503,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   defp keeps_without_hp?(:sc_winkcharm, unit_type, damage_info) when unit_type != :player,
-    do: Map.get(damage_info, :damage, 0) == 0 and not Map.get(damage_info, :coma?, false)
+    do: battle_damage(damage_info) == 0
 
   defp keeps_without_hp?(_status, _unit_type, _damage_info), do: false
+
+  # A battle coma counts its hit's own damage; a coma without one takes HP.
+  defp battle_damage(%{coma?: true, hit_damage: damage}), do: damage
+  defp battle_damage(%{coma?: true}), do: 1
+  defp battle_damage(damage_info), do: Map.get(damage_info, :damage, 0)
 
   defp damage_broken_rank(status_id) do
     Enum.find_index(@damage_broken_order, &(&1 == status_id)) || length(@damage_broken_order)

@@ -4,8 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -67,6 +69,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  setup do
+    Mimic.copy(EquipComa)
+    :ok
+  end
 
   test "reduces skill magic damage using the player target's equipment" do
     target_id = 29
@@ -389,7 +396,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
              effect
   end
 
-  test "zero prepared coma damage performs no owner delivery or post-damage hook" do
+  test "zero prepared coma damage still comas the owner without a post-damage hook" do
     target_id = 26
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
     stub_unit_info(target_id)
@@ -400,9 +407,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    reject(&PlayerSession.apply_coma/2)
+    test_pid = self()
     reject(&PlayerSession.apply_damage/4)
-    reject(&PlayerSession.record_skill_hit/3)
+
+    expect(PlayerSession, :apply_coma, fn ^target_pid, {:player, 20}, metadata ->
+      send(test_pid, {:coma, metadata})
+      :ok
+    end)
+
+    expect(PlayerSession, :record_skill_hit, fn ^target_pid, 21, 5 -> :ok end)
 
     assert :ok =
              DamageApplication.apply_unit_damage(
@@ -414,13 +427,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                20
              )
 
+    assert_received {:coma, %{hit_damage: 0}}
     refute_received {:after_damage_taken, _hit_info}
   end
 
-  test "Devotion redirection carries coma to the actual owner" do
-    devotee_id = 27
-    crusader_id = 28
-    devotee_pid = spawn(fn -> Process.sleep(:infinity) end)
+  test "a missed attack's coma is rolled and delivered for no damage" do
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+    attacker = CombatTestHelper.create_player_combatant(unit_id: 20)
+    target = CombatTestHelper.create_mob_combatant(unit_id: 29)
+    test_pid = self()
+
+    expect(EquipComa, :trigger?, fn ^attacker, ^target -> true end)
+    reject(&MobSession.apply_damage/4)
+
+    expect(MobSession, :apply_coma, fn ^target_pid, {:player, 20}, metadata ->
+      send(test_pid, {:coma, metadata})
+      :ok
+    end)
+
+    assert DamageApplication.apply_missed_coma(attacker, target, target_pid, {:player, 20})
+    assert_received {:coma, %{hit_damage: 0, coma?: true, div: 1} = metadata}
+    refute Map.has_key?(metadata, :proc_event)
+  end
+
+  test "a missed attack without a coma delivers nothing" do
+    attacker = CombatTestHelper.create_player_combatant(unit_id: 20)
+    target = CombatTestHelper.create_mob_combatant(unit_id: 29)
+
+    expect(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+    reject(&MobSession.apply_coma/3)
+
+    refute DamageApplication.apply_missed_coma(attacker, target, self(), {:player, 20})
+  end
+
+  defp devote(devotee_id, crusader_id) do
     crusader_pid = spawn(fn -> Process.sleep(:infinity) end)
 
     crusader = %PlayerState{
@@ -445,8 +485,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{links: %{devotee_id => %{peer: {:player, devotee_id}, link_id: link_id}}}
       )
 
-    reject(&PlayerSession.apply_damage/4)
-    expect(PlayerSession, :apply_coma, fn ^crusader_pid, {:player, 20}, _metadata -> :ok end)
+    crusader_pid
+  end
+
+  test "Devotion comas the devotee on its own roll and rolls afresh for the Crusader" do
+    devotee_id = 27
+    devotee_pid = spawn(fn -> Process.sleep(:infinity) end)
+    crusader_pid = devote(devotee_id, 28)
+
+    expect(PlayerSession, :apply_damage, fn ^crusader_pid, 40, {:player, 20}, _info -> :ok end)
+    expect(PlayerSession, :apply_coma, fn ^devotee_pid, {:player, 20}, _metadata -> :ok end)
 
     assert {0, prepared} =
              DamageApplication.prepare_unit_damage(
@@ -464,6 +512,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                devotee_id,
                0,
                prepared,
+               20
+             )
+  end
+
+  test "an immediate hit never strikes the devotee, so only the Crusader rolls coma" do
+    devotee_id = 30
+    crusader_pid = devote(devotee_id, 31)
+
+    expect(PlayerSession, :apply_damage, fn ^crusader_pid, 40, {:player, 20}, _info -> :ok end)
+    reject(&PlayerSession.apply_coma/3)
+
+    assert {0, %{devotion_rerouted?: true, coma?: false}} =
+             DamageApplication.prepare_unit_damage(
+               :player,
+               devotee_id,
+               40,
+               %{coma?: true, proc: %{immediate?: true}},
                20
              )
   end

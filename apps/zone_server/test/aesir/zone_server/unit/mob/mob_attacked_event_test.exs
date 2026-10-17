@@ -98,11 +98,38 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedEventTest do
   test "an equipment coma hit carries its attacked event through the coma path" do
     {:noreply, _state} =
       MobSession.handle_cast(
-        {:combat, {:apply_coma, @attacker, Map.put(@hit, :coma?, true)}},
+        {:combat, {:apply_coma, @attacker, Map.merge(@hit, %{coma?: true, hit_damage: 50})}},
         mob_state()
       )
 
     assert_receive {:ai, {:attacked, @attacker, false}}, 400
+  end
+
+  test "a coma on a missed or blocked hit leaves 1 HP but schedules nothing" do
+    for metadata <- [
+          Map.merge(@hit, %{coma?: true, hit_damage: 0}),
+          Map.merge(@hit, %{coma?: true, hit_damage: 0, blocked?: true})
+        ] do
+      {:noreply, state} =
+        MobSession.handle_cast({:combat, {:apply_coma, @attacker, metadata}}, mob_state())
+
+      assert state.hp == 1
+      assert state.sp == 1
+    end
+
+    refute_receive {:ai, {:attacked, _, _}}, 400
+  end
+
+  test "a coma on a connected hit of no damage schedules the event at once" do
+    {:noreply, _state} =
+      MobSession.handle_cast(
+        {:combat,
+         {:apply_coma, @attacker,
+          %{connected?: true, coma?: true, hit_damage: 0, div: 1, skill_id: nil}}},
+        mob_state()
+      )
+
+    assert_receive {:ai, {:attacked, @attacker, false}}, 50
   end
 
   test "a status-started coma schedules nothing" do

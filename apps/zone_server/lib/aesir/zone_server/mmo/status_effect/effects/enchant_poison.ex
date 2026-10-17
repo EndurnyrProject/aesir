@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
   Enchant Poison (SC_ENCPOISON).
 
   Endows the weapon with the poison element, replacing other weapon endows.
-  Confirmed ordinary swings may Poison the target through the existing
-  attacker-side damage hook. In classic it also ends Weapon Enchant
+  A normal attack's additional-effect stage (a connected hit on a target that
+  survives it, whatever its damage) may Poison the target (`roll_poison/2`). In classic it also ends Weapon Enchant
   (SC_ENCHANTARMS); in renewal the two coexist and Weapon Enchant's element
   wins.
   """
@@ -44,45 +44,47 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @impl true
   def modifiers(_instance, _context), do: %{attack_element: :poison}
 
-  @impl true
-  def on_dealt_damage(target, instance, hit_info, context),
-    do: on_dealt_damage(target, instance, hit_info, context, &Resistance.roll_rate/1)
+  @doc """
+  Rolls the attacker's Enchant Poison against `target` on a normal attack's
+  additional-effect stage. An attacker without the endow attempts nothing.
+  """
+  @spec roll_poison(Definition.target(), Definition.target()) :: :ok
+  def roll_poison(attacker, target), do: roll_poison(attacker, target, &Resistance.roll_rate/1)
 
   @doc false
-  @spec on_dealt_damage(
-          Definition.target(),
-          StatusEntry.t(),
-          map(),
-          Definition.context(),
-          (integer() -> boolean())
-        ) :: Definition.hook_result()
-  def on_dealt_damage({source_type, source_id}, instance, hit_info, _context, roll) do
-    if hit_info.damage > 0 do
-      {target_type, target_id} = hit_info.target
+  @spec roll_poison(Definition.target(), Definition.target(), (integer() -> boolean())) :: :ok
+  def roll_poison({source_type, source_id}, {target_type, target_id}, roll) do
+    case StatusStorage.get_status(source_type, source_id, :sc_encpoison) do
+      nil ->
+        :ok
 
-      case StatusInterpreter.apply_status(target_type, target_id, :sc_poison,
-             caster_id: source_id,
-             source_type: source_type,
-             duration: 10_000 * instance.val1,
-             success_rate: (250 + 50 * instance.val1) / 100,
-             resistance_roll: roll
-           ) do
-        :ok ->
-          {:ok, instance}
+      %StatusEntry{} = instance ->
+        poison(instance, {source_type, source_id}, target_type, target_id, roll)
+    end
+  end
 
-        {:error, reason}
-        when reason in [:immune, :boss_immune, :prevented, :conflict, :resisted, :target_dead] ->
-          {:ok, instance}
+  defp poison(instance, {source_type, source_id}, target_type, target_id, roll) do
+    case StatusInterpreter.apply_status(target_type, target_id, :sc_poison,
+           caster_id: source_id,
+           source_type: source_type,
+           duration: 10_000 * instance.val1,
+           success_rate: (250 + 50 * instance.val1) / 100,
+           resistance_roll: roll
+         ) do
+      :ok ->
+        :ok
 
-        {:error, reason} ->
-          raise "SC_POISON application failed: #{inspect(reason)}"
-      end
-    else
-      {:ok, instance}
+      {:error, reason}
+      when reason in [:immune, :boss_immune, :prevented, :conflict, :resisted, :target_dead] ->
+        :ok
+
+      {:error, reason} ->
+        raise "SC_POISON application failed: #{inspect(reason)}"
     end
   end
 end

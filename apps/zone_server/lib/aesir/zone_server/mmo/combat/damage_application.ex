@@ -11,9 +11,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageDisplay
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.Endure
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
@@ -115,13 +117,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   # The devotee takes nothing, but the hit still connected: its additional
   # effects apply to the devotee as if the damage had landed. The forwarded
   # amount is kept for the counter stage of an immediate hit.
-  defp rerouted(hit_info, forwarded),
-    do:
-      Map.merge(hit_info, %{
-        pre_delivery_prepared?: true,
-        devotion_rerouted?: true,
-        devotion_damage: forwarded
-      })
+  defp rerouted(hit_info, forwarded) do
+    hit_info
+    |> Map.merge(%{
+      pre_delivery_prepared?: true,
+      devotion_rerouted?: true,
+      devotion_damage: forwarded
+    })
+    |> drop_immediate_coma()
+  end
+
+  # An immediate hit never strikes the devotee at all, so only the Crusader
+  # rolls coma; a delayed hit still lands on the devotee for nothing and keeps
+  # the devotee's own decision.
+  defp drop_immediate_coma(%{proc: %{immediate?: true}} = hit_info),
+    do: Map.put(hit_info, :coma?, false)
+
+  defp drop_immediate_coma(hit_info), do: hit_info
 
   defp prepare_ground_damage(
          target_type,
@@ -268,15 +280,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   def apply_weapon_swing(
-        _target_type,
-        _target_pid,
-        _target_id,
+        target_type,
+        target_pid,
+        target_id,
         %HandedAttack{} = swing,
-        _hit_info,
-        _attacker
+        hit_info,
+        attacker
       ) do
-    {settle_components(swing, 0), :ok}
+    {settle_components(swing, 0),
+     swing_coma(target_type, target_pid, target_id, hit_info, attacker)}
   end
+
+  # A swing that dealt nothing raw is a miss, which still lands its coma.
+  defp swing_coma(target_type, target_pid, target_id, %{coma?: true} = hit_info, attacker) do
+    coma_hit =
+      hit_info
+      |> Map.delete(:proc)
+      |> Map.put(:pre_delivery_prepared?, true)
+
+    apply_unit_damage(target_type, target_pid, target_id, 0, coma_hit, attacker)
+  end
+
+  defp swing_coma(_target_type, _target_pid, _target_id, _hit_info, _attacker), do: :ok
+
+  @doc """
+  Rolls and delivers the equipment coma of an attack that reaches `target`
+  without dealing anything (a miss, a perfect dodge, a shield block), sourced
+  as `source`. The coma leaves the target at 1 HP and 1 SP and is active
+  damage, but the miss schedules no attacked event and no equipment procs.
+  Returns whether the coma triggered.
+  """
+  @spec apply_missed_coma(Combatant.t(), Combatant.t(), pid(), integer() | Ref.t()) ::
+          boolean()
+  def apply_missed_coma(attacker, %Combatant{unit_type: target_type} = target, target_pid, source)
+      when target_type in [:player, :mob, :homunculus] do
+    coma? = EquipComa.trigger?(attacker, target)
+
+    if coma? do
+      coma_hit = %{coma?: true, div: 1, pre_delivery_prepared?: true}
+      apply_unit_damage(target_type, target_pid, target.unit_id, 0, coma_hit, source)
+    end
+
+    coma?
+  end
+
+  def apply_missed_coma(_attacker, _target, _target_pid, _source), do: false
 
   defp settle_weapon_swing(
          :mob,
@@ -638,12 +686,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   # self-heals the link.
   defp redirect_damage(crusader_id, damage, hit_info, attacker_id) do
     case TargetResolver.resolve(:player, crusader_id) do
-      {:ok, crusader_pid, _state, :player} ->
+      {:ok, crusader_pid, crusader_state, :player} ->
         redirected_info =
           hit_info
           |> Map.drop([:proc, :proc_event])
           |> Map.put(:redirected, true)
           |> Map.put(:pre_delivery_prepared?, true)
+          |> Map.put(:coma?, fresh_coma?(attacker_id, :player, crusader_state))
 
         apply_unit_damage(
           :player,
@@ -858,13 +907,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp apply_reflected_damage(amount, attacker_id, reflector, hit_info)
        when amount > 0 and is_integer(attacker_id) do
     case TargetResolver.resolve(attacker_id) do
-      {:ok, attacker_pid, _state, attacker_type} ->
+      {:ok, attacker_pid, attacker_state, attacker_type} ->
         apply_unit_damage(
           attacker_type,
           attacker_pid,
           attacker_id,
           amount,
-          hit_info,
+          Map.put(hit_info, :coma?, reflected_coma?(reflector, attacker_type, attacker_state)),
           reflector
         )
 
@@ -881,13 +930,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
        )
        when amount > 0 do
     case TargetResolver.resolve(attacker_ref) do
-      {:ok, attacker_pid, _state, ^attacker_type} ->
+      {:ok, attacker_pid, attacker_state, ^attacker_type} ->
         apply_unit_damage(
           attacker_type,
           attacker_pid,
           attacker_id,
           amount,
-          hit_info,
+          Map.put(hit_info, :coma?, reflected_coma?(reflector, attacker_type, attacker_state)),
           reflector
         )
 
@@ -897,6 +946,34 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp apply_reflected_damage(_amount, _attacker, _reflector, _hit_info), do: :ok
+
+  # A forwarded or returned hit is its own battle hit: its source rolls its own
+  # coma against its new victim. Only a player source carries coma bonuses,
+  # and only a player, mob or homunculus victim takes a coma.
+  defp fresh_coma?(source, victim_type, victim_state),
+    do: owner_coma?(resolve_attacker(source), victim_type, victim_state)
+
+  # A return whose reflector is gone by the time it lands is dealt by the
+  # victim to itself: a player victim rolls its own coma bonuses.
+  defp reflected_coma?(reflector, victim_type, victim_state) do
+    case resolve_attacker(reflector) do
+      %Combatant{} = owner ->
+        owner_coma?(owner, victim_type, victim_state)
+
+      _gone when victim_type == :player ->
+        victim = victim_state.__struct__.to_combatant(victim_state)
+        EquipComa.trigger?(victim, victim)
+
+      _gone ->
+        false
+    end
+  end
+
+  defp owner_coma?(%Combatant{unit_type: :player} = owner, victim_type, victim_state)
+       when victim_type in [:player, :mob, :homunculus],
+       do: EquipComa.trigger?(owner, victim_state.__struct__.to_combatant(victim_state))
+
+  defp owner_coma?(_owner, _victim_type, _victim_state), do: false
 
   # Equipment-granted melee damage reflect (`bShortWeaponDamageReturn`): the
   # defender's gear returns a percent of the supplied basis to the attacker on
@@ -990,13 +1067,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
          %{coma?: true} = hit_info,
          attacker
        )
-       when target_type in [:player, :mob, :homunculus] and damage > 0 do
-    deliver_coma(target_type, target_pid, target_id, hit_info, attacker)
+       when target_type in [:player, :mob, :homunculus] do
+    deliver_coma(
+      target_type,
+      target_pid,
+      target_id,
+      Map.put(hit_info, :hit_damage, damage),
+      attacker
+    )
   end
-
-  defp deliver_unit_damage(_target_type, _pid, _id, damage, %{coma?: true}, _attacker)
-       when damage <= 0,
-       do: :ok
 
   defp deliver_unit_damage(:homunculus, target_pid, target_id, damage, hit_info, attacker)
        when target_pid == self() do
@@ -1082,7 +1161,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp homunculus_coma(target_id, hit_info, attacker) do
-    metadata = Map.take(hit_info, [:damage_broken, :walk_delay?])
+    metadata = Map.take(hit_info, [:damage_broken, :walk_delay?, :hit_damage])
     {:homunculus, {:apply_coma, target_id, typed_attacker(attacker), metadata}}
   end
 

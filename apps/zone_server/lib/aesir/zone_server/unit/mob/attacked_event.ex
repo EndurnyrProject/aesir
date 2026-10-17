@@ -6,7 +6,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AttackedEvent do
   reflected hit) and carries its division count (`:div`, set by every attack
   path; status ticks, passive HP loss and status-started damage carry none)
   schedules `{:ai, {:attacked, attacker_ref, norm?}}` in the mob's own session
-  after the hit's walk delay. A unit's own normal attack (`weapon_attack?:
+  after the hit's walk delay. A coma hit is classified and delayed by the
+  hit's own damage (`:hit_damage`), not the HP the coma took. A unit's own normal attack (`weapon_attack?:
   true`; never a splash or skill hit) on a mob
   in its attack state whose target is not the attacker, from within its attack
   range + 1, is a "norm" event.
@@ -31,7 +32,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AttackedEvent do
         {_type, _id} = attacker_ref,
         %{div: divisions} = metadata
       ) do
-    damage = if Map.get(metadata, :coma?, false), do: max(damage, 1), else: damage
+    damage =
+      if Map.get(metadata, :coma?, false), do: Map.fetch!(metadata, :hit_damage), else: damage
 
     if landed?(metadata, damage) do
       delay = walk_delay(damage, divisions, state.mob_data.damage_motion)

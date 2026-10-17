@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.TrapTestHelper
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -198,7 +199,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       attacker = spawn_session(:attacker)
       arm_reflect(1)
       expect(SpecialEffect, :play, fn {:player, @victim_id}, :reflectshield, :area -> :ok end)
-      stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, attacker, %{}, :player} end)
+
+      stub(TargetResolver, :resolve, fn @attacker_id ->
+        {:ok, attacker, TrapTestHelper.player(@attacker_id), :player}
+      end)
 
       DamageApplication.apply_unit_damage(
         :player,
@@ -217,7 +221,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       victim = spawn_session(:victim)
       attacker = spawn_session(:attacker)
       arm_reflect(10)
-      stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, attacker, %{}, :player} end)
+
+      stub(TargetResolver, :resolve, fn @attacker_id ->
+        {:ok, attacker, TrapTestHelper.player(@attacker_id), :player}
+      end)
 
       DamageApplication.apply_unit_damage(
         :player,
@@ -237,7 +244,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       attacker = spawn_session(:attacker)
       arm_reflect(5)
       reject(&SpecialEffect.play/3)
-      stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, attacker, %{}, :player} end)
+
+      stub(TargetResolver, :resolve, fn @attacker_id ->
+        {:ok, attacker, TrapTestHelper.player(@attacker_id), :player}
+      end)
 
       DamageApplication.apply_unit_damage(
         :player,
@@ -257,7 +267,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       attacker = spawn_session(:attacker)
       arm_reflect(5)
       reject(&SpecialEffect.play/3)
-      stub(TargetResolver, :resolve, fn @attacker_id -> {:ok, attacker, %{}, :player} end)
+
+      stub(TargetResolver, :resolve, fn @attacker_id ->
+        {:ok, attacker, TrapTestHelper.player(@attacker_id), :player}
+      end)
 
       DamageApplication.apply_unit_damage(
         :player,
@@ -316,8 +329,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       expect(SpecialEffect, :play, fn {:player, @victim_id}, :reflectshield, :area -> :ok end)
 
       stub(TargetResolver, :resolve, fn
-        @attacker_id -> {:ok, attacker, %{}, :player}
-        @victim_id -> {:ok, victim, %{}, :player}
+        @attacker_id -> {:ok, attacker, TrapTestHelper.player(@attacker_id), :player}
+        @victim_id -> {:ok, victim, TrapTestHelper.player(@victim_id), :player}
       end)
 
       DamageApplication.apply_unit_damage(

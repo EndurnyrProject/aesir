@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -180,8 +181,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
       {:intercept, result} ->
         broadcast_guard_feedback(result, attacker, target)
+        intercepted_coma(result, attacker, target, target_pid, target_type)
         :intercepted
     end
+  end
+
+  # A shield block (Guard, Parrying) is an attack dealt for nothing, which still
+  # rolls the attacker's coma; the other interceptions never deliver the attack.
+  defp intercepted_coma(:blocked, attacker, target, target_pid, target_type),
+    do: missed_coma(attacker, target, target_pid, target_type)
+
+  defp intercepted_coma(_result, _attacker, _target, _target_pid, _target_type), do: :ok
+
+  defp missed_coma(attacker, target, target_pid, target_type) do
+    DamageApplication.apply_missed_coma(
+      attacker,
+      target,
+      target_pid,
+      player_damage_source(target_type, attacker.unit_id)
+    )
+
+    :ok
   end
 
   defp resolve_player_attack_or_replacement(
@@ -420,7 +440,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   @doc """
   Deals the player a weapon hit of no damage on the monster `target_id`
   without calculating it, classified as `attack_flag` (the hit Wink of Charm
-  deals a monster it charms).
+  deals a monster it charms, and Mug a monster it robs).
 
   The hit connects (`connected?: true`): the monster logs the player as an
   attacker for 0, its damage-broken statuses and cast react to it as to any
@@ -446,6 +466,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         skill_level: nil,
         div: 1,
         connected?: true,
+        coma?: EquipComa.trigger?(attacker, target),
         pre_delivery_prepared?: true,
         proc: EquipProcDispatch.spec(attacker, target, target_state, attack_flag)
       }
@@ -477,6 +498,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     updated_player_state =
       connected_swing_effects(
+        attacker,
         stages,
         player_state,
         target_state,
@@ -743,13 +765,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          _target_state,
          attacker,
          target,
-         _target_pid,
+         target_pid,
          target_type,
          target_id
        ) do
     Logger.debug("Combat: Player #{attacker.unit_id} attack missed #{target_type} #{target_id}")
 
     DamageApplication.broadcast_nearby(target, PacketFactory.build_miss_packet(attacker, target))
+    missed_coma(attacker, target, target_pid, target_type)
 
     :ok
   end
@@ -760,7 +783,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          _target_state,
          attacker,
          target,
-         _target_pid,
+         target_pid,
          target_type,
          target_id
        ) do
@@ -773,7 +796,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       PacketFactory.build_perfect_dodge_packet(attacker, target)
     )
 
-    :ok
+    missed_coma(attacker, target, target_pid, target_type)
   end
 
   defp resolve_player_attack(
@@ -807,6 +830,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
            ) do
       if connected?(stages) do
         dispatch_normal_hit_passives(player_state, target_type, target_id, target)
+        roll_enchant_poison(attacker, target_type, target_id)
         roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
       end
 
@@ -944,6 +968,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
           updated_player_state =
             connected_swing_effects(
+              attacker,
               stages,
               player_state,
               target_state,
@@ -974,18 +999,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   # that survives it.
   defp connected?(stages), do: stages.attack_effects? and stages.hit_class == :hit
 
-  defp connected_swing_effects(stages, player_state, target_state, target_context) do
+  defp connected_swing_effects(attacker, stages, player_state, target_state, target_context) do
     {target_type, target_id, target_pid, target} = target_context
 
     if connected?(stages) do
       snatched = maybe_snatch(player_state, target_type, target_id)
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
+      roll_enchant_poison(attacker, target_type, target_id)
       roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
       snatched
     else
       player_state
     end
   end
+
+  # Enchant Poison rolls on every normal hit reaching the additional-effect
+  # stage, whatever it dealt; a skill unit holds no statuses.
+  defp roll_enchant_poison(_attacker, :skill_unit, _target_id), do: :ok
+
+  defp roll_enchant_poison(%Combatant{unit_id: attacker_id}, target_type, target_id),
+    do: EnchantPoison.roll_poison({:player, attacker_id}, {target_type, target_id})
 
   defp maybe_snatch(player_state, :mob, target_id) do
     chance = Passives.steal_proc(player_state)
@@ -1108,7 +1141,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          splash_target <- target_state.__struct__.to_combatant(target_state),
          {:ok, {:hit, damage_result}} <-
-           check_hit_and_calculate_damage(attacker, splash_target),
+           splash_swing(attacker, splash_target, target_pid, target_type),
          {:ok, stages} <-
            handle_player_attack_hit(
              damage_result,
@@ -1135,6 +1168,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     end
 
     :ok
+  end
+
+  # A splashed target the swing misses still rolls the attacker's coma.
+  defp splash_swing(attacker, splash_target, target_pid, target_type) do
+    case check_hit_and_calculate_damage(attacker, splash_target) do
+      {:ok, {:hit, _damage_result}} = hit ->
+        hit
+
+      {:ok, _missed} = missed ->
+        missed_coma(attacker, splash_target, target_pid, target_type)
+        missed
+
+      error ->
+        error
+    end
   end
 
   # Rolls equipment breaks once per confirmed weapon hit (never once per
@@ -1653,10 +1701,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
   defp equipment_coma?(_attacker, _target, :skill_unit, _damage), do: false
 
-  defp equipment_coma?(attacker, target, _target_type, damage) when damage > 0,
+  defp equipment_coma?(attacker, target, _target_type, _damage),
     do: EquipComa.trigger?(attacker, target)
-
-  defp equipment_coma?(_attacker, _target, _target_type, _damage), do: false
 
   defp player_damage_source(_target_type, attacker_id), do: {:player, attacker_id}
 

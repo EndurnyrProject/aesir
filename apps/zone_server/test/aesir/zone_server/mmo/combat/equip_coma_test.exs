@@ -26,6 +26,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComaTest do
     assert_received {:rolled, 1_000}
   end
 
+  test "bonus? is the attacker's class or race coma bonus, whatever the target" do
+    assert EquipComa.bonus?(
+             with_modifiers(CombatTestHelper.create_player_combatant(), %{{:coma_race, :all} => 1})
+           )
+
+    assert EquipComa.bonus?(
+             with_modifiers(CombatTestHelper.create_player_combatant(), %{
+               {:coma_class, :boss} => 1
+             })
+           )
+
+    refute EquipComa.bonus?(
+             with_modifiers(CombatTestHelper.create_player_combatant(), %{{:crit_race, :all} => 5})
+           )
+
+    refute EquipComa.bonus?(CombatTestHelper.create_player_combatant())
+  end
+
   test "does not invoke the roller for a non-positive effective rate" do
     target = CombatTestHelper.create_mob_combatant(race: :brute)
 

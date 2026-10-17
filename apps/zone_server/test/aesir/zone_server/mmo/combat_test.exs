@@ -574,7 +574,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
 
     for outcome <- [:miss, :perfect_dodge] do
-      test "#{outcome} does not consult or deliver equipment coma" do
+      test "#{outcome} rolls equipment coma and delivers nothing on a failed roll" do
         Mimic.copy(HitCalculations)
         attacker = combatant(1001, :player)
         player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
@@ -595,7 +595,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
           unquote(outcome)
         end)
 
-        reject(&EquipComa.trigger?/2)
+        expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
         reject(&DamageCalculator.calculate_damage/3)
         reject(&MobSession.apply_coma/2)
         reject(&MobSession.apply_damage/4)
@@ -637,7 +637,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
     end
 
-    test "zero calculated damage skips coma before preparation and keeps the zero packet" do
+    test "zero calculated damage rolls coma and keeps the zero packet" do
       test_pid = self()
       {stats, player_state} = dagger_player()
       target = combatant(2001, :mob)
@@ -655,7 +655,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         {:ok, %{damage: 0, is_critical: false}}
       end)
 
-      reject(&EquipComa.trigger?/2)
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
       reject(&StatusInterpreter.absorb_hit/4)
       reject(&MobSession.apply_coma/2)
       reject(&MobSession.apply_damage/4)
@@ -836,7 +836,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                        }}
     end
 
-    test "a Guard block does not consult or deliver equipment coma",
+    test "a Guard block rolls equipment coma and delivers nothing on a failed roll",
          %{player_state: player_state, stats: stats} do
       stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info ->
         {:intercept, :blocked}
@@ -844,7 +844,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       reject(&Passives.attack_replacement/1)
       reject(&DamageCalculator.calculate_damage/3)
-      reject(&EquipComa.trigger?/2)
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
       reject(&MobSession.apply_coma/2)
       reject(&MobSession.apply_damage/4)
 

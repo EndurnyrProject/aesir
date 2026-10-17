@@ -140,6 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       case MagicDefense.resolve(target, Map.put(hit_info, :damage, damage)) do
         :miss ->
           broadcast_magic_miss(attacker, target, skill_id, skill_level)
+          missed_coma_once(:unchecked, attacker, target, target_pid, target_type)
           {:ok, {target_type, target_id}}
 
         :reflect ->
@@ -690,6 +691,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       case MagicDefense.resolve(target, Map.put(hit_info, :damage, damage)) do
         :miss ->
           broadcast_magic_miss(attacker, target, skill_id, skill_level)
+          missed_coma_once(:unchecked, attacker, target, target_pid, target_type)
           magic_attack_result({target_type, target_id}, @no_hit, opts)
 
         :reflect ->
@@ -1181,6 +1183,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         :miss ->
           broadcast_magic_miss(attacker, target, skill_id, skill_level)
 
+          coma_decision =
+            missed_coma_once(coma_decision, attacker, target, target_pid, target_type)
+
           result = %{
             target_ref: target_ref,
             target_state: target_state,
@@ -1264,9 +1269,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
     {damage, hit_info} =
       prepare_magic_hit(target_type, target_id, damage, hit_info, source)
-
-    hit_info =
-      if hit_info[:magic_rod_miss?], do: Map.put(hit_info, :coma?, false), else: hit_info
 
     if damage > 1,
       do: EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag(hit_info))
@@ -1524,11 +1526,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     [{damage, prepared_hit_info}] =
       Enum.map(damages, &prepare_magic_hit(target_type, target_id, &1, hit_info, source))
 
-    prepared_hit_info =
-      if prepared_hit_info[:magic_rod_miss?],
-        do: Map.put(prepared_hit_info, :coma?, false),
-        else: prepared_hit_info
-
     apply_vanish_hits(attacker, target, target_pid, [damage], hit_info)
 
     packet =
@@ -1614,17 +1611,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         true
       )
 
-  defp decide_coma(attacker, target, damages) do
-    case Enum.find(damages, &(&1 > 0)) do
-      nil -> :unchecked
-      _damage -> EquipComa.trigger?(attacker, target)
-    end
-  end
+  defp decide_coma(attacker, target, _damages), do: EquipComa.trigger?(attacker, target)
 
   defp decide_coma_once(:unchecked, attacker, target, damage),
     do: decide_coma(attacker, target, [damage])
 
   defp decide_coma_once(decision, _attacker, _target, _damage), do: decision
+
+  # A spell the target's defense turned into a miss still rolls the caster's
+  # coma once.
+  defp missed_coma_once(:unchecked, attacker, target, target_pid, target_type),
+    do:
+      DamageApplication.apply_missed_coma(
+        attacker,
+        target,
+        target_pid,
+        damage_source(attacker, target_type)
+      )
+
+  defp missed_coma_once(decision, _attacker, _target, _target_pid, _target_type), do: decision
 
   defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, :player),
     do: {unit_type, unit_id}

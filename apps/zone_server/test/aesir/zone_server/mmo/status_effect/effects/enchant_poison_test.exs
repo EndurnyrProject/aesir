@@ -62,10 +62,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
     end
   end
 
-  test "ordinary-swing proc forwards the source chance and injected resistance roll" do
+  test "a normal hit's additional effect forwards the source chance and injected roll" do
     for {level, chance} <- [{1, 3.0}, {10, 7.5}], result <- [true, false] do
-      instance = arm_enchant(level)
-      hit_info = %{target: {:mob, @target_id}, damage: 50, element: :poison}
+      arm_enchant(level)
       roll = fn _rate -> result end
 
       expect(Interpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
@@ -80,30 +79,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
         {:error, :resisted}
       end)
 
-      assert {:ok, ^instance} =
-               EnchantPoison.on_dealt_damage(
-                 {:player, @attacker_id},
-                 instance,
-                 hit_info,
-                 %{},
-                 roll
-               )
+      assert :ok = EnchantPoison.roll_poison({:player, @attacker_id}, {:mob, @target_id}, roll)
 
       Interpreter.remove_status(:player, @attacker_id, :sc_encpoison)
     end
   end
 
-  test "non-damaging hit metadata cannot attempt Poison" do
-    instance = arm_enchant(10)
+  test "rolls without the endow's holder having dealt any damage" do
+    arm_enchant(10)
 
-    assert {:ok, ^instance} =
-             EnchantPoison.on_dealt_damage(
-               {:player, @attacker_id},
-               instance,
-               %{target: {:mob, @target_id}, damage: 0, element: :poison},
-               %{},
-               fn _rate -> raise "misses must not roll" end
-             )
+    assert :ok =
+             EnchantPoison.roll_poison({:player, @attacker_id}, {:mob, @target_id}, fn _rate ->
+               true
+             end)
+
+    assert StatusStorage.has_status?(:mob, @target_id, :sc_poison)
+  end
+
+  test "an attacker without the endow attempts nothing" do
+    assert :ok =
+             EnchantPoison.roll_poison({:player, @attacker_id}, {:mob, @target_id}, fn _rate ->
+               raise "no endow must not roll"
+             end)
 
     refute StatusStorage.has_status?(:mob, @target_id, :sc_poison)
   end
@@ -111,16 +108,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
   test "Poison immunity rejects a successful proc through the ordinary status gate" do
     immune = mob_state(@target_id, :plant)
     :ok = UnitRegistry.update_unit_state(:mob, @target_id, immune)
-    instance = arm_enchant(10)
+    arm_enchant(10)
 
-    assert {:ok, ^instance} =
-             EnchantPoison.on_dealt_damage(
-               {:player, @attacker_id},
-               instance,
-               %{target: {:mob, @target_id}, damage: 50, element: :poison},
-               %{},
-               fn _rate -> true end
-             )
+    assert :ok =
+             EnchantPoison.roll_poison({:player, @attacker_id}, {:mob, @target_id}, fn _rate ->
+               true
+             end)
 
     refute StatusStorage.has_status?(:mob, @target_id, :sc_poison)
   end

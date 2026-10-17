@@ -271,7 +271,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
     prepare_curse_target()
     stub(TarotDeck, :draw, fn -> :death end)
 
-    expect(PlayerSession, :apply_coma, fn pid, {:player, 17} ->
+    expect(PlayerSession, :apply_coma, fn pid, {:player, 17}, %{passive?: true} ->
       assert pid == self()
       :ok
     end)
@@ -295,7 +295,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
 
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, boss, self())
     stub(TarotDeck, :draw, fn -> :death end)
-    reject(&MobSession.apply_coma/2)
+    reject(&MobSession.apply_coma/3)
     assert {:ok, :death} = Tarot.play(caster, {:mob, 42}, 5)
   end
 
