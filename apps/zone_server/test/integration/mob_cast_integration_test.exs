@@ -584,7 +584,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       mob = spawn_test_mob(@map, {190, 190}, mob_id: @summon_mob_id)
       caster = get_mob_state(mob.pid)
 
-      assert :ok = Executor.execute(caster, row!(@summon_mob_id, "NPC_SUMMONSLAVE"))
+      assert {:ok, %{can_summon: true}} =
+               Executor.execute(caster, row!(@summon_mob_id, "NPC_SUMMONSLAVE"))
 
       slave =
         :mob

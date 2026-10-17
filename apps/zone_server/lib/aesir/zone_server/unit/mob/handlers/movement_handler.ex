@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Movement
@@ -313,6 +314,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     SpatialIndex.reenter_block(:mob, state.instance_id)
     Movement.warp_position(:mob, state.instance_id, state, state.map_name)
     SpawnView.notify_spawn(state)
+    Slaves.recall(state)
     state
   end
 

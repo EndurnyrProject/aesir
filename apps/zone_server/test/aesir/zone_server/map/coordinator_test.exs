@@ -63,6 +63,28 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       assert mob.map_name == "prontera"
     end
 
+    test "a slave discards its species modes and copies its master's base speed" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+      master = struct(MobState, %{instance_id: 42, base_walk_speed: 95, walk_speed: 700})
+      UnitRegistry.register_unit(:mob, 42, MobState, master, self())
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      {:reply, {:ok, id}, _state} =
+        Coordinator.handle_call(
+          {:summon_mob, @poring_id, 150, 100, [master_id: 42]},
+          {self(), nil},
+          state
+        )
+
+      assert {:ok, {MobState, slave, _}} = UnitRegistry.get_unit(:mob, id)
+
+      assert Enum.sort(slave.mob_data.modes) ==
+               Enum.sort([:can_move, :can_attack, :no_random_walk])
+
+      assert slave.walk_speed == 95
+      assert slave.base_walk_speed == 95
+    end
+
     test "a mob spawning on a ground unit's cell is placed by it" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
       stub(Catalog, :ground_module_for, fn :test_field -> {:ok, __MODULE__.ArrivalSpy} end)

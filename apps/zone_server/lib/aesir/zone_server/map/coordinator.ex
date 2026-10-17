@@ -779,6 +779,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   # overriding mob_data.modes, which the AI state machine reads in several places;
   # left for a follow-up so summons don't ship a half-correct mode override.
   defp place_mob(mob_data, {x, y}, opts, state) do
+    mob_data = slave_definition(mob_data, Keyword.get(opts, :master_id))
     instance_id = generate_mob_instance_id()
     spawn_ref = Keyword.get_lazy(opts, :spawn_ref, fn -> summon_spawn_ref(mob_data, x, y) end)
 
@@ -805,6 +806,18 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         {{:error, reason}, state}
     end
   end
+
+  defp slave_definition(mob_data, master_id) when is_integer(master_id) and master_id > 0 do
+    speed =
+      case UnitRegistry.get_unit(:mob, master_id) do
+        {:ok, {_, %MobState{base_walk_speed: speed}, _}} -> speed
+        _missing -> mob_data.walk_speed
+      end
+
+    %{mob_data | modes: [:can_move, :no_random_walk, :can_attack], walk_speed: max(speed, 20)}
+  end
+
+  defp slave_definition(mob_data, _master_id), do: mob_data
 
   # Dispatches a dying mob's OnMyMobDead owner event (rAthena `mobkillevent`)
   # when it carries one and the killing blow lands from a live player session

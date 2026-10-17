@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Ref
@@ -335,12 +336,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       {:cont, state} ->
         {state, rude?} = process_attacked(state)
         state = if rude?, do: Keyword.get(opts, :on_rude, & &1).(state), else: state
-        state = search(state, view_range)
 
-        case state.target_ref do
-          nil -> idle_step(state, now, mono)
-          target -> engage(state, target, can_move, now, mono)
+        case Slaves.process(state, now) do
+          {:halt, state} ->
+            state
+
+          {:cont, state} ->
+            process_target(state, view_range, can_move, now, mono)
         end
+    end
+  end
+
+  defp process_target(state, view_range, can_move, now, mono) do
+    state = search(state, view_range)
+
+    case state.target_ref do
+      nil -> idle_step(state, now, mono)
+      target -> engage(state, target, can_move, now, mono)
     end
   end
 
@@ -397,7 +409,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     modes = state.mob_data.modes || []
 
     cond do
-      (:aggressive in modes and is_nil(state.target_ref)) or state.skill_state == :follow ->
+      (:aggressive in modes and (is_nil(state.target_ref) or not is_nil(state.master_id))) or
+          state.skill_state == :follow ->
         state |> active_search(view_range) |> rush_new_target_in_range(state.target_ref)
 
       :change_chase in modes and MobState.chasing?(state) ->
@@ -678,22 +691,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   # walk one millisecond after its delay ends (`resume_chase/1`); a walk that
   # cannot start drops the target.
   defp chase(state, target, now, mono) do
-    case target_position(target) do
-      {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
-        case chase_destination(state, {target_x, target_y}) do
-          {dest_x, dest_y} ->
-            state = state |> MobState.stop_attack() |> Map.put(:chase_target, target)
+    with {:ok, {target_x, target_y, map_name}} when map_name == state.map_name <-
+           target_position(target),
+         {dest_x, dest_y} <- chase_destination(state, {target_x, target_y}) do
+      state = state |> MobState.stop_attack() |> Map.put(:chase_target, target)
 
-            if MobState.walk_delayed?(state, mono),
-              do: %{state | chase_resume_at: state.walk_delay_until + 1},
-              else: chase_walk(state, dest_x, dest_y, now)
-
-          nil ->
-            unlock_target(state, now)
-        end
-
-      _other ->
-        unlock_target(state, now)
+      if MobState.walk_delayed?(state, mono),
+        do: %{state | chase_resume_at: state.walk_delay_until + 1},
+        else: chase_walk(state, dest_x, dest_y, now)
+    else
+      _unavailable -> unlock_target(state, now)
     end
   end
 

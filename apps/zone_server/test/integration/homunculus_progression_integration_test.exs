@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusProgressionIntegrationTest do
       owner_session(
         class_id: 6_001,
         level: 2,
-        exp: required - 1,
+        exp: required,
         skill_points: 0,
         learned_skills: %{"8001" => 3},
         catalyst?: true
@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusProgressionIntegrationTest do
 
     progressed = eventually_hom(owner.pid, &(&1.level == 3))
     assert progressed.skill_points == 1
-    assert progressed.exp == 0
+    assert progressed.exp == 1
     assert progressed.raw_max_hp > before.raw_max_hp
 
     cast_skill(owner.pid, 1, 8_001, :self)

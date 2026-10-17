@@ -418,6 +418,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   # Combat: damage application (death handling lives in CombatHandler).
   @impl GenServer
+  def handle_cast({:combat, {:master_dead, master_id}}, state) do
+    CombatHandler.handle_master_death(master_id, state)
+  end
+
   def handle_cast({:combat, {:apply_damage, damage, attacker_id, metadata}}, state) do
     CombatHandler.handle_apply_damage(damage, attacker_id, metadata, state)
   end

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.StateCommit
 
   @doc """
   Starts a cast for `row`, either firing instantly (0 cast time) or locking
@@ -34,7 +35,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
        %{state | last_skill_id: row.skill_id}
        |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
        |> start_attack_delay()
-       |> MobState.rest(now)}
+       |> MobState.rest(now)
+       |> StateCommit.commit()}
     else
       MobSkillExecutor.broadcast_cast_cancel(state)
       {:rejected, state}
@@ -53,7 +55,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
         timer_ref: timer_ref
       }
 
-      {:ok, MobState.set_casting(%{state | last_skill_id: row.skill_id}, casting)}
+      {:ok,
+       state
+       |> Map.put(:last_skill_id, row.skill_id)
+       |> MobState.set_casting(casting)
+       |> StateCommit.commit()}
     else
       MobSkillExecutor.broadcast_cast_cancel(state)
       {:rejected, state}
@@ -87,7 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
 
     if updated_state.ai_timer_ref, do: Process.cancel_timer(updated_state.ai_timer_ref)
 
-    {:noreply, AiHandler.schedule_ai_tick(updated_state)}
+    {:noreply, updated_state |> AiHandler.schedule_ai_tick() |> StateCommit.commit()}
   end
 
   @doc """
@@ -168,5 +174,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
     |> MobState.clear_casting()
     |> start_attack_delay()
+    |> StateCommit.commit()
   end
 end

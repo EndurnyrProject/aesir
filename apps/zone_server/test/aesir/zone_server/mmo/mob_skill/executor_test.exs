@@ -545,7 +545,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       stub(UnitRegistry, :get_unit, fn
         :player, 1 ->
-          {:ok, {PlayerState, %{living_player(1) | combat_target_id: 5001}, self()}}
+          {:ok,
+           {PlayerState,
+            %{
+              living_player(1)
+              | combat_target_id: 5001,
+                action_state: :attacking,
+                continuous_attack_timer: make_ref()
+            }, self()}}
 
         :player, 2 ->
           {:ok, {PlayerState, living_player(2), self()}}
@@ -557,11 +564,51 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
           {:ok, {MobState, fighter(%{instance_id: 6002, attack_target: {:player, 1}}), self()}}
 
         :homunculus, gid ->
-          {:ok, {HomunculusState, %{homunculus_state(gid, 100) | target: {:mob, 5001}}, self()}}
+          {:ok,
+           {HomunculusState,
+            %{homunculus_state(gid, 100) | target: {:mob, 5001}, action_state: :attacking},
+            self()}}
       end)
 
       assert Executor.count_targeting({:mob, 5001}) == 3
       assert Executor.count_targeting({:mob, 7}) == 0
+    end
+
+    test "chasing or idle intent without an active attack order does not count" do
+      stub(UnitRegistry, :list_units_by_type, fn
+        :player -> [1, 2]
+        :mob -> [6001]
+        :homunculus -> [1_500_007, 1_500_008]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 1 ->
+          {:ok,
+           {PlayerState,
+            %{
+              living_player(1)
+              | combat_target_id: 5001,
+                action_state: :combat_moving,
+                continuous_attack_timer: make_ref()
+            }, self()}}
+
+        :player, 2 ->
+          {:ok, {PlayerState, %{living_player(2) | combat_target_id: 5001}, self()}}
+
+        :mob, 6001 ->
+          {:ok,
+           {MobState, fighter(%{instance_id: 6001, target_ref: {:mob, 5001}, attack_target: nil}),
+            self()}}
+
+        :homunculus, gid ->
+          action = if gid == 1_500_007, do: :moving, else: :idle
+
+          {:ok,
+           {HomunculusState,
+            %{homunculus_state(gid, 100) | target: {:mob, 5001}, action_state: action}, self()}}
+      end)
+
+      assert Executor.count_targeting({:mob, 5001}) == 0
     end
 
     test "counts the monsters within 14 cells, the mob included" do

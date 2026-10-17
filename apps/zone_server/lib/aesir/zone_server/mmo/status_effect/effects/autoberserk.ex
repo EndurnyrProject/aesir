@@ -29,23 +29,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoberserk do
         if hp > div(max_hp, 4), do: Interpreter.remove_status(type, id, :sc_provoke)
 
       _ordinary_or_missing ->
-        if hp <= div(max_hp, 4) do
-          {atk, defense} = if type == :player, do: {32, 55}, else: {0, 100}
-
-          Interpreter.apply_status(type, id, :sc_provoke,
-            val1: 10,
-            val2: atk,
-            val3: defense,
-            val4: 1,
-            caster_id: id,
-            source_type: type,
-            duration: -1,
-            no_avoid: true
-          )
-        end
+        if hp <= div(max_hp, 4), do: provoke(type, id)
     end
 
     {:ok, instance}
+  end
+
+  defp provoke(type, id) do
+    {atk, defense} = if type == :player, do: {32, 55}, else: {0, 100}
+
+    Interpreter.apply_status(type, id, :sc_provoke,
+      val1: 10,
+      val2: atk,
+      val3: defense,
+      val4: 1,
+      caster_id: id,
+      source_type: type,
+      duration: -1,
+      no_avoid: true
+    )
   end
 
   @impl true

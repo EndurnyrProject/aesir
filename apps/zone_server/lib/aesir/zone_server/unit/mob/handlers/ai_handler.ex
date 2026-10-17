@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Slaves
+  alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -67,7 +69,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
 
     if AIStateMachine.attack_target_visible?(state),
       do: {:noreply, timed(state, &think/1)},
-      else: {:noreply, AIStateMachine.unlock_target(MobState.stop_attack(state), now())}
+      else:
+        {:noreply,
+         state
+         |> MobState.stop_attack()
+         |> AIStateMachine.unlock_target(now())
+         |> StateCommit.commit()}
   end
 
   def handle_attack_timer(state, _at), do: {:noreply, state}
@@ -87,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   # Runs `fun` on the state and arms the attack timer and chase resume
   # messages it booked.
   defp timed(state, fun) do
-    state |> fun.() |> arm_timers(state)
+    state |> fun.() |> arm_timers(state) |> StateCommit.commit()
   end
 
   defp arm_timers(state, before) do
@@ -121,10 +128,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     state = clean_spotted(state)
 
     cond do
-      now - (state.next_think_at || 0) < @hard_think_guard -> state
-      state.last_skillcheck != nil and now - state.last_skillcheck < @skill_interval -> state
-      state.master_id != nil -> state
-      true -> lazy_act(AIStateMachine.unlock_target(state, now), now)
+      now - (state.next_think_at || 0) < @hard_think_guard ->
+        state
+
+      state.last_skillcheck != nil and now - state.last_skillcheck < @skill_interval ->
+        state
+
+      state.master_id != nil ->
+        if MapSet.size(state.spotted_by) > 0,
+          do: state |> Slaves.process(now) |> elem(1),
+          else: state
+
+      true ->
+        lazy_act(AIStateMachine.unlock_target(state, now), now)
     end
   end
 
@@ -235,7 +251,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
       |> MobState.set_state(:idle)
       |> Map.merge(%{ai_awake: false, ai_timer_ref: nil})
 
-    {:noreply, updated_state, :hibernate}
+    {:noreply, StateCommit.commit(updated_state), :hibernate}
   end
 
   @doc """
@@ -256,7 +272,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         expected_ref,
         new_ref
       ) do
-    {:reply, :ok, MobState.set_target(state, new_ref)}
+    {:reply, :ok, state |> MobState.set_target(new_ref) |> StateCommit.commit()}
   end
 
   def handle_redirect_target(%MobState{is_dead: true} = state, _expected_ref, _new_ref),
@@ -272,13 +288,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   """
   @spec handle_set_target(MobState.t(), Ref.t() | integer() | nil) :: {:noreply, MobState.t()}
   def handle_set_target(state, nil),
-    do: {:noreply, AIStateMachine.unlock_target(state, System.system_time(:millisecond))}
+    do:
+      {:noreply,
+       state
+       |> AIStateMachine.unlock_target(System.system_time(:millisecond))
+       |> StateCommit.commit()}
 
   def handle_set_target(state, target_id) when is_integer(target_id),
     do: handle_set_target(state, {:player, target_id})
 
   def handle_set_target(state, target_ref),
-    do: {:noreply, AIStateMachine.lock_target(state, target_ref, false)}
+    do: {:noreply, state |> AIStateMachine.lock_target(target_ref, false) |> StateCommit.commit()}
 
   @doc """
   Locks the mob's AI target onto its provoker for an `{:ai, {:provoke,
@@ -286,7 +306,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   """
   @spec handle_provoke(MobState.t(), Ref.t()) :: {:noreply, MobState.t()}
   def handle_provoke(state, target_ref),
-    do: {:noreply, AIStateMachine.lock_target(state, target_ref, true)}
+    do: {:noreply, state |> AIStateMachine.lock_target(target_ref, true) |> StateCommit.commit()}
 
   @doc """
   Attacks `target_ref` once for an `{:attack_intent, ref}` nudge (Poison
@@ -296,7 +316,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   def handle_attack_intent(%MobState{is_dead: true} = state, _target_ref), do: {:noreply, state}
 
   def handle_attack_intent(%MobState{} = state, target_ref),
-    do: {:noreply, AIStateMachine.attack_once(state, target_ref)}
+    do: {:noreply, state |> AIStateMachine.attack_once(target_ref) |> StateCommit.commit()}
 
   @doc """
   Schedules the next `{:ai, :tick}` after `interval` milliseconds (defaults to

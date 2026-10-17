@@ -144,6 +144,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert later.skill_state == :idle
       assert later.movement_state == :standing
 
+      master = %{movable_mob_state() | instance_id: 7, x: 99}
+      stub(UnitRegistry, :get_unit, fn :mob, 7 -> {:ok, {MobState, master, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 7 -> {:ok, {99, 100, "prontera"}} end)
       slave = think(%{movable_mob_state() | next_walktime: now, master_id: 7}, now)
       assert slave.movement_state == :standing
     end

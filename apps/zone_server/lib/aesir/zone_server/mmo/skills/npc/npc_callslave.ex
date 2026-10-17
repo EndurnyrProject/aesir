@@ -1,11 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCallslave do
   @moduledoc """
-  Call Slave (NPC_CALLSLAVE). Mob-only summon behavior.
-
-  rAthena mob_skill id 352. Identical semantics to `NPC_SUMMONSLAVE`: both map
-  to the same `mob_summonslave` behavior in rAthena, so this module shares the
-  `Npc.SlaveSummon` logic (slave ids from `condition.val1..val5`, 5-slave
-  living cap, id cycling).
+  Call Slave (NPC_CALLSLAVE) recalls the caster's existing followers on its
+  current map to random cells within two cells of it. It creates no monsters
+  and does not read the row's species values. Both modes agree.
 
   Not learnable by players: `cast/4` is a stub, the mob executor always
   dispatches through `mob_cast/5`.
@@ -24,8 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCallslave do
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Slaves
 
   @behaviour Active
 
@@ -38,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCallslave do
   @impl Active
   @spec mob_cast(MobState.t(), term(), pos_integer(), Definition.t(), map()) ::
           :ok | {:error, term()}
-  def mob_cast(%MobState{} = caster, _raw_target, level, _definition, row) do
-    SlaveSummon.summon(caster, level, row)
+  def mob_cast(%MobState{} = caster, _raw_target, _level, _definition, _row) do
+    Slaves.recall(caster)
   end
 end

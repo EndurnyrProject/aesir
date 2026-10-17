@@ -164,23 +164,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     if HomunculusState.living?(homunculus) do
       case ProgressionHandler.gain_exp(homunculus, amount) do
         {:ok, progressed} ->
-          progressed =
-            if progressed.level > homunculus.level or
-                 ExpTable.exp_for(progressed.level) == {:ok, progressed.exp} do
-              Broadcast.to_in_range(
-                progressed.map_name,
-                progressed.x,
-                progressed.y,
-                Config.view_range(),
-                %SpecialEffect{source_id: gid, effect_id: EffectId.id(:ho_up)}
-              )
-
-              StateCommit.copy_owner_walk_speed(progressed, session)
-            else
-              progressed
-            end
-
-          {:noreply, StateCommit.commit(session, progressed)}
+          {:noreply, commit_exp(session, progressed)}
 
         {:error, reason} ->
           {:noreply, log_error(session, :gain_exp, reason)}
@@ -196,6 +180,26 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def cast(command, %SessionState{} = session) do
     Logger.warning("Unsupported Homunculus cast: #{inspect(command)}")
     {:noreply, session}
+  end
+
+  defp commit_exp(session, progressed) do
+    progressed =
+      if progressed.level > session.homunculus.level or
+           ExpTable.exp_for(progressed.level) == {:ok, progressed.exp} do
+        Broadcast.to_in_range(
+          progressed.map_name,
+          progressed.x,
+          progressed.y,
+          Config.view_range(),
+          %SpecialEffect{source_id: progressed.world_gid, effect_id: EffectId.id(:ho_up)}
+        )
+
+        StateCommit.copy_owner_walk_speed(progressed, session)
+      else
+        progressed
+      end
+
+    StateCommit.commit(session, progressed)
   end
 
   @type local_effect_result ::

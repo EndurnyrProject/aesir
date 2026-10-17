@@ -1,10 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSummonslave do
   @moduledoc """
-  Summon Slave (NPC_SUMMONSLAVE). Mob-only summon behavior.
-
-  rAthena mob_skill id 196. Summons slave mobs linked to their master, sharing
-  the `Npc.SlaveSummon` logic (slave ids from `condition.val1..val5`, 5-slave
-  living cap, id cycling) with `NPC_CALLSLAVE`.
+  Summon Slave (NPC_SUMMONSLAVE). Creates the requested number of followers
+  from the row's consecutive valid species IDs, cycling among them. Followers
+  start near their master with the shared slave movement and attack modes and
+  inherit its base walk speed. Both modes agree.
 
   Not learnable by players: `cast/4` is a stub, the mob executor always
   dispatches through `mob_cast/5`.
@@ -36,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSummonslave do
 
   @impl Active
   @spec mob_cast(MobState.t(), term(), pos_integer(), Definition.t(), map()) ::
-          :ok | {:error, term()}
+          :ok | {:ok, MobState.t()} | {:error, term()}
   def mob_cast(%MobState{} = caster, _raw_target, level, _definition, row) do
     SlaveSummon.summon(caster, level, row)
   end

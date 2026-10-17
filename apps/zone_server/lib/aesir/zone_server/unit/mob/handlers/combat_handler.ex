@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MvpReward
   alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
+  alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -101,6 +102,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
         )
     end
   end
+
+  @doc "Kills a slave only when the death belongs to its current master."
+  @spec handle_master_death(integer(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_master_death(master_id, %MobState{master_id: master_id} = state)
+      when is_integer(master_id),
+      do: handle_apply_damage(state.hp, nil, %{passive?: true}, state)
+
+  def handle_master_death(_master_id, state), do: {:noreply, state}
 
   @doc """
   Leaves a living mob at exactly 1 HP and 1 SP. The hit is active damage for the
@@ -361,6 +370,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     Lifecycle.publish_death(:mob, state.instance_id, state.map_name, kill_credit)
 
     announce_kill(state, attacker_ref, reward_owner_id, kill_blow, exp_bonus)
+    Slaves.master_died(updated_state)
 
     # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
     Coordinator.mob_died(state.map_name, state.instance_id, reward_owner_id)

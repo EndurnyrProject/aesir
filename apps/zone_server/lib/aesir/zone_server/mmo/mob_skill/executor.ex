@@ -517,8 +517,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   @doc """
-  Counts the units with a standing attack order on `ref`: players attacking
-  it, monsters with it as their attack target and homunculi targeting it.
+  Counts active attack orders on `ref`, never chase or idle intent: players
+  with a continuous attack armed, monsters with an attack target and homunculi
+  performing an attack. The unit counter is capped at 255.
   """
   @spec count_targeting({atom(), integer()}) :: non_neg_integer()
   def count_targeting({_type, id} = ref) do
@@ -527,7 +528,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       |> UnitRegistry.list_units_by_type()
       |> Enum.count(fn player_id ->
         match?(
-          {:ok, {_module, %PlayerState{combat_target_id: ^id}, _pid}},
+          {:ok,
+           {_module,
+            %PlayerState{
+              combat_target_id: ^id,
+              action_state: action,
+              continuous_attack_timer: timer
+            }, _pid}}
+          when action in [:attacking, :casting] and is_reference(timer),
           UnitRegistry.get_unit(:player, player_id)
         )
       end)
@@ -547,12 +555,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       |> UnitRegistry.list_units_by_type()
       |> Enum.count(fn hom_id ->
         match?(
-          {:ok, {_module, %HomunculusState{target: ^ref}, _pid}},
+          {:ok, {_module, %HomunculusState{target: ^ref, action_state: :attacking}, _pid}},
           UnitRegistry.get_unit(:homunculus, hom_id)
         )
       end)
 
-    players + mobs + homunculi
+    min(players + mobs + homunculi, 255)
   end
 
   @doc "Counts the monsters within the square visual area of the mob, itself included."
