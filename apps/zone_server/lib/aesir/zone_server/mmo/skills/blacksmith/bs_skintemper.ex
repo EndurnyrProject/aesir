@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSkintemper do
     name: :bs_skintemper,
     display_name: "Skin Tempering",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   @behaviour Passive
 end

@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McVending do
     display_name: "Vending",
     max_level: 10,
     target_type: :passive,
-    sp_cost: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+    sp_cost: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

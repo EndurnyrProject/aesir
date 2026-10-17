@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRestore do
     cast_time: [renewal: [], pre_renewal: [10_000]],
     fixed_cast_time: [renewal: [1_000], pre_renewal: []],
     cooldown: [renewal: [180_000], pre_renewal: []],
-    damage_splash: true
+    damage_splash: true,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea

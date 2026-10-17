@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
     cast_time: [renewal: List.duplicate(1_500, 5), pre_renewal: List.duplicate(3_000, 5)],
     fixed_cast_time: [renewal: List.duplicate(1_500, 5), pre_renewal: []],
     sp_cost: List.duplicate(25, 5),
-    duration: [30_000, 45_000, 60_000, 75_000, 90_000]
+    duration: [30_000, 45_000, 60_000, 75_000, 90_000],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Active

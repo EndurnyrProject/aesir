@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsUnfairlytrick do
     max_level: 1,
     target_type: :passive,
     quest_skill: true,
-    quest_owner_job: :blacksmith
+    quest_owner_job: :blacksmith,
+    damage_type: :damage
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive

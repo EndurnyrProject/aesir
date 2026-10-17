@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSrecovery do
     name: :mg_srecovery,
     display_name: "Increase SP Recovery",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

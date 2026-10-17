@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifBrain do
     name: :hlif_brain,
     display_name: "Brain Surgery",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

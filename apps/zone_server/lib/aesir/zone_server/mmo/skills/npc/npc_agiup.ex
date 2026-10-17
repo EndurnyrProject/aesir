@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcAgiup do
     max_level: 50,
     target_type: :self,
     damage_type: :no_damage,
-    is_npc: true
+    is_npc: true,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

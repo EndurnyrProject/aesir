@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdGuildStorage do
     name: :gd_guild_storage,
     display_name: "Guild Storage Expansion",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

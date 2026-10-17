@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAxemastery do
     name: :am_axemastery,
     display_name: "Axe Mastery",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive

@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicaccel do
     max_level: 1,
     target_type: :passive,
     quest_skill: true,
-    quest_owner_job: :assassin
+    quest_owner_job: :assassin,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

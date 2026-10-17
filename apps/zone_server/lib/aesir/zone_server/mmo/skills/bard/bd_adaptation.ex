@@ -22,7 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptation do
     cast_time: [0],
     fixed_cast_time: [0],
     after_cast_delay: [renewal: [300], pre_renewal: []],
-    cooldown: [renewal: [300_000], pre_renewal: []]
+    cooldown: [renewal: [300_000], pre_renewal: []],
+    damage_kind: :none
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active

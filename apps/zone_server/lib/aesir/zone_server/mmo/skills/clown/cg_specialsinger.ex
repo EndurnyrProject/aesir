@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgSpecialsinger do
     damage_type: :no_damage,
     sp_cost: [1],
     after_cast_delay: [300],
-    cooldown: [60_000]
+    cooldown: [60_000],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

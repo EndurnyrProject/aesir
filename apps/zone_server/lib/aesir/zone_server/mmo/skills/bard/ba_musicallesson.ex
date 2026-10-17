@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicallesson do
     name: :ba_musicallesson,
     display_name: "Musical Lesson",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive

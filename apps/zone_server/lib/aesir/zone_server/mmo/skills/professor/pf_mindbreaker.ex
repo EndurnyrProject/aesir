@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMindbreaker do
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :no_damage,
-    damage_kind: :magic,
+    damage_kind: :none,
     range: 9,
     sp_cost: [12, 15, 18, 21, 24],
     after_cast_delay: [800, 900, 1_000, 1_100, 1_200],

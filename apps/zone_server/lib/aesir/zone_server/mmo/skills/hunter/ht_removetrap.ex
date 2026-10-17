@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrap do
     target_type: :ground,
     damage_type: :no_damage,
     range: 2,
-    sp_cost: [5]
+    sp_cost: [5],
+    damage_kind: :misc
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active

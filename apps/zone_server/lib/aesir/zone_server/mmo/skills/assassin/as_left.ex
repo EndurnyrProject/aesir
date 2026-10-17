@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsLeft do
     name: :as_left,
     display_name: "Lefthand Mastery",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

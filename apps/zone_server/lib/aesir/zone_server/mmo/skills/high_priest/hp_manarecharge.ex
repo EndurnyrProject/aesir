@@ -14,7 +14,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpManarecharge do
     name: :hp_manarecharge,
     display_name: "Mana Recharge",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

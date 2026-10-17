@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAxe do
     name: :bs_axe,
     display_name: "Smith Axe",
     max_level: 3,
-    target_type: :self
+    target_type: :self,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Menu

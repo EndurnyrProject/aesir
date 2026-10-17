@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspirits do
     target_type: :self,
     sp_cost: List.duplicate(8, 5),
     cast_time: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1_000, 5)],
-    fixed_cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []]
+    fixed_cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Learned

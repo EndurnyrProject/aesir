@@ -33,7 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnare do
     hit_interval: 1_000,
     unit_duration: [250_000, 200_000, 150_000, 100_000, 50_000],
     sp_cost: List.duplicate(12, 5),
-    item_cost: [%{id: 1065, amount: 1}]
+    item_cost: [%{id: 1065, amount: 1}],
+    damage_kind: :misc
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.Knockback

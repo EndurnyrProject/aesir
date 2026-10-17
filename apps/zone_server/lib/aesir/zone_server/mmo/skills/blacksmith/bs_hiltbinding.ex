@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbinding do
     name: :bs_hiltbinding,
     display_name: "Hilt Binding",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

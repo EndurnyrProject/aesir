@@ -28,7 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgTarotcard do
     cast_time: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1000, 5)],
     fixed_cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(300, 5), pre_renewal: List.duplicate(3000, 5)],
-    cooldown: [renewal: List.duplicate(3000, 5), pre_renewal: []]
+    cooldown: [renewal: List.duplicate(3000, 5), pre_renewal: []],
+    damage_kind: :misc
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

@@ -11,5 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOrideocon do
     name: :bs_orideocon,
     display_name: "Oridecon Research",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 end

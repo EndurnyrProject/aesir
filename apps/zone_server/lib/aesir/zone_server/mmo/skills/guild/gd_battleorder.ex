@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdBattleorder do
     splash_radius: 15,
     sp_cost: [renewal: [], pre_renewal: [1]],
     cooldown: [renewal: [180_000], pre_renewal: []],
-    damage_splash: true
+    damage_splash: true,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea

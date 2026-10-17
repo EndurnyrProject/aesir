@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmTwohand do
     name: :sm_twohand,
     display_name: "Two-Handed Sword Mastery",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

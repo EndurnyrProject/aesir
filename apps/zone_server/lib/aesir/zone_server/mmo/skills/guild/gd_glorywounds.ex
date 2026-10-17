@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdGlorywounds do
     name: :gd_glorywounds,
     display_name: "Glorious Wounds",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

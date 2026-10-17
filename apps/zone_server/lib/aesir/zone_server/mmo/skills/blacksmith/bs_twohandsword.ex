@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsTwohandsword do
     name: :bs_twohandsword,
     display_name: "Smith Two-handed Sword",
     max_level: 3,
-    target_type: :self
+    target_type: :self,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Menu

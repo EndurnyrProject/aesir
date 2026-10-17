@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmRecovery do
     name: :sm_recovery,
     display_name: "Increase HP Recovery",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

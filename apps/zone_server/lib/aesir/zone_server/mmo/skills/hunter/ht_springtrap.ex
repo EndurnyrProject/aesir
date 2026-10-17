@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrap do
     target_type: :ground,
     damage_type: :no_damage,
     range: [4, 5, 6, 7, 8],
-    sp_cost: [10, 10, 10, 10, 10]
+    sp_cost: [10, 10, 10, 10, 10],
+    damage_kind: :misc
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

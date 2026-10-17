@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster do
     display_name: "Sight Blaster",
     max_level: 1,
     target_type: :self,
-    damage_type: :no_damage,
+    damage_type: :damage,
     damage_kind: :magic,
     element: :fire,
     range: 0,

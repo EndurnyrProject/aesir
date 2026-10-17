@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdHawkeyes do
     name: :gd_hawkeyes,
     display_name: "Sharp Gaze",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

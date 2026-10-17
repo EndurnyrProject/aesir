@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
 
     assert definition.max_level == 1
     assert definition.target_type == :self
-    assert definition.damage_type == :no_damage
+    assert definition.damage_type == :damage
     assert definition.damage_kind == :magic
     assert definition.element == :fire
     assert definition.splash_radius == 1

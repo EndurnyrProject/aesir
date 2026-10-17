@@ -317,11 +317,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
 
   defp undead_target?(_target), do: false
 
-  @self_cast_types [:self, :target_ally, :target_any, :target_resurrection]
-
-  defp no_damage_cast?(%{target_type: type}) when type in @self_cast_types, do: true
-  defp no_damage_cast?(%{damage_type: :no_damage}), do: true
-  defp no_damage_cast?(_definition), do: false
+  defp no_damage_cast?(definition), do: Definition.cast_type(definition) != :damage
 
   defp castend_unit({:unit, {_type, id}}), do: {:unit, id}
   defp castend_unit({:unit, id}), do: {:unit, id}

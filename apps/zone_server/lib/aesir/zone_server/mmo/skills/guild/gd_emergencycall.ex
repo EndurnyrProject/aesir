@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencycall do
     cast_time: [renewal: [], pre_renewal: [5_000]],
     fixed_cast_time: [renewal: [5_000], pre_renewal: []],
     cooldown: [renewal: [300_000], pre_renewal: []],
-    damage_splash: true
+    damage_splash: true,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster

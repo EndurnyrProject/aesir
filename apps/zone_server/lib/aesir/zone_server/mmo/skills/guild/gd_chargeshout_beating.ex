@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdChargeshoutBeating do
     name: :gd_chargeshout_beating,
     display_name: "Charge Shout Beating",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

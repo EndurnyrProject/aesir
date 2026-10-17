@@ -18,6 +18,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   @grand_cross 254
   @demonstration 229
   @gravitation 484
+  @auto_counter 61
+  @poison_react 139
+  @sight_blaster 1006
+  @triple_attack 263
   @target_force 1
 
   setup do
@@ -257,6 +261,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
       if GameMode.mode() == :renewal,
         do: assert_received({:"$gen_cast", {:skill, {:equip_proc, _}}}),
         else: refute_received({:"$gen_cast", _})
+    end
+
+    test "counters, Sight Blaster's strike and Triple Attack are damage hits" do
+      wearer = player(1001, [autocast(:when_hit, BattleFlags.fill_battle(0))])
+
+      for skill_id <- [@auto_counter, @poison_react, @sight_blaster, @triple_attack] do
+        EquipProcDispatch.when_hit(wearer, {:mob, 2001}, hit(skill_id: skill_id))
+        assert_received {:"$gen_cast", {:skill, {:equip_proc, %{branch: :counter}}}}
+      end
     end
 
     test "when-hit autobonuses activate on the recipient" do

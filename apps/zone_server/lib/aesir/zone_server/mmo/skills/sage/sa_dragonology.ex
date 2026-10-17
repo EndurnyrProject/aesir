@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDragonology do
     name: :sa_dragonology,
     display_name: "Dragonology",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

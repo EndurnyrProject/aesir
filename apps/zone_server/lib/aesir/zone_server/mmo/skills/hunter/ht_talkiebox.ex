@@ -28,7 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
     hit_interval: 1_000,
     unit_duration: [600_000],
     sp_cost: [1],
-    item_cost: [%{id: 1065, amount: 1}]
+    item_cost: [%{id: 1065, amount: 1}],
+    damage_kind: :misc
 
   alias Aesir.Net.ChatMessage
   alias Aesir.ZoneServer.Config

@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdRegeneration do
     splash_radius: 15,
     sp_cost: [renewal: [], pre_renewal: [1, 1, 1]],
     cooldown: [renewal: List.duplicate(180_000, 3), pre_renewal: []],
-    damage_splash: true
+    damage_splash: true,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea

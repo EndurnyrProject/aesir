@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
     max_level: 10,
     target_type: :self,
     sp_cost: [80, 80, 80, 80, 80, 100, 100, 100, 100, 100],
-    duration: List.duplicate(60_000, 10)
+    duration: List.duplicate(60_000, 10),
+    damage_kind: :misc
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Cost

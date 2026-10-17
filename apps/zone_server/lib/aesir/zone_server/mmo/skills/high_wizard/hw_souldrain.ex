@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwSouldrain do
     display_name: "Soul Drain",
     max_level: 10,
     target_type: :passive,
-    damage_kind: :magic
+    damage_kind: :magic,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Passive

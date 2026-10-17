@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSteel do
     name: :bs_steel,
     display_name: "Steel Tempering",
     max_level: 5,
-    target_type: :self
+    target_type: :self,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Menu

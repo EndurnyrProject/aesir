@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiBloodlust do
     sp_cost: List.duplicate(120, 3),
     duration: [60_000, 180_000, 300_000],
     cooldown: [300_000, 600_000, 900_000],
-    status: :sc_bloodlust
+    status: :sc_bloodlust,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

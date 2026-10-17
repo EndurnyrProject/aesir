@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrap do
     hit_interval: 1_000,
     unit_duration: [300_000, 240_000, 180_000, 120_000, 60_000],
     sp_cost: [10, 10, 10, 10, 10],
-    item_cost: [%{id: 1065, amount: 1}]
+    item_cost: [%{id: 1065, amount: 1}],
+    damage_kind: :misc
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.Knockback

@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsKnuckle do
     name: :bs_knuckle,
     display_name: "Smith Knucklebrace",
     max_level: 3,
-    target_type: :self
+    target_type: :self,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Menu

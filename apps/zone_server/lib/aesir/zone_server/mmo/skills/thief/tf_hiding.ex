@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding do
     max_level: 10,
     target_type: :self,
     sp_cost: List.duplicate(10, 10),
-    allow_when_hidden: true
+    allow_when_hidden: true,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster

@@ -6,7 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanInstruct do
     name: :hvan_instruct,
     display_name: "Instruction Change",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

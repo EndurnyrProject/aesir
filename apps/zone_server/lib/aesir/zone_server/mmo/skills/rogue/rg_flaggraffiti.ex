@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgFlaggraffiti do
     target_type: :ground,
     damage_type: :no_damage,
     unit_duration: [180_000, 180_000, 180_000, 180_000, 180_000],
-    sp_cost: [10, 10, 10, 10, 10]
+    sp_cost: [10, 10, 10, 10, 10],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group

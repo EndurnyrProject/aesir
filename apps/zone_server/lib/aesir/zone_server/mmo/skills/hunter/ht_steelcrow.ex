@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSteelcrow do
     name: :ht_steelcrow,
     display_name: "Steel Crow",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :misc,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

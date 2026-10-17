@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstone do
     cast_time: [renewal: [], pre_renewal: [500]],
     fixed_cast_time: [renewal: [500], pre_renewal: []],
     quest_skill: true,
-    quest_owner_job: :thief
+    quest_owner_job: :thief,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active

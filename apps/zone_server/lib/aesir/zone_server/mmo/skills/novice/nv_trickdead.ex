@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvTrickdead do
     target_type: :self,
     sp_cost: [5],
     quest_skill: true,
-    quest_owner_job: :novice
+    quest_owner_job: :novice,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
@@ -1783,8 +1784,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  # Damage skills broadcast their own ZC_NOTIFY_SKILL from the combat layer, so
-  # the no-damage support visual is sent only for no-damage skills. Ground casts
+  # Damage casts broadcast their own ZC_NOTIFY_SKILL from the combat layer, so
+  # the no-damage visual is sent only for a no-damage cast type. Ground casts
   # emit their own ZC_NOTIFY_GROUNDSKILL visual, so they skip this entirely.
   # A completed skill use, ordinary or automatic: shows the skill to onlookers
   # and arms the caster's on-skill procs for a no-damage or ground skill. A
@@ -1815,12 +1816,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # Brandish Spear is a no-damage cast whose only visuals are its hits.
   defp broadcast_skill_effect(_game_state, @brandish_spear, _level, _target), do: :ok
 
+  # A no-damage cast shows the skill's effect; a damage cast's visuals are its hits.
   defp broadcast_skill_effect(game_state, skill_id, level, target) do
-    case Catalog.by_id(skill_id) do
-      {:ok, %{damage_type: :damage}} ->
-        :ok
-
-      _ ->
+    with {:ok, definition} <- Catalog.by_id(skill_id),
+         :damage <- Definition.cast_type(definition) do
+      :ok
+    else
+      _no_damage_cast ->
         packet = %SkillEffect{
           skill_id: skill_id,
           level: level,

@@ -11,5 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmLearningpotion do
     name: :am_learningpotion,
     display_name: "Learning Potion",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 end

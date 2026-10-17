@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFalcon do
     name: :ht_falcon,
     display_name: "Falconry Mastery",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :misc,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

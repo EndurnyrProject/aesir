@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifAvoid do
     sp_cost: [20, 25, 30, 35, 40],
     cooldown: List.duplicate(35_000, 5),
     duration: [40_000, 35_000, 30_000, 25_000, 20_000],
-    status: :sc_avoid
+    status: :sc_avoid,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

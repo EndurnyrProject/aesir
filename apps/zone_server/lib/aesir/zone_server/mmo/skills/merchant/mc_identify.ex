@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McIdentify do
     target_type: :self,
     damage_type: :no_damage,
     range: 1,
-    sp_cost: [10]
+    sp_cost: [10],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Menu

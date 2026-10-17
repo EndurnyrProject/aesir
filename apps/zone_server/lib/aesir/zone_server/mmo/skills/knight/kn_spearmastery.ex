@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearmastery do
     name: :kn_spearmastery,
     display_name: "Spear Mastery",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

@@ -21,7 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
     cast_time: [renewal: [800], pre_renewal: [1_000]],
     fixed_cast_time: [renewal: [200], pre_renewal: []],
     after_cast_delay: [2_000],
-    cooldown: [renewal: [10_000], pre_renewal: []]
+    cooldown: [renewal: [10_000], pre_renewal: []],
+    damage_kind: :misc
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active

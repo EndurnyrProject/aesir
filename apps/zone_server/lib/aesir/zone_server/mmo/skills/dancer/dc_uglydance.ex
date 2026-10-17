@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
     fixed_cast_time: [renewal: List.duplicate(300, 5), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(300, 5), pre_renewal: []],
     cooldown: [renewal: List.duplicate(5_000, 5), pre_renewal: []],
-    require_weapon: [:whip]
+    require_weapon: [:whip],
+    damage_kind: :misc
 
   use Aesir.ZoneServer.Mmo.Skill.Performance
 

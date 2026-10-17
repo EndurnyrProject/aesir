@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
     range: 9,
     sp_cost: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
     cooldown: [renewal: [], pre_renewal: List.duplicate(1_000, 10)],
-    duration: List.duplicate(30_000, 10)
+    duration: List.duplicate(30_000, 10),
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active

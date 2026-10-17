@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiDefence do
     sp_cost: [20, 25, 30, 35, 40],
     duration: [40_000, 35_000, 30_000, 25_000, 20_000],
     cooldown: List.duplicate(30_000, 5),
-    status: :sc_defence
+    status: :sc_defence,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
     display_name: "Auto Counter",
     max_level: 5,
     target_type: :self,
-    damage_type: :no_damage,
+    damage_type: :damage,
     range: 0,
     sp_cost: [3, 3, 3, 3, 3],
     require_weapon: [

@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdSoulcold do
     name: :gd_soulcold,
     display_name: "Cold Heart",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

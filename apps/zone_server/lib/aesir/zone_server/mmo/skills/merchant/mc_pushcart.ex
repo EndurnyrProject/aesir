@@ -14,7 +14,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McPushcart do
     name: :mc_pushcart,
     display_name: "Pushcart",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

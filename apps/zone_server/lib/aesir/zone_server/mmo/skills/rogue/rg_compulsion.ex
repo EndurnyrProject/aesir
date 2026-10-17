@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCompulsion do
     name: :rg_compulsion,
     display_name: "Haggle",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

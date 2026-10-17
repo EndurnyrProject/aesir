@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrust do
     name: :cr_trust,
     display_name: "Faith",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

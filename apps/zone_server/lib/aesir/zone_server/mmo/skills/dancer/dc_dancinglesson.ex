@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglesson do
     name: :dc_dancinglesson,
     display_name: "Dancing Lesson",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive

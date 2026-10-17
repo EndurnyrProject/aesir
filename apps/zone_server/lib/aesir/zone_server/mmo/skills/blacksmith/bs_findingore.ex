@@ -10,5 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsFindingore do
     name: :bs_findingore,
     display_name: "Ore Discovery",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 end

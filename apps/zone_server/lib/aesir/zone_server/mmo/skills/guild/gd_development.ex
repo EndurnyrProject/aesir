@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdDevelopment do
     name: :gd_development,
     display_name: "Permanent Development",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

@@ -17,7 +17,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMovingRecovery do
     max_level: 1,
     target_type: :passive,
     quest_skill: true,
-    quest_owner_job: :swordman
+    quest_owner_job: :swordman,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

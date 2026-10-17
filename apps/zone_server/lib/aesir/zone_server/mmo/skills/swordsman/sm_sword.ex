@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmSword do
     name: :sm_sword,
     display_name: "Sword Mastery",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

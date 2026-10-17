@@ -22,7 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCannibalize do
     item_cost: [%{id: 7_137, amount: 1}],
     cast_time: [renewal: List.duplicate(1_600, 5), pre_renewal: List.duplicate(2_000, 5)],
     fixed_cast_time: [renewal: List.duplicate(400, 5), pre_renewal: []],
-    after_cast_delay: List.duplicate(500, 5)
+    after_cast_delay: List.duplicate(500, 5),
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Skill.Active

@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
     damage_type: :no_damage,
     range: 18,
     sp_cost: [14],
-    sphere_cost: [1]
+    sphere_cost: [1],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell

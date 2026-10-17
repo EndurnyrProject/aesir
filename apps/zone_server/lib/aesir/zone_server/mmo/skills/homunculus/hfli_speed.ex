@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HfliSpeed do
     damage_type: :no_damage,
     sp_cost: [30, 40, 50, 60, 70],
     duration: [60_000, 55_000, 50_000, 45_000, 40_000],
-    cooldown: [60_000, 75_000, 90_000, 105_000, 120_000]
+    cooldown: [60_000, 75_000, 90_000, 105_000, 120_000],
+    damage_kind: :misc
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgLongingfreedom do
     damage_type: :no_damage,
     sp_cost: List.duplicate(15, 5),
     duration: List.duplicate(180_000, 5),
-    status: :sc_longing
+    status: :sc_longing,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

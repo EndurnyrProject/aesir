@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
     damage_type: :no_damage,
     sp_cost: [30],
     quest_skill: true,
-    quest_owner_job: :sage
+    quest_owner_job: :sage,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active

@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvFirstaid do
     target_type: :self,
     sp_cost: [3],
     quest_skill: true,
-    quest_owner_job: :novice
+    quest_owner_job: :novice,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
 

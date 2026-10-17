@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpMeditatio do
     display_name: "Meditatio",
     max_level: 10,
     target_type: :passive,
-    damage_kind: :magic
+    damage_kind: :magic,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

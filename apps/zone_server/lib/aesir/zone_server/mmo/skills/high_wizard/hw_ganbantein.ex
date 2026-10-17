@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGanbantein do
     cast_time: [renewal: [], pre_renewal: [3_000]],
     fixed_cast_time: [renewal: [3_000], pre_renewal: []],
     after_cast_delay: [5_000],
-    item_cost: [%{id: 715, amount: 1}, %{id: 717, amount: 1}]
+    item_cost: [%{id: 715, amount: 1}, %{id: 717, amount: 1}],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

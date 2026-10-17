@@ -33,7 +33,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic do
     name: :nv_basic,
     display_name: "Basic Skill",
     max_level: 9,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passive

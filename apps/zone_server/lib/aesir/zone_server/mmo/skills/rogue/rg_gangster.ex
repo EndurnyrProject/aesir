@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGangster do
     name: :rg_gangster,
     display_name: "Slyness",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

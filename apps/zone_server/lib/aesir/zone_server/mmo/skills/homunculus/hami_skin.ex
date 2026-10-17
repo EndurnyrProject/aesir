@@ -6,7 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiSkin do
     name: :hami_skin,
     display_name: "Adamantium Skin",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   @behaviour Aesir.ZoneServer.Mmo.Skill.Passive
 end

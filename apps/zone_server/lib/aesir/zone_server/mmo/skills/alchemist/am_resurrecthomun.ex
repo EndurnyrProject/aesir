@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmResurrecthomun do
     sp_cost: [74, 68, 62, 56, 50],
     cast_time: List.duplicate(2_000, 5),
     fixed_cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
-    cooldown: [renewal: [140_000, 110_000, 80_000, 50_000, 20_000], pre_renewal: []]
+    cooldown: [renewal: [140_000, 110_000, 80_000, 50_000, 20_000], pre_renewal: []],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
 

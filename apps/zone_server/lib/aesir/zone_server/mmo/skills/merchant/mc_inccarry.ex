@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McInccarry do
     name: :mc_inccarry,
     display_name: "Enlarge Weight Limit",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

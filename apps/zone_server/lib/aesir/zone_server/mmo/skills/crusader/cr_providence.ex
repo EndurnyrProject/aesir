@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidence do
     cast_time: [renewal: List.duplicate(1_500, 5), pre_renewal: List.duplicate(3_000, 5)],
     fixed_cast_time: [renewal: List.duplicate(1_500, 5), pre_renewal: []],
     sp_cost: List.duplicate(30, 5),
-    duration: List.duplicate(180_000, 5)
+    duration: List.duplicate(180_000, 5),
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs

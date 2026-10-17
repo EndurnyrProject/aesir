@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
     damage_type: :no_damage,
     range: 9,
     sp_cost: List.duplicate(1, 5),
-    after_cast_delay: List.duplicate(500, 5)
+    after_cast_delay: List.duplicate(500, 5),
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCleaner do
     range: 1,
     splash_radius: 5,
     sp_cost: [5],
-    damage_splash: true
+    damage_splash: true,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Unit

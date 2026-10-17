@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdChargeshoutFlag do
     name: :gd_chargeshout_flag,
     display_name: "Charge Shout Flag",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McDiscount do
     name: :mc_discount,
     display_name: "Discount",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :none,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

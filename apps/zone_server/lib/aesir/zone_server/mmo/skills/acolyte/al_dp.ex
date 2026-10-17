@@ -23,7 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDp do
     name: :al_dp,
     display_name: "Divine Protection",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

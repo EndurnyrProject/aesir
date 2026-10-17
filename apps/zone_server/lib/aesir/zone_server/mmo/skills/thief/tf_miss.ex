@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfMiss do
     name: :tf_miss,
     display_name: "Improve Dodge",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage

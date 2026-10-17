@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnRiding do
     name: :kn_riding,
     display_name: "Peco Peco Riding",
     max_level: 1,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsEnchantedstone do
     name: :bs_enchantedstone,
     display_name: "Enchanted Stone Craft",
     max_level: 5,
-    target_type: :self
+    target_type: :self,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Menu

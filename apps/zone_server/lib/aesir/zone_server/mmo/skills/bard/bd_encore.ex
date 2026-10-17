@@ -21,7 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
     fixed_cast_time: [0],
     after_cast_delay: [renewal: [300], pre_renewal: []],
     cooldown: [renewal: [10_000], pre_renewal: []],
-    require_weapon: [:musical, :whip]
+    require_weapon: [:musical, :whip],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster

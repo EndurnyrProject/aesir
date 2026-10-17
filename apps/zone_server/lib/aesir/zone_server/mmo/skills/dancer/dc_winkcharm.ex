@@ -26,7 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
     fixed_cast_time: [renewal: [200], pre_renewal: []],
     after_cast_delay: [2_000],
     cooldown: [renewal: [10_000], pre_renewal: []],
-    duration: [renewal: [10_000], pre_renewal: [30_000]]
+    duration: [renewal: [10_000], pre_renewal: [30_000]],
+    damage_kind: :misc
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat

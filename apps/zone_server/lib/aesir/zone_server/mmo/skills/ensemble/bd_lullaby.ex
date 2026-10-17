@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullaby do
     fixed_cast_time: [renewal: [500], pre_renewal: []],
     after_cast_delay: [renewal: [300], pre_renewal: []],
     cooldown: [renewal: [20_000], pre_renewal: []],
-    require_weapon: [:musical, :whip]
+    require_weapon: [:musical, :whip],
+    damage_kind: :misc
 
   use Aesir.ZoneServer.Mmo.Skill.Ensemble
 

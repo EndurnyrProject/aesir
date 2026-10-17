@@ -13,7 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCallhomun do
     max_level: 1,
     target_type: :self,
     sp_cost: [10],
-    duration: [renewal: [1_800_000], pre_renewal: []]
+    duration: [renewal: [1_800_000], pre_renewal: []],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
 

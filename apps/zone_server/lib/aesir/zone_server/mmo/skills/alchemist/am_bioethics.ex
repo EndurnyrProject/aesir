@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmBioethics do
     max_level: 1,
     target_type: :passive,
     quest_skill: true,
-    quest_owner_job: :alchemist
+    quest_owner_job: :alchemist,
+    damage_kind: :none,
+    damage_type: :damage
 
   @behaviour Aesir.ZoneServer.Mmo.Skill.Passive
 end

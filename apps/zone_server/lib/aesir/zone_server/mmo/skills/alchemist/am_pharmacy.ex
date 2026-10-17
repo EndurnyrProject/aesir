@@ -11,7 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPharmacy do
     max_level: 10,
     target_type: :self,
     sp_cost: List.duplicate(5, 10),
-    item_cost: [%{id: 7134, amount: 1}]
+    item_cost: [%{id: 7134, amount: 1}],
+    damage_kind: :none
 
   @behaviour Aesir.ZoneServer.Mmo.Skill.Active
   @behaviour Aesir.ZoneServer.Mmo.Skill.Menu

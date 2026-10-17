@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
     target_type: :self,
     damage_type: :no_damage,
     sp_cost: List.duplicate(10, 5),
-    cooldown: List.duplicate(1_000, 5)
+    cooldown: List.duplicate(1_000, 5),
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit

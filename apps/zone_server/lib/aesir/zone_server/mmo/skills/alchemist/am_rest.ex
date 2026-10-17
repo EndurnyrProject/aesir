@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmRest do
     max_level: 1,
     target_type: :self,
     sp_cost: [50],
-    cooldown: [renewal: [20_000], pre_renewal: []]
+    cooldown: [renewal: [20_000], pre_renewal: []],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
 

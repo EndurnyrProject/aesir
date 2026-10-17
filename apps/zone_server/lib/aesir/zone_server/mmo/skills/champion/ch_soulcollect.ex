@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChSoulcollect do
     target_type: :self,
     sp_cost: [20],
     cast_time: [renewal: [0], pre_renewal: [2_000]],
-    fixed_cast_time: [renewal: [1_000], pre_renewal: []]
+    fixed_cast_time: [renewal: [1_000], pre_renewal: []],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

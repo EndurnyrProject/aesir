@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDouble do
     display_name: "Double Attack",
     max_level: 10,
     target_type: :passive,
-    hit_count: 2
+    hit_count: 2,
+    damage_type: :damage
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive

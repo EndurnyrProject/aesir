@@ -25,7 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermode do
     duration: [10_000, 15_000, 20_000, 25_000, 30_000],
     sp_cost: [20, 30, 40, 50, 60],
     require_weapon: [:musical, :whip],
-    status: :sc_hermode
+    status: :sc_hermode,
+    damage_kind: :misc
 
   use Aesir.ZoneServer.Mmo.Skill.Performance
 

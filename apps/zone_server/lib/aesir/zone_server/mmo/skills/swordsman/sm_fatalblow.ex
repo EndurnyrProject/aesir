@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmFatalblow do
     max_level: 1,
     target_type: :passive,
     quest_skill: true,
-    quest_owner_job: :swordman
+    quest_owner_job: :swordman,
+    damage_type: :damage
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive

@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnCavaliermastery do
     name: :kn_cavaliermastery,
     display_name: "Cavalier Mastery",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

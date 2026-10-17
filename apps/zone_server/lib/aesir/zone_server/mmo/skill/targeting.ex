@@ -470,12 +470,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   defp body_locked?(_body_state, definition, {:cast_end, _item?}), do: damage_cast?(definition)
   defp body_locked?(_body_state, _definition, :splash), do: true
 
-  # The source's damage cast type: not ground, support or self (an enemy-aimed
-  # combo is `:target_enemy` here), and not flagged as dealing no damage.
-  defp damage_cast?(%Definition{damage_type: :damage, target_type: type}),
-    do: type not in [:ground, :self, :target_ally, :passive]
-
-  defp damage_cast?(_definition), do: false
+  defp damage_cast?(%Definition{} = definition), do: Definition.cast_type(definition) == :damage
 
   defp performance_locked?(type, id, %Definition{id: skill_id}, {:cast_end, _item?}),
     do: not StatusInterpreter.performance_allows_skill?(type, id, skill_id)

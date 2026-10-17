@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifChange do
     sp_cost: List.duplicate(100, 3),
     duration: [60_000, 180_000, 300_000],
     cooldown: [600_000, 900_000, 1_200_000],
-    status: :sc_change
+    status: :sc_change,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

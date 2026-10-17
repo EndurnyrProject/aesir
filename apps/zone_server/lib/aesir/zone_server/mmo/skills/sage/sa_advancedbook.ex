@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAdvancedbook do
     name: :sa_advancedbook,
     display_name: "Advanced Book",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive

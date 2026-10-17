@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsKatar do
     name: :as_katar,
     display_name: "Katar Mastery",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 

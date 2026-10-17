@@ -21,7 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMoonlit do
     knockback: 2,
     duration: [20_000, 25_000, 30_000, 35_000, 40_000],
     sp_cost: [30, 40, 50, 60, 70],
-    require_weapon: [:musical, :whip]
+    require_weapon: [:musical, :whip],
+    damage_kind: :misc
 
   use Aesir.ZoneServer.Mmo.Skill.Ensemble
 

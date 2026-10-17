@@ -19,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart do
     damage_type: :no_damage,
     sp_cost: [40],
     quest_skill: true,
-    quest_owner_job: :merchant
+    quest_owner_job: :merchant,
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler

@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoTripleattack do
     display_name: "Raging Trifecta Blow",
     max_level: 10,
     target_type: :passive,
-    hit_count: -3
+    hit_count: -3,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas

@@ -39,6 +39,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   a Hiding target; IsNpc and Splash change how a splash recipient's skill use is
   checked. They are mode-keyable and never inferred from other fields.
 
+  `damage_kind` is the skill DB `Type` (`:none` when the DB sets none) and
+  `damage_type` its `NoDamage` damage flag, both exactly as each mode's DB
+  declares them. Neither is the cast type: whether a cast resolves as a damage
+  cast also depends on how it is targeted (`cast_type/1`).
+
   `allow_when_hidden` mirrors the source's AllowWhenHidden flag: a Hiding
   player may use the skill, and its splash or ground hits still land while the
   caster stays hidden. It is mode-keyable.
@@ -94,11 +99,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           | :ground
           | :passive
 
-  @typedoc "Whether casting deals damage (rAthena `DamageFlags.NoDamage`)."
+  @typedoc "The skill DB `NoDamage` damage flag: `:no_damage` when it is set."
   @type damage_type :: :damage | :no_damage
 
-  @typedoc "Which damage calculator a skill dispatches to (rAthena skill type)."
-  @type damage_kind :: :weapon | :magic | :misc
+  @typedoc "The skill DB `Type`: weapon, magic, misc, or none."
+  @type damage_kind :: :weapon | :magic | :misc | :none
+
+  @typedoc """
+  How a completed cast resolves: on the ground, as a no-damage cast, or as a
+  damage cast (see `cast_type/1`).
+  """
+  @type cast_type :: :ground | :no_damage | :damage
 
   @typedoc """
   Which value feeds the physical base-damage step: the equipped weapon
@@ -297,7 +308,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     ranged_single_unit: :boolean,
     after_cast_delay: {:list, :integer},
     cooldown: {:list, :integer},
-    damage_kind: {:enum, [:weapon, :magic, :misc]},
+    damage_kind: {:enum, [:weapon, :magic, :misc, :none]},
     damage_base: {:enum, [:weapon, :shield]},
     item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}},
     requires: {:list, {:enum, Requirement.all()}},
@@ -455,6 +466,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
         raise ArgumentError, "unknown quest_owner_job #{inspect(owner)} in #{inspect(module)}"
     end
   end
+
+  @doc """
+  The skill's cast type: a ground skill is `:ground`; a self or support skill,
+  or one flagged as dealing no damage, is `:no_damage`; every other skill is
+  `:damage`. An enemy-aimed combo is declared `:target_enemy`, so it resolves as
+  a damage cast; a `:target_any` skill resolves by its no-damage flag.
+  """
+  @spec cast_type(t()) :: cast_type()
+  def cast_type(%__MODULE__{target_type: :ground}), do: :ground
+
+  def cast_type(%__MODULE__{target_type: type})
+      when type in [:self, :target_ally, :target_resurrection],
+      do: :no_damage
+
+  def cast_type(%__MODULE__{damage_type: :no_damage}), do: :no_damage
+  def cast_type(%__MODULE__{}), do: :damage
 
   @doc """
   Resolves a skill's declared range to a plain cell count for `level`.

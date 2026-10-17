@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
     target_type: :target_ally,
     damage_type: :no_damage,
     range: 7,
-    sp_cost: [100]
+    sp_cost: [100],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage

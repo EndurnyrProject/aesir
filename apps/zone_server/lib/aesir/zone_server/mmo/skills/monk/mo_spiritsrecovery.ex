@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSpiritsrecovery do
     name: :mo_spiritsrecovery,
     display_name: "Spiritual Cadence",
     max_level: 5,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas

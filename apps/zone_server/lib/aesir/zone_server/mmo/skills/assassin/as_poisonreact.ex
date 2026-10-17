@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsPoisonreact do
     display_name: "Poison React",
     max_level: 10,
     target_type: :self,
-    damage_type: :no_damage,
+    damage_type: :damage,
     sp_cost: [25, 30, 35, 40, 45, 50, 55, 60, 45, 45],
     duration: [
       20_000,

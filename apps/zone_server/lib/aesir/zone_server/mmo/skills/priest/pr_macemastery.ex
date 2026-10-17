@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemastery do
     name: :pr_macemastery,
     display_name: "Mace Mastery",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_type: :damage
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive

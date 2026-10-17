@@ -16,7 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGraffiti do
     range: 1,
     unit_duration: [180_000],
     sp_cost: [15],
-    item_cost: [%{id: 716, amount: 1}]
+    item_cost: [%{id: 716, amount: 1}],
+    damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
