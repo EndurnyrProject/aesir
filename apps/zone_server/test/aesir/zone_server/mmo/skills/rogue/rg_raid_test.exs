@@ -85,6 +85,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaidTest do
     assert {:ok, ^caster} = RgRaid.cast(caster, :self, 3, RgRaid.definition())
   end
 
+  test "strikes targetable ground cells without trying to inflict character statuses" do
+    caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 150, y: 150}
+
+    cell = %Aesir.ZoneServer.Mmo.Skill.Unit.Cell{
+      cell_id: 77,
+      group_id: 1,
+      map_name: "prontera",
+      x: 151,
+      y: 150,
+      hp: 100
+    }
+
+    stub(StatusInterpreter, :remove_status, fn :player, 1_000, :sc_hiding -> :ok end)
+
+    stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, _ ->
+      [{:skill_unit, 77}]
+    end)
+
+    stub(TargetResolver, :resolve, fn {:skill_unit, 77} -> {:ok, self(), cell, :skill_unit} end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, {:skill_unit, 77}, _ ->
+      {:ok, %{hit?: true}}
+    end)
+
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, ^caster} = RgRaid.cast(caster, :self, 3, RgRaid.definition())
+  end
+
   defp mob(id, x, y) do
     %MobState{
       instance_id: id,

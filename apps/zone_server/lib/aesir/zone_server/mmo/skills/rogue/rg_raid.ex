@@ -90,10 +90,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
 
   defp enemy?(caster, target_ref) do
     case TargetResolver.resolve(target_ref) do
+      {:ok, _pid, _cell, :skill_unit} -> true
       {:ok, _pid, target, _unit_type} -> Targeting.validate_enemy(caster, target) == :ok
       _ -> false
     end
   end
+
+  defp apply_riders(_source, {:skill_unit, _cell_id}, _level), do: :ok
 
   defp apply_riders({source_type, source_id}, {target_type, target_id}, level) do
     success_rate = 10 + 3 * level

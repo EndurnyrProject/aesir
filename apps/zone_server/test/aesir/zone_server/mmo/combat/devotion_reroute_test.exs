@@ -112,6 +112,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
     }
   end
 
+  test "an instant zero-damage skill still forwards to the Crusader" do
+    crusader = spawn_session(:crusader)
+    arm_devotion(make_ref())
+    stub_alive_crusader(crusader)
+    stub_positions(in_range_pos())
+
+    {0, hit_info} =
+      DamageApplication.prepare_unit_damage(
+        :player,
+        @devotee_id,
+        0,
+        %{skill_id: 5, dmg_type: :physical, proc: %{immediate?: true}, coma?: true},
+        @attacker_id
+      )
+
+    assert hit_info.devotion_rerouted?
+    refute hit_info.coma?
+    assert_receive {:crusader, 0, {:player, @attacker_id}}
+  end
+
   describe "devotion damage reroute" do
     test "redirects one dual-component aggregate and zeroes the devotee components" do
       devotee = spawn_session(:devotee)

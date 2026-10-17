@@ -39,7 +39,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   Skill magic damage is reduced by the target's equipment first, then the
   target's damage statuses run in their fixed stage order. On siege ground,
   eligibility precedes mutable hooks and absorption precedes the map rate.
-  Devotion then forwards the settled amount when it is above zero. Raw costs
+  Devotion then forwards a skill hit's settled amount even when it is zero;
+  a normal swing forwards only positive damage. Raw costs
   and status ticks do not acquire an attack's map rate.
 
   Attack paths that render damage must call this before constructing their
@@ -635,12 +636,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   # Redirects damage aimed at a devoted player to its Crusader. Runs entirely
   # against StatusStorage and the spatial index (no session calls), so the
-  # decision is safe inside the attacker's own process. Only real, positive,
-  # non-reflected/non-redirected damage from a distinct attacker is eligible;
+  # decision is safe inside the attacker's own process. A skill forwards even
+  # zero damage; a normal swing needs positive damage. Only non-reflected,
+  # non-redirected damage from a distinct attacker is eligible;
   # self-damage (Grand Cross) carries `attacker_id == target_id` and is skipped.
   defp reroute_to_crusader(:player, target_id, damage, hit_info, attacker)
-       when damage > 0 and not is_nil(attacker) do
-    if attacker_id(attacker) != target_id and reroutable?(hit_info) do
+       when not is_nil(attacker) do
+    skill? = is_integer(hit_info[:skill_id]) and hit_info[:skill_id] > 0
+
+    if (damage > 0 or skill?) and attacker_id(attacker) != target_id and reroutable?(hit_info) do
       dispatch_reroute(target_id, damage, hit_info, attacker)
     else
       :not_rerouted

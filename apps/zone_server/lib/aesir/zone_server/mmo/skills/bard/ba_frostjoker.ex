@@ -38,10 +38,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
@@ -112,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker do
 
     map_name
     |> SpatialIndex.get_all_units_in_range(x, y, area_size)
-    |> Enum.filter(&(elem(&1, 0) in [:player, :mob]))
+    |> Enum.filter(&(elem(&1, 0) in [:player, :mob, :homunculus]))
     |> Enum.each(&apply_freeze(&1, payload, caster, level))
   end
 
@@ -153,7 +155,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker do
     end
   end
 
-  defp eligibility(caster, target, level) do
+  defp eligibility(%PlayerState{} = caster, %HomunculusState{} = target, level) do
+    owner = UnitRegistry.get_unit(:player, target.owner_character_id)
+
+    party? =
+      target.owner_character_id == caster.character_id or
+        (caster.party_id > 0 and
+           match?({:ok, {_, %{party_id: party_id}, _}} when party_id == caster.party_id, owner))
+
+    cond do
+      not Unit.living?(target) -> {:error, :target_dead}
+      party? -> {:ok, party_chance(level), 15_000}
+      true -> enemy_eligibility(caster, target, level)
+    end
+  end
+
+  defp eligibility(caster, target, level), do: enemy_eligibility(caster, target, level)
+
+  defp enemy_eligibility(caster, target, level) do
     case Targeting.validate_enemy(caster, target) do
       :ok -> {:ok, enemy_chance(level), enemy_freeze_duration()}
       {:error, reason} -> {:error, reason}

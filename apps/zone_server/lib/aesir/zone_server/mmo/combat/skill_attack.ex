@@ -495,9 +495,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       opts,
       damage_calculator,
       weapon_hit_metadata,
-      &Targeting.validate_enemy/2
+      &validate_physical_skill_target(&1, &2, Keyword.fetch!(opts, :skill_id))
     )
   end
+
+  defp validate_physical_skill_target(_attacker, %{unit_type: :skill_unit}, 214), do: :ok
+
+  defp validate_physical_skill_target(attacker, target, _skill_id),
+    do: Targeting.validate_enemy(attacker, target)
 
   defp execute_single_target_attack(
          caster_state,
