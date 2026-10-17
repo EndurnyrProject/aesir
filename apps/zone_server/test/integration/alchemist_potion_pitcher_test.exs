@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Integration.AlchemistPotionPitcherTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
@@ -8,8 +9,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPotionPitcherTest do
   alias Aesir.Net.HomunculusPrivateState
   alias Aesir.Net.SkillCast
   alias Aesir.Repo
-  alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
-  alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -32,17 +32,12 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPotionPitcherTest do
     seed_session(caster.pid, seed)
     :rand.seed(:exsss, seed)
     roll = 45 + :rand.uniform(21) - 1
-    caster_amount = AmPotionpitcher.scale_caster_bonus(roll, 1, 0)
 
     before = PlayerSession.get_state(caster.pid).game_state
+    vit = PlayerStats.get_effective_stat(before.stats, :vit)
 
-    expected_recovery =
-      PotionRecovery.recover({:potion, :hp, caster_amount}, %{
-        learning_potion: 0,
-        effective_vit: PlayerStats.get_effective_stat(before.stats, :vit),
-        effective_int: PlayerStats.get_effective_stat(before.stats, :int),
-        item_heal_rate: PlayerStats.get_item_heal_rate(before.stats)
-      })
+    # Learned Potion Pitcher 5 (+50%) even when cast at level 1, then the VIT term.
+    expected_recovery = div(div(roll * 150, 100) * (100 + 2 * vit), 100)
 
     cast(caster.pid, caster.character.id)
 
@@ -68,18 +63,14 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPotionPitcherTest do
     seed_session(caster.pid, seed)
     :rand.seed(:exsss, seed)
     roll = 45 + :rand.uniform(21) - 1
-    caster_amount = AmPotionpitcher.scale_caster_bonus(roll, 1, 0)
+    :ok = StatusStorage.apply_status(:player, recipient.character.id, :sc_inchealrate, val1: 50)
 
     before_caster = PlayerSession.get_state(caster.pid).game_state
     recipient_state = PlayerSession.get_state(recipient.pid).game_state
+    vit = PlayerStats.get_effective_stat(recipient_state.stats, :vit)
 
-    expected_recovery =
-      PotionRecovery.recover({:potion, :hp, caster_amount}, %{
-        learning_potion: 0,
-        effective_vit: PlayerStats.get_effective_stat(recipient_state.stats, :vit),
-        effective_int: PlayerStats.get_effective_stat(recipient_state.stats, :int),
-        item_heal_rate: PlayerStats.get_item_heal_rate(recipient_state.stats)
-      })
+    # The recipient's VIT counts; its Increase Heal Rate does not.
+    expected_recovery = div(div(roll * 150, 100) * (100 + 2 * vit), 100)
 
     cast(caster.pid, recipient.character.id)
 
@@ -94,7 +85,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPotionPitcherTest do
              1
   end
 
-  test "owner Homunculus receives post-rounding HP times three, capped, and publishes immediately" do
+  test "owner Homunculus receives the thrower's final HP, capped, and publishes immediately" do
     caster = start_alchemist(potions: 2, homunculus: true, hom_hp: 100)
     gid = homunculus(caster.pid).world_gid
     flush_packets()
@@ -106,14 +97,18 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPotionPitcherTest do
     assert_receive {:packet_sent, %HomunculusPrivateState{world_gid: ^gid}, _channel}, 500
   end
 
-  test "owner Homunculus SP follows canonical recovery without the HP multiplier" do
-    caster = start_alchemist(potions: 1, homunculus: true, hom_sp: 150, potion_id: 505)
+  test "owner Homunculus SP takes its INT term without the HP multiplier" do
+    caster = start_alchemist(potions: 1, homunculus: true, hom_sp: 50, potion_id: 505)
     gid = homunculus(caster.pid).world_gid
 
     cast(caster.pid, gid, 5)
 
-    assert_eventually(fn -> homunculus(caster.pid).sp > 150 end)
-    assert homunculus(caster.pid).sp in 198..200
+    assert_eventually(fn -> homunculus(caster.pid).sp > 50 end)
+
+    assert homunculus(caster.pid).sp in for(
+             roll <- 40..60,
+             do: 50 + div(div(roll * 150, 100) * 120, 100)
+           )
   end
 
   test "foreign Homunculus is rejected even for party members" do
@@ -314,9 +309,10 @@ defmodule Aesir.ZoneServer.Integration.AlchemistPotionPitcherTest do
   defp homunculus(pid), do: PlayerSession.get_state(pid).homunculus
 
   defp homunculus_hp_results(start_hp) do
+    multiplier = if GameMode.mode() == :renewal, do: 3, else: 1
+
     for roll <- 45..65 do
-      caster_amount = AmPotionpitcher.scale_caster_bonus(roll, 1, 0)
-      min(start_hp + div(caster_amount * 120, 100) * 3, 1_000)
+      min(start_hp + div(div(roll * 150, 100) * 120, 100) * multiplier, 1_000)
     end
   end
 end

@@ -59,8 +59,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   Heals the player by HP/SP amounts scaled by their item recovery bonuses and
   statuses (the `itemheal` command), for the item whose script runs (`nil` from
   an NPC script). Takes the same `opts` as `heal/2`.
+
+  A thrown potion's script (`{:potion_pitch, item_id}` source) heals no one: it
+  stages the rolled amounts as `{:potion_pitch, :flat, hp, sp}` for the thrower.
   """
   @spec item_heal(Ctx.t(), keyword()) :: Ctx.t()
+  def item_heal(%Ctx{source: {:potion_pitch, _item_id}} = ctx, opts),
+    do: pitch(ctx, :flat, opts)
+
   def item_heal(ctx, opts) do
     vitals(ctx, fn ->
       {:item_heal, healing_item(ctx.source), amount(opts, :hp), amount(opts, :sp)}
@@ -75,12 +81,24 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   change to its own state at once and stages any HP damage for the session to
   settle (status reactions, death) after the script; an NPC script applies the
   heal through the player's session. Halts `:no_player` on a detached ctx.
+
+  A thrown potion's script stages the percents as `{:potion_pitch, :percent,
+  hp, sp}` instead.
   """
   @spec percent_heal(Ctx.t(), keyword()) :: Ctx.t()
+  def percent_heal(%Ctx{source: {:potion_pitch, _item_id}} = ctx, opts),
+    do: pitch(ctx, :percent, opts)
+
   def percent_heal(ctx, opts),
     do: vitals(ctx, fn -> {:percent_heal, amount(opts, :hp), amount(opts, :sp)} end)
 
+  defp pitch(%Ctx{status: {:error, _}} = ctx, _kind, _opts), do: ctx
+
+  defp pitch(ctx, kind, opts),
+    do: stage_session_effect(ctx, {:potion_pitch, kind, amount(opts, :hp), amount(opts, :sp)})
+
   defp vitals(%Ctx{status: {:error, _}} = ctx, _op), do: ctx
+  defp vitals(%Ctx{source: {:potion_pitch, _}} = ctx, _op), do: Ctx.halt(ctx, :not_throwable)
   defp vitals(%Ctx{game_state: nil} = ctx, _op), do: Ctx.halt(ctx, :no_player)
 
   defp vitals(%Ctx{source: {:item, _}} = ctx, op) do

@@ -31,8 +31,11 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
 
-  @typedoc "Tag identifying the script trigger — either an item ID or an NPC module atom."
-  @type source :: {:item, integer()} | {:npc, atom()}
+  @typedoc """
+  Tag identifying the script trigger: an item ID, an NPC module atom, or the
+  item a Potion Pitcher throws (its heals are read, not applied).
+  """
+  @type source :: {:item, integer()} | {:npc, atom()} | {:potion_pitch, integer()}
 
   @typedoc "Pipeline status: `:ok` until `halt/2` is called."
   @type status :: :ok | {:error, term()}
@@ -50,6 +53,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           | {:homunculus, homunculus_effect()}
           | {:item_skill, integer(), pos_integer(), boolean()}
           | {:script_damage, ScriptVitals.damage()}
+          | {:potion_pitch, :flat | :percent, integer(), integer()}
 
   @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]
   defstruct char_id: nil,

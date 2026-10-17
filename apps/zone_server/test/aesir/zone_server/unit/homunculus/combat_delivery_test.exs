@@ -148,41 +148,61 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
     assert registered.hp == state.homunculus.hp
   end
 
-  test "local HP potion recovery rounds before the Renewal three-times multiplier", %{
+  test "a thrown potion restores its final HP and SP with no multiplier of its own", %{
     session: session,
     gid: gid
   } do
     :sys.replace_state(session.pid, fn current ->
       current = StateCommit.commit(current, %{current.homunculus | hp: 100})
-      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, :hp, 101}, nil)
+      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, 101, 41}, nil)
       {:noreply, current} = CommandHandler.local_effect(effect, current)
       current
     end)
 
-    assert PlayerSession.get_state(session.pid).homunculus.hp == 463
+    assert %{hp: 201, sp: 191} = PlayerSession.get_state(session.pid).homunculus
   end
 
-  test "Homunculus SP potion recovery is canonical target recovery without HP's multiplier", %{
-    session: session,
-    gid: gid
-  } do
+  test "a thrown potion clamps to the effective maxima", %{session: session, gid: gid} do
     :sys.replace_state(session.pid, fn current ->
-      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, :sp, 41}, nil)
+      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, 5_000, 90}, nil)
       {:noreply, current} = CommandHandler.local_effect(effect, current)
       current
     end)
 
-    assert PlayerSession.get_state(session.pid).homunculus.sp == 199
+    assert %{hp: 1_000, sp: 200} = PlayerSession.get_state(session.pid).homunculus
   end
 
-  test "local HP potion recovery clamps to the effective maximum", %{session: session, gid: gid} do
+  test "Frenzy refuses a thrown potion's HP, not its SP", %{session: session, gid: gid} do
+    :ok = StatusStorage.apply_status(:homunculus, gid, :sc_berserk)
+    on_exit(fn -> StatusStorage.remove_status(:homunculus, gid, :sc_berserk) end)
+
     :sys.replace_state(session.pid, fn current ->
-      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, :hp, 101}, nil)
+      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, 100, 20}, nil)
       {:noreply, current} = CommandHandler.local_effect(effect, current)
       current
     end)
 
-    assert PlayerSession.get_state(session.pid).homunculus.hp == 1_000
+    assert %{hp: 800, sp: 170} = PlayerSession.get_state(session.pid).homunculus
+  end
+
+  test "a negative thrown potion is passive damage and drains SP", %{session: session, gid: gid} do
+    :sys.replace_state(session.pid, fn current ->
+      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, -300, -500}, nil)
+      {:noreply, current} = CommandHandler.local_effect(effect, current)
+      current
+    end)
+
+    assert %{hp: 500, sp: 0} = PlayerSession.get_state(session.pid).homunculus
+  end
+
+  test "a negative thrown potion beyond the current HP kills", %{session: session, gid: gid} do
+    :sys.replace_state(session.pid, fn current ->
+      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, -5_000, 0}, nil)
+      {:noreply, current} = CommandHandler.local_effect(effect, current)
+      current
+    end)
+
+    assert %{hp: 0} = PlayerSession.get_state(session.pid).homunculus
   end
 
   test "external mob damage and typed SP drains arrive asynchronously", %{

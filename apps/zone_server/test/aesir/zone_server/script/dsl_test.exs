@@ -122,6 +122,25 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert result.game_state == healed
       assert result.session_effects == []
     end
+
+    test "a thrown potion's script stages its rolled amounts and heals no one" do
+      original = %{build_ctx(hp: 100, sp: 10) | source: {:potion_pitch, 501}}
+
+      ctx =
+        original
+        |> Dsl.item_heal(hp: 45..45, sp: 3)
+        |> Dsl.percent_heal(hp: 7, sp: 2)
+
+      assert ctx.game_state == original.game_state
+
+      assert ctx.session_effects == [
+               {:potion_pitch, :flat, 45, 3},
+               {:potion_pitch, :percent, 7, 2}
+             ]
+
+      refute_received {:send, _channel, _packet}
+      assert Dsl.heal(ctx, hp: 10).status == {:error, :not_throwable}
+    end
   end
 
   describe "sc_start/4" do

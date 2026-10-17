@@ -679,12 +679,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   end
 
   describe "SC_NORECOVER_STATE" do
-    test "blocks a potion heal and SP restoration, never a final heal amount" do
+    test "blocks SP restoration, never a final heal amount" do
       :ok = StatusStorage.apply_status(:player, 1, :sc_norecover_state)
       on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_norecover_state) end)
       state = build_state(20, :idle)
 
-      assert {:noreply, ^state} = HealthHandler.apply_heal({:potion, :hp, 50}, 2, state)
       assert {:noreply, ^state} = HealthHandler.restore_sp(30, state)
 
       assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 70}}}}} =
@@ -999,20 +998,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       HealthHandler.apply_heal(20, nil, build_state(70, :idle))
     end
 
-    test "potion HP descriptor applies the recipient VIT and Learning Potion terms once" do
-      state = build_recalculable_state(50, :idle, %{learned_skills: %{227 => 2}})
+    test "a thrown potion restores its final HP and SP with no rate of the recipient" do
+      state = build_recalculable_state(50, :idle, %{learned_skills: %{227 => 2, 4 => 10}})
       state = put_in(state.game_state.stats.base_stats.vit, 10)
+      :ok = StatusStorage.apply_status(:player, 1, :sc_inchealrate, val1: 50)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_inchealrate) end)
 
-      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 76}}}}} =
-               HealthHandler.apply_heal({:potion, :hp, 20}, nil, state)
+      sp = state.game_state.stats.current_state.sp + 5
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 70, sp: ^sp}}}}} =
+               HealthHandler.apply_heal({:potion, 20, 5}, nil, state)
     end
 
-    test "potion SP descriptor applies recipient INT and restores SP" do
-      state = build_recalculable_state(50, :idle, %{learned_skills: %{227 => 2}})
-      state = put_in(state.game_state.stats.base_stats.int, 10)
+    test "Frenzy refuses a thrown potion's HP, not its SP" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_berserk)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_berserk) end)
+      state = build_recalculable_state(50, :idle, %{})
 
-      assert {:noreply, %{game_state: %{stats: %{current_state: %{sp: 36}}}}} =
-               HealthHandler.apply_heal({:potion, :sp, 20}, nil, state)
+      sp = state.game_state.stats.current_state.sp + 5
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 50, sp: ^sp}}}}} =
+               HealthHandler.apply_heal({:potion, 20, 5}, nil, state)
+    end
+
+    test "a negative thrown potion is passive damage, through Frenzy, and drains SP" do
+      test_pid = self()
+      :ok = StatusStorage.apply_status(:player, 1, :sc_berserk)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_berserk) end)
+
+      stub(StatusInterpreter, :on_damage, fn :player, 1, info ->
+        send(test_pid, {:on_damage, info})
+        :ok
+      end)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_heal({:potion, -20, -500}, nil, build_state(70, :idle))
+
+      assert game_state.stats.current_state.hp == 50
+      assert game_state.stats.current_state.sp == 0
+      assert game_state.action_state == :idle
+      assert_received {:on_damage, %{passive?: true, damage: 20}}
+    end
+
+    test "a negative thrown potion beyond the current HP kills" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_heal({:potion, -100, 0}, nil, build_state(70, :idle))
+
+      assert game_state.action_state == :dead
     end
   end
 

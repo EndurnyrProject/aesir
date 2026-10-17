@@ -510,12 +510,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   @typedoc """
   A heal as the recipient takes it: an integer is a final amount a unit in
   Frenzy refuses, `{:passive, amount}` one Frenzy does not stop (an HP drain),
-  and a potion descriptor runs the recipient's potion terms.
+  and `{:potion, hp, sp}` a thrown potion's final HP and SP, whose HP Frenzy
+  refuses.
   """
   @type heal_amount ::
           non_neg_integer()
           | {:passive, non_neg_integer()}
-          | {:potion, :hp | :sp, non_neg_integer()}
+          | {:potion, non_neg_integer(), non_neg_integer()}
 
   @doc """
   Whether a unit refuses an ordinary heal: one in Frenzy takes no HP from it.

@@ -2,13 +2,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
   @moduledoc """
   Potion Pitcher (AM_POTIONPITCHER).
 
-  The caster's skill bonuses are applied before a deferred descriptor settles
-  the item and ordinary cast costs. Delivery then lets the recipient apply its
-  own potion recovery terms without reading another player's state from the
-  caster process.
+  A player throws the level's potion (Red, Orange, Yellow, White, then Blue) at
+  itself, a party or guild member, or its own Homunculus for 1 SP with a 0.5 s
+  delay. The thrower reads the potion's script amounts without healing anyone
+  and computes the whole recovery with `Combat.PotionRecovery`; a deferred
+  descriptor settles the potion and the cast costs, then the recipient takes the
+  result as a plain heal (Frenzy refuses the HP).
 
-  Both modes throw the level's potion at an ally for 1 SP with a 0.5 s delay,
-  scaled by 10 percent per Pitcher level and 5 percent per Learning Potion level.
+  A monster throws its level's table amount on itself or a friend, with no
+  potion; a throw at the Emperium heals nothing. A player can never target the
+  Emperium (only itself, its allies and its own Homunculus).
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 231,
@@ -23,27 +26,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
     after_cast_delay: List.duplicate(500, 5),
     damage_kind: :none
 
+  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
+  alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
-  @learning_potion_id 227
-  @potions %{
-    1 => {501, :hp, 45, 65},
-    2 => {502, :hp, 105, 145},
-    3 => {503, :hp, 175, 235},
-    4 => {504, :hp, 325, 405},
-    5 => {505, :sp, 40, 60}
-  }
+  @potions %{1 => 501, 2 => 502, 3 => 503, 4 => 504, 5 => 505}
+  @emperium 1_288
+
+  # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1.
+  @compile {:no_warn_undefined, CompiledItemScripts}
 
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
@@ -80,21 +83,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
     end
   end
 
+  def validate(%MobState{}, _target, _level, _definition), do: :ok
+
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
   @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:deferred, PlayerState.t(), tuple()} | {:error, atom()}
+  @spec cast(PlayerState.t() | MobState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:deferred, PlayerState.t(), tuple()} | {:ok, MobState.t()} | {:error, atom()}
   def cast(%PlayerState{} = caster, target, level, definition) do
-    {item_id, resource, minimum, maximum} = potion_for_level(level)
+    item_id = potion_for_level(level)
 
     with :ok <- validate(caster, target, level, definition),
          index when not is_nil(index) <- ItemContainer.stackable_index(caster.inventory, item_id),
+         {:ok, recipient} <- recipient(caster, target),
+         {:ok, potion} <- read_potion(caster, item_id),
          {:ok, inventory, change} <- ItemContainer.remove(caster.inventory, index, 1) do
-      amount =
-        minimum
-        |> roll(maximum)
-        |> scale_caster_bonus(level, learning_potion_level(caster))
+      {hp, sp} = PotionRecovery.player_throw(PotionRecovery.thrower(caster), recipient, potion)
 
       updated = %{
         caster
@@ -103,8 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
             caster.pending_inventory_persist ++ [{caster.inventory, inventory, change}]
       }
 
-      {:deferred, updated,
-       {:potion_delivery, target_ref(caster, target), {:potion, resource, amount}}}
+      {:deferred, updated, {:potion_delivery, recipient.ref, {:potion, hp, sp}}}
     else
       nil -> {:error, :missing_potion}
       {:error, :not_found} -> {:error, :missing_potion}
@@ -113,26 +116,85 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
     end
   end
 
-  @doc false
-  @spec potion_for_level(1..5) :: {501..505, :hp | :sp, pos_integer(), pos_integer()}
+  def cast(%MobState{} = caster, target, level, _definition) do
+    case mob_recipient(caster, Active.target_unit_ref(caster, target)) do
+      :emperium ->
+        {:ok, caster}
+
+      {:ok, recipient} ->
+        {hp, sp} = PotionRecovery.monster_throw(level, recipient)
+        deliver_from_mob(recipient.ref, hp, sp, caster.instance_id)
+        {:ok, caster}
+
+      :error ->
+        {:error, :invalid_target}
+    end
+  end
+
+  @doc "The potion a player throws at `level`."
+  @spec potion_for_level(1..5) :: 501..505
   def potion_for_level(level), do: Map.fetch!(@potions, level)
 
-  @doc false
-  @spec scale_caster_bonus(non_neg_integer(), pos_integer(), non_neg_integer()) ::
-          non_neg_integer()
-  def scale_caster_bonus(amount, level, learning_potion_level) do
-    div(amount * (100 + 10 * level + 5 * learning_potion_level), 100)
+  @doc """
+  Reads the amounts `item_id`'s script declares when thrown: the last flat
+  (`itemheal`) and the last percent (`percentheal`) heal, each rolled once.
+  """
+  @spec read_potion(PlayerState.t(), pos_integer()) ::
+          {:ok, PotionRecovery.potion()} | {:error, term()}
+  def read_potion(%PlayerState{} = caster, item_id) do
+    ctx = %Ctx{
+      char_id: caster.character_id,
+      account_id: caster.account_id,
+      connection_pid: nil,
+      game_state: caster,
+      source: {:potion_pitch, item_id}
+    }
+
+    case CompiledItemScripts.on_use(item_id, ctx) do
+      %Ctx{status: {:error, _reason} = error} ->
+        error
+
+      %Ctx{session_effects: effects} ->
+        {:ok, Enum.reduce(effects, %{hp: 0, sp: 0, per_hp: 0, per_sp: 0}, &record/2)}
+    end
   end
 
-  defp target_ref(%PlayerState{character_id: id}, :self), do: Ref.new!(:player, id)
-  defp target_ref(_caster, {:unit, {type, id}}), do: Ref.new!(type, id)
-  defp target_ref(_caster, {:unit, id}), do: Ref.new!(:player, id)
+  defp record({:potion_pitch, :flat, hp, sp}, potion), do: %{potion | hp: hp, sp: sp}
+  defp record({:potion_pitch, :percent, hp, sp}, potion), do: %{potion | per_hp: hp, per_sp: sp}
+  defp record(_effect, potion), do: potion
 
-  defp roll(minimum, maximum), do: minimum + :rand.uniform(maximum - minimum + 1) - 1
+  defp recipient(%PlayerState{character_id: id} = caster, target)
+       when target in [:self, {:unit, id}, {:unit, {:player, id}}],
+       do: {:ok, PotionRecovery.recipient(caster)}
 
-  defp learning_potion_level(caster) do
-    Learned.learned_level(caster.stats.progression.learned_skills, @learning_potion_id)
+  defp recipient(_caster, {:unit, {:homunculus, gid}}), do: registered(:homunculus, gid)
+  defp recipient(_caster, {:unit, {:player, id}}), do: registered(:player, id)
+  defp recipient(_caster, {:unit, id}) when is_integer(id), do: registered(:player, id)
+
+  defp registered(type, id) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, state, _pid}} -> {:ok, PotionRecovery.recipient(state)}
+      _missing -> {:error, :invalid_target}
+    end
   end
+
+  defp mob_recipient(%MobState{instance_id: id} = caster, {:mob, id}), do: throw_at(caster)
+
+  defp mob_recipient(_caster, {type, id}) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, state, _pid}} -> throw_at(state)
+      _missing -> :error
+    end
+  end
+
+  defp throw_at(%MobState{mob_data: %{id: @emperium}}), do: :emperium
+  defp throw_at(state), do: {:ok, PotionRecovery.recipient(state)}
+
+  defp deliver_from_mob({:mob, id}, hp, _sp, source_id),
+    do: Combat.apply_heal(:mob, id, hp, source_id)
+
+  defp deliver_from_mob({type, id}, hp, sp, source_id),
+    do: Combat.apply_heal(type, id, {:potion, hp, sp}, source_id)
 
   defp allied?(%PlayerState{} = caster, %PlayerState{} = target) do
     (caster.party_id != 0 and caster.party_id == target.party_id) or

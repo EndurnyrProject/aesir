@@ -13,7 +13,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
-  alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -96,28 +95,24 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   def handle({:apply_passive_hp_loss, _gid, _amount}, session), do: {:noreply, session}
 
-  # Renewal's three-times Homunculus bonus applies only to HP potion recovery; SP uses shared recovery unmultiplied.
-  def handle({:apply_heal, gid, {:potion, :hp, _amount} = descriptor, _source}, session) do
+  # A thrown potion's HP and SP are final: Frenzy refuses a positive HP, and a
+  # negative amount is passive damage that can kill (or drains SP).
+  def handle({:apply_heal, gid, {:potion, hp, sp}, _source}, session) do
     case active_homunculus(session, gid) do
-      {:ok, homunculus} ->
-        amount = PotionRecovery.recover(descriptor, potion_recipient_terms(homunculus)) * 3
-        updated = %{homunculus | hp: min(homunculus.hp + amount, homunculus.max_hp)}
-        notify_hp(updated)
-        {:noreply, StateCommit.commit(session, updated)}
+      {:ok, %HomunculusState{hp: current} = homunculus} when current > 0 ->
+        hp = if hp > 0 and DamageApplication.heal_refused?(:homunculus, gid), do: 0, else: hp
 
-      {:error, :stale_target} ->
-        {:noreply, session}
-    end
-  end
+        updated = %{
+          homunculus
+          | hp: min(homunculus.hp + max(hp, 0), homunculus.max_hp),
+            sp: sp |> Kernel.+(homunculus.sp) |> min(homunculus.max_sp) |> max(0)
+        }
 
-  def handle({:apply_heal, gid, {:potion, :sp, _amount} = descriptor, _source}, session) do
-    case active_homunculus(session, gid) do
-      {:ok, homunculus} ->
-        amount = PotionRecovery.recover(descriptor, potion_recipient_terms(homunculus))
-        updated = %{homunculus | sp: min(homunculus.sp + amount, homunculus.max_sp)}
-        {:noreply, StateCommit.commit(session, updated)}
+        if hp < 0,
+          do: take_damage(session, updated, -hp, %{passive?: true}, nil),
+          else: commit_damage(session, homunculus, updated)
 
-      {:error, :stale_target} ->
+      _stale_or_dead ->
         {:noreply, session}
     end
   end
@@ -392,15 +387,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
       %HomunculusState{world_gid: ^gid, lifecycle: :active} = state -> {:ok, state}
       _other -> {:error, :stale_target}
     end
-  end
-
-  defp potion_recipient_terms(%HomunculusState{} = homunculus) do
-    %{
-      learning_potion: 0,
-      effective_vit: homunculus.vit,
-      effective_int: homunculus.int,
-      item_heal_rate: 0
-    }
   end
 
   defp notify_hp(%HomunculusState{} = state) do

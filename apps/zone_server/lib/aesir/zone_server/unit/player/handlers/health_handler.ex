@@ -28,7 +28,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
-  alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -57,7 +56,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -400,8 +398,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   An integer is a heal whose amount is already final (a skill's recipe, a
   drain, a percentage restore): it takes no rate here, and a player in Frenzy
   takes none of it. `{:passive, amount}` is a heal Frenzy does not stop (an HP
-  drain). A potion descriptor runs the recipient's potion terms and is refused
-  under No Recovery. No-op when the player is dead or the amount is
+  drain). `{:potion, hp, sp}` is a thrown potion's final HP and SP: Frenzy
+  refuses a positive HP, and a negative amount is passive damage that can kill
+  (or drains SP). No-op when the player is dead or the amount is
   non-positive. Does not trigger death or cast-interrupt logic.
   """
   @spec apply_heal(DamageApplication.heal_amount(), integer() | nil, SessionState.t()) ::
@@ -410,8 +409,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     {:noreply, state}
   end
 
-  def apply_heal({:potion, _resource, _amount} = descriptor, _source_id, state) do
-    if recovery_blocked?(state), do: {:noreply, state}, else: apply_potion(descriptor, state)
+  def apply_heal({:potion, hp, sp}, _source_id, state) do
+    refused? = hp > 0 and DamageApplication.heal_refused?(:player, state.game_state.character_id)
+    apply_script_vitals({:heal, if(refused?, do: 0, else: hp), sp}, state)
   end
 
   def apply_heal({:passive, amount}, _source_id, state), do: restore_hp(amount, state)
@@ -420,21 +420,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     if DamageApplication.heal_refused?(:player, state.game_state.character_id),
       do: {:noreply, state},
       else: restore_hp(amount, state)
-  end
-
-  defp apply_potion({:potion, :hp, _amount} = descriptor, state) do
-    stats = state.game_state.stats
-
-    descriptor
-    |> PotionRecovery.recover(potion_recipient_terms(state))
-    |> scale_received_heal(state.game_state.character_id, stats)
-    |> restore_hp(state)
-  end
-
-  defp apply_potion({:potion, :sp, _amount} = descriptor, state) do
-    descriptor
-    |> PotionRecovery.recover(potion_recipient_terms(state))
-    |> do_restore_sp(state)
   end
 
   defp restore_hp(amount, state) when is_integer(amount) and amount > 0 do
@@ -454,29 +439,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   defp restore_hp(_amount, state), do: {:noreply, state}
-
-  # A thrown potion's recovery scaled by the target's Increase Heal Rate and
-  # received heal power, as before; Potion Pitcher's own recipient terms are a
-  # separate recipe.
-  defp scale_received_heal(amount, char_id, stats) do
-    status_rate =
-      :player
-      |> ModifierCalculator.get_all_modifiers(char_id)
-      |> Map.get(:received_heal_rate, 0)
-
-    equip_rate = Map.get(stats.modifiers.equipment, :heal_power2, 0)
-
-    div(amount * (100 + status_rate + equip_rate), 100)
-  end
-
-  defp potion_recipient_terms(%{game_state: %{stats: stats}}) do
-    %{
-      learning_potion: Learned.learned_level(stats.progression.learned_skills, 227),
-      effective_vit: PlayerStats.get_effective_stat(stats, :vit),
-      effective_int: PlayerStats.get_effective_stat(stats, :int),
-      item_heal_rate: PlayerStats.get_item_heal_rate(stats)
-    }
-  end
 
   @doc """
   Drains SP from the player, clamping at zero, then syncs and persists it.
