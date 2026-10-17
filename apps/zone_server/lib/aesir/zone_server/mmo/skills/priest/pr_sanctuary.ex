@@ -4,11 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   living units within one cell of them, each unit at most once a second for all
   Sanctuaries together: it heals non-undead, non-demon units below full HP (100
   per level, 777 from level 7, with the caster's and the target's heal bonuses
-  of `Combat.SkillHeal`) and instead strikes enemy undead and demons for half
-  that amount as fixed holy magic damage, pushing them 2 cells away from the
-  striking cell. Successful strikes spend a shared quota of level plus 3; heals
-  and failed strikes do not. Once it is spent the field ends after the striking
-  cell's remaining units. Magic-immune players receive no healing.
+  of `Combat.SkillHeal`) and instead strikes enemy undead and demons with a holy
+  magic attack whose base is half that amount (MDEF ignored), pushing them 2
+  cells away from the striking cell. Successful strikes spend a shared quota of
+  level plus 3; heals and failed strikes do not. Once it is spent the field ends
+  after the striking cell's remaining units. Magic-immune players receive no healing.
 
   Renewal: a 4 s cast plus 1 s fixed, and the Emperium is never healed. Pre-renewal:
   a 5 s variable cast, and the Emperium heals like any other mob. Both modes cost
@@ -186,7 +186,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
         group.level,
         :holy,
         0,
-        fixed_damage: heal_amount(group, {unit_type, unit_id}, false),
+        base_damage: heal_amount(group, {unit_type, unit_id}, false),
+        ignore_mdef: true,
         base_distance: definition().knockback,
         origin: cell,
         native_target_types: [:player, :mob, :homunculus]

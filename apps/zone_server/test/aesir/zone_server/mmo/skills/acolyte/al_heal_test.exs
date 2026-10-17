@@ -111,16 +111,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
   end
 
   describe "cast/4 — undead target deals holy damage instead of healing" do
-    test "an undead-element enemy calls execute_magic_damage with :holy, not apply_heal",
+    test "an undead-element enemy takes a holy magic attack on the strike amount, not apply_heal",
          %{caster: caster, definition: definition} do
       stub(Combat, :resolve_combatant, fn _id ->
         {:ok, enemy(%{race: :undead, element: {:undead, 1}})}
       end)
 
-      expect(Combat, :execute_magic_damage, fn _caster, @ally_id, 200, opts ->
-        assert Keyword.fetch!(opts, :element) == :holy
-        assert Keyword.fetch!(opts, :skill_id) == 28
-        assert Keyword.fetch!(opts, :skill_level) == 5
+      reject(&Combat.apply_heal/4)
+
+      expect(Combat, :execute_magic_attack, fn _caster, @ally_id, opts ->
+        assert Enum.sort(opts) ==
+                 Enum.sort(
+                   skill_id: 28,
+                   skill_level: 5,
+                   element: :holy,
+                   base_damage: 200,
+                   ignore_mdef: true,
+                   skip_range: true
+                 )
+
         {:ok, {:mob, @ally_id}}
       end)
 
@@ -133,7 +142,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
         {:ok, enemy(%{race: :demi_human, element: {:undead, 1}})}
       end)
 
-      expect(Combat, :execute_magic_damage, fn _caster, @ally_id, 200, _opts ->
+      expect(Combat, :execute_magic_attack, fn _caster, @ally_id, opts ->
+        assert opts[:base_damage] == 200
         {:ok, {:mob, @ally_id}}
       end)
 
@@ -204,6 +214,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
     end)
 
     expect(Combat, :apply_heal, fn :player, @ally_id, 731, 9001 -> :ok end)
+
+    assert {:ok, ^mob} = AlHeal.cast(mob, {:unit, @ally_id}, 5, definition)
+  end
+
+  test "only a player's Heal strikes: a monster heals an undead enemy", %{definition: definition} do
+    mob = mob_caster(base_level: 50, int: 50, matk: 50)
+
+    stub(Combat, :resolve_combatant, fn _id ->
+      {:ok,
+       enemy(%{
+         race: :undead,
+         element: {:undead, 1},
+         unit_type: :player,
+         social_root: {:player, @ally_id}
+       })}
+    end)
+
+    reject(&Combat.execute_magic_attack/3)
+    expect(Combat, :apply_heal, fn :player, @ally_id, 350, 9001 -> :ok end)
 
     assert {:ok, ^mob} = AlHeal.cast(mob, {:unit, @ally_id}, 5, definition)
   end

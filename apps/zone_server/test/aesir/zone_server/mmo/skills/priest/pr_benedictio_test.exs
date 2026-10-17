@@ -277,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     refute_received {:buff, 2_004}
   end
 
-  test "the immediate enemy pass deals Heal-formula magic only to undead and demon characters" do
+  test "the immediate enemy pass strikes undead and demon characters with a Heal-based magic attack" do
     test_pid = self()
     {_minimal, _west, _east} = register_formation()
     caster = register_player(%{real_player(@caster_id, 150, 150) | dir: 4})
@@ -293,8 +293,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
       [{:mob, 3_001}, {:mob, 3_002}, {:mob, 3_003}, {:mob, 3_004}]
     end)
 
-    stub(Combat, :execute_magic_damage, fn ^caster, target_id, damage, opts ->
-      send(test_pid, {:damage, target_id, damage, opts})
+    stub(Combat, :execute_magic_attack, fn ^caster, target_id, opts ->
+      send(test_pid, {:damage, target_id, opts[:base_damage], opts})
       {:ok, {:mob, target_id}}
     end)
 
@@ -309,6 +309,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
       assert opts[:skill_id] == 69
       assert opts[:skill_level] == 5
       assert opts[:element] == :neutral
+      assert opts[:ignore_mdef]
+      refute opts[:ignore_element]
       assert opts[:skip_range]
     end
 

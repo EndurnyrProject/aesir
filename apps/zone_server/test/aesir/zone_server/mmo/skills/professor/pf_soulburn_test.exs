@@ -56,18 +56,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
   end
 
   test "a successful level 3 roll empties the target's SP without damage" do
-    reject(&MagicAttack.execute_magic_damage/4)
+    reject(&MagicAttack.execute_magic_attack/3)
 
     assert {:ok, _caster} = cast(3, 60)
     assert_received {:drained, {:player, 3001}}
   end
 
-  test "a successful level 5 roll also deals twice the target's SP, ignoring element" do
+  test "a successful level 5 roll also strikes with twice the target's SP as the magic base" do
     test_pid = self()
 
-    expect(MagicAttack, :execute_magic_damage, fn _caster, {:player, 3001}, 80, opts ->
-      assert opts[:ignore_element]
-      assert opts[:skip_range]
+    expect(MagicAttack, :execute_magic_attack, fn _caster, {:player, 3001}, opts ->
+      assert Enum.sort(opts) ==
+               Enum.sort(skill_id: 375, skill_level: 5, base_damage: 80, skip_range: true)
+
       send(test_pid, :damaged)
       {:ok, {:player, 3001}}
     end)
@@ -77,9 +78,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
     assert_received {:drained, {:player, 3001}}
   end
 
-  test "a failed level 5 roll burns the caster for twice the SP left on the paid pool" do
+  test "a failed level 5 roll strikes the caster with twice the SP left on the paid pool" do
     reject(&Resource.drain_sp_percent/2)
-    expect(MagicAttack, :deal_damage, fn {:player, 1001}, 60, :neutral, :skill -> :ok end)
+    reject(&MagicAttack.deal_damage/4)
+
+    expect(MagicAttack, :execute_self_magic_attack, fn %PlayerState{character_id: 1001}, opts ->
+      assert Enum.sort(opts) == Enum.sort(skill_id: 375, skill_level: 5, base_damage: 60)
+      {:ok, {:player, 1001}}
+    end)
 
     caster = put_in(@caster.stats.current_state.sp, 30)
 
@@ -92,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
   end
 
   test "a successful roll leaves the caster's own SP alone" do
-    stub(MagicAttack, :execute_magic_damage, fn _caster, _target, _amount, _opts ->
+    stub(MagicAttack, :execute_magic_attack, fn _caster, _target, _opts ->
       {:ok, {:player, 3001}}
     end)
 
@@ -112,14 +118,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
 
   test "a failed level 5 roll empties the caster" do
     reject(&Resource.drain_sp_percent/2)
-    stub(MagicAttack, :deal_damage, fn {:player, 1001}, _damage, :neutral, :skill -> :ok end)
+    stub(MagicAttack, :execute_self_magic_attack, fn _caster, _opts -> {:ok, {:player, 1001}} end)
 
     assert {:ok, caster} = cast(5, 71)
     assert caster.stats.current_state.sp == 0
   end
 
   test "a failed lower-level roll only empties the caster's SP" do
-    reject(&MagicAttack.deal_damage/4)
+    reject(&MagicAttack.execute_self_magic_attack/2)
 
     assert {:ok, caster} = cast(2, 51)
     assert caster.stats.current_state.sp == 0

@@ -1,11 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   @moduledoc """
   Soul Siphon (PF_SOULBURN). Targets players only. A `30 + 10 * level` percent
-  chance (70% at most) to empty the target's SP; at level 5 the target also takes magic damage equal
-  to twice the SP it had, ignoring element and cards. On a failed roll the same
-  happens to the Professor instead: their SP empties and, at level 5, they take
-  twice the SP they have left after paying the cost as damage, which can kill
-  them. A monster's SP never empties.
+  chance (70% at most) to empty the target's SP; at level 5 the target also
+  takes a magic attack whose base is twice the SP it had, reduced by MDEF but
+  ignoring element and cards. On a failed roll the same
+  happens to the Professor instead: their SP empties and, at level 5, the same
+  magic attack strikes them on twice the SP they have left after paying the
+  cost, reduced by their own MDEF, which can kill them. A monster's SP never empties.
 
   Identical in both modes: 80 to 120 SP, 9 cells, a 10 s cooldown (15 s at
   level 5). Monsters cast it through `mob_cast/5`.
@@ -72,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   defp siphon(caster, target, level, definition, rng) do
     if rng.(100) <= success_chance(level),
       do: drain(caster, target, level, definition),
-      else: backfire(caster, level)
+      else: backfire(caster, level, definition)
   end
 
   defp drain(caster, target, level, definition) do
@@ -84,23 +85,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
   end
 
   defp burn(caster, target, damage, definition) do
-    MagicAttack.execute_magic_damage(caster, target, damage,
+    MagicAttack.execute_magic_attack(caster, target,
       skill_id: definition.id,
       skill_level: 5,
-      skip_range: true,
-      ignore_element: true
+      base_damage: damage,
+      skip_range: true
     )
   end
 
-  defp backfire(caster, level) do
+  defp backfire(caster, level, definition) do
     if level == 5 do
-      type = caster.__struct__.get_unit_type(caster)
-
-      MagicAttack.deal_damage(
-        {type, caster.__struct__.get_unit_id(caster)},
-        own_sp(caster) * 2,
-        :neutral,
-        :skill
+      MagicAttack.execute_self_magic_attack(caster,
+        skill_id: definition.id,
+        skill_level: 5,
+        base_damage: own_sp(caster) * 2
       )
     end
 

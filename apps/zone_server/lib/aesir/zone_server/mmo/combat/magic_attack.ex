@@ -81,10 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   @doc """
   Applies an explicit damage amount as a single magic hit of the given element,
-  bypassing MATK and MDEF.
-
-  Intended for the Heal undead/demon branch: the already-computed heal value is
-  delivered as holy damage, so MATK and MDEF play no role. The amount is raised to
+  bypassing MATK, cardfix and MDEF. The amount is raised to
   the magic minimum of 1 and then takes one attribute step, so an immune target
   takes 0. An infinite-defense target (`Combatant.infinite_defense?/2`) takes exactly 1. Resolves and range-checks the target
   identically to `execute_magic_attack/3`, broadcasts a `SkillDamage` packet, and
@@ -95,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:skill_id` / `:skill_level` — identify the skill for the damage packet (required).
     - `:element` — attack element applied against the target's element resistance
       (default `:neutral`).
-    - `:ignore_element` — deliver `amount` without the element table (Soul Siphon)
+    - `:ignore_element` — deliver `amount` without the element table
       (default `false`).
     - `:skip_range` — skip only the distance check (which gates on the caster's
       *weapon* attack range) for a cast whose skill range the interpreter already
@@ -259,9 +256,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   `:damage_scale` (default `1`) multiplies the computed damage before delivery
   and re-clamps to a floor of 1.
 
-  `:base_damage` replaces the MATK roll with a skill formula's base; the skill
-  ratio, cardfix, defense and element steps still run. `:ignore_mdef` skips
-  both MDEF components (IgnoreDefense).
+  `:base_damage` is a skill's own base replacing the MATK roll, S.MAtk, the
+  skill ratio and the flat MATK; cardfix, skill rates, defense and element still
+  run. `:ignore_mdef` skips both MDEF components (IgnoreDefense).
 
   The canonical skill knockback options are `:base_distance`, `:origin`,
   `:native_enabled`, `:native_target_types`, and `:native_requires_survival`.
@@ -596,6 +593,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:skill_ratio` - percent of base MATK each hit deals (default `100`)
     - `:bonus_matk` - flat MATK added after the skill-ratio step (default `0`)
+    - `:base_damage` - a skill's own base replacing the MATK roll, S.MAtk, the
+      skill ratio and `:bonus_matk` (the heal skills' strike); later stages run
+    - `:ignore_mdef` - skip both MDEF components (IgnoreDefense) (default `false`)
     - `:element` - the skill's magic element (default `:neutral`)
     - `:hit_divisions` - signed divisions of one calculated attack (default `1`);
       the packet shows the normalized count
@@ -622,7 +622,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   @spec execute_magic_attack(struct(), integer() | Ref.t(), keyword()) ::
           {:ok, Ref.t() | :suppressed | %{hit?: boolean(), damage: integer()}}
           | {:error, atom()}
-  def execute_magic_attack(caster_state, target_ref, opts) do
+  def execute_magic_attack(caster_state, target_ref, opts),
+    do: magic_attack(caster_state, target_ref, opts, :relation)
+
+  @doc """
+  Executes a magic skill whose target is the caster itself (Soul Siphon's
+  backfire).
+
+  Runs `execute_magic_attack/3` against the caster's own unit, skipping only the
+  relation checks a unit cannot pass against itself: the enemy relation and the
+  siege friendliness rule. Everything else runs as for any target, the caster's
+  own MDEF, cards and element included, as do magic immunity and reflection.
+  Takes the same options; `:skip_range` is implied.
+  """
+  @spec execute_self_magic_attack(struct(), keyword()) ::
+          {:ok, Ref.t() | :suppressed | %{hit?: boolean(), damage: integer()}}
+          | {:error, atom()}
+  def execute_self_magic_attack(caster_state, opts) do
+    module = caster_state.__struct__
+    self_ref = {module.get_unit_type(caster_state), module.get_unit_id(caster_state)}
+    magic_attack(caster_state, self_ref, Keyword.put(opts, :skip_range, true), :self)
+  end
+
+  defp magic_attack(caster_state, target_ref, opts, relation) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
@@ -636,8 +658,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          target_id <- target.unit_id,
          :ok <- AttackValidator.validate(attacker, target, opts),
-         :ok <- Targeting.validate_enemy(attacker, target),
-         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
+         :ok <- validate_relation(relation, attacker, target, skill_id),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       range = SkillRange.classify(attacker, target, skill_id, skill_level)
 
@@ -647,6 +668,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           skill_ratio: skill_ratio,
           bonus_matk: bonus_matk,
           skill_id: skill_id,
+          base_matk: Keyword.get(opts, :base_damage),
           ignore_mdef: Keyword.get(opts, :ignore_mdef, false),
           attack_flag: BattleFlags.build(:magic, range, true)
         )
@@ -703,6 +725,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       :suppressed -> {:ok, :suppressed}
       error -> error
     end
+  end
+
+  defp validate_relation(:self, _attacker, _target, _skill_id), do: :ok
+
+  defp validate_relation(:relation, attacker, target, skill_id) do
+    with :ok <- Targeting.validate_enemy(attacker, target),
+         do: Rules.validate_target(attacker, target, %{skill_id: skill_id})
   end
 
   @doc """

@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -38,18 +39,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
     assert {:ok, ^caster} = PrAspersio.cast(caster, :self, 3, definition)
   end
 
-  test "Aspersio deals fixed Holy magic damage to an undead enemy" do
+  test "Aspersio strikes an undead enemy with a 40 base holy magic attack ignoring MDEF" do
     caster = %{character_id: 1_000}
 
     stub(Combat, :resolve_combatant, fn 2_000 ->
       {:ok, %{unit_type: :mob, race: :undead, element: {:undead, 1}}}
     end)
 
-    expect(Combat, :execute_magic_damage, fn ^caster, 2_000, 40, opts ->
-      assert opts[:skill_id] == 68
-      assert opts[:skill_level] == 3
-      assert opts[:element] == :holy
-      assert opts[:skip_range]
+    expect(Combat, :execute_magic_attack, fn ^caster, 2_000, opts ->
+      assert Enum.sort(opts) ==
+               Enum.sort(
+                 skill_id: 68,
+                 skill_level: 3,
+                 element: :holy,
+                 base_damage: 40,
+                 ignore_mdef: true,
+                 skip_range: true
+               )
+
       {:ok, {:mob, 2_000}}
     end)
 
@@ -198,7 +205,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
       {:ok, %{unit_type: :mob, race: :undead, element: {:undead, 1}}}
     end)
 
-    expect(Combat, :execute_magic_damage, fn ^caster, 2_000, 40, _opts ->
+    expect(Combat, :execute_magic_attack, fn ^caster, 2_000, opts ->
+      assert opts[:base_damage] == 40
       {:ok, {:mob, 2_000}}
     end)
 
@@ -271,7 +279,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
         progression: %{learned_skills: learned_skills}
       }
     }
-    |> Aesir.ZoneServer.PlayerStateFixture.build()
+    |> PlayerStateFixture.build()
   end
 
   defp catalyst(amount), do: %InventoryItem{nameid: 523, amount: amount, equip: 0}

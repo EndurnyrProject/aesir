@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
@@ -260,7 +261,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
 
     casters =
       for caster_id <- [1_000, 1_001] do
-        Aesir.ZoneServer.PlayerStateFixture.build(%PlayerState{
+        PlayerStateFixture.build(%PlayerState{
           character_id: caster_id,
           map_name: "prontera",
           x: 150,
@@ -443,12 +444,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
              )
   end
 
-  test "real offensive strikes retain ground Holy damage and one cell-origin combined blow" do
+  test "real offensive strikes take the magic attack on the heal base, MDEF ignored, with one cell-origin blow" do
     target_ids = [2_001, 2_002, 2_003, 2_004]
     targets = Enum.map(target_ids, &{:mob, &1})
 
     states = %{
-      2_001 => %{mob(2_001, :demon, :shadow) | x: 151},
+      2_001 => put_in(%{mob(2_001, :demon, :shadow) | x: 151}.mob_data.mdef, 50),
       2_002 => %{mob(2_002, :demon, :water) | x: 151},
       2_003 => %{mob(2_003, :demon, :holy) | x: 151},
       2_004 => %{mob(2_004, :demon, :shadow) | x: 151}
@@ -460,7 +461,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
         position: @center,
         map_name: "prontera"
       )
-      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 70} => 3})
+      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 70} => 3, {:magic_addrace, :demon} => 20})
 
     register_caster()
     stub(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, attacker} end)
@@ -513,14 +514,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
                PrSanctuary.on_unit_hit(field, {149, 150}, target, 1_000)
              end)
 
-    # A strike is half the heal: 777 / 2 = 388, x125% against Shadow.
-    water_damage = 388
-    assert_received {:damage_packet, 2_001, 1_000, 485}
+    # The base is half the heal, 777 / 2 = 388, with MDEF ignored. Renewal takes
+    # the +20% demon cardfix before the element (465, x125% Shadow = 581);
+    # classic takes the element first (485), then the cardfix (582).
+    shadow_damage = if GameMode.mode() == :renewal, do: 581, else: 582
+    water_damage = 465
+    assert_received {:damage_packet, 2_001, 1_000, ^shadow_damage}
     assert_received {:damage_packet, 2_002, 1_000, ^water_damage}
     assert_received {:damage_packet, 2_003, 1_000, 0}
     refute_received {:damage_packet, 2_004, _, _}
 
-    assert_received {:delivered_damage, 485}
+    assert_received {:delivered_damage, ^shadow_damage}
     assert_received {:delivered_damage, ^water_damage}
     assert_received {:delivered_damage, 0}
 
@@ -536,7 +540,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     refute_receive {:"$gen_cast", {:movement, _movement}}
   end
 
-  test "damages enemy undead and demons with half the heal as fixed Holy damage, spending quota only on success" do
+  test "strikes enemy undead and demons with half the heal as a Holy magic base, spending quota only on success" do
     targets = [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}]
 
     states = %{
@@ -555,7 +559,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     expect(Combat, :apply_skill_unit_damage, 3, fn
       %{unit_id: 1_000}, :mob, id, 70, 7, :holy, 0, opts ->
         assert opts == [
-                 fixed_damage: 388,
+                 base_damage: 388,
+                 ignore_mdef: true,
                  base_distance: 2,
                  origin: {150, 150},
                  native_target_types: [:player, :mob, :homunculus]
@@ -586,7 +591,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
 
     expect(Combat, :apply_skill_unit_damage, 4, fn
       %{unit_id: 1_000}, :mob, _id, 70, 1, :holy, 0, opts ->
-        assert opts[:fixed_damage] == 50
+        assert opts[:base_damage] == 50
+        assert opts[:ignore_mdef]
         assert opts[:base_distance] == 2
         assert opts[:origin] == {150, 150}
         :ok

@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
   @moduledoc """
   Aspersio (PR_ASPERSIO). Endows a player's weapon with the holy element for 1 minute
-  plus 30 s per level, or deals 40 fixed holy magic damage to an undead enemy.
+  plus 30 s per level, or strikes an undead enemy with a holy magic attack on a
+  base of 40 that ignores MDEF, the element table and element cards.
 
   Renewal and pre-renewal agree: 9-cell range, 14 to 30 SP, one Holy Water, and a
   2 s delay.
@@ -62,10 +63,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
   end
 
   defp damage_undead(caster, target_id, level, definition) do
-    case Combat.execute_magic_damage(caster, target_id, 40,
+    case Combat.execute_magic_attack(caster, target_id,
            skill_id: definition.id,
            skill_level: level,
            element: definition.element,
+           base_damage: 40,
+           ignore_mdef: true,
            skip_range: true
          ) do
       {:ok, _ref} -> {:ok, caster}

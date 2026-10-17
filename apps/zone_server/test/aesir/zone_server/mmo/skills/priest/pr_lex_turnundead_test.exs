@@ -109,8 +109,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
 
   @tag game_mode: :renewal
   test "Turn Undead scales its Renewal MATK fallback by skill level in percent" do
-    assert PrTurnundead.fallback_skill_ratio(1) == 1
-    assert PrTurnundead.fallback_skill_ratio(10) == 10
+    assert PrTurnundead.renewal_fallback_base(300, 10) == 30
+    assert PrTurnundead.renewal_fallback_base(99, 1) == 0
 
     assert PrTurnundead.instant_kill_score(
              %{luk: 50, int: 80, base_level: 99},
@@ -154,10 +154,48 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
     stub(TargetResolver, :resolve, fn ^target_id -> {:ok, self(), target, :mob} end)
     stub(PlayerState, :get_stats, fn _caster -> %{luk: 0, int: 0, base_level: 0} end)
 
+    stub(PlayerState, :to_combatant, fn _caster ->
+      %{combat_stats: %{matk: 3_000, matk_min: 3_000, matk_max: 3_000}}
+    end)
+
+    # The first draw of this seed is 26, above the level 1 score of 10.
     :rand.seed(:exsss, {1, 2, 3})
 
     expect(Combat, :execute_magic_attack, fn %{character_id: 1_000}, ^target_id, opts ->
-      assert opts[:skill_ratio] == 1
+      assert Enum.sort(opts) ==
+               Enum.sort(
+                 skill_id: 77,
+                 skill_level: 1,
+                 element: :holy,
+                 base_damage: 30,
+                 ignore_mdef: true,
+                 skip_range: true
+               )
+
+      {:ok, {:mob, target_id}}
+    end)
+
+    assert {:ok, %{character_id: 1_000}} =
+             PrTurnundead.cast(%{character_id: 1_000}, {:unit, target_id}, 1, definition)
+  end
+
+  test "Turn Undead's kill strikes with the target's HP as the magic attack's base" do
+    {:ok, definition} = Catalog.by_id(77)
+    target_id = 2_000
+
+    target = %TargetState{
+      combatant: %{race: :undead, element: {:undead, 1}},
+      stats: %{hp: 40, max_hp: 100}
+    }
+
+    stub(TargetResolver, :resolve, fn ^target_id -> {:ok, self(), target, :mob} end)
+    stub(PlayerState, :get_stats, fn _caster -> %{luk: 99, int: 80, base_level: 70} end)
+
+    # The first draw of this seed is 26, below either mode's score.
+    :rand.seed(:exsss, {1, 2, 3})
+
+    expect(Combat, :execute_magic_attack, fn %{character_id: 1_000}, ^target_id, opts ->
+      assert opts[:base_damage] == 40
       assert opts[:element] == :holy
       assert opts[:ignore_mdef]
       assert opts[:skip_range]
@@ -180,10 +218,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
 
     stub(TargetResolver, :resolve, fn ^target_id -> {:ok, self(), target, :mob} end)
     stub(PlayerState, :get_stats, fn _caster -> %{luk: 99, int: 80, base_level: 70} end)
-    reject(&Combat.execute_magic_attack/3)
+    reject(&Combat.execute_magic_damage/4)
 
-    expect(Combat, :execute_magic_damage, fn %{character_id: 1_000}, ^target_id, 160, opts ->
+    expect(Combat, :execute_magic_attack, fn %{character_id: 1_000}, ^target_id, opts ->
+      assert opts[:base_damage] == 160
       assert opts[:element] == :holy
+      assert opts[:ignore_mdef]
       assert opts[:skip_range]
       {:ok, {:mob, target_id}}
     end)

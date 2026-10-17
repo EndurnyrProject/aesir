@@ -322,7 +322,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
   `opts` carries the hit's `:element`, `:skill_id`, `:skill_ratio`,
   `:bonus_matk`, `:ignore_mdef` and `:attack_flag` (the battle flag whose range
-  class selects range-flagged resists, default a long-range magic skill hit).
+  class selects range-flagged resists, default a long-range magic skill hit),
+  and the skill's card flags: `:ignore_atk_card` drops every attacker card
+  channel, `:ignore_def_card` every target card channel, and `:ignore_element`
+  the element channels on both sides.
   """
   @spec magic_context(map(), map(), keyword(), map(), map()) :: MagicDamage.context()
   def magic_context(attacker, defender, opts, modifiers, defender_modifiers) do
@@ -359,6 +362,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       magic: Map.get(defender_modifiers, :magic_damage_reduction, 0)
     }
 
+    {attack, taken} = apply_card_flags(attack, taken, opts)
+
     %{
       attack: attack,
       taken: taken,
@@ -375,6 +380,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       ignore_mdef?: Keyword.get(opts, :ignore_mdef, false)
     }
   end
+
+  defp apply_card_flags(attack, taken, opts) do
+    attack = if Keyword.get(opts, :ignore_atk_card, false), do: zero(attack), else: attack
+    taken = if Keyword.get(opts, :ignore_def_card, false), do: zero(taken), else: taken
+
+    if Keyword.get(opts, :ignore_element, false),
+      do: {%{attack | element_target: 0, atk_ele: 0}, %{taken | element: 0}},
+      else: {attack, taken}
+  end
+
+  defp zero(rates), do: Map.new(rates, fn {channel, _rate} -> {channel, 0} end)
 
   @doc "Rolls the half-open MATK band, falling back to its deterministic scalar."
   @spec roll_matk(map()) :: non_neg_integer()

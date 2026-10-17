@@ -1593,6 +1593,54 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     end
   end
 
+  describe "execute_self_magic_attack/2" do
+    test "the plain magic attack refuses the caster as its target" do
+      caster = build_player(@caster_id, 150, %{}, %{})
+      :ok = UnitRegistry.register_player(caster, self())
+
+      reject(&PlayerSession.apply_damage/4)
+
+      assert {:error, _reason} =
+               MagicAttack.execute_magic_attack(caster, {:player, @caster_id},
+                 skill_id: 375,
+                 skill_level: 5,
+                 base_damage: 100,
+                 skip_range: true
+               )
+    end
+
+    test "strikes the caster itself through the magic attack, its own MDEF included" do
+      test_pid = self()
+      caster_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)
+      on_exit(fn -> Process.exit(caster_pid, :kill) end)
+
+      caster = build_player(@caster_id, 150, %{}, %{})
+      :ok = UnitRegistry.register_player(caster, caster_pid)
+
+      reject(&Targeting.validate_enemy/2)
+
+      expect(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        assert packet.src_id == @caster_id
+        assert packet.target_id == @caster_id
+        assert packet.damage == 98
+        :ok
+      end)
+
+      # Base 100 against the caster's own MDEF 1 and soft MDEF 1: renewal
+      # 100 * 1001 / 1010 - 1, classic 100 * 99 / 100 - 1.
+      expect(PlayerSession, :apply_damage, fn ^caster_pid, 98, {:player, @caster_id}, _meta ->
+        :ok
+      end)
+
+      assert {:ok, {:player, @caster_id}} =
+               MagicAttack.execute_self_magic_attack(caster,
+                 skill_id: 375,
+                 skill_level: 5,
+                 base_damage: 100
+               )
+    end
+  end
+
   describe "apply_skill_unit_damage/8" do
     test "dispatches a ground magic proc to the source player session once despite divisions" do
       flag = BattleFlags.build(:magic, :long, true)

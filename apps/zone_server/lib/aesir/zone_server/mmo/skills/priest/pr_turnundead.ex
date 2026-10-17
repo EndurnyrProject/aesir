@@ -1,13 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrTurnundead do
   @moduledoc """
   Turn Undead (PR_TURNUNDEAD). Rolls an instant kill against an undead race or
-  element enemy, otherwise dealing a holy magic fallback that ignores MDEF. Status-
-  immune targets never roll the kill.
+  element enemy, otherwise a fallback. Either way the target takes a holy magic
+  attack whose base is the target's HP (kill) or the fallback, ignoring MDEF and
+  the caster's cards. Status-immune targets never roll the kill.
 
   Renewal: kill score 10 per level plus LUK, INT, and base level, plus 300 scaled by
-  missing HP (cap 700 of 1000); the fallback deals MATK times the level in percent;
-  a 0.8 s cast plus 0.2 s fixed. Pre-renewal: 20 per level and a 200 HP term; the
-  fallback deals base level plus INT plus 10 per level as fixed damage; a 1 s cast.
+  missing HP (cap 700 of 1000); the fallback base is a MATK roll times the level in
+  percent; a 0.8 s cast plus 0.2 s fixed. Pre-renewal: 20 per level and a 200 HP
+  term; the fallback base is base level plus INT plus 10 per level; a 1 s cast.
   Both modes reach 5 cells for 20 SP with a 3 s delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
@@ -28,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrTurnundead do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -90,44 +92,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrTurnundead do
   defp apply_damage(caster, target_id, caster_stats, target_stats, level, definition, opts) do
     roll = :rand.uniform(1_000) - 1
 
-    cond do
-      roll < instant_kill_score(caster_stats, target_stats, level) and
-          not Keyword.fetch!(opts, :status_immune) ->
-        Combat.execute_magic_damage(caster, target_id, target_stats.hp,
-          skill_id: definition.id,
-          skill_level: level,
-          element: definition.element,
-          skip_range: true
-        )
+    base =
+      cond do
+        roll < instant_kill_score(caster_stats, target_stats, level) and
+            not Keyword.fetch!(opts, :status_immune) ->
+          target_stats.hp
 
-      GameMode.mode() == :renewal ->
-        Combat.execute_magic_attack(caster, target_id,
-          skill_id: definition.id,
-          skill_level: level,
-          skill_ratio: fallback_skill_ratio(level),
-          element: definition.element,
-          ignore_mdef: true,
-          skip_range: true
-        )
+        GameMode.mode() == :renewal ->
+          caster
+          |> PlayerState.to_combatant()
+          |> Map.fetch!(:combat_stats)
+          |> MagicDamageCalculator.roll_matk()
+          |> renewal_fallback_base(level)
 
-      true ->
-        Combat.execute_magic_damage(
-          caster,
-          target_id,
-          fallback_damage(caster_stats, level),
-          skill_id: definition.id,
-          skill_level: level,
-          element: definition.element,
-          skip_range: true
-        )
-    end
+        true ->
+          fallback_damage(caster_stats, level)
+      end
+
+    Combat.execute_magic_attack(caster, target_id,
+      skill_id: definition.id,
+      skill_level: level,
+      element: definition.element,
+      base_damage: base,
+      ignore_mdef: true,
+      skip_range: true
+    )
   end
 
-  @doc "Renewal's failed roll deals MATK scaled by the skill level in percent."
-  @spec fallback_skill_ratio(pos_integer()) :: pos_integer()
-  def fallback_skill_ratio(level), do: level
+  @doc "Renewal's failed roll takes a MATK roll scaled by the skill level in percent."
+  @spec renewal_fallback_base(non_neg_integer(), pos_integer()) :: non_neg_integer()
+  def renewal_fallback_base(matk, level), do: div(matk * level, 100)
 
-  @doc "Pre-renewal's failed roll deals a fixed base level plus INT plus 10 per level."
+  @doc "Pre-renewal's failed roll takes base level plus INT plus 10 per level."
   @spec fallback_damage(map(), pos_integer()) :: pos_integer()
   def fallback_damage(caster_stats, level),
     do: caster_stats.base_level + caster_stats.int + 10 * level

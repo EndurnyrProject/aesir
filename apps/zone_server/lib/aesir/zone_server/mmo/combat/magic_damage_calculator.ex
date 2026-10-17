@@ -7,7 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   Renewal applies cardfix before the skill ratio and MDEF; classic applies
   cardfix after MDEF and element. Both run one attribute step after MDEF and the
   reference minimum of 1, owned here because it can burn a web; an immune element
-  deals 0. Only Renewal uses S.MAtk and MRes. `:ignore_element` skips the step.
+  deals 0. Only Renewal uses S.MAtk and MRes. The `:skill_id`'s damage flags
+  (`ignore_atk_card`, `ignore_def_card`, `ignore_element`) skip the matching card
+  channels, and `ignore_element` (or the `:ignore_element` option) the element step.
 
   An infinite-defense target (`Combatant.infinite_defense?/2`) takes exactly 1
   before any other step, fixed amounts included; delivery still divides, reduces
@@ -21,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   @typedoc "Result of a magic damage calculation. Magic never crits."
@@ -34,12 +37,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     * `:skill_ratio`: percent of rolled MATK, default `100`.
     * `:bonus_matk`: flat addition after the skill ratio, default `0`.
     * `:element`: spell element, default `:neutral`.
-    * `:skill_id`: selects equipment skill rates, never an alternate formula.
+    * `:skill_id`: selects equipment skill rates and the skill's damage flags,
+      never an alternate formula.
     * `:matk_divisor`: split a rolled MATK among splash recipients before the
       skill ratio, defense and element steps. Default `1`.
     * `:fixed_damage`: returns this amount without rolls or modifier lookups.
-    * `:base_matk`: a skill formula's base that replaces the MATK roll; every
-      later step still runs.
+    * `:base_matk`: a skill's own base that replaces the MATK roll and the
+      stages only a rolled MATK takes (S.MAtk, `:skill_ratio`, `:bonus_matk`);
+      cardfix, skill rates, MRes, MDEF and element still run.
     * `:ignore_mdef`: bypasses both MDEF components, not cardfix, element,
       skill/status channels or Renewal MRes. Default `false`.
     * `:attack_flag`: the hit's battle flag, whose range class selects the
@@ -68,15 +73,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   defdelegate roll_matk(combat_stats), to: DamageInputs
 
   defp calculate_pipeline_damage(attacker, defender, opts) do
-    matk =
-      case Keyword.get(opts, :base_matk) do
-        nil -> div(roll_matk(attacker.combat_stats), Keyword.get(opts, :matk_divisor, 1))
-        base -> base
-      end
-
+    opts = Keyword.merge(opts, skill_flags(opts))
     modifiers = combatant_modifiers(attacker)
     defender_modifiers = combatant_modifiers(defender)
     context = DamageInputs.magic_context(attacker, defender, opts, modifiers, defender_modifiers)
+
+    {matk, context} =
+      case Keyword.get(opts, :base_matk) do
+        nil ->
+          {div(roll_matk(attacker.combat_stats), Keyword.get(opts, :matk_divisor, 1)), context}
+
+        base ->
+          {base, %{context | smatk: 0, skill_ratio: 100, bonus_matk: 0}}
+      end
+
     formulas = Mechanics.magic_damage()
 
     damage =
@@ -86,6 +96,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
       |> formulas.post_element(context)
 
     {:ok, %{damage: damage, is_critical: false}}
+  end
+
+  defp skill_flags(opts) do
+    with id when is_integer(id) <- Keyword.get(opts, :skill_id),
+         {:ok, definition} <- Catalog.by_id(id) do
+      [
+        ignore_atk_card: definition.ignore_atk_card,
+        ignore_def_card: definition.ignore_def_card,
+        ignore_element: definition.ignore_element or Keyword.get(opts, :ignore_element, false)
+      ]
+    else
+      _no_skill -> []
+    end
   end
 
   defp element_step(damage, attacker, defender, opts, modifiers) do

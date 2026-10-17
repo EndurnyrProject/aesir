@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   @moduledoc """
-  Heal (AL_HEAL). Restores HP on an ally, or deals the amount as a holy magic
-  hit when the target is an enemy whose defence element is undead. A demon-race
-  target, and an undead-element target friendly to the caster, are both healed
-  normally.
+  Heal (AL_HEAL). Restores HP on an ally, or strikes an enemy whose defence
+  element is undead with a holy magic attack whose base is the strike amount,
+  ignoring MDEF but taking cardfix, skill rates and the element step. Only a
+  player's Heal strikes: a demon-race target, an undead-element target friendly
+  to the caster, and every target of a non-player caster are healed normally.
 
   The amount is `Combat.SkillHeal`'s recipe for both modes: the base from the
   caster's base level and effective INT (9999 from level 11), halved for a
@@ -35,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -65,8 +67,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   @doc """
   Casts Heal on the given target.
 
-  Branches on the target: an enemy whose defence element is undead takes the
-  amount as a holy magic hit, halved as an offensive cast; every other target
+  Branches on the target: an enemy whose defence element is undead takes a
+  holy magic attack on the halved strike amount; every other target
   (including players, allies and unresolvable targets) has the amount restored
   as HP.
   """
@@ -75,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   def cast(caster, target, level, _definition) do
     combatant = caster.__struct__.to_combatant(caster)
     target = Active.resolve_target_id(caster, target)
-    offensive? = offensive_target?(combatant, target)
+    offensive? = match?(%PlayerState{}, caster) and offensive_target?(combatant, target)
 
     amount =
       SkillHeal.amount(
@@ -105,10 +107,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   end
 
   defp attack_undead(caster, target, damage, level) do
-    case Combat.execute_magic_damage(caster, target, damage,
+    case Combat.execute_magic_attack(caster, target,
            skill_id: 28,
            skill_level: level,
            element: :holy,
+           base_damage: damage,
+           ignore_mdef: true,
            skip_range: true
          ) do
       {:ok, _ref} -> {:ok, caster}

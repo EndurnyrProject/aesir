@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   targets remain bare IDs; ground targets become `{:ground, x, y}`.
 
   Packet ownership: the combat primitives a skill's `cast/4`/`mob_cast/5` calls
-  (e.g. `Combat.execute_magic_damage/4`) broadcast their own `SkillDamage`
+  (e.g. `Combat.execute_magic_attack/3`) broadcast their own `SkillDamage`
   packets, so this module broadcasts only the mob cast bar — `SkillCasting` via
   `broadcast_casting/2` and its `CastCancel` counterpart via
   `broadcast_cast_cancel/1`.

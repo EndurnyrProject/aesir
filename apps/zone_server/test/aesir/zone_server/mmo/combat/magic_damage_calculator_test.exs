@@ -189,6 +189,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                )
     end
 
+    test "a skill's own base replaces the roll and skips S.MAtk, the skill ratio and the flat addition" do
+      # Renewal: 200 * 1010 / 1100 - 5. Classic: 200 * 90 / 100 - 5.
+      assert {:ok, %{damage: mode_value(178, 175), is_critical: false}} ==
+               MagicDamageCalculator.calculate_magic_damage(
+                 attacker(9_999, %{smatk: 50}),
+                 defender(10, 5),
+                 base_matk: 200,
+                 skill_ratio: 300,
+                 bonus_matk: 50
+               )
+    end
+
+    test "a skill's own base keeps cardfix and element when MDEF is ignored" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{{:magic_addsize, :large} => 20}
+        _, _ -> %{}
+      end)
+
+      target = defender(500, 100, {:earth, 1}) |> Map.put(:size, :large)
+
+      # Renewal: 200 * 120% cardfix, then fire on earth 150%. Classic: element, then cardfix.
+      assert {:ok, %{damage: 360, is_critical: false}} ==
+               MagicDamageCalculator.calculate_magic_damage(
+                 attacker(9_999, %{smatk: 50}),
+                 target,
+                 base_matk: 200,
+                 element: :fire,
+                 ignore_mdef: true
+               )
+    end
+
     test "element modifier multiplies after MDEF reduction" do
       expected = if GameMode.mode() == :renewal, do: 129, else: 127
 
@@ -373,12 +404,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "fixed_damage bypasses S.MAtk entirely" do
-      # smatk only applies to the rolled base_matk in the computed-damage
-      # branch (calculate_pipeline_damage), so a huge smatk here must not
-      # change the fixed result. Note: AL_HEAL's undead/demon heal-as-damage
-      # branch does NOT use this module's fixed_damage option -- it goes
-      # through Combat.execute_magic_damage/4 directly (see al_heal_test.exs
-      # for the real heal/smatk guard).
       assert {:ok, %{damage: 50, is_critical: false}} =
                MagicDamageCalculator.calculate_magic_damage(
                  attacker(9999, %{smatk: 500}),
@@ -409,6 +434,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
 
         assert damage >= 1 and damage <= mode_value(86, 85)
       end
+    end
+  end
+
+  describe "the skill's damage flags" do
+    setup do
+      attacker = c_attacker(100, %{{:magic_addrace, :formless} => 50})
+
+      defender =
+        c_defender(0, 0, unit_type: :player, equip_modifiers: %{{:subrace, :formless} => 25})
+
+      %{attacker: attacker, defender: defender}
+    end
+
+    test "IgnoreAtkCard (Turn Undead) skips the attacker's cards, not the target's", ctx do
+      # 100 * 150% = 150, then 25% off the 1000 factor: 150 - 150 * 250 / 1000.
+      assert {:ok, %{damage: 113}} =
+               MagicDamageCalculator.calculate_magic_damage(ctx.attacker, ctx.defender)
+
+      assert {:ok, %{damage: 75}} =
+               MagicDamageCalculator.calculate_magic_damage(ctx.attacker, ctx.defender,
+                 skill_id: 77
+               )
+    end
+
+    test "IgnoreAtkCard, IgnoreDefCard and IgnoreElement (Soul Siphon) skip both cards and element",
+         ctx do
+      defender = %{ctx.defender | element: {:earth, 1}}
+
+      assert {:ok, %{damage: 100}} =
+               MagicDamageCalculator.calculate_magic_damage(ctx.attacker, defender,
+                 skill_id: 375,
+                 element: :fire
+               )
+    end
+
+    test "IgnoreElement (Aspersio) skips the element step and element cards, not race cards" do
+      attacker =
+        c_attacker(100, %{{:magic_addele, :earth} => 50, {:magic_addrace, :formless} => 20})
+
+      defender = c_defender(0, 0, element: {:earth, 1})
+
+      assert {:ok, %{damage: 120}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender,
+                 skill_id: 68,
+                 element: :fire
+               )
     end
   end
 

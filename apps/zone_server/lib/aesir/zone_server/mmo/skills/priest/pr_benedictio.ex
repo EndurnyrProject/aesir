@@ -7,10 +7,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
 
   Living players in the area that are neither undead nor demon receive the holy
   armor blessing for 40 s per level; living demon enemies and enemies of undead
-  defence element instead take the Heal formula's offensive amount at the cast
-  level as fixed magic damage that ignores MDEF and carries no element. Renewal
-  and pre-renewal agree apart from the Heal formula itself: 9-cell range, 20 SP,
-  no cast.
+  defence element instead take a neutral magic attack whose base is the Heal
+  formula's offensive amount at the cast level, ignoring MDEF but taking
+  cardfix, skill rates and the element step. Renewal and pre-renewal agree apart
+  from the Heal formula itself: 9-cell range, 20 SP, no cast.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 69,
@@ -147,6 +147,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
       skill_id: definition.id,
       skill_level: level,
       element: definition.element,
+      ignore_mdef: true,
       skip_range: true
     ]
 
@@ -155,11 +156,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     |> Enum.each(fn {unit_type, target_id} ->
       with {:ok, {module, state, _pid}} <- UnitRegistry.get_unit(unit_type, target_id),
            true <- undead_or_demon?(module, state) do
-        Combat.execute_magic_damage(
+        Combat.execute_magic_attack(
           caster,
           target_id,
-          strike_damage(caster, level, {unit_type, target_id}),
-          opts
+          [base_damage: strike_damage(caster, level, {unit_type, target_id})] ++ opts
         )
       else
         _other -> :ok
