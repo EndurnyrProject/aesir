@@ -194,6 +194,21 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     assert {:ok, {2, 1, @map}} = SpatialIndex.get_unit_position(:homunculus, 700)
   end
 
+  test "a confused Homunculus walks to a random cell as far as the requested one" do
+    session = active_session()
+    :ok = StatusStorage.apply_status(:homunculus, 700, :sc_confusion, duration: 60_000)
+
+    # (2, 7) is straight south of (2, 2): no diagonal candidate keeps x at 2.
+    moving = MovementHandler.move_to(session, {2, 7})
+
+    candidates =
+      for {dx, dy} <- [{-1, 1}, {-1, -1}, {1, -1}, {1, 1}], s <- 1..5 do
+        {2 + s * dx, 2 + trunc(:math.sqrt(25 - s * s)) * dy}
+      end
+
+    assert List.last(moving.homunculus_runtime.movement_path) in candidates
+  end
+
   test "entering a map copies the owner's current walk speed onto the Homunculus" do
     session = active_session()
     session = %{session | game_state: %{session.game_state | walk_speed: 112}}

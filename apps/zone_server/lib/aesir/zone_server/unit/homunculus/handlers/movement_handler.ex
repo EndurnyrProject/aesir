@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.ConfusedWalk
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
@@ -42,7 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   def move_to(%SessionState{} = session, destination) do
     session = CastingHandler.cancel(session)
 
-    case path(session, destination) do
+    case request_path(session, destination) do
       {:ok, cells} -> start_path(session, cells, nil, false)
       {:error, _reason} -> stop(session, true)
     end
@@ -142,7 +143,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
           {:ok, SessionState.t()} | {:error, atom(), SessionState.t()}
   def follow_result(%SessionState{} = session) do
     with destination when not is_nil(destination) <- owner_adjacent_cell(session),
-         {:ok, cells} <- path(session, destination) do
+         {:ok, cells} <- request_path(session, destination) do
       {:ok, session |> CastingHandler.cancel() |> start_path(cells, nil, false)}
     else
       nil -> {:error, :invalid_goal, session}
@@ -169,7 +170,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
            distance({homunculus.x, homunculus.y}, {target_x, target_y}) > homunculus.attack_range,
          destination when not is_nil(destination) <-
            adjacent_to_target(homunculus, {target_x, target_y}),
-         {:ok, cells} <- path(session, destination) do
+         {:ok, cells} <- request_path(session, destination) do
       start_path(session, cells, target_ref, false)
     else
       false -> stop(session, false)
@@ -494,6 +495,26 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   end
 
   defp path(_session, _destination), do: {:error, :invalid_destination}
+
+  # A walk request whose destination has a path walks it, or while the
+  # Homunculus is confused the path to its random cell (`ConfusedWalk`).
+  defp request_path(session, destination) do
+    with {:ok, cells} <- path(session, destination) do
+      homunculus = session.homunculus
+      from = {homunculus.x, homunculus.y}
+
+      case ConfusedWalk.destination(
+             :homunculus,
+             homunculus.world_gid,
+             homunculus.map_name,
+             from,
+             destination
+           ) do
+        ^destination -> {:ok, cells}
+        random -> path(session, random)
+      end
+    end
+  end
 
   defp target_position({type, id}) do
     with {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(type, id),

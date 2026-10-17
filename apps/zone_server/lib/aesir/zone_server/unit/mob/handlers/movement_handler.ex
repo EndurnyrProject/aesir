@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.ConfusedWalk
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -25,6 +26,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   @doc """
   Forces the mob to path toward `{x, y}`. A mob already walking keeps its
   pending step and takes the new path from the cell that step lands on.
+
+  A request with a path stops the mob's attack, and a confused mob walks to a
+  random cell instead (`ConfusedWalk`); a random cell it cannot path to leaves
+  it where it is.
   """
   @spec handle_move_to(MobState.t(), integer(), integer(), keyword()) ::
           {:noreply, MobState.t()}
@@ -34,7 +39,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     with {:ok, map_data} <- MapCache.get(state.map_name),
          {:ok, path} <-
            Pathfinding.find_path(map_data, {state.x, state.y}, {x, y}, profile: :mob) do
-      {:noreply, walk(%{state | walk_easy: false, chase_walk: chase?}, {x, y}, path)}
+      state = MobState.stop_attack(%{state | walk_easy: false, chase_walk: chase?})
+
+      {:noreply,
+       walk_request(state, {x, y}, path, fn destination ->
+         Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob)
+       end)}
     else
       # No path found or map not loaded.
       _ -> {:noreply, state}
@@ -47,7 +57,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   (east when they share it), stopping short of the first cell it cannot walk
   on. The walk paths in a straight line for its whole length. A mob already
   walking takes it from the cell its pending step lands on. Nothing happens
-  when not even the first cell is walkable.
+  when not even the first cell is walkable. Like any walk request it stops
+  the mob's attack and is randomized under Confusion.
   """
   @spec escape(MobState.t(), {integer(), integer()}, pos_integer()) :: MobState.t()
   def escape(%MobState{x: x, y: y} = state, {from_x, from_y}, distance) do
@@ -62,9 +73,32 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
     with true <- reach > 0,
          {:ok, path} <- Pathfinding.easy_path(state.map_name, {x, y}, destination) do
-      walk(%{state | walk_easy: true, chase_walk: false}, destination, path)
+      state = MobState.stop_attack(%{state | walk_easy: true, chase_walk: false})
+
+      walk_request(state, destination, path, &Pathfinding.easy_path(state.map_name, {x, y}, &1))
     else
       _ -> state
+    end
+  end
+
+  # Walks a request whose own destination has a path: a confused mob walks to
+  # its random cell instead, re-pathed now unless it is already walking.
+  defp walk_request(state, destination, path, path_to) do
+    from = {state.x, state.y}
+
+    case ConfusedWalk.destination(:mob, state.instance_id, state.map_name, from, destination) do
+      ^destination -> walk(state, destination, path)
+      random -> walk_random(state, random, path_to)
+    end
+  end
+
+  defp walk_random(%MobState{movement_state: :moving} = state, random, _path_to),
+    do: walk(state, random, [])
+
+  defp walk_random(state, random, path_to) do
+    case path_to.(random) do
+      {:ok, path} -> walk(state, random, path)
+      _no_path -> state
     end
   end
 

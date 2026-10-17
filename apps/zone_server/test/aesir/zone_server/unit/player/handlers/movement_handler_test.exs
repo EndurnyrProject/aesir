@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.ConfusedWalk
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -272,6 +273,71 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       assert new_state.game_state.combat_target_id == nil
       assert new_state.game_state.action_state == :moving
       refute_received {:auto_attack, _}
+    end
+  end
+
+  describe "handle_request_move/4 walk request rules" do
+    setup do
+      Mimic.copy(ConfusedWalk)
+      :ok
+    end
+
+    test "a confused player walks to the random cell instead" do
+      stub(ConfusedWalk, :destination, fn :player, 1, "prontera", {50, 50}, {51, 50} ->
+        {53, 52}
+      end)
+
+      stub(Pathfinding, :find_path, fn
+        _map, {50, 50}, {51, 50} -> {:ok, [{51, 50}]}
+        _map, {50, 50}, {53, 52} -> {:ok, [{51, 51}, {52, 52}, {53, 52}]}
+      end)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
+
+      assert new_state.game_state.walk_path == [{51, 51}, {52, 52}, {53, 52}]
+    end
+
+    test "a random cell with no path starts no walk but still stops the attack" do
+      stub(ConfusedWalk, :destination, fn :player, 1, "prontera", {50, 50}, {60, 60} ->
+        {53, 52}
+      end)
+
+      stub(Pathfinding, :find_path, fn
+        _map, {50, 50}, {60, 60} -> {:ok, [{51, 51}, {60, 60}]}
+        _map, {50, 50}, {53, 52} -> {:error, :no_path}
+      end)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(attacking_state(), 60, 60)
+
+      assert new_state.game_state.movement_state == :standing
+      assert new_state.game_state.combat_target_id == nil
+      assert new_state.game_state.continuous_attack_timer == nil
+      assert new_state.game_state.action_state == :idle
+    end
+
+    test "a request for the player's own cell stops the attack without walking" do
+      stub(Pathfinding, :find_path, fn _map, {50, 50}, {50, 50} -> {:ok, []} end)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(attacking_state(), 50, 50)
+
+      assert new_state.game_state.movement_state == :standing
+      assert new_state.game_state.combat_target_id == nil
+      assert new_state.game_state.action_state == :idle
+    end
+
+    test "a confused player's request for its own cell walks to the random cell" do
+      stub(ConfusedWalk, :destination, fn :player, 1, "prontera", {50, 50}, {50, 50} ->
+        {51, 50}
+      end)
+
+      stub(Pathfinding, :find_path, fn
+        _map, {50, 50}, {50, 50} -> {:ok, []}
+        _map, {50, 50}, {51, 50} -> {:ok, [{51, 50}]}
+      end)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 50, 50)
+
+      assert new_state.game_state.walk_path == [{51, 50}]
     end
   end
 
@@ -855,6 +921,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
   defp idle_state do
     %{game_state: PlayerState.new(character()), connection_pid: self()}
+  end
+
+  defp attacking_state do
+    ref = Process.send_after(self(), {:auto_attack, 2000}, 60_000)
+
+    game_state =
+      character()
+      |> PlayerState.new()
+      |> PlayerState.set_combat_intent(2000, 7, {60, 60})
+
+    {:ok, attacking} = PlayerState.transition_to(game_state, :attacking)
+    %{game_state: PlayerState.set_continuous_timer(attacking, ref), connection_pid: self()}
   end
 
   defp moving_state do

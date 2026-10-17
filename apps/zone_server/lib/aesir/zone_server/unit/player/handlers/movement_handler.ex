@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Concealment
+  alias Aesir.ZoneServer.Unit.ConfusedWalk
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -492,45 +493,74 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
        else: {:noreply, state}
   end
 
+  # A request with a path to its own destination stops the player's attack and
+  # is walked, toward a random cell instead while the player is confused
+  # (`ConfusedWalk`). A random cell the player cannot path to, like the player's
+  # own cell, starts no walk.
   defp do_request_move(state, game_state, dest_x, dest_y, opts) do
-    walking? = game_state.movement_state == :moving
-
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
-         {:ok, path} when path != [] or walking? <-
+         {:ok, path} <-
            Pathfinding.find_path(
              map_data,
              {game_state.x, game_state.y},
              {dest_x, dest_y}
            ) do
-      state = dispatch_movement_intent(state, game_state)
-
-      # A manual move (no combat_initiated:/pickup_initiated: flag) while heading
-      # to a target or item cancels that pending intent so the player can walk away.
-      game_state = maybe_clear_action_intent(state.game_state, opts)
-
-      # The full per-cell path is walked, never a simplified one: step_delay/3
-      # prices one adjacent step, so hopping a collapsed straight segment in a
-      # single tick would cross it at many times walk speed, racing far ahead of
-      # the client's interpolation (and skipping over warp/trap cells). A walk
-      # already under way is redirected when its pending step lands instead of
-      # starting a second step chain.
-      game_state =
-        if walking?,
-          do: %{game_state | walk_target: {dest_x, dest_y}},
-          else: start_walk(state, game_state, path, dest_x, dest_y)
-
-      {:noreply, %{state | game_state: game_state}}
+      {destination, path} = confused_request(game_state, map_data, {dest_x, dest_y}, path)
+      walk_request(state, game_state, destination, path, opts)
     else
-      {:ok, []} ->
-        # Already at destination
-        {:noreply, state}
-
       {:error, reason} ->
         # An unreachable destination is ignored: nothing is sent and a walk
         # under way continues.
         Logger.debug("Movement refused for player #{game_state.character_id}: #{inspect(reason)}")
         {:noreply, state}
     end
+  end
+
+  defp confused_request(game_state, map_data, destination, path) do
+    from = {game_state.x, game_state.y}
+
+    case ConfusedWalk.destination(
+           :player,
+           game_state.character_id,
+           game_state.map_name,
+           from,
+           destination
+         ) do
+      ^destination ->
+        {destination, path}
+
+      random ->
+        case Pathfinding.find_path(map_data, from, random) do
+          {:ok, random_path} -> {random, random_path}
+          {:error, _reason} -> {random, []}
+        end
+    end
+  end
+
+  defp walk_request(state, %{movement_state: movement_state} = game_state, _destination, [], opts)
+       when movement_state != :moving,
+       do: {:noreply, %{state | game_state: maybe_clear_action_intent(game_state, opts, :idle)}}
+
+  defp walk_request(state, game_state, {dest_x, dest_y}, path, opts) do
+    walking? = game_state.movement_state == :moving
+    state = dispatch_movement_intent(state, game_state)
+
+    # A manual move (no combat_initiated:/pickup_initiated: flag) while heading
+    # to a target or item cancels that pending intent so the player can walk away.
+    game_state = maybe_clear_action_intent(state.game_state, opts)
+
+    # The full per-cell path is walked, never a simplified one: step_delay/3
+    # prices one adjacent step, so hopping a collapsed straight segment in a
+    # single tick would cross it at many times walk speed, racing far ahead of
+    # the client's interpolation (and skipping over warp/trap cells). A walk
+    # already under way is redirected when its pending step lands instead of
+    # starting a second step chain.
+    game_state =
+      if walking?,
+        do: %{game_state | walk_target: {dest_x, dest_y}},
+        else: start_walk(state, game_state, path, dest_x, dest_y)
+
+    {:noreply, %{state | game_state: game_state}}
   end
 
   defp dispatch_movement_intent(state, game_state) do
@@ -542,25 +572,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp maybe_clear_action_intent(%{action_state: :combat_moving} = game_state, opts) do
+  # `next` is the action state left behind: `:moving` when the request starts
+  # a walk, `:idle` when it does not.
+  defp maybe_clear_action_intent(game_state, opts, next \\ :moving)
+
+  defp maybe_clear_action_intent(%{action_state: :combat_moving} = game_state, opts, next) do
     if Keyword.get(opts, :combat_initiated, false) do
       game_state
     else
       Logger.debug("Player manually moving while in combat, clearing combat intent")
-      clear_intent_to_moving(game_state, &PlayerState.clear_combat_intent/1)
+      clear_intent(game_state, &PlayerState.clear_combat_intent/1, next)
     end
   end
 
-  defp maybe_clear_action_intent(%{action_state: :attacking} = game_state, opts) do
+  defp maybe_clear_action_intent(%{action_state: :attacking} = game_state, opts, next) do
     if Keyword.get(opts, :combat_initiated, false) do
       game_state
     else
       Logger.debug("Player manually moving while attacking, clearing combat intent")
-      clear_intent_to_moving(game_state, &PlayerState.clear_combat_intent/1)
+      clear_intent(game_state, &PlayerState.clear_combat_intent/1, next)
     end
   end
 
-  defp maybe_clear_action_intent(%{action_state: :skill_moving} = game_state, opts) do
+  defp maybe_clear_action_intent(%{action_state: :skill_moving} = game_state, opts, next) do
     if Keyword.get(opts, :skill_initiated, false) do
       game_state
     else
@@ -568,25 +602,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         "Player manually moving while heading to a skill target, clearing skill intent"
       )
 
-      clear_intent_to_moving(game_state, &PlayerState.clear_skill_intent/1)
+      clear_intent(game_state, &PlayerState.clear_skill_intent/1, next)
     end
   end
 
-  defp maybe_clear_action_intent(%{action_state: :moving_to_item} = game_state, opts) do
+  defp maybe_clear_action_intent(%{action_state: :moving_to_item} = game_state, opts, next) do
     if Keyword.get(opts, :pickup_initiated, false) do
       game_state
     else
       Logger.debug("Player manually moving while heading to an item, clearing pickup intent")
-      clear_intent_to_moving(game_state, &PlayerState.clear_pickup_intent/1)
+      clear_intent(game_state, &PlayerState.clear_pickup_intent/1, next)
     end
   end
 
-  defp maybe_clear_action_intent(game_state, _opts), do: game_state
+  defp maybe_clear_action_intent(game_state, _opts, _next), do: game_state
 
-  defp clear_intent_to_moving(game_state, clear_fun) do
+  defp clear_intent(game_state, clear_fun, next) do
     game_state
     |> clear_fun.()
-    |> PlayerState.transition_to(:moving)
+    |> PlayerState.transition_to(next)
     |> case do
       {:ok, transitioned} -> transitioned
       _ -> game_state
