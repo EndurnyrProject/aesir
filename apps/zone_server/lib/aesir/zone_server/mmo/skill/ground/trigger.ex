@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
 
   Invoked from the single `Aesir.ZoneServer.Unit.Movement.set_position/4`
   chokepoint after a unit's cell changes, so both player and mob movers
-  trigger ground units (Warp Portal, Pneuma). Traps and Fire Pillar act only on
-  the skill-unit timer, never on a step or an arrival. `on_step/7` runs the
+  trigger ground units (Warp Portal, Pneuma). Timer units (`timer_unit?/1`:
+  traps, Fire Pillar, Storm Gust, ...) act only on the skill-unit timer, never
+  on a step, an arrival or a removal. `on_step/7` runs the
   whole step as one manager pass (`Manager.step/3`): the old cell's groups
   leave the mover, the new cell's groups place it (`on_touch/2`), and the
   fields the mover is no longer placed on end their statuses; `on_out/2` fires
@@ -14,9 +15,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   the same footprint does not count). `on_appear/4` places a unit that appears
   on a cell without stepping onto it (a mob spawn, a homunculus call);
   `on_removed/1` runs the leave events of every group on the cell of a unit
-  removed from play (a warp, a logout, a despawn, a vaporize, a death). Spider
-  Web never acts on a step or an arrival: it catches only the units standing on
-  its cell when it is placed. All only invoke modules that export the matching
+  removed from play (a warp, a logout, a despawn, a vaporize, a death). A
+  dissonant song cell leaves an appearing or removed unit whether or not it
+  targets it. Spider Web never acts on an arrival, by a step or an appearance:
+  it catches only the units standing on its cell when it is placed. All only invoke modules that export the matching
   callback, and apply its result:
 
     - `{:ok, updated_group}` - the updated group is persisted.
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   invokes it for every mover and applies the result.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -35,13 +38,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   @typedoc "The unit that entered the cell: `{unit_type, unit_id}`."
   @type mover :: {atom(), integer()}
 
-  # Spider Web and classic Basilica never act on a unit's step: an interval
-  # unit without DualMode acts only on its own timer.
-  @never_on_move [:pf_spiderweb, :hp_basilica]
-
   # Ground units with an interval and no DualMode flag (Lullaby aside) act on
-  # their own timer, never on a unit's arrival. Hunter traps carry trap state.
-  @timer_units [:wz_firepillar, :hp_basilica, :ba_dissonance, :dc_uglydance]
+  # their own timer, never on a unit's step, appearance or removal. Hunter traps
+  # carry trap state. Gravitation has DualMode only in classic.
+  @timer_units [
+    :mg_firewall,
+    :mg_thunderstorm,
+    :pr_sanctuary,
+    :pr_magnus,
+    :wz_firepillar,
+    :wz_meteor,
+    :wz_vermilion,
+    :wz_icewall,
+    :wz_stormgust,
+    :ht_skidtrap,
+    :ht_landmine,
+    :ht_anklesnare,
+    :ht_shockwave,
+    :ht_sandman,
+    :ht_flasher,
+    :ht_freezingtrap,
+    :ht_blastmine,
+    :ht_claymoretrap,
+    :ht_talkiebox,
+    :as_venomdust,
+    :am_demonstration,
+    :cr_grandcross,
+    :pa_gospel,
+    :npc_earthquake,
+    :npc_evilland,
+    :hp_basilica,
+    :ba_dissonance,
+    :dc_uglydance
+  ]
 
   @doc """
   Runs a step from `(old_x, old_y)` on `old_map` to `(new_x, new_y)` on
@@ -53,42 +82,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
   def on_step(mover, old_map, old_x, old_y, new_map, new_x, new_y),
     do: Manager.step(mover, {old_map, old_x, old_y}, {new_map, new_x, new_y})
 
-  @doc "Whether a ground unit acts on a unit's step at all (Spider Web and classic Basilica never do)."
-  @spec acts_on_step?(Group.t()) :: boolean()
-  def acts_on_step?(%Group{skill_name: skill_name}), do: skill_name not in @never_on_move
+  @doc """
+  Whether a ground unit acts only on its own timer: an interval and no
+  DualMode (Lullaby aside), and every armed or spent trap. Such a unit never
+  acts on a unit's appearance or removal.
+  """
+  @spec timer_unit?(Group.t()) :: boolean()
+  def timer_unit?(%Group{state: %{trap: %TrapState{}}}), do: true
+  def timer_unit?(%Group{skill_name: :hw_gravitation}), do: GameMode.mode() == :renewal
+  def timer_unit?(%Group{skill_name: skill_name}), do: skill_name in @timer_units
+
+  @doc "Whether a ground unit acts on a unit arriving on its cell, by a step or an appearance (Spider Web never does)."
+  @spec acts_on_appearance?(Group.t()) :: boolean()
+  def acts_on_appearance?(%Group{skill_name: skill_name}), do: skill_name != :pf_spiderweb
 
   @doc """
-  Fires `on_touch` for a unit appearing on `(x, y)` without stepping onto it.
-
-  Only units that act on arrival qualify: traps and other interval units wait
-  for their own timer, and Spider Web never acts on an arrival. Returns `:ok`.
+  Places a unit appearing on `(x, y)` without stepping onto it, as one manager
+  pass (`Manager.appear/2`): a dissonant song cell leaves it, Spider Web and
+  timer units do nothing, every other unit places it. Returns `:ok`.
   """
   @spec on_appear(mover(), String.t(), integer(), integer()) :: :ok
-  def on_appear(mover, map_name, x, y) do
-    map_name
-    |> Storage.get_groups_at_cell(x, y)
-    |> Enum.filter(&acts_on_arrival?/1)
-    |> Enum.each(&maybe_touch(&1, mover))
-  end
+  def on_appear(mover, map_name, x, y), do: Manager.appear(mover, {map_name, x, y})
 
   @doc """
-  Runs the leave events (`on_out`, then the field's `onleft`) of every ground
-  unit covering the mover's cell when it is removed from play: a map removal
-  (call it before the mover leaves the spatial index) or a death (the source's
-  `skill_unit_move` flag 4, with no step bookkeeping). A unit without an
-  indexed position runs nothing. Returns `:ok`.
+  Runs the leave events of every ground unit covering the mover's cell when it
+  is removed from play, as one manager pass (`Manager.remove/2`): a map
+  removal (call it before the mover leaves the spatial index) or a death, with
+  no step bookkeeping. A dissonant song cell leaves it, timer units do
+  nothing, every other unit runs `on_out`, then the field's `onleft`. A unit
+  without an indexed position runs nothing. Returns `:ok`.
   """
   @spec on_removed(mover()) :: :ok
   def on_removed({unit_type, unit_id} = mover) do
     case SpatialIndex.get_unit_position(unit_type, unit_id) do
-      {:ok, {x, y, map_name}} ->
-        map_name
-        |> Storage.get_groups_at_cell(x, y)
-        |> Enum.reject(&(&1.skill_name in @never_on_move))
-        |> Enum.each(&maybe_dispatch(&1, mover, :on_removed))
-
-      {:error, _not_placed} ->
-        :ok
+      {:ok, {x, y, map_name}} -> Manager.remove(mover, {map_name, x, y})
+      {:error, _not_placed} -> :ok
     end
   end
 
@@ -104,19 +132,5 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
     |> Storage.get_groups_by_caster(unit_id)
     |> Enum.filter(&Group.follows_caster?/1)
     |> Enum.each(&Manager.follow_caster(&1.group_id, map_name, {x, y}))
-  end
-
-  @spec acts_on_arrival?(Group.t()) :: boolean()
-  defp acts_on_arrival?(%Group{state: %{trap: %TrapState{}}}), do: false
-
-  defp acts_on_arrival?(%Group{skill_name: skill_name}),
-    do: skill_name not in @never_on_move and skill_name not in @timer_units
-
-  @spec maybe_touch(Group.t(), mover()) :: :ok
-  defp maybe_touch(group, mover), do: maybe_dispatch(group, mover, :on_touch)
-
-  @spec maybe_dispatch(Group.t(), mover(), atom()) :: :ok
-  defp maybe_dispatch(%Group{group_id: group_id}, mover, callback) do
-    Manager.trigger(group_id, mover, callback)
   end
 end

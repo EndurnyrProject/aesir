@@ -257,11 +257,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def register_water_ball_sequence(server, %Group{} = group, cells),
     do: GenServer.call(server, {:register_water_ball_sequence, group, cells})
 
-  @typedoc """
-  A movement event: a unit appearing on the footprint, or its removal from
-  play (the leave events with no step bookkeeping).
-  """
-  @type trigger_callback :: :on_touch | :on_removed
+  @typedoc "A movement event: a unit placed on the footprint."
+  @type trigger_callback :: :on_touch
 
   @typedoc "A cell a mover stands on: `{map_name, x, y}`."
   @type step_cell :: {String.t(), integer(), integer()}
@@ -272,9 +269,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @doc false
   @spec trigger(server(), non_neg_integer(), mover(), trigger_callback()) :: :ok
-  def trigger(server, group_id, mover, callback) when callback in [:on_touch, :on_removed] do
+  def trigger(server, group_id, mover, callback) when callback == :on_touch do
     GenServer.call(server, {:trigger, group_id, mover, callback})
   end
+
+  @doc """
+  A unit appearing on `cell` without stepping onto it, run as one serial pass
+  over the groups there: a dissonant song cell leaves it there and then,
+  Spider Web and timer units do nothing, every other group places it
+  (`on_touch`, then `onplace`).
+  """
+  @spec appear(mover(), step_cell()) :: :ok
+  def appear(mover, cell), do: appear(default_server(), mover, cell)
+
+  @doc false
+  @spec appear(server(), mover(), step_cell()) :: :ok
+  def appear(server, mover, cell), do: GenServer.call(server, {:appear, mover, cell})
+
+  @doc """
+  A unit removed from play on `cell`, run as one serial pass over the groups
+  there with no step bookkeeping: a dissonant song cell leaves it there and
+  then, timer units do nothing, every other group runs its leave events
+  (`on_out`, then `onleft`).
+  """
+  @spec remove(mover(), step_cell()) :: :ok
+  def remove(mover, cell), do: remove(default_server(), mover, cell)
+
+  @doc false
+  @spec remove(server(), mover(), step_cell()) :: :ok
+  def remove(server, mover, cell), do: GenServer.call(server, {:remove, mover, cell})
 
   @doc """
   A step from `old` to `new`, run as one serial pass: every group on the old
@@ -455,6 +478,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_call({:trigger, group_id, mover, callback}, _from, state) do
     if group = Storage.get(group_id), do: run_trigger(group, mover, callback)
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:appear, mover, {map_name, x, y}}, _from, state) do
+    map_name
+    |> Storage.get_groups_at_cell(x, y)
+    |> Enum.each(&appear_on(&1, mover, {x, y}))
+
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:remove, mover, {map_name, x, y}}, _from, state) do
+    map_name
+    |> Storage.get_groups_at_cell(x, y)
+    |> Enum.each(&remove_from(&1, mover, {x, y}))
+
     {:reply, :ok, state}
   end
 
@@ -795,13 +834,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
+  # An appearance never wakes Spider Web; a dissonant song cell leaves the
+  # unit whether or not it targets it; a timer unit waits for its timer.
+  defp appear_on(%Group{} = group, mover, cell) do
+    cond do
+      not triggerable?(group) or not Trigger.acts_on_appearance?(group) -> :ok
+      FieldSupport.dissonant?(group, cell) -> FieldSupport.dissonance_step(group, mover)
+      Trigger.timer_unit?(group) -> :ok
+      true -> run_trigger(group, mover, :on_touch)
+    end
+  end
+
   # A unit removed from play (map removal, death) leaves every field on its
   # cell for good: the handler's `on_out`, then the field's `onleft`.
-  defp run_trigger(%Group{} = group, mover, :on_removed) do
-    if triggerable?(group),
-      do: FieldSupport.leave(group, mover, &run_out_callback(group, handler_or_nil(group), &1))
+  defp remove_from(%Group{} = group, mover, cell) do
+    cond do
+      not triggerable?(group) ->
+        :ok
 
-    :ok
+      FieldSupport.dissonant?(group, cell) ->
+        FieldSupport.dissonance_step(group, mover)
+
+      Trigger.timer_unit?(group) ->
+        :ok
+
+      true ->
+        FieldSupport.leave(group, mover, &run_out_callback(group, handler_or_nil(group), &1))
+    end
   end
 
   # A ground unit acts only on a unit its target check reaches; an invincible
@@ -829,16 +888,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp step_groups(map_name, x, y) do
     map_name
     |> Storage.get_groups_at_cell(x, y)
-    |> Enum.filter(&(Trigger.acts_on_step?(&1) and triggerable?(&1)))
+    |> Enum.filter(&triggerable?/1)
   end
 
   # Stepping off a cell: a target leaves it (the handler's `on_out` once the
   # mover is off the whole footprint) and is remembered unless it performs the
-  # song; a non-target is remembered only for its own ensemble.
+  # song; a non-target is remembered only for its own ensemble. A timer unit
+  # takes no part.
   defp step_out(%Group{} = group, mover, cell, {new_map, new_x, new_y}) do
     cond do
       FieldSupport.dissonant?(group, cell) ->
         FieldSupport.dissonance_step(group, mover)
+        []
+
+      Trigger.timer_unit?(group) ->
         []
 
       FieldSupport.target?(group, mover) ->
@@ -857,11 +920,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   # Stepping onto a cell: a placement that ran to its end forgets one
   # remembered entry of the skill, so the mover never leaves a field it is
-  # still placed on.
+  # still placed on. Spider Web and timer units take no part.
   defp step_in(%Group{} = group, mover, cell, remembered) do
     cond do
+      not Trigger.acts_on_appearance?(group) ->
+        remembered
+
       FieldSupport.dissonant?(group, cell) ->
         FieldSupport.dissonance_step(group, mover)
+        remembered
+
+      Trigger.timer_unit?(group) ->
         remembered
 
       not FieldSupport.target?(group, mover) ->

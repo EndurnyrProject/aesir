@@ -199,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
     expect(Cell, :random_traversable_near, fn "prontera", {30, 30}, 1 -> {31, 30} end)
     expect(PlayerSession, :warp, fn _caster_pid, "prontera", 30, 30 -> :ok end)
 
-    expect(PlayerSession, :displace_homunculus, fn ^owner_pid, 9, 11, 10, "prontera", 31, 30 ->
+    expect(PlayerSession, :warp_homunculus, fn ^owner_pid, 9, 11, 10, "prontera", 31, 30 ->
       :ok
     end)
 

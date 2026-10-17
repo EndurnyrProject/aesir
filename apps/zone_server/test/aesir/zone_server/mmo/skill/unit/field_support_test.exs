@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
 
   setup :set_mimic_private
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
@@ -601,6 +602,136 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
 
     move(singer, {4, 5}, {5, 5})
     assert %{val4: 0} = StatusStorage.get_status(:player, 1, :sc_whistle)
+  end
+
+  defp dissonant_whistle do
+    song =
+      group(1, AllyWhistleField,
+        skill_id: 319,
+        skill_name: :ba_whistle,
+        expires_at: @now + 60_000,
+        cells: [{4, 5}, {5, 5}],
+        state: %{performance: %{kind: :song, performers: [1]}}
+      )
+
+    group(2, BragiField,
+      skill_id: 321,
+      skill_name: :ba_poembragi,
+      caster_id: 2,
+      expires_at: @now + 60_000,
+      cells: [{5, 5}],
+      state: %{performance: %{kind: :song, performers: [2]}}
+    )
+
+    :ok = StatusStorage.apply_status(:player, 12, :sc_whistle, val2: 5, val4: 0, duration: 60_000)
+    :ok = StatusStorage.apply_status(:player, 1, :sc_whistle, val2: 5, val4: 0, duration: 60_000)
+    assert FieldSupport.dissonant?(song, {5, 5})
+    song
+  end
+
+  test "appearing on a dissonant cell lingers the song on a non-target, the singer's own copy untouched" do
+    dissonant_whistle()
+    bystander = player(12, {5, 5})
+    singer = player(1, {5, 5})
+
+    assert :ok = Trigger.on_appear(bystander, "prontera", 5, 5)
+    assert %{val4: 1} = StatusStorage.get_status(:player, 12, :sc_whistle)
+    refute StatusStorage.has_status?(:player, 12, :sc_poembragi)
+
+    assert :ok = Trigger.on_appear(singer, "prontera", 5, 5)
+    assert %{val4: 0} = StatusStorage.get_status(:player, 1, :sc_whistle)
+  end
+
+  test "removal from a dissonant cell lingers the song on a non-target, the singer's own copy untouched" do
+    dissonant_whistle()
+    bystander = player(12, {5, 5})
+    singer = player(1, {5, 5})
+
+    assert :ok = Trigger.on_removed(bystander)
+    assert %{val4: 1} = StatusStorage.get_status(:player, 12, :sc_whistle)
+
+    assert :ok = Trigger.on_removed(singer)
+    assert %{val4: 0} = StatusStorage.get_status(:player, 1, :sc_whistle)
+  end
+
+  test "a timer unit neither places an appearing unit nor sees a removed one leave" do
+    walker = player(11, {5, 5})
+
+    for {skill_name, id} <- [pr_sanctuary: 1, wz_firepillar: 2, ht_landmine: 3, ba_dissonance: 4] do
+      group(id, VolcanoField, skill_id: 83, skill_name: skill_name)
+    end
+
+    assert :ok = Trigger.on_appear(walker, "prontera", 5, 5)
+    refute StatusStorage.has_status?(:player, 11, :sc_volcano)
+
+    :ok = StatusStorage.apply_status(:player, 11, :sc_volcano, val1: 1, duration: 60_000)
+    assert :ok = Trigger.on_removed(walker)
+    assert StatusStorage.has_status?(:player, 11, :sc_volcano)
+  end
+
+  test "Spider Web never places an appearing unit but sees a removed one leave" do
+    walker = player(11, {5, 5})
+    group(1, VolcanoField, skill_id: 405, skill_name: :pf_spiderweb)
+
+    assert :ok = Trigger.on_appear(walker, "prontera", 5, 5)
+    refute StatusStorage.has_status?(:player, 11, :sc_volcano)
+
+    :ok = StatusStorage.apply_status(:player, 11, :sc_volcano, val1: 1, duration: 60_000)
+    assert :ok = Trigger.on_removed(walker)
+    refute StatusStorage.has_status?(:player, 11, :sc_volcano)
+  end
+
+  test "renewal Gravitation acts on its timer only, classic Gravitation on an appearance too" do
+    walker = player(11, {5, 5})
+    group(1, VolcanoField, skill_id: 361, skill_name: :hw_gravitation)
+
+    assert :ok = Trigger.on_appear(walker, "prontera", 5, 5)
+
+    case GameMode.mode() do
+      :renewal -> refute StatusStorage.has_status?(:player, 11, :sc_volcano)
+      :pre_renewal -> assert StatusStorage.has_status?(:player, 11, :sc_volcano)
+    end
+  end
+
+  @tag game_mode: :renewal
+  test "a monster stepping through a renewal Gravitation neither gains nor loses its status" do
+    beast = mob(21, {4, 5})
+    group(1, VolcanoField, skill_id: 361, skill_name: :hw_gravitation, cells: [{5, 5}])
+
+    move(beast, {4, 5}, {5, 5})
+    refute StatusStorage.has_status?(:mob, 21, :sc_volcano)
+
+    :ok = StatusStorage.apply_status(:mob, 21, :sc_volcano, val1: 1, duration: 60_000)
+    move(beast, {5, 5}, {6, 5})
+    assert StatusStorage.has_status?(:mob, 21, :sc_volcano)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "a monster stepping through a classic Gravitation gains it and loses it" do
+    beast = mob(21, {4, 5})
+    group(1, VolcanoField, skill_id: 361, skill_name: :hw_gravitation, cells: [{5, 5}])
+
+    move(beast, {4, 5}, {5, 5})
+    assert StatusStorage.has_status?(:mob, 21, :sc_volcano)
+
+    move(beast, {5, 5}, {6, 5})
+    refute StatusStorage.has_status?(:mob, 21, :sc_volcano)
+  end
+
+  test "a step never wakes a timer unit, and Spider Web sees a step out but not a step in" do
+    walker = player(11, {4, 5})
+    group(1, VolcanoField, skill_id: 70, skill_name: :pr_sanctuary, cells: [{5, 5}])
+    group(2, VolcanoField, skill_id: 405, skill_name: :pf_spiderweb, cells: [{6, 5}])
+
+    move(walker, {4, 5}, {5, 5})
+    refute StatusStorage.has_status?(:player, 11, :sc_volcano)
+
+    :ok = StatusStorage.apply_status(:player, 11, :sc_volcano, val1: 1, duration: 60_000)
+    move(walker, {5, 5}, {6, 5})
+    assert StatusStorage.has_status?(:player, 11, :sc_volcano)
+
+    move(walker, {6, 5}, {7, 5})
+    refute StatusStorage.has_status?(:player, 11, :sc_volcano)
   end
 
   defmodule EnsembleStepField do

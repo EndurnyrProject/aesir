@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
 
   defp warp_target(:homunculus, owner_pid, target, map_name, x, y),
     do:
-      PlayerSession.displace_homunculus(
+      PlayerSession.warp_homunculus(
         owner_pid,
         target.world_gid,
         target.x,

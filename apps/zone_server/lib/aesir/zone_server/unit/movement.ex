@@ -56,9 +56,46 @@ defmodule Aesir.ZoneServer.Unit.Movement do
       {unit_type, unit_id, updated_state},
       previous,
       map_name,
-      move_state(updated_state.movement_state)
+      move_state(updated_state.movement_state),
+      &fire_step/5
     )
   end
+
+  @doc """
+  Applies a warp: the unit is removed from its map and put back on its new
+  cell, even when that is the cell it stood on.
+
+  Instead of a step, it leaves every ground unit on its old cell as a unit
+  removed from the map does (`Trigger.on_removed/1`), then appears on the new
+  cell (`Trigger.on_appear/4`: no step bookkeeping, Spider Web, traps and
+  timer units do not act on the arrival). Index, registry and dirty-set
+  updates are those of `set_position/4`.
+  """
+  @spec warp_position(unit_type(), unit_id(), map(), String.t()) :: :ok
+  def warp_position(unit_type, unit_id, updated_state, map_name) do
+    :ok = Trigger.on_removed({unit_type, unit_id})
+    previous = SpatialIndex.get_unit_position(unit_type, unit_id)
+
+    SpatialIndex.update_unit_position(
+      unit_type,
+      unit_id,
+      updated_state.x,
+      updated_state.y,
+      map_name
+    )
+
+    UnitRegistry.update_unit_state(unit_type, unit_id, updated_state)
+
+    finish_position_change(
+      {unit_type, unit_id, updated_state},
+      previous,
+      map_name,
+      move_state(updated_state.movement_state),
+      &appear/5
+    )
+  end
+
+  defp appear(mover, _previous, map_name, x, y), do: Trigger.on_appear(mover, map_name, x, y)
 
   # A step onto another cell runs the old and new cells' units as one pass, a
   # unit with no previous position appears there, and staying on the same
@@ -159,8 +196,8 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
       :ok = UnitRegistry.update_unit_state(first_type, first_id, first_updated)
       :ok = UnitRegistry.update_unit_state(second_type, second_id, second_updated)
-      finish_position_change(first, first_previous, map_name, @standing)
-      finish_position_change(second, second_previous, map_name, @standing)
+      finish_position_change(first, first_previous, map_name, @standing, &fire_step/5)
+      finish_position_change(second, second_previous, map_name, @standing, &fire_step/5)
     end
   end
 
@@ -175,13 +212,19 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   end
 
   # Everything after the spatial/registry writes: boundary notifications, the
-  # dirty mark, and the cell leave/enter/contact triggers.
-  defp finish_position_change({unit_type, unit_id, updated_state}, previous, map_name, move_state) do
+  # dirty mark, the ground-unit cell events and the contact triggers.
+  defp finish_position_change(
+         {unit_type, unit_id, updated_state},
+         previous,
+         map_name,
+         move_state,
+         cell_events
+       ) do
     notify_homunculus_boundaries(unit_type, unit_id, previous, updated_state, map_name)
     mark_dirty(map_name, unit_type, unit_id, move_state)
 
     mover = {unit_type, unit_id}
-    fire_step(mover, previous, map_name, updated_state.x, updated_state.y)
+    cell_events.(mover, previous, map_name, updated_state.x, updated_state.y)
     Trigger.on_caster_moved(mover, map_name, updated_state.x, updated_state.y)
     fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
   end

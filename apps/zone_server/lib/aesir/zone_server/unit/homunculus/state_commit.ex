@@ -199,7 +199,31 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
         homunculus
       )
       when is_struct(homunculus, HomunculusState) or is_nil(homunculus) do
-    homunculus = synchronize_presence(session.homunculus, homunculus)
+    homunculus = synchronize_presence(session.homunculus, homunculus, :step)
+
+    %{
+      session
+      | homunculus: homunculus,
+        homunculus_runtime: %{runtime | private_dirty: true}
+    }
+  end
+
+  @doc """
+  Commits the active Homunculus warped to its new cell, as `commit/2` does,
+  except that its position change is a warp (`Movement.warp_position/4`): it
+  leaves the ground units of its old cell and appears on the new one, even
+  when it lands on the cell it stood on.
+  """
+  @spec commit_warp(SessionState.t(), HomunculusState.t()) :: SessionState.t()
+  def commit_warp(
+        %SessionState{
+          homunculus: %HomunculusState{world_gid: gid},
+          homunculus_runtime: %Runtime{} = runtime
+        } = session,
+        %HomunculusState{lifecycle: :active, world_gid: gid} = homunculus
+      )
+      when is_integer(gid) do
+    homunculus = synchronize_presence(session.homunculus, homunculus, :warp)
 
     %{
       session
@@ -279,16 +303,18 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
     end
   end
 
-  defp synchronize_presence(previous, %HomunculusState{lifecycle: :active} = current) do
+  defp synchronize_presence(previous, %HomunculusState{lifecycle: :active} = current, move) do
     unless active_world_state?(current) do
       raise ArgumentError, "active Homunculus requires complete living world state"
     end
 
     current = %{current | owner_session_pid: self()}
     maybe_remove_replaced(previous, current.world_gid)
-    publish_active(previous, current)
+    publish_active(previous, current, move)
     current
   end
+
+  defp synchronize_presence(previous, current, _move), do: synchronize_presence(previous, current)
 
   defp synchronize_presence(previous, nil) do
     remove_if_active(previous)
@@ -310,8 +336,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   end
 
   defp publish_active(
+         %HomunculusState{world_gid: gid},
+         %HomunculusState{world_gid: gid} = current,
+         :warp
+       ) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {_module, _state, _pid}} ->
+        Movement.warp_position(:homunculus, gid, current, current.map_name)
+
+      {:error, :not_found} ->
+        register_active(current)
+    end
+  end
+
+  defp publish_active(
          %HomunculusState{world_gid: gid, map_name: old_map, x: old_x, y: old_y},
-         %HomunculusState{world_gid: gid} = current
+         %HomunculusState{world_gid: gid} = current,
+         :step
        ) do
     case UnitRegistry.get_unit(:homunculus, gid) do
       {:ok, {_module, previous_state, _pid}}
@@ -327,7 +368,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
     end
   end
 
-  defp publish_active(_previous, %HomunculusState{} = current), do: register_active(current)
+  defp publish_active(_previous, %HomunculusState{} = current, _move),
+    do: register_active(current)
 
   defp register_active(%HomunculusState{} = current) do
     UnitRegistry.register_unit(

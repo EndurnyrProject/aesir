@@ -88,16 +88,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   @doc """
   Instantly relocates the mob to a random walkable cell on its map and drops
-  its current target (`AL_TELEPORT` flee). Reuses the `{:movement,
-  {:knocked_back, x, y}}` instant position-set path; a no-op if no walkable
-  cell is found.
+  its current target (`AL_TELEPORT` flee). The move is a warp
+  (`Movement.warp_position/4`): the mob leaves the ground units of its old cell
+  and appears on the new one. A no-op if no walkable cell is found.
   """
   @spec handle_teleport(MobState.t()) :: {:noreply, MobState.t()}
   def handle_teleport(state) do
-    # Instant flee reposition (AL_TELEPORT): reuse the {:movement,
-    # {:knocked_back, x, y}} position-set path (spatial-index update +
-    # delta-snapshot broadcast), not the walking move_to. A missing cache
-    # entry or a fully-blocked map is a benign no-op.
     case Cell.random_traversable(state.map_name) do
       {:ok, {x, y}} ->
         updated_state =
@@ -110,7 +106,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
         SpatialIndex.reenter_block(:mob, updated_state.instance_id)
 
-        Movement.set_position(
+        Movement.warp_position(
           :mob,
           updated_state.instance_id,
           updated_state,
@@ -179,6 +175,29 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
         ) :: {:noreply, MobState.t()}
   def handle_displacement(state, expected_x, expected_y, map_name, x, y),
     do: handle_relocation(state, expected_x, expected_y, map_name, x, y)
+
+  @doc """
+  Warps the mob to `(x, y)` on `map_name`, including a boss: a living mob lands
+  there when the cell is walkable, leaving the ground units of its old cell
+  and appearing on the new one (`Movement.warp_position/4`).
+  """
+  @spec handle_warp(MobState.t(), String.t(), integer(), integer()) :: {:noreply, MobState.t()}
+  def handle_warp(state, map_name, x, y) do
+    if Unit.living?(state) and map_name == state.map_name and Cell.traversable?(map_name, x, y) do
+      state =
+        state
+        |> MobState.stop_movement()
+        |> MobState.update_position(x, y)
+
+      Movement.warp_position(:mob, state.instance_id, state, map_name)
+
+      packet = %Knockback{unit_id: state.instance_id, dst_x: x, dst_y: y}
+      Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
+      {:noreply, state}
+    else
+      {:noreply, state}
+    end
+  end
 
   @doc """
   Commits an authoritative self-relocation, including for boss mobs.

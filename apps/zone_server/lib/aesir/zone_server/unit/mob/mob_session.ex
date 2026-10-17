@@ -234,8 +234,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @doc """
   Instantly relocates the mob to a random walkable cell on its map and drops
-  its current target (`AL_TELEPORT` flee). Reuses the `{:movement,
-  {:knocked_back, x, y}}` instant position-set path; a no-op if no walkable
+  its current target (`AL_TELEPORT` flee), as a warp; a no-op if no walkable
   cell is found.
   """
   @spec teleport(pid()) :: :ok
@@ -363,7 +362,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   def handle_cast({:movement, {:warp, map_name, x, y}}, state) do
-    MovementHandler.handle_relocation(state, state.x, state.y, map_name, x, y)
+    MovementHandler.handle_warp(state, map_name, x, y)
   end
 
   def handle_cast({:movement, {:knockback, expected_x, expected_y, map_name, x, y}}, state) do

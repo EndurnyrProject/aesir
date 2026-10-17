@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
   use Aesir.DataCase, async: false
 
   import Aesir.TestEtsSetup
+  import Mimic
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -170,6 +172,55 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     relocated = MovementHandler.separation_timeout(ref, armed)
     assert {relocated.homunculus.x, relocated.homunculus.y} == {2, 1}
     assert relocated.homunculus_runtime.separation_timer_ref == nil
+  end
+
+  test "a separated Homunculus returns to its owner as a warp, not a step" do
+    session = active_session(homunculus: %{homunculus() | x: 30, y: 30})
+    armed = MovementHandler.sync_separation(session)
+    ref = armed.homunculus_runtime.separation_timer_ref
+    test_pid = self()
+
+    reject(&Movement.set_position/4)
+
+    expect(Movement, :warp_position, fn :homunculus, 700, warped, @map ->
+      send(test_pid, {:warped, warped.x, warped.y})
+      Mimic.call_original(Movement, :warp_position, [:homunculus, 700, warped, @map])
+    end)
+
+    relocated = MovementHandler.separation_timeout(ref, armed)
+
+    assert {relocated.homunculus.x, relocated.homunculus.y} == {2, 1}
+    assert_received {:warped, 2, 1}
+    assert {:ok, {2, 1, @map}} = SpatialIndex.get_unit_position(:homunculus, 700)
+  end
+
+  test "a Homunculus warp lands only for the exact living endpoint, even on its own cell" do
+    session = active_session()
+    test_pid = self()
+
+    reject(&Movement.set_position/4)
+
+    expect(Movement, :warp_position, 2, fn :homunculus, 700, warped, @map ->
+      send(test_pid, {:warped, warped.x, warped.y})
+      Mimic.call_original(Movement, :warp_position, [:homunculus, 700, warped, @map])
+    end)
+
+    moving = MovementHandler.move_to(session, {6, 2})
+    warped = MovementHandler.warp(moving, 700, 2, 2, @map, 3, 4)
+
+    assert {warped.homunculus.x, warped.homunculus.y} == {3, 4}
+    assert warped.homunculus.movement_state == :standing
+    assert warped.homunculus_runtime.movement_timer_ref == nil
+    assert_received {:warped, 3, 4}
+
+    same_cell = MovementHandler.warp(warped, 700, 3, 4, @map, 3, 4)
+    assert {same_cell.homunculus.x, same_cell.homunculus.y} == {3, 4}
+    assert_received {:warped, 3, 4}
+
+    assert MovementHandler.warp(warped, 700, 2, 2, @map, 4, 2) == warped
+    assert MovementHandler.warp(warped, 701, 3, 4, @map, 4, 2) == warped
+    dead = %{warped | homunculus: %{warped.homunculus | hp: 0}}
+    assert MovementHandler.warp(dead, 700, 3, 4, @map, 4, 2) == dead
   end
 
   test "missing food falls through to aggressive combat instead of selecting feed forever" do

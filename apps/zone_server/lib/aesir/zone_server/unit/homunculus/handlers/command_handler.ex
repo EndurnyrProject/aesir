@@ -121,6 +121,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     {:noreply, MovementHandler.displace(session, gid, expected_x, expected_y, map_name, x, y)}
   end
 
+  def cast({:warp, gid, expected_x, expected_y, map_name, x, y}, session) do
+    {:noreply, MovementHandler.warp(session, gid, expected_x, expected_y, map_name, x, y)}
+  end
+
   def cast({:apply_damage, _gid, _damage, _hit_info, _source} = combat_event, session),
     do: CombatHandler.handle(combat_event, session)
 

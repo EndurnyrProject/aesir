@@ -90,6 +90,43 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
     end
   end
 
+  @doc """
+  Warps the exact living Homunculus endpoint to `(x, y)` on `map_name`: it
+  stops, leaves the ground units of its old cell and appears on the new one
+  (`StateCommit.commit_warp/2`). Anything else leaves the session unchanged.
+  """
+  @spec warp(
+          SessionState.t(),
+          pos_integer(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: SessionState.t()
+  def warp(%SessionState{} = session, gid, expected_x, expected_y, map_name, x, y) do
+    with %HomunculusState{world_gid: ^gid} = homunculus <- session.homunculus,
+         true <- HomunculusState.living?(homunculus),
+         true <-
+           {homunculus.x, homunculus.y, homunculus.map_name} ==
+             {expected_x, expected_y, map_name},
+         true <- Cell.traversable?(map_name, x, y) do
+      session = cancel_movement(session)
+
+      warped = %{
+        homunculus
+        | x: x,
+          y: y,
+          action_state: stopped_action(homunculus.action_state),
+          movement_state: :standing
+      }
+
+      session |> StateCommit.commit_warp(warped) |> sync_separation()
+    else
+      _invalid -> session
+    end
+  end
+
   @doc "Leaves standby and paths to a deterministic traversable cell beside the owner."
   @spec follow(SessionState.t()) :: SessionState.t()
   def follow(%SessionState{} = session) do
@@ -414,7 +451,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
     }
   end
 
-  @doc "Relocates to the first deterministic traversable owner-adjacent cell."
+  @doc "Warps to the first deterministic traversable owner-adjacent cell."
   @spec relocate(SessionState.t()) :: SessionState.t()
   def relocate(%SessionState{} = session) do
     case owner_adjacent_cell(session) do
@@ -433,7 +470,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
             target: nil
         }
 
-        StateCommit.commit(session, homunculus)
+        StateCommit.commit_warp(session, homunculus)
     end
   end
 

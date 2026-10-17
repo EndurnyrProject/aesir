@@ -478,6 +478,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     )
   end
 
+  @doc "Requests a warp of this owner's exact active Homunculus endpoint."
+  @spec warp_homunculus(
+          pid(),
+          pos_integer(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: :ok
+  def warp_homunculus(owner_pid, gid, expected_x, expected_y, map_name, x, y) do
+    GenServer.cast(
+      owner_pid,
+      {:homunculus, {:warp, gid, expected_x, expected_y, map_name, x, y}}
+    )
+  end
+
   @doc "Notifies this player that a Homunculus entered their view range."
   @spec notify_homunculus_entered_view(pid(), pos_integer()) :: :ok
   def notify_homunculus_entered_view(pid, gid) do

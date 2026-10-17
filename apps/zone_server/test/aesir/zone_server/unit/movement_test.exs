@@ -13,6 +13,21 @@ defmodule Aesir.ZoneServer.Unit.MovementTest.TouchSpy do
   end
 end
 
+defmodule Aesir.ZoneServer.Unit.MovementTest.FieldSpy do
+  @moduledoc false
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+
+  def on_touch(%Group{group_id: gid, state: %{test_pid: test_pid}} = group, mover) do
+    send(test_pid, {:touched, gid, mover})
+    {:ok, group}
+  end
+
+  def on_out(%Group{group_id: gid, state: %{test_pid: test_pid}} = group, mover) do
+    send(test_pid, {:left, gid, mover})
+    {:ok, group}
+  end
+end
+
 defmodule Aesir.ZoneServer.Unit.MovementTest do
   use ExUnit.Case, async: true
 
@@ -31,6 +46,7 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  alias __MODULE__.FieldSpy
   alias __MODULE__.TouchSpy
 
   setup :setup_ets_tables
@@ -278,6 +294,123 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
                  %{corpse | x: 50, y: 50, movement_state: :moving},
                  map_name
                )
+    end
+  end
+
+  describe "warp_position/4" do
+    setup do
+      stub(Catalog, :ground_module_for, fn _skill_name -> {:ok, FieldSpy} end)
+      UnitRegistry.register_unit(:mob, 2001, __MODULE__, %{movement_state: :standing}, nil)
+      SpatialIndex.add_unit(:mob, 2001, 50, 50, "prontera")
+      :ok
+    end
+
+    defp field(group_id, cells, overrides \\ []) do
+      struct(
+        %{
+          touch_group(group_id, "prontera")
+          | skill_name: :test_field,
+            cells: cells,
+            center: hd(cells)
+        },
+        overrides
+      )
+    end
+
+    test "leaves every unit on the old cell, then appears on the new one" do
+      :ok = Storage.insert(field(1, [{50, 50}]))
+      :ok = Storage.insert(field(2, [{55, 60}]))
+
+      assert :ok =
+               Movement.warp_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :standing, x: 55, y: 60},
+                 "prontera"
+               )
+
+      assert_received {:left, 1, {:mob, 2001}}
+      assert_received {:touched, 2, {:mob, 2001}}
+      refute_received {:touched, 1, _}
+      refute_received {:left, 2, _}
+      assert {:ok, {55, 60, "prontera"}} = SpatialIndex.get_unit_position(:mob, 2001)
+      assert [{:mob, 2001, 0}] = Movement.drain_dirty("prontera")
+    end
+
+    test "a warp inside one footprint leaves it and is placed again, where a step does neither" do
+      :ok = Storage.insert(field(1, [{50, 50}, {51, 50}, {52, 50}]))
+
+      assert :ok =
+               Movement.set_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :moving, x: 51, y: 50},
+                 "prontera"
+               )
+
+      refute_received {:left, 1, _}
+
+      assert :ok =
+               Movement.warp_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :standing, x: 52, y: 50},
+                 "prontera"
+               )
+
+      assert_received {:left, 1, {:mob, 2001}}
+      assert_received {:touched, 1, {:mob, 2001}}
+    end
+
+    test "a warp onto its own cell still leaves and appears" do
+      :ok = Storage.insert(field(1, [{50, 50}]))
+
+      assert :ok =
+               Movement.warp_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :standing, x: 50, y: 50},
+                 "prontera"
+               )
+
+      assert_received {:left, 1, {:mob, 2001}}
+      assert_received {:touched, 1, {:mob, 2001}}
+    end
+
+    test "Spider Web sees the departure but never catches the arrival; traps and timer units see neither" do
+      :ok = Storage.insert(field(1, [{50, 50}], skill_name: :pf_spiderweb))
+      :ok = Storage.insert(field(5, [{50, 50}], skill_name: :wz_firepillar))
+      :ok = Storage.insert(field(2, [{55, 60}], skill_name: :pf_spiderweb))
+      :ok = Storage.insert(field(3, [{55, 60}], state: %{test_pid: self(), trap: %TrapState{}}))
+      :ok = Storage.insert(field(4, [{55, 60}], skill_name: :wz_firepillar))
+
+      assert :ok =
+               Movement.warp_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :standing, x: 55, y: 60},
+                 "prontera"
+               )
+
+      assert_received {:left, 1, {:mob, 2001}}
+      refute_received {:left, _, _}
+      refute_received {:touched, _, _}
+    end
+
+    test "a unit without a previous position only appears" do
+      :ok = Storage.insert(field(1, [{55, 60}]))
+      UnitRegistry.register_unit(:mob, 2002, __MODULE__, %{movement_state: :standing}, nil)
+
+      assert :ok =
+               Movement.warp_position(
+                 :mob,
+                 2002,
+                 %{movement_state: :standing, x: 55, y: 60},
+                 "prontera"
+               )
+
+      assert_received {:touched, 1, {:mob, 2002}}
+      refute_received {:left, _, _}
     end
   end
 

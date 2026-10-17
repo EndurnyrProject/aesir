@@ -2,9 +2,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   @moduledoc """
   Verifies the mob teleport reposition (`AL_TELEPORT`): the `{:movement, :teleport}`
   cast instantly relocates the mob to a random walkable cell, drops its target
-  and returns it to `:idle`, routing the move through the same `Movement`
-  choke point the knockback path uses. A map with no walkable cell is a clean
-  no-op, not a crash.
+  and returns it to `:idle`, routing the move through `Movement.warp_position/4`
+  (a warp: the ground units of the old cell are left, the new cell's appear),
+  while a knockback relocation stays a step. A map with no walkable cell is a
+  clean no-op, not a crash.
   """
 
   use ExUnit.Case, async: true
@@ -76,7 +77,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
     stub(Cell, :random_traversable, fn "prontera" -> {:ok, {150, 160}} end)
 
-    expect(Movement, :set_position, fn :mob, 1, updated_state, "prontera" ->
+    reject(&Movement.set_position/4)
+
+    expect(Movement, :warp_position, fn :mob, 1, updated_state, "prontera" ->
       send(test_pid, {:reposition, updated_state.x, updated_state.y})
       :ok
     end)
@@ -122,8 +125,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
     test_pid = self()
 
     stub(Cell, :traversable?, fn "prontera", 150, 160 -> true end)
+    reject(&Movement.set_position/4)
 
-    expect(Movement, :set_position, fn :mob, 1, updated_state, "prontera" ->
+    expect(Movement, :warp_position, fn :mob, 1, updated_state, "prontera" ->
       send(test_pid, {:reposition, updated_state.x, updated_state.y})
       :ok
     end)
@@ -148,7 +152,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
   test "is a clean no-op when no walkable cell is available" do
     stub(Cell, :random_traversable, fn "prontera" -> {:error, :no_walkable_cell} end)
-    reject(&Movement.set_position/4)
+    reject(&Movement.warp_position/4)
 
     state = build_mob_state()
 
@@ -158,7 +162,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
   test "is a clean no-op when the map is not cached" do
     stub(Cell, :random_traversable, fn "prontera" -> {:error, :not_found} end)
-    reject(&Movement.set_position/4)
+    reject(&Movement.warp_position/4)
 
     state = build_mob_state()
 
