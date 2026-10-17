@@ -37,8 +37,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
       `:rng`, this is the escape hatch keeping the module testable: the default
       reads the unit registry (read-only, and only when a `slavele` row is
       actually evaluated), tests inject a pure fun.
+    * `:hp_rate_friend` - a 3-arg fun `(mob, min_rate, max_rate -> ref | nil)`
+      for the `friendhpltmaxrate` (`0..value`) and `friendhpinrate`
+      (`value..val1`) gates (default `MobSkill.Executor.hp_rate_friend/3`, which
+      the `friend` target resolves with too); injected like
+      `:count_living_slaves`.
   """
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon
@@ -55,7 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     env = %{
       event: Keyword.get(opts, :event, :tick),
       count_living_slaves:
-        Keyword.get(opts, :count_living_slaves, &SlaveSummon.count_living_slaves/1)
+        Keyword.get(opts, :count_living_slaves, &SlaveSummon.count_living_slaves/1),
+      hp_rate_friend: Keyword.get(opts, :hp_rate_friend, &Executor.hp_rate_friend/3)
     }
 
     eligible = eligible_states(mob_state)
@@ -154,6 +161,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
        when is_integer(value) do
     env.count_living_slaves.(instance_id) <= value
   end
+
+  defp evaluate(:friendhpltmaxrate, %{value: value}, mob_state, env) when is_integer(value),
+    do: env.hp_rate_friend.(mob_state, 0, value) != nil
+
+  defp evaluate(:friendhpinrate, %{value: low, val1: high}, mob_state, env)
+       when is_integer(low) and is_integer(high),
+       do: env.hp_rate_friend.(mob_state, low, high) != nil
 
   defp evaluate(_type, _condition, _mob_state, _env), do: false
 end

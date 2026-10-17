@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Origin
@@ -51,12 +52,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @around_self [:around, :around1, :around2, :around3, :around4]
   @around_target [:around5, :around6, :around7, :around8]
   @mob_scope %{invocation: :mob, autocast_flag?: false}
+  @friend_range 8
+  @max_random_targets 30
 
   @typedoc "A resolved cast target: a concrete unit or a ground cell."
   @type target ::
@@ -68,7 +72,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   `around`/`around1..4` anchor the ground cell on the caster, `around5..8` on
   the current target's cell (rAthena semantics); the `area` atom is passed
-  through for the ground-target skill to size the AoE.
+  through for the ground-target skill to size the AoE. `friend` is the friend
+  the row's `friendhpltmaxrate`/`friendhpinrate` condition finds
+  (`hp_rate_friend/3`), otherwise the caster itself. `randomtarget` rolls one
+  of the first 30 living player-side units in the skill-range square, taken in
+  the map's block order.
   """
   @spec resolve_target(MobState.t(), map()) :: {:ok, target()} | {:error, atom()}
   def resolve_target(%MobState{target_ref: nil}, %{target: :target}), do: {:error, :no_target}
@@ -87,20 +95,20 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       else: {:error, :no_master}
   end
 
-  def resolve_target(%MobState{} = state, %{target: :friend}) do
-    case lowest_hp_friend(state) do
-      nil -> {:error, :no_friend}
-      friend_id -> {:ok, {:unit, :mob, friend_id}}
+  def resolve_target(%MobState{} = state, %{target: :friend} = row) do
+    case condition_friend(state, Map.get(row, :condition)) do
+      nil -> {:ok, {:unit, :mob, state.instance_id}}
+      {unit_type, unit_id} -> {:ok, {:unit, unit_type, unit_id}}
     end
   end
 
   def resolve_target(%MobState{} = state, %{target: :randomtarget}) do
-    case player_side_units_in_skill_range(state) do
+    case random_targets(state) do
       [] ->
         {:error, :no_target}
 
       targets ->
-        {unit_type, unit_id} = Enum.random(targets)
+        {unit_type, unit_id} = Enum.at(targets, :rand.uniform(length(targets)) - 1)
         {:ok, {:unit, unit_type, unit_id}}
     end
   end
@@ -338,39 +346,87 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     end
   end
 
-  defp lowest_hp_friend(%MobState{} = state) do
-    :mob
-    |> SpatialIndex.get_units_in_range(state.map_name, state.x, state.y, skill_range(state))
-    |> Enum.reject(&(&1 == state.instance_id))
-    |> Enum.flat_map(fn id ->
-      case UnitRegistry.get_unit(:mob, id) do
-        {:ok, {_module, %MobState{mob_id: mob_id} = friend, _pid}}
-        when mob_id == state.mob_id ->
-          living_friend(friend)
+  defp condition_friend(state, %{type: :friendhpltmaxrate, value: max_rate}),
+    do: hp_rate_friend(state, 0, max_rate)
 
-        _other ->
-          []
-      end
-    end)
-    |> Enum.min_by(& &1.hp, fn -> nil end)
-    |> then(fn
-      nil -> nil
-      friend -> friend.instance_id
+  defp condition_friend(state, %{type: :friendhpinrate, value: min_rate, val1: max_rate}),
+    do: hp_rate_friend(state, min_rate, max_rate)
+
+  defp condition_friend(_state, _condition), do: nil
+
+  @doc """
+  The friend a `friendhpltmaxrate`/`friendhpinrate` row finds: within 8 cells
+  of the caster in the map's block order, the first unit other than the caster
+  that is not its enemy and whose HP rate (`100 * (hp / max_hp)` as a
+  double, truncated) lies in `min_rate..max_rate`. A player-owned summon looks
+  among players, siding with its owner (players are never its enemies), any
+  other monster among monsters. A dead player still counts
+  (at 0%); a dead monster has left the map. `nil` when none qualifies.
+  """
+  @spec hp_rate_friend(MobState.t(), integer(), integer()) :: {:player | :mob, integer()} | nil
+  def hp_rate_friend(%MobState{} = state, min_rate, max_rate) do
+    {unit_type, caster} =
+      if state.owner_player_id,
+        do: {:player, :summon},
+        else: {:mob, MobState.to_combatant(state)}
+
+    state.map_name
+    |> SpatialIndex.units_in_area(
+      state.x - @friend_range,
+      state.y - @friend_range,
+      state.x + @friend_range,
+      state.y + @friend_range
+    )
+    |> Enum.find(fn {type, _id} = ref ->
+      type == unit_type and ref != {:mob, state.instance_id} and
+        friend_in_rate?(caster, ref, min_rate, max_rate)
     end)
   end
 
-  defp living_friend(friend) do
-    if Unit.living?(friend), do: [friend], else: []
+  defp friend_in_rate?(caster, {unit_type, unit_id}, min_rate, max_rate) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {module, unit, _pid}} ->
+        on_map?(unit) and not enemy?(caster, module, unit) and
+          rate_within?(hp_rate(unit), min_rate, max_rate)
+
+      {:error, :not_found} ->
+        false
+    end
   end
 
-  defp player_side_units_in_skill_range(%MobState{} = state) do
-    [:player, :homunculus]
-    |> Enum.flat_map(fn unit_type ->
-      unit_type
-      |> SpatialIndex.get_units_in_range(state.map_name, state.x, state.y, skill_range(state))
-      |> Enum.filter(&living_unit?(unit_type, &1))
-      |> Enum.map(&{unit_type, &1})
+  defp enemy?(:summon, PlayerState, _player), do: false
+  defp enemy?(caster, module, unit), do: Relationship.enemy?(caster, module.to_combatant(unit))
+
+  defp on_map?(%MobState{} = mob), do: Unit.living?(mob)
+  defp on_map?(%PlayerState{}), do: true
+
+  defp hp_rate(%MobState{hp: hp, max_hp: max_hp}), do: percentage(hp, max_hp)
+
+  defp hp_rate(%PlayerState{stats: stats}),
+    do: percentage(stats.current_state.hp, stats.derived_stats.max_hp)
+
+  defp percentage(_hp, max_hp) when max_hp <= 0, do: nil
+  defp percentage(hp, max_hp), do: trunc(100 * (hp / max_hp))
+
+  defp rate_within?(nil, _min_rate, _max_rate), do: false
+  defp rate_within?(rate, min_rate, max_rate), do: rate >= min_rate and rate <= max_rate
+
+  # The living enemies the random roll indexes: the player side within the
+  # skill range square, in the map's block order, at most the first 30.
+  defp random_targets(%MobState{} = state) do
+    range = skill_range(state)
+
+    state.map_name
+    |> SpatialIndex.units_in_area(
+      state.x - range,
+      state.y - range,
+      state.x + range,
+      state.y + range
+    )
+    |> Enum.filter(fn {unit_type, unit_id} ->
+      unit_type in [:player, :homunculus] and living_unit?(unit_type, unit_id)
     end)
+    |> Enum.take(@max_random_targets)
   end
 
   defp living_unit?(unit_type, unit_id) do

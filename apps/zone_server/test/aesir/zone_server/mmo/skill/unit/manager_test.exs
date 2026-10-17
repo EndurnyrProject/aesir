@@ -3385,6 +3385,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert MapSet.new() == Storage.get_observer_groups(98)
     end
 
+    test "a cell moved into another block becomes its newest unit; one moved within keeps its place" do
+      manager = start_manager(10_000)
+      follower = [skill_name: :field_unit, visibility: :none, state: %{follows_caster: true}]
+
+      :ok =
+        Manager.register(manager, group(1, [center: {97, 100}, cells: [{97, 100}]] ++ follower))
+
+      :ok =
+        Manager.register(manager, group(3, [center: {95, 100}, cells: [{95, 100}]] ++ follower))
+
+      :ok =
+        Manager.register(
+          manager,
+          group(2, skill_name: :field_unit, visibility: :none, cells: [{96, 100}, {98, 100}])
+        )
+
+      :ok = Manager.follow_caster(manager, 1, "prontera", {98, 100})
+      :ok = Manager.follow_caster(manager, 3, "prontera", {96, 100})
+      _ = :sys.get_state(manager)
+
+      assert [2, 1] == Enum.map(Storage.get_groups_at_cell("prontera", 98, 100), & &1.group_id)
+      assert [3, 2] == Enum.map(Storage.get_groups_at_cell("prontera", 96, 100), & &1.group_id)
+    end
+
     test "ignores stale requests" do
       manager = start_manager(10_000)
       :ok = Manager.register(manager, group(1, visibility: :public, cells: [{100, 100}]))

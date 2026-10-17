@@ -75,9 +75,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
 
   defp companions(%{stats: %{current_state: %{sp: sp}}}) when sp < @participant_sp_cost, do: []
 
+  # The first two eligible companions in the map's block order take part.
   defp companions(%PlayerState{} = caster) do
     caster.map_name
-    |> units_in_square(caster.x, caster.y, 1)
+    |> SpatialIndex.units_in_area(caster.x - 1, caster.y - 1, caster.x + 1, caster.y + 1)
     |> Enum.filter(&match?({:player, id} when id != caster.character_id, &1))
     |> Enum.flat_map(&eligible_companion(&1, caster))
     |> Enum.take(2)

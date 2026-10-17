@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler do
   Executes the Castling position swap between the owner and their Homunculus.
 
   Validates both swap endpoints, atomically swaps the registered positions,
-  clears owner movement and intent state, and best-effort redirects mobs that
-  were targeting the owner onto the Homunculus. Runs inside the owning player
+  clears owner movement and intent state, and redirects one monster rolled
+  among the owner's attackers around its pre-swap cell onto the Homunculus. Runs inside the owning player
   session process.
   """
 
@@ -12,16 +12,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Mob.Attackers
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler, as: PlayerMovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
-  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
-
-  @redirect_limit 8
-  @stale_fallback_limit 2
 
   @doc "Swaps owner and Homunculus positions when both endpoints are still valid."
   @spec swap(SessionState.t(), integer()) ::
@@ -69,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler do
               homunculus_runtime: runtime
             )
 
-          redirect_mob(owner.map_name, owner.character_id, gid)
+          redirect_attacker(owner, gid)
           {:noreply, updated}
 
         {:error, :stale_endpoint} ->
@@ -106,53 +103,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler do
     })
   end
 
-  defp redirect_mob(map_name, owner_id, homunculus_gid) do
-    expected = {:player, owner_id}
-    replacement = {:homunculus, homunculus_gid}
-
-    map_name
-    |> redirect_candidates(expected)
-    |> Enum.reduce_while(:not_redirected, fn mob_id, _acc ->
-      redirect_candidate(mob_id, expected, replacement)
-    end)
-  end
-
-  defp redirect_candidates(map_name, expected) do
-    map_ids = :mob |> SpatialIndex.get_units_on_map(map_name) |> Enum.sort()
-
-    {targeting_owner, stale_fallback} =
-      Enum.split_with(map_ids, fn mob_id -> mob_targets?(mob_id, expected) end)
-
-    (targeting_owner ++ Enum.take(stale_fallback, @stale_fallback_limit))
-    |> Enum.uniq()
-    |> Enum.take(@redirect_limit)
-  end
-
-  defp mob_targets?(mob_id, expected) do
-    match?({:ok, {_module, %{target_ref: ^expected}, _pid}}, UnitRegistry.get_unit(:mob, mob_id))
-  end
-
-  defp redirect_candidate(mob_id, expected, replacement) do
-    case live_mob_pid(mob_id) do
-      {:ok, pid} ->
-        case MobSession.redirect_target(pid, expected, replacement) do
-          :ok -> {:halt, :ok}
-          {:error, :outcome_unknown} -> {:halt, :outcome_unknown}
-          {:error, _definitive} -> {:cont, :not_redirected}
-        end
-
-      _unavailable ->
-        {:cont, :not_redirected}
-    end
-  end
-
-  defp live_mob_pid(mob_id) do
-    case UnitRegistry.get_unit(:mob, mob_id) do
-      {:ok, {_module, _state, pid}} when is_pid(pid) and pid != self() ->
-        if Process.alive?(pid), do: {:ok, pid}, else: :error
-
-      _other ->
-        :error
+  @doc """
+  Redirects one monster rolled among `owner`'s attackers onto the Homunculus.
+  The roll is made once; a monster that no longer targets the owner keeps its
+  target.
+  """
+  @spec redirect_attacker(PlayerState.t(), integer()) :: :ok | :none | {:error, atom()}
+  def redirect_attacker(%PlayerState{} = owner, homunculus_gid) do
+    with {:ok, mob_id} <- Attackers.random(owner),
+         {:ok, {_module, _state, pid}} when is_pid(pid) <- UnitRegistry.get_unit(:mob, mob_id) do
+      MobSession.redirect_target(
+        pid,
+        {:player, owner.character_id},
+        {:homunculus, homunculus_gid}
+      )
+    else
+      :none -> :none
+      _unavailable -> {:error, :unavailable}
     end
   end
 end

@@ -154,6 +154,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
     refute_received {:struck, _, _, {:mob, 2}, _}
   end
 
+  test "a cell strikes its reach in block order: non-monsters first, blocks by row, newest first",
+       %{manager: manager} do
+    :ok = Manager.register(manager, field(1, [{48, 48}]))
+    mob_at(1, 48, 48)
+    mob_at(3, 49, 48)
+    register_player(9, nil)
+    SpatialIndex.add_player(9, 49, 49, @map)
+    mob_at(2, 47, 47)
+
+    :ok = Manager.tick(manager, 1_000)
+
+    struck =
+      for _ <- 1..4 do
+        assert_received {:struck, 1, {48, 48}, ref, 1_000}
+        ref
+      end
+
+    assert struck == [{:player, 9}, {:mob, 2}, {:mob, 3}, {:mob, 1}]
+  end
+
   test "each target is struck once per interval, a newcomer on the next tick", %{
     manager: manager
   } do

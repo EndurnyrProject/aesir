@@ -188,9 +188,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
     test "skips a chat-room member standing on the portal" do
       stub_target_session(3000, 1)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn "prt_fild08", 100, 100, 0 ->
-        [{:player, 3000}]
-      end)
+      stub(SpatialIndex, :units_in_cell, fn "prt_fild08", 100, 100 -> [{:player, 3000}] end)
 
       assert {:ok, %Group{state: %{uses: 8}}} =
                AlWarp.on_interval(group(open_state()), now_ms())
@@ -201,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
     test "warps players standing on the portal cell once it opens" do
       stub_target_session(3000)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn "prt_fild08", 100, 100, 0 ->
+      stub(SpatialIndex, :units_in_cell, fn "prt_fild08", 100, 100 ->
         [{:player, 3000}, {:mob, 5000}]
       end)
 
@@ -214,14 +212,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
     test "expires when standing occupants drain the last use" do
       stub_target_session(3000)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn _, _, _, _ -> [{:player, 3000}] end)
+      stub(SpatialIndex, :units_in_cell, fn _, _, _ -> [{:player, 3000}] end)
 
       assert {:expire, %Group{state: %{uses: 0}}} =
                AlWarp.on_interval(group(open_state(%{uses: 1})), now_ms())
     end
 
+    test "the last use goes to the first player in the cell's block order" do
+      test_pid = self()
+
+      stub(UnitRegistry, :get_unit, fn :player, player_id ->
+        state = %PlayerState{
+          character_id: player_id,
+          action_state: :idle,
+          stats: %{current_state: %{hp: 1}}
+        }
+
+        send(test_pid, {:warped, player_id})
+        {:ok, {PlayerState, state, test_pid}}
+      end)
+
+      stub(SpatialIndex, :units_in_cell, fn "prt_fild08", 100, 100 ->
+        [{:player, 3001}, {:player, 3000}]
+      end)
+
+      assert {:expire, %Group{state: %{uses: 0}}} =
+               AlWarp.on_interval(group(open_state(%{uses: 1})), now_ms())
+
+      assert_received {:warped, 3001}
+      refute_received {:warped, 3000}
+    end
+
     test "does nothing before the portal opens" do
-      reject(&SpatialIndex.get_all_units_in_range/4)
+      reject(&SpatialIndex.units_in_cell/3)
 
       state = open_state(%{opens_at: now_ms() + 10_000})
       assert {:ok, %Group{state: %{uses: 8}}} = AlWarp.on_interval(group(state), now_ms())

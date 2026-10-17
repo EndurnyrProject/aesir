@@ -22,19 +22,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
   @range 1
   @performer_weapons [:musical, :whip]
 
-  @doc "Returns the first eligible partner within one cell of the caster, or `:none`."
+  @doc """
+  Returns the first eligible partner within one cell of the caster in the map's
+  block order (`SpatialIndex.units_in_area/5`), or `:none`.
+  """
   @spec find(PlayerState.t(), integer()) :: {:ok, PlayerState.t()} | :none
   def find(%PlayerState{} = caster, skill_id) do
     case performer_job(caster) do
       {:ok, caster_job} ->
         caster.map_name
-        |> SpatialIndex.get_players_in_area(
+        |> SpatialIndex.units_in_area(
           caster.x - @range,
           caster.y - @range,
           caster.x + @range,
           caster.y + @range
         )
-        |> Enum.find_value(:none, &resolve_partner(&1, caster, caster_job, skill_id))
+        |> Enum.find_value(:none, fn
+          {:player, id} -> resolve_partner(id, caster, caster_job, skill_id)
+          _other -> nil
+        end)
 
       :error ->
         :none

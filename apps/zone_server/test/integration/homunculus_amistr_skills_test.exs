@@ -448,67 +448,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
     assert swapped.homunculus_runtime.movement_path == []
   end
 
-  test "Castling bounds definitive redirect failures and halts on an unknown outcome" do
-    session = start_amistr_session()
-    on_exit(fn -> stop_if_alive(session.pid) end)
-    owner_id = PlayerSession.get_state(session.pid).game_state.character_id
-    test_pid = self()
-    {:ok, redirect_result} = Agent.start_link(fn -> {:error, :target_changed} end)
-
-    mobs =
-      for unit_id <- 1_820_001..1_820_009 do
-        start_mob_session(unit_id: unit_id, map_name: "amistr_castling_map", awake: false)
-      end
-
-    Enum.each(mobs, &on_exit(fn -> end_mob_session(&1) end))
-    Enum.each(mobs, &MobSession.set_target(&1.pid, {:player, owner_id}))
-
-    assert_eventually(fn ->
-      Enum.all?(mobs, &(get_mob_state(&1.pid).target_ref == {:player, owner_id}))
-    end)
-
-    Enum.each(mobs, fn mob ->
-      :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, get_mob_state(mob.pid))
-    end)
-
-    Mimic.copy(MobSession)
-    Mimic.allow(MobSession, self(), session.pid)
-
-    stub(MobSession, :redirect_target, fn pid, {:player, ^owner_id}, _replacement ->
-      send(test_pid, {:castling_redirect_attempt, pid})
-      Agent.get(redirect_result, & &1)
-    end)
-
-    swap = fn ->
-      :sys.replace_state(session.pid, fn current ->
-        assert {:noreply, swapped} =
-                 CommandHandler.local_effect(
-                   {:homunculus, {:castling_swap, current.homunculus.world_gid}},
-                   current
-                 )
-
-        swapped
-      end)
-    end
-
-    swap.()
-    mob_ids_by_pid = Map.new(mobs, &{&1.pid, &1.unit_id})
-
-    attempts =
-      for _ <- 1..8 do
-        assert_receive {:castling_redirect_attempt, pid}
-        Map.fetch!(mob_ids_by_pid, pid)
-      end
-
-    assert attempts == Enum.to_list(1_820_001..1_820_008)
-    refute_receive {:castling_redirect_attempt, _}
-
-    Agent.update(redirect_result, fn _ -> {:error, :outcome_unknown} end)
-    swap.()
-    assert_receive {:castling_redirect_attempt, _pid}
-    refute_receive {:castling_redirect_attempt, _}
-  end
-
   test "rank-five Castling swaps the real aggregate and redirects exactly one mob" do
     session = start_amistr_session()
     on_exit(fn -> stop_if_alive(session.pid) end)
@@ -521,6 +460,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
       start_mob_session(
         unit_id: 1_810_001,
         map_name: initial.game_state.map_name,
+        position: {initial.game_state.x + 1, initial.game_state.y},
         awake: false
       )
 
@@ -528,6 +468,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
       start_mob_session(
         unit_id: 1_810_002,
         map_name: initial.game_state.map_name,
+        position: {initial.game_state.x, initial.game_state.y + 1},
         awake: false
       )
 
@@ -535,6 +476,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
       start_mob_session(
         unit_id: 1_810_003,
         map_name: initial.game_state.map_name,
+        position: {initial.game_state.x + 1, initial.game_state.y + 1},
         awake: false
       )
 

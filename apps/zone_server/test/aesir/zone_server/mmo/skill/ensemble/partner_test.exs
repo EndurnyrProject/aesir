@@ -128,6 +128,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     assert partner in [first, second]
   end
 
+  test "of several eligible partners, the first in block order wins: block rows by y, then x" do
+    caster = %{player(1, :bard, 7, @violin) | x: 48, y: 48}
+    register(%{player(2, :dancer, 4, @whip) | x: 47, y: 49})
+    lower_row = %{player(3, :dancer, 4, @whip) | x: 49, y: 47}
+    register(lower_row)
+
+    assert {:ok, ^lower_row} = Partner.find(caster, @skill_id)
+  end
+
   test "requires adjacency and rejects a partner already performing a solo song" do
     caster = player(1, :bard, 1, @violin)
     partner = %{player(2, :dancer, 1, @whip) | x: 52}

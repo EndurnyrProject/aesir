@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   Protector. Otherwise the cell offers its group the combat units within
   `unit_range` cells of it (Chebyshev square, line of sight from the cell when
   the group path-checks) whose strike interval has run out, never an
-  invincible player; the group keeps the
+  invincible player, in the map's block order (`SpatialIndex.units_in_area/5`:
+  a trap springs on, and a budget is spent on, the first of them); the group
+  keeps the
   ones it may affect (`unit_targets/3`) and strikes each once
   (`on_unit_hit/4`), and that unit's next strike moves to `now + interval`.
 
@@ -43,7 +45,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   group keeps its own skill, interval and NoOverlap afterwards.
   """
 
-  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
@@ -248,18 +249,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
 
   defp reached(%Group{map_name: map_name, unit_range: range} = group, {x, y} = cell) do
     map_name
-    |> SpatialIndex.get_all_units_in_range(x, y, range * 2)
+    |> SpatialIndex.units_in_area(x - range, y - range, x + range, y + range)
     |> Enum.filter(fn {unit_type, unit_id} = ref ->
       CombatTarget.combat_unit?(ref) and
-        case SpatialIndex.get_unit_position(unit_type, unit_id) do
-          {:ok, {tx, ty, ^map_name}} ->
-            Geometry.chebyshev_distance(x, y, tx, ty) <= range and
-              (not group.path_check or LineOfSight.clear?(map_name, cell, {tx, ty}))
-
-          _elsewhere ->
-            false
-        end
+        (not group.path_check or sighted?(map_name, cell, unit_type, unit_id))
     end)
+  end
+
+  defp sighted?(map_name, cell, unit_type, unit_id) do
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {tx, ty, ^map_name}} -> LineOfSight.clear?(map_name, cell, {tx, ty})
+      _elsewhere -> false
+    end
   end
 
   defp key(%Group{no_overlap: true, skill_id: skill_id}, ref), do: {ref, {:skill, skill_id}}

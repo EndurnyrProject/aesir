@@ -213,7 +213,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
   end
 
   @doc """
-  Returns every group whose footprint covers cell `(x, y)` on `map_name`.
+  Returns every group whose footprint covers cell `(x, y)` on `map_name`, the
+  one whose unit entered the cell's map block most recently first
+  (`Group.block_entry/2`), as the map lists them.
 
   Used by the movement-pipeline `on_touch` hook to find ground units a mover
   just stepped onto.
@@ -225,6 +227,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
     |> :ets.lookup({map_name, x, y})
     |> Enum.map(fn {_coordinate, group_id} -> group_id end)
     |> indexed_groups()
+    |> Enum.sort_by(&Group.block_entry(&1, {x, y}), :desc)
   end
 
   @doc "Whether a Land Protector footprint covers cell `(x, y)` on `map_name`."

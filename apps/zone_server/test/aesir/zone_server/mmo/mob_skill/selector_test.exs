@@ -184,6 +184,24 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob, [r], counts.(4)) == nil
     end
 
+    test "friendhpltmaxrate and friendhpinrate fire when a friend in the HP band is found" do
+      lt = row(%{condition: %{type: :friendhpltmaxrate, value: 60}})
+      band = row(%{condition: %{type: :friendhpinrate, value: 20, val1: 40}})
+      mob = mob(%{instance_id: 9001})
+
+      found = fn expected ->
+        opts(
+          hp_rate_friend: fn %MobState{instance_id: 9001}, low, high ->
+            if {low, high} == expected, do: {:mob, 9002}
+          end
+        )
+      end
+
+      assert Selector.select(mob, [lt], found.({0, 60})) == {:cast, lt}
+      assert Selector.select(mob, [band], found.({20, 40})) == {:cast, band}
+      assert Selector.select(mob, [lt], found.(:none)) == nil
+    end
+
     test "an unsupported condition type never fires" do
       r = row(%{condition: %{type: :skillused, value: 100}})
 

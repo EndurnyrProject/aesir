@@ -240,6 +240,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     refute_received {:charge, _pid}
   end
 
+  test "of three eligible companions, the first two in block order are charged" do
+    test_pid = self()
+    [west_pid, east_pid, newest_pid] = for _ <- 1..3, do: spawn(fn -> :ok end)
+    caster = register_player(player(@caster_id, 150, 150, dir: 4))
+    register_player(player(1_001, 149, 150, job_id: 4, sp: 0), west_pid)
+    register_player(player(1_002, 151, 150, job_id: 4, sp: 0), east_pid)
+    register_player(player(1_003, 149, 150, job_id: 4, sp: 0), newest_pid)
+
+    stub(PlayerSession, :try_consume_sp, fn pid, 10 ->
+      send(test_pid, {:charge, pid})
+      :ok
+    end)
+
+    stub(StatusInterpreter, :apply_status, fn :player, _id, :sc_benedictio, _params -> :ok end)
+    stub(Combat, :splash_targets, fn "prontera", {160, 160}, 1, @caster_id -> [] end)
+
+    assert {:ok, ^caster} =
+             PrBenedictio.cast(caster, {:ground, 160, 160}, 3, PrBenedictio.definition())
+
+    assert_received {:charge, ^newest_pid}
+    assert_received {:charge, ^east_pid}
+    refute_received {:charge, ^west_pid}
+  end
+
   test "completion revalidates the formation before charging or applying either area pass" do
     {caster, _west, _east} = register_formation()
     :ok = SpatialIndex.update_unit_position(:player, 1_002, 170, 170, "prontera")

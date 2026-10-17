@@ -16,6 +16,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   `path_check` is set, and a `no_overlap` field shares each unit's strike
   interval with every other group of its skill.
 
+  `cell_entries` records when a cell's unit entered its 8x8 map block, for the
+  cells that moved into another block since placement; every other cell entered
+  with the group: its placement stamp is the `group_id` itself, a monotonic
+  unique integer taken when the group is built for the cast (not when it is
+  registered with the manager), from the same counter a moved cell's fresh
+  stamp comes from (`block_entry/2`).
+
   `handler` carries the group's tick/trigger module for casters that bypass
   `Skill.Catalog` (e.g. mob ground skills built without a catalog entry). When
   `nil`, `Skill.Unit.Manager` resolves the handler from `skill_name` via
@@ -59,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
             lifecycle_policy: %LifecyclePolicy{},
             visibility: :public,
             state: %{},
+            cell_entries: %{},
             handler: nil
 
   @type t() :: %__MODULE__{
@@ -85,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
           lifecycle_policy: LifecyclePolicy.t(),
           visibility: visibility(),
           state: skill_state(),
+          cell_entries: %{optional(cell()) => integer()},
           handler: module() | nil
         }
 
@@ -142,6 +151,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   @spec ignores_land_protector?(t()) :: boolean()
   def ignores_land_protector?(%__MODULE__{state: %{ignore_land_protector: true}}), do: true
   def ignores_land_protector?(%__MODULE__{}), do: false
+
+  @doc """
+  When the unit on `cell` entered its map block, comparable across groups: the
+  larger entered more recently.
+  """
+  @spec block_entry(t(), cell()) :: integer()
+  def block_entry(%__MODULE__{cell_entries: entries, group_id: group_id}, cell),
+    do: Map.get(entries, cell, group_id)
 
   @doc """
   Whether this group's footprint moves with its caster (a pre-renewal song or

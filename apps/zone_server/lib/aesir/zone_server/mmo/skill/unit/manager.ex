@@ -1262,10 +1262,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   # Shifts every cell by the caster's displacement, keeping cell IDs. Each
   # cell's terrain and target indexes follow it; occupants of vacated cells
-  # leave the field and occupants of newly covered cells are placed on it.
+  # leave the field and occupants of newly covered cells are placed on it. A
+  # cell crossing into another map block becomes that block's newest unit.
   defp move_group(%Group{center: {cx, cy}} = group, {x, y} = center) do
     shift = fn {cell_x, cell_y} -> {cell_x + x - cx, cell_y + y - cy} end
-    moved = %{group | center: center, origin: center, cells: Enum.map(group.cells, shift)}
+
+    moved = %{
+      group
+      | center: center,
+        origin: center,
+        cells: Enum.map(group.cells, shift),
+        cell_entries: Map.new(group.cells, &moved_entry(group, &1, shift.(&1)))
+    }
+
     vacated = group.cells -- moved.cells
 
     module =
@@ -1280,6 +1289,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     group.group_id |> Storage.get_cells_by_group() |> Enum.each(&move_cell(&1, shift))
     FieldSupport.place(moved, moved.cells -- group.cells)
     publish_move(moved)
+  end
+
+  defp moved_entry(group, {old_x, old_y} = old, {new_x, new_y} = new) do
+    if SpatialIndex.block(old_x, old_y) == SpatialIndex.block(new_x, new_y),
+      do: {new, Group.block_entry(group, old)},
+      else: {new, System.unique_integer([:monotonic, :positive])}
   end
 
   defp move_cell(%Cell{} = cell, shift) do

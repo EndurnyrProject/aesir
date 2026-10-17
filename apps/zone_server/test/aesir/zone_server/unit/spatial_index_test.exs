@@ -273,6 +273,38 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
     end
   end
 
+  describe "units_in_area" do
+    test "walks blocks row by row, non-monsters before monsters, each block newest first" do
+      SpatialIndex.add_unit(:mob, 5001, 41, 41, "prontera")
+      SpatialIndex.add_player(1001, 47, 41, "prontera")
+      SpatialIndex.add_player(1002, 48, 40, "prontera")
+      SpatialIndex.add_unit(:mob, 5002, 40, 48, "prontera")
+      SpatialIndex.add_unit(:mob, 5003, 47, 40, "prontera")
+      SpatialIndex.add_player(1003, 41, 47, "prontera")
+      SpatialIndex.add_player(1004, 40, 40, "prontera")
+      SpatialIndex.add_player(1005, 49, 49, "prontera")
+      SpatialIndex.add_player(1006, 39, 40, "prontera")
+
+      assert SpatialIndex.units_in_area("prontera", 40, 40, 49, 49) == [
+               {:player, 1004},
+               {:player, 1003},
+               {:player, 1001},
+               {:player, 1002},
+               {:player, 1005},
+               {:mob, 5003},
+               {:mob, 5001},
+               {:mob, 5002}
+             ]
+    end
+
+    test "normalizes reversed corners and is map-scoped" do
+      SpatialIndex.add_player(1001, 50, 50, "prontera")
+      SpatialIndex.add_player(1002, 50, 50, "geffen")
+
+      assert SpatialIndex.units_in_area("prontera", 51, 51, 49, 49) == [{:player, 1001}]
+    end
+  end
+
   describe "get_players_in_area" do
     test "returns players inside the rectangle, excluding those outside" do
       SpatialIndex.add_player(1001, 50, 50, "prontera")

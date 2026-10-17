@@ -93,7 +93,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
      }}
   end
 
-  # Warps players already standing on the portal cell once the opening phase ends.
+  # Warps players already standing on the portal cell once the opening phase
+  # ends, in the cell's block order: when the uses run out, the rest stay.
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
   def on_interval(%Group{} = group, now) do
@@ -108,7 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
   defp warp_occupants(%Group{center: {cx, cy}, map_name: map_name} = group) do
     updated =
       map_name
-      |> SpatialIndex.get_all_units_in_range(cx, cy, 0)
+      |> SpatialIndex.units_in_cell(cx, cy)
       |> Enum.filter(&match?({:player, _id}, &1))
       |> Enum.reduce(group, fn {:player, player_id}, acc -> consume_warp(acc, player_id) end)
 

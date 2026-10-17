@@ -176,29 +176,57 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   """
   @spec units_in_cell(String.t(), integer(), integer()) :: [{atom(), integer()}]
   def units_in_cell(map_name, x, y) do
-    cell = cell_key(map_name, x, y)
+    {mobs, others} =
+      block_entries(cell_key(map_name, x, y), map_name, &(&1 == x and &2 == y))
 
+    newest_first(others) ++ newest_first(mobs)
+  end
+
+  @doc """
+  The units standing inside the rectangle `{x1, y1}`-`{x2, y2}` (corners
+  inclusive, in any order), in the order the map's blocks list them: every unit
+  other than a monster first, then the monsters. Each group walks the 8x8
+  blocks row by row (y, then x) and lists each block's units with the one that
+  entered it most recently first.
+  """
+  @spec units_in_area(String.t(), integer(), integer(), integer(), integer()) ::
+          [{atom(), integer()}]
+  def units_in_area(map_name, x1, y1, x2, y2) do
+    {x_min, x_max} = Enum.min_max([x1, x2])
+    {y_min, y_max} = Enum.min_max([y1, y2])
+    inside? = fn ux, uy -> ux >= x_min and ux <= x_max and uy >= y_min and uy <= y_max end
+
+    blocks =
+      for cy <- div(y_min, @cell_size)..div(y_max, @cell_size),
+          cx <- div(x_min, @cell_size)..div(x_max, @cell_size),
+          do: block_entries({map_name, cx, cy}, map_name, inside?)
+
+    Enum.flat_map(blocks, &newest_first(elem(&1, 1))) ++
+      Enum.flat_map(blocks, &newest_first(elem(&1, 0)))
+  end
+
+  # A block's units standing where `pred` holds, split into `{monsters, others}`.
+  defp block_entries(cell, map_name, pred) do
     entries =
       case :ets.lookup(spatial_index_table(), cell) do
         [{^cell, units_map}] ->
           for {unit_type, ids} <- units_map,
               {unit_id, entry} <- ids,
-              at?(unit_type, unit_id, map_name, &(&1 == x and &2 == y)),
+              at?(unit_type, unit_id, map_name, pred),
               do: {unit_type, unit_id, entry}
 
         [] ->
           []
       end
 
-    {mobs, others} =
-      Enum.split_with(entries, fn {unit_type, _id, _entry} -> unit_type == :mob end)
-
-    Enum.map(newest_first(others) ++ newest_first(mobs), fn {unit_type, unit_id, _entry} ->
-      {unit_type, unit_id}
-    end)
+    Enum.split_with(entries, fn {unit_type, _id, _entry} -> unit_type == :mob end)
   end
 
-  defp newest_first(entries), do: Enum.sort_by(entries, &elem(&1, 2), :desc)
+  defp newest_first(entries) do
+    entries
+    |> Enum.sort_by(&elem(&1, 2), :desc)
+    |> Enum.map(fn {unit_type, unit_id, _entry} -> {unit_type, unit_id} end)
+  end
 
   # Candidate ids of `unit_type` across `cells`; cells are coarse, so callers
   # still confirm each unit's exact position with `at?/4`.
@@ -356,6 +384,10 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     :ets.insert(map_units_table(), {{new_map, unit_type, unit_id}})
     :ok
   end
+
+  @doc "The 8x8 map block holding cell `(x, y)`."
+  @spec block(integer(), integer()) :: {integer(), integer()}
+  def block(x, y), do: {div(x, @cell_size), div(y, @cell_size)}
 
   defp cell_key(map_name, x, y) do
     {map_name, div(x, @cell_size), div(y, @cell_size)}

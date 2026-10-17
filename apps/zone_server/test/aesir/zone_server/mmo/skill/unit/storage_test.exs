@@ -292,6 +292,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.StorageTest do
       assert ids == [1, 2]
     end
 
+    test "lists the newest unit on the cell first, and an update keeps the order" do
+      :ok = Storage.insert(group(1, cells: [{100, 100}]))
+      :ok = Storage.insert(group(2, cells: [{100, 100}]))
+      assert [2, 1] == Enum.map(Storage.get_groups_at_cell("prontera", 100, 100), & &1.group_id)
+
+      :ok = Storage.update(group(2, cells: [{100, 100}], state: %{touched: true}))
+      assert [2, 1] == Enum.map(Storage.get_groups_at_cell("prontera", 100, 100), & &1.group_id)
+    end
+
     test "matches any cell of a multi-cell footprint" do
       :ok = Storage.insert(group(1, cells: [{10, 10}, {11, 10}, {12, 10}]))
 
