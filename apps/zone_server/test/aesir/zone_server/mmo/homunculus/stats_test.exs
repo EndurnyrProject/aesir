@@ -129,9 +129,30 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.StatsTest do
     assert effective.combat_stats.matk_min == mode_value(116, 126)
     assert effective.combat_stats.matk_max == mode_value(116, 126)
     assert effective.attack_delay_ms == 542
-    assert Stats.movement_delay_ms(200, modifiers) == 80
-    assert Stats.movement_delay_ms(1000, %{haste_rate: 80}) == 400
-    assert Stats.movement_delay_ms(1000, %{haste_rate: 30, movement_speed: 30}) == 1000
+  end
+
+  describe "walk_speed/3" do
+    @tag game_mode: :renewal
+    test "renewal starts from the owner's current speed and applies the Homunculus's statuses" do
+      homunculus = %{state(6_001, %{}) | owner_walk_speed: 150}
+
+      # Owner under Increase AGI (112), the Homunculus under Decrease AGI.
+      assert Stats.walk_speed(homunculus, %{movement_speed: 25}, 112) == 140
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal starts from the owner speed copied at its last recalculation" do
+      homunculus = %{state(6_001, %{}) | owner_walk_speed: 150}
+
+      assert Stats.walk_speed(homunculus, %{movement_speed: 25}, 112) == 187
+    end
+
+    test "a slow slows it and only the strongest haste counts" do
+      homunculus = %{state(6_001, %{}) | owner_walk_speed: 150}
+
+      assert Stats.walk_speed(homunculus, %{movement_speed: 300}, 150) == 600
+      assert Stats.walk_speed(homunculus, %{haste_rate: 80}, 150) == 60
+    end
   end
 
   test "preserves absolute resources and clamps only when an effective maximum shrinks" do

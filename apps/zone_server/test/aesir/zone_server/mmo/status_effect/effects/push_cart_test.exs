@@ -12,17 +12,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCartTest do
     end
   end
 
-  describe "modifiers/2 movement_speed penalty (rAthena 50 - 5 * pushcart_level)" do
+  describe "modifiers/2 walk_delay_rate penalty (rAthena 50 - 5 * pushcart_level)" do
     test "level 0 (unlearned) applies the full +50% slowdown" do
-      assert %{movement_speed: 50} = PushCart.modifiers(entry(val1: 0), %{})
+      assert %{walk_delay_rate: 50} = PushCart.modifiers(entry(val1: 0), %{})
     end
 
     test "level 5 applies a +25% slowdown" do
-      assert %{movement_speed: 25} = PushCart.modifiers(entry(val1: 5), %{})
+      assert %{walk_delay_rate: 25} = PushCart.modifiers(entry(val1: 5), %{})
     end
 
     test "max level (10) removes the penalty entirely" do
-      assert %{movement_speed: 0} = PushCart.modifiers(entry(val1: 10), %{})
+      assert %{walk_delay_rate: 0} = PushCart.modifiers(entry(val1: 10), %{})
     end
   end
 

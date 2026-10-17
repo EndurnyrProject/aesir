@@ -7,8 +7,10 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
   snapshot, so repeated derivation cannot compound them.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.WalkSpeed
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
 
   @brain_surgery 8003
@@ -107,11 +109,24 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
 
   defp learned_rank(_skills, _skill_id, false), do: 0
 
-  @doc "Returns the current movement step delay after Homunculus movement-haste modifiers."
-  @spec movement_delay_ms(pos_integer(), modifiers()) :: pos_integer()
-  def movement_delay_ms(base_delay_ms, modifiers) when base_delay_ms > 0 and is_map(modifiers) do
-    haste = max(Map.get(modifiers, :haste_rate, 0) - Map.get(modifiers, :movement_speed, 0), 0)
-    div(base_delay_ms * max(100 - haste, 40), 100)
+  @doc """
+  The Homunculus's walk speed: its owner's speed through its own statuses
+  (`WalkSpeed.calculate/3`).
+
+  In renewal every owner speed change reaches the Homunculus, so the owner's
+  current speed is used. In pre-renewal the Homunculus copies its owner's speed
+  only when its own stats are recalculated (call, level, skill, evolution, a
+  speed status of its own), which is `owner_walk_speed`.
+  """
+  @spec walk_speed(HomunculusState.t(), modifiers(), pos_integer()) :: pos_integer()
+  def walk_speed(%HomunculusState{} = homunculus, modifiers, owner_walk_speed) do
+    base =
+      case GameMode.mode() do
+        :renewal -> owner_walk_speed
+        :pre_renewal -> homunculus.owner_walk_speed
+      end
+
+    WalkSpeed.calculate(base, modifiers)
   end
 
   defp ensure_raw_maxima(%HomunculusState{raw_max_hp: nil, raw_max_sp: nil} = state) do

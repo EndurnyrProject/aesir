@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
@@ -243,7 +244,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   defp refresh_status(session, homunculus, :sc_change, :expired) do
     if lif?(homunculus) do
-      recomputed = recompute_statuses(homunculus)
+      recomputed = recompute_statuses(session, homunculus, :sc_change)
       changed = %{recomputed | hp: 10, sp: 10}
 
       case persist_resources(changed) do
@@ -255,24 +256,37 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
           {:stop, {:homunculus_change_expiry_persistence_failed, reason}, session}
       end
     else
-      commit_recomputed(session, homunculus)
+      commit_recomputed(session, homunculus, :sc_change)
     end
   end
 
-  defp refresh_status(session, homunculus, _status_id, _event),
-    do: commit_recomputed(session, homunculus)
+  defp refresh_status(session, homunculus, status_id, _event),
+    do: commit_recomputed(session, homunculus, status_id)
 
-  defp commit_recomputed(session, homunculus) do
-    recomputed = recompute_statuses(homunculus)
+  defp commit_recomputed(session, homunculus, status_id) do
+    recomputed = recompute_statuses(session, homunculus, status_id)
     notify_hp(recomputed)
     {:noreply, StateCommit.commit(session, recomputed)}
   end
 
-  defp recompute_statuses(%HomunculusState{} = homunculus) do
+  # A status with a speed recalculation flag recalculates the Homunculus's
+  # speed, copying its owner's speed again.
+  defp recompute_statuses(session, %HomunculusState{} = homunculus, status_id) do
     modifiers =
       ModifierCalculator.get_all_modifiers(:homunculus, homunculus.world_gid)
 
-    Stats.recompute(homunculus, modifiers)
+    recomputed = Stats.recompute(homunculus, modifiers)
+
+    if speed_status?(status_id),
+      do: StateCommit.copy_owner_walk_speed(recomputed, session),
+      else: recomputed
+  end
+
+  defp speed_status?(status_id) do
+    case Registry.get_definition(status_id) do
+      %{calc_flags: flags} -> Enum.any?(flags, &(&1 in [:speed, :movement_speed]))
+      _unknown -> false
+    end
   end
 
   defp lif?(%HomunculusState{} = homunculus) do

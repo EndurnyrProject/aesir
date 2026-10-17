@@ -6,17 +6,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
+  alias Aesir.ZoneServer.Mmo.Skills.Thief.TfMiss
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.WalkSpeed
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
   @base_walk_speed 150
-  @min_walk_speed 20
-  @max_walk_speed 1_000
-  @min_speed_rate 40
 
   @doc """
   Handles applying a status effect to the player.
@@ -111,44 +112,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   end
 
   @doc """
-  The player's walk speed (ms per straight cell) for a stats snapshot.
+  The player's walk speed (ms per straight cell) for a stats snapshot, through
+  `WalkSpeed.calculate/3` from the base 150.
 
-  Statuses contribute summed `:movement_speed` slows and max-folded
-  `:haste_rate` hastes. Riding retains its separate additive movement bonus.
-  Equipment uses the opposite convention, so `bSpeedRate` keeps the strongest source while
-  `bSpeedAddRate` stacks; their sum is subtracted because positive means faster.
-
-  The rate is floored at 40 and the resulting walk speed is clamped to the
-  engine's MIN/MAX walk-speed bounds. With no speed modifier from either source
-  the speed stays exactly the base 150.
+  The player terms: Tunnel Drive's slow while hidden, the Improve Dodge haste,
+  and the item speed. The item speed is the strongest bonus speed rate (from
+  equipment or a status such as a speed potion, never below 0) plus the summed
+  additive speed rate. `cast_speed_rate` is Free Cast's speed rate while a
+  cast is in flight, 0 otherwise.
   """
-  @spec walk_speed_for(Stats.t()) :: pos_integer()
-  def walk_speed_for(stats) do
-    equipment_speed =
-      Stats.get_equipment_modifier(stats, :movement_speed) +
-        Stats.get_equipment_modifier(stats, :movement_speed_add)
-
-    speed_delta =
-      Stats.get_status_modifier(stats, :movement_speed) -
-        Stats.get_status_modifier(stats, :haste_rate) - equipment_speed +
-        hiding_speed_penalty(stats)
-
-    speed_rate = max(100 + speed_delta, @min_speed_rate)
-
-    calculated_walk_speed =
-      @base_walk_speed
-      |> Kernel.*(speed_rate)
-      |> div(100)
-      |> max(@min_walk_speed)
-      |> min(@max_walk_speed)
-
-    floored =
-      max(calculated_walk_speed, Map.get(stats.modifiers.status_effects, :walk_speed_floor, 0))
-
-    Map.get(stats.modifiers.status_effects, :walk_speed_override, floored)
+  @spec walk_speed_for(Stats.t(), non_neg_integer()) :: pos_integer()
+  def walk_speed_for(stats, cast_speed_rate \\ 0) do
+    WalkSpeed.calculate(@base_walk_speed, stats.modifiers.status_effects, %{
+      tunnel_drive_slow: tunnel_drive_slow(stats),
+      item_speed: item_speed(stats),
+      improve_dodge_haste: TfMiss.move_haste(stats),
+      cast_speed_rate: cast_speed_rate
+    })
   end
 
-  defp hiding_speed_penalty(stats) do
+  @doc """
+  The player's walk speed right now: `walk_speed`, or while a cast is in
+  flight with Free Cast learned, the speed under Free Cast's rate.
+  """
+  @spec current_walk_speed(PlayerState.t()) :: pos_integer()
+  def current_walk_speed(%PlayerState{casting: nil} = game_state), do: game_state.walk_speed
+
+  def current_walk_speed(%PlayerState{} = game_state) do
+    case SaFreecast.level(game_state) do
+      0 -> game_state.walk_speed
+      level -> walk_speed_for(game_state.stats, SaFreecast.speed_rate(level))
+    end
+  end
+
+  defp tunnel_drive_slow(stats) do
     if Stats.get_status_flag(stats, :hiding), do: Passives.hidden_move_speed(stats), else: 0
+  end
+
+  defp item_speed(stats) do
+    speed_rate =
+      stats
+      |> Stats.get_equipment_modifier(:movement_speed)
+      |> max(Stats.get_status_modifier(stats, :speed_rate_bonus))
+      |> max(0)
+
+    speed_rate + Stats.get_equipment_modifier(stats, :movement_speed_add)
   end
 end

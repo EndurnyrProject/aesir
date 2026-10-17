@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LongingTest do
   setup :setup_ets_tables
   setup :set_mimic_private
 
+  @tag game_mode: :pre_renewal
   test "Longing's movement and ASPD penalties vanish at level five" do
     for {level, penalty} <- [{1, 40}, {2, 30}, {3, 20}, {4, 10}, {5, 0}] do
       assert %{movement_speed: ^penalty, aspd_rate: aspd} =
@@ -33,6 +34,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LongingTest do
 
       assert aspd == -penalty
     end
+  end
+
+  @tag game_mode: :renewal
+  test "renewal's Longing keeps the ASPD penalty but has no movement term" do
+    assert Longing.modifiers(%StatusEntry{val1: 1}, %{}) == %{aspd_rate: -40}
   end
 
   test "support-blocking statuses refuse ally casts without blocking unrelated skills" do

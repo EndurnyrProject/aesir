@@ -194,6 +194,15 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     assert {:ok, {2, 1, @map}} = SpatialIndex.get_unit_position(:homunculus, 700)
   end
 
+  test "entering a map copies the owner's current walk speed onto the Homunculus" do
+    session = active_session()
+    session = %{session | game_state: %{session.game_state | walk_speed: 112}}
+
+    {:noreply, entered} = CommandHandler.entered_after_warp(session)
+
+    assert entered.homunculus.owner_walk_speed == 112
+  end
+
   test "a Homunculus warp lands only for the exact living endpoint, even on its own cell" do
     session = active_session()
     test_pid = self()
@@ -496,6 +505,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
       dir: 0,
       action_state: :idle,
       movement_state: :standing,
+      walk_speed: 150,
       combat_target_id: nil,
       inventory: %{},
       stats: %PlayerStats{

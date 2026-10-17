@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnsembleFatigueTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
@@ -40,7 +41,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnsembleFatigueTest do
     assert :ok = apply_fatigue()
     fatigued = Calculator.calculate_stats(player.stats, @player_id)
 
-    assert StatusManager.walk_speed_for(fatigued) > StatusManager.walk_speed_for(baseline)
+    # Only renewal's speed recipe reads Ensemble Fatigue.
+    if GameMode.mode() == :renewal,
+      do: assert(StatusManager.walk_speed_for(fatigued) > StatusManager.walk_speed_for(baseline)),
+      else:
+        assert(StatusManager.walk_speed_for(fatigued) == StatusManager.walk_speed_for(baseline))
 
     assert AttackSpeed.calculate_delay_from_stats(fatigued) >
              AttackSpeed.calculate_delay_from_stats(baseline)

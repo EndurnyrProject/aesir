@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.WalkSpeed
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Ref
@@ -64,6 +66,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Movement state machine
     movement_state: :standing,
     walk_path: [],
+    # The speed statuses start from: the database walk speed, lowered by
+    # Speed Up. `walk_speed` is this through the active statuses.
+    base_walk_speed: 200,
     walk_speed: 200,
     walk_delay_until: 0,
     # Where a move request made while walking redirects the walk once the
@@ -211,6 +216,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           dir: integer(),
           movement_state: movement_state(),
           walk_path: list(),
+          base_walk_speed: integer(),
           walk_speed: integer(),
           walk_delay_until: integer(),
           walk_target: {integer(), integer()} | nil,
@@ -306,6 +312,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       spawned_at: current_time,
       last_ai_tick: current_time,
       status_effects: %{},
+      base_walk_speed: mob_data.walk_speed,
       walk_speed: mob_data.walk_speed,
       view_range: mob_data.skill_range,
       respawn_delay: spawn_ref.respawn_time,
@@ -546,6 +553,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   # State Management Functions
+
+  @doc """
+  Recomputes `walk_speed` from `base_walk_speed` and the mob's active statuses
+  (`WalkSpeed.calculate/3`). A new spawn has no statuses, so it walks at its
+  base speed.
+  """
+  @spec recalculate_walk_speed(t()) :: t()
+  def recalculate_walk_speed(%__MODULE__{instance_id: instance_id} = state) do
+    modifiers = ModifierCalculator.get_all_modifiers(:mob, instance_id, get_stats(state))
+    %{state | walk_speed: WalkSpeed.calculate(state.base_walk_speed, modifiers)}
+  end
 
   @doc """
   Recomputes `max_hp` from the immutable `base_max_hp` and the unit's aggregated

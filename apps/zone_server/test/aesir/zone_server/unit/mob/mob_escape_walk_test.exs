@@ -179,6 +179,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
       y: 30,
       hp: 10,
       max_hp: 10,
+      base_walk_speed: 800,
       walk_speed: 800,
       last_skillcheck: System.system_time(:millisecond),
       is_dead: false

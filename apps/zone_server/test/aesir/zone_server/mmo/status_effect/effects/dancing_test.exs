@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing
@@ -187,7 +188,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     assert {:ok, %{state: %{ticks: 10}}} = Dancing.on_tick({:player, 17}, updated, %{})
   end
 
-  test "Longing triples upkeep and removes the lock's walk slow" do
+  test "Longing triples upkeep and removes the lock's walk slow in pre-renewal" do
     :ok = UnitRegistry.register_player(player(17), self())
     :ok = StatusStorage.apply_status(:player, 17, :sc_longing, val1: 1)
 
@@ -203,6 +204,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     }
 
     assert {:ok, _} = Dancing.on_tick({:player, 17}, entry, %{})
+
+    # Renewal's speed recipe has no Longing term: only Ensemble Fatigue lifts
+    # the performing slow there.
+    slow = %{renewal: 100, pre_renewal: 0}[GameMode.mode()]
+
+    assert %{movement_speed: ^slow} =
+             Dancing.modifiers(entry, %{unit_type: :player, target_id: 17})
+  end
+
+  @tag game_mode: :renewal
+  test "Ensemble Fatigue removes the lock's walk slow in renewal" do
+    :ok = UnitRegistry.register_player(player(17), self())
+    :ok = StatusStorage.apply_status(:player, 17, :sc_ensemblefatigue, val1: 1)
+
+    entry = %StatusEntry{type: :sc_dancing, val3: 10, state: %{upkeep: 10, ticks: 0}}
+
     assert %{movement_speed: 0} = Dancing.modifiers(entry, %{unit_type: :player, target_id: 17})
   end
 

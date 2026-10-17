@@ -20,24 +20,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RidingTest do
   describe "modifiers/2 (movement +25%, ASPD penalty 50 - 10 * Cavalier Mastery level)" do
     @tag game_mode: :renewal
     test "level 0 (unlearned) keeps the full 50% ASPD slowdown alongside the speed bonus" do
-      assert %{movement_speed: -25, aspd: -50} = Riding.modifiers(entry(val1: 0), %{})
+      assert %{move_haste2: 25, aspd: -50} = Riding.modifiers(entry(val1: 0), %{})
     end
 
     @tag game_mode: :renewal
     test "mid level shrinks the ASPD slowdown proportionally" do
-      assert %{movement_speed: -25, aspd: -20} = Riding.modifiers(entry(val1: 3), %{})
+      assert %{move_haste2: 25, aspd: -20} = Riding.modifiers(entry(val1: 3), %{})
     end
 
     @tag game_mode: :renewal
     test "max level (5) removes the ASPD penalty entirely, speed bonus unchanged" do
-      assert %{movement_speed: -25, aspd: 0} = Riding.modifiers(entry(val1: 5), %{})
+      assert %{move_haste2: 25, aspd: 0} = Riding.modifiers(entry(val1: 5), %{})
     end
 
     @tag game_mode: :pre_renewal
     test "classic applies the penalty as an attack speed rate" do
-      assert %{movement_speed: -25, aspd_rate: -50} = Riding.modifiers(entry(val1: 0), %{})
-      assert %{movement_speed: -25, aspd_rate: -20} = Riding.modifiers(entry(val1: 3), %{})
-      assert %{movement_speed: -25, aspd_rate: 0} = Riding.modifiers(entry(val1: 5), %{})
+      assert %{move_haste2: 25, aspd_rate: -50} = Riding.modifiers(entry(val1: 0), %{})
+      assert %{move_haste2: 25, aspd_rate: -20} = Riding.modifiers(entry(val1: 3), %{})
+      assert %{move_haste2: 25, aspd_rate: 0} = Riding.modifiers(entry(val1: 5), %{})
     end
   end
 end

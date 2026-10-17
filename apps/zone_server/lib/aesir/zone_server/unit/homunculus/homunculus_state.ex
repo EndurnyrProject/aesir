@@ -96,6 +96,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
             attack_range: 1,
             attack_delay_ms: 500,
             raw_attack_delay_ms: nil,
+            owner_walk_speed: 150,
             combat_stats: %{
               atk: 0,
               atk_min: 0,
@@ -166,6 +167,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
           attack_range: pos_integer(),
           attack_delay_ms: pos_integer(),
           raw_attack_delay_ms: pos_integer() | nil,
+          owner_walk_speed: pos_integer(),
           combat_stats: combat_stats()
         }
 

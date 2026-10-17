@@ -130,38 +130,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   @doc """
   How long, in milliseconds, this player's step from `from` to `to` takes.
 
-  The base delay comes from the live `walk_speed` and the per-cell movement cost
-  (`MovementEngine.step_delay/3`). A caster walking under Free Cast pays
-  `SaFreecast.speed_rate/1` percent of that (rAthena `speed = speed * speed_rate / 100`,
-  `status.cpp:8040-8044,8213`).
-
-  The penalty is applied here, at the point of use, rather than folded into
-  `walk_speed`: rAthena scopes it to the cast (`sd->ud.skilltimer != INVALID_TIMER`)
-  rather than to a status, so there is no recalculation to trigger when a cast
-  starts or ends, and the remaining cells retime themselves the moment the cast
-  resolves.
+  The delay is `MovementEngine.step_delay/3` of the player's current walk
+  speed (`StatusManager.current_walk_speed/1`), which while a cast is in flight
+  with Free Cast learned is the speed under Free Cast's rate. Each step reads
+  it, so the remaining cells retime themselves when the cast starts or ends.
   """
   @spec step_delay(PlayerState.t(), {integer(), integer()}, {integer(), integer()}) ::
           non_neg_integer()
   def step_delay(game_state, from, to) do
-    base = MovementEngine.step_delay(game_state.walk_speed, from, to)
-
-    case cast_speed_rate(game_state) do
-      100 -> base
-      rate -> div(base * rate, 100)
-    end
-  end
-
-  # rAthena gates the rate on a cast being in flight *and* Free Cast being known
-  # (`status.cpp:8040`) — the skill only ever grants the slow walk, never a plain
-  # walk-speed penalty.
-  defp cast_speed_rate(%{casting: nil}), do: 100
-
-  defp cast_speed_rate(game_state) do
-    case SaFreecast.level(game_state) do
-      0 -> 100
-      level -> SaFreecast.speed_rate(level)
-    end
+    game_state
+    |> StatusManager.current_walk_speed()
+    |> MovementEngine.step_delay(from, to)
   end
 
   defp stop_restricted_walk(state, game_state) do

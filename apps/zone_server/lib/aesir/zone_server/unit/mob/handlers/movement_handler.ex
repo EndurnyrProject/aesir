@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -226,6 +227,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
         ) :: {:noreply, MobState.t()}
   def handle_displacement(state, expected_x, expected_y, map_name, x, y),
     do: handle_relocation(state, expected_x, expected_y, map_name, x, y)
+
+  @doc """
+  Recomputes the mob's walk speed after one of its statuses started, ticked or
+  ended, publishing it when it moved. The next step and every walk-time read
+  use it. A dead mob keeps its speed.
+  """
+  @spec handle_speed_status(MobState.t()) :: MobState.t()
+  def handle_speed_status(%MobState{is_dead: true} = state), do: state
+
+  def handle_speed_status(%MobState{} = state) do
+    updated = MobState.recalculate_walk_speed(state)
+
+    if updated.walk_speed == state.walk_speed,
+      do: state,
+      else: StateCommit.commit(updated)
+  end
 
   @doc """
   Warps the mob to `(x, y)` on `map_name`, including a boss: a living mob lands

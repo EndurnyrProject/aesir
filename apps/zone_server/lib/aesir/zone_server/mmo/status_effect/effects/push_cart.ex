@@ -13,8 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCart do
       sprite bit. An unset tier (`0`/`nil`) falls back to `:cart1`.
 
   The speed penalty is `50 - 5 * level` percent (none at level 10) in both
-  modes, expressed as a `:movement_speed` percentage modifier (positive =
-  slower) folded into `walk_speed` by the status `:speed` recalc bridge.
+  modes, added to the walk delay itself (`:walk_delay_rate`) before the speed
+  rate of slows and hastes applies.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_push_cart,
@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCart do
 
   @impl true
   def modifiers(%StatusEntry{val1: level}, _context) do
-    %{movement_speed: 50 - 5 * level}
+    %{walk_delay_rate: 50 - 5 * level}
   end
 
   @impl true

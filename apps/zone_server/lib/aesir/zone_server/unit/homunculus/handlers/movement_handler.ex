@@ -19,11 +19,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.NaturalRegen
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
+  alias Aesir.ZoneServer.Unit.MovementEngine
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @movement_interval 200
   @separation_delay 3_000
   @adjacent_offsets [{0, -1}, {-1, 0}, {1, 0}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}]
 
@@ -420,10 +421,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   defp stopped_action(action), do: action
 
   defp arm_movement(session) do
-    modifiers =
-      ModifierCalculator.get_all_modifiers(:homunculus, session.homunculus.world_gid)
-
-    interval = Stats.movement_delay_ms(@movement_interval, modifiers)
+    homunculus = session.homunculus
+    modifiers = ModifierCalculator.get_all_modifiers(:homunculus, homunculus.world_gid)
+    owner_speed = StatusManager.current_walk_speed(session.game_state)
+    speed = Stats.walk_speed(homunculus, modifiers, owner_speed)
+    [next | _rest] = session.homunculus_runtime.movement_path
+    interval = MovementEngine.step_delay(speed, {homunculus.x, homunculus.y}, next)
     ref = Clock.arm(interval, :movement_tick)
 
     runtime = %{

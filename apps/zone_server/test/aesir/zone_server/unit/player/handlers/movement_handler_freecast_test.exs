@@ -115,18 +115,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerFreecastTest do
       assert MovementHandler.step_delay(game_state, {50, 50}, {51, 50}) == 225
     end
 
-    test "the penalty scales with the learned level" do
+    test "the rate scales with the learned level and replaces the status speed" do
       game_state = walking_game_state(freecast_level: 10, walk_speed: 200)
 
-      # 200 * 125/100
-      assert MovementHandler.step_delay(game_state, {50, 50}, {51, 50}) == 250
+      # Free Cast's rate replaces the status rate: base 150 * 125/100, whatever
+      # walk_speed the statuses gave.
+      assert MovementHandler.step_delay(game_state, {50, 50}, {51, 50}) == 187
     end
 
-    test "it compounds with the diagonal movement cost rather than replacing it" do
+    test "a diagonal step takes 14/10 of the Free Cast speed" do
       game_state = walking_game_state(freecast_level: 10, walk_speed: 200)
 
-      # round(200 * 1.414) = 283, then * 125/100
-      assert MovementHandler.step_delay(game_state, {50, 50}, {51, 51}) == 353
+      # 187 * 14 / 10
+      assert MovementHandler.step_delay(game_state, {50, 50}, {51, 51}) == 261
     end
 
     test "a walker with no cast in flight is not slowed" do

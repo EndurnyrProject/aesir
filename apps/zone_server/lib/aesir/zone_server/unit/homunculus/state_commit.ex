@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -157,7 +158,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
 
   defp prepare_active(session, homunculus, gid, modifiers) do
     owner = session.game_state
-    homunculus = Stats.recompute(homunculus, modifiers)
+    homunculus = homunculus |> Stats.recompute(modifiers) |> copy_owner_walk_speed(session)
 
     %{
       homunculus
@@ -192,6 +193,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   @doc """
   Stores `homunculus`, marks the owner-private view dirty, and synchronizes its
   active registry, spatial, movement, status, and observer state.
+
+  A commit that changes the Homunculus's level, class or learned skills is a
+  full stat recalculation, so it copies the owner's walk speed again
+  (`copy_owner_walk_speed/2`).
   """
   @spec commit(SessionState.t(), HomunculusState.t() | nil) :: SessionState.t()
   def commit(
@@ -199,6 +204,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
         homunculus
       )
       when is_struct(homunculus, HomunculusState) or is_nil(homunculus) do
+    homunculus =
+      if recalculated?(session.homunculus, homunculus),
+        do: copy_owner_walk_speed(homunculus, session),
+        else: homunculus
+
     homunculus = synchronize_presence(session.homunculus, homunculus, :step)
 
     %{
@@ -207,6 +217,26 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
         homunculus_runtime: %{runtime | private_dirty: true}
     }
   end
+
+  @doc """
+  Copies the owner's current walk speed onto the Homunculus, as each of its
+  stat recalculations does; pre-renewal Homunculus walk speed starts from it
+  (`Stats.walk_speed/3`).
+  """
+  @spec copy_owner_walk_speed(HomunculusState.t(), SessionState.t()) :: HomunculusState.t()
+  def copy_owner_walk_speed(%HomunculusState{} = homunculus, %SessionState{
+        game_state: %PlayerState{} = owner
+      }),
+      do: %{homunculus | owner_walk_speed: StatusManager.current_walk_speed(owner)}
+
+  def copy_owner_walk_speed(%HomunculusState{} = homunculus, _session), do: homunculus
+
+  defp recalculated?(%HomunculusState{} = before, %HomunculusState{} = homunculus),
+    do:
+      before.level != homunculus.level or before.class_id != homunculus.class_id or
+        before.learned_skills != homunculus.learned_skills
+
+  defp recalculated?(_before, _homunculus), do: false
 
   @doc """
   Commits the active Homunculus warped to its new cell, as `commit/2` does,

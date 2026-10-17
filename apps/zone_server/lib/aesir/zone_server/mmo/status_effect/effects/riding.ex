@@ -13,9 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Riding do
 
   ## Modifiers
 
-  Movement uses the additive percent convention where negative means faster
-  (`status_manager.ex:walk_speed_for/1`): mounted movement is a flat `-25`
-  (25% faster), independent of Cavalier Mastery.
+  Movement is the mount haste (`:move_haste2`): a flat 25% faster,
+  independent of Cavalier Mastery, taken off the speed rate before slows and
+  other hastes.
 
   ASPD uses the flat fixed-bonus bucket read by `Stats.Calculator.calculate_aspd/1`
   (the `:aspd` status modifier folded into `flat_bonus * agi / 200`, the
@@ -47,8 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Riding do
     penalty = 50 - 10 * cavalier_mastery_level
 
     case GameMode.mode() do
-      :renewal -> %{movement_speed: -25, aspd: -penalty}
-      :pre_renewal -> %{movement_speed: -25, aspd_rate: -penalty}
+      :renewal -> %{move_haste2: 25, aspd: -penalty}
+      :pre_renewal -> %{move_haste2: 25, aspd_rate: -penalty}
     end
   end
 end

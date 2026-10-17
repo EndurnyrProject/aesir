@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
 
       assert %StatusEntry{val1: 0} = StatusStorage.get_status(:player, char_id, @status_id)
 
-      assert %{movement_speed: -25, aspd: -50} =
+      assert %{move_haste2: 25, aspd: -50} =
                riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       assert band(StatusDisplay.spawn_state(:player, char_id).effect_state, @riding_bit) != 0
@@ -185,7 +185,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert StatusStorage.has_status?(:player, character.id, @status_id)
       assert StatusStorage.get_status(:player, character.id, @status_id).val1 == 2
 
-      assert %{movement_speed: -25, aspd: -30} =
+      assert %{move_haste2: 25, aspd: -30} =
                riding_view(ModifierCalculator.get_all_modifiers(:player, character.id))
 
       assert restored.walk_speed < @base_walk_speed
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert riding?(respawned)
       assert StatusStorage.has_status?(:player, char_id, @status_id)
 
-      assert %{movement_speed: -25, aspd: -40} =
+      assert %{move_haste2: 25, aspd: -40} =
                riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       assert respawned.walk_speed < @base_walk_speed
@@ -258,7 +258,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert raised.stats.progression.learned_skills[kn_cavaliermastery_id()] == 1
       assert StatusStorage.get_status(:player, char_id, @status_id).val1 == 1
 
-      assert %{movement_speed: -25, aspd: -40} =
+      assert %{move_haste2: 25, aspd: -40} =
                riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       assert Repo.get(Character, char_id).learned_skills[
@@ -344,7 +344,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert Map.has_key?(changed.stats.progression.learned_skills, kn_riding_id())
       assert StatusStorage.has_status?(:player, char_id, @status_id)
 
-      assert %{movement_speed: -25, aspd: -30} =
+      assert %{move_haste2: 25, aspd: -30} =
                riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       assert Repo.get(Character, char_id).option == @riding_bit

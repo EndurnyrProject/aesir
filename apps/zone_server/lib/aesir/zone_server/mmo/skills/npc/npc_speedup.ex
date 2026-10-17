@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedup do
   NPC Speed Up (NPC_SPEEDUP).
 
   Monster-only. While at least 700 ms of the monster's trick cast (Random
-  Move) are left, it lowers the monster's walk speed by 250 for the rest of its
-  life (never below 20); within the last skill interval of that window the
+  Move) are left, it lowers the monster's base walk speed by 250 for the rest
+  of its life (never below 20), with its statuses applied on top; within the last skill interval of that window the
   next skill check waits until 100 ms from now. Otherwise the next skill check
   is synchronized with the trick cast's end, and the trick cast and the escape
   walk's damage immunity end. A walk-time skill check that used this skill
@@ -42,7 +42,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedup do
     left = trickcasting - now
 
     if left >= @trick_stop do
-      faster = %{caster | walk_speed: max(caster.walk_speed - @speed_gain, @min_walk_speed)}
+      faster =
+        MobState.recalculate_walk_speed(%{
+          caster
+          | base_walk_speed: max(caster.base_walk_speed - @speed_gain, @min_walk_speed)
+        })
 
       if left < @trick_stop + @skill_interval,
         do: {:ok, %{faster | last_skillcheck: now + 100}},

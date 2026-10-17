@@ -105,8 +105,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   Notifies the mob that one of its statuses was applied, ticked, or expired.
 
   Status application and `StatusTickManager` send this asynchronously; a
-  `:max_hp_rate` status recomputes the mob's HP ceiling. It never interrupts
-  an in-flight cast.
+  `:max_hp_rate` status recomputes the mob's HP ceiling, and every change
+  recomputes its walk speed. It never interrupts an in-flight cast.
   """
   @spec notify_status_changed(pid(), atom(), atom()) :: :ok
   def notify_status_changed(pid, status_id, event) do
@@ -378,10 +378,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   # Casting: a status apply/tick/expiry, which may recompute the mob's HP
-  # ceiling for a `:max_hp_rate` status.
+  # ceiling for a `:max_hp_rate` status and its walk speed.
   @impl GenServer
   def handle_cast({:casting, {:status_changed, status_id, _event}}, state) do
-    {:noreply, CombatHandler.handle_max_hp_status(status_id, state)}
+    state = CombatHandler.handle_max_hp_status(status_id, state)
+    {:noreply, MovementHandler.handle_speed_status(state)}
   end
 
   # Movement: pathing kickoff, teleport, knockback/displacement landings and

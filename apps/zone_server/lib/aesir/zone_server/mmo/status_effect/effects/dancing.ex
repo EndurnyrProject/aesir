@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
   `root` is `:none` for mobile solo songs, `:ensemble` for ensembles freed by
   Longing, or `:always` for Moonlit and Hermode. Older entries infer the root
   from a positive partner character id in `val4`. A player walking without
-  Longing is slowed by `500 - 40 * Lesson` percent, with the lesson frozen in
+  Longing (pre-renewal) or Ensemble Fatigue (renewal) is slowed by
+  `500 - 40 * Lesson` percent, with the lesson frozen in
   `val3`; a monster is not slowed.
   """
 
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     tick_interval: 1_000,
     icon: :bdplaying
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -44,7 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     unit_type = Map.get(context, :unit_type)
 
     slow =
-      if unit_type == :mob or longing?(unit_type, Map.get(context, :target_id)),
+      if unit_type == :mob or slow_lifted?(unit_type, Map.get(context, :target_id)),
         do: 0,
         else: 500 - 40 * (lesson || 0)
 
@@ -106,4 +108,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
   def on_expire(_target, _entry, _context), do: :ok
 
   defp longing?(type, id), do: StatusStorage.has_status?(type, id, :sc_longing)
+
+  # The performing slow gives way to Longing in pre-renewal and to Ensemble
+  # Fatigue in renewal.
+  defp slow_lifted?(type, id) do
+    case GameMode.mode() do
+      :pre_renewal -> longing?(type, id)
+      :renewal -> StatusStorage.has_status?(type, id, :sc_ensemblefatigue)
+    end
+  end
 end

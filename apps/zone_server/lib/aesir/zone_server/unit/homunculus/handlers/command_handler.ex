@@ -575,7 +575,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
             owner_session_pid: self()
         }
 
-        StateCommit.commit(session, homunculus)
+        # Entering the map recalculates its speed, copying the owner's again.
+        StateCommit.commit(session, StateCommit.copy_owner_walk_speed(homunculus, session))
       else
         session
       end

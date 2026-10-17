@@ -18,11 +18,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AspdMovementTest do
     {Effects.SkfAspd, :sc_skf_aspd, %{aspd_rate: 10}, :skf_aspd}
   ]
 
-  # Movement: movement_speed is a slow; haste_rate keeps the strongest haste. SPEEDUP is
-  # faster => negates val1; SLOWDOWN is slower => keeps val1 positive.
+  # Movement: movement_speed is a slow; SPEEDUP is a player bonus speed rate (positive =
+  # faster); SLOWDOWN is slower => keeps val1 positive.
   @movement [
-    {Effects.Speedup0, :sc_speedup0, %{haste_rate: 10}, :movhaste_horse},
-    {Effects.Speedup1, :sc_speedup1, %{haste_rate: 10}, :movhaste_potion},
+    {Effects.Speedup0, :sc_speedup0, %{speed_rate_bonus: 10}, :movhaste_horse},
+    {Effects.Speedup1, :sc_speedup1, %{speed_rate_bonus: 10}, :movhaste_potion},
     {Effects.Slowdown, :sc_slowdown, %{movement_speed: 10}, nil}
   ]
 
@@ -40,10 +40,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AspdMovementTest do
       end
     end
 
-    test "Slowdown emits movement_speed, Speedup emits haste_rate" do
+    test "Slowdown emits movement_speed, Speedup emits a status bonus speed rate" do
       assert %{movement_speed: 100} == Effects.Slowdown.modifiers(entry(:sc_slowdown, 100), %{})
-      assert %{haste_rate: 25} == Effects.Speedup0.modifiers(entry(:sc_speedup0, 25), %{})
-      assert %{haste_rate: 50} == Effects.Speedup1.modifiers(entry(:sc_speedup1, 50), %{})
+      assert %{speed_rate_bonus: 25} == Effects.Speedup0.modifiers(entry(:sc_speedup0, 25), %{})
+      assert %{speed_rate_bonus: 50} == Effects.Speedup1.modifiers(entry(:sc_speedup1, 50), %{})
     end
   end
 
