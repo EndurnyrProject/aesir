@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
 
   Teardown is edge-triggered plus convergent, with no coordinator:
 
-    * removing this entry (map change, death, manual) cascades removal of every
+    * removing this entry (death, manual) cascades removal of every
       devotee's `sc_devotion`; each devotee's back-reference is cleared first so
       its own `on_expire` finds no peer and the removal echo terminates. The
       Crusader leaving the world drops the entry without that cascade: its
@@ -28,8 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
 
   The entry is permanent: the finite lifetime lives on the devotee's
   `sc_devotion`, and the per-devotee cascade plus the self-heal tick retire this
-  entry. It is not persisted (`no_save`) and ends on a cross-map warp
-  (`remove_on_map_change`): the pairing is tied to live units on one map.
+  entry. It is not persisted (`no_save`). A warp of the Crusader keeps it: a devotee's
+  record ends on a hit that finds its Crusader out of range.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_devoted_by,
@@ -37,7 +37,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
     no_clear_buff: true,
     engine_only: true,
     no_save: true,
-    remove_on_map_change: true,
     permanent: true,
     properties: [:buff],
     target_types: [:player],

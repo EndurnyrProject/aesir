@@ -299,7 +299,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     cleanup_paths = [
       fn -> StatusInterpreter.remove_status(:mob, target.instance_id, :sc_splasher) end,
       fn -> StatusInterpreter.remove_on_death(:mob, target.instance_id) end,
-      fn -> StatusInterpreter.remove_on_map_change(:mob, target.instance_id) end,
       fn -> StatusInterpreter.remove_all_statuses(:mob, target.instance_id) end,
       fn -> Dispel.dispel({:mob, target.instance_id}) end
     ]

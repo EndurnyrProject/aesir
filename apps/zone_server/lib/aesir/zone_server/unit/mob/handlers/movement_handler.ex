@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
@@ -18,7 +19,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
@@ -193,35 +196,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   end
 
   @doc """
-  Instantly relocates the mob to a random walkable cell on its map and drops
-  its current target (`AL_TELEPORT` flee). The move is a warp
-  (`Movement.warp_position/4`): the mob leaves the ground units of its old cell
-  and appears on the new one. A no-op if no walkable cell is found.
+  Warps the mob to a random walkable cell on its map (`AL_TELEPORT`, Tarot):
+  it leaves its map as `warp_to/3` describes. A no-op if no walkable cell is
+  found.
   """
   @spec handle_teleport(MobState.t()) :: {:noreply, MobState.t()}
   def handle_teleport(state) do
     case Cell.random_traversable(state.map_name) do
-      {:ok, {x, y}} ->
-        updated_state =
-          state
-          |> MobState.advance_deferred_epoch()
-          |> MobState.update_position(x, y)
-          |> MobState.stop_movement()
-          |> MobState.leave_map()
-
-        SpatialIndex.reenter_block(:mob, updated_state.instance_id)
-
-        Movement.warp_position(
-          :mob,
-          updated_state.instance_id,
-          updated_state,
-          updated_state.map_name
-        )
-
-        {:noreply, updated_state}
-
-      {:error, _reason} ->
-        {:noreply, state}
+      {:ok, {x, y}} -> {:noreply, warp_to(state, x, y)}
+      {:error, _reason} -> {:noreply, state}
     end
   end
 
@@ -296,27 +279,45 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   @doc """
   Warps the mob to `(x, y)` on `map_name`, including a boss: a living mob lands
-  there when the cell is walkable, leaving the ground units of its old cell
-  and appearing on the new one (`Movement.warp_position/4`).
+  there when the cell is walkable, leaving its map as `warp_to/3` describes.
   """
   @spec handle_warp(MobState.t(), String.t(), integer(), integer()) :: {:noreply, MobState.t()}
   def handle_warp(state, map_name, x, y) do
     if Unit.living?(state) and map_name == state.map_name and Cell.traversable?(map_name, x, y) do
-      state =
-        state
-        |> MobState.stop_movement()
-        |> MobState.leave_map()
-        |> MobState.update_position(x, y)
-
-      Movement.warp_position(:mob, state.instance_id, state, map_name)
-
-      packet = %Knockback{unit_id: state.instance_id, dst_x: x, dst_y: y}
-      Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
-      {:noreply, state}
+      {:noreply, warp_to(state, x, y)}
     else
       {:noreply, state}
     end
   end
+
+  @doc """
+  Removes the mob from its map and puts it back on `(x, y)`: its cast is
+  cancelled, its walk and attack stop, its attack and walk delays end, its
+  deferred work is invalidated, it drops its chase and attack orders, its
+  attacked event and spotting players and goes idle (its target stays), it
+  loses the statuses a unit leaving its map loses, leaves its ground units and
+  vanishes with the teleport reason (`Movement.warp_position/4`), and appears
+  on the new cell, the same cell included.
+  """
+  @spec warp_to(MobState.t(), integer(), integer()) :: MobState.t()
+  def warp_to(%MobState{} = state, x, y) do
+    state =
+      state
+      |> cancel_cast()
+      |> MobState.stop_movement()
+      |> MobState.leave_map()
+      |> MobState.advance_deferred_epoch()
+
+    StatusInterpreter.remove_on_map_change(:mob, state.instance_id)
+    state = MobState.update_position(state, x, y)
+    SpatialIndex.reenter_block(:mob, state.instance_id)
+    Movement.warp_position(:mob, state.instance_id, state, state.map_name)
+    SpawnView.notify_spawn(state)
+    state
+  end
+
+  defp cancel_cast(%MobState{casting: nil} = state), do: state
+  defp cancel_cast(state), do: CastingHandler.abort_cast(state)
 
   @doc """
   Commits an authoritative self-relocation, including for boss mobs.

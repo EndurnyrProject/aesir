@@ -525,9 +525,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     %{session | homunculus_runtime: runtime}
   end
 
-  @doc "Detaches active presence before the owner leaves the old warp map."
+  @doc """
+  Detaches active presence before the owner warps, the same map included: the
+  Homunculus leaves the map with its owner and loses the statuses a unit
+  leaving its map loses.
+  """
   @spec detach_for_warp(map(), boolean()) :: map()
-  def detach_for_warp(%SessionState{} = session, false) do
+  def detach_for_warp(%SessionState{} = session, _same_map?) do
     session = cancel_active_runtime(session)
 
     case session.homunculus do
@@ -540,9 +544,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
     StateCommit.detach(session)
   end
-
-  def detach_for_warp(%SessionState{} = session, true),
-    do: session |> cancel_active_runtime() |> StateCommit.detach()
 
   def detach_for_warp(session, same_map?) when is_map(session) and is_boolean(same_map?),
     do: session

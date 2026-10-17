@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Pathfinding
@@ -113,17 +114,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
            {homunculus.x, homunculus.y, homunculus.map_name} ==
              {expected_x, expected_y, map_name},
          true <- Cell.traversable?(map_name, x, y) do
-      session = cancel_movement(session)
-
-      warped = %{
-        homunculus
-        | x: x,
-          y: y,
-          action_state: stopped_action(homunculus.action_state),
-          movement_state: :standing
-      }
-
-      session |> StateCommit.commit_warp(warped) |> sync_separation()
+      session |> warp_to(x, y) |> sync_separation()
     else
       _invalid -> session
     end
@@ -463,19 +454,34 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
         session
 
       {x, y} ->
-        session = cancel_movement(session)
-
-        homunculus = %{
-          session.homunculus
-          | x: x,
-            y: y,
-            action_state: :idle,
-            movement_state: :standing,
-            target: nil
-        }
-
-        StateCommit.commit_warp(session, homunculus)
+        warp_to(session, x, y)
     end
+  end
+
+  @doc """
+  Removes the active Homunculus from its map and puts it back on `(x, y)`: its
+  cast is cancelled, its walk and attack stop and its attack delay ends, it
+  loses the statuses a unit leaving its map loses, and it is committed as a
+  warp (`StateCommit.commit_warp/2`), the same cell included.
+  """
+  @spec warp_to(SessionState.t(), integer(), integer()) :: SessionState.t()
+  def warp_to(%SessionState{} = session, x, y) do
+    %HomunculusState{world_gid: gid} = session.homunculus
+    true = is_integer(gid)
+    session = session |> CastingHandler.interrupt() |> cancel_movement()
+    runtime = %{session.homunculus_runtime | last_basic_attack_at_ms: nil}
+    StatusInterpreter.remove_on_map_change(:homunculus, gid)
+
+    homunculus = %{
+      session.homunculus
+      | x: x,
+        y: y,
+        action_state: :idle,
+        movement_state: :standing,
+        target: nil
+    }
+
+    StateCommit.commit_warp(%{session | homunculus_runtime: runtime}, homunculus)
   end
 
   defp path(%SessionState{} = session, {x, y}) when is_integer(x) and is_integer(y) do

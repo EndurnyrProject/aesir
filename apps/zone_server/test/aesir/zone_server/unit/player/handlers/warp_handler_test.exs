@@ -492,13 +492,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       refute StatusStorage.has_status?(:mob, 9001, :sc_bladestop)
     end
 
-    test "a same-map warp leaves the Root pair intact" do
+    test "a same-map warp unroots both sides of a Root pair too" do
       arm_root_pair()
 
       assert {:ok, _} = WarpHandler.warp(state(), "prontera", 100, 120)
 
-      assert StatusStorage.has_status?(:player, 1000, :sc_bladestop)
-      assert StatusStorage.has_status?(:mob, 9001, :sc_bladestop)
+      refute StatusStorage.has_status?(:player, 1000, :sc_bladestop)
+      refute StatusStorage.has_status?(:mob, 9001, :sc_bladestop)
     end
   end
 

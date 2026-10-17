@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher do
     no_dispel: false,
     no_clear_buff: false,
     no_save: true,
-    remove_on_map_change: true,
     bypass_resistance: true,
     properties: [:debuff],
     immunity: [:status_immune],

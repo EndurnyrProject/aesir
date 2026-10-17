@@ -8,9 +8,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   """
 
   alias Aesir.Commons.Models.Homunculus
+  alias Aesir.Net.CastCancel
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
@@ -92,6 +95,31 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
       _other ->
         session
     end
+  end
+
+  @doc """
+  Cancels the current cast and tells the players in view, as a unit leaving
+  its map does; without a cast nothing is sent.
+  """
+  @spec interrupt(SessionState.t()) :: SessionState.t()
+  def interrupt(%SessionState{} = session) do
+    case session.homunculus do
+      %HomunculusState{casting: casting} = homunculus when not is_nil(casting) ->
+        packet = %CastCancel{gid: homunculus.world_gid}
+
+        Broadcast.to_in_range(
+          homunculus.map_name,
+          homunculus.x,
+          homunculus.y,
+          Config.view_range(),
+          packet
+        )
+
+      _not_casting ->
+        :ok
+    end
+
+    cancel(session)
   end
 
   defp begin_current(session, _homunculus, _id, _level, _target)

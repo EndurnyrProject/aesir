@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
 
     assert metadata.no_save
     assert metadata.no_dispel
-    assert metadata.remove_on_map_change
+    refute metadata.remove_on_map_change
     assert :conceals in metadata.properties
     assert :no_pick_item in metadata.flags
   end

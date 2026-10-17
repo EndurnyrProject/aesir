@@ -992,12 +992,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
-  Removes the unit's statuses flagged `remove_on_map_change` through the normal
-  removal path (mirrors rAthena's `status_change_clear_onchangemap`).
+  Ends, through the normal removal path, the statuses a unit loses when it
+  leaves its map: on every warp of a player, monster or Homunculus, the same
+  map included.
 
-  Consumed by the cross-map warp path; a status opts in via its definition's
-  `:remove_on_map_change` flag, so the warp handler stays ignorant of any
-  specific status.
+  Those are the statuses flagged `remove_on_map_change`, Cloaking (every
+  warp ends it, whatever the unit), the Battle Chant caster lock and an
+  infinite Provoke (`val4` 1, the Auto Berserk one).
   """
   @spec remove_on_map_change(unit_type(), integer()) :: :ok
   def remove_on_map_change(unit_type, unit_id) do
@@ -1007,6 +1008,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     |> Enum.map(& &1.type)
     |> then(&remove_statuses(unit_type, unit_id, &1, owner_refresh: :notify))
   end
+
+  defp remove_on_map_change?(%StatusEntry{type: type})
+       when type in [:sc_cloaking, :sc_gospel],
+       do: true
+
+  defp remove_on_map_change?(%StatusEntry{type: :sc_provoke, val4: val4}), do: val4 == 1
 
   defp remove_on_map_change?(%StatusEntry{type: type}) do
     match?(%{remove_on_map_change: true}, Registry.get_definition(type))

@@ -16,10 +16,12 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
+  alias Aesir.ZoneServer.Unit.Mob.SpawnView, as: MobSpawnView
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -57,7 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
       previous,
       map_name,
       move_state(updated_state.movement_state),
-      &fire_step/5
+      :step
     )
   end
 
@@ -69,12 +71,16 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   removed from the map does (`Trigger.on_removed/1`), then appears on the new
   cell (`Trigger.on_appear/4`: no step bookkeeping, Spider Web, traps and
   timer units do not act on the arrival). Index, registry and dirty-set
-  updates are those of `set_position/4`.
+  updates are those of `set_position/4`. After leaving the ground units, a
+  Homunculus vanishes with the teleport reason for every player that saw it
+  and appears for every player in view of its new cell; a mob vanishes with
+  the teleport reason for the players in view of its old cell.
   """
   @spec warp_position(unit_type(), unit_id(), map(), String.t()) :: :ok
   def warp_position(unit_type, unit_id, updated_state, map_name) do
     :ok = Trigger.on_removed({unit_type, unit_id})
     previous = SpatialIndex.get_unit_position(unit_type, unit_id)
+    vanish(unit_type, unit_id, previous)
 
     SpatialIndex.update_unit_position(
       unit_type,
@@ -91,11 +97,26 @@ defmodule Aesir.ZoneServer.Unit.Movement do
       previous,
       map_name,
       move_state(updated_state.movement_state),
-      &appear/5
+      :warp
     )
   end
 
-  defp appear(mover, _previous, map_name, x, y), do: Trigger.on_appear(mover, map_name, x, y)
+  defp vanish(:homunculus, gid, previous) do
+    previous
+    |> players_near()
+    |> HomunculusSpawnView.notify_vanished(gid, DespawnReason.teleport())
+  end
+
+  defp vanish(:mob, instance_id, {:ok, position}),
+    do: MobSpawnView.notify_teleported(instance_id, position)
+
+  defp vanish(_unit_type, _unit_id, _previous), do: :ok
+
+  defp cell_events(:step, mover, previous, map_name, x, y),
+    do: fire_step(mover, previous, map_name, x, y)
+
+  defp cell_events(:warp, mover, _previous, map_name, x, y),
+    do: Trigger.on_appear(mover, map_name, x, y)
 
   # A step onto another cell runs the old and new cells' units as one pass, a
   # unit with no previous position appears there, and staying on the same
@@ -196,8 +217,8 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
       :ok = UnitRegistry.update_unit_state(first_type, first_id, first_updated)
       :ok = UnitRegistry.update_unit_state(second_type, second_id, second_updated)
-      finish_position_change(first, first_previous, map_name, @standing, &fire_step/5)
-      finish_position_change(second, second_previous, map_name, @standing, &fire_step/5)
+      finish_position_change(first, first_previous, map_name, @standing, :step)
+      finish_position_change(second, second_previous, map_name, @standing, :step)
     end
   end
 
@@ -212,19 +233,22 @@ defmodule Aesir.ZoneServer.Unit.Movement do
   end
 
   # Everything after the spatial/registry writes: boundary notifications, the
-  # dirty mark, the ground-unit cell events and the contact triggers.
+  # dirty mark, the ground-unit cell events and the contact triggers. A warped
+  # unit was removed from its map: every observer in view of its new cell sees
+  # it appear.
   defp finish_position_change(
          {unit_type, unit_id, updated_state},
          previous,
          map_name,
          move_state,
-         cell_events
+         kind
        ) do
-    notify_homunculus_boundaries(unit_type, unit_id, previous, updated_state, map_name)
+    seen_from = if kind == :warp, do: {:error, :removed}, else: previous
+    notify_homunculus_boundaries(unit_type, unit_id, seen_from, updated_state, map_name)
     mark_dirty(map_name, unit_type, unit_id, move_state)
 
     mover = {unit_type, unit_id}
-    cell_events.(mover, previous, map_name, updated_state.x, updated_state.y)
+    cell_events(kind, mover, previous, map_name, updated_state.x, updated_state.y)
     Trigger.on_caster_moved(mover, map_name, updated_state.x, updated_state.y)
     fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
   end

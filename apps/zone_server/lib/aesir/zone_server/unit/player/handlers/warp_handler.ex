@@ -103,9 +103,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
 
       state = state |> StateCommit.commit(new_game_state) |> SkillMenuHandler.clear()
 
-      unless same_map? do
-        StatusInterpreter.remove_on_map_change(:player, game_state.character_id)
+      StatusInterpreter.remove_on_map_change(:player, game_state.character_id)
 
+      unless same_map? do
         Lifecycle.publish_transition(
           :player,
           game_state.character_id,

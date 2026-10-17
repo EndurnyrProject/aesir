@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Avoid do
     properties: [:buff],
     calc_flags: [:movement_speed],
     no_save: true,
-    remove_on_map_change: true,
     icon: :hlif_avoid
 
   @impl true

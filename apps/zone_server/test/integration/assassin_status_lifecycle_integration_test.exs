@@ -324,8 +324,12 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     warped_generation = splasher_generation(:player, warped.character.id)
     PlayerSession.warp(warped.pid, @other_map, 5, 5)
     assert eventually(fn -> get_player_state(warped.pid).map_name == @other_map end)
-    refute StatusStorage.has_status?(:player, warped.character.id, :sc_splasher)
-    assert tick_current(:player, warped.character.id, warped_generation, 1) == :stop
+    # Splasher is not a RemoveOnChangeMap status: the warp keeps it, and with the
+    # caster on another map its end explodes on no one.
+    assert StatusStorage.has_status?(:player, warped.character.id, :sc_splasher)
+    warped_hp = get_player_state(warped.pid).stats.current_state.hp
+    assert tick_until_stopped(:player, warped.character.id, warped_generation) == :stop
+    assert get_player_state(warped.pid).stats.current_state.hp == warped_hp
 
     replacement = start_real_mob(26_403, {21, 10})
     arm_splasher(caster, :mob, replacement.unit_id, 10)

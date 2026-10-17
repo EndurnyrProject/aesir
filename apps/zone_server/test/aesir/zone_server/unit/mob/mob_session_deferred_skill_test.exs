@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDeferredSkillTest do
   import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -120,8 +121,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDeferredSkillTest do
   defp mob_state do
     %MobState{
       instance_id: 1,
-      mob_id: 1,
-      mob_data: nil,
+      mob_id: 1002,
+      mob_data: %MobDefinition{
+        id: 1002,
+        aegis_name: "PORING",
+        name: "Poring",
+        level: 3,
+        hp: 100,
+        sp: 100,
+        stats: %{str: 1, agi: 1, vit: 1, int: 0, dex: 6, luk: 30},
+        attack_range: 1,
+        walk_speed: 200,
+        attack_delay: 1_000,
+        attack_motion: 672,
+        client_attack_motion: 500,
+        damage_motion: 480,
+        element: {:water, 1},
+        race: :plant,
+        size: :medium
+      },
       spawn_ref: nil,
       x: 100,
       y: 100,

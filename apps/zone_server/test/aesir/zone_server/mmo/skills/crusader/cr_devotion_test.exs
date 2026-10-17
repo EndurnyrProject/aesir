@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       assert devotion.no_save
       assert devotion.remove_on_map_change
       assert devoted_by.no_save
-      assert devoted_by.remove_on_map_change
+      refute devoted_by.remove_on_map_change
     end
   end
 

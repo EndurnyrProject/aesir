@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HomunculusChange do
     calc_flags: [:vit, :int],
     prevented_by: [:sc_change],
     no_save: true,
-    remove_on_map_change: true,
     icon: :hlif_change
 
   @impl true

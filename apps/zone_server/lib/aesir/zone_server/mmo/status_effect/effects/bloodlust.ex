@@ -8,7 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bloodlust do
     properties: [:buff],
     calc_flags: [:atk],
     no_save: true,
-    remove_on_map_change: true,
     icon: :hami_bloodlust
 
   @impl true

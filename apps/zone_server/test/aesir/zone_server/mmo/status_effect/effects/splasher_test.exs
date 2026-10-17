@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
   test "is tickless to the global poll and decrements only exact callbacks" do
     metadata = Splasher.metadata()
     assert metadata.no_save
-    assert metadata.remove_on_map_change
+    refute metadata.remove_on_map_change
     refute metadata.no_dispel
     assert metadata.remove_on_death
     assert metadata.icon == :splasher

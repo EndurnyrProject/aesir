@@ -7,7 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gospel do
   at levels 1-5 or 45 HP and 35 SP at levels 6-10. When the upkeep cannot be
   paid the chant ends. `val2` holds the Gospel field's group id: ending the
   status tears the field down, and the field ending removes this status, so
-  either side may finish first. The chant also ends on map change, on Silence
+  either side may finish first. The chant also ends whenever its holder
+  leaves its map (any warp), on Silence
   (declared on `sc_silence`), on Dispel and on death.
 
   The reference keeps the caster lock and the enemy slow on one status id with
@@ -21,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Gospel do
     clear_buff_flags: [:remove_on_hermode],
     no_save: true,
     bypass_resistance: true,
-    remove_on_map_change: true,
     target_types: [:player],
     properties: [:prevents_movement, :prevents_skills],
     allow_skills: [369],

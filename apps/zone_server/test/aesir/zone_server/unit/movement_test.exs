@@ -34,6 +34,8 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Net.UnitDespawn
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -41,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -395,6 +398,36 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
       assert_received {:left, 1, {:mob, 2001}}
       refute_received {:left, _, _}
       refute_received {:touched, _, _}
+    end
+
+    test "a mob leaves the ground units on its old cell before it vanishes there" do
+      :ok = Storage.insert(field(1, [{50, 50}]))
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn map, x, y, _range, packet ->
+        send(test_pid, {:broadcast, map, x, y, packet})
+        :ok
+      end)
+
+      assert :ok =
+               Movement.warp_position(
+                 :mob,
+                 2001,
+                 %{movement_state: :standing, x: 55, y: 60},
+                 "prontera"
+               )
+
+      despawn = %UnitDespawn{gid: 2001, reason: DespawnReason.teleport()}
+      {:messages, messages} = Process.info(self(), :messages)
+
+      removal =
+        Enum.filter(messages, fn
+          {:left, _group, _mover} -> true
+          {:broadcast, _map, _x, _y, %UnitDespawn{}} -> true
+          _other -> false
+        end)
+
+      assert removal == [{:left, 1, {:mob, 2001}}, {:broadcast, "prontera", 50, 50, despawn}]
     end
 
     test "a unit without a previous position only appears" do

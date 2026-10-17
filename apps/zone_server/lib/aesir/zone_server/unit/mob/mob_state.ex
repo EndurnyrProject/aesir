@@ -693,22 +693,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   defp modes(_mob_data), do: []
 
   @doc """
-  Resets the mob as it leaves its map for a warp: the target, the attack and
-  chase orders, the attacked event and the spotting players are dropped and
-  the mob goes idle.
+  Resets the mob as it leaves its map for a warp: the attack and chase orders,
+  the attacked event and the spotting players are dropped, its attack and walk
+  delays end and the mob goes idle. Its target, and the norm attacked event,
+  stay.
   """
   @spec leave_map(t()) :: t()
   def leave_map(%__MODULE__{} = state) do
     %{
       set_state(state, :idle)
-      | target_ref: nil,
-        attack_target: nil,
+      | attack_target: nil,
         attack_timer_at: nil,
         chase_target: nil,
         chase_resume_at: nil,
         attacked_ref: nil,
-        norm_attacked_ref: nil,
-        spotted_by: MapSet.new()
+        spotted_by: MapSet.new(),
+        last_attack_time: nil,
+        walk_delay_until: 0
     }
   end
 

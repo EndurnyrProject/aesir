@@ -11,8 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
   the attacker is status-immune (a boss-class monster or one with the
   status-immune mode). The holder cannot attack or cast; it may still walk out.
   A player loses it on any step or warp onto another cell; any holder loses it
-  when the sanctuary cell it stands on ends. It ends on map change and is never
-  saved. Dispel ends it too.
+  when the sanctuary cell it stands on ends. It ends whenever its holder leaves its
+  map (any warp, same map included) and is never saved. Dispel ends it too.
 
   Renewal Basilica is the `sc_basilica_buff` self buff; this status is only
   granted in pre-renewal. `absorb_damage/4` is shared with the caster lock,
@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
     no_dispel: false,
     no_clear_buff: false,
     clear_buff_flags: [:remove_on_hermode],
-    remove_on_map_change: true,
+    remove_on_map_change: [renewal: false, pre_renewal: true],
     bypass_resistance: true,
     target_types: [:player, :mob, :homunculus],
     properties: [:prevents_attack, :prevents_skills],

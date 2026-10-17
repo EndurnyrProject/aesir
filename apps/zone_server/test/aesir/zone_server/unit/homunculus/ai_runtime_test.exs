@@ -8,15 +8,18 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.CastCancel
   alias Aesir.Net.HomunculusPrivateState
   alias Aesir.Net.ItemRemoved
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
@@ -245,6 +248,62 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     assert MovementHandler.warp(warped, 701, 3, 4, @map, 4, 2) == warped
     dead = %{warped | homunculus: %{warped.homunculus | hp: 0}}
     assert MovementHandler.warp(dead, 700, 3, 4, @map, 4, 2) == dead
+  end
+
+  test "a Homunculus warp removes it from its map: statuses, attack, delay, vanish then appear" do
+    session = active_session()
+
+    session = %{
+      session
+      | homunculus: %{session.homunculus | action_state: :attacking, target: {:mob, 9}},
+        homunculus_runtime: %{
+          session.homunculus_runtime
+          | last_basic_attack_at_ms: System.monotonic_time(:millisecond)
+        }
+    }
+
+    :ok = StatusStorage.apply_status(:homunculus, 700, :sc_stop, val1: 1, duration: 60_000)
+    :ok = StatusStorage.apply_status(:homunculus, 700, :sc_blessing, val1: 5, duration: 60_000)
+
+    warped = MovementHandler.warp(session, 700, 2, 2, @map, 3, 4)
+
+    refute StatusStorage.has_status?(:homunculus, 700, :sc_stop)
+    assert StatusStorage.has_status?(:homunculus, 700, :sc_blessing)
+    assert warped.homunculus.action_state == :idle
+    assert warped.homunculus.target == nil
+    assert warped.homunculus_runtime.last_basic_attack_at_ms == nil
+
+    {:messages, messages} = Process.info(self(), :messages)
+
+    visibility =
+      for {:"$gen_cast", {:visibility, event}} <- messages, elem(event, 1) == 700, do: event
+
+    assert visibility == [
+             {:homunculus_vanished, 700, DespawnReason.teleport()},
+             {:homunculus_entered_view, 700}
+           ]
+  end
+
+  test "a Homunculus warp cancels its cast and tells the players in view" do
+    session = active_session()
+    casting = %{token: make_ref(), skill_id: 8001, level: 1, target: :self, fixed: 0, total: 1000}
+
+    session = %{
+      session
+      | homunculus: %{session.homunculus | action_state: :casting, casting: casting}
+    }
+
+    test_pid = self()
+
+    stub(Broadcast, :to_in_range, fn map, x, y, _range, packet ->
+      send(test_pid, {:broadcast, map, x, y, packet})
+      :ok
+    end)
+
+    warped = MovementHandler.warp(session, 700, 2, 2, @map, 3, 4)
+
+    assert warped.homunculus.casting == nil
+    assert_received {:broadcast, @map, 2, 2, %CastCancel{gid: 700}}
   end
 
   test "missing food falls through to aggressive combat instead of selecting feed forever" do

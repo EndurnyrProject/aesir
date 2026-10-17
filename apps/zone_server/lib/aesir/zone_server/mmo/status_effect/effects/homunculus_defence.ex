@@ -7,8 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.HomunculusDefence do
     no_clear_buff: false,
     properties: [:buff],
     calc_flags: [:vit, :def],
-    no_save: true,
-    remove_on_map_change: true
+    no_save: true
 
   @impl true
   def modifiers(instance, %{unit_type: :player}), do: %{vit: instance.val2}

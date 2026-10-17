@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
 
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -162,6 +163,15 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
              UnitRegistry.get_unit(:player, observer.character_id)
 
     assert published.visible_homunculi == MapSet.new()
+
+    teleport = DespawnReason.teleport()
+    assert {:noreply, ^left} = VisibilityHandler.homunculus_vanished(70_001, teleport, left)
+    refute_receive {:send, _channel, _packet}, 20
+
+    assert {:noreply, vanished} = VisibilityHandler.homunculus_vanished(70_001, teleport, present)
+    assert vanished.game_state.visible_homunculi == MapSet.new()
+
+    assert_receive {:send, :world, {:unit_despawn, %UnitDespawn{gid: 70_001, reason: ^teleport}}}
   end
 
   test "same-position public commits dirty once without routing through movement" do

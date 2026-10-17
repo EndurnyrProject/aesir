@@ -87,6 +87,19 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.SpawnView do
     end)
   end
 
+  @doc """
+  Vanishes a Homunculus with `reason` (a `DespawnReason`) for every observer
+  that sees it.
+  """
+  @spec notify_vanished(Enumerable.t(), pos_integer(), non_neg_integer()) :: :ok
+  def notify_vanished(observer_ids, gid, reason) do
+    Enum.each(observer_ids, fn observer_id ->
+      with {:ok, pid} <- UnitRegistry.get_player_pid(observer_id) do
+        PlayerSession.notify_homunculus_vanished(pid, gid, reason)
+      end
+    end)
+  end
+
   @doc "Sends a died despawn for a Homunculus to its current observers."
   @spec notify_died(Enumerable.t(), pos_integer()) :: :ok
   def notify_died(observer_ids, gid) do

@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Longing do
     properties: [:buff],
     calc_flags: [:movement_speed, :aspd_rate],
     no_save: true,
-    remove_on_map_change: true,
     target_types: [:player],
     icon: :longing
 

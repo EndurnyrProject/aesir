@@ -56,10 +56,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:no_save` - when true, the status is not persisted across logout
     - `:no_save_infinite` - when true, a logout ends the status before saving
       while it is infinite (`val4` set or no expiry)
-    - `:remove_on_map_change` - when true, a cross-map warp ends the status through
-      the ordinary removal path (mirrors rAthena's `SCF_REMOVEONCHGMAP`); use it for
-      statuses tied to a specific location or a live pairing that cannot survive the
-      player leaving the map
+    - `:remove_on_map_change` - when true, the status ends through the ordinary
+      removal path whenever its holder leaves its map: every warp, the same map
+      included (`Interpreter.remove_on_map_change/2`). Mode-keyable
     - `:remove_on_death` - when true (the default), death ends the status through
       the ordinary removal path. Set it to false only for finite statuses designed
       to keep their remaining duration through death
@@ -741,7 +740,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :no_dispel,
     :no_clear_buff,
     :clear_buff_flags,
-    :immunity
+    :immunity,
+    :remove_on_map_change
   ]
 
   @doc "Resolves the mode-keyable metadata options for the selected mode."

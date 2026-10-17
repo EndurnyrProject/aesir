@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
@@ -47,7 +48,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
 
       assert metadata.no_save
       refute metadata.no_dispel
-      assert metadata.remove_on_map_change
+
+      assert metadata.remove_on_map_change ==
+               (module == BasilicaCaster or GameMode.mode() == :pre_renewal)
+
       assert metadata.icon == :basilica
     end
 
