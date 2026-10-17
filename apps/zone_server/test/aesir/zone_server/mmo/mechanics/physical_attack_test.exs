@@ -56,6 +56,19 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     assert classic(parts(), context) == 308
   end
 
+  test "Renewal EDP scales cardfixed weapon and equipment, not status mastery or percent ATK" do
+    context = neutral_context() |> Map.merge(%{edp_level: 5, attacker_cards: [10]})
+    assert renewal(parts(), context) == 563
+
+    context = neutral_context() |> Map.merge(%{edp_level: 5, equipment_atk_rate: 50})
+    assert renewal(parts(), context) == 578
+
+    for skill_id <- [149, 141, 406, 137, 1004] do
+      context = neutral_context() |> Map.merge(%{edp_level: 5, skill_id: skill_id})
+      assert renewal(parts(), context) == 165
+    end
+  end
+
   test "post-defense ATK adds exactly 100 before later scaling in both modes" do
     context = neutral_context()
 

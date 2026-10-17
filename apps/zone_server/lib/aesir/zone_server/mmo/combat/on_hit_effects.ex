@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @normal_short BattleFlags.build(:weapon, :short, false)
@@ -175,6 +176,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
     attack_flag = Keyword.get(opts, :attack_flag, 0)
     skill_id = Keyword.get(opts, :skill_id)
 
+    if hit_class == :hit and skill_id in [nil, 0] and (attack_flag &&& @bf_weapon) != 0,
+      do: inflict_edp(attacker, defender, roll)
+
     if add_eff_skill?(skill_id), do: inflict_add_eff(attacker, defender, roll, attack_flag)
     inflict_on_skill(attacker, defender, skill_id, roll)
 
@@ -183,6 +187,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   end
 
   def attack_stage(_attacker, _defender, _stages, _opts), do: :ok
+
+  defp inflict_edp(attacker, defender, roll) do
+    case StatusStorage.get_status(attacker.unit_type, attacker.unit_id, :sc_edp) do
+      %{val1: level, val2: chance} ->
+        duration = if GameMode.mode() == :renewal, do: 10_000 * (level + 1), else: 60_000
+
+        StatusInterpreter.apply_status(defender.unit_type, defender.unit_id, :sc_dpoison,
+          val1: level,
+          val2: attacker.unit_id,
+          caster_id: attacker.unit_id,
+          source_type: attacker.unit_type,
+          duration: duration,
+          success_rate: chance,
+          resistance_roll: roll
+        )
+
+      nil ->
+        :ok
+    end
+  end
 
   @doc """
   The counter stage of one settled hit (`after_hit/4`'s options): a player

@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SubWeaponProperty do
 
   A partial weapon property: the carrier's attacks keep their own element and
   additionally deal `val2` percent of themselves as `val1` element damage,
-  resolved against the victim separately from the main hit. Magnum Break's
-  ten-second fire aura is the only source today.
+  resolved against the victim separately from the main hit. Magnum Break
+  grants a ten-second fire aura; Enchant Deadly Poison grants a poison aura.
 
   This is deliberately *not* an endow. It sits beside the weapon endows rather
   than replacing them, so it neither lists them in `end_on_start` nor appears in
@@ -26,6 +26,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SubWeaponProperty do
     no_save: true
 
   alias Aesir.ZoneServer.Mmo.Element
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Edp
+  alias Aesir.ZoneServer.Mmo.StatusEntry
+
+  @impl true
+  @spec resolve_duration(Definition.target(), StatusEntry.t(), pos_integer()) ::
+          {pos_integer(), StatusEntry.t()}
+  def resolve_duration(target, %{val3: 378} = entry, duration),
+    do: {duration + Edp.duration_bonus(target), entry}
+
+  def resolve_duration(_target, entry, duration), do: {duration, entry}
 
   @impl true
   def modifiers(%{val1: element_id, val2: percent}, _context)

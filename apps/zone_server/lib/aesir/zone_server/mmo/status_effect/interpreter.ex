@@ -1908,7 +1908,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          duration,
          {instance, held, incoming}
        ) do
-    {duration, instance} = resolve_duration(definition, instance, duration, status_params)
+    {duration, instance} =
+      resolve_duration(definition, {unit_type, unit_id}, instance, duration, status_params)
 
     context =
       unit_type
@@ -2005,12 +2006,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp stored_decision(_refused), do: :keep
 
-  defp resolve_duration(_definition, instance, nil, _status_params), do: {nil, instance}
+  defp resolve_duration(_definition, _target, instance, nil, _status_params), do: {nil, instance}
 
-  defp resolve_duration(definition, instance, duration, status_params) do
-    if Keyword.get(status_params, :loaded, false),
-      do: {duration, instance},
-      else: definition.module.resolve_duration(instance, duration)
+  defp resolve_duration(definition, target, instance, duration, status_params) do
+    cond do
+      Keyword.get(status_params, :loaded, false) ->
+        {duration, instance}
+
+      function_exported?(definition.module, :resolve_duration, 3) ->
+        definition.module.resolve_duration(target, instance, duration)
+
+      true ->
+        definition.module.resolve_duration(instance, duration)
+    end
   end
 
   defp store_applied_status(

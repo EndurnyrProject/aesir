@@ -219,6 +219,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @callback resolve_duration(StatusEntry.t(), pos_integer()) :: {pos_integer(), StatusEntry.t()}
 
+  @doc "Target-aware duration and value initialization, used instead of resolve_duration/2 when present."
+  @callback resolve_duration(target(), StatusEntry.t(), pos_integer()) ::
+              {pos_integer(), StatusEntry.t()}
+  @optional_callbacks resolve_duration: 3
+
   @doc """
   Invoked only when the status runs out its duration naturally, after it was removed.
 
@@ -731,6 +736,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   end
 
   @mode_keyable [
+    :flags,
+    :calc_flags,
     :allow_skills,
     :end_on_start,
     :end_return,

@@ -157,6 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_DPOISON" => :sc_dpoison,
     "SC_SLOWPOISON" => :sc_slowpoison,
     "SC_ENCPOISON" => :sc_encpoison,
+    "SC_EDP" => :sc_edp,
     "SC_POISONREACT" => :sc_poisonreact,
     "SC_BLIND" => :sc_blind,
     "SC_CURSE" => :sc_curse,

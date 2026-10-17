@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
@@ -325,6 +326,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     damage =
       0
       |> classic_after_element(hit, element, :right_hand)
+      |> classic_edp(hit, fn -> left || 0 end)
       |> classic_watk(hit, %{left: fn -> left || 0 end, base: fn -> 0 end})
       |> max(0)
       |> Kernel.+(classic_late_atk(hit))
@@ -580,6 +582,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         damage
         |> attribute_steps(hit, element, true)
         |> classic_after_element(hit, element, :right_hand)
+        |> classic_edp(hit, fn -> scalar_watk_input(hit).left.() end)
         |> classic_watk(hit, scalar_watk_input(hit))
         |> max(0)
 
@@ -764,6 +767,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     damage =
       right
+      |> classic_edp(hit, watk_input.left)
       |> classic_watk(hit, watk_input)
       |> max(0)
       |> Kernel.+(classic_late_atk(hit))
@@ -910,6 +914,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # The status adds to the skill ratio (Over Thrust, Frenzy), which Sacrifice skips.
   defp status_skill_ratio(_modifiers, @sacrifice), do: 0
   defp status_skill_ratio(modifiers, _skill_id), do: Map.get(modifiers, :skill_ratio, 0)
+
+  defp classic_edp(damage, hit, left \\ fn -> 0 end) do
+    with :pre_renewal <- GameMode.mode(),
+         false <- Keyword.get(hit.opts, :ignore_element, false),
+         false <- ignore_atk_card?(Keyword.get(hit.opts, :skill_id)),
+         %{val3: rate} <- held_edp(hit.attacker),
+         true <- damage > 0 or left.() > 0 do
+      damage + div(damage * rate, 100)
+    else
+      _ineligible -> damage
+    end
+  end
+
+  defp held_edp(attacker),
+    do: StatusStorage.get_status(attacker.unit_type, attacker.unit_id, :sc_edp)
 
   # Classic Magnum Break (SC_WATK_ELEMENT): a player's hit, unless it ignores
   # elements or attack cards, gains `val2` percent of its normal-attack base taken
@@ -1127,6 +1146,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     damage
     |> attribute_steps(hit, element, primary?)
     |> classic_after_element(hit, element, :right_hand)
+    |> classic_edp(hit)
     |> max(0)
   end
 
@@ -1240,6 +1260,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       status_skill_ratio: status_skill_ratio(attacker_modifiers, skill_id),
       damage_multiplier: Map.get(attacker_modifiers, :damage_multiplier, 0),
       equipment_atk_rate: EquipmentBonuses.percent_atk_rate(attacker, attacker_modifiers),
+      edp_level:
+        case held_edp(attacker) do
+          %{val1: level} -> level
+          nil -> 0
+        end,
       stave_matk: Keyword.get(opts, :stave_matk, 0),
       patk: Map.get(attacker.combat_stats, :patk, 0),
       res: Map.get(defender.combat_stats, :res, 0),

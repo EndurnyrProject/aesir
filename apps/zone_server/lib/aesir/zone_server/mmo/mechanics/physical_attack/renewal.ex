@@ -80,8 +80,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   def calculate_components(components, context) do
     status = modified_component(components.status_atk, context, :status)
     mastery = modified_component(components.mastery_atk, context, :status)
-    weapon = modified_component(components.weapon_atk, context, :weapon)
-    equipment = modified_component(components.flat_atk, context, :weapon)
+
+    weapon =
+      components.weapon_atk |> modified_component(context, :weapon) |> edp_component(context)
+
+    equipment =
+      components.flat_atk |> modified_component(context, :weapon) |> edp_component(context)
+
     percent_atk = PhysicalAttack.damage_multiplier(components.percent_atk, context)
 
     core =
@@ -109,6 +114,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   @doc "Runs the critical tail after any post-defense attribute step."
   @spec finish_attack(integer(), PhysicalAttack.context()) :: integer()
   def finish_attack(damage, context), do: critical_damage(damage, context)
+
+  defp edp_component(damage, %{edp_level: level} = context) when level > 0 do
+    if Map.get(context, :skill_id) in [149, 141, 406, 137, 1004],
+      do: damage,
+      else: div(damage * (250 + 30 * level), 100)
+  end
+
+  defp edp_component(damage, _context), do: damage
 
   defp reduce_res(damage, %{defense_mode: :simple}), do: damage
 

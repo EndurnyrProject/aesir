@@ -21,7 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoberserk do
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @impl true
-  @spec on_tick(Definition.target(), StatusEntry.t(), Definition.context()) :: {:ok, StatusEntry.t()}
+  @spec on_tick(Definition.target(), StatusEntry.t(), Definition.context()) ::
+          {:ok, StatusEntry.t()}
   def on_tick({type, id}, instance, %{target: %{hp: hp, max_hp: max_hp}}) do
     case StatusStorage.get_status(type, id, :sc_provoke) do
       %{val4: 1} ->
