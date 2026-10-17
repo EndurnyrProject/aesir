@@ -1152,7 +1152,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          map_data,
          locked
        ) do
-    case Pathfinding.find_path(map_data, current, optimal) do
+    case Pathfinding.rewalk_path(map_data, current, optimal) do
       {:ok, [_ | _]} ->
         start_skill_approach(state, skill_id, level, target, optimal, locked)
 

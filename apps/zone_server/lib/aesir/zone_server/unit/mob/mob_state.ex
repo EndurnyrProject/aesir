@@ -81,6 +81,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Whether the walk paths in a straight line (diagonal first) instead of
     # around obstacles, for its start and every re-path.
     walk_easy: false,
+    # Consecutive walk steps an icewall cell held the mob on; any step taken
+    # resets it. Read only by the walk for now.
+    walk_fail_count: 0,
     # A chase walk (the source's attack_continue): entering its path puts the
     # mob in its rush state before the first cell's skill check.
     chase_walk: false,
@@ -223,6 +226,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           pending_step: HitStop.step(),
           can_escape: boolean(),
           walk_easy: boolean(),
+          walk_fail_count: non_neg_integer(),
           chase_walk: boolean(),
           trickcasting: integer() | nil,
           skill_state: skill_state(),
@@ -356,8 +360,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   and battlefield classes.
   """
   @spec status_immune?(t()) :: boolean()
-  def status_immune?(%__MODULE__{mob_data: mob_data}),
-    do: :status_immune in (mob_data.modes || [])
+  def status_immune?(%__MODULE__{mob_data: %{modes: modes}}), do: :status_immune in (modes || [])
+  def status_immune?(%__MODULE__{}), do: false
 
   @doc "Whether the monster has detector mode, seeing through Hiding and Cloaking."
   @spec detector?(t()) :: boolean()

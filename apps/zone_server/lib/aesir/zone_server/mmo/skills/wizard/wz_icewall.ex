@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewall do
             %{
               hp: hp,
               max_hp: hp,
-              flags: [:targetable, :blocks_movement, :blocks_projectiles],
+              flags: [:targetable, :blocks_movement, :blocks_projectiles, :icewall],
               state: %{exclusive_terrain: true}
             }}
          end),

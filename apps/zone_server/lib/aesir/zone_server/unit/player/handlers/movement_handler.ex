@@ -230,7 +230,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     game_state = %{game_state | walk_target: nil}
 
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
-         {:ok, path} <- Pathfinding.find_path(map_data, {game_state.x, game_state.y}, destination) do
+         {:ok, path} <-
+           Pathfinding.rewalk_path(map_data, {game_state.x, game_state.y}, destination) do
       case path do
         [] ->
           finish_walk(%{state | game_state: game_state})
@@ -372,7 +373,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp handle_blocked_player(state, game_state, {dest_x, dest_y} = destination) do
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
          {:ok, [_ | _] = path} <-
-           Pathfinding.find_path(map_data, {game_state.x, game_state.y}, destination) do
+           Pathfinding.rewalk_path(map_data, {game_state.x, game_state.y}, destination) do
       {:noreply, %{state | game_state: start_walk(state, game_state, path, dest_x, dest_y)}}
     else
       _ ->
@@ -390,6 +391,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp schedule_step(game_state, delay),
     do: %{game_state | pending_step: HitStop.schedule({:movement, :movement_tick}, delay)}
 
+  # A step re-checks only the cells it enters: the path already decided the
+  # corners it may cut.
   defp segment_traversable?(_map_name, {x, y}, {x, y}), do: true
 
   defp segment_traversable?(map_name, {x, y}, {next_x, next_y}) do
@@ -397,10 +400,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     dx = sign(next_x - x)
     dy = sign(next_y - y)
 
-    Enum.all?(1..steps, fn step ->
-      from = {x + dx * (step - 1), y + dy * (step - 1)}
-      Cell.step_traversable?(map_name, from, {x + dx * step, y + dy * step})
-    end)
+    Enum.all?(1..steps, fn step -> Cell.traversable?(map_name, x + dx * step, y + dy * step) end)
   end
 
   defp sign(n) when n > 0, do: 1
@@ -500,7 +500,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp do_request_move(state, game_state, dest_x, dest_y, opts) do
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
          {:ok, path} <-
-           Pathfinding.find_path(
+           Pathfinding.walk_path(
              map_data,
              {game_state.x, game_state.y},
              {dest_x, dest_y}
@@ -529,8 +529,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       ^destination ->
         {destination, path}
 
+      # The random cell is a re-path of the walk: only the 14-step rule refuses it.
       random ->
-        case Pathfinding.find_path(map_data, from, random) do
+        case Pathfinding.rewalk_path(map_data, from, random) do
           {:ok, random_path} -> {random, random_path}
           {:error, _reason} -> {random, []}
         end

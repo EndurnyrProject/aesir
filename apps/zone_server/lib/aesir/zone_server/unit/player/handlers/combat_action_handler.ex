@@ -755,7 +755,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp inactive_player?(_unit), do: false
 
   defp handle_pathfinding_to_target(state, target_id, action_type, context, map_data) do
-    case Pathfinding.find_path(map_data, context.current_pos, context.optimal_pos) do
+    case Pathfinding.rewalk_path(map_data, context.current_pos, context.optimal_pos) do
       {:ok, [_ | _] = _path} ->
         move_to_optimal_position(state, target_id, action_type, context)
 
@@ -814,7 +814,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
     adjusted_pos = calculate_adjusted_position({current_x, current_y}, {target_x, target_y})
 
-    case Pathfinding.find_path(map_data, context.current_pos, adjusted_pos) do
+    case Pathfinding.rewalk_path(map_data, context.current_pos, adjusted_pos) do
       {:ok, [_ | _] = _short_path} ->
         move_to_adjusted_position(state, target_id, action_type, context, adjusted_pos)
 

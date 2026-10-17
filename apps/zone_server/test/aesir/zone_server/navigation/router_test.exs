@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
   alias Aesir.ZoneServer.Navigation.PortalGraph.Edge
   alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Router
-  alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Navigation.RouteSearch
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -29,8 +29,8 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
   end
 
   test "chooses the cheaper portal chain and keeps the winning seed path" do
-    expect(Pathfinding, :find_path, 4, fn map_data, start, goal, opts ->
-      call_original(Pathfinding, :find_path, [map_data, start, goal, opts])
+    expect(RouteSearch, :find_path, 3, fn map_data, start, goal ->
+      call_original(RouteSearch, :find_path, [map_data, start, goal])
     end)
 
     assert {:ok, route} = Router.route({"start", 0, 0}, [{"goal", {2, 0}}], walk_speed: 1.0)
@@ -97,9 +97,9 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
     detour = portal("detour", "start", {9, 9}, "slow_mid", {0, 0})
     put_graph(graph([detour], %{}))
 
-    stub(Pathfinding, :find_path, fn map_data, start, goal, opts ->
+    stub(RouteSearch, :find_path, fn map_data, start, goal ->
       send(self(), {:path_requested, goal})
-      call_original(Pathfinding, :find_path, [map_data, start, goal, opts])
+      call_original(RouteSearch, :find_path, [map_data, start, goal])
     end)
 
     assert {:ok, route} = Router.route({"start", 0, 0}, [{"start", {1, 0}}], walk_speed: 1.0)

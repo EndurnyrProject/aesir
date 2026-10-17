@@ -58,7 +58,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.KnockbackGroundTest do
 
       refute_received {:"$gen_cast", _request}
 
-      {movable_x, movable_y} = if active?, do: {22, 202}, else: {1, 263}
+      # (1, 263) was on aldeg_cas01's last row, which no walk or pull may enter.
+      {movable_x, movable_y} = if active?, do: {22, 202}, else: {30, 250}
       destination_x = movable_x + 1
       {movable_id, _movable} = register_mob(map_name, movable_x, movable_y)
 

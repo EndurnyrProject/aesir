@@ -50,7 +50,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.AiHandlerCadenceTest do
     stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
     stub(MapCache, :get, fn _map -> {:ok, :map_data} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
+    stub(Pathfinding, :find_path, fn _map, _from, {x, y} -> {:ok, [{x, y}]} end)
     stub(Pathfinding, :find_path, fn _map, _from, {x, y}, _opts -> {:ok, [{x, y}]} end)
+    stub(Pathfinding, :walk_path, fn _map, _from, {x, y} -> {:ok, [{x, y}]} end)
+    stub(Pathfinding, :rewalk_path, fn _map, _from, {x, y} -> {:ok, [{x, y}]} end)
     stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range -> [] end)
     stub(SpatialIndex, :units_in_area, fn _map, _x1, _y1, _x2, _y2 -> [] end)
 

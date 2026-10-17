@@ -14,45 +14,51 @@ defmodule Aesir.ZoneServer.Integration.SetcellIcewallPenTest do
   @map "setcell_icewall_pen"
 
   setup do
-    # A synthetic walkable 12x12 map with a 4x4 icewall band in the middle.
+    # A synthetic walkable 12x12 map with a 4x4 icewall band in the middle. Its
+    # last row and column (11) are impassable, and (0, 0) is never a path goal
+    # (the client search's zeroed first slot), so the walks stay inside 1..10.
     :ets.insert(EtsTable.table_for(:map_cache), {@map, MapData.new(@map, 12, 12)})
     :ok = ScriptCells.set(@map, {4, 4}, {7, 7}, :icewall, 1)
     :ok
   end
 
-  test "a mob inside the band stays penned across path requests and ticks" do
-    mob = start_mob_session(map_name: @map, position: {5, 5}, awake: false)
-
-    # The mob can wander within the band.
-    {:noreply, state} = MovementHandler.handle_move_to(mob.mob_state, 6, 6)
-    {state, in_band_positions} = drive(state)
-    assert {state.x, state.y} == {6, 6}
-    assert Enum.all?(in_band_positions, fn {x, y} -> Cell.icewall?(@map, x, y) end)
-
-    # Repeated requests toward outside goals cannot take it out of the band.
-    state =
-      Enum.reduce([{0, 0}, {11, 11}, {0, 11}, {11, 0}], state, fn {gx, gy}, acc ->
-        {:noreply, acc} = MovementHandler.handle_move_to(acc, gx, gy)
-        {acc, positions} = drive(acc)
-        assert Enum.all?(positions, fn {x, y} -> Cell.icewall?(@map, x, y) end)
-        acc
-      end)
-
-    assert Cell.icewall?(@map, state.x, state.y)
-  end
-
-  test "a mob outside the band detours around it and never enters" do
+  test "a mob walking into the band from the south-west is held on its first band cell" do
     map_data = MapCache.get!(@map)
 
-    assert {:ok, mob_path} = Pathfinding.find_path(map_data, {1, 1}, {9, 9}, profile: :mob)
-    refute Enum.any?(mob_path, fn {x, y} -> Cell.icewall?(@map, x, y) end)
+    assert {:ok, mob_path} = Pathfinding.find_path(map_data, {1, 1}, {9, 9})
+    assert Enum.any?(mob_path, fn {x, y} -> Cell.icewall?(@map, x, y) end)
 
     mob = start_mob_session(map_name: @map, position: {1, 1}, awake: false)
     {:noreply, state} = MovementHandler.handle_move_to(mob.mob_state, 9, 9)
-    {state, positions} = drive(state)
+    {state, _positions} = drive(state)
 
-    assert {state.x, state.y} == {9, 9}
-    refute Enum.any?(positions, fn {x, y} -> Cell.icewall?(@map, x, y) end)
+    assert Cell.icewall?(@map, state.x, state.y)
+    assert state.movement_state == :standing
+    assert state.walk_fail_count == 1
+  end
+
+  test "a mob inside the band walks out of it west and south" do
+    mob = start_mob_session(map_name: @map, position: {5, 5}, awake: false)
+
+    {:noreply, state} = MovementHandler.handle_move_to(mob.mob_state, 1, 1)
+    {state, _positions} = drive(state)
+
+    assert {state.x, state.y} == {1, 1}
+    assert state.walk_fail_count == 0
+  end
+
+  test "a mob inside the band cannot step east or north" do
+    mob = start_mob_session(map_name: @map, position: {5, 5}, awake: false)
+
+    state =
+      Enum.reduce([{10, 5}, {5, 10}, {10, 10}], mob.mob_state, fn {gx, gy}, acc ->
+        {:noreply, acc} = MovementHandler.handle_move_to(acc, gx, gy)
+        {acc, positions} = drive(acc)
+        assert Enum.all?(positions, &(&1 == {5, 5}))
+        acc
+      end)
+
+    assert state.walk_fail_count == 3
   end
 
   test "player-profile pathing crosses the band freely" do
@@ -62,26 +68,19 @@ defmodule Aesir.ZoneServer.Integration.SetcellIcewallPenTest do
     assert Enum.any?(player_path, fn {x, y} -> Cell.icewall?(@map, x, y) end)
   end
 
-  test "clearing the band releases a penned mob" do
-    map_data = MapCache.get!(@map)
-
-    assert {:error, :no_path} = Pathfinding.find_path(map_data, {5, 5}, {0, 0}, profile: :mob)
-
+  test "clearing the band releases a held mob" do
     mob = start_mob_session(map_name: @map, position: {5, 5}, awake: false)
 
-    # Penned while the band is up: the request cannot produce a path out.
-    {:noreply, state} = MovementHandler.handle_move_to(mob.mob_state, 0, 0)
+    {:noreply, state} = MovementHandler.handle_move_to(mob.mob_state, 10, 10)
     {state, _} = drive(state)
-    assert Cell.icewall?(@map, state.x, state.y)
+    assert {state.x, state.y} == {5, 5}
 
-    # Clearing the band frees the same mob.
     :ok = ScriptCells.set(@map, {4, 4}, {7, 7}, :icewall, 0)
 
-    {:noreply, state} = MovementHandler.handle_move_to(state, 0, 0)
-    {state, positions} = drive(state)
+    {:noreply, state} = MovementHandler.handle_move_to(state, 10, 10)
+    {state, _positions} = drive(state)
 
-    assert {state.x, state.y} == {0, 0}
-    refute Enum.any?(positions, fn {x, y} -> Cell.icewall?(@map, x, y) end)
+    assert {state.x, state.y} == {10, 10}
   end
 
   defp drive(state, max_ticks \\ 100) do

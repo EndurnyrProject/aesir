@@ -2485,6 +2485,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     []
     |> maybe_put(:blocks_movement, Cell.flag?(cell, :blocks_movement))
     |> maybe_put(:blocks_projectiles, Cell.flag?(cell, :blocks_projectiles))
+    |> maybe_put(:icewall, Cell.flag?(cell, :icewall))
     |> maybe_put(:exclusive, exclusive_terrain_cell?(cell))
     |> maybe_put(
       :consumable_water,

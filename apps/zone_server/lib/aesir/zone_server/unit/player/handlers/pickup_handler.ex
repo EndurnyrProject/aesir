@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
   defp walk_to_item(ground_id, %{game_state: gs} = state) do
     with {:ok, %GroundItem{x: x, y: y}} <- GroundItemStore.get(gs.map_name, ground_id),
          {:ok, map_data} <- MapCache.get(gs.map_name),
-         {:ok, [_ | _]} <- Pathfinding.find_path(map_data, {gs.x, gs.y}, {x, y}),
+         {:ok, [_ | _]} <- Pathfinding.walk_path(map_data, {gs.x, gs.y}, {x, y}),
          {:ok, moving} <-
            PlayerState.transition_to(
              PlayerState.set_pickup_intent(gs, ground_id),

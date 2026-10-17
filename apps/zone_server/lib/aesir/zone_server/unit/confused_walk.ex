@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.ConfusedWalk do
   """
 
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Pathfinding
 
@@ -54,9 +55,16 @@ defmodule Aesir.ZoneServer.Unit.ConfusedWalk do
     end)
   end
 
+  # The reference's reach check: the cell is passable and the straight walk to
+  # it searches with CELL_CHKNOREACH (the map's last row and column open).
   defp reachable?(map_name, from, {cell_x, cell_y} = cell) do
-    Cell.traversable?(map_name, cell_x, cell_y) and
-      match?({:ok, _path}, Pathfinding.easy_path(map_name, from, cell))
+    with true <- Cell.traversable?(map_name, cell_x, cell_y),
+         {:ok, map_data} <- MapCache.get(map_name),
+         {:ok, _path} <- Pathfinding.find_path(map_data, from, cell, easy: true, cells: :noreach) do
+      true
+    else
+      _ -> false
+    end
   end
 
   # The square root truncated to an integer. A negative argument (a request for

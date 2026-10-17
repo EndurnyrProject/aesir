@@ -1116,7 +1116,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
 
-      stub(Pathfinding, :find_path, fn :map_data, {150, 150}, {151, 150} ->
+      stub(Pathfinding, :rewalk_path, fn :map_data, {150, 150}, {151, 150} ->
         {:ok, [{151, 150}]}
       end)
 
@@ -1144,7 +1144,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
 
-      stub(Pathfinding, :find_path, fn :map_data, {150, 150}, {151, 150} ->
+      stub(Pathfinding, :rewalk_path, fn :map_data, {150, 150}, {151, 150} ->
         {:ok, [{151, 150}]}
       end)
 
@@ -1185,7 +1185,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       # Level 1's range is 3, not the definition's widest (level 5) range of 11:
       # sizing off 11 would read the target (10 cells away) as already in range
       # and never call find_path at all.
-      expect(Pathfinding, :find_path, fn :map_data, {150, 150}, {157, 150} ->
+      expect(Pathfinding, :rewalk_path, fn :map_data, {150, 150}, {157, 150} ->
         {:ok, [{151, 150}]}
       end)
 
@@ -1220,7 +1220,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
 
-      stub(Pathfinding, :find_path, fn :map_data, {150, 150}, {151, 150} ->
+      stub(Pathfinding, :rewalk_path, fn :map_data, {150, 150}, {151, 150} ->
         {:ok, [{151, 150}]}
       end)
 
@@ -1263,7 +1263,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
 
-      stub(Pathfinding, :find_path, fn :map_data, {150, 150}, {151, 150} -> {:error, :blocked} end)
+      stub(Pathfinding, :rewalk_path, fn :map_data, {150, 150}, {151, 150} ->
+        {:error, :blocked}
+      end)
 
       reject(&MovementHandler.handle_request_move/4)
 

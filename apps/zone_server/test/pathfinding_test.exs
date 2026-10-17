@@ -60,12 +60,12 @@ defmodule Aesir.ZoneServer.PathfindingTest do
 
       cache(map_data)
 
-      assert {:ok, path} = Pathfinding.find_path(map_data, {0, 5}, {9, 5})
+      assert {:ok, path} = Pathfinding.find_path(map_data, {0, 5}, {8, 5})
 
       # Path should go around the wall (above or below)
       # At least as long as direct path
-      assert length(path) >= 9
-      assert List.last(path) == {9, 5}
+      assert length(path) >= 8
+      assert List.last(path) == {8, 5}
 
       # Verify path doesn't go through wall
       refute Enum.any?(path, fn {x, y} -> y == 5 and x in [4, 5, 6] end)
@@ -147,46 +147,23 @@ defmodule Aesir.ZoneServer.PathfindingTest do
     end
   end
 
-  describe "find_path/4 with movement profile" do
+  describe "find_path/4 and icewall cells" do
     setup :setup_ets_tables
 
-    test "mob detours around an icewall band while the player crosses" do
+    test "a path crosses an icewall band like any walkable cell" do
       map_data = MapData.new("fence_map", 10, 10)
       cache(map_data)
 
-      for y <- 2..7 do
+      for y <- 0..9 do
         :ok = Cell.put_traits("fence_map", 5, y, :npc_script, 0, icewall: true)
       end
 
-      assert {:ok, player_path} = Pathfinding.find_path(map_data, {0, 5}, {9, 5})
-      assert Enum.any?(player_path, fn {x, y} -> x == 5 and y in 2..7 end)
-
-      assert {:ok, mob_path} = Pathfinding.find_path(map_data, {0, 5}, {9, 5}, profile: :mob)
-      assert List.last(mob_path) == {9, 5}
-      refute Enum.any?(mob_path, fn {x, y} -> Cell.icewall?("fence_map", x, y) end)
-
-      steps = Enum.zip([{0, 5} | mob_path], mob_path)
-
-      assert Enum.all?(steps, fn {from, to} ->
-               Cell.step_traversable?("fence_map", from, to, profile: :mob)
-             end)
+      assert {:ok, path} = Pathfinding.find_path(map_data, {0, 5}, {8, 5})
+      assert List.last(path) == {8, 5}
+      assert {5, 5} in path
     end
 
-    test "mob paths stay within an icewall band" do
-      map_data = MapData.new("fence_band", 10, 10)
-      cache(map_data)
-
-      for x <- 3..7, y <- 3..7 do
-        :ok = Cell.put_traits("fence_band", x, y, :npc_script, 0, icewall: true)
-      end
-
-      assert {:ok, in_band_path} =
-               Pathfinding.find_path(map_data, {4, 4}, {6, 6}, profile: :mob)
-
-      assert Enum.all?(in_band_path, fn {x, y} -> Cell.icewall?("fence_band", x, y) end)
-    end
-
-    test "mob cannot escape a closed icewall ring" do
+    test "a path leaves a closed icewall ring" do
       map_data = MapData.new("fence_ring", 10, 10)
       cache(map_data)
 
@@ -200,7 +177,8 @@ defmodule Aesir.ZoneServer.PathfindingTest do
         :ok = Cell.put_traits("fence_ring", 7, y, :npc_script, 0, icewall: true)
       end
 
-      assert {:error, :no_path} = Pathfinding.find_path(map_data, {5, 5}, {0, 0}, profile: :mob)
+      assert {:ok, [_ | _] = path} = Pathfinding.find_path(map_data, {5, 5}, {1, 1})
+      assert List.last(path) == {1, 1}
     end
   end
 

@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.ConfusedWalk
   alias Aesir.ZoneServer.Unit.HitStop
+  alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.StateCommit
@@ -29,7 +30,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   A request with a path stops the mob's attack, and a confused mob walks to a
   random cell instead (`ConfusedWalk`); a random cell it cannot path to leaves
-  it where it is.
+  it where it is. A `chase: true` request (a chase, loot or follow walk) is
+  refused only by the 14-step rule (`Pathfinding.rewalk_path/3`); any other
+  request is a new walk, refused past 17 steps too (`Pathfinding.walk_path/3`).
   """
   @spec handle_move_to(MobState.t(), integer(), integer(), keyword()) ::
           {:noreply, MobState.t()}
@@ -38,13 +41,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
     with {:ok, map_data} <- MapCache.get(state.map_name),
          {:ok, path} <-
-           Pathfinding.find_path(map_data, {state.x, state.y}, {x, y}, profile: :mob) do
+           request_path(map_data, {state.x, state.y}, {x, y}, chase?) do
       state = MobState.stop_attack(%{state | walk_easy: false, chase_walk: chase?})
 
       {:noreply,
-       walk_request(state, {x, y}, path, fn destination ->
-         Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob)
-       end)}
+       walk_request(
+         state,
+         {x, y},
+         path,
+         &Pathfinding.rewalk_path(map_data, {state.x, state.y}, &1)
+       )}
     else
       # No path found or map not loaded.
       _ -> {:noreply, state}
@@ -72,17 +78,30 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     destination = {x + reach * dx, y + reach * dy}
 
     with true <- reach > 0,
-         {:ok, path} <- Pathfinding.easy_path(state.map_name, {x, y}, destination) do
+         {:ok, map_data} <- MapCache.get(state.map_name),
+         {:ok, path} <- Pathfinding.walk_path(map_data, {x, y}, destination, easy: true) do
       state = MobState.stop_attack(%{state | walk_easy: true, chase_walk: false})
 
-      walk_request(state, destination, path, &Pathfinding.easy_path(state.map_name, {x, y}, &1))
+      walk_request(
+        state,
+        destination,
+        path,
+        &Pathfinding.rewalk_path(map_data, {x, y}, &1, easy: true)
+      )
     else
       _ -> state
     end
   end
 
+  # A chase walk (`unit_walktobl`) is refused only by the 14-step rule; any
+  # other request is a new walk with the 17-step refusal too.
+  defp request_path(map_data, from, to, true), do: Pathfinding.rewalk_path(map_data, from, to)
+  defp request_path(map_data, from, to, false), do: Pathfinding.walk_path(map_data, from, to)
+
   # Walks a request whose own destination has a path: a confused mob walks to
-  # its random cell instead, re-pathed now unless it is already walking.
+  # its random cell instead, re-pathed now unless it is already walking. The
+  # random cell is a re-path of the walk (`rewalk_path`): only the 14-step rule
+  # refuses it, whatever refused the requested cell.
   defp walk_request(state, destination, path, path_to) do
     from = {state.x, state.y}
 
@@ -208,8 +227,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   @doc """
   Stops a walking mob that a damaging hit stopped (`HitStop`): it finishes the
-  step it is taking when at most half of it is left, else it stays on its cell.
-  The caller has already ruled out endure and an escape walk.
+  step it is taking when at most half of it is left and the step's checks
+  let it, else it stays on its cell. The caller has already
+  ruled out endure and an escape walk.
   """
   @spec handle_hit_stop(MobState.t()) :: MobState.t()
   def handle_hit_stop(%MobState{movement_state: :moving} = state) do
@@ -218,14 +238,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
     with {:finish_step, [next | _rest]} <-
            {HitStop.plan(state.pending_step, HitStop.now()), state.walk_path},
-         true <-
-           Cell.step_traversable?(state.map_name, {state.x, state.y}, next, profile: :mob) do
-      step_mob(state, next, [])
+         check when check != :blocked <- step_check(state, next) do
+      if check == :step, do: step_mob(state, next, []), else: hold_on_icewall(state)
     else
-      _stay ->
-        stopped_state = MobState.stop_movement(state)
-        Movement.set_position(:mob, stopped_state.instance_id, stopped_state, state.map_name)
-        stopped_state
+      _stay -> stop_walk(state)
     end
   end
 
@@ -350,19 +366,57 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   defp process_unblocked_movement_tick(%{movement_state: :moving} = state) do
     case state.walk_path do
-      [{next_x, next_y} | _] = walk_path ->
-        if Cell.step_traversable?(state.map_name, {state.x, state.y}, {next_x, next_y},
-             profile: :mob,
-             corners: not state.walk_easy
-           ) do
-          step_mob(state, {next_x, next_y}, tl(walk_path))
-        else
-          handle_blocked_mob(
-            %{state | walk_target: nil},
-            state.walk_target || List.last(walk_path)
-          )
+      [next | rest] = walk_path ->
+        case step_check(state, next) do
+          :step ->
+            step_mob(state, next, rest)
+
+          :hold ->
+            hold_on_icewall(state)
+
+          :blocked ->
+            handle_blocked_mob(
+              %{state | walk_target: nil},
+              state.walk_target || List.last(walk_path)
+            )
         end
     end
+  end
+
+  @icewall_walk_block 75
+
+  # A step re-checks only the cell it enters: the path already decided the
+  # corners it may cut. A mob walks on into an icewall cell that blocks the way
+  # when it steps east or north (when the cell holds it at all); on an icewall
+  # cell it cannot step east or north until 75 such steps in a row have failed.
+  # A status-immune mob is never held.
+  defp step_check(state, next) do
+    block = if MobState.status_immune?(state), do: 0, else: @icewall_walk_block
+
+    cond do
+      blocked_step?(state, next, block) -> :blocked
+      held_on_icewall?(state, next, block) -> :hold
+      true -> :step
+    end
+  end
+
+  defp blocked_step?(state, {next_x, next_y}, block) do
+    not Cell.traversable?(state.map_name, next_x, next_y) and
+      (block == 0 or next_x < state.x or next_y < state.y or
+         not Cell.icewall?(state.map_name, next_x, next_y))
+  end
+
+  defp held_on_icewall?(state, {next_x, next_y}, block) do
+    state.walk_fail_count < block and (next_x > state.x or next_y > state.y) and
+      Cell.icewall?(state.map_name, state.x, state.y)
+  end
+
+  # An icewall cell holding the mob ends its walk on its cell and drops its
+  # target.
+  defp hold_on_icewall(state) do
+    %{state | walk_fail_count: state.walk_fail_count + 1}
+    |> stop_walk()
+    |> AIStateMachine.unlock_target(System.system_time(:millisecond))
   end
 
   defp step_mob(state, {next_x, next_y}, remaining_path) do
@@ -374,7 +428,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       state
       |> MobState.update_position(next_x, next_y)
       |> MobState.update_direction(dir)
-      |> Map.put(:walk_path, remaining_path)
+      |> Map.merge(%{walk_path: remaining_path, walk_fail_count: 0})
 
     # Route through the single choke point so the spatial index + registry
     # are synced and the unit is marked dirty for the per-map broadcaster.
@@ -429,12 +483,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   # A path for the walk's current mode: straight for an easy walk, else around
   # obstacles.
-  defp walk_path(%MobState{walk_easy: true} = state, destination),
-    do: Pathfinding.easy_path(state.map_name, {state.x, state.y}, destination)
-
   defp walk_path(state, destination) do
     with {:ok, map_data} <- MapCache.get(state.map_name) do
-      Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob)
+      Pathfinding.rewalk_path(map_data, {state.x, state.y}, destination, easy: state.walk_easy)
     end
   end
 

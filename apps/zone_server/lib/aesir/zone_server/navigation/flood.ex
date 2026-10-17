@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Navigation.Flood do
   Computes exact walking costs from one map cell to a set of target cells.
 
   Straight and diagonal steps use `Unit.MovementEngine` costs. Traversability
-  defaults to the runtime-aware `Map.Cell.step_traversable?/4`; callers building
+  defaults to the runtime-aware `Map.Cell.step_traversable?/3`; callers building
   long-lived topology can select immutable base terrain instead.
   """
 
@@ -150,7 +150,7 @@ defmodule Aesir.ZoneServer.Navigation.Flood do
   end
 
   defp step_traversable?(map_data, from, to, :runtime) do
-    Cell.step_traversable?(map_data.name, from, to, [])
+    Cell.step_traversable?(map_data.name, from, to)
   end
 
   defp step_traversable?(map_data, {from_x, from_y}, {to_x, to_y}, :static) do

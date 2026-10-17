@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Map.MapCacheTest do
   end
 
   test "returns false for an open neighbor ring" do
-    cache(MapData.new("adjacency", 3, 3))
+    cache(MapData.new("adjacency", 4, 4))
 
     refute MapCache.adjacent_impassable?("adjacency", 1, 1)
   end
@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Map.MapCacheTest do
   end
 
   test "ignores NPC occupancy and dynamic blockers" do
-    map = MapData.new("adjacency", 3, 3) |> MapData.set_cell_flag(1, 0, :npc, true)
+    map = MapData.new("adjacency", 4, 4) |> MapData.set_cell_flag(1, 0, :npc, true)
     cache(map)
     :ok = Cell.put("adjacency", 0, 1, :wall, 1, blocks_movement: true)
 

@@ -95,10 +95,15 @@ defmodule Aesir.ZoneServer.Map.MapData do
   def set_cell(map, _, _, _), do: map
 
   @doc """
-  Checks if a position is walkable.
+  Checks if a position is walkable. The map's last row and column are never
+  walkable, whatever their terrain.
   """
   @spec walkable?(t(), integer(), integer()) :: boolean()
   def walkable?(map, x, y) do
+    if edge?(map, x, y), do: false, else: base_walkable?(map, x, y)
+  end
+
+  defp base_walkable?(map, x, y) do
     case get_cell(map, x, y) do
       nil -> false
       gat_type -> GatType.is_walkable?(gat_type)
@@ -126,12 +131,29 @@ defmodule Aesir.ZoneServer.Map.MapData do
   end
 
   @doc """
-  Checks various cell properties.
-  Based on rAthena's map_getcellp function.
+  Checks various cell properties. Outside the map, and on its last row and
+  column, every check but `:get_type` answers as an impassable cell that is
+  not a wall: only `:chk_nopass` is true.
   """
   @spec check_cell(t(), integer(), integer(), atom()) :: boolean() | integer()
+  def check_cell(map, x, y, check_type) when check_type != :get_type do
+    if edge?(map, x, y),
+      do: check_type == :chk_nopass,
+      else: check_cell_in_bounds(map, x, y, check_type)
+  end
+
+  def check_cell(map, x, y, check_type), do: check_cell_in_bounds(map, x, y, check_type)
+
+  @doc """
+  Whether `{x, y}` is outside the map or on its last row or column: the cells
+  every check but `:get_type` answers for as impassable, not walls.
+  """
+  @spec edge?(t(), integer(), integer()) :: boolean()
+  def edge?(%__MODULE__{xs: xs, ys: ys}, x, y),
+    do: x < 0 or x >= xs - 1 or y < 0 or y >= ys - 1
+
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  def check_cell(map, x, y, check_type) do
+  defp check_cell_in_bounds(map, x, y, check_type) do
     gat_type = get_cell(map, x, y)
     dynamic = Map.get(map.dynamic_cells, y * map.xs + x, %{})
 

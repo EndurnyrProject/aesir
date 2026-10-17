@@ -486,7 +486,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
          {:ok, map} <- MapCache.get(homunculus.map_name),
          true <- x >= 0 and y >= 0 and x < map.xs and y < map.ys,
          true <- Cell.traversable?(homunculus.map_name, x, y),
-         {:ok, cells} <- Pathfinding.find_path(map, {homunculus.x, homunculus.y}, {x, y}) do
+         {:ok, cells} <- Pathfinding.walk_path(map, {homunculus.x, homunculus.y}, {x, y}) do
       {:ok, cells}
     else
       false -> {:error, :invalid_destination}

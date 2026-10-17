@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Map.CellTest do
 
   setup do
     map =
-      MapData.new("cell_test", 3, 3)
+      MapData.new("cell_test", 4, 4)
       |> MapData.set_cell(1, 0, GatType.wall())
       |> MapData.set_cell(2, 0, GatType.water())
 
@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Map.CellTest do
 
   test "fails closed for projectiles outside known base terrain" do
     assert Cell.blocks_projectiles?("missing", 0, 0)
-    assert Cell.blocks_projectiles?("cell_test", 3, 0)
+    assert Cell.blocks_projectiles?("cell_test", 4, 0)
   end
 
   test "delegates base water detection to MapData" do
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     refute Cell.step_traversable?("cell_test", {0, 1}, {1, 2})
   end
 
-  test "step_traversable? fences only the mob profile against icewall boundaries" do
+  test "step_traversable? does not treat icewall cells as blocked" do
     :ets.insert(
       EtsTable.table_for(:map_cache),
       {"icewall_test", MapData.new("icewall_test", 5, 5)}
@@ -84,20 +84,10 @@ defmodule Aesir.ZoneServer.Map.CellTest do
       :ok = Cell.put_traits("icewall_test", x, y, :npc_script, 0, icewall: true)
     end
 
-    # :player ignores the fence entirely (explicit and default arity)
+    assert Cell.icewall?("icewall_test", 1, 2)
     assert Cell.step_traversable?("icewall_test", {0, 2}, {1, 2})
-    assert Cell.step_traversable?("icewall_test", {0, 2}, {1, 2}, profile: :player)
-
-    # :mob cannot cross the boundary in either direction
-    refute Cell.step_traversable?("icewall_test", {0, 2}, {1, 2}, profile: :mob)
-    refute Cell.step_traversable?("icewall_test", {1, 2}, {0, 2}, profile: :mob)
-
-    # :mob moves freely within and outside the band
-    assert Cell.step_traversable?("icewall_test", {1, 1}, {1, 2}, profile: :mob)
-    assert Cell.step_traversable?("icewall_test", {0, 0}, {0, 1}, profile: :mob)
-
-    # diagonal step across the band's corner: both cells out-of-band, so allowed
-    assert Cell.step_traversable?("icewall_test", {0, 1}, {1, 0}, profile: :mob)
+    assert Cell.step_traversable?("icewall_test", {1, 2}, {0, 2})
+    assert Cell.step_traversable?("icewall_test", {0, 0}, {1, 1})
   end
 
   test "merges independent source contributions and restores exact base terrain", %{map: map} do
@@ -158,14 +148,14 @@ defmodule Aesir.ZoneServer.Map.CellTest do
   end
 
   test "samples canonical map aliases and rejects exhausted or non-positive attempt budgets" do
-    :ets.insert(EtsTable.table_for(:map_cache), {"single_cell", MapData.new("single_cell", 1, 1)})
+    :ets.insert(EtsTable.table_for(:map_cache), {"single_cell", MapData.new("single_cell", 2, 2)})
 
-    assert {:ok, {0, 0}} = Cell.random_traversable("single_cell.gat", 1)
+    assert {:ok, {0, 0}} = Cell.random_traversable("single_cell.gat", 100)
     assert {:error, :no_walkable_cell} = Cell.random_traversable("single_cell", 0)
     assert {:error, :no_walkable_cell} = Cell.random_traversable("single_cell", -1)
 
     :ok = Cell.put("single_cell", 0, 0, :test_blocker, 1, blocks_movement: true)
-    assert {:error, :no_walkable_cell} = Cell.random_traversable("single_cell", 1)
+    assert {:error, :no_walkable_cell} = Cell.random_traversable("single_cell", 100)
   end
 
   test "a random cell near a center skips the center, the five-cell edge and blocked cells" do

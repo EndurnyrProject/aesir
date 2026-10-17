@@ -212,7 +212,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     case MapCache.get(map_name) do
       {:ok, %{xs: width, ys: height}} ->
         Enum.filter(cells, fn {x, y} = cell ->
-          x >= 0 and x < width and y >= 0 and y < height and
+          x > 0 and x < width and y > 0 and y < height and
             standable?(group, cell) and
             (not path_check? or LineOfSight.clear?(map_name, cell, origin))
         end)

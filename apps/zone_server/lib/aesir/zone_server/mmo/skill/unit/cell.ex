@@ -10,8 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
   @blocks_projectiles 4
   @consumable_water 8
   @visible 16
+  @icewall 32
   @known_flags @targetable ||| @blocks_movement ||| @blocks_projectiles ||| @consumable_water |||
-                 @visible
+                 @visible ||| @icewall
   @uint32_max 0xFFFF_FFFF
   @uint64_max 0xFFFF_FFFF_FFFF_FFFF
 
@@ -105,6 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
   defp flag_value(:blocks_projectiles), do: @blocks_projectiles
   defp flag_value(:consumable_water), do: @consumable_water
   defp flag_value(:visible), do: @visible
+  defp flag_value(:icewall), do: @icewall
   defp flag_value(_), do: nil
 
   defp valid_identity?(%__MODULE__{} = cell) do

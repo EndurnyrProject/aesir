@@ -48,9 +48,9 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
   end
 
   test "walk edges carry the weighted flood cost", %{map_source: map_source} do
-    cache_map(MapData.new("nav_start", 6, 6))
-    middle = cache_map(MapData.new("nav_middle", 6, 6))
-    cache_map(MapData.new("nav_end", 6, 6))
+    cache_map(MapData.new("nav_start", 7, 7))
+    middle = cache_map(MapData.new("nav_middle", 7, 7))
+    cache_map(MapData.new("nav_end", 7, 7))
 
     put_warps([
       warp("enter_middle", "nav_start", {1, 1}, "nav_middle", {0, 0}),
@@ -71,15 +71,15 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
   end
 
   test "a blocked landing is nudged to its nearest walkable cell", %{map_source: map_source} do
-    cache_map(MapData.new("nav_start", 6, 6))
+    cache_map(MapData.new("nav_start", 7, 7))
 
     middle =
       "nav_middle"
-      |> MapData.new(6, 6)
+      |> MapData.new(7, 7)
       |> MapData.set_cell(2, 2, GatType.wall())
       |> cache_map()
 
-    cache_map(MapData.new("nav_end", 6, 6))
+    cache_map(MapData.new("nav_end", 7, 7))
 
     put_warps([
       warp("blocked_landing", "nav_start", {1, 1}, "nav_middle", {2, 2}),
@@ -99,15 +99,15 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
     map_source: map_source,
     warp_source: warp_source
   } do
-    cache_map(MapData.new("nav_start", 5, 3))
+    cache_map(MapData.new("nav_start", 6, 4))
 
     middle =
-      for x <- 0..4, y <- [0, 2], reduce: MapData.new("nav_middle", 5, 3) do
+      for x <- 0..4, y <- [0, 2], reduce: MapData.new("nav_middle", 6, 4) do
         map_data -> MapData.set_cell(map_data, x, y, GatType.wall())
       end
       |> cache_map()
 
-    cache_map(MapData.new("nav_end", 5, 3))
+    cache_map(MapData.new("nav_end", 6, 4))
 
     put_warps([
       warp("enter_middle", "nav_start", {1, 1}, "nav_middle", {0, 1}),
@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
 
   test "portals touching a statically excluded map are absent", %{map_source: map_source} do
     for map_name <- ["nav_allowed", "nav_hidden", "nav_other"] do
-      cache_map(MapData.new(map_name, 4, 4))
+      cache_map(MapData.new(map_name, 5, 5))
     end
 
     :persistent_term.put(Exclusions, MapSet.new(["nav_hidden"]))
@@ -246,8 +246,8 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
   end
 
   defp seed_cache_fixture do
-    cache_map(MapData.new("nav_a", 4, 4))
-    cache_map(MapData.new("nav_b", 4, 4))
+    cache_map(MapData.new("nav_a", 5, 5))
+    cache_map(MapData.new("nav_b", 5, 5))
   end
 
   defp cache_path(root) do

@@ -3048,6 +3048,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     refute MapCell.traversable?("prontera", 102, 100)
   end
 
+  test "an icewall cell marks its map cell as icewall until it is removed" do
+    manager = start_unmanaged_manager(10_000)
+
+    :ok =
+      Manager.register(
+        manager,
+        group(1,
+          visibility: :public,
+          cells: [{100, 100}],
+          state: %{cell_attrs: %{{100, 100} => %{flags: [:blocks_movement, :icewall]}}}
+        )
+      )
+
+    assert MapCell.icewall?("prontera", 100, 100)
+    refute MapCell.traversable?("prontera", 100, 100)
+
+    assert :ok = Manager.destroy(manager, 1)
+    refute MapCell.icewall?("prontera", 100, 100)
+  end
+
   test "logs and survives an unknown cast" do
     manager = start_manager(10_000)
 

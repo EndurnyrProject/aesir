@@ -176,7 +176,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     with true <- Geometry.chebyshev_distance(state.x, state.y, tx, ty) <= range,
          {:ok, cell} <- adjoining_cell(state, {tx, ty}),
          {:ok, map_data} <- MapCache.get(state.map_name),
-         {:ok, path} <- Pathfinding.find_path(map_data, {state.x, state.y}, cell, profile: :mob) do
+         {:ok, path} <-
+           Pathfinding.find_path(map_data, {state.x, state.y}, cell, cells: :noreach) do
       length(path) <= @area_size or
         LineOfSight.passable?(state.map_name, {state.x, state.y}, cell)
     else

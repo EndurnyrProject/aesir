@@ -6,11 +6,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler do
   alias Aesir.ZoneServer.Navigation.Route
   alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Router
+  alias Aesir.ZoneServer.Navigation.RouteSearch
   alias Aesir.ZoneServer.Navigation.Session
   alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Navigation.View
   alias Aesir.ZoneServer.Network.MessageRouter
-  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
@@ -227,7 +227,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler do
   end
 
   defp walk_cells(map_name, origin, destination) do
-    case Pathfinding.find_path(MapCache.get!(map_name), origin, destination, []) do
+    case RouteSearch.find_path(MapCache.get!(map_name), origin, destination) do
       {:ok, path} -> {:ok, [origin | path]}
       {:error, reason} -> {:error, reason}
     end

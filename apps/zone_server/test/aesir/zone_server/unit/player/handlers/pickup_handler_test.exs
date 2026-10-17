@@ -179,7 +179,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
     stub(GroundItemStore, :query_in_range, fn "prontera", 100, 100, 2 -> [] end)
     stub(GroundItemStore, :get, fn "prontera", @ground_id -> {:ok, far} end)
     stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
-    stub(Pathfinding, :find_path, fn :map_data, {100, 100}, {105, 100} -> {:ok, [{105, 100}]} end)
+    stub(Pathfinding, :walk_path, fn :map_data, {100, 100}, {105, 100} -> {:ok, [{105, 100}]} end)
     reject(&Coordinator.claim_item/4)
 
     expect(MovementHandler, :handle_request_move, fn moving, 105, 100, opts ->

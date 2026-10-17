@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerFreecastTest do
 
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
-    stub(Pathfinding, :find_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
+    stub(Pathfinding, :walk_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
     stub(Pathfinding, :simplify_path, fn path, _map -> path end)
     stub(SpatialIndex, :get_players_in_range, fn _map, _x, _y, _r -> [] end)
     stub(SpatialIndex, :get_units_in_range, fn _type, _map, _x, _y, _r -> [] end)

@@ -7,16 +7,16 @@ defmodule Aesir.ZoneServer.Navigation.FloodTest do
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Navigation.Flood
-  alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Navigation.RouteSearch
 
   setup :setup_ets_tables
 
   test "flood cost agrees with a mixed-step pathfinder path" do
-    map_data = cache(MapData.new("navigation_flood_mixed", 6, 6))
+    map_data = cache(MapData.new("navigation_flood_mixed", 7, 7))
     start = {0, 0}
     target = {4, 2}
 
-    assert {:ok, path} = Pathfinding.find_path(map_data, start, target)
+    assert {:ok, path} = RouteSearch.find_path(map_data, start, target)
     steps = Enum.zip([start | path], path)
 
     assert Enum.any?(steps, &diagonal?/1)
@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Navigation.FloodTest do
       for x <- 2..4,
           y <- 2..4,
           {x, y} != enclosed,
-          reduce: MapData.new("navigation_flood_enclosed", 7, 7) do
+          reduce: MapData.new("navigation_flood_enclosed", 8, 8) do
         map_data -> MapData.set_cell(map_data, x, y, GatType.wall())
       end
       |> cache()
@@ -51,12 +51,12 @@ defmodule Aesir.ZoneServer.Navigation.FloodTest do
     target = {6, 3}
 
     map_data =
-      Enum.reduce(1..5, MapData.new("navigation_flood_detour", 7, 7), fn y, map_data ->
+      Enum.reduce(1..5, MapData.new("navigation_flood_detour", 8, 8), fn y, map_data ->
         MapData.set_cell(map_data, 3, y, GatType.wall())
       end)
       |> cache()
 
-    assert {:ok, path} = Pathfinding.find_path(map_data, start, target)
+    assert {:ok, path} = RouteSearch.find_path(map_data, start, target)
     assert Enum.any?(path, fn {_x, y} -> y in [0, 6] end)
 
     costs = Flood.costs(map_data, start, MapSet.new([target]))
@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Navigation.FloodTest do
   end
 
   test "a cyclic map is exhausted without repeated expansion" do
-    map_data = cache(MapData.new("navigation_flood_cycle", 40, 40))
+    map_data = cache(MapData.new("navigation_flood_cycle", 41, 41))
 
     task = Task.async(fn -> Flood.costs(map_data, {0, 0}, MapSet.new([{-1, -1}])) end)
 

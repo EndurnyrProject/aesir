@@ -46,6 +46,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobWalkRequestTest do
       assert escaped.movement_state == :moving
     end
 
+    test "refuses a walk longer than seventeen steps" do
+      {:noreply, unchanged} = MovementHandler.handle_move_to(mob(), 48, 30)
+
+      assert unchanged.movement_state == :standing
+    end
+
+    test "a chase walk is not refused for its length" do
+      {:noreply, walking} = MovementHandler.handle_move_to(mob(), 48, 30, chase: true)
+
+      assert walking.movement_state == :moving
+      assert length(walking.walk_path) == 18
+    end
+
     test "with no path leaves the attack running" do
       attacking = %{mob() | attack_target: {:unit, :player, 1}, attack_timer_at: 123}
 

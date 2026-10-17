@@ -495,7 +495,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         {:ok, %{width: 200, height: 200}}
       end)
 
-      expect(Pathfinding, :find_path, fn _map_data, {50, 50}, {60, 60} ->
+      expect(Pathfinding, :walk_path, fn _map_data, {50, 50}, {60, 60} ->
         {:ok,
          [
            {51, 50},

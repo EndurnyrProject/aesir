@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Map.PathfindingWallsTest do
 
   setup do
     map =
-      MapData.new("walls_test", 3, 3)
+      MapData.new("walls_test", 4, 4)
       |> MapData.set_cell(1, 1, GatType.cliff())
       |> MapData.set_cell(2, 0, GatType.wall())
       |> MapData.set_cell(0, 2, GatType.wall())

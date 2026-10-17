@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     stub(MapCache, :get, fn "prontera" -> {:ok, %{width: 200, height: 200}} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
     stub(Cell, :step_traversable?, fn "prontera", _from, _to -> true end)
-    stub(Pathfinding, :find_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
+    stub(Pathfinding, :walk_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{50, 50}, {51, 50}]} end)
     stub(SpatialIndex, :get_visible_players, fn _ -> [] end)
     stub(Broadcast, :to_player, fn _, _ -> :ok end)
     stub(Broadcast, :to_players, fn _, _, _ -> :ok end)
@@ -106,7 +106,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end
 
     test "walks the full per-cell path and delays the first tick by one step" do
-      stub(Pathfinding, :find_path, fn _map, {50, 50}, {54, 50} ->
+      stub(Pathfinding, :walk_path, fn _map, {50, 50}, {54, 50} ->
         {:ok, [{51, 50}, {52, 50}, {53, 50}, {54, 50}]}
       end)
 
@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end
 
     test "invalid path commands do not dispatch movement intent" do
-      stub(Pathfinding, :find_path, fn _map, _from, _to -> {:error, :no_path} end)
+      stub(Pathfinding, :walk_path, fn _map, _from, _to -> {:error, :no_path} end)
       reject(&Interpreter.on_movement_intent/3)
 
       {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
@@ -251,7 +251,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
   describe "handle_request_move/4 combat disengage" do
     test "a manual move cancels a locked auto-attack loop and clears the timer" do
-      stub(Pathfinding, :find_path, fn _map, _from, _to ->
+      stub(Pathfinding, :walk_path, fn _map, _from, _to ->
         {:ok, [{50, 50}, {55, 55}, {60, 60}]}
       end)
 
@@ -287,9 +287,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
         {53, 52}
       end)
 
-      stub(Pathfinding, :find_path, fn
-        _map, {50, 50}, {51, 50} -> {:ok, [{51, 50}]}
-        _map, {50, 50}, {53, 52} -> {:ok, [{51, 51}, {52, 52}, {53, 52}]}
+      stub(Pathfinding, :walk_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{51, 50}]} end)
+
+      stub(Pathfinding, :rewalk_path, fn _map, {50, 50}, {53, 52} ->
+        {:ok, [{51, 51}, {52, 52}, {53, 52}]}
       end)
 
       {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
@@ -302,10 +303,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
         {53, 52}
       end)
 
-      stub(Pathfinding, :find_path, fn
-        _map, {50, 50}, {60, 60} -> {:ok, [{51, 51}, {60, 60}]}
-        _map, {50, 50}, {53, 52} -> {:error, :no_path}
-      end)
+      stub(Pathfinding, :walk_path, fn _map, {50, 50}, {60, 60} -> {:ok, [{51, 51}, {60, 60}]} end)
+
+      stub(Pathfinding, :rewalk_path, fn _map, {50, 50}, {53, 52} -> {:error, :no_path} end)
 
       {:noreply, new_state} = MovementHandler.handle_request_move(attacking_state(), 60, 60)
 
@@ -315,8 +315,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       assert new_state.game_state.action_state == :idle
     end
 
+    test "the random cell is refused only by the 14-step rule, not the 17-step one" do
+      far = for x <- 51..74, do: {x, 50}
+
+      stub(ConfusedWalk, :destination, fn :player, 1, "prontera", {50, 50}, {67, 67} ->
+        {74, 50}
+      end)
+
+      stub(Pathfinding, :walk_path, fn _map, {50, 50}, {67, 67} -> {:ok, [{51, 51}]} end)
+      stub(Pathfinding, :rewalk_path, fn _map, {50, 50}, {74, 50} -> {:ok, far} end)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 67, 67)
+
+      assert new_state.game_state.walk_path == far
+    end
+
     test "a request for the player's own cell stops the attack without walking" do
-      stub(Pathfinding, :find_path, fn _map, {50, 50}, {50, 50} -> {:ok, []} end)
+      stub(Pathfinding, :walk_path, fn _map, {50, 50}, {50, 50} -> {:ok, []} end)
 
       {:noreply, new_state} = MovementHandler.handle_request_move(attacking_state(), 50, 50)
 
@@ -330,10 +345,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
         {51, 50}
       end)
 
-      stub(Pathfinding, :find_path, fn
-        _map, {50, 50}, {50, 50} -> {:ok, []}
-        _map, {50, 50}, {51, 50} -> {:ok, [{51, 50}]}
-      end)
+      stub(Pathfinding, :walk_path, fn _map, {50, 50}, {50, 50} -> {:ok, []} end)
+      stub(Pathfinding, :rewalk_path, fn _map, {50, 50}, {51, 50} -> {:ok, [{51, 50}]} end)
 
       {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 50, 50)
 
@@ -348,14 +361,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
       stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
 
-      stub(Pathfinding, :find_path, fn
+      paths = fn
         _map, {50, 50}, {52, 50} -> {:ok, [{51, 50}, {52, 50}]}
         _map, {50, 50}, {51, 50} -> {:ok, [{51, 50}]}
         _map, {50, 50}, {51, 52} -> {:ok, [{50, 51}, {51, 52}]}
         _map, {51, 50}, {51, 52} -> {:ok, [{51, 51}, {51, 52}]}
         _map, {51, 50}, {60, 60} -> {:error, :no_path}
         _map, {50, 50}, {60, 60} -> {:ok, [{51, 51}, {60, 60}]}
-      end)
+      end
+
+      stub(Pathfinding, :walk_path, paths)
+      stub(Pathfinding, :rewalk_path, paths)
 
       :ok
     end
@@ -481,8 +497,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
     test "a dynamic movement blocker stops the player before it steps into the cell" do
       Mimic.copy(Movement)
-      stub(Cell, :step_traversable?, fn "prontera", {50, 50}, {51, 50} -> false end)
-      stub(Pathfinding, :find_path, fn _map, _from, _destination -> {:error, :no_path} end)
+      stub(Cell, :traversable?, fn "prontera", x, y -> {x, y} != {51, 50} end)
+      stub(Pathfinding, :rewalk_path, fn _map, _from, _destination -> {:error, :no_path} end)
       stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
 
       {:noreply, new_state} = MovementHandler.handle_movement_tick(moving_state())

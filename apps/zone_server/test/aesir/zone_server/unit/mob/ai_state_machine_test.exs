@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
     stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range -> [] end)
     stub(SpatialIndex, :units_in_area, fn _map, _x1, _y1, _x2, _y2 -> [] end)
-    stub(Pathfinding, :find_path, fn _map, from, to, _opts -> {:ok, line_path(from, to)} end)
+    stub_paths(fn from, to -> {:ok, line_path(from, to)} end)
     stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
 
     stub(UnitRegistry, :get_unit, fn :player, _id ->
@@ -274,7 +274,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
     test "an angry mob chases only a reachable target" do
       stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {105, 105, "prontera"}} end)
-      stub(Pathfinding, :find_path, fn _map, _from, _to, _opts -> {:error, :no_path} end)
+      stub_paths(fn _from, _to -> {:error, :no_path} end)
 
       result = think(%{chase_mob_state() | skill_state: :angry})
 
@@ -606,9 +606,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       assert think(weak).target_ref == {:player, 2}
 
-      stub(Pathfinding, :find_path, fn _map, _from, _to, _opts ->
-        {:ok, Enum.map(1..13, &{100 + &1, 100})}
-      end)
+      stub_paths(fn _from, _to -> {:ok, Enum.map(1..13, &{100 + &1, 100})} end)
 
       assert think(weak).target_ref == nil
     end
@@ -1219,9 +1217,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       stub(StatusStorage, :has_status?, fn _type, _id, status -> status == :sc_spiderweb end)
 
-      stub(Pathfinding, :find_path, fn _map, {100, 100}, {103, 100}, _opts ->
-        {:ok, [{101, 100}, {102, 100}, {103, 100}]}
-      end)
+      stub_paths(fn {100, 100}, {103, 100} -> {:ok, [{101, 100}, {102, 100}, {103, 100}]} end)
 
       held = %{attacked_mob(:berserk, {:player, 6}, [:can_attack]) | target_ref: {:player, 6}}
       delayed = %{held | walk_delay_until: System.monotonic_time(:millisecond) + 60_000}
@@ -1416,6 +1412,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   defp destination(%MobState{walk_path: path}), do: List.last(path)
 
   # A straight path, one cell per step along each axis.
+  defp stub_paths(path_fun) do
+    stub(Pathfinding, :find_path, fn _map, from, to -> path_fun.(from, to) end)
+    stub(Pathfinding, :find_path, fn _map, from, to, _opts -> path_fun.(from, to) end)
+    stub(Pathfinding, :walk_path, fn _map, from, to -> path_fun.(from, to) end)
+    stub(Pathfinding, :rewalk_path, fn _map, from, to -> path_fun.(from, to) end)
+    stub(Pathfinding, :rewalk_path, fn _map, from, to, _opts -> path_fun.(from, to) end)
+  end
+
   defp line_path({fx, fy}, {tx, ty}) do
     steps = max(abs(tx - fx), abs(ty - fy))
 

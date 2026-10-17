@@ -842,7 +842,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       reject(&Combat.execute_attack/4)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
-      stub(Pathfinding, :find_path, fn _map, _from, _to -> {:ok, [{29, 29}]} end)
+      stub(Pathfinding, :rewalk_path, fn _map, _from, _to -> {:ok, [{29, 29}]} end)
 
       stub(MovementHandler, :handle_request_move, fn s, _x, _y, _opts ->
         send(self(), :move_requested)
@@ -918,7 +918,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       Mimic.copy(Cell)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
       stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
-      stub(Pathfinding, :find_path, fn _map, _from, to -> {:ok, [to]} end)
+      stub(Pathfinding, :rewalk_path, fn _map, _from, to -> {:ok, [to]} end)
     end
 
     defp capture_moves(tag) do

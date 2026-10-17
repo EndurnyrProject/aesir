@@ -14,8 +14,8 @@ defmodule Aesir.ZoneServer.Navigation.Router do
   alias Aesir.ZoneServer.Navigation.PortalGraph.Edge
   alias Aesir.ZoneServer.Navigation.Route
   alias Aesir.ZoneServer.Navigation.Route.Leg
+  alias Aesir.ZoneServer.Navigation.RouteSearch
   alias Aesir.ZoneServer.Navigation.Target
-  alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.MovementEngine
 
   @typedoc "A map name and cell coordinate."
@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Navigation.Router do
         [route_option(0.0, direct_route(origin_map, [origin], origin))]
 
       {^origin_map, destination} ->
-        case Pathfinding.find_path(map_data, origin, destination, []) do
+        case RouteSearch.find_path(map_data, origin, destination) do
           {:ok, path} ->
             cost = travel_time(Flood.path_cost(origin, path), walk_speed)
             [route_option(cost, direct_route(origin_map, [origin | path], destination))]
@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Navigation.Router do
     |> Enum.reject(&MapSet.member?(excluded, &1.to_map))
     |> Enum.filter(&can_beat_direct?(&1, origin, walk_speed, direct_cost))
     |> Enum.flat_map(fn portal ->
-      case Pathfinding.find_path(map_data, origin, {portal.x, portal.y}, []) do
+      case RouteSearch.find_path(map_data, origin, {portal.x, portal.y}) do
         {:ok, path} ->
           cost = travel_time(Flood.path_cost(origin, path), walk_speed)
           [%{portal_id: portal.id, cost: cost, path: [origin | path]}]
@@ -221,7 +221,7 @@ defmodule Aesir.ZoneServer.Navigation.Router do
   defp terminal_cost(%Portal{to_map: map_name, to_x: x, to_y: y}, destination, walk_speed) do
     start = {x, y}
 
-    case Pathfinding.find_path(MapCache.get!(map_name), start, destination, []) do
+    case RouteSearch.find_path(MapCache.get!(map_name), start, destination) do
       {:ok, path} -> {:ok, travel_time(Flood.path_cost(start, path), walk_speed), destination}
       {:error, reason} -> {:error, reason}
     end

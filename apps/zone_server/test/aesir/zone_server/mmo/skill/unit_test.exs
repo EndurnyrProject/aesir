@@ -359,28 +359,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
     test "a song or dance keeps its wall cells" do
       stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, BorderFakeUnit} end)
       stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
-      map = "border" |> MapData.new(2, 2) |> MapData.set_cell(1, 1, GatType.wall())
+      # The layout's cells are absolute: only (1, 1) is past row and column 0.
+      map = "border" |> MapData.new(4, 4) |> MapData.set_cell(1, 1, GatType.wall())
       :ets.insert(EtsTable.table_for(:map_cache), {"border", map})
       caster = %{caster() | map_name: "border"}
 
-      assert {:ok, %Group{cells: plain}} = Unit.place(caster, @skill_name, 7, {0, 0})
-      refute {1, 1} in plain
+      assert {:error, :no_walkable_cells} = Unit.place(caster, @skill_name, 7, {0, 0})
 
-      assert {:ok, %Group{cells: song}} =
+      assert {:ok, %Group{cells: [{1, 1}]}} =
                Unit.place(caster, @skill_name, 7, {0, 0}, state: %{performance: %{}})
-
-      assert {1, 1} in song
     end
 
-    test "filters a border layout to in-bounds cells before registering it" do
+    test "skips the first row and column and the cells no unit can stand on" do
       stub(Catalog, :ground_module_for, fn @skill_name -> {:ok, BorderFakeUnit} end)
       stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
-      :ets.insert(EtsTable.table_for(:map_cache), {"border", MapData.new("border", 2, 2)})
+      :ets.insert(EtsTable.table_for(:map_cache), {"border", MapData.new("border", 3, 3)})
 
       caster = %{caster() | map_name: "border"}
       assert {:ok, group} = Unit.place(caster, @skill_name, 7, {0, 0})
 
-      assert group.cells == [{0, 0}, {0, 1}, {1, 0}, {1, 1}]
+      # Row and column 0 are skipped outright; the layout's other cell, (1, 1), is
+      # inside the last row and column (2).
+      assert group.cells == [{1, 1}]
 
       assert Storage.get_cells_by_group(group.group_id) |> Enum.map(&{&1.x, &1.y}) |> Enum.sort() ==
                group.cells
