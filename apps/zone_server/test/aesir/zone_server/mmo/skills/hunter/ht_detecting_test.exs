@@ -51,21 +51,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetectingTest do
 
     expect(Manager, :reveal_traps, fn "prontera", 150, 150, 3 -> {:ok, [10]} end)
 
-    expect(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 6 ->
+    expect(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 3 ->
       [
         {:player, 2000},
         {:mob, 3000},
-        {:skill_unit, 4000},
-        {:player, 5000},
-        {:player, 6000}
+        {:skill_unit, 4000}
       ]
     end)
 
     stub(SpatialIndex, :get_unit_position, fn
       :player, 2000 -> {:ok, {153, 153, "prontera"}}
       :mob, 3000 -> {:ok, {150, 150, "prontera"}}
-      :player, 5000 -> {:ok, {154, 150, "prontera"}}
-      :player, 6000 -> {:ok, {150, 150, "geffen"}}
     end)
 
     stub(UnitRegistry, :get_unit, fn

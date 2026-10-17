@@ -134,14 +134,6 @@ defmodule Aesir.ZoneServer.Geometry do
   end
 
   @doc """
-  Calculates Manhattan distance between two points.
-  Useful for grid-based movement.
-  """
-  def manhattan_distance(x1, y1, x2, y2) do
-    abs(x2 - x1) + abs(y2 - y1)
-  end
-
-  @doc """
   Calculates Chebyshev distance between two points.
   This is the correct distance for tile-based games like Ragnarok Online,
   where diagonal movement is allowed and counts as 1 cell distance.

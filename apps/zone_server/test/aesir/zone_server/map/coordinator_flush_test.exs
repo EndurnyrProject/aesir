@@ -137,6 +137,18 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       assert deliveries == []
     end
 
+    test "includes a dirty unit on the corner of the observer's view square" do
+      register_player(character_id: 1001, x: 50, y: 50, view_range: 14)
+      register_mob(instance_id: 5001, x: 64, y: 64, movement_state: :moving)
+      Movement.mark_dirty(@map_name, :mob, 5001, 1)
+
+      {deliveries, _} = Coordinator.flush_snapshots(@map_name, %{}, 1)
+
+      pid = self()
+      assert [{^pid, chunks}] = deliveries
+      assert chunks |> Enum.flat_map(& &1.entities) |> Enum.map(& &1.id) == [5001]
+    end
+
     test "never includes the observer's own entity in its delta snapshot" do
       register_player(character_id: 1001, x: 50, y: 50)
       register_mob(instance_id: 5001, x: 52, y: 50, movement_state: :moving)

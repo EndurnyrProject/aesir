@@ -25,8 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
   With both `:length` and `:width`, selects an eight-direction lane from the
   origin toward the endpoint instead, starting `:offset` rows out (default 0),
   and keeps only the units the origin has a clear line of sight to. Without
-  them, uses the original line. The spatial query covers the greatest
-  Manhattan distance of the chosen cells.
+  them, uses the original line. Candidates are read from the chosen cells'
+  bounding rectangle in the map's block order.
   """
   @spec select(String.t(), {integer(), integer()}, {integer(), integer()}, map(), keyword()) ::
           [Ref.t()]
@@ -43,12 +43,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
           {sx |> Geometry.line_cells(sy, tx, ty) |> MapSet.new(), fn _cell -> true end}
       end
 
-    radius = Enum.max_by(cell_set, fn {x, y} -> Geometry.manhattan_distance(sx, sy, x, y) end)
-    {rx, ry} = radius
-    radius = Geometry.manhattan_distance(sx, sy, rx, ry)
+    {xs, ys} = Enum.unzip(cell_set)
 
     map_name
-    |> SpatialIndex.get_all_units_in_range(sx, sy, radius)
+    |> SpatialIndex.units_in_area(Enum.min(xs), Enum.min(ys), Enum.max(xs), Enum.max(ys))
     |> Enum.filter(fn target_ref ->
       CombatTarget.combat_unit?(target_ref) and
         target_ref != {caster.unit_type, caster.unit_id} and

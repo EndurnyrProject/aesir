@@ -830,8 +830,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Handle warp visibility — static NPC warp entities are not spatial-indexed
     # (few per map; held per-map in `Npc.Warps`). Diff against `visible_warps`
-    # using the same Manhattan-distance convention as the mob path
-    # (`SpatialIndex.get_units_in_range`'s `distance/4`).
+    # using the same view square as the mob path (`SpatialIndex.get_units_in_range`).
     warps_on_map =
       case Warps.for_map(game_state.map_name) do
         {:ok, list} -> list
@@ -840,7 +839,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     warps_in_range =
       Enum.filter(warps_on_map, fn warp ->
-        manhattan(game_state.x, game_state.y, warp.x, warp.y) <= game_state.view_range
+        Geometry.chebyshev_distance(game_state.x, game_state.y, warp.x, warp.y) <=
+          game_state.view_range
       end)
 
     warps_by_id = Map.new(warps_in_range, &{Warp.Registry.entity_id(&1), &1})
@@ -855,7 +855,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Handle static NPC visibility — same model as warps: registered placements
     # are held statically (in `Npc.Registry`), not spatial-indexed, and diffed
-    # against `visible_npcs` by Manhattan distance vs `view_range`. A disabled
+    # against `visible_npcs` by the `view_range` square. A disabled
     # or hidden NPC (`Npc.Session.visible?/1`) is filtered out here, so the
     # diff never sends a spawn for one and drops it from `visible_npcs` (as a
     # vanish, if the player already had it visible) the moment it stops
@@ -865,7 +865,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     npcs_in_range =
       Enum.filter(NpcRegistry.entries(), fn {_module, placement} ->
         placement.map == game_state.map_name and
-          manhattan(game_state.x, game_state.y, placement.x, placement.y) <=
+          Geometry.chebyshev_distance(game_state.x, game_state.y, placement.x, placement.y) <=
             game_state.view_range and
           NpcSession.visible?(NpcRegistry.entity_id(placement))
       end)
@@ -885,7 +885,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     # Handle static shop visibility — same model as warps: shop placements are
     # held per-map in `Npc.Shops`, not spatial-indexed, and diffed against
-    # `visible_shops` by Manhattan distance vs `view_range`.
+    # `visible_shops` by the `view_range` square.
     shops_on_map =
       case Shops.for_map(game_state.map_name) do
         {:ok, list} -> list
@@ -894,7 +894,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     shops_in_range =
       Enum.filter(shops_on_map, fn shop ->
-        manhattan(game_state.x, game_state.y, shop.x, shop.y) <= game_state.view_range
+        Geometry.chebyshev_distance(game_state.x, game_state.y, shop.x, shop.y) <=
+          game_state.view_range
       end)
 
     shops_by_id = Map.new(shops_in_range, &{Shop.Registry.entity_id(&1), &1})
@@ -951,8 +952,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
     updated_game_state
   end
-
-  defp manhattan(x1, y1, x2, y2), do: abs(x2 - x1) + abs(y2 - y1)
 
   defp update_skill_unit_visibility(game_state) do
     visible_groups =

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
 
   @doc """
@@ -25,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore do
   end
 
   @doc """
-  Returns the ground items on `map_name` within `range` (Manhattan distance) of
+  Returns the ground items on `map_name` in the square of `range` cells around
   `{x, y}`. Lock-free read.
   """
   @spec query_in_range(String.t(), integer(), integer(), non_neg_integer()) :: [GroundItem.t()]
@@ -33,7 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore do
     table_for(:ground_items)
     |> :ets.match_object({{map_name, :_}, :_})
     |> Enum.map(fn {_key, item} -> item end)
-    |> Enum.filter(fn %GroundItem{x: ix, y: iy} -> abs(ix - x) + abs(iy - y) <= range end)
+    |> Enum.filter(fn %GroundItem{x: ix, y: iy} ->
+      Geometry.in_tile_range?(x, y, ix, iy, range)
+    end)
   end
 
   @doc """

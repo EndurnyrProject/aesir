@@ -212,14 +212,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
     :mob
     |> SpatialIndex.get_units_in_range(homunculus.map_name, homunculus.x, homunculus.y, range)
     |> Enum.sort()
-    |> Enum.flat_map(&candidate(&1, homunculus, range))
+    |> Enum.flat_map(&candidate/1)
   end
 
-  defp candidate(id, homunculus, range) do
+  defp candidate(id) do
     with {:ok, {MobState, %MobState{} = mob, _pid}} <- UnitRegistry.get_unit(:mob, id),
-         {:ok, {x, y, map}} <- SpatialIndex.get_unit_position(:mob, id),
-         true <- map == homunculus.map_name,
-         true <- distance({homunculus.x, homunculus.y}, {x, y}) <= range do
+         {:ok, {x, y, _map}} <- SpatialIndex.get_unit_position(:mob, id) do
       [
         %{
           ref: {:mob, id},
@@ -315,6 +313,4 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
   defp ai_target(type) when type in [:target_ally, :target_any], do: {:ok, :owner}
   defp ai_target(:target_enemy), do: {:ok, :enemy}
   defp ai_target(_type), do: :error
-
-  defp distance({x1, y1}, {x2, y2}), do: max(abs(x1 - x2), abs(y1 - y2))
 end

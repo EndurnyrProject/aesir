@@ -176,17 +176,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     combatant.race == :demon or RaceModifiers.undead_target?(combatant)
   end
 
-  defp units_in_square(map_name, x, y, radius) do
-    map_name
-    |> SpatialIndex.get_all_units_in_range(x, y, radius * 2)
-    |> Enum.filter(fn {unit_type, unit_id} ->
-      case SpatialIndex.get_unit_position(unit_type, unit_id) do
-        {:ok, {unit_x, unit_y, ^map_name}} ->
-          Geometry.in_tile_range?(x, y, unit_x, unit_y, radius)
-
-        _other ->
-          false
-      end
-    end)
-  end
+  defp units_in_square(map_name, x, y, radius),
+    do: SpatialIndex.get_all_units_in_range(map_name, x, y, radius)
 end

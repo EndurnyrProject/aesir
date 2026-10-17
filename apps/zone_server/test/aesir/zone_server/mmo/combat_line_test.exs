@@ -150,7 +150,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
     caster = build_caster()
     # Diagonal line from (150, 150) to (153, 153): (151, 151), (152, 152) sit
     # between the endpoints.
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 6 ->
+    stub(SpatialIndex, :units_in_area, fn @map_name, 150, 150, 153, 153 ->
       [{:mob, 3000}, {:mob, 2001}, {:mob, 2002}]
     end)
 
@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
   test "hits every mob on a straight horizontal line, skipping one standing off the line" do
     caster = build_caster()
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 3 ->
+    stub(SpatialIndex, :units_in_area, fn @map_name, 150, 150, 153, 150 ->
       [{:mob, 3000}, {:mob, 2001}, {:mob, 2002}]
     end)
 
@@ -199,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
     caster = build_caster()
     Mimic.copy(DamageApplication)
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 3 ->
+    stub(SpatialIndex, :units_in_area, fn @map_name, 150, 150, 153, 150 ->
       [{:mob, 3000}, {:mob, 2001}]
     end)
 
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
   test "skips a dead mob standing on the line" do
     caster = build_caster()
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 3 ->
+    stub(SpatialIndex, :units_in_area, fn @map_name, 150, 150, 153, 150 ->
       [{:mob, 3000}]
     end)
 

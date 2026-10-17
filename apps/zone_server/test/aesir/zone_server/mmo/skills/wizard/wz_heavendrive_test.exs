@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
         Process.exit(mob_pid, :kill)
       end)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 2 ->
         [{:player, target_id}]
       end)
 
@@ -280,11 +280,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
         combatant(state.instance_id, :mob, state.x, state.y)
       end)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 2 ->
         [
           {:mob, 2_001},
           {:mob, 2_002},
-          {:mob, 2_003},
           {:player, 3_001},
           {:player, 3_002},
           {:player, 3_003},

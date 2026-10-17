@@ -209,7 +209,8 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
     end
   end
 
-  # A walkable cell at least `min_dist` cells (Manhattan) from `origin` that the
+  # A walkable cell at least `min_dist` cells (the square's Chebyshev distance,
+  # as pickup range is measured) from `origin` that the
   # pathfinder can actually reach — the move-to-pickup destination.
   defp reachable_target(origin, min_dist) do
     {:ok, map_data} = MapCache.get(@map)
@@ -219,7 +220,7 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
       for d <- min_dist..(min_dist + 5),
           dx <- -d..d,
           dy <- -d..d,
-          abs(dx) + abs(dy) >= min_dist,
+          max(abs(dx), abs(dy)) >= min_dist,
           do: {ox + dx, oy + dy}
 
     candidates

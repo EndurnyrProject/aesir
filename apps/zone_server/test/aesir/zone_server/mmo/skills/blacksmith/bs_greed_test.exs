@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreedTest do
 
   @item_def %ItemDefinition{id: 501, aegis_name: "Red_Potion", name: "Red Potion", weight: 10}
 
-  test "collects every ground item within Manhattan radius 2 into inventory" do
+  test "collects every ground item in the 2-cell square into inventory" do
     items = [ground_item(1, 100, 100), ground_item(2, 101, 101)]
 
     expect(GroundItemStore, :query_in_range, fn "prontera", 100, 100, 2 -> items end)
@@ -121,12 +121,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreedTest do
     assert {:ok, ^protected} = GroundItemStore.get("prontera", protected.id)
   end
 
-  test "sweeps at exactly Manhattan distance 2 and leaves distance 3 on the ground" do
-    in_range = ground_item(1, 101, 101)
-    out_of_range = ground_item(2, 102, 101)
-
-    assert manhattan(in_range) == 2
-    assert manhattan(out_of_range) == 3
+  test "sweeps the square's corner and leaves a cell past its edge on the ground" do
+    in_range = ground_item(1, 102, 102)
+    out_of_range = ground_item(2, 103, 100)
 
     expect(GroundItemStore, :query_in_range, fn "prontera", 100, 100, 2 ->
       GroundItemStore.query_in_range("prontera", 100, 100, 2)
@@ -215,8 +212,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreedTest do
       item_pickup_share: true
     }
   end
-
-  defp manhattan(%GroundItem{x: x, y: y}), do: abs(x - 100) + abs(y - 100)
 
   defp ground_item(id, x, y) do
     %GroundItem{

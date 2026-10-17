@@ -229,12 +229,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   # Builds an `(x, y) -> bool` occupancy predicate from currently-known nearby
   # units, excluding the chasing mob itself and the target player so the mob is
-  # not blocked by its own or the target's cell. A radius of `range * 2` covers
-  # the full Chebyshev square of candidate cells.
+  # not blocked by its own or the target's cell.
   defp build_occupied?(%MobState{} = state, {target_x, target_y}, range) do
     cells =
       state.map_name
-      |> SpatialIndex.get_all_units_in_range(target_x, target_y, range * 2)
+      |> SpatialIndex.get_all_units_in_range(target_x, target_y, range)
       |> Enum.reject(fn {type, id} ->
         (type == :mob and id == state.instance_id) or
           {type, id} == state.target_ref or inactive_unit?({type, id})

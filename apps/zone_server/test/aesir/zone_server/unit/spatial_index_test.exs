@@ -52,14 +52,14 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
       player1_id = 1001
       SpatialIndex.add_player(player1_id, 50, 50, "prontera")
 
-      # Add player 2 at diagonal position (57, 57) - 14 cells Manhattan distance
+      # Add player 2 at diagonal position (57, 57) - 7 cells away on the square
       player2_id = 1002
       SpatialIndex.add_player(player2_id, 57, 57, "prontera")
 
       # Update visibility
       SpatialIndex.update_visibility(player1_id, player2_id, true)
 
-      # Should be visible (14 cells Manhattan distance)
+      # Should be visible (inside the 14-cell view square)
       assert SpatialIndex.can_see?(player1_id, player2_id)
       assert SpatialIndex.can_see?(player2_id, player1_id)
     end
@@ -302,6 +302,43 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
       SpatialIndex.add_player(1002, 50, 50, "geffen")
 
       assert SpatialIndex.units_in_area("prontera", 51, 51, 49, 49) == [{:player, 1001}]
+    end
+  end
+
+  describe "range queries measure the square" do
+    test "get_players_in_range reaches the square's corner and stops one past its edge" do
+      SpatialIndex.add_player(1001, 64, 64, "prontera")
+      SpatialIndex.add_player(1002, 50, 64, "prontera")
+      SpatialIndex.add_player(1003, 50, 36, "prontera")
+      SpatialIndex.add_player(1004, 65, 50, "prontera")
+      SpatialIndex.add_player(1005, 50, 50, "geffen")
+
+      assert Enum.sort(SpatialIndex.get_players_in_range("prontera", 50, 50, 14)) ==
+               [1001, 1002, 1003]
+    end
+
+    test "get_units_in_range is typed and reaches the corner" do
+      SpatialIndex.add_unit(:mob, 5001, 53, 47, "prontera")
+      SpatialIndex.add_unit(:mob, 5002, 54, 47, "prontera")
+      SpatialIndex.add_player(1001, 53, 53, "prontera")
+
+      assert SpatialIndex.get_units_in_range(:mob, "prontera", 50, 50, 3) == [5001]
+    end
+
+    test "get_all_units_in_range lists the square in block order" do
+      SpatialIndex.add_unit(:mob, 5001, 47, 47, "prontera")
+      SpatialIndex.add_player(1001, 53, 53, "prontera")
+      SpatialIndex.add_unit(:mob, 5002, 53, 47, "prontera")
+      SpatialIndex.add_player(1002, 47, 53, "prontera")
+      SpatialIndex.add_player(1003, 54, 50, "prontera")
+      SpatialIndex.add_player(1004, 50, 46, "prontera")
+
+      assert SpatialIndex.get_all_units_in_range("prontera", 50, 50, 3) == [
+               {:player, 1002},
+               {:player, 1001},
+               {:mob, 5001},
+               {:mob, 5002}
+             ]
     end
   end
 

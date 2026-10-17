@@ -1012,7 +1012,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     second_state = %TestUnit{combatant: second, hp: 100, x: 102, y: 100}
     test_pid = self()
 
-    stub(SpatialIndex, :get_all_units_in_range, fn "test_map", 100, 100, 4 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn "test_map", 100, 100, 2 ->
       [{:mob, 2001}, {:mob, 2002}]
     end)
 
@@ -1687,7 +1687,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     caster_state = %TestUnit{combatant: attacker, hp: 100, x: 100, y: 100}
     target_state = %TestUnit{combatant: target, hp: 100, x: 101, y: 100}
 
-    stub(SpatialIndex, :get_all_units_in_range, fn "test_map", 100, 100, 4 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn "test_map", 100, 100, 2 ->
       [{:mob, 2001}]
     end)
 

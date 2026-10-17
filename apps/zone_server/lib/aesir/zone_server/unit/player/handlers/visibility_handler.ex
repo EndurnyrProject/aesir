@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.VendingBoardShown
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.WaitingRoom
@@ -155,7 +156,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
            UnitRegistry.get_unit(:homunculus, gid),
          {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(:homunculus, gid),
          true <- map_name == player.map_name,
-         true <- abs(x - player.x) + abs(y - player.y) <= player.view_range do
+         true <- Geometry.in_tile_range?(player.x, player.y, x, y, player.view_range) do
       {:visible, homunculus}
     else
       _ -> :hidden

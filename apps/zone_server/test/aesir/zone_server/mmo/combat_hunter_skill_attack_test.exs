@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatHunterSkillAttackTest do
     target = build_target(100, 10_000)
     stub_target(target)
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
       [{:mob, @target_id}]
     end)
 
@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatHunterSkillAttackTest do
     target = build_target(100, 10_000)
     stub_target(target)
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
       [{:mob, @target_id}]
     end)
 

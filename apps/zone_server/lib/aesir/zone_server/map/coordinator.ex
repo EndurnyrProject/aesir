@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.Net.SnapshotEntity
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.BossRespawn
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
@@ -509,7 +510,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   Drains the map's dirty set, folds it into `recently_stopped` (stop redundancy),
   builds a `%Aesir.Net.SnapshotEntity{}` per dirty/echoed unit, and for each
   observing player on the map returns the dirty entities within that player's
-  `view_range` (Manhattan, the metric `SpatialIndex` uses) excluding the player's
+  `view_range` (the square `SpatialIndex` measures) excluding the player's
   own entity, packed into datagram-sized `%Aesir.Net.Snapshot{}` chunks sharing
   the given `server_tick`.
 
@@ -609,7 +610,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       _other -> false
     end)
     |> Enum.filter(fn {_key, entity} ->
-      abs(entity.x - px) + abs(entity.y - py) <= view_range
+      Geometry.in_tile_range?(px, py, entity.x, entity.y, view_range)
     end)
     |> Enum.map(fn {_key, entity} -> entity end)
   end

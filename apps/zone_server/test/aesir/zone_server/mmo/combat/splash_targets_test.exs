@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargetsTest do
     caster = build_caster()
     mob = build_mob(2001, 151, 150)
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
       [{:mob, 2001}, {:player, @caster_id}]
     end)
 

@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Unit.StaticEntity do
   @moduledoc """
   Shared visibility diffing for static (non-spatial-indexed) entities such as
   warps and NPCs. These placements are held per-map in registries and diffed
-  against a `visible_*` MapSet by Manhattan distance at the call site; this
+  against a `visible_*` MapSet by the view square at the call site; this
   helper owns the common spawn/vanish/diff step.
   """
 

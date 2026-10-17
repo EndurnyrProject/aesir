@@ -489,7 +489,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       on_exit(fn -> Process.exit(target_player, :kill) end)
       stub_player_target(target_player, self())
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:player, @target_id}]
       end)
 

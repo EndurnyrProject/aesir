@@ -502,7 +502,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       caster = build_caster()
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 
@@ -545,7 +545,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       caster = build_caster()
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:mob, 2001}, {:skill_unit, 0x4000_0001}, {:mob, 2002}]
       end)
 
@@ -594,7 +594,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
     test "split damage returns cleanly when no living enemies are selected" do
       caster = build_caster()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 -> [] end)
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 -> [] end)
       reject(&MiscDamageCalculator.calculate_misc_damage/3)
 
       assert [] =
@@ -610,7 +610,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       caster = build_caster()
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 
@@ -663,7 +663,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       dead = %{build_mob_state(2001, 150, 150) | hp: 0, is_dead: true}
       living = build_mob_state(2002, 151, 150)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 

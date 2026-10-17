@@ -51,6 +51,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStoreTest do
       refute out_range.id in ids
     end
 
+    test "reaches an item on the square's corner" do
+      corner = GroundItem.new(503, 1, 105, 105)
+      assert :ok = GroundItemStore.put("prontera", corner)
+
+      assert [^corner] = GroundItemStore.query_in_range("prontera", 100, 100, 5)
+    end
+
     test "excludes items on a different map" do
       item = GroundItem.new(501, 1, 100, 100)
       assert :ok = GroundItemStore.put("morocc", item)

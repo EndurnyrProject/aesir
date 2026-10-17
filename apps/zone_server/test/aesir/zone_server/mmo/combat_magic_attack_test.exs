@@ -882,7 +882,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       target_state = %TestUnit{combatant: target, x: 151, y: 150}
       second_target_state = %TestUnit{combatant: second_target, x: 151, y: 150}
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:player, @target_id}, {:player, second_target_id}]
       end)
 
@@ -1902,7 +1902,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       :ok = UnitRegistry.register_player(caster, self())
       :ok = UnitRegistry.register_player(target, target_pid)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:player, @target_id}]
       end)
 
@@ -1958,7 +1958,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       :ok = UnitRegistry.register_player(caster, self())
       :ok = UnitRegistry.register_player(target, target_pid)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:player, @target_id}]
       end)
 
@@ -1988,7 +1988,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       :ok = UnitRegistry.register_player(caster, self())
       :ok = UnitRegistry.register_player(target, self())
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:player, @target_id}]
       end)
 
@@ -2011,7 +2011,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       Mimic.copy(Cell)
       stub(Cell, :blocks_projectiles?, fn @map_name, x, y -> {x, y} == {151, 150} end)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 6 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 3 ->
         [{:mob, visible_id}, {:mob, blocked_id}]
       end)
 
@@ -2046,7 +2046,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       target = %{build_caster() | character_id: @target_id, x: 151}
       target_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:player, @target_id}]
       end)
 
@@ -2073,7 +2073,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = build_caster()
       target_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:mob, @caster_id}]
       end)
 
@@ -2120,7 +2120,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
         enemy_pid => %{build_caster() | character_id: enemy_id, party_id: 0, x: 152}
       }
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:player, @caster_id}, {:player, ally_id}, {:player, enemy_id}]
       end)
 
@@ -2160,7 +2160,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = build_caster()
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:mob, 2001}]
       end)
 
@@ -2191,7 +2191,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = build_caster()
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 
@@ -2233,7 +2233,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     test "splash divisions resolve once per target with one coma decision" do
       caster = put_in(build_caster().stats.modifiers.equipment, %{{:add_skill_blow, 91} => 4})
 
-      expect(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      expect(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:mob, @target_id}]
       end)
 
@@ -2278,7 +2278,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = build_caster()
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 
@@ -2315,7 +2315,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = build_caster()
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 
@@ -2356,7 +2356,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = caster_with_band(1, 2000)
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 
@@ -2392,7 +2392,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       caster = caster_with_band(50, 50)
       test_pid = self()
 
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
         [{:mob, 2001}, {:mob, 2002}]
       end)
 

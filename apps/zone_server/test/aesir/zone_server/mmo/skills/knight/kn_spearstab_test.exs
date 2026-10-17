@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
 
       # Diagonal line (150, 150) -> (152, 152): the on-line mob sits at (151, 151),
       # the off-line mob at (151, 150) is untouched.
-      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+      stub(SpatialIndex, :units_in_area, fn @map_name, 150, 150, 152, 152 ->
         [{:mob, @target_id}, {:mob, 2001}, {:mob, 2002}]
       end)
 

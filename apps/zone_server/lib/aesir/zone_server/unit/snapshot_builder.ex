@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
 
   A QUIC datagram cannot be IP-fragmented, so a snapshot must never exceed the
   path's safe datagram size. `chunks_for/3` orders the entities nearest-first (the
-  same Manhattan metric the AoI filter uses) and greedily packs them into multiple
+  same square metric the AoI filter uses) and greedily packs them into multiple
   self-contained `%Snapshot{}` chunks, each within `datagram_budget/0`, all sharing
   one `server_tick`. Datagrams arrive independently, so every chunk is valid on its
   own.
@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
   alias Aesir.Net.Envelope
   alias Aesir.Net.Snapshot, as: NetSnapshot
   alias Aesir.Net.SnapshotEntity
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -74,8 +75,8 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
   @doc """
   Packs entities into datagram-sized `%Aesir.Net.Snapshot{}` chunks.
 
-  Entities are ordered nearest-first (Manhattan distance from `{center_x,
-  center_y}`, the metric the AoI filter uses) and greedily packed into
+  Entities are ordered nearest-first (the square's Chebyshev distance from
+  `{center_x, center_y}`, the metric the AoI filter uses) and greedily packed into
   `%Snapshot{}` chunks whose encoded datagram stays within `datagram_budget/0`.
   Every chunk carries the same `server_tick`, so each is self-contained. Entities
   that overflow `max_chunks/0` chunks are dropped and the count is logged.
@@ -83,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
   @spec chunks_for([SnapshotEntity.t()], {integer(), integer()}, non_neg_integer()) ::
           [NetSnapshot.t()]
   def chunks_for(entities, {center_x, center_y}, server_tick) do
-    sorted = Enum.sort_by(entities, &manhattan(&1, center_x, center_y))
+    sorted = Enum.sort_by(entities, &distance(&1, center_x, center_y))
 
     {chunks, dropped} = pack(sorted, server_tick)
     log_decimation(dropped)
@@ -164,8 +165,9 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
     )
   end
 
-  @spec manhattan(SnapshotEntity.t(), integer(), integer()) :: non_neg_integer()
-  defp manhattan(%SnapshotEntity{x: x, y: y}, px, py), do: abs(x - px) + abs(y - py)
+  @spec distance(SnapshotEntity.t(), integer(), integer()) :: non_neg_integer()
+  defp distance(%SnapshotEntity{x: x, y: y}, px, py),
+    do: Geometry.chebyshev_distance(px, py, x, y)
 
   @spec entity_for_unit({atom(), integer()}) :: [SnapshotEntity.t()]
   defp entity_for_unit({unit_type, unit_id}) do

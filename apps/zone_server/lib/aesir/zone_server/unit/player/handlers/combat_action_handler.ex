@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
   # Server-authoritative target acquisition: the client may only attack a unit it
   # could legitimately see. A unit is acquirable only when it is on the same map
-  # and within view range (the Manhattan radius the coordinator uses to decide
+  # and within view range (the square the coordinator uses to decide
   # what entities a client is told about). This rejects cross-map attacks and
   # attacks on units the client never received, and stops the move-to-attack
   # logic from auto-walking the player toward an unseen target.
@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
           target_map != game_state.map_name ->
             {:error, :different_map}
 
-          Geometry.manhattan_distance(game_state.x, game_state.y, target_x, target_y) >
+          Geometry.chebyshev_distance(game_state.x, game_state.y, target_x, target_y) >
               Config.view_range() ->
             {:error, :out_of_view}
 
@@ -726,12 +726,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
   # Builds an `(x, y) -> bool` occupancy predicate from currently-known nearby
   # units, excluding the moving player and the target so the mover is not
-  # blocked by its own or the target's cell. A Manhattan radius of `range * 2`
-  # covers the full Chebyshev square of candidate cells.
+  # blocked by its own or the target's cell.
   defp build_occupied?(map_name, {target_x, target_y}, range, self_char_id, target_id) do
     cells =
       map_name
-      |> SpatialIndex.get_all_units_in_range(target_x, target_y, range * 2)
+      |> SpatialIndex.get_all_units_in_range(target_x, target_y, range)
       |> Enum.reject(fn {type, id} ->
         id == target_id or (type == :player and id == self_char_id) or
           inactive_player?({type, id})

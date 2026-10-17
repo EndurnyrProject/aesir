@@ -289,7 +289,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
       Mimic.copy(Cell)
       stub(Cell, :blocks_projectiles?, fn "prontera", x, y -> {x, y} == {151, 150} end)
 
-      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 6 ->
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 3 ->
         [
           {:player, 1_000},
           {:mob, inner_id},

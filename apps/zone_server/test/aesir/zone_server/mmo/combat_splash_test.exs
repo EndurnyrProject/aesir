@@ -105,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     mob_pid_a = self()
     mob_pid_b = self()
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
       [{:mob, 2001}, {:mob, 2002}, {:player, @caster_id}]
     end)
 
@@ -250,7 +250,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
   test "execute_splash_attack hits a mob at the square corner (Chebyshev radius)" do
     caster = build_caster()
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
       [{:mob, 2001}]
     end)
 
@@ -284,37 +284,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     assert hits == [2001]
   end
 
-  test "execute_splash_attack skips a mob outside the square" do
-    caster = build_caster()
-
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
-      [{:mob, 2001}]
-    end)
-
-    stub(UnitRegistry, :get_unit, fn
-      :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 153, 150), self()}}
-    end)
-
-    stub(SpatialIndex, :get_unit_position, fn
-      :mob, 2001 -> {:ok, {153, 150, @map_name}}
-    end)
-
-    hits =
-      Combat.execute_splash_attack(caster, @center, 2,
-        skill_id: 7,
-        skill_level: 5,
-        skill_ratio: 200,
-        skip_crit: true
-      )
-
-    assert hits == []
-  end
-
   test "execute_splash_attack skips a dead mob inside the radius" do
     caster = build_caster()
     dead_mob = %{build_mob_state(2001, 151, 150) | hp: 0}
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
       [{:mob, 2001}]
     end)
 
@@ -341,7 +315,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     caster = build_caster()
     test_pid = self()
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
       [{:mob, 2001}]
     end)
 
@@ -385,7 +359,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     caster = build_caster()
     test_pid = self()
 
-    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
       [{:mob, 2001}]
     end)
 

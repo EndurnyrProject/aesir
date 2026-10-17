@@ -3,6 +3,10 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   ETS-based spatial indexing for O(1) player lookups.
   Uses grid cells for efficient range queries.
 
+  Every range query measures the square: `range` cells around `{x, y}` is the
+  rectangle `[x - range, x + range] x [y - range, y + range]`, corners included,
+  the same area the explicit-corner queries take.
+
   Each grid cell is a map block of 8x8 cells and remembers when every unit in
   it entered: placing a unit, or moving it into another block, stamps a new
   entry; moving within the block keeps it. `units_in_cell/3` lists a cell's
@@ -120,17 +124,12 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   end
 
   @doc """
-  Gets units of a specific type in range of a position.
+  Gets units of a specific type in the square of `range` cells around a position.
   Returns list of unit IDs.
   """
   @spec get_units_in_range(atom(), String.t(), integer(), integer(), integer()) :: [integer()]
   def get_units_in_range(unit_type, map_name, x, y, range) do
-    map_name
-    |> cells_in_range(x, y, range)
-    |> units_in_cells(unit_type)
-    |> Enum.filter(
-      &at?(unit_type, &1, map_name, fn ux, uy -> distance(x, y, ux, uy) <= range end)
-    )
+    get_units_in_area(unit_type, map_name, x - range, y - range, x + range, y + range)
   end
 
   @doc """
@@ -153,20 +152,14 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   end
 
   @doc """
-  Gets all units (of any type) in range of a position.
+  Gets all units (of any type) in the square of `range` cells around a
+  position, in the map's block order (`units_in_area/5`).
   Returns list of {unit_type, unit_id} tuples.
   """
   @spec get_all_units_in_range(String.t(), integer(), integer(), integer()) ::
           [{atom(), integer()}]
   def get_all_units_in_range(map_name, x, y, range) do
-    in_range? = fn ux, uy -> distance(x, y, ux, uy) <= range end
-
-    map_name
-    |> cells_in_range(x, y, range)
-    |> Enum.flat_map(&cell_units/1)
-    |> Enum.flat_map(fn {unit_type, ids} -> Enum.map(ids, &{unit_type, &1}) end)
-    |> Enum.uniq()
-    |> Enum.filter(fn {unit_type, unit_id} -> at?(unit_type, unit_id, map_name, in_range?) end)
+    units_in_area(map_name, x - range, y - range, x + range, y + range)
   end
 
   @doc """
@@ -334,10 +327,11 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   end
 
   @doc """
-  Gets all players in range of a position.
+  Gets all players in the square of `range` cells around a position.
   Returns list of character IDs.
   This is a wrapper for backward compatibility.
   """
+  @spec get_players_in_range(String.t(), integer(), integer(), integer()) :: [integer()]
   def get_players_in_range(map_name, x, y, range) do
     get_units_in_range(:player, map_name, x, y, range)
   end
@@ -393,26 +387,12 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     {map_name, div(x, @cell_size), div(y, @cell_size)}
   end
 
-  defp cells_in_range(map_name, x, y, range) do
-    center_cx = div(x, @cell_size)
-    center_cy = div(y, @cell_size)
-
-    cell_range = div(range, @cell_size) + 1
-
-    for cx <- (center_cx - cell_range)..(center_cx + cell_range),
-        cy <- (center_cy - cell_range)..(center_cy + cell_range) do
-      {map_name, cx, cy}
-    end
-  end
-
   defp cells_in_area(map_name, x_min, y_min, x_max, y_max) do
     for cx <- div(x_min, @cell_size)..div(x_max, @cell_size),
         cy <- div(y_min, @cell_size)..div(y_max, @cell_size) do
       {map_name, cx, cy}
     end
   end
-
-  defp distance(x1, y1, x2, y2), do: abs(x2 - x1) + abs(y2 - y1)
 
   @doc """
   Checks if observer can see target (O(1) lookup).

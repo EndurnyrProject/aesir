@@ -633,6 +633,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       assert MapSet.member?(updated.visible_warps, Warp.Registry.entity_id(warp))
     end
 
+    test "a warp on the corner of the view square becomes visible" do
+      game_state = %{idle_state().game_state | visible_warps: MapSet.new()}
+      {x, y} = {game_state.x + game_state.view_range, game_state.y + game_state.view_range}
+
+      warp = %Warp{id: "corner", map: "prontera", to_map: "izlude", x: x, y: y, to_x: 0, to_y: 0}
+
+      stub(Warps, :for_map, fn "prontera" -> {:ok, [warp]} end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
+      stub(UnitRegistry, :get_player_pid, fn 1 -> {:ok, self()} end)
+
+      updated = MovementHandler.handle_visibility_update(game_state)
+
+      assert MapSet.member?(updated.visible_warps, Warp.Registry.entity_id(warp))
+    end
+
     test "a now-hidden warp yields a UnitDespawn with reason out_of_sight" do
       test_pid = self()
 

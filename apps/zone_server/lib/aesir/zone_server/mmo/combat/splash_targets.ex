@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   one place.
   """
 
-  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -22,12 +21,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
-  Returns the `{unit_type, unit_id}` units that are in the Chebyshev square of
-  `radius` cells around `{cx, cy}`, are living enemies of the caster, and are
-  alive.
-
-  The spatial index filters by Manhattan distance (a diamond); we query a Manhattan
-  radius of `2 * radius` so the full Chebyshev square is covered, then post-filter.
+  Returns the `{unit_type, unit_id}` units that are in the square of `radius`
+  cells around `{cx, cy}`, are living enemies of the caster, and are alive, in
+  the map's block order.
 
   `hits_caster` (default `false`) is the Grand Cross exception: when `true`
   the caster is not excluded from its own selection on the caster-identity
@@ -73,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
       selectable_target?(target_ref, opts) and
         not CombatTarget.own_caster?(target_ref, caster_ref, false) and
         match?(
-          {:ok, _target, _state},
+          {:ok, _target},
           authorized_target(caster, target_ref, caster_ref, opts, authorized?)
         )
     end)
@@ -128,20 +124,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
     caster_ref = {caster.unit_type, caster.unit_id}
 
     map_name
-    |> SpatialIndex.get_all_units_in_range(cx, cy, radius * 2)
+    |> SpatialIndex.get_all_units_in_range(cx, cy, radius)
     |> Enum.filter(fn target_ref ->
       selectable_target?(target_ref, opts) and
         not CombatTarget.own_caster?(target_ref, caster_ref, hits_caster) and
-        offensive_target_in_square?(
-          caster,
-          target_ref,
-          caster_ref,
-          cx,
-          cy,
-          radius,
-          opts,
-          target_authorized?
-        )
+        offensive_target?(caster, target_ref, caster_ref, {cx, cy}, opts, target_authorized?)
     end)
   end
 
@@ -150,23 +137,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
       (Keyword.get(opts, :target_skill_units, false) and TrapCombatTarget.targetable?(target_ref))
   end
 
-  defp offensive_target_in_square?(
-         caster,
-         target_ref,
-         caster_ref,
-         cx,
-         cy,
-         radius,
-         opts,
-         target_authorized?
-       ) do
+  defp offensive_target?(caster, target_ref, caster_ref, center, opts, target_authorized?) do
     case authorized_target(caster, target_ref, caster_ref, opts, target_authorized?) do
-      {:ok, target, target_state} ->
-        splash_hit?(target_state, cx, cy, radius) and
-          splash_visible?(caster.map_name, {cx, cy}, target.position, opts)
-
-      :error ->
-        false
+      {:ok, target} -> splash_visible?(caster.map_name, center, target.position, opts)
+      :error -> false
     end
   end
 
@@ -182,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
          {:ok, target} <- splash_target_combatant(target_state, opts),
          true <- target_living?(target_ref, target_state),
          true <- authorized?.(caster, target, target_ref, caster_ref) do
-      {:ok, target, target_state}
+      {:ok, target}
     else
       _unavailable -> :error
     end
@@ -226,7 +200,4 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   # fallback: mobs remain targetable, but players are not.
   defp splash_enemy?(%{relation_unavailable: true}, %{unit_type: :player}), do: false
   defp splash_enemy?(caster, target), do: Targeting.validate_enemy(caster, target) == :ok
-
-  defp splash_hit?(%{x: tx, y: ty}, x, y, radius),
-    do: Geometry.chebyshev_distance(x, y, tx, ty) <= radius
 end

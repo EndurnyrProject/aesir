@@ -43,22 +43,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetecting do
   def cast(%PlayerState{map_name: map_name} = caster, {:ground, x, y}, _level, definition) do
     with {:ok, _group_ids} <- Manager.reveal_traps(map_name, x, y, definition.splash_radius) do
       map_name
-      |> SpatialIndex.get_all_units_in_range(x, y, definition.splash_radius * 2)
-      |> Enum.filter(fn target ->
-        CombatTarget.combat_unit?(target) and
-          inside_square?(target, map_name, x, y, definition.splash_radius) and living?(target)
-      end)
+      |> SpatialIndex.get_all_units_in_range(x, y, definition.splash_radius)
+      |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
       |> Enum.each(&Helpers.remove_statuses(&1, @hidden_statuses))
 
       {:ok, caster}
-    end
-  end
-
-  defp inside_square?({unit_type, unit_id}, map_name, center_x, center_y, radius) do
-    case SpatialIndex.get_unit_position(unit_type, unit_id) do
-      {:ok, {x, y, ^map_name}} -> abs(x - center_x) <= radius and abs(y - center_y) <= radius
-      {:ok, {_x, _y, _other_map}} -> false
-      {:error, :not_found} -> false
     end
   end
 
