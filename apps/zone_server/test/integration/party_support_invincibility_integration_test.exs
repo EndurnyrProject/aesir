@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Integration.PartySupportInvincibilityIntegrationTest 
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
-  alias Aesir.Net.MapLoaded
   alias Aesir.Net.SkillCast
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -35,10 +34,8 @@ defmodule Aesir.ZoneServer.Integration.PartySupportInvincibilityIntegrationTest 
 
     caster = start_member(caster_character, {150, 150})
     ally = start_member(ally_character, {152, 150})
-    loaded = start_member(loaded_character, {153, 150})
-
-    simulate_incoming_message(loaded.pid, %MapLoaded{})
-    assert_eventually(fn -> Invincibility.active?({:player, loaded.character.id}) end)
+    loaded = start_member(loaded_character, {153, 150}, invincible: true)
+    assert Invincibility.active?({:player, loaded.character.id})
 
     simulate_incoming_message(caster.pid, %SkillCast{
       skill_id: @angelus,
@@ -54,11 +51,10 @@ defmodule Aesir.ZoneServer.Integration.PartySupportInvincibilityIntegrationTest 
     refute StatusStorage.has_status?(:player, loaded.character.id, :sc_angelus)
   end
 
-  defp start_member(character, position) do
+  defp start_member(character, position, opts \\ []) do
     start_player_session(
-      character: Repo.get!(Character, character.id),
-      map_name: @map,
-      position: position
+      [character: Repo.get!(Character, character.id), map_name: @map, position: position] ++
+        opts
     )
   end
 

@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Integration.SkillEligibilityProgressionTest do
 
   @moduletag :capture_log
 
-  alias Aesir.Net.MapLoaded
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
   alias Aesir.ZoneServer.CharacterPersistence
@@ -17,7 +16,6 @@ defmodule Aesir.ZoneServer.Integration.SkillEligibilityProgressionTest do
   test "Novice job levels refresh Basic Skill eligibility without reconnecting" do
     player = start_player_session(class: 0, job_level: 1, skill_point: 0)
     Mimic.allow(CharacterPersistence, self(), player.pid)
-    simulate_incoming_message(player.pid, %MapLoaded{})
 
     assert %SkillList{skills: initial_skills} = assert_packet_sent(SkillList)
     assert %SkillInfo{level: 0, max_level: 9, upgradable: false} = basic_skill(initial_skills)
@@ -38,7 +36,6 @@ defmodule Aesir.ZoneServer.Integration.SkillEligibilityProgressionTest do
   test "combat job level-up refreshes eligibility but ordinary EXP ticks do not" do
     player = start_player_session(class: 0, job_level: 1, skill_point: 0)
     Mimic.allow(CharacterPersistence, self(), player.pid)
-    simulate_incoming_message(player.pid, %MapLoaded{})
     assert %SkillList{} = assert_packet_sent(SkillList)
     {:ok, job_exp} = JobManagement.get_job_exp(:novice, 1)
 

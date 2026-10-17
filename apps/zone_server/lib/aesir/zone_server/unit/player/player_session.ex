@@ -724,8 +724,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # subscribe at spawn; re-subscribe on warp when warps land.
     Broadcast.subscribe_mob_despawns(state.game_state.map_name)
 
-    send(self(), :spawn_player)
-
+    # The player enters the map only when the client acks its first map load
+    # (`MapLoadHandler`), which sends `:spawn_player` once.
     {:ok, state}
   end
 

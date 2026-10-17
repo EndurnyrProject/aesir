@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
   """
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.MapLoaded
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -15,13 +16,19 @@ defmodule Aesir.ZoneServer.SessionHelpers do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
-  Starts a test player session with the given character data.
+  Starts a test player session with the given character data and puts it on
+  its map the way a real login does: the session starts, the client's
+  `MapLoaded` ack runs the full sync and the spawn, and the map-load
+  invincibility is then ended through the session's own deadline path so the
+  player can be targeted at once. The load-time packets reach the connection
+  process like any other.
 
   ## Options
   - :character - A Character struct or map with character attributes
   - :connection_pid - Mock connection PID (optional, will create one if not provided)
   - :map_name - Map to spawn on (default: "prontera")
   - :position - Starting position as {x, y} tuple (default: {150, 150})
+  - :invincible - Keep the map-load invincibility running (default: false)
 
   ## Examples
 
@@ -67,9 +74,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
         y: y
       })
 
-    # PlayerSession.init/1 already registers the player in the UnitRegistry with
-    # its full PlayerState, so we only place it in the SpatialIndex here.
-    SpatialIndex.add_unit(:player, character.id, x, y, map_name)
+    load_map(pid, Keyword.get(opts, :invincible, false))
 
     %{
       pid: pid,
@@ -78,6 +83,26 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       map_name: map_name,
       position: {x, y}
     }
+  end
+
+  # The ack queues `:spawn_player` on the session, so the first round trip
+  # settles the sync and the second the spawn; the spawn queues the quest-info
+  # refresh, which the third settles. Ending the invincibility cancels its
+  # timer and sends the session its own deadline for the published generation;
+  # the last round trip settles that end.
+  defp load_map(pid, invincible?) do
+    PlayerSession.deliver_message(pid, %MapLoaded{})
+    _synced = PlayerSession.get_state(pid)
+    _spawned = PlayerSession.get_state(pid)
+    %{game_state: game_state} = PlayerSession.get_state(pid)
+
+    unless invincible? or game_state.invincible_timer == nil do
+      Process.cancel_timer(game_state.invincible_timer)
+      send(pid, {:invincibility, {:expire, game_state.invincible_generation}})
+      _ended = PlayerSession.get_state(pid)
+    end
+
+    :ok
   end
 
   @doc """

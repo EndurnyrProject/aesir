@@ -28,7 +28,6 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.StatusParams
-  alias Aesir.Net.MapLoaded
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.ParamChange
@@ -155,8 +154,6 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       relog = start_player_session(character: char, position: {150, 150}, map_name: "prontera")
       assert %Entry{state: :active} = get_player_state(relog.pid).quest_log[@cooldown_quest]
 
-      flush_packets()
-      simulate_incoming_message(relog.pid, %MapLoaded{})
       list = assert_packet_sent(QuestList)
       assert Enum.any?(list.quests, &(&1.quest_id == @cooldown_quest and &1.state == 1))
     end

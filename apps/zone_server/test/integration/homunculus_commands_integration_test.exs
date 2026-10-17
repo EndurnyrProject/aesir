@@ -21,7 +21,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusCommandsIntegrationTest do
   alias Aesir.Net.HomunculusRestCommand
   alias Aesir.Net.HomunculusResult
   alias Aesir.Net.HomunculusStandbyCommand
-  alias Aesir.Net.MapLoaded
   alias Aesir.Net.MoveStop
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -810,7 +809,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusCommandsIntegrationTest do
     position = Keyword.get(opts, :position, {150, 150})
     session = start_player_session(character: character, map_name: "prontera", position: position)
     on_exit(fn -> if Process.alive?(session.pid), do: end_player_session(session) end)
-    simulate_incoming_message(session.pid, %MapLoaded{})
     Process.sleep(20)
     flush_packets()
     session

@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Integration.StatusPointsIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.StatusParams
-  alias Aesir.Net.MapLoaded
   alias Aesir.Net.ParamChange
   alias Aesir.Net.StatUp
   alias Aesir.Net.StatUpResult
@@ -36,10 +35,7 @@ defmodule Aesir.ZoneServer.Integration.StatusPointsIntegrationTest do
 
   describe "map enter" do
     test "sends the status-point balance and per-stat cost indicators" do
-      player = start_player_session(id: 8104, str: 5, status_point: 7)
-      flush_packets()
-
-      simulate_incoming_message(player.pid, %MapLoaded{})
+      _player = start_player_session(id: 8104, str: 5, status_point: 7)
 
       status_point_id = StatusParams.status_point()
       ustr_id = StatusParams.ustr()

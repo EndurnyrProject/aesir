@@ -278,6 +278,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       assert gs.last_visibility_cell == nil
     end
 
+    test "a player warped before its first map load is still logging in" do
+      stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
+      logging_in = put_in(state().game_state.pending_map_load, :login)
+
+      assert {:ok, %{game_state: gs}} = WarpHandler.warp(logging_in, "geffen", 100, 120)
+
+      assert {gs.map_name, gs.x, gs.y} == {"geffen", 100, 120}
+      assert gs.pending_map_load == :login
+    end
+
     test "publishes one complete party member delta for the destination map" do
       stub(Broadcast, :to_players, fn _visible, _packet, _opts -> :ok end)
       reject(&Manager.push_map_change/3)

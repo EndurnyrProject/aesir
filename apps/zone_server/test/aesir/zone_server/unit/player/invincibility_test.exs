@@ -220,6 +220,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
       class: 0
     }
 
-    %SessionState{connection_pid: self(), game_state: PlayerState.new(character)}
+    on_map = %{PlayerState.new(character) | pending_map_load: nil}
+    %SessionState{connection_pid: self(), game_state: on_map}
   end
 end

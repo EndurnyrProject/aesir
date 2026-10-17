@@ -246,6 +246,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ConquestEjectionTest do
         guild_id: guild_id
       }
       |> PlayerState.new()
+      |> Map.put(:pending_map_load, nil)
 
     %SessionState{game_state: game_state, connection_pid: self()}
   end

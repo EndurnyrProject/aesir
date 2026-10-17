@@ -26,7 +26,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   alias Aesir.ZoneServer.Navigation.Route
   alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Session
+  alias Aesir.ZoneServer.Npc.Warp
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -78,6 +81,65 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
       game_state: PlayerState.new(character()),
       connection_pid: self()
     }
+  end
+
+  test "the initial load hands off the spawn with the invincibility already published" do
+    state = session_state()
+    assert state.game_state.pending_map_load == :login
+
+    {:noreply, loaded} = MapLoadHandler.handle_map_loaded(state)
+
+    assert_received :spawn_player
+    assert loaded.game_state.pending_map_load == nil
+    assert Invincibility.active?({:player, @char_id})
+    assert Invincibility.active?(loaded.game_state)
+  end
+
+  test "the spawn is queued ahead of the spawn-cell warp" do
+    warp = %Warp{
+      id: "spawn_warp",
+      map: "prontera",
+      to_map: "geffen",
+      x: 150,
+      y: 150,
+      xs: 1,
+      ys: 1,
+      to_x: 120,
+      to_y: 100
+    }
+
+    stub(Warps, :for_map, fn "prontera" -> {:ok, [warp]} end)
+
+    {:noreply, _loaded} = MapLoadHandler.handle_map_loaded(session_state())
+
+    {:messages, messages} = Process.info(self(), :messages)
+    spawn_at = Enum.find_index(messages, &(&1 == :spawn_player))
+
+    warp_at =
+      Enum.find_index(messages, &(&1 == {:"$gen_cast", {:movement, {:warp, "geffen", 120, 100}}}))
+
+    assert spawn_at < warp_at
+  end
+
+  test "an ack from a player already on its map changes nothing" do
+    {:noreply, loaded} = MapLoadHandler.handle_map_loaded(session_state())
+    assert_received :spawn_player
+    timer = loaded.game_state.invincible_timer
+    flush_mailbox()
+
+    assert {:noreply, ^loaded} = MapLoadHandler.handle_map_loaded(loaded)
+
+    assert loaded.game_state.invincible_timer == timer
+    refute_received :spawn_player
+    refute_received {:send, _channel, _packet}
+  end
+
+  defp flush_mailbox do
+    receive do
+      _message -> flush_mailbox()
+    after
+      0 -> :ok
+    end
   end
 
   test "initial load reports zero next cost at the primary cap and normal cost below it" do

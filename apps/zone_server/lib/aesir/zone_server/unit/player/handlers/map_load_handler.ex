@@ -3,10 +3,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   Handles the client's map-loaded acknowledgement.
 
   On initial entry the full client sync runs (status params, inventory, cart,
-  skill list) before the spawn; after a warp the client already holds that
-  data, so only the respawn on the destination map fires. Both branches clear
-  the warp cooldown, run the on-spawn warp check and start the player's
-  invincibility.
+  skill list), the invincibility starts, and only then does the player enter
+  the map: `:spawn_player` indexes the player and runs the first visibility
+  pass, so nothing can see or pick the player before its invincibility runs.
+  After a warp the client already holds that data, so only the respawn on the
+  destination map fires. Both branches clear the warp cooldown and run the
+  on-spawn warp check. An ack from a player already on its map is ignored:
+  nothing restarts, nothing is sent and the player is not spawned again.
   """
 
   require Logger
@@ -35,6 +38,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   CZ_NOTIFY_ACTORINIT).
   """
   @spec handle_map_loaded(map()) :: {:noreply, map()}
+  def handle_map_loaded(%{game_state: %{pending_map_load: nil}} = state), do: {:noreply, state}
+
   def handle_map_loaded(%{game_state: %{pending_map_load: :warp}} = state) do
     {:noreply, state} = StatsManager.handle_recalculate_stats(state)
     game_state = state.game_state
@@ -104,6 +109,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
 
     visible_skill_units = send_skill_unit_snapshot(game_state)
 
+    # The spawn is queued first: it runs after this handler returns, with the
+    # invincibility already published, ahead of the spawn-cell warp below and
+    # of the invincibility's deferred arrival (sent when the map sets no time).
     send(self(), :spawn_player)
 
     cleared_game_state = PlayerState.clear_warp_cooldown(game_state)
@@ -111,7 +119,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
 
     state = %{
       state
-      | game_state: %{cleared_game_state | visible_skill_units: visible_skill_units}
+      | game_state: %{
+          cleared_game_state
+          | pending_map_load: nil,
+            visible_skill_units: visible_skill_units
+        }
     }
 
     {:noreply, Invincibility.start_on_map_load(state)}

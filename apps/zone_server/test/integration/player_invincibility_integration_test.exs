@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Integration.PlayerInvincibilityIntegrationTest do
 
   @moduletag :capture_log
 
-  alias Aesir.Net.MapLoaded
   alias Aesir.Net.MoveRequest
   alias Aesir.ZoneServer.Unit.Player.Invincibility
 
@@ -16,11 +15,9 @@ defmodule Aesir.ZoneServer.Integration.PlayerInvincibilityIntegrationTest do
   end
 
   test "a map load hides the player from an aggressive mob until a walk request ends it" do
-    player = start_player_session(id: 8_653, position: {150, 150}, map_name: "prontera")
+    player = start_player_session(id: 8_653, position: {150, 150}, invincible: true)
     player_ref = {:player, player.character.id}
-
-    simulate_incoming_message(player.pid, %MapLoaded{})
-    assert_eventually(fn -> Invincibility.active?(player_ref) end)
+    assert Invincibility.active?(player_ref)
 
     mob =
       start_mob_session(
@@ -41,11 +38,9 @@ defmodule Aesir.ZoneServer.Integration.PlayerInvincibilityIntegrationTest do
   end
 
   test "the deadline ends it and the mob then acquires the player" do
-    player = start_player_session(id: 8_654, position: {150, 150}, map_name: "prontera")
+    player = start_player_session(id: 8_654, position: {150, 150}, invincible: true)
     player_ref = {:player, player.character.id}
-
-    simulate_incoming_message(player.pid, %MapLoaded{})
-    assert_eventually(fn -> Invincibility.active?(player_ref) end)
+    assert Invincibility.active?(player_ref)
 
     mob =
       start_mob_session(

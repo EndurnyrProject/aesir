@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.MapLoaded
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
@@ -317,16 +318,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert {:error, :not_found} = UnitRegistry.get_unit(:player, character.id)
     end
 
-    test "sends spawn_player message on init", %{character: character} do
-      connection_pid = self()
+    test "registers the player but leaves the spawn to the map load", %{character: character} do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 
-      {:ok, _state} =
-        PlayerSession.init(%{
-          character: character,
-          connection_pid: connection_pid
-        })
-
-      assert_receive :spawn_player, 100
+      assert state.game_state.pending_map_load == :login
+      assert {:ok, _unit} = UnitRegistry.get_unit(:player, character.id)
+      assert SpatialIndex.get_unit_position(:player, character.id) == {:error, :not_found}
+      refute_received :spawn_player
     end
 
     test "routes a matching sphere expiry through the player-session writer", %{
@@ -1658,6 +1656,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       stub(CharacterPersistence, :update_position, fn _, _, _, _ -> {:ok, %Character{}} end)
 
       {:ok, pid} = PlayerSession.start_link(%{character: character, connection_pid: self()})
+      enter_map(pid)
       source_character = %{character | id: 2, account_id: 200, name: "ResurrectionSource"}
       {:ok, _source_pid} = ResurrectionSource.start_link(PlayerState.new(source_character))
 
@@ -1721,6 +1720,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       {:ok, target_pid} =
         PlayerSession.start_link(%{character: character, connection_pid: self()})
 
+      enter_map(target_pid)
       source_character = %{character | id: 2, account_id: 200, name: "ResurrectionSource"}
 
       {:ok, source_pid} =
@@ -1863,6 +1863,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert PlayerSession.get_state(pid).game_state.inventory[0].attribute == 0
       assert {:error, :repair_failed} = PlayerSession.repair_item(pid, 0)
     end
+  end
+
+  # A player enters its map at the client's first map-load ack: the ack queues
+  # the spawn, so the second round trip settles it.
+  defp enter_map(pid) do
+    PlayerSession.deliver_message(pid, %MapLoaded{})
+    _synced = PlayerSession.get_state(pid)
+    _spawned = PlayerSession.get_state(pid)
+    :ok
   end
 
   defp equip_registration do

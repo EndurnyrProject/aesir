@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           x: integer(),
           y: integer(),
           map_name: String.t(),
-          pending_map_load: :warp | nil,
+          pending_map_load: :login | :warp | nil,
           save_map: String.t(),
           save_x: integer(),
           save_y: integer(),
@@ -168,8 +168,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :x,
     :y,
     :map_name,
-    # Set to :warp while a cross-map warp waits for the client's MapLoaded ack;
-    # nil during normal play. Drives the lighter respawn path on map load.
+    # :login until the client's first MapLoaded ack puts the player on its map,
+    # :warp while a cross-map warp waits for the ack, nil while on a map. Picks
+    # the map-load branch; an ack while nil is ignored.
     :pending_map_load,
 
     # Save point — the return-on-death destination (rAthena save_point).
@@ -376,6 +377,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       map_name: character.last_map,
       x: character.last_x,
       y: character.last_y,
+      pending_map_load: :login,
       save_map: character.save_map,
       save_x: character.save_x,
       save_y: character.save_y,

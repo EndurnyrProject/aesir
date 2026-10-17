@@ -68,7 +68,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     owner = owner_session()
     hom = PlayerSession.get_state(owner.pid).homunculus
     observer = observer_session(:moving, {hom.x + 21, hom.y})
-    simulate_incoming_message(observer.pid, %MapLoaded{})
     flush_observer(:moving)
 
     simulate_incoming_message(observer.pid, %MoveRequest{dest_x: hom.x + 20, dest_y: hom.y})
@@ -113,7 +112,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     owner = owner_session()
     hom = PlayerSession.get_state(owner.pid).homunculus
     observer = observer_session(:stationary, {hom.x + 22, hom.y})
-    simulate_incoming_message(observer.pid, %MapLoaded{})
     flush_observer(:stationary)
 
     request(owner.pid, 10, {:move, %HomunculusMoveCommand{x: hom.x + 3, y: hom.y}})
@@ -154,7 +152,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     stone_index = inventory_client_index(owner.pid, @stone)
     gid = hom.world_gid
 
-    simulate_incoming_message(observer.pid, %MapLoaded{})
     flush_observer(:pending_evolution)
 
     true = :erlang.suspend_process(observer.pid)
@@ -204,7 +201,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     owner = owner_session(stone?: true, intimacy_hundredths: 91_100)
     hom = PlayerSession.get_state(owner.pid).homunculus
     observer = observer_session(:lifecycle, {hom.x + 1, hom.y})
-    simulate_incoming_message(observer.pid, %MapLoaded{})
     assert_receive {:observer_packet, :lifecycle, %UnitSpawn{gid: gid, name: "Lif"}, _}, 1_000
     flush_observer(:lifecycle)
 
@@ -283,8 +279,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     PlayerSession.warp(returned.pid, @warp_map, 40, 40)
     assert_receive {:observer_packet, :lifecycle, %UnitDespawn{gid: ^new_gid}, _}, 1_000
 
-    destination_observer = observer_session(:destination, {41, 40}, @warp_map)
-    simulate_incoming_message(destination_observer.pid, %MapLoaded{})
+    _destination_observer = observer_session(:destination, {41, 40}, @warp_map)
     flush_observer(:destination)
     simulate_incoming_message(returned.pid, %MapLoaded{})
 

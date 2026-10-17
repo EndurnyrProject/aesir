@@ -99,7 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         game_state
         |> PlayerState.relocate(dest_map, fx, fy)
         |> preserve_corpse(game_state)
-        |> Map.put(:pending_map_load, :warp)
+        |> Map.put(:pending_map_load, pending_after_warp(game_state.pending_map_load))
 
       state = state |> StateCommit.commit(new_game_state) |> SkillMenuHandler.clear()
 
@@ -306,6 +306,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
       {x + dx, y + dy}
     end
   end
+
+  # A player warped before its first map load is still logging in: the next
+  # load runs the full initial entry, only at the new cell.
+  defp pending_after_warp(:login), do: :login
+  defp pending_after_warp(_pending), do: :warp
 
   defp preserve_corpse(relocated, original) do
     if PlayerState.corpse?(original), do: %{relocated | action_state: :dead}, else: relocated

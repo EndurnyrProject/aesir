@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Integration.CastSweepTest do
   alias Aesir.Net.HomunculusCastSkillCommand
   alias Aesir.Net.HomunculusRequest
   alias Aesir.Net.HomunculusResult
-  alias Aesir.Net.MapLoaded
   alias Aesir.Net.SkillCast
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Skill.Castability
@@ -230,8 +229,6 @@ defmodule Aesir.ZoneServer.Integration.CastSweepTest do
     |> Repo.insert!()
 
     character = Repo.preload(character, :homunculus)
-    owner = start_player_session(character: character, map_name: @map, position: {150, 150})
-    simulate_incoming_message(owner.pid, %MapLoaded{})
-    owner
+    start_player_session(character: character, map_name: @map, position: {150, 150})
   end
 end
