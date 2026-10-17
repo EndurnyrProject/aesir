@@ -278,10 +278,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
 
   defp silenced_lex_divina?(_definition, _id), do: false
 
-  @doc "Returns whether `map` is a versus map."
+  @doc "Returns whether `map` is a versus map (`MapFlags.versus?/1`)."
   @spec versus_map?(term()) :: boolean()
-  def versus_map?(map_name) when is_binary(map_name),
-    do: MapFlags.get(map_name, :pvp) or MapFlags.get(map_name, :gvg)
+  def versus_map?(map_name) when is_binary(map_name), do: MapFlags.versus?(map_name)
 
   def versus_map?(_map_name), do: false
 
@@ -625,7 +624,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
 
   defp versus_context(map_name) when is_binary(map_name) do
     cond do
-      MapFlags.get(map_name, :gvg) ->
+      MapFlags.gvg?(map_name) ->
         :gvg
 
       MapFlags.get(map_name, :pvp) ->

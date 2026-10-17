@@ -14,6 +14,10 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   invincible time from the mode-scoped `map_invincible_time.yml`, loaded on
   first use and again after `reload/0`.
 
+  The overlay also carries the global agit state (`set_agit/1`), so the
+  derived predicates `versus?/1` and `gvg?/1` can count a castle as a siege
+  map only while WoE runs.
+
   Only `@flags` are accepted. The WoE-consumed subset (`gvg`, `gvg_castle`,
   `nosave`, `noteleport`, `nowarp`, `noreturn`) drives behavior this phase;
   `pvp`, `pvp_noparty`, and `pvp_noguild` are consumed by the targeting layer to
@@ -145,6 +149,33 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   end
 
   def clear_runtime(_map_name, _flag), do: :ok
+
+  @doc "Records whether the agit (War of Emperium) window is running."
+  @spec set_agit(boolean()) :: :ok
+  def set_agit(active?) when is_boolean(active?) do
+    :ets.insert(overlay_table(), {:agit, active?})
+    :ok
+  end
+
+  @doc "Whether the agit (War of Emperium) window is running."
+  @spec agit?() :: boolean()
+  def agit? do
+    case :ets.lookup(overlay_table(), :agit) do
+      [{:agit, active?}] -> active?
+      [] -> false
+    end
+  end
+
+  @doc """
+  Whether players may hit each other on `map_name`: a PvP or GvG map, or a
+  castle while the agit runs.
+  """
+  @spec versus?(map_name()) :: boolean()
+  def versus?(map_name), do: get(map_name, :pvp) or gvg?(map_name)
+
+  @doc "Whether `map_name` is a GvG map: the `gvg` flag, or a castle while the agit runs."
+  @spec gvg?(map_name()) :: boolean()
+  def gvg?(map_name), do: get(map_name, :gvg) or (agit?() and get(map_name, :gvg_castle))
 
   @doc """
   Merged view of a map's known flags: static flags overlaid by runtime values.

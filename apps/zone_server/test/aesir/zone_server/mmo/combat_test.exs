@@ -1357,6 +1357,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         _map_name, _flag -> false
       end)
 
+      stub(MapFlags, :gvg?, fn map_name -> map_name == "prontera" end)
+
       stub(UnitRegistry, :get_unit, fn
         :mob, 3001 -> {:error, :not_found}
         :player, 3001 -> {:ok, {PlayerState, target_state, target_pid}}

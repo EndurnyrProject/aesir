@@ -317,4 +317,31 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
       end
     end
   end
+
+  describe "versus?/1 and gvg?/1" do
+    test "a castle counts only while the agit runs" do
+      refute MapFlags.versus?("aldeg_cas01")
+      refute MapFlags.gvg?("aldeg_cas01")
+
+      :ok = MapFlags.set_agit(true)
+
+      assert MapFlags.versus?("aldeg_cas01")
+      assert MapFlags.gvg?("aldeg_cas01")
+      refute MapFlags.versus?("prontera")
+
+      :ok = MapFlags.set_agit(false)
+
+      refute MapFlags.versus?("aldeg_cas01")
+    end
+
+    test "a pvp map is versus but not gvg, a gvg map is both" do
+      assert MapFlags.versus?("pvp_y_1-2")
+      refute MapFlags.gvg?("pvp_y_1-2")
+
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+
+      assert MapFlags.versus?("prontera")
+      assert MapFlags.gvg?("prontera")
+    end
+  end
 end

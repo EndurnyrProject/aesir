@@ -9,10 +9,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Assumptio do
 
   Pre-renewal: in the common damage stage, after Lex Aeterna and before
   Defending Aura, every incoming attack (physical, magic, or misc) is halved,
-  or cut to a truncated two thirds on a PvP or GvG map. Status-driven damage
-  (poison ticks, HP costs) is not an attack and never reaches it. No DEF is
-  granted. Kyrie Eleison and
-  Assumptio end each other on application.
+  or cut to a truncated two thirds on a versus map (`MapFlags.versus?/1`).
+  Status-driven damage (poison ticks, HP costs) is not an attack and never
+  reaches it. No DEF is granted. Kyrie Eleison and Assumptio end each other on
+  application.
 
   In both modes it is dispellable on players, while Dispel spares it on mobs,
   and mobs can grant it to boss allies. Deviations: the status shows the
@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Assumptio do
 
   defp versus_map?({unit_type, unit_id}) do
     case SpatialIndex.get_unit_position(unit_type, unit_id) do
-      {:ok, {_x, _y, map}} -> MapFlags.get(map, :pvp) or MapFlags.get(map, :gvg)
+      {:ok, {_x, _y, map}} -> MapFlags.versus?(map)
       {:error, :not_found} -> false
     end
   end

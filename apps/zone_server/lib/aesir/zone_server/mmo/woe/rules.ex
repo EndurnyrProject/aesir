@@ -28,9 +28,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
     MapFlags.get(map_name, :gvg) or MapFlags.get(map_name, :gvg_castle)
   end
 
-  @doc "Returns whether siege is currently active on a map."
+  @doc "Returns whether siege is currently active on a map (`MapFlags.gvg?/1`)."
   @spec active?(String.t()) :: boolean()
-  def active?(map_name), do: MapFlags.get(map_name, :gvg)
+  def active?(map_name), do: MapFlags.gvg?(map_name)
 
   @doc "Validates whether an attack may target the live Emperium."
   @spec validate_target(Combatant.t(), Combatant.t(), map()) :: :ok | {:error, atom()}

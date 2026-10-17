@@ -68,7 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   end
 
   @doc """
-  AgitStart: arms every FE castle (idempotent).
+  AgitStart: marks the agit running (`MapFlags.set_agit/1`), then arms every
+  FE castle (idempotent).
 
   Sets the `:gvg` mapflag, summons the Emperium (mob 1288), records its unit
   id, and marks the castle under siege, then broadcasts the WoE-begun message.
@@ -79,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   end
 
   @doc """
-  AgitEnd: disarms every FE castle (idempotent).
+  AgitEnd: marks the agit over, then disarms every FE castle (idempotent).
 
   Clears the `:gvg` mapflag, despawns the Emperiums, cancels pending respawn
   timers, then broadcasts the WoE-ended message and an owners roll-call.
@@ -118,6 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
       if state.active? do
         state
       else
+        MapFlags.set_agit(true)
         arm_all_castles()
         announce_woe("WoE has begun")
         %{state | active?: true}
@@ -131,6 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
     state =
       if state.active? do
         cancel_timers(state.respawn_timers)
+        MapFlags.set_agit(false)
         disarm_all_castles()
         announce_woe("WoE has ended")
         announce_owners()

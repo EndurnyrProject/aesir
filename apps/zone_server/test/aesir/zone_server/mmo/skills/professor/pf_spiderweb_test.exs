@@ -49,7 +49,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderwebTest do
     }
   end
 
-  defp versus(map?), do: stub(MapFlags, :get, fn _map, flag -> map? and flag == :pvp end)
+  defp versus(map?) do
+    stub(MapFlags, :get, fn _map, flag -> map? and flag == :pvp end)
+    stub(MapFlags, :versus?, fn _map -> map? end)
+  end
 
   defp now, do: System.monotonic_time(:millisecond)
 
