@@ -371,6 +371,43 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     if ready?, do: use_skill(state, :tick, now), else: {:none, state}
   end
 
+  @npc_speedup 332
+  @npc_emotions [197, 474]
+
+  @doc """
+  The skill check a walking mob makes before each cell, its first included:
+  once more than the skill interval less half the walk speed has passed since
+  the last periodic check, a mob not casting runs the periodic skill use.
+  `{:stop, state}` when a skill was used and stops the walk: anything but
+  Speed Up while the trick cast is kept or an emotion, unless the mob is in
+  its walk state; `{:continue, state}` otherwise.
+  """
+  @spec walk_skill_check(MobState.t()) :: {:continue | :stop, MobState.t()}
+  def walk_skill_check(%MobState{casting: nil, is_dead: false} = state) do
+    now = System.system_time(:millisecond)
+
+    if state.last_skillcheck == nil or
+         now - state.last_skillcheck > @skill_interval - div(state.walk_speed, 2) do
+      case use_skill(state, :tick, now) do
+        {:used, state} -> {if(keeps_walking?(state), do: :continue, else: :stop), state}
+        {:none, state} -> {:continue, state}
+      end
+    else
+      {:continue, state}
+    end
+  end
+
+  def walk_skill_check(state), do: {:continue, state}
+
+  defp keeps_walking?(%MobState{last_skill_id: @npc_speedup, trickcasting: until})
+       when until != nil,
+       do: true
+
+  defp keeps_walking?(%MobState{last_skill_id: skill_id}) when skill_id in @npc_emotions,
+    do: true
+
+  defp keeps_walking?(%MobState{skill_state: skill_state}), do: skill_state == :walk
+
   # A periodic skill check (not an event use) stamps `last_skillcheck`.
   defp use_skill(state, event, now) do
     state = if event == :tick, do: %{state | last_skillcheck: now}, else: state

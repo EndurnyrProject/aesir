@@ -166,20 +166,22 @@ defmodule Aesir.ZoneServer.Map.Cell do
   With `profile: :mob`, a step is additionally rejected when the source and
   destination cells disagree on the icewall trait, fencing mobs on either side
   of a script icewall band. The default `:player` profile ignores the trait.
+  With `corners: false` (a straight-line walk) only the destination cell is
+  checked, as the straight-line path itself cuts corners.
   """
   @spec step_traversable?(String.t(), {integer(), integer()}, {integer(), integer()}, keyword()) ::
           boolean()
   def step_traversable?(map_name, from, to, opts \\ []) do
-    base_step_traversable?(map_name, from, to) and
+    base_step_traversable?(map_name, from, to, Keyword.get(opts, :corners, true)) and
       fence_ok?(map_name, from, to, Keyword.get(opts, :profile, :player))
   end
 
-  defp base_step_traversable?(map_name, {from_x, from_y}, {to_x, to_y}) do
+  defp base_step_traversable?(map_name, {from_x, from_y}, {to_x, to_y}, corners?) do
     dx = to_x - from_x
     dy = to_y - from_y
 
     traversable?(map_name, to_x, to_y) and
-      (dx == 0 or dy == 0 or
+      (not corners? or dx == 0 or dy == 0 or
          (traversable?(map_name, from_x + dx, from_y) and
             traversable?(map_name, from_x, from_y + dy)))
   end

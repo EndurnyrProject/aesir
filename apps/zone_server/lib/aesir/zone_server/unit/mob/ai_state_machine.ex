@@ -765,8 +765,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp chase_walk(state, x, y, now) do
-    case start_walk(state, x, y) do
-      {:ok, state} -> MobState.set_state(state, :rush)
+    case start_walk(state, x, y, chase: true) do
+      {:ok, state} -> state
       {:error, state} -> unlock_target(state, now)
     end
   end
@@ -774,8 +774,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp resume_chase_walk(state, target) do
     with {:ok, {x, y, map_name}} when map_name == state.map_name <- target_position(target),
          {dest_x, dest_y} <- chase_destination(state, {x, y}),
-         {:ok, walking} <- start_walk(state, dest_x, dest_y) do
-      MobState.set_state(walking, :rush)
+         {:ok, walking} <- start_walk(state, dest_x, dest_y, chase: true) do
+      walking
     else
       {:error, state} -> state
       _other -> state
@@ -919,8 +919,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   # Starts a walk to `{x, y}` in the session (the think runs there); `{:ok,
   # state}` when the mob is walking afterwards.
-  defp start_walk(%MobState{} = state, x, y) do
-    {:noreply, state} = MovementHandler.handle_move_to(state, x, y)
+  defp start_walk(%MobState{} = state, x, y, opts \\ []) do
+    {:noreply, state} = MovementHandler.handle_move_to(state, x, y, opts)
     if walking?(state), do: {:ok, state}, else: {:error, state}
   end
 

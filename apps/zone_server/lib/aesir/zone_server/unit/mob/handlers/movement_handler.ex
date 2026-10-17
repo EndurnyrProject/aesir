@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.HitStop
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
@@ -24,31 +25,55 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   Forces the mob to path toward `{x, y}`. A mob already walking keeps its
   pending step and takes the new path from the cell that step lands on.
   """
-  @spec handle_move_to(MobState.t(), integer(), integer()) :: {:noreply, MobState.t()}
-  def handle_move_to(state, x, y), do: handle_move_to(state, x, y, false)
-
-  @doc """
-  Like `handle_move_to/3`. An escape request (`escape?`) makes the mob
-  unstoppable by damage whether or not it starts a walk, until a walk ends.
-  """
-  @spec handle_move_to(MobState.t(), integer(), integer(), boolean()) ::
+  @spec handle_move_to(MobState.t(), integer(), integer(), keyword()) ::
           {:noreply, MobState.t()}
-  def handle_move_to(state, x, y, escape?) do
-    state = if escape?, do: %{state | can_escape: true}, else: state
-
-    walking? = state.movement_state == :moving
+  def handle_move_to(state, x, y, opts \\ []) do
+    chase? = Keyword.get(opts, :chase, false)
 
     with {:ok, map_data} <- MapCache.get(state.map_name),
-         {:ok, path} when path != [] or walking? <-
+         {:ok, path} <-
            Pathfinding.find_path(map_data, {state.x, state.y}, {x, y}, profile: :mob) do
-      if walking?,
-        do: {:noreply, %{state | walk_target: {x, y}}},
-        else: {:noreply, start_walk(state, path)}
+      {:noreply, walk(%{state | walk_easy: false, chase_walk: chase?}, {x, y}, path)}
     else
-      # Already at destination, no path found or map not loaded.
+      # No path found or map not loaded.
       _ -> {:noreply, state}
     end
   end
+
+  @doc """
+  Runs the mob away from `{from_x, from_y}` in a straight line, up to
+  `distance` cells: along the 8-way sector of the mob's offset from that cell
+  (east when they share it), stopping short of the first cell it cannot walk
+  on. The walk paths in a straight line for its whole length. A mob already
+  walking takes it from the cell its pending step lands on. Nothing happens
+  when not even the first cell is walkable.
+  """
+  @spec escape(MobState.t(), {integer(), integer()}, pos_integer()) :: MobState.t()
+  def escape(%MobState{x: x, y: y} = state, {from_x, from_y}, distance) do
+    {dx, dy} = Geometry.sector_step(x - from_x, y - from_y)
+
+    reach =
+      Enum.find(1..distance, distance + 1, fn i ->
+        not Cell.traversable?(state.map_name, x + i * dx, y + i * dy)
+      end) - 1
+
+    destination = {x + reach * dx, y + reach * dy}
+
+    with true <- reach > 0,
+         {:ok, path} <- Pathfinding.easy_path(state.map_name, {x, y}, destination) do
+      walk(%{state | walk_easy: true, chase_walk: false}, destination, path)
+    else
+      _ -> state
+    end
+  end
+
+  # A mob already walking redirects at the cell its pending step lands on; a
+  # chase redirect puts it in its rush state at once.
+  defp walk(%MobState{movement_state: :moving} = state, destination, _path),
+    do: enter_chase(%{state | walk_target: destination})
+
+  defp walk(state, _destination, []), do: state
+  defp walk(state, _destination, path), do: start_walk(state, path)
 
   @doc """
   Takes the walk step whose timer is `timer`, or drops it when it is not the
@@ -66,8 +91,35 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   # clients' interpolation instead of one cell ahead.
   defp start_walk(state, path) do
     state
+    |> enter_chase()
     |> MobState.set_path(path)
-    |> schedule_step(MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path)))
+    |> next_cell()
+  end
+
+  # A chase walk puts the mob in its rush state as its path starts, so the
+  # first cell's skill check already sees it.
+  defp enter_chase(%MobState{chase_walk: true} = state), do: MobState.set_state(state, :rush)
+  defp enter_chase(state), do: state
+
+  # Before each cell of a walk (its first included) the mob checks its skills
+  # (`AiHandler.walk_skill_check/1`). A walk the skill asked for starts from
+  # this cell; a skill that stops the walk leaves the mob standing here.
+  defp next_cell(state) do
+    case AiHandler.walk_skill_check(state) do
+      {_continue_or_stop, %MobState{walk_target: {_x, _y}} = redirected} ->
+        redirect_walk(redirected)
+
+      {:continue, state} ->
+        [next | _rest] = state.walk_path
+
+        schedule_step(
+          state,
+          MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, next)
+        )
+
+      {:stop, state} ->
+        stop_walk(state)
+    end
   end
 
   @doc """
@@ -249,7 +301,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     case state.walk_path do
       [{next_x, next_y} | _] = walk_path ->
         if Cell.step_traversable?(state.map_name, {state.x, state.y}, {next_x, next_y},
-             profile: :mob
+             profile: :mob,
+             corners: not state.walk_easy
            ) do
           step_mob(state, {next_x, next_y}, tl(walk_path))
         else
@@ -285,13 +338,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       updated_state.walk_target != nil ->
         redirect_walk(updated_state)
 
-      # Schedule the next tick priced by the step it will take, so entering
-      # each cell lines up with the clients' per-cell interpolation.
+      # The next tick is priced by the step it will take, so entering each
+      # cell lines up with the clients' per-cell interpolation.
       remaining_path != [] ->
-        interval =
-          MovementEngine.step_delay(state.walk_speed, {next_x, next_y}, hd(remaining_path))
-
-        schedule_step(updated_state, interval)
+        next_cell(updated_state)
 
       true ->
         finish_walk(updated_state)
@@ -313,18 +363,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     destination = state.walk_target
     state = %{state | walk_target: nil}
 
-    with {:ok, map_data} <- MapCache.get(state.map_name),
-         {:ok, path} <-
-           Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob) do
-      case path do
-        [] -> finish_walk(state)
-        _ -> start_walk(state, path)
-      end
-    else
-      _ ->
-        stopped_state = MobState.stop_movement(state)
-        Movement.set_position(:mob, stopped_state.instance_id, stopped_state, state.map_name)
-        stopped_state
+    case walk_path(state, destination) do
+      {:ok, []} -> finish_walk(state)
+      {:ok, path} -> start_walk(state, path)
+      _no_path -> stop_walk(state)
+    end
+  end
+
+  defp stop_walk(state) do
+    stopped_state = MobState.stop_movement(state)
+    Movement.set_position(:mob, stopped_state.instance_id, stopped_state, state.map_name)
+    stopped_state
+  end
+
+  # A path for the walk's current mode: straight for an easy walk, else around
+  # obstacles.
+  defp walk_path(%MobState{walk_easy: true} = state, destination),
+    do: Pathfinding.easy_path(state.map_name, {state.x, state.y}, destination)
+
+  defp walk_path(state, destination) do
+    with {:ok, map_data} <- MapCache.get(state.map_name) do
+      Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob)
     end
   end
 
@@ -332,22 +391,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     do: %{state | pending_step: HitStop.schedule({:movement, :tick}, delay)}
 
   defp handle_blocked_mob(state, destination) do
-    with {:ok, map_data} <- MapCache.get(state.map_name),
-         {:ok, [_ | _] = path} <-
-           Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob) do
-      start_walk(state, path)
-    else
-      _ ->
-        stopped_state = MobState.stop_movement(state)
-
-        Movement.set_position(
-          :mob,
-          stopped_state.instance_id,
-          stopped_state,
-          stopped_state.map_name
-        )
-
-        stopped_state
+    case walk_path(state, destination) do
+      {:ok, [_ | _] = path} -> start_walk(state, path)
+      _no_path -> stop_walk(state)
     end
   end
 end

@@ -59,7 +59,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
 
   Event conditions (`casttargeted`, `skillused`, `closedattacked`,
   `longrangeattacked`, `groundattacked`, `damagedgt`) fire only from their
-  events, never from a periodic check; `trickcasting` never holds.
+  events, never from a periodic check. `trickcasting` holds while the mob
+  keeps a trick cast (`MobState.trickcasting`); `alchemist` needs a
+  player-owned, hurt mob without one.
   """
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
@@ -169,11 +171,19 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   defp evaluate(
          :alchemist,
          _condition,
-         %MobState{owner_player_id: owner_player_id, hp: hp, max_hp: max_hp},
+         %MobState{
+           owner_player_id: owner_player_id,
+           trickcasting: trickcasting,
+           hp: hp,
+           max_hp: max_hp
+         },
          _env
        ) do
-    owner_player_id != nil and hp < max_hp
+    owner_player_id != nil and trickcasting == nil and hp < max_hp
   end
+
+  defp evaluate(:trickcasting, _condition, %MobState{trickcasting: trickcasting}, _env),
+    do: trickcasting != nil
 
   defp evaluate(:rudeattacked, _condition, _mob_state, %{event: :rudeattacked}), do: true
 

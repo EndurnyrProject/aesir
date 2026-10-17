@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     MobSkillExecutor.broadcast_casting(state, row)
 
     if can_use_skill?(state, row) and target_reachable?(state, row) do
-      MobSkillExecutor.execute(state, row)
+      state = state |> MobSkillExecutor.execute(row) |> executed_state(state)
 
       {:ok,
        %{state | last_skill_id: row.skill_id}
@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     # surfaces as {:error, _} from the Executor: a clean abort with no packet.
     # The cooldown is written in every case so a failed cast cannot be
     # instantly re-rolled every tick.
-    MobSkillExecutor.execute(state, row, :cast_end)
+    state = state |> MobSkillExecutor.execute(row, :cast_end) |> executed_state(state)
     now = System.system_time(:millisecond)
 
     updated_state =
@@ -127,6 +127,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   end
 
   def interrupt_on_damage(state, _damage_info), do: state
+
+  # A skill that changed its caster hands back the mob's new state.
+  defp executed_state({:ok, %MobState{} = executed}, _state), do: executed
+  defp executed_state(_result, state), do: state
 
   # The reference sets a monster's attack delay when a cast ends or is cancelled.
   defp start_attack_delay(state),

@@ -278,6 +278,7 @@
 329	DC_FORTUNEKISS	Misc	true	Misc	true	none	none
 330	DC_SERVICEFORYOU	Misc	true	Misc	true	none	none
 331	NPC_RANDOMMOVE	None	true	None	true	none	none
+332	NPC_SPEEDUP	None	true	None	true	none	none
 340	NPC_DARKSTRIKE	Magic	false	Magic	false	none	none
 347	NPC_UNDEADATTACK	Weapon	false	Weapon	false	none	none
 350	NPC_AGIUP	None	true	None	true	none	none

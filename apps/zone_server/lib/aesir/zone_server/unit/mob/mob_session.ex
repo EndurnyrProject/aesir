@@ -140,15 +140,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
-  Forces the mob to escape to a target position: damage cannot stop the walk
-  until it ends.
-  """
-  @spec escape_to(pid(), integer(), integer()) :: :ok
-  def escape_to(pid, x, y) do
-    GenServer.cast(pid, {:movement, {:escape_to, x, y}})
-  end
-
-  @doc """
   Locks the mob's AI target onto `target_ref` (a taunt; the lock follows the
   mob's target-change rules), or drops it when `nil`.
   """
@@ -398,10 +389,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_cast({:movement, {:move_to, x, y}}, state) do
     MovementHandler.handle_move_to(state, x, y)
-  end
-
-  def handle_cast({:movement, {:escape_to, x, y}}, state) do
-    MovementHandler.handle_move_to(state, x, y, true)
   end
 
   def handle_cast({:movement, :teleport}, state) do

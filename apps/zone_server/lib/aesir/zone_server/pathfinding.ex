@@ -65,6 +65,45 @@ defmodule Aesir.ZoneServer.Pathfinding do
     end
   end
 
+  @max_easy_steps 32
+
+  @doc """
+  The straight-line path from `start` to `goal`: diagonal steps until one axis
+  lines up with the goal, then straight steps. It fails when the goal or any
+  cell before it is not traversable, or when the goal is more than 32 steps
+  away. Corners are not checked.
+  """
+  @spec easy_path(String.t(), {integer(), integer()}, {integer(), integer()}) ::
+          {:ok, [{integer(), integer()}]} | {:error, :no_path}
+  def easy_path(_map_name, start, start), do: {:ok, []}
+
+  def easy_path(map_name, start, {goal_x, goal_y} = goal) do
+    if Cell.traversable?(map_name, goal_x, goal_y),
+      do: easy_steps(map_name, start, goal, [], 0),
+      else: {:error, :no_path}
+  end
+
+  defp easy_steps(_map_name, _cell, _goal, _path, @max_easy_steps), do: {:error, :no_path}
+
+  defp easy_steps(map_name, {x, y}, {goal_x, goal_y} = goal, path, steps) do
+    {next_x, next_y} = next = {x + sign(goal_x - x), y + sign(goal_y - y)}
+
+    cond do
+      next == goal ->
+        {:ok, Enum.reverse([next | path])}
+
+      Cell.traversable?(map_name, next_x, next_y) ->
+        easy_steps(map_name, next, goal, [next | path], steps + 1)
+
+      true ->
+        {:error, :no_path}
+    end
+  end
+
+  defp sign(0), do: 0
+  defp sign(delta) when delta > 0, do: 1
+  defp sign(_delta), do: -1
+
   defp a_star_loop(map_data, open_set, closed_set, g_scores, {goal_x, goal_y} = goal, opts) do
     if :gb_sets.is_empty(open_set) do
       {:error, :no_path}

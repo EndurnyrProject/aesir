@@ -150,9 +150,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   Target invalidation, a caster that can no longer complete the cast, a failed
   `validate/4`, and a `cast/4`/`mob_cast/5`
   error surface as `{:error, reason}` — a clean abort, never a crash. A skill
-  unresolvable in the catalog is a no-op `:ok`.
+  unresolvable in the catalog is a no-op `:ok`. A `mob_cast/5` that changed
+  its caster returns `{:ok, mob_state}`, the mob's new state.
   """
-  @spec execute(MobState.t(), map(), Targeting.skill_use_phase()) :: :ok | {:error, term()}
+  @spec execute(MobState.t(), map(), Targeting.skill_use_phase()) ::
+          :ok | {:ok, MobState.t()} | {:error, term()}
   def execute(%MobState{} = state, row, phase \\ :cast_begin) do
     maybe_emote(state, row)
 
@@ -243,9 +245,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
          :ok <- check_placement(state, definition, adapted_target),
          :ok <- module.validate(state, adapted_target, row.level, definition),
          :ok <- check_castend_target(state, target, definition) do
-      module
-      |> invoke(state, target, adapted_target, row, definition)
-      |> collapse()
+      invoke(module, state, target, adapted_target, row, definition)
     end
   end
 
@@ -313,16 +313,22 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     Origin.with_skill(definition.name, {:mob, state.instance_id}, @mob_scope, fn ->
       cond do
         function_exported?(module, :mob_cast, 5) ->
-          module.mob_cast(state, raw_target, row.level, definition, row)
+          state |> module.mob_cast(raw_target, row.level, definition, row) |> mob_cast_result()
 
         function_exported?(module, :cast_with_origin, 5) ->
-          module.cast_with_origin(state, adapted_target, row.level, definition, :mob)
+          state
+          |> module.cast_with_origin(adapted_target, row.level, definition, :mob)
+          |> collapse()
 
         true ->
-          module.cast(state, adapted_target, row.level, definition)
+          state |> module.cast(adapted_target, row.level, definition) |> collapse()
       end
     end)
   end
+
+  defp mob_cast_result(:ok), do: :ok
+  defp mob_cast_result({:ok, %MobState{}} = changed), do: changed
+  defp mob_cast_result({:error, _reason} = error), do: error
 
   defp adapt_target({:unit, unit_type, id}, %{target_type: :ground}, state),
     do: ground_center(unit_type, id, state)

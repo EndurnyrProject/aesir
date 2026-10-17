@@ -134,7 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   `{:unit, :player, id}` / `{:ground, x, y, area}` with the `around*` area code
   intact) instead of `cast/4`'s player-shaped adapted `target()`, plus the full
   mob-skill `row`, whose `condition.val1..val5` carry per-row data such as
-  summon mob ids.
+  summon mob ids. A skill that changes its caster returns `{:ok, mob_state}`
+  with the mob's new state, which the mob keeps.
   """
   @callback mob_cast(
               caster :: MobState.t(),
@@ -142,7 +143,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               level :: pos_integer(),
               definition :: Definition.t(),
               row :: map()
-            ) :: :ok | {:error, term()}
+            ) :: :ok | {:ok, MobState.t()} | {:error, term()}
 
   @doc "Optionally resolves a dynamic cost from the caster's current state."
   @callback dynamic_cost(caster(), target(), pos_integer(), Definition.t()) :: Cost.t()

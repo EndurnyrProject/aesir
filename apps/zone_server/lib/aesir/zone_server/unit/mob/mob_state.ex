@@ -73,6 +73,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     pending_step: nil,
     # An escape walk that damage cannot stop; it ends when the walk does.
     can_escape: false,
+    # Whether the walk paths in a straight line (diagonal first) instead of
+    # around obstacles, for its start and every re-path.
+    walk_easy: false,
+    # A chase walk (the source's attack_continue): entering its path puts the
+    # mob in its rush state before the first cell's skill check.
+    chase_walk: false,
+    # The end (ms) of the fake cast bar a monster shows while it moves, kept
+    # until Speed Up ends it.
+    trickcasting: nil,
 
     # AI state
     skill_state: :idle,
@@ -207,6 +216,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           walk_target: {integer(), integer()} | nil,
           pending_step: HitStop.step(),
           can_escape: boolean(),
+          walk_easy: boolean(),
+          chase_walk: boolean(),
+          trickcasting: integer() | nil,
           skill_state: skill_state(),
           aggressive: boolean(),
           attack_target: Ref.t() | nil,
@@ -615,6 +627,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       | walk_path: [],
         movement_state: :standing,
         walk_target: nil,
+        walk_easy: false,
+        chase_walk: false,
         pending_step: nil
     }
   end

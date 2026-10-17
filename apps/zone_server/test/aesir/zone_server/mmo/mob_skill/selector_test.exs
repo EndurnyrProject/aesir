@@ -256,6 +256,16 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(%{owner_player_id: 42, hp: 99}), [r], opts()) == {:cast, r}
       assert Selector.select(mob(%{owner_player_id: 42, hp: 100}), [r], opts()) == nil
       assert Selector.select(mob(%{owner_player_id: nil, hp: 99}), [r], opts()) == nil
+
+      assert Selector.select(mob(%{owner_player_id: 42, hp: 99, trickcasting: 1}), [r], opts()) ==
+               nil
+    end
+
+    test "trickcasting fires while a trick cast is kept" do
+      r = row(%{condition: %{type: :trickcasting}})
+
+      assert Selector.select(mob(%{trickcasting: 1}), [r], opts()) == {:cast, r}
+      assert Selector.select(mob(%{trickcasting: nil}), [r], opts()) == nil
     end
 
     test "idle rows stay eligible in combat for player-owned mobs" do
@@ -303,8 +313,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
             :closedattacked,
             :longrangeattacked,
             :groundattacked,
-            :damagedgt,
-            :trickcasting
+            :damagedgt
           ] do
         r = row(%{condition: %{type: type, value: 100}})
         assert Selector.select(mob(%{target_ref: {:player, 42}}), [r], opts()) == nil
