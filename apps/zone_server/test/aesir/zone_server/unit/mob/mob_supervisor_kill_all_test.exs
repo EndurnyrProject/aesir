@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisorKillAllTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -40,11 +41,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisorKillAllTest do
     assert UnitRegistry.get_unit(:mob, b.unit_id) == {:error, :not_found}
   end
 
+  test "a killed mob's statuses end through the death and removal clears" do
+    start_supervised!(%{id: MobSupervisor, start: {MobSupervisor, :start_link, [@map]}})
+    a = spawn_mob(1)
+    b = spawn_mob(2)
+    :ok = StatusStorage.apply_status(:mob, 1, :sc_blessing, val1: 5, duration: 60_000)
+    :ok = StatusStorage.apply_status(:mob, 1, :sc_endure, val1: 1, duration: 60_000)
+    :ok = StatusStorage.apply_status(:mob, 2, :sc_endure, val1: 1, duration: 60_000)
+
+    assert MobSupervisor.kill_all(@map) == :ok
+
+    refute Process.alive?(a.pid)
+    refute Process.alive?(b.pid)
+    assert StatusStorage.get_unit_statuses(:mob, 1) == []
+    assert StatusStorage.get_unit_statuses(:mob, 2) == []
+  end
+
   defp spawn_mob(instance_id) do
     mob_state = build_mob_state(instance_id)
 
     {:ok, pid} = MobSupervisor.spawn_mob(@map, mob_state, awake: false)
-    UnitRegistry.register_unit(:mob, instance_id, MobSupervisor, mob_state, pid)
+    UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, pid)
 
     %{pid: pid, unit_id: instance_id}
   end

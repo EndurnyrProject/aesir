@@ -235,7 +235,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       assert StatusStorage.has_status?(:player, @crusader_id, :sc_devoted_by)
     end
 
-    test "the devotee side self-heals when the Crusader record was bulk-cleared" do
+    test "the devotee side keeps its link when the Crusader record was bulk-cleared" do
       caster = register(player(@crusader_id, job_id: @crusader_class))
       register(player(4001))
       {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
 
       StatusInterpreter.process_tick(:player, 4001, :sc_devotion)
 
-      refute StatusStorage.has_status?(:player, 4001, :sc_devotion)
+      assert StatusStorage.has_status?(:player, 4001, :sc_devotion)
     end
 
     test "the Crusader side drops a devotee whose record was bulk-cleared, retiring the empty entry" do

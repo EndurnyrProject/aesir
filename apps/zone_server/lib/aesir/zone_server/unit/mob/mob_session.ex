@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   require Logger
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
@@ -109,6 +110,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @spec notify_status_changed(pid(), atom(), atom()) :: :ok
   def notify_status_changed(pid, status_id, event) do
     GenServer.cast(pid, {:casting, {:status_changed, status_id, event}})
+  end
+
+  @doc """
+  Removes the mob for a script kill (`killmonster`, `killmonsterall`): its
+  death ends the statuses death ends, then the session stops and its removal
+  ends the rest. Exits when the session is already gone.
+  """
+  @spec script_kill(pid()) :: :ok
+  def script_kill(pid) do
+    GenServer.call(pid, {:combat, :script_kill})
   end
 
   @doc """
@@ -299,6 +310,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   # Casting: the forced-interrupt call (SA_SPELLBREAKER).
   @impl GenServer
+  def handle_call({:combat, :script_kill}, _from, state) do
+    CombatHandler.handle_script_kill(state)
+  end
+
   def handle_call({:casting, :interrupt}, _from, state) do
     CastingHandler.handle_interrupt_cast(state)
   end
@@ -506,6 +521,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     Trigger.on_removed({:mob, state.instance_id})
     SpatialIndex.remove_unit(:mob, state.instance_id)
     Broadcast.publish_mob_despawn(state.map_name, state.instance_id)
+    StatusInterpreter.end_removed_unit_statuses(:mob, state.instance_id)
     :ok
   end
 end

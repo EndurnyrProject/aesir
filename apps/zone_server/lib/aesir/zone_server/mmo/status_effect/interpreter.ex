@@ -830,7 +830,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Removes a status effect, running its on_expire callback first.
 
   A status implementing `on_end_request/3` decides whether it ends; this holds
-  for every removal below that goes through `remove_statuses/4` too.
+  for every removal below that goes through `remove_statuses/4` too. A holder
+  already gone from the registry still ends it, its end logic seeing empty
+  target stats.
 
   `owner_refresh: :notify` publishes the player's asynchronous refresh after a
   real removal. `owner_refresh: :defer` is for an owning session that will
@@ -929,7 +931,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         false
 
       instance ->
-        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+        context = end_context(unit_type, unit_id, instance)
         outcome = module.on_end_request({unit_type, unit_id}, instance, context)
 
         case store_end_outcome(outcome, unit_type, unit_id, status_id, instance) do
@@ -1056,6 +1058,116 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp permanent?(%StatusEntry{type: type}) do
     match?(%{permanent: true}, Registry.get_definition(type))
+  end
+
+  @doc """
+  Ends every status of a unit leaving the world (logout, despawn, a dead
+  monster's removal, a homunculus put away) through its end logic, then drops
+  whatever is left with the unit's status counters.
+
+  Each status is taken out of storage before its `on_expire` runs. A status
+  deciding how it ends (`on_end_request/3`) still runs its outcome, and is
+  dropped even when it asks to stay. An infinite Endure never runs its end
+  logic. An engine-only status has no end case of its own: it goes with the
+  unit after the others ended. The holder may already be gone from the
+  registry; its end logic then sees empty target stats. No owner refresh is
+  published: the unit is leaving.
+  """
+  @spec end_removed_unit_statuses(unit_type(), integer()) :: :ok
+  def end_removed_unit_statuses(unit_type, unit_id) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.each(&end_on_removal(unit_type, unit_id, &1.type))
+
+    StatusStorage.clear_unit_statuses(unit_type, unit_id)
+  end
+
+  @doc """
+  Ends, through their end logic and with no owner refresh, the unit's statuses
+  a logout does not save: those whose definition sets `no_save`, and those
+  setting `no_save_infinite` while infinite (`val4` set or no expiry). An
+  infinite Endure refuses to end this way and stays. A logout runs it before
+  saving the rest.
+  """
+  @spec end_unsaved_statuses(unit_type(), integer()) :: :ok
+  def end_unsaved_statuses(unit_type, unit_id) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.filter(&unsaved?/1)
+    |> Enum.reject(&infinite_endure?/1)
+    |> Enum.map(& &1.type)
+    |> then(&remove_statuses(unit_type, unit_id, &1, owner_refresh: :defer))
+  end
+
+  defp unsaved?(%StatusEntry{type: type} = entry) do
+    case Registry.get_definition(type) do
+      %{no_save: true} -> true
+      %{no_save_infinite: true} -> entry.val4 > 0 or is_nil(entry.expires_at)
+      _ -> false
+    end
+  end
+
+  defp infinite_endure?(%StatusEntry{type: :sc_endure, val4: val4}), do: val4 != 0
+  defp infinite_endure?(%StatusEntry{}), do: false
+
+  defp end_on_removal(unit_type, unit_id, status_id) do
+    case {Registry.get_definition(status_id),
+          StatusStorage.get_status(unit_type, unit_id, status_id)} do
+      {_definition, nil} ->
+        :ok
+
+      {nil, _instance} ->
+        :ok
+
+      {%{engine_only: true}, _instance} ->
+        :ok
+
+      {_definition, %StatusEntry{type: :sc_endure, val4: val4} = instance} when val4 != 0 ->
+        StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance)
+
+      {%{module: module}, instance} ->
+        context = end_context(unit_type, unit_id, instance)
+        end_removed(module, unit_type, unit_id, instance, context)
+    end
+
+    :ok
+  end
+
+  defp end_removed(module, unit_type, unit_id, %StatusEntry{type: status_id} = instance, context) do
+    after_end =
+      if MapSet.member?(Registry.statuses_implementing(:on_end_request), status_id) do
+        case module.on_end_request({unit_type, unit_id}, instance, context) do
+          {:keep, _kept, after_end} -> {:dropped, after_end}
+          {:end, after_end} -> {:ended, after_end}
+        end
+      else
+        {:ended, fn -> :ok end}
+      end
+
+    if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance) do
+      finish_removal(after_end, module, unit_type, unit_id, instance, context)
+    end
+  end
+
+  defp finish_removal({:dropped, after_end}, _module, _unit_type, _unit_id, _instance, _context),
+    do: after_end.()
+
+  defp finish_removal({:ended, after_end}, module, unit_type, unit_id, instance, context) do
+    module.on_expire({unit_type, unit_id}, instance, context)
+    StatusDisplay.on_removed(unit_type, unit_id, instance.type, instance)
+    notify_unit_status_removed(unit_type, unit_id, instance.type)
+    after_end.()
+  end
+
+  # Ending a status never needs its holder in the world: a holder already gone
+  # (a removal's chained ends, an orphan) shows its end logic empty stats.
+  defp end_context(unit_type, unit_id, instance) do
+    target =
+      if UnitRegistry.unit_exists?(unit_type, unit_id),
+        do: ContextBuilder.get_unit_stats(unit_type, unit_id),
+        else: %{}
+
+    ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance, target)
   end
 
   defp maybe_refresh_owner(:player, unit_id, true, opts) do
@@ -2498,8 +2610,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp with_active_status(unit_type, unit_id, status_id, fun) do
     with definition when definition != nil <- Registry.get_definition(status_id),
          instance when instance != nil <- StatusStorage.get_status(unit_type, unit_id, status_id) do
-      context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
-      fun.(definition.module, instance, context)
+      fun.(definition.module, instance, end_context(unit_type, unit_id, instance))
     else
       _ -> :ok
     end

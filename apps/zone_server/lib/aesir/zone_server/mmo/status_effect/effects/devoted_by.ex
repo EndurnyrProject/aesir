@@ -18,7 +18,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
 
     * removing this entry (map change, death, manual) cascades removal of every
       devotee's `sc_devotion`; each devotee's back-reference is cleared first so
-      its own `on_expire` finds no peer and the removal echo terminates;
+      its own `on_expire` finds no peer and the removal echo terminates. The
+      Crusader leaving the world drops the entry without that cascade: its
+      devotees keep their record until a hit finds no Crusader devoting them;
     * a per-second tick drops any devotee link whose `sc_devotion` record (same
       link id) or whose unit has vanished, removing the whole entry once the map
       empties - the case a terminating session that cleared status storage

@@ -306,11 +306,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   end
 
   # A unit can vanish without running its cleanup (killed session, node
-  # restart), leaving its statuses behind in StatusStorage. Processing them
-  # would crash on the missing unit, so drop them and keep ticking.
+  # restart), leaving its statuses behind in StatusStorage. They end as the
+  # unit's removal would have ended them, and the manager keeps ticking.
   defp clear_orphaned_status(unit_type, unit_id, status_id) do
-    Logger.warning("Clearing orphaned status #{status_id} of missing #{unit_type} #{unit_id}")
-    StatusStorage.clear_unit_statuses(unit_type, unit_id)
+    Logger.warning("Ending orphaned status #{status_id} of missing #{unit_type} #{unit_id}")
+    Interpreter.end_removed_unit_statuses(unit_type, unit_id)
   end
 
   # Expiration can change both stats and status-driven state such as walk speed.

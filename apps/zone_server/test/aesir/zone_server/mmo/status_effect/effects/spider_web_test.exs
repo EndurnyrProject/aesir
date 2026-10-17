@@ -203,6 +203,33 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWebTest do
     refute StatusStorage.has_status?(:mob, 9_701, :sc_spiderweb)
   end
 
+  test "a living holder leaving the world burns one web and loses the hold" do
+    web(51, 9_000)
+    web(52, 5_000)
+    hold([51, 52, nil])
+    record_destroys()
+
+    :ok = Interpreter.end_removed_unit_statuses(:mob, 9_701)
+
+    assert_received {:destroyed, 52}
+    refute_received {:destroyed, 51}
+    refute StatusStorage.has_status?(:mob, 9_701, :sc_spiderweb)
+  end
+
+  test "a holder already gone from the registry burns one web on its removal" do
+    UnitRegistry.unregister_unit(:mob, 9_701)
+    web(51, 9_000)
+    web(52, 5_000)
+    hold([51, 52, nil])
+    record_destroys()
+
+    :ok = Interpreter.end_removed_unit_statuses(:mob, 9_701)
+
+    assert_received {:destroyed, 52}
+    refute_received {:destroyed, 51}
+    refute StatusStorage.has_status?(:mob, 9_701, :sc_spiderweb)
+  end
+
   test "running out leaves the webs standing" do
     web(51, 9_000)
     hold([51, nil, nil])

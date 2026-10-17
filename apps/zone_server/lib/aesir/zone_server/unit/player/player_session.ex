@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica
-  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -1576,7 +1576,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       GuildSync.sync(game_state, online: false)
     end
 
-    game_state = WaitingRoomHandler.leave_if_in_room(game_state)
+    StatusInterpreter.end_unsaved_statuses(:player, game_state.character_id)
+    state = apply_pending_vitals(state)
+    game_state = WaitingRoomHandler.leave_if_in_room(state.game_state)
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
 
     unless game_state.action_state == :dead do
@@ -1588,17 +1590,28 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       )
     end
 
-    # Persist the survivable statuses, then drop them all from StatusStorage:
-    # leaving entries behind for an unregistered unit would orphan them and
-    # the tick manager would have to garbage-collect them.
+    # Unsaved statuses ended above; persist the rest, then end them all
+    # through their end logic while the player is still registered.
     StatusPersistence.save_statuses(game_state.character_id)
     SkillCooldownPersistence.save_cooldowns(game_state)
-    StatusStorage.clear_unit_statuses(:player, game_state.character_id)
+    StatusInterpreter.end_removed_unit_statuses(:player, game_state.character_id)
 
     # Clean up player data (only if this process still owns the registry entry)
     UnitRegistry.unregister_player(game_state.character_id, self())
 
     :ok
+  end
+
+  # End logic run during a logout (Berserk's HP penalty) sets this session's
+  # vitals by a cast it would never handle; they are written before the save.
+  defp apply_pending_vitals(state) do
+    receive do
+      {:"$gen_cast", {:unit, {:set_vitals, opts}}} ->
+        {:noreply, state} = HealthHandler.set_vitals(opts, state, [])
+        apply_pending_vitals(state)
+    after
+      0 -> state
+    end
   end
 
   defp departure_reason(:normal), do: :disconnect

@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Endure do
     no_dispel: false,
     no_clear_buff: false,
     remove_on_death: false,
+    no_save_infinite: true,
     properties: [:buff],
     calc_flags: [:mdef],
     prevented_by: [:sc_refresh, :sc_inspiration],

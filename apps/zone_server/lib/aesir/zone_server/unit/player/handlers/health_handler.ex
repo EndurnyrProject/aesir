@@ -315,12 +315,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Sets living player's HP/SP to absolute values, bypassing recovery blockers.
 
   `:max` fills the resource; omitted values remain unchanged. HP is floored at
-  one and SP at zero, with both capped by their current maxima.
+  one and SP at zero, with both capped by their current maxima. The vitals are
+  persisted with `persistence` (`CharacterPersistence.update_stats/3` options;
+  asynchronous by default, `[]` writes before returning).
   """
-  @spec set_vitals(keyword(), SessionState.t()) :: {:noreply, SessionState.t()}
-  def set_vitals(_opts, %{game_state: %{action_state: :dead}} = state), do: {:noreply, state}
+  @spec set_vitals(keyword(), SessionState.t(), keyword()) :: {:noreply, SessionState.t()}
+  def set_vitals(opts, state, persistence \\ [async: true])
 
-  def set_vitals(opts, state) do
+  def set_vitals(_opts, %{game_state: %{action_state: :dead}} = state, _persistence),
+    do: {:noreply, state}
+
+  def set_vitals(opts, state, persistence) do
     stats = state.game_state.stats
     max_hp = stats.derived_stats.max_hp
     max_sp = stats.derived_stats.max_sp
@@ -343,7 +348,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
     StatusSync.send_param(state.connection_pid, StatusParams.hp(), hp)
     StatusSync.send_param(state.connection_pid, StatusParams.sp(), sp)
-    CharacterPersistence.update_stats(game_state.character_id, %{hp: hp, sp: sp}, async: true)
+    CharacterPersistence.update_stats(game_state.character_id, %{hp: hp, sp: sp}, persistence)
 
     {:noreply, state}
   end

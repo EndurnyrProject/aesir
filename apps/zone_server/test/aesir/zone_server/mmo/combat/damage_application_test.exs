@@ -433,9 +433,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     SpatialIndex.add_player(devotee_id, 50, 50, "prontera")
     SpatialIndex.add_player(crusader_id, 51, 50, "prontera")
 
+    link_id = make_ref()
+
     :ok =
       StatusStorage.apply_status(:player, devotee_id, :sc_devotion,
-        state: %{peer: {:player, crusader_id}, link_id: make_ref(), range: 7}
+        state: %{peer: {:player, crusader_id}, link_id: link_id, range: 7}
+      )
+
+    :ok =
+      StatusStorage.apply_status(:player, crusader_id, :sc_devoted_by,
+        state: %{links: %{devotee_id => %{peer: {:player, devotee_id}, link_id: link_id}}}
       )
 
     reject(&PlayerSession.apply_damage/4)
@@ -477,9 +484,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       SpatialIndex.add_player(devotee_id, 50, 50, "prontera")
       SpatialIndex.add_player(crusader_id, 51, 50, "prontera")
 
+      link_id = make_ref()
+
       :ok =
         StatusStorage.apply_status(:player, devotee_id, :sc_devotion,
-          state: %{peer: {:player, crusader_id}, link_id: make_ref(), range: 7}
+          state: %{peer: {:player, crusader_id}, link_id: link_id, range: 7}
+        )
+
+      :ok =
+        StatusStorage.apply_status(:player, crusader_id, :sc_devoted_by,
+          state: %{links: %{devotee_id => %{peer: {:player, devotee_id}, link_id: link_id}}}
         )
 
       %{devotee_id: devotee_id, crusader_pid: crusader_pid}

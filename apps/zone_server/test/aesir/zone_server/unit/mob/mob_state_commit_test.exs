@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StateCommitTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -49,6 +50,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.StateCommitTest do
     snapshot = registry_state()
     assert snapshot.is_dead
     refute Unit.living?(snapshot)
+  end
+
+  test "death ends the statuses death ends; the mob's removal ends the rest" do
+    pid = start_registered_mob(hp: 10, sp: 50)
+    :ok = StatusStorage.apply_status(:mob, 1, :sc_blessing, val1: 5, duration: 60_000)
+    :ok = StatusStorage.apply_status(:mob, 1, :sc_endure, val1: 1, duration: 60_000)
+
+    MobSession.apply_damage(pid, 10, nil)
+    _ = MobSession.get_state(pid)
+
+    refute StatusStorage.has_status?(:mob, 1, :sc_blessing)
+    assert StatusStorage.has_status?(:mob, 1, :sc_endure)
+
+    :ok = GenServer.stop(pid)
+
+    assert StatusStorage.get_unit_statuses(:mob, 1) == []
   end
 
   test "heal republishes" do

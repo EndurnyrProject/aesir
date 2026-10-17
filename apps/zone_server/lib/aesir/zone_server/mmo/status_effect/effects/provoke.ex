@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Provoke do
     id: :sc_provoke,
     no_dispel: false,
     no_clear_buff: false,
+    no_save_infinite: true,
     clear_buff_flags: [:debuff, :remove_on_hermode],
     immunity: [:boss, :undead],
     properties: [:debuff],

@@ -619,8 +619,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     SpatialIndex.add_player(devotee, 50, 50, map)
     SpatialIndex.add_player(crusader, 51, 50, map)
 
+    link_id = make_ref()
+
     StatusStorage.apply_status(:player, devotee, :sc_devotion,
-      state: %{peer: {:player, crusader}, link_id: make_ref(), range: 7}
+      state: %{peer: {:player, crusader}, link_id: link_id, range: 7}
+    )
+
+    StatusStorage.apply_status(:player, crusader, :sc_devoted_by,
+      state: %{links: %{devotee => %{peer: {:player, devotee}, link_id: link_id}}}
     )
   end
 

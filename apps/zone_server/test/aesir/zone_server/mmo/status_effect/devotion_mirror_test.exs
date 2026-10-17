@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirrorTest do
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield
   alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -293,6 +295,60 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirrorTest do
         )
 
       refute StatusStorage.has_status?(:player, 4001, :sc_endure)
+    end
+  end
+
+  describe "a unit leaving the world" do
+    test "a removed Crusader's toggles end on its devotees" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+
+      {:ok, _} = CrDefender.cast(caster, :self, 2, def_of(:cr_defender))
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+      assert StatusStorage.has_status?(:player, 4001, :sc_defender)
+
+      :ok = StatusInterpreter.end_removed_unit_statuses(:player, @crusader_id)
+
+      assert StatusStorage.get_unit_statuses(:player, @crusader_id) == []
+      refute StatusStorage.has_status?(:player, 4001, :sc_defender)
+    end
+
+    test "a devotee keeps its Devotion after its Crusader leaves, until a hit finds no Crusader" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+
+      :ok = StatusInterpreter.end_removed_unit_statuses(:player, @crusader_id)
+      UnitRegistry.unregister_player(@crusader_id, self())
+      StatusInterpreter.process_tick(:player, 4001, :sc_devotion)
+
+      assert StatusStorage.has_status?(:player, 4001, :sc_devotion)
+      assert Devotion.redirect_target(4001) == :stale
+    end
+
+    test "a Crusader back in the world no longer covers a devotee it did not devote again" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+      :ok = SpatialIndex.add_player(@crusader_id, 50, 50, "prontera")
+      :ok = SpatialIndex.add_player(4001, 51, 50, "prontera")
+      assert Devotion.redirect_target(4001) == {:ok, @crusader_id}
+
+      :ok = StatusInterpreter.end_removed_unit_statuses(:player, @crusader_id)
+
+      assert Devotion.redirect_target(4001) == :stale
+    end
+
+    test "a removed devotee's link ends on its Crusader" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+
+      {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, def_of(:cr_devotion))
+      assert DevotedBy.devotee_ids(@crusader_id) == [4001]
+
+      :ok = StatusInterpreter.end_removed_unit_statuses(:player, 4001)
+
+      assert DevotedBy.devotee_ids(@crusader_id) == []
     end
   end
 

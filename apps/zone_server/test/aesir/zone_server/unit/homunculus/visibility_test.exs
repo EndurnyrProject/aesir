@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Constants.ObjectType
+  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView
@@ -281,6 +282,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
 
     StateCommit.commit(committed, %{active | lifecycle: :rested})
     refute_receive {:"$gen_cast", {:visibility, {:homunculus_left_view, 70_001}}}, 20
+  end
+
+  test "a Homunculus put to rest or killed ends its statuses through their end logic" do
+    test_pid = self()
+    stub(SkillUnit, :destroy_async, fn group_id -> send(test_pid, {:destroyed, group_id}) end)
+    active = homunculus()
+
+    for {lifecycle, group_id} <- [rested: 77, dead: 78] do
+      committed = StateCommit.commit(session(player_state(42, 100, 121)), active)
+      :ok = StatusStorage.apply_status(:homunculus, 70_001, :sc_dancing, val1: 1, val2: group_id)
+      :ok = StatusStorage.apply_status(:homunculus, 70_001, :sc_blessing, duration: 60_000)
+
+      StateCommit.commit(committed, %{active | lifecycle: lifecycle})
+
+      assert_received {:destroyed, ^group_id}
+      assert StatusStorage.get_unit_statuses(:homunculus, 70_001) == []
+    end
   end
 
   test "invalid activation validates without reading modifiers from the dummy gid" do

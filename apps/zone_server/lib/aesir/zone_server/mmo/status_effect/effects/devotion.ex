@@ -15,10 +15,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
     * ending this record detaches the devotee from the Crusader's `sc_devoted_by`
       map for the same link id. When `peer` has been nulled by the Crusader-side
       cascade the detach is a no-op, terminating the echo;
-    * a per-second tick removes the record once the Crusader's entry no longer
-      carries a matching link, or the Crusader unit has vanished - the case a
-      terminating session that cleared status storage directly leaves behind;
-    * the finite 30xlv second duration is the final backstop.
+    * a hit on the devotee ends the record when its Crusader is gone, no longer
+      devotes it (a Crusader back in the world starts with no devotees), or
+      stands out of range (`redirect_target/1` returning `:stale`);
+    * a per-second tick ends it once the Crusader died;
+    * otherwise it runs its finite 30xlv second duration: a Crusader leaving
+      the world does not end it.
 
   Ending this record also ends the devotee's Guard, Defending Aura, Reflect
   Shield and Endure, whoever started them (`DevotionMirror.end_inherited/1`).
@@ -55,7 +57,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   calls - so the damage pipeline can decide in the attacker's own process:
 
     * `{:ok, crusader_id}` when the devotee holds an `sc_devotion` whose Crusader
-      is alive, on the same map, and within the stored redirect range;
+      is alive, still devotes it, on the same map, and within the stored
+      redirect range;
     * `:stale` when a link exists but fails that pull-check (the caller should
       tear both sides down and apply damage normally);
     * `:none` when the devotee holds no devotion link.
@@ -63,8 +66,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   @spec redirect_target(non_neg_integer()) :: {:ok, non_neg_integer()} | :stale | :none
   def redirect_target(devotee_id) do
     case StatusStorage.get_status(:player, devotee_id, :sc_devotion) do
-      %StatusEntry{state: %{peer: {:player, crusader_id}, range: range}} ->
-        if link_valid?(devotee_id, crusader_id, range), do: {:ok, crusader_id}, else: :stale
+      %StatusEntry{state: %{peer: {:player, crusader_id}, range: _} = state} ->
+        if link_valid?(devotee_id, state), do: {:ok, crusader_id}, else: :stale
 
       _ ->
         :none
@@ -114,8 +117,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
   end
 
   @impl true
-  def on_tick({_type, devotee_id}, %StatusEntry{state: state} = instance, _context) do
-    if peer_intact?(devotee_id, state), do: {:ok, instance}, else: :remove
+  def on_tick(_target, %StatusEntry{state: state} = instance, _context) do
+    if crusader_dead?(state), do: :remove, else: {:ok, instance}
   end
 
   # Detaches this devotee from the Crusader's provider entry. A nulled peer -
@@ -126,14 +129,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
 
   defp detach(_devotee_id, _state), do: :ok
 
-  defp peer_intact?(devotee_id, %{peer: {:player, crusader_id}, link_id: link_id}) do
-    provider_matches?(crusader_id, devotee_id, link_id) and alive?(crusader_id)
+  defp crusader_dead?(%{peer: {:player, crusader_id}}) do
+    case UnitRegistry.get_unit(:player, crusader_id) do
+      {:ok, {_module, state, _pid}} -> not Unit.living?(state)
+      {:error, :not_found} -> false
+    end
   end
 
-  defp peer_intact?(_devotee_id, _state), do: false
+  defp crusader_dead?(_state), do: false
 
-  defp link_valid?(devotee_id, crusader_id, range) do
-    alive?(crusader_id) and within_range?(devotee_id, crusader_id, range)
+  defp link_valid?(devotee_id, %{peer: {:player, crusader_id}, link_id: link_id, range: range}) do
+    alive?(crusader_id) and provider_matches?(crusader_id, devotee_id, link_id) and
+      within_range?(devotee_id, crusader_id, range)
   end
 
   # Same-map, within-range pull-check. The pinned map on the Crusader lookup

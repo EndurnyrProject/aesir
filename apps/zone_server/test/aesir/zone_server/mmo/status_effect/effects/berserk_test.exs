@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BerserkTest do
 
   test "natural expiry caps HP at 100 and removes only Berserk-owned Endure" do
     :ok = StatusStorage.apply_status(:player, 5, :sc_endure, val4: 1, duration: 300_000)
+    stub(Interpreter, :apply_status, fn :player, 5, :sc_regeneration, _params -> :ok end)
     expect(Helpers, :set_vitals, fn {:player, 5}, [hp: 100] -> :ok end)
     expect(Interpreter, :remove_status, fn :player, 5, :sc_endure -> :ok end)
 
@@ -88,6 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BerserkTest do
 
   test "a disarmed penalty leaves HP unchanged but still removes Berserk-owned Endure" do
     :ok = StatusStorage.apply_status(:player, 5, :sc_endure, val4: 1, duration: 300_000)
+    stub(Interpreter, :apply_status, fn :player, 5, :sc_regeneration, _params -> :ok end)
     reject(&Helpers.set_vitals/2)
     expect(Interpreter, :remove_status, fn :player, 5, :sc_endure -> :ok end)
 
@@ -101,10 +103,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BerserkTest do
 
   test "expiry preserves an unrelated finite Endure" do
     :ok = StatusStorage.apply_status(:player, 5, :sc_endure, val4: 0, duration: 30_000)
+    stub(Interpreter, :apply_status, fn :player, 5, :sc_regeneration, _params -> :ok end)
     reject(&Helpers.set_vitals/2)
     reject(&Interpreter.remove_status/3)
     assert :ok = Berserk.on_expire({:player, 5}, %StatusEntry{}, %{target: %{hp: 100}})
     assert StatusStorage.has_status?(:player, 5, :sc_endure)
+  end
+
+  test "ending Berserk blocks HP and SP regeneration for the skill's duration" do
+    stub(Helpers, :set_vitals, fn _target, _opts -> :ok end)
+
+    expect(Interpreter, :apply_status, fn :player, 5, :sc_regeneration, params ->
+      assert params[:val1] == 10
+      assert params[:val4] == 3
+      assert params[:duration] == 300_000
+      assert params[:caster_id] == 5
+      :ok
+    end)
+
+    assert :ok = Berserk.on_expire({:player, 5}, %StatusEntry{val1: 1}, %{target: %{hp: 2_000}})
+  end
+
+  test "a holder gone from the world starts no Regeneration" do
+    reject(&Interpreter.apply_status/4)
+
+    assert :ok = Berserk.on_expire({:player, 5}, %StatusEntry{val1: 1}, %{target: %{}})
   end
 
   defp shared_modifiers do

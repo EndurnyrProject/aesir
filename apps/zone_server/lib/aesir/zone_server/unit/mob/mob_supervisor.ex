@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
 
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Starts the mob supervisor for a specific map.
@@ -125,9 +124,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   Kills every mob on `map_name` matching `filter` (rAthena `killmonster`):
   `:all` kills every script-summoned mob (a `respawn_time`-0 spawn ref), and a
   binary event label kills mobs summoned with that owner event. Matching mobs
-  are removed without firing their death event or scheduling a respawn — the
-  registry entry is cleared and the process terminated (its `terminate/2`
-  drops the spatial index entry and notifies nearby players).
+  are removed without firing their death event or scheduling a respawn, through
+  `MobSession.script_kill/1`: their death and removal end their statuses, and
+  the session's `terminate/2` drops the spatial index entry and notifies nearby
+  players.
 
   Runs in the caller's process; a mob that dies concurrently is skipped.
   """
@@ -139,10 +139,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
       try do
         mob = MobSession.get_state(pid)
 
-        if kill_match?(mob, filter) do
-          UnitRegistry.unregister_unit(:mob, mob.instance_id)
-          terminate_mob(map_name, pid)
-        end
+        if kill_match?(mob, filter), do: MobSession.script_kill(pid)
       catch
         :exit, _ -> :ok
       end
@@ -161,8 +158,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   @doc """
   Kills every mob on `map_name`, spawn-table mobs included (rAthena
   `killmonsterall`), without firing their death event or scheduling a
-  respawn — the registry entry is cleared and the process terminated, exactly
-  as `kill_by_event/2` but with no spawn-type filter. A map without a running
+  respawn, exactly as `kill_by_event/2` but with no spawn-type filter. A map
+  without a running
   mob supervisor kills nothing.
 
   Runs in the caller's process; a mob that dies concurrently is skipped.
@@ -173,10 +170,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
     |> get_mob_processes()
     |> Enum.each(fn pid ->
       try do
-        mob = MobSession.get_state(pid)
-
-        UnitRegistry.unregister_unit(:mob, mob.instance_id)
-        terminate_mob(map_name, pid)
+        MobSession.script_kill(pid)
       catch
         :exit, _ -> :ok
       end

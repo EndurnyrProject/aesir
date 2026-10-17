@@ -8,8 +8,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   alias Aesir.ZoneServer.Mmo.Homunculus.LifecycleSkills
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -406,8 +406,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
     do: remove_world_presence(homunculus, :out_of_sight)
 
   defp remove_world_presence(%HomunculusState{world_gid: gid} = homunculus, reason) do
+    if reason == :dead,
+      do: StatusInterpreter.remove_on_death(:homunculus, gid, owner_refresh: :defer)
+
     clear_spatial_presence(homunculus, reason)
-    StatusStorage.clear_unit_statuses(:homunculus, gid)
+    StatusInterpreter.end_removed_unit_statuses(:homunculus, gid)
     UnitRegistry.unregister_unit(:homunculus, gid)
   end
 

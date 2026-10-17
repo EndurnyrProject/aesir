@@ -400,6 +400,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       assert StatusStorage.get_unit_statuses(:player, @player_id) == []
     end
 
+    test "an orphan's statuses end through their end logic" do
+      test_pid = self()
+      stub(UnitRegistry, :unit_exists?, fn :mob, @mob_id -> false end)
+
+      stub(Aesir.ZoneServer.Mmo.Skill.Unit, :destroy_async, fn group_id ->
+        send(test_pid, {:destroyed, group_id})
+      end)
+
+      :ok = StatusStorage.apply_status(:mob, @mob_id, :sc_dancing, val1: 1, val2: 77)
+      :ok = StatusStorage.apply_status(:mob, @mob_id, @status)
+      :ok = StatusStorage.update_next_tick(:mob, @mob_id, @status, past())
+
+      tick()
+
+      assert_received {:destroyed, 77}
+      assert StatusStorage.get_unit_statuses(:mob, @mob_id) == []
+    end
+
     test "the tick manager keeps processing other units after clearing an orphan" do
       test_pid = self()
       stub(UnitRegistry, :unit_exists?, fn _type, id -> id == @mob_id end)

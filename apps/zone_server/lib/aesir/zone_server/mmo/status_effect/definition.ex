@@ -54,6 +54,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:duration` - base duration in milliseconds
     - `:permanent` - when true, the status never auto-expires (ignores duration)
     - `:no_save` - when true, the status is not persisted across logout
+    - `:no_save_infinite` - when true, a logout ends the status before saving
+      while it is infinite (`val4` set or no expiry)
     - `:remove_on_map_change` - when true, a cross-map warp ends the status through
       the ordinary removal path (mirrors rAthena's `SCF_REMOVEONCHGMAP`); use it for
       statuses tied to a specific location or a live pairing that cannot survive the
@@ -415,6 +417,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     duration: nil,
     permanent: false,
     no_save: false,
+    no_save_infinite: false,
     remove_on_map_change: false,
     remove_on_death: true,
     engine_only: false,
@@ -449,6 +452,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     duration: {:integer, {:gt, 0}},
     permanent: :boolean,
     no_save: :boolean,
+    no_save_infinite: :boolean,
     remove_on_map_change: :boolean,
     remove_on_death: :boolean,
     no_dispel: {:required, :boolean},

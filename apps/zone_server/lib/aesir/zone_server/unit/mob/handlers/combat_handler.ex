@@ -180,6 +180,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
+  @doc """
+  A script kill: the statuses death ends end, the mob leaves the registry and
+  its session stops, whose removal ends the remaining statuses. No death event,
+  reward or respawn follows.
+  """
+  @spec handle_script_kill(MobState.t()) :: {:stop, :normal, :ok, MobState.t()}
+  def handle_script_kill(state) do
+    StatusInterpreter.remove_on_death(:mob, state.instance_id)
+    UnitRegistry.unregister_unit(:mob, state.instance_id)
+    {:stop, :normal, :ok, state}
+  end
+
   @doc "Applies nonlethal equipment vanish from a max-HP percentage."
   @spec handle_vanish(non_neg_integer(), tuple(), MobState.t()) :: {:noreply, MobState.t()}
   def handle_vanish(_hp_percent, _source, %{is_dead: true} = state), do: {:noreply, state}
@@ -229,9 +241,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   @doc """
   Recomputes the HP ceiling after a `:max_hp_rate` status (SC_DELUGE and kin)
   is applied or removed, publishing and broadcasting only when it moved.
-  Ordinary status ticks are gated out by the status's `calc_flags`.
+  Ordinary status ticks are gated out by the status's `calc_flags`. A dead
+  monster, whose statuses end at its death and removal, has no ceiling to move.
   """
   @spec handle_max_hp_status(atom(), MobState.t()) :: MobState.t()
+  def handle_max_hp_status(_status_id, %{is_dead: true} = state), do: state
+
   def handle_max_hp_status(status_id, state) do
     if max_hp_status?(status_id) do
       updated = state |> MobState.recalculate_max_hp() |> StateCommit.commit()
@@ -327,6 +342,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       |> MobState.advance_deferred_epoch()
       |> MobState.set_dead()
       |> StateCommit.commit()
+
+    StatusInterpreter.remove_on_death(:mob, state.instance_id)
 
     # Notify nearby players of mob death
     SpawnView.notify_despawn(updated_state)

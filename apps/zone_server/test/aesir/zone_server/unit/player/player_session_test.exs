@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -1238,6 +1239,91 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       refute 1 in SpatialIndex.get_players_on_map("prontera")
       refute SpatialIndex.can_see?(1, 2)
       refute_receive {:unit_lifecycle, %Event{}}
+    end
+
+    test "ends unsaved statuses before saving and the rest after, through their end logic", %{
+      character: character
+    } do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      :ok = StatusStorage.apply_status(:player, 1, :sc_blessing, val1: 5, duration: 60_000)
+      :ok = StatusStorage.apply_status(:player, 1, :sc_auto_counter, val1: 1, duration: 60_000)
+      test_pid = self()
+
+      expect(StatusPersistence, :save_statuses, fn 1 ->
+        send(test_pid, {:saved, Enum.map(StatusStorage.get_unit_statuses(:player, 1), & &1.type)})
+        :ok
+      end)
+
+      assert :ok = PlayerSession.terminate(:normal, state)
+
+      assert_received {:saved, [:sc_blessing]}
+      assert StatusStorage.get_unit_statuses(:player, 1) == []
+    end
+
+    test "a logout ending Berserk persists its HP penalty before the save", %{
+      character: character
+    } do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      stats = state.game_state.stats
+
+      stats = %{
+        stats
+        | current_state: %{stats.current_state | hp: 900},
+          derived_stats: %{stats.derived_stats | max_hp: 1_000}
+      }
+
+      state = %{state | game_state: %{state.game_state | stats: stats}}
+      :ok = UnitRegistry.update_unit_state(:player, 1, state.game_state)
+      test_pid = self()
+
+      :ok =
+        StatusStorage.apply_status(:player, 1, :sc_berserk,
+          val1: 1,
+          duration: 60_000,
+          state: %{penalty_armed: true}
+        )
+
+      stub(CharacterPersistence, :update_stats, fn 1, fields, opts ->
+        send(test_pid, {:persisted, fields, opts})
+        {:ok, %Character{}}
+      end)
+
+      expect(StatusPersistence, :save_statuses, fn 1 ->
+        send(test_pid, {:saved, StatusStorage.get_status(:player, 1, :sc_regeneration)})
+        :ok
+      end)
+
+      assert :ok = PlayerSession.terminate(:normal, state)
+
+      assert_received {:persisted, %{hp: 100}, opts}
+      refute Keyword.get(opts, :async, false)
+      assert {:messages, messages} = Process.info(self(), :messages)
+      refute Enum.any?(messages, &match?({:persisted, _, _}, &1))
+      assert_received {:saved, %StatusEntry{val1: 10, val4: 3}}
+    end
+
+    test "a logout ends infinite statuses the save skips, keeping a refused infinite Endure", %{
+      character: character
+    } do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      test_pid = self()
+
+      :ok =
+        StatusStorage.apply_status(:player, 1, :sc_provoke, val1: 1, val4: 1, duration: 60_000)
+
+      :ok = StatusStorage.apply_status(:player, 1, :sc_regeneration, val1: 1, duration: 60_000)
+      :ok = StatusStorage.apply_status(:player, 1, :sc_endure, val1: 1, val4: 1, duration: 60_000)
+
+      expect(StatusPersistence, :save_statuses, fn 1 ->
+        types = Enum.map(StatusStorage.get_unit_statuses(:player, 1), & &1.type)
+        send(test_pid, {:saved, Enum.sort(types)})
+        :ok
+      end)
+
+      assert :ok = PlayerSession.terminate(:normal, state)
+
+      assert_received {:saved, [:sc_endure, :sc_regeneration]}
+      assert StatusStorage.get_unit_statuses(:player, 1) == []
     end
 
     test "publishes termination for an abnormal session stop", %{character: character} do
