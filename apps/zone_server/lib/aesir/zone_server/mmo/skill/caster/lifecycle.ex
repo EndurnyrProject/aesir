@@ -36,9 +36,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle do
   @callback cost_before_validation?() :: boolean()
   @callback cost(state(), module(), Active.target(), Definition.t(), pos_integer()) ::
               {:ok, prepared()} | {:error, atom()}
+  @doc """
+  Optional cast-end requirement check: prepares the cost a cast spends when it
+  ends, checking only the requirements due there. An adapter without it
+  prepares the cast end with `cost/5`.
+  """
+  @callback castend_cost(state(), module(), Active.target(), Definition.t(), pos_integer()) ::
+              {:ok, prepared()} | {:error, atom()}
   @callback commit(state(), prepared()) :: state()
   @callback cooldown_ready?(state(), integer(), integer(), phase()) :: boolean()
   @callback put_cooldown(state(), integer(), integer()) :: state()
   @callback act_ready?(state(), integer()) :: boolean()
   @callback cast_stats(state(), integer()) :: cast_stats()
+
+  @optional_callbacks castend_cost: 5
 end

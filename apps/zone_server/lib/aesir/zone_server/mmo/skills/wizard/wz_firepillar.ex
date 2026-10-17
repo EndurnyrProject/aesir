@@ -8,10 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
   on Land Protector ends without becoming active.
 
   The burst strikes level plus 2 times at 40% plus 20% per level MATK (a player's damage
-  is split across the hits) for 75 SP, needing a Blue Gemstone from level 6. The
-  level-gated gemstone is checked locally because the item cost field cannot express a
-  level threshold. Renewal casts in 0.19 to 1.92 s plus a fixed part; pre-renewal in
-  0.3 to 3 s. The two modes otherwise agree.
+  is split across the hits) for 75 SP, needing a Blue Gemstone from level 6
+  (`dynamic_item_cost/4`, as the item cost field cannot express a level threshold).
+  Renewal casts in 0.19 to 1.92 s plus a fixed part; pre-renewal in 0.3 to 3 s. The
+  two modes otherwise agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 80,
@@ -47,28 +47,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
-  alias Aesir.ZoneServer.Unit.ItemContainer
 
   @blue_gemstone 717
   @active_duration 1_000
   @behaviour Ground
 
-  @doc false
-  @spec validate(map(), term(), pos_integer(), struct()) :: :ok | {:error, :missing_catalyst}
-  def validate(%{inventory: _inventory}, _target, level, _definition) when level < 6, do: :ok
+  @doc "Fire Pillar needs one Blue Gemstone from level 6."
+  @spec dynamic_item_cost(map(), term(), pos_integer(), struct()) :: [map()]
+  def dynamic_item_cost(_caster, _target, level, _definition) when level < 6, do: []
 
-  def validate(%{inventory: inventory}, _target, _level, _definition) do
-    if ItemContainer.held_amount(inventory, @blue_gemstone) > 0,
-      do: :ok,
-      else: {:error, :missing_catalyst}
-  end
+  def dynamic_item_cost(_caster, _target, _level, _definition),
+    do: [%{id: @blue_gemstone, amount: 1}]
 
   @doc false
   @spec cast(map(), {:ground, integer(), integer()}, pos_integer(), struct()) ::
           {:ok, map()} | {:error, term()}
   def cast(caster, {:ground, x, y}, level, _definition) do
     case Unit.place(caster, :wz_firepillar, level, {x, y}) do
-      {:ok, _group} -> {:ok, consume_blue_gemstone(caster, level)}
+      {:ok, _group} -> {:ok, caster}
       {:error, _reason} = error -> error
     end
   end
@@ -181,23 +177,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
 
   @spec skill_ratio(pos_integer()) :: pos_integer()
   defp skill_ratio(level), do: 40 + 20 * level
-
-  defp consume_blue_gemstone(caster, level) when level < 6, do: caster
-
-  defp consume_blue_gemstone(caster, _level) do
-    case ItemContainer.stackable_index(caster.inventory, @blue_gemstone) do
-      nil ->
-        caster
-
-      index ->
-        {:ok, inventory, change} = ItemContainer.remove(caster.inventory, index, 1)
-
-        %{
-          caster
-          | inventory: inventory,
-            pending_inventory_persist:
-              caster.pending_inventory_persist ++ [{caster.inventory, inventory, change}]
-        }
-    end
-  end
 end

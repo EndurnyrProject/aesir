@@ -102,21 +102,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   end
 
   defp validate_resources(game_state, cost) do
-    current = game_state.stats.current_state
-
-    cond do
-      cost.hp > 0 and Map.get(current, :hp, 0) <= cost.hp ->
-        {:error, :insufficient_hp}
-
-      Map.get(current, :sp, 0) < max(cost.sp_requirement, cost.sp) ->
-        {:error, :insufficient_sp}
-
-      available_spheres(game_state) < cost.spheres ->
-        {:error, :insufficient_spirit_spheres}
-
-      true ->
-        :ok
+    with :ok <- check_hp(game_state, cost),
+         :ok <- check_sp(game_state, cost) do
+      check_spheres(game_state, cost)
     end
+  end
+
+  @doc "Fails a resolved cost whose HP charge would leave the caster at or below zero."
+  @spec check_hp(map(), t()) :: :ok | {:error, :insufficient_hp}
+  def check_hp(game_state, %__MODULE__{hp: hp}) do
+    if hp > 0 and Map.get(game_state.stats.current_state, :hp, 0) <= hp,
+      do: {:error, :insufficient_hp},
+      else: :ok
+  end
+
+  @doc "Fails a resolved cost whose SP requirement or charge exceeds the caster's SP."
+  @spec check_sp(map(), t()) :: :ok | {:error, :insufficient_sp}
+  def check_sp(game_state, %__MODULE__{sp_requirement: requirement, sp: sp}) do
+    if Map.get(game_state.stats.current_state, :sp, 0) < max(requirement, sp),
+      do: {:error, :insufficient_sp},
+      else: :ok
+  end
+
+  @doc "Fails a resolved cost needing more spirit spheres than the caster holds."
+  @spec check_spheres(map(), t()) :: :ok | {:error, :insufficient_spirit_spheres}
+  def check_spheres(game_state, %__MODULE__{spheres: spheres}) do
+    if available_spheres(game_state) < spheres,
+      do: {:error, :insufficient_spirit_spheres},
+      else: :ok
   end
 
   @spec prepare(map(), t()) :: {:ok, Commitment.t()} | {:error, resource_error()}

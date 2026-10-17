@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
       assert {:ok, defn} = Catalog.by_id(31)
       assert defn.max_level == 1
       assert defn.target_type == :self
+      assert defn.item_cost == []
       assert defn.sp_cost == [10]
       assert defn.cast_time == [800]
       assert defn.fixed_cast_time == [200]
@@ -83,25 +85,44 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
     end
   end
 
+  describe "begin_attempt/4" do
+    test "starts only while the caster holds an Empty Bottle" do
+      {:ok, definition} = Catalog.by_id(31)
+
+      assert {:error, :no_empty_bottle} =
+               AlHolywater.begin_attempt(@caster, :self, 1, definition)
+
+      holder = %{@caster | inventory: %{0 => %InventoryItem{nameid: 713, amount: 1}}}
+      assert {:ok, ^holder} = AlHolywater.begin_attempt(holder, :self, 1, definition)
+    end
+  end
+
   describe "cast/4" do
-    test "adds Holy Water (id 523) to inventory and stages the change for client notify" do
+    defp holder(bottles, extra \\ %{}) do
+      inventory = Map.merge(%{0 => %InventoryItem{nameid: 713, amount: bottles}}, extra)
+      Map.merge(@caster, %{inventory: inventory, pending_inventory_persist: []})
+    end
+
+    test "consumes one Empty Bottle and adds one Holy Water (id 523)" do
       {:ok, definition} = Catalog.by_id(31)
       item_def = %{id: 523, weight: 30}
-      new_inventory = %{0 => %{nameid: 523, amount: 1}}
-      change = {:added, 0, %{nameid: 523, amount: 1}}
+      caster = holder(2)
+      change = {:added, 1, %{nameid: 523, amount: 1}}
 
       expect(ItemManagement, :get_item_by_id, fn 523 -> {:ok, item_def} end)
 
-      expect(InventoryOps, :add, fn 1000, _inventory, _stats, ^item_def, 1 ->
-        {:ok, new_inventory, change}
+      expect(InventoryOps, :add, fn 1000, inventory, _stats, ^item_def, 1 ->
+        assert %{0 => %InventoryItem{nameid: 713, amount: 1}} = inventory
+        {:ok, Map.put(inventory, 1, %{nameid: 523, amount: 1}), change}
       end)
 
-      assert {:ok, updated} = AlHolywater.cast(@caster, :self, 1, definition)
-      assert updated.inventory == new_inventory
+      assert {:ok, updated} = AlHolywater.cast(caster, :self, 1, definition)
+      assert %{0 => %InventoryItem{amount: 1}, 1 => %{nameid: 523}} = updated.inventory
+      assert [{_before, _after, {:reduced, 0, 1}}] = updated.pending_inventory_persist
       assert updated.pending_inventory_notify == [change]
     end
 
-    test "propagates {:error, :overweight} when carry limit is exceeded" do
+    test "a Holy Water that cannot be carried is lost with its bottle" do
       {:ok, definition} = Catalog.by_id(31)
       item_def = %{id: 523, weight: 30}
 
@@ -111,7 +132,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
         {:error, :overweight}
       end)
 
-      assert {:error, :overweight} = AlHolywater.cast(@caster, :self, 1, definition)
+      assert {:ok, updated} = AlHolywater.cast(holder(1), :self, 1, definition)
+      assert updated.inventory == %{}
+      assert updated.pending_inventory_notify == []
+    end
+
+    test "fails after the requirement when no Empty Bottle is left" do
+      {:ok, definition} = Catalog.by_id(31)
+      reject(&InventoryOps.add/5)
+
+      assert {:failed, @caster, :brew_failed} = AlHolywater.cast(@caster, :self, 1, definition)
+    end
+
+    test "fails before taking the bottle when the Holy Water stack is full" do
+      {:ok, definition} = Catalog.by_id(31)
+      reject(&InventoryOps.add/5)
+      caster = holder(1, %{1 => %InventoryItem{nameid: 523, amount: 30_000}})
+
+      assert {:failed, ^caster, :brew_failed} = AlHolywater.cast(caster, :self, 1, definition)
     end
   end
 end

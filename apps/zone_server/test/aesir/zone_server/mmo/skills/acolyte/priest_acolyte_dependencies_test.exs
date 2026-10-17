@@ -172,7 +172,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.PriestAcolyteDependenciesTest do
         fixed_cast_time: [200],
         after_cast_delay: [500],
         sp_cost: [10],
-        item_cost: [%{id: 713, amount: 1}]
+        item_cost: []
       },
       module: AlHolywater,
       evidence: "db/re/skill_db.yml:1515-1529; skills/acolyte/holywater.cpp:12-29 water craft"

@@ -226,6 +226,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         {:noreply, resolve_deferred(state, new_game_state, descriptor, nil)}
 
+      {:failed, new_game_state, reason} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
+        {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, reason)}
+
       {:error, reason} ->
         report_cast_failure(skill_id, state.game_state.character_id, reason)
         {:noreply, state}
@@ -310,9 +314,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
            expected_id
          )}
 
+      {:failed, new_game_state, reason} ->
+        new_state =
+          commit_spent_failure(state, new_game_state, ctx.skill_id, ctx.skill_level, reason)
+
+        resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
+        {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
+
       {:error, reason} ->
         reject_completed_cast(state, game_state, ctx.skill_id, reason)
     end
+  end
+
+  # The effect failed after its requirement was spent: the spend commits like a
+  # cast, but the caster sees the failure instead of the skill.
+  defp commit_spent_failure(state, new_game_state, skill_id, level, reason) do
+    new_state = commit_cast(state, new_game_state, skill_id, level)
+    report_cast_failure(skill_id, new_state.game_state.character_id, reason)
+    new_state
   end
 
   defp reject_completed_cast(state, game_state, skill_id, reason) do
@@ -585,6 +604,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         sync_cast_start_stats(state, game_state, new_game_state)
         schedule_cast(%{state | game_state: new_game_state}, info, locked)
 
+      {:failed, new_game_state, reason} ->
+        sync_cast_start_stats(state, game_state, new_game_state)
+        {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, reason)}
+
+      error ->
+        handle_begin_error(state, game_state, skill_id, level, target, locked, error)
+    end
+  end
+
+  defp handle_begin_error(state, game_state, skill_id, level, target, locked, error) do
+    case error do
       {:error, :out_of_range, refreshed} ->
         committed = commit_failed_attempt(state, game_state, refreshed, skill_id, :out_of_range)
         initiate_skill_movement(committed, skill_id, level, target, locked)

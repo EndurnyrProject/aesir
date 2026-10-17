@@ -166,13 +166,95 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   @impl true
   def cost(caster, module, target, definition, level) do
+    with {:ok, definition, cost, zeny} <-
+           resolve_requirement(caster, module, target, definition, level) do
+      prepare_begin_cost(caster, module, definition, cost, zeny)
+    end
+  end
+
+  @impl true
+  def castend_cost(caster, module, target, definition, level) do
+    with {:ok, definition, cost, zeny} <-
+           resolve_requirement(caster, module, target, definition, level) do
+      prepare_castend_cost(caster, module, target, level, definition, cost, zeny)
+    end
+  end
+
+  defp resolve_requirement(caster, module, target, definition, level) do
     definition = item_cost_definition(caster, module, target, level, definition)
 
     with {:ok, cost} <- resolve_cost(caster, module, target, level, definition) do
       zeny = effective_zeny_cost(caster, Enum.at(definition.zeny_cost, level - 1, 0))
-      prepare_cost(caster, module, definition, cost, zeny)
+      {:ok, definition, cost, zeny}
     end
   end
+
+  @doc """
+  Checks a resolved cost's cast-begin requirements in order: SP, zeny, then
+  spirit spheres. HP, ammo and items wait for the cast end.
+  """
+  @spec prepare_begin_cost(PlayerState.t(), module(), map(), Cost.t(), non_neg_integer()) ::
+          {:ok, map()} | {:error, atom()}
+  def prepare_begin_cost(caster, module, definition, cost, zeny) do
+    with :ok <- Cost.check_sp(caster, cost),
+         :ok <- check_zeny(caster, zeny),
+         :ok <- Cost.check_spheres(caster, cost) do
+      {:ok, prepared(caster, module, definition, cost, zeny)}
+    end
+  end
+
+  @doc """
+  Checks a resolved cost's cast-end requirements in order: the skill's own
+  cast-end requirement, HP, weapon, ammo, then items. SP, zeny and spheres are
+  not checked again; the commitment spends each up to what the caster holds.
+  """
+  @spec prepare_castend_cost(
+          PlayerState.t(),
+          module(),
+          term(),
+          pos_integer(),
+          map(),
+          Cost.t(),
+          non_neg_integer()
+        ) :: {:ok, map()} | {:error, atom()}
+  def prepare_castend_cost(caster, module, target, level, definition, cost, zeny) do
+    with :ok <- castend_requirement(module, caster, target, level, definition),
+         :ok <- Cost.check_hp(caster, cost),
+         :ok <- check_weapon(caster, definition),
+         :ok <- check_ammo(caster, definition),
+         :ok <- check_catalysts(caster, definition) do
+      {:ok, prepared(caster, module, definition, cost, min(zeny, caster.zeny))}
+    end
+  end
+
+  defp castend_requirement(module, caster, target, level, definition) do
+    if function_exported?(module, :castend_requirement, 4),
+      do: module.castend_requirement(caster, target, level, definition),
+      else: :ok
+  end
+
+  defp prepared(caster, module, definition, cost, zeny) do
+    %{
+      definition: definition,
+      module: module,
+      cost: cost,
+      commitment: Cost.prepare_clamped(caster, cost),
+      zeny: zeny,
+      consume_catalysts?: true
+    }
+  end
+
+  @doc "Fails a player whose equipped weapon type the skill does not allow."
+  @spec check_weapon(map(), map()) :: :ok | {:error, :wrong_weapon}
+  def check_weapon(_caster, %{require_weapon: []}), do: :ok
+
+  def check_weapon(%{stats: %{equipment: equipment}}, %{require_weapon: allowed}) do
+    if PlayerStats.weapon_type(equipment) in allowed,
+      do: :ok,
+      else: {:error, :wrong_weapon}
+  end
+
+  def check_weapon(_caster, _definition), do: :ok
 
   @doc """
   Consumes a skill's requirement for an equipment proc, before its effect.
@@ -201,25 +283,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   defp waive_proc_sp(cost, %{id: @holy_light}), do: cost
   defp waive_proc_sp(cost, _definition), do: %{cost | sp: 0, sp_requirement: 0}
 
-  @doc false
-  @spec prepare_cost(PlayerState.t(), module(), map(), Cost.t(), non_neg_integer()) ::
-          {:ok, map()} | {:error, atom()}
-  def prepare_cost(caster, module, definition, cost, zeny) do
-    with {:ok, commitment} <- Cost.prepare(caster, cost),
-         :ok <- check_zeny(caster, zeny),
-         :ok <- check_catalysts(caster, definition),
-         :ok <- check_ammo(caster, definition) do
-      {:ok,
-       %{
-         definition: definition,
-         module: module,
-         cost: cost,
-         commitment: commitment,
-         zeny: zeny,
-         consume_catalysts?: true
-       }}
-    end
-  end
+  @doc """
+  Prepares a deferred cast's settlement without checking anything again: its
+  requirements were checked when the cast ended, so the SP, HP, spheres and
+  zeny are each spent up to what the caster holds.
+  """
+  @spec prepare_settlement(PlayerState.t(), module(), map(), Cost.t(), non_neg_integer()) ::
+          map()
+  def prepare_settlement(caster, module, definition, cost, zeny),
+    do: prepared(caster, module, definition, cost, min(zeny, caster.zeny))
 
   @doc """
   Spends a prepared cost's HP, SP and spheres ahead of the effect and returns

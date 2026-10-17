@@ -50,16 +50,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
     assert AsVenomknife.skill_ratio() == 100
   end
 
-  test "validation requires the equipped Venom Knife item" do
+  test "the cast end requires the equipped Venom Knife item" do
     definition = AsVenomknife.definition()
     venom_knife = %InventoryItem{nameid: 1771, amount: 2, equip: 0x008000}
     arrow = %InventoryItem{nameid: 1750, amount: 2, equip: 0x008000}
 
     assert {:error, :no_ammo} =
-             AsVenomknife.validate(%PlayerState{inventory: %{}}, {:unit, 2_000}, 1, definition)
+             AsVenomknife.castend_requirement(
+               %PlayerState{inventory: %{}},
+               {:unit, 2_000},
+               1,
+               definition
+             )
 
     assert {:error, :wrong_ammo} =
-             AsVenomknife.validate(
+             AsVenomknife.castend_requirement(
                %PlayerState{inventory: %{1 => arrow}},
                {:unit, 2_000},
                1,
@@ -67,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
              )
 
     assert :ok =
-             AsVenomknife.validate(
+             AsVenomknife.castend_requirement(
                %PlayerState{inventory: %{1 => venom_knife}},
                {:unit, 2_000},
                1,

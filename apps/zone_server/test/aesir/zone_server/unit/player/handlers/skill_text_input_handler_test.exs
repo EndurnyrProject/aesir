@@ -146,26 +146,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
     refute_received {:send, _, {:move_stop, _}}
   end
 
-  test "moving without a required catalyst stages nothing and does not stop or mutate movement" do
+  test "a missing catalyst does not block staging, which checks only cast-begin requirements" do
     stub(Catalog, :by_id, fn 9_001 ->
       {:ok, definition(item_cost: [%{id: 716, amount: 1}])}
     end)
 
-    expect(Broadcast, :to_player, fn 1000,
-                                     %SkillCastFailed{
-                                       reason: :SKILL_CAST_FAILURE_REASON_MISSING_CATALYST
-                                     } ->
-      :ok
-    end)
-
     initial = moving_state(10)
 
-    assert {:noreply, rejected} =
+    assert {:noreply, staged} =
              SkillHandler.handle_use_skill_ground(initial, 9_001, 1, 151, 150)
 
-    assert rejected == initial
-    refute_received {:send, _, {:skill_text_input_request, _}}
+    assert staged.game_state == initial.game_state
+    assert staged.pending_skill_text_input.skill_id == 9_001
     refute_received {:send, _, {:move_stop, _}}
+    SkillTextInputHandler.clear(staged)
   end
 
   test "successful moving staging preserves the entire game state" do

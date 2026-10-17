@@ -2,16 +2,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @moduledoc """
   Orchestrates a skill cast across two phases.
 
-  `begin_cast/4` runs the full validation chain and computes the active mode's
-  cast time; a zero-cast skill resolves immediately, a timed skill returns a
+  `begin_cast/4` runs the full validation chain with the cast-begin
+  requirements (SP, zeny, spirit spheres) and computes the active mode's cast
+  time; a zero-cast skill resolves immediately, a timed skill returns a
   `cast_info` for the caller to schedule and leaves the game state untouched
   (no SP deducted, no cooldown set). `complete_cast/4` re-validates the target,
-  re-checks SP, runs the behavior, then deducts SP, sets the cooldown, and arms
-  the after-cast act delay.
+  checks the cast-end requirements (the skill's own, HP, weapon, ammo, items),
+  runs the behavior, then spends the SP, zeny and spheres up to what the caster
+  holds, sets the cooldown, and arms the after-cast act delay. An instant cast
+  runs its cast-start effects, then the same cast end.
 
-  Validate-then-cast-then-charge: SP is only consumed at castend, so a failed
-  or interrupted cast never charges SP. Starting any cast is blocked while the
-  act delay is pending (`validate_cast` rejects with `{:error, :act_delayed}`).
+  Validate-then-cast-then-charge: resources are only consumed at castend, so a
+  failed or interrupted cast never charges them. Starting any cast is blocked
+  while the act delay is pending (`validate_cast` rejects with
+  `{:error, :act_delayed}`).
 
   `cast/4` is the synchronous wrapper preserving the legacy single-call
   semantics: instant casts execute immediately and timed casts run their
@@ -51,7 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   # Vulture's Eye: the passive whose learned level widens a `vulture_range` skill.
   @vulture_skill_id 44
@@ -99,6 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           {:ok, PlayerState.t()}
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
+          | {:failed, PlayerState.t(), atom()}
           | {:error, atom()}
           | {:error, atom(), PlayerState.t()}
   def cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
@@ -114,6 +118,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       {:casting, refreshed, info} ->
         finish_synchronous_cast(game_state, refreshed, info, skill_id, level, target)
+
+      {:failed, _spent, _reason} = failed ->
+        failed
 
       {:error, _reason} = error ->
         error
@@ -153,6 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:instant, Active.caster(), [Active.effect()]}
           | {:deferred, Active.caster(), term()}
           | {:casting, Active.caster(), cast_info()}
+          | {:failed, Active.caster(), atom()}
           | {:error, atom()}
           | {:error, atom(), Active.caster()}
   def begin_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
@@ -349,7 +357,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, prepared} <- validate_encore_replay(caster, memory, target, now),
          {:ok, begun} <-
            begin_attempt(prepared.module, caster, target, prepared.level, prepared.definition),
-         {:ok, _cost} <- encore_prepared_cost(begun, prepared) do
+         {:ok, _cost} <- encore_prepared_cost(begun, prepared, target, :begin) do
       finish_encore_timing(begun, memory, target, definition, early)
     else
       {:error, reason} ->
@@ -404,7 +412,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, %{definition: definition, skill_id: skill_id, level: level} = prepared} <-
            validate_encore_replay(game_state, memory, target, now),
          :ok <- check_completion_caster(game_state, definition, false),
-         {:ok, cost} <- encore_prepared_cost(game_state, prepared) do
+         {:ok, cost} <- encore_prepared_cost(game_state, prepared, target, :completion) do
       complete_resolved_cast(
         game_state,
         prepared.module,
@@ -425,13 +433,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp encore_prepared_cost(caster, %{definition: definition, module: module, level: level}) do
+  defp encore_prepared_cost(caster, prepared, target, phase) do
+    %{definition: definition, module: module, level: level} = prepared
     raw_half = definition.sp_cost |> Enum.at(level - 1, 0) |> div(2)
     sp = Cost.resolve_sp(caster, definition, level, raw_half)
     cost = Cost.from_definition(caster, definition, level, sp: sp)
 
     with {:ok, cost} <- Cost.validate_resolved(cost) do
-      Caster.Player.prepare_cost(caster, module, definition, cost, 0)
+      case phase do
+        :begin ->
+          Caster.Player.prepare_begin_cost(caster, module, definition, cost, 0)
+
+        :completion ->
+          Caster.Player.prepare_castend_cost(caster, module, target, level, definition, cost, 0)
+      end
     end
   end
 
@@ -439,21 +454,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   Runs a previously-validated cast to completion.
 
   Re-validates the target (it may have moved, died, or logged out during the
-  cast) and re-checks every resolved resource cost, then runs the behavior,
-  applies the prepared cost, sets the cooldown, and arms the after-cast act
-  delay. A target that is gone or out of range fizzles with `{:error, _}` and
-  no resources are spent.
+  cast) and checks the cast-end requirements (the skill's own, HP, weapon,
+  ammo, items), then runs the behavior, applies the prepared cost, sets the
+  cooldown, and arms the after-cast act delay. SP, zeny and spheres are not
+  checked again: each is spent up to what the caster holds. A target that is
+  gone or out of range fizzles with `{:error, _}` and no resources are spent.
+  An effect that fails after the requirement (`{:failed, caster, reason}` from
+  the behavior) is settled like a success and returned as `{:failed, ...}`.
 
-  The resources are validated from the pre-effect state, so `:all` SP is visible
-  to the behavior. On success, the already-validated HP and SP costs are then
-  deducted from the behavior's returned state; a behavior's own HP/SP changes
-  are therefore retained. Sphere consumption is prepared from the original
-  collection.
+  The cost is prepared from the pre-effect state, so `:all` SP is visible to the
+  behavior. On success, the prepared HP and SP costs are then deducted from the
+  behavior's returned state; a behavior's own HP/SP changes are therefore
+  retained. Sphere consumption is prepared from the original collection.
   """
   @spec complete_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
           {:ok, Active.caster()}
           | {:local_effects, Active.caster(), [Active.effect()]}
           | {:deferred, Active.caster(), term()}
+          | {:failed, Active.caster(), atom()}
           | {:error, atom()}
   def complete_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0,
     do: complete_validated_cast(game_state, skill_id, level, target, :without_input)
@@ -475,6 +493,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           {:ok, PlayerState.t()}
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
+          | {:failed, PlayerState.t(), atom()}
           | {:error, atom()}
   def complete_cast_with_input(game_state, skill_id, level, target, input)
       when is_integer(level) and level > 0,
@@ -492,7 +511,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           validate_completion(game_state, skill_id, level, target)
 
         {:with_input, _value} ->
-          validate_cast(game_state, skill_id, level, target, now, :cast_end)
+          with {:ok, context} <-
+                 validate_cast(game_state, skill_id, level, target, now, :cast_end),
+               do: prepare_castend(context, game_state)
       end
 
     with {:ok, prepared} <- validation do
@@ -548,21 +569,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp pad_levels(table, level) when length(table) >= level, do: table
   defp pad_levels(table, level), do: table ++ List.duplicate(0, level - length(table))
 
-  @doc "Settles a deferred cast against the caster's current resources."
+  @doc """
+  Settles a deferred cast, spending its cast-end cost up to what the caster
+  holds now: the requirements were checked when the cast ended.
+  """
   @spec settle_deferred(PlayerState.t(), Deferred.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def settle_deferred(game_state, %Deferred{} = deferred) do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, definition} <- fetch_definition(deferred.skill_id),
-         {:ok, prepared} <-
-           Caster.Player.prepare_cost(
-             game_state,
-             __MODULE__,
-             definition,
-             deferred.cost,
-             deferred.zeny
-           ) do
+    with {:ok, definition} <- fetch_definition(deferred.skill_id) do
+      prepared =
+        Caster.Player.prepare_settlement(
+          game_state,
+          __MODULE__,
+          definition,
+          deferred.cost,
+          deferred.zeny
+        )
+
       {:ok,
        game_state
        |> Caster.Player.commit(prepared)
@@ -867,7 +892,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_placement(caster, definition, target),
          {:ok, module} <- validate_item_cast(caster, target, level, definition, true),
          :ok <- check_castend_target(caster, target, definition),
-         {:ok, cost} <- Caster.Player.cost(caster, module, target, definition, level) do
+         {:ok, cost} <- Caster.Player.castend_cost(caster, module, target, definition, level) do
       complete_resolved_cast(caster, module, target, level, definition, %{
         adapter: Caster.Player,
         prepared_cost: cost,
@@ -930,9 +955,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp maybe_check_item_map(_caster, _skill_id, false), do: :ok
 
   defp item_requirement_ready(caster, module, target, level, definition, true) do
-    with {:ok, _prepared} <- Caster.Player.cost(caster, module, target, definition, level) do
-      check_weapon(caster, definition)
-    end
+    with :ok <- check_weapon(caster, definition),
+         {:ok, _prepared} <- Caster.Player.cost(caster, module, target, definition, level),
+         do: :ok
   end
 
   defp item_requirement_ready(_caster, _module, _target, _level, _definition, false), do: :ok
@@ -1046,6 +1071,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:deferred, game_state, descriptor} ->
         {:deferred, game_state, descriptor}
 
+      {:failed, _game_state, reason} ->
+        {:error, reason}
+
       {:error, _reason} = error ->
         error
     end
@@ -1062,9 +1090,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
            prepared_cost: prepared_cost,
            skill_id: skill_id,
            level: level,
-           apply_act_delay: apply_act_delay,
-           after_cast_delay: after_cast_delay,
-           now: now,
            input: input
          } = opts
        ) do
@@ -1080,21 +1105,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {result, game_state, effects, consume_catalysts?}
       when result in [:ok, :local_effects] and is_list(effects) ->
         prepared_cost = Map.put(prepared_cost, :consume_catalysts?, consume_catalysts?)
-
-        settled =
-          game_state
-          |> then(&adapter.commit(&1, prepared_cost))
-          |> put_cooldown(adapter, skill_id, definition, level, now)
-          |> rearm_cooldowns(module, level, definition, now)
-          |> put_resolved_act_delay(apply_act_delay, after_cast_delay, now)
+        settled = settle_cast(game_state, module, level, definition, prepared_cost, opts)
 
         if result == :local_effects,
           do: {:local_effects, settled, effects},
           else: {:ok, settled}
 
+      {:failed, game_state, reason} ->
+        {:failed, settle_cast(game_state, module, level, definition, prepared_cost, opts), reason}
+
       {:error, _reason} = error ->
         error
     end
+  end
+
+  defp settle_cast(
+         game_state,
+         module,
+         level,
+         definition,
+         prepared_cost,
+         %{adapter: adapter} = opts
+       ) do
+    game_state
+    |> then(&adapter.commit(&1, prepared_cost))
+    |> put_cooldown(adapter, opts.skill_id, definition, level, opts.now)
+    |> rearm_cooldowns(module, level, definition, opts.now)
+    |> put_resolved_act_delay(opts.apply_act_delay, opts.after_cast_delay, opts.now)
   end
 
   defp deferred_result(
@@ -1365,19 +1402,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       else: {:ok, caster}
   end
 
-  defp prepare_cast(%CastContext{} = context) do
-    adapter = context.adapter
+  defp prepare_cast(%CastContext{adapter: adapter} = context) do
+    args = [context.caster, context.module, context.target, context.definition, context.level]
 
-    case adapter.cost(
-           context.caster,
-           context.module,
-           context.target,
-           context.definition,
-           context.level
-         ) do
+    case :erlang.apply(adapter, cost_callback(adapter, context.phase), args) do
       {:ok, prepared} -> {:ok, %{context | cost: prepared}}
       {:error, _reason} = error -> error
     end
+  end
+
+  defp cost_callback(adapter, :completion) do
+    if function_exported?(adapter, :castend_cost, 5), do: :castend_cost, else: :cost
+  end
+
+  defp cost_callback(_adapter, :begin), do: :cost
+
+  # The cast end prepares its cost again on the caster that reaches it; an
+  # adapter without cast-end requirements keeps the cast-begin cost.
+  defp prepare_castend(%CastContext{adapter: adapter} = context, caster) do
+    if function_exported?(adapter, :castend_cost, 5),
+      do: prepare_cast(%{context | caster: caster, phase: :completion}),
+      else: {:ok, context}
   end
 
   defp check_context_cooldown(%CastContext{} = context, now) do
@@ -1416,15 +1461,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:error, atom()}
   defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared) do
     now = System.monotonic_time(:millisecond)
+    started = cast_start(game_state, prepared.adapter, skill_id)
 
-    with :ok <- check_placement(game_state, prepared.definition, target),
-         :ok <- check_castend_target(game_state, target, prepared.definition) do
-      started = cast_start(game_state, prepared.adapter, skill_id)
-
-      case complete_instant_cast(started, skill_id, level, target, now, prepared) do
-        {:error, reason} when started != game_state -> {:error, reason, started}
-        outcome -> outcome
-      end
+    case complete_instant_cast(started, skill_id, level, target, now, prepared) do
+      {:error, reason} when started != game_state -> {:error, reason, started}
+      outcome -> outcome
     end
   end
 
@@ -1449,20 +1490,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       else: game_state
   end
 
+  # An instant cast reaches its cast end once its cast-start effects ran: the
+  # unit placement, the cast-end target, then the cast-end requirements.
   defp complete_instant_cast(game_state, skill_id, level, target, now, prepared) do
-    case complete_prepared_cast(
-           game_state,
-           skill_id,
-           level,
-           target,
-           :without_input,
-           now,
-           prepared
-         ) do
-      {:ok, game_state} -> instant_result(game_state, prepared.cost)
-      {:local_effects, game_state, effects} -> {:instant, game_state, effects}
-      {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
-      {:error, reason} -> {:error, reason}
+    with :ok <- check_placement(game_state, prepared.definition, target),
+         :ok <- check_castend_target(game_state, target, prepared.definition),
+         {:ok, prepared} <- prepare_castend(prepared, game_state) do
+      case complete_prepared_cast(
+             game_state,
+             skill_id,
+             level,
+             target,
+             :without_input,
+             now,
+             prepared
+           ) do
+        {:ok, game_state} -> instant_result(game_state, prepared.cost)
+        {:local_effects, game_state, effects} -> {:instant, game_state, effects}
+        {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
+        {:failed, game_state, reason} -> {:failed, game_state, reason}
+        {:error, reason} -> {:error, reason}
+      end
     end
   end
 
@@ -1519,15 +1567,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp check_weapon(_game_state, %{require_weapon: []}), do: :ok
-
-  defp check_weapon(%{stats: %{equipment: equipment}}, %{require_weapon: allowed}) do
-    if PlayerStats.weapon_type(equipment) in allowed,
-      do: :ok,
-      else: {:error, :wrong_weapon}
-  end
-
-  defp check_weapon(_game_state, _definition), do: :ok
+  defp check_weapon(game_state, definition),
+    do: Caster.Player.check_weapon(game_state, definition)
 
   defp fetch_active_module(definition) do
     case Catalog.active_module_for(definition.name) do
@@ -1851,6 +1892,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           invoke_cast(module, caster, target, level, definition, unflagged_scope(origin))
       end
 
+    cast_outcome(result, module, target, level, definition, adapter)
+  end
+
+  defp cast_outcome(result, module, target, level, definition, adapter) do
     case result do
       {:ok, caster} ->
         valid_cast_result(adapter, caster, fn ->
@@ -1866,6 +1911,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       {:local_effects, caster, effects} when is_list(effects) ->
         valid_cast_result(adapter, caster, fn -> {:local_effects, caster, effects, true} end)
+
+      {:failed, caster, reason} ->
+        valid_cast_result(adapter, caster, fn -> {:failed, caster, reason} end)
 
       {:deferred, caster, descriptor} ->
         {:deferred, caster, descriptor}

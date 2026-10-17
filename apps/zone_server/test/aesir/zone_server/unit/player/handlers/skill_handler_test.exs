@@ -1391,6 +1391,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert gs.stats.current_state.sp == 45 - 18
     end
 
+    test "a completion failing after its requirement commits the spend and reports the failure" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, %{sp: 27}, _opts -> {:ok, %{}} end)
+
+      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+      token = casting.game_state.state_context.token
+
+      stub(Interpreter, :complete_cast, fn game_state, 29, 1, _target ->
+        {:failed, put_in(game_state.stats.current_state.sp, 27), :brew_failed}
+      end)
+
+      assert {:noreply, completed} = SkillHandler.handle_cast_complete(casting, token)
+
+      assert completed.game_state.action_state == :idle
+      assert completed.game_state.stats.current_state.sp == 27
+      assert_received {:to_player, %SkillCastFailed{skill_id: 29}}
+    end
+
+    test "an instant cast failing after its requirement commits the spend and reports it" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      reject(&Broadcast.to_in_range/6)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, %{sp: 40}, _opts -> {:ok, %{}} end)
+
+      stub(Interpreter, :begin_cast, fn game_state, 12, 1, {:ground, 12, 12} ->
+        {:failed, put_in(game_state.stats.current_state.sp, 40), :brew_failed}
+      end)
+
+      assert {:noreply, failed} =
+               SkillHandler.handle_use_skill_ground(casting_state(45), 12, 1, 12, 12)
+
+      assert failed.game_state.stats.current_state.sp == 40
+      assert_received {:to_player, %SkillCastFailed{skill_id: 12}}
+    end
+
     test "a stale token is ignored and the cast continues" do
       stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)

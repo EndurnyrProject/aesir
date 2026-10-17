@@ -79,8 +79,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
 
   @tag game_mode: :renewal
   test "renewal casts regardless of how little health the caster has left" do
-    assert SmMagnum.validate(caster_with_hp(1), :self, 1, definition()) == :ok
-    assert SmMagnum.validate(caster_with_hp(1), :self, 10, definition()) == :ok
+    assert SmMagnum.castend_requirement(caster_with_hp(1), :self, 1, definition()) == :ok
+    assert SmMagnum.castend_requirement(caster_with_hp(1), :self, 10, definition()) == :ok
   end
 
   @tag game_mode: :pre_renewal
@@ -99,14 +99,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
 
   @tag game_mode: :pre_renewal
   test "classic refuses the cast unless the caster is above the level's health reserve" do
-    assert SmMagnum.validate(caster_with_hp(21), :self, 1, definition()) == :ok
+    assert SmMagnum.castend_requirement(caster_with_hp(21), :self, 1, definition()) == :ok
 
-    assert SmMagnum.validate(caster_with_hp(20), :self, 1, definition()) ==
+    assert SmMagnum.castend_requirement(caster_with_hp(20), :self, 1, definition()) ==
              {:error, :insufficient_hp}
 
-    assert SmMagnum.validate(caster_with_hp(17), :self, 10, definition()) == :ok
+    assert SmMagnum.castend_requirement(caster_with_hp(17), :self, 10, definition()) == :ok
 
-    assert SmMagnum.validate(caster_with_hp(16), :self, 10, definition()) ==
+    assert SmMagnum.castend_requirement(caster_with_hp(16), :self, 10, definition()) ==
              {:error, :insufficient_hp}
   end
 

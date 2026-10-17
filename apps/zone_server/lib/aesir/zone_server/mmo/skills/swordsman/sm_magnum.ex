@@ -25,9 +25,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
   Pre-renewal: no cooldown at all, but the caster is locked for a full two
   seconds after the cast, and the skill additionally demands (without spending)
   a health reserve that shrinks with skill level, from 20 HP at level 1 down to
-  16 HP at level 10. A caster at or below that reserve cannot start the cast;
-  a caster above it pays nothing but SP. The declared HP requirement is checked
-  at cast start, but must not be consumed when the cast succeeds.
+  16 HP at level 10. A caster at or below that reserve fails the cast when it
+  ends; a caster above it pays nothing but SP. The declared HP requirement is
+  checked at cast end, but must not be consumed when the cast succeeds.
 
   In both modes the blast falls off with distance: victims within one cell of
   the caster take 100% + 20% per level, everyone further out 100% + 10% per
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
   @behaviour Active
 
   @impl Active
-  def validate(caster, _target, level, definition) do
+  def castend_requirement(caster, _target, level, definition) do
     case GameMode.mode() do
       :renewal -> :ok
       :pre_renewal -> check_health_reserve(caster, level, definition)

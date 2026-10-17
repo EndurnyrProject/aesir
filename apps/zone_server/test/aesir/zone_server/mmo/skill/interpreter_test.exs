@@ -23,11 +23,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke
+  alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -199,6 +202,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         do: :ok,
         else: {:error, :requirements_changed}
     end
+  end
+
+  defmodule CastEndRequirementSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      send(self(), {:cost_skill_sp, game_state.stats.current_state.sp})
+      {:ok, game_state}
+    end
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+
+    @impl true
+    def castend_requirement(_game_state, _target, _level, _definition) do
+      send(self(), :castend_requirement_checked)
+      Process.get(:interpreter_test_castend_requirement, :ok)
+    end
+  end
+
+  defmodule SpentFailureSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition), do: {:failed, game_state, :no_effect}
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
   end
 
   defmodule DynamicDelaySkill do
@@ -562,6 +594,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       refute_received :ordinary_input_fallback
     end
 
+    test "preflight leaves the items to the input completion's cast end" do
+      definition = %Definition{
+        id: 29,
+        name: :input_aware,
+        display_name: "Input Aware",
+        max_level: 1,
+        target_type: :self,
+        sp_cost: [10],
+        item_cost: [%{id: 717, amount: 1}]
+      }
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      initial = Map.merge(game_state(50, %{29 => 1}), %{inventory: %{}})
+
+      assert :ok = Interpreter.preflight_cast(initial, 29, 1, :self)
+
+      assert {:error, :missing_catalyst} =
+               Interpreter.complete_cast_with_input(initial, 29, 1, :self, "hello")
+
+      refute_received {:input_cast, _input}
+    end
+
     test "completion invokes the input callback and uses ordinary commitment" do
       assert {:ok, updated} =
                Interpreter.complete_cast_with_input(
@@ -735,7 +789,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert updated.stats.current_state.sp == 0
   end
 
-  test "prepares an instant dynamic cost once before commitment" do
+  test "resolves an instant dynamic cost at its cast begin and again at its cast end" do
     definition = %Definition{
       id: 29,
       name: :cost_skill,
@@ -751,6 +805,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     gs = game_state(50, %{29 => 1})
     assert {:ok, updated} = Interpreter.cast(gs, 29, 1, :self)
 
+    assert_received {:dynamic_cost_prepared, 10}
     assert_received {:dynamic_cost_prepared, 10}
     refute_received {:dynamic_cost_prepared, 10}
     assert updated.stats.current_state.sp == 40
@@ -776,15 +831,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     Process.put(:interpreter_test_dynamic_sp, 60)
 
-    assert {:error, :insufficient_sp} =
-             Interpreter.complete_cast(started, 29, 1, :self)
+    assert {:ok, updated} = Interpreter.complete_cast(started, 29, 1, :self)
 
     assert_received {:dynamic_cost_prepared, 60}
     refute_received {:dynamic_cost_prepared, 60}
-    refute_received {:cost_skill_sp, _}
+    assert_received {:cost_skill_sp, 50}
+    assert updated.stats.current_state.sp == 0
   end
 
-  test "rebuilds completion context from the caster's current SP" do
+  test "a completion short of SP spends what the caster holds" do
     definition = %Definition{
       id: 29,
       name: :cost_skill,
@@ -802,8 +857,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert {:casting, ^started, _info} = Interpreter.begin_cast(started, 29, 1, :self)
 
     depleted = put_in(started.stats.current_state.sp, 5)
-    assert {:error, :insufficient_sp} = Interpreter.complete_cast(depleted, 29, 1, :self)
-    refute_received {:cost_skill_sp, _}
+    assert {:ok, updated} = Interpreter.complete_cast(depleted, 29, 1, :self)
+    assert_received {:cost_skill_sp, 5}
+    assert updated.stats.current_state.sp == 0
   end
 
   test "rejects a dynamic cost with nil SP before the effect runs" do
@@ -952,11 +1008,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
               target: :self
             } = deferred} = Interpreter.cast(game_state, 29, 1, :self)
 
-    assert {:error, :insufficient_sp} =
+    assert {:ok, drained} =
              Interpreter.settle_deferred(
                put_in(game_state.stats.current_state.sp, 10),
                deferred
              )
+
+    assert drained.stats.current_state.sp == 0
 
     assert {:ok, settled} = Interpreter.settle_deferred(game_state, deferred)
     assert settled.stats.current_state.hp == 90
@@ -1695,6 +1753,186 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  describe "cast-begin and cast-end requirements" do
+    @blue_gemstone [%{id: 717, amount: 1}]
+
+    defp gem(amount), do: %InventoryItem{nameid: 717, amount: amount, equip: 0}
+
+    defp without_items(game_state),
+      do: Map.merge(game_state, %{inventory: %{}, pending_inventory_persist: []})
+
+    defp cost_definition(attrs) do
+      struct(
+        %Definition{
+          id: 29,
+          name: :cost_skill,
+          display_name: "Cost Skill",
+          max_level: 1,
+          target_type: :self,
+          sp_cost: [10],
+          cast_time: [1_000]
+        },
+        attrs
+      )
+    end
+
+    defp stub_cost_skill(definition, module) do
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, module} end)
+    end
+
+    test "an instant ground cast checks SP, then its placement, then its items" do
+      put_walkable_map()
+      store_groups(:wz_quagmire, 92, 3)
+      quagmire = %{WzQuagmire.definition() | item_cost: @blue_gemstone}
+      stub(Catalog, :by_id, fn 92 -> {:ok, quagmire} end)
+      gs = without_items(game_state(100, %{92 => 5}))
+
+      assert {:error, :insufficient_sp} =
+               Interpreter.begin_cast(
+                 put_in(gs.stats.current_state.sp, 0),
+                 92,
+                 1,
+                 {:ground, 12, 12}
+               )
+
+      assert {:error, :unit_placement_refused} =
+               Interpreter.begin_cast(gs, 92, 1, {:ground, 12, 12})
+    end
+
+    test "an instant ground cast placed within its limit reports its missing item" do
+      put_walkable_map()
+      quagmire = %{WzQuagmire.definition() | item_cost: @blue_gemstone}
+      stub(Catalog, :by_id, fn 92 -> {:ok, quagmire} end)
+      gs = without_items(game_state(100, %{92 => 5}))
+
+      assert {:error, :missing_catalyst} = Interpreter.begin_cast(gs, 92, 1, {:ground, 12, 12})
+    end
+
+    test "an instant unit cast checks SP, then its cast-end target, then its items" do
+      definition = %{instant_definition() | item_cost: @blue_gemstone}
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      reject(&SmProvoke.cast/4)
+      gs = without_items(game_state(100, %{6 => 1}))
+
+      stub(Targeting, :castend_refused?, fn _caster, :self, _definition -> true end)
+
+      assert {:error, :insufficient_sp} =
+               Interpreter.begin_cast(put_in(gs.stats.current_state.sp, 0), 6, 1, :self)
+
+      assert {:error, :target_invincible} = Interpreter.begin_cast(gs, 6, 1, :self)
+
+      stub(Targeting, :castend_refused?, fn _caster, :self, _definition -> false end)
+
+      assert {:error, :missing_catalyst} = Interpreter.begin_cast(gs, 6, 1, :self)
+    end
+
+    test "an instant cast runs its cast-start effects before its cast-end checks" do
+      test_pid = self()
+      stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
+      stub(Targeting, :castend_refused?, fn _caster, :self, _definition -> true end)
+
+      stub(StatusInterpreter, :on_committed_action, fn :player, 1000, {:skill, 6} ->
+        send(test_pid, :cast_started)
+        :unchanged
+      end)
+
+      assert {:error, :target_invincible} =
+               Interpreter.begin_cast(game_state(100, %{6 => 1}), 6, 1, :self)
+
+      assert_received :cast_started
+    end
+
+    test "a timed cast checks its items and HP when it ends, not when it starts" do
+      stub_cost_skill(cost_definition(item_cost: @blue_gemstone, hp_cost: [100]), StaticCostSkill)
+      gs = without_items(game_state(100, %{29 => 1}))
+
+      assert {:casting, ^gs, _info} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert {:error, :insufficient_hp} = Interpreter.complete_cast(gs, 29, 1, :self)
+
+      healthy = put_in(gs.stats.current_state.hp, 101)
+      assert {:error, :missing_catalyst} = Interpreter.complete_cast(healthy, 29, 1, :self)
+      refute_received {:cost_skill_sp, _}
+    end
+
+    test "a timed completion skips the SP check but still checks its items" do
+      stub_cost_skill(cost_definition(item_cost: @blue_gemstone), StaticCostSkill)
+      gs = without_items(game_state(100, %{29 => 1}))
+      depleted = put_in(gs.stats.current_state.sp, 0)
+
+      assert {:error, :insufficient_sp} = Interpreter.begin_cast(depleted, 29, 1, :self)
+      assert {:error, :missing_catalyst} = Interpreter.complete_cast(depleted, 29, 1, :self)
+    end
+
+    test "a skill's own cast-end requirement runs at the cast end, before HP" do
+      stub_cost_skill(cost_definition(hp_cost: [100]), CastEndRequirementSkill)
+      Process.put(:interpreter_test_castend_requirement, {:error, :requirement_unmet})
+      gs = game_state(100, %{29 => 1})
+
+      assert {:casting, ^gs, _info} = Interpreter.begin_cast(gs, 29, 1, :self)
+      refute_received :castend_requirement_checked
+
+      assert {:error, :requirement_unmet} = Interpreter.complete_cast(gs, 29, 1, :self)
+      assert_received :castend_requirement_checked
+
+      Process.put(:interpreter_test_castend_requirement, :ok)
+      assert {:error, :insufficient_hp} = Interpreter.complete_cast(gs, 29, 1, :self)
+    end
+
+    test "a timed cast checks its weapon again when it ends" do
+      stub_cost_skill(cost_definition(require_weapon: [:musical]), StaticCostSkill)
+
+      assert {:error, :wrong_weapon} =
+               Interpreter.complete_cast(game_state(100, %{29 => 1}), 29, 1, :self)
+
+      refute_received {:cost_skill_sp, _}
+    end
+
+    test "an effect failing after the requirement still spends it and arms the delay" do
+      definition =
+        cost_definition(cast_time: [0], after_cast_delay: [1_000], item_cost: @blue_gemstone)
+
+      stub_cost_skill(definition, SpentFailureSkill)
+      gs = Map.merge(game_state(100, %{29 => 1}), %{inventory: %{0 => gem(1)}})
+
+      assert {:failed, spent, :no_effect} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert spent.stats.current_state.sp == 90
+      assert spent.inventory == %{}
+      assert spent.act_delay_until > System.monotonic_time(:millisecond)
+
+      stub_cost_skill(%{definition | cast_time: [1_000]}, SpentFailureSkill)
+      assert {:failed, timed, :no_effect} = Interpreter.complete_cast(gs, 29, 1, :self)
+      assert timed.stats.current_state.sp == 90
+    end
+
+    test "Fire Pillar spends its gemstone on an ordinary cast and keeps it on an item cast" do
+      put_walkable_map()
+      stub(SkillUnit, :place, fn _caster, :wz_firepillar, _level, {12, 12} -> {:ok, :group} end)
+      gs = Map.merge(game_state(100, %{80 => 6}), %{inventory: %{0 => gem(2)}})
+
+      assert {:ok, cast} = Interpreter.complete_cast(gs, 80, 6, {:ground, 12, 12})
+      assert Inventory.held_amount(cast.inventory, 717) == 1
+
+      assert {:ok, item} = Interpreter.complete_item_cast(gs, 80, 6, {:ground, 12, 12})
+      assert Inventory.held_amount(item.inventory, 717) == 2
+
+      assert {:error, :missing_catalyst} =
+               Interpreter.complete_cast(%{gs | inventory: %{}}, 80, 6, {:ground, 12, 12})
+
+      assert {:ok, _low} =
+               Interpreter.complete_cast(%{gs | inventory: %{}}, 80, 5, {:ground, 12, 12})
+    end
+
+    test "a completion spends at most the zeny the caster holds" do
+      stub_cost_skill(cost_definition(zeny_cost: [100]), StaticCostSkill)
+      gs = %{game_state(100, %{29 => 1}) | zeny: 100}
+
+      assert {:casting, ^gs, _info} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert {:ok, updated} = Interpreter.complete_cast(%{gs | zeny: 40}, 29, 1, :self)
+      assert updated.zeny == 0
+    end
+  end
+
   describe "begin_cast/4" do
     test "instant skill runs the behavior, deducts SP, and sets the cooldown" do
       stub(Catalog, :by_id, fn 6 -> {:ok, instant_definition()} end)
@@ -2275,7 +2513,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         display_name: "Completion Subset",
         max_level: 1,
         target_type: :passive,
-        require_weapon: [:musical],
         sp_cost: [0, 0],
         cooldown: [10_000, 10_000]
       }

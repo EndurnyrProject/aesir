@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
   Throw Venom Knife (AS_VENOMKNIFE). The Assassin platinum skill: throws one
   equipped Venom Knife at 9 cells as a forced ranged hit that always poisons.
 
+  The equipped ammunition must be a Venom Knife when the cast ends.
+
   Renewal: 500% weapon damage, 35 SP, poison 18 s. Pre-renewal: 100% weapon
   damage, 15 SP, poison 60 s.
   """
@@ -33,7 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
   @behaviour Active
 
   @impl Active
-  def validate(%PlayerState{inventory: inventory}, _target, _level, _definition) do
+  def castend_requirement(%PlayerState{inventory: inventory}, _target, _level, _definition) do
     case Ammo.equipped_ammo(inventory) do
       {:ok, %{nameid: 1771}, %{id: 1771}} -> :ok
       {:error, :no_ammo} -> {:error, :no_ammo}

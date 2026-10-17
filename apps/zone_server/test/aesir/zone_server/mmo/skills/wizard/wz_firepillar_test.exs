@@ -113,32 +113,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     assert level_ten.state == %{phase: :waiting, hit_budget: 12}
   end
 
-  test "missing Blue Gemstone rejects a level-six cast before placement" do
-    reject(&Unit.place/4)
+  test "needs one Blue Gemstone from level six" do
+    definition = WzFirepillar.definition()
 
-    assert {:error, :missing_catalyst} =
-             WzFirepillar.validate(caster(%{}), {:ground, 150, 150}, 6, WzFirepillar.definition())
+    assert WzFirepillar.dynamic_item_cost(caster(%{}), {:ground, 150, 150}, 5, definition) == []
+
+    assert WzFirepillar.dynamic_item_cost(caster(%{}), {:ground, 150, 150}, 6, definition) ==
+             [%{id: @blue_gemstone, amount: 1}]
   end
 
-  test "a failed placement does not consume a level-six Blue Gemstone" do
-    caster = caster(%{0 => gemstone(1)})
-    stub(Unit, :place, fn ^caster, :wz_firepillar, 6, @center -> {:error, :invalid_target} end)
-
-    assert {:error, :invalid_target} =
-             WzFirepillar.cast(caster, {:ground, 150, 150}, 6, WzFirepillar.definition())
-  end
-
-  test "a successful level-six placement consumes exactly one Blue Gemstone" do
+  test "the placement itself leaves the gemstone to the cast's requirement" do
     caster = caster(%{0 => gemstone(2)})
     stub(Unit, :place, fn ^caster, :wz_firepillar, 6, @center -> {:ok, :group} end)
 
-    assert {:ok, updated} =
+    assert {:ok, ^caster} =
              WzFirepillar.cast(caster, {:ground, 150, 150}, 6, WzFirepillar.definition())
-
-    assert %{0 => %InventoryItem{amount: 1}} = updated.inventory
-    assert [{original_inventory, updated_inventory, _change}] = updated.pending_inventory_persist
-    assert original_inventory == caster.inventory
-    assert updated_inventory == updated.inventory
   end
 
   test "a non-enemy in reach does not wake the waiting pillar" do

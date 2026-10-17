@@ -54,13 +54,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   :no_consume}` completes the cast (SP, cooldown, act delay) but spares the
   catalysts (rAthena `SKILL_NOCONSUME_REQ`, e.g. Stone Curse lv 6-10 on a failed
   petrify). `{:deferred, state, descriptor}` leaves all commitments to the
-  caller that settles the descriptor.
+  caller that settles the descriptor. `{:failed, state, reason}` is an effect
+  that failed after the requirement was spent: the cast settles as a success
+  (resources, catalysts, cooldown, act delay) but reports `reason` to the
+  caster instead of showing the skill.
   """
   @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
               {:ok, caster()}
               | {:ok, caster(), :no_consume}
               | {:local_effects, caster(), [effect()]}
               | {:deferred, caster(), term()}
+              | {:failed, caster(), atom()}
               | {:error, atom()}
 
   @doc """
@@ -92,6 +96,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
 
   @doc "Optional pre-cast validation, run before SP is charged. Defaults to `:ok` when absent."
   @callback validate(caster(), target(), pos_integer(), Definition.t()) ::
+              :ok | {:error, atom()}
+
+  @doc """
+  Optional skill-specific cast-end requirement, checked on a player's cast when
+  it ends, before the generic HP, weapon, ammo and item requirements. Nothing is
+  spent when it fails. Defaults to `:ok` when absent.
+  """
+  @callback castend_requirement(caster(), target(), pos_integer(), Definition.t()) ::
               :ok | {:error, atom()}
 
   @doc """
@@ -197,6 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
                       rearm_cooldowns: 4,
                       cast_with_input: 5,
                       validate: 4,
+                      castend_requirement: 4,
                       begin_attempt: 4,
                       deferred: 2,
                       mob_cast: 5,
