@@ -202,12 +202,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     end
   end
 
-  test "Katar has no secondary against Aesir's plant target representation" do
+  test "Katar has no secondary against an infinite-defense target, but has one against race Plant" do
     attacker = with_hands(hand(:right_hand, 100, :katar), nil)
+    infinite_defense = defender() |> Map.put(:ignore_modes, [:ignore_melee])
     plant = defender() |> Map.put(:race, :plant)
 
-    assert {:ok, %HandedAttack{primary: %{damage: damage}, secondary: nil, raw_total: damage}} =
+    assert {:ok, %HandedAttack{primary: %{damage: 1}, secondary: nil, raw_total: 1}} =
+             HandedAttack.calculate(player(%{48 => 10}, :katar), attacker, infinite_defense)
+
+    assert {:ok, %HandedAttack{secondary: %{damage: secondary}}} =
              HandedAttack.calculate(player(%{48 => 10}, :katar), attacker, plant)
+
+    assert secondary > 0
   end
 
   test "bCriticalLong applies only to ordinary ammunition-based ranged attacks" do

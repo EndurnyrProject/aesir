@@ -27,13 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
-  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
-
-  @emperium_mob_id 1288
 
   @enforce_keys [
     :primary,
@@ -116,7 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
     with {:ok, primary} <- DamageCalculator.calculate_damage(attacker, defender, primary_opts),
          {primary, divisions} <- repeat_primary(primary, divisions, defender),
          {:ok, primary, secondary} <-
-           components(player, attacker, defender, primary, plant_mode?(defender)) do
+           components(player, attacker, defender, primary, Map.has_key?(primary, :plant)) do
       {:ok, result(attacker, primary, secondary, divisions)}
     end
   end
@@ -144,14 +141,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
       else: components(player, attacker, defender, %{primary | damage: damage}, false)
   end
 
-  # A plant-mode Emperium contact stays at its fixed 1 damage; the proc's
-  # divisions remain display metadata.
-  defp repeat_primary(primary, divisions, defender) do
-    if DamageCalculator.emperium_plant_contact?(defender, []) do
-      {primary, divisions}
-    else
-      {damage, divisions} = DamageShared.normalize_damage_divisions(primary.damage, divisions)
-      {%{primary | damage: damage}, divisions}
+  # An infinite-defense contact on the Emperium stays at its single damage; the
+  # proc's divisions remain display metadata.
+  defp repeat_primary(primary, divisions, _defender),
+    do: DamageCalculator.normalize_divisions(primary, divisions)
+
+  # On an infinite-defense target each hand deals its own 1 without the hand
+  # rates, and a right hand above 1 caps both hands at 1.
+  defp components(
+         %PlayerState{stats: %Stats{}},
+         %Combatant{right_hand: %WeaponHand{}, left_hand: %WeaponHand{}} = attacker,
+         defender,
+         primary,
+         true
+       ) do
+    case DamageCalculator.calculate_secondary_hand_damage(attacker, defender, []) do
+      {:ok, %{damage: left} = secondary} when primary.damage > 1 and left > 0 ->
+        {:ok, %{primary | damage: 1}, %{secondary | damage: 1}}
+
+      {:ok, secondary} ->
+        {:ok, primary, secondary}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -201,13 +213,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
 
   defp scale(%{damage: 0} = result, _rate), do: result
   defp scale(result, rate), do: %{result | damage: max(div(result.damage * rate, 100), 1)}
-
-  defp plant_mode?(%Combatant{unit_type: :mob, monster_id: @emperium_mob_id}) do
-    Mechanics.mob_formulas().emperium_damage_mode() == :plant
-  end
-
-  defp plant_mode?(%Combatant{race: :plant}), do: true
-  defp plant_mode?(_defender), do: false
 
   defp result(attacker, primary, secondary, divisions) do
     %__MODULE__{

@@ -26,6 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
       DamageCalculator.calculate_damage(player_combatant, mob_combatant)
   """
 
+  import Bitwise
+
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
@@ -130,6 +133,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # sees through Hiding and Cloaking. Only monsters carry it.
     detector: false,
 
+    # The monster's infinite-defense modes (`:ignore_melee`, `:ignore_magic`,
+    # `:ignore_ranged`, `:ignore_misc`); see `infinite_defense?/2`.
+    ignore_modes: [],
+
     # Monster database id (mob class), set only for mob defenders. Keys the
     # per-monster physical damage bonus (add_damage_class); nil for players.
     monster_id: nil,
@@ -212,6 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           class: :normal | :boss,
           status_immune: boolean(),
           detector: boolean(),
+          ignore_modes: [ignore_mode()],
           monster_id: integer() | nil,
           riding: boolean(),
           equip_modifiers: map(),
@@ -219,6 +227,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           equip_autobonuses: %{Stats.autobonus_key() => Stats.autobonus_registration()},
           spirit_spheres: non_neg_integer()
         }
+
+  @typedoc "A monster mode that turns every matching hit into a 1-damage contact."
+  @type ignore_mode :: :ignore_melee | :ignore_magic | :ignore_ranged | :ignore_misc
+
+  @ignore_modes [:ignore_melee, :ignore_magic, :ignore_ranged, :ignore_misc]
+  @weapon_short BattleFlags.type_bit(:weapon) ||| BattleFlags.range_bit(:short)
+  @weapon_long BattleFlags.type_bit(:weapon) ||| BattleFlags.range_bit(:long)
+  @magic BattleFlags.type_bit(:magic)
+  @misc BattleFlags.type_bit(:misc)
+
+  @doc "The monster modes that grant infinite defense."
+  @spec ignore_modes() :: [ignore_mode()]
+  def ignore_modes, do: @ignore_modes
+
+  @doc """
+  Whether `defender` takes a hit described by the battle flag `attack_flag` as
+  an infinite-defense contact: melee weapon hits against `:ignore_melee`, any
+  magic against `:ignore_magic`, ranged weapon hits against `:ignore_ranged`,
+  any misc hit against `:ignore_misc`. The invincibility status and the
+  infinite-defense skill units that also grant it are not implemented.
+  """
+  @spec infinite_defense?(t() | map(), BattleFlags.flag()) :: boolean()
+  def infinite_defense?(defender, attack_flag) when is_integer(attack_flag) do
+    modes = Map.get(defender, :ignore_modes, [])
+
+    (:ignore_melee in modes and (attack_flag &&& @weapon_short) == @weapon_short) or
+      (:ignore_magic in modes and (attack_flag &&& @magic) != 0) or
+      (:ignore_ranged in modes and (attack_flag &&& @weapon_long) == @weapon_long) or
+      (:ignore_misc in modes and (attack_flag &&& @misc) != 0)
+  end
 
   @doc """
   Creates a new combatant struct with validation.

@@ -3596,6 +3596,11 @@
   id: 1078
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Red Plant
   race: plant
   size: small
@@ -3641,6 +3646,11 @@
   id: 1079
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Blue Plant
   race: plant
   size: small
@@ -3686,6 +3696,11 @@
   id: 1080
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Green Plant
   race: plant
   size: small
@@ -3731,6 +3746,11 @@
   id: 1081
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Yellow Plant
   race: plant
   size: small
@@ -3776,6 +3796,11 @@
   id: 1082
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: White Plant
   race: plant
   size: small
@@ -3821,6 +3846,11 @@
   id: 1083
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Shining Plant
   race: plant
   size: small
@@ -3866,6 +3896,11 @@
   id: 1084
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Black Mushroom
   race: plant
   size: small
@@ -3911,6 +3946,11 @@
   id: 1085
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Red Mushroom
   race: plant
   size: small
@@ -8745,6 +8785,11 @@
   id: 1182
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Thief Mushroom
   race: plant
   size: small
@@ -11571,6 +11616,10 @@
   job_exp: 2
   level: 10
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Antonio
@@ -19096,6 +19145,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Wind Crystal
   race: formless
@@ -19144,6 +19197,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Earth Crystal
   race: formless
@@ -19192,6 +19249,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Fire Crystal
   race: formless
@@ -19240,6 +19301,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Water Crystal
   race: formless
@@ -31315,6 +31380,10 @@
   level: 12
   mdef: 99
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - looter
     - can_attack
@@ -34053,6 +34122,11 @@
   id: 1750
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Red Plant
   race: plant
   size: small
@@ -36038,6 +36112,11 @@
   id: 1792
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Soccer Ball
   race: formless
   size: small
@@ -36902,6 +36981,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Delightful Lude
   race: formless
   size: small
@@ -37045,6 +37128,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Rice Cake
   race: formless
   size: medium
@@ -37078,6 +37165,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Gourd
   race: formless
   size: medium
@@ -37548,6 +37639,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -38192,6 +38287,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Golden Savage
@@ -38234,6 +38333,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -38276,6 +38379,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -38319,6 +38426,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38365,6 +38476,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39916,6 +40031,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Crystal
   race: formless
@@ -39956,6 +40075,11 @@
   id: 1878
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Shining Plant
   race: plant
   size: small
@@ -40965,6 +41089,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - assist
@@ -41027,6 +41155,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Barricade
   race: formless
   size: large
@@ -41120,6 +41252,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Food Storage
   race: formless
   size: large
@@ -41149,6 +41285,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Food Depot
   race: formless
   size: large
@@ -41178,6 +41318,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Neutrality Flag
   race: formless
   size: large
@@ -41207,6 +41351,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Lion Flag
   race: formless
   size: large
@@ -41236,6 +41384,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Eagle Flag
   race: formless
   size: large
@@ -41265,6 +41417,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Blue Crystal
   race: formless
   size: large
@@ -41294,6 +41450,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Pink Crystal
   race: formless
   size: large
@@ -42072,6 +42232,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Garden Keeper
@@ -42143,6 +42307,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Blue Flower
   race: plant
   size: medium
@@ -42173,6 +42341,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Red Flower
   race: plant
   size: medium
@@ -42203,6 +42375,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Yellow Flower
   race: plant
   size: medium
@@ -42843,6 +43019,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Crystal
   race: formless
@@ -42889,6 +43069,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Crystal
   race: formless
@@ -42935,6 +43119,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Crystal
   race: formless
@@ -42981,6 +43169,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
   name: Crystal
   race: formless

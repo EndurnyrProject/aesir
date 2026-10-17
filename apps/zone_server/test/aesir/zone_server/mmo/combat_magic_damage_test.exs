@@ -116,9 +116,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
     }
   end
 
-  defp stub_mob_target(x, y, element) do
+  defp stub_mob_target(x, y, element, modes \\ []) do
+    mob = build_mob_state(@target_id, x, y, element)
+    mob = put_in(mob.mob_data.modes, modes)
+
     stub(UnitRegistry, :get_unit, fn
-      :mob, @target_id -> {:ok, {MobState, build_mob_state(@target_id, x, y, element), self()}}
+      :mob, @target_id -> {:ok, {MobState, mob, self()}}
     end)
 
     stub(SpatialIndex, :get_unit_position, fn
@@ -154,6 +157,21 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
                Combat.execute_magic_damage(caster, @target_id, 50,
                  skill_id: @skill_id,
                  skill_level: @skill_level
+               )
+    end
+
+    test "an infinite-defense target takes exactly 1, with no element step" do
+      stub_mob_target(150, 150, {:undead, 1}, [:ignore_magic])
+      stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(StatusInterpreter, :absorb_hit, fn :mob, @target_id, 1, _hit_info -> {1, :hit} end)
+      expect(MobSession, :apply_damage, fn _pid, 1, @caster_id, _metadata -> :ok end)
+
+      assert {:ok, {:mob, @target_id}} =
+               Combat.execute_magic_damage(build_caster(), @target_id, 100,
+                 skill_id: @skill_id,
+                 skill_level: @skill_level,
+                 element: :holy
                )
     end
 

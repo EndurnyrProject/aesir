@@ -28,7 +28,11 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
     {"aggressive", :aggressive},
     {"detector", :detector},
     {"statusimmune", :status_immune},
-    {"skillimmune", :skill_immune}
+    {"skillimmune", :skill_immune},
+    {"ignoremelee", :ignore_melee},
+    {"ignoremagic", :ignore_magic},
+    {"ignoreranged", :ignore_ranged},
+    {"ignoremisc", :ignore_misc}
   ]
 
   @races %{

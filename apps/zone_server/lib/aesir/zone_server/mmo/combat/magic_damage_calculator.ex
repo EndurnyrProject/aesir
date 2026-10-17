@@ -9,11 +9,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   reference minimum of 1, owned here because it can burn a web; an immune element
   deals 0. Only Renewal uses S.MAtk and MRes. `:ignore_element` skips the step.
 
-  Fixed amounts bypass calculation. Skill-owned formulas use shared input
+  An infinite-defense target (`Combatant.infinite_defense?/2`) takes exactly 1
+  before any other step, fixed amounts included; delivery still divides, reduces
+  and absorbs it. Fixed amounts bypass calculation. Skill-owned formulas use shared input
   primitives directly. Reflection, absorption, hit division, packets and HP
   mutation belong to delivery. Magic never rolls a critical here.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
@@ -48,9 +51,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   @spec calculate_magic_damage(Combatant.t() | map(), Combatant.t() | map(), keyword()) ::
           {:ok, magic_damage_result()} | {:error, atom()}
   def calculate_magic_damage(attacker, defender, opts \\ []) do
-    case Keyword.get(opts, :fixed_damage) do
-      nil -> calculate_pipeline_damage(attacker, defender, opts)
-      damage -> {:ok, %{damage: damage, is_critical: false}}
+    cond do
+      Combatant.infinite_defense?(defender, BattleFlags.type_bit(:magic)) ->
+        {:ok, %{damage: 1, is_critical: false}}
+
+      damage = Keyword.get(opts, :fixed_damage) ->
+        {:ok, %{damage: damage, is_critical: false}}
+
+      true ->
+        calculate_pipeline_damage(attacker, defender, opts)
     end
   end
 

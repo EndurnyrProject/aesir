@@ -72,6 +72,23 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
       assert :skill_immune in definition.modes
     end
 
+    test "the four infinite-defense modes are kept" do
+      {:ok, definition} =
+        Importer.to_definition(
+          entry(%{
+            "Modes" => %{
+              "IgnoreMelee" => true,
+              "IgnoreMagic" => true,
+              "IgnoreRanged" => true,
+              "IgnoreMisc" => true
+            }
+          })
+        )
+
+      for mode <- [:ignore_melee, :ignore_magic, :ignore_ranged, :ignore_misc],
+          do: assert(mode in definition.modes)
+    end
+
     test "boss + aggressive-decoding Ai + explicit aggressive dedup" do
       {:ok, definition} =
         Importer.to_definition(

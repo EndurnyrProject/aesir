@@ -511,6 +511,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
       assert MobState.to_combatant(state).status_immune
     end
+
+    test "only the infinite-defense modes are projected as ignore modes" do
+      base = build_mob_state()
+      modes = [:boss, :ignore_melee, :status_immune, :ignore_misc]
+      state = %MobState{base | mob_data: %{base.mob_data | modes: modes}}
+
+      assert MobState.to_combatant(state).ignore_modes == [:ignore_melee, :ignore_misc]
+      assert build_mob_state() |> MobState.to_combatant() |> Map.fetch!(:ignore_modes) == []
+    end
   end
 
   describe "to_combatant/1 status modifiers" do

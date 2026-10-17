@@ -3654,6 +3654,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Red Plant
   race: plant
   size: small
@@ -3700,6 +3705,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Blue Plant
   race: plant
   size: small
@@ -3746,6 +3756,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Green Plant
   race: plant
   size: small
@@ -3792,6 +3807,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Yellow Plant
   race: plant
   size: small
@@ -3838,6 +3858,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: White Plant
   race: plant
   size: small
@@ -3884,6 +3909,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Shining Plant
   race: plant
   size: small
@@ -3930,6 +3960,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Black Mushroom
   race: plant
   size: small
@@ -3976,6 +4011,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Red Mushroom
   race: plant
   size: small
@@ -8987,6 +9027,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Thief Mushroom
   race: plant
   size: small
@@ -11821,6 +11866,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Antonio
@@ -13940,6 +13989,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Emperium
   race: angel
   race_groups:
@@ -19368,6 +19421,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Wind Crystal
@@ -19414,6 +19471,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Earth Crystal
@@ -19462,6 +19523,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Fire Crystal
@@ -19508,6 +19573,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Water Crystal
@@ -34512,6 +34581,11 @@
   level: 1
   matk: 100
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Red Plant
   race: plant
   size: small
@@ -36568,6 +36642,11 @@
   id: 1792
   level: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Soccer Ball
   race: formless
   size: small
@@ -37130,6 +37209,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37174,6 +37257,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37218,6 +37305,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37262,6 +37353,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37306,6 +37401,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37349,6 +37448,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37434,6 +37537,10 @@
   level: 10
   matk: 8
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Delightful Lude
@@ -37588,6 +37695,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Rice Cake
   race: formless
   size: medium
@@ -37623,6 +37734,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   mvp_drops:
     - item: Fatty_Chubby_Earthworm
       rate: 5000
@@ -40389,6 +40504,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Crystal
@@ -40432,6 +40551,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Mystic Plant
   race: plant
   size: small
@@ -41145,6 +41269,10 @@
   matk: 10
   mdef: 7
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41374,6 +41502,10 @@
   matk: 7
   mdef: 15
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - assist
     - can_attack
@@ -41642,6 +41774,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Food Storage
   race: formless
   size: large
@@ -41674,6 +41810,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Food Depot
   race: formless
   size: large
@@ -41706,6 +41846,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Neutrality Flag
   race: formless
   size: large
@@ -41738,6 +41882,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Lion Flag
   race: formless
   size: large
@@ -41770,6 +41918,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Eagle Flag
   race: formless
   size: large
@@ -41802,6 +41954,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Blue Crystal
   race: formless
   size: large
@@ -41834,6 +41990,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Pink Crystal
   race: formless
   size: large
@@ -42357,6 +42517,10 @@
   matk: 1
   mdef: 1
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Jakk
@@ -42608,6 +42772,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Garden Keeper
@@ -42678,6 +42846,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Blue Flower
   race: plant
   size: medium
@@ -42709,6 +42881,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Red Flower
   race: plant
   size: medium
@@ -42740,6 +42916,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Yellow Flower
   race: plant
   size: medium
@@ -43367,6 +43547,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Crystal
@@ -43416,6 +43600,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Crystal
@@ -43465,6 +43653,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Crystal
@@ -43514,6 +43706,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Crystal
@@ -43563,6 +43759,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Treasure Chest
   race: formless
   size: small
@@ -43875,6 +44075,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Christmas Thief
@@ -44235,6 +44439,10 @@
   level: 19
   matk: 11
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -44323,6 +44531,10 @@
   matk: 3
   mdef: 5
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - looter
     - can_attack
@@ -46803,6 +47015,10 @@
   matk: 10
   mdef: 99
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Wild Gift Box
@@ -47030,6 +47246,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Golden Tulip
   race: plant
   size: small
@@ -47650,6 +47871,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
     - can_move
     - can_attack
   mvp_drops:
@@ -47850,6 +48072,10 @@
   mdef: 10
   modes:
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   mvp_drops:
@@ -48312,6 +48538,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   mvp_drops:
     - item: Valhalla_Flower
       rate: 10000
@@ -48511,6 +48741,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49135,6 +49369,10 @@
   matk: 20
   mdef: 20
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Botaring
@@ -50836,6 +51074,10 @@
   id: 2135
   level: 100
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50967,6 +51209,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -50998,6 +51244,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -51029,6 +51279,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -51060,6 +51314,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -51091,6 +51349,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -51122,6 +51384,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Nydhoggur Memory
@@ -51330,6 +51596,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Ripe Watermelon
   race: plant
   size: medium
@@ -52618,6 +52888,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_magic
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52676,6 +52947,8 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_ranged
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52850,6 +53123,8 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_ranged
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52966,6 +53241,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_magic
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53201,6 +53477,8 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_ranged
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53265,6 +53543,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_magic
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53329,6 +53608,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_magic
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53393,6 +53673,8 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_ranged
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53437,6 +53719,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Seaweed
@@ -54231,6 +54517,10 @@
   mdef: 1
   modes:
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Thief Bug
@@ -54321,6 +54611,10 @@
   matk: 1
   mdef: 1
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Christmas Teddy Bear
@@ -54374,6 +54668,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54620,6 +54915,10 @@
   level: 10
   matk: 8
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Octopus Tentacle
@@ -54660,6 +54959,10 @@
   level: 10
   matk: 8
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Giant Octopus
@@ -54698,6 +55001,10 @@
   level: 10
   matk: 8
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Messenger of Devil
@@ -56169,6 +56476,10 @@
   matk: 10
   mdef: 5
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Golden Poring
@@ -57851,6 +58162,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Treasure Chest
   race: formless
   size: small
@@ -58461,6 +58776,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_magic
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -59019,6 +59335,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Bangungot
   race: demon
   size: medium
@@ -59412,6 +59732,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   mvp_drops:
     - item: Old_Violet_Box
       rate: 5500
@@ -59442,6 +59766,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Drum
   race: formless
   size: small
@@ -59535,6 +59864,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Seaweed
@@ -59606,6 +59939,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Weakpoint
   race: plant
   size: small
@@ -59687,6 +60024,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Bakonawa's Treasure
   race: formless
   size: small
@@ -59744,6 +60085,10 @@
     - status_immune
     - skill_immune
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Monster
@@ -59981,6 +60326,10 @@
     - status_immune
     - skill_immune
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Hidden Mob
@@ -61270,6 +61619,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Soil
   race: plant
   size: small
@@ -61298,6 +61652,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Rock
   race: plant
   size: small
@@ -61326,6 +61685,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Thicket
   race: plant
   size: small
@@ -61446,6 +61810,10 @@
   matk: 2
   mdef: 1
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Novus
@@ -61518,6 +61886,10 @@
   level: 10
   matk: 11
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Socks Stealing Raccoon
@@ -61554,6 +61926,10 @@
   level: 10
   matk: 11
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Gift Stealing Raccoon
@@ -61668,6 +62044,7 @@
   matk: 20
   mdef: 17
   modes:
+    - ignore_magic
     - can_move
     - looter
     - can_attack
@@ -61701,6 +62078,7 @@
   matk: 20
   mdef: 17
   modes:
+    - ignore_melee
     - can_move
     - looter
     - can_attack
@@ -63807,6 +64185,10 @@
   matk: 1
   mdef: 5
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Thief Poring
@@ -63848,6 +64230,10 @@
   matk: 1
   mdef: 5
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Strange Baby Orc
@@ -65922,6 +66308,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Monster 3
@@ -65957,6 +66347,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Monster 4
@@ -65992,6 +66386,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Monster 5
@@ -66034,6 +66432,10 @@
   mdef: 10
   modes:
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Faceworm Egg
   race: insect
   race_groups:
@@ -85520,6 +85922,10 @@
   matk: 1
   mdef: 99
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Ghostring
@@ -85784,6 +86190,10 @@
     - status_immune
     - skill_immune
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Icemine
   race: insect
   size: small
@@ -86333,6 +86743,10 @@
     - status_immune
     - skill_immune
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Flamecross
   race: insect
   size: small
@@ -86480,6 +86894,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Wicked Vice Plant Manage
@@ -87342,6 +87760,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Death Soul
   race: demon
   size: small
@@ -88056,6 +88478,10 @@
   matk: 12
   mdef: 3
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Fire Pit
@@ -88128,6 +88554,11 @@
   level: 17
   matk: 12
   mdef: 3
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Sonia
   race: undead
   size: medium
@@ -88217,6 +88648,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Monster 7
@@ -88371,6 +88806,10 @@
   matk: 1
   mdef: 99
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Angry Mimic
@@ -88748,6 +89187,11 @@
   hp: 3
   id: 3075
   level: 1
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Treasure
   race: formless
   size: small
@@ -89138,6 +89582,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Mercenary
   race: demi_human
   size: medium
@@ -89548,6 +89996,11 @@
   level: 1
   matk: 1
   mdef: 1
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Mana of White
   race: formless
   size: small
@@ -89575,6 +90028,11 @@
   level: 1
   matk: 1
   mdef: 1
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Mana of Life
   race: formless
   size: small
@@ -89602,6 +90060,11 @@
   level: 1
   matk: 1
   mdef: 1
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Mana of Earth
   race: formless
   size: small
@@ -90426,6 +90889,11 @@
   level: 100
   matk: 1
   mdef: 50
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Illegal Promotion
   race: formless
   size: small
@@ -90893,6 +91361,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   mvp_drops:
@@ -90938,6 +91410,8 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_ranged
     - can_move
     - aggressive
     - can_attack
@@ -90981,6 +91455,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_magic
     - can_move
     - aggressive
     - can_attack
@@ -91063,6 +91538,8 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_ranged
     - can_move
     - aggressive
     - can_attack
@@ -91104,6 +91581,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_magic
     - can_move
     - aggressive
     - can_attack
@@ -91391,6 +91869,9 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Organic Pumpkin
@@ -91445,6 +91926,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_magic
     - can_move
     - can_attack
   name: Inorganic Pumpkin
@@ -93823,6 +94305,10 @@
   matk: 2
   mdef: 99
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - can_attack
@@ -93961,6 +94447,10 @@
     - status_immune
     - skill_immune
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -97665,6 +98155,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Plate
   race: formless
   size: small
@@ -98599,6 +99094,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - can_attack
   name: Shining Poring
@@ -100397,6 +100896,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Plasma R
   race: formless
   size: small
@@ -100425,6 +100929,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Plasma G
   race: formless
   size: small
@@ -100453,6 +100962,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Plasma B
   race: formless
   size: small
@@ -102872,6 +103386,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Purple Ore
   race: formless
   race_groups:
@@ -102902,6 +103421,11 @@
   level: 1
   matk: 1
   mdef: 99
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Sea Anemone
   race: formless
   race_groups:
@@ -103539,6 +104063,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103600,6 +104125,7 @@
     - boss
     - detector
     - status_immune
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -104210,6 +104736,10 @@
   id: 3790
   level: 1
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - looter
     - can_attack
@@ -104513,6 +105043,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: ILL_FROZEN_KN
   race: formless
   race_groups:
@@ -104543,6 +105077,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: ILL_FROZEN_GC
   race: formless
   race_groups:
@@ -105932,6 +106470,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Guild Skill Flag
   race: formless
   size: small
@@ -106722,6 +107264,10 @@
   level: 110
   mdef: 200
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Chemical Poison
@@ -106750,6 +107296,10 @@
   level: 110
   mdef: 200
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Bio Battery
@@ -107028,6 +107578,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
   name: Manhole
@@ -109397,6 +109951,10 @@
   matk: 1
   mdef: 71
   modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -112306,6 +112864,10 @@
   mdef: 32
   modes:
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Papila Ruba
   race: insect
   size: medium
@@ -112433,6 +112995,10 @@
   mdef: 84
   modes:
     - detector
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Papila Cae
   race: insect
   size: medium
@@ -112556,6 +113122,11 @@
   level: 130
   matk: 1
   mdef: 1
+  modes:
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Guardian Parts
   race: formless
   size: large
@@ -114297,6 +114868,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
     - aggressive
     - can_attack
     - random_target
@@ -114329,6 +114904,10 @@
     - boss
     - detector
     - status_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Plague of Corruption
   race: formless
   size: small
@@ -118643,6 +119222,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Spring Jewel
   race: formless
   size: small
@@ -118672,6 +119255,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Summer Jewel
   race: formless
   size: small
@@ -118701,6 +119288,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Autumn Jewel
   race: formless
   size: small
@@ -118730,6 +119321,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Winter Jewel
   race: formless
   size: small
@@ -118759,6 +119354,10 @@
   modes:
     - status_immune
     - skill_immune
+    - ignore_melee
+    - ignore_magic
+    - ignore_ranged
+    - ignore_misc
   name: Jewel
   race: formless
   size: small

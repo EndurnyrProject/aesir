@@ -24,6 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
      skill ignores elements.
   5. A negative result deals 0. There is no minimum of 1: an immune element
      deals 0.
+  6. Any other result against an infinite-defense target
+     (`Combatant.infinite_defense?/2`, read with the hit's battle flag) deals
+     exactly 1.
 
   Misc hits never roll flee: every misc damage skill ignores it. The skill's
   ignore-defensive-cards and ignore-element flags come from its definition.
@@ -91,7 +94,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
       |> skill_rates(attacker, defender, skill_id)
       |> element_step(element, attacker, defender, definition)
 
-    {:ok, %{damage: max(damage, 0), is_critical: false}}
+    {:ok, %{damage: infinite_defense_clamp(damage, defender, opts), is_critical: false}}
+  end
+
+  defp infinite_defense_clamp(damage, _defender, _opts) when damage <= 0, do: 0
+
+  defp infinite_defense_clamp(damage, defender, opts) do
+    if Combatant.infinite_defense?(defender, Keyword.fetch!(opts, :attack_flag)),
+      do: 1,
+      else: damage
   end
 
   defp defender_cardfix(damage, attacker, %{unit_type: :player} = defender, element, flag, defn)

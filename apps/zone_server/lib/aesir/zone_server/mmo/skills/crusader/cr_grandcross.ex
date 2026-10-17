@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
@@ -152,20 +153,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
       modifiers = ModifierCalculator.get_all_modifiers(caster.unit_type, caster.unit_id)
       defender_modifiers = ModifierCalculator.get_all_modifiers(target.unit_type, target.unit_id)
 
+      attack_flag =
+        BattleFlags.build(
+          :magic,
+          SkillRange.classify(caster, target, definition().id, level),
+          true
+        )
+
       magic =
         DamageInputs.magic_context(
           caster,
           target,
-          [
-            skill_id: definition().id,
-            element: :holy,
-            attack_flag:
-              BattleFlags.build(
-                :magic,
-                SkillRange.classify(caster, target, definition().id, level),
-                true
-              )
-          ],
+          [skill_id: definition().id, element: :holy, attack_flag: attack_flag],
           modifiers,
           defender_modifiers
         )
@@ -193,7 +192,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
         non_crit_atk_rate: EquipmentBonuses.non_crit_atk_rate(caster)
       }
 
-      amount = Damage.calculate(GameMode.mode(), inputs)
+      amount =
+        if Combatant.infinite_defense?(target, attack_flag),
+          do: 1,
+          else: Damage.calculate(GameMode.mode(), inputs)
 
       :ok =
         Combat.deliver_skill_unit_hit(prepared, amount,

@@ -1759,12 +1759,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   # The one calculated damage becomes the attack's logical total before any
   # mutable target status sees it; the packet shows the normalized count.
-  defp normalize_divisions(damage_result, hit_divisions) do
-    {damage, divisions} =
-      DamageShared.normalize_damage_divisions(damage_result.damage, hit_divisions)
-
-    {%{damage_result | damage: damage}, divisions}
-  end
+  defp normalize_divisions(damage_result, hit_divisions),
+    do: DamageCalculator.normalize_divisions(damage_result, hit_divisions)
 
   defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, :player),
     do: {unit_type, unit_id}
@@ -1806,6 +1802,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           arrow_attack?: immediate? and arrow_skill?(attacker, skill_id, hit_metadata.delivery)
         )
     }
+
+    hit_info = DamageApplication.mark_infinite_defense(hit_info, damage_result)
 
     source = damage_source(attacker, target_type)
 

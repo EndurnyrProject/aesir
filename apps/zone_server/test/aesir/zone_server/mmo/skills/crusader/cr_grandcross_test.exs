@@ -267,6 +267,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       assert {:ok, _group} = strike(group, {:mob, @mob_id})
     end
 
+    test "an :ignore_magic monster takes 1" do
+      caster = combatant(:player, @caster_id)
+
+      stub(Combat, :resolve_combatant, fn
+        :player, @caster_id -> {:ok, caster}
+        :mob, @mob_id -> {:ok, undead_mob()}
+      end)
+
+      stub(Combat, :prepare_skill_unit_hit, fn _caster, {:mob, @mob_id}, 254 ->
+        {:ok, %{target: %{combatant(:mob, @mob_id) | ignore_modes: [:ignore_magic]}}}
+      end)
+
+      stub(StatusInterpreter, :apply_status, fn :mob, @mob_id, :sc_blind, _ -> :ok end)
+      expect(Combat, :deliver_skill_unit_hit, fn _prepared, 1, _opts -> :ok end)
+
+      assert {:ok, _group} = strike(group([]), {:mob, @mob_id})
+    end
+
     @tag game_mode: :pre_renewal
     test "a monster's own field hits it for nothing, a miss that never blinds it" do
       # The fixture monster is undead-element.

@@ -756,6 +756,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     attack_stages(damage, Map.get(hit_info, :status_tick?, false), run, hit_info)
   end
 
+  @doc """
+  Runs only the blocking statuses (Kyrie Eleison, Safety Wall, Pneuma,
+  Basilica) over a single point of damage, for a weapon contact on an
+  infinite-defense target. A Kyrie Eleison barrier loses that one point.
+  Returns the damage left (`0` or `1`) and the `absorb_hit/4` classification.
+  """
+  @spec block_hit(unit_type(), integer(), map()) :: {0 | 1, :hit | :block}
+  def block_hit(unit_type, unit_id, hit_info) do
+    held = Map.new(StatusStorage.get_unit_statuses(unit_type, unit_id), &{&1.type, &1})
+    run = &dispatch_absorb(unit_type, unit_id, Map.get(held, &1), &2, hit_info)
+    Enum.reduce_while(@block_stage, {1, :hit}, fn id, acc -> block_step(id, acc, run) end)
+  end
+
   @doc "Intercepts a same-source magic skill hit after ordinary reductions and blockers."
   @spec intercept_magic(unit_type(), integer(), map()) :: :miss | :continue
   def intercept_magic(unit_type, unit_id, hit_info) do

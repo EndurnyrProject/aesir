@@ -76,7 +76,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
   defp reflectable_type?(_hit_info), do: false
 
   defp reflectable?(hit_info) do
-    reflectable_type?(hit_info) and
+    not Map.has_key?(hit_info, :infinite_defense) and
+      reflectable_type?(hit_info) and
       Map.get(hit_info, :is_short, false) == true and
       not Map.get(hit_info, :reflected, false) and
       not Map.get(hit_info, :redirected, false)

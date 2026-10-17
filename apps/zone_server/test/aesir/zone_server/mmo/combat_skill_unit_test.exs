@@ -560,6 +560,31 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
              )
   end
 
+  test "fixed ground magic deals an infinite-defense monster 1, with no element step" do
+    test_pid = self()
+    mob_state = build_mob_state(0)
+
+    mob_state = %{
+      mob_state
+      | mob_data: %{mob_state.mob_data | element: {:undead, 1}, modes: [:ignore_magic]}
+    }
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id -> {:ok, {150, 150, @map_name}} end)
+
+    stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    expect(MobSession, :apply_damage, fn ^test_pid, 1, _source, _metadata -> :ok end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 70, 10, :holy, 0,
+               fixed_damage: 388
+             )
+  end
+
   test "player-owned ground damage reaches player and Homunculus owners" do
     attacker = caster(100)
     player_id = @target_id

@@ -4,11 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
-  alias Aesir.ZoneServer.Mmo.Mechanics
-  alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -30,18 +29,15 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
     :ok
   end
 
-  test "the Emperium profile and imported HP follow the boot-selected mode" do
-    assert MobFormulas.Renewal.emperium_damage_mode() == :plant
-    assert MobFormulas.PreRenewal.emperium_damage_mode() == :normal
-
-    {profile, hp} =
+  test "the Emperium's infinite-defense modes and imported HP follow the boot-selected mode" do
+    {ignore_modes, hp} =
       case GameMode.mode() do
-        :renewal -> {:plant, 100}
-        :pre_renewal -> {:normal, 68_430}
+        :renewal -> {Combatant.ignore_modes(), 100}
+        :pre_renewal -> {[], 68_430}
       end
 
-    assert Mechanics.mob_formulas().emperium_damage_mode() == profile
-    assert {:ok, %{hp: ^hp, race: :angel}} = Mobs.by_id(@emperium_mob_id)
+    assert {:ok, %{hp: ^hp, race: :angel} = emperium} = Mobs.by_id(@emperium_mob_id)
+    assert Enum.sort(ignore_modes(emperium)) == Enum.sort(ignore_modes)
   end
 
   test "ordinary STR, critical, and multiplier inflation obey the active profile" do
@@ -147,7 +143,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
     case GameMode.mode() do
       :renewal ->
         assert {primary.damage, secondary.damage, status_element.damage, explicit_element.damage} ==
-                 {1, 0, 1, 1}
+                 {1, 1, 1, 1}
 
       :pre_renewal ->
         assert primary.damage > secondary.damage
@@ -245,8 +241,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
     case GameMode.mode() do
       :renewal ->
         assert result.primary.damage == 0
-        assert result.secondary.damage == 0
-        assert result.raw_total == 0
+        assert result.secondary.damage == 1
+        assert result.raw_total == 1
 
       :pre_renewal ->
         assert result.raw_total == 0
@@ -288,7 +284,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
     case GameMode.mode() do
       :renewal ->
         assert ordinary.damage == 1
-        assert triple.damage > ordinary.damage
+        assert triple.damage == 1
 
       :pre_renewal ->
         assert ordinary.damage > 1
@@ -306,13 +302,18 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
       luk: 0
     ]
 
-    defaults
-    |> Keyword.merge(opts)
+    opts = Keyword.merge(defaults, opts)
+    {:ok, mob} = Mobs.by_id(opts[:monster_id])
+
+    opts
     |> CombatTestHelper.create_mob_combatant()
+    |> Map.put(:ignore_modes, ignore_modes(mob))
     |> then(fn defender ->
       %{defender | combat_stats: Map.put(defender.combat_stats, :perfect_dodge, 0)}
     end)
   end
+
+  defp ignore_modes(mob), do: Enum.filter(mob.modes, &(&1 in Combatant.ignore_modes()))
 
   defp player(learned_skills \\ %{}) do
     %PlayerState{

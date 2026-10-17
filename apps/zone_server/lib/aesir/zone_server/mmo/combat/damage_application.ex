@@ -64,6 +64,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
           map(),
           integer() | Ref.t() | nil
         ) :: {integer(), map()}
+  def prepare_unit_damage(
+        :mob,
+        target_id,
+        damage,
+        %{infinite_defense: _} = hit_info,
+        attacker_id
+      ),
+      do: settle_infinite_defense(target_id, damage, hit_info, attacker_id)
+
   def prepare_unit_damage(target_type, target_id, damage, hit_info, attacker_id) do
     case ground_target(target_type, target_id, hit_info) do
       {:ok, target} ->
@@ -181,6 +190,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   @doc """
+  Marks `hit_info` as an infinite-defense weapon contact when the calculated
+  `result` is one (`DamageCalculator.damage_result/0` `:plant`).
+
+  A marked hit on a monster skips the damage arithmetic statuses, the
+  attacker's damage statuses, the siege map rate and every damage return: only
+  the blocking statuses run, against a single point of damage. Only a blocker
+  that stops the hit (Safety Wall, Pneuma, Basilica) makes it deal nothing;
+  Kyrie Eleison absorbing the point still lets the contact deal 1. A contact on the Emperium on siege ground must also be
+  a valid siege attack.
+  """
+  @spec mark_infinite_defense(map(), map()) :: map()
+  def mark_infinite_defense(hit_info, %{plant: plant}),
+    do: Map.put(hit_info, :infinite_defense, plant)
+
+  def mark_infinite_defense(hit_info, _result), do: hit_info
+
+  defp settle_infinite_defense(target_id, damage, hit_info, attacker) do
+    blocker_hit = Map.put(hit_info, :attacker, absorb_attacker(attacker))
+
+    {damage, hit_info} =
+      case StatusInterpreter.block_hit(:mob, target_id, blocker_hit) do
+        {0, :block} -> {0, Map.put(hit_info, :blocked?, true)}
+        {_reduced, :hit} -> {damage, hit_info}
+      end
+
+    {damage, hit_info} = emperium_siege_check(target_id, damage, hit_info, attacker)
+    {damage, Map.put(hit_info, :pre_delivery_prepared?, true)}
+  end
+
+  defp emperium_siege_check(
+         target_id,
+         damage,
+         %{infinite_defense: :emperium} = hit_info,
+         attacker
+       )
+       when damage > 0 do
+    with {:ok, target} <- ground_target(:mob, target_id, hit_info),
+         {:error, reason} <- Rules.validate_target(resolve_attacker(attacker), target, hit_info) do
+      {0, Map.put(hit_info, :settlement_error, reason)}
+    else
+      _valid_or_off_ground -> {damage, hit_info}
+    end
+  end
+
+  defp emperium_siege_check(_target_id, damage, hit_info, _attacker), do: {damage, hit_info}
+
+  @doc """
   Settles and delivers one already-calculated ordinary weapon swing.
 
   Mutating status absorption sees the raw aggregate once. On siege ground,
@@ -208,11 +264,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       )
       when raw_total > 0 do
     hit_info = Map.put(hit_info, :components, component_metadata(swing))
+    settle_weapon_swing(target_type, target_pid, target_id, swing, hit_info, attacker)
+  end
 
+  def apply_weapon_swing(
+        _target_type,
+        _target_pid,
+        _target_id,
+        %HandedAttack{} = swing,
+        _hit_info,
+        _attacker
+      ) do
+    {settle_components(swing, 0), :ok}
+  end
+
+  defp settle_weapon_swing(
+         :mob,
+         target_pid,
+         target_id,
+         swing,
+         %{infinite_defense: _} = hit_info,
+         attacker
+       ) do
+    {damage, prepared_hit} =
+      settle_infinite_defense(target_id, swing.raw_total, hit_info, attacker)
+
+    settled = settle_components(swing, damage)
+    delivery = apply_unit_damage(:mob, target_pid, target_id, damage, prepared_hit, attacker)
+    dispatch_swing_procs(delivery, prepared_hit, damage)
+    {with_stages(settled, prepared_hit, damage), delivery}
+  end
+
+  defp settle_weapon_swing(target_type, target_pid, target_id, swing, hit_info, attacker) do
     case ground_target(target_type, target_id, hit_info) do
       {:ok, target} ->
         {absorbed, prepared_hit} =
-          absorb_ground_hit(target_type, target_id, raw_total, hit_info, attacker, target)
+          absorb_ground_hit(target_type, target_id, swing.raw_total, hit_info, attacker, target)
 
         settled =
           swing
@@ -238,17 +325,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       :not_ground ->
         apply_ordinary_swing(target_type, target_pid, target_id, swing, hit_info, attacker)
     end
-  end
-
-  def apply_weapon_swing(
-        _target_type,
-        _target_pid,
-        _target_id,
-        %HandedAttack{} = swing,
-        _hit_info,
-        _attacker
-      ) do
-    {settle_components(swing, 0), :ok}
   end
 
   defp apply_ordinary_swing(target_type, target_pid, target_id, swing, hit_info, attacker) do
@@ -866,7 +942,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp trap_skill?(skill_id), do: match?({:ok, %{is_trap: true}}, Catalog.by_id(skill_id))
 
   defp melee_reflectable?(hit_info) do
-    Map.get(hit_info, :dmg_type) == :physical and
+    not Map.has_key?(hit_info, :infinite_defense) and
+      Map.get(hit_info, :dmg_type) == :physical and
       Map.get(hit_info, :is_short, false) == true and
       not Map.get(hit_info, :reflected, false) and
       not Map.get(hit_info, :redirected, false)

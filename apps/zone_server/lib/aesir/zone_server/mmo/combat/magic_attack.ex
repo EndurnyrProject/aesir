@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageDisplay
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
@@ -85,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   Intended for the Heal undead/demon branch: the already-computed heal value is
   delivered as holy damage, so MATK and MDEF play no role. The amount is raised to
   the magic minimum of 1 and then takes one attribute step, so an immune target
-  takes 0. Resolves and range-checks the target
+  takes 0. An infinite-defense target (`Combatant.infinite_defense?/2`) takes exactly 1. Resolves and range-checks the target
   identically to `execute_magic_attack/3`, broadcasts a `SkillDamage` packet, and
   applies the final damage.
 
@@ -125,9 +126,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
       damage =
-        if Keyword.get(opts, :ignore_element, false),
-          do: max(amount, 1),
-          else: DamageShared.apply_element_step(max(amount, 1), element, attacker, target)
+        cond do
+          Combatant.infinite_defense?(target, BattleFlags.type_bit(:magic)) -> 1
+          Keyword.get(opts, :ignore_element, false) -> max(amount, 1)
+          true -> DamageShared.apply_element_step(max(amount, 1), element, attacker, target)
+        end
 
       hit_info =
         magic_hit_info(element,
@@ -849,7 +852,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          _formula
        )
        when is_integer(fixed_damage) and fixed_damage >= 0 do
-    DamageShared.apply_element_step(max(fixed_damage, 1), element, attacker, target)
+    if Combatant.infinite_defense?(target, BattleFlags.type_bit(:magic)),
+      do: 1,
+      else: DamageShared.apply_element_step(max(fixed_damage, 1), element, attacker, target)
   end
 
   defp apply_magic_damage(:skill_unit, manager_pid, target_id, damage, _hit_info, attacker) do

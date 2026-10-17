@@ -832,6 +832,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       proc: EquipProcDispatch.spec(attacker, target, target_state, attack_flag)
     }
 
+    hit_info = DamageApplication.mark_infinite_defense(hit_info, swing.primary)
+
     source = player_damage_source(target_type, attacker.unit_id)
 
     {settled, delivery} =
@@ -1174,6 +1176,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           proc: proc
         }
 
+        hit_info = DamageApplication.mark_infinite_defense(hit_info, damage_result)
+
         prepared_hits =
           Enum.map(1..hits//1, fn _ ->
             DamageApplication.prepare_unit_damage(
@@ -1410,6 +1414,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         )
     }
 
+    hit_info = DamageApplication.mark_infinite_defense(hit_info, damage_result)
+
     {damage, hit_info} =
       DamageApplication.prepare_unit_damage(
         target_type,
@@ -1486,6 +1492,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       div: 1,
       proc: EquipProcDispatch.spec(attacker, target, target_hp, normal_attack_flag(attacker))
     }
+
+    hit_info = DamageApplication.mark_infinite_defense(hit_info, damage_result)
 
     source = {:homunculus, attacker.unit_id}
 

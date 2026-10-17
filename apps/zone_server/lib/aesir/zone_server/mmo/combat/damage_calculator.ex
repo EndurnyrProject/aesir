@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @emperium_mob_id 1288
+  @unsplit_plant_skills [263, 267]
   @cart_revolution 153
   @sacrifice 368
 
@@ -57,9 +58,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   Result of damage calculation containing final damage and critical hit status.
   """
   @type damage_result :: %{
-          damage: non_neg_integer(),
-          is_critical: boolean()
+          required(:damage) => non_neg_integer(),
+          required(:is_critical) => boolean(),
+          optional(:plant) => plant()
         }
+
+  @typedoc """
+  How an infinite-defense contact divides over its hits: `:emperium` keeps its
+  single contact, `:unsplit` multiplies a split skill's contact by its hit
+  count, `:ordinary` divides like any other hit.
+  """
+  @type plant :: :emperium | :unsplit | :ordinary
 
   @typedoc """
   Standardized combatant structure for damage calculations.
@@ -376,25 +385,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp calculate_damage_with(attacker, defender, opts, attack_path, defense_mode) do
-    case Keyword.get(opts, :fixed_damage) do
-      nil -> calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
-      fixed_damage -> {:ok, %{damage: fixed_damage, is_critical: false}}
+    cond do
+      infinite_defense_hit?(attacker, defender, opts) ->
+        plant_contact(select_weapon_hand(attacker, attack_path), defender, opts, attack_path)
+
+      fixed_damage = Keyword.get(opts, :fixed_damage) ->
+        {:ok, %{damage: fixed_damage, is_critical: false}}
+
+      true ->
+        calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
     end
   end
 
   defp calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_mode) do
     attacker = select_weapon_hand(attacker, attack_path)
 
-    cond do
-      emperium_plant_contact?(defender, opts) ->
-        calculate_emperium_plant_contact(attacker, defender, opts)
-
-      attacker.unit_type == :player and not Keyword.has_key?(opts, :base_damage) ->
-        calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
-
-      true ->
+    if attacker.unit_type == :player and not Keyword.has_key?(opts, :base_damage),
+      do: calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode),
+      else:
         calculate_ordinary_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
-    end
   end
 
   # The scalar recipe of non-player hits and of player hits with a replaced base:
@@ -1365,38 +1374,76 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     }
   end
 
-  # A plant-mode Emperium contact is 1 damage that takes the weapon's attribute
-  # step (battle.cpp:4980-4996).
-  defp calculate_emperium_plant_contact(attacker, defender, opts) do
-    modifiers = attacker_status_modifiers(attacker)
+  defp infinite_defense_hit?(attacker, defender, opts) do
+    range = if ranged_hit?(attacker, opts), do: :long, else: :short
+    flag = BattleFlags.build(:weapon, range, Keyword.has_key?(opts, :skill_id))
+    Combatant.infinite_defense?(defender, flag)
+  end
 
+  # A landed weapon hit on an infinite-defense target skips the whole recipe:
+  # each hand deals 1. Only the Emperium's right hand takes the attribute step;
+  # its left hand would only when the right dealt nothing before that step.
+  defp plant_contact(attacker, defender, opts, :primary) do
     damage =
-      DamageShared.apply_element_step(
-        1,
-        hit_element(attacker, modifiers, opts),
-        attacker,
-        defender,
-        attacker_modifiers: modifiers
-      )
+      if emperium?(defender) do
+        modifiers = attacker_status_modifiers(attacker)
 
-    {:ok, %{damage: damage, is_critical: critical_decision(opts)}}
+        DamageShared.apply_element_step(
+          1,
+          hit_element(attacker, modifiers, opts),
+          attacker,
+          defender,
+          attacker_modifiers: modifiers
+        )
+      else
+        1
+      end
+
+    {:ok,
+     %{damage: damage, is_critical: critical_decision(opts), plant: plant_kind(defender, opts)}}
+  end
+
+  defp plant_contact(_attacker, defender, opts, :secondary),
+    do:
+      {:ok, %{damage: 1, is_critical: critical_decision(opts), plant: plant_kind(defender, opts)}}
+
+  defp emperium?(defender), do: Map.get(defender, :monster_id) == @emperium_mob_id
+
+  # Triple Attack and Finger Offensive keep their whole hit count against an
+  # infinite-defense target; classic requires the target's DEF to be exactly 100.
+  defp plant_kind(defender, opts) do
+    cond do
+      emperium?(defender) ->
+        :emperium
+
+      Keyword.get(opts, :skill_id) in @unsplit_plant_skills and
+          (not classic?() or defender.combat_stats.def == 100) ->
+        :unsplit
+
+      true ->
+        :ordinary
+    end
   end
 
   @doc """
-  Whether an ordinary swing against `defender` is a plant-mode Emperium
-  contact: a fixed 1-damage hit that skips the rest of the weapon recipe,
-  including hit-division normalization.
+  Normalizes a calculated hit over its `divisions` (see
+  `DamageShared.normalize_damage_divisions/2`). An infinite-defense contact on
+  the Emperium keeps its single damage; a `:unsplit` contact multiplies by the
+  hit count even for a split skill.
   """
-  @spec emperium_plant_contact?(Combatant.t() | map(), keyword()) :: boolean()
-  def emperium_plant_contact?(
-        %Combatant{unit_type: :mob, monster_id: @emperium_mob_id},
-        opts
-      ) do
-    is_nil(Keyword.get(opts, :skill_id)) and
-      Mechanics.mob_formulas().emperium_damage_mode() == :plant
+  @spec normalize_divisions(damage_result(), integer()) :: {damage_result(), non_neg_integer()}
+  def normalize_divisions(%{plant: :emperium} = result, divisions),
+    do: {result, abs(divisions)}
+
+  def normalize_divisions(%{plant: :unsplit} = result, divisions),
+    do: normalize_divisions(Map.delete(result, :plant), abs(divisions)) |> keep_plant(:unsplit)
+
+  def normalize_divisions(result, divisions) do
+    {damage, divisions} = DamageShared.normalize_damage_divisions(result.damage, divisions)
+    {%{result | damage: damage}, divisions}
   end
 
-  def emperium_plant_contact?(_defender, _opts), do: false
+  defp keep_plant({result, divisions}, plant), do: {Map.put(result, :plant, plant), divisions}
 
   # P.Atk (renewal 4th-job attacker stat): a percentage multiplier on base ATK
   # applied before the skill ratio. rAthena battle.cpp:5532.
