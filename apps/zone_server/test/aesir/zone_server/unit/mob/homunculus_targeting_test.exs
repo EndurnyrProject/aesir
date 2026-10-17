@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
+  alias Aesir.Net.HomunculusDeleteCommand
+  alias Aesir.Net.HomunculusRequest
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
@@ -114,7 +116,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
     assert MobSession.get_state(mob.pid).target_ref == {:homunculus, homunculus.world_gid}
     assert PlayerSession.get_state(session.pid).game_state.stats.current_state.hp == 1_000
 
-    UnitRegistry.unregister_unit(:homunculus, homunculus.world_gid)
+    simulate_incoming_message(session.pid, %HomunculusRequest{
+      request_id: 1,
+      command: {:delete, %HomunculusDeleteCommand{confirmed: true}}
+    })
+
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus == nil end)
 
     # The map's pass repeats every 100 ms; a think inside the attack motion is dropped.
     assert_eventually(fn ->

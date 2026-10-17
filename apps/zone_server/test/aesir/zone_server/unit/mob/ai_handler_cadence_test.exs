@@ -263,7 +263,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AiHandlerCadenceTest do
 
     test "a spotted standing mob checks its idle skills, within the skill interval it does not" do
       now = System.system_time(:millisecond)
-      row = %{row() | state: :idle}
+      row = %{row() | state: :idle, skill: "MG_SIGHT", skill_id: 10, level: 1, target: :self}
       stub(MobSkillDb, :rows_for, fn 1001 -> [row] end)
 
       idle = %{

@@ -54,7 +54,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
-  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -87,6 +86,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   (`skill_cast_range/1`), in the map's block order.
   """
   @spec resolve_target(MobState.t(), map()) :: {:ok, target()} | {:error, atom()}
+  def resolve_target(
+        %MobState{casting: %{row: row, unit_target: {:unit, type, id} = target}} = state,
+        row
+      ) do
+    if {type, id} == {:mob, state.instance_id} or living_unit?(type, id),
+      do: {:ok, target},
+      else: {:error, :no_target}
+  end
+
   def resolve_target(%MobState{target_ref: nil}, %{target: :target}), do: {:error, :no_target}
 
   def resolve_target(%MobState{target_ref: {type, id}}, %{target: :target}) do
@@ -190,7 +198,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   def broadcast_casting(%MobState{} = state, row) do
     packet = %SkillCasting{
       src_id: state.instance_id,
-      target_id: target_id(state.target_ref),
+      target_id: casting_target_id(state),
       x: 0,
       y: 0,
       skill_id: row.skill_id,
@@ -215,6 +223,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
     Broadcast.to_in_range(state.map_name, state.x, state.y, Config.view_range(), packet)
   end
+
+  defp casting_target_id(%MobState{casting: %{unit_target: {:unit, _type, id}}}), do: id
+  defp casting_target_id(state), do: target_id(state.target_ref)
 
   defp target_id(nil), do: 0
   defp target_id({_type, id}), do: id
@@ -517,51 +528,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   @doc """
-  Counts active attack orders on `ref`, never chase or idle intent: players
-  with a continuous attack armed, monsters with an attack target and homunculi
-  performing an attack. The unit counter is capped at 255.
+  Reads the active-attack counter on `ref`, never chase or idle intent.
+  The eight-bit counter loses excess increments at saturation; departures
+  decrement its stored value rather than reconstructing a fresh count.
   """
   @spec count_targeting({atom(), integer()}) :: non_neg_integer()
-  def count_targeting({_type, id} = ref) do
-    players =
-      :player
-      |> UnitRegistry.list_units_by_type()
-      |> Enum.count(fn player_id ->
-        match?(
-          {:ok,
-           {_module,
-            %PlayerState{
-              combat_target_id: ^id,
-              action_state: action,
-              continuous_attack_timer: timer
-            }, _pid}}
-          when action in [:attacking, :casting] and is_reference(timer),
-          UnitRegistry.get_unit(:player, player_id)
-        )
-      end)
-
-    mobs =
-      :mob
-      |> UnitRegistry.list_units_by_type()
-      |> Enum.count(fn mob_id ->
-        match?(
-          {:ok, {_module, %MobState{attack_target: ^ref}, _pid}},
-          UnitRegistry.get_unit(:mob, mob_id)
-        )
-      end)
-
-    homunculi =
-      :homunculus
-      |> UnitRegistry.list_units_by_type()
-      |> Enum.count(fn hom_id ->
-        match?(
-          {:ok, {_module, %HomunculusState{target: ^ref, action_state: :attacking}, _pid}},
-          UnitRegistry.get_unit(:homunculus, hom_id)
-        )
-      end)
-
-    min(players + mobs + homunculi, 255)
-  end
+  defdelegate count_targeting(ref), to: UnitRegistry, as: :target_count
 
   @doc "Counts the monsters within the square visual area of the mob, itself included."
   @spec count_nearby_mobs(MobState.t()) :: non_neg_integer()

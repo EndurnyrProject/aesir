@@ -495,7 +495,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
     assert_eventually(fn -> get_mob_state(near.pid).hp == 4_000 end)
     assert get_mob_state(far.pid).hp == 5_000
     assert {:error, :not_found} = UnitRegistry.get_unit(:skill_unit, enemy_trap.cell_id)
-    assert {:ok, _registered} = UnitRegistry.get_unit(:skill_unit, ally_trap.cell_id)
+    assert {:error, :not_found} = UnitRegistry.get_unit(:skill_unit, ally_trap.cell_id)
     assert {:ok, _registered} = UnitRegistry.get_unit(:skill_unit, generic_unit.cell_id)
 
     Process.cancel_timer(settled.homunculus_runtime.bio_explosion_timer_ref)

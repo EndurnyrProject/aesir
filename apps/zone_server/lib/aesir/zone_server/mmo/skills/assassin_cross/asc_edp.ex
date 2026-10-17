@@ -1,4 +1,4 @@
-defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AscEdp do
+defmodule Aesir.ZoneServer.Mmo.Skills.AssassinCross.AscEdp do
   @moduledoc """
   Enchant Deadly Poison strengthens the caster's weapon attacks and grants
   an additional 25 percent poison property, without replacing the weapon element.
@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AscEdp do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 378,
     name: :asc_edp,
+    status: :sc_edp,
     display_name: "Enchant Deadly Poison",
     max_level: 5,
     target_type: :self,

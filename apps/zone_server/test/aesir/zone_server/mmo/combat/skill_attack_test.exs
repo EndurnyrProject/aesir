@@ -732,7 +732,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end)
 
     stub(MapCache, :get, fn ^map_name -> {:ok, :map} end)
-    stub(Cell, :step_traversable?, fn ^map_name, _from, _to -> true end)
+    stub(Cell, :traversable?, fn ^map_name, _x, _y -> true end)
 
     # A hit below one damage per division pushes nothing, equipment blow
     # included: a total quantized to zero by negative divisions stays put while
@@ -815,7 +815,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     end)
 
     stub(MapCache, :get, fn ^map_name -> {:ok, :map} end)
-    stub(Cell, :step_traversable?, fn ^map_name, _from, _to -> true end)
+    stub(Cell, :traversable?, fn ^map_name, _x, _y -> true end)
 
     assert :ok =
              SkillAttack.execute_skill_attack(caster_state, {:mob, 2001},

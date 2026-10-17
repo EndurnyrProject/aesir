@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusProgressionIntegrationTest do
     :ok = MobSession.apply_damage(second_mob.pid, 1, {:homunculus, progressed.world_gid})
 
     assert_eventually(fn ->
-      Repo.get_by!(Homunculus, character_id: owner.character.id).exp > 0
+      PlayerSession.get_state(owner.pid).homunculus.exp > progressed.exp
     end)
 
     row = Repo.get_by!(Homunculus, character_id: owner.character.id)

@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Slaves do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Mmo.MobSkill.Executor
+  alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Slaves do
 
   @follow_distance 2
 
-  @doc "Runs the slave step, halting the current think when it starts following."
+  @doc "Runs slave death, follow and target linking, halting a think when the step handles it."
   @spec process(MobState.t(), integer()) :: {:cont | :halt, MobState.t()}
   def process(%MobState{master_id: nil} = state, _now), do: {:cont, state}
 
@@ -151,10 +151,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Slaves do
   defp master_target(%MobState{attack_target: target}, _slave) when not is_nil(target), do: target
   defp master_target(%MobState{chase_target: target}, _slave) when not is_nil(target), do: target
 
-  defp master_target(%MobState{casting: %{row: row}} = master, slave) do
-    with {:ok, {:unit, type, id}} <- Executor.resolve_target(master, row),
-         {:ok, {_, unit, _}} <- UnitRegistry.get_unit(type, id),
-         :ok <- Targeting.validate_enemy(slave, unit) do
+  defp master_target(%MobState{casting: %{unit_target: {:unit, type, id}}}, slave) do
+    with {:ok, {module, unit, _}} <- UnitRegistry.get_unit(type, id),
+         true <- Relationship.enemy?(MobState.to_combatant(slave), module.to_combatant(unit)) do
       {type, id}
     else
       _support_or_missing -> nil

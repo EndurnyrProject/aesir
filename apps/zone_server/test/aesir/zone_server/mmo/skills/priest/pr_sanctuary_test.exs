@@ -478,7 +478,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     end)
 
     stub(MapCache, :get, fn "prontera" -> {:ok, :map} end)
-    stub(Cell, :step_traversable?, fn "prontera", _from, _to -> true end)
+    stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
 
     # Delivery skips absorption for the Holy target's 0 damage.
     expect(StatusInterpreter, :absorb_hit, 2, fn :mob, id, damage, hit_info ->

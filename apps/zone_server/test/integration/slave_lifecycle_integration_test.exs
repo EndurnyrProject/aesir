@@ -1,11 +1,14 @@
 defmodule Aesir.ZoneServer.Integration.SlaveLifecycleIntegrationTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Net.ActionRequest
+  alias Aesir.Net.MoveRequest
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.Slaves
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @map "slave_lifecycle"
@@ -75,6 +78,14 @@ defmodule Aesir.ZoneServer.Integration.SlaveLifecycleIntegrationTest do
     assert_eventually(fn ->
       get_mob_state(slave_pid).target_ref == {:player, target.character.id}
     end)
+
+    simulate_incoming_message(target.pid, %ActionRequest{target_id: master.unit_id, action: 7})
+    PlayerSession.get_state(target.pid)
+    assert UnitRegistry.target_count({:mob, master.unit_id}) == 1
+    simulate_incoming_message(target.pid, %MoveRequest{dest_x: 20, dest_y: 21})
+    stopped = PlayerSession.get_state(target.pid)
+    assert stopped.game_state.continuous_attack_timer == nil
+    assert UnitRegistry.target_count({:mob, master.unit_id}) == 0
 
     MobSession.warp(master.pid, @map, 60, 60)
 

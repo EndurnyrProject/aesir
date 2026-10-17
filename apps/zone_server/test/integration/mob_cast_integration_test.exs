@@ -199,9 +199,9 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     end
 
     test "a mob casts Lex Aeterna and delayed Lex Divina against a player" do
-      # vit/luk zeroed so Lex Divina's silence resistance (vit + luk/3 percent)
-      # cannot shorten the status below the observable window — mirrors the
-      # Frost Nova test's determinism pattern in this file.
+      # This exercises cast delivery, not the infliction roll.
+      stub(Resistance, :roll_rate, fn _rate -> true end)
+
       player =
         start_player_session(
           id: 9_823,
@@ -221,6 +221,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
           ] do
         mob = spawn_test_mob(@map, {150, 150}, mob_id: @lex_mob_id)
         row = row!(@lex_mob_id, skill, target: :target)
+        allow(Resistance, self(), mob.pid)
 
         complete_mob_cast(mob, row, char_id)
 
@@ -258,9 +259,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   describe "SA_DISPELL rows" do
     test "a mob dispel strips the player's buffs and debuffs, sparing no_dispel statuses" do
-      # vit/luk 0 pins the setup infliction rolls to 100%: sc_poison and
-      # sc_bleeding below are arranged state, and a resisted roll fails the test
-      # before the dispel under test ever runs.
+      # Poison and Bleeding are arranged state; pin their infliction rolls.
       player =
         start_player_session(id: 9_801, name: "Dispelled", base_level: 50, vit: 0, luk: 0)
 
@@ -280,8 +279,18 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
           duration: 1_800_000
         )
 
-      :ok = StatusInterpreter.apply_status(:player, char_id, :sc_poison, duration: 1_800_000)
-      :ok = StatusInterpreter.apply_status(:player, char_id, :sc_bleeding, duration: 1_800_000)
+      :ok =
+        StatusInterpreter.apply_status(:player, char_id, :sc_poison,
+          duration: 1_800_000,
+          resistance_roll: fn _ -> true end
+        )
+
+      :ok =
+        StatusInterpreter.apply_status(:player, char_id, :sc_bleeding,
+          duration: 1_800_000,
+          resistance_roll: fn _ -> true end
+        )
+
       :ok = StatusInterpreter.apply_status(:player, char_id, :sc_hiding, duration: 1_800_000)
 
       assert :ok = Executor.execute(caster, row!(@dispel_mob_id, "SA_DISPELL", level: 5))

@@ -187,7 +187,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
           Logger.debug("Target no longer available: #{reason}")
           updated_game_state = PlayerState.clear_combat_intent(game_state)
           {:ok, transitioned_state} = PlayerState.transition_to(updated_game_state, :idle)
-          {:noreply, %{state | game_state: transitioned_state}}
+          {:noreply, StateCommit.commit(state, transitioned_state)}
       end
     else
       Logger.warning("Reached attack position but no combat_target_id set")
@@ -246,7 +246,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       timer_ref =
         Process.send_after(self(), {:combat, {:auto_attack, target_id}}, max(remaining, 0))
 
-      {:noreply, %{state | game_state: PlayerState.set_continuous_timer(game_state, timer_ref)}}
+      {:noreply,
+       StateCommit.commit(state, PlayerState.set_continuous_timer(game_state, timer_ref))}
     end
   end
 
@@ -257,7 +258,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   def cancel_combat_intent(%{game_state: game_state} = state) do
     updated_game_state = PlayerState.clear_combat_intent(game_state)
     {:ok, transitioned_state} = PlayerState.transition_to(updated_game_state, :idle)
-    %{state | game_state: transitioned_state}
+    StateCommit.commit(state, transitioned_state)
   end
 
   @doc """
@@ -467,7 +468,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     game_state =
       determine_post_attack_state(state, target_id, transitioned_state, current_timestamp)
 
-    {:noreply, %{state | game_state: game_state}}
+    {:noreply, StateCommit.commit(state, game_state)}
   end
 
   defp maybe_open_combo(game_state, nil, _now), do: game_state
@@ -628,13 +629,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp handle_attack_failure(state, transitioned_state, reason) do
     Logger.warning("Attack failed with reason: #{inspect(reason)}")
     {:ok, idle_state} = PlayerState.transition_to(transitioned_state, :idle)
-    {:noreply, %{state | game_state: idle_state}}
+    {:noreply, StateCommit.commit(state, idle_state)}
   end
 
   defp return_to_idle_from_combat(state, transitioned_state) do
     updated_game_state = PlayerState.clear_combat_intent(transitioned_state)
     {:ok, idle_state} = PlayerState.transition_to(updated_game_state, :idle)
-    {:noreply, %{state | game_state: idle_state}}
+    {:noreply, StateCommit.commit(state, idle_state)}
   end
 
   defp initiate_combat_movement(state, target_id, action_type, {target_x, target_y}) do

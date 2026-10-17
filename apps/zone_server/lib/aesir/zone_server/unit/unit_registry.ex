@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   @type unit_key :: {unit_type(), unit_id()}
   @type unit_data :: {module(), any(), pid() | nil}
 
+  @counted_types [:player, :mob, :homunculus, :npc]
+
   @doc """
   Registers a unit in the registry.
 
@@ -35,8 +37,11 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   @spec register_unit(unit_type(), unit_id(), module(), any(), pid() | nil) :: :ok
   def register_unit(unit_type, unit_id, module, state, pid \\ nil) do
     key = {unit_type, unit_id}
+    previous_target = registered_attack_target(key)
+    initialize_target_count(key)
     :ets.insert(table_for(:unit_registry), {key, module, state, pid})
     :ets.insert(table_for(:unit_registry_id_index), {unit_id, unit_type})
+    retarget(previous_target, attack_target(unit_type, state))
     :ok
   end
 
@@ -46,7 +51,9 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   @spec unregister_unit(unit_type(), unit_id()) :: :ok
   def unregister_unit(unit_type, unit_id) do
     key = {unit_type, unit_id}
+    adjust_target_count(registered_attack_target(key), -1)
     :ets.delete(table_for(:unit_registry), key)
+    :ets.delete(table_for(:unit_registry), {:target_count, unit_type, unit_id})
     :ets.delete_object(table_for(:unit_registry_id_index), {unit_id, unit_type})
 
     Logger.debug("Unregistered #{unit_type} unit with ID #{unit_id}")
@@ -91,14 +98,85 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     key = {unit_type, unit_id}
 
     case :ets.lookup(table_for(:unit_registry), key) do
-      [{^key, module, _old_state, pid}] ->
+      [{^key, module, old_state, pid}] ->
+        previous_target = attack_target(unit_type, old_state)
         :ets.insert(table_for(:unit_registry), {key, module, new_state, pid})
+        retarget(previous_target, attack_target(unit_type, new_state))
         :ok
 
       [] ->
         {:error, :not_found}
     end
   end
+
+  @doc """
+  Reads the unit's standing-attack counter in constant time.
+
+  The eight-bit counter saturates at 255. Excess increments are lost, and a
+  departing attacker decrements the stored count, never a reconstructed scan.
+  Metadata stays with a claimed unit ID while its map presence is detached.
+  """
+  @spec target_count(unit_key()) :: 0..255
+  def target_count({type, id}) do
+    case :ets.lookup(table_for(:unit_registry), {:target_count, type, id}) do
+      [{_key, count}] -> count
+      [] -> 0
+    end
+  end
+
+  defp initialize_target_count({type, id}) when type in @counted_types,
+    do: :ets.insert_new(table_for(:unit_registry), {{:target_count, type, id}, 0})
+
+  defp initialize_target_count(_key), do: :ok
+
+  defp registered_attack_target({type, _id} = key) do
+    case :ets.lookup(table_for(:unit_registry), key) do
+      [{^key, _module, state, _pid}] -> attack_target(type, state)
+      [] -> nil
+    end
+  end
+
+  defp attack_target(:player, %{
+         combat_target_id: id,
+         action_state: action,
+         continuous_attack_timer: timer
+       })
+       when is_integer(id) and action in [:attacking, :casting, :idle] and is_reference(timer) do
+    case unit_type_for(id) do
+      {:ok, type} -> {type, id}
+      {:error, :not_found} -> nil
+    end
+  end
+
+  defp attack_target(:mob, %{attack_target: {type, id}}), do: {type, id}
+  defp attack_target(:homunculus, %{target: {type, id}, action_state: :attacking}), do: {type, id}
+  defp attack_target(_type, _state), do: nil
+
+  defp retarget(target, target), do: :ok
+
+  defp retarget(previous, current) do
+    adjust_target_count(previous, -1)
+    adjust_target_count(current, 1)
+  end
+
+  defp adjust_target_count({type, id}, delta) when type in @counted_types do
+    limit = if delta > 0, do: 255, else: 0
+
+    try do
+      :ets.update_counter(
+        table_for(:unit_registry),
+        {:target_count, type, id},
+        {2, delta, limit, limit}
+      )
+
+      :ok
+    rescue
+      # The target may have been removed after the attacker's state was read.
+      ArgumentError -> :ok
+    end
+  end
+
+  defp adjust_target_count(_target, _delta), do: :ok
 
   @doc """
   Checks if a unit exists in the registry.
@@ -140,6 +218,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   @doc "Deletes a typed registry row while retaining its numeric ID claim."
   @spec detach_unit(unit_type(), unit_id()) :: :ok
   def detach_unit(unit_type, unit_id) do
+    adjust_target_count(registered_attack_target({unit_type, unit_id}), -1)
     :ets.delete(table_for(:unit_registry), {unit_type, unit_id})
     :ok
   end
@@ -203,8 +282,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     keys_to_delete = :ets.select(table_for(:unit_registry), match_spec)
 
     Enum.each(keys_to_delete, fn {unit_type, unit_id} = key ->
-      :ets.delete(table_for(:unit_registry), key)
-      :ets.delete_object(table_for(:unit_registry_id_index), {unit_id, unit_type})
+      unregister_unit(unit_type, unit_id)
       Logger.debug("Cleaned up unit #{inspect(key)} due to process death")
     end)
 

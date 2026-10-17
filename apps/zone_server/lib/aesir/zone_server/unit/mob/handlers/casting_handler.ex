@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor, as: MobSkillExecutor
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -22,10 +23,40 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   @doc """
   Starts a cast for `row`, either firing instantly (0 cast time) or locking
   the mob and scheduling `{:casting, :complete}`. A status that denies the
-  skill or a unit target concealed from the mob rejects the cast.
+  skill or a unit target concealed from the mob rejects the cast. The chosen
+  unit target is pinned for the bar, completion and followers; changing the
+  mob's AI intent never retargets a cast already begun.
   """
   @spec begin_cast(MobState.t(), map(), integer()) :: {:ok | :rejected, MobState.t()}
-  def begin_cast(state, %{cast_time: 0} = row, now) do
+  def begin_cast(state, row, now) do
+    case unit_cast_target(state, row) do
+      {:ok, target} ->
+        preparing = %{state | casting: %{row: row, unit_target: target}}
+        start_cast(preparing, row, now)
+
+      {:error, _reason} ->
+        {:rejected, state}
+    end
+  end
+
+  defp unit_cast_target(state, row) do
+    case SkillCatalog.by_id(row.skill_id) do
+      {:ok, %{target_type: :ground}} ->
+        {:ok, nil}
+
+      :error ->
+        {:ok, nil}
+
+      {:ok, _definition} ->
+        case MobSkillExecutor.resolve_target(state, row) do
+          {:ok, {:unit, _, _} = target} -> {:ok, target}
+          {:ok, _ground} -> {:ok, nil}
+          error -> error
+        end
+    end
+  end
+
+  defp start_cast(state, %{cast_time: 0} = row, now) do
     MobSkillExecutor.broadcast_casting(state, row)
 
     if can_use_skill?(state, row) and target_reachable?(state, row) do
@@ -34,16 +65,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
       {:ok,
        %{state | last_skill_id: row.skill_id}
        |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
+       |> MobState.clear_casting()
        |> start_attack_delay()
        |> MobState.rest(now)
        |> StateCommit.commit()}
     else
       MobSkillExecutor.broadcast_cast_cancel(state)
-      {:rejected, state}
+      {:rejected, MobState.clear_casting(state)}
     end
   end
 
-  def begin_cast(state, row, now) do
+  defp start_cast(state, row, now) do
     MobSkillExecutor.broadcast_casting(state, row)
 
     if can_use_skill?(state, row) and target_reachable?(state, row) do
@@ -51,6 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
 
       casting = %{
         row: row,
+        unit_target: state.casting.unit_target,
         complete_at: now + row.cast_time,
         timer_ref: timer_ref
       }
@@ -62,7 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
        |> StateCommit.commit()}
     else
       MobSkillExecutor.broadcast_cast_cancel(state)
-      {:rejected, state}
+      {:rejected, MobState.clear_casting(state)}
     end
   end
 

@@ -303,6 +303,7 @@
 373	PF_HPCONVERSION	Magic	true	Magic	true	none	none
 374	PF_SOULCHANGE	None	true	None	true	none	none
 375	PF_SOULBURN	Magic	false	Magic	false	IgnoreDefCard,IgnoreElement	IgnoreDefCard,IgnoreElement
+378	ASC_EDP	Weapon	true	Weapon	true	none	none
 380	SN_SIGHT	Weapon	true	Weapon	true	none	none
 381	SN_FALCONASSAULT	Misc	false	Misc	false	IgnoreDefCard,IgnoreFlee	IgnoreFlee
 382	SN_SHARPSHOOTING	Weapon	false	Weapon	false	none	none

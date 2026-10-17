@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.StaticEntity
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -540,7 +541,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   defp walk_request(state, %{movement_state: movement_state} = game_state, _destination, [], opts)
        when movement_state != :moving,
-       do: {:noreply, %{state | game_state: maybe_clear_action_intent(game_state, opts, :idle)}}
+       do:
+         {:noreply, StateCommit.commit(state, maybe_clear_action_intent(game_state, opts, :idle))}
 
   defp walk_request(state, game_state, {dest_x, dest_y}, path, opts) do
     walking? = game_state.movement_state == :moving
@@ -561,7 +563,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         do: %{game_state | walk_target: {dest_x, dest_y}},
         else: start_walk(state, game_state, path, dest_x, dest_y)
 
-    {:noreply, %{state | game_state: game_state}}
+    {:noreply, StateCommit.commit(state, game_state)}
   end
 
   defp dispatch_movement_intent(state, game_state) do

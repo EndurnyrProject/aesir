@@ -4,16 +4,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.SlavesTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.PlayerStateFixture
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -165,6 +169,86 @@ defmodule Aesir.ZoneServer.Unit.Mob.SlavesTest do
 
     assert dead.is_dead
     assert_received {:"$gen_cast", {:combat, {:master_dead, 1}}}
+  end
+
+  test "a unit cast and its followers keep the chosen target when the master's AI intent changes" do
+    master = %{mob(1, 20, 20) | target_ref: {:player, 10}}
+    register(master)
+    register_player(10)
+    test_pid = self()
+
+    stub(Broadcast, :to_in_range, fn _, _, _, _, packet ->
+      send(test_pid, {:cast_packet, packet})
+      :ok
+    end)
+
+    row = %{
+      skill: "MG_FIREBOLT",
+      skill_id: 19,
+      level: 1,
+      cast_time: 60_000,
+      delay: 1_000,
+      target: :randomtarget,
+      cancelable: false,
+      emotion: nil
+    }
+
+    assert {:ok, casting} = CastingHandler.begin_cast(master, row, 1_000)
+    assert_received {:cast_packet, %SkillCasting{target_id: 10, skill_id: 19}}
+    register_player(11)
+    assert {:noreply, changed} = AiHandler.handle_set_target(casting, {:player, 11})
+    slave = %{mob(2, 22, 20) | master_id: 1}
+    assert {:halt, inherited} = Slaves.process(slave, 2_000)
+    assert inherited.target_ref == {:player, 10}
+
+    Process.cancel_timer(casting.casting.timer_ref)
+    expect(Combat, :execute_magic_attack, fn _, 10, _ -> {:ok, {:player, 10}} end)
+    assert {:noreply, completed} = CastingHandler.handle_cast_complete(changed)
+    assert completed.casting == nil
+    Process.cancel_timer(completed.ai_timer_ref)
+
+    UnitRegistry.unregister_unit(:player, 10)
+    reject(&Combat.execute_magic_attack/3)
+    assert {:noreply, aborted} = CastingHandler.handle_cast_complete(changed)
+    assert aborted.casting == nil
+    Process.cancel_timer(aborted.ai_timer_ref)
+  end
+
+  test "a ground cast has no unit skill target, so a follower may use the master's AI target" do
+    master = %{mob(1, 20, 20) | target_ref: {:player, 10}}
+    register(master)
+    register_player(10)
+
+    row = %{
+      skill: "WZ_STORMGUST",
+      skill_id: 89,
+      level: 1,
+      cast_time: 60_000,
+      delay: 1_000,
+      target: :self,
+      cancelable: false,
+      emotion: nil
+    }
+
+    assert {:ok, casting} = CastingHandler.begin_cast(master, row, 1_000)
+    slave = %{mob(2, 22, 20) | master_id: 1}
+    assert {:halt, inherited} = Slaves.process(slave, 2_000)
+    assert inherited.target_ref == {:player, 10}
+    Process.cancel_timer(casting.casting.timer_ref)
+  end
+
+  defp register_player(id) do
+    player =
+      PlayerStateFixture.build(%{
+        character_id: id,
+        map_name: @map,
+        x: 25,
+        y: 20,
+        stats: %{combat_stats: %CombatStats{}}
+      })
+
+    UnitRegistry.register_unit(:player, id, PlayerState, player, self())
+    SpatialIndex.add_unit(:player, id, 25, 20, @map)
   end
 
   defp mob(id, x, y) do

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   @map "prontera"
@@ -536,77 +537,85 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   end
 
   describe "count_targeting/1 and count_nearby_mobs/1" do
+    setup :setup_ets_tables
+
     test "counts players, monsters and homunculi with an attack order on the unit" do
-      stub(UnitRegistry, :list_units_by_type, fn
-        :player -> [1, 2]
-        :mob -> [6001, 6002]
-        :homunculus -> [1_500_007]
-      end)
+      UnitRegistry.register_unit(
+        :mob,
+        5001,
+        MobState,
+        fighter(%{instance_id: 5001, attack_target: nil})
+      )
 
-      stub(UnitRegistry, :get_unit, fn
-        :player, 1 ->
-          {:ok,
-           {PlayerState,
-            %{
-              living_player(1)
-              | combat_target_id: 5001,
-                action_state: :attacking,
-                continuous_attack_timer: make_ref()
-            }, self()}}
+      attacking = %{
+        living_player(1)
+        | combat_target_id: 5001,
+          action_state: :attacking,
+          continuous_attack_timer: make_ref()
+      }
 
-        :player, 2 ->
-          {:ok, {PlayerState, living_player(2), self()}}
+      UnitRegistry.register_unit(:player, 1, PlayerState, attacking)
+      UnitRegistry.register_unit(:player, 2, PlayerState, living_player(2))
 
-        :mob, 6001 ->
-          {:ok, {MobState, fighter(%{instance_id: 6001, attack_target: {:mob, 5001}}), self()}}
+      UnitRegistry.register_unit(
+        :mob,
+        6001,
+        MobState,
+        fighter(%{instance_id: 6001, attack_target: {:mob, 5001}})
+      )
 
-        :mob, 6002 ->
-          {:ok, {MobState, fighter(%{instance_id: 6002, attack_target: {:player, 1}}), self()}}
+      UnitRegistry.register_unit(
+        :mob,
+        6002,
+        MobState,
+        fighter(%{instance_id: 6002, attack_target: {:player, 1}})
+      )
 
-        :homunculus, gid ->
-          {:ok,
-           {HomunculusState,
-            %{homunculus_state(gid, 100) | target: {:mob, 5001}, action_state: :attacking},
-            self()}}
-      end)
+      homunculus = %{
+        homunculus_state(1_500_007, 100)
+        | target: {:mob, 5001},
+          action_state: :attacking
+      }
+
+      UnitRegistry.register_unit(:homunculus, 1_500_007, HomunculusState, homunculus)
 
       assert Executor.count_targeting({:mob, 5001}) == 3
       assert Executor.count_targeting({:mob, 7}) == 0
     end
 
     test "chasing or idle intent without an active attack order does not count" do
-      stub(UnitRegistry, :list_units_by_type, fn
-        :player -> [1, 2]
-        :mob -> [6001]
-        :homunculus -> [1_500_007, 1_500_008]
-      end)
+      UnitRegistry.register_unit(
+        :mob,
+        5001,
+        MobState,
+        fighter(%{instance_id: 5001, attack_target: nil})
+      )
 
-      stub(UnitRegistry, :get_unit, fn
-        :player, 1 ->
-          {:ok,
-           {PlayerState,
-            %{
-              living_player(1)
-              | combat_target_id: 5001,
-                action_state: :combat_moving,
-                continuous_attack_timer: make_ref()
-            }, self()}}
+      chasing = %{
+        living_player(1)
+        | combat_target_id: 5001,
+          action_state: :combat_moving,
+          continuous_attack_timer: make_ref()
+      }
 
-        :player, 2 ->
-          {:ok, {PlayerState, %{living_player(2) | combat_target_id: 5001}, self()}}
+      UnitRegistry.register_unit(:player, 1, PlayerState, chasing)
 
-        :mob, 6001 ->
-          {:ok,
-           {MobState, fighter(%{instance_id: 6001, target_ref: {:mob, 5001}, attack_target: nil}),
-            self()}}
+      UnitRegistry.register_unit(:player, 2, PlayerState, %{
+        living_player(2)
+        | combat_target_id: 5001
+      })
 
-        :homunculus, gid ->
-          action = if gid == 1_500_007, do: :moving, else: :idle
+      UnitRegistry.register_unit(
+        :mob,
+        6001,
+        MobState,
+        fighter(%{instance_id: 6001, target_ref: {:mob, 5001}, attack_target: nil})
+      )
 
-          {:ok,
-           {HomunculusState,
-            %{homunculus_state(gid, 100) | target: {:mob, 5001}, action_state: action}, self()}}
-      end)
+      for {gid, action} <- [{1_500_007, :moving}, {1_500_008, :idle}] do
+        homunculus = %{homunculus_state(gid, 100) | target: {:mob, 5001}, action_state: action}
+        UnitRegistry.register_unit(:homunculus, gid, HomunculusState, homunculus)
+      end
 
       assert Executor.count_targeting({:mob, 5001}) == 0
     end

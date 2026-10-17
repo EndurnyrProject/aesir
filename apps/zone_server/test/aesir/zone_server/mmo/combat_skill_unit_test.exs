@@ -203,7 +203,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
-    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> true end)
+    stub(Cell, :traversable?, fn @map_name, _x, _y -> true end)
 
     expect(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
       {:ok, %{damage: 40, is_critical: false}}
@@ -238,7 +238,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
-    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> true end)
+    stub(Cell, :traversable?, fn @map_name, _x, _y -> true end)
 
     expect(MagicDamageCalculator, :calculate_magic_damage, 2, fn _attacker, _target, _opts ->
       {:ok, %{damage: 40, is_critical: false}}
@@ -289,7 +289,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
-    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> true end)
+    stub(Cell, :traversable?, fn @map_name, _x, _y -> true end)
 
     expect(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
       {:ok, %{damage: 80, is_critical: false}}

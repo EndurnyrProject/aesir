@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
 
   @target_id 42
@@ -59,6 +60,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(StatusStorage, :has_status?, fn _unit_type, _unit_id, _status -> false end)
     stub(StatusInterpreter, :concealed?, fn _unit_type, _unit_id -> false end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :player, @target_id -> {:ok, {PlayerState, living_player_state(), nil}}
+      type, id -> call_original(UnitRegistry, :get_unit, [type, id])
+    end)
+
     :ok
   end
 

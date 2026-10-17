@@ -210,7 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     assert_receive {:skill, {:deferred, WzJupitel, %{target: {:mob, @target_id}, skill_level: 3}}}
   end
 
-  test "Ice Wall creates targetable movement and projectile terrain, decays it, and restores the cell",
+  test "Ice Wall blocks movement but permits projectiles, decays, and restores the cell",
        %{
          manager: manager
        } do
@@ -225,7 +225,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     assert length(Storage.get_cells_by_group(wall.group_id)) == 5
     assert {:ok, ^cell} = Manager.targetable_cell(manager, cell.cell_id)
     refute MapCell.traversable?(@map, cell.x, cell.y)
-    assert MapCell.blocks_projectiles?(@map, cell.x, cell.y)
+    refute MapCell.blocks_projectiles?(@map, cell.x, cell.y)
 
     assert :ok = Manager.tick(manager, wall.next_tick_at)
     assert %{hp: 750} = Storage.get_cell(cell.cell_id)

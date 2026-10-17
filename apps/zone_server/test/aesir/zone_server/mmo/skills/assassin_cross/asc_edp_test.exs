@@ -1,11 +1,11 @@
-defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AscEdpTest do
+defmodule Aesir.ZoneServer.Mmo.Skills.AssassinCross.AscEdpTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.Mmo.Skills.Assassin.AscEdp
+  alias Aesir.ZoneServer.Mmo.Skills.AssassinCross.AscEdp
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
