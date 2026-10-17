@@ -42,8 +42,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Ref
@@ -413,6 +415,76 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       false -> {:error, :invalid_target}
       error -> error
     end
+  end
+
+  @doc """
+  Deals the player a weapon hit of no damage on the monster `target_id`
+  without calculating it, classified as `attack_flag` (the hit Wink of Charm
+  deals a monster it charms).
+
+  The hit connects (`connected?: true`): the monster logs the player as an
+  attacker for 0, its damage-broken statuses and cast react to it as to any
+  hit, and its attacked event fires at once, since a hit of no damage has no
+  walk delay. No damage packet is sent. The player's additional-effect stage
+  then runs as for a connected normal attack (bAddEff, Snatcher, normal-hit
+  passives, equipment breaks, attack autospells, with the arrow-attack state
+  off), followed by its counter stage (attack autobonuses).
+
+  Returns the player state, holding any item Snatcher stole. A monster that is
+  gone or dead takes nothing.
+  """
+  @spec execute_zero_damage_hit(PlayerState.t(), integer(), BattleFlags.flag()) ::
+          PlayerState.t()
+  def execute_zero_damage_hit(%PlayerState{} = player_state, target_id, attack_flag) do
+    with {:ok, target_pid, target_state, :mob} <- TargetResolver.resolve(:mob, target_id),
+         :ok <- TargetResolver.ensure_targetable(target_state, :mob) do
+      attacker = PlayerState.to_combatant(player_state)
+      target = MobState.to_combatant(target_state)
+
+      hit_info = %{
+        skill_id: nil,
+        skill_level: nil,
+        div: 1,
+        connected?: true,
+        pre_delivery_prepared?: true,
+        proc: EquipProcDispatch.spec(attacker, target, target_state, attack_flag)
+      }
+
+      delivery =
+        DamageApplication.apply_unit_damage(
+          :mob,
+          target_pid,
+          target_id,
+          0,
+          hit_info,
+          {:player, player_state.character_id}
+        )
+
+      zero_damage_hit_effects(delivery, player_state, hit_info, {target_state, target_pid})
+    else
+      _gone_or_dead -> player_state
+    end
+  end
+
+  defp zero_damage_hit_effects({:error, _reason}, player_state, _hit_info, _target),
+    do: player_state
+
+  defp zero_damage_hit_effects(delivery, player_state, hit_info, {target_state, target_pid}) do
+    %{attacker: attacker, target: target, attack_flag: attack_flag} = hit_info.proc
+    stages = EquipProcDispatch.hit_event(hit_info, 0)
+
+    OnHitEffects.after_hit(attacker, target, stages, attack_flag: attack_flag)
+
+    updated_player_state =
+      connected_swing_effects(
+        stages,
+        player_state,
+        target_state,
+        {:mob, target.unit_id, target_pid, target}
+      )
+
+    EquipProcDispatch.dispatch_delivered(delivery, hit_info, 0)
+    updated_player_state
   end
 
   @doc "Executes one collision-safe Homunculus basic attack against a typed target."

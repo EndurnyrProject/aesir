@@ -292,11 +292,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp enemy?(state, {:homunculus, _id} = target_ref), do: can_target?(state, target_ref)
   defp enemy?(_state, _target_ref), do: false
 
-  # Whether the mob can act on an enemy it may fight: the enemy is targetable,
-  # visible to it and not its charmer.
+  # Whether the mob can act on an enemy it may fight: the enemy is targetable
+  # and visible to it. A charm does not hide its charmer: the charmed mob may
+  # target and chase it, only its attack order is refused.
   defp attack_visible?(%MobState{} = state, {:player, target_id}) do
     Interpreter.targetable?(:player, target_id) and
-      not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
       Targeting.attack_visible?(attack_viewer(state), %{unit_type: :player, unit_id: target_id})
   end
 
@@ -662,13 +662,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     end
   end
 
-  # The attack order: a mob that cannot attack drops it and keeps walking; an
-  # armed attack timer only switches the target; otherwise the swing fires now
-  # when the attack delay has ended, else the attack timer is armed for its
-  # end, and the state becomes the attack state either way.
+  # The attack order: a mob that cannot attack, or is charmed by the target,
+  # drops it and keeps walking; an armed attack timer only switches the target;
+  # otherwise the swing fires now when the attack delay has ended, else the
+  # attack timer is armed for its end, and the state becomes the attack state
+  # either way.
   defp order_attack(state, target, now) do
     cond do
-      not Interpreter.can_attack?(:mob, state.instance_id) ->
+      not Interpreter.can_attack?(:mob, state.instance_id) or charmed_by?(state, target) ->
         {MobState.stop_attack(state), :continue}
 
       MobState.attacking?(state) ->
@@ -685,6 +686,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         {MobState.set_state(state, :berserk), :stop}
     end
   end
+
+  defp charmed_by?(state, {:player, target_id}),
+    do: Interpreter.charmed_against?(:mob, state.instance_id, target_id)
+
+  defp charmed_by?(_state, _target), do: false
 
   @doc """
   Whether the target of the mob's attack order is still in the world, on the

@@ -6,10 +6,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
   import Aesir.ZoneServer.SessionHelpers
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.WinkCharm
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.StatusTickManager
+  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
 
@@ -20,6 +25,42 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
     assert Interpreter.charmed_against?(:mob, 100, 200)
     refute Interpreter.charmed_against?(:mob, 100, 201)
     refute Interpreter.charmed_against?(:mob, 101, 201)
+  end
+
+  test "a charmed monster cannot use skills, a charmed player can" do
+    StatusStorage.apply_status(:mob, 100, :sc_winkcharm, caster_id: 200)
+    StatusStorage.apply_status(:player, 201, :sc_winkcharm, caster_id: 100)
+
+    refute Interpreter.can_use_skill?(:mob, 100, 5)
+    assert Interpreter.can_use_skill?(:mob, 101, 5)
+    assert Interpreter.can_use_skill?(:player, 201, 5)
+  end
+
+  test "a charm ending on a monster unlocks its target" do
+    {:ok, definition} = Mobs.by_id(1002)
+
+    spawn = %MobSpawn{
+      mob: 1002,
+      amount: 1,
+      respawn_time: 5_000,
+      spawn_area: %SpawnArea{x: 100, y: 100}
+    }
+
+    mob = MobState.new(100, definition, spawn, "prontera", 100, 100)
+    :ok = UnitRegistry.register_unit(:mob, 100, MobState, mob, self())
+    StatusStorage.apply_status(:mob, 100, :sc_winkcharm, caster_id: 200)
+
+    Interpreter.remove_status(:mob, 100, :sc_winkcharm)
+
+    assert_receive {:"$gen_cast", {:ai, {:set_target, nil}}}
+  end
+
+  test "a charm ending on a player unlocks nothing" do
+    StatusStorage.apply_status(:player, 201, :sc_winkcharm, caster_id: 100)
+
+    Interpreter.remove_status(:player, 201, :sc_winkcharm)
+
+    refute_receive {:"$gen_cast", {:ai, {:set_target, nil}}}, 50
   end
 
   test "zero damage preserves wink of charm" do

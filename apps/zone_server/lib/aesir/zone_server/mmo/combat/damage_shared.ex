@@ -38,7 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   Classifies one settled hit as its additional and counter stages see it.
 
   A Magic Rod interception is a miss and a blocking status's stop a block. A
-  reflected hit connected even when it reaches its new target for nothing.
+  reflected hit connected even when it reaches its new target for nothing, as
+  does a hit dealt as connected without being calculated (`connected?: true`,
+  e.g. the zero-damage hit Wink of Charm deals a monster it charms).
   Any other hit whose total before Devotion forwarding (`settled_total/2`) is
   below 1 is a miss. A Devotion-forwarded hit that resolves after the attack
   motion (not `immediate?`) is a block. Everything else connected (`:hit`).
@@ -47,6 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   def hit_class(%{magic_rod_miss?: true}, _damage, _immediate?), do: :miss
   def hit_class(%{blocked?: true}, _damage, _immediate?), do: :block
   def hit_class(%{reflected: true}, _damage, _immediate?), do: :hit
+  def hit_class(%{connected?: true}, _damage, _immediate?), do: :hit
 
   def hit_class(hit_info, damage, immediate?) do
     cond do

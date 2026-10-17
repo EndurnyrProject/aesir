@@ -3,7 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
   Wink of Charm (DC_WINKCHARM). A quest skill charming a non-boss demon,
   demi-human, angel, or player at 9 cells for 40 SP with a 2 s delay. Monsters are
   charmed for 10 s at caster level minus target level plus 40 percent in both
-  modes.
+  modes; a charmed monster then takes a zero-damage ranged normal weapon hit
+  from the caster, which may make it switch its target to the caster.
 
   Renewal: a 0.8 s cast plus 0.2 s fixed, a 10 s cooldown, and players are
   confused and hallucinating for 10 s outright. Pre-renewal: a 1 s cast, no
@@ -32,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
-  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -83,9 +83,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
         )
 
       if target_type == :mob and charmed == :ok,
-        do: OnHitEffects.direct(caster, {:mob, target_id}, @charm_hit_flag, nil)
-
-      {:ok, caster}
+        do: {:ok, Combat.execute_zero_damage_hit(caster, target_id, @charm_hit_flag)},
+        else: {:ok, caster}
     end
   end
 

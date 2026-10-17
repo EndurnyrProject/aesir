@@ -45,6 +45,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   defdelegate execute_mob_attack(mob_state, target_id), to: AutoAttack
 
   @doc """
+  Deals a player's uncalculated zero-damage weapon hit on a monster.
+
+  See `Aesir.ZoneServer.Mmo.Combat.AutoAttack.execute_zero_damage_hit/3`.
+  """
+  defdelegate execute_zero_damage_hit(player_state, target_id, attack_flag), to: AutoAttack
+
+  @doc """
   Executes a single-target offensive skill from a caster against a target.
 
   Rolls a hit/flee check per hit; pass `report_hit: true` in `opts` to get

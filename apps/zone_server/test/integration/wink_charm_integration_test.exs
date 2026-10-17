@@ -35,38 +35,28 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
 
   setup {Aesir.MimicMode, :global}
 
-  test "a live mob drops the charmer, then acquires and attacks another player" do
-    dancer = start_dancer("Protected", {150, 150})
+  test "a charmed mob switches to the Dancer after the charm's hit but never attacks her" do
+    dancer = start_dancer("Charmer", {150, 150})
     other = start_player("Other", {152, 150})
-    mob = start_charmable_mob(awake: false)
+    mob = start_charmable_mob(awake: false, modes: [:can_move, :can_attack])
 
-    MobSession.set_target(mob.pid, dancer.character.id)
-    assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
-
-    # Charm has a ~1s cast that damage interrupts (health_handler cancels casts).
-    # An awake mob attacking the adjacent dancer would race and cancel the cast,
-    # so the status intermittently never landed. Cast while the mob is dormant,
-    # then wake it to exercise the real autonomous drop-and-reacquire behaviour.
-    charm(dancer, mob)
-    MobSession.wake(mob.pid)
-    force_ticks(mob, 3)
-
-    # The charmer must be released. Asserting the transient `target_ref == nil`
-    # state is a race: an aggressive mob re-acquires the other nearby player in
-    # the same or next tick, so the null moment can be skipped entirely. The
-    # stable, meaningful outcome is that the mob no longer targets the charmer.
-    assert eventually(fn -> mob_target(mob) != {:player, dancer.character.id} end)
-
-    flush_packets()
-    force_ticks(mob, 3)
-
+    MobSession.set_target(mob.pid, other.character.id)
     assert eventually(fn -> mob_target(mob) == {:player, other.character.id} end)
 
-    assert_receive {:packet_sent, %DamageDealt{src_id: source_id, target_id: target_id}, _},
-                   2_000
+    flush_packets()
+    charm(dancer, mob)
 
-    assert source_id == mob.unit_id
-    assert target_id == other.character.id
+    # The charm's zero-damage hit gives the mob its attacked event at once; the
+    # mob may change target in its idle state and adopts the Dancer.
+    assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
+    force_ticks(mob, 3)
+
+    assert mob_target(mob) == {:player, dancer.character.id}
+    assert get_mob_state(mob.pid).hp == 50_000
+    assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
+
+    mob_id = mob.unit_id
+    refute_receive {:packet_sent, %DamageDealt{src_id: ^mob_id}, _}, 300
   end
 
   test "non-zero damage from another source breaks charm and restores Dancer targeting" do
@@ -199,15 +189,10 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
     assert StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm)
   end
 
-  test "expiry releases a held target without an explicit removal call" do
+  test "a charm ending unlocks the target the charmed mob held" do
     dancer = start_dancer("ExpiryCharm", {150, 150})
-    mob = start_charmable_mob()
+    mob = start_charmable_mob(awake: false, modes: [:can_move, :can_attack])
 
-    # The window must comfortably outlast full-suite scheduler jitter: the mob is
-    # awake and can be starved for a while before it processes the forced tick
-    # that sheds the charmed target. A 500ms charm could lapse before that tick
-    # ran, so the target was never observably released. Pump several ticks and
-    # give the charm a wide window so the release is deterministic.
     assert :ok =
              StatusInterpreter.apply_status(:mob, mob.unit_id, :sc_winkcharm,
                duration: 2_000,
@@ -216,16 +201,14 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
              )
 
     MobSession.set_target(mob.pid, dancer.character.id)
-    force_ticks(mob, 3)
-    assert eventually(fn -> mob_target(mob) == nil end)
+    assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
 
     assert eventually(
              fn -> not StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm) end,
              4_000
            )
 
-    force_ticks(mob, 2)
-    assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
+    assert eventually(fn -> mob_target(mob) == nil end)
   end
 
   test "a second Dancer replaces the first charmer and makes the first targetable" do

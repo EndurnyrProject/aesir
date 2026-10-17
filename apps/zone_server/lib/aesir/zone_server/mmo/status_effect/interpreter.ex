@@ -1543,6 +1543,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp skill_allowed?(%StatusEntry{type: :sc_auto_counter}, _unit_type, _unit_id, _skill_id),
     do: false
 
+  defp skill_allowed?(%StatusEntry{type: :sc_winkcharm}, unit_type, _unit_id, _skill_id)
+       when unit_type != :player,
+       do: false
+
   defp skill_allowed?(%StatusEntry{type: :sc_hiding}, :player, _unit_id, skill_id),
     do: match?({:ok, %{allow_when_hidden: true}}, Catalog.by_id(skill_id))
 

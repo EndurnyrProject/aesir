@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
@@ -104,6 +105,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
       assert params == [duration: 10_000, success_rate: 65, caster_id: @caster_id]
       :ok
     end)
+
+    stub(Combat, :execute_zero_damage_hit, fn ^caster, @target_id, _flag -> caster end)
+
+    assert {:ok, ^caster} = DcWinkcharm.cast(caster, {:unit, target.instance_id}, 1, definition())
+  end
+
+  test "a charmed monster takes a zero-damage ranged normal weapon hit from the caster" do
+    target = register_mob([], :demon)
+    caster = player_state(50)
+    snatched = %{caster | zeny: 1}
+    flag = BattleFlags.build(:weapon, :long, false)
+
+    stub(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_winkcharm, _params -> :ok end)
+    expect(Combat, :execute_zero_damage_hit, fn ^caster, @target_id, ^flag -> snatched end)
+
+    assert {:ok, ^snatched} =
+             DcWinkcharm.cast(caster, {:unit, target.instance_id}, 1, definition())
+  end
+
+  test "a monster the charm missed takes no hit" do
+    target = register_mob([], :demon)
+    caster = player_state(50)
+
+    stub(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_winkcharm, _params ->
+      {:error, :resisted}
+    end)
+
+    reject(&Combat.execute_zero_damage_hit/3)
 
     assert {:ok, ^caster} = DcWinkcharm.cast(caster, {:unit, target.instance_id}, 1, definition())
   end

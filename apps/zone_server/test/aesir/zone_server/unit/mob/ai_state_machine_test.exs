@@ -962,36 +962,35 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   end
 
   describe "wink of charm targeting" do
-    test "a charmed mob drops the Dancer it already targets" do
+    test "a charmed mob keeps its charmer as its target but never attacks it" do
       stub(Interpreter, :charmed_against?, fn :mob, 1, 2 -> true end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {100, 100, "prontera"}} end)
+      reject(&Combat.execute_mob_attack/2)
 
-      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
-        {:ok, {100, 100, "prontera"}}
-      end)
+      result = think(%{combat_mob_state() | skill_state: :idle})
 
-      stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
-
-      result = think(combat_mob_state())
-
-      assert result.target_ref == nil
-      assert result.skill_state == :idle
+      assert {result.target_ref, result.attack_target, result.skill_state} ==
+               {{:player, 2}, nil, :idle}
     end
 
-    test "a charmed mob acquires a different player" do
+    test "a charmed mob's search finds its charmer like any other player" do
       stub(Interpreter, :charmed_against?, fn :mob, 1, target_id -> target_id == 2 end)
 
       stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 ->
-        [{:player, 2}, {:player, 3}]
+        [{:player, 3}, {:player, 2}]
       end)
 
-      stub(SpatialIndex, :get_unit_position, fn :player, 3 ->
-        {:ok, {101, 101, "prontera"}}
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2 -> {:ok, {101, 101, "prontera"}}
+        :player, 3 -> {:ok, {103, 103, "prontera"}}
       end)
+
+      reject(&Combat.execute_mob_attack/2)
 
       result = think(aggressive_idle_mob_state())
 
-      assert result.target_ref == {:player, 3}
-      assert result.skill_state == :berserk
+      assert result.target_ref == {:player, 2}
+      assert result.attack_target == nil
     end
 
     test "a charmed mob attacks a different player normally" do
@@ -1131,6 +1130,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
                {{:player, 2}, :idle, 0}
 
       assert {result.attacked_ref, result.norm_attacked_ref} == {nil, nil}
+    end
+
+    test "a charmed mob adopts its charmer when the charmer hits it" do
+      stub(Interpreter, :charmed_against?, fn :mob, 1, 2 -> true end)
+
+      {result, false} = AIStateMachine.process_attacked(attacked_mob(:idle, {:player, 2}))
+
+      assert result.target_ref == {:player, 2}
     end
 
     test "a mob in its attack state without change_target_melee keeps its target" do

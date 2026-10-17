@@ -71,6 +71,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedEventTest do
       assert_receive {:ai, {:attacked, @attacker, false}}, 50
     end
 
+    test "dealt connected for no damage schedules at once and logs its attacker" do
+      {:noreply, state} =
+        hit(0, %{skill_id: nil, div: 1, connected?: true, pre_delivery_prepared?: true})
+
+      assert_receive {:ai, {:attacked, @attacker, false}}, 50
+      assert %{damage: 0} = state.typed_aggro_list[@attacker]
+      assert state.hp == 1000
+      assert is_integer(state.last_damage_time)
+    end
+
     test "a normal attack on a mob attacking someone else from within its range + 1 is norm" do
       attacking = %{mob_state() | skill_state: :berserk, target_ref: {:player, 7}}
       normal = Map.put(@hit, :weapon_attack?, true)
