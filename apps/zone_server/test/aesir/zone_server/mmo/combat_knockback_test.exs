@@ -59,11 +59,26 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     end)
 
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
-    stub(Cell, :step_traversable?, fn @map_name, from, to -> traversable?.(from, to) end)
+    stub(Cell, :traversable?, fn @map_name, tx, ty -> traversable?.({x, y}, {tx, ty}) end)
 
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
       {:ok, {MobState, mob_state(x, y, modes), self()}}
     end)
+  end
+
+  test "a push crosses a diagonal corner without a walking path check" do
+    stub_movable_mob(position: {151, 151})
+    stub(Cell, :traversable?, fn @map_name, x, y -> x == y end)
+    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> false end)
+
+    assert {:ok, {153, 153}} = Knockback.knockback(:mob, @mob_id, 150, 150, 2)
+  end
+
+  test "a push stops at 25 cells" do
+    stub_movable_mob()
+    stub(Cell, :traversable?, fn @map_name, _x, _y -> true end)
+
+    assert {:ok, {176, 150}} = Knockback.knockback(:mob, @mob_id, 150, 150, 30)
   end
 
   test "a caller-named current cell drives a second push before the first has landed" do
@@ -260,7 +275,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
 
     # A wall at x == 154: cells 152 and 153 are walkable, 154 is not.
-    stub(Cell, :step_traversable?, fn @map_name, _from, {x, _y} -> x < 154 end)
+    stub(Cell, :traversable?, fn @map_name, x, _y -> x < 154 end)
 
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
       {:ok, {MobState, mob_state(151, 150), test_pid}}
@@ -341,7 +356,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
 
-    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> false end)
+    stub(Cell, :traversable?, fn @map_name, _x, _y -> false end)
 
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
       {:ok, {MobState, mob_state(151, 150), self()}}
@@ -510,7 +525,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     end)
 
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
-    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> true end)
+    stub(Cell, :traversable?, fn @map_name, _x, _y -> true end)
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:error, :not_found} end)
 
     {from_x, from_y} = @from

@@ -202,51 +202,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp sign(n) when n < 0, do: -1
   defp sign(_n), do: 0
 
-  # Picks the cell the mob should path to while chasing: an adjacent, unoccupied
-  # cell within attack range of the target (shared with the player approach via
-  # AttackPositioning), never the target's own cell. Recomputed every AI tick, so
-  # a cell taken by another unit mid-approach is re-picked on the next tick.
-  # Falls back to the target's cell when no free cell is known (e.g. map missing).
-  defp chase_destination(%MobState{} = state, {target_x, target_y}) do
-    attack_range = MobState.get_attack_range(state)
-
-    case MapCache.get(state.map_name) do
-      {:ok, _map_data} ->
-        walkable? = &Cell.traversable?(state.map_name, &1, &2)
-        occupied? = build_occupied?(state, {target_x, target_y}, attack_range)
-
-        AttackPositioning.adjacent_attack_cell(
-          {state.x, state.y},
-          {target_x, target_y},
-          attack_range,
-          walkable?,
-          occupied?
-        ) || {target_x, target_y}
-
-      {:error, _reason} ->
-        {target_x, target_y}
-    end
-  end
-
-  # Builds an `(x, y) -> bool` occupancy predicate from currently-known nearby
-  # units, excluding the chasing mob itself and the target player so the mob is
-  # not blocked by its own or the target's cell.
-  defp build_occupied?(%MobState{} = state, {target_x, target_y}, range) do
-    cells =
-      state.map_name
-      |> SpatialIndex.get_all_units_in_range(target_x, target_y, range)
-      |> Enum.reject(fn {type, id} ->
-        (type == :mob and id == state.instance_id) or
-          {type, id} == state.target_ref or inactive_unit?({type, id})
-      end)
-      |> Enum.reduce(MapSet.new(), fn {type, id}, acc ->
-        case SpatialIndex.get_unit_position(type, id) do
-          {:ok, {x, y, _map}} -> MapSet.put(acc, {x, y})
-          {:error, _reason} -> acc
-        end
-      end)
-
-    fn x, y -> MapSet.member?(cells, {x, y}) end
+  defp chase_destination(%MobState{} = state, target) do
+    walkable? = &Cell.traversable?(state.map_name, &1, &2)
+    AttackPositioning.adjacent_attack_cell({state.x, state.y}, target, walkable?)
   end
 
   defp can_target?(%MobState{} = state, {:player, _target_id} = target_ref) do
@@ -328,15 +286,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       _ -> 0
     end
   end
-
-  defp inactive_unit?({type, id}) when type in [:player, :homunculus] do
-    case UnitRegistry.get_unit(type, id) do
-      {:ok, {_module, unit, _pid}} -> not Unit.living?(unit)
-      {:error, :not_found} -> true
-    end
-  end
-
-  defp inactive_unit?(_unit), do: false
 
   defp target_in_attack_range?(state, target_ref) do
     attack_range = MobState.get_attack_range(state)
@@ -731,12 +680,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp chase(state, target, now, mono) do
     case target_position(target) do
       {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
-        {dest_x, dest_y} = chase_destination(state, {target_x, target_y})
-        state = state |> MobState.stop_attack() |> Map.put(:chase_target, target)
+        case chase_destination(state, {target_x, target_y}) do
+          {dest_x, dest_y} ->
+            state = state |> MobState.stop_attack() |> Map.put(:chase_target, target)
 
-        if MobState.walk_delayed?(state, mono),
-          do: %{state | chase_resume_at: state.walk_delay_until + 1},
-          else: chase_walk(state, dest_x, dest_y, now)
+            if MobState.walk_delayed?(state, mono),
+              do: %{state | chase_resume_at: state.walk_delay_until + 1},
+              else: chase_walk(state, dest_x, dest_y, now)
+
+          nil ->
+            unlock_target(state, now)
+        end
 
       _other ->
         unlock_target(state, now)

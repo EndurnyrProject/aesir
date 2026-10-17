@@ -267,10 +267,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   defp blow_path(_map_name, x, y, _dx, _dy, 0), do: {x, y}
 
   defp blow_path(map_name, x, y, dx, dy, distance) do
-    Enum.reduce_while(1..distance, {x, y}, fn _step, {cx, cy} ->
+    Enum.reduce_while(1..min(distance, 25), {x, y}, fn _step, {cx, cy} ->
       next = {cx + dx, cy + dy}
 
-      if Cell.step_traversable?(map_name, {cx, cy}, next) do
+      if Cell.traversable?(map_name, cx + dx, cy + dy) do
         {:cont, next}
       else
         {:halt, {cx, cy}}

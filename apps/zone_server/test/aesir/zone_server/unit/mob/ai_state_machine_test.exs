@@ -1323,7 +1323,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end
   end
 
-  describe "the chase targets an adjacent, unoccupied cell" do
+  describe "the chase targets an adjoining cell regardless of occupancy" do
     test "a chasing mob paths to a cell adjacent to the player, never the player's cell" do
       stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
         {:ok, {105, 105, "prontera"}}
@@ -1334,22 +1334,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
     end
 
-    test "re-picks another adjacent cell when the best cell is occupied" do
+    test "keeps the adjoining destination when another unit occupies it" do
       stub(SpatialIndex, :get_unit_position, fn
         :player, 2 -> {:ok, {105, 105, "prontera"}}
-        :mob, 55 -> {:ok, {103, 103, "prontera"}}
+        :mob, 55 -> {:ok, {104, 104, "prontera"}}
       end)
 
-      # (103,103) is the closest walkable adjacent cell along the approach; a
-      # second unit sitting there must be avoided rather than overlapped.
+      # Another unit already stands on the adjoining approach cell.
       stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range ->
         [{:mob, 55}]
       end)
 
-      {dest_x, dest_y} = destination(think(chase_mob_state()))
-      assert {dest_x, dest_y} != {103, 103}
-      assert {dest_x, dest_y} != {105, 105}
-      assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
+      assert destination(think(chase_mob_state())) == {104, 104}
     end
 
     test "uses a corpse cell as an available chase destination" do
@@ -1367,7 +1363,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         :player, 5000 -> {:ok, {PlayerState, corpse_player_state(), nil}}
       end)
 
-      assert destination(think(chase_mob_state())) == {103, 103}
+      assert destination(think(chase_mob_state())) == {104, 104}
     end
 
     test "uses an inconsistent player cell as an available chase destination" do
@@ -1390,7 +1386,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
             nil}}
       end)
 
-      assert destination(think(chase_mob_state())) == {103, 103}
+      assert destination(think(chase_mob_state())) == {104, 104}
     end
 
     test "re-picks another adjacent cell when dynamic terrain blocks the nearest cell" do
@@ -1398,9 +1394,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {105, 105, "prontera"}}
       end)
 
-      stub(Cell, :traversable?, fn "prontera", x, y -> {x, y} != {103, 103} end)
+      stub(Cell, :traversable?, fn "prontera", x, y -> {x, y} != {104, 104} end)
       {dest_x, dest_y} = destination(think(chase_mob_state()))
-      assert {dest_x, dest_y} != {103, 103}
+      assert {dest_x, dest_y} == {105, 104}
       assert {dest_x, dest_y} != {105, 105}
       assert Geometry.chebyshev_distance(dest_x, dest_y, 105, 105) <= 2
     end

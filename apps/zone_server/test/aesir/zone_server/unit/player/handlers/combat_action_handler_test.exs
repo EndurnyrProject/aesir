@@ -841,6 +841,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       end)
 
       reject(&Combat.execute_attack/4)
+      Mimic.copy(Aesir.ZoneServer.Map.Cell)
+      stub(Aesir.ZoneServer.Map.Cell, :traversable?, fn "prontera", _x, _y -> true end)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
       stub(Pathfinding, :rewalk_path, fn _map, _from, _to -> {:ok, [{29, 29}]} end)
 
@@ -890,7 +892,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
   end
 
-  describe "move-to-attack adjacency and re-pick on arrival" do
+  describe "move-to-attack adjacency without cell reservations" do
     alias Aesir.ZoneServer.Map.Cell
     alias Aesir.ZoneServer.Map.MapCache
     alias Aesir.ZoneServer.Pathfinding
@@ -948,11 +950,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       refute {dest_x, dest_y} == {14, 14}
     end
 
-    test "approach avoids a candidate adjacent cell already occupied by another unit" do
+    test "approach uses the adjoining cell even when another unit occupies it" do
       stub(Stats, :weapon_type, fn _equipment -> :dagger end)
 
-      # {13,13} is the cell the approach would pick if it were free (nearest
-      # adjacent to the target along the approach vector); unit 5000 sits on it.
+      # Unit 5000 already stands on the adjoining approach cell.
       stub(SpatialIndex, :get_unit_position, fn
         :player, 2000 -> {:error, :not_found}
         :mob, 2000 -> {:ok, {14, 14, "prontera"}}
@@ -967,7 +968,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       assert returned.game_state.action_state == :combat_moving
       assert_received {:approach, {dest_x, dest_y}}
-      refute {dest_x, dest_y} == {13, 13}
+      assert {dest_x, dest_y} == {13, 13}
       refute {dest_x, dest_y} == {14, 14}
       assert max(abs(dest_x - 14), abs(dest_y - 14)) == 1
     end
@@ -1017,7 +1018,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert_received {:approach, {13, 13}}
     end
 
-    test "re-picks and steps again when the arrival cell is occupied by another unit" do
+    test "attacks when another unit occupies the arrival cell" do
       stub(Stats, :weapon_type, fn _equipment -> :dagger end)
 
       # Target mob at {20,20}; the player arrived on {21,20}, but unit 5000 is
@@ -1030,17 +1031,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [{:mob, 5000}] end)
       stub_open_terrain()
-      capture_moves(:repick)
-      reject(&Combat.execute_attack/4)
+      reject(&MovementHandler.handle_request_move/4)
+
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
+        send(self(), :attacked)
+        {:ok, game_state}
+      end)
 
       state = approach_state(%{x: 21, y: 20, combat_target_id: 2000})
 
-      {:noreply, returned} = CombatActionHandler.handle_reached_attack_position(state)
+      {:noreply, _returned} = CombatActionHandler.handle_reached_attack_position(state)
 
-      assert returned.game_state.action_state == :combat_moving
-      assert_received {:repick, {dest_x, dest_y}}
-      refute {dest_x, dest_y} == {21, 20}
-      assert max(abs(dest_x - 20), abs(dest_y - 20)) == 1
+      assert_received :attacked
     end
 
     test "attacks from the arrival cell when it is not occupied by another unit" do

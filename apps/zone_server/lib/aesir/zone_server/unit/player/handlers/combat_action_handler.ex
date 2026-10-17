@@ -23,7 +23,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
-  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
@@ -35,8 +34,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
-  alias Aesir.ZoneServer.Unit.SpatialIndex
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Handles an attack request, initiating move-to-range if necessary.
@@ -172,7 +169,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       # Verify target is still in range and execute attack
       case check_attack_range(state, game_state.combat_target_id) do
         {:in_range, _distance} ->
-          attack_or_repick(state, game_state.combat_target_id)
+          execute_immediate_attack(state, game_state.combat_target_id)
 
         {:out_of_range, target_pos} ->
           # Target moved away, need to move again
@@ -196,36 +193,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       Logger.warning("Reached attack position but no combat_target_id set")
       {:noreply, state}
     end
-  end
-
-  # On arrival in range, if another unit landed on the same destination cell (a
-  # simultaneous move), take one more step to a fresh adjacent cell instead of
-  # attacking from an overlap. Otherwise swing as usual.
-  defp attack_or_repick(%{game_state: game_state} = state, target_id) do
-    if arrival_cell_occupied?(state, target_id) do
-      case get_target_position(target_id) do
-        {:ok, target_pos} ->
-          initiate_combat_movement(state, target_id, game_state.combat_action_type, target_pos)
-
-        {:error, _reason} ->
-          execute_immediate_attack(state, target_id)
-      end
-    else
-      execute_immediate_attack(state, target_id)
-    end
-  end
-
-  defp arrival_cell_occupied?(%{game_state: game_state}, target_id) do
-    occupied? =
-      build_occupied?(
-        game_state.map_name,
-        {game_state.x, game_state.y},
-        0,
-        game_state.character_id,
-        target_id
-      )
-
-    occupied?.(game_state.x, game_state.y)
   end
 
   @doc """
@@ -671,7 +638,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp initiate_combat_movement(state, target_id, action_type, {target_x, target_y}) do
-    with {:ok, combat_context} <- prepare_combat_context(state, target_id, {target_x, target_y}),
+    with {:ok, combat_context} <- prepare_combat_context(state, {target_x, target_y}),
          {:ok, map_data} <- MapCache.get(state.game_state.map_name) do
       handle_pathfinding_to_target(state, target_id, action_type, combat_context, map_data)
     else
@@ -681,78 +648,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     end
   end
 
-  defp prepare_combat_context(state, target_id, {target_x, target_y}) do
+  defp prepare_combat_context(state, {target_x, target_y}) do
     attack_range = Stats.attack_range(state.game_state.stats)
     current_pos = {state.game_state.x, state.game_state.y}
-    optimal_pos = pick_attack_cell(state, target_id, {target_x, target_y}, attack_range)
 
-    {:ok,
-     %{
-       current_pos: current_pos,
-       target_pos: {target_x, target_y},
-       optimal_pos: optimal_pos,
-       attack_range: attack_range
-     }}
-  end
+    case pick_attack_cell(state, {target_x, target_y}) do
+      nil ->
+        {:error, :no_attack_cell}
 
-  # Routes move-to-attack positioning through the shared occupancy-aware helper
-  # so the player approaches an adjacent, unoccupied cell (never the target's
-  # cell). `occupied?` excludes the attacker itself and the target; `walkable?`
-  # comes from the same terrain source pathfinding uses. Falls back to the
-  # geometric estimate when no free adjacent cell is known (e.g. map missing).
-  defp pick_attack_cell(state, target_id, {target_x, target_y}, attack_range) do
-    game_state = state.game_state
-    from = {game_state.x, game_state.y}
-
-    walkable? = &Cell.traversable?(game_state.map_name, &1, &2)
-
-    occupied? =
-      build_occupied?(
-        game_state.map_name,
-        {target_x, target_y},
-        attack_range,
-        game_state.character_id,
-        target_id
-      )
-
-    AttackPositioning.adjacent_attack_cell(
-      from,
-      {target_x, target_y},
-      attack_range,
-      walkable?,
-      occupied?
-    ) || get_optimal_attack_position(from, {target_x, target_y}, attack_range)
-  end
-
-  # Builds an `(x, y) -> bool` occupancy predicate from currently-known nearby
-  # units, excluding the moving player and the target so the mover is not
-  # blocked by its own or the target's cell.
-  defp build_occupied?(map_name, {target_x, target_y}, range, self_char_id, target_id) do
-    cells =
-      map_name
-      |> SpatialIndex.get_all_units_in_range(target_x, target_y, range)
-      |> Enum.reject(fn {type, id} ->
-        id == target_id or (type == :player and id == self_char_id) or
-          inactive_player?({type, id})
-      end)
-      |> Enum.reduce(MapSet.new(), fn {type, id}, acc ->
-        case SpatialIndex.get_unit_position(type, id) do
-          {:ok, {x, y, _map}} -> MapSet.put(acc, {x, y})
-          {:error, _reason} -> acc
-        end
-      end)
-
-    fn x, y -> MapSet.member?(cells, {x, y}) end
-  end
-
-  defp inactive_player?({:player, player_id}) do
-    case UnitRegistry.get_unit(:player, player_id) do
-      {:ok, {_module, player, _pid}} -> not Unit.living?(player)
-      {:error, :not_found} -> true
+      optimal_pos ->
+        {:ok,
+         %{
+           current_pos: current_pos,
+           target_pos: {target_x, target_y},
+           optimal_pos: optimal_pos,
+           attack_range: attack_range
+         }}
     end
   end
 
-  defp inactive_player?(_unit), do: false
+  defp pick_attack_cell(state, target) do
+    game_state = state.game_state
+    from = {game_state.x, game_state.y}
+    walkable? = &Cell.traversable?(game_state.map_name, &1, &2)
+
+    AttackPositioning.adjacent_attack_cell(from, target, walkable?)
+  end
 
   defp handle_pathfinding_to_target(state, target_id, action_type, context, map_data) do
     case Pathfinding.rewalk_path(map_data, context.current_pos, context.optimal_pos) do
