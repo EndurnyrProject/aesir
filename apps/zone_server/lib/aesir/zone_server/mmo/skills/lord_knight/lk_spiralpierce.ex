@@ -201,7 +201,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   defp ankle_target?(%Combatant{unit_type: :player}), do: true
 
   defp ankle_target?(%Combatant{unit_type: :mob} = target),
-    do: target.class != :boss and not target.status_immune
+    do: not target.status_immune
 
   defp ankle_target?(_target), do: false
 end

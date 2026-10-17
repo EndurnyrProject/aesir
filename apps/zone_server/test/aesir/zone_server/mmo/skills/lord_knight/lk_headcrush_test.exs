@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrushTest do
   setup :verify_on_exit!
 
   test "a boss is refused before the attack spends SP" do
-    boss = mob([:boss])
+    boss = mob([:detector, :status_immune, :knockback_immune])
     caster = %PlayerState{character_id: 5_130}
     {:ok, definition} = Catalog.by_name(:lk_headcrush)
     stub(TargetResolver, :resolve, fn 6_130 -> {:ok, self(), boss, :mob} end)

@@ -94,7 +94,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
     expect(LevelPenalty, :exp, fn 25, 50 -> 100 end)
 
     state = reward_mob_state()
-    state = %{state | no_exp: false, mob_data: %{state.mob_data | modes: [:boss]}}
+
+    state = %{
+      state
+      | no_exp: false,
+        mob_data: %{state.mob_data | modes: [:detector, :status_immune, :knockback_immune]}
+    }
 
     KillExp.distribute_typed(
       [entry({:player, 1}, 1, 100, 0)],

@@ -219,7 +219,7 @@ defmodule Aesir.ZoneServer.Integration.LordKnightSkillsTest do
     knight = knight()
     normal = target_mob(vit: 1)
     undead = target_mob(vit: 1, race: :undead, element: {:undead, 1})
-    boss = target_mob(vit: 1, modes: [:boss])
+    boss = target_mob(vit: 1, modes: [:detector, :status_immune, :knockback_immune])
     id = knight.character.id
     flush_packets()
 

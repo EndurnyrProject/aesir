@@ -18,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer do
   constant/aegis name (a `String.t()`) to be resolved against `Mobs` by the Mix
   task. Keeping the token here keeps this module pure.
 
-  Both `monster` and `boss_monster` lines are imported; comments, blanks, and
+  Both `monster` and `boss_monster` lines are imported, a `boss_monster` line
+  with `"boss" => true`; comments, blanks, and
   any other NPC line are skipped. Pure functions - the boot-safety checks
   against `MapCache`/`Mobs` live in the `Mix.Tasks.Aesir.Import.Spawns` task,
   not here.
@@ -54,34 +55,40 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer do
   defp classify(line) do
     case String.split(line, "\t", trim: true) do
       [location, kind, _name, csv] when kind in ["monster", "boss_monster"] ->
-        build(location, csv)
+        build(location, csv, kind == "boss_monster")
 
       _ ->
         :skip
     end
   end
 
-  @spec build(String.t(), String.t()) :: {:ok, spawn_map()} | {:error, term()}
-  defp build(location, csv) do
+  @spec build(String.t(), String.t(), boolean()) :: {:ok, spawn_map()} | {:error, term()}
+  defp build(location, csv, boss?) do
     with {:ok, map, x, y, xs, ys} <- parse_location(location),
          {:ok, mob, amount, respawn_time, respawn_variance} <- parse_csv(csv) do
       {:ok,
        %{
          "map" => map,
          "spawns" => [
-           %{
-             "mob" => mob,
-             "amount" => amount,
-             "respawn_time" => respawn_time,
-             "respawn_variance" => respawn_variance,
-             "area" => %{"x" => x, "y" => y, "xs" => xs, "ys" => ys}
-           }
+           boss_flag(
+             %{
+               "mob" => mob,
+               "amount" => amount,
+               "respawn_time" => respawn_time,
+               "respawn_variance" => respawn_variance,
+               "area" => %{"x" => x, "y" => y, "xs" => xs, "ys" => ys}
+             },
+             boss?
+           )
          ]
        }}
     else
       _ -> {:error, {:malformed, location, csv}}
     end
   end
+
+  defp boss_flag(spawn, true), do: Map.put(spawn, "boss", true)
+  defp boss_flag(spawn, false), do: spawn
 
   @spec parse_location(String.t()) ::
           {:ok, String.t(), integer(), integer(), integer(), integer()} | :error

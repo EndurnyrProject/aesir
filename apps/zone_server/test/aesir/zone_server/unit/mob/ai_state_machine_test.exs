@@ -597,7 +597,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {101, 101, "prontera"}}
       end)
 
-      base = base_mob_state(modes: [:aggressive, :boss])
+      base = base_mob_state(modes: [:aggressive, :detector, :status_immune, :knockback_immune])
       state = %MobState{base | x: 100, y: 100, ai_state: :idle, target_ref: nil}
 
       result = AIStateMachine.process_ai(state)
@@ -750,7 +750,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
 
-      base = base_mob_state(modes: [:boss])
+      base = base_mob_state(modes: [:detector, :status_immune, :knockback_immune])
 
       state = %MobState{
         base

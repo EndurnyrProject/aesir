@@ -44,7 +44,13 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
 
   test "a boss immunity rejection still spends a legitimately activated trap" do
     player = start_player_session(id: 98_120, name: "SandmanCaster", position: {160, 160})
-    boss = spawn_test_mob(@map, {164, 160}, unit_id: 99_120, modes: [:boss])
+
+    boss =
+      spawn_test_mob(@map, {164, 160},
+        unit_id: 99_120,
+        modes: [:detector, :status_immune, :knockback_immune]
+      )
+
     on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, boss.unit_id) end)
 
     now = System.monotonic_time(:millisecond)

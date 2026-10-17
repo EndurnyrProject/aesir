@@ -208,6 +208,7 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
       amount: amount,
       respawn_time: 60_000,
       respawn_variance: 0,
+      boss: true,
       spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
     }
   end

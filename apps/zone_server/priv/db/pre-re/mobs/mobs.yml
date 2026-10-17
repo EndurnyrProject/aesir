@@ -1607,9 +1607,9 @@
   level: 78
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -1674,9 +1674,9 @@
   level: 81
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -2006,9 +2006,9 @@
   level: 72
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -2675,9 +2675,9 @@
   level: 74
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4000,9 +4000,9 @@
   level: 64
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - assist
@@ -4062,9 +4062,9 @@
   level: 77
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4184,9 +4184,9 @@
   job_exp: 50
   level: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4242,9 +4242,9 @@
   level: 2
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4300,9 +4300,9 @@
   job_exp: 44
   level: 8
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4358,9 +4358,9 @@
   job_exp: 176
   level: 24
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4416,9 +4416,9 @@
   level: 6
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4578,9 +4578,9 @@
   level: 20
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5422,9 +5422,9 @@
   level: 70
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5585,9 +5585,9 @@
   level: 65
   mdef: 15
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5861,9 +5861,9 @@
   level: 18
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7186,9 +7186,9 @@
   level: 81
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7364,9 +7364,9 @@
   level: 67
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7748,9 +7748,9 @@
   level: 93
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7863,9 +7863,9 @@
   level: 69
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9159,9 +9159,9 @@
   level: 74
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9610,9 +9610,9 @@
   level: 79
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - assist
@@ -9879,9 +9879,9 @@
   level: 76
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9938,9 +9938,9 @@
   level: 71
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9997,9 +9997,9 @@
   level: 65
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -11828,9 +11828,9 @@
   level: 77
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -11893,9 +11893,9 @@
   level: 73
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12278,9 +12278,9 @@
   level: 72
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12440,9 +12440,9 @@
   level: 65
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12967,9 +12967,9 @@
   level: 80
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13552,9 +13552,9 @@
   level: 70
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13698,9 +13698,9 @@
   level: 90
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Emperium
   race: angel
   race_groups:
@@ -13751,9 +13751,9 @@
   level: 81
   mdef: 48
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14093,9 +14093,9 @@
   level: 75
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14494,9 +14494,9 @@
   level: 77
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14780,9 +14780,9 @@
   level: 76
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15063,9 +15063,9 @@
   level: 97
   mdef: 54
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15512,9 +15512,9 @@
   level: 75
   mdef: 49
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15726,9 +15726,9 @@
   id: 1324
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15772,9 +15772,9 @@
   id: 1325
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15818,9 +15818,9 @@
   id: 1326
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15864,9 +15864,9 @@
   id: 1327
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15910,9 +15910,9 @@
   id: 1328
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -15956,9 +15956,9 @@
   id: 1329
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16002,9 +16002,9 @@
   id: 1330
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16048,9 +16048,9 @@
   id: 1331
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16094,9 +16094,9 @@
   id: 1332
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16140,9 +16140,9 @@
   id: 1333
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16186,9 +16186,9 @@
   id: 1334
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16232,9 +16232,9 @@
   id: 1335
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16278,9 +16278,9 @@
   id: 1336
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16324,9 +16324,9 @@
   id: 1337
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16370,9 +16370,9 @@
   id: 1338
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16416,9 +16416,9 @@
   id: 1339
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16462,9 +16462,9 @@
   id: 1340
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16508,9 +16508,9 @@
   id: 1341
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16554,9 +16554,9 @@
   id: 1342
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16600,9 +16600,9 @@
   id: 1343
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16646,9 +16646,9 @@
   id: 1344
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16692,9 +16692,9 @@
   id: 1345
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16738,9 +16738,9 @@
   id: 1346
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16784,9 +16784,9 @@
   id: 1347
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16830,9 +16830,9 @@
   id: 1348
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16876,9 +16876,9 @@
   id: 1349
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16922,9 +16922,9 @@
   id: 1350
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -16968,9 +16968,9 @@
   id: 1351
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17014,9 +17014,9 @@
   id: 1352
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17060,9 +17060,9 @@
   id: 1353
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17106,9 +17106,9 @@
   id: 1354
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17152,9 +17152,9 @@
   id: 1355
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17198,9 +17198,9 @@
   id: 1356
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17244,9 +17244,9 @@
   id: 1357
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17290,9 +17290,9 @@
   id: 1358
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17336,9 +17336,9 @@
   id: 1359
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17382,9 +17382,9 @@
   id: 1360
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17428,9 +17428,9 @@
   id: 1361
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17474,9 +17474,9 @@
   id: 1362
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -17520,9 +17520,9 @@
   id: 1363
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -18021,9 +18021,9 @@
   level: 94
   mdef: 73
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18799,9 +18799,9 @@
   level: 60
   mdef: 58
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18856,9 +18856,9 @@
   level: 85
   mdef: 76
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -19142,9 +19142,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -19194,9 +19194,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -19246,9 +19246,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -19298,9 +19298,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -19354,9 +19354,9 @@
   level: 68
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -20200,9 +20200,9 @@
   level: 73
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -21188,9 +21188,9 @@
   level: 72
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -21260,9 +21260,9 @@
   level: 65
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -21503,9 +21503,9 @@
   level: 70
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -22485,9 +22485,9 @@
   level: 76
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -22522,9 +22522,9 @@
   level: 71
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -22559,9 +22559,9 @@
   level: 65
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -22753,9 +22753,9 @@
   level: 71
   mdef: 51
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -23188,9 +23188,9 @@
   level: 99
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -23676,9 +23676,9 @@
   level: 88
   mdef: 52
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -24421,9 +24421,9 @@
   level: 73
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -24460,9 +24460,9 @@
   level: 85
   mdef: 76
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -24867,9 +24867,9 @@
   level: 71
   mdef: 51
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -25743,9 +25743,9 @@
   level: 20
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26008,9 +26008,9 @@
   level: 18
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26234,9 +26234,9 @@
   level: 31
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26293,9 +26293,9 @@
   level: 70
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26656,9 +26656,9 @@
   level: 29
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -26704,9 +26704,9 @@
   level: 40
   mdef: 27
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - assist
     - can_attack
@@ -26742,9 +26742,9 @@
   level: 52
   mdef: 27
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -27159,9 +27159,9 @@
   level: 77
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27319,9 +27319,9 @@
   level: 54
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - can_attack
@@ -27359,9 +27359,9 @@
   id: 1610
   level: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -27402,9 +27402,9 @@
   id: 1611
   level: 32
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27447,9 +27447,9 @@
   level: 56
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -28022,9 +28022,9 @@
   level: 86
   mdef: 41
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28154,9 +28154,9 @@
   level: 88
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28346,9 +28346,9 @@
   level: 85
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -28874,9 +28874,9 @@
   level: 99
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28919,9 +28919,9 @@
   level: 99
   mdef: 39
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28964,9 +28964,9 @@
   level: 99
   mdef: 36
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29009,9 +29009,9 @@
   level: 99
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29054,9 +29054,9 @@
   level: 99
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29099,9 +29099,9 @@
   level: 99
   mdef: 88
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29158,9 +29158,9 @@
   level: 99
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29225,9 +29225,9 @@
   level: 99
   mdef: 39
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29292,9 +29292,9 @@
   level: 99
   mdef: 36
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29359,9 +29359,9 @@
   level: 99
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29426,9 +29426,9 @@
   level: 99
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29493,9 +29493,9 @@
   level: 99
   mdef: 88
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29884,9 +29884,9 @@
   level: 79
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -30587,9 +30587,9 @@
   level: 88
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Monemus
@@ -30943,9 +30943,9 @@
   level: 72
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -31122,9 +31122,9 @@
   level: 97
   mdef: 54
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31291,9 +31291,9 @@
   level: 89
   mdef: 44
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -31334,9 +31334,9 @@
   level: 85
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31893,9 +31893,9 @@
   level: 81
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31949,9 +31949,9 @@
   level: 80
   mdef: 63
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32007,9 +32007,9 @@
   level: 79
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32065,9 +32065,9 @@
   level: 77
   mdef: 67
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32121,9 +32121,9 @@
   level: 92
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32178,9 +32178,9 @@
   level: 88
   mdef: 39
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32235,9 +32235,9 @@
   level: 83
   mdef: 72
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32292,9 +32292,9 @@
   level: 83
   mdef: 80
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32351,9 +32351,9 @@
   level: 99
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32407,9 +32407,9 @@
   level: 92
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32454,9 +32454,9 @@
   level: 88
   mdef: 39
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32501,9 +32501,9 @@
   level: 83
   mdef: 72
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32548,9 +32548,9 @@
   level: 83
   mdef: 80
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32912,9 +32912,9 @@
   level: 90
   mdef: 59
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32979,9 +32979,9 @@
   level: 89
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33358,9 +33358,9 @@
   level: 72
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33395,9 +33395,9 @@
   id: 1732
   level: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   size: small
@@ -33428,9 +33428,9 @@
   level: 90
   mdef: 32
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33487,9 +33487,9 @@
   level: 90
   mdef: 32
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34174,9 +34174,9 @@
   level: 99
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34351,9 +34351,9 @@
   level: 81
   mdef: 24
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34410,9 +34410,9 @@
   level: 83
   mdef: 24
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34449,9 +34449,9 @@
   level: 89
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -34701,9 +34701,9 @@
   level: 81
   mdef: 24
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -34741,9 +34741,9 @@
   level: 83
   mdef: 24
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -34787,9 +34787,9 @@
   level: 99
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34826,9 +34826,9 @@
   level: 99
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34872,9 +34872,9 @@
   level: 99
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34936,9 +34936,9 @@
   level: 89
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35522,9 +35522,9 @@
   level: 98
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35725,9 +35725,9 @@
   level: 44
   mdef: 12
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - assist
@@ -35830,9 +35830,9 @@
   level: 82
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36080,9 +36080,9 @@
   level: 44
   mdef: 12
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - assist
@@ -36233,9 +36233,9 @@
   level: 82
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36373,9 +36373,9 @@
   id: 1798
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   size: small
@@ -36409,9 +36409,9 @@
   level: 99
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36453,9 +36453,9 @@
   level: 99
   mdef: 39
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36497,9 +36497,9 @@
   level: 99
   mdef: 36
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36541,9 +36541,9 @@
   level: 99
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36585,9 +36585,9 @@
   level: 99
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36628,9 +36628,9 @@
   level: 99
   mdef: 88
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36672,9 +36672,9 @@
   level: 99
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36716,9 +36716,9 @@
   level: 99
   mdef: 39
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36760,9 +36760,9 @@
   level: 99
   mdef: 36
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36804,9 +36804,9 @@
   level: 99
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36848,9 +36848,9 @@
   level: 99
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36892,9 +36892,9 @@
   level: 99
   mdef: 88
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36978,9 +36978,9 @@
   level: 99
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37028,9 +37028,9 @@
   level: 99
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37069,9 +37069,9 @@
   level: 80
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37125,9 +37125,9 @@
   level: 12
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37162,9 +37162,9 @@
   level: 12
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37212,9 +37212,9 @@
   level: 99
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37636,9 +37636,9 @@
   level: 20
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37693,9 +37693,9 @@
   level: 86
   mdef: 33
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37750,9 +37750,9 @@
   level: 80
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37811,9 +37811,9 @@
   level: 91
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37870,9 +37870,9 @@
   level: 99
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37937,9 +37937,9 @@
   level: 85
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37976,9 +37976,9 @@
   level: 91
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38015,9 +38015,9 @@
   level: 85
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38224,9 +38224,9 @@
   level: 86
   mdef: 13
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38284,9 +38284,9 @@
   level: 99
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -38330,9 +38330,9 @@
   level: 15
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -38376,9 +38376,9 @@
   level: 23
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -38423,9 +38423,9 @@
   level: 43
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -38473,9 +38473,9 @@
   level: 47
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -38527,9 +38527,9 @@
   id: 1845
   level: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Box
   race: formless
   size: small
@@ -38562,9 +38562,9 @@
   level: 90
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dream Metal
   race: formless
   size: small
@@ -38595,9 +38595,9 @@
   level: 98
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38636,9 +38636,9 @@
   level: 50
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38677,9 +38677,9 @@
   level: 60
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38718,9 +38718,9 @@
   level: 50
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38759,9 +38759,9 @@
   level: 61
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38798,9 +38798,9 @@
   level: 99
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38837,9 +38837,9 @@
   level: 99
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39692,9 +39692,9 @@
   level: 88
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39748,9 +39748,9 @@
   job_exp: 1111111
   level: 80
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39795,9 +39795,9 @@
   level: 66
   mdef: 15
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39835,9 +39835,9 @@
   level: 98
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39894,9 +39894,9 @@
   level: 98
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39986,9 +39986,9 @@
   level: 99
   mdef: 73
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40028,9 +40028,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -40108,9 +40108,9 @@
   level: 6
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40412,9 +40412,9 @@
   level: 85
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40580,9 +40580,9 @@
   level: 73
   mdef: 23
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40656,9 +40656,9 @@
   level: 99
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40769,9 +40769,9 @@
   level: 50
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - assist
@@ -40875,9 +40875,9 @@
   level: 81
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40951,9 +40951,9 @@
   level: 86
   mdef: 33
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -41023,9 +41023,9 @@
   id: 1902
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Box
   race: formless
   size: small
@@ -41053,9 +41053,9 @@
   id: 1903
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Box
   race: formless
   size: small
@@ -41086,9 +41086,9 @@
   level: 28
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -41122,9 +41122,9 @@
   id: 1905
   level: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Barricade
   race: formless
   race_groups:
@@ -41152,9 +41152,9 @@
   level: 98
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -41186,9 +41186,9 @@
   level: 90
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Guardian Stone
   race: formless
   race_groups:
@@ -41218,9 +41218,9 @@
   level: 90
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Guardian Stone
   race: formless
   race_groups:
@@ -41484,9 +41484,9 @@
   level: 99
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41538,9 +41538,9 @@
   level: 99
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41602,9 +41602,9 @@
   level: 97
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41656,9 +41656,9 @@
   level: 97
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41712,9 +41712,9 @@
   level: 96
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41766,9 +41766,9 @@
   level: 98
   mdef: 54
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41805,9 +41805,9 @@
   level: 97
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41844,9 +41844,9 @@
   level: 97
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41883,9 +41883,9 @@
   level: 96
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41922,9 +41922,9 @@
   level: 98
   mdef: 54
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42109,9 +42109,9 @@
   level: 98
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42148,9 +42148,9 @@
   level: 90
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42187,9 +42187,9 @@
   level: 98
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42229,9 +42229,9 @@
   level: 80
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -42266,9 +42266,9 @@
   level: 81
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42304,9 +42304,9 @@
   level: 98
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -42338,9 +42338,9 @@
   level: 98
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -42372,9 +42372,9 @@
   level: 98
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -42454,9 +42454,9 @@
   id: 1938
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42500,9 +42500,9 @@
   id: 1939
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42546,9 +42546,9 @@
   id: 1940
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42592,9 +42592,9 @@
   id: 1941
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42638,9 +42638,9 @@
   id: 1942
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42684,9 +42684,9 @@
   id: 1943
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42730,9 +42730,9 @@
   id: 1944
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42776,9 +42776,9 @@
   id: 1945
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42822,9 +42822,9 @@
   id: 1946
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   race_groups:
@@ -42855,9 +42855,9 @@
   level: 90
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42929,9 +42929,9 @@
   level: 86
   mdef: 33
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -42966,9 +42966,9 @@
   level: 80
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -43016,9 +43016,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43066,9 +43066,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43116,9 +43116,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43166,9 +43166,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43202,9 +43202,9 @@
   id: 1955
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Chest
   race: formless
   size: small
@@ -43250,9 +43250,9 @@
   level: 99
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -43310,9 +43310,9 @@
   level: 90
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Entweihen Crothen
@@ -43345,9 +43345,9 @@
   level: 89
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
     - random_target
@@ -43381,9 +43381,9 @@
   level: 89
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
     - random_target
@@ -43417,9 +43417,9 @@
   level: 89
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
     - random_target
@@ -43453,9 +43453,9 @@
   level: 89
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Thorn of Purification
@@ -43563,9 +43563,9 @@
   level: 30
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Nightmare
   race: brute
   size: large
@@ -43619,9 +43619,9 @@
   level: 72
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Doppelganger
   race: demon
   size: medium
@@ -43650,9 +43650,9 @@
   level: 79
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Egnigem Cenia
   race: demi_human
   size: medium
@@ -44281,9 +44281,9 @@
   level: 85
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44741,9 +44741,9 @@
   level: 115
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -44799,9 +44799,9 @@
   level: 113
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45267,9 +45267,9 @@
   level: 66
   mdef: 15
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Ox
   race: demon
   size: large
@@ -45718,9 +45718,9 @@
   level: 117
   mdef: 75
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45961,9 +45961,9 @@
   level: 90
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -46002,9 +46002,9 @@
   level: 80
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -46268,9 +46268,9 @@
   level: 1
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Cramp
   race: plant
   size: medium
@@ -46316,9 +46316,9 @@
   level: 93
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle

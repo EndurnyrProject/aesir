@@ -78,7 +78,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOpsTest do
   test "rejects boss and status-immune mobs" do
     caster = %{dex: 500, luk: 500, base_level: 230}
 
-    assert {:error, :immune} = StealOps.attempt_mug(mob_state([:boss]), caster, 10)
+    assert {:error, :immune} =
+             StealOps.attempt_mug(
+               mob_state([:detector, :status_immune, :knockback_immune]),
+               caster,
+               10
+             )
+
     assert {:error, :immune} = StealOps.attempt_mug(mob_state([:status_immune]), caster, 10)
   end
 end

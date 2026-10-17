@@ -3,13 +3,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComa do
   Pure equipment coma eligibility and chance policy (`battle_check_coma`).
 
   The class bonuses count against every eligible target; the race bonuses only
-  against one that is not status-immune.
+  against one that is not status-immune. A monster in the GvG group is never
+  eligible, nor is one whose sprite id equals the battlefield class number: the
+  exclusion compares the sprite id, not the class, so no monster sprite meets it
+  and battlefield-class monsters stay eligible.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
 
   @roll_ceiling 10_000
+  @battlefield_class_number 4
 
   @typedoc "A per-10,000 roll predicate receiving the effective chance."
   @type roll_fun :: (pos_integer() -> boolean())
@@ -41,8 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComa do
   defp race_rate(_attacker, %Combatant{status_immune: true}), do: 0
   defp race_rate(attacker, target), do: EquipmentBonuses.coma_race_rate(attacker, target)
 
-  defp competitive_mob?(%Combatant{unit_type: :mob, race2: race2}),
-    do: :gvg in race2 or :battlefield in race2
+  defp competitive_mob?(%Combatant{unit_type: :mob, race2: race2, monster_id: monster_id}),
+    do: :gvg in race2 or monster_id == @battlefield_class_number
 
   defp competitive_mob?(_target), do: false
 

@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.SpawnsTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.Spawns
@@ -33,10 +34,10 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.SpawnsTest do
     test "the boss entry references a boss-classified mob" do
       assert {:ok, spawns} = Spawns.for_map("gld_dun03")
       boss_id = %{renewal: 1039, pre_renewal: 1147}[GameMode.mode()]
-      assert %MobSpawn{mob: mob_id} = Enum.find(spawns, &(&1.mob == boss_id))
+      assert %MobSpawn{mob: mob_id, boss: true} = Enum.find(spawns, &(&1.mob == boss_id))
 
       assert {:ok, mob} = Mobs.by_id(mob_id)
-      assert :boss in mob.modes
+      assert MobMode.class(mob.modes) == :boss
     end
 
     test "every spawn deserializes as a MobSpawn struct with an integer variance" do

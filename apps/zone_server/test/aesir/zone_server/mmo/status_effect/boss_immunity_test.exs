@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.BossImmunityTest do
   end
 
   test "a boss rejects a BossResist status from a foreign caster and stores nothing" do
-    unit_id = start_mob([:boss, :status_immune])
+    unit_id = start_mob([:detector, :status_immune, :knockback_immune])
 
     assert {:error, :immune} =
              Interpreter.apply_status(:mob, unit_id, :sc_stun, caster_id: 12_345)
@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.BossImmunityTest do
   end
 
   test "a boss rejects a BossResist status it is itself the source of" do
-    unit_id = start_mob([:boss, :status_immune])
+    unit_id = start_mob([:detector, :status_immune, :knockback_immune])
 
     assert {:error, :immune} =
              Interpreter.apply_status(:mob, unit_id, :sc_stun,
@@ -46,14 +46,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.BossImmunityTest do
   end
 
   test "a boss receives a status without BossResist from any source" do
-    unit_id = start_mob([:boss, :status_immune])
+    unit_id = start_mob([:detector, :status_immune, :knockback_immune])
 
     assert :ok = Interpreter.apply_status(:mob, unit_id, :sc_increaseagi, val1: 3)
     assert StatusStorage.has_status?(:mob, unit_id, :sc_increaseagi)
   end
 
   test "an unavoidable application reaches a boss" do
-    unit_id = start_mob([:boss, :status_immune])
+    unit_id = start_mob([:detector, :status_immune, :knockback_immune])
 
     assert :ok =
              Interpreter.apply_status(:mob, unit_id, :sc_stun,

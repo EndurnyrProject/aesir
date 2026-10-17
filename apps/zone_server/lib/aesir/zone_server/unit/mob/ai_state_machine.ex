@@ -574,7 +574,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   defp attack_viewer(state) do
     %{
-      class: if(MobState.is_boss?(state), do: :boss, else: :normal),
+      class: MobState.monster_class(state),
       detector: MobState.detector?(state)
     }
   end

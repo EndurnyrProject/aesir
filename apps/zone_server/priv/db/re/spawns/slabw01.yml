@@ -25,6 +25,7 @@
         xs: 0
         'y': 0
         ys: 0
+      boss: true
       mob: 3633
       respawn_time: 3600000
       respawn_variance: 600000

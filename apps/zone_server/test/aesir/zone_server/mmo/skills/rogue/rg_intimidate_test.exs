@@ -85,7 +85,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
       {:ok, %{hit?: true, damage: 10, target_survives?: true}}
     end)
 
-    boss = %{mob() | mob_data: %{mob().mob_data | modes: [:boss]}}
+    boss = %{
+      mob()
+      | mob_data: %{mob().mob_data | modes: [:detector, :status_immune, :knockback_immune]}
+    }
+
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), boss, :mob} end)
     assert {:ok, _caster} = RgIntimidate.cast(player(), {:unit, @target_id}, 5, definition())
 

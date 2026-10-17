@@ -187,8 +187,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   defp instant_kill?(mode, target_state, caster_stats, target_stats, level) do
     combatant = target_state.__struct__.to_combatant(target_state)
 
-    Map.get(combatant, :class, :normal) != :boss and
-      :rand.uniform(1_000) - 1 < instant_kill_score(mode, caster_stats, target_stats, level)
+    :rand.uniform(1_000) - 1 < instant_kill_score(mode, caster_stats, target_stats, level) and
+      not combatant.status_immune
   end
 
   @doc false

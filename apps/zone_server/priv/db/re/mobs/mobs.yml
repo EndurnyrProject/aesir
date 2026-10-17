@@ -1631,9 +1631,9 @@
   matk: 1503
   mdef: 164
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -1698,9 +1698,9 @@
   matk: 1984
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -2032,9 +2032,9 @@
   matk: 1176
   mdef: 86
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -2709,9 +2709,9 @@
   matk: 1967
   mdef: 192
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -3655,6 +3655,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -3706,6 +3707,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -3757,6 +3759,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -3808,6 +3811,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -3859,6 +3863,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -3910,6 +3915,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -3961,6 +3967,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -4012,6 +4019,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -4065,9 +4073,9 @@
   matk: 843
   mdef: 81
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - assist
@@ -4129,9 +4137,9 @@
   matk: 441
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4255,9 +4263,9 @@
   matk: 19
   mdef: 6
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4314,9 +4322,9 @@
   matk: 40
   mdef: 31
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4373,9 +4381,9 @@
   matk: 33
   mdef: 28
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4432,9 +4440,9 @@
   matk: 46
   mdef: 51
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4491,9 +4499,9 @@
   matk: 20
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -4650,9 +4658,9 @@
   matk: 145
   mdef: 238
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5506,9 +5514,9 @@
   matk: 1403
   mdef: 135
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5673,9 +5681,9 @@
   matk: 776
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -5952,9 +5960,9 @@
   matk: 162
   mdef: 72
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -6837,9 +6845,9 @@
   matk: 62
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - assist
@@ -6891,9 +6899,9 @@
   matk: 33
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - assist
@@ -7406,9 +7414,9 @@
   matk: 265
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7584,9 +7592,9 @@
   matk: 1251
   mdef: 81
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -7972,9 +7980,9 @@
   matk: 1782
   mdef: 269
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -8090,9 +8098,9 @@
   matk: 967
   mdef: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -9028,6 +9036,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -9377,9 +9386,9 @@
   matk: 648
   mdef: 92
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10104,9 +10113,9 @@
   matk: 567
   mdef: 61
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10167,9 +10176,9 @@
   matk: 411
   mdef: 69
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -10229,9 +10238,9 @@
   matk: 359
   mdef: 188
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -11863,9 +11872,9 @@
   level: 10
   matk: 8
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -12079,9 +12088,9 @@
   matk: 1433
   mdef: 166
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12146,9 +12155,9 @@
   matk: 1733
   mdef: 103
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12541,9 +12550,9 @@
   matk: 103
   mdef: 72
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -12706,9 +12715,9 @@
   matk: 534
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13246,9 +13255,9 @@
   matk: 2585
   mdef: 168
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13839,9 +13848,9 @@
   matk: 148
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -13986,9 +13995,9 @@
   matk: 13
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -14040,9 +14049,9 @@
   matk: 553
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14383,9 +14392,9 @@
   matk: 201
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -14787,9 +14796,9 @@
   matk: 360
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15073,9 +15082,9 @@
   matk: 80
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15357,9 +15366,9 @@
   matk: 2066
   mdef: 123
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -15808,9 +15817,9 @@
   matk: 300
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -18279,9 +18288,9 @@
   matk: 1962
   mdef: 73
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -19074,9 +19083,9 @@
   matk: 100
   mdef: 81
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -19133,9 +19142,9 @@
   matk: 1812
   mdef: 146
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -19418,9 +19427,9 @@
   level: 1
   mdef: 160
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -19468,9 +19477,9 @@
   level: 1
   mdef: 160
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -19520,9 +19529,9 @@
   level: 1
   mdef: 160
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -19570,9 +19579,9 @@
   level: 1
   mdef: 160
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -19628,9 +19637,9 @@
   matk: 420
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -20487,9 +20496,9 @@
   matk: 1986
   mdef: 185
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -21497,9 +21506,9 @@
   matk: 103
   mdef: 72
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -21569,9 +21578,9 @@
   matk: 534
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -21813,9 +21822,9 @@
   matk: 148
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -22805,9 +22814,9 @@
   matk: 567
   mdef: 61
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -22842,9 +22851,9 @@
   matk: 411
   mdef: 69
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -22879,9 +22888,9 @@
   matk: 359
   mdef: 188
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -23074,9 +23083,9 @@
   matk: 936
   mdef: 140
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -23509,9 +23518,9 @@
   matk: 5000
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -24004,9 +24013,9 @@
   matk: 2052
   mdef: 123
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -24362,9 +24371,9 @@
   matk: 2036
   mdef: 178
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -24771,9 +24780,9 @@
   matk: 1986
   mdef: 185
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -24810,9 +24819,9 @@
   matk: 1812
   mdef: 146
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -25215,9 +25224,9 @@
   matk: 936
   mdef: 140
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26092,9 +26101,9 @@
   matk: 145
   mdef: 238
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26356,9 +26365,9 @@
   matk: 162
   mdef: 72
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26581,9 +26590,9 @@
   matk: 183
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26640,9 +26649,9 @@
   matk: 1260
   mdef: 143
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -26989,9 +26998,9 @@
   matk: 24
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -27033,9 +27042,9 @@
   matk: 55
   mdef: 27
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - assist
     - can_attack
@@ -27071,9 +27080,9 @@
   matk: 100
   mdef: 27
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -27487,9 +27496,9 @@
   matk: 360
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27645,9 +27654,9 @@
   matk: 35
   mdef: 36
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - can_attack
@@ -27685,9 +27694,9 @@
   level: 30
   matk: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -27730,9 +27739,9 @@
   matk: 29
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -27775,9 +27784,9 @@
   matk: 418
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -28364,9 +28373,9 @@
   matk: 976
   mdef: 96
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28497,9 +28506,9 @@
   matk: 51
   mdef: 46
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -28689,9 +28698,9 @@
   matk: 2036
   mdef: 178
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29238,9 +29247,9 @@
   matk: 2342
   mdef: 155
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29286,9 +29295,9 @@
   matk: 1378
   mdef: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29334,9 +29343,9 @@
   matk: 1465
   mdef: 106
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29382,9 +29391,9 @@
   matk: 3396
   mdef: 349
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29430,9 +29439,9 @@
   matk: 1550
   mdef: 135
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29478,9 +29487,9 @@
   matk: 4254
   mdef: 555
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29540,9 +29549,9 @@
   matk: 2342
   mdef: 155
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29609,9 +29618,9 @@
   matk: 1378
   mdef: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29678,9 +29687,9 @@
   matk: 1465
   mdef: 106
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29747,9 +29756,9 @@
   matk: 3396
   mdef: 349
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29816,9 +29825,9 @@
   matk: 1550
   mdef: 135
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -29885,9 +29894,9 @@
   matk: 4254
   mdef: 555
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -30291,9 +30300,9 @@
   matk: 2351
   mdef: 175
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31006,9 +31015,9 @@
   matk: 1000
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Monemus
@@ -31364,9 +31373,9 @@
   matk: 622
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -31543,9 +31552,9 @@
   matk: 4656
   mdef: 109
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31717,9 +31726,9 @@
   matk: 925
   mdef: 104
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -31758,9 +31767,9 @@
   matk: 2036
   mdef: 178
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -31798,9 +31807,9 @@
   level: 12
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - can_attack
@@ -32313,9 +32322,9 @@
   matk: 152
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32369,9 +32378,9 @@
   matk: 944
   mdef: 89
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32428,9 +32437,9 @@
   matk: 804
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32487,9 +32496,9 @@
   matk: 165
   mdef: 96
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32543,9 +32552,9 @@
   matk: 144
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32602,9 +32611,9 @@
   matk: 171
   mdef: 69
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32661,9 +32670,9 @@
   matk: 245
   mdef: 90
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32720,9 +32729,9 @@
   matk: 201
   mdef: 80
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32781,9 +32790,9 @@
   matk: 1671
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32837,9 +32846,9 @@
   matk: 144
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32884,9 +32893,9 @@
   matk: 171
   mdef: 69
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32931,9 +32940,9 @@
   matk: 245
   mdef: 90
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -32978,9 +32987,9 @@
   matk: 201
   mdef: 80
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33346,9 +33355,9 @@
   matk: 2662
   mdef: 166
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33413,9 +33422,9 @@
   matk: 150
   mdef: 58
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33804,9 +33813,9 @@
   matk: 1176
   mdef: 86
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33873,9 +33882,9 @@
   matk: 1629
   mdef: 32
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -33932,9 +33941,9 @@
   matk: 3580
   mdef: 232
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34582,6 +34591,7 @@
   matk: 100
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -34635,9 +34645,9 @@
   matk: 4412
   mdef: 506
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34812,9 +34822,9 @@
   matk: 325
   mdef: 92
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34871,9 +34881,9 @@
   matk: 218
   mdef: 86
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -34910,9 +34920,9 @@
   matk: 150
   mdef: 95
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -35162,9 +35172,9 @@
   matk: 325
   mdef: 92
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -35202,9 +35212,9 @@
   matk: 218
   mdef: 86
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -35248,9 +35258,9 @@
   matk: 3206
   mdef: 506
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35287,9 +35297,9 @@
   matk: 11
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35333,9 +35343,9 @@
   matk: 11
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -35399,9 +35409,9 @@
   matk: 2785
   mdef: 262
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36019,9 +36029,9 @@
   matk: 2680
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36233,9 +36243,9 @@
   matk: 77
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - assist
@@ -36344,9 +36354,9 @@
   matk: 1503
   mdef: 176
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36596,9 +36606,9 @@
   matk: 77
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - assist
@@ -36765,9 +36775,9 @@
   matk: 123
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -36942,9 +36952,9 @@
   matk: 3802
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -36986,9 +36996,9 @@
   matk: 4100
   mdef: 39
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37030,9 +37040,9 @@
   matk: 429
   mdef: 36
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37074,9 +37084,9 @@
   matk: 892
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37118,9 +37128,9 @@
   matk: 4221
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37162,9 +37172,9 @@
   matk: 3197
   mdef: 88
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37206,9 +37216,9 @@
   matk: 1
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37254,9 +37264,9 @@
   matk: 1
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37302,9 +37312,9 @@
   matk: 1
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37350,9 +37360,9 @@
   matk: 1
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37398,9 +37408,9 @@
   matk: 1
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37445,9 +37455,9 @@
   matk: 1
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37586,9 +37596,9 @@
   matk: 32767
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37634,9 +37644,9 @@
   matk: 300
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -37692,9 +37702,9 @@
   matk: 7
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37731,9 +37741,9 @@
   matk: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -37789,9 +37799,9 @@
   matk: 32767
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38209,9 +38219,9 @@
   matk: 13
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -38265,9 +38275,9 @@
   matk: 129
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38322,9 +38332,9 @@
   matk: 120
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38383,9 +38393,9 @@
   matk: 600
   mdef: 68
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38442,9 +38452,9 @@
   matk: 3389
   mdef: 218
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38509,9 +38519,9 @@
   matk: 305
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38548,9 +38558,9 @@
   matk: 600
   mdef: 68
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38587,9 +38597,9 @@
   matk: 305
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38798,9 +38808,9 @@
   matk: 141
   mdef: 13
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -38856,9 +38866,9 @@
   matk: 200
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - can_attack
   name: Golden Savage
@@ -38896,9 +38906,9 @@
   matk: 9
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -38938,9 +38948,9 @@
   matk: 33
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -38980,9 +38990,9 @@
   matk: 80
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -39026,9 +39036,9 @@
   matk: 84
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - can_attack
   name: Snake Lord's Minion
@@ -39107,9 +39117,9 @@
   matk: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dream Metal
   race: formless
   size: small
@@ -39139,9 +39149,9 @@
   matk: 5000
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Poring
   race: angel
   size: medium
@@ -39172,9 +39182,9 @@
   matk: 1500
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39213,9 +39223,9 @@
   matk: 1500
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39261,9 +39271,9 @@
   matk: 1500
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -39335,9 +39345,9 @@
   matk: 11
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Angeling
   race: angel
   size: small
@@ -39365,9 +39375,9 @@
   matk: 11
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Deviling
   race: angel
   size: small
@@ -40157,9 +40167,9 @@
   matk: 1006
   mdef: 73
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40216,9 +40226,9 @@
   matk: 4636
   mdef: 382
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40263,9 +40273,9 @@
   matk: 152
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40303,9 +40313,9 @@
   matk: 2100
   mdef: 265
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40362,9 +40372,9 @@
   matk: 4444
   mdef: 265
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40454,9 +40464,9 @@
   matk: 802
   mdef: 73
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40501,9 +40511,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -40584,9 +40594,9 @@
   matk: 6
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Eclipse
   race: brute
   size: medium
@@ -40899,9 +40909,9 @@
   matk: 1861
   mdef: 121
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -40987,9 +40997,9 @@
   matk: 50
   mdef: 38
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41031,9 +41041,9 @@
   matk: 900
   mdef: 13
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -41075,9 +41085,9 @@
   matk: 1300
   mdef: 23
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41116,9 +41126,9 @@
   matk: 4256
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41155,9 +41165,9 @@
   matk: 3206
   mdef: 506
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41360,9 +41370,9 @@
   matk: 1984
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Baphomet
   race: demon
   size: large
@@ -41420,9 +41430,9 @@
   matk: 129
   mdef: 33
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -41457,9 +41467,9 @@
   matk: 680
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -41539,9 +41549,9 @@
   id: 1902
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Box
   race: formless
   size: small
@@ -41572,9 +41582,9 @@
   id: 1903
   level: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Treasure Box
   race: formless
   size: small
@@ -41611,9 +41621,9 @@
   matk: 200
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - looter
     - can_attack
@@ -41702,9 +41712,9 @@
   matk: 1
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Guardian Stone
   race: formless
   race_groups:
@@ -41737,9 +41747,9 @@
   matk: 1
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Guardian Stone
   race: formless
   race_groups:
@@ -42023,9 +42033,9 @@
   matk: 2640
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42079,9 +42089,9 @@
   matk: 2880
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42143,9 +42153,9 @@
   matk: 145
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42197,9 +42207,9 @@
   matk: 159
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42253,9 +42263,9 @@
   matk: 363
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42307,9 +42317,9 @@
   matk: 599
   mdef: 54
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42346,9 +42356,9 @@
   matk: 145
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42385,9 +42395,9 @@
   matk: 159
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42424,9 +42434,9 @@
   matk: 363
   mdef: 37
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42463,9 +42473,9 @@
   matk: 599
   mdef: 54
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42649,9 +42659,9 @@
   matk: 2300
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42688,9 +42698,9 @@
   matk: 1200
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42727,9 +42737,9 @@
   matk: 3300
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -42769,9 +42779,9 @@
   matk: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -42806,9 +42816,9 @@
   matk: 943
   mdef: 55
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - assist
@@ -42843,9 +42853,9 @@
   matk: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -42878,9 +42888,9 @@
   matk: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -42913,9 +42923,9 @@
   matk: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43387,9 +43397,9 @@
   matk: 1200
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - no_random_walk
     - can_attack
@@ -43456,9 +43466,9 @@
   matk: 1550
   mdef: 33
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -43493,9 +43503,9 @@
   matk: 680
   mdef: 62
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -43544,9 +43554,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43597,9 +43607,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43650,9 +43660,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43703,9 +43713,9 @@
   level: 1
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43756,9 +43766,9 @@
   id: 1955
   level: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -43810,9 +43820,9 @@
   matk: 3200
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -43874,9 +43884,9 @@
   matk: 3600
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -43912,9 +43922,9 @@
   matk: 680
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
     - random_target
@@ -43948,9 +43958,9 @@
   matk: 680
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
     - random_target
@@ -43984,9 +43994,9 @@
   matk: 680
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
     - random_target
@@ -44020,9 +44030,9 @@
   matk: 680
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Thorn of Purification
@@ -44072,9 +44082,9 @@
   matk: 7
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -44200,9 +44210,9 @@
   matk: 50
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Doppelganger
   race: demon
   size: medium
@@ -44231,9 +44241,9 @@
   matk: 50
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Egnigem Cenia
   race: demi_human
   size: medium
@@ -44913,9 +44923,9 @@
   matk: 220
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45373,9 +45383,9 @@
   matk: 774
   mdef: 43
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45434,9 +45444,9 @@
   matk: 1320
   mdef: 123
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -45827,9 +45837,9 @@
   level: 50
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Male Game Master
   race: demi_human
   size: medium
@@ -45857,9 +45867,9 @@
   level: 50
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Female Game Master
   race: demi_human
   size: medium
@@ -46168,9 +46178,9 @@
   matk: 2000
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -46212,9 +46222,9 @@
   matk: 4000
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -46848,9 +46858,9 @@
   matk: 3840
   mdef: 75
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -47247,6 +47257,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -47440,9 +47451,9 @@
   matk: 380
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - assist
@@ -47477,9 +47488,9 @@
   matk: 196
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - assist
@@ -47517,9 +47528,9 @@
   matk: 280
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - assist
@@ -47868,9 +47879,9 @@
   matk: 2585
   mdef: 168
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - can_move
     - can_attack
@@ -48168,9 +48179,9 @@
   matk: 962
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48535,9 +48546,9 @@
   matk: 2600
   mdef: 32
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -48685,9 +48696,9 @@
   matk: 7777
   mdef: 77
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -48738,9 +48749,9 @@
   level: 1
   mdef: 160
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -49083,9 +49094,9 @@
   matk: 1240
   mdef: 220
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49423,9 +49434,9 @@
   matk: 441
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49490,9 +49501,9 @@
   matk: 776
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49557,9 +49568,9 @@
   matk: 903
   mdef: 164
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49624,9 +49635,9 @@
   matk: 1812
   mdef: 146
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49691,9 +49702,9 @@
   matk: 1176
   mdef: 86
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49754,9 +49765,9 @@
   matk: 1367
   mdef: 192
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49819,9 +49830,9 @@
   matk: 1284
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49886,9 +49897,9 @@
   matk: 962
   mdef: 73
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -49953,9 +49964,9 @@
   matk: 2085
   mdef: 168
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50019,9 +50030,9 @@
   matk: 2680
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50086,9 +50097,9 @@
   matk: 1986
   mdef: 185
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50153,9 +50164,9 @@
   matk: 2066
   mdef: 123
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50220,9 +50231,9 @@
   matk: 4656
   mdef: 109
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50287,9 +50298,9 @@
   matk: 4636
   mdef: 382
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50354,9 +50365,9 @@
   matk: 2785
   mdef: 262
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50421,9 +50432,9 @@
   matk: 4412
   mdef: 506
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50488,9 +50499,9 @@
   matk: 3389
   mdef: 218
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50555,9 +50566,9 @@
   matk: 1465
   mdef: 106
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50619,9 +50630,9 @@
   matk: 2342
   mdef: 155
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50686,9 +50697,9 @@
   matk: 1378
   mdef: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -50878,9 +50889,9 @@
   matk: 530
   mdef: 51
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -51206,9 +51217,9 @@
   id: 2138
   level: 130
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -51241,9 +51252,9 @@
   id: 2139
   level: 130
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -51276,9 +51287,9 @@
   id: 2140
   level: 130
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -51311,9 +51322,9 @@
   id: 2141
   level: 130
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -51346,9 +51357,9 @@
   id: 2142
   level: 130
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -51381,9 +51392,9 @@
   id: 2143
   level: 130
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -51487,9 +51498,9 @@
   matk: 840
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - no_random_walk
     - can_attack
@@ -51593,9 +51604,9 @@
   matk: 1
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -51892,9 +51903,9 @@
   matk: 1284
   mdef: 128
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52077,9 +52088,9 @@
   matk: 590
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52137,9 +52148,9 @@
   matk: 3090
   mdef: 15
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52197,9 +52208,9 @@
   matk: 3211
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52257,9 +52268,9 @@
   matk: 630
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52315,9 +52326,9 @@
   matk: 6440
   mdef: 220
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52534,9 +52545,9 @@
   matk: 3211
   mdef: 15
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52574,9 +52585,9 @@
   matk: 630
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52614,9 +52625,9 @@
   matk: 590
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52654,9 +52665,9 @@
   matk: 3090
   mdef: 15
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52712,9 +52723,9 @@
   matk: 225
   mdef: 21
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52770,9 +52781,9 @@
   matk: 820
   mdef: 218
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52826,9 +52837,9 @@
   matk: 234
   mdef: 15
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -52885,9 +52896,9 @@
   matk: 237
   mdef: 48
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_magic
     - can_move
     - aggressive
@@ -52944,9 +52955,9 @@
   matk: 1122
   mdef: 215
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_ranged
     - can_move
@@ -53004,9 +53015,9 @@
   matk: 118
   mdef: 33
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53062,9 +53073,9 @@
   matk: 3500
   mdef: 221
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53120,9 +53131,9 @@
   matk: 235
   mdef: 17
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_ranged
     - can_move
@@ -53180,9 +53191,9 @@
   matk: 331
   mdef: 51
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53238,9 +53249,9 @@
   matk: 312
   mdef: 22
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_magic
     - can_move
     - aggressive
@@ -53297,9 +53308,9 @@
   matk: 3845
   mdef: 326
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53355,9 +53366,9 @@
   matk: 256
   mdef: 58
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53415,9 +53426,9 @@
   matk: 1290
   mdef: 280
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53474,9 +53485,9 @@
   matk: 1890
   mdef: 280
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_ranged
     - can_move
@@ -53540,9 +53551,9 @@
   matk: 1890
   mdef: 280
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_magic
     - can_move
     - aggressive
@@ -53605,9 +53616,9 @@
   matk: 5500
   mdef: 280
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_magic
     - can_move
     - aggressive
@@ -53670,9 +53681,9 @@
   matk: 5500
   mdef: 280
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_ranged
     - can_move
@@ -53764,9 +53775,9 @@
   matk: 225
   mdef: 21
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53816,9 +53827,9 @@
   matk: 225
   mdef: 21
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Octopus Leg
@@ -53869,9 +53880,9 @@
   matk: 1200
   mdef: 21
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -53949,9 +53960,9 @@
   matk: 3500
   mdef: 221
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54059,9 +54070,9 @@
   matk: 330
   mdef: 22
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54252,9 +54263,9 @@
   matk: 1830
   mdef: 229
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54410,9 +54421,9 @@
   matk: 555
   mdef: 158
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Kraken Tentacle
@@ -54461,9 +54472,9 @@
   matk: 330
   mdef: 22
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -54665,9 +54676,9 @@
   matk: 1433
   mdef: 166
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - can_move
     - aggressive
@@ -54788,9 +54799,9 @@
   matk: 200
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -54828,9 +54839,9 @@
   matk: 200
   mdef: 68
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55437,9 +55448,9 @@
   matk: 3017
   mdef: 151
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55484,9 +55495,9 @@
   matk: 2514
   mdef: 113
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55531,9 +55542,9 @@
   matk: 3114
   mdef: 543
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55578,9 +55589,9 @@
   matk: 1947
   mdef: 134
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55626,9 +55637,9 @@
   matk: 1274
   mdef: 107
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55673,9 +55684,9 @@
   matk: 3749
   mdef: 109
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55720,9 +55731,9 @@
   matk: 4036
   mdef: 112
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55780,9 +55791,9 @@
   matk: 3017
   mdef: 151
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55849,9 +55860,9 @@
   matk: 2514
   mdef: 113
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55914,9 +55925,9 @@
   matk: 3114
   mdef: 543
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -55981,9 +55992,9 @@
   matk: 1947
   mdef: 134
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56049,9 +56060,9 @@
   matk: 1274
   mdef: 107
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56114,9 +56125,9 @@
   matk: 3749
   mdef: 109
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56181,9 +56192,9 @@
   matk: 4036
   mdef: 112
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56530,9 +56541,9 @@
   matk: 1513
   mdef: 206
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56597,9 +56608,9 @@
   matk: 1701
   mdef: 58
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56656,9 +56667,9 @@
   matk: 2601
   mdef: 218
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56723,9 +56734,9 @@
   matk: 2101
   mdef: 68
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56782,9 +56793,9 @@
   matk: 1410
   mdef: 123
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56849,9 +56860,9 @@
   matk: 1036
   mdef: 178
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56908,9 +56919,9 @@
   matk: 2001
   mdef: 262
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -56975,9 +56986,9 @@
   matk: 1501
   mdef: 96
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -57634,9 +57645,9 @@
   matk: 1701
   mdef: 58
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -57673,9 +57684,9 @@
   matk: 2101
   mdef: 68
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -57712,9 +57723,9 @@
   matk: 1036
   mdef: 178
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -57751,9 +57762,9 @@
   matk: 1501
   mdef: 96
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -58159,9 +58170,9 @@
   id: 2288
   level: 140
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -58773,9 +58784,9 @@
   matk: 843
   mdef: 81
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_magic
     - can_move
     - aggressive
@@ -58838,9 +58849,9 @@
   id: 2308
   level: 140
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Zanzou
   race: formless
   size: small
@@ -59277,9 +59288,9 @@
   matk: 1504
   mdef: 95
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -59332,9 +59343,9 @@
   matk: 1504
   mdef: 95
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -59385,9 +59396,9 @@
   matk: 3501
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -59431,9 +59442,9 @@
   level: 156
   matk: 2501
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Bakonawa
@@ -59467,9 +59478,9 @@
   level: 156
   matk: 2501
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Bakonawa
@@ -59505,9 +59516,9 @@
   level: 156
   matk: 2501
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -59550,9 +59561,9 @@
   matk: 200
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -59729,9 +59740,9 @@
   matk: 1504
   mdef: 95
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -59898,9 +59909,9 @@
   matk: 1252
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -59936,9 +59947,9 @@
   matk: 1
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -60021,9 +60032,9 @@
   id: 2335
   level: 140
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -60248,9 +60259,9 @@
   matk: 4412
   mdef: 506
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -60614,9 +60625,9 @@
   matk: 500
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -61125,9 +61136,9 @@
   matk: 3201
   mdef: 301
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -61719,9 +61730,9 @@
   matk: 85
   mdef: 6
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -61758,9 +61769,9 @@
   matk: 83
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -62294,9 +62305,9 @@
   id: 2408
   level: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy 10
   race: formless
   size: medium
@@ -62325,9 +62336,9 @@
   level: 50
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy 50
   race: formless
   size: medium
@@ -62356,9 +62367,9 @@
   level: 100
   mdef: 90
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy 100
   race: formless
   size: medium
@@ -62387,9 +62398,9 @@
   level: 150
   mdef: 120
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy 150
   race: formless
   size: medium
@@ -62416,9 +62427,9 @@
   id: 2413
   level: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy 10
   race: formless
   size: medium
@@ -63737,9 +63748,9 @@
   matk: 2107
   mdef: 139
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -63795,9 +63806,9 @@
   matk: 3526
   mdef: 192
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -63847,9 +63858,9 @@
   matk: 285
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -63895,9 +63906,9 @@
   matk: 153
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -63943,9 +63954,9 @@
   matk: 253
   mdef: 9
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -63991,9 +64002,9 @@
   matk: 223
   mdef: 13
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64039,9 +64050,9 @@
   matk: 650
   mdef: 66
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64087,9 +64098,9 @@
   matk: 498
   mdef: 83
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -64135,9 +64146,9 @@
   matk: 342
   mdef: 8
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -65065,9 +65076,9 @@
   matk: 122
   mdef: 50
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -65117,9 +65128,9 @@
   matk: 100
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -65169,9 +65180,9 @@
   matk: 3200
   mdef: 300
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -65224,9 +65235,9 @@
   matk: 1009
   mdef: 150
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -65280,9 +65291,9 @@
   matk: 1488
   mdef: 180
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -65338,9 +65349,9 @@
   matk: 3887
   mdef: 333
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -65394,9 +65405,9 @@
   matk: 3900
   mdef: 40
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -65713,9 +65724,9 @@
   matk: 1984
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -65813,9 +65824,9 @@
   matk: 296
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -65918,9 +65929,9 @@
   matk: 4006
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -65978,9 +65989,9 @@
   matk: 2003
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -66022,9 +66033,9 @@
   level: 140
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   name: Venom Bug
@@ -66070,9 +66081,9 @@
   matk: 15000
   mdef: 400
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -66132,9 +66143,9 @@
   matk: 5000
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -66194,9 +66205,9 @@
   matk: 10000
   mdef: 400
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -66256,9 +66267,9 @@
   matk: 5000
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -66305,9 +66316,9 @@
   level: 151
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -66344,9 +66355,9 @@
   level: 151
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -66383,9 +66394,9 @@
   level: 151
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -67312,9 +67323,9 @@
   matk: 1500
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -67355,9 +67366,9 @@
   matk: 1875
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -67412,9 +67423,9 @@
   matk: 2250
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -68623,9 +68634,9 @@
   matk: 330
   mdef: 22
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -85356,9 +85367,9 @@
   matk: 900
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85397,9 +85408,9 @@
   matk: 900
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85456,9 +85467,9 @@
   matk: 603
   mdef: 25
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -85706,9 +85717,9 @@
   matk: 165
   mdef: 96
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Solace
   race: angel
   size: medium
@@ -85805,9 +85816,9 @@
   matk: 183
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Deviling
   race: demon
   size: medium
@@ -85842,9 +85853,9 @@
   matk: 100
   mdef: 81
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Arc Angeling
   race: angel
   size: medium
@@ -86143,9 +86154,9 @@
   matk: 167
   mdef: 103
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -86891,9 +86902,9 @@
   matk: 66
   mdef: 44
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -87281,9 +87292,9 @@
   matk: 6666
   mdef: 444
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87332,9 +87343,9 @@
   matk: 6666
   mdef: 444
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87374,9 +87385,9 @@
   matk: 900
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87422,9 +87433,9 @@
   level: 158
   mdef: 555
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87480,9 +87491,9 @@
   matk: 1
   mdef: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - aggressive
     - can_attack
   mvp_drops:
@@ -87521,9 +87532,9 @@
   matk: 900
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87561,9 +87572,9 @@
   matk: 900
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87601,9 +87612,9 @@
   matk: 900
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -87639,9 +87650,9 @@
   matk: 90
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87679,9 +87690,9 @@
   matk: 900
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87719,9 +87730,9 @@
   matk: 113
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -87757,9 +87768,9 @@
   matk: 900
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -87793,9 +87804,9 @@
   matk: 1
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Morocc Hidden
   race: demon
   size: small
@@ -88603,9 +88614,9 @@
   matk: 1000
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -88645,9 +88656,9 @@
   level: 151
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -88685,9 +88696,9 @@
   matk: 145
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -88726,9 +88737,9 @@
   matk: 159
   mdef: 5
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -88767,9 +88778,9 @@
   matk: 599
   mdef: 54
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -89065,9 +89076,9 @@
   matk: 1000
   mdef: 68
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -89125,9 +89136,9 @@
   matk: 2100
   mdef: 265
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -89188,6 +89199,7 @@
   id: 3075
   level: 1
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -89750,9 +89762,9 @@
   matk: 197
   mdef: 177
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -89793,9 +89805,9 @@
   matk: 98
   mdef: 140
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -89832,9 +89844,9 @@
   matk: 209
   mdef: 134
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -89875,9 +89887,9 @@
   matk: 175
   mdef: 155
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -89919,9 +89931,9 @@
   matk: 40
   mdef: 212
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -89958,9 +89970,9 @@
   matk: 67
   mdef: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -90029,6 +90041,7 @@
   matk: 1
   mdef: 1
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -90097,9 +90110,9 @@
   matk: 145
   mdef: 35
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -90138,9 +90151,9 @@
   matk: 599
   mdef: 54
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -90192,9 +90205,9 @@
   matk: 695
   mdef: 68
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -90246,9 +90259,9 @@
   matk: 695
   mdef: 68
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -90377,9 +90390,9 @@
   matk: 1000
   mdef: 90
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -90890,6 +90903,7 @@
   matk: 1
   mdef: 50
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -91314,9 +91328,9 @@
   matk: 695
   mdef: 90
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - can_attack
   mvp_drops:
@@ -91358,9 +91372,9 @@
   matk: 1665
   mdef: 255
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -91407,9 +91421,9 @@
   matk: 120
   mdef: 112
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_ranged
     - can_move
@@ -91452,9 +91466,9 @@
   matk: 89
   mdef: 175
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_magic
     - can_move
     - aggressive
@@ -91494,9 +91508,9 @@
   matk: 165
   mdef: 155
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -91535,9 +91549,9 @@
   matk: 82
   mdef: 177
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_ranged
     - can_move
@@ -91578,9 +91592,9 @@
   matk: 116
   mdef: 140
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_magic
     - can_move
     - aggressive
@@ -91622,9 +91636,9 @@
   matk: 61
   mdef: 190
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -91866,9 +91880,9 @@
   level: 10
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_ranged
     - ignore_misc
@@ -91923,9 +91937,9 @@
   level: 10
   mdef: 99
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_magic
     - can_move
     - can_attack
@@ -91978,9 +91992,9 @@
   matk: 1333
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92035,9 +92049,9 @@
   matk: 4667
   mdef: 400
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92092,9 +92106,9 @@
   matk: 4000
   mdef: 400
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92151,9 +92165,9 @@
   matk: 1333
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92210,9 +92224,9 @@
   matk: 2000
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92267,9 +92281,9 @@
   matk: 2667
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92306,9 +92320,9 @@
   matk: 2000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92347,9 +92361,9 @@
   matk: 7000
   mdef: 800
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92388,9 +92402,9 @@
   matk: 6000
   mdef: 800
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92429,9 +92443,9 @@
   matk: 2000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92470,9 +92484,9 @@
   matk: 3000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92511,9 +92525,9 @@
   matk: 4000
   mdef: 400
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92572,9 +92586,9 @@
   matk: 2000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92640,9 +92654,9 @@
   matk: 7000
   mdef: 800
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92708,9 +92722,9 @@
   matk: 2000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92776,9 +92790,9 @@
   matk: 3000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92844,9 +92858,9 @@
   matk: 6000
   mdef: 800
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92912,9 +92926,9 @@
   matk: 4000
   mdef: 400
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -92980,9 +92994,9 @@
   matk: 1333
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93037,9 +93051,9 @@
   matk: 3333
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93094,9 +93108,9 @@
   matk: 3333
   mdef: 800
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93151,9 +93165,9 @@
   matk: 2000
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93208,9 +93222,9 @@
   matk: 1667
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93265,9 +93279,9 @@
   matk: 4000
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93322,9 +93336,9 @@
   matk: 4000
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93361,9 +93375,9 @@
   matk: 2000
   mdef: 400
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93402,9 +93416,9 @@
   matk: 5000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93443,9 +93457,9 @@
   matk: 5000
   mdef: 800
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93484,9 +93498,9 @@
   matk: 3000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93525,9 +93539,9 @@
   matk: 2500
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93566,9 +93580,9 @@
   matk: 6000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93607,9 +93621,9 @@
   matk: 6000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93668,9 +93682,9 @@
   matk: 2000
   mdef: 400
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93736,9 +93750,9 @@
   matk: 5000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93804,9 +93818,9 @@
   matk: 5000
   mdef: 800
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93872,9 +93886,9 @@
   matk: 3000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -93940,9 +93954,9 @@
   matk: 2500
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -94008,9 +94022,9 @@
   matk: 6000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -94076,9 +94090,9 @@
   matk: 6000
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -94498,9 +94512,9 @@
   matk: 196
   mdef: 134
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -96620,9 +96634,9 @@
   matk: 19
   mdef: 6
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -96677,9 +96691,9 @@
   matk: 46
   mdef: 51
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -96789,9 +96803,9 @@
   matk: 20
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -96846,9 +96860,9 @@
   matk: 148
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -96903,9 +96917,9 @@
   matk: 776
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -96970,9 +96984,9 @@
   matk: 1503
   mdef: 164
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -97037,9 +97051,9 @@
   matk: 967
   mdef: 98
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -97104,9 +97118,9 @@
   matk: 441
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -97173,9 +97187,9 @@
   matk: 1260
   mdef: 143
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -97956,9 +97970,9 @@
   matk: 1444
   mdef: 200
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -98210,9 +98224,9 @@
   matk: 640
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -98276,9 +98290,9 @@
   matk: 434
   mdef: 48
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -98333,9 +98347,9 @@
   matk: 1577
   mdef: 72
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -98465,9 +98479,9 @@
   matk: 292
   mdef: 58
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -98778,9 +98792,9 @@
   matk: 640
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -99091,9 +99105,9 @@
   level: 100
   matk: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -99657,9 +99671,9 @@
   matk: 82
   mdef: 4
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - cast_sensor_idle
     - can_attack
@@ -100055,9 +100069,9 @@
   matk: 50
   mdef: 30
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -100150,9 +100164,9 @@
   matk: 60
   mdef: 45
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -100441,9 +100455,9 @@
   matk: 300
   mdef: 80
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -100622,9 +100636,9 @@
   matk: 300
   mdef: 95
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -100795,9 +100809,9 @@
   matk: 1900
   mdef: 150
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -100897,6 +100911,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -100930,6 +100945,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -100963,6 +100979,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -101126,9 +101143,9 @@
   matk: 1000
   mdef: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -101211,9 +101228,9 @@
   matk: 300
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -101378,9 +101395,9 @@
   matk: 1000
   mdef: 150
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -102452,9 +102469,9 @@
   matk: 5555
   mdef: 168
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -102519,9 +102536,9 @@
   matk: 16595
   mdef: 168
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103341,9 +103358,9 @@
   matk: 2066
   mdef: 123
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -103387,6 +103404,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -103422,6 +103440,7 @@
   matk: 1
   mdef: 99
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -104060,9 +104079,9 @@
   matk: 1683
   mdef: 60
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_misc
     - can_move
     - aggressive
@@ -104122,9 +104141,9 @@
   matk: 2765
   mdef: 146
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_misc
     - can_move
     - aggressive
@@ -104188,9 +104207,9 @@
   matk: 2797
   mdef: 81
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -104995,9 +105014,9 @@
   matk: 2680
   mdef: 78
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -105043,6 +105062,7 @@
   modes:
     - status_immune
     - skill_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -105077,6 +105097,7 @@
   modes:
     - status_immune
     - skill_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -105422,9 +105443,9 @@
   matk: 2808
   mdef: 246
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -105487,9 +105508,9 @@
   matk: 119
   mdef: 20
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -105545,9 +105566,9 @@
   matk: 89
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -105595,9 +105616,9 @@
   matk: 89
   mdef: 10
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -106470,6 +106491,7 @@
   modes:
     - status_immune
     - skill_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -106684,9 +106706,9 @@
   matk: 3028
   mdef: 143
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -106918,9 +106940,9 @@
   matk: 3101
   mdef: 143
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107081,9 +107103,9 @@
   matk: 854
   mdef: 42
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107264,6 +107286,7 @@
   level: 110
   mdef: 200
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -107296,6 +107319,7 @@
   level: 110
   mdef: 200
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -107346,9 +107370,9 @@
   matk: 2450
   mdef: 95
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107390,9 +107414,9 @@
   matk: 2450
   mdef: 95
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -107575,9 +107599,9 @@
   level: 1
   matk: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -107648,9 +107672,9 @@
   matk: 1900
   mdef: 65
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -109107,9 +109131,9 @@
   matk: 4150
   mdef: 124
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -109205,9 +109229,9 @@
   matk: 2356
   mdef: 331
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -109324,9 +109348,9 @@
   matk: 1469
   mdef: 112
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -109384,9 +109408,9 @@
   matk: 3841
   mdef: 134
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -110011,9 +110035,9 @@
   matk: 3782
   mdef: 90
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -110177,9 +110201,9 @@
   matk: 702
   mdef: 77
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -110236,9 +110260,9 @@
   matk: 2060
   mdef: 113
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -111310,9 +111334,9 @@
   matk: 1112
   mdef: 85
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -111587,9 +111611,9 @@
   matk: 912
   mdef: 83
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - can_attack
@@ -111640,9 +111664,9 @@
   matk: 1714
   mdef: 103
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -112138,9 +112162,9 @@
   matk: 828
   mdef: 80
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -112551,9 +112575,9 @@
   matk: 1334
   mdef: 90
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -112609,9 +112633,9 @@
   matk: 2470
   mdef: 121
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -113123,6 +113147,7 @@
   matk: 1
   mdef: 1
   modes:
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -114639,9 +114664,9 @@
   matk: 1889
   mdef: 271
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -114821,9 +114846,9 @@
   matk: 1853
   mdef: 81
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -114865,9 +114890,9 @@
   level: 170
   matk: 10000
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -114901,9 +114926,9 @@
   level: 170
   matk: 1
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -115497,9 +115522,9 @@
   matk: 2756
   mdef: 114
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -115827,9 +115852,9 @@
   matk: 2187
   mdef: 140
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116325,9 +116350,9 @@
   matk: 2687
   mdef: 210
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -116368,9 +116393,9 @@
   id: 21064
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Small)
   race: formless
   size: small
@@ -116397,9 +116422,9 @@
   id: 21065
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Medium)
   race: formless
   size: medium
@@ -116426,9 +116451,9 @@
   id: 21066
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Large)
   race: formless
   size: large
@@ -116455,9 +116480,9 @@
   id: 21067
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Neutral)
   race: formless
   size: medium
@@ -116484,9 +116509,9 @@
   id: 21068
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Dragon)
   race: dragon
   size: medium
@@ -116513,9 +116538,9 @@
   id: 21069
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Brute)
   race: brute
   size: medium
@@ -116542,9 +116567,9 @@
   id: 21070
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Human)
   race: demi_human
   size: medium
@@ -116571,9 +116596,9 @@
   id: 21071
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Insect)
   race: insect
   size: medium
@@ -116600,9 +116625,9 @@
   id: 21072
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Fish)
   race: fish
   size: medium
@@ -116629,9 +116654,9 @@
   id: 21073
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Demon)
   race: demon
   size: medium
@@ -116658,9 +116683,9 @@
   id: 21074
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Plant)
   race: plant
   size: medium
@@ -116687,9 +116712,9 @@
   id: 21075
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Angel)
   race: angel
   size: medium
@@ -116716,9 +116741,9 @@
   id: 21076
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Training Dummy (Undead)
   race: undead
   size: medium
@@ -116745,9 +116770,9 @@
   id: 21077
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Neutral Lv1)
   race: formless
   size: medium
@@ -116774,9 +116799,9 @@
   id: 21078
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Water Lv1)
   race: formless
   size: medium
@@ -116803,9 +116828,9 @@
   id: 21079
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Earth Lv1)
   race: formless
   size: medium
@@ -116832,9 +116857,9 @@
   id: 21080
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Fire Lv1)
   race: formless
   size: medium
@@ -116861,9 +116886,9 @@
   id: 21081
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Wind Lv1)
   race: formless
   size: medium
@@ -116890,9 +116915,9 @@
   id: 21082
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Poison Lv1)
   race: formless
   size: medium
@@ -116919,9 +116944,9 @@
   id: 21083
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Holy Lv1)
   race: formless
   size: medium
@@ -116948,9 +116973,9 @@
   id: 21084
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Dark Lv1)
   race: formless
   size: medium
@@ -116977,9 +117002,9 @@
   id: 21085
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Ghost Lv1)
   race: formless
   size: medium
@@ -117006,9 +117031,9 @@
   id: 21086
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Undead Lv1)
   race: formless
   size: medium
@@ -117034,9 +117059,9 @@
   id: 21087
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Human Player)
   race: player_human
   size: medium
@@ -117061,9 +117086,9 @@
   id: 21088
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Doram Player)
   race: player_doram
   size: small
@@ -117497,9 +117522,9 @@
   matk: 4904
   mdef: 149
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118042,9 +118067,9 @@
   matk: 1958
   mdef: 115
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118085,9 +118110,9 @@
   matk: 1891
   mdef: 112
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118128,9 +118153,9 @@
   matk: 2220
   mdef: 115
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118176,9 +118201,9 @@
   matk: 1897
   mdef: 112
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118504,9 +118529,9 @@
   matk: 1053
   mdef: 70
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -118552,9 +118577,9 @@
   matk: 1053
   mdef: 520
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119176,9 +119201,9 @@
   matk: 3827
   mdef: 184
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119222,6 +119247,7 @@
   modes:
     - status_immune
     - skill_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -119255,6 +119281,7 @@
   modes:
     - status_immune
     - skill_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -119288,6 +119315,7 @@
   modes:
     - status_immune
     - skill_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -119321,6 +119349,7 @@
   modes:
     - status_immune
     - skill_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -119354,6 +119383,7 @@
   modes:
     - status_immune
     - skill_immune
+    - knockback_immune
     - ignore_melee
     - ignore_magic
     - ignore_ranged
@@ -119541,9 +119571,9 @@
   matk: 5855
   mdef: 257
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119595,9 +119625,9 @@
   matk: 5967
   mdef: 260
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119649,9 +119679,9 @@
   matk: 6774
   mdef: 278
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119754,9 +119784,9 @@
   matk: 4129
   mdef: 220
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119808,9 +119838,9 @@
   matk: 4205
   mdef: 223
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119862,9 +119892,9 @@
   matk: 5657
   mdef: 259
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -119967,9 +119997,9 @@
   matk: 5792
   mdef: 257
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120021,9 +120051,9 @@
   matk: 6152
   mdef: 260
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120075,9 +120105,9 @@
   matk: 6984
   mdef: 278
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120180,9 +120210,9 @@
   matk: 4879
   mdef: 241
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120234,9 +120264,9 @@
   matk: 4971
   mdef: 243
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120288,9 +120318,9 @@
   matk: 5643
   mdef: 259
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120344,9 +120374,9 @@
   matk: 5905
   mdef: 251
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120400,9 +120430,9 @@
   matk: 6017
   mdef: 254
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120456,9 +120486,9 @@
   matk: 6130
   mdef: 257
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120512,9 +120542,9 @@
   matk: 7418
   mdef: 284
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120568,9 +120598,9 @@
   matk: 5842
   mdef: 251
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120624,9 +120654,9 @@
   matk: 5952
   mdef: 254
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120680,9 +120710,9 @@
   matk: 6079
   mdef: 257
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120736,9 +120766,9 @@
   matk: 7438
   mdef: 284
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120842,9 +120872,9 @@
   matk: 5952
   mdef: 246
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120896,9 +120926,9 @@
   matk: 5124
   mdef: 227
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -120950,9 +120980,9 @@
   matk: 6902
   mdef: 265
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121055,9 +121085,9 @@
   matk: 5150
   mdef: 241
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121109,9 +121139,9 @@
   matk: 5247
   mdef: 243
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121163,9 +121193,9 @@
   matk: 5957
   mdef: 259
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121268,9 +121298,9 @@
   matk: 5952
   mdef: 246
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121322,9 +121352,9 @@
   matk: 5105
   mdef: 227
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121376,9 +121406,9 @@
   matk: 6875
   mdef: 265
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121481,9 +121511,9 @@
   matk: 5150
   mdef: 241
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121535,9 +121565,9 @@
   matk: 5247
   mdef: 243
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121589,9 +121619,9 @@
   matk: 5957
   mdef: 259
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121645,9 +121675,9 @@
   matk: 5920
   mdef: 251
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121701,9 +121731,9 @@
   matk: 6017
   mdef: 254
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121757,9 +121787,9 @@
   matk: 6145
   mdef: 257
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121813,9 +121843,9 @@
   matk: 7438
   mdef: 284
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121869,9 +121899,9 @@
   matk: 5905
   mdef: 251
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121925,9 +121955,9 @@
   matk: 6017
   mdef: 254
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -121981,9 +122011,9 @@
   matk: 6130
   mdef: 257
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -122037,9 +122067,9 @@
   matk: 7418
   mdef: 284
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
     - can_move
     - aggressive
     - cast_sensor_idle
@@ -122072,9 +122102,9 @@
   id: 22551
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122099,9 +122129,9 @@
   id: 22552
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122126,9 +122156,9 @@
   id: 22553
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122153,9 +122183,9 @@
   id: 22554
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -122180,9 +122210,9 @@
   id: 22555
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122207,9 +122237,9 @@
   id: 22556
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122234,9 +122264,9 @@
   id: 22557
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122261,9 +122291,9 @@
   id: 22558
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -122288,9 +122318,9 @@
   id: 22559
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122315,9 +122345,9 @@
   id: 22560
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122342,9 +122372,9 @@
   id: 22561
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122369,9 +122399,9 @@
   id: 22562
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122396,9 +122426,9 @@
   id: 22563
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122423,9 +122453,9 @@
   id: 22564
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122450,9 +122480,9 @@
   id: 22565
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122477,9 +122507,9 @@
   id: 22566
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122504,9 +122534,9 @@
   id: 22567
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -122531,9 +122561,9 @@
   id: 22568
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122558,9 +122588,9 @@
   id: 22569
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122585,9 +122615,9 @@
   id: 22570
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122612,9 +122642,9 @@
   id: 22571
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -122639,9 +122669,9 @@
   id: 22572
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122666,9 +122696,9 @@
   id: 22573
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122693,9 +122723,9 @@
   id: 22574
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122720,9 +122750,9 @@
   id: 22575
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122747,9 +122777,9 @@
   id: 22576
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122774,9 +122804,9 @@
   id: 22577
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122801,9 +122831,9 @@
   id: 22578
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122828,9 +122858,9 @@
   id: 22579
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122855,9 +122885,9 @@
   id: 22580
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122882,9 +122912,9 @@
   id: 22581
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -122909,9 +122939,9 @@
   id: 22582
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -122936,9 +122966,9 @@
   id: 22583
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -122963,9 +122993,9 @@
   id: 22584
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -122990,9 +123020,9 @@
   id: 22585
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -123017,9 +123047,9 @@
   id: 22586
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123044,9 +123074,9 @@
   id: 22587
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123071,9 +123101,9 @@
   id: 22588
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123098,9 +123128,9 @@
   id: 22589
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123125,9 +123155,9 @@
   id: 22590
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123152,9 +123182,9 @@
   id: 22591
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123179,9 +123209,9 @@
   id: 22592
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -123206,9 +123236,9 @@
   id: 22593
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123233,9 +123263,9 @@
   id: 22594
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123260,9 +123290,9 @@
   id: 22595
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123287,9 +123317,9 @@
   id: 22596
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -123314,9 +123344,9 @@
   id: 22597
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123341,9 +123371,9 @@
   id: 22598
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123368,9 +123398,9 @@
   id: 22599
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123395,9 +123425,9 @@
   id: 22600
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123422,9 +123452,9 @@
   id: 22601
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123449,9 +123479,9 @@
   id: 22602
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123476,9 +123506,9 @@
   id: 22603
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123503,9 +123533,9 @@
   id: 22604
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123530,9 +123560,9 @@
   id: 22605
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123557,9 +123587,9 @@
   id: 22606
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -123584,9 +123614,9 @@
   id: 22607
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123611,9 +123641,9 @@
   id: 22608
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123638,9 +123668,9 @@
   id: 22609
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123665,9 +123695,9 @@
   id: 22610
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -123692,9 +123722,9 @@
   id: 22611
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123719,9 +123749,9 @@
   id: 22612
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123746,9 +123776,9 @@
   id: 22613
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123773,9 +123803,9 @@
   id: 22614
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123800,9 +123830,9 @@
   id: 22615
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123827,9 +123857,9 @@
   id: 22616
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123854,9 +123884,9 @@
   id: 22617
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123881,9 +123911,9 @@
   id: 22618
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -123908,9 +123938,9 @@
   id: 22619
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -123935,9 +123965,9 @@
   id: 22620
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -123962,9 +123992,9 @@
   id: 22621
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -123989,9 +124019,9 @@
   id: 22622
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -124016,9 +124046,9 @@
   id: 22623
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -124043,9 +124073,9 @@
   id: 22624
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Extra Large)
   race: formless
   size: large
@@ -124070,9 +124100,9 @@
   id: 22625
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Small)
   race: formless
   size: small
@@ -124097,9 +124127,9 @@
   id: 22626
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Medium)
   race: formless
   size: medium
@@ -124124,9 +124154,9 @@
   id: 22627
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large
@@ -124151,9 +124181,9 @@
   id: 22628
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Formless Race)
   race: formless
   size: medium
@@ -124178,9 +124208,9 @@
   id: 22629
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Dragon Race)
   race: dragon
   size: medium
@@ -124205,9 +124235,9 @@
   id: 22630
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Brute Race)
   race: brute
   size: medium
@@ -124232,9 +124262,9 @@
   id: 22631
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Human Race)
   race: demi_human
   size: medium
@@ -124259,9 +124289,9 @@
   id: 22632
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Insect Race)
   race: insect
   size: medium
@@ -124286,9 +124316,9 @@
   id: 22633
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Fish Race)
   race: fish
   size: medium
@@ -124313,9 +124343,9 @@
   id: 22634
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Demon Race)
   race: demon
   size: medium
@@ -124340,9 +124370,9 @@
   id: 22635
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Plant Race)
   race: plant
   size: medium
@@ -124367,9 +124397,9 @@
   id: 22636
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Angel Race)
   race: angel
   size: medium
@@ -124394,9 +124424,9 @@
   id: 22637
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Undead Race)
   race: undead
   size: medium
@@ -124421,9 +124451,9 @@
   id: 22638
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Formless Race)
   race: formless
   size: medium
@@ -124448,9 +124478,9 @@
   id: 22639
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Dragon Race)
   race: dragon
   size: medium
@@ -124475,9 +124505,9 @@
   id: 22640
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Brute Race)
   race: brute
   size: medium
@@ -124502,9 +124532,9 @@
   id: 22641
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Human Race)
   race: demi_human
   size: medium
@@ -124529,9 +124559,9 @@
   id: 22642
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Insect Race)
   race: insect
   size: medium
@@ -124556,9 +124586,9 @@
   id: 22643
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Fish Race)
   race: fish
   size: medium
@@ -124583,9 +124613,9 @@
   id: 22644
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Demon Race)
   race: demon
   size: medium
@@ -124610,9 +124640,9 @@
   id: 22645
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Plant Race)
   race: plant
   size: medium
@@ -124637,9 +124667,9 @@
   id: 22646
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Angel Race)
   race: angel
   size: medium
@@ -124664,9 +124694,9 @@
   id: 22647
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Undead Race)
   race: undead
   size: medium
@@ -124691,9 +124721,9 @@
   id: 22648
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Neutral)
   race: formless
   size: medium
@@ -124718,9 +124748,9 @@
   id: 22649
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Water)
   race: formless
   size: medium
@@ -124745,9 +124775,9 @@
   id: 22650
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Earth)
   race: formless
   size: medium
@@ -124772,9 +124802,9 @@
   id: 22651
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Fire)
   race: formless
   size: medium
@@ -124799,9 +124829,9 @@
   id: 22652
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Wind)
   race: formless
   size: medium
@@ -124826,9 +124856,9 @@
   id: 22653
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Poison)
   race: formless
   size: medium
@@ -124853,9 +124883,9 @@
   id: 22654
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Holy)
   race: formless
   size: medium
@@ -124880,9 +124910,9 @@
   id: 22655
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Dark)
   race: formless
   size: medium
@@ -124907,9 +124937,9 @@
   id: 22656
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Ghost)
   race: formless
   size: medium
@@ -124934,9 +124964,9 @@
   id: 22657
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Undead)
   race: formless
   size: medium
@@ -124961,9 +124991,9 @@
   id: 22658
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Neutral)
   race: formless
   size: medium
@@ -124988,9 +125018,9 @@
   id: 22659
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Water)
   race: formless
   size: medium
@@ -125015,9 +125045,9 @@
   id: 22660
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Earth)
   race: formless
   size: medium
@@ -125042,9 +125072,9 @@
   id: 22661
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Fire)
   race: formless
   size: medium
@@ -125069,9 +125099,9 @@
   id: 22662
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Wind)
   race: formless
   size: medium
@@ -125096,9 +125126,9 @@
   id: 22663
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Poison)
   race: formless
   size: medium
@@ -125123,9 +125153,9 @@
   id: 22664
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Holy)
   race: formless
   size: medium
@@ -125150,9 +125180,9 @@
   id: 22665
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Dark)
   race: formless
   size: medium
@@ -125177,9 +125207,9 @@
   id: 22666
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Ghost)
   race: formless
   size: medium
@@ -125204,9 +125234,9 @@
   id: 22667
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Undead)
   race: formless
   size: medium
@@ -125231,9 +125261,9 @@
   id: 22668
   level: 100
   modes:
-    - boss
     - detector
     - status_immune
+    - knockback_immune
   name: Dummy (Large)
   race: formless
   size: large

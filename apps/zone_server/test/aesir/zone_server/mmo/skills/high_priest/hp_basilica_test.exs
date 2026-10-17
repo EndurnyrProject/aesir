@@ -310,7 +310,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
          %{caster: caster, manager: manager} do
       {:ok, _} = HpBasilica.cast(caster, :self, 1, definition())
       [group] = Storage.get_groups_by_caster(:player, @caster_id)
-      register_mob(@boss_id, [:boss], {21, 21})
+      register_mob(@boss_id, [:detector, :status_immune, :knockback_immune], {21, 21})
 
       :ok = Manager.tick(manager, group.next_tick_at)
 

@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BasilicaTest do
     :ok = UnitRegistry.register_player(holder, self())
     :ok = SpatialIndex.add_player(@holder_id, 100, 100, "prontera")
     register_mob(@mob_id, [])
-    register_mob(@boss_id, [:boss])
+    register_mob(@boss_id, [:detector, :status_immune, :knockback_immune])
     :ok
   end
 

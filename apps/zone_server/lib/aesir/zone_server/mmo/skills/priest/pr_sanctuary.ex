@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   magic attack whose base is half that amount (MDEF ignored), pushing them 2
   cells away from the striking cell. Successful strikes spend a shared quota of
   level plus 3; heals and failed strikes do not. Once it is spent the field ends
-  after the striking cell's remaining units. Magic-immune players receive no healing.
+  after the striking cell's remaining units. Magic-immune players receive no
+  healing and battlefield-class monsters are never healed.
 
   Renewal: a 4 s cast plus 1 s fixed, and the Emperium is never healed. Pre-renewal:
   a 5 s variable cast, and the Emperium heals like any other mob. Both modes cost
@@ -146,7 +147,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
       undead_or_demon?(module, state) ->
         :skip
 
-      full_hp?(state) or protected_emperium?(state) ->
+      protected_emperium?(state) or battlefield?(state) or full_hp?(state) ->
         :skip
 
       true ->
@@ -217,9 +218,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   defp full_hp?(_state), do: true
 
   defp protected_emperium?(%MobState{mob_id: 1_288}), do: GameMode.mode() == :renewal
-
-  # NOTE: Exclude battlefield-class mobs once Aesir models that mob classification.
   defp protected_emperium?(_state), do: false
+
+  defp battlefield?(%MobState{} = mob), do: MobState.monster_class(mob) == :battlefield
+  defp battlefield?(_state), do: false
 
   # The recipe for the field's caster as it is now; a caster gone since the
   # strike was decided heals and deals nothing.

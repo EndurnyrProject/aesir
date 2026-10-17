@@ -740,7 +740,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "class domain" do
-      assert BonusKeys.param_domain(:class) == [:normal, :boss, :all]
+      assert BonusKeys.param_domain(:class) == [:normal, :boss, :guardian, :battlefield, :all]
     end
 
     test "status domain equals the Resolver effs value set" do

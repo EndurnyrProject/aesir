@@ -175,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
 
   describe "cast/4 on a boss-moded monster" do
     test "leaves the mob's native element alone" do
-      mob = build_mob([:boss, :status_immune])
+      mob = build_mob([:detector, :status_immune, :knockback_immune])
 
       assert {:ok, %PlayerState{}} =
                SaElementwater.cast(

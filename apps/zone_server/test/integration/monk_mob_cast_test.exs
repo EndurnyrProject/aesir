@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
         unit_id: 8_111,
         map_name: @map,
         position: {150, 150},
-        modes: [:boss]
+        modes: [:detector, :status_immune, :knockback_immune]
       )
 
     caster = %{mob_state(boss) | target_ref: {:player, target.character.id}}

@@ -72,7 +72,12 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
   end
 
   test "boss mobs reject steals outright without consuming a roll" do
-    mob = start_mob_session(dex: 10, modes: [:boss], drops: guaranteed_drops())
+    mob =
+      start_mob_session(
+        dex: 10,
+        modes: [:detector, :status_immune, :knockback_immune],
+        drops: guaranteed_drops()
+      )
 
     assert {:error, :boss} = MobSession.attempt_steal(mob.pid, 10, 20)
     refute get_mob_state(mob.pid).stolen_from

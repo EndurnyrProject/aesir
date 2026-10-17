@@ -431,7 +431,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     :all
   ]
   @size_domain [:small, :medium, :large, :all]
-  @class_domain [:normal, :boss, :all]
+  @class_domain [:normal, :boss, :guardian, :battlefield, :all]
 
   @doc """
   Resolves a rAthena `bonus` key (any case) to its `modifiers.equipment`

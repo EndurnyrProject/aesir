@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Loader do
       amount: Map.fetch!(spawn, "amount"),
       respawn_time: Map.fetch!(spawn, "respawn_time"),
       respawn_variance: Map.get(spawn, "respawn_variance", 0),
+      boss: Map.get(spawn, "boss", false),
       spawn_area: %MobSpawn.SpawnArea{
         x: Map.fetch!(area, "x"),
         y: Map.fetch!(area, "y"),

@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
   end
 
   test "a Demihuman boss is rejected by the separate boss gate before race resolution" do
-    target = register_mob([:boss], :demi_human)
+    target = register_mob([:detector, :status_immune, :knockback_immune], :demi_human)
     reject(&Combat.resolve_combatant/1)
 
     assert {:error, :boss_immune} =

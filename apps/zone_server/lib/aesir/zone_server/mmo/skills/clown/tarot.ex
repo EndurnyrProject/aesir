@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
   Tarot eligibility, success gate and card effects over existing unit boundaries.
 
   Both modes use the weighted deck and an eight-percent-per-level success chance.
-  The Emperium is refused. Pre-renewal additionally refuses Basilica holders;
+  The Emperium and battlefield-class monsters are refused. Pre-renewal additionally refuses Basilica holders;
   renewal's Sun grants a marker preventing further cards for thirty seconds.
   Unit mutations remain in the target's session and statuses use normal resistance.
   """
@@ -195,6 +195,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
           not Unit.living?(unit) ->
             {:error, :invalid_target}
 
+          battlefield?(unit) ->
+            {:error, :invalid_target}
+
           GameMode.mode() == :pre_renewal and StatusStorage.has_status?(type, id, :sc_basilica) ->
             {:error, :invalid_target}
 
@@ -206,4 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.Tarot do
         {:error, :invalid_target}
     end
   end
+
+  defp battlefield?(%MobState{} = mob), do: MobState.monster_class(mob) == :battlefield
+  defp battlefield?(_unit), do: false
 end

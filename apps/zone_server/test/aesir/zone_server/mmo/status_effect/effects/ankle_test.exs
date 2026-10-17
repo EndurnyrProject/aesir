@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleTest do
   setup :setup_ets_tables
 
   test "immobilises a normal mob and a boss, sparing their attacks" do
-    for {id, modes} <- [{@mob_id, []}, {@boss_id, [:boss]}] do
+    for {id, modes} <- [{@mob_id, []}, {@boss_id, [:detector, :status_immune, :knockback_immune]}] do
       register_mob(id, modes)
 
       assert :ok =

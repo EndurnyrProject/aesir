@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   import Bitwise
 
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
@@ -122,8 +123,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # train with it (0 for non-players).
     vulture_eye_level: 0,
 
-    # Mob-class axis for bAddClass/bSubClass-style equipment bonuses. Players
-    # are always :normal; mobs are :boss when tagged with the :boss mode.
+    # Monster class for the class-keyed bonuses and rules. Players are always
+    # :normal; a mob's class is derived from its modes (`MobMode.class/1`).
     class: :normal,
 
     # Existing status-immunity mode projected for pure combat policies.
@@ -216,7 +217,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           faith_level: integer(),
           skin_temper_level: integer(),
           vulture_eye_level: non_neg_integer(),
-          class: :normal | :boss,
+          class: MobMode.class(),
           status_immune: boolean(),
           detector: boolean(),
           ignore_modes: [ignore_mode()],

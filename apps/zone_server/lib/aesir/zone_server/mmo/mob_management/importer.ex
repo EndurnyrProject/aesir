@@ -4,12 +4,13 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   a `MobDefinition`. Used by the one-time `mix aesir.import.mobs` task; not on
   any runtime path.
 
-  Modes come from four sources, unioned and deduped: the class (`Class: Boss`
-  gives `:boss` with the `:detector` and `:status_immune` modes it implies,
-  `Guardian` gives `:status_immune`, `Battlefield` gives `:status_immune` and
-  `:skill_immune`), the explicit `Modes` flags `Aggressive`, `Detector`,
-  `StatusImmune` and `SkillImmune`, and the mode set derived from the `Ai` value
-  via `MobMode`. `MvpExp` and `MvpDrops` are parsed onto
+  Modes come from three sources, unioned and deduped: the class (`Class: Boss`
+  gives `:detector`, `:status_immune` and `:knockback_immune`, `Guardian` gives
+  `:status_immune`, `Battlefield` gives `:status_immune` and `:skill_immune`),
+  the explicit `Modes` flags (`Aggressive`, `Detector`, `StatusImmune`,
+  `SkillImmune`, `KnockBackImmune` and the four `Ignore*` flags), and the mode
+  set derived from the `Ai` value via `MobMode`. The class itself is not
+  stored: `MobMode.class/1` derives it from the modes at runtime. `MvpExp` and `MvpDrops` are parsed onto
   `mvp_exp`/`mvp_drops` and stay strictly separate from the normal `drops`
   list. `RaceGroups` is parsed into `race_groups`; resistances and `DamageTaken`
   are still dropped.
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
     {"detector", :detector},
     {"statusimmune", :status_immune},
     {"skillimmune", :skill_immune},
+    {"knockbackimmune", :knockback_immune},
     {"ignoremelee", :ignore_melee},
     {"ignoremagic", :ignore_magic},
     {"ignoreranged", :ignore_ranged},
@@ -214,7 +216,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   @spec class_modes(term()) :: [atom()]
   defp class_modes(class) when is_binary(class) do
     case String.downcase(class) do
-      "boss" -> [:boss, :detector, :status_immune]
+      "boss" -> [:detector, :status_immune, :knockback_immune]
       "guardian" -> [:status_immune]
       "battlefield" -> [:status_immune, :skill_immune]
       _other -> []

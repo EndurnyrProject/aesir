@@ -111,6 +111,27 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobMode do
     end
   end
 
+  @typedoc "The monster class a unit runs as, derived from its current modes."
+  @type class :: :normal | :boss | :guardian | :battlefield
+
+  @doc """
+  Derives the monster class from a mode list, re-derived whenever the modes
+  change: status and skill immune is a battlefield object; status immune,
+  knockback immune and detector is a boss; status immune alone is a guardian;
+  anything else is normal. A declared Event class therefore runs as normal.
+  """
+  @spec class([atom()]) :: class()
+  def class(modes) when is_list(modes) do
+    cond do
+      all?(modes, [:status_immune, :skill_immune]) -> :battlefield
+      all?(modes, [:status_immune, :knockback_immune, :detector]) -> :boss
+      :status_immune in modes -> :guardian
+      true -> :normal
+    end
+  end
+
+  defp all?(modes, required), do: Enum.all?(required, &(&1 in modes))
+
   @spec decode(non_neg_integer()) :: [atom()]
   defp decode(bitmask) do
     for {bit, atom} <- @mode_bits, band(bitmask, bit) != 0, do: atom

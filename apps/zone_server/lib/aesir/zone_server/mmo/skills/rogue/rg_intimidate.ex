@@ -205,7 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
   end
 
   defp status_immune?(%MobState{mob_data: %{modes: modes}}),
-    do: Enum.any?(modes, &(&1 in [:boss, :status_immune]))
+    do: :status_immune in modes
 
   defp status_immune?(_target), do: false
 

@@ -192,7 +192,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
     test "bosses and status-immune monsters do not set it off" do
       register_player(@player_id, base_level: 50)
       register_mob(@mob_id, modes: [:status_immune])
-      register_mob(@mob_id + 1, modes: [:boss])
+      register_mob(@mob_id + 1, modes: [:detector, :status_immune, :knockback_immune])
       register_mob(@mob_id + 2)
       armed = group(:player, @player_id, level: 5)
 
@@ -207,7 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
     @tag game_mode: :pre_renewal
     test "a pre-renewal boss is caught for a fifth of the base time" do
       register_player(@player_id, base_level: 1)
-      register_mob(@mob_id, agi: 0, modes: [:boss])
+      register_mob(@mob_id, agi: 0, modes: [:detector, :status_immune, :knockback_immune])
       stub(Knockback, :pull_to, fn _type, _id, _x, _y, _opts -> :ok end)
       armed = group(:player, @player_id, level: 5)
       now = System.monotonic_time(:millisecond)

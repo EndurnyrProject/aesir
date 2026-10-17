@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
       element: {:fire, 2},
       race: :insect,
       size: :large,
-      modes: [:boss]
+      modes: [:detector, :status_immune, :knockback_immune]
     }
 
     spawn_ref = %MobSpawn{

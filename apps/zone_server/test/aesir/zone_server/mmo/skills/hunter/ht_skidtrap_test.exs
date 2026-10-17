@@ -100,7 +100,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
     end
 
     test "bosses do not set the trap off" do
-      stub_units([player(1000), mob(2000, modes: [:boss]), mob(2001)])
+      stub_units([
+        player(1000),
+        mob(2000, modes: [:detector, :status_immune, :knockback_immune]),
+        mob(2001)
+      ])
 
       assert [{:mob, 2001}] =
                HtSkidtrap.unit_targets(group(), @cell, [{:mob, 2000}, {:mob, 2001}])
@@ -118,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
     @describetag game_mode: :pre_renewal
 
     test "a boss sets the trap off" do
-      stub_units([player(1000), mob(2000, modes: [:boss])])
+      stub_units([player(1000), mob(2000, modes: [:detector, :status_immune, :knockback_immune])])
 
       assert [{:mob, 2000}] = HtSkidtrap.unit_targets(group(), @cell, [{:mob, 2000}])
     end

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitHp
   alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -95,7 +96,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
       mob_state.map_name,
       mob_state.x,
       mob_state.y,
-      mob_state.view_range,
+      Config.view_range(),
       packet
     )
   end

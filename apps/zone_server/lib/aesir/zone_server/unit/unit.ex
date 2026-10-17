@@ -105,9 +105,9 @@ defmodule Aesir.ZoneServer.Unit do
   @callback corpse?(state :: any()) :: boolean()
 
   @doc """
-  Optional: whether this unit resists being blown away by knockback. Only unit
-  types that model equipment (players) implement it; unit types without it are
-  never immune.
+  Optional: whether this unit resists being blown away by knockback. Players
+  read their no-knockback equipment, monsters their knockback-immune mode; unit
+  types without it are never immune.
   """
   @callback knockback_immune?(state :: any()) :: boolean()
 

@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
   @moduledoc """
-  Pang Voice (BA_PANGVOICE). A quest skill confusing a non-boss enemy at 9 cells
-  with a 2 s delay.
+  Pang Voice (BA_PANGVOICE). A quest skill confusing an enemy at 9 cells with a
+  2 s delay. A player caster cannot target a boss-class monster.
 
-  Renewal: 40 SP, a 0.8 s cast plus 0.2 s fixed, a 10 s cooldown, and 10 s of
-  confusion. Pre-renewal: 20 SP, a 1 s cast, no cooldown, and 30 s of confusion.
+  Renewal: 40 SP, a 0.8 s cast plus 0.2 s fixed, a 10 s cooldown, and a 100%
+  base chance of 10 s of confusion and 10 s of bleeding. Pre-renewal: 20 SP, a
+  1 s cast, no cooldown, and a 70% base chance of 30 s of confusion.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -24,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
     cooldown: [renewal: [10_000], pre_renewal: []],
     damage_kind: :misc
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -33,10 +35,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
   @behaviour Active
 
   @impl Active
-  def validate(_caster, {:unit, target_id}, _level, _definition) do
+  def validate(%PlayerState{}, {:unit, target_id}, _level, _definition) do
     with {:ok, _pid, target, _unit_type} <- TargetResolver.resolve(target_id) do
       if target.__struct__.is_boss?(target), do: {:error, :boss_immune}, else: :ok
     end
+  end
+
+  def validate(_caster, {:unit, target_id}, _level, _definition) do
+    with {:ok, _pid, _target, _unit_type} <- TargetResolver.resolve(target_id), do: :ok
   end
 
   @impl Active
@@ -44,10 +50,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
     with {:ok, _pid, _target, target_type} <- TargetResolver.resolve(target_id) do
       {caster_id, source_type} = caster_ref(caster)
 
-      Enum.each([:sc_confusion, :sc_bleeding], fn status ->
+      Enum.each(statuses(GameMode.mode()), fn {status, duration, rate} ->
         StatusInterpreter.apply_status(target_type, target_id, status,
-          duration: 10_000,
-          success_rate: 100,
+          duration: duration,
+          success_rate: rate,
           caster_id: caster_id,
           source_type: source_type
         )
@@ -56,6 +62,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
       {:ok, caster}
     end
   end
+
+  defp statuses(:renewal), do: [{:sc_confusion, 10_000, 100}, {:sc_bleeding, 10_000, 100}]
+  defp statuses(:pre_renewal), do: [{:sc_confusion, 30_000, 70}]
 
   defp caster_ref(%PlayerState{character_id: caster_id}), do: {caster_id, :player}
   defp caster_ref(%MobState{instance_id: caster_id}), do: {caster_id, :mob}

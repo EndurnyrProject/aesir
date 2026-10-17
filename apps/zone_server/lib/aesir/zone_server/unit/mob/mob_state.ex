@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -262,7 +263,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       last_ai_tick: current_time,
       status_effects: %{},
       walk_speed: mob_data.walk_speed,
-      view_range: calculate_view_range(mob_data),
+      view_range: mob_data.skill_range,
       respawn_delay: spawn_ref.respawn_time
     }
   end
@@ -287,10 +288,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     end
   end
 
+  @doc "The monster class the mob runs as, derived from its current modes."
+  @spec monster_class(t()) :: MobMode.class()
+  def monster_class(%__MODULE__{mob_data: %{modes: modes}}), do: MobMode.class(modes)
+
   @impl Aesir.ZoneServer.Unit
-  def is_boss?(%__MODULE__{mob_data: mob_data}) do
-    :boss in (mob_data.modes || [])
-  end
+  def is_boss?(%__MODULE__{} = mob_state), do: monster_class(mob_state) == :boss
+
+  @doc "Whether the monster resists being knocked back: the knockback-immune mode."
+  @impl Aesir.ZoneServer.Unit
+  def knockback_immune?(%__MODULE__{mob_data: %{modes: modes}}), do: :knockback_immune in modes
 
   @doc """
   Whether the monster is status-immune (MD_STATUSIMMUNE): the boss, guardian
@@ -484,7 +491,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       amotion: get_attack_motion(mob_state),
       position: {mob_state.x, mob_state.y},
       map_name: mob_state.map_name,
-      class: if(is_boss?(mob_state), do: :boss, else: :normal),
+      class: monster_class(mob_state),
       status_immune: :status_immune in mob_data.modes,
       detector: detector?(mob_state),
       ignore_modes: Enum.filter(mob_data.modes, &(&1 in Combatant.ignore_modes())),
@@ -1007,15 +1014,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   def thinking?(%__MODULE__{next_think_at: next}, now), do: now >= next
 
   # Private Helper Functions
-
-  defp calculate_view_range(mob_data) do
-    # Base view range, bosses have larger range
-    if :boss in (mob_data.modes || []) do
-      20
-    else
-      12
-    end
-  end
 
   defp modifier(modifiers, key), do: Map.get(modifiers, key, 0)
 

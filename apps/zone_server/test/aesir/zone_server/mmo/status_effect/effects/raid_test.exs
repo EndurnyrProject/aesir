@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.RaidTest do
   end
 
   test "amplifies incoming damage by fifteen percent on bosses" do
-    %{unit_id: boss_id} = start_mob_session(modes: [:boss])
+    %{unit_id: boss_id} = start_mob_session(modes: [:detector, :status_immune, :knockback_immune])
 
     assert :ok =
              Interpreter.apply_status(:mob, boss_id, :sc_raid,

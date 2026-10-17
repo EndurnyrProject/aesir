@@ -177,13 +177,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
           integer(),
           integer()
         ) :: {:noreply, MobState.t()}
-  def handle_displacement(state, expected_x, expected_y, map_name, x, y) do
-    if MobState.is_boss?(state) do
-      {:noreply, state}
-    else
-      handle_relocation(state, expected_x, expected_y, map_name, x, y)
-    end
-  end
+  def handle_displacement(state, expected_x, expected_y, map_name, x, y),
+    do: handle_relocation(state, expected_x, expected_y, map_name, x, y)
 
   @doc """
   Commits an authoritative self-relocation, including for boss mobs.

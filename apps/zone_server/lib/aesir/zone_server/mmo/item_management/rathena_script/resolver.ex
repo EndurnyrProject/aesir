@@ -344,6 +344,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   @mob_classes %{
     "Class_Normal" => :normal,
     "Class_Boss" => :boss,
+    "Class_Guardian" => :guardian,
+    "Class_Battlefield" => :battlefield,
     "Class_All" => :all
   }
 
@@ -531,8 +533,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   @doc """
   Resolves an rAthena mob-class `Class_*` constant (`bAddClass`/`bSubClass`'s
-  param) to `:normal | :boss | :all`. `Class_Guardian` is deliberately absent
-  - Aesir has no guardian mob class - so it resolves `:error`.
+  param) to `:normal | :boss | :guardian | :battlefield | :all`.
   """
   @spec resolve_mob_class(String.t()) :: {:ok, atom()} | error()
   def resolve_mob_class(symbol) when is_binary(symbol), do: lookup(@mob_classes, symbol)

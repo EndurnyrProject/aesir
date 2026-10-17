@@ -97,7 +97,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
   end
 
   test "plant bosses do not activate the trap" do
-    stub_units([player(1000), mob(2001, race: :plant, modes: [:boss])])
+    stub_units([
+      player(1000),
+      mob(2001, race: :plant, modes: [:detector, :status_immune, :knockback_immune])
+    ])
+
     reject(&StatusInterpreter.apply_status/4)
 
     armed = armed()

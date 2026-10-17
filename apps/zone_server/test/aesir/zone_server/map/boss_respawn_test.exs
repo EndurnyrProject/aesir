@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
   end
 
   describe "Coordinator wiring" do
-    test "a boss death writes a row, and its respawn deletes it" do
+    test "a boss_monster line's death writes a row, and its respawn deletes it" do
       instance_id = System.unique_integer([:positive])
 
       spawn_config = %MobSpawn{
@@ -93,6 +93,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
         amount: 1,
         respawn_time: 10_000,
         respawn_variance: 0,
+        boss: true,
         spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
       }
 
@@ -123,6 +124,36 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
 
       {:noreply, _final_state} =
         Coordinator.handle_info({:respawn_mob, spawn_config}, respawn_state)
+
+      assert Repo.all(Row) == []
+    end
+
+    test "a boss-class mob on a plain monster line writes no row" do
+      instance_id = System.unique_integer([:positive])
+
+      spawn_config = %MobSpawn{
+        mob: @osiris_id,
+        amount: 1,
+        respawn_time: 10_000,
+        respawn_variance: 0,
+        spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
+      }
+
+      mob_state =
+        MobState.new(
+          instance_id,
+          mob_definition(@osiris_id, boss?: true),
+          spawn_config,
+          "prontera",
+          100,
+          100
+        )
+
+      UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, self())
+
+      state = %Coordinator{map_name: "prontera", respawn_timers: %{}}
+
+      {:noreply, _new_state} = Coordinator.handle_cast({:mob_died, instance_id, nil}, state)
 
       assert Repo.all(Row) == []
     end
@@ -167,6 +198,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
         amount: 1,
         respawn_time: 10_000,
         respawn_variance: 0,
+        boss: true,
         spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
       }
 
@@ -251,7 +283,7 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
       element: {:neutral, 1},
       race: :formless,
       size: :medium,
-      modes: if(boss?, do: [:boss], else: [])
+      modes: if(boss?, do: [:detector, :status_immune, :knockback_immune], else: [])
     }
   end
 end

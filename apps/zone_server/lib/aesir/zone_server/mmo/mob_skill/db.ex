@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
   on, and caches an index in `:persistent_term` (mirroring `MobManagement.Mobs`).
 
   `rows_for/1` merges a mob's own rows with the global rows applicable to its
-  class - `global_all` for every mob, plus `global_boss` for `:boss`-mode mobs or
+  class - `global_all` for every mob, plus `global_boss` for status-immune mobs or
   `global_normal` otherwise - resolving the class via `Mobs.by_id/1` at read time
   so the on-disk file stays small and correct even though the renewal DB
   currently ships zero global rows.
@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
 
   @spec class_globals(index(), [atom()]) :: [row()]
   defp class_globals(idx, modes) do
-    if :boss in modes, do: idx.global_boss, else: idx.global_normal
+    if :status_immune in modes, do: idx.global_boss, else: idx.global_normal
   end
 
   @spec index() :: index()

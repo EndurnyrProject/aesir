@@ -221,12 +221,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
 
   defp capped_expiry(_expires_at, deadline), do: deadline
 
-  @doc "Whether the unit is immune to statuses: a boss or status-immune monster."
+  @doc "Whether the unit is immune to statuses: a status-immune monster."
   @spec status_immune?(Ref.t()) :: boolean()
   def status_immune?({:mob, mob_id}) do
     case UnitRegistry.get_unit(:mob, mob_id) do
       {:ok, {MobState, mob, _pid}} ->
-        MobState.is_boss?(mob) or :status_immune in (mob.mob_data.modes || [])
+        MobState.status_immune?(mob)
 
       _other ->
         false

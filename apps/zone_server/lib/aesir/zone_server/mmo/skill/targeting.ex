@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -50,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
           | %{
               required(:unit_type) => atom(),
               required(:unit_id) => term(),
-              optional(:class) => :normal | :boss,
+              optional(:class) => MobMode.class(),
               optional(:detector) => boolean()
             }
 

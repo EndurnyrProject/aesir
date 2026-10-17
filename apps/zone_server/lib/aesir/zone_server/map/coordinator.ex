@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -303,27 +304,26 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       {:error, :not_found} ->
         {:noreply, state}
 
-      {:ok, {module, mob, _pid}} ->
+      {:ok, {_module, mob, _pid}} ->
         Trigger.on_removed({:mob, instance_id})
         UnitRegistry.unregister_unit(:mob, instance_id)
         SpatialIndex.remove_unit(:mob, instance_id)
 
         dispatch_owner_event(mob.owner_event, killer_char_id)
 
-        {:noreply, schedule_mob_respawn(state, instance_id, module, mob)}
+        {:noreply, schedule_mob_respawn(state, instance_id, mob)}
     end
   end
 
   # Summoned mobs have no map spawn line; death is terminal for them.
-  defp schedule_mob_respawn(state, _instance_id, _module, %{spawn_ref: %{summoned: true}}),
+  defp schedule_mob_respawn(state, _instance_id, %{spawn_ref: %{summoned: true}}),
     do: state
 
-  defp schedule_mob_respawn(state, instance_id, module, mob) do
+  defp schedule_mob_respawn(state, instance_id, mob) do
     spawn_config = mob.spawn_ref
-    boss? = module.is_boss?(mob)
-    delay = respawn_delay(spawn_config, boss?)
+    delay = respawn_delay(spawn_config, mob.mob_data)
 
-    if boss? do
+    if spawn_config.boss do
       respawn_at = DateTime.add(DateTime.utc_now(), delay, :millisecond)
       BossRespawn.write(state.map_name, spawn_config.mob, respawn_at)
     end
@@ -717,8 +717,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   # Clearing the durable deadline lives here rather than in the `:respawn_mob`
   # handler because this is the one path every spawn funnels through, and
-  # `mob_data` is already loaded. The delete is gated on boss mode so ordinary
-  # mob respawns issue no query.
+  # `mob_data` is already loaded. The delete is gated on the `boss_monster` spawn
+  # line so ordinary mob respawns issue no query.
   #
   # CONTRACT for boot reconciliation: a boss whose deadline is still in the
   # future must be skipped *before* reaching this function, so its row survives
@@ -727,7 +727,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp spawn_single_mob(spawn_config, state) do
     case MobManagement.get_mob_by_id(spawn_config.mob) do
       {:ok, mob_data} ->
-        if :boss in mob_data.modes do
+        if spawn_config.boss do
           BossRespawn.delete(state.map_name, spawn_config.mob)
         end
 
@@ -822,25 +822,28 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
-  # Boss respawn delay: base + a uniform random offset in `0..respawn_variance`,
-  # scaled by the configured boss percentage, floored at 1000 ms. Non-boss mobs
-  # keep their current fixed `respawn_time`, ignoring the variance field
-  # entirely -- applying variance game-wide is a deliberately deferred decision
-  # (architecture doc, boss-monsters spec).
-  #
-  @spec respawn_delay(MobSpawn.t(), boolean()) :: pos_integer()
-  defp respawn_delay(%MobSpawn{respawn_time: respawn_time}, false), do: respawn_time
+  # Respawn delay: the base plus, for a `boss_monster` line only, a uniform
+  # offset in `0..variance - 1`; a status-immune mob's delay is then divided by
+  # 100 and multiplied by the boss percentage (unless it is 100). Every delay is
+  # floored at 1000 ms.
+  @spec respawn_delay(MobSpawn.t(), MobDefinition.t()) :: pos_integer()
+  defp respawn_delay(%MobSpawn{} = spawn, %MobDefinition{modes: modes}) do
+    base = spawn.respawn_time + random_variance(spawn)
+    percentage = Config.boss_respawn_delay_percentage()
 
-  defp respawn_delay(%MobSpawn{respawn_time: respawn_time, respawn_variance: variance}, true) do
-    (respawn_time + random_variance(variance))
-    |> Kernel.*(Config.boss_respawn_delay_percentage())
-    |> div(100)
-    |> max(1000)
+    scaled =
+      if :status_immune in modes and percentage != 100,
+        do: div(base, 100) * percentage,
+        else: base
+
+    max(scaled, 1000)
   end
 
-  @spec random_variance(non_neg_integer()) :: non_neg_integer()
-  defp random_variance(0), do: 0
-  defp random_variance(variance) when variance > 0, do: :rand.uniform(variance + 1) - 1
+  @spec random_variance(MobSpawn.t()) :: non_neg_integer()
+  defp random_variance(%MobSpawn{boss: true, respawn_variance: variance}) when variance > 0,
+    do: :rand.uniform(variance) - 1
+
+  defp random_variance(%MobSpawn{}), do: 0
 
   # NOTE: summoned mobs (Dead Branch etc.) have no map spawn config; we fabricate
   # a minimal MobSpawn marked summoned so death is terminal instead of respawning.

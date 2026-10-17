@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -265,7 +266,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     %{
       unit_type: :mob,
       unit_id: id,
-      class: if(:boss in modes, do: :boss, else: :normal),
+      class: MobMode.class(modes),
       detector: :detector in modes
     }
   end

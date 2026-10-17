@@ -185,26 +185,16 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
     :ok
   end
 
-  # Boss-classified spawns are worth calling out on every import: they are the
-  # entries that grant MVP rewards and carry long respawn timers, so a sudden
-  # change in their number after a rAthena sync is something to look at.
+  # `boss_monster` spawn lines are worth calling out on every import: they are
+  # the entries that roll respawn variance and persist their respawn deadline,
+  # so a sudden change in their number after a rAthena sync is worth a look.
   @spec report_boss_density([Importer.spawn_map()]) :: :ok
   defp report_boss_density(kept) do
-    boss_spawns = Enum.filter(kept, &boss_spawn?/1)
+    boss_spawns = Enum.filter(kept, &match?(%{"spawns" => [%{"boss" => true} | _]}, &1))
     maps = boss_spawns |> Enum.map(& &1["map"]) |> Enum.uniq() |> length()
 
-    Mix.shell().info("  #{length(boss_spawns)} boss-classified spawns across #{maps} maps")
+    Mix.shell().info("  #{length(boss_spawns)} boss_monster spawns across #{maps} maps")
   end
-
-  @spec boss_spawn?(Importer.spawn_map()) :: boolean()
-  defp boss_spawn?(%{"spawns" => [%{"mob" => mob} | _]}) when is_integer(mob) do
-    case Mobs.by_id(mob) do
-      {:ok, %{modes: modes}} -> :boss in modes
-      _ -> false
-    end
-  end
-
-  defp boss_spawn?(_spawn_map), do: false
 
   @spec report_error(Path.t(), pos_integer(), term()) :: :ok
   defp report_error(file, line, reason) do

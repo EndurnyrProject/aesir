@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -470,8 +471,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "view_range" do
+    test "is the monster's skill range, whatever its class" do
+      base = build_mob_state()
+
+      for modes <- [[], [:detector, :status_immune, :knockback_immune]] do
+        mob_data = %{base.mob_data | modes: modes, skill_range: 7}
+        state = MobState.new(1, mob_data, base.spawn_ref, "prontera", 10, 10)
+
+        assert state.view_range == 7
+      end
+    end
+  end
+
   describe "to_combatant/1 class and equip_modifiers" do
-    test "a normal mob (no :boss mode) combatant has class :normal" do
+    test "a mob without class modes has combatant class :normal" do
       state = build_mob_state()
 
       combatant = MobState.to_combatant(state)
@@ -479,14 +493,32 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert combatant.class == :normal
     end
 
-    test "a mob with the :boss mode has combatant class :boss" do
+    test "the combatant class is derived from the class modes" do
       base = build_mob_state()
-      mob_data = %{base.mob_data | modes: [:boss]}
-      state = %MobState{base | mob_data: mob_data}
 
-      combatant = MobState.to_combatant(state)
+      for {modes, class} <- [
+            {[:detector, :status_immune, :knockback_immune], :boss},
+            {[:status_immune], :guardian},
+            {[:status_immune, :skill_immune], :battlefield}
+          ] do
+        state = %MobState{base | mob_data: %{base.mob_data | modes: modes}}
 
-      assert combatant.class == :boss
+        assert MobState.to_combatant(state).class == class
+        assert MobState.is_boss?(state) == (class == :boss)
+      end
+    end
+
+    test "a class-keyed bonus reads the derived class" do
+      base = build_mob_state()
+      guardian = %MobState{base | mob_data: %{base.mob_data | modes: [:status_immune]}}
+
+      attacker = %Combatant{
+        Combatant.new!(%{unit_type: :player, unit_id: 1, race: :demi_human})
+        | equip_modifiers: %{{:coma_class, :guardian} => 300, {:coma_class, :boss} => 9_000}
+      }
+
+      assert EquipmentBonuses.coma_class_rate(attacker, MobState.to_combatant(guardian)) == 300
+      assert EquipmentBonuses.coma_class_rate(attacker, MobState.to_combatant(base)) == 0
     end
 
     test "mob combatant equip_modifiers is always an empty map" do
@@ -514,7 +546,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
     test "only the infinite-defense modes are projected as ignore modes" do
       base = build_mob_state()
-      modes = [:boss, :ignore_melee, :status_immune, :ignore_misc]
+      modes = [:detector, :ignore_melee, :status_immune, :ignore_misc]
       state = %MobState{base | mob_data: %{base.mob_data | modes: modes}}
 
       assert MobState.to_combatant(state).ignore_modes == [:ignore_melee, :ignore_misc]

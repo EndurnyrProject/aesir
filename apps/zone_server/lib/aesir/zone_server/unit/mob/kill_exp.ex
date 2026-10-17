@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Party.ExpShare
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
@@ -144,7 +145,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
           non_neg_integer(),
           String.t(),
           atom(),
-          :boss | :normal
+          MobMode.class()
         ) :: :ok
   def distribute(aggro_list, base_exp, job_exp, mob_level, mob_map, mob_race, mob_class) do
     total_damage = Enum.reduce(aggro_list, 0, fn {_char_id, dmg}, acc -> acc + dmg end)
@@ -193,17 +194,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExp do
           non_neg_integer(),
           String.t(),
           atom(),
-          MobState.t() | :boss | :normal
+          MobState.t() | MobMode.class()
         ) ::
           :ok
   def distribute_typed(damage_log, base_exp, job_exp, mob_level, mob_map, mob_race, state)
       when is_struct(state, MobState) do
-    mob_class = if MobState.is_boss?(state), do: :boss, else: :normal
+    mob_class = MobState.monster_class(state)
     distribute_typed(damage_log, base_exp, job_exp, mob_level, mob_map, mob_race, mob_class)
   end
 
   def distribute_typed(damage_log, base_exp, job_exp, mob_level, mob_map, mob_race, mob_class)
-      when mob_class in [:boss, :normal] do
+      when mob_class in [:normal, :boss, :guardian, :battlefield] do
     total_damage = Enum.sum_by(damage_log, & &1.damage)
     eligible_entries = Enum.filter(damage_log, &eligible_typed?(&1, mob_map))
 

@@ -252,7 +252,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
 
   test "a Demihuman boss is rejected before the otherwise valid race gate" do
     dancer = start_dancer("BossGate", {150, 150})
-    boss = start_charmable_mob(modes: [:aggressive, :boss])
+    boss = start_charmable_mob(modes: [:aggressive, :detector, :status_immune, :knockback_immune])
     initial_sp = player_sp(dancer.pid)
 
     cast(dancer, boss.unit_id)

@@ -11,6 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   strike, the caster's and the target's heal bonuses, the renewal MATK part,
   and the target's penalties. A monster or NPC caster heals off its own INT and
   base level with no equipment bonus.
+
+  A magic-immune player, the Emperium and a battlefield-class monster are
+  healed for 0.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,
@@ -31,16 +34,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
+
+  @emperium 1_288
 
   @impl Active
   def validate(
@@ -139,10 +146,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   end
 
   defp heal_living_target(caster, target, heal_value, source_id) do
-    {unit_type, unit_id} = target_ref(target)
+    {unit_type, unit_id} = ref = target_ref(target)
+    heal_value = if heal_refused?(ref), do: 0, else: heal_value
     Combat.apply_heal(unit_type, unit_id, heal_value, source_id)
     {:ok, caster}
   end
+
+  defp heal_refused?({:mob, mob_id}) do
+    case UnitRegistry.get_unit(:mob, mob_id) do
+      {:ok, {_module, %MobState{mob_id: @emperium}, _pid}} -> true
+      {:ok, {_module, %MobState{} = mob, _pid}} -> MobState.monster_class(mob) == :battlefield
+      _missing -> false
+    end
+  end
+
+  defp heal_refused?(ref), do: MagicDefense.immune?(ref)
 
   # A target the caller could not type stays without the Assumptio bonus
   # rather than guessing its unit type.

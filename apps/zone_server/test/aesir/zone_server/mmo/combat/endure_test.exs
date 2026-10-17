@@ -65,13 +65,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EndureTest do
 
     @tag game_mode: :renewal
     test "a renewal boss endures only in the unshown form" do
-      assert Endure.endure?(:mob, 7, mob([:boss]), false, 0)
-      refute Endure.endure?(:mob, 7, mob([:boss]), true, 0)
+      assert Endure.endure?(
+               :mob,
+               7,
+               mob([:detector, :status_immune, :knockback_immune]),
+               false,
+               0
+             )
+
+      refute Endure.endure?(:mob, 7, mob([:detector, :status_immune, :knockback_immune]), true, 0)
     end
 
     @tag game_mode: :pre_renewal
     test "a classic boss does not endure" do
-      refute Endure.endure?(:mob, 7, mob([:boss]), false, 0)
+      refute Endure.endure?(
+               :mob,
+               7,
+               mob([:detector, :status_immune, :knockback_immune]),
+               false,
+               0
+             )
     end
   end
 

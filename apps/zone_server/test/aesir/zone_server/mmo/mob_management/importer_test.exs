@@ -34,10 +34,18 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
       assert :aggressive in definition.modes
     end
 
-    test "a boss class still yields :boss" do
+    test "a boss class is knockback-immune and carries no class marker mode" do
       {:ok, definition} = Importer.to_definition(entry(%{"Class" => "Boss"}))
 
-      assert :boss in definition.modes
+      assert :knockback_immune in definition.modes
+      refute :boss in definition.modes
+    end
+
+    test "an explicit KnockBackImmune mode is kept" do
+      {:ok, definition} =
+        Importer.to_definition(entry(%{"Modes" => %{"KnockBackImmune" => true}}))
+
+      assert definition.modes == [:knockback_immune]
     end
 
     test "an explicit Detector mode and a boss class both yield :detector" do
@@ -52,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
 
     test "the boss, guardian and battlefield classes are status-immune" do
       for {class, expected} <- [
-            {"Boss", [:boss, :detector, :status_immune]},
+            {"Boss", [:detector, :status_immune, :knockback_immune]},
             {"Guardian", [:status_immune]},
             {"Battlefield", [:status_immune, :skill_immune]},
             {"Normal", []}
@@ -96,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
         )
 
       assert Enum.count(definition.modes, &(&1 == :aggressive)) == 1
-      assert Enum.count(definition.modes, &(&1 == :boss)) == 1
+      assert Enum.count(definition.modes, &(&1 == :status_immune)) == 1
       assert definition.modes == Enum.uniq(definition.modes)
     end
 

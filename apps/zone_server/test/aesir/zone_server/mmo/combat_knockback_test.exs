@@ -231,7 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
     result = %{hit?: true, target_survives?: true, coma?: false}
-    stub_movable_mob(modes: [:boss])
+    stub_movable_mob(modes: [:detector, :status_immune, :knockback_immune])
 
     assert {:ok, {151, 150}} = Knockback.skill(attacker, target, 18, result)
     refute_received {:"$gen_cast", {:movement, _movement}}
@@ -274,7 +274,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     assert_received {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 153, 150}}}
   end
 
-  test "hostile knockback and pull leave a boss mob unchanged" do
+  test "hostile knockback leaves a boss mob unchanged" do
     stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
       {:ok, {151, 150, @map_name}}
     end)
@@ -282,7 +282,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
 
     stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
-      {:ok, {MobState, mob_state(151, 150, [:boss]), self()}}
+      {:ok,
+       {MobState, mob_state(151, 150, [:detector, :status_immune, :knockback_immune]), self()}}
     end)
 
     reject(&Cell.step_traversable?/3)
@@ -290,8 +291,20 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
 
     {from_x, from_y} = @from
     assert {:ok, {151, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
-    assert {:ok, {151, 150}} = Combat.pull_to(:mob, @mob_id, 155, 150)
     refute_received {:"$gen_cast", {:movement, _movement}}
+  end
+
+  test "a plain pull moves a boss mob, as a Spider Web catch does" do
+    map_data = MapData.new(@map_name, 10, 10)
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id -> {:ok, {1, 5, @map_name}} end)
+    stub(MapCache, :get, fn @map_name -> {:ok, map_data} end)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, mob_state(1, 5, [:detector, :status_immune, :knockback_immune]), self()}}
+    end)
+
+    assert {:ok, {8, 5}} = Combat.pull_to(:mob, @mob_id, 8, 5)
+    assert_received {:"$gen_cast", {:movement, {:displace, 1, 5, @map_name, 8, 5}}}
   end
 
   test "a player with the no_knockback equipment flag is not blown away" do

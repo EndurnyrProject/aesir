@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Basilica do
   defp status_immune?(unit_type, unit_id) do
     case UnitRegistry.get_unit(unit_type, unit_id) do
       {:ok, {MobState, %MobState{mob_data: %{modes: modes}}, _pid}} ->
-        Enum.any?(modes, &(&1 in [:boss, :status_immune]))
+        :status_immune in modes
 
       _not_a_mob ->
         false

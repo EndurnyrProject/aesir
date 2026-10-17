@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   Attempts to steal one item from the mob described by `state`.
 
   Runs the full rate roll, per-drop roll and `stolen_from` flip. Rejects
-  bosses and mobs already stolen from without consuming a roll. Returns
+  status-immune mobs (reason `:boss`) and mobs already stolen from without
+  consuming a roll. Returns
   `{:ok, item_id, new_state}` on a successful steal (with `stolen_from` set on
   `new_state`), or `{:error, reason}` — all but `:boss`/`:already_stolen` leave
   the state untouched, so the caller may retry. The caller is responsible for
@@ -40,7 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
     rate = steal_rate(caster_dex, mob_data.stats.dex, skill_level)
 
     cond do
-      :boss in (mob_data.modes || []) ->
+      :status_immune in mob_data.modes ->
         {:error, :boss}
 
       state.stolen_from ->
@@ -67,8 +68,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   @doc """
   Attempts to steal zeny from a mob (RG_STEALCOIN).
 
-  Returns the zeny amount and a state marked as mugged on success. Bosses,
-  status-immune mobs, failed rolls, and already-mugged mobs do not mutate the
+  Returns the zeny amount and a state marked as mugged on success.
+  Status-immune mobs, failed rolls, and already-mugged mobs do not mutate the
   state.
   """
   @spec attempt_mug(MobState.t(), mug_caster(), pos_integer()) ::
@@ -79,7 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
         skill_level
       ) do
     cond do
-      :boss in modes or :status_immune in modes ->
+      :status_immune in modes ->
         {:error, :immune}
 
       state.coin_stolen ->

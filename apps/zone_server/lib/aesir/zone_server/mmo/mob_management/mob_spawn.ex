@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.MobSpawn do
   @moduledoc """
   Mob spawn configuration: where and how mobs spawn on a map.
+
+  `boss` marks a `boss_monster` spawn line: only such a line rolls its
+  `respawn_variance`, and its pending respawn deadline is persisted.
   """
 
   defmodule SpawnArea do
@@ -27,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobSpawn do
             amount: nil,
             respawn_time: nil,
             respawn_variance: 0,
+            boss: false,
             spawn_area: nil,
             summoned: false
 
@@ -35,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobSpawn do
           amount: integer(),
           respawn_time: integer(),
           respawn_variance: integer(),
+          boss: boolean(),
           spawn_area: SpawnArea.t(),
           summoned: boolean()
         }

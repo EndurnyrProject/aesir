@@ -435,7 +435,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   @tag game_mode: :renewal, integration_pre_re: false
   test "boss, status-immune, and same-side real mobs leave Skid Trap armed", %{manager: manager} do
     for {group_id, modes, caster_type} <- [
-          {11_001, [:boss], :player},
+          {11_001, [:detector, :status_immune, :knockback_immune], :player},
           {11_002, [:status_immune], :player},
           {11_003, [], :mob}
         ] do

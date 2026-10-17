@@ -138,7 +138,7 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
           level: @base_level,
           hp: 800,
           max_hp: 800,
-          modes: [:boss],
+          modes: [:detector, :status_immune, :knockback_immune],
           mvp_exp: @mvp_exp,
           mvp_drops: [%MobDrop{item: @mvp_item, rate: 10_000}],
           # The real prontera coordinator schedules a respawn from this spawn
@@ -182,7 +182,11 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
       attacker = start_attacker("BossCaster")
 
       boss =
-        start_mob_session(map_name: @map, position: {150, 151}, modes: [:boss, :status_immune])
+        start_mob_session(
+          map_name: @map,
+          position: {150, 151},
+          modes: [:detector, :status_immune, :knockback_immune]
+        )
 
       assert {:error, :immune} = cast_status(boss, attacker, :sc_stun)
       assert {:error, :immune} = cast_status(boss, attacker, :sc_freeze)
@@ -209,7 +213,11 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
       attacker = start_attacker("BuffedFight")
 
       boss =
-        start_mob_session(map_name: @map, position: {150, 151}, modes: [:boss, :status_immune])
+        start_mob_session(
+          map_name: @map,
+          position: {150, 151},
+          modes: [:detector, :status_immune, :knockback_immune]
+        )
 
       assert {:error, :immune} = cast_status(boss, attacker, :sc_stun)
 
@@ -226,7 +234,13 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
       char_id = player.character.id
 
       normal = start_mob_session(map_name: @map, position: {150, 151}, modes: [:aggressive])
-      boss = start_mob_session(map_name: @map, position: {150, 152}, modes: [:aggressive, :boss])
+
+      boss =
+        start_mob_session(
+          map_name: @map,
+          position: {150, 152},
+          modes: [:aggressive, :detector, :status_immune, :knockback_immune]
+        )
 
       assert :ok = Interpreter.apply_status(:player, char_id, :sc_hiding, duration: 60_000)
       assert Interpreter.concealed?(:player, char_id)
@@ -252,7 +266,7 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
           position: {100, 100},
           hp: 1,
           max_hp: 1,
-          modes: [:boss],
+          modes: [:detector, :status_immune, :knockback_immune],
           respawn_time: @respawn_ms
         )
 

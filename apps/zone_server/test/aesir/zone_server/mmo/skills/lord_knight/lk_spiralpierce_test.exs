@@ -282,14 +282,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     assert expiry - start == 1_000
   end
 
-  test "bosses and missed hits are never rooted" do
+  test "status-immune monsters and missed hits are never rooted" do
     caster = caster(1401)
     stub_weapon(1401, :one_handed_spear)
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
 
     stub(Combat, :resolve_combatant, fn
-      6_160 -> {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_160, class: :boss)}
-      6_161 -> {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_161, class: :normal)}
+      6_160 ->
+        {:ok,
+         %{
+           CombatTestHelper.create_mob_combatant(unit_id: 6_160, class: :boss)
+           | status_immune: true
+         }}
+
+      6_161 ->
+        {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_161, class: :normal)}
     end)
 
     stub(Combat, :execute_skill_attack, fn _caster, target_id, _opts ->

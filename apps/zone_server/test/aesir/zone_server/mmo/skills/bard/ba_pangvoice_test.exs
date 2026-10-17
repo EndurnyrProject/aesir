@@ -47,8 +47,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
     assert definition.quest_skill
   end
 
+  test "a boss-class target is refused for a player caster only" do
+    boss = register_mob([:detector, :status_immune, :knockback_immune], 11, 10)
+
+    assert {:error, :boss_immune} =
+             BaPangvoice.validate(player_state(), {:unit, boss.instance_id}, 1, nil)
+
+    assert :ok =
+             BaPangvoice.validate(
+               mob_state(@caster_id, [], 10, 10),
+               {:unit, boss.instance_id},
+               1,
+               nil
+             )
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic attempts only confusion, at 70% for 30 seconds" do
+    target = register_mob([], 18, 10)
+    caster = %PlayerState{character_id: @caster_id}
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_confusion, opts ->
+      assert opts == [
+               duration: 30_000,
+               success_rate: 70,
+               caster_id: @caster_id,
+               source_type: :player
+             ]
+
+      :ok
+    end)
+
+    assert {:ok, ^caster} = BaPangvoice.cast(caster, {:unit, target.instance_id}, 1, nil)
+  end
+
   test "boss validation is atomic before either status application" do
-    boss = register_mob([:boss], 18, 10)
+    boss = register_mob([:detector, :status_immune, :knockback_immune], 18, 10)
     caster = player_state()
 
     reject(&StatusInterpreter.apply_status/4)
@@ -71,6 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
              Interpreter.cast(caster, 1010, 1, {:unit, target.instance_id})
   end
 
+  @tag game_mode: :renewal
   test "confusion resistance does not prevent bleeding and the validated cast succeeds" do
     target = register_mob([], 18, 10)
     caster = %PlayerState{character_id: @caster_id}
@@ -97,6 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
     assert_received {:status_attempted, :sc_bleeding}
   end
 
+  @tag game_mode: :renewal
   test "mob casters identify themselves and apply both statuses to a player target" do
     caster = mob_state(@caster_id, [], 10, 10)
     target = %PlayerState{character_id: @target_id, x: 11, y: 10, map_name: "prontera"}

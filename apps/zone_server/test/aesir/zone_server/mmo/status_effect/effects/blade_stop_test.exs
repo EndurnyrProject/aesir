@@ -451,7 +451,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopTest do
       attack_motion: 500,
       client_attack_motion: 400,
       damage_motion: 300,
-      modes: [:boss]
+      modes: [:detector, :status_immune, :knockback_immune]
     }
 
     spawn_ref = %MobSpawn{

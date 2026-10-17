@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat
@@ -531,10 +532,17 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :player, 42 -> {:ok, {PlayerState, player_state(42), self()}}
       end)
 
-      expect(StatusInterpreter, :apply_status, 2, fn :player, 42, status, opts ->
+      # Renewal: confusion and bleeding at 100% for 10 s each; classic:
+      # confusion alone at 70% for 30 s.
+      {statuses, duration, rate} =
+        if GameMode.mode() == :renewal,
+          do: {[:sc_confusion, :sc_bleeding], 10_000, 100},
+          else: {[:sc_confusion], 30_000, 70}
+
+      expect(StatusInterpreter, :apply_status, length(statuses), fn :player, 42, status, opts ->
         assert opts == [
-                 duration: 10_000,
-                 success_rate: 100,
+                 duration: duration,
+                 success_rate: rate,
                  caster_id: 5001,
                  source_type: :mob
                ]
@@ -551,8 +559,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         row(%{skill: "BA_PANGVOICE", skill_id: 1010, level: 1, target: :target})
 
       assert Executor.execute(mob(), pang_voice_row) == :ok
-      assert_received {:status_attempted, :sc_confusion}
-      assert_received {:status_attempted, :sc_bleeding}
+      for status <- statuses, do: assert_received({:status_attempted, ^status})
     end
 
     test "direct cast/4 sees the mob skill origin" do

@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
 
   test "a mob row lands Assumptio on a boss friend" do
     mob = register_mob(@mob_id, [])
-    register_mob(@friend_mob_id, [:boss])
+    register_mob(@friend_mob_id, [:detector, :status_immune, :knockback_immune])
 
     assert {:ok, ^mob} =
              HpAssumptio.mob_cast(mob, {:unit, :mob, @friend_mob_id}, 5, definition(), %{})

@@ -265,9 +265,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
       assert {:ok, :all} = Resolver.resolve_mob_class("Class_All")
     end
 
-    test "Class_Guardian is deliberately unresolved" do
-      assert {:error, {:unknown_symbol, "Class_Guardian"}} =
-               Resolver.resolve_mob_class("Class_Guardian")
+    test "maps Class_Guardian and Class_Battlefield to their classes" do
+      assert {:ok, :guardian} = Resolver.resolve_mob_class("Class_Guardian")
+      assert {:ok, :battlefield} = Resolver.resolve_mob_class("Class_Battlefield")
     end
   end
 

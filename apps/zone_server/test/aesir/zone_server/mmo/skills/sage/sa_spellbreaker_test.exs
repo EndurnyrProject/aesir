@@ -353,8 +353,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       assert caster.stats.current_state.hp == 510
     end
 
-    test "a boss without status immunity never rolls at all" do
-      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:boss]))
+    test "a detector, knockback-immune monster without status immunity never rolls at all" do
+      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:detector, :knockback_immune]))
 
       assert {:ok, _caster} =
                SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil,

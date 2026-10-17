@@ -128,6 +128,18 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.ImporterTest do
               }} = Importer.parse_line(line)
     end
 
+    test "marks a boss_monster line as a boss spawn and leaves a monster line unmarked" do
+      assert {:ok, %{"spawns" => [%{"boss" => true}]}} =
+               Importer.parse_line(
+                 "gl_cas02_,0,0\tboss_monster\tBaphomet\t1039,1,7200000,600000,0"
+               )
+
+      assert {:ok, %{"spawns" => [spawn]}} =
+               Importer.parse_line("prontera,0,0\tmonster\tPoring\t1002,1,5000,1000,0")
+
+      refute Map.has_key?(spawn, "boss")
+    end
+
     test "skips blank lines and comments" do
       assert :skip = Importer.parse_line("")
       assert :skip = Importer.parse_line("   ")

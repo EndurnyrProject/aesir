@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -111,7 +112,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
        }) do
     rate = LevelPenalty.mvp_exp(level, base_level)
     mvp_exp = apply_rate(mvp_exp, Config.mvp_exp_rate())
-    mob_class = if :boss in modes, do: :boss, else: :normal
+    mob_class = MobMode.class(modes)
 
     PubSub.broadcast(
       Aesir.PubSub,

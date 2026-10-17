@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.DbTest do
   @pt_key Aesir.ZoneServer.Mmo.MobSkill.Db
 
   # Scorpion (1001) is a normal mob with its own NPC_POISON/NPC_FIREATTACK rows;
-  # Osiris (1038) is a `:boss`-mode mob. Both exist in the real mob db, so they
+  # Osiris (1038) is a status-immune boss. Both exist in the real mob db, so they
   # drive the class-based global-row resolution deterministically.
   @normal_mob_id 1001
   @boss_mob_id 1038

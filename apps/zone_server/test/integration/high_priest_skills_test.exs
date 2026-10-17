@@ -180,7 +180,10 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
       assert get_player_state(priest.pid).act_delay_until == 0
 
       normal = spawn_mob({153, 150})
-      boss = spawn_mob({153, 151}, modes: [:boss], level: 99)
+
+      boss =
+        spawn_mob({153, 151}, modes: [:detector, :status_immune, :knockback_immune], level: 99)
+
       hp = current_hp(ally)
 
       assert :ok = Combat.execute_mob_attack(get_mob_state(normal.pid), ally.character.id)

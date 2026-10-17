@@ -556,7 +556,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
         position: {151, 150},
         race: :undead,
         element: {:undead, 1},
-        modes: [:boss],
+        modes: [:detector, :status_immune, :knockback_immune],
         hp: 100_000,
         max_hp: 100_000
       )

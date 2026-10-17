@@ -89,4 +89,44 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobModeTest do
       assert_raise ArgumentError, ~r/Foo_Unknown/, fn -> MobMode.from_ai("Foo_Unknown") end
     end
   end
+
+  describe "class/1" do
+    test "derives the monster class from the modes, checking battlefield, boss, guardian in order" do
+      for {modes, class} <- [
+            {[:status_immune, :skill_immune], :battlefield},
+            {[:status_immune, :skill_immune, :knockback_immune, :detector], :battlefield},
+            {[:detector, :status_immune, :knockback_immune], :boss},
+            {[:status_immune, :knockback_immune], :guardian},
+            {[:status_immune, :detector], :guardian},
+            {[:status_immune], :guardian},
+            {[:detector, :knockback_immune], :normal},
+            {[:skill_immune], :normal},
+            {[], :normal}
+          ] do
+        assert MobMode.class(modes) == class, inspect(modes)
+      end
+    end
+
+    test "gives each imported class the class it was declared with, except event" do
+      alias Aesir.ZoneServer.Mmo.MobManagement.Importer
+
+      for {declared, class} <- [
+            {"Normal", :normal},
+            {"Boss", :boss},
+            {"Guardian", :guardian},
+            {"Battlefield", :battlefield},
+            {"Event", :normal}
+          ] do
+        {:ok, definition} =
+          Importer.to_definition(%{
+            "Id" => 1,
+            "AegisName" => "T",
+            "Name" => "T",
+            "Class" => declared
+          })
+
+        assert MobMode.class(definition.modes) == class, declared
+      end
+    end
+  end
 end

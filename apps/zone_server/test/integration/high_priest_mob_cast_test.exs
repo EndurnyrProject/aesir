@@ -23,7 +23,14 @@ defmodule Aesir.ZoneServer.Integration.HighPriestMobCastTest do
 
   test "a friend row blesses a wounded boss ally" do
     caster = spawn_mob({150, 150})
-    boss = spawn_mob({151, 150}, modes: [:boss], hp: 10, max_hp: 1_000)
+
+    boss =
+      spawn_mob({151, 150},
+        modes: [:detector, :status_immune, :knockback_immune],
+        hp: 10,
+        max_hp: 1_000
+      )
+
     row = %{skill: "HP_ASSUMPTIO", skill_id: 361, target: :friend, level: 5}
 
     assert :ok = Executor.execute(get_mob_state(caster.pid), row)

@@ -59,6 +59,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
     assert {:error, :invalid_target} = Tarot.play(caster, {:mob, 42}, 5)
   end
 
+  test "a battlefield-class monster is not an eligible target, a guardian is", %{caster: caster} do
+    :ok = UnitRegistry.register_unit(:mob, 42, MobState, mob(42, 1_909), self())
+    reject(&TarotDeck.draw/0)
+    assert {:error, :invalid_target} = Tarot.play(caster, {:mob, 42}, 5)
+
+    :ok = UnitRegistry.register_unit(:mob, 43, MobState, mob(43, 1_285), self())
+    stub(TarotDeck, :roll, fn _rate -> false end)
+    assert {:error, :failed} = Tarot.play(caster, {:mob, 43}, 5)
+  end
+
   @tag game_mode: :pre_renewal
   test "classic Basilica prevents a card", %{caster: caster} do
     :ok = StatusStorage.apply_status(:player, 18, :sc_basilica)
@@ -278,7 +288,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
       target
       | mob_data: %{
           target.mob_data
-          | modes: Enum.uniq([:boss, :status_immune | target.mob_data.modes])
+          | modes:
+              Enum.uniq([:detector, :status_immune, :knockback_immune | target.mob_data.modes])
         }
     }
 

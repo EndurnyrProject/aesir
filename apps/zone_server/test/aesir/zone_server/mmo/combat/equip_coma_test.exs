@@ -85,16 +85,38 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComaTest do
     assert EquipComa.trigger?(attacker, target, roll: fn 300 -> true end)
   end
 
-  test "competitive mob classifications suppress coma without rolling" do
+  test "the gvg monster group and the battlefield sprite id suppress coma without rolling" do
     attacker =
       CombatTestHelper.create_player_combatant()
       |> with_modifiers(%{{:coma_race, :all} => 10_000})
 
-    for classification <- [:gvg, :battlefield] do
-      target = %{CombatTestHelper.create_mob_combatant() | race2: [classification]}
+    no_roll = [roll: fn _rate -> flunk("unexpected roll") end]
 
-      refute EquipComa.trigger?(attacker, target, roll: fn _rate -> flunk("unexpected roll") end)
-    end
+    refute EquipComa.trigger?(
+             attacker,
+             %{CombatTestHelper.create_mob_combatant() | race2: [:gvg]},
+             no_roll
+           )
+
+    refute EquipComa.trigger?(
+             attacker,
+             CombatTestHelper.create_mob_combatant(monster_id: 4),
+             no_roll
+           )
+  end
+
+  test "neither the battlefield class nor the battlefield group suppresses coma" do
+    attacker =
+      CombatTestHelper.create_player_combatant()
+      |> with_modifiers(%{{:coma_class, :battlefield} => 10_000})
+
+    target = %{
+      CombatTestHelper.create_mob_combatant(class: :battlefield, monster_id: 1_909)
+      | race2: [:battlefield],
+        status_immune: true
+    }
+
+    assert EquipComa.trigger?(attacker, target, roll: fn _rate -> flunk("unexpected roll") end)
   end
 
   test "accepts player, mob, and Homunculus recipients" do

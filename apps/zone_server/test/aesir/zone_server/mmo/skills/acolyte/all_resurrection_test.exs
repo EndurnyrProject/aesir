@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living_undead, :mob} end)
 
     stub(MobState, :to_combatant, fn ^living_undead ->
-      %{race: :formless, element: {:undead, 1}}
+      %{race: :formless, element: {:undead, 1}, status_immune: false}
     end)
 
     stub(MobState, :get_stats, fn ^living_undead -> %{hp: 100, max_hp: 100} end)
@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living_undead, :mob} end)
 
     stub(MobState, :to_combatant, fn ^living_undead ->
-      %{race: :formless, element: {:undead, 1}}
+      %{race: :formless, element: {:undead, 1}, status_immune: false}
     end)
 
     stub(MobState, :get_stats, fn ^living_undead -> %{hp: 100, max_hp: 100} end)
@@ -199,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living_undead, :mob} end)
 
     stub(MobState, :to_combatant, fn ^living_undead ->
-      %{race: :undead, element: {:undead, 1}}
+      %{race: :undead, element: {:undead, 1}, status_immune: false}
     end)
 
     stub(MobState, :get_stats, fn ^living_undead -> %{hp: 100, max_hp: 100} end)
@@ -229,7 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), boss_undead, :mob} end)
 
     stub(MobState, :to_combatant, fn ^boss_undead ->
-      %{race: :undead, element: {:undead, 1}, class: :boss}
+      %{race: :undead, element: {:undead, 1}, class: :boss, status_immune: true}
     end)
 
     stub(MobState, :get_stats, fn ^boss_undead -> %{hp: 100, max_hp: 100} end)
@@ -254,7 +254,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), boss_undead, :mob} end)
 
     stub(MobState, :to_combatant, fn ^boss_undead ->
-      %{race: :undead, element: {:undead, 1}, class: :boss}
+      %{race: :undead, element: {:undead, 1}, class: :boss, status_immune: true}
     end)
 
     stub(MobState, :get_stats, fn ^boss_undead -> %{hp: 100, max_hp: 100} end)

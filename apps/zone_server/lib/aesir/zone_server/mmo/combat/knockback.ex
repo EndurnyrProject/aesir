@@ -93,8 +93,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   @doc """
   Requests collision-aware movement toward `{target_x, target_y}`.
 
-  A boss is never pulled. `blown_immunity: true` instead applies the same
-  resistance as a knockback (a siege map, a knockback-immune monster,
+  Without options the pull moves any unit, a boss included (Spider Web's
+  catch). `blown_immunity: true` applies the same resistance as a knockback (a siege map, a knockback-immune monster,
   no-knockback gear, a pre-renewal Basilica caster).
   """
   @spec pull_to(atom(), integer(), integer(), integer(), keyword()) :: result()
@@ -108,9 +108,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
          :ok <- ensure_living(state),
          {:ok, map_data} <- MapCache.get(map_name) do
       immune? =
-        if Keyword.get(opts, :blown_immunity, false),
-          do: blown_immune?({unit_type, unit_id}, map_name, module, state, []),
-          else: module.is_boss?(state)
+        Keyword.get(opts, :blown_immunity, false) and
+          blown_immune?({unit_type, unit_id}, map_name, module, state, [])
 
       if immune? do
         {:ok, {x, y}}
@@ -150,14 +149,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   end
 
   defp blown_immune?({unit_type, unit_id}, map_name, module, state, opts) do
-    Rules.ground?(map_name) or module.is_boss?(state) or knockback_immune?(module, state) or
+    Rules.ground?(map_name) or knockback_immune?(module, state) or
       anchored_by_basilica?(unit_type, unit_id, opts)
   end
 
-  # A unit carrying the `:no_knockback` equipment flag resists being blown away,
-  # the same way a boss does. Only unit types that model equipment implement the
-  # optional `knockback_immune?/1` callback; the rest are never immune. Pull
-  # effects are not gated here.
+  # A player carrying the `:no_knockback` equipment flag or a knockback-immune
+  # monster resists being blown away. Unit types without the optional
+  # `knockback_immune?/1` callback are never immune. Pull effects are not gated
+  # here.
   @spec knockback_immune?(module(), any()) :: boolean()
   defp knockback_immune?(module, state) do
     function_exported?(module, :knockback_immune?, 1) and module.knockback_immune?(state)
