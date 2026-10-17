@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
@@ -98,7 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
     state = build_mob_state() |> MobState.set_path([{101, 100}])
 
-    {:noreply, updated} = MobSession.handle_info({:movement, :tick}, state)
+    {:noreply, updated} = MovementHandler.handle_movement_tick(state)
 
     assert {updated.x, updated.y} == {101, 100}
     assert updated.deferred_epoch == 0

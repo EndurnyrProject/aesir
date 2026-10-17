@@ -818,8 +818,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # walk) - kept here rather than in a handler since the routing itself spans
   # domains.
   @impl true
-  def handle_info({:movement, :movement_tick}, state) do
-    MovementHandler.handle_movement_tick(state)
+  def handle_info({:timeout, timer, {:movement, :movement_tick}}, state) do
+    MovementHandler.handle_step(timer, state)
   end
 
   def handle_info({:movement, :movement_completed}, %{game_state: game_state} = state) do

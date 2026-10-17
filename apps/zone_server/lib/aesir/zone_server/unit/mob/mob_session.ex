@@ -455,8 +455,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   # Movement: the self-armed per-step walk tick.
   @impl GenServer
-  def handle_info({:movement, :tick}, state) do
-    MovementHandler.handle_movement_tick(state)
+  def handle_info({:timeout, timer, {:movement, :tick}}, state) do
+    MovementHandler.handle_step(timer, state)
   end
 
   # Skill: the generic deferred-effect seam (`Skill.defer/3`) that runs

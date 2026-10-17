@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -549,7 +550,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, new_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
+      {:noreply, new_state} = MovementHandler.handle_movement_tick(state)
 
       assert new_state.game_state.x == 51
       assert new_state.game_state.y == 50
@@ -1423,7 +1424,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
         connection_pid: self()
       }
 
-      {:noreply, new_state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
+      {:noreply, new_state} = MovementHandler.handle_movement_tick(state)
 
       assert new_state.game_state.movement_state == :standing
       assert new_state.game_state.movement_state == :standing

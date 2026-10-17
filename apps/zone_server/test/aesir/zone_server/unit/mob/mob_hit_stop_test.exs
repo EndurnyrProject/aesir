@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobHitStopTest do
 
     assert hit_mob.movement_state == :standing
     assert {hit_mob.x, hit_mob.y} == {100, 100}
-    assert {:movement, :tick} not in elem(Process.info(self(), :messages), 1)
+    refute_receive {:timeout, _timer, {:movement, :tick}}
   end
 
   test "a coma hit carries its walk delay and stops the mob" do

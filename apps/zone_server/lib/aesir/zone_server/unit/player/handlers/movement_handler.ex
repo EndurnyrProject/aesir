@@ -62,6 +62,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
+  Takes the walk step whose timer is `timer`, or drops it when it is not the
+  player's recorded pending step: the walk it belonged to was stopped.
+  """
+  @spec handle_step(reference(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def handle_step(timer, %{game_state: game_state} = state) do
+    if HitStop.current?(game_state.pending_step, timer),
+      do: handle_movement_tick(state),
+      else: {:noreply, state}
+  end
+
+  @doc """
   Handles movement tick processing for a walking player.
 
   ## Parameters
@@ -107,7 +118,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
            ) do
           step_player(state, game_state, {next_x, next_y}, tl(walk_path))
         else
-          handle_blocked_player(state, game_state, List.last(walk_path))
+          handle_blocked_player(
+            state,
+            %{game_state | walk_target: nil},
+            game_state.walk_target || List.last(walk_path)
+          )
         end
     end
   end
@@ -196,31 +211,81 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           |> maybe_trigger_touch()
           |> NavigationHandler.on_moved()
 
-        # Schedule the next tick priced by the step it will take, so entering
-        # each cell lines up with the client's per-cell interpolation.
-        if remaining_path != [] do
-          interval =
-            step_delay(touched_state.game_state, {next_x, next_y}, hd(remaining_path))
+        cond do
+          touched_state.game_state.walk_target != nil ->
+            redirect_walk(touched_state)
 
-          {:noreply,
-           %{touched_state | game_state: schedule_step(touched_state.game_state, interval)}}
-        else
-          # Path completed: stop and broadcast the standing transition so the
-          # client's last snapshot sample flips move_state back to idle.
-          game_state = PlayerState.stop_walking(touched_state.game_state)
+          # Schedule the next tick priced by the step it will take, so entering
+          # each cell lines up with the client's per-cell interpolation.
+          remaining_path != [] ->
+            interval =
+              step_delay(touched_state.game_state, {next_x, next_y}, hd(remaining_path))
 
-          Movement.set_position(
-            :player,
-            game_state.character_id,
-            game_state,
-            game_state.map_name
-          )
+            {:noreply,
+             %{touched_state | game_state: schedule_step(touched_state.game_state, interval)}}
 
-          # Send completion message for PlayerSession to handle
-          send(self(), {:movement, :movement_completed})
-          {:noreply, %{touched_state | game_state: game_state}}
+          true ->
+            finish_walk(touched_state)
         end
     end
+  end
+
+  # Path completed: stop and broadcast the standing transition so the client's
+  # last snapshot sample flips move_state back to idle.
+  defp finish_walk(state) do
+    game_state = PlayerState.stop_walking(state.game_state)
+    Movement.set_position(:player, game_state.character_id, game_state, game_state.map_name)
+    send(self(), {:movement, :movement_completed})
+    {:noreply, %{state | game_state: game_state}}
+  end
+
+  # A move request made while walking takes effect on the cell the step just
+  # landed on: the new path starts there, and a target that cannot be reached
+  # from it stops the walk.
+  defp redirect_walk(%{game_state: game_state} = state) do
+    {dest_x, dest_y} = destination = game_state.walk_target
+    game_state = %{game_state | walk_target: nil}
+
+    with {:ok, map_data} <- MapCache.get(game_state.map_name),
+         {:ok, path} <- Pathfinding.find_path(map_data, {game_state.x, game_state.y}, destination) do
+      case path do
+        [] ->
+          finish_walk(%{state | game_state: game_state})
+
+        _ ->
+          {:noreply, %{state | game_state: start_walk(state, game_state, path, dest_x, dest_y)}}
+      end
+    else
+      _ ->
+        stopped = %{state | game_state: PlayerState.stop_walking(game_state)}
+
+        Movement.set_position(
+          :player,
+          game_state.character_id,
+          stopped.game_state,
+          game_state.map_name
+        )
+
+        publish_stop(stopped)
+        {:noreply, stopped}
+    end
+  end
+
+  # Starts a walk along `path`: the client is told, and the first step lands
+  # after its own cost, keeping the server position in lockstep with the
+  # client's interpolation instead of one cell ahead.
+  defp start_walk(state, game_state, path, dest_x, dest_y) do
+    game_state = PlayerState.set_path(game_state, path)
+
+    MessageRouter.send_to(state.connection_pid, %SelfMove{
+      start_time: System.monotonic_time(:millisecond),
+      src_x: game_state.x,
+      src_y: game_state.y,
+      dst_x: dest_x,
+      dst_y: dest_y
+    })
+
+    schedule_step(game_state, step_delay(game_state, {game_state.x, game_state.y}, hd(path)))
   end
 
   # On-touch warp trigger hook (rAthena `OnTouch`, cell-enter).
@@ -321,14 +386,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp handle_blocked_player(state, game_state, destination) do
+  defp handle_blocked_player(state, game_state, {dest_x, dest_y} = destination) do
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
          {:ok, [_ | _] = path} <-
            Pathfinding.find_path(map_data, {game_state.x, game_state.y}, destination) do
-      game_state = PlayerState.set_path(game_state, path)
-
-      first_delay = step_delay(game_state, {game_state.x, game_state.y}, hd(path))
-      {:noreply, %{state | game_state: schedule_step(game_state, first_delay)}}
+      {:noreply, %{state | game_state: start_walk(state, game_state, path, dest_x, dest_y)}}
     else
       _ ->
         game_state = PlayerState.stop_walking(game_state)
@@ -406,7 +468,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       ) do
     if Interpreter.can_move?(:player, game_state.character_id) and
          not PlayerState.walk_delayed?(game_state, System.monotonic_time(:millisecond)) do
-      do_request_move(state, game_state, connection_pid, dest_x, dest_y, opts)
+      do_request_move(state, game_state, dest_x, dest_y, opts)
     else
       packet = %MoveStop{gid: game_state.character_id, x: game_state.x, y: game_state.y}
       MessageRouter.send_to(connection_pid, packet)
@@ -414,63 +476,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp do_request_move(state, game_state, connection_pid, dest_x, dest_y, opts) do
+  defp do_request_move(state, game_state, dest_x, dest_y, opts) do
+    walking? = game_state.movement_state == :moving
+
     with {:ok, map_data} <- MapCache.get(game_state.map_name),
-         {:ok, [_ | _] = path} <-
+         {:ok, path} when path != [] or walking? <-
            Pathfinding.find_path(
              map_data,
              {game_state.x, game_state.y},
              {dest_x, dest_y}
            ) do
       state = dispatch_movement_intent(state, game_state)
-      game_state = state.game_state
 
       # A manual move (no combat_initiated:/pickup_initiated: flag) while heading
       # to a target or item cancels that pending intent so the player can walk away.
-      game_state = maybe_clear_action_intent(game_state, opts)
+      game_state = maybe_clear_action_intent(state.game_state, opts)
 
       # The full per-cell path is walked, never a simplified one: step_delay/3
       # prices one adjacent step, so hopping a collapsed straight segment in a
       # single tick would cross it at many times walk speed, racing far ahead of
-      # the client's interpolation (and skipping over warp/trap cells).
-      game_state = PlayerState.set_path(game_state, path)
+      # the client's interpolation (and skipping over warp/trap cells). A walk
+      # already under way is redirected when its pending step lands instead of
+      # starting a second step chain.
+      game_state =
+        if walking?,
+          do: %{game_state | walk_target: {dest_x, dest_y}},
+          else: start_walk(state, game_state, path, dest_x, dest_y)
 
-      # Send movement confirmation to the client
-      walk_start_time = System.monotonic_time(:millisecond)
-
-      packet = %SelfMove{
-        start_time: walk_start_time,
-        src_x: game_state.x,
-        src_y: game_state.y,
-        dst_x: dest_x,
-        dst_y: dest_y
-      }
-
-      MessageRouter.send_to(connection_pid, packet)
-
-      # The first tick fires after the first step's cost, not immediately: a
-      # unit enters a cell when the step completes, keeping the server position
-      # in lockstep with the client's interpolation instead of one cell ahead.
-      first_delay = step_delay(game_state, {game_state.x, game_state.y}, hd(path))
-
-      {:noreply, %{state | game_state: schedule_step(game_state, first_delay)}}
+      {:noreply, %{state | game_state: game_state}}
     else
       {:ok, []} ->
         # Already at destination
         {:noreply, state}
 
       {:error, reason} ->
-        # No path found or map not loaded
-        Logger.error("Movement failed for player #{game_state.character_id}: #{inspect(reason)}")
-
-        packet = %MoveStop{
-          gid: game_state.character_id,
-          x: game_state.x,
-          y: game_state.y
-        }
-
-        MessageRouter.send_to(connection_pid, packet)
-
+        # An unreachable destination is ignored: nothing is sent and a walk
+        # under way continues.
+        Logger.debug("Movement refused for player #{game_state.character_id}: #{inspect(reason)}")
         {:noreply, state}
     end
   end
@@ -543,6 +585,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   @spec handle_hit_stop(SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_hit_stop(%{game_state: %{movement_state: :moving} = game_state} = state) do
     HitStop.cancel(game_state.pending_step)
+    game_state = %{game_state | walk_target: nil}
 
     with {:finish_step, [next | _rest]} <-
            {HitStop.plan(game_state.pending_step, HitStop.now()), game_state.walk_path},

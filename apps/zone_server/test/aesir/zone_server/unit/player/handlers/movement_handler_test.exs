@@ -117,8 +117,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
       # The first tick lands after the first step's cost (150ms at base speed),
       # never immediately: stepping at schedule time would lead the client.
-      refute_receive {:movement, :movement_tick}, 50
-      assert_receive {:movement, :movement_tick}, 300
+      refute_receive {:timeout, _timer, {:movement, :movement_tick}}, 50
+      assert_receive {:timeout, _timer, {:movement, :movement_tick}}, 300
     end
 
     test "dispatches once at the committed cell after validating the command" do
@@ -232,6 +232,78 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     end
   end
 
+  describe "walk step chain" do
+    setup do
+      Mimic.copy(Movement)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+
+      stub(Pathfinding, :find_path, fn
+        _map, {50, 50}, {52, 50} -> {:ok, [{51, 50}, {52, 50}]}
+        _map, {50, 50}, {51, 50} -> {:ok, [{51, 50}]}
+        _map, {50, 50}, {51, 52} -> {:ok, [{50, 51}, {51, 52}]}
+        _map, {51, 50}, {51, 52} -> {:ok, [{51, 51}, {51, 52}]}
+        _map, {51, 50}, {60, 60} -> {:error, :no_path}
+        _map, {50, 50}, {60, 60} -> {:ok, [{51, 51}, {60, 60}]}
+      end)
+
+      :ok
+    end
+
+    defp step_timer(state), do: elem(state.game_state.pending_step, 2)
+
+    test "a stopped walk's step does not move the player's next walk" do
+      {:noreply, walking} = MovementHandler.handle_request_move(idle_state(), 52, 50)
+      {:noreply, stopped} = MovementHandler.handle_force_stop_movement(walking)
+      {:noreply, rewalking} = MovementHandler.handle_request_move(stopped, 51, 50)
+
+      {:noreply, stale} = MovementHandler.handle_step(step_timer(walking), rewalking)
+
+      assert {stale.game_state.x, stale.game_state.y} == {50, 50}
+      assert stale.game_state.pending_step == rewalking.game_state.pending_step
+
+      {:noreply, stepped} = MovementHandler.handle_step(step_timer(rewalking), rewalking)
+
+      assert {stepped.game_state.x, stepped.game_state.y} == {51, 50}
+    end
+
+    test "a re-click while walking redirects at the next cell without a second step chain" do
+      {:noreply, walking} = MovementHandler.handle_request_move(idle_state(), 52, 50)
+      first_timer = step_timer(walking)
+      assert_received {:send, :gameplay, {:self_move, %SelfMove{dst_x: 52, dst_y: 50}}}
+
+      {:noreply, redirected} = MovementHandler.handle_request_move(walking, 51, 52)
+
+      assert redirected.game_state.pending_step == walking.game_state.pending_step
+      assert redirected.game_state.walk_path == [{51, 50}, {52, 50}]
+      refute_received {:send, :gameplay, {:self_move, %SelfMove{}}}
+
+      assert_receive {:timeout, ^first_timer, {:movement, :movement_tick}}, 300
+      refute_receive {:timeout, _timer, {:movement, :movement_tick}}, 200
+
+      {:noreply, landed} = MovementHandler.handle_step(first_timer, redirected)
+
+      assert {landed.game_state.x, landed.game_state.y} == {51, 50}
+      assert landed.game_state.walk_path == [{51, 51}, {51, 52}]
+      assert {_due_at, 150, _timer} = landed.game_state.pending_step
+
+      assert_received {:send, :gameplay,
+                       {:self_move, %SelfMove{src_x: 51, src_y: 50, dst_x: 51, dst_y: 52}}}
+    end
+
+    test "a redirect unreachable from the landed cell stops the walk there" do
+      {:noreply, walking} = MovementHandler.handle_request_move(idle_state(), 52, 50)
+      {:noreply, redirected} = MovementHandler.handle_request_move(walking, 60, 60)
+
+      {:noreply, landed} = MovementHandler.handle_step(step_timer(walking), redirected)
+
+      assert {landed.game_state.x, landed.game_state.y} == {51, 50}
+      assert landed.game_state.movement_state == :standing
+      assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1, x: 51, y: 50}}}
+    end
+  end
+
   describe "handle_hit_stop/1" do
     setup do
       Mimic.copy(Movement)
@@ -265,7 +337,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       assert {stopped.game_state.x, stopped.game_state.y} == {50, 50}
       assert stopped.game_state.movement_state == :standing
       assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1, x: 50, y: 50}}}
-      refute_receive {:movement, :movement_tick}, 200
+      refute_receive {:timeout, _timer, {:movement, :movement_tick}}, 200
     end
 
     test "a standing player is untouched" do

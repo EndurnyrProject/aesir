@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
   alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler, as: MobMovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
@@ -141,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
       SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
 
-      {:noreply, _state} = MobSession.handle_info({:movement, :tick}, mob_state)
+      {:noreply, _state} = MobMovementHandler.handle_movement_tick(mob_state)
 
       assert {:mob, ^instance_id, _move_state} =
                @map_name |> Movement.drain_dirty() |> find_unit(:mob, instance_id)
@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
       SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
 
-      {:noreply, new_state} = MobSession.handle_info({:movement, :tick}, mob_state)
+      {:noreply, new_state} = MobMovementHandler.handle_movement_tick(mob_state)
 
       assert {new_state.x, new_state.y} == {100, 100}
       assert new_state.movement_state == :moving
@@ -171,7 +171,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
       SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
 
-      {:noreply, new_state} = MobSession.handle_info({:movement, :tick}, mob_state)
+      {:noreply, new_state} = MobMovementHandler.handle_movement_tick(mob_state)
 
       assert {new_state.x, new_state.y} == {100, 100}
       assert new_state.movement_state == :standing
@@ -179,6 +179,47 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
 
       assert {:mob, ^instance_id, _move_state} =
                @map_name |> Movement.drain_dirty() |> find_unit(:mob, instance_id)
+    end
+
+    test "a stopped walk's step does not move the mob's next walk" do
+      SpatialIndex.add_unit(:mob, 42, 100, 100, @map_name)
+
+      {:noreply, walking} = MobMovementHandler.handle_move_to(mob_state(), 102, 100)
+      stopped = MobState.stop_movement(walking)
+      {:noreply, rewalking} = MobMovementHandler.handle_move_to(stopped, 101, 100)
+
+      {:noreply, stale} =
+        MobMovementHandler.handle_step(elem(walking.pending_step, 2), rewalking)
+
+      assert {stale.x, stale.y} == {100, 100}
+      assert stale.pending_step == rewalking.pending_step
+
+      {:noreply, stepped} =
+        MobMovementHandler.handle_step(elem(rewalking.pending_step, 2), rewalking)
+
+      assert {stepped.x, stepped.y} == {101, 100}
+    end
+
+    test "a move request while walking redirects at the next cell without a second step chain" do
+      SpatialIndex.add_unit(:mob, 42, 100, 100, @map_name)
+
+      {:noreply, walking} = MobMovementHandler.handle_move_to(mob_state(), 102, 100)
+      first_timer = elem(walking.pending_step, 2)
+
+      {:noreply, redirected} = MobMovementHandler.handle_move_to(walking, 100, 100)
+
+      assert redirected.pending_step == walking.pending_step
+      assert redirected.walk_path == walking.walk_path
+
+      assert_receive {:timeout, ^first_timer, {:movement, :tick}}, 400
+      refute_receive {:timeout, _timer, {:movement, :tick}}, 250
+
+      {:noreply, landed} = MobMovementHandler.handle_step(first_timer, redirected)
+
+      assert {landed.x, landed.y} == {101, 100}
+      assert landed.walk_path == [{100, 100}]
+      assert landed.movement_state == :moving
+      assert {_due_at, 200, _timer} = landed.pending_step
     end
 
     test "a mob resumes stepping after a movement blocker is removed" do
@@ -189,7 +230,7 @@ defmodule Aesir.ZoneServer.Unit.MovementStepperTest do
       instance_id = mob_state.instance_id
       SpatialIndex.add_unit(:mob, instance_id, 100, 100, @map_name)
 
-      {:noreply, new_state} = MobSession.handle_info({:movement, :tick}, mob_state)
+      {:noreply, new_state} = MobMovementHandler.handle_movement_tick(mob_state)
 
       assert {new_state.x, new_state.y} == {101, 100}
     end

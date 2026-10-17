@@ -22,6 +22,6 @@ defmodule Aesir.ZoneServer.Unit.HitStopTest do
     step = HitStop.schedule(:step_due, 20)
 
     assert :ok = HitStop.cancel(step)
-    refute_receive :step_due, 60
+    refute_receive {:timeout, _timer, :step_due}, 60
   end
 end

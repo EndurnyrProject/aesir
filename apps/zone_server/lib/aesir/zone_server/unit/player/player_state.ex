@@ -79,6 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           walk_path: list({integer(), integer()}),
           walk_speed: integer(),
           pending_step: HitStop.step(),
+          walk_target: {integer(), integer()} | nil,
           movement_intent: :none | :normal | :combat | :skill | :pickup,
           view_range: integer(),
           visible_players: MapSet.t(),
@@ -195,6 +196,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :walk_delay_until,
     # The step the walk scheduled last, read by the hit stop (`HitStop`).
     :pending_step,
+    # Where a move request made while walking redirects the walk once the
+    # pending step lands.
+    :walk_target,
 
     # Movement intent - why are we moving?
     # :none | :normal | :combat | :skill | :pickup
@@ -577,7 +581,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       state
       | walk_path: [],
         movement_state: :standing,
-        pending_step: nil
+        pending_step: nil,
+        walk_target: nil
     }
   end
 

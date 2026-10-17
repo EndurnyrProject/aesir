@@ -21,8 +21,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @doc """
-  Forces the mob to path toward `{x, y}`, or drops the request if the mob is
-  already moving.
+  Forces the mob to path toward `{x, y}`. A mob already walking keeps its
+  pending step and takes the new path from the cell that step lands on.
   """
   @spec handle_move_to(MobState.t(), integer(), integer()) :: {:noreply, MobState.t()}
   def handle_move_to(state, x, y), do: handle_move_to(state, x, y, false)
@@ -36,35 +36,38 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   def handle_move_to(state, x, y, escape?) do
     state = if escape?, do: %{state | can_escape: true}, else: state
 
-    if state.movement_state == :moving do
-      {:noreply, state}
+    walking? = state.movement_state == :moving
+
+    with {:ok, map_data} <- MapCache.get(state.map_name),
+         {:ok, path} when path != [] or walking? <-
+           Pathfinding.find_path(map_data, {state.x, state.y}, {x, y}, profile: :mob) do
+      if walking?,
+        do: {:noreply, %{state | walk_target: {x, y}}},
+        else: {:noreply, start_walk(state, path)}
     else
-      with {:ok, map_data} <- MapCache.get(state.map_name),
-           {:ok, [_ | _] = path} <-
-             Pathfinding.find_path(
-               map_data,
-               {state.x, state.y},
-               {x, y},
-               profile: :mob
-             ) do
-        updated_state = MobState.set_path(state, path)
-
-        # The first tick fires after the first step's cost: a unit enters a
-        # cell when the step completes, keeping the server position in
-        # lockstep with the clients' interpolation instead of one cell ahead.
-        first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
-
-        {:noreply, schedule_step(updated_state, first_delay)}
-      else
-        {:ok, []} ->
-          # Already at destination
-          {:noreply, state}
-
-        {:error, _reason} ->
-          # No path found or map not loaded
-          {:noreply, state}
-      end
+      # Already at destination, no path found or map not loaded.
+      _ -> {:noreply, state}
     end
+  end
+
+  @doc """
+  Takes the walk step whose timer is `timer`, or drops it when it is not the
+  mob's recorded pending step: the walk it belonged to was stopped.
+  """
+  @spec handle_step(reference(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_step(timer, %MobState{} = state) do
+    if HitStop.current?(state.pending_step, timer),
+      do: handle_movement_tick(state),
+      else: {:noreply, state}
+  end
+
+  # The first tick fires after the first step's cost: a unit enters a cell when
+  # the step completes, keeping the server position in lockstep with the
+  # clients' interpolation instead of one cell ahead.
+  defp start_walk(state, path) do
+    state
+    |> MobState.set_path(path)
+    |> schedule_step(MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path)))
   end
 
   @doc """
@@ -129,6 +132,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   @spec handle_hit_stop(MobState.t()) :: MobState.t()
   def handle_hit_stop(%MobState{movement_state: :moving} = state) do
     HitStop.cancel(state.pending_step)
+    state = %{state | walk_target: nil}
 
     with {:finish_step, [next | _rest]} <-
            {HitStop.plan(state.pending_step, HitStop.now()), state.walk_path},
@@ -235,7 +239,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
            ) do
           step_mob(state, {next_x, next_y}, tl(walk_path))
         else
-          handle_blocked_mob(state, List.last(walk_path))
+          handle_blocked_mob(
+            %{state | walk_target: nil},
+            state.walk_target || List.last(walk_path)
+          )
         end
     end
   end
@@ -260,27 +267,50 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       updated_state.map_name
     )
 
-    # Schedule the next tick priced by the step it will take, so entering each
-    # cell lines up with the clients' per-cell interpolation.
-    if remaining_path != [] do
-      interval =
-        MovementEngine.step_delay(state.walk_speed, {next_x, next_y}, hd(remaining_path))
+    cond do
+      updated_state.walk_target != nil ->
+        redirect_walk(updated_state)
 
-      schedule_step(updated_state, interval)
+      # Schedule the next tick priced by the step it will take, so entering
+      # each cell lines up with the clients' per-cell interpolation.
+      remaining_path != [] ->
+        interval =
+          MovementEngine.step_delay(state.walk_speed, {next_x, next_y}, hd(remaining_path))
+
+        schedule_step(updated_state, interval)
+
+      true ->
+        finish_walk(updated_state)
+    end
+  end
+
+  # Path completed: stop and broadcast the standing transition so the client's
+  # last snapshot sample flips move_state back to idle. An escape walk ends here.
+  defp finish_walk(state) do
+    stopped_state = %{MobState.stop_movement(state) | can_escape: false}
+    Movement.set_position(:mob, stopped_state.instance_id, stopped_state, stopped_state.map_name)
+    stopped_state
+  end
+
+  # A move request made while walking takes effect on the cell the step just
+  # landed on: the new path starts there, and a target that cannot be reached
+  # from it stops the walk.
+  defp redirect_walk(state) do
+    destination = state.walk_target
+    state = %{state | walk_target: nil}
+
+    with {:ok, map_data} <- MapCache.get(state.map_name),
+         {:ok, path} <-
+           Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob) do
+      case path do
+        [] -> finish_walk(state)
+        _ -> start_walk(state, path)
+      end
     else
-      # Path completed: stop and broadcast the standing transition so the
-      # client's last snapshot sample flips move_state back to idle. An
-      # escape walk ends here.
-      stopped_state = %{MobState.stop_movement(updated_state) | can_escape: false}
-
-      Movement.set_position(
-        :mob,
-        stopped_state.instance_id,
-        stopped_state,
-        stopped_state.map_name
-      )
-
-      stopped_state
+      _ ->
+        stopped_state = MobState.stop_movement(state)
+        Movement.set_position(:mob, stopped_state.instance_id, stopped_state, state.map_name)
+        stopped_state
     end
   end
 
@@ -291,10 +321,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     with {:ok, map_data} <- MapCache.get(state.map_name),
          {:ok, [_ | _] = path} <-
            Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob) do
-      updated_state = MobState.set_path(state, path)
-
-      first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
-      schedule_step(updated_state, first_delay)
+      start_walk(state, path)
     else
       _ ->
         stopped_state = MobState.stop_movement(state)

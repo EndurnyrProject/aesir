@@ -60,7 +60,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     walk_path: [],
     walk_speed: 200,
     walk_delay_until: 0,
-    target_position: nil,
+    # Where a move request made while walking redirects the walk once the
+    # pending step lands.
+    walk_target: nil,
     # The step the walk scheduled last, read by the hit stop (`HitStop`).
     pending_step: nil,
     # An escape walk that damage cannot stop; it ends when the walk does.
@@ -176,7 +178,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           walk_path: list(),
           walk_speed: integer(),
           walk_delay_until: integer(),
-          target_position: {integer(), integer()} | nil,
+          walk_target: {integer(), integer()} | nil,
           pending_step: HitStop.step(),
           can_escape: boolean(),
           ai_state: ai_state(),
@@ -571,7 +573,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       state
       | walk_path: [],
         movement_state: :standing,
-        target_position: nil,
+        walk_target: nil,
         pending_step: nil,
         last_movement_end_time: System.system_time(:millisecond)
     }
@@ -896,7 +898,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         typed_aggro_list: %{},
         typed_aggro_order: [],
         movement_state: :standing,
-        walk_path: []
+        walk_path: [],
+        pending_step: nil,
+        walk_target: nil
     }
   end
 

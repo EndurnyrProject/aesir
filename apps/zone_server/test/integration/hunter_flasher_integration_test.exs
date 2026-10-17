@@ -98,7 +98,6 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
     simulate_incoming_message(pid, %MoveRequest{dest_x: x, dest_y: y})
 
     assert eventually(fn ->
-             send(pid, {:movement, :movement_tick})
              state = get_player_state(pid)
              {state.x, state.y} == {x, y}
            end)
