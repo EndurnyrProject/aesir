@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate homevolution(ctx), to: PlayerEffects
   defdelegate add_homunculus_intimacy(ctx, amount), to: PlayerEffects
   defdelegate heal(ctx, opts), to: PlayerEffects
+  defdelegate item_heal(ctx, opts), to: PlayerEffects
   defdelegate percent_heal(ctx, opts), to: PlayerEffects
 
   defdelegate sc_start(ctx, status, duration_ms, val, rate \\ 10_000, flag \\ nil),

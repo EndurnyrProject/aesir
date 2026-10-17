@@ -90,6 +90,60 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
                         %ItemUseResult{index: @red_potion_client_index, ok: true, reason: 0}}}
     end
 
+    test "an item script reads the HP its own heal just restored" do
+      source = "ctx = heal(ctx, hp: 50)\nheal(ctx, sp: hp(ctx))"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+
+      state = state_with_potion()
+
+      stub(Items, :by_id, fn @red_potion_id ->
+        {:ok, usable_definition(@red_potion_id, source)}
+      end)
+
+      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+        {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+         {:reduced, @red_potion_slot, 4}}
+      end)
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.stats.current_state.hp == 150
+      assert committed.game_state.stats.current_state.sp == 160
+    end
+
+    test "a lethal heal kills through the session's death handling and still consumes the item" do
+      source = "percent_heal(ctx, hp: -100, sp: -100)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+
+      state =
+        state_with_potion()
+        |> update_in(
+          [:game_state, Access.key!(:stats), Access.key!(:progression)],
+          fn progression ->
+            %{progression | base_exp: 0, job_exp: 0}
+          end
+        )
+        |> put_in([:game_state, Access.key!(:visible_players)], MapSet.new())
+
+      stub(Items, :by_id, fn @red_potion_id ->
+        {:ok, usable_definition(@red_potion_id, source)}
+      end)
+
+      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+        {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+         {:reduced, @red_potion_slot, 4}}
+      end)
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.action_state == :dead
+      assert committed.game_state.stats.current_state.hp == 0
+      assert committed.game_state.stats.current_state.sp == 0
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+    end
+
     test "Fly Wing consumes once, stages Teleport, then relocates on client cast" do
       source = "itemskill(ctx, 26, level: 1)"
       ScriptCompiler.compile_all!([item_def(@fly_wing_id, source)])

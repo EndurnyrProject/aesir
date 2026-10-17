@@ -27,27 +27,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
 
   describe "generate/1 healing commands" do
     test "itemheal omits sp when zero" do
-      assert {:ok, "heal(ctx, hp: 45)"} = compile("itemheal 45,0;")
+      assert {:ok, "item_heal(ctx, hp: 45)"} = compile("itemheal 45,0;")
     end
 
     test "itemheal omits hp when zero" do
-      assert {:ok, "heal(ctx, sp: 30)"} = compile("itemheal 0,30;")
+      assert {:ok, "item_heal(ctx, sp: 30)"} = compile("itemheal 0,30;")
     end
 
     test "itemheal keeps both hp and sp" do
-      assert {:ok, "heal(ctx, hp: 45, sp: 30)"} = compile("itemheal 45,30;")
+      assert {:ok, "item_heal(ctx, hp: 45, sp: 30)"} = compile("itemheal 45,30;")
     end
 
     test "itemheal with rand(a,b) emits a range" do
-      assert {:ok, "heal(ctx, hp: 45..65)"} = compile("itemheal rand(45,65),0;")
+      assert {:ok, "item_heal(ctx, hp: 45..65)"} = compile("itemheal rand(45,65),0;")
     end
 
     test "itemheal with rand(n) emits a 0-based range" do
-      assert {:ok, "heal(ctx, hp: 0..99)"} = compile("itemheal rand(100),0;")
+      assert {:ok, "item_heal(ctx, hp: 0..99)"} = compile("itemheal rand(100),0;")
     end
 
     test "itemheal with a negative amount passes it through" do
-      assert {:ok, "heal(ctx, hp: -100)"} = compile("itemheal -100,0;")
+      assert {:ok, "item_heal(ctx, hp: -100)"} = compile("itemheal -100,0;")
     end
 
     test "percentheal maps to percent_heal" do
@@ -137,8 +137,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
                compile("if (BaseLevel > 70) { itemheal 100,0; itemheal 0,30; }")
 
       assert Code.string_to_quoted!(source)
-      assert source =~ "ctx = heal(ctx, hp: 100)"
-      assert source =~ "ctx = heal(ctx, sp: 30)"
+      assert source =~ "ctx = item_heal(ctx, hp: 100)"
+      assert source =~ "ctx = item_heal(ctx, sp: 30)"
     end
 
     test "class branch resolves a Job_ constant" do
@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
       assert {:ok, source} = compile("itemheal 45,0; sc_start SC_BLESSING,60000,10;")
 
       assert Code.string_to_quoted!(source)
-      assert source =~ "ctx = heal(ctx, hp: 45)"
+      assert source =~ "ctx = item_heal(ctx, hp: 45)"
       assert source =~ "ctx = sc_start(ctx, :sc_blessing, 60000, 10)"
     end
   end

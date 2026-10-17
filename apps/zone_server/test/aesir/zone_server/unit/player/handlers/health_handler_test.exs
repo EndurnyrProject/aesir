@@ -745,13 +745,155 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert current.sp == 40
     end
 
-    test "routes negative HP through damage and floors negative SP at zero" do
+    test "routes negative HP through passive damage and floors negative SP at zero" do
+      test_pid = self()
+
+      stub(StatusInterpreter, :on_damage, fn :player, 1, info ->
+        send(test_pid, {:on_damage, info})
+        :ok
+      end)
+
       assert {:noreply, %{game_state: game_state}} =
                HealthHandler.apply_forced_heal(-20, -30, build_state(70, :idle))
 
       assert game_state.stats.current_state.hp == 50
       assert game_state.stats.current_state.sp == 0
       assert game_state.action_state == :idle
+      assert_received {:on_damage, %{passive?: true, damage: 20}}
+    end
+
+    test "negative HP beyond the current HP kills" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_forced_heal(-100, 0, build_state(70, :idle))
+
+      assert game_state.action_state == :dead
+    end
+
+    test "Frenzy does not stop it" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_berserk)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_berserk) end)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_forced_heal(20, 0, build_state(70, :idle))
+
+      assert game_state.stats.current_state.hp == 90
+    end
+  end
+
+  describe "apply_script_vitals/2 with an item heal" do
+    test "scales the amounts by the recipient's item heal bonus and heals through Frenzy" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_berserk)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_berserk) end)
+      state = put_in(build_state(10, :idle).game_state.stats.base_stats, %{vit: 25, int: 0})
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals({:item_heal, 501, 20, 0}, state)
+
+      assert game_state.stats.current_state.hp == 40
+    end
+
+    test "a negative item heal is damage that can kill" do
+      state = put_in(build_state(70, :idle).game_state.stats.base_stats, %{vit: 50, int: 0})
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals({:item_heal, 12_346, -100, 0}, state)
+
+      assert game_state.action_state == :dead
+    end
+  end
+
+  describe "apply_script_vitals/2 with a percent heal" do
+    test "heals a percent of the maxima, at least 1" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals({:percent_heal, 10, 1}, build_state(50, :idle))
+
+      assert game_state.stats.current_state.hp == 60
+      assert game_state.stats.current_state.sp == 11
+    end
+
+    test "Frenzy refuses the HP but not the SP" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_berserk)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_berserk) end)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals({:percent_heal, 10, 10}, build_state(50, :idle))
+
+      assert game_state.stats.current_state.hp == 50
+      assert game_state.stats.current_state.sp == 15
+    end
+
+    test "negative percents are passive damage that stops at 1 HP" do
+      test_pid = self()
+
+      stub(StatusInterpreter, :on_damage, fn :player, 1, info ->
+        send(test_pid, {:on_damage, info})
+        :ok
+      end)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals({:percent_heal, -10, -10}, build_state(5, :idle))
+
+      assert game_state.stats.current_state.hp == 1
+      assert game_state.stats.current_state.sp == 5
+      assert game_state.action_state == :idle
+      assert_received {:on_damage, %{passive?: true, damage: 4}}
+    end
+
+    test "-100 HP kills" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals({:percent_heal, -100, 0}, build_state(70, :idle))
+
+      assert game_state.action_state == :dead
+    end
+
+    test "crossed signs heal one side and drain the other, clamping the rates" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals(
+                 {:percent_heal, 150, -10},
+                 build_state(50, :idle)
+               )
+
+      assert game_state.stats.current_state.hp == 100
+      assert game_state.stats.current_state.sp == 5
+    end
+
+    test "No Recovery cancels both sides, damage included" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_norecover_state)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_norecover_state) end)
+      state = build_state(50, :idle)
+
+      assert {:noreply, ^state} =
+               HealthHandler.apply_script_vitals({:percent_heal, 10, -10}, state)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal: Asura recovery cancels the SP side" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_extremityfist)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_extremityfist) end)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals({:percent_heal, 10, 10}, build_state(50, :idle))
+
+      assert game_state.stats.current_state.hp == 60
+      assert game_state.stats.current_state.sp == 10
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal: Asura recovery leaves the SP side" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_extremityfist)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_extremityfist) end)
+
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_script_vitals({:percent_heal, 10, 10}, build_state(50, :idle))
+
+      assert game_state.stats.current_state.sp == 15
+    end
+
+    test "a dead player is not healed" do
+      state = build_state(0, :dead)
+
+      assert {:noreply, ^state} =
+               HealthHandler.apply_script_vitals({:percent_heal, 50, 50}, state)
     end
   end
 

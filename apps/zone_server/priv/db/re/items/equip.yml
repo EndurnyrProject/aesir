@@ -95096,6 +95096,11 @@
   locations:
     - head_top
   name: Showy High Cap
+  on_equip: |-
+    ctx = bonus(ctx, :str, 3)
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, {:add_item_sp_heal, 505}, 50)
+    ctx
   refineable: true
   slots: 1
   type: armor

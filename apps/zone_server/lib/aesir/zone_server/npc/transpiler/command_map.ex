@@ -133,6 +133,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "resetlvl" => %{dsl: "resetlvl", args: [:int]},
     "resetskill" => %{shape: :nullary, dsl: "reset_skills"},
     "heal" => %{shape: :heal, dsl: "heal"},
+    "itemheal" => %{shape: :heal, dsl: "item_heal"},
     "percentheal" => %{shape: :heal, dsl: "percent_heal"},
     "sc_start" => %{dsl: "sc_start", args: [:status, :int, :int]},
     "sc_end" => %{dsl: "sc_end", args: [:status]},

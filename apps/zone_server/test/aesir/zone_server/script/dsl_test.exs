@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Script.Ctx
@@ -81,200 +80,47 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     :ok
   end
 
-  describe "heal/2" do
-    test "raises hp by a rolled amount within the range, clamps at max, syncs and persists" do
-      test_pid = self()
-
-      expect(CharacterPersistence, :update_stats, fn 1, %{hp: hp}, [async: true] ->
-        send(test_pid, {:persisted, hp})
-        {:ok, %Character{}}
-      end)
-
-      ctx = Dsl.heal(build_ctx(hp: 100), hp: 45..65)
-
-      assert ctx.status == :ok
-      assert ctx.game_state.stats.current_state.hp in 145..165
-      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: value}}}
-      assert value in 145..165
-      assert_received {:persisted, persisted}
-      assert persisted in 145..165
-    end
-
-    test "clamps the healed hp at max_hp (no overheal)" do
-      ctx = Dsl.heal(build_ctx(hp: 480), hp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 500
-    end
-
-    test "heals sp too" do
-      ctx = Dsl.heal(build_ctx(sp: 10), sp: 20)
-
-      assert ctx.game_state.stats.current_state.sp == 30
-      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_sp, value: 30}}}
-    end
-
-    test "scales the healed HP delta by received_heal_rate (once)" do
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{received_heal_rate: 50} end)
-
-      ctx = Dsl.heal(build_ctx(hp: 100), hp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 250
-    end
-
-    test "received_heal_rate does not scale SP heals" do
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, _ -> %{received_heal_rate: 50} end)
-
-      ctx = Dsl.heal(build_ctx(sp: 10), sp: 20)
-
-      assert ctx.game_state.stats.current_state.sp == 30
-    end
-
-    test "HP consumables gain two percent per effective VIT" do
-      ctx = Dsl.heal(build_ctx(hp: 100, vit: 25), hp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 250
-    end
-
-    test "SP consumables gain two percent per effective INT" do
-      ctx = Dsl.heal(build_ctx(sp: 10, int: 25), sp: 100)
-
-      assert ctx.game_state.stats.current_state.sp == 160
-    end
-
-    test "consumables gain five percent per learned Potion Research level" do
-      stub(Catalog, :by_name, fn
-        :am_learningpotion -> {:ok, %{id: 227}}
-        :sm_recovery -> {:ok, %{id: 4}}
-        :mg_srecovery -> {:ok, %{id: 9}}
-      end)
-
-      stub(Learned, :learned_level, fn
-        %{}, 227 -> 4
-        %{}, 4 -> 0
-        %{}, 9 -> 0
-      end)
-
-      ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 220
-      assert ctx.game_state.stats.current_state.sp == 130
-    end
-
-    test "HP consumables gain ten percent per learned Increase HP Recovery level" do
-      stub(Catalog, :by_name, fn
-        :sm_recovery -> {:ok, %{id: 4}}
-        :am_learningpotion -> {:ok, %{id: 227}}
-        :mg_srecovery -> {:ok, %{id: 9}}
-      end)
-
-      stub(Learned, :learned_level, fn
-        %{}, 4 -> 5
-        %{}, 9 -> 0
-        %{}, 227 -> 0
-      end)
-
-      ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 250
-      assert ctx.game_state.stats.current_state.sp == 110
-    end
-
-    test "SP consumables gain ten percent per learned Increase SP Recovery level" do
-      stub(Catalog, :by_name, fn
-        :mg_srecovery -> {:ok, %{id: 9}}
-        :sm_recovery -> {:ok, %{id: 4}}
-        :am_learningpotion -> {:ok, %{id: 227}}
-      end)
-
-      stub(Learned, :learned_level, fn
-        %{}, 9 -> 5
-        %{}, 4 -> 0
-        %{}, 227 -> 0
-      end)
-
-      ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 200
-      assert ctx.game_state.stats.current_state.sp == 160
-    end
-
-    test "HP consumables include the item heal rate bonus" do
-      ctx = Dsl.heal(build_ctx(hp: 100, item_heal_rate: 30), hp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 230
-    end
-
-    test "HP consumables include the per-item add_item_heal bonus for the used item" do
-      # build_ctx sources item 501, so the per-item bonus applies.
-      ctx = Dsl.heal(build_ctx(hp: 100, equipment: %{{:add_item_heal, 501} => 40}), hp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 240
-    end
-
-    test "per-item add_item_heal for a different item does not apply" do
-      ctx = Dsl.heal(build_ctx(hp: 100, equipment: %{{:add_item_heal, 999} => 40}), hp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 200
-    end
-
-    test "HP consumables include matching item-group healing bonuses" do
+  describe "heal/2, item_heal/2 and percent_heal/2" do
+    test "an item script applies each heal to its own state at once, syncs and persists it" do
       ctx =
-        Dsl.heal(
-          build_ctx(hp: 100, equipment: %{{:add_item_group_heal, :bluebox} => 30}),
-          hp: 100
-        )
+        build_ctx(hp: 100, sp: 10)
+        |> Dsl.heal(hp: 45..65, sp: -5)
+        |> Dsl.item_heal(hp: 10, sp: 20..20)
 
-      assert ctx.game_state.stats.current_state.hp == 230
+      hp = Dsl.hp(ctx)
+      assert hp in 155..175
+      assert Dsl.sp(ctx) == 25
+      assert ctx.session_effects == []
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: ^hp}}}
+      assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_sp, value: 25}}}
     end
 
-    test "item-group healing ignores groups that do not contain the used item" do
-      ctx =
-        Dsl.heal(
-          build_ctx(hp: 100, equipment: %{{:add_item_group_heal, :ore} => 30}),
-          hp: 100
-        )
+    test "an item script stages the HP damage of a heal for its session to settle" do
+      ctx = Dsl.percent_heal(build_ctx(hp: 100, sp: 10), hp: -100)
 
-      assert ctx.game_state.stats.current_state.hp == 200
+      assert Dsl.hp(ctx) == 0
+      assert ctx.session_effects == [{:script_damage, {100, 0}}]
     end
 
-    test "scaled recovery floors fractional results" do
-      ctx = Dsl.heal(build_ctx(hp: 100, vit: 25), hp: 105)
+    test "an NPC script applies each heal through its player's session" do
+      healed = put_in(build_game_state().stats.current_state.hp, 300)
+      ctx = %{build_ctx() | source: {:npc, __MODULE__}, session_pid: self()}
 
-      assert ctx.game_state.stats.current_state.hp == 257
-    end
+      expect(PlayerSession, :script_apply, 3, fn
+        pid, {:heal, 10, 0} when pid == self() -> {:ok, healed}
+        _pid, {:item_heal, nil, 0, 20} -> {:ok, healed}
+        _pid, {:percent_heal, -10, -10} -> {:ok, healed}
+      end)
 
-    test "zero-stat players recover exactly the item roll" do
-      ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
+      result =
+        ctx
+        |> Dsl.heal(hp: 10)
+        |> Dsl.item_heal(sp: 20)
+        |> Dsl.percent_heal(hp: -10, sp: -10)
 
-      assert ctx.game_state.stats.current_state.hp == 200
-      assert ctx.game_state.stats.current_state.sp == 110
-    end
-
-    test "non-item heals remain unchanged" do
-      ctx = %{build_ctx(hp: 100, vit: 50, item_heal_rate: 50) | source: {:npc, __MODULE__}}
-
-      ctx = Dsl.heal(ctx, hp: 100)
-
-      assert ctx.game_state.stats.current_state.hp == 200
-    end
-
-    test "no-recover blocks item/script HP and SP recovery" do
-      ctx = %{build_ctx(hp: 100, sp: 10) | char_id: 88_002}
-      :ok = StatusStorage.apply_status(:player, 88_002, :sc_norecover_state)
-      on_exit(fn -> StatusStorage.remove_status(:player, 88_002, :sc_norecover_state) end)
-
-      blocked = Dsl.heal(ctx, hp: 100, sp: 100)
-
-      assert blocked.game_state.stats.current_state.hp == 100
-      assert blocked.game_state.stats.current_state.sp == 10
-    end
-  end
-
-  describe "percent_heal/2" do
-    test "heals a percentage of max_hp" do
-      ctx = Dsl.percent_heal(build_ctx(hp: 100), hp: 50)
-
-      assert ctx.game_state.stats.current_state.hp == 350
+      assert result.status == :ok
+      assert result.game_state == healed
+      assert result.session_effects == []
     end
   end
 
@@ -400,13 +246,20 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   describe "consumeitem/2" do
-    # Red Potion (501) carries `on_use: "heal(ctx, hp: 45..65)"`, so consuming
+    # Red Potion (501) carries `on_use: "item_heal(ctx, hp: 45..65)"`, so consuming
     # it runs that heal through the same compiled item script the use path runs.
     test "runs the item's use script, applying its effect to the player" do
-      result = Dsl.consumeitem(build_ctx(hp: 100), 501)
+      healed = put_in(build_game_state().stats.current_state.hp, 150)
+      ctx = %{build_ctx(hp: 100) | source: {:npc, __MODULE__}, session_pid: self()}
+
+      expect(PlayerSession, :script_apply, fn _pid, {:item_heal, nil, hp, 0} when hp in 45..65 ->
+        {:ok, healed}
+      end)
+
+      result = Dsl.consumeitem(ctx, 501)
 
       assert result.status == :ok
-      assert result.game_state.stats.current_state.hp in 145..165
+      assert result.game_state == healed
     end
 
     test "an item with no use script is a no-op returning the ctx unchanged" do

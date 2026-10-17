@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
       expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_appleidun, params ->
         assert params[:val2] == min(9 + level, 20)
         assert params[:duration] == 180_000
-        refute Keyword.has_key?(params, :val3)
+        assert params[:val3] == 2 * level
         :ok
       end)
 

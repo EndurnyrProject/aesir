@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
@@ -111,6 +112,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     effects = Enum.reject(effects, &match?({:item_skill, _, _, _}, &1))
 
     with :ok <- validate_item_skill(pending),
+         :ok <- reject_homunculus(effects),
          {:ok, updated} <- apply_session_effects(effects, %{state | game_state: ctx.game_state}) do
       if type == :delay_consume and pending do
         stage_delayed_item_skill(client_index, server_index, item_id, pending, updated)
@@ -138,9 +140,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
           {:error, _reason} = error -> {:halt, error}
         end
 
-      {:homunculus, _effect}, _acc ->
-        {:halt, {:error, :invalid_script}}
+      {:script_damage, damage}, {:ok, acc} ->
+        {:noreply, updated} = HealthHandler.settle_script_damage(damage, acc)
+        {:cont, {:ok, updated}}
     end)
+  end
+
+  # A Homunculus effect must be the script's only effect (see run_effect/4).
+  defp reject_homunculus(effects) do
+    if Enum.any?(effects, &match?({:homunculus, _}, &1)),
+      do: {:error, :invalid_script},
+      else: :ok
   end
 
   defp reject_invalid_script(client_index, item_id, state) do

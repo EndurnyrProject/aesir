@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -350,32 +351,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   @doc """
-  Applies rAthena's forced `heal` command semantics to signed HP and SP amounts.
-
-  Positive amounts restore without recovery modifiers or recovery-blocking statuses.
-  Negative HP uses the ordinary damage/death path; negative SP is drained to zero.
+  Applies the forced `heal` command to signed HP and SP amounts (see
+  `ScriptVitals`): no rates, Frenzy does not stop it, negative HP is passive
+  damage that can kill and negative SP drains to zero.
   """
   @spec apply_forced_heal(integer(), integer(), SessionState.t()) ::
           {:noreply, SessionState.t()}
-  def apply_forced_heal(_hp, _sp, %{game_state: %{action_state: :dead}} = state),
-    do: {:noreply, state}
+  def apply_forced_heal(hp, sp, state) when is_integer(hp) and is_integer(sp),
+    do: apply_script_vitals({:heal, hp, sp}, state)
 
-  def apply_forced_heal(hp, sp, state) when is_integer(hp) and is_integer(sp) do
-    {:noreply, state} = apply_forced_hp(hp, state)
-    apply_forced_sp(sp, state)
+  @doc """
+  Applies a script heal command (`ScriptVitals.op/0`) to the session: commits,
+  syncs and persists the HP/SP change, then settles any HP damage it dealt.
+  """
+  @spec apply_script_vitals(ScriptVitals.op(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def apply_script_vitals(op, state) do
+    {game_state, damage} = ScriptVitals.apply(op, state.game_state)
+    ScriptVitals.sync(state.connection_pid, state.game_state, game_state)
+    settle_script_damage(damage, StateCommit.commit(state, game_state))
   end
 
-  defp apply_forced_hp(amount, state) when amount > 0, do: gain_hp(amount, state)
-  defp apply_forced_hp(amount, state) when amount < 0, do: apply_damage(-amount, nil, state)
-  defp apply_forced_hp(_amount, state), do: {:noreply, state}
+  @doc """
+  Settles HP damage a script heal already applied to the state: the player's
+  statuses see it as passive damage, and it kills when it left no HP.
+  """
+  @spec settle_script_damage(ScriptVitals.damage(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def settle_script_damage(nil, state), do: {:noreply, state}
 
-  defp apply_forced_sp(amount, state) when amount > 0 do
-    {:noreply,
-     put_sp(state, min(current_sp(state) + amount, state.game_state.stats.derived_stats.max_sp))}
+  def settle_script_damage({damage, hp_after}, state) do
+    StatusInterpreter.on_damage(:player, state.game_state.character_id, %{
+      passive?: true,
+      element: :neutral,
+      damage: damage,
+      hp_after: hp_after,
+      max_hp: state.game_state.stats.derived_stats.max_hp,
+      attacker: nil
+    })
+
+    if hp_after == 0 and state.game_state.action_state != :dead,
+      do: handle_death(nil, state),
+      else: {:noreply, state}
   end
-
-  defp apply_forced_sp(amount, state) when amount < 0, do: consume_sp(-amount, state)
-  defp apply_forced_sp(_amount, state), do: {:noreply, state}
 
   @doc """
   Applies a heal to the player, clamped at `max_hp`.

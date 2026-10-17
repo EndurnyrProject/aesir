@@ -60,8 +60,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
 
   @doc """
   Learned level of `skill` (id or catalog name atom) from a game state's
-  progression; `0` for an unknown skill or name (the `getskilllv` core, shared
-  with consumable-recovery scaling).
+  progression; `0` for an unknown skill or name (the `getskilllv` core).
   """
   @spec learned_level(struct(), integer() | atom()) :: non_neg_integer()
   def learned_level(gs, skill) do

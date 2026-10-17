@@ -129,6 +129,7 @@ is_equipped/2
 isbegin_quest/2
 isequippedcnt/2
 ismounting/1
+item_heal/2
 itemskill/3
 job_level/1
 job_name/2

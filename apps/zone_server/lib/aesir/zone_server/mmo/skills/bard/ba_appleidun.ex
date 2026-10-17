@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidun do
 
   @impl Active
   def cast(caster, :self, level, definition) do
-    Performance.perform(caster, definition, level, :sc_appleidun, [val2: hp_rate(caster, level)],
+    Performance.perform(caster, definition, level, :sc_appleidun, status_params(caster, level),
       kind: :song,
       reach: :everyone,
       linger_ms: 20_000,
@@ -52,6 +52,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidun do
       tick_interval: 6_000,
       caster_vit: Caster.stat(caster, :vit)
     )
+  end
+
+  # Renewal's val3 is the potion recovery term item heals read.
+  defp status_params(caster, level) do
+    case GameMode.mode() do
+      :renewal -> [val2: hp_rate(caster, level), val3: 2 * level]
+      :pre_renewal -> [val2: hp_rate(caster, level)]
+    end
   end
 
   defp hp_rate(caster, level) do

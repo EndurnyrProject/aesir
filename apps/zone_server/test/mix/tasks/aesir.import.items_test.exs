@@ -29,7 +29,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
 
   describe "apply_transpile/2 (on_use)" do
     test "sets on_use from a supported usable script" do
-      assert {%ItemDefinition{on_use: "heal(ctx, hp: 45)"}, nil} =
+      assert {%ItemDefinition{on_use: "item_heal(ctx, hp: 45)"}, nil} =
                Items.apply_transpile(definition(%{type: :usable}), "itemheal 45,0;")
     end
 

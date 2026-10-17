@@ -90,6 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :no_magic_damage,
     :fixcast_rate,
     :item_heal_rate,
+    :item_sp_heal_rate,
     :no_knockback,
     :no_walk_delay,
     :no_cast_cancel,
@@ -375,8 +376,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bdropaddrace" => %{family: :drop_add_race, param: :race, unit: :percent},
     "bfixedcastrate" => %{family: :skill_fixcast_rate, param: :skill, unit: :percent},
     "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
+    "badditemsphealrate" => %{family: :add_item_sp_heal, param: :item, unit: :percent},
     "badditemgrouphealrate" => %{
       family: :add_item_group_heal,
+      param: :item_group,
+      unit: :percent
+    },
+    "badditemgroupsphealrate" => %{
+      family: :add_item_group_sp_heal,
       param: :item_group,
       unit: :percent
     },

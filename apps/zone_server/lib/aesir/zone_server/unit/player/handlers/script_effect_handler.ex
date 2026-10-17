@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
@@ -49,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
+  alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Rental
@@ -96,6 +98,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:completequest, QuestLog.quest_id()}
           | {:changequest, QuestLog.quest_id(), QuestLog.quest_id()}
           | {:set_look, 1 | 3 | 5 | 6 | 7 | 12, non_neg_integer()}
+          | ScriptVitals.op()
 
   @type reply :: {:ok, PlayerState.t()} | RefineOps.result() | {:error, term()}
   @type state :: %{
@@ -364,9 +367,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
-  # rAthena `disable_items` (disableitemuse): suppresses inventory item use for
-  # the player while the script runs; `ItemHandler` rejects use requests until
-  # the flag is cleared (a later script or a fresh session).
+  def apply_op(op, state) when elem(op, 0) in [:heal, :item_heal, :percent_heal] do
+    {:noreply, state} = HealthHandler.apply_script_vitals(op, state)
+    {{:ok, state.game_state}, state}
+  end
+
+  # `disable_items` (disableitemuse): suppresses inventory item use for the
+  # player while the script runs; `ItemHandler` rejects use requests until the
+  # flag is cleared (a later script or a fresh session).
   def apply_op({:disable_items}, %{game_state: gs} = state) do
     commit(state, %{gs | disable_item_use: true})
   end
@@ -527,7 +535,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   # is deferred — RefineOps already recalculates `new_gs.stats` server-side and
   # the registry sync below keeps other players' view of this unit correct;
   # only the owning client's own StatusParams push (str/def/atk/etc.) is
-  # missing. Add a StatusSync push here (mirroring `apply_heal/3` in `Dsl`) if
+  # missing. Add a StatusSync push here (as `HealthHandler` pushes HP/SP) if
   # a real refine NPC needs the owner's stat window to update live.
   def apply_op({:refine, index, nameid, cost_type, use_blessing?}, %{game_state: gs} = state) do
     {new_gs, result} = RefineOps.apply(gs, index, nameid, cost_type, use_blessing?)

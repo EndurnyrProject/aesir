@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
 
   describe "transpile/1" do
     test "a plain itemheal becomes a heal call" do
-      assert {:ok, "heal(ctx, hp: 45)"} = Transpiler.transpile("itemheal 45,0;")
+      assert {:ok, "item_heal(ctx, hp: 45)"} = Transpiler.transpile("itemheal 45,0;")
     end
 
     test "an unsupported command surfaces the codegen error unchanged" do
@@ -46,11 +46,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
 
   describe "golden set" do
     test "a plain potion" do
-      assert {:ok, "heal(ctx, hp: 45)"} = Transpiler.transpile("itemheal 45,0;")
+      assert {:ok, "item_heal(ctx, hp: 45)"} = Transpiler.transpile("itemheal 45,0;")
     end
 
     test "a condensed potion using rand" do
-      assert {:ok, "heal(ctx, hp: 45..65)"} = Transpiler.transpile("itemheal rand(45,65),0;")
+      assert {:ok, "item_heal(ctx, hp: 45..65)"} = Transpiler.transpile("itemheal rand(45,65),0;")
     end
 
     test "a fly wing" do
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
         if (class(ctx) == :knight) do
           sc_start(ctx, :sc_blessing, 60000, 10)
         else
-          heal(ctx, hp: 50)
+          item_heal(ctx, hp: 50)
         end
         """)
 

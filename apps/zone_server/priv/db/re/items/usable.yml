@@ -9,35 +9,35 @@
   buy: 10
   id: 501
   name: Red Potion
-  on_use: 'heal(ctx, hp: 45..65)'
+  on_use: 'item_heal(ctx, hp: 45..65)'
   type: healing
   weight: 70
 - aegis_name: Orange_Potion
   buy: 50
   id: 502
   name: Orange Potion
-  on_use: 'heal(ctx, hp: 105..145)'
+  on_use: 'item_heal(ctx, hp: 105..145)'
   type: healing
   weight: 100
 - aegis_name: Yellow_Potion
   buy: 180
   id: 503
   name: Yellow Potion
-  on_use: 'heal(ctx, hp: 175..235)'
+  on_use: 'item_heal(ctx, hp: 175..235)'
   type: healing
   weight: 130
 - aegis_name: White_Potion
   buy: 1200
   id: 504
   name: White Potion
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 150
 - aegis_name: Blue_Potion
   buy: 5000
   id: 505
   name: Blue Potion
-  on_use: 'heal(ctx, sp: 40..60)'
+  on_use: 'item_heal(ctx, sp: 40..60)'
   type: healing
   weight: 150
 - aegis_name: Green_Potion
@@ -57,28 +57,28 @@
   buy: 18
   id: 507
   name: Red Herb
-  on_use: 'heal(ctx, hp: 18..28)'
+  on_use: 'item_heal(ctx, hp: 18..28)'
   type: healing
   weight: 30
 - aegis_name: Yellow_Herb
   buy: 40
   id: 508
   name: Yellow Herb
-  on_use: 'heal(ctx, hp: 38..58)'
+  on_use: 'item_heal(ctx, hp: 38..58)'
   type: healing
   weight: 50
 - aegis_name: White_Herb
   buy: 120
   id: 509
   name: White Herb
-  on_use: 'heal(ctx, hp: 75..115)'
+  on_use: 'item_heal(ctx, hp: 75..115)'
   type: healing
   weight: 70
 - aegis_name: Blue_Herb
   buy: 60
   id: 510
   name: Blue Herb
-  on_use: 'heal(ctx, sp: 15..30)'
+  on_use: 'item_heal(ctx, sp: 15..30)'
   type: healing
   weight: 70
 - aegis_name: Green_Herb
@@ -92,77 +92,77 @@
   buy: 15
   id: 512
   name: Apple
-  on_use: 'heal(ctx, hp: 16..22)'
+  on_use: 'item_heal(ctx, hp: 16..22)'
   type: healing
   weight: 20
 - aegis_name: Banana
   buy: 15
   id: 513
   name: Banana
-  on_use: 'heal(ctx, hp: 17..21)'
+  on_use: 'item_heal(ctx, hp: 17..21)'
   type: healing
   weight: 20
 - aegis_name: Grape
   buy: 200
   id: 514
   name: Grape
-  on_use: 'heal(ctx, sp: 10..15)'
+  on_use: 'item_heal(ctx, sp: 10..15)'
   type: healing
   weight: 20
 - aegis_name: Carrot
   buy: 15
   id: 515
   name: Carrot
-  on_use: 'heal(ctx, hp: 18..20)'
+  on_use: 'item_heal(ctx, hp: 18..20)'
   type: healing
   weight: 20
 - aegis_name: Sweet_Potato
   buy: 15
   id: 516
   name: Potato
-  on_use: 'heal(ctx, hp: 15..23)'
+  on_use: 'item_heal(ctx, hp: 15..23)'
   type: healing
   weight: 20
 - aegis_name: Meat
   buy: 50
   id: 517
   name: Meat
-  on_use: 'heal(ctx, hp: 70..100)'
+  on_use: 'item_heal(ctx, hp: 70..100)'
   type: healing
   weight: 150
 - aegis_name: Honey
   buy: 500
   id: 518
   name: Honey
-  on_use: 'heal(ctx, hp: 70..100, sp: 20..40)'
+  on_use: 'item_heal(ctx, hp: 70..100, sp: 20..40)'
   type: healing
   weight: 100
 - aegis_name: Milk
   buy: 25
   id: 519
   name: Milk
-  on_use: 'heal(ctx, hp: 27..37)'
+  on_use: 'item_heal(ctx, hp: 27..37)'
   type: healing
   weight: 30
 - aegis_name: Leaflet_Of_Hinal
   buy: 150
   id: 520
   name: Hinalle Leaflet
-  on_use: 'heal(ctx, hp: 175..235)'
+  on_use: 'item_heal(ctx, hp: 175..235)'
   type: healing
   weight: 10
 - aegis_name: Leaflet_Of_Aloe
   buy: 360
   id: 521
   name: Aloe Leaflet
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 20
 - aegis_name: Fruit_Of_Mastela
   buy: 8500
   id: 522
   name: Mastela Fruit
-  on_use: 'heal(ctx, hp: 400..600)'
+  on_use: 'item_heal(ctx, hp: 400..600)'
   type: healing
   weight: 30
 - aegis_name: Holy_Water
@@ -191,7 +191,7 @@
   id: 526
   name: Royal Jelly
   on_use: |-
-    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = item_heal(ctx, hp: 325..405, sp: 40..60)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -204,56 +204,56 @@
   buy: 60
   id: 528
   name: Monster's Feed
-  on_use: 'heal(ctx, hp: 72..108)'
+  on_use: 'item_heal(ctx, hp: 72..108)'
   type: healing
   weight: 150
 - aegis_name: Candy
   buy: 10
   id: 529
   name: Candy
-  on_use: 'heal(ctx, hp: 45..65)'
+  on_use: 'item_heal(ctx, hp: 45..65)'
   type: healing
   weight: 30
 - aegis_name: Candy_Striper
   buy: 20
   id: 530
   name: Candy Cane
-  on_use: 'heal(ctx, hp: 105..145)'
+  on_use: 'item_heal(ctx, hp: 105..145)'
   type: healing
   weight: 40
 - aegis_name: Apple_Juice
   buy: 20
   id: 531
   name: Apple Juice
-  on_use: 'heal(ctx, hp: 25..35)'
+  on_use: 'item_heal(ctx, hp: 25..35)'
   type: healing
   weight: 40
 - aegis_name: Banana_Juice
   buy: 20
   id: 532
   name: Banana Juice
-  on_use: 'heal(ctx, hp: 26..34)'
+  on_use: 'item_heal(ctx, hp: 26..34)'
   type: healing
   weight: 40
 - aegis_name: Grape_Juice
   buy: 250
   id: 533
   name: Grape Juice
-  on_use: 'heal(ctx, sp: 15..25)'
+  on_use: 'item_heal(ctx, sp: 15..25)'
   type: healing
   weight: 40
 - aegis_name: Carrot_Juice
   buy: 20
   id: 534
   name: Carrot Juice
-  on_use: 'heal(ctx, hp: 27..33)'
+  on_use: 'item_heal(ctx, hp: 27..33)'
   type: healing
   weight: 40
 - aegis_name: Pumpkin
   buy: 15
   id: 535
   name: Pumpkin
-  on_use: 'heal(ctx, hp: 19)'
+  on_use: 'item_heal(ctx, hp: 19)'
   type: healing
   weight: 20
 - aegis_name: Ice_Cream
@@ -261,7 +261,7 @@
   id: 536
   name: Ice Cream
   on_use: |-
-    ctx = heal(ctx, hp: 105..145)
+    ctx = item_heal(ctx, hp: 105..145)
     ctx = sc_start(ctx, :sc_freeze, 10000, 0, 2500, 0)
     ctx
   type: healing
@@ -270,84 +270,84 @@
   buy: 1000
   id: 537
   name: Pet Food
-  on_use: 'heal(ctx, hp: 50..90)'
+  on_use: 'item_heal(ctx, hp: 50..90)'
   type: healing
   weight: 10
 - aegis_name: Well_Baked_Cookie
   buy: 1000
   id: 538
   name: Well-baked Cookie
-  on_use: 'heal(ctx, hp: 160..200)'
+  on_use: 'item_heal(ctx, hp: 160..200)'
   type: healing
   weight: 30
 - aegis_name: Piece_Of_Cake
   buy: 3000
   id: 539
   name: Piece of Cake
-  on_use: 'heal(ctx, hp: 270..330)'
+  on_use: 'item_heal(ctx, hp: 270..330)'
   type: healing
   weight: 100
 - aegis_name: Falcon's_Feed
   buy: 2000
   id: 540
   name: Falcon Food
-  on_use: 'heal(ctx, hp: 185..225)'
+  on_use: 'item_heal(ctx, hp: 185..225)'
   type: healing
   weight: 50
 - aegis_name: Pecopeco's_Feed
   buy: 3000
   id: 541
   name: PecoPeco Food
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 50
 - aegis_name: Festive_Cookie
   buy: 10
   id: 542
   name: Festival Cookie
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 10
 - aegis_name: Festive_Rainbow_Cake
   buy: 10
   id: 543
   name: Festival Rainbow Cake
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 10
 - aegis_name: Fish_Slice
   buy: 20
   id: 544
   name: Raw Fish
-  on_use: 'heal(ctx, hp: 25..60)'
+  on_use: 'item_heal(ctx, hp: 25..60)'
   type: healing
   weight: 30
 - aegis_name: Red_Slim_Potion
   buy: 150
   id: 545
   name: Condensed Red Potion
-  on_use: 'heal(ctx, hp: 45..65)'
+  on_use: 'item_heal(ctx, hp: 45..65)'
   type: healing
   weight: 20
 - aegis_name: Yellow_Slim_Potion
   buy: 600
   id: 546
   name: Condensed Yellow Potion
-  on_use: 'heal(ctx, hp: 175..235)'
+  on_use: 'item_heal(ctx, hp: 175..235)'
   type: healing
   weight: 30
 - aegis_name: White_Slim_Potion
   buy: 1650
   id: 547
   name: Condensed White Potion
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 50
 - aegis_name: Cheese
   buy: 2800
   id: 548
   name: Cheese
-  on_use: 'heal(ctx, sp: 10..15)'
+  on_use: 'item_heal(ctx, sp: 10..15)'
   type: healing
   weight: 50
 - aegis_name: Nice_Sweet_Potato
@@ -355,7 +355,7 @@
   id: 549
   name: Yam
   on_use: |-
-    ctx = heal(ctx, hp: 50..100)
+    ctx = item_heal(ctx, hp: 50..100)
     ctx = sc_start(ctx, :sc_stun, 3000, 0, 1500, 0)
     ctx
   type: healing
@@ -364,28 +364,28 @@
   buy: 10
   id: 550
   name: Rice Cake
-  on_use: 'heal(ctx, hp: 10..15)'
+  on_use: 'item_heal(ctx, hp: 10..15)'
   type: healing
   weight: 10
 - aegis_name: Shusi
   buy: 1
   id: 551
   name: Sushi
-  on_use: 'heal(ctx, hp: 50..60)'
+  on_use: 'item_heal(ctx, hp: 50..60)'
   type: healing
   weight: 50
 - aegis_name: KETUPAT
   buy: 1
   id: 552
   name: Ketupat
-  on_use: 'heal(ctx, hp: 70..90, sp: 20..30)'
+  on_use: 'item_heal(ctx, hp: 70..90, sp: 20..30)'
   type: healing
   weight: 10
 - aegis_name: Bun
   buy: 1
   id: 553
   name: Bao
-  on_use: 'heal(ctx, hp: 35..70)'
+  on_use: 'item_heal(ctx, hp: 35..70)'
   type: healing
   weight: 50
 - aegis_name: Mojji
@@ -393,7 +393,7 @@
   id: 554
   name: Mochi
   on_use: |-
-    ctx = heal(ctx, hp: 105..145)
+    ctx = item_heal(ctx, hp: 105..145)
     ctx = sc_start(ctx, :sc_stun, 3000, 0)
     ctx = sc_start(ctx, :sc_blind, 2000, 0, 1500, 0)
     ctx
@@ -403,77 +403,77 @@
   buy: 100
   id: 555
   name: Traditional Rice Cake
-  on_use: 'heal(ctx, hp: 105..145)'
+  on_use: 'item_heal(ctx, hp: 105..145)'
   type: healing
   weight: 20
 - aegis_name: Long_Rice_Cake
   buy: 10
   id: 556
   name: Rice Cake Stick
-  on_use: 'heal(ctx, hp: 20..25)'
+  on_use: 'item_heal(ctx, hp: 20..25)'
   type: healing
   weight: 10
 - aegis_name: Hash_Rice_Cake
   buy: 10
   id: 557
   name: Neatly Sliced Rice Cake
-  on_use: 'heal(ctx, hp: 25..30)'
+  on_use: 'item_heal(ctx, hp: 25..30)'
   type: healing
   weight: 10
 - aegis_name: Chocolate
   buy: 1
   id: 558
   name: Chocolate
-  on_use: 'heal(ctx, hp: 1, sp: 1)'
+  on_use: 'item_heal(ctx, hp: 1, sp: 1)'
   type: healing
   weight: 20
 - aegis_name: HandMade_Chocolate
   buy: 1
   id: 559
   name: Hand-made Chocolate
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: HandMade_Chocolate_
   buy: 5000
   id: 560
   name: Handmade White Chocolate
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: White_Chocolate
   buy: 5000
   id: 561
   name: White Chocolate
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Pizza
   buy: 100
   id: 562
   name: Doublecrust Swiss Fondue
-  on_use: 'heal(ctx, hp: 70..100)'
+  on_use: 'item_heal(ctx, hp: 70..100)'
   type: healing
   weight: 150
 - aegis_name: Pizza_01
   buy: 1200
   id: 563
   name: Doublecrust Swiss Fondue
-  on_use: 'heal(ctx, hp: 375..445)'
+  on_use: 'item_heal(ctx, hp: 375..445)'
   type: healing
   weight: 150
 - aegis_name: Rice_Ball
   buy: 1
   id: 564
   name: Rice Ball
-  on_use: 'heal(ctx, hp: 200)'
+  on_use: 'item_heal(ctx, hp: 200)'
   type: healing
   weight: 30
 - aegis_name: Vita500_Bottle
   buy: 580
   id: 565
   name: Vita500
-  on_use: 'heal(ctx, hp: 142..274)'
+  on_use: 'item_heal(ctx, hp: 142..274)'
   type: healing
   weight: 100
 - aegis_name: Tomyumkung
@@ -481,7 +481,7 @@
   id: 566
   name: Tom Yum Goong
   on_use: |-
-    ctx = heal(ctx, hp: 244..350, sp: 10..30)
+    ctx = item_heal(ctx, hp: 244..350, sp: 10..30)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -495,41 +495,41 @@
   buy: 500
   id: 567
   name: Shrimp
-  on_use: 'heal(ctx, hp: 117..192)'
+  on_use: 'item_heal(ctx, hp: 117..192)'
   type: healing
   weight: 40
 - aegis_name: Lemon
   buy: 60
   id: 568
   name: Lemon
-  on_use: 'heal(ctx, sp: 10..20)'
+  on_use: 'item_heal(ctx, sp: 10..20)'
   type: healing
   weight: 40
 - aegis_name: Novice_Potion
   id: 569
   name: Novice Potion
-  on_use: 'heal(ctx, hp: 44..66)'
+  on_use: 'item_heal(ctx, hp: 44..66)'
   type: healing
   weight: 10
 - aegis_name: Lucky_Candy
   buy: 10
   id: 570
   name: Lucky Candy
-  on_use: 'heal(ctx, hp: 45..65)'
+  on_use: 'item_heal(ctx, hp: 45..65)'
   type: healing
   weight: 30
 - aegis_name: Lucky_Candy_Cane
   buy: 20
   id: 571
   name: Lucky Candy Cane
-  on_use: 'heal(ctx, hp: 105..145)'
+  on_use: 'item_heal(ctx, hp: 105..145)'
   type: healing
   weight: 40
 - aegis_name: Lucky_Cookie
   buy: 1000
   id: 572
   name: Lucky Cookie
-  on_use: 'heal(ctx, hp: 160..200)'
+  on_use: 'item_heal(ctx, hp: 160..200)'
   type: healing
   weight: 30
 - aegis_name: Chocolate_Drink
@@ -537,7 +537,7 @@
   id: 573
   name: Chocolate Drink
   on_use: |-
-    ctx = heal(ctx, hp: 330..410, sp: 45..65)
+    ctx = item_heal(ctx, hp: 330..410, sp: 45..65)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -551,63 +551,63 @@
   buy: 20
   id: 574
   name: Egg
-  on_use: 'heal(ctx, hp: 33..42)'
+  on_use: 'item_heal(ctx, hp: 33..42)'
   type: healing
   weight: 30
 - aegis_name: Piece_Of_Cake_
   buy: 10
   id: 575
   name: 2nd Anniversary Cake
-  on_use: 'heal(ctx, hp: 270..330)'
+  on_use: 'item_heal(ctx, hp: 270..330)'
   type: healing
   weight: 100
 - aegis_name: Prickly_Fruit
   buy: 540
   id: 576
   name: Prickly Fruit
-  on_use: 'heal(ctx, hp: 150..300, sp: 20..30)'
+  on_use: 'item_heal(ctx, hp: 150..300, sp: 20..30)'
   type: healing
   weight: 60
 - aegis_name: Grain
   buy: 200
   id: 577
   name: Bag of Grain
-  on_use: 'heal(ctx, hp: 60..70)'
+  on_use: 'item_heal(ctx, hp: 60..70)'
   type: healing
   weight: 20
 - aegis_name: Strawberry
   buy: 200
   id: 578
   name: Strawberry
-  on_use: 'heal(ctx, sp: 16..28)'
+  on_use: 'item_heal(ctx, sp: 16..28)'
   type: healing
   weight: 20
 - aegis_name: Delicious_Fish
   buy: 700
   id: 579
   name: Fresh Fish
-  on_use: 'heal(ctx, hp: 100..150)'
+  on_use: 'item_heal(ctx, hp: 100..150)'
   type: healing
   weight: 20
 - aegis_name: Bread
   buy: 150
   id: 580
   name: Bread
-  on_use: 'heal(ctx, hp: 50..90)'
+  on_use: 'item_heal(ctx, hp: 50..90)'
   type: healing
   weight: 20
 - aegis_name: Mushroom
   buy: 40
   id: 581
   name: Edible Mushroom
-  on_use: 'heal(ctx, hp: 20..30)'
+  on_use: 'item_heal(ctx, hp: 20..30)'
   type: healing
   weight: 20
 - aegis_name: Orange
   buy: 300
   id: 582
   name: Orange
-  on_use: 'heal(ctx, hp: 10..20, sp: 10..20)'
+  on_use: 'item_heal(ctx, hp: 10..20, sp: 10..20)'
   type: healing
   weight: 20
 - aegis_name: KETUPAT_
@@ -615,7 +615,7 @@
   id: 583
   name: Ketupat Sayur
   on_use: |-
-    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = item_heal(ctx, hp: 325..405, sp: 40..60)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -629,7 +629,7 @@
   buy: 100
   id: 584
   name: Fish Cake Soup
-  on_use: 'heal(ctx, hp: 40..70)'
+  on_use: 'item_heal(ctx, hp: 40..70)'
   type: healing
   weight: 60
 - aegis_name: Wurst
@@ -637,7 +637,7 @@
   id: 585
   name: Brusti
   on_use: |-
-    ctx = heal(ctx, hp: 15..20)
+    ctx = item_heal(ctx, hp: 15..20)
     ctx = itemskill(ctx, 74, level: 3)
     ctx
   type: delay_consume
@@ -646,42 +646,42 @@
   buy: 20
   id: 586
   name: Mother's Cake
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 100
 - aegis_name: Prickly_Fruit_
   buy: 880
   id: 587
   name: Red Prickly Fruit
-  on_use: 'heal(ctx, hp: 270..330, sp: 20..30)'
+  on_use: 'item_heal(ctx, hp: 270..330, sp: 20..30)'
   type: healing
   weight: 60
 - aegis_name: Spaghetti
   buy: 100
   id: 588
   name: Spaghetti
-  on_use: 'heal(ctx, hp: 40..70)'
+  on_use: 'item_heal(ctx, hp: 40..70)'
   type: healing
   weight: 100
 - aegis_name: Pizza_02
   buy: 1200
   id: 589
   name: Pizza
-  on_use: 'heal(ctx, hp: 375..445)'
+  on_use: 'item_heal(ctx, hp: 375..445)'
   type: healing
   weight: 150
 - aegis_name: Brezel_
   buy: 2
   id: 590
   name: Pretzel
-  on_use: 'heal(ctx, hp: 50..90)'
+  on_use: 'item_heal(ctx, hp: 50..90)'
   type: healing
   weight: 20
 - aegis_name: Caviar_Pancake
   id: 591
   name: Caviar Pancake
   on_use: |-
-    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = item_heal(ctx, hp: 325..405, sp: 40..60)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -695,7 +695,7 @@
   id: 592
   name: Jam Pancake
   on_use: |-
-    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = item_heal(ctx, hp: 325..405, sp: 40..60)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -709,7 +709,7 @@
   id: 593
   name: Honey Pancake
   on_use: |-
-    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = item_heal(ctx, hp: 325..405, sp: 40..60)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -723,7 +723,7 @@
   id: 594
   name: Sour-Cream Pancake
   on_use: |-
-    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = item_heal(ctx, hp: 325..405, sp: 40..60)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -737,7 +737,7 @@
   id: 595
   name: Mushroom Pancake
   on_use: |-
-    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = item_heal(ctx, hp: 325..405, sp: 40..60)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -751,14 +751,14 @@
   buy: 20
   id: 596
   name: Cute Strawberry-Choco
-  on_use: 'heal(ctx, sp: 1..100)'
+  on_use: 'item_heal(ctx, sp: 1..100)'
   type: healing
   weight: 100
 - aegis_name: Lovely_Choco_Tart
   buy: 20
   id: 597
   name: Lovely Choco-Tart
-  on_use: 'heal(ctx, hp: 10..400)'
+  on_use: 'item_heal(ctx, hp: 10..400)'
   type: healing
   weight: 100
 - aegis_name: Light_Red_Pot
@@ -767,7 +767,7 @@
   name: Light Red Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 45..65)'
+  on_use: 'item_heal(ctx, hp: 45..65)'
   type: healing
   weight: 10
 - aegis_name: Light_Orange_Pot
@@ -776,7 +776,7 @@
   name: Light Orange Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 105..145)'
+  on_use: 'item_heal(ctx, hp: 105..145)'
   type: healing
   weight: 10
 - aegis_name: Wing_Of_Fly
@@ -1782,7 +1782,7 @@
   name: Light Yellow Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 175..235)'
+  on_use: 'item_heal(ctx, hp: 175..235)'
   type: healing
   weight: 10
 - aegis_name: Light_White_Pot
@@ -1791,7 +1791,7 @@
   name: Light White Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 10
 - aegis_name: Light_Blue_Pot
@@ -1800,7 +1800,7 @@
   name: Light Blue Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 40..60)'
+  on_use: 'item_heal(ctx, sp: 40..60)'
   type: healing
   weight: 10
 - aegis_name: Siege_White_Potion
@@ -1808,7 +1808,7 @@
   name: WoE White Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 400..500)'
+  on_use: 'item_heal(ctx, hp: 400..500)'
   type: healing
   weight: 100
 - aegis_name: Siege_Blue_Potion
@@ -1816,69 +1816,69 @@
   name: WoE Blue Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 50..70)'
+  on_use: 'item_heal(ctx, sp: 50..70)'
   type: healing
   weight: 100
 - aegis_name: Iris
   id: 11505
   name: Iris
-  on_use: 'heal(ctx, sp: 150)'
+  on_use: 'item_heal(ctx, sp: 150)'
   type: healing
   weight: 30
 - aegis_name: Fanta_Orange
   buy: 800
   id: 11506
   name: Fanta Orange
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 10
 - aegis_name: Fanta_Grape
   buy: 800
   id: 11507
   name: Fanta Grape
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 10
 - aegis_name: Karada_Meguri_Tea
   buy: 800
   id: 11508
   name: Karada Meguricha
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Royal_Milk_Tea
   buy: 800
   id: 11509
   name: Black Tea Kochakaden
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Coke_Zero
   buy: 800
   id: 11510
   name: Coca Cola Zero
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Coke_No_Cal
   buy: 800
   id: 11511
   name: Diet Coca Cola
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Coca_Cola
   buy: 800
   id: 11512
   name: Coca Cola
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Protect_Neck_Candy
   buy: 250
   id: 11513
   name: Protect Neck Candy
-  on_use: 'heal(ctx, hp: 5..25)'
+  on_use: 'item_heal(ctx, hp: 5..25)'
   type: healing
   weight: 1
 - aegis_name: Enriched_Slim_Pot
@@ -1886,7 +1886,7 @@
   name: Enriched Slim Pot
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 335..415)'
+  on_use: 'item_heal(ctx, hp: 335..415)'
   type: healing
   weight: 50
 - aegis_name: Coconut
@@ -1899,14 +1899,14 @@
   buy: 15
   id: 11516
   name: Asai Fruit
-  on_use: 'heal(ctx, hp: 16..22)'
+  on_use: 'item_heal(ctx, hp: 16..22)'
   type: healing
   weight: 20
 - aegis_name: Puri_Potion
   buy: 20
   id: 11517
   name: Puri Potion
-  on_use: 'heal(ctx, hp: 400..600)'
+  on_use: 'item_heal(ctx, hp: 400..600)'
   type: healing
   weight: 100
 - aegis_name: N_Blue_Potion
@@ -1914,14 +1914,14 @@
   name: Blue Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 5)'
+  on_use: 'item_heal(ctx, sp: 5)'
   type: healing
   weight: 50
 - aegis_name: Beef_Toast
   buy: 1200
   id: 11519
   name: Beef Toast
-  on_use: 'heal(ctx, hp: 170..250)'
+  on_use: 'item_heal(ctx, hp: 170..250)'
   type: healing
   weight: 40
 - aegis_name: Mora_Mandarin
@@ -1929,7 +1929,7 @@
   equip_level_min: 100
   id: 11520
   name: Mora Mandar
-  on_use: 'heal(ctx, sp: 50..80)'
+  on_use: 'item_heal(ctx, sp: 50..80)'
   type: healing
   weight: 20
 - aegis_name: Pingui_Berry_Juice
@@ -1937,7 +1937,7 @@
   equip_level_min: 100
   id: 11521
   name: Pingui Berry Juice
-  on_use: 'heal(ctx, hp: 400..800, sp: 50..80)'
+  on_use: 'item_heal(ctx, hp: 400..800, sp: 50..80)'
   type: healing
   weight: 50
 - aegis_name: Red_Raffle_Sap
@@ -1945,7 +1945,7 @@
   equip_level_min: 100
   id: 11522
   name: Red Raffle Sap
-  on_use: 'heal(ctx, hp: 400..800)'
+  on_use: 'item_heal(ctx, hp: 400..800)'
   type: healing
   weight: 100
 - aegis_name: Yellow_Raffle_Sap
@@ -1953,7 +1953,7 @@
   equip_level_min: 110
   id: 11523
   name: Yellow Raffle Sap
-  on_use: 'heal(ctx, hp: 600..1000)'
+  on_use: 'item_heal(ctx, hp: 600..1000)'
   type: healing
   weight: 120
 - aegis_name: White_Raffle_Sap
@@ -1961,7 +1961,7 @@
   equip_level_min: 120
   id: 11524
   name: White Raffle Sap
-  on_use: 'heal(ctx, hp: 800..1200)'
+  on_use: 'item_heal(ctx, hp: 800..1200)'
   type: healing
   weight: 140
 - aegis_name: Mora_Hip_Tea
@@ -1969,7 +1969,7 @@
   equip_level_min: 120
   id: 11525
   name: Mora Hip Tea
-  on_use: 'heal(ctx, hp: 1500..2000)'
+  on_use: 'item_heal(ctx, hp: 1500..2000)'
   type: healing
   weight: 150
 - aegis_name: Rafflecino
@@ -1977,70 +1977,70 @@
   equip_level_min: 120
   id: 11526
   name: Rafflecino
-  on_use: 'heal(ctx, sp: 120..160)'
+  on_use: 'item_heal(ctx, sp: 120..160)'
   type: healing
   weight: 100
 - aegis_name: Baklava
   buy: 3500
   id: 11527
   name: Baklava
-  on_use: 'heal(ctx, hp: 1200, sp: 440)'
+  on_use: 'item_heal(ctx, hp: 1200, sp: 440)'
   type: healing
   weight: 600
 - aegis_name: Kanafeh
   buy: 1500
   id: 11528
   name: Kanafeh
-  on_use: 'heal(ctx, hp: 300, sp: 240)'
+  on_use: 'item_heal(ctx, hp: 300, sp: 240)'
   type: healing
   weight: 200
 - aegis_name: MAAMOUL_
   buy: 500
   id: 11529
   name: Maamoul
-  on_use: 'heal(ctx, hp: 120, sp: 60)'
+  on_use: 'item_heal(ctx, hp: 120, sp: 60)'
   type: healing
   weight: 100
 - aegis_name: Jujube
   buy: 10
   id: 11530
   name: Jujube
-  on_use: 'heal(ctx, hp: 30)'
+  on_use: 'item_heal(ctx, hp: 30)'
   type: healing
   weight: 100
 - aegis_name: Coffee
   buy: 10
   id: 11531
   name: Coffee
-  on_use: 'heal(ctx, sp: 10)'
+  on_use: 'item_heal(ctx, sp: 10)'
   type: healing
   weight: 100
 - aegis_name: Nasi_Goreng
   buy: 15
   id: 11532
   name: Nasi Goreng
-  on_use: 'heal(ctx, hp: 17..23)'
+  on_use: 'item_heal(ctx, hp: 17..23)'
   type: healing
   weight: 20
 - aegis_name: Satay
   buy: 15
   id: 11533
   name: Satay
-  on_use: 'heal(ctx, hp: 17..23)'
+  on_use: 'item_heal(ctx, hp: 17..23)'
   type: healing
   weight: 20
 - aegis_name: Coco_Juice
   buy: 20
   id: 11534
   name: Coconut Juice
-  on_use: 'heal(ctx, hp: 17..23)'
+  on_use: 'item_heal(ctx, hp: 17..23)'
   type: healing
   weight: 50
 - aegis_name: Almond_Chocolate
   buy: 190
   id: 11535
   name: Almond Chocolate
-  on_use: 'heal(ctx, sp: 8..16)'
+  on_use: 'item_heal(ctx, sp: 8..16)'
   type: healing
   weight: 200
 - aegis_name: Cat_Hard_Biscuit
@@ -2057,69 +2057,69 @@
   buy: 20
   id: 11538
   name: Fresh Octopus Legs
-  on_use: 'heal(ctx, hp: 35..60, sp: 5..10)'
+  on_use: 'item_heal(ctx, hp: 35..60, sp: 5..10)'
   type: healing
   weight: 30
 - aegis_name: Athale_Choco
   buy: 1
   id: 11539
   name: Athale Choco
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Shyai_Choco
   buy: 1
   id: 11540
   name: Shyai Choco
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Mid_Choco
   buy: 1
   id: 11541
   name: Mid Choco
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Zonda_Choco
   buy: 1
   id: 11542
   name: Zonda Choco
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Goedo_Choco
   buy: 1
   id: 11543
   name: Goedo Choco
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Huike_Choco
   buy: 1
   id: 11544
   name: Huike Choco
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Rune_Choco
   buy: 1
   id: 11545
   name: Rune Choco
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Pope_Choco
   buy: 1
   id: 11546
   name: Pope Choco
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Woe_Violet_Potion
   id: 11547
   name: Siege Purple Potion
-  on_use: 'heal(ctx, hp: 500..700, sp: 60..85)'
+  on_use: 'item_heal(ctx, hp: 500..700, sp: 60..85)'
   type: healing
   weight: 80
 - aegis_name: Woe_White_Potion
@@ -2147,7 +2147,7 @@
   no_guild_storage: true
   no_trade: true
   on_use: |-
-    ctx = heal(ctx, hp: 20..30)
+    ctx = item_heal(ctx, hp: 20..30)
     ctx = sc_start(ctx, :sc_strfood, 180000, 1)
     ctx
   type: healing
@@ -2158,7 +2158,7 @@
   no_guild_storage: true
   no_trade: true
   on_use: |-
-    ctx = heal(ctx, hp: 20..30)
+    ctx = item_heal(ctx, hp: 20..30)
     ctx = sc_start(ctx, :sc_agifood, 180000, 1)
     ctx
   type: healing
@@ -2169,7 +2169,7 @@
   no_guild_storage: true
   no_trade: true
   on_use: |-
-    ctx = heal(ctx, hp: 20..30)
+    ctx = item_heal(ctx, hp: 20..30)
     ctx = sc_start(ctx, :sc_vitfood, 180000, 1)
     ctx
   type: healing
@@ -2180,7 +2180,7 @@
   no_guild_storage: true
   no_trade: true
   on_use: |-
-    ctx = heal(ctx, hp: 20..30)
+    ctx = item_heal(ctx, hp: 20..30)
     ctx = sc_start(ctx, :sc_dexfood, 180000, 1)
     ctx
   type: healing
@@ -2188,33 +2188,33 @@
 - aegis_name: Red_Potion_RG
   id: 11555
   name: Red Potion RG
-  on_use: 'heal(ctx, hp: 325)'
+  on_use: 'item_heal(ctx, hp: 325)'
   type: healing
   weight: 40
 - aegis_name: Blue_Potion_RG
   id: 11556
   name: RG Blue Potion
-  on_use: 'heal(ctx, sp: 40..60)'
+  on_use: 'item_heal(ctx, sp: 40..60)'
   type: healing
   weight: 90
 - aegis_name: TE_White_Potion
   buy: 200
   id: 11557
   name: TE White Potion
-  on_use: 'heal(ctx, hp: 325)'
+  on_use: 'item_heal(ctx, hp: 325)'
   type: healing
   weight: 300
 - aegis_name: TE_White_Slim_Potion
   buy: 275
   id: 11558
   name: TE White Slim Potion
-  on_use: 'heal(ctx, hp: 325)'
+  on_use: 'item_heal(ctx, hp: 325)'
   type: healing
   weight: 100
 - aegis_name: Pie_Fruit
   id: 11562
   name: Pie Fruit
-  on_use: 'heal(ctx, hp: 65..90, sp: 35..40)'
+  on_use: 'item_heal(ctx, hp: 65..90, sp: 35..40)'
   type: healing
   weight: 30
 - aegis_name: Hot_Tee
@@ -2227,7 +2227,7 @@
   buy: 10
   id: 11564
   name: Sweet Canape
-  on_use: 'heal(ctx, hp: 1000)'
+  on_use: 'item_heal(ctx, hp: 1000)'
   type: usable
   weight: 20
 - aegis_name: White_Potion_B
@@ -2236,7 +2236,7 @@
   name: White Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 150
 - aegis_name: Yellow_Potion_B
@@ -2244,7 +2244,7 @@
   name: '[Not For Sale] Yellow Potion'
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 175..235)'
+  on_use: 'item_heal(ctx, hp: 175..235)'
   type: healing
   weight: 130
 - aegis_name: Novice_Potion_B
@@ -2253,7 +2253,7 @@
   name: Novice Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 44..66)'
+  on_use: 'item_heal(ctx, hp: 44..66)'
   type: healing
 - aegis_name: Red_Slim_Potion_B
   buy: 10
@@ -2261,7 +2261,7 @@
   name: Red Slim Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 45..65)'
+  on_use: 'item_heal(ctx, hp: 45..65)'
   type: healing
   weight: 20
 - aegis_name: Orange_Potion_B
@@ -2269,7 +2269,7 @@
   name: '[Not For Sale] Orange Potion'
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 105..145)'
+  on_use: 'item_heal(ctx, hp: 105..145)'
   type: healing
   weight: 100
 - aegis_name: Red_Potion_B
@@ -2277,7 +2277,7 @@
   name: '[Not For Sale] Red Potion'
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 45..65)'
+  on_use: 'item_heal(ctx, hp: 45..65)'
   type: healing
   weight: 70
 - aegis_name: Green_Potion_B
@@ -2299,7 +2299,7 @@
   name: '[Not For Sale] Blue Potion'
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 40..60)'
+  on_use: 'item_heal(ctx, sp: 40..60)'
   type: healing
   weight: 150
 - aegis_name: White_Slim_Potion_B
@@ -2308,7 +2308,7 @@
   name: White Slim Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 50
 - aegis_name: Yellow_Slim_Potion_B
@@ -2317,7 +2317,7 @@
   name: Yellow Slim Potion
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 175..235)'
+  on_use: 'item_heal(ctx, hp: 175..235)'
   type: healing
   weight: 30
 - aegis_name: Rice_Ball_B
@@ -2326,7 +2326,7 @@
   name: Rice Ball
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 200)'
+  on_use: 'item_heal(ctx, hp: 200)'
   type: healing
   weight: 30
 - aegis_name: Candy_Striper_B
@@ -2335,7 +2335,7 @@
   name: Candy Bar
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 105..145)'
+  on_use: 'item_heal(ctx, hp: 105..145)'
   type: healing
   weight: 40
 - aegis_name: Candy_B
@@ -2344,7 +2344,7 @@
   name: Candy
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 45..65)'
+  on_use: 'item_heal(ctx, hp: 45..65)'
   type: healing
   weight: 30
 - aegis_name: Piece_Of_Cake_B
@@ -2353,7 +2353,7 @@
   name: Piece of Cake
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 270..330)'
+  on_use: 'item_heal(ctx, hp: 270..330)'
   type: healing
   weight: 100
 - aegis_name: Well_Baked_Cookie_B
@@ -2362,7 +2362,7 @@
   name: Well-baked Cookie
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 160..200)'
+  on_use: 'item_heal(ctx, hp: 160..200)'
   type: healing
   weight: 30
 - aegis_name: Chocolate_Drink_B
@@ -2372,7 +2372,7 @@
   no_guild_storage: true
   no_trade: true
   on_use: |-
-    ctx = heal(ctx, hp: 330..410, sp: 45..65)
+    ctx = item_heal(ctx, hp: 330..410, sp: 45..65)
     ctx = sc_end(ctx, :sc_poison)
     ctx = sc_end(ctx, :sc_silence)
     ctx = sc_end(ctx, :sc_blind)
@@ -2388,7 +2388,7 @@
   name: White Chocolate
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: HandMade_Chocolate_B
@@ -2397,7 +2397,7 @@
   name: Hand-made Chocolate
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: HandMade_Chocolate_B_
@@ -2406,7 +2406,7 @@
   name: Hand-made White Chocolate
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 50, sp: 50)'
+  on_use: 'item_heal(ctx, hp: 50, sp: 50)'
   type: healing
   weight: 80
 - aegis_name: Chocolate_B
@@ -2415,14 +2415,14 @@
   name: Chocolate
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 1, sp: 1)'
+  on_use: 'item_heal(ctx, hp: 1, sp: 1)'
   type: healing
   weight: 20
 - aegis_name: Strawberry_
   buy: 10
   id: 11588
   name: Fresh Strawberries
-  on_use: 'heal(ctx, hp: 32..56, sp: 16..28)'
+  on_use: 'item_heal(ctx, hp: 32..56, sp: 16..28)'
   type: healing
   weight: 10
 - aegis_name: Iceflake
@@ -2436,7 +2436,7 @@
   buy: 5000
   id: 11590
   name: Skewer No.5
-  on_use: 'heal(ctx, hp: 760..810, sp: 10)'
+  on_use: 'item_heal(ctx, hp: 760..810, sp: 10)'
   type: healing
   weight: 300
 - aegis_name: Trance_Candy_R
@@ -2467,7 +2467,7 @@
   buy: 20
   id: 11596
   name: Blood In Skull
-  on_use: 'heal(ctx, hp: 600..800)'
+  on_use: 'item_heal(ctx, hp: 600..800)'
   type: healing
   weight: 50
 - aegis_name: Iron_Bug
@@ -2498,7 +2498,7 @@
   id: 11601
   name: Delicious Anchovy
   on_use: |-
-    ctx = heal(ctx, hp: 30..46)
+    ctx = item_heal(ctx, hp: 30..46)
     ctx = specialeffect2(ctx, :heal3)
     ctx
   type: healing
@@ -2508,7 +2508,7 @@
   id: 11602
   name: Catnip Fruit
   on_use: |-
-    ctx = heal(ctx, hp: 36..40)
+    ctx = item_heal(ctx, hp: 36..40)
     ctx = specialeffect2(ctx, :heal3)
     ctx
   type: healing
@@ -2530,7 +2530,7 @@
 - aegis_name: Cookies_Bat
   id: 11605
   name: Cookie Bat
-  on_use: 'heal(ctx, hp: 50..100)'
+  on_use: 'item_heal(ctx, hp: 50..100)'
   type: healing
   weight: 30
 - aegis_name: Light_White_Pot_
@@ -2538,7 +2538,7 @@
   name: '[Not for Sale] Light White Potion'
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 325)'
+  on_use: 'item_heal(ctx, hp: 325)'
   type: healing
   weight: 10
 - aegis_name: Crepe
@@ -2558,31 +2558,31 @@
 - aegis_name: Chocolate_Egg
   id: 11608
   name: Chocolate Egg
-  on_use: 'heal(ctx, hp: 325..405)'
+  on_use: 'item_heal(ctx, hp: 325..405)'
   type: healing
   weight: 50
 - aegis_name: Yummy_Cookie_Egg
   id: 11609
   name: Tasty Cookie Egg
-  on_use: 'heal(ctx, sp: 40..60)'
+  on_use: 'item_heal(ctx, sp: 40..60)'
   type: healing
   weight: 50
 - aegis_name: Sweet_Melon
   id: 11610
   name: Sweet Melon
-  on_use: 'heal(ctx, hp: 350)'
+  on_use: 'item_heal(ctx, hp: 350)'
   type: healing
   weight: 50
 - aegis_name: Pop_Corn
   id: 11611
   name: Popcorn
-  on_use: 'heal(ctx, hp: 235)'
+  on_use: 'item_heal(ctx, hp: 235)'
   type: healing
   weight: 30
 - aegis_name: Aromatic_Pop_Corn
   id: 11612
   name: Aromatic Popcorn
-  on_use: 'heal(ctx, hp: 800)'
+  on_use: 'item_heal(ctx, hp: 800)'
   type: healing
   weight: 50
 - aegis_name: Harvest_Cookie
@@ -2590,7 +2590,7 @@
   name: Harvest Biscuit
   on_use: |-
     ctx = percent_heal(ctx, hp: 3)
-    ctx = heal(ctx, sp: 100)
+    ctx = item_heal(ctx, sp: 100)
     ctx
   type: healing
   weight: 30
@@ -2599,7 +2599,7 @@
   name: Fresh Milk
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 27..37)'
+  on_use: 'item_heal(ctx, hp: 27..37)'
   type: healing
   weight: 30
 - aegis_name: Sweet_Potato_
@@ -2607,14 +2607,14 @@
   name: Sweet Potato
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 15..23)'
+  on_use: 'item_heal(ctx, hp: 15..23)'
   type: healing
   weight: 20
 - aegis_name: Yummy_Meat
   buy: 1400
   id: 11616
   name: Delicious Meat
-  on_use: 'heal(ctx, hp: 100..150)'
+  on_use: 'item_heal(ctx, hp: 100..150)'
   type: healing
   weight: 50
 - aegis_name: Silvervine_Choco
@@ -2633,7 +2633,7 @@
   equip_level_min: 60
   id: 11621
   name: Red Syrup
-  on_use: 'heal(ctx, hp: 325)'
+  on_use: 'item_heal(ctx, hp: 325)'
   type: healing
   weight: 70
 - aegis_name: High_YelloPotion
@@ -2641,7 +2641,7 @@
   equip_level_min: 60
   id: 11622
   name: Yellow Syrup
-  on_use: 'heal(ctx, hp: 900)'
+  on_use: 'item_heal(ctx, hp: 900)'
   type: healing
   weight: 100
 - aegis_name: High_WhitePotion
@@ -2649,7 +2649,7 @@
   equip_level_min: 60
   id: 11623
   name: White Syrup
-  on_use: 'heal(ctx, hp: 1800)'
+  on_use: 'item_heal(ctx, hp: 1800)'
   type: healing
   weight: 140
 - aegis_name: High_BluePotion
@@ -2657,13 +2657,13 @@
   equip_level_min: 60
   id: 11624
   name: Blue Syrup
-  on_use: 'heal(ctx, sp: 180)'
+  on_use: 'item_heal(ctx, sp: 180)'
   type: healing
   weight: 100
 - aegis_name: Gourmet_Popcorn
   id: 11625
   name: Gourmet Butter Popcorn
-  on_use: 'heal(ctx, sp: 20)'
+  on_use: 'item_heal(ctx, sp: 20)'
   type: healing
   weight: 40
 - aegis_name: Kings_Melon_5
@@ -2678,7 +2678,7 @@
   name: High Quality Beef Jerky
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 1500)'
+  on_use: 'item_heal(ctx, hp: 1500)'
   type: healing
   weight: 1
 - aegis_name: Fleshy_Larva
@@ -2687,7 +2687,7 @@
   name: Fleshy Larva
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 140)'
+  on_use: 'item_heal(ctx, sp: 140)'
   type: healing
   weight: 1
 - aegis_name: Acorn_Chocoball
@@ -2723,7 +2723,7 @@
   name: New Year Wind Rice Cake
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 1500)'
+  on_use: 'item_heal(ctx, hp: 1500)'
   type: healing
   weight: 1
 - aegis_name: 2401_ev_Yugwa
@@ -2732,7 +2732,7 @@
   name: New Year Yugwa
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 140)'
+  on_use: 'item_heal(ctx, sp: 140)'
   type: healing
   weight: 1
 - aegis_name: 2401_ev_RedLin
@@ -2746,7 +2746,7 @@
   name: Lime Soda
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 1800)'
+  on_use: 'item_heal(ctx, hp: 1800)'
   type: healing
   weight: 1
 - aegis_name: 24_S_Ev_Berry_Soda
@@ -2755,7 +2755,7 @@
   name: Berry Soda
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 180)'
+  on_use: 'item_heal(ctx, sp: 180)'
   type: healing
   weight: 1
 - aegis_name: 24_A_Ev_Choco_C
@@ -2764,7 +2764,7 @@
   name: Symposium Choco Egg Cookie
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 2650)'
+  on_use: 'item_heal(ctx, hp: 2650)'
   type: healing
   weight: 1
 - aegis_name: 24_A_Ev_Egg_C
@@ -2773,7 +2773,7 @@
   name: Symposium Egg Cookie
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 260)'
+  on_use: 'item_heal(ctx, sp: 260)'
   type: healing
   weight: 1
 - aegis_name: E_Deli_BBQ
@@ -2782,7 +2782,7 @@
   name: Well Roasted Meat
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 1750)'
+  on_use: 'item_heal(ctx, hp: 1750)'
   type: healing
   weight: 1
 - aegis_name: E_Leather_Bottle
@@ -2791,14 +2791,14 @@
   name: Leather Water Bottle
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 160)'
+  on_use: 'item_heal(ctx, sp: 160)'
   type: healing
   weight: 1
 - aegis_name: Girl_Bunch_Of_Flower
   buy: 20
   id: 11701
   name: Girl's Bouquet
-  on_use: 'heal(ctx, hp: 105..145)'
+  on_use: 'item_heal(ctx, hp: 105..145)'
   type: healing
   weight: 50
 - aegis_name: Moon_Cookie
@@ -2809,76 +2809,76 @@
 - aegis_name: Mysterious_Blood
   id: 11703
   name: Mystery Blood
-  on_use: 'heal(ctx, sp: 25..35)'
+  on_use: 'item_heal(ctx, sp: 25..35)'
   type: healing
   weight: 10
 - aegis_name: KETUPAT_F
   buy: 2
   id: 11704
   name: Ketupat
-  on_use: 'heal(ctx, hp: 70..90)'
+  on_use: 'item_heal(ctx, hp: 70..90)'
   type: healing
   weight: 10
 - aegis_name: Special_White_Potion
   buy: 1
   id: 11705
   name: Children's Potion
-  on_use: 'heal(ctx, hp: 425)'
+  on_use: 'item_heal(ctx, hp: 425)'
   type: healing
   weight: 10
 - aegis_name: Steak
   buy: 1
   id: 11706
   name: Steak
-  on_use: 'heal(ctx, hp: 700..1000)'
+  on_use: 'item_heal(ctx, hp: 700..1000)'
   type: healing
   weight: 200
 - aegis_name: Roasted_Beef
   buy: 1
   id: 11707
   name: Roast Beef
-  on_use: 'heal(ctx, sp: 100..200)'
+  on_use: 'item_heal(ctx, sp: 100..200)'
   type: healing
   weight: 200
 - aegis_name: Fore_Flank_Sirloin
   buy: 20
   id: 11708
   name: Fore Flank Sirloin
-  on_use: 'heal(ctx, hp: 30..50, sp: 1..5)'
+  on_use: 'item_heal(ctx, hp: 30..50, sp: 1..5)'
   type: healing
   weight: 100
 - aegis_name: Fanta_Zero_Lemon
   buy: 800
   id: 11709
   name: Fanta Zero Lemon
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Sakura_Mist
   buy: 800
   id: 11710
   name: Sakura Mist
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Sakura_Milk_Tea
   buy: 800
   id: 11711
   name: Sakura Milk Tea
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: First_Leaf_Tea
   buy: 800
   id: 11712
   name: Flower
-  on_use: 'heal(ctx, hp: 50..70, sp: 10..12)'
+  on_use: 'item_heal(ctx, hp: 50..70, sp: 10..12)'
   type: healing
   weight: 100
 - aegis_name: Julia's_Candy
   id: 11713
   name: Julia's Candy
-  on_use: 'heal(ctx, hp: 40..45)'
+  on_use: 'item_heal(ctx, hp: 40..45)'
   type: healing
   weight: 30
 - aegis_name: Cold_Scroll_2_5
@@ -8216,7 +8216,7 @@
   buy: 2
   id: 12711
   name: Pretzel
-  on_use: 'heal(ctx, hp: 50..90)'
+  on_use: 'item_heal(ctx, hp: 50..90)'
   type: healing
   weight: 100
 - aegis_name: Green_Beer
@@ -45686,7 +45686,7 @@
   equip_level_min: 120
   id: 1100003
   name: Concentrated Red Potion
-  on_use: 'heal(ctx, hp: 655..675)'
+  on_use: 'item_heal(ctx, hp: 655..675)'
   type: healing
   weight: 2
 - aegis_name: Concentrated_B_P
@@ -45694,7 +45694,7 @@
   equip_level_min: 120
   id: 1100004
   name: Concentrated Blue Potion
-  on_use: 'heal(ctx, sp: 340..360)'
+  on_use: 'item_heal(ctx, sp: 340..360)'
   type: healing
   weight: 2
 - aegis_name: Concentrated_G_P
@@ -45702,7 +45702,7 @@
   equip_level_min: 180
   id: 1100005
   name: Concentrated Gold Potion
-  on_use: 'heal(ctx, hp: 2730..2750)'
+  on_use: 'item_heal(ctx, hp: 2730..2750)'
   type: healing
   weight: 2
 - aegis_name: Ep19_Dry_Icegangu
@@ -45710,7 +45710,7 @@
   equip_level_min: 200
   id: 1100006
   name: Dried Ice Gangu
-  on_use: 'heal(ctx, hp: 1925)'
+  on_use: 'item_heal(ctx, hp: 1925)'
   type: healing
   weight: 5
 - aegis_name: Fried_Sausage
@@ -45740,7 +45740,7 @@
   name: Poring Kombucha
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 350)'
+  on_use: 'item_heal(ctx, sp: 350)'
   type: healing
   weight: 5
 - aegis_name: Monster_Bread
@@ -45749,7 +45749,7 @@
   name: Monster Bread
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 4500)'
+  on_use: 'item_heal(ctx, hp: 4500)'
   type: healing
   weight: 3
 - aegis_name: Monster_Bread_
@@ -45758,7 +45758,7 @@
   name: Forbidden Monster Bread
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 450)'
+  on_use: 'item_heal(ctx, sp: 450)'
   type: healing
   weight: 3
 - aegis_name: South_Pork_Slice
@@ -45779,7 +45779,7 @@
   name: Fire-grilled Fish
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 40)'
+  on_use: 'item_heal(ctx, sp: 40)'
   type: healing
   weight: 2
 - aegis_name: Grilled_Veg_Skewers_
@@ -45797,7 +45797,7 @@
   name: Night Market Bingsu
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 150)'
+  on_use: 'item_heal(ctx, sp: 150)'
   type: healing
   weight: 3
 - aegis_name: Night_M_Ice_Cream
@@ -45806,7 +45806,7 @@
   name: Night Market Ice Cream
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 2500)'
+  on_use: 'item_heal(ctx, hp: 2500)'
   type: healing
   weight: 2
 - aegis_name: Night_M_Cotton_Candy
@@ -45815,7 +45815,7 @@
   name: Night Market Cotton Candy
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 250)'
+  on_use: 'item_heal(ctx, sp: 250)'
   type: healing
   weight: 2
 - aegis_name: Grilled_Veg_Skewers
@@ -45824,7 +45824,7 @@
   name: Fire-grilled Vegetable Skewers
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 1200)'
+  on_use: 'item_heal(ctx, hp: 1200)'
   type: healing
   weight: 1
 - aegis_name: Grilled_Hm_Sausage
@@ -45833,7 +45833,7 @@
   name: Fire-grilled Homemade Sausage
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 120)'
+  on_use: 'item_heal(ctx, sp: 120)'
   type: healing
   weight: 1
 - aegis_name: 2403_ev_Berry_Cup
@@ -45841,7 +45841,7 @@
   name: Strawberry Fresh Cream Cupcake
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 200)'
+  on_use: 'item_heal(ctx, sp: 200)'
   type: healing
   weight: 1
 - aegis_name: 2403_ev_Macaron
@@ -45850,7 +45850,7 @@
   name: Moist Macaron
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 2000)'
+  on_use: 'item_heal(ctx, hp: 2000)'
   type: healing
   weight: 1
 - aegis_name: 2501_ev_Matjalal
@@ -45860,13 +45860,13 @@
 - aegis_name: aegis_1100028
   id: 1100028
   name: Delicious Noodle
-  on_use: 'heal(ctx, sp: 300)'
+  on_use: 'item_heal(ctx, sp: 300)'
   type: healing
   weight: 10
 - aegis_name: aegis_1100029
   id: 1100029
   name: Delicious Dumplings
-  on_use: 'heal(ctx, hp: 2500)'
+  on_use: 'item_heal(ctx, hp: 2500)'
   type: healing
   weight: 10
 - aegis_name: CLB_HM_3Cheese
@@ -45875,7 +45875,7 @@
   name: Hanmac Triple Cheese Burger
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 3250)'
+  on_use: 'item_heal(ctx, hp: 3250)'
   type: healing
   weight: 1
 - aegis_name: CLB_HM_Pizzalio
@@ -45884,7 +45884,7 @@
   name: Hanmac Pizzario Burger
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, hp: 650)'
+  on_use: 'item_heal(ctx, hp: 650)'
   type: healing
   weight: 1
 - aegis_name: CLB_HM_PC_Yangnyeom
@@ -45893,7 +45893,7 @@
   name: Pocket Chicken Seasoning
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 420)'
+  on_use: 'item_heal(ctx, sp: 420)'
   type: healing
   weight: 1
 - aegis_name: CLB_HM_PC_Hot_Fried
@@ -45902,13 +45902,13 @@
   name: Pocket Chicken Hot Fries
   no_guild_storage: true
   no_trade: true
-  on_use: 'heal(ctx, sp: 300)'
+  on_use: 'item_heal(ctx, sp: 300)'
   type: healing
   weight: 1
 - aegis_name: aegis_1100036
   id: 1100036
   name: Sharing Fish
-  on_use: 'heal(ctx, hp: 2500)'
+  on_use: 'item_heal(ctx, hp: 2500)'
   type: healing
   weight: 1
 - aegis_name: 25_A_Ev_Cookie

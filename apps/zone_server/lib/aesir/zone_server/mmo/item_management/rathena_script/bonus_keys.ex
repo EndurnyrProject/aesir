@@ -168,6 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bnomagicdamage" => :no_magic_damage,
     "bfixedcastrate" => :fixcast_rate,
     "badditemhealrate" => :item_heal_rate,
+    "badditemsphealrate" => :item_sp_heal_rate,
     "bnoknockback" => :no_knockback,
     "bnowalkdelay" => :no_walk_delay,
     "bnocastcancel" => :no_cast_cancel,
@@ -242,8 +243,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bdropaddrace" => %{family: :drop_add_race, param: :race, unit: :percent},
     "bfixedcastrate" => %{family: :skill_fixcast_rate, param: :skill, unit: :percent},
     "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
+    "badditemsphealrate" => %{family: :add_item_sp_heal, param: :item, unit: :percent},
     "badditemgrouphealrate" => %{
       family: :add_item_group_heal,
+      param: :item_group,
+      unit: :percent
+    },
+    "badditemgroupsphealrate" => %{
+      family: :add_item_group_sp_heal,
       param: :item_group,
       unit: :percent
     },

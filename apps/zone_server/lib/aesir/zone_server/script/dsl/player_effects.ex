@@ -11,17 +11,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2]
   import Bitwise, only: [band: 2]
 
-  alias Aesir.Commons.StatusParams
-  alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Script.Ctx
-  alias Aesir.ZoneServer.Script.Dsl.Internal
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
-  alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.Player.ScriptVitals
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @scstart_noavoid 0x01
@@ -52,40 +45,58 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
     do: Map.update!(ctx, :session_effects, &(&1 ++ [effect]))
 
   @doc """
-  Restores HP and/or SP by the given amounts, clamped to the player's maxima.
+  Heals or damages the player by flat HP/SP amounts (the `heal` command): no
+  recovery bonus applies and Frenzy does not stop it; a negative amount is
+  passive damage that can kill.
 
-  `opts` accepts `:hp` and `:sp`, each a flat integer or a `lo..hi` range from
-  which a value is rolled. The new value is pushed to the client and persisted.
-  Halts `:no_player` on a detached ctx.
+  `opts` accepts `:hp` and `:sp`, each an integer or a `lo..hi` range rolled
+  once. See `percent_heal/2` for how the heal reaches the player.
   """
   @spec heal(Ctx.t(), keyword()) :: Ctx.t()
-  def heal(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
-  def heal(%Ctx{game_state: nil} = ctx, _opts), do: Ctx.halt(ctx, :no_player)
+  def heal(ctx, opts), do: vitals(ctx, fn -> {:heal, amount(opts, :hp), amount(opts, :sp)} end)
 
-  def heal(%Ctx{} = ctx, opts) do
-    hp = opts |> Keyword.get(:hp, 0) |> roll() |> scale_consumable_recovery(ctx, :hp)
-    sp = opts |> Keyword.get(:sp, 0) |> roll() |> scale_consumable_recovery(ctx, :sp)
-
-    apply_heal(ctx, fn current, _max -> current + hp end, fn current, _max -> current + sp end)
+  @doc """
+  Heals the player by HP/SP amounts scaled by their item recovery bonuses and
+  statuses (the `itemheal` command), for the item whose script runs (`nil` from
+  an NPC script). Takes the same `opts` as `heal/2`.
+  """
+  @spec item_heal(Ctx.t(), keyword()) :: Ctx.t()
+  def item_heal(ctx, opts) do
+    vitals(ctx, fn ->
+      {:item_heal, healing_item(ctx.source), amount(opts, :hp), amount(opts, :sp)}
+    end)
   end
 
   @doc """
-  Restores HP and/or SP by a percentage of the player's maxima.
+  Heals or damages the player by percents of their maxima (the `percentheal`
+  command); a negative percent is passive damage that only kills at -100 HP.
 
-  `opts` accepts `:hp` and `:sp` as integer percents applied to `max_hp`/`max_sp`.
-  Halts `:no_player` on a detached ctx.
+  An item script, which runs inside its player's session, applies the HP/SP
+  change to its own state at once and stages any HP damage for the session to
+  settle (status reactions, death) after the script; an NPC script applies the
+  heal through the player's session. Halts `:no_player` on a detached ctx.
   """
   @spec percent_heal(Ctx.t(), keyword()) :: Ctx.t()
-  def percent_heal(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
-  def percent_heal(%Ctx{game_state: nil} = ctx, _opts), do: Ctx.halt(ctx, :no_player)
+  def percent_heal(ctx, opts),
+    do: vitals(ctx, fn -> {:percent_heal, amount(opts, :hp), amount(opts, :sp)} end)
 
-  def percent_heal(%Ctx{} = ctx, opts) do
-    apply_heal(
-      ctx,
-      fn current, max -> current + div(max * Keyword.get(opts, :hp, 0), 100) end,
-      fn current, max -> current + div(max * Keyword.get(opts, :sp, 0), 100) end
-    )
+  defp vitals(%Ctx{status: {:error, _}} = ctx, _op), do: ctx
+  defp vitals(%Ctx{game_state: nil} = ctx, _op), do: Ctx.halt(ctx, :no_player)
+
+  defp vitals(%Ctx{source: {:item, _}} = ctx, op) do
+    {game_state, damage} = ScriptVitals.apply(op.(), ctx.game_state)
+    ScriptVitals.sync(ctx.connection_pid, ctx.game_state, game_state)
+    ctx = %{ctx | game_state: game_state}
+
+    if damage, do: stage_session_effect(ctx, {:script_damage, damage}), else: ctx
   end
+
+  defp vitals(%Ctx{} = ctx, op), do: apply_op(ctx, op.())
+
+  defp amount(opts, key), do: opts |> Keyword.get(key, 0) |> roll()
+
+  defp healing_item({:item, item_id}), do: item_id
+  defp healing_item({:npc, _module}), do: nil
 
   @doc """
   Applies a status effect to the player for `duration_ms` with strength `val`.
@@ -317,106 +328,6 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
       {:error, _} ->
         {ctx, 0}
     end
-  end
-
-  # Consumable recovery: +5%/Potion Research level, +2%/VIT (HP) or +2%/INT (SP),
-  # +10%/Increase HP Recovery level on HP and +10%/Increase SP Recovery level on
-  # SP, plus the flat item_heal_rate and the per-item add_item_heal equipment
-  # bonuses on HP; floored integer percent.
-  defp scale_consumable_recovery(
-         amount,
-         %Ctx{source: {:item, item_id}, game_state: %{stats: stats}} = ctx,
-         resource
-       ) do
-    potion_research_rate = 5 * Internal.learned_level(ctx.game_state, :am_learningpotion)
-
-    stat_rate =
-      case resource do
-        :hp ->
-          equipment = stats.modifiers.equipment
-
-          2 * PlayerStats.get_effective_stat(stats, :vit) +
-            10 * Internal.learned_level(ctx.game_state, :sm_recovery) +
-            PlayerStats.get_item_heal_rate(stats) +
-            PlayerStats.get_equipment_modifier(stats, {:add_item_heal, item_id}) +
-            item_group_heal_rate(equipment, item_id)
-
-        :sp ->
-          2 * PlayerStats.get_effective_stat(stats, :int) +
-            10 * Internal.learned_level(ctx.game_state, :mg_srecovery)
-      end
-
-    div(amount * (100 + potion_research_rate + stat_rate), 100)
-  end
-
-  defp scale_consumable_recovery(amount, %Ctx{}, _resource), do: amount
-
-  defp item_group_heal_rate(equipment, item_id) do
-    Enum.reduce(equipment, 0, fn
-      {{:add_item_group_heal, group_key}, rate}, acc ->
-        if ItemGroups.member?(group_key, item_id), do: acc + rate, else: acc
-
-      _modifier, acc ->
-        acc
-    end)
-  end
-
-  defp apply_heal(%Ctx{} = ctx, hp_fun, sp_fun) do
-    stats = ctx.game_state.stats
-    current = stats.current_state
-    max_hp = stats.derived_stats.max_hp
-    max_sp = stats.derived_stats.max_sp
-
-    hp_delta = scale_received_heal(hp_fun.(current.hp, max_hp) - current.hp, ctx.char_id)
-    sp_delta = sp_fun.(current.sp, max_sp) - current.sp
-    {hp_delta, sp_delta} = block_recovery(ctx.char_id, hp_delta, sp_delta)
-
-    new_hp = Internal.clamp(current.hp + hp_delta, max_hp)
-    new_sp = Internal.clamp(current.sp + sp_delta, max_sp)
-
-    new_state = %{current | hp: new_hp, sp: new_sp}
-    game_state = %{ctx.game_state | stats: %{stats | current_state: new_state}}
-
-    sync_hp(ctx, current.hp, new_hp)
-    sync_sp(ctx, current.sp, new_sp)
-
-    %{ctx | game_state: game_state}
-  end
-
-  defp block_recovery(char_id, hp_delta, sp_delta) do
-    if StatusStorage.has_status?(:player, char_id, :sc_norecover_state) do
-      {min(hp_delta, 0), min(sp_delta, 0)}
-    else
-      {hp_delta, sp_delta}
-    end
-  end
-
-  # Scales the healed HP delta (never SP) by the target's `received_heal_rate`
-  # (SC_INCHEALRATE) before it is applied. Only
-  # positive deltas are scaled; item/script heals never subtract HP here.
-  defp scale_received_heal(delta, _char_id) when delta <= 0, do: delta
-
-  defp scale_received_heal(delta, char_id) do
-    rate =
-      :player
-      |> ModifierCalculator.get_all_modifiers(char_id)
-      |> Map.get(:received_heal_rate, 0)
-
-    div(delta * (100 + rate), 100)
-  end
-
-  defp sync_hp(_ctx, same, same), do: :ok
-
-  defp sync_hp(ctx, _old, new_hp) do
-    StatusSync.send_param(ctx.connection_pid, StatusParams.hp(), new_hp)
-    CharacterPersistence.update_stats(ctx.char_id, %{hp: new_hp}, async: true)
-  end
-
-  defp sync_sp(_ctx, same, same), do: :ok
-
-  defp sync_sp(ctx, _old, new_sp) do
-    StatusSync.send_param(ctx.connection_pid, StatusParams.sp(), new_sp)
-    CharacterPersistence.update_stats(ctx.char_id, %{sp: new_sp}, async: true)
   end
 
   defp roll(lo..hi//_step), do: lo + :rand.uniform(hi - lo + 1) - 1

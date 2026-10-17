@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   """
 
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.ScriptVitals
 
   @typedoc "Tag identifying the script trigger — either an item ID or an NPC module atom."
   @type source :: {:item, integer()} | {:npc, atom()}
@@ -48,6 +49,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           {:falcon, boolean()}
           | {:homunculus, homunculus_effect()}
           | {:item_skill, integer(), pos_integer(), boolean()}
+          | {:script_damage, ScriptVitals.damage()}
 
   @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]
   defstruct char_id: nil,
