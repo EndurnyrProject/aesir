@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
@@ -266,7 +267,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     end_player_session(session)
   end
 
-  test "timed Resurrection rechecks SP at completion without settling" do
+  test "timed Resurrection does not recheck SP at completion and clamps the consume" do
     session = start_alchemist(nil, nil, insert_homunculus: :dead)
     cast(session.pid, @resurrection, 1)
     casting = eventually_state(session.pid, & &1.game_state.casting)
@@ -276,15 +277,19 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
       put_in(state.game_state.stats.current_state.sp, 0)
     end)
 
-    before = PlayerSession.get_state(session.pid)
-    row_before = Repo.get_by(Homunculus, character_id: before.game_state.character_id)
     clear_packet_inbox()
     send(session.pid, {:skill, {:cast_complete, token}})
-    after_state = PlayerSession.get_state(session.pid)
 
-    assert_lifecycle_unchanged(after_state, before, row_before)
-    refute_packet_sent(SkillEffect)
-    refute_packet_sent(ItemRemoved)
+    assert_eventually(fn ->
+      PlayerSession.get_state(session.pid).homunculus.lifecycle == :active
+    end)
+
+    revived = PlayerSession.get_state(session.pid)
+    assert revived.game_state.stats.current_state.sp == 0
+
+    if GameMode.mode() == :renewal,
+      do: assert(is_integer(revived.game_state.skill_cooldowns[@resurrection]))
+
     end_player_session(session)
   end
 

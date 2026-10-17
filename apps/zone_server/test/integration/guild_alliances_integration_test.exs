@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Integration.GuildAlliancesIntegrationTest do
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Mmo.Woe.CastleMobs
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Guardians
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
@@ -151,7 +152,12 @@ defmodule Aesir.ZoneServer.Integration.GuildAlliancesIntegrationTest do
     guild_b: guild_b,
     member_b: member_b
   } do
-    start_supervised!({WoeServer, []})
+    # Stopping the agit reseeds an unowned castle's monster pack, whose
+    # aggressive monsters would attack the members between the agits; the pack
+    # plays no part in the hostility under test.
+    woe = start_supervised!({WoeServer, []})
+    stub(CastleMobs, :seed, fn _castle -> :ok end)
+    Mimic.allow(CastleMobs, self(), woe)
     :ok = WoeServer.start()
 
     assert :ok = attack(member_a, member_b.character.id)

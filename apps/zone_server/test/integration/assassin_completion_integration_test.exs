@@ -403,7 +403,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          name: :as_right,
          display_name: "Righthand Mastery",
          max_level: 5,
-         target_type: :passive
+         target_type: :passive,
+         damage_type: :damage
        ), :passive},
       {AsLeft,
        definition(
@@ -411,7 +412,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          name: :as_left,
          display_name: "Lefthand Mastery",
          max_level: 5,
-         target_type: :passive
+         target_type: :passive,
+         damage_type: :damage
        ), :passive},
       {AsKatar,
        definition(
@@ -419,7 +421,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          name: :as_katar,
          display_name: "Katar Mastery",
          max_level: 10,
-         target_type: :passive
+         target_type: :passive,
+         damage_type: :damage
        ), :passive},
       {AsCloaking,
        definition(
@@ -485,6 +488,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          display_name: "Poison React",
          max_level: 10,
          target_type: :self,
+         damage_type: :damage,
          status: :sc_poisonreact,
          sp_cost: [25, 30, 35, 40, 45, 50, 55, 60, 45, 45],
          duration: [
@@ -532,7 +536,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          duration: mode_value(List.duplicate(18_000, 10), List.duplicate(60_000, 10)),
          item_cost: mode_value([], [%{id: 716, amount: 1}]),
          requires: [],
-         ignore_atk_card: true
+         ignore_atk_card: true,
+         ignore_flee: true
        ), :active},
       {AsSonicaccel,
        definition(
@@ -541,6 +546,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          display_name: "Sonic Acceleration",
          max_level: 1,
          target_type: :passive,
+         damage_type: :damage,
          quest_skill: true,
          quest_owner_job: :assassin
        ), :passive},

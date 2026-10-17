@@ -164,23 +164,26 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
       assert Storage.all() == []
     end
 
-    test "preflight failure (missing catalyst) stages nothing" do
+    test "missing catalyst stages the prompt and fails at completion without placing" do
       caster = start_caster(id: 98_531, position: {150, 150}, item_amount: 0)
-      flush_packets()
+      request_id = stage(caster, {151, 150})
 
-      simulate_incoming_message(caster.pid, %GroundSkillCast{
-        skill_id: @skill_id,
-        level: 1,
-        x: 151,
-        y: 150
+      simulate_incoming_message(caster.pid, %SkillTextInputReply{
+        request_id: request_id,
+        outcome: {:text, "boo"}
       })
 
       assert_receive {:packet_sent,
                       %SkillCastFailed{
                         reason: :SKILL_CAST_FAILURE_REASON_MISSING_CATALYST
-                      }, _}
+                      }, _},
+                     1_000
 
-      refute_received {:packet_sent, %SkillTextInputRequest{}, _}
+      assert eventually(fn ->
+               PlayerSession.get_state(caster.pid).pending_skill_text_input == nil
+             end)
+
+      assert PlayerSession.get_state(caster.pid).game_state.stats.current_state.sp == 50
       assert Storage.all() == []
     end
 

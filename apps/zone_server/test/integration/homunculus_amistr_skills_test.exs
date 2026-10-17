@@ -482,15 +482,9 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
 
     Enum.each([first, second, unrelated], &on_exit(fn -> end_mob_session(&1) end))
 
-    MobSession.set_target(first.pid, {:player, owner_id})
-    MobSession.set_target(second.pid, {:player, owner_id})
-    MobSession.set_target(unrelated.pid, {:player, owner_id + 1})
-
-    assert_eventually(fn -> get_mob_state(first.pid).target_ref == {:player, owner_id} end)
-    assert_eventually(fn -> get_mob_state(second.pid).target_ref == {:player, owner_id} end)
-
-    MobSession.set_target(first.pid, {:player, owner_id + 2})
-    assert_eventually(fn -> get_mob_state(first.pid).target_ref == {:player, owner_id + 2} end)
+    force_target(first, {:player, owner_id + 2})
+    force_target(second, {:player, owner_id})
+    force_target(unrelated, {:player, owner_id + 1})
 
     owner_position = {initial.game_state.x, initial.game_state.y}
     hom_position = {initial.homunculus.x, initial.homunculus.y}
@@ -536,6 +530,13 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
     assert get_mob_state(first.pid).target_ref == {:player, owner_id + 2}
     assert_eventually(fn -> get_mob_state(second.pid).target_ref == {:homunculus, gid} end)
     assert get_mob_state(unrelated.pid).target_ref == {:player, owner_id + 1}
+  end
+
+  # The AI target lock refuses units it cannot fight (an absent player among
+  # them), so the targets under test are written on the real sessions directly.
+  defp force_target(mob, target_ref) do
+    updated = :sys.replace_state(mob.pid, &%{&1 | target_ref: target_ref})
+    :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)
   end
 
   defp amistr(overrides) do

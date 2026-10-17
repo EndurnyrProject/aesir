@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Integration.BardActiveSkillsIntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
@@ -128,18 +129,26 @@ defmodule Aesir.ZoneServer.Integration.BardActiveSkillsIntegrationTest do
     assert table_rows(:skill_units) == []
   end
 
-  test "Pang Voice applies confusion and bleeding through the ordinary status path" do
+  test "Pang Voice applies its mode's statuses through the ordinary status path" do
     bard = start_bard([@pang_voice])
     target = start_target({151, 150}, hp: 50_000)
+
+    statuses =
+      case GameMode.mode() do
+        :renewal -> [:sc_confusion, :sc_bleeding]
+        :pre_renewal -> [:sc_confusion]
+      end
 
     cast(bard, @pang_voice, target.unit_id)
 
     assert eventually(fn ->
-             StatusStorage.has_status?(:mob, target.unit_id, :sc_confusion) and
-               StatusStorage.has_status?(:mob, target.unit_id, :sc_bleeding)
+             Enum.all?(statuses, &StatusStorage.has_status?(:mob, target.unit_id, &1))
            end)
 
-    for status <- [:sc_confusion, :sc_bleeding] do
+    refute StatusStorage.has_status?(:mob, target.unit_id, :sc_bleeding) and
+             GameMode.mode() == :pre_renewal
+
+    for status <- statuses do
       assert %{source_id: source_id, expires_at: expires_at} =
                StatusStorage.get_status(:mob, target.unit_id, status)
 

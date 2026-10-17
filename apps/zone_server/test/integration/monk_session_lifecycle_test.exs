@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Integration.MonkSessionLifecycleTest do
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
@@ -113,24 +112,18 @@ defmodule Aesir.ZoneServer.Integration.MonkSessionLifecycleTest do
       assert StatusStorage.get_unit_statuses(:player, 7_004) == []
     end
 
-    test "a Root peer left behind by a terminating session converges on the status tick" do
+    test "a terminating session releases its Root peer at once" do
       monk = start_monk_session(7_005, {150, 150})
       mob = spawn_mob(7_105, {151, 150})
       establish_root(monk.character.id, mob)
 
       ref = Process.monitor(monk.pid)
-      # Terminate bulk-clears the Monk's status storage without running on_expire,
-      # stranding the mob's half of the pair.
+      # Terminate ends the Monk's statuses; Root's end releases the mob's half
+      # of the pair as well.
       :ok = GenServer.stop(monk.pid, :normal)
       assert_receive {:DOWN, ^ref, :process, _, :normal}, 1_000
 
-      assert Root.rooted?(:mob, mob.unit_id)
       refute StatusStorage.has_status?(:player, 7_005, :sc_bladestop)
-
-      # The per-second peer check on the mob's record removes it once due.
-      force_due(:mob, mob.unit_id, :sc_bladestop)
-      StatusTickManager.force_tick()
-
       assert eventually(fn -> not Root.rooted?(:mob, mob.unit_id) end)
     end
   end
@@ -225,10 +218,5 @@ defmodule Aesir.ZoneServer.Integration.MonkSessionLifecycleTest do
     assert :intercepted = Combat.execute_mob_attack(mob.mob_state, monk_id)
     assert Root.rooted?(:player, monk_id)
     assert Root.rooted?(:mob, mob.unit_id)
-  end
-
-  defp force_due(unit_type, unit_id, status_type) do
-    past = System.monotonic_time(:millisecond) - 1_000
-    :ok = StatusStorage.update_next_tick(unit_type, unit_id, status_type, past)
   end
 end

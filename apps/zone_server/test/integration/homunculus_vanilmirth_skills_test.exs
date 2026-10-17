@@ -171,16 +171,14 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
       )
 
     on_exit(fn -> end_mob_session(mob) end)
-    :ok = MobSession.set_target(mob.pid, {:player, 100})
-    assert_eventually(fn -> get_mob_state(mob.pid).target_ref == {:player, 100} end)
+    force_target(mob, {:player, 100})
     seed_rolls([{100, 100}, {1, 1}, {5, 1}])
 
     assert {:local_effects, ^caster,
             [{:mob, {:apply_heal, 7_002, ^rank_one, {:homunculus, 1_500_001}}}]} =
              HvanChaotic.cast(caster, :self, 5, HvanChaotic.definition())
 
-    :ok = MobSession.set_target(mob.pid, {:player, 999})
-    assert_eventually(fn -> get_mob_state(mob.pid).target_ref == {:player, 999} end)
+    force_target(mob, {:player, 999})
     seed_rolls([{100, 100}, {5, 1}])
 
     assert {:local_effects, ^caster,
@@ -868,6 +866,13 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
         sp_regen_rate: 0
       }
     }
+  end
+
+  # The AI target lock refuses units it cannot fight (an absent player among
+  # them), so the target under test is written on the real session directly.
+  defp force_target(mob, target_ref) do
+    updated = :sys.replace_state(mob.pid, &%{&1 | target_ref: target_ref})
+    :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)
   end
 
   defp register_mob(id, x, y, target_ref, overrides \\ []) do

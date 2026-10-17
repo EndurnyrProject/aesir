@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
 
       # --- Stage 1: drive a movement tick into the warp's trigger area. ---
       game_state =
-        PlayerState.new(character)
+        on_map_state(character)
         |> Map.put(:walk_path, [{51, 50}, {52, 50}])
         |> Map.put(:movement_state, :moving)
         |> Map.put(:visible_warps, MapSet.new([Warp.Registry.entity_id(warp)]))
@@ -150,7 +150,7 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
       end)
 
       game_state =
-        PlayerState.new(character)
+        on_map_state(character)
         |> Map.put(:walk_path, [{51, 50}, {52, 50}])
         |> Map.put(:movement_state, :moving)
         |> Map.put(:visible_warps, MapSet.new([Warp.Registry.entity_id(warp)]))
@@ -189,6 +189,11 @@ defmodule Aesir.ZoneServer.Npc.WarpIntegrationTest do
   end
 
   # --- helpers ---------------------------------------------------------------
+
+  # A player already standing on its map (the login MapLoaded has been acked).
+  defp on_map_state(character) do
+    %{PlayerState.new(character) | pending_map_load: nil}
+  end
 
   defp warp_at(x, y, opts) do
     struct!(

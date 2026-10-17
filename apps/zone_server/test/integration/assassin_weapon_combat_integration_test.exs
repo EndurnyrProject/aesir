@@ -167,8 +167,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
     assert attacker.combat_stats.hit == player_state(double).stats.combat_stats.hit
 
     katar = start_assassin(equipped: [both: @jur], skills: %{@tf_double => 10}, luk: 30)
-    plant = start_target(unique_id(), race: :plant)
-    ordinary = start_target(unique_id(), race: :formless)
+    plant = start_target(unique_id(), race: :plant, modes: [:ignore_melee])
+    ordinary = start_target(unique_id(), race: :plant)
 
     assert player_state(katar).stats.combat_stats.critical > 0
     assert calculated_hit(katar, plant).secondary == nil

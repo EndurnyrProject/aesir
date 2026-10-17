@@ -94,6 +94,7 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
           %MobSpawn{
             mob: @osiris_id,
             amount: 1,
+            boss: true,
             respawn_time: @respawn_ms,
             respawn_variance: 0,
             spawn_area: %MobSpawn.SpawnArea{x: 100, y: 100, xs: 0, ys: 0}
@@ -271,6 +272,7 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
           hp: 1,
           max_hp: 1,
           modes: [:detector, :status_immune, :knockback_immune],
+          boss: true,
           respawn_time: @respawn_ms
         )
 

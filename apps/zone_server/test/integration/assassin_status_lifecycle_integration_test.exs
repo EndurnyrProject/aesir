@@ -585,7 +585,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
       end)
 
     :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)
-    send(mob.pid, {:ai, :tick})
+    MobSession.hard_think(mob.pid, target.character.id)
     attacked = get_mob_state(mob.pid)
     MobSession.sleep(mob.pid)
     _sync = get_mob_state(mob.pid)

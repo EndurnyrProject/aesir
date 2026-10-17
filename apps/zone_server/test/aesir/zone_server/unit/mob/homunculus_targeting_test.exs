@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.Repo
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -13,6 +15,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup do
+    # The target search paths to its candidates, so the test map needs cells.
+    :ets.insert(
+      EtsTable.table_for(:map_cache),
+      {"homunculus_targeting_map", MapData.new("homunculus_targeting_map", 100, 100)}
+    )
+
     {:ok, account} =
       %Account{}
       |> Account.changeset(%{
@@ -89,23 +97,30 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
     Mimic.allow(HitCalculations, self(), mob.pid)
     :sys.replace_state(mob.pid, &%{&1 | ai_awake: true, spawn_tick_pending?: false})
 
+    # The hard think (target search and attack) is driven per nearby player by
+    # the map's AI pass; the test stands in for that pass with the owner's id.
+    owner_id = state.game_state.character_id
     hp_before = homunculus.hp
-    send(mob.pid, {:ai, :tick})
+    MobSession.hard_think(mob.pid, owner_id)
 
     assert_eventually(fn ->
       MobSession.get_state(mob.pid).target_ref == {:homunculus, homunculus.world_gid}
     end)
 
-    send(mob.pid, {:ai, :tick})
-    send(mob.pid, {:ai, :tick})
+    MobSession.hard_think(mob.pid, owner_id)
+    MobSession.hard_think(mob.pid, owner_id)
 
     assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp < hp_before end)
     assert MobSession.get_state(mob.pid).target_ref == {:homunculus, homunculus.world_gid}
     assert PlayerSession.get_state(session.pid).game_state.stats.current_state.hp == 1_000
 
     UnitRegistry.unregister_unit(:homunculus, homunculus.world_gid)
-    send(mob.pid, {:ai, :tick})
-    assert_eventually(fn -> MobSession.get_state(mob.pid).target_ref == nil end)
+
+    # The map's pass repeats every 100 ms; a think inside the attack motion is dropped.
+    assert_eventually(fn ->
+      MobSession.hard_think(mob.pid, owner_id)
+      MobSession.get_state(mob.pid).target_ref == nil
+    end)
   end
 
   test "retaliation and damage groundwork retain colliding typed contributors in first-hit order",

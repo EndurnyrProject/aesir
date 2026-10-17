@@ -83,7 +83,10 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
 
     MobSession.set_target(mob.pid, nil)
     assert eventually(fn -> mob_target(mob) == nil end)
-    force_ticks(mob, 2)
+
+    # The target search runs in the hard think the map drives per nearby
+    # player; the test stands in for that pass with the Dancer's id.
+    MobSession.hard_think(mob.pid, dancer.character.id)
 
     assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
   end

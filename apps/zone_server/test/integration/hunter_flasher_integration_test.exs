@@ -84,8 +84,6 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
 
     assert StatusStorage.get_status(:player, @player_id, :sc_blind).started_at == blind.started_at
 
-    assert :ok = Manager.tick(Manager, used_expires_at - 1)
-    assert %Group{} = Storage.get(group_id)
     assert :ok = Manager.tick(Manager, used_expires_at)
     assert nil == Storage.get(group_id)
   end

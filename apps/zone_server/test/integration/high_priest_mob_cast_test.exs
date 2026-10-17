@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Integration.HighPriestMobCastTest do
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @map "prontera"
 
@@ -16,7 +17,7 @@ defmodule Aesir.ZoneServer.Integration.HighPriestMobCastTest do
     mob = spawn_mob({150, 150})
     row = %{skill: "HP_ASSUMPTIO", skill_id: 361, target: :self, level: 5}
 
-    assert :ok = Executor.execute(get_mob_state(mob.pid), row)
+    assert {:ok, %MobState{}} = Executor.execute(get_mob_state(mob.pid), row)
 
     assert %{val1: 5} = StatusStorage.get_status(:mob, mob.unit_id, :sc_assumptio)
   end
@@ -31,9 +32,15 @@ defmodule Aesir.ZoneServer.Integration.HighPriestMobCastTest do
         max_hp: 1_000
       )
 
-    row = %{skill: "HP_ASSUMPTIO", skill_id: 361, target: :friend, level: 5}
+    row = %{
+      skill: "HP_ASSUMPTIO",
+      skill_id: 361,
+      target: :friend,
+      level: 5,
+      condition: %{type: :friendhpltmaxrate, value: 50}
+    }
 
-    assert :ok = Executor.execute(get_mob_state(caster.pid), row)
+    assert {:ok, %MobState{}} = Executor.execute(get_mob_state(caster.pid), row)
 
     assert StatusStorage.has_status?(:mob, boss.unit_id, :sc_assumptio)
   end

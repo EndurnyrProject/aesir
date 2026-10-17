@@ -64,14 +64,14 @@ defmodule Aesir.ZoneServer.SessionHelpers do
     map_name = opts[:map_name] || character.last_map || "prontera"
     {x, y} = opts[:position] || {character.last_x || 150, character.last_y || 150}
 
-    # Start the PlayerSession
+    # The session spawns the player where the character record says it is,
+    # so the requested map and position are written there first.
+    character = %{character | last_map: map_name, last_x: x, last_y: y}
+
     {:ok, pid} =
       PlayerSession.start_link(%{
         character: character,
-        connection_pid: connection_pid,
-        map_name: map_name,
-        x: x,
-        y: y
+        connection_pid: connection_pid
       })
 
     load_map(pid, Keyword.get(opts, :invincible, false))
@@ -124,6 +124,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
   - :mvp_exp - MVP experience (default `0`; a non-zero value makes the mob MVP-tier)
   - :mvp_drops - MVP drop table (default `[]`; a non-empty list makes the mob MVP-tier)
   - :respawn_time - Spawn config respawn delay in ms (default `5_000`)
+  - :boss - Whether the spawn row is a `boss_monster` line (default `false`)
   - :awake - Whether to start the AI tick loop (default `false`). Test mobs are
     stationary targets; an awake mob's jittered idle tick can wander it off its
     cell and put it out of attack range, making combat tests flaky. Pass
@@ -188,6 +189,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
     mob_spawn = %MobSpawn{
       mob: mob_id,
       amount: 1,
+      boss: opts[:boss] || false,
       respawn_time: opts[:respawn_time] || 5_000,
       spawn_area: %MobSpawn.SpawnArea{
         x: x,
