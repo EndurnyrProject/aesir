@@ -28,7 +28,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -322,22 +321,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   # player session pids; an offline player simply has no subscriber.
   defp notify_player_session(player_id) do
     PubSub.broadcast(Aesir.PubSub, "player:#{player_id}", {:stats, :recalculate})
-  end
-
-  # Signals a mob's session that one of its statuses ticked or expired. Unlike
-  # players, mobs have no cached stats to recompute (combat numbers are folded
-  # live in MobState.to_combatant/1) and their display delta is already
-  # broadcast by the interpreter, so this is a per-status cast the MobSession
-  # uses to recompute its HP ceiling. A mob no longer in the registry simply
-  # has no session to notify.
-  defp notify_unit_session(:mob, instance_id, status_id, event) do
-    case UnitRegistry.get_unit(:mob, instance_id) do
-      {:ok, {_module, _state, pid}} when is_pid(pid) ->
-        MobSession.notify_status_changed(pid, status_id, event)
-
-      _ ->
-        :ok
-    end
   end
 
   defp notify_unit_session(:homunculus, world_gid, status_id, event) do

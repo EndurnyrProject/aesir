@@ -60,6 +60,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @defense_stats [:str, :agi, :vit, :int, :dex, :luk]
 
+  @mob_ineligible_statuses ~w(
+    sc_strfood sc_agifood sc_vitfood sc_intfood sc_dexfood sc_lukfood
+    sc_food_str_cash sc_food_agi_cash sc_food_vit_cash sc_food_int_cash
+    sc_food_dex_cash sc_food_luk_cash sc_savage_steak sc_cocktail_warg_blood
+    sc_minor_bbq sc_siroma_ice_tea sc_drocera_herb_steamed sc_putti_tails_noodles
+    sc_atkpotion sc_matkpotion sc_batkfood sc_matkfood sc_full_swing_k sc_mana_plus
+    sc_hitfood sc_fleefood sc_crifood sc_inccri sc_incflee2 sc_incstr sc_incint
+    sc_incdex sc_incluk sc_atthaste_cash sc_boost500 sc_extract_salamine_juice
+    sc_skf_aspd sc_mustle_m sc_life_force_f sc_extract_white_potion_z sc_increase_maxsp
+    sc_mental_potion sc_speedup0 sc_speedup1 sc_spcost_rate sc_skf_cast
+    sc_beef_rib_stew sc_pork_rib_stew sc_almighty sc_ultimatecook sc_mysticpowder
+    sc_cup_of_boza sc_str_scroll sc_int_scroll sc_combat_pill sc_combat_pill2
+    sc_vitalize_potion sc_infinity_drink sc_2011rwc_scroll sc_sparkcandy sc_magiccandy
+    sc_arcane_charge sc_riding
+  )a
+
   @doc """
   Initializes the status effect system by loading all definitions.
   """
@@ -73,7 +89,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   Returns `:ok` on success (including when the effect's `on_apply` consumed
   the application), or `{:error, reason}` when the status is unknown or the
-  target is immune, protected or resisted it.
+  target is immune, protected or resisted it. Monster admission also rejects
+  scripted player bonuses and unsupported mount/custom numeric statuses,
+  including loaded applications; restoration never expands target eligibility.
 
   A status-immune target (a monster of the boss, guardian or battlefield class)
   rejects a status whose definition carries the `:boss` immunity (status.yml
@@ -331,7 +349,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
             "Stopping exact tick for #{status_id}: invalid #{unit_type} #{unit_id} lookup #{inspect(unexpected)}"
           )
 
-          StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance)
+          remove_current_status_and_notify(unit_type, unit_id, status_id, instance)
           :stop
       end
     else
@@ -884,6 +902,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     if StatusStorage.replace_status_if_current(unit_type, unit_id, status_id, held, replacement) do
       StatusTickManager.arm(unit_type, unit_id, replacement)
       StatusDisplay.on_applied(unit_type, unit_id, status_id, replacement)
+      notify_mob_status_write(unit_type, unit_id, status_id, :apply)
       true
     else
       false
@@ -1136,7 +1155,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         :ok
 
       {_definition, %StatusEntry{type: :sc_endure, val4: val4} = instance} when val4 != 0 ->
-        StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance)
+        remove_current_status_and_notify(unit_type, unit_id, status_id, instance)
 
       {%{module: module}, instance} ->
         context = end_context(unit_type, unit_id, instance)
@@ -1790,6 +1809,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
        ) do
     if status_id in definition.end_on_start and not is_nil(prior_instance) do
       expire_replaced_status_entry(unit_type, unit_id, status_id, prior_instance)
+      notify_mob_status_write(unit_type, unit_id, status_id, :removed)
 
       if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance,
         do: :current,
@@ -2153,6 +2173,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   def expire_status_if_current(unit_type, unit_id, status_id, instance) do
     if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance) do
       expire_status_entry(unit_type, unit_id, status_id, instance)
+      notify_mob_status_write(unit_type, unit_id, status_id, :removed)
       true
     else
       false
@@ -2200,15 +2221,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     module.on_expire({unit_type, unit_id}, instance, context)
   end
 
-  defp notify_unit_status_applied(:mob, unit_id, status_id) do
-    case UnitRegistry.get_unit(:mob, unit_id) do
-      {:ok, {_module, _state, pid}} when is_pid(pid) ->
-        GenServer.cast(pid, {:casting, {:status_changed, status_id, :apply}})
-
-      _ ->
-        :ok
-    end
-  end
+  defp notify_unit_status_applied(:mob, unit_id, status_id),
+    do: notify_mob_status_write(:mob, unit_id, status_id, :apply)
 
   defp notify_unit_status_applied(:homunculus, unit_id, status_id) do
     notify_homunculus_owner(unit_id, status_id, :applied)
@@ -2216,21 +2230,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp notify_unit_status_applied(_unit_type, _unit_id, _status_id), do: :ok
 
-  defp notify_unit_status_removed(:mob, unit_id, status_id) do
-    case UnitRegistry.get_unit(:mob, unit_id) do
-      {:ok, {_module, _state, pid}} when is_pid(pid) ->
-        GenServer.cast(pid, {:casting, {:status_changed, status_id, :removed}})
-
-      _ ->
-        :ok
-    end
-  end
+  defp notify_unit_status_removed(:mob, unit_id, status_id),
+    do: notify_mob_status_write(:mob, unit_id, status_id, :removed)
 
   defp notify_unit_status_removed(:homunculus, unit_id, status_id) do
     notify_homunculus_owner(unit_id, status_id, :removed)
   end
 
   defp notify_unit_status_removed(_unit_type, _unit_id, _status_id), do: :ok
+
+  defp remove_current_status_and_notify(unit_type, unit_id, status_id, instance) do
+    if StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance),
+      do: notify_mob_status_write(unit_type, unit_id, status_id, :removed)
+  end
+
+  defp notify_mob_status_write(:mob, unit_id, status_id, event) do
+    case UnitRegistry.get_unit(:mob, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        GenServer.cast(pid, {:casting, {:status_changed, status_id, event}})
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp notify_mob_status_write(_unit_type, _unit_id, _status_id, _event), do: :ok
 
   defp notify_homunculus_owner(unit_id, status_id, event) do
     case UnitRegistry.get_unit(:homunculus, unit_id) do
@@ -2421,9 +2445,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
            instance.type,
            instance,
            updated
-         ),
-       do: :changed,
-       else: unchanged
+         ) do
+      if instance.type == :sc_magicpower,
+        do: notify_mob_status_write(unit_type, unit_id, instance.type, :armed)
+
+      :changed
+    else
+      unchanged
+    end
   end
 
   defp apply_committed_action_result(:remove, unit_type, unit_id, instance, unchanged) do
@@ -2500,6 +2529,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
            instance,
            updated
          ) do
+      notify_mob_status_write(unit_type, unit_id, instance.type, :apply)
       module.modifiers(instance, context) != module.modifiers(updated, context)
     else
       false
@@ -2599,6 +2629,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         {definition, context} = hooks
         definition.module.on_expire({unit_type, unit_id}, claimed, context)
         StatusDisplay.on_removed(unit_type, unit_id, :sc_aeterna, claimed)
+        notify_mob_status_write(unit_type, unit_id, :sc_aeterna, :removed)
         new_damage
     end
   end
@@ -2652,6 +2683,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         raise "Cannot apply status effect to non-existent #{unit_type} with ID: #{unit_id}"
     end
   end
+
+  defp ensure_eligible_target(:mob, %{id: status_id}) when status_id in @mob_ineligible_statuses,
+    do: {:error, :ineligible_target}
 
   defp ensure_eligible_target(:homunculus, %{require_weapon: [_ | _]}),
     do: {:error, :ineligible_target}

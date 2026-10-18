@@ -2,9 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   @moduledoc """
   Verifies the tick manager's exact per-status deadlines (arming, anchored
   ticks, tick-before-expiry ordering, stale generations) and its post-processing
-  notifications: a mob whose status ticks or expires gets a
-  `{:casting, {:status_changed, status_id, event}}` cast on its MobSession, while
-  the player path keeps its `{:stats, :status_changed}` PubSub broadcast.
+  notifications: monster lifecycle notifications belong to the interpreter,
+  while the player path keeps its `{:stats, :status_changed}` PubSub broadcast.
   """
 
   use ExUnit.Case, async: true
@@ -341,7 +340,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   end
 
   describe "mob notifications" do
-    test "an expired mob status casts {:casting, {:status_changed, status_id, :expired}} to its session" do
+    test "expiry does not duplicate the interpreter's monster lifecycle notification" do
       test_pid = self()
       stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:ok, {MobState, %{}, test_pid}} end)
 
@@ -350,10 +349,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       tick()
 
-      assert_receive {:"$gen_cast", {:casting, {:status_changed, @status, :expired}}}
+      refute StatusStorage.has_status?(:mob, @mob_id, @status)
+      refute_received {:"$gen_cast", {:casting, {:status_changed, _, _}}}
     end
 
-    test "a due mob status casts {:casting, {:status_changed, status_id, :tick}} to its session" do
+    test "a due mob tick does not request calculated stats" do
       test_pid = self()
       stub(UnitRegistry, :get_unit, fn :mob, @mob_id -> {:ok, {MobState, %{}, test_pid}} end)
 
@@ -362,7 +362,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
       tick()
 
-      assert_receive {:"$gen_cast", {:casting, {:status_changed, @status, :tick}}}
+      assert %{tick_count: 1} = StatusStorage.get_status(:mob, @mob_id, @status)
+      refute_received {:"$gen_cast", {:casting, {:status_changed, _, _}}}
     end
 
     test "an unregistered mob session is a silent no-op" do
@@ -431,7 +432,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       tick()
 
       assert StatusStorage.get_unit_statuses(:player, @player_id) == []
-      assert_receive {:"$gen_cast", {:casting, {:status_changed, @status, :tick}}}
+      assert %{tick_count: 1} = StatusStorage.get_status(:mob, @mob_id, @status)
+      refute_received {:"$gen_cast", {:casting, {:status_changed, _, _}}}
     end
   end
 
