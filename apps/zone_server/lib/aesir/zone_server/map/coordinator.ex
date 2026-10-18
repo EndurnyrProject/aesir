@@ -142,6 +142,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     GenServer.call(server(map_name), {:claim_item, ground_id, char_id, party_ctx})
   end
 
+  @doc "Claims a floor item for a looter monster, without player pickup protection."
+  @spec claim_loot_item(String.t(), pos_integer()) ::
+          {:ok, GroundItem.t()} | {:error, :gone}
+  def claim_loot_item(map_name, ground_id) do
+    GenServer.call(server(map_name), {:claim_loot_item, ground_id})
+  end
+
   @impl true
   def init(opts) do
     map_name = Keyword.fetch!(opts, :map_name)
@@ -384,6 +391,23 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       {:error, reason} when reason in [:gone, :protected] ->
         {:reply, {:error, reason}, state}
     end
+  end
+
+  @impl true
+  def handle_call({:claim_loot_item, ground_id}, _from, state) do
+    result = GroundItemStore.claim(state.map_name, ground_id)
+
+    with {:ok, item} <- result do
+      Broadcast.to_in_range(
+        state.map_name,
+        item.x,
+        item.y,
+        Config.view_range(),
+        %ItemVanished{ground_id: ground_id, reason: :PICKED_UP}
+      )
+    end
+
+    {:reply, result, state}
   end
 
   @impl true

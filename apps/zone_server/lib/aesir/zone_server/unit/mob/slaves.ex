@@ -120,7 +120,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Slaves do
   defp follow(state, master) do
     distance = Geometry.chebyshev_distance(state.x, state.y, master.x, master.y)
 
-    if state.target_ref == nil and (distance > @follow_distance or distance == 0) and
+    if state.target_ref == nil and state.loot_target_id == nil and
+         (distance > @follow_distance or distance == 0) and
          AIStateMachine.can_move?(state, System.monotonic_time(:millisecond)) do
       center = {master.x, master.y}
       destination = Cell.random_traversable_near(master.map_name, center, @follow_distance)
@@ -130,7 +131,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Slaves do
     end
   end
 
-  defp inherit_target(%MobState{target_ref: nil} = state, master, now)
+  defp inherit_target(%MobState{target_ref: nil, loot_target_id: nil} = state, master, now)
        when now - state.last_linktime >= 1_000 do
     with {type, id} = target <- master_target(master, state),
          {:ok, {_, unit, _}} <- UnitRegistry.get_unit(type, id) do

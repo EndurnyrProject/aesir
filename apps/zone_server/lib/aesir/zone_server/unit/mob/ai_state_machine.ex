@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Mob.Looting
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Movement
@@ -148,7 +149,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     with true <- not reach_blocked?(state),
          {:ok, {x, y, map_name}} when map_name == state.map_name <-
            SpatialIndex.get_unit_position(type, id) do
-      walk_reachable?(state, {x, y}, range)
+      reachable_cell?(state, {x, y}, range)
     else
       _ -> false
     end
@@ -171,9 +172,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       not MobState.walk_delayed?(state, mono)
   end
 
-  defp walk_reachable?(%MobState{x: x, y: y}, {x, y}, _range), do: true
+  @doc "Whether a cell can be adjoined within the mob's reach and obstacle path limits."
+  @spec reachable_cell?(MobState.t(), {integer(), integer()}, non_neg_integer()) :: boolean()
+  def reachable_cell?(%MobState{x: x, y: y}, {x, y}, _range), do: true
 
-  defp walk_reachable?(state, {tx, ty}, range) do
+  def reachable_cell?(state, {tx, ty}, range) do
     with true <- Geometry.chebyshev_distance(state.x, state.y, tx, ty) <= range,
          {:ok, cell} <- adjoining_cell(state, {tx, ty}),
          {:ok, map_data} <- MapCache.get(state.map_name),
@@ -348,17 +351,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp process_target(state, view_range, can_move, now, mono) do
-    state = search(state, view_range)
+    state = state |> Looting.search(can_move, now) |> search(view_range)
 
-    case state.target_ref do
-      nil -> idle_step(state, now, mono)
-      target -> engage(state, target, can_move, now, mono)
+    cond do
+      state.target_ref != nil ->
+        engage(%{state | loot_target_id: nil}, state.target_ref, can_move, now, mono)
+
+      state.loot_target_id != nil ->
+        Looting.step(state, can_move, now)
+
+      true ->
+        idle_step(state, now, mono)
     end
   end
 
   # A walk never exceeds the chase refresh distance, so a walking mob keeps
   # walking before dropping a target that became invalid; a target gone from
   # the world is dropped at once.
+  defp check_target(%MobState{target_ref: nil, loot_target_id: id} = state, now) when id != nil,
+    do: Looting.validate_target(state, now)
+
   defp check_target(%MobState{target_ref: nil} = state, _now), do: {:cont, state}
 
   defp check_target(%MobState{target_ref: target} = state, now) do
@@ -409,7 +421,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     modes = state.mob_data.modes || []
 
     cond do
-      (:aggressive in modes and (is_nil(state.target_ref) or not is_nil(state.master_id))) or
+      (:aggressive in modes and
+         (no_target?(state) or not is_nil(state.master_id))) or
           state.skill_state == :follow ->
         state |> active_search(view_range) |> rush_new_target_in_range(state.target_ref)
 
@@ -420,6 +433,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         state
     end
   end
+
+  defp no_target?(state), do: state.target_ref == nil and state.loot_target_id == nil
 
   # A new target found already in attack range puts the mob straight into
   # rush, out of its aggressive mode.
@@ -789,6 +804,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         :idle ->
           state
 
+        :loot ->
+          state
+          |> MovementHandler.stop_soon()
+          |> MobState.stop_attack()
+          |> MobState.set_state(:idle)
+          |> Map.put(:next_walktime, next_walktime(now))
+
         _other ->
           state
           |> MobState.stop_attack()
@@ -796,7 +818,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
           |> Map.put(:next_walktime, next_walktime(now))
       end
 
-    %{state | target_ref: nil, chase_target: nil}
+    %{state | target_ref: nil, chase_target: nil, loot_target_id: nil}
   end
 
   @doc "The next random walk time from `now`: 4000-4999 ms away."

@@ -358,7 +358,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         %{state | next_think_at: now}
 
       StatusInterpreter.loses_target?(:mob, state.instance_id) ->
-        %{state | next_think_at: now} |> MobState.set_target(nil) |> MobState.clear_attacked()
+        %{state | next_think_at: now, loot_target_id: nil}
+        |> MobState.set_target(nil)
+        |> MobState.clear_attacked()
 
       true ->
         state = %{state | next_think_at: now}

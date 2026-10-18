@@ -64,7 +64,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     MobSkillExecutor.broadcast_casting(state, row)
 
     if can_use_skill?(state, row) and target_reachable?(state, row) do
-      state = state |> MobSkillExecutor.execute(row) |> executed_state(state)
+      result = MobSkillExecutor.execute(state, row)
+      state = result |> executed_state(state) |> finish_action_delay(result, now)
 
       {:ok,
        %{state | last_skill_id: row.skill_id}
@@ -118,8 +119,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     # surfaces as {:error, _} from the Executor: a clean abort with no packet.
     # The cooldown is written in every case so a failed cast cannot be
     # instantly re-rolled every tick.
-    state = state |> MobSkillExecutor.execute(row, :cast_end) |> executed_state(state)
+    result = MobSkillExecutor.execute(state, row, :cast_end)
     now = System.system_time(:millisecond)
+    state = result |> executed_state(state) |> finish_action_delay(result, now)
 
     updated_state =
       state
@@ -175,6 +177,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   defp executed_state({:ok, %MobState{} = executed}, _state), do: executed
   defp executed_state(_result, state), do: state
 
+  # Monsters bypass skill-specific action delays, retaining the 100 ms minimum.
+  defp finish_action_delay(state, {:error, _reason}, now),
+    do: %{state | act_delay_until: now}
+
+  defp finish_action_delay(state, _result, now),
+    do: %{state | act_delay_until: max(state.act_delay_until || now, now + 100)}
+
   # The reference sets a monster's attack delay when a cast ends or is cancelled.
   defp start_attack_delay(state),
     do: %{state | last_attack_time: System.system_time(:millisecond)}
@@ -207,7 +216,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
 
     now = System.system_time(:millisecond)
 
-    state
+    %{state | act_delay_until: now}
     |> MobState.put_skill_cooldown(row.skill_id, now + row.delay)
     |> MobState.clear_casting()
     |> start_attack_delay()

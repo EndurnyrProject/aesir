@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.KillExp
+  alias Aesir.ZoneServer.Unit.Mob.Looting
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MvpReward
   alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
@@ -369,6 +370,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     SpawnView.notify_despawn(updated_state)
     Lifecycle.publish_death(:mob, state.instance_id, state.map_name, kill_credit)
 
+    if state.no_drops or not is_integer(reward_owner_id), do: Looting.drop_on_death(state)
     announce_kill(state, attacker_ref, reward_owner_id, kill_blow, exp_bonus)
     Slaves.master_died(updated_state)
 
@@ -438,6 +440,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
             %{
               mob_id: mob_data.id,
               drops: mob_data.drops,
+              looted_items: state.looted_items,
               mob_level: mob_data.level,
               mob_race: mob_data.race,
               map: state.map_name,

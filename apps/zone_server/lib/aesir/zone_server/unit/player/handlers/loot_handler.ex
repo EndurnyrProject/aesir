@@ -196,6 +196,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
         Map.get(payload, :final_source, {:player, char_id})
       )
 
+    items = items ++ DropCalculator.scatter_loot(Map.get(payload, :looted_items, []), map, x, y)
+
     case {items, opts} do
       {[], _opts} -> :ok
       {items, []} -> Coordinator.drop_items(map, items, x, y)

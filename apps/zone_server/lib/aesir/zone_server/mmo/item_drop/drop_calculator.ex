@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
@@ -215,6 +216,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   defp clamp_rate(rate, category) do
     {min_rate, max_rate} = Config.item_drop_bounds(category)
     rate |> max(min_rate) |> min(max_rate)
+  end
+
+  @doc "Scatters retained monster loot north, southeast, west, without rolling its contents."
+  @spec scatter_loot([GroundItem.t()], String.t(), integer(), integer()) :: [drop()]
+  def scatter_loot(items, map_name, x, y) do
+    items
+    |> Enum.with_index(3)
+    |> Enum.map(fn {item, index} ->
+      {cx, cy} = resolve_cell(index, map_name, x, y)
+      {item.nameid, item.amount, cx, cy, item.identified}
+    end)
   end
 
   @spec scatter([{integer(), integer(), boolean()}], String.t(), integer(), integer()) :: [drop()]

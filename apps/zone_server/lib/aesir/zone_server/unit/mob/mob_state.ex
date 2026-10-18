@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
@@ -129,6 +130,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # The cell the mob actually spawned on.
     spawn_point: nil,
     target_ref: nil,
+    loot_target_id: nil,
+    looted_items: [],
     # The pending attacked event: the retaliation target of the last landed hit
     # (and of the last "norm" hit, a normal attack on the mob in its attack
     # state from within its attack range + 1), consumed by the next AI think.
@@ -162,6 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     typed_aggro_list: %{},
     typed_aggro_order: [],
     last_action_time: nil,
+    act_delay_until: nil,
     last_attack_time: nil,
     # The AI does not think before this time (ms): after an attack or a cast's
     # end it rests for its attack motion.
@@ -212,6 +216,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @type t() :: %__MODULE__{
           instance_id: integer(),
           mob_id: integer(),
+          loot_target_id: pos_integer() | nil,
+          looted_items: [GroundItem.t()],
           mob_data: MobDefinition.t(),
           spawn_ref: MobSpawn.t(),
           process_pid: pid() | nil,
@@ -275,6 +281,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           },
           typed_aggro_order: [Ref.t()],
           last_action_time: integer() | nil,
+          act_delay_until: integer() | nil,
           last_attack_time: integer() | nil,
           next_think_at: integer() | nil,
           hp: integer(),

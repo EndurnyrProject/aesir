@@ -46,7 +46,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     with {:ok, map_data} <- MapCache.get(state.map_name),
          {:ok, path} <-
            request_path(map_data, {state.x, state.y}, {x, y}, chase?) do
-      state = MobState.stop_attack(%{state | walk_easy: false, chase_walk: chase?})
+      state =
+        MobState.stop_attack(%{
+          state
+          | walk_easy: false,
+            chase_walk: chase? and state.loot_target_id == nil
+        })
 
       {:noreply,
        walk_request(
@@ -230,6 +235,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   end
 
   def handle_hit_stop(%MobState{} = state), do: state
+
+  @doc "Shortens a walking mob's path to one cell, or two after crossing the step's midpoint."
+  @spec stop_soon(MobState.t()) :: MobState.t()
+  def stop_soon(%MobState{movement_state: :moving} = state) do
+    remaining = if HitStop.plan(state.pending_step, HitStop.now()) == :finish_step, do: 2, else: 1
+    state = %{state | walk_path: Enum.take(state.walk_path, remaining), walk_target: nil}
+    Movement.set_position(:mob, state.instance_id, state, state.map_name)
+    state
+  end
+
+  def stop_soon(state), do: state
 
   @doc "Rejects offensive knockback on current castle ground before displacement commit."
   @spec handle_knockback(
