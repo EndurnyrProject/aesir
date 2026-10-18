@@ -4,13 +4,13 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   a `MobDefinition`. Used by the one-time `mix aesir.import.mobs` task; not on
   any runtime path.
 
-  Modes come from three sources, unioned and deduped: the class (`Class: Boss`
-  gives `:detector`, `:status_immune` and `:knockback_immune`, `Guardian` gives
-  `:status_immune`, `Battlefield` gives `:status_immune` and `:skill_immune`),
-  the explicit `Modes` flags (`Aggressive`, `Detector`, `StatusImmune`,
-  `SkillImmune`, `KnockBackImmune` and the four `Ignore*` flags), and the mode
-  set derived from the `Ai` value via `MobMode`. The class itself is not
-  stored: `MobMode.class/1` derives it from the modes at runtime. `MvpExp` and `MvpDrops` are parsed onto
+  Modes start with the `Ai` preset, then explicit boolean `Modes` overrides
+  set or clear its bits. Class modes are added last: Boss gives detector,
+  status immunity and knockback immunity, Guardian gives status immunity,
+  Battlefield adds skill immunity, and Event adds fixed-item-drop mode.
+  The declared class is retained
+  for initial base data; a later Mode calculation derives the runtime class.
+  `MvpExp` and `MvpDrops` are parsed onto
   `mvp_exp`/`mvp_drops` and stay strictly separate from the normal `drops`
   list. `RaceGroups` is parsed into `race_groups`; resistances and `DamageTaken`
   are still dropped.
@@ -24,18 +24,13 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   require Logger
 
   @sizes %{"small" => :small, "medium" => :medium, "large" => :large}
-
-  @explicit_modes [
-    {"aggressive", :aggressive},
-    {"detector", :detector},
-    {"statusimmune", :status_immune},
-    {"skillimmune", :skill_immune},
-    {"knockbackimmune", :knockback_immune},
-    {"ignoremelee", :ignore_melee},
-    {"ignoremagic", :ignore_magic},
-    {"ignoreranged", :ignore_ranged},
-    {"ignoremisc", :ignore_misc}
-  ]
+  @classes %{
+    "normal" => :normal,
+    "boss" => :boss,
+    "guardian" => :guardian,
+    "battlefield" => :battlefield,
+    "event" => :event
+  }
 
   @races %{
     "formless" => :formless,
@@ -84,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   end
 
   @spec encode_value(atom(), term()) :: term()
-  defp encode_value(field, value) when field in [:size, :race], do: Atom.to_string(value)
+  defp encode_value(field, value) when field in [:size, :race, :class], do: Atom.to_string(value)
   defp encode_value(:modes, value), do: Enum.map(value, &Atom.to_string/1)
   defp encode_value(:race_groups, value), do: Enum.map(value, &Atom.to_string/1)
   defp encode_value(:stats, value), do: Map.new(value, fn {k, v} -> {Atom.to_string(k), v} end)
@@ -111,7 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   @spec to_definition(map(), :renewal | :pre_renewal) ::
           {:ok, MobDefinition.t()} | {:error, term()}
   def to_definition(entry, mode \\ :renewal) do
-    with {:ok, size} <- fetch_enum(@sizes, Map.get(entry, "Size", "Small"), :unknown_size),
+    with {:ok, class} <- fetch_enum(@classes, Map.get(entry, "Class", "Normal"), :unknown_class),
+         {:ok, size} <- fetch_enum(@sizes, Map.get(entry, "Size", "Small"), :unknown_size),
          {:ok, race} <- fetch_enum(@races, Map.get(entry, "Race", "Formless"), :unknown_race),
          {:ok, element} <-
            fetch_enum(@elements, Map.get(entry, "Element", "Neutral"), :unknown_element) do
@@ -120,16 +116,18 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
          id: Map.fetch!(entry, "Id"),
          aegis_name: Map.fetch!(entry, "AegisName"),
          name: Map.fetch!(entry, "Name"),
-         level: Map.get(entry, "Level", 1),
-         hp: Map.get(entry, "Hp", 1),
-         sp: max(Map.get(entry, "Sp", 1), 1),
+         level: uint!(entry, "Level", 1, 16),
+         hp: max(uint!(entry, "Hp", 1, 32), 1),
+         sp: max(uint!(entry, "Sp", 1, 32), 1),
          base_exp: Map.get(entry, "BaseExp", 0),
          job_exp: Map.get(entry, "JobExp", 0),
-         atk: Map.get(entry, "Attack", 0),
-         atk2: if(mode == :pre_renewal, do: Map.get(entry, "Attack2", 0), else: 0),
-         matk: if(mode == :renewal, do: Map.get(entry, "Attack2", 0), else: 0),
-         def: Map.get(entry, "Defense", 0),
-         mdef: Map.get(entry, "MagicDefense", 0),
+         atk: uint!(entry, "Attack", 0, 16),
+         atk2: if(mode == :pre_renewal, do: uint!(entry, "Attack2", 0, 16), else: 0),
+         matk: if(mode == :renewal, do: uint!(entry, "Attack2", 0, 16), else: 0),
+         def: min(uint!(entry, "Defense", 0, 16), if(mode == :renewal, do: 32_767, else: 127)),
+         mdef:
+           min(uint!(entry, "MagicDefense", 0, 16), if(mode == :renewal, do: 32_767, else: 127)),
+         class: class,
          stats: parse_stats(entry),
          attack_range: Map.get(entry, "AttackRange", 0),
          skill_range: Map.get(entry, "SkillRange", 10),
@@ -137,12 +135,13 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
          size: size,
          race: race,
          race_groups: parse_race_groups(Map.get(entry, "RaceGroups")),
-         element: {element, Map.get(entry, "ElementLevel", 1)},
-         walk_speed: Map.get(entry, "WalkSpeed", 150),
-         attack_delay: Map.get(entry, "AttackDelay", 0),
-         attack_motion: Map.get(entry, "AttackMotion", 0),
-         client_attack_motion: Map.get(entry, "ClientAttackMotion", 0),
-         damage_motion: Map.get(entry, "DamageMotion", 0),
+         element: {element, element_level(entry)},
+         walk_speed: entry |> uint!("WalkSpeed", 150, 16) |> max(20) |> min(1_000),
+         attack_delay: entry |> uint!("AttackDelay", 100, 16) |> max(100) |> min(8_000),
+         attack_motion: attack_motion(entry),
+         client_attack_motion:
+           entry |> uint!("ClientAttackMotion", attack_motion(entry), 16) |> max(1),
+         damage_motion: uint!(entry, "DamageMotion", 0, 16),
          ai_type: parse_ai(Map.get(entry, "Ai")),
          modes: parse_modes(entry),
          drops: parse_drops(Map.get(entry, "Drops")),
@@ -179,14 +178,28 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
 
   @spec parse_stats(map()) :: map()
   defp parse_stats(entry) do
-    %{
-      str: Map.get(entry, "Str", 1),
-      agi: Map.get(entry, "Agi", 1),
-      vit: Map.get(entry, "Vit", 1),
-      int: Map.get(entry, "Int", 1),
-      dex: Map.get(entry, "Dex", 1),
-      luk: Map.get(entry, "Luk", 1)
-    }
+    Map.new(
+      [{"Str", :str}, {"Agi", :agi}, {"Vit", :vit}, {"Int", :int}, {"Dex", :dex}, {"Luk", :luk}],
+      fn {key, field} ->
+        value = uint!(entry, key, 1, 16)
+        {field, Integer.mod(value + 32_768, 65_536) - 32_768}
+      end
+    )
+  end
+
+  defp attack_motion(entry), do: entry |> uint!("AttackMotion", 100, 16) |> max(1) |> min(8_000)
+
+  defp element_level(entry) do
+    level = uint!(entry, "ElementLevel", 1, 16)
+    if level in 1..4, do: level, else: 1
+  end
+
+  defp uint!(entry, key, default, bits) do
+    value = Map.get(entry, key, default)
+
+    if is_integer(value) and value >= 0 and value < Integer.pow(2, bits),
+      do: value,
+      else: raise(ArgumentError, "invalid #{key} for monster #{entry["Id"]}: #{inspect(value)}")
   end
 
   @spec parse_ai(term()) :: integer()
@@ -203,13 +216,13 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
 
   @spec parse_modes(map()) :: [atom()]
   defp parse_modes(entry) do
-    modes = Map.get(entry, "Modes")
+    modes =
+      entry
+      |> Map.get("Ai")
+      |> MobMode.from_ai()
+      |> MobMode.apply_overrides(Map.get(entry, "Modes") || %{})
 
-    explicit =
-      for {name, mode} <- @explicit_modes, explicit_mode?(modes, name), do: mode
-
-    derived = MobMode.from_ai(Map.get(entry, "Ai"))
-    Enum.uniq(class_modes(Map.get(entry, "Class")) ++ explicit ++ derived)
+    Enum.uniq(class_modes(Map.get(entry, "Class")) ++ modes)
   end
 
   # The modes `MobDatabase::loadingFinished` adds for a class.
@@ -219,18 +232,12 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
       "boss" -> [:detector, :status_immune, :knockback_immune]
       "guardian" -> [:status_immune]
       "battlefield" -> [:status_immune, :skill_immune]
+      "event" -> [:fixed_item_drop]
       _other -> []
     end
   end
 
   defp class_modes(_class), do: []
-
-  @spec explicit_mode?(term(), String.t()) :: boolean()
-  defp explicit_mode?(modes, name) when is_map(modes) do
-    Enum.any?(modes, fn {k, v} -> v == true and String.downcase(k) == name end)
-  end
-
-  defp explicit_mode?(_modes, _name), do: false
 
   @spec parse_drops(term()) :: [MobDrop.t()]
   defp parse_drops(drops) when is_list(drops) do

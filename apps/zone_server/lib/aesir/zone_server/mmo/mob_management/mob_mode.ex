@@ -64,6 +64,14 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobMode do
     {0x0002000, :change_target_chase},
     {0x0004000, :target_weak},
     {0x0008000, :random_target},
+    {0x0010000, :ignore_melee},
+    {0x0020000, :ignore_magic},
+    {0x0040000, :ignore_ranged},
+    {0x0080000, :mvp},
+    {0x0100000, :ignore_misc},
+    {0x0200000, :knockback_immune},
+    {0x0400000, :teleport_block},
+    {0x1000000, :fixed_item_drop},
     {0x2000000, :detector},
     {0x4000000, :status_immune},
     {0x8000000, :skill_immune}
@@ -111,14 +119,57 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobMode do
     end
   end
 
+  @doc "Applies explicit boolean database overrides to a decoded mode set."
+  @spec apply_overrides([atom()], map()) :: [atom()]
+  def apply_overrides(modes, overrides) when is_map(overrides) do
+    overrides
+    |> Enum.reduce(mask(modes), fn {name, active}, current ->
+      bit = database_mode_bit!(name)
+
+      unless is_boolean(active),
+        do: raise(ArgumentError, "invalid mode value #{inspect({name, active})}")
+
+      if active, do: current ||| bit, else: current &&& bnot(bit)
+    end)
+    |> from_mask()
+  end
+
+  defp database_mode_bit!(name) when is_binary(name) do
+    normalized = String.downcase(name)
+
+    case Enum.find(@mode_bits, fn {_bit, mode} ->
+           mode |> Atom.to_string() |> String.replace("_", "") == normalized
+         end) do
+      {bit, _mode} -> bit
+      nil when normalized == "none" -> 0
+      nil -> raise ArgumentError, "unknown monster mode #{inspect(name)}"
+    end
+  end
+
+  @doc "Encodes mode atoms as the bitmask retained in a calculated snapshot."
+  @spec mask([atom()]) :: non_neg_integer()
+  def mask(modes) do
+    Enum.reduce(modes, 0, fn mode, mask ->
+      case List.keyfind(@mode_bits, mode, 1) do
+        {bit, ^mode} -> mask ||| bit
+        nil -> raise ArgumentError, "unknown monster mode #{inspect(mode)}"
+      end
+    end)
+  end
+
+  @doc "Decodes the recognized mode bits for behavior and class readers."
+  @spec from_mask(non_neg_integer()) :: [atom()]
+  def from_mask(mask), do: decode(mask)
+
   @typedoc "The monster class a unit runs as, derived from its current modes."
-  @type class :: :normal | :boss | :guardian | :battlefield
+  @type class :: :normal | :boss | :guardian | :battlefield | :event
 
   @doc """
   Derives the monster class from a mode list, re-derived whenever the modes
   change: status and skill immune is a battlefield object; status immune,
   knockback immune and detector is a boss; status immune alone is a guardian;
-  anything else is normal. A declared Event class therefore runs as normal.
+  anything else is normal. A Mode refresh maps Event to normal; the initial
+  database class is retained until that refresh.
   """
   @spec class([atom()]) :: class()
   def class(modes) when is_list(modes) do

@@ -17,8 +17,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
-  @base_walk_speed 150
-
   @doc """
   Handles applying a status effect to the player.
 
@@ -123,7 +121,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   """
   @spec walk_speed_for(Stats.t(), non_neg_integer()) :: pos_integer()
   def walk_speed_for(stats, cast_speed_rate \\ 0) do
-    WalkSpeed.calculate(@base_walk_speed, stats.modifiers.status_effects, %{
+    WalkSpeed.calculate(PlayerState.base_walk_speed(), stats.modifiers.status_effects, %{
       tunnel_drive_slow: tunnel_drive_slow(stats),
       item_speed: item_speed(stats),
       improve_dodge_haste: TfMiss.move_haste(stats),

@@ -51,9 +51,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmSpheremine do
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(caster, {:ground, x, y}, _level, _definition) do
+  def cast(caster, {:ground, x, y}, level, _definition) do
     case Coordinator.summon_mob(caster.map_name, @mob_id, x, y,
            owner_player_id: caster.character_id,
+           summon_kind: :sphere,
+           summon_level: level,
            lifetime_ms: 30_000,
            no_exp: true,
            no_drops: false

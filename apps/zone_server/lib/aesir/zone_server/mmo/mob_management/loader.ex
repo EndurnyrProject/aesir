@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
   # Version-suffixed: the cache stores built structs, so a shape change (new
   # field, new convert/2 clause) must invalidate every existing cache. Freshness
   # is mtime-based and cannot detect that the cache was built by older code.
-  @cache_file "mobs_v5.etf"
+  @cache_file "mobs_v6.etf"
 
   @field_names MobDefinition
                |> struct(%{})
@@ -75,6 +75,14 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
   @spec convert(atom(), term()) :: term()
   defp convert(:size, v), do: String.to_atom(v)
   defp convert(:race, v), do: String.to_atom(v)
+
+  defp convert(:class, "normal"), do: :normal
+  defp convert(:class, "boss"), do: :boss
+  defp convert(:class, "guardian"), do: :guardian
+  defp convert(:class, "battlefield"), do: :battlefield
+  defp convert(:class, "event"), do: :event
+
+  defp convert(:class, value), do: raise(ArgumentError, "invalid monster class #{inspect(value)}")
   defp convert(:race_groups, v), do: Enum.map(v, &String.to_atom/1)
   defp convert(:modes, v), do: Enum.map(v, &String.to_atom/1)
   defp convert(:stats, v), do: Map.new(v, fn {k, n} -> {String.to_atom(k), n} end)

@@ -193,6 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Economy do
 
     [
       hp_override: mob.hp + hp_bonus(defense, mode),
+      guardian_hp_bonus: hp_bonus(defense, mode),
       stat_bonus: %{def: flat, mdef: flat}
     ]
   end

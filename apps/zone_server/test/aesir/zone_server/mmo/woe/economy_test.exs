@@ -240,11 +240,13 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EconomyTest do
 
       assert Economy.emperium_summon_opts(100, :renewal) == [
                hp_override: mob.hp + 1_000,
+               guardian_hp_bonus: 1_000,
                stat_bonus: %{def: 34, mdef: 34}
              ]
 
       assert Economy.emperium_summon_opts(100, :pre_renewal) == [
                hp_override: mob.hp + 100_000,
+               guardian_hp_bonus: 100_000,
                stat_bonus: %{def: 34, mdef: 34}
              ]
     end

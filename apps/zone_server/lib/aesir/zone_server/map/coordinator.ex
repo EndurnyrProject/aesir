@@ -803,6 +803,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   # overriding mob_data.modes, which the AI state machine reads in several places;
   # left for a follow-up so summons don't ship a half-correct mode override.
   defp place_mob(mob_data, {x, y}, opts, state) do
+    opts = Keyword.put(opts, :form_modes, mob_data.modes || [])
     mob_data = slave_definition(mob_data, Keyword.get(opts, :master_id))
     instance_id = generate_mob_instance_id()
     spawn_ref = Keyword.get_lazy(opts, :spawn_ref, fn -> summon_spawn_ref(mob_data, x, y) end)

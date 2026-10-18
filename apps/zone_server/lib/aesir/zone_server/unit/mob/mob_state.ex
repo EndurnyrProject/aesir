@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Mmo.WalkSpeed
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.HitStop
+  alias Aesir.ZoneServer.Unit.Mob.Calculated
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.Ref
 
   @behaviour Aesir.ZoneServer.Unit
@@ -54,7 +56,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Core identification
     instance_id: nil,
     mob_id: nil,
+    level: nil,
     mob_data: nil,
+    base: nil,
+    calculated: nil,
     spawn_ref: nil,
     process_pid: nil,
 
@@ -216,6 +221,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @type t() :: %__MODULE__{
           instance_id: integer(),
           mob_id: integer(),
+          level: non_neg_integer() | nil,
+          base: Calculated.t() | nil,
+          calculated: Calculated.t() | nil,
           loot_target_id: pos_integer() | nil,
           looted_items: [GroundItem.t()],
           mob_data: MobDefinition.t(),
@@ -310,9 +318,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   def new(instance_id, mob_data, spawn_ref, map_name, x, y) do
     current_time = System.system_time(:second)
 
-    %__MODULE__{
+    state = %__MODULE__{
       instance_id: instance_id,
       mob_id: mob_data.id,
+      level: mob_data.level,
       mob_data: mob_data,
       spawn_ref: spawn_ref,
       map_name: map_name,
@@ -333,7 +342,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       respawn_delay: spawn_ref.respawn_time,
       aggressive: :angry in (mob_data.modes || [])
     }
+
+    base = Stats.base(state)
+    %{state | base: base, calculated: base, sp: base.max_sp, max_sp: base.max_sp}
   end
+
+  @doc "The runtime level, which can differ from the current form's database level."
+  @spec get_level(t()) :: non_neg_integer()
+  def get_level(%__MODULE__{level: level}) when is_integer(level), do: level
+  def get_level(%__MODULE__{mob_data: data}), do: data.level
 
   @impl Aesir.ZoneServer.Unit
   def get_race(%__MODULE__{mob_data: mob_data}) do
@@ -878,10 +895,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           stat_bonus: Keyword.get(opts, :stat_bonus, %{})
       }
 
-    case Keyword.get(opts, :hp_override) do
-      nil -> state
-      hp -> %{state | hp: hp, max_hp: hp, base_max_hp: hp}
-    end
+    level = if state.level in 1..275, do: state.level, else: state.mob_data.level
+    state = %{state | level: level}
+    base = Stats.prepare_base(state, opts)
+
+    %{
+      state
+      | base: base,
+        calculated: base,
+        hp: base.max_hp,
+        max_hp: base.max_hp,
+        base_max_hp: base.max_hp,
+        sp: base.max_sp,
+        max_sp: base.max_sp,
+        base_walk_speed: base.speed,
+        walk_speed: base.speed
+    }
   end
 
   @doc """

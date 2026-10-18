@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
 
   alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.Race
   alias Aesir.ZoneServer.Mmo.Size
 
@@ -60,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
             matk: 0,
             def: 0,
             mdef: 0,
+            class: :normal,
             stats: nil,
             attack_range: nil,
             skill_range: 10,
@@ -93,6 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
           matk: integer(),
           def: integer(),
           mdef: integer(),
+          class: MobMode.class(),
           stats: map(),
           attack_range: integer(),
           skill_range: integer(),

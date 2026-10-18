@@ -191,7 +191,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
     stub(Config, :exp_bonus_attacker, fn -> 0 end)
 
     player = player_state(1, "prontera", 100)
-    owned_mob = %{MobState.configure_summon(mob_state(), owner_player_id: 1) | instance_id: 20}
+
+    owned_mob = %{
+      MobState.configure_summon(reward_mob_state(), owner_player_id: 1)
+      | instance_id: 20
+    }
+
     UnitRegistry.register_unit(:player, 1, PlayerState, player, self())
     UnitRegistry.register_unit(:mob, 20, MobState, owned_mob, self())
 

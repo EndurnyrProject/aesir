@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCannibalize
@@ -59,7 +61,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
         assert opts[:no_exp] == true
         assert opts[:no_drops] == true
 
-        configured = MobState.configure_summon(struct(MobState, %{hp: 1, max_hp: 1}), opts)
+        {:ok, form} = MobManagement.get_mob_by_id(mob_id)
+        spawn = %MobSpawn{mob: mob_id, amount: 1, respawn_time: 0, spawn_area: nil}
+
+        configured =
+          9_001
+          |> MobState.new(form, spawn, "prontera", 11, 10)
+          |> MobState.configure_summon(opts)
+
         assert configured.hp == expected_hp
         assert configured.max_hp == expected_hp
       end

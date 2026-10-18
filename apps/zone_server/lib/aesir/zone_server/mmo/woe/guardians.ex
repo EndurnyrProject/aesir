@@ -98,26 +98,40 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Guardians do
 
   Below level 1, `Strengthen Guardians` grants no scaling: only `guild_id` is
   set. From level 1, HP, DEF/MDEF, ATK, and attack-speed bonuses apply on top
-  of the mob's base stats.
+  of the mob's base stats. Training-edition castles (IDs 24 and above) omit
+  the ordinary castle HP and DEF/MDEF additions.
   """
   @spec summon_opts(Castle.slot(), 0..100, 0..3, non_neg_integer(), GameMode.t()) :: keyword()
-  def summon_opts(_slot, _defense, guardup_level, guild_id, _mode) when guardup_level < 1 do
+  @spec summon_opts(
+          Castle.slot(),
+          0..100,
+          0..3,
+          non_neg_integer(),
+          GameMode.t(),
+          non_neg_integer()
+        ) :: keyword()
+  def summon_opts(slot, defense, guardup_level, guild_id, mode, castle_id \\ 0)
+
+  def summon_opts(_slot, _defense, guardup_level, guild_id, _mode, _castle_id)
+      when guardup_level < 1 do
     [guild_id: guild_id]
   end
 
-  def summon_opts(slot, defense, guardup_level, guild_id, mode) do
+  def summon_opts(slot, defense, guardup_level, guild_id, mode, castle_id) do
     {:ok, mob} = Mobs.by_id(Map.fetch!(@mob_ids, slot.type))
     flat = div(defense + 2, 3)
+    castle_hp = if castle_id < 24, do: Economy.hp_bonus(defense, mode), else: 0
+    castle_defense = if castle_id < 24, do: %{def: flat, mdef: flat}, else: %{}
 
     [
       guild_id: guild_id,
-      hp_override: mob.hp + Economy.hp_bonus(defense, mode) + 1_000 * defense,
-      stat_bonus: %{
-        def: flat,
-        mdef: flat,
-        atk: 2 * guardup_level + 8,
-        aspd_rate: 2 * guardup_level + 3
-      }
+      hp_override: mob.hp + castle_hp + 1_000 * defense,
+      guardian_hp_bonus: castle_hp + 1_000 * defense,
+      stat_bonus:
+        Map.merge(castle_defense, %{
+          atk: 2 * guardup_level + 8,
+          aspd_rate: 2 * guardup_level + 3
+        })
     ]
   end
 
@@ -162,7 +176,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Guardians do
       slot_def = Enum.at(slots, slot)
       mob_id = Map.fetch!(@mob_ids, slot_def.type)
       {x, y} = slot_def.cell
-      opts = summon_opts(slot_def, defense, guardup_level(owner), owner, GameMode.mode())
+
+      opts =
+        summon_opts(slot_def, defense, guardup_level(owner), owner, GameMode.mode(), castle_id)
 
       case Coordinator.summon_mob(map, mob_id, x, y, opts) do
         {:ok, unit_id} ->

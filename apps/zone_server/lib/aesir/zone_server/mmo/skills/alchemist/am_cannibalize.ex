@@ -61,6 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCannibalize do
 
     case Coordinator.summon_mob(caster.map_name, mob_id, x, y,
            owner_player_id: caster.character_id,
+           summon_kind: :flora,
+           master_speed: PlayerState.base_walk_speed(),
            hp_override: 1_500 + 200 * level + 10 * base_level,
            lifetime_ms: lifetime_ms,
            no_exp: true,

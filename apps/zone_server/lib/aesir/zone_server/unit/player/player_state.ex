@@ -6,6 +6,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   @behaviour Aesir.ZoneServer.Unit
 
+  @doc "Returns the unmodified player cell delay before equipment and status effects."
+  @spec base_walk_speed() :: pos_integer()
+  def base_walk_speed, do: 150
+
   import Bitwise
 
   alias Aesir.Commons.Models.InventoryItem
@@ -392,7 +396,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
       # Movement defaults
       walk_path: [],
-      walk_speed: 150,
+      walk_speed: base_walk_speed(),
       movement_intent: :none,
 
       # Visibility defaults
