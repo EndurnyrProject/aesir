@@ -15,8 +15,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.LootingTest do
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
+  alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.Looting
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Handlers.LootHandler
@@ -135,6 +137,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.LootingTest do
     end
   end
 
+  test "a lost item discovered at a cell centre leaves just one further step" do
+    item = GroundItem.new(501, 1, 104, 100)
+    GroundItemStore.put("prontera", item)
+
+    state = %{
+      looter()
+      | last_skillcheck: System.system_time(:millisecond),
+        loot_target_id: item.id
+    }
+
+    moving = Looting.step(state, true, System.system_time(:millisecond))
+    GroundItemStore.claim("prontera", item.id)
+
+    {:noreply, shortened} = MovementHandler.handle_movement_tick(moving)
+
+    assert shortened.walk_path == [{102, 100}]
+    assert shortened.skill_state == :idle
+    HitStop.cancel(shortened.pending_step)
+  end
+
   test "a full bag replaces its oldest stack, and a lost claim grants nothing" do
     retained = for id <- 501..510, do: GroundItem.new(id, 1, 100, 100)
     incoming = GroundItem.new(511, 4, 100, 100)
@@ -170,6 +192,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.LootingTest do
     assert Looting.search(state, true, now).loot_target_id == item.id
     Mimic.copy(LineOfSight)
     stub(LineOfSight, :passable?, fn _, _, _ -> false end)
+    assert Looting.search(state, true, now).loot_target_id == item.id
+    stub(LineOfSight, :clear?, fn _, _, _ -> false end)
     assert Looting.search(state, true, now).loot_target_id == nil
   end
 

@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -158,7 +159,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp reach_blocked?(state) do
     not can_move?(state, System.monotonic_time(:millisecond)) and
       not MobState.walk_delayed?(state, System.monotonic_time(:millisecond)) and
-      Enum.any?(@reach_blocking_statuses, &StatusStorage.has_status?(:mob, state.instance_id, &1))
+      (state.walk_fail_count > 0 or
+         Enum.any?(
+           @reach_blocking_statuses,
+           &StatusStorage.has_status?(:mob, state.instance_id, &1)
+         ))
   end
 
   @doc """
@@ -645,9 +650,58 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   # attack timer is armed for its end, and the state becomes the attack state
   # either way.
   defp order_attack(state, target, now) do
+    case attack_target(state, target) do
+      nil -> {state, :continue}
+      chosen -> order_selected_attack(state, chosen, now)
+    end
+  end
+
+  defp attack_target(state, target) do
+    if :random_target in (state.mob_data.modes || []) do
+      range = min(MobState.get_attack_range(state), MobState.get_chase_range(state))
+
+      candidates =
+        state
+        |> units_in_range(range)
+        |> Enum.filter(&(enemy?(state, &1) and visible?(state, &1)))
+        |> Enum.take(30)
+
+      pick_attack_target(state, candidates)
+    else
+      target
+    end
+  end
+
+  defp pick_attack_target(_state, []), do: nil
+
+  defp pick_attack_target(state, candidates) do
+    chosen = Enum.random(candidates)
+    if shoot_range?(state, chosen), do: chosen
+  end
+
+  defp shoot_range?(state, target) do
+    case target_position(target) do
+      {:ok, {x, y, map}} when map == state.map_name ->
+        distance = Geometry.chebyshev_distance(state.x, state.y, x, y)
+
+        distance < 2 or
+          (distance <= @area_size and LineOfSight.clear?(map, {state.x, state.y}, {x, y}))
+
+      _ ->
+        false
+    end
+  end
+
+  defp order_selected_attack(state, target, now) do
     cond do
+      not target_living?(target) ->
+        {unlock_target(state, now), :stop}
+
       not Interpreter.can_attack?(:mob, state.instance_id) or charmed_by?(state, target) ->
         {MobState.stop_attack(state), :continue}
+
+      not attack_target_valid?(state, target) ->
+        {unlock_target(state, now), :stop}
 
       MobState.attacking?(state) ->
         {MobState.set_attack_target(state, target), :stop}
@@ -662,6 +716,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
         {MobState.set_state(state, :berserk), :stop}
     end
+  end
+
+  defp target_living?({type, id}) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, unit, _pid}} -> Unit.living?(unit)
+      _missing -> false
+    end
+  end
+
+  defp attack_target_valid?(state, target) do
+    :can_attack in (state.mob_data.modes || []) and enemy?(state, target) and
+      attack_visible?(state, target)
   end
 
   defp charmed_by?(state, {:player, target_id}),
@@ -681,6 +747,91 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       {:ok, {_x, _y, map_name}} when map_name == state.map_name -> visible?(state, target)
       _other -> false
     end
+  end
+
+  @doc "Checks a chase attack after a completed walk cell, without running another AI think."
+  @spec walk_chase(MobState.t(), boolean(), boolean()) ::
+          {:continue | :stop | {:repath, {integer(), integer()}}, MobState.t()}
+  def walk_chase(
+        %MobState{chase_target: nil} = state,
+        _progressed?,
+        _fullcheck?
+      ),
+      do: {:continue, state}
+
+  def walk_chase(state, progressed?, fullcheck?) do
+    target = state.chase_target
+    now = System.system_time(:millisecond)
+
+    case walk_target_position(state, target) do
+      {:ok, position} ->
+        update_walk_chase(state, target, position, progressed?, fullcheck?, now)
+
+      {:error, _missing} ->
+        {:continue, unlock_target(state, now)}
+    end
+  end
+
+  defp update_walk_chase(state, target, position, progressed?, fullcheck?, now) do
+    cond do
+      progressed? and walk_attack_in_range?(state, target, position) ->
+        {state, action} = order_attack(state, target, now)
+        {action, state}
+
+      fullcheck? and not walk_visible?(state, target, position) ->
+        {:continue, unlock_target(state, now)}
+
+      fullcheck? and progressed? ->
+        refresh_walk_chase(state, target, position)
+
+      true ->
+        {:continue, state}
+    end
+  end
+
+  defp walk_attack_in_range?(_state, {:item, _id}, _position), do: false
+
+  defp walk_attack_in_range?(state, _target, {x, y, map}) do
+    map == state.map_name and
+      Geometry.in_tile_range?(state.x, state.y, x, y, MobState.get_attack_range(state))
+  end
+
+  defp refresh_walk_chase(state, target, {x, y, _map}) do
+    destination = if elem(target, 0) == :item, do: {x, y}, else: chase_destination(state, {x, y})
+
+    cond do
+      MobState.walk_delayed?(state, System.monotonic_time(:millisecond)) ->
+        {:continue, state}
+
+      not reachable_cell?(state, {x, y}, Geometry.chebyshev_distance(state.x, state.y, x, y) + 1) ->
+        {:continue, %{state | chase_target: nil}}
+
+      (destination && destination != {state.x, state.y}) and
+          can_move?(state, System.monotonic_time(:millisecond)) ->
+        {{:repath, destination}, state}
+
+      true ->
+        {:continue, state}
+    end
+  end
+
+  defp walk_target_position(state, {:item, id}) do
+    case GroundItemStore.get(state.map_name, id) do
+      {:ok, item} -> {:ok, {item.x, item.y, state.map_name}}
+      error -> error
+    end
+  end
+
+  defp walk_target_position(_state, target), do: target_position(target)
+
+  defp walk_visible?(state, target, {x, y, map}) do
+    range =
+      if StatusStorage.has_status?(:mob, state.instance_id, :sc_blind),
+        do: 1,
+        else: MobState.get_chase_range(state)
+
+    map == state.map_name and Geometry.in_tile_range?(state.x, state.y, x, y, range) and
+      visible?(state, target)
   end
 
   @doc "Whether the mob's attack delay has ended at `now` (ms)."

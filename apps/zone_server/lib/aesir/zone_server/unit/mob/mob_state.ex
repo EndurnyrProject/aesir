@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # stops attacking (target unlock, chase start, a refused order).
     attack_target: nil,
     attack_timer_at: nil,
-    # The target the mob is walking to in a chase, and the monotonic time (ms)
+    # The unit or floor item the mob is walking to, and the monotonic time (ms)
     # a chase walk held by the walk delay resumes at.
     chase_target: nil,
     chase_resume_at: nil,
@@ -241,7 +241,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           aggressive: boolean(),
           attack_target: Ref.t() | nil,
           attack_timer_at: integer() | nil,
-          chase_target: Ref.t() | nil,
+          chase_target: Ref.t() | {:item, pos_integer()} | nil,
           chase_resume_at: integer() | nil,
           provoke_flag: Ref.t() | nil,
           last_skill_id: integer() | nil,

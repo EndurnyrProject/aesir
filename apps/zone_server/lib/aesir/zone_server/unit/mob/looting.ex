@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Looting do
         |> GroundItemStore.query_in_range(state.x, state.y, @loot_range)
         |> Enum.sort_by(& &1.id)
         |> Enum.find(fn item ->
-          LineOfSight.passable?(state.map_name, {state.x, state.y}, {item.x, item.y}) and
+          LineOfSight.clear?(state.map_name, {state.x, state.y}, {item.x, item.y}) and
             AIStateMachine.reachable_cell?(state, {item.x, item.y}, @loot_range)
         end)
 
@@ -106,7 +106,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Looting do
 
       true ->
         {:noreply, moving} =
-          MovementHandler.handle_move_to(MobState.set_state(state, :loot), item.x, item.y,
+          MovementHandler.handle_move_to(
+            MobState.set_state(%{state | chase_target: {:item, item.id}}, :loot),
+            item.x,
+            item.y,
             chase: true
           )
 

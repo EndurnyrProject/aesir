@@ -556,7 +556,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       stub(SpatialIndex, :units_in_area, fn "prontera", _x1, _y1, _x2, _y2 -> [{:player, 2}] end)
       stub(SpatialIndex, :get_unit_position, fn :player, 2 -> {:ok, {101, 101, "prontera"}} end)
 
-      result = think(aggressive_idle_mob_state(modes: [:aggressive, :angry, :can_move]))
+      result =
+        think(aggressive_idle_mob_state(modes: [:aggressive, :angry, :can_move, :can_attack]))
 
       assert {result.target_ref, result.skill_state, result.aggressive} ==
                {{:player, 2}, :berserk, false}
@@ -910,7 +911,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {101, 101, "prontera"}}
       end)
 
-      base = base_mob_state(modes: [:aggressive, :detector, :status_immune, :knockback_immune])
+      base =
+        base_mob_state(
+          modes: [:aggressive, :detector, :status_immune, :knockback_immune, :can_attack]
+        )
+
       state = %MobState{base | x: 100, y: 100, skill_state: :idle, target_ref: nil}
 
       result = think(state)
@@ -930,7 +935,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {101, 101, "prontera"}}
       end)
 
-      base = base_mob_state(modes: [:aggressive, :detector])
+      base = base_mob_state(modes: [:aggressive, :detector, :can_attack])
       state = %MobState{base | x: 100, y: 100, skill_state: :idle, target_ref: nil}
 
       result = think(state)
@@ -1060,7 +1065,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       stub(Combat, :execute_mob_attack, fn _state, _target -> :ok end)
 
-      base = base_mob_state(modes: [:detector, :status_immune, :knockback_immune])
+      base = base_mob_state(modes: [:detector, :status_immune, :knockback_immune, :can_attack])
 
       state = %MobState{
         base
@@ -1439,7 +1444,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     end)
   end
 
-  defp aggressive_idle_mob_state(opts \\ [modes: [:aggressive]]) do
+  defp aggressive_idle_mob_state(opts \\ [modes: [:aggressive, :can_attack]]) do
     %MobState{base_mob_state(opts) | x: 100, y: 100, skill_state: :idle, target_ref: nil}
   end
 

@@ -91,6 +91,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
 
   def handle_chase_resume(state, _at), do: {:noreply, state}
 
+  @doc "Runs the walk cell's chase check and arms any attack timer the order creates."
+  @spec walk_chase(MobState.t(), boolean(), boolean()) ::
+          {:continue | :stop | {:repath, {integer(), integer()}}, MobState.t()}
+  def walk_chase(state, progressed?, fullcheck?) do
+    {action, updated} = AIStateMachine.walk_chase(state, progressed?, fullcheck?)
+    {action, updated |> arm_timers(state) |> StateCommit.commit()}
+  end
+
   # Runs `fun` on the state and arms the attack timer and chase resume
   # messages it booked.
   defp timed(state, fun) do

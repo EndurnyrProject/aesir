@@ -110,7 +110,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       damage_motion: 300,
       element: {:neutral, 1},
       race: :formless,
-      size: :medium
+      size: :medium,
+      modes: [:can_attack]
     }
 
     spawn_ref = %MobSpawn{

@@ -50,7 +50,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
         MobState.stop_attack(%{
           state
           | walk_easy: false,
-            chase_walk: chase? and state.loot_target_id == nil
+            chase_walk: chase? and state.loot_target_id == nil,
+            chase_target: if(chase?, do: state.chase_target, else: nil)
         })
 
       {:noreply,
@@ -167,22 +168,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   # Before each cell of a walk (its first included) the mob checks its skills
   # (`AiHandler.walk_skill_check/1`). A walk the skill asked for starts from
   # this cell; a skill that stops the walk leaves the mob standing here.
-  defp next_cell(state) do
+  defp next_cell(state, progressed? \\ false) do
     case AiHandler.walk_skill_check(state) do
       {_continue_or_stop, %MobState{walk_target: {_x, _y}} = redirected} ->
         redirect_walk(redirected)
 
       {:continue, state} ->
-        [next | _rest] = state.walk_path
-
-        schedule_step(
-          state,
-          MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, next)
-        )
+        case AiHandler.walk_chase(state, progressed?, length(state.walk_path) == 1) do
+          {:stop, state} -> stop_walk(%{state | chase_target: nil})
+          {{:repath, destination}, state} -> refresh_chase_path(state, destination)
+          {:continue, state} -> schedule_next_cell(state)
+        end
 
       {:stop, state} ->
         stop_walk(state)
     end
+  end
+
+  defp schedule_next_cell(state) do
+    [next | _rest] = state.walk_path
+    schedule_step(state, MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, next))
   end
 
   @doc """
@@ -439,6 +444,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   end
 
   defp step_mob(state, {next_x, next_y}, remaining_path) do
+    HitStop.cancel(state.pending_step)
     # Facing toward the cell we are stepping into.
     dir = Geometry.calculate_direction(state.x, state.y, next_x, next_y)
 
@@ -447,7 +453,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       state
       |> MobState.update_position(next_x, next_y)
       |> MobState.update_direction(dir)
-      |> Map.merge(%{walk_path: remaining_path, walk_fail_count: 0})
+      |> Map.merge(%{walk_path: remaining_path, walk_fail_count: 0, pending_step: nil})
 
     # Route through the single choke point so the spatial index + registry
     # are synced and the unit is marked dirty for the per-map broadcaster.
@@ -465,7 +471,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
       # The next tick is priced by the step it will take, so entering each
       # cell lines up with the clients' per-cell interpolation.
       remaining_path != [] ->
-        next_cell(updated_state)
+        next_cell(updated_state, true)
 
       true ->
         finish_walk(updated_state)
@@ -475,9 +481,35 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   # Path completed: stop and broadcast the standing transition so the client's
   # last snapshot sample flips move_state back to idle. An escape walk ends here.
   defp finish_walk(state) do
-    stopped_state = %{MobState.stop_movement(state) | can_escape: false}
-    Movement.set_position(:mob, stopped_state.instance_id, stopped_state, stopped_state.map_name)
-    stopped_state
+    case AiHandler.walk_chase(state, true, true) do
+      {{:repath, destination}, state} ->
+        refresh_chase_path(state, destination)
+
+      {:stop, state} ->
+        settle_walk(%{state | chase_target: nil})
+
+      {:continue, state} ->
+        settle_walk(state)
+    end
+  end
+
+  defp settle_walk(state) do
+    stopped = %{MobState.stop_movement(state) | can_escape: false}
+    Movement.set_position(:mob, stopped.instance_id, stopped, stopped.map_name)
+    stopped
+  end
+
+  defp refresh_chase_path(state, destination) do
+    case walk_path(state, destination) do
+      {:ok, [_ | _] = path} ->
+        start_walk(state, path)
+
+      {:ok, []} ->
+        settle_walk(state)
+
+      _no_path ->
+        if state.walk_path == [], do: settle_walk(state), else: schedule_next_cell(state)
+    end
   end
 
   # A move request made while walking takes effect on the cell the step just
@@ -495,6 +527,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   end
 
   defp stop_walk(state) do
+    HitStop.cancel(state.pending_step)
     stopped_state = MobState.stop_movement(state)
     Movement.set_position(:mob, stopped_state.instance_id, stopped_state, state.map_name)
     stopped_state
