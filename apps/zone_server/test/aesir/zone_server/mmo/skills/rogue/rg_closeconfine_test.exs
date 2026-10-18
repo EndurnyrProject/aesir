@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -14,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -32,18 +34,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
     register_mob(@target_id)
 
     assert {:ok, definition} = Catalog.by_id(1005)
-    assert %{icon: :rg_cconfine_m} = Registry.get_definition(:sc_closeconfine2)
-    assert %{icon: :rg_cconfine_s} = Registry.get_definition(:sc_closeconfine)
+    assert %{icon: :rg_cconfine_m} = Registry.get_definition(:sc_closeconfine)
+    assert %{icon: :rg_cconfine_s} = Registry.get_definition(:sc_closeconfine2)
 
     assert {:ok, ^caster} = RgCloseconfine.cast(caster, {:unit, @target_id}, 1, definition)
 
-    assert %{val2: @target_id, expires_at: holder_expires, started_at: holder_started} =
-             StatusStorage.get_status(:player, @caster_id, :sc_closeconfine2)
+    assert %{val1: 1, val2: 1, val3: flee, expires_at: holder_expires, started_at: holder_started} =
+             StatusStorage.get_status(:player, @caster_id, :sc_closeconfine)
 
     assert %{val2: @caster_id, expires_at: victim_expires, started_at: victim_started} =
-             StatusStorage.get_status(:mob, @target_id, :sc_closeconfine)
+             StatusStorage.get_status(:mob, @target_id, :sc_closeconfine2)
 
-    assert holder_expires - holder_started == 10_000
+    assert flee == if(GameMode.mode() == :renewal, do: 50, else: 10)
+    assert holder_expires - holder_started == 11_000
     assert victim_expires - victim_started == 10_000
     refute StatusInterpreter.can_move?(:player, @caster_id)
     refute StatusInterpreter.can_move?(:mob, @target_id)
@@ -56,17 +59,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
     assert {:ok, ^caster} =
              RgCloseconfine.cast(caster, {:unit, @target_id}, 1, skill_definition())
 
-    assert %{val2: @target_id} =
-             StatusStorage.get_status(:player, @caster_id, :sc_closeconfine2)
+    assert %{val2: 1} =
+             StatusStorage.get_status(:player, @caster_id, :sc_closeconfine)
 
     assert %{val2: @caster_id} =
-             StatusStorage.get_status(:player, @target_id, :sc_closeconfine)
+             StatusStorage.get_status(:player, @target_id, :sc_closeconfine2)
 
     refute StatusInterpreter.can_move?(:player, @caster_id)
     refute StatusInterpreter.can_move?(:player, @target_id)
   end
 
-  test "holder frees itself when its victim has died" do
+  test "a dead victim retains its link until expiry releases the holder" do
     caster = register_player(@caster_id)
     target = register_mob(@target_id)
     definition = skill_definition()
@@ -74,21 +77,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
     assert {:ok, ^caster} = RgCloseconfine.cast(caster, {:unit, @target_id}, 1, definition)
     :ok = UnitRegistry.update_unit_state(:mob, @target_id, %{target | hp: 0, is_dead: true})
 
-    assert :ok = StatusInterpreter.process_tick(:player, @caster_id, :sc_closeconfine2)
-    refute StatusStorage.has_status?(:player, @caster_id, :sc_closeconfine2)
+    assert :ok = StatusInterpreter.remove_on_death(:mob, @target_id)
+    refute StatusInterpreter.can_move?(:player, @caster_id)
+    victim = StatusStorage.get_status(:mob, @target_id, :sc_closeconfine2)
+    assert victim != nil
+    assert StatusInterpreter.expire_status_if_current(:mob, @target_id, :sc_closeconfine2, victim)
+    refute StatusStorage.has_status?(:player, @caster_id, :sc_closeconfine)
     assert StatusInterpreter.can_move?(:player, @caster_id)
   end
 
-  test "victim frees itself when its holder has left" do
+  test "ending the holder frees its nearby victim" do
     caster = register_player(@caster_id)
     register_mob(@target_id)
     definition = skill_definition()
 
     assert {:ok, ^caster} = RgCloseconfine.cast(caster, {:unit, @target_id}, 1, definition)
-    :ok = UnitRegistry.unregister_unit(:player, @caster_id)
-
-    assert :ok = StatusInterpreter.process_tick(:mob, @target_id, :sc_closeconfine)
-    refute StatusStorage.has_status?(:mob, @target_id, :sc_closeconfine)
+    assert :ok = StatusInterpreter.remove_status(:player, @caster_id, :sc_closeconfine)
+    refute StatusStorage.has_status?(:mob, @target_id, :sc_closeconfine2)
     assert StatusInterpreter.can_move?(:mob, @target_id)
   end
 
@@ -126,6 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
 
     state = PlayerState.new(character)
     :ok = UnitRegistry.register_unit(:player, id, PlayerState, state, self())
+    :ok = SpatialIndex.add_unit(:player, id, state.x, state.y, state.map_name)
     state
   end
 
@@ -158,6 +164,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
 
     state = MobState.new(id, mob_data, spawn_ref, "prontera", 50, 50)
     :ok = UnitRegistry.register_unit(:mob, id, MobState, state, self())
+    :ok = SpatialIndex.add_unit(:mob, id, state.x, state.y, state.map_name)
     state
   end
 

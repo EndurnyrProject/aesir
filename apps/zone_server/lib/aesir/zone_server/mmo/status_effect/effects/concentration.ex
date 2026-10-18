@@ -3,7 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Concentration do
   Concentration (SC_CONCENTRATION).
 
   Both modes grant `10 × level` HIT and level-one Endure. Renewal raises ATK
-  and reduces hard/soft DEF by `(5 + 2 × level)%`; pre-renewal uses `5 × level%`.
+  and reduces hard DEF by `(5 + 2 × level)%`; pre-renewal uses `5 × level%`
+  and also reduces soft DEF.
   Expiry removes finite Endure, leaving an independent infinite Endure active.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -27,12 +28,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Concentration do
   end
 
   @impl true
-  def on_apply({unit_type, unit_id}, instance, _context) do
+  def on_apply({:mob, _unit_id}, instance, %{loaded: true}), do: {:ok, instance}
+
+  def on_apply({:mob, _unit_id} = target, instance, %{duration: duration}) do
+    start_endure(target, instance, duration)
+    {:ok, instance}
+  end
+
+  def on_apply(target, instance, _context) do
     duration =
       if instance.expires_at,
         do: max(instance.expires_at - System.monotonic_time(:millisecond), 1),
         else: nil
 
+    start_endure(target, instance, duration)
+    {:ok, instance}
+  end
+
+  defp start_endure({unit_type, unit_id}, instance, duration) do
     case StatusStorage.get_status(unit_type, unit_id, :sc_endure) do
       %StatusEntry{val4: val4} when val4 != 0 ->
         :ok
@@ -45,8 +58,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Concentration do
           duration: duration
         )
     end
-
-    {:ok, instance}
   end
 
   @impl true

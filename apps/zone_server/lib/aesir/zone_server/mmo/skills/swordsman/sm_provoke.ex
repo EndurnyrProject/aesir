@@ -47,8 +47,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
   @behaviour Active
 
   @impl Active
-  def cast(caster, {:unit, target_id}, level, definition) do
-    caster_id = Caster.for(caster).id(caster)
+  def cast(caster, {:unit, target_ref}, level, definition) do
+    adapter = Caster.for(caster)
+    caster_id = adapter.id(caster)
     duration = Enum.at(definition.duration, level - 1)
 
     params = [
@@ -56,10 +57,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
       val2: 2 + 3 * level,
       val3: 5 + 5 * level,
       caster_id: caster_id,
+      source_type: adapter.unit_type(caster),
       duration: duration
     ]
 
-    with {:ok, pid, target, unit_type} <- TargetResolver.resolve(target_id),
+    with {:ok, pid, target, unit_type} <- TargetResolver.resolve(target_ref),
+         target_id = target.__struct__.get_unit_id(target),
          true <- lands?(caster, target, level),
          :ok <- StatusInterpreter.apply_status(unit_type, target_id, :sc_provoke, params) do
       taunt(unit_type, pid, caster)

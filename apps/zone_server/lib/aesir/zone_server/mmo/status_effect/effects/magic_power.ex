@@ -31,15 +31,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicPower do
   end
 
   @impl true
-  def on_committed_action(_target, instance, {:skill, skill_id}, _context) do
+  def on_committed_action(target, instance, {:skill, skill_id}, _context) do
     cond do
       GameMode.mode() == :renewal or not offensive_magic?(skill_id) -> {:ok, instance}
-      armed?(instance) -> :remove
+      armed_for?(target, instance) -> :remove
       true -> {:ok, put_state(instance, :armed, true)}
     end
   end
 
   def on_committed_action(_target, instance, _action, _context), do: {:ok, instance}
+
+  defp armed_for?({:mob, _id}, %{val4: val4}) when is_integer(val4) and val4 != 0, do: true
+  defp armed_for?(_target, instance), do: armed?(instance)
 
   defp armed?(%{state: %{armed: true}}), do: true
   defp armed?(_instance), do: false

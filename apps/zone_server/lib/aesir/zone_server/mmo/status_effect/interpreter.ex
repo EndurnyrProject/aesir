@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRod
+  alias Aesir.ZoneServer.Mmo.StatusEffect.MobParameters
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -891,6 +892,56 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       true
     else
       false
+    end
+  end
+
+  @doc """
+  Updates Close Confine link bookkeeping without starting a status or calculating stats.
+
+  The pure callback may change only `val1`, `val2` and the expiry, or return
+  `:keep`. Missing entries remain missing. A winning update preserves the held
+  FLEE value and original start time and re-arms the exact deadline, without
+  refreshing the icon or notifying a calculated-stat owner.
+  """
+  @spec update_link_status(
+          unit_type(),
+          integer(),
+          :sc_closeconfine | :sc_closeconfine2,
+          (StatusEntry.t() -> StatusEntry.t() | :keep)
+        ) :: StatusEntry.t() | nil
+  def update_link_status(unit_type, unit_id, status_id, update)
+      when status_id in [:sc_closeconfine, :sc_closeconfine2] do
+    decide = fn
+      nil -> :keep
+      current -> link_update_decision(current, update)
+    end
+
+    case StatusStorage.apply_status_with_entry(unit_type, unit_id, status_id, [], decide) do
+      {:stored, replacement, _prior} ->
+        StatusTickManager.arm(unit_type, unit_id, replacement)
+        replacement
+
+      _not_stored ->
+        nil
+    end
+  end
+
+  defp link_update_decision(current, update) do
+    case update.(current) do
+      :keep ->
+        :keep
+
+      updated ->
+        {:store,
+         fn incoming ->
+           %{
+             current
+             | val1: updated.val1,
+               val2: updated.val2,
+               expires_at: updated.expires_at,
+               generation: incoming.generation
+           }
+         end}
     end
   end
 
@@ -1885,6 +1936,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       expires_at: nil
     }
 
+    instance =
+      if unit_type == :mob and not Keyword.get(status_params, :loaded, false),
+        do:
+          MobParameters.initialize(
+            instance,
+            GameMode.mode(),
+            monster_parameter_context(unit_id, instance)
+          ),
+        else: instance
+
     # The statuses this application ends before meeting the held instance: its
     # end-on-start list and, for a body state, every held body state.
     definition = %{definition | end_on_start: ended_on_start(unit_type, unit_id, definition)}
@@ -1902,6 +1963,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         end_ended_on_start(unit_type, unit_id, status_id, definition)
         overlap_result(refused)
     end
+  end
+
+  defp monster_parameter_context(unit_id, instance) do
+    source_present? =
+      is_integer(instance.source_id) and
+        UnitRegistry.unit_exists?(instance.source_type, instance.source_id)
+
+    :mob
+    |> get_entity_info(unit_id)
+    |> Map.put(:source_present, source_present?)
   end
 
   defp start_application(

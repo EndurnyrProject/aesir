@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
+  alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Mob.Calculated
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
@@ -35,6 +37,35 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
 
   @doc "Builds raw base data with captured spawn adjustments, never held statuses."
   @callback base(MobState.t(), keyword()) :: Calculated.t()
+
+  @doc "Expands monster-only primary dependencies without player resource or timing edges."
+  @callback expand_calc_flags([CalcFlags.flag()]) :: [CalcFlags.flag()]
+
+  @doc "Recalculates selected combat fields from the raw base and captured held entries."
+  @callback recalculate_combat(MobState.t(), [StatusEntry.t()], [CalcFlags.flag()]) ::
+              Calculated.t()
+
+  @doc false
+  @spec expand_calc_flags([CalcFlags.flag()], :renewal | :pre_renewal) :: [CalcFlags.flag()]
+  def expand_calc_flags(flags, mode) do
+    dependencies = %{
+      "Str" => ~w(Batk),
+      "Agi" => if(mode == :renewal, do: ~w(Flee Def2), else: ~w(Flee)),
+      "Vit" => ~w(Def2 Mdef2),
+      "Int" => ~w(Matk Mdef2),
+      "Dex" => if(mode == :renewal, do: ~w(Batk Hit Matk Mdef2), else: ~w(Batk Hit)),
+      "Luk" =>
+        if(mode == :renewal, do: ~w(Batk Cri Flee2 Matk Hit Flee), else: ~w(Batk Cri Flee2))
+    }
+
+    selected = CalcFlags.normalize_flags!(Map.new(flags, &{&1, true}))
+    selected = if "All" in selected, do: CalcFlags.all(), else: selected
+
+    selected
+    |> Enum.flat_map(&[&1 | Map.get(dependencies, &1, [])])
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
 
   @callback calculate_hit(mob_data()) :: integer()
   @callback calculate_flee(mob_data()) :: integer()

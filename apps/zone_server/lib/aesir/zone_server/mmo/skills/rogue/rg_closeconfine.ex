@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfine do
   @moduledoc """
-  Both modes hold caster and target for 10 s. Renewal costs 40 SP; pre-renewal
-  25 SP.
+  Roots the target for 10 seconds and starts or extends its caster's hold for
+  one extra second. Renewal grants the caster 50 FLEE and costs 40 SP; classic
+  grants 10 FLEE and costs 25 SP. A refused recipient still completes the cast.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -20,41 +21,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfine do
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @behaviour Active
 
   @impl Active
-  def cast(caster, {:unit, target_ref}, _level, _definition) do
-    {caster_type, caster_id} = caster_identity(caster)
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast(caster, {:unit, target_ref}, level, definition) do
+    adapter = Caster.for(caster)
+    caster_type = adapter.unit_type(caster)
+    caster_id = adapter.id(caster)
     target_id = unit_id(target_ref)
 
-    with {:ok, _pid, _target, target_type} <- TargetResolver.resolve(target_ref),
-         :ok <-
-           StatusInterpreter.apply_status(caster_type, caster_id, :sc_closeconfine2,
-             val2: target_id,
-             caster_id: caster_id,
-             source_type: caster_type,
-             duration: 10_000,
-             bypass_resistance: true
-           ),
-         :ok <-
-           StatusInterpreter.apply_status(target_type, target_id, :sc_closeconfine,
-             val2: caster_id,
-             caster_id: caster_id,
-             source_type: caster_type,
-             duration: 10_000,
-             bypass_resistance: true
-           ) do
+    with {:ok, _pid, _target, target_type} <- TargetResolver.resolve(target_ref) do
+      StatusInterpreter.apply_status(target_type, target_id, :sc_closeconfine2,
+        val1: level,
+        val2: caster_id,
+        caster_id: caster_id,
+        source_type: caster_type,
+        duration: hd(definition.duration)
+      )
+
       {:ok, caster}
     end
   end
-
-  # Generic caster identity so the confine works for a mob caster (RG_CLOSECONFINE
-  # is an imported mob skill, e.g. Drosera/Gertie) as well as a player.
-  defp caster_identity(%MobState{instance_id: id}), do: {:mob, id}
-  defp caster_identity(%{character_id: id}), do: {:player, id}
 
   defp unit_id({_unit_type, unit_id}), do: unit_id
   defp unit_id(unit_id), do: unit_id

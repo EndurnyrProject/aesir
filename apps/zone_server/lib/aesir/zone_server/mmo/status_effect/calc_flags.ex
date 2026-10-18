@@ -35,6 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags do
     "sc_autocounter" => ["sc_auto_counter"]
   }
 
+  @doc "Returns the full calculation vocabulary selected by All, including Base but not Dye."
+  @spec all() :: [flag()]
+  def all, do: @all_flags
+
   @doc "Returns the selection for a committed apply, removal or armed transition."
   @spec for_event(atom(), :apply | :removed | :armed) :: [flag()]
   def for_event(:sc_intravision, :removed), do: ["All"]

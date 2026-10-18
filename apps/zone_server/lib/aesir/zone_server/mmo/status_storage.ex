@@ -68,7 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
           decision()
         ) ::
           {:stored, StatusEntry.t(), StatusEntry.t() | nil}
-          | {:superseded | :kept, StatusEntry.t()}
+          | {:superseded, StatusEntry.t()}
+          | {:kept, StatusEntry.t() | nil}
   def apply_status_with_entry(
         unit_type,
         unit_id,
@@ -97,7 +98,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   """
   @spec store_if_newer(unit_type(), integer(), StatusEntry.t(), decision()) ::
           {:stored, StatusEntry.t(), StatusEntry.t() | nil}
-          | {:superseded | :kept, StatusEntry.t()}
+          | {:superseded, StatusEntry.t()}
+          | {:kept, StatusEntry.t() | nil}
   def store_if_newer(
         unit_type,
         unit_id,
@@ -112,18 +114,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   defp store_if_newer_loop(table, key, entry, decide) do
     case :ets.lookup(table, key) do
       [] ->
-        stored = decided_entry(decide.(nil), entry)
-
-        if :ets.insert_new(table, {key, stored}) do
-          {:stored, stored, nil}
-        else
-          store_if_newer_loop(table, key, entry, decide)
-        end
+        insert_if_absent(table, key, entry, decide)
 
       [{^key, current}] ->
         if newer_generation?(entry.generation, current.generation),
           do: replace_if_current(table, key, current, entry, decide),
           else: {:superseded, current}
+    end
+  end
+
+  defp insert_if_absent(table, key, entry, decide) do
+    case decide.(nil) do
+      :keep ->
+        {:kept, nil}
+
+      decision ->
+        stored = decided_entry(decision, entry)
+
+        if :ets.insert_new(table, {key, stored}),
+          do: {:stored, stored, nil},
+          else: store_if_newer_loop(table, key, entry, decide)
     end
   end
 

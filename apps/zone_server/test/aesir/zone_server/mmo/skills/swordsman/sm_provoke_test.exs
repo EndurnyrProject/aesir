@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvokeTest do
                                                   val2: 11,
                                                   val3: 20,
                                                   caster_id: 1,
+                                                  source_type: :player,
                                                   duration: ^duration
                                                 ] ->
       :ok

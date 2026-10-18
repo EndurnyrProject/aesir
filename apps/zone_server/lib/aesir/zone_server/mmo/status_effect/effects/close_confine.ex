@@ -1,32 +1,33 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloseConfine do
+  @moduledoc """
+  Close Confine's caster hold (SC_CLOSECONFINE).
+
+  Renewal grants the held FLEE bonus of 50; classic grants 10. Recipient starts
+  supply the captured bonus, hold count and extra-second duration. Expiry or
+  removal frees nearby recipients, but death does not end the hold.
+  """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_closeconfine,
     immunity: [:boss],
     no_dispel: true,
     no_clear_buff: false,
     no_save: true,
+    remove_on_death: false,
     remove_on_map_change: true,
     properties: [:prevents_movement],
     flags: [:no_move],
-    tick_interval: 1_000,
+    calc_flags: [:flee],
     duration: 10_000,
-    icon: :rg_cconfine_s
+    icon: :rg_cconfine_m
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.CloseConfineLink
   alias Aesir.ZoneServer.Mmo.StatusEntry
-  alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
-  def on_tick(_target, %StatusEntry{val2: peer_id} = instance, _context) do
-    if alive?(peer_id), do: {:ok, instance}, else: :remove
-  end
+  @spec modifiers(StatusEntry.t(), map()) :: %{flee: integer()}
+  def modifiers(instance, _context), do: %{flee: instance.val3}
 
-  defp alive?(unit_id) do
-    Enum.any?([:player, :mob], fn unit_type ->
-      case UnitRegistry.get_unit(unit_type, unit_id) do
-        {:ok, {_module, state, _pid}} -> Unit.living?(state)
-        _ -> false
-      end
-    end)
-  end
+  @impl true
+  @spec on_expire({atom(), integer()}, StatusEntry.t(), map()) :: :ok
+  def on_expire(target, instance, _context), do: CloseConfineLink.end_caster(target, instance)
 end

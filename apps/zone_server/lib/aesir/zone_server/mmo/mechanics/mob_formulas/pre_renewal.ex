@@ -10,8 +10,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal do
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
 
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
+  alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Combat
   alias Aesir.ZoneServer.Mmo.Mechanics.StatusAttack
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Mob.Calculated
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
@@ -39,6 +42,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal do
   @impl true
   @spec base(MobState.t(), keyword()) :: Calculated.t()
   def base(state, opts), do: MobFormulas.adjusted_base(state, opts, __MODULE__, 8)
+
+  @impl true
+  @spec expand_calc_flags([CalcFlags.flag()]) :: [CalcFlags.flag()]
+  def expand_calc_flags(flags), do: MobFormulas.expand_calc_flags(flags, :pre_renewal)
+
+  @impl true
+  @spec recalculate_combat(MobState.t(), [StatusEntry.t()], [CalcFlags.flag()]) :: Calculated.t()
+  def recalculate_combat(state, entries, flags),
+    do: Combat.recalculate(state, entries, flags, :pre_renewal)
 
   @impl true
   def calculate_hit(%MobDefinition{} = mob_data) do

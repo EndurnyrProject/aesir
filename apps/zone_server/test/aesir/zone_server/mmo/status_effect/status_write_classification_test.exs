@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusWriteClassificationTest do
     {@interpreter, :store_movement_changes_if_current, :replace_status_if_current} =>
       :store_movement_changes_if_current,
     {@interpreter, :settle_absorb, :take_status} => :settle_absorb,
+    {@interpreter, :update_link_status, :apply_status_with_entry} => :silent_values,
     {@interpreter, :store_instance_changes, :update_status} => :silent_values,
     {@interpreter, :store_instance_changes_if_current, :update_status} => :silent_values,
     {"mmo/status_effect/dispel.ex", :disarm_penalties, :update_status} => :silent_disarm,
