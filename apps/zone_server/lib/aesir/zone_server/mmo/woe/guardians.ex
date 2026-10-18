@@ -125,6 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Guardians do
 
     [
       guild_id: guild_id,
+      guardian_recalculation: true,
       hp_override: mob.hp + castle_hp + 1_000 * defense,
       guardian_hp_bonus: castle_hp + 1_000 * defense,
       stat_bonus:

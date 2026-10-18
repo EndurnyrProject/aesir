@@ -86,7 +86,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Looting do
   def drop_on_death(%MobState{} = state) do
     drops = DropCalculator.scatter_loot(state.looted_items, state.map_name, state.x, state.y)
     ownership = LootOwnership.determine_typed(state)
-    Coordinator.drop_items(state.map_name, drops, state.x, state.y, ownership: ownership)
+
+    Coordinator.drop_items(state.map_name, drops, state.x, state.y,
+      ownership: {ownership, MobState.is_boss?(state)}
+    )
   end
 
   defp approach(%MobState{x: x, y: y} = state, %{x: x, y: y}, _can_move, now),

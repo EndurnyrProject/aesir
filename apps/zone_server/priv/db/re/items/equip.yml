@@ -3664,6 +3664,7 @@
   locations:
     - right_hand
   name: Azoth
+  on_equip: 'bonus(ctx, :class_change, 300)'
   range: 1
   refineable: true
   subtype: dagger

@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :smatk,
     :res,
     :mres,
+    :class_change,
     :break_weapon_rate,
     :break_armor_rate,
     :unbreakable,
@@ -147,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "returns :error for an out-of-vocabulary key" do
-      assert BonusKeys.destination("bClassChange") == :error
+      assert BonusKeys.destination("bNotAVocabularyKey") == :error
     end
 
     test "resolves the splash range key case-insensitively" do

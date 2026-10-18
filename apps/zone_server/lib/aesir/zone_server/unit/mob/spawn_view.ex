@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
   Mirrors `Player.SpawnView` for the mob spawn domain.
   """
 
+  alias Aesir.Net.SpriteChange
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitHp
   alias Aesir.Net.UnitSpawn
@@ -73,6 +74,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
       max_hp: max(1, mob_state.calculated.max_hp)
     }
 
+    broadcast_to_nearby_players(mob_state, packet)
+    {:ok, packet}
+  end
+
+  @doc """
+  Broadcasts a class-change packet to nearby players: the monster's new form
+  takes the shape its form id names, without a respawn.
+  """
+  @spec notify_class_change(MobState.t()) :: {:ok, SpriteChange.t()}
+  def notify_class_change(%MobState{} = mob_state) do
+    packet = %SpriteChange{gid: mob_state.instance_id, type: 0, val: mob_state.mob_id, val2: 0}
     broadcast_to_nearby_players(mob_state, packet)
     {:ok, packet}
   end

@@ -234,13 +234,18 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
       player = start_attacker("HiddenOne")
       char_id = player.character.id
 
-      normal = start_mob_session(map_name: @map, position: {150, 151}, modes: [:aggressive])
+      normal =
+        start_mob_session(
+          map_name: @map,
+          position: {150, 151},
+          modes: [:aggressive, :can_attack]
+        )
 
       boss =
         start_mob_session(
           map_name: @map,
           position: {150, 152},
-          modes: [:aggressive, :detector, :status_immune, :knockback_immune]
+          modes: [:aggressive, :can_attack, :detector, :status_immune, :knockback_immune]
         )
 
       assert :ok = Interpreter.apply_status(:player, char_id, :sc_hiding, duration: 60_000)

@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Integration.PlayerInvincibilityIntegrationTest do
       start_mob_session(
         map_name: "prontera",
         position: {152, 150},
-        modes: [:aggressive],
+        modes: [:aggressive, :can_attack],
         awake: true
       )
 
@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Integration.PlayerInvincibilityIntegrationTest do
       start_mob_session(
         map_name: "prontera",
         position: {152, 150},
-        modes: [:aggressive],
+        modes: [:aggressive, :can_attack],
         awake: true
       )
 

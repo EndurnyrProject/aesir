@@ -60,6 +60,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Changes the monster's form to `replacement_id`'s, inside its own session.
+
+  The form change keeps the monster's held statuses, runtime level, looted
+  items, AI skill state and fired deferred work, resets its calculated stats to
+  the replacement form's base and applies the configured HP recovery rule. An
+  excluded target (guardian, emperium, treasure box, player summon) or an
+  unknown/unchanged replacement changes nothing.
+  """
+  @spec polymorph(pid(), integer()) :: :ok
+  def polymorph(pid, replacement_id) do
+    GenServer.cast(pid, {:combat, {:polymorph, replacement_id}})
+  end
+
+  @doc """
   Applies passive, nonlethal HP loss: at most down to 1 HP, without the aggro,
   AI reaction or death an attack's damage triggers.
   """
@@ -428,6 +442,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   def handle_cast({:combat, {:apply_vanish, hp_percent, source}}, state) do
     CombatHandler.handle_vanish(hp_percent, source, state)
+  end
+
+  def handle_cast({:combat, {:polymorph, replacement_id}}, state) do
+    CombatHandler.handle_polymorph(replacement_id, state)
   end
 
   def handle_cast({:combat, {:note_hit_type, attacker, bf, skill_id}}, state) do

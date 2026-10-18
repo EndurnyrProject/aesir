@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -19,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AttackedEvent
+  alias Aesir.ZoneServer.Unit.Mob.Calculated
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.KillExp
@@ -29,9 +31,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StateCommit
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
+
+  @emperium_id 1288
 
   @doc """
   Applies `damage` to the mob, from `attacker_id` if known.
@@ -326,6 +331,49 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
+  @doc """
+  Resets the monster into `replacement_id`'s form, keeping everything a class
+  change keeps.
+
+  Guardians, the emperium, treasure boxes and player summons never change form,
+  and a same-form or unknown replacement is refused. Otherwise the form changes,
+  the form's own locks end, attack, walk and cast stop, the new form's base is
+  calculated with no held status contribution, HP follows
+  `monster_class_change_full_recover`, every skill cooldown and the mob's targets
+  are dropped, and the damage history is cleared only on the full-recovery
+  branch. Held statuses, the runtime level, looted items, the AI skill state,
+  already-fired deferred work and an established attack deadline all survive.
+  Exactly one commit publishes the result.
+  """
+  @spec handle_polymorph(integer(), MobState.t()) :: {:noreply, MobState.t()}
+  def handle_polymorph(replacement_id, %MobState{} = state) when is_integer(replacement_id) do
+    with {:ok, replacement} <- Mobs.by_id(replacement_id),
+         :ok <- form_change_allowed?(state, replacement) do
+      hp_rate = hp_percentage(state)
+
+      state = MobState.change_form(state, replacement)
+      :ok = end_form_locks(state.instance_id)
+
+      state =
+        state
+        |> MobState.stop_attack()
+        |> stop_walk()
+        |> CastingHandler.cancel_cast_for_form_change()
+
+      SpawnView.notify_class_change(state)
+
+      state = state |> reset_form(hp_rate) |> StateCommit.commit()
+      SpawnView.notify_hp_update(state)
+
+      {:noreply, state}
+    else
+      :error -> {:noreply, state}
+      {:error, _reason} -> {:noreply, state}
+    end
+  end
+
+  def handle_polymorph(_replacement_id, %MobState{} = state), do: {:noreply, state}
+
   defp handle_death(state, attacker_ref, reward_owner_id, kill_blow, kill_credit) do
     exp_bonus = kill_exp_bonus(state.instance_id)
 
@@ -456,4 +504,75 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   @spec apply_rate(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
   defp apply_rate(amount, 100), do: amount
   defp apply_rate(amount, rate), do: div(amount * rate, 100)
+
+  # The source refuses a class change on castle-owned units (guardians and the
+  # emperium), on treasure boxes and on player summons (spheres, floras and the
+  # other summoned units whose stats scale from their summoner), and on a
+  # replacement that names the monster's current form.
+  defp form_change_allowed?(%MobState{} = state, replacement) do
+    cond do
+      state.mob_id == replacement.id -> {:error, :unchanged_form}
+      :treasure in (state.mob_data.race_groups || []) -> {:error, :treasure_box}
+      guardian?(state) -> {:error, :guardian}
+      is_integer(state.owner_player_id) -> {:error, :player_summon}
+      true -> :ok
+    end
+  end
+
+  defp guardian?(%MobState{guild_id: guild_id, mob_id: mob_id}),
+    do: guild_id > 0 or mob_id == @emperium_id
+
+  # A form change ends the new form's own locks before anything else: a form
+  # that cannot be held ends here, in the same order the change does, so a
+  # monster that acquires one is released before the first calculation.
+  defp end_form_locks(instance_id) do
+    :ok = StatusInterpreter.remove_status(:mob, instance_id, :sc_keeping)
+    :ok = StatusInterpreter.remove_status(:mob, instance_id, :sc_barrier)
+  end
+
+  @spec hp_percentage(MobState.t()) :: non_neg_integer()
+  defp hp_percentage(%MobState{hp: hp, calculated: %Calculated{max_hp: max_hp}}) when max_hp > 0,
+    do: div(hp * 100, max_hp)
+
+  # The new form's base is built from the replacement's database values plus the
+  # adjustments a spawn keeps: a slave still inherits its master's base speed.
+  @spec reset_form(MobState.t(), non_neg_integer()) :: MobState.t()
+  defp reset_form(%MobState{} = state, hp_rate) do
+    base = Stats.prepare_base(state, polymorph_base_opts(state))
+
+    %{state | base: base, calculated: base}
+    |> restore_resources(base, hp_rate)
+    |> MobState.clear_skill_cooldowns()
+    |> MobState.set_target(nil)
+    |> MobState.clear_attacked()
+    |> clear_damage_history()
+  end
+
+  defp polymorph_base_opts(%MobState{master_id: master_id, mob_data: mob_data})
+       when is_integer(master_id) and master_id > 0,
+       do: [master_speed: Coordinator.master_base_speed(master_id, mob_data)]
+
+  defp polymorph_base_opts(%MobState{}), do: []
+
+  # Full recovery leaves the new form at its ceiling; otherwise the new form
+  # keeps the pre-change HP percentage, never below 1 HP. The product wraps at
+  # 32 bits, as the source's unsigned multiplication does.
+  defp restore_resources(%MobState{} = state, base, hp_rate) do
+    hp =
+      if Config.monster_class_change_full_recover?(),
+        do: base.max_hp,
+        else: base.max_hp |> Kernel.*(hp_rate) |> Integer.mod(4_294_967_296) |> div(100) |> max(1)
+
+    %{state | hp: hp, sp: base.max_sp}
+  end
+
+  defp clear_damage_history(%MobState{} = state) do
+    if Config.monster_class_change_full_recover?(), do: MobState.clear_aggro(state), else: state
+  end
+
+  # Stops a walk in progress without a position update: the class change's stop
+  # carries no fix-position request, so no observer is snapped to the cell and
+  # no half-built form is published before the single commit.
+  defp stop_walk(%MobState{} = state),
+    do: MobState.stop_movement(%{state | chase_target: nil, chase_resume_at: nil})
 end

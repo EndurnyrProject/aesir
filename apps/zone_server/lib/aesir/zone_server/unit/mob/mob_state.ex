@@ -154,6 +154,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     last_action_time: nil,
     act_delay_until: nil,
     last_attack_time: nil,
+    # The (absolute) time (ms) an established attack delay ends. A delay is
+    # stamped when it starts, so a later attack-speed change cannot move it.
+    attack_delay_until: nil,
     # The AI does not think before this time (ms): after an attack or a cast's
     # end it rests for its attack motion.
     next_think_at: nil,
@@ -264,6 +267,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           last_action_time: integer() | nil,
           act_delay_until: integer() | nil,
           last_attack_time: integer() | nil,
+          attack_delay_until: integer() | nil,
           next_think_at: integer() | nil,
           hp: integer(),
           sp: integer(),
@@ -672,6 +676,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         attacked_ref: nil,
         spotted_by: MapSet.new(),
         last_attack_time: nil,
+        attack_delay_until: nil,
         walk_delay_until: 0
     }
   end
@@ -772,6 +777,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     %{state | skill_cooldowns: Map.put(cooldowns, skill_id, expires_at)}
   end
 
+  @doc "Drops every per-skill cooldown gate: the monster may immediately reuse any skill."
+  @spec clear_skill_cooldowns(t()) :: t()
+  def clear_skill_cooldowns(%__MODULE__{} = state), do: %{state | skill_cooldowns: %{}}
+
   @doc """
   Returns `true` when `skill_id` has no cooldown entry or `now` has reached
   the recorded `expires_at`. `now` is a millisecond timestamp in the same
@@ -817,6 +826,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @doc """
   Configures player summon ownership, reward policy, optional HP override, and
   an optional flat DEF/MDEF stat bonus.
+
+  `guardian_recalculation` runs the full post-spawn calculation a guardian's
+  spawn performs, which folds its base attack-speed adjustment into its motion.
   """
   @spec configure_summon(t(), keyword()) :: t()
   def configure_summon(%__MODULE__{} = state, opts) do
@@ -832,8 +844,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     level = if state.level in 1..275, do: state.level, else: state.mob_data.level
     state = %{state | level: level}
     base = Stats.prepare_base(state, opts)
+    seeded = %{state | base: base}
 
-    %{state | base: base, calculated: base, hp: base.max_hp, sp: base.max_sp}
+    calculated =
+      if Keyword.get(opts, :guardian_recalculation, false),
+        do: Stats.recalculate_spawn(seeded),
+        else: base
+
+    %{seeded | calculated: calculated, hp: calculated.max_hp, sp: calculated.max_sp}
+  end
+
+  @doc """
+  Adopts `definition` as the monster's current form: the form identity and data
+  change, while the runtime level is kept when it is a level the monster may
+  hold and the replacement's level is adopted otherwise.
+  """
+  @spec change_form(t(), MobDefinition.t()) :: t()
+  def change_form(%__MODULE__{} = state, %MobDefinition{} = definition) do
+    level = if state.level in 1..275, do: state.level, else: definition.level
+
+    %{state | mob_id: definition.id, mob_data: definition, level: level}
   end
 
   @doc """
@@ -1034,6 +1064,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec get_attack_delay(t()) :: integer()
   def get_attack_delay(%__MODULE__{calculated: %Calculated{adelay: adelay, amotion: amotion}}) do
     adelay |> max(amotion) |> min(@max_motion)
+  end
+
+  @doc """
+  Starts the monster's attack delay from `now` (ms), never shortening a
+  deadline an earlier delay already established.
+  """
+  @spec start_attack_delay(t(), integer()) :: t()
+  def start_attack_delay(%__MODULE__{} = state, now) do
+    deadline = now + get_attack_delay(state)
+
+    %{
+      state
+      | last_attack_time: now,
+        attack_delay_until: max(state.attack_delay_until || deadline, deadline)
+    }
   end
 
   @doc """

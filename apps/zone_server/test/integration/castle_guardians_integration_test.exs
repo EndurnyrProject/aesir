@@ -238,7 +238,7 @@ defmodule Aesir.ZoneServer.Integration.CastleGuardiansIntegrationTest do
 
     assert scaled.combat_stats.def == baseline.combat_stats.def + 34
     assert scaled.combat_stats.mdef == baseline.combat_stats.mdef + 34
-    assert scaled.attack_delay_ms == div(baseline.attack_delay_ms * 91, 100)
+    assert scaled.attack_delay_ms == div(baseline.attack_delay_ms * 991, 1_000)
   end
 
   defp live_unit_ids(slots) do

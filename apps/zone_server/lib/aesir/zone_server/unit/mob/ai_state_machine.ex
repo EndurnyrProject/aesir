@@ -707,14 +707,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
         {MobState.set_attack_target(state, target), :stop}
 
       true ->
-        state = MobState.set_attack_target(state, target)
-
-        state =
-          if attack_delay_over?(state, now),
-            do: execute_mob_attack(state, target, now),
-            else: MobState.arm_attack_timer(state, attack_ready_at(state))
-
+        state = state |> MobState.set_attack_target(target) |> swing_if_able(target, now)
         {MobState.set_state(state, :berserk), :stop}
+    end
+  end
+
+  # A mob without the attack mode keeps its order and its attack state but never
+  # swings.
+  defp swing_if_able(%MobState{} = state, target, now) do
+    if MobState.mode?(state, :can_attack) do
+      if attack_delay_over?(state, now),
+        do: execute_mob_attack(state, target, now),
+        else: MobState.arm_attack_timer(state, attack_ready_at(state))
+    else
+      state
     end
   end
 
@@ -726,8 +732,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp attack_target_valid?(state, target) do
-    MobState.mode?(state, :can_attack) and enemy?(state, target) and
-      attack_visible?(state, target)
+    enemy?(state, target) and attack_visible?(state, target)
   end
 
   defp charmed_by?(state, {:player, target_id}),
@@ -836,9 +841,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   @doc "Whether the mob's attack delay has ended at `now` (ms)."
   @spec attack_delay_over?(MobState.t(), integer()) :: boolean()
+  def attack_delay_over?(%MobState{attack_delay_until: until}, now) when is_integer(until),
+    do: now >= until
+
   def attack_delay_over?(%MobState{last_attack_time: nil}, _now), do: true
 
   def attack_delay_over?(%MobState{} = state, now), do: now >= attack_ready_at(state)
+
+  defp attack_ready_at(%MobState{attack_delay_until: until}) when is_integer(until), do: until
 
   defp attack_ready_at(%MobState{last_attack_time: last} = state),
     do: last + MobState.get_attack_delay(state)
@@ -1093,7 +1103,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp execute_mob_attack(state, target_ref, now) do
     case Combat.execute_mob_attack(state, target_ref) do
       result when result in [:ok, :intercepted] ->
-        state = MobState.rest(%{state | last_attack_time: now, last_skill_id: nil}, now)
+        state =
+          %{state | last_skill_id: nil} |> MobState.start_attack_delay(now) |> MobState.rest(now)
+
         MobState.arm_attack_timer(state, attack_ready_at(state))
 
       {:error, reason} ->

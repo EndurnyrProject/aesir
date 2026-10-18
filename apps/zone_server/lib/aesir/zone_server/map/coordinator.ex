@@ -847,7 +847,12 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
-  defp master_base_speed(master_id, mob_data) do
+  @doc """
+  Returns the base speed a slave inherits from `master_id`, falling back to
+  `mob_data`'s database speed while the master is not registered.
+  """
+  @spec master_base_speed(integer(), MobDefinition.t()) :: non_neg_integer()
+  def master_base_speed(master_id, mob_data) do
     case UnitRegistry.get_unit(:mob, master_id) do
       {:ok, {_, %MobState{base: %Calculated{speed: speed}}, _}} -> speed
       _missing -> mob_data.walk_speed

@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -546,7 +547,11 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
   defp set_mob_element(mob, element) do
     updated =
       :sys.replace_state(mob.pid, fn state ->
-        %{state | mob_data: %{state.mob_data | element: element}}
+        # The reaction reads the published snapshot, so the form change must be
+        # calculated into it.
+        state = %{state | mob_data: %{state.mob_data | element: element}}
+        base = Stats.prepare_base(state, [])
+        %{state | base: base, calculated: base}
       end)
 
     :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)
@@ -638,7 +643,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
             position: position,
             hp: 100_000,
             max_hp: 100_000,
-            dex: 999
+            dex: 999,
+            modes: [:can_move, :can_attack]
           ],
           opts
         )

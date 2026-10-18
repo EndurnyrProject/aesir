@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @map "prontera"
@@ -444,6 +445,12 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       caster = caster_targeting(char_id)
       caster = put_in(caster.mob_data.matk, 500)
       caster = put_in(caster.mob_data.stats.int, 100)
+
+      # The caster's combat view reads its published snapshot, so the mutated
+      # form values must be calculated into it before either is used.
+      caster_base = Stats.prepare_base(caster, [])
+      caster = %{caster | base: caster_base, calculated: caster_base}
+
       row = row!(@mob_id, "MG_FIREBOLT", level: 10)
 
       attacker = MobState.to_combatant(caster)

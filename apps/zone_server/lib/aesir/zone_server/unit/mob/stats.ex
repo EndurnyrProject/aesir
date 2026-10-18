@@ -22,6 +22,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.Stats do
   def prepare_base(state, opts), do: Mechanics.mob_formulas().base(state, opts)
 
   @doc """
+  Recalculates every field of a freshly initialized base.
+
+  A spawned unit whose base carries an adjustment that a later calculation
+  would fold (a guardian's attack speed, for example) derives it here, with no
+  held status contributing.
+  """
+  @spec recalculate_spawn(MobState.t()) :: Calculated.t()
+  def recalculate_spawn(%{base: %Calculated{}} = state) do
+    recalculate(state, [], Mechanics.mob_formulas().expand_calc_flags(["All"]))
+  end
+
+  @doc """
   Recalculates the selected fields from the raw base and the held status entries.
 
   The caller expands the selection once with `expand_calc_flags/1`; this

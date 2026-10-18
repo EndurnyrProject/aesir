@@ -30,6 +30,10 @@ config :zone_server, natural_break_rate: 0
 # before the 1000 ms floor. 100 leaves the imported delay unchanged.
 config :zone_server, boss_respawn_delay_percentage: 100
 
+# Whether a monster class change fully recovers its HP. Disabled, the new form
+# keeps the pre-change HP percentage, never below 1 HP.
+config :zone_server, monster_class_change_full_recover: true
+
 # Require a valid single-use zone-entry token (issued by the char server on
 # character selection) in SessionAuth before admitting a client to the zone.
 # Set to false only during a client rollout that does not yet echo the token;

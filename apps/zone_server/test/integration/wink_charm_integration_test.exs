@@ -216,7 +216,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
 
   test "a second Dancer replaces the first charmer and makes the first targetable" do
     first = start_dancer("FirstCharm", {150, 150})
-    second = start_dancer("SecondCharm", {152, 150})
+    second = start_dancer("SecondCharm", {154, 150})
     mob = start_charmable_mob()
 
     charm(first, mob)
@@ -228,7 +228,10 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
     assert second_id == second.character.id
 
     MobSession.set_target(mob.pid, first.character.id)
-    force_tick(mob)
+
+    # The hard think is the map's per-player pass; the lazy tick only unlocks
+    # an idle mob's target.
+    MobSession.hard_think(mob.pid, first.character.id)
 
     assert eventually(fn ->
              state = get_mob_state(mob.pid)
@@ -285,7 +288,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
         hp: 50_000,
         max_hp: 50_000,
         race: :demi_human,
-        modes: Keyword.get(opts, :modes, [:aggressive]),
+        modes: Keyword.get(opts, :modes, [:aggressive, :can_attack]),
         awake: Keyword.get(opts, :awake, true)
       )
 

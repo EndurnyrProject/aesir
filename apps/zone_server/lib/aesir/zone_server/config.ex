@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Config do
   @default_boss_respawn_delay_percentage 100
   @default_boss_respawn_reconcile_on_boot true
   @default_woe_castle_mobs_on_boot true
+  @default_monster_class_change_full_recover true
   @default_exp_rate 100
   @default_item_rate 100
   @default_drop_min 1
@@ -226,6 +227,21 @@ defmodule Aesir.ZoneServer.Config do
         :zone_server,
         :woe_castle_mobs_on_boot,
         @default_woe_castle_mobs_on_boot
+      )
+
+  @doc """
+  Whether a monster class change fully recovers the new form's HP.
+
+  Enabled by default. Disabled, the new form keeps the pre-change HP
+  percentage, never below 1 HP.
+  """
+  @spec monster_class_change_full_recover?() :: boolean()
+  def monster_class_change_full_recover?,
+    do:
+      Application.get_env(
+        :zone_server,
+        :monster_class_change_full_recover,
+        @default_monster_class_change_full_recover
       )
 
   @doc "Server base-EXP rate multiplier as a percentage (100 = 1x). Scales mob-kill base EXP."

@@ -1068,8 +1068,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "unknown bonus key" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bClassChange"}}} =
-               compile("bonus bClassChange,2;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bNotAVocabularyKey"}}} =
+               compile("bonus bNotAVocabularyKey,2;")
     end
 
     test "a conditional read outside the inputs is rejected" do
@@ -1087,8 +1087,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "the first violation aborts the whole item" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bClassChange"}}} =
-               compile("bonus bStr,5; bonus bClassChange,2; bonus bAgi,3;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bNotAVocabularyKey"}}} =
+               compile("bonus bStr,5; bonus bNotAVocabularyKey,2; bonus bAgi,3;")
     end
 
     test "bonus with more than two args is rejected" do

@@ -20,7 +20,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -74,7 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
     }
   end
 
-  test "NPC_AGIUP self-buffs the mob, folds into to_combatant, and reverts on removal" do
+  test "NPC_AGIUP self-buffs the mob, recalculates into to_combatant, and reverts on removal" do
     state = build_mob_state()
     UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
 
@@ -83,11 +85,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
     assert :ok = Executor.execute(state, self_buff_row())
 
     assert StatusStorage.has_status?(:mob, state.instance_id, :sc_increaseagi)
-    assert MobState.to_combatant(state).base_stats.agi == @base_agi + @level
+
+    # The owning session reconciles the committed status: the buff reaches the
+    # combat view through the recalculated snapshot, not by folding storage.
+    {:noreply, buffed} = StatsHandler.handle_status_changed(:sc_increaseagi, :apply, state)
+    assert MobState.to_combatant(buffed).base_stats.agi == @base_agi + 2 + @level
 
     :ok = StatusInterpreter.remove_status(:mob, state.instance_id, :sc_increaseagi)
 
     refute StatusStorage.has_status?(:mob, state.instance_id, :sc_increaseagi)
-    assert MobState.to_combatant(state).base_stats.agi == @base_agi
+    {:noreply, reverted} = StatsHandler.handle_status_changed(:sc_increaseagi, :removed, buffed)
+    assert MobState.to_combatant(reverted).base_stats.agi == @base_agi
   end
 end

@@ -91,7 +91,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
         unit_id: 1_811_001,
         map_name: homunculus.map_name,
         position: {homunculus.x + 1, homunculus.y},
-        modes: [:aggressive],
+        modes: [:aggressive, :can_attack],
         awake: false
       )
 

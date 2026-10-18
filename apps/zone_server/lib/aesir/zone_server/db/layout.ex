@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Db.Layout do
   @domains %{
     "items" => {:glob, false, "aesir.import.items"},
     "mobs" => {:glob, false, "aesir.import.mobs"},
+    "mob_summon/polymorph.yml" => {:file, false, "aesir.import.mobs"},
     "spawns" => {:glob, false, "aesir.import.spawns"},
     "jobs" => {:glob, false, "aesir.import.jobs"},
     "quests" => {:glob, false, "aesir.import.quests"},

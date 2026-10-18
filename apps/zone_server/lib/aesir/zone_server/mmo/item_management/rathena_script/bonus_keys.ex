@@ -125,6 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bsmatk" => :smatk,
     "bres" => :res,
     "bmres" => :mres,
+    "bclasschange" => :class_change,
     "bbreakweaponrate" => :break_weapon_rate,
     "bbreakarmorrate" => :break_armor_rate,
     "bunbreakable" => :unbreakable,
@@ -180,6 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @capped_rate_families MapSet.new([:skill_use_sp_rate])
   @rate_cap 10_000
   @ammunition_excluded_destinations MapSet.new([
+                                      :class_change,
                                       :non_crit_atk_rate,
                                       :short_atk_rate,
                                       :long_atk_rate,
@@ -639,6 +641,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   @doc "Whether a numeric equipment destination uses last-writer merge semantics."
   @spec overwrite_destination?(term()) :: boolean()
+  def overwrite_destination?(:class_change), do: true
   def overwrite_destination?({family, _param}), do: family in @defender_proc_families
   def overwrite_destination?(_destination), do: false
 

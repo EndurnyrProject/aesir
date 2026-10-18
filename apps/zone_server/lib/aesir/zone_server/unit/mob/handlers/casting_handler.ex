@@ -186,7 +186,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
 
   # The reference sets a monster's attack delay when a cast ends or is cancelled.
   defp start_attack_delay(state),
-    do: %{state | last_attack_time: System.system_time(:millisecond)}
+    do: MobState.start_attack_delay(state, System.system_time(:millisecond))
 
   defp can_use_skill?(state, row) do
     StatusInterpreter.can_use_skill?(:mob, state.instance_id, row.skill_id)
@@ -222,4 +222,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
     |> start_attack_delay()
     |> StateCommit.commit()
   end
+
+  @doc """
+  Cancels the monster's in-flight cast for a form change.
+
+  The cast ends with its bar torn down and the attack delay restarted, but no
+  skill delay is written: the form change drops every cooldown immediately
+  afterwards, so none of them may be re-established here. A monster with no
+  in-flight cast passes through unchanged.
+  """
+  @spec cancel_cast_for_form_change(MobState.t()) :: MobState.t()
+  def cancel_cast_for_form_change(%{casting: %{row: _row} = casting} = state) do
+    case Map.get(casting, :timer_ref) do
+      nil -> :ok
+      ref -> Process.cancel_timer(ref)
+    end
+
+    MobSkillExecutor.broadcast_cast_cancel(state)
+
+    %{state | act_delay_until: System.system_time(:millisecond)}
+    |> MobState.clear_casting()
+    |> start_attack_delay()
+  end
+
+  def cancel_cast_for_form_change(%MobState{} = state), do: state
 end
