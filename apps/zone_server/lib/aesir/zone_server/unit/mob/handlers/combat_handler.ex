@@ -11,9 +11,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
+  alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.HitStop
@@ -279,10 +279,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   defp max_hp_status?(status_id) do
-    case StatusRegistry.get_definition(status_id) do
-      %{calc_flags: flags} -> :max_hp_rate in flags
-      _ -> false
-    end
+    flags = CalcFlags.for_event(status_id, :apply)
+    "MaxHp" in flags or "All" in flags
   end
 
   defp maybe_add_aggro(state, _reward_owner_id, nil, _damage), do: state

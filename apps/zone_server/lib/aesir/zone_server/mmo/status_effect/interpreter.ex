@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRod
@@ -59,22 +60,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @block_stage [:sc_kyrie, :sc_safetywall, :sc_pneuma, :sc_basilica, :sc_basilica_caster]
 
   @defense_stats [:str, :agi, :vit, :int, :dex, :luk]
-
-  @mob_ineligible_statuses ~w(
-    sc_strfood sc_agifood sc_vitfood sc_intfood sc_dexfood sc_lukfood
-    sc_food_str_cash sc_food_agi_cash sc_food_vit_cash sc_food_int_cash
-    sc_food_dex_cash sc_food_luk_cash sc_savage_steak sc_cocktail_warg_blood
-    sc_minor_bbq sc_siroma_ice_tea sc_drocera_herb_steamed sc_putti_tails_noodles
-    sc_atkpotion sc_matkpotion sc_batkfood sc_matkfood sc_full_swing_k sc_mana_plus
-    sc_hitfood sc_fleefood sc_crifood sc_inccri sc_incflee2 sc_incstr sc_incint
-    sc_incdex sc_incluk sc_atthaste_cash sc_boost500 sc_extract_salamine_juice
-    sc_skf_aspd sc_mustle_m sc_life_force_f sc_extract_white_potion_z sc_increase_maxsp
-    sc_mental_potion sc_speedup0 sc_speedup1 sc_spcost_rate sc_skf_cast
-    sc_beef_rib_stew sc_pork_rib_stew sc_almighty sc_ultimatecook sc_mysticpowder
-    sc_cup_of_boza sc_str_scroll sc_int_scroll sc_combat_pill sc_combat_pill2
-    sc_vitalize_potion sc_infinity_drink sc_2011rwc_scroll sc_sparkcandy sc_magiccandy
-    sc_arcane_charge sc_riding
-  )a
 
   @doc """
   Initializes the status effect system by loading all definitions.
@@ -2684,8 +2669,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp ensure_eligible_target(:mob, %{id: status_id}) when status_id in @mob_ineligible_statuses,
-    do: {:error, :ineligible_target}
+  defp ensure_eligible_target(:mob, %{id: status_id, target_types: target_types}) do
+    if :mob in target_types and CalcFlags.monster_eligible?(status_id),
+      do: :ok,
+      else: {:error, :ineligible_target}
+  end
 
   defp ensure_eligible_target(:homunculus, %{require_weapon: [_ | _]}),
     do: {:error, :ineligible_target}

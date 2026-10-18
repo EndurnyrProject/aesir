@@ -15,9 +15,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
@@ -283,10 +283,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   end
 
   defp speed_status?(status_id) do
-    case Registry.get_definition(status_id) do
-      %{calc_flags: flags} -> Enum.any?(flags, &(&1 in [:speed, :movement_speed]))
-      _unknown -> false
-    end
+    flags = CalcFlags.for_event(status_id, :apply)
+    "Speed" in flags or "All" in flags
   end
 
   defp lif?(%HomunculusState{} = homunculus) do
