@@ -102,6 +102,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoberserkTest do
     refute StatusStorage.has_status?(:player, 3, :sc_provoke)
   end
 
+  test "death ends infinite Auto Berserk and its own Provoke" do
+    :ok = Interpreter.apply_status(:player, 5, :sc_autoberserk)
+    entry = StatusStorage.get_status(:player, 5, :sc_autoberserk)
+    Autoberserk.on_tick({:player, 5}, entry, %{target: %{hp: 200, max_hp: 1_000}})
+    assert StatusStorage.has_status?(:player, 5, :sc_provoke)
+
+    Interpreter.remove_on_death(:player, 5)
+    refute StatusStorage.has_status?(:player, 5, :sc_autoberserk)
+    refute StatusStorage.has_status?(:player, 5, :sc_provoke)
+  end
+
   test "damage does not apply Provoke before the next status tick" do
     :ok = Interpreter.apply_status(:player, 4, :sc_autoberserk)
     Interpreter.on_damage(:player, 4, %{damage: 800, hp_after: 200, max_hp: 1_000})

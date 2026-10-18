@@ -776,6 +776,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @spec validate_metadata!(keyword(), module()) :: map()
   def validate_metadata!(opts, module) do
     validate_blocked_skill_ids!(opts, module)
+    opts = Keyword.put_new(opts, :remove_on_death, not Keyword.get(opts, :permanent, false))
 
     DefinitionValidation.validate!(
       @metadata_schema,

@@ -29,13 +29,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler do
   """
   @spec begin_cast(MobState.t(), map(), integer()) :: {:ok | :rejected, MobState.t()}
   def begin_cast(state, row, now) do
-    case unit_cast_target(state, row) do
-      {:ok, target} ->
-        preparing = %{state | casting: %{row: row, unit_target: target}}
-        start_cast(preparing, row, now)
+    if can_use_skill?(state, row) do
+      case unit_cast_target(state, row) do
+        {:ok, target} ->
+          preparing = %{state | casting: %{row: row, unit_target: target}}
+          start_cast(preparing, row, now)
 
-      {:error, _reason} ->
-        {:rejected, state}
+        {:error, _reason} ->
+          {:rejected, state}
+      end
+    else
+      {:rejected, state}
     end
   end
 

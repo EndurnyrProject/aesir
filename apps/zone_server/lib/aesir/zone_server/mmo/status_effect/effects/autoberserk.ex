@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoberserk do
 
   At or below a quarter of maximum HP it grants level 10 infinite Provoke,
   marked as automatic. Healing above that threshold, ending Auto Berserk, or
-  leaving the map removes that Provoke, not an ordinary taunt.
+  leaving the map removes that Provoke, not an ordinary taunt. Death also
+  ends Auto Berserk itself.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_autoberserk,
@@ -12,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoberserk do
     no_clear_buff: false,
     properties: [:buff],
     permanent: true,
+    remove_on_death: true,
     tick_interval: 100,
     icon: :autoberserk
 
