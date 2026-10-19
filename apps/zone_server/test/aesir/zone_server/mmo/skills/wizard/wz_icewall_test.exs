@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewallTest do
     assert Enum.all?(placement.cell_attrs, fn {_cell, attrs} ->
              attrs.hp == 800 and attrs.max_hp == 800 and
                attrs.flags == [:targetable, :blocks_movement, :icewall] and
-               attrs.state == %{exclusive_terrain: true}
+               attrs.state == %{exclusive_terrain: true, no_knockback: true}
            end)
   end
 

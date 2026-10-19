@@ -39,6 +39,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Cell do
           state: map()
         }
 
+  @doc "Whether this skill unit prevents offensive knockback."
+  @spec knockback_immune?(t()) :: boolean()
+  def knockback_immune?(%__MODULE__{state: state}), do: Map.get(state, :no_knockback, false)
+
   @doc "Builds a cell after validating its flags and optional HP state."
   @spec new(map()) :: {:ok, t()} | {:error, :invalid_cell | :invalid_flags | :invalid_hp}
   def new(attrs) do

@@ -163,10 +163,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     with :ok <- validate_field_source(group, attacker),
          :ok <- validate_field_target_map(group, target),
          :ok <- validate_field_self(group, target),
+         :ok <- validate_field_status(group, target),
          :ok <- validate_field_relationship(group, attacker, target) do
       Rules.validate_target(attacker, target, %{skill_id: group.skill_id})
     end
   end
+
+  @doc "Checks status-based immunity to a ground unit, independently of its owner."
+  @spec validate_field_status(Group.t(), map()) :: :ok | {:error, :target_trap_immune}
+  def validate_field_status(%Group{skill_id: skill_id}, target) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} -> validate_trap_status(definition, target)
+      :error -> :ok
+    end
+  end
+
+  defp validate_trap_status(%Definition{is_trap: true}, target) do
+    case StatusStorage.get_status(unit_type(target), unit_id(target), :sc_sightblaster) do
+      %{state: state} ->
+        if Map.get(state || %{}, :trap_immunity, true),
+          do: {:error, :target_trap_immune},
+          else: :ok
+
+      _unprotected ->
+        :ok
+    end
+  end
+
+  defp validate_trap_status(_definition, _target), do: :ok
 
   @doc "Returns whether two typed combatants are enemies on a PvE map."
   @spec enemy?(Combatant.t(), Combatant.t()) :: boolean()
@@ -385,7 +409,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
           concealment_unit(),
           integer() | Definition.t(),
           delivery()
-        ) :: :ok | {:error, :caster_restricted | :target_restricted | :target_concealed}
+        ) ::
+          :ok
+          | {:error,
+             :caster_restricted | :target_restricted | :target_concealed | :target_trap_immune}
   def validate_delivery(_caster, _target, _skill, :direct), do: :ok
 
   def validate_delivery(caster, target, skill_id, delivery) when is_integer(skill_id) do
@@ -395,8 +422,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     end
   end
 
-  def validate_delivery(caster, target, %Definition{} = definition, :unit),
-    do: validate_skill_use(caster, target, definition, :splash)
+  def validate_delivery(caster, target, %Definition{} = definition, :unit) do
+    with :ok <- validate_trap_status(definition, target),
+         do: validate_skill_use(caster, target, definition, :splash)
+  end
 
   def validate_delivery(caster, target, %Definition{} = definition, {:splash, primary}) do
     if primary?(target, primary) or definition.is_npc or not definition.damage_splash,

@@ -311,6 +311,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   Returns `:continue` when the callback retained the current status, otherwise
   returns `:stop` so an exact-timer owner does not schedule another deadline.
+  A callback may publish interim changes to its generation; removal ends that
+  generation's latest entry, never a replacement application.
   """
   @spec process_tick_if_current(unit_type(), integer(), atom(), pos_integer()) ::
           :continue | :stop
@@ -368,7 +370,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         :continue
 
       :remove ->
-        expire_status_if_current(unit_type, unit_id, status_id, instance)
+        end_generation(unit_type, unit_id, status_id, expected_generation)
         :stop
 
       {:error, reason} ->

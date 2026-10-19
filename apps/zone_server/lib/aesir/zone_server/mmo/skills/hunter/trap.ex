@@ -130,9 +130,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
     end
   end
 
-  def enemy?(%Group{caster_type: :mob}, {mover_type, _mover_id})
-      when mover_type in [:player, :homunculus],
-      do: true
+  def enemy?(%Group{caster_type: :mob} = group, {mover_type, mover_id})
+      when mover_type in [:player, :homunculus] do
+    Targeting.validate_field_status(group, %{unit_type: mover_type, unit_id: mover_id}) == :ok
+  end
 
   def enemy?(%Group{}, {_mover_type, _mover_id}), do: false
 

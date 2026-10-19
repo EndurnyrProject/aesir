@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Pathfinding
@@ -72,8 +73,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   @spec knockback(atom(), integer(), integer(), integer(), non_neg_integer(), keyword()) ::
           result()
   def knockback(unit_type, unit_id, from_x, from_y, distance, opts \\ [])
-
-  def knockback(:skill_unit, _unit_id, _from_x, _from_y, _distance, _opts), do: :ok
 
   def knockback(unit_type, unit_id, from_x, from_y, distance, opts) do
     with {:ok, {x, y, map_name}} <- current_position(unit_type, unit_id, opts),
@@ -158,6 +157,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   # `knockback_immune?/1` callback are never immune. Pull effects are not gated
   # here.
   @spec knockback_immune?(module(), any()) :: boolean()
+  defp knockback_immune?(_module, %SkillUnitCell{} = cell),
+    do: SkillUnitCell.knockback_immune?(cell)
+
   defp knockback_immune?(module, state) do
     function_exported?(module, :knockback_immune?, 1) and module.knockback_immune?(state)
   end
@@ -178,6 +180,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
         {:error, :owner_unavailable}
     end
   end
+
+  defp ensure_living(%SkillUnitCell{} = cell),
+    do: if(SkillUnitCell.flag?(cell, :targetable), do: :ok, else: {:error, :target_dead})
 
   defp ensure_living(state), do: if(Unit.living?(state), do: :ok, else: {:error, :target_dead})
 
@@ -225,6 +230,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
   defp request_knockback(_unit_type, _unit_id, _pid, {x, y, _map_name}, {x, y}),
     do: {:ok, {x, y}}
+
+  defp request_knockback(:skill_unit, unit_id, pid, expected, destination) do
+    GenServer.cast(pid, {:displace_cell, unit_id, expected, destination})
+    {:ok, destination}
+  end
 
   defp request_knockback(:homunculus, unit_id, pid, {x, y, map_name}, {dst_x, dst_y}) do
     PlayerSession.knockback_homunculus(pid, unit_id, x, y, map_name, dst_x, dst_y)

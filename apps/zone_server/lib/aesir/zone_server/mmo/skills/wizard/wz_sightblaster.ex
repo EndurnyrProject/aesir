@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster do
   @moduledoc """
-  Sight Blaster (WZ_SIGHTBLASTER). A self buff that answers the first enemy to step
-  next to the caster with a fire strike that pushes it 3 cells.
+  Sight Blaster (WZ_SIGHTBLASTER). A self buff whose 20 ms ticks strike all
+  adjacent enemies with fire and push them 3 cells. It ends after the sweep
+  when a non-trap target takes damage; trap strikes leave it armed.
 
   Renewal: 80 SP, a 1.28 s cast plus 0.32 s fixed, a 15-minute buff, and a 600% MATK
   strike. Pre-renewal: 40 SP, a 2 s cast, a 2-minute buff, and a 100% MATK strike.

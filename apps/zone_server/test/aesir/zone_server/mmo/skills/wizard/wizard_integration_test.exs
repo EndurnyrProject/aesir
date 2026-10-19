@@ -358,9 +358,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
   end
 
   @tag integration_pre_re: false
-  test "Sight Blaster arms, hits on contact, and consumes its status" do
-    # `ensure_living_target` (and `on_contact`, which re-fetches the caster
-    # from the registry) need a real living `PlayerState`, not a bare map.
+  test "Sight Blaster arms, hits adjacent enemies on its tick, and consumes its status" do
+    # Target validation needs a real living player snapshot.
     caster = %PlayerState{
       character_id: @caster_id,
       x: 120,
@@ -395,6 +394,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
 
     assert StatusStorage.has_status?(:player, @caster_id, :sc_sightblaster)
     assert :ok = Movement.set_position(:mob, @target_id, %{target | x: 121}, @map)
+    assert :ok = StatusInterpreter.process_tick(:player, @caster_id, :sc_sightblaster)
     refute StatusStorage.has_status?(:player, @caster_id, :sc_sightblaster)
   end
 

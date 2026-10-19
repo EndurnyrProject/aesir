@@ -7,9 +7,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
@@ -21,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @map "trap_combat"
@@ -66,6 +69,66 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTest do
 
     UnitRegistry.register_unit(:player, 1, PlayerState, player, self())
     %{manager: manager, now: now, player: player}
+  end
+
+  test "a trap push moves its registered cell without resetting its identity or lifetime", %{
+    manager: manager,
+    player: player
+  } do
+    assert {:ok, group} = Unit.place(player, :ht_landmine, 1, {10, 10})
+    [original] = Storage.get_cells_by_group(group.group_id)
+    deadline = Storage.get(group.group_id).expires_at
+
+    assert {:ok, {13, 10}} = Knockback.knockback(:skill_unit, original.cell_id, 9, 10, 3)
+    assert {:ok, moved} = Manager.targetable_cell(manager, original.cell_id)
+    assert {moved.x, moved.y, moved.hp, moved.cell_id} == {13, 10, 3_500, original.cell_id}
+
+    assert %{cells: [{13, 10}], center: {13, 10}, expires_at: ^deadline} =
+             Storage.get(group.group_id)
+
+    assert {:ok, {13, 10, @map}} = SpatialIndex.get_unit_position(:skill_unit, original.cell_id)
+    assert {:ok, {_, ^moved, ^manager}} = UnitRegistry.get_unit(:skill_unit, original.cell_id)
+    assert Storage.get_groups_at_cell(@map, 10, 10) == []
+    assert [%{group_id: id}] = Storage.get_groups_at_cell(@map, 13, 10)
+    assert id == group.group_id
+
+    assert {:ok, %{hp: 0}} =
+             Manager.damage_targetable_cell(manager, original.cell_id, 3_500, {:player, 1})
+
+    assert {:ok, {16, 10}} = Knockback.knockback(:skill_unit, original.cell_id, 12, 10, 3)
+    assert {:ok, %{x: 16, y: 10, hp: 0}} = Manager.targetable_cell(manager, original.cell_id)
+    assert {:ok, {16, 10, @map}} = SpatialIndex.get_unit_position(:skill_unit, original.cell_id)
+    assert {:ok, {_, %{hp: 0}, ^manager}} = UnitRegistry.get_unit(:skill_unit, original.cell_id)
+  end
+
+  test "a stale trap push is ignored and a wall bounds the next push", %{
+    manager: manager,
+    player: player
+  } do
+    assert {:ok, group} = Unit.place(player, :ht_landmine, 1, {10, 10})
+    [cell] = Storage.get_cells_by_group(group.group_id)
+
+    assert {:ok, {14, 10}} =
+             Knockback.knockback(:skill_unit, cell.cell_id, 9, 10, 3, position: {11, 10})
+
+    assert {:ok, ^cell} = Manager.targetable_cell(manager, cell.cell_id)
+
+    map = MapData.new(@map, 40, 40) |> MapData.set_cell(12, 10, GatType.wall())
+    :ets.insert(EtsTable.table_for(:map_cache), {@map, map})
+    assert {:ok, {11, 10}} = Knockback.knockback(:skill_unit, cell.cell_id, 9, 10, 5)
+    assert {:ok, %{x: 11, y: 10}} = Manager.targetable_cell(manager, cell.cell_id)
+  end
+
+  test "Ankle Snare and Ice Wall refuse knockback", %{manager: manager, player: player} do
+    for {skill, position} <- [{:ht_anklesnare, {10, 10}}, {:wz_icewall, {20, 20}}] do
+      assert {:ok, group} = Unit.place(player, skill, 1, position)
+      [cell | _] = Storage.get_cells_by_group(group.group_id)
+
+      assert {:ok, {cell.x, cell.y}} ==
+               Knockback.knockback(:skill_unit, cell.cell_id, cell.x - 1, cell.y, 3)
+
+      assert {:ok, ^cell} = Manager.targetable_cell(manager, cell.cell_id)
+    end
   end
 
   test "a real trap stays targetable after lethal durability damage until the cell timer marks it used",

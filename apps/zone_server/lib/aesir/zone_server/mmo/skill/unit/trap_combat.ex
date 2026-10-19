@@ -35,7 +35,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombat do
       hp: hp,
       max_hp: hp,
       flags: [:targetable],
-      state: %{trap_target: true, ignores_damage: name == :ht_talkiebox}
+      state: %{
+        trap_target: true,
+        ignores_damage: name == :ht_talkiebox,
+        no_knockback: name == :ht_anklesnare
+      }
     }
   end
 

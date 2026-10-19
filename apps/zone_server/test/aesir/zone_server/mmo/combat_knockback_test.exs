@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -404,7 +405,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     assert {:error, :target_dead} = Combat.knockback(:mob, @mob_id, 151, 150, 5)
   end
 
-  test "knockback ignores skill-unit cells without casting to their manager" do
+  test "knockback sends a targetable cell's displacement to its owning manager" do
     test_pid = self()
 
     stub(SpatialIndex, :get_unit_position, fn :skill_unit, @mob_id ->
@@ -415,14 +416,24 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     stub(Cell, :traversable?, fn _map_name, _x, _y -> true end)
 
     stub(UnitRegistry, :get_unit, fn :skill_unit, @mob_id ->
-      {:ok, {__MODULE__, %{}, test_pid}}
+      cell = %SkillUnitCell{
+        cell_id: @mob_id,
+        group_id: 1,
+        map_name: @map_name,
+        x: 151,
+        y: 150,
+        hp: 3_500,
+        flags: SkillUnitCell.targetable()
+      }
+
+      {:ok, {SkillUnitCell, cell, test_pid}}
     end)
 
     reject(&Broadcast.to_in_range/5)
 
     {from_x, from_y} = @from
-    assert :ok = Combat.knockback(:skill_unit, @mob_id, from_x, from_y, 5)
-    refute_received {:"$gen_cast", {:movement, {:knocked_back, _, _}}}
+    assert {:ok, {156, 150}} = Combat.knockback(:skill_unit, @mob_id, from_x, from_y, 5)
+    assert_received {:"$gen_cast", {:displace_cell, @mob_id, {151, 150, @map_name}, {156, 150}}}
   end
 
   test "pull-to finds a valid detour around an obstacle" do

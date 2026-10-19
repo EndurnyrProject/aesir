@@ -5,6 +5,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -58,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
-  test "cast immediately triggers an already-adjacent stationary target" do
+  test "the first tick strikes an already-adjacent stationary target" do
     caster = living_player(1001, 50, 50)
     target = %{instance_id: 2001, x: 51, y: 50, map_name: "prontera"}
     register(:player, 1001, caster)
@@ -71,6 +76,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     expect(Combat, :knockback, fn :mob, 2001, 50, 50, 3 -> {:ok, {54, 50}} end)
 
     assert {:ok, ^caster} = WzSightblaster.cast(caster, :self, 1, WzSightblaster.definition())
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
@@ -93,6 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     reject(&Combat.knockback/5)
 
     assert {:ok, ^caster} = WzSightblaster.cast(caster, :self, 1, WzSightblaster.definition())
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
@@ -105,6 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     reject(&Combat.knockback/5)
 
     assert {:ok, ^caster} = WzSightblaster.cast(caster, :self, 1, WzSightblaster.definition())
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
@@ -134,7 +143,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
 
   @tag game_mode: :renewal
 
-  test "movement contact damages, knocks back, and consumes the status" do
+  test "a tick after movement damages, knocks back, and consumes the status" do
     caster = living_player(1001, 50, 50)
     target = %{instance_id: 2001, x: 55, y: 50, map_name: "prontera", movement_state: :moving}
     register(:player, 1001, caster)
@@ -163,6 +172,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     end)
 
     assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
@@ -185,6 +195,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     reject(&Combat.knockback/5)
 
     assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
@@ -207,6 +218,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     reject(&Combat.knockback/5)
 
     assert :ok = Movement.set_position(:player, 2001, %{immune | x: 51}, "prontera")
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
@@ -229,6 +241,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     expect(Combat, :knockback, fn :player, 2001, 50, 50, 3 -> {:ok, {58, 50}} end)
 
     assert :ok = Movement.set_position(:player, 2001, %{resistant | x: 51}, "prontera")
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
@@ -249,6 +262,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     reject(&Combat.knockback/5)
 
     assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 
@@ -269,7 +283,205 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     reject(&Combat.knockback/5)
 
     assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
+  test "an adjacent enemy is not struck before the first 20 ms tick" do
+    caster = living_player(1001, 50, 50)
+    target = %{instance_id: 2001, x: 51, y: 50, map_name: "prontera"}
+    register(:player, 1001, caster)
+    register(:mob, 2001, target)
+    reject(&Combat.execute_magic_attack/3)
+
+    assert {:ok, ^caster} = WzSightblaster.cast(caster, :self, 1, WzSightblaster.definition())
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+    instance = StatusStorage.get_status(:player, 1001, :sc_sightblaster)
+    assert instance.next_tick_at == instance.started_at + 20
+  end
+
+  test "one tick strikes every adjacent enemy in block order before consuming the status" do
+    caster = living_player(1001, 50, 50)
+    register(:player, 1001, caster)
+    register(:mob, 2001, %{instance_id: 2001, x: 51, y: 50, map_name: "prontera"})
+    register(:mob, 2002, %{instance_id: 2002, x: 50, y: 51, map_name: "prontera"})
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster, caster_id: 1001, val1: 1)
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2002, _ ->
+      {:ok, %{hit?: true, damage: 100}}
+    end)
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _ ->
+      {:ok, %{hit?: true, damage: 100}}
+    end)
+
+    stub(Combat, :knockback, fn :mob, _, 50, 50, 3 -> {:ok, {54, 50}} end)
+
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
+    refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
+  test "entering the radius does not strike until a status tick" do
+    caster = living_player(1001, 50, 50)
+    target = %{instance_id: 2001, x: 55, y: 50, map_name: "prontera", movement_state: :moving}
+    register(:player, 1001, caster)
+    register(:mob, 2001, target)
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster, caster_id: 1001, val1: 1)
+
+    reject(&Combat.execute_magic_attack/3)
+
+    assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
+  test "a trap strike keeps the status and lifts immunity only until the next tick" do
+    caster = living_player(1001, 50, 50)
+    register(:player, 1001, caster)
+
+    group = %Group{
+      group_id: 10,
+      skill_id: 116,
+      skill_name: :ht_landmine,
+      caster_type: :mob,
+      caster_id: 900,
+      map_name: "prontera",
+      cells: [{51, 50}]
+    }
+
+    cell = %Cell{cell_id: 2001, group_id: 10, map_name: "prontera", x: 51, y: 50, hp: 3_500}
+    Storage.insert(group)
+    Storage.insert_cell(cell)
+    register(:skill_unit, 2001, cell)
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster, caster_id: 1001, val1: 1)
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _ ->
+      Storage.delete_cell(2001)
+      Storage.delete(10)
+      {:ok, %{hit?: true, damage: 1}}
+    end)
+
+    stub(Combat, :knockback, fn :skill_unit, 2001, 50, 50, 3 -> :ok end)
+
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
+
+    assert %{state: %{trap_immunity: false}} =
+             StatusStorage.get_status(:player, 1001, :sc_sightblaster)
+
+    SpatialIndex.remove_unit(:skill_unit, 2001)
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
+
+    assert %{state: %{trap_immunity: true}} =
+             StatusStorage.get_status(:player, 1001, :sc_sightblaster)
+  end
+
+  test "an armed Sight Blaster refuses a monster's trap trigger" do
+    caster = living_player(1001, 50, 50)
+    register(:player, 1001, caster)
+
+    group = %Group{
+      group_id: 10,
+      skill_id: 116,
+      skill_name: :ht_landmine,
+      caster_type: :mob,
+      caster_id: 900,
+      map_name: "prontera",
+      cells: [{51, 50}]
+    }
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster, caster_id: 1001, val1: 1)
+
+    refute Trap.enemy?(group, {:player, 1001})
+  end
+
+  test "trap damage delivery also respects immunity after another unit triggered the trap" do
+    caster = living_player(1001, 50, 50)
+    register(:player, 1001, caster)
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster, caster_id: 1001, val1: 1)
+
+    attacker = %{unit_type: :mob, unit_id: 900}
+    target = %{unit_type: :player, unit_id: 1001}
+
+    assert {:error, :target_trap_immune} =
+             Targeting.validate_delivery(attacker, target, 116, :unit)
+
+    assert :ok = Targeting.validate_delivery(attacker, target, 116, :direct)
+  end
+
+  test "an Ice Wall hit consumes the status after the rest of the sweep" do
+    caster = living_player(1001, 50, 50)
+    register(:player, 1001, caster)
+
+    group = %Group{
+      group_id: 10,
+      skill_id: 87,
+      skill_name: :wz_icewall,
+      caster_type: :player,
+      caster_id: 1001,
+      map_name: "prontera",
+      cells: [{51, 50}]
+    }
+
+    cell = %Cell{cell_id: 2001, group_id: 10, map_name: "prontera", x: 51, y: 50, hp: 400}
+    Storage.insert(group)
+    Storage.insert_cell(cell)
+    register(:skill_unit, 2001, cell)
+    register(:mob, 2002, %{instance_id: 2002, x: 50, y: 51, map_name: "prontera"})
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster, caster_id: 1001, val1: 1)
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _ ->
+      {:ok, %{hit?: true, damage: 100}}
+    end)
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2002, _ ->
+      assert %{state: %{trap_immunity: false}} =
+               StatusStorage.get_status(:player, 1001, :sc_sightblaster)
+
+      {:ok, %{hit?: false, damage: 0}}
+    end)
+
+    expect(Combat, :knockback, fn :skill_unit, 2001, 50, 50, 3 -> :ok end)
+
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
+    refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
+  test "a tick skips a hidden adjacent enemy but reaches it after Hiding ends" do
+    caster = living_player(1001, 50, 50)
+    register(:player, 1001, caster)
+    register(:mob, 2001, %{instance_id: 2001, x: 51, y: 50, map_name: "prontera"})
+    :ok = StatusStorage.apply_status(:mob, 2001, :sc_hiding, val1: 1)
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster, caster_id: 1001, val1: 1)
+
+    test_pid = self()
+
+    stub(Combat, :execute_magic_attack, fn ^caster, 2001, _ ->
+      send(test_pid, :struck)
+      {:ok, %{hit?: true, damage: 100}}
+    end)
+
+    stub(Combat, :knockback, fn :mob, 2001, 50, 50, 3 -> {:ok, {54, 50}} end)
+
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
+    assert StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+    refute_received :struck
+
+    :ok = StatusStorage.remove_status(:mob, 2001, :sc_hiding)
+    assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
+    refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+    assert_received :struck
   end
 
   defp register(unit_type, unit_id, state) do

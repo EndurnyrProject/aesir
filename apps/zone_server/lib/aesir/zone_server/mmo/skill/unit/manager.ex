@@ -531,6 +531,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     {:noreply, state}
   end
 
+  def handle_cast({:displace_cell, cell_id, {x, y, map_name}, destination}, state) do
+    with {:ok, %Cell{x: ^x, y: ^y, map_name: ^map_name, group_id: group_id} = cell} <-
+           fetch_targetable_cell(cell_id),
+         false <- Cell.knockback_immune?(cell),
+         %Group{cells: [{^x, ^y}]} = group <- Storage.get(group_id) do
+      move_group(group, destination)
+    end
+
+    {:noreply, state}
+  end
+
   def handle_cast(message, state) do
     Logger.warning("Ignoring unknown skill-unit manager cast: #{inspect(message)}")
     {:noreply, state}
@@ -2513,7 +2524,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp register_target(%Cell{} = cell) do
-    if Cell.flag?(cell, :targetable) and cell.hp > 0 do
+    if Cell.flag?(cell, :targetable) and TrapCombat.targetable?(cell) do
       :ok = UnitRegistry.register_skill_unit(cell, self())
       SpatialIndex.add_skill_unit(cell)
     else
