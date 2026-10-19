@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.MobSkill.Selector, as: MobSkillSelector
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StealOps
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -160,6 +162,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:ai, {:hard, player_id}})
   end
 
+  @doc """
+  Delivers a skill event to the mob: `{:skillused, skill_id}` when
+  `source_ref` used that skill on it at `tick` (milliseconds). The mob reacts
+  in its own session; the caller never waits.
+  """
+  @spec skill_event(pid(), Ref.t(), MobSkillSelector.event(), integer()) :: :ok
+  def skill_event(pid, source_ref, event, tick) do
+    GenServer.cast(pid, {:ai, {:skill_event, source_ref, event, tick}})
+  end
+
   @doc "Locks the mob's AI target onto its provoker."
   @spec provoke(pid(), tuple()) :: :ok
   def provoke(pid, target_ref) do
@@ -186,17 +198,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @doc """
   Attempts to steal one item from this mob (TF_STEAL).
 
-  Runs the full rate roll, per-drop roll and `stolen_from` flip inside the
-  mob's own process so concurrent attempts can't both succeed. Rejects bosses
-  and mobs already stolen from without consuming a roll. Returns `{:ok,
-  item_id}` on a successful steal, or `{:error, reason}` (`:boss`,
-  `:already_stolen`, `:miss`, `:no_drop`) — all but `:boss`/`:already_stolen`
-  leave `stolen_from` untouched, so the caller may retry.
+  Serializes the rate/drop rolls and terminal lock inside this owner. Numeric
+  caster DEX remains supported; a caster map also carries its additive bonus.
+  Immune and protected monsters become terminally locked even on refusal;
+  body-state and rate/drop failures remain retryable. No refusal consumes a
+  roll before the source's eligibility gates have passed.
   """
-  @spec attempt_steal(pid(), non_neg_integer(), pos_integer()) ::
-          {:ok, non_neg_integer()} | {:error, atom()}
-  def attempt_steal(pid, caster_dex, skill_level) do
-    GenServer.call(pid, {:steal, {:attempt, caster_dex, skill_level}})
+  @spec attempt_steal(pid(), non_neg_integer() | StealOps.item_caster(), non_neg_integer()) ::
+          {:ok, non_neg_integer()} | {:error, StealOps.reason()}
+  def attempt_steal(pid, caster, skill_level) do
+    GenServer.call(pid, {:steal, {:attempt, caster, skill_level}})
   end
 
   @doc """
@@ -338,9 +349,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   # Steal: the TF_STEAL roll, serialized inside this mob's own process.
   @impl GenServer
-  def handle_call({:steal, {:attempt, caster_dex, skill_level}}, _from, state) do
-    case StealOps.attempt_steal(state, caster_dex, skill_level) do
+  def handle_call({:steal, {:attempt, caster, skill_level}}, _from, state) do
+    case StealOps.attempt_steal(state, caster, skill_level) do
       {:ok, item_id, new_state} -> {:reply, {:ok, item_id}, new_state}
+      {:error, reason, new_state} -> {:reply, {:error, reason}, new_state}
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
@@ -374,6 +386,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   def handle_cast({:ai, {:provoke, target_ref}}, state) do
     AiHandler.handle_provoke(state, target_ref)
+  end
+
+  def handle_cast({:ai, {:skill_event, source_ref, event, tick}}, state) do
+    AiHandler.handle_skill_event(state, source_ref, event, tick)
   end
 
   def handle_cast({:ai, {:hard, player_id}}, state) do

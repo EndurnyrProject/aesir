@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector
+  alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
@@ -319,19 +320,28 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   defp invoke(module, state, raw_target, adapted_target, row, definition) do
     Origin.with_skill(definition.name, {:mob, state.instance_id}, @mob_scope, fn ->
-      cond do
-        function_exported?(module, :mob_cast, 5) ->
-          state |> module.mob_cast(raw_target, row.level, definition, row) |> mob_cast_result()
+      result = run_effect(module, state, raw_target, adapted_target, row, definition)
 
-        function_exported?(module, :cast_with_origin, 5) ->
-          state
-          |> module.cast_with_origin(adapted_target, row.level, definition, :mob)
-          |> collapse()
+      unless match?({:error, _reason}, result),
+        do: CastEnd.complete_unit({:mob, state.instance_id}, definition, raw_target)
 
-        true ->
-          state |> module.cast(adapted_target, row.level, definition) |> collapse()
-      end
+      result
     end)
+  end
+
+  defp run_effect(module, state, raw_target, adapted_target, row, definition) do
+    cond do
+      function_exported?(module, :mob_cast, 5) ->
+        state |> module.mob_cast(raw_target, row.level, definition, row) |> mob_cast_result()
+
+      function_exported?(module, :cast_with_origin, 5) ->
+        state
+        |> module.cast_with_origin(adapted_target, row.level, definition, :mob)
+        |> collapse()
+
+      true ->
+        state |> module.cast(adapted_target, row.level, definition) |> collapse()
+    end
   end
 
   defp mob_cast_result(:ok), do: :ok
@@ -359,6 +369,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   defp collapse(:ok), do: :ok
   defp collapse({:ok, _state}), do: :ok
   defp collapse({:ok, _state, :no_consume}), do: :ok
+  defp collapse({:failed, _state, _reason}), do: :ok
   defp collapse({:error, _reason} = error), do: error
 
   defp property(skill_id) do

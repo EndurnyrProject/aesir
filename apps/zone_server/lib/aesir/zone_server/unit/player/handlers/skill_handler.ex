@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -228,7 +229,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       {:failed, new_game_state, reason} ->
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
-        {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, reason)}
+        {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, target, reason)}
 
       {:error, reason} ->
         report_cast_failure(skill_id, state.game_state.character_id, reason)
@@ -316,7 +317,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       {:failed, new_game_state, reason} ->
         new_state =
-          commit_spent_failure(state, new_game_state, ctx.skill_id, ctx.skill_level, reason)
+          commit_spent_failure(
+            state,
+            new_game_state,
+            ctx.skill_id,
+            ctx.skill_level,
+            ctx.target,
+            reason
+          )
 
         resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
         {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
@@ -327,10 +335,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   # The effect failed after its requirement was spent: the spend commits like a
-  # cast, but the caster sees the failure instead of the skill.
-  defp commit_spent_failure(state, new_game_state, skill_id, level, reason) do
+  # cast and the use still closes, but the caster sees the failure instead of
+  # the skill.
+  defp commit_spent_failure(state, new_game_state, skill_id, level, target, reason) do
     new_state = commit_cast(state, new_game_state, skill_id, level)
     report_cast_failure(skill_id, new_state.game_state.character_id, reason)
+    CastEnd.complete(new_state.game_state, skill_id, target)
     new_state
   end
 
@@ -606,7 +616,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       {:failed, new_game_state, reason} ->
         sync_cast_start_stats(state, game_state, new_game_state)
-        {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, reason)}
+        {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, target, reason)}
 
       error ->
         handle_begin_error(state, game_state, skill_id, level, target, locked, error)
@@ -1597,9 +1607,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         broadcast_skill_use(new_state.game_state, skill_id, level, target)
         {:noreply, new_state}
 
+      {:failed, new_game_state, reason} ->
+        {:noreply, close_failed_auto_use(state, new_game_state, skill_id, level, target, reason)}
+
       {:error, _reason} ->
         {:noreply, state}
     end
+  end
+
+  # An automatic use whose effect failed after its requirement was spent: the
+  # spend commits, the caster sees the failure and the use still closes.
+  defp close_failed_auto_use(state, new_game_state, skill_id, level, target, reason) do
+    new_state = commit_cast(state, new_game_state, skill_id, level, false)
+    report_cast_failure(skill_id, new_state.game_state.character_id, reason)
+    CastEnd.complete(new_state.game_state, skill_id, target)
+    new_state
   end
 
   @doc """
@@ -1673,6 +1695,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         new_state = commit_cast(state, new_game_state, skill_id, level, false)
         broadcast_skill_use(new_state.game_state, skill_id, level, target)
         HealthHandler.settle_lethal_cost(new_state)
+
+      {:failed, new_game_state, reason} ->
+        state
+        |> close_failed_auto_use(new_game_state, skill_id, level, target, reason)
+        |> HealthHandler.settle_lethal_cost()
 
       {:error, _reason, charged} ->
         HealthHandler.settle_lethal_cost(commit_cast(state, charged, skill_id, level, false))
@@ -1827,23 +1854,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # damage skill arms them per damaging hit from the combat layer instead.
   defp broadcast_skill_use(game_state, skill_id, level, target) do
     broadcast_skill_effect(game_state, skill_id, level, target)
-    dispatch_castend_on_skill(game_state, skill_id, target)
-  end
-
-  @spec dispatch_castend_on_skill(PlayerState.t(), integer(), term()) :: :ok
-  defp dispatch_castend_on_skill(game_state, skill_id, target) do
-    with {:ok, definition} <- Catalog.by_id(skill_id),
-         {:ok, on_skill_target} <- EquipProcDispatch.castend_target(definition, target) do
-      wearer = %{
-        unit_id: game_state.character_id,
-        equip_modifiers: game_state.stats.modifiers.equipment,
-        equip_autobonuses: game_state.stats.equip_autobonuses
-      }
-
-      EquipProcDispatch.on_skill(wearer, skill_id, on_skill_target)
-    end
-
-    :ok
+    CastEnd.complete(game_state, skill_id, target)
   end
 
   defp broadcast_skill_effect(_game_state, _skill_id, _level, {:ground, _x, _y}), do: :ok

@@ -341,6 +341,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @spec begin_encore_replay(PlayerState.t(), map(), Active.target()) ::
           {:instant, PlayerState.t()}
           | {:casting, PlayerState.t(), cast_info()}
+          | {:failed, PlayerState.t(), atom()}
           | {:error, atom()}
           | {:error, atom(), PlayerState.t()}
   def begin_encore_replay(caster, %{skill_id: skill_id, level: level} = memory, target) do
@@ -618,7 +619,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   proc does, so it only keeps a flag already set by an enclosing invocation.
   """
   @spec auto_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
-          {:ok, Active.caster()} | {:error, atom()}
+          {:ok, Active.caster()} | {:failed, Active.caster(), atom()} | {:error, atom()}
   def auto_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
     adapter = Caster.for(game_state)
@@ -628,17 +629,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, module} <- fetch_active_module(definition),
          {:ok, resolved} <- resolve_auto_cast_target(definition, target),
          cost = auto_cast_sp_cost(definition, level),
-         :ok <- check_sp(adapter, game_state, cost),
-         {:ok, game_state} <-
-           run_unconditional(module, game_state, resolved, level, definition, :auto, false) do
-      {:ok,
-       game_state
-       |> adapter.deduct_sp(cost)
-       |> put_act_delay(definition, level, now, 0)}
+         :ok <- check_sp(adapter, game_state, cost) do
+      case run_unconditional(module, game_state, resolved, level, definition, :auto, false) do
+        {:ok, game_state} ->
+          {:ok, settle_auto_cast(game_state, adapter, cost, definition, level, now)}
+
+        {:failed, game_state, reason} ->
+          {:failed, settle_auto_cast(game_state, adapter, cost, definition, level, now), reason}
+
+        error ->
+          error
+      end
     end
   end
 
   def auto_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  defp settle_auto_cast(game_state, adapter, cost, definition, level, now) do
+    game_state
+    |> adapter.deduct_sp(cost)
+    |> put_act_delay(definition, level, now, 0)
+  end
 
   @doc """
   Checks whether an equipment proc may fire `skill_id` for the wearer.
@@ -692,7 +703,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       use fired it.
   """
   @spec proc_cast(Active.caster(), integer(), pos_integer(), Active.target(), keyword()) ::
-          {:ok, Active.caster()} | {:error, atom()} | {:error, atom(), Active.caster()}
+          {:ok, Active.caster()}
+          | {:failed, Active.caster(), atom()}
+          | {:error, atom()}
+          | {:error, atom(), Active.caster()}
   def proc_cast(game_state, skill_id, level, target, opts \\ [])
 
   def proc_cast(%PlayerState{} = game_state, skill_id, level, target, opts)
@@ -710,6 +724,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       case run_unconditional(module, charged, resolved, level, definition, :auto, true) do
         {:ok, game_state} ->
           {:ok, proc_act_delay(game_state, definition, level, now)}
+
+        {:failed, game_state, reason} ->
+          {:failed, proc_act_delay(game_state, definition, level, now), reason}
 
         {:error, reason} ->
           proc_failure(reason, game_state, charged, definition, level, now)
@@ -766,6 +783,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @spec begin_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:instant, PlayerState.t()}
           | {:casting, PlayerState.t(), cast_info()}
+          | {:failed, PlayerState.t(), atom()}
           | {:error, atom()}
           | {:error, atom(), PlayerState.t()}
   def begin_item_cast(caster, skill_id, level, target) do
@@ -786,6 +804,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         ) ::
           {:instant, PlayerState.t()}
           | {:casting, PlayerState.t(), cast_info()}
+          | {:failed, PlayerState.t(), atom()}
           | {:error, atom()}
           | {:error, atom(), PlayerState.t(), :before_start | :after_start}
   def begin_item_cast(caster, skill_id, level, target, on_ready),
@@ -802,6 +821,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         ) ::
           {:instant, PlayerState.t()}
           | {:casting, PlayerState.t(), cast_info()}
+          | {:failed, PlayerState.t(), atom()}
           | {:error, atom()}
           | {:error, atom(), PlayerState.t(), :before_start | :after_start}
   def begin_item_cast(%PlayerState{} = caster, skill_id, level, target, on_ready, keep?)
@@ -857,6 +877,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       case complete_item_cast(started, skill_id, level, target, keep?) do
         {:ok, finished} -> {:instant, finished}
+        {:failed, _finished, _reason} = failed -> failed
         {:error, reason} -> {:error, reason, started, :after_start}
       end
     else
@@ -878,13 +899,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   Completes an item skill against the current target without learned or resource checks.
   """
   @spec complete_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
   def complete_item_cast(caster, skill_id, level, target),
     do: complete_item_cast(caster, skill_id, level, target, false)
 
   @doc "Completes an item cast, charging the skill's own requirements when retained."
   @spec complete_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target(), boolean()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
   def complete_item_cast(%PlayerState{} = caster, skill_id, level, target, true) do
     now = System.monotonic_time(:millisecond)
 
@@ -914,16 +935,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_placement(caster, definition, target),
          {:ok, module} <- validate_item_cast(caster, target, level, definition, false),
-         :ok <- check_castend_target(caster, target, definition),
-         {:ok, caster} <-
-           run_unconditional(module, caster, target, level, definition, :item, false) do
-      {:ok,
-       caster
-       |> put_cooldown(skill_id, definition, level, now)
-       |> rearm_cooldowns(module, level, definition, now)
-       |> put_act_delay(definition, level, now)}
-      |> retain_menu_requirements(false)
+         :ok <- check_castend_target(caster, target, definition) do
+      case run_unconditional(module, caster, target, level, definition, :item, false) do
+        {:ok, caster} ->
+          {:ok, pace_item_cast(caster, module, skill_id, definition, level, now)}
+          |> retain_menu_requirements(false)
+
+        {:failed, caster, reason} ->
+          {:failed, pace_item_cast(caster, module, skill_id, definition, level, now), reason}
+
+        error ->
+          error
+      end
     end
+  end
+
+  defp pace_item_cast(caster, module, skill_id, definition, level, now) do
+    caster
+    |> put_cooldown(skill_id, definition, level, now)
+    |> rearm_cooldowns(module, level, definition, now)
+    |> put_act_delay(definition, level, now)
   end
 
   defp retain_menu_requirements(
@@ -999,7 +1030,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   cannot be spammed past the skill's own pacing.
   """
   @spec item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
   def item_cast(%PlayerState{} = game_state, skill_id, level, target)
       when is_integer(level) and level > 0 do
     case begin_item_cast(game_state, skill_id, level, target) do
@@ -1083,8 +1114,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:deferred, game_state, descriptor} ->
         {:deferred, game_state, descriptor}
 
-      {:failed, _game_state, reason} ->
-        {:error, reason}
+      {:failed, _game_state, _reason} = failed ->
+        failed
 
       {:error, _reason} = error ->
         error

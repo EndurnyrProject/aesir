@@ -426,6 +426,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
                           :cg_hermode
                         ]
 
+  @doc "Whether a self cast of `definition` is placed as a ground unit at the caster."
+  @spec self_unit_skill?(Definition.t()) :: boolean()
+  def self_unit_skill?(%Definition{name: name}), do: name in self_unit_skills()
+
   defp self_unit_skills do
     if GameMode.mode() == :renewal, do: @renewal_self_units, else: @classic_self_units
   end

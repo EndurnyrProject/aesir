@@ -174,7 +174,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bnowalkdelay" => :no_walk_delay,
     "bnocastcancel" => :no_cast_cancel,
     "bnocastcancel2" => :no_cast_cancel2,
-    "bnogemstone" => :no_gemstone
+    "bnogemstone" => :no_gemstone,
+    "baddstealrate" => :add_steal_rate
   }
 
   @max_destinations MapSet.new([:movement_speed, :perfect_hit_rate, :splash_range, :no_gemstone])
@@ -182,6 +183,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @capped_rate_families MapSet.new([:skill_use_sp_rate])
   @rate_cap 10_000
   @ammunition_excluded_destinations MapSet.new([
+                                      :add_steal_rate,
                                       :class_change,
                                       :no_gemstone,
                                       :non_crit_atk_rate,

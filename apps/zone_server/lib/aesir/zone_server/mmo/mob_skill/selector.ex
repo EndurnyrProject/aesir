@@ -7,31 +7,34 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   first row that clears every gate, or `nil`. It reads state but never mutates
   it; the `MobSession` cast phase (Task P2-6) acts on the result.
 
-  Gates are applied in order:
+  A mob with the no-cast mode picks nothing. Otherwise rows are visited in
+  order and the first row passing every gate wins; no later row is tried:
 
     1. **State** - the row's `state` must match the mob's skill state
        (`state_matches?/2`): `any` matches every state but dead, `anytarget`
        every state but dead and loot while the mob has a target.
-    2. **Castable** - the row's skill must resolve in the real skill catalog
+    2. **Delay** - the row's skill must be off cooldown (`MobState.skill_ready?/3`).
+    3. **Castable** - the row's skill must resolve in the real skill catalog
        (`Skill.Catalog.by_id/1` with an active module) and satisfy its declared
        requirements for a mob caster. Non-castable rows are dropped silently;
        coverage is tracked once globally by the importer's manifest and the
        sweep test, not per-tick here (that would spam).
-    3. **Condition** - the row's `condition` predicate must hold.
-    4. **Delay** - the row's skill must be off cooldown (`MobState.skill_ready?/3`).
-    5. **Rate** - each surviving row rolls `rng.(10_000) <= row.rate` in order;
-       the first success wins.
+    4. **Rate** - a zero-based roll below 10000 must not exceed the row's rate,
+       rolled before its condition, so a rate of 0 still fires once in 10000.
+    5. **Condition** - the row's `condition` predicate must hold.
 
   `opts`:
 
     * `:now` - millisecond timestamp for the delay gate (default: current system
       time). The cast site passes the same clock it writes cooldowns with.
-    * `:rng` - a 1-arg fun `(pos_integer -> pos_integer)` for the rate roll
-      (default `&:rand.uniform/1`); injected so tests are deterministic.
+    * `:rng` - a 1-arg fun `(pos_integer -> non_neg_integer)` returning a
+      zero-based roll below its argument (default uniform); injected so tests
+      are deterministic.
     * `:event` - the AI event driving this selection (default `:tick`); set to
       `:spawn` for the spawn event use, where only `onspawn` rows fire, and to
       `:rudeattacked` for the rude-attacked event use, where only `rudeattacked`
-      rows fire. On a `:tick`, a `rudeattacked` row needs a rude-attack count of
+      rows fire, and to `{:skillused, skill_id}` when a skill was used on the
+      mob, where only `skillused` rows naming that skill (or no skill) fire. On a `:tick`, a `rudeattacked` row needs a rude-attack count of
       at least 1; the caller resets the count when such a row is picked.
     * `:count_living_slaves` - a 1-arg fun `(master instance id -> count)` for
       the `slavele` gate (default `SlaveSummon.count_living_slaves/1`). Like
@@ -74,10 +77,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   @typedoc "A mob skill row as produced by `MobSkill.Db`."
   @type row :: map()
 
+  @typedoc "The AI event a selection runs for."
+  @type event :: :tick | :spawn | :rudeattacked | {:skillused, pos_integer()}
+
   @spec select(MobState.t(), [row()], keyword()) :: {:cast, row()} | nil
   def select(%MobState{} = mob_state, rows, opts \\ []) when is_list(rows) do
     now = Keyword.get(opts, :now, System.system_time(:millisecond))
-    rng = Keyword.get(opts, :rng, &:rand.uniform/1)
+    rng = Keyword.get(opts, :rng, &zero_based_roll/1)
 
     env = %{
       event: Keyword.get(opts, :event, :tick),
@@ -91,14 +97,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
       nearby_mobs: Keyword.get(opts, :nearby_mobs, &Executor.count_nearby_mobs/1)
     }
 
-    rows
-    |> Enum.filter(fn row ->
-      row_state_eligible?(row, mob_state) and castable?(row) and
-        condition_holds?(row, mob_state, env) and
-        MobState.skill_ready?(mob_state, row.skill_id, now)
-    end)
-    |> Enum.find_value(fn row -> if rng.(10_000) <= row.rate, do: {:cast, row} end)
+    if MobState.mode?(mob_state, :no_cast),
+      do: nil,
+      else: Enum.find_value(rows, &pick(&1, mob_state, env, now, rng))
   end
+
+  defp pick(row, mob_state, env, now, rng) do
+    if row_state_eligible?(row, mob_state) and MobState.skill_ready?(mob_state, row.skill_id, now) and
+         castable?(row) and rng.(10_000) <= row.rate and condition_holds?(row, mob_state, env),
+       do: {:cast, row}
+  end
+
+  defp zero_based_roll(bound), do: :rand.uniform(bound) - 1
 
   # Player-owned summons have no combat rotation of their own: their imported
   # rows are their entire behavior, so idle rows stay eligible in every state
@@ -137,6 +147,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   defp condition_holds?(%{condition: %{type: type}}, _mob_state, %{event: :rudeattacked})
        when type != :rudeattacked,
        do: false
+
+  defp condition_holds?(%{condition: %{type: :skillused} = condition}, _mob_state, %{
+         event: {:skillused, skill_id}
+       }),
+       do: Map.get(condition, :value) in [skill_id, 0, nil]
+
+  defp condition_holds?(_row, _mob_state, %{event: {:skillused, _skill_id}}), do: false
 
   defp condition_holds?(%{condition: %{type: type}}, _mob_state, %{event: :spawn})
        when type != :onspawn,

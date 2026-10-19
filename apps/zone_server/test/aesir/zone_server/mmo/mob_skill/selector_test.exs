@@ -405,4 +405,53 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(), [row(%{rate: 0})], opts(rng: miss())) == nil
     end
   end
+
+  describe "source picker order" do
+    test "a zero roll fires a rate-0 row" do
+      r = row(%{rate: 0})
+
+      assert Selector.select(mob(), [r], opts(rng: fn 10_000 -> 0 end)) == {:cast, r}
+    end
+
+    test "the roll comes before the condition, so a row whose condition fails still rolls" do
+      failing = row(%{skill: "NPC_FIREATTACK", condition: %{type: :myhpltmaxrate, value: 10}})
+      later = row(%{skill: "NPC_WATERATTACK"})
+
+      rng = fn bound ->
+        send(self(), {:roll, bound})
+        0
+      end
+
+      assert Selector.select(mob(), [failing, later], opts(rng: rng)) == {:cast, later}
+      assert_received {:roll, 10_000}
+      assert_received {:roll, 10_000}
+    end
+
+    test "a monster with the no-cast mode picks nothing" do
+      mob = mob(%{mob_data: Aesir.TestMob.definition(modes: [:no_cast])})
+      reject(&Castability.check/2)
+
+      assert Selector.select(mob, [row()], opts()) == nil
+    end
+  end
+
+  describe "skill-used event" do
+    test "fires a skillused row naming the used skill or no skill" do
+      named = row(%{condition: %{type: :skillused, value: 28}})
+      any = row(%{condition: %{type: :skillused, value: 0}})
+      other = row(%{condition: %{type: :skillused, value: 50}})
+      event = opts(event: {:skillused, 28})
+
+      assert Selector.select(mob(), [named], event) == {:cast, named}
+      assert Selector.select(mob(), [any], event) == {:cast, any}
+      assert Selector.select(mob(), [other], event) == nil
+    end
+
+    test "runs no periodic condition, and a skillused row never fires on a tick" do
+      skill_used = row(%{condition: %{type: :skillused, value: 0}})
+
+      assert Selector.select(mob(), [row()], opts(event: {:skillused, 28})) == nil
+      assert Selector.select(mob(), [skill_used], opts()) == nil
+    end
+  end
 end

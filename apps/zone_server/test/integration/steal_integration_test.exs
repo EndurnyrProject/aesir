@@ -12,7 +12,10 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
 
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Net.SkillCastFailed
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
+  alias Aesir.ZoneServer.TestSupport.ClownSessions
   alias Aesir.ZoneServer.Unit.Mob.MobSession
 
   # Jellopy, Empty Bottle, Apple - real ids from priv/db/re/items.
@@ -71,7 +74,7 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
     refute get_mob_state(mob.pid).stolen_from
   end
 
-  test "boss mobs reject steals outright without consuming a roll" do
+  test "status-immune mobs reject and terminally lock stealing without a roll" do
     mob =
       start_mob_session(
         dex: 10,
@@ -79,8 +82,8 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
         drops: guaranteed_drops()
       )
 
-    assert {:error, :boss} = MobSession.attempt_steal(mob.pid, 10, 20)
-    refute get_mob_state(mob.pid).stolen_from
+    assert {:error, :immune} = MobSession.attempt_steal(mob.pid, 10, 20)
+    assert get_mob_state(mob.pid).stolen_from
   end
 
   test "a mob can only be stolen from once; the second attempt fails" do
@@ -111,5 +114,49 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
       )
 
     assert {:ok, @jellopy_id} = MobSession.attempt_steal(mob.pid, 10, 20)
+  end
+
+  describe "a player's failed Steal through the real sessions" do
+    @rogue 17
+    @emotion 197
+
+    setup do
+      ClownSessions.blank_map("prontera")
+      :ok
+    end
+
+    defp reacts_to_steal do
+      %{
+        skill: "NPC_EMOTION",
+        skill_id: @emotion,
+        state: :any,
+        level: 1,
+        target: :self,
+        delay: 5_000,
+        cancelable: true,
+        cast_time: 0,
+        rate: 10_000,
+        emotion: nil,
+        condition: %{type: :skillused, value: 50, val1: 15}
+      }
+    end
+
+    test "spends its SP, reports the failure and lets the monster react to the use" do
+      mob = start_mob_session(dex: 255, drops: guaranteed_drops(), position: {151, 150})
+      stub(MobSkillDb, :rows_for, fn _mob_id -> [reacts_to_steal()] end)
+      Mimic.allow(MobSkillDb, self(), mob.pid)
+
+      session =
+        :novice
+        |> ClownSessions.character("prontera", {150, 150}, %{50 => 1}, %{class: @rogue, dex: 1})
+        |> ClownSessions.start_session()
+
+      ClownSessions.cast(session, 50, 1, mob.unit_id)
+
+      assert_packet_sent(SkillCastFailed)
+      assert_eventually(fn -> get_player_state(session.pid).stats.current_state.sp == 990 end)
+      assert_eventually(fn -> get_mob_state(mob.pid).last_skill_id == @emotion end)
+      refute get_mob_state(mob.pid).stolen_from
+    end
   end
 end

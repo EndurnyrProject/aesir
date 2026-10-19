@@ -3151,6 +3151,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   # The restricted entry SA_AUTOSPELL's proc casts through (battle.cpp:7502-7526):
   # no cast time, no catalyst, SP fixed at 2/3 of the bolt's, aftercast delay
   # applied. MG_FIREBOLT (19) costs 12 SP at level 1 and delays 1400ms.
+  describe "a completed failure through the restricted entries" do
+    test "a status auto cast still pays its SP" do
+      stub_spent_failure()
+
+      assert {:failed, paid, :no_effect} =
+               Interpreter.auto_cast(game_state(100, %{}), 29, 1, :self)
+
+      assert paid.stats.current_state.sp == 94
+    end
+
+    test "an item cast still arms the skill's cooldown" do
+      stub_spent_failure()
+
+      assert {:failed, paced, :no_effect} =
+               Interpreter.item_cast(game_state(100, %{}), 29, 1, :self)
+
+      assert Map.has_key?(paced.skill_cooldowns, 29)
+    end
+  end
+
+  defp stub_spent_failure do
+    definition = %Definition{
+      id: 29,
+      name: :spent_failure,
+      display_name: "Spent Failure",
+      max_level: 1,
+      target_type: :self,
+      damage_type: :no_damage,
+      sp_cost: [10],
+      hp_cost: [15],
+      cooldown: [1_000]
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :spent_failure -> {:ok, SpentFailureSkill} end)
+  end
+
   describe "auto_cast/4" do
     setup do
       stub(Combat, :execute_magic_attack, fn _caster, target_id, _opts ->
@@ -3327,6 +3364,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       stub(Catalog, :active_module_for, fn :paid_failure -> {:ok, FailingSkill} end)
 
       assert {:error, :no_effect, charged} =
+               Interpreter.proc_cast(game_state(100, %{}), 29, 1, :self)
+
+      assert charged.stats.current_state == %CurrentState{hp: 85, sp: 100}
+    end
+
+    test "an effect that failed after its requirement keeps the completed failure" do
+      stub_spent_failure()
+
+      assert {:failed, charged, :no_effect} =
                Interpreter.proc_cast(game_state(100, %{}), 29, 1, :self)
 
       assert charged.stats.current_state == %CurrentState{hp: 85, sp: 100}

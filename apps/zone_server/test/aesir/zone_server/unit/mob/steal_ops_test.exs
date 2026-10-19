@@ -1,10 +1,17 @@
 defmodule Aesir.ZoneServer.Unit.Mob.StealOpsTest do
   use ExUnit.Case, async: true
 
+  import Aesir.TestEtsSetup
+
+  setup :setup_ets_tables
+
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.StealOps
 
@@ -49,6 +56,88 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOpsTest do
     }
 
     Aesir.TestMob.publish(%{state | mob_data: mob_data})
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic compares a zero-based roll to the positive fractional threshold" do
+    rng = fn 10_000 -> 0 end
+    assert {:ok, 501, _state} = StealOps.attempt_steal(stealable_mob(1, 1), 1, 1, rng)
+  end
+
+  test "protected and unresolved drops consume no drop rolls" do
+    base = stealable_mob(1, 1)
+
+    state = %{
+      base
+      | mob_data: %{
+          base.mob_data
+          | drops: [
+              %MobDrop{item: "Jellopy", rate: 10_000, steal_protected: true},
+              %MobDrop{item: "NotARealItem_XYZ", rate: 10_000},
+              %MobDrop{item: "Red_Potion", rate: 1}
+            ]
+        }
+    }
+
+    rng = fn bound ->
+      send(self(), {:steal_roll, bound})
+      0
+    end
+
+    assert {:ok, 501, _state} = StealOps.attempt_steal(state, 400, 10, rng)
+    assert_received {:steal_roll, 10_000}
+    refute_received {:steal_roll, 10_000}
+
+    if GameMode.mode() == :renewal do
+      assert_received {:steal_roll, 100}
+    else
+      refute_received {:steal_roll, 100}
+    end
+  end
+
+  test "the caster's additive bonus can lift a refused base chance above zero" do
+    state = stealable_mob(200, 10_000)
+    assert {:error, :miss} = StealOps.attempt_steal(state, 1, 1)
+
+    assert {:ok, 501, _state} =
+             StealOps.attempt_steal(state, %{dex: 1, add_steal_rate: 100}, 1, fn _ -> 0 end)
+  end
+
+  test "masters and Treasure race-group monsters become terminally protected" do
+    base = stealable_mob(1, 10_000)
+    treasure = %{base | mob_data: %{base.mob_data | race_groups: [:treasure]}}
+
+    for state <- [%{base | master_id: 42}, treasure] do
+      assert {:error, :protected, locked} = StealOps.attempt_steal(state, 400, 10)
+      assert locked.stolen_from
+    end
+  end
+
+  test "NoMobLoot refuses and locks the monster even after the map flag is removed" do
+    state = stealable_mob(1, 10_000)
+    :ok = MapFlags.set_runtime(state.map_name, :nomobloot, true)
+    assert {:error, :protected, locked} = StealOps.attempt_steal(state, 400, 10)
+    assert locked.stolen_from
+    :ok = MapFlags.set_runtime(state.map_name, :nomobloot, false)
+    assert {:error, :already_stolen} = StealOps.attempt_steal(locked, 400, 10)
+  end
+
+  test "a body-state refusal is retryable after the status ends" do
+    state = stealable_mob(1, 10_000)
+    :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_stun, val1: 1)
+    assert {:error, :status_blocked} = StealOps.attempt_steal(state, 400, 10)
+    refute state.stolen_from
+    StatusStorage.take_status(:mob, state.instance_id, :sc_stun)
+    assert {:ok, 501, unlocked} = StealOps.attempt_steal(state, 400, 10)
+    assert unlocked.stolen_from
+  end
+
+  test "status immunity makes the monster terminally unavailable to item stealing" do
+    assert {:error, :immune, locked} =
+             StealOps.attempt_steal(mob_state([:status_immune]), 100, 10)
+
+    assert locked.stolen_from
+    assert {:error, :already_stolen} = StealOps.attempt_steal(locked, 100, 10)
   end
 
   @tag game_mode: :pre_renewal

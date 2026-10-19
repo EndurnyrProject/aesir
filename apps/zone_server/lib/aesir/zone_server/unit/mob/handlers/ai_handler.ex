@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   a cast resolves.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector, as: MobSkillSelector
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -200,6 +201,50 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
         state = state |> MobState.set_attacked(target_ref, norm?) |> wake_for_attacked()
 
         if state.is_dead, do: {:noreply, state}, else: {:noreply, timed(state, &think/1)}
+    end
+  end
+
+  @doc """
+  Runs a skill event on this mob: `{:skillused, skill_id}` when `source_ref`
+  used that skill on it at `tick`.
+
+  A mob without a target takes the source as its target while its event rows
+  are picked at `tick`. The previous target comes back when no row fired or
+  the source is not its enemy. A dead or casting mob picks nothing.
+  """
+  @spec handle_skill_event(MobState.t(), Ref.t(), MobSkillSelector.event(), integer()) ::
+          {:noreply, MobState.t()}
+  def handle_skill_event(%MobState{is_dead: true} = state, _source_ref, _event, _tick),
+    do: {:noreply, state}
+
+  def handle_skill_event(state, source_ref, event, tick) do
+    {:noreply, timed(state, &skill_event(&1, source_ref, event, tick))}
+  end
+
+  defp skill_event(%MobState{target_ref: previous} = state, source_ref, event, tick) do
+    candidate = if previous == nil, do: MobState.set_target(state, source_ref), else: state
+
+    case event_skill(candidate, event, tick) do
+      {:used, used} ->
+        if enemy_source?(used, source_ref), do: used, else: MobState.set_target(used, previous)
+
+      {:none, unused} ->
+        MobState.set_target(unused, previous)
+    end
+  end
+
+  defp event_skill(%MobState{casting: casting} = state, _event, _tick) when casting != nil,
+    do: {:none, state}
+
+  defp event_skill(state, event, tick), do: use_skill(state, event, tick)
+
+  defp enemy_source?(state, {type, id}) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {module, unit, _pid}} ->
+        Relationship.enemy?(MobState.to_combatant(state), module.to_combatant(unit))
+
+      {:error, :not_found} ->
+        false
     end
   end
 

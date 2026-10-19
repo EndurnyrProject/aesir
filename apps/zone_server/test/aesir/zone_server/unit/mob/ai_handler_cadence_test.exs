@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AiHandlerCadenceTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -239,6 +240,77 @@ defmodule Aesir.ZoneServer.Unit.Mob.AiHandlerCadenceTest do
       assert %{row: ^row} = thought.casting
       assert thought.last_skillcheck == now
       Process.cancel_timer(thought.casting.timer_ref)
+    end
+  end
+
+  describe "skill event" do
+    setup do
+      player =
+        PlayerStateFixture.build(%{
+          character_id: 42,
+          map_name: "prontera",
+          x: 101,
+          y: 100,
+          stats: %{}
+        })
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 42 -> {:ok, {PlayerState, player, nil}}
+        :mob, 7 -> {:ok, {MobState, %{mob_state() | instance_id: 7}, nil}}
+        _type, _id -> {:error, :not_found}
+      end)
+
+      :ok
+    end
+
+    defp skill_used_row(skill_id, target \\ :target) do
+      %{row() | state: :any, target: target, condition: %{type: :skillused, value: skill_id}}
+    end
+
+    defp skill_event(state, source, skill_id) do
+      now = System.system_time(:millisecond)
+
+      {:noreply, updated} =
+        AiHandler.handle_skill_event(state, source, {:skillused, skill_id}, now)
+
+      if updated.casting, do: Process.cancel_timer(updated.casting.timer_ref)
+      updated
+    end
+
+    test "a target-less mob reacts to an enemy's skill and keeps the enemy as its target" do
+      stub(MobSkillDb, :rows_for, fn 1001 -> [skill_used_row(28)] end)
+
+      reacted = skill_event(%{mob_state() | target_ref: nil, skill_state: :idle}, @target, 28)
+
+      assert %{row: %{skill_id: 19}} = reacted.casting
+      assert reacted.target_ref == @target
+    end
+
+    test "the previous target comes back when no row fires" do
+      stub(MobSkillDb, :rows_for, fn 1001 -> [skill_used_row(50)] end)
+
+      unmoved = skill_event(%{mob_state() | target_ref: nil, skill_state: :idle}, @target, 28)
+
+      assert {unmoved.casting, unmoved.target_ref} == {nil, nil}
+    end
+
+    test "the previous target comes back when the source is not an enemy" do
+      stub(MobSkillDb, :rows_for, fn 1001 -> [skill_used_row(28, :self)] end)
+
+      reacted = skill_event(%{mob_state() | target_ref: nil, skill_state: :idle}, {:mob, 7}, 28)
+
+      assert reacted.casting != nil
+      assert reacted.target_ref == nil
+    end
+
+    test "a casting mob picks nothing and keeps its target" do
+      reject(&MobSkillDb.rows_for/1)
+      casting = %{mob_state() | target_ref: nil, casting: %{timer_ref: make_ref()}}
+
+      {:noreply, unchanged} =
+        AiHandler.handle_skill_event(casting, @target, {:skillused, 28}, 0)
+
+      assert unchanged.target_ref == nil
     end
   end
 

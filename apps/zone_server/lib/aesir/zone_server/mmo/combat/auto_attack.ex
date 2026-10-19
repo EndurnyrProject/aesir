@@ -34,24 +34,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SpDrain
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
-  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoison
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
-  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.Resource
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Blade Stop (MO_BLADESTOP) skill id, read from a caught player attacker's
   # learned skills so their own Root record carries their own level; a monster
@@ -1003,7 +999,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     {target_type, target_id, target_pid, target} = target_context
 
     if connected?(stages) do
-      snatched = maybe_snatch(player_state, target_type, target_id)
+      snatched = maybe_snatch(player_state, target_type, target_id, target_pid, target)
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
       roll_enchant_poison(attacker, target_type, target_id)
       roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
@@ -1020,42 +1016,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp roll_enchant_poison(%Combatant{unit_id: attacker_id}, target_type, target_id),
     do: EnchantPoison.roll_poison({:player, attacker_id}, {target_type, target_id})
 
-  defp maybe_snatch(player_state, :mob, target_id) do
-    chance = Passives.steal_proc(player_state)
+  defp maybe_snatch(player_state, :mob, target_id, target_pid, %Combatant{position: position}),
+    do: TfSteal.gank(player_state, target_id, target_pid, position)
 
-    if chance > 0 and :rand.uniform(1_000) <= chance do
-      snatch(player_state, target_id)
-    else
-      player_state
-    end
-  end
-
-  defp maybe_snatch(player_state, _target_type, _target_id), do: player_state
-
-  defp snatch(player_state, target_id) do
-    caster_dex = PlayerStats.get_effective_stat(player_state.stats, :dex)
-    tf_steal_level = Learned.learned_level(player_state.stats.progression.learned_skills, 50)
-
-    with {:ok, {_module, _state, mob_pid}} <- UnitRegistry.get_unit(:mob, target_id),
-         {:ok, item_id} <- MobSession.attempt_steal(mob_pid, caster_dex, tf_steal_level),
-         {:ok, item_def} <- ItemManagement.get_item_by_id(item_id),
-         {:ok, inventory, change} <-
-           InventoryOps.add(
-             player_state.character_id,
-             player_state.inventory,
-             player_state.stats,
-             item_def,
-             1
-           ) do
-      %{
-        player_state
-        | inventory: inventory,
-          pending_inventory_notify: player_state.pending_inventory_notify ++ [change]
-      }
-    else
-      _ -> player_state
-    end
-  end
+  defp maybe_snatch(player_state, _target_type, _target_id, _target_pid, _target),
+    do: player_state
 
   # The confirmed-ordinary-hit passive seam: fires exactly once per successful
   # primary swing, right after the hit has landed. Skill-unit targets are

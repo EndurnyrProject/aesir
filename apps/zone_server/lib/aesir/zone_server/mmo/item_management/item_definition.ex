@@ -114,6 +114,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   def normalize_gender(%__MODULE__{} = definition), do: definition
 
   @doc """
+  Whether a newly obtained copy of this item starts identified.
+
+  Weapons, armour, pet armour and shadow gear arrive unidentified; every other
+  type is identified.
+  """
+  @spec identified_on_obtain?(t()) :: boolean()
+  def identified_on_obtain?(%__MODULE__{type: type}),
+    do: type not in [:weapon, :armor, :pet_armor, :shadow_gear]
+
+  @doc """
   The item's sell price, applying the rAthena default: when `sell` is unset
   (`0`), it falls back to half the buy price (`Buy / 2`).
   """

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -482,6 +483,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 1}}}}} =
                SkillHandler.handle_proc_cast(state, 29, 1, :self)
+    end
+
+    test "a proc whose effect completed as a failure reports it and closes the use" do
+      state = casting_state(45)
+      game_state = state.game_state
+      charged = put_in(game_state.stats.current_state.hp, 1)
+      test_pid = self()
+
+      stub(Interpreter, :proc_cast, fn ^game_state, 29, 1, :self ->
+        {:failed, charged, :no_effect}
+      end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub_commit()
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, ^charged -> :ok end)
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      expect(CastEnd, :complete, fn %{character_id: 1000}, 29, :self -> :ok end)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 1}}}}} =
+               SkillHandler.handle_proc_cast(state, 29, 1, :self)
+
+      assert_received {:to_player, %SkillCastFailed{skill_id: 29}}
     end
 
     test "publishes the final resource projection after consuming SP" do
@@ -1434,6 +1457,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert failed.game_state.stats.current_state.sp == 40
       assert_received {:to_player, %SkillCastFailed{skill_id: 12}}
+    end
+
+    test "a cast failing after its requirement still closes the use at its target" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      stub(Interpreter, :begin_cast, fn game_state, 12, 1, {:ground, 12, 12} ->
+        {:failed, game_state, :brew_failed}
+      end)
+
+      expect(CastEnd, :complete, fn %{character_id: 1000}, 12, {:ground, 12, 12} -> :ok end)
+
+      SkillHandler.handle_use_skill_ground(casting_state(45), 12, 1, 12, 12)
     end
 
     test "a stale token is ignored and the cast continues" do

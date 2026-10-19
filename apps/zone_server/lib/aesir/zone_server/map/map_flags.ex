@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
           | :nowarpto
           | :gvg_te
           | :gvg_te_castle
+          | :nomobloot
   @type map_name :: String.t()
 
   @flags [
@@ -75,7 +76,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     :nomemo,
     :nowarpto,
     :gvg_te,
-    :gvg_te_castle
+    :gvg_te_castle,
+    :nomobloot
   ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 
