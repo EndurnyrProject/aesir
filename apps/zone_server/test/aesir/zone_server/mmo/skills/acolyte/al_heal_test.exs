@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -50,6 +52,79 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
 
     {:ok, definition} = Catalog.by_id(28)
     {:ok, caster: caster, definition: definition}
+  end
+
+  test "a live Hermode entry refuses Heal before the player's magic snapshot refreshes",
+       %{caster: caster, definition: definition} do
+    :ok = UnitRegistry.register_player(%{caster | character_id: @ally_id}, self())
+
+    assert :ok =
+             StatusInterpreter.apply_status(:player, @ally_id, :sc_hermode,
+               caster_id: @ally_id,
+               val1: 1,
+               duration: 10_000,
+               owner_refresh: :defer
+             )
+
+    assert StatusStorage.has_status?(:player, @ally_id, :sc_hermode)
+    assert {:ok, %{magic_reduction: 0}} = UnitRegistry.get_unit_info(:player, @ally_id)
+    expect(Combat, :apply_heal, fn :player, @ally_id, 0, 1000 -> :ok end)
+    assert {:ok, ^caster} = AlHeal.cast(caster, {:unit, @ally_id}, 5, definition)
+  end
+
+  test "a Hermode monster receives zero without a player equipment snapshot",
+       %{caster: caster, definition: definition} do
+    mob = %{mob_caster(base_level: 50, int: 50, matk: 50) | instance_id: @ally_id}
+    :ok = UnitRegistry.register_unit(:mob, @ally_id, MobState, mob, self())
+    :ok = StatusStorage.apply_status(:mob, @ally_id, :sc_hermode, val1: 1, duration: 10_000)
+    expect(Combat, :apply_heal, fn :mob, @ally_id, 0, 1000 -> :ok end)
+    assert {:ok, ^caster} = AlHeal.cast(caster, {:unit, @ally_id}, 5, definition)
+  end
+
+  test "an owner-local Homunculus heal carries zero under Hermode",
+       %{caster: caster, definition: definition} do
+    homunculus = %HomunculusState{
+      id: 1,
+      world_gid: @ally_id,
+      owner_character_id: caster.character_id,
+      class_id: 6001,
+      name: "Lif"
+    }
+
+    :ok = UnitRegistry.register_unit(:homunculus, @ally_id, HomunculusState, homunculus, self())
+
+    :ok =
+      StatusStorage.apply_status(:homunculus, @ally_id, :sc_hermode, val1: 1, duration: 10_000)
+
+    reject(&Combat.apply_heal/4)
+
+    assert {:local_effects, ^caster, [{:homunculus, {:apply_heal, @ally_id, 0, {:player, 1000}}}]} =
+             AlHeal.cast(caster, {:unit, {:homunculus, @ally_id}}, 5, definition)
+  end
+
+  test "Deadly Defeasance bypasses equipment immunity but not Hermode",
+       %{caster: caster, definition: definition} do
+    target = put_in(caster.stats.modifiers.equipment, %{no_magic_damage: 50})
+    target = %{target | character_id: @ally_id}
+    :ok = UnitRegistry.register_player(target, self())
+    expect(Combat, :apply_heal, fn :player, @ally_id, 0, 1000 -> :ok end)
+    assert {:ok, ^caster} = AlHeal.cast(caster, {:unit, @ally_id}, 5, definition)
+    :ok = StatusStorage.apply_status(:player, @ally_id, :sc_deadly_defeasance)
+    expect(Combat, :apply_heal, fn :player, @ally_id, 350, 1000 -> :ok end)
+    assert {:ok, ^caster} = AlHeal.cast(caster, {:unit, @ally_id}, 5, definition)
+    :ok = StatusStorage.apply_status(:player, @ally_id, :sc_hermode)
+    expect(Combat, :apply_heal, fn :player, @ally_id, 0, 1000 -> :ok end)
+    assert {:ok, ^caster} = AlHeal.cast(caster, {:unit, @ally_id}, 5, definition)
+  end
+
+  test "the source's zero-heal statuses override a positive recipe amount",
+       %{caster: caster, definition: definition} do
+    for status <- [:sc_berserk, :sc_saturdaynightfever] do
+      :ok = StatusStorage.apply_status(:player, @ally_id, status)
+      expect(Combat, :apply_heal, fn :player, @ally_id, 0, 1000 -> :ok end)
+      assert {:ok, ^caster} = AlHeal.cast(caster, {:unit, @ally_id}, 5, definition)
+      StatusStorage.take_status(:player, @ally_id, status)
+    end
   end
 
   describe "cast/4 — player/ally target" do

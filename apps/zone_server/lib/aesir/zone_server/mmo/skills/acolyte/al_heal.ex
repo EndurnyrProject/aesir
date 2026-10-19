@@ -12,8 +12,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   and the target's penalties. A monster or NPC caster heals off its own INT and
   base level with no equipment bonus.
 
-  A magic-immune player, the Emperium and a battlefield-class monster are
-  healed for 0.
+  In both modes, Hermode and the explicit zero-heal statuses suppress the
+  amount before every delivery path. Equipment-based magic immunity also
+  zeroes a player's received heal unless Deadly Defeasance overrides it.
+  The Emperium and battlefield-class monsters always receive zero.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,
@@ -39,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -127,7 +130,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     end
   end
 
-  defp heal_living_target(
+  defp heal_living_target(caster, target, heal_value, source_id) do
+    ref = target_ref(target)
+    deliver_heal(caster, ref, if(heal_refused?(ref), do: 0, else: heal_value), source_id)
+  end
+
+  defp deliver_heal(
          %{character_id: owner_id} = caster,
          {:homunculus, gid} = target_ref,
          heal_value,
@@ -145,14 +153,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     end
   end
 
-  defp heal_living_target(caster, target, heal_value, source_id) do
-    {unit_type, unit_id} = ref = target_ref(target)
-    heal_value = if heal_refused?(ref), do: 0, else: heal_value
+  defp deliver_heal(caster, {unit_type, unit_id}, heal_value, source_id) do
     Combat.apply_heal(unit_type, unit_id, heal_value, source_id)
     {:ok, caster}
   end
 
-  defp heal_refused?({:mob, mob_id}) do
+  defp heal_refused?({type, id} = ref) do
+    Enum.any?([:sc_hermode, :sc_berserk, :sc_saturdaynightfever], fn status ->
+      StatusStorage.has_status?(type, id, status)
+    end) or protected_mob?(ref) or
+      (not StatusStorage.has_status?(type, id, :sc_deadly_defeasance) and
+         MagicDefense.immune?(ref))
+  end
+
+  defp protected_mob?({:mob, mob_id}) do
     case UnitRegistry.get_unit(:mob, mob_id) do
       {:ok, {_module, %MobState{mob_id: @emperium}, _pid}} -> true
       {:ok, {_module, %MobState{} = mob, _pid}} -> MobState.monster_class(mob) == :battlefield
@@ -160,7 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     end
   end
 
-  defp heal_refused?(ref), do: MagicDefense.immune?(ref)
+  defp protected_mob?(_ref), do: false
 
   # A target the caller could not type stays without the Assumptio bonus
   # rather than guessing its unit type.
