@@ -52,6 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaoticTest do
         hp: 100,
         is_dead: false,
         target_ref: {:player, 100},
+        attack_target: {:player, 100},
         spawned_at: 0
       }
       |> Aesir.TestMob.publish(max_sp: 0, max_hp: 100)

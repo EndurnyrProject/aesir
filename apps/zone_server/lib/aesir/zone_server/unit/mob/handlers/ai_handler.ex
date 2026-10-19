@@ -272,22 +272,36 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     {:noreply, schedule_jittered_ai_tick(%{state | ai_awake: true})}
   end
 
-  @doc "Redirects only a living mob whose current target still matches."
-  @spec handle_redirect_target(MobState.t(), tuple(), tuple()) ::
+  @doc "Redirects a selected monster's standing attack, chase and unit cast targets."
+  @spec handle_redirect_target(MobState.t(), Ref.t(), Ref.t()) ::
           {:reply, :ok | {:error, atom()}, MobState.t()}
-  def handle_redirect_target(
-        %MobState{is_dead: false, target_ref: expected_ref} = state,
-        expected_ref,
-        new_ref
-      ) do
-    {:reply, :ok, state |> MobState.set_target(new_ref) |> StateCommit.commit()}
-  end
-
   def handle_redirect_target(%MobState{is_dead: true} = state, _expected_ref, _new_ref),
     do: {:reply, {:error, :dead}, state}
 
-  def handle_redirect_target(%MobState{} = state, _expected_ref, _new_ref),
-    do: {:reply, {:error, :target_changed}, state}
+  def handle_redirect_target(%MobState{} = state, expected_ref, {type, id} = new_ref) do
+    if UnitRegistry.targeting?(:mob, state, expected_ref) do
+      casting =
+        case state.casting do
+          %{unit_target: {:unit, _old_type, _old_id}} = casting ->
+            %{casting | unit_target: {:unit, type, id}}
+
+          casting ->
+            casting
+        end
+
+      updated = %{
+        state
+        | target_ref: new_ref,
+          attack_target: new_ref,
+          chase_target: if(state.chase_target, do: new_ref),
+          casting: casting
+      }
+
+      {:reply, :ok, StateCommit.commit(updated)}
+    else
+      {:reply, {:error, :target_changed}, state}
+    end
+  end
 
   @doc """
   Locks the mob's AI target for an `{:ai, {:set_target, target_ref}}` cast (a

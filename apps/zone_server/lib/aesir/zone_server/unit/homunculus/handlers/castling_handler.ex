@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler do
   """
   @spec redirect_attacker(PlayerState.t(), integer()) :: :ok | :none | {:error, atom()}
   def redirect_attacker(%PlayerState{} = owner, homunculus_gid) do
-    with {:ok, mob_id} <- Attackers.random(owner),
+    with {:ok, {:mob, mob_id}} <- Attackers.random(owner),
          {:ok, {_module, _state, pid}} when is_pid(pid) <- UnitRegistry.get_unit(:mob, mob_id) do
       MobSession.redirect_target(
         pid,
@@ -119,6 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler do
       )
     else
       :none -> :none
+      {:ok, {_type, _id}} -> :none
       _unavailable -> {:error, :unavailable}
     end
   end

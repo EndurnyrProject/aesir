@@ -3,8 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
   Benediction of Chaos heals Vanilmirth, its owner, or one current owner-attacker,
   by `Combat.SkillHeal`'s recipe at a random level from 1 to the skill level.
 
-  The attacker is rolled among the first 30 monsters within 14 cells of the
-  owner that target it, taken in the map's block order.
+  In both modes the attacker is rolled among the first 30 characters within
+  14 cells of the owner that have it as a standing attack or skill target,
+  taken in map block order. Renewal has a three-second cooldown; pre-renewal
+  has none.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -16,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
     damage_type: :no_damage,
     damage_kind: :magic,
     sp_cost: List.duplicate(40, 5),
-    cooldown: List.duplicate(3_000, 5)
+    cooldown: [renewal: List.duplicate(3_000, 5), pre_renewal: []]
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
@@ -51,8 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
   defp random_attacker(caster) do
     with {:ok, {_module, owner, _pid}} <-
            UnitRegistry.get_unit(:player, caster.owner_character_id),
-         {:ok, id} <- Attackers.random(owner) do
-      {:mob, id}
+         {:ok, target_ref} <- Attackers.random(owner) do
+      target_ref
     else
       _none -> :homunculus
     end
@@ -65,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
 
   defp recipient_ref(caster, :homunculus), do: {:homunculus, caster.world_gid}
   defp recipient_ref(caster, :owner), do: {:player, caster.owner_character_id}
-  defp recipient_ref(_caster, {:mob, id}), do: {:mob, id}
+  defp recipient_ref(_caster, {_type, _id} = target_ref), do: target_ref
 
   defp heal_effect(caster, :homunculus, amount) do
     source = {:homunculus, caster.world_gid}
@@ -78,5 +80,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
 
   defp heal_effect(caster, {:mob, id}, amount) do
     {:mob, {:apply_heal, id, amount, {:homunculus, caster.world_gid}}}
+  end
+
+  defp heal_effect(%{world_gid: gid} = caster, {:homunculus, gid}, amount),
+    do: heal_effect(caster, :homunculus, amount)
+
+  defp heal_effect(caster, target_ref, amount) do
+    {:external_heal, target_ref, amount, {:homunculus, caster.world_gid}}
   end
 end

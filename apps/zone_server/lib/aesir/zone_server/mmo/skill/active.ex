@@ -38,8 +38,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
           | {:mob, {:apply_heal, pos_integer(), non_neg_integer(), Ref.t()}}
           | {:owner_item_cost, pos_integer(), pos_integer()}
 
-  @typedoc "A staged external hit delivered only after aggregate settlement succeeds."
-  @type external_effect :: {:prepared_external_hit, PreparedHit.t()}
+  @typedoc "A staged external hit or heal delivered only after aggregate settlement succeeds."
+  @type external_effect ::
+          {:prepared_external_hit, PreparedHit.t()}
+          | {:external_heal, Ref.t(), non_neg_integer(), Ref.t()}
 
   @typedoc "An effect settled by the owning aggregate after the caster state commits."
   @type effect :: local_effect() | external_effect()

@@ -124,6 +124,27 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     end
   end
 
+  @doc "Checks a published unit's standing attack and in-flight skill targets."
+  @spec targeting?(unit_type(), map(), unit_key()) :: boolean()
+  def targeting?(type, state, target) do
+    attack_target(type, state) == target or skill_target(type, state) == target
+  end
+
+  defp skill_target(:mob, %{casting: %{unit_target: {:unit, type, id}}}), do: {type, id}
+
+  defp skill_target(type, %{casting: %{target: {:unit, {target_type, id}}}})
+       when type in [:player, :homunculus],
+       do: {target_type, id}
+
+  defp skill_target(:player, %{casting: %{target: {:unit, id}}}) when is_integer(id) do
+    case unit_type_for(id) do
+      {:ok, type} -> {type, id}
+      {:error, :not_found} -> nil
+    end
+  end
+
+  defp skill_target(_type, _state), do: nil
+
   defp initialize_target_count({type, id}) when type in @counted_types,
     do: :ets.insert_new(table_for(:unit_registry), {{:target_count, type, id}, 0})
 

@@ -57,6 +57,24 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandlerTest do
     refute_receive {:redirected, _, _, _}, 50
   end
 
+  test "a selected player is counted but not redirected or rerolled" do
+    owner = owner_at({20, 20})
+
+    player = %PlayerState{
+      character_id: 200,
+      map_name: @map,
+      x: 21,
+      y: 20,
+      casting: %{target: {:unit, 100}}
+    }
+
+    UnitRegistry.register_unit(:player, 200, PlayerState, player, self())
+    SpatialIndex.add_unit(:player, 200, 21, 20, @map)
+
+    assert CastlingHandler.redirect_attacker(owner, @gid) == :none
+    refute_received {:"$gen_call", _, _}
+  end
+
   defp owner_at({x, y}) do
     owner = %PlayerState{character_id: 100, map_name: @map, x: x, y: y}
     :ok = UnitRegistry.register_unit(:player, 100, PlayerState, owner, self())
@@ -78,6 +96,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandlerTest do
         hp: 100,
         is_dead: false,
         target_ref: {:player, 100},
+        attack_target: {:player, 100},
         spawned_at: 0
       }
       |> Aesir.TestMob.publish(max_sp: 0, max_hp: 100)

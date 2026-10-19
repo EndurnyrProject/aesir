@@ -1,25 +1,20 @@
 defmodule Aesir.ZoneServer.Unit.Mob.Attackers do
   @moduledoc """
-  Rolls one of the monsters currently targeting a player.
+  Rolls one of the units currently attacking or casting at a player.
 
-  The candidates are the first 30 living monsters within 14 cells of the
-  player whose target is that player, taken in the map's block order; the
-  roll is uniform over them. Each candidate's live state is read from its
-  session within a shared time budget, so a stalled mob ends the scan early.
+  The candidates are the first 30 characters within 14 cells of the player,
+  taken in map block order. The roll is uniform and reads published registry
+  snapshots without calling another session.
   """
 
-  alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @area 14
   @max_attackers 30
-  @scan_budget_ms 100
-  @mob_state_timeout_ms 25
-
   @doc """
-  Returns one random attacker of `owner` as `{:ok, mob_id}`, or `:none` when
+  Returns one random attacker of `owner` as `{:ok, typed_ref}`, or `:none` when
   nothing targets it or the owner has no position.
   """
   @spec random(%{
@@ -28,7 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Attackers do
           required(:x) => integer(),
           required(:y) => integer(),
           optional(atom()) => term()
-        }) :: {:ok, integer()} | :none
+        }) :: {:ok, Ref.t()} | :none
   def random(%{character_id: owner_id, map_name: map_name, x: x, y: y} = owner)
       when is_binary(map_name) and is_integer(x) and is_integer(y) do
     case scan(owner, {:player, owner_id}) do
@@ -40,8 +35,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Attackers do
   def random(%{character_id: _owner_id}), do: :none
 
   defp scan(owner, owner_ref) do
-    deadline = System.monotonic_time(:millisecond) + @scan_budget_ms
-
     owner.map_name
     |> SpatialIndex.units_in_area(
       owner.x - @area,
@@ -50,11 +43,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Attackers do
       owner.y + @area
     )
     |> Enum.reduce_while([], fn target_ref, attackers ->
-      case attacker(target_ref, owner, owner_ref, deadline) do
-        {:attacker, id} -> collected([id | attackers])
-        :not_attacker -> {:cont, attackers}
-        :expired -> {:halt, attackers}
-      end
+      if attacker?(target_ref, owner, owner_ref),
+        do: collected([target_ref | attackers]),
+        else: {:cont, attackers}
     end)
     |> Enum.reverse()
   end
@@ -62,35 +53,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Attackers do
   defp collected(attackers) when length(attackers) >= @max_attackers, do: {:halt, attackers}
   defp collected(attackers), do: {:cont, attackers}
 
-  defp attacker({:mob, id}, owner, owner_ref, deadline) do
-    with {:ok, {MobState, _snapshot, pid}} when is_pid(pid) <- UnitRegistry.get_unit(:mob, id),
-         {:ok, %MobState{} = mob} <- live_state(pid, deadline),
-         true <- mob.instance_id == id,
-         true <- Unit.living?(mob),
-         true <- mob.map_name == owner.map_name,
-         true <- mob.target_ref == owner_ref,
-         true <- max(abs(mob.x - owner.x), abs(mob.y - owner.y)) <= @area do
-      {:attacker, id}
+  defp attacker?(owner_ref, _owner, owner_ref), do: false
+
+  defp attacker?({type, id}, owner, owner_ref) when type in [:player, :mob, :homunculus] do
+    with {:ok, {_module, state, _pid}} <- UnitRegistry.get_unit(type, id),
+         %{map_name: map_name, x: x, y: y} when is_integer(x) and is_integer(y) <- state do
+      map_name == owner.map_name and max(abs(x - owner.x), abs(y - owner.y)) <= @area and
+        UnitRegistry.targeting?(type, state, owner_ref)
     else
-      :expired -> :expired
-      _other -> :not_attacker
+      _unavailable -> false
     end
   end
 
-  defp attacker(_target_ref, _owner, _owner_ref, _deadline), do: :not_attacker
-
-  defp live_state(pid, deadline) do
-    remaining_ms = deadline - System.monotonic_time(:millisecond)
-
-    if remaining_ms > 0 do
-      {:ok, GenServer.call(pid, :get_state, min(remaining_ms, @mob_state_timeout_ms))}
-    else
-      :expired
-    end
-  catch
-    :exit, _reason ->
-      if System.monotonic_time(:millisecond) >= deadline,
-        do: :expired,
-        else: {:error, :mob_unavailable}
-  end
+  defp attacker?(_target_ref, _owner, _owner_ref), do: false
 end

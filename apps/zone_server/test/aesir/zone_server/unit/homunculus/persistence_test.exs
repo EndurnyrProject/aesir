@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.PersistenceTest do
 
   setup do
     suffix = System.unique_integer([:positive])
-    username = "hp#{suffix}"
+    username = "hpers#{suffix}"
 
     {:ok, account} =
       %Account{}
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.PersistenceTest do
       |> Character.changeset(%{
         account_id: account.id,
         char_num: 0,
-        name: "H#{suffix}",
+        name: "Hom#{suffix}",
         class: 1,
         base_level: 99,
         str: 10,

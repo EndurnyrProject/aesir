@@ -98,6 +98,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
     end
   end
 
+  @tag game_mode: :renewal
+  @tag integration_pre_re: false
   test "Benediction of Chaos publishes the exact non-damaging self definition" do
     assert {:ok, definition} = Catalog.by_id(8_014)
     assert definition.name == :hvan_chaotic
@@ -186,7 +188,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
              HvanChaotic.cast(caster, :self, 5, HvanChaotic.definition())
   end
 
-  test "Benediction bounds all unresponsive attacker reads to one scan budget" do
+  test "Benediction selects published attackers even when their sessions are unresponsive" do
     rank_one = rank_heal(1)
     owner = %PlayerState{character_id: 100, map_name: "vanilmirth_skills_map", x: 20, y: 20}
     :ok = UnitRegistry.register_unit(:player, 100, PlayerState, owner, self())
@@ -216,14 +218,12 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
       end)
     end)
 
-    seed_rolls([{100, 100}, {5, 1}])
-    started_at = System.monotonic_time(:millisecond)
+    seed_rolls([{100, 100}, {5, 1}, {5, 1}])
 
-    assert {:local_effects, _,
-            [{:homunculus, {:apply_heal, 1_500_001, ^rank_one, {:homunculus, 1_500_001}}}]} =
+    assert {:local_effects, _, [{:mob, {:apply_heal, id, ^rank_one, {:homunculus, 1_500_001}}}]} =
              HvanChaotic.cast(vanilmirth(), :self, 5, HvanChaotic.definition())
 
-    assert System.monotonic_time(:millisecond) - started_at <= 180
+    assert id in 7_010..7_014
   end
 
   test "the typed mob heal effect is delivered only through the post-settlement local route" do
@@ -871,7 +871,9 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
   # The AI target lock refuses units it cannot fight (an absent player among
   # them), so the target under test is written on the real session directly.
   defp force_target(mob, target_ref) do
-    updated = :sys.replace_state(mob.pid, &%{&1 | target_ref: target_ref})
+    updated =
+      :sys.replace_state(mob.pid, &%{&1 | target_ref: target_ref, attack_target: target_ref})
+
     :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)
   end
 
@@ -889,6 +891,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
         sp: 0,
         is_dead: Keyword.get(overrides, :is_dead, false),
         target_ref: target_ref,
+        attack_target: target_ref,
         spawned_at: 0
       }
       |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)

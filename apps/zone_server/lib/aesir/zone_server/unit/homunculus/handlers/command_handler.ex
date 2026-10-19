@@ -237,6 +237,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     {:noreply, session}
   end
 
+  def local_effect({:external_heal, {type, id}, amount, source}, %SessionState{} = session) do
+    :ok = DamageApplication.apply_heal(type, id, amount, source)
+    {:noreply, session}
+  end
+
   @doc "Applies aggregate-local effects in list order through the current session state."
   @spec local_effects([tuple()], SessionState.t()) :: local_effect_result()
   def local_effects(effects, %SessionState{} = session) when is_list(effects) do
