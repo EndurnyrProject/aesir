@@ -142,6 +142,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # per-monster physical damage bonus (add_damage_class); nil for players.
     monster_id: nil,
 
+    # The player whose equipment procs answer for this attacker's hits. Set for
+    # a player-owned monster summon (its owner), nil otherwise.
+    proc_owner_id: nil,
+
     # Whether the attacker is mounted (Peco-Peco). Feeds the mounted-spear
     # size-modifier override; always false for mobs.
     riding: false,
@@ -222,6 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           detector: boolean(),
           ignore_modes: [ignore_mode()],
           monster_id: integer() | nil,
+          proc_owner_id: integer() | nil,
           riding: boolean(),
           equip_modifiers: map(),
           magic_reduction: 0..100,

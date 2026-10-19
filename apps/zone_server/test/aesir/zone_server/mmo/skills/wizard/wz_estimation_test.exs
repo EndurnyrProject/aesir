@@ -9,6 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimation
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.Member
+  alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -83,9 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
   end
 
   describe "cast/4" do
-    test "delivers the result only to the caster session" do
-      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
-
+    test "delivers the result to the caster session alone without a party" do
       stub(UnitRegistry, :get_unit, fn
         :mob, @target_id -> {:ok, {MobState, target(), self()}}
         :player, @caster_id -> {:ok, {PlayerState, caster(), self()}}
@@ -95,17 +96,84 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
                WzEstimation.cast(caster(), {:unit, @target_id}, 1, WzEstimation.definition())
 
       assert_received {:"$gen_cast", {:send_packet, %EstimationResult{target_id: @target_id}}}
+      refute_received {:"$gen_cast", {:send_packet, _other}}
     end
 
-    test "rejects player targets before spending resources" do
-      stub(UnitRegistry, :unit_exists?, fn :mob, _target_id -> false end)
+    test "delivers the result to every same-map party member" do
+      caster = %{caster() | party_id: 7, map_name: "prontera"}
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id ->
+          {:ok, {MobState, target(), self()}}
+
+        :player, 100 ->
+          {:ok, {PlayerState, caster, self()}}
+
+        :player, 201 ->
+          {:ok, {PlayerState, %{caster | character_id: 201}, self()}}
+
+        :player, 202 ->
+          {:ok, {PlayerState, %{caster | character_id: 202, map_name: "geffen"}, self()}}
+      end)
+
+      stub(PartyManager, :get, fn 7 ->
+        {:ok,
+         %PartyState{
+           party_id: 7,
+           name: "Party",
+           leader_char_id: 100,
+           exp_share: true,
+           item_pickup_share: true,
+           members: %{
+             100 => member(100),
+             201 => member(201),
+             202 => member(202),
+             203 => %{member(203) | online: false}
+           }
+         }}
+      end)
+
+      assert {:ok, %PlayerState{character_id: 100}} =
+               WzEstimation.cast(caster, {:unit, @target_id}, 1, WzEstimation.definition())
+
+      # The caster and the same-map online member; not the member on another map
+      # nor the offline one.
+      assert_received {:"$gen_cast", {:send_packet, %EstimationResult{target_id: @target_id}}}
+      assert_received {:"$gen_cast", {:send_packet, %EstimationResult{target_id: @target_id}}}
+      refute_received {:"$gen_cast", {:send_packet, _other}}
+    end
+
+    # The reference charges the completed cast and then reports the failure, so
+    # a non-monster target passes validation and fails in the behavior.
+    test "a player target validates, then fails the completed cast" do
+      stub(UnitRegistry, :unit_id_exists?, fn @target_id -> true end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:error, :not_found}
+        :player, @caster_id -> {:ok, {PlayerState, caster(), self()}}
+      end)
+
+      assert :ok =
+               WzEstimation.validate(caster(), {:unit, @target_id}, 1, WzEstimation.definition())
+
+      assert {:failed, %PlayerState{character_id: @caster_id}, :invalid_target} =
+               WzEstimation.cast(caster(), {:unit, @target_id}, 1, WzEstimation.definition())
+    end
+
+    test "a vanished target is refused before anything is spent" do
+      stub(UnitRegistry, :unit_id_exists?, fn _target_id -> false end)
 
       assert {:error, :invalid_target} =
                WzEstimation.validate(caster(), {:unit, @target_id}, 1, WzEstimation.definition())
     end
 
     test "fails loudly when the target disappears before cast completion" do
-      stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
+      stub(UnitRegistry, :unit_id_exists?, fn _target_id -> false end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, @target_id -> {:error, :not_found}
+        :player, @caster_id -> {:ok, {PlayerState, caster(), self()}}
+      end)
 
       assert {:error, :target_not_found} =
                WzEstimation.cast(caster(), {:unit, @target_id}, 1, WzEstimation.definition())
@@ -114,6 +182,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
 
   defp caster do
     %PlayerState{character_id: @caster_id}
+  end
+
+  defp member(char_id) do
+    %Member{char_id: char_id, name: "Member", base_level: 1, online: true}
   end
 
   defp target do

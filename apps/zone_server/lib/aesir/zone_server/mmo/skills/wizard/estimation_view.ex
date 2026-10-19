@@ -27,10 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView do
         target_id: target_id,
         class_id: mob_data.id,
         level: MobState.get_level(state),
-        size: size_id(mob_data.size),
+        size: size_id(calculated.size),
         hp: hp,
         def: calculated.def,
-        race: race_id(mob_data.race),
+        race: race_id(calculated.race),
         mdef: calculated.mdef,
         element: ElementModifiers.id(element),
         server_tick: ServerTick.now()

@@ -140,6 +140,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     last_linktime: 0,
     can_summon: false,
     owner_player_id: nil,
+    # The summon class a player-owned monster belongs to (`:sphere`, `:flora`).
+    # It selects which spawn-time stat adjustments apply and whether the summon
+    # lends its master's equipment procs to its attacks.
+    summon_kind: nil,
     guild_id: 0,
     no_exp: false,
     no_drops: false,
@@ -247,6 +251,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           last_linktime: integer(),
           can_summon: boolean(),
           owner_player_id: integer() | nil,
+          summon_kind: atom() | nil,
           guild_id: non_neg_integer(),
           no_exp: boolean(),
           no_drops: boolean(),
@@ -534,9 +539,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       ignore_modes:
         Enum.filter(MobMode.from_mask(calculated.mode), &(&1 in Combatant.ignore_modes())),
       monster_id: mob_state.mob_id,
+      proc_owner_id: proc_owner_id(mob_state),
       equip_modifiers: %{}
     })
   end
+
+  # A player-owned summon attacks with its master's equipment procs. Monster
+  # classes the reference excludes lend nothing, and `summon_kind` is nil for
+  # every ordinary spawn.
+  defp proc_owner_id(%__MODULE__{summon_kind: kind, owner_player_id: owner})
+       when is_atom(kind) and is_integer(owner),
+       do: owner
+
+  defp proc_owner_id(%__MODULE__{}), do: nil
 
   # Renewal Heal adds the database MATK on top of the base bounds again
   # (`skill_calc_heal`'s weapon MATK, with no variance for a monster). The
@@ -836,6 +851,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       %{
         state
         | owner_player_id: Keyword.get(opts, :owner_player_id),
+          summon_kind: Keyword.get(opts, :summon_kind),
           guild_id: Keyword.get(opts, :guild_id, 0),
           no_exp: Keyword.get(opts, :no_exp, false),
           no_drops: Keyword.get(opts, :no_drops, false)

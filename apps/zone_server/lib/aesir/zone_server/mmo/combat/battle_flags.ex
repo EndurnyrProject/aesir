@@ -68,6 +68,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.BattleFlags do
   def type_bit(:magic), do: @magic
   def type_bit(:misc), do: @misc
 
+  @doc "Whether an attack flag includes a weapon-damage hit."
+  @spec weapon?(flag()) :: boolean()
+  def weapon?(flag) when is_integer(flag) and flag >= 0, do: (flag &&& @weapon) != 0
+  def weapon?(_flag), do: false
+
   @doc "The battle-flag bit for an attack range."
   @spec range_bit(range()) :: flag()
   def range_bit(:short), do: @short

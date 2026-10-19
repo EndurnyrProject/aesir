@@ -5,6 +5,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
   Self and monster targets settle locally. Player targets use the one-shot
   exchange path and are gated by the server's current PvP policy.
 
+  A monster that is status-immune, or that fails the 20% roll, makes the
+  completed cast fail: its SP is already spent and the caster sees the skill
+  failure, exactly as the reference's cast-end check does. A monster that
+  accepts the roll absorbs twice its runtime level in SP and turns on the
+  caster.
+
   Renewal: a 0.5 s fixed cast only. Pre-renewal: a 2 s cast. The 7 SP per absorbed
   sphere and the 20% monster roll for twice its level are shared.
   """
@@ -25,6 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   @behaviour Active
@@ -56,13 +64,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
       {:ok, _pid, _target, :player} ->
         {:deferred, caster, {:absorb_player, target_id}}
 
-      {:ok, _pid, target, :mob} ->
-        reward =
-          if :rand.uniform(100) <= Formulas.absorb_mob_activation_rate(),
-            do: Formulas.absorb_mob_sp(target.mob_data.level),
-            else: 0
-
-        {:deferred, caster, {:absorb_local, reward}}
+      {:ok, pid, %MobState{} = target, :mob} ->
+        absorb_from_monster(caster, pid, target)
 
       _ ->
         {:error, :invalid_target}
@@ -75,11 +78,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
       else: Targeting.validate_enemy_relation(caster, target)
   end
 
-  defp validate_target(_caster, %{mob_data: %{modes: modes}}, :mob) do
-    if :status_immune in (modes || []), do: {:error, :invalid_target}, else: :ok
-  end
+  # The reference decides at cast end, so the requirement is already spent when
+  # an immune or resisting monster refuses the skill.
+  defp validate_target(_caster, _target, :mob), do: :ok
 
   defp validate_target(_caster, _target, _unit_type), do: {:error, :invalid_target}
+
+  defp absorb_from_monster(caster, pid, %MobState{} = target) do
+    if MobState.status_immune?(target) or
+         :rand.uniform(100) > Formulas.absorb_mob_activation_rate() do
+      {:failed, caster, :invalid_target}
+    else
+      MobSession.set_target(pid, {:player, caster.character_id})
+      reward = Formulas.absorb_mob_sp(MobState.get_level(target))
+      {:deferred, caster, {:absorb_local, reward}}
+    end
+  end
 
   defp coin_job?(%{stats: %{progression: %{job_id: job_id}}}) do
     match?({:ok, job} when job in @coin_jobs, AvailableJobs.job_id_to_name(job_id))

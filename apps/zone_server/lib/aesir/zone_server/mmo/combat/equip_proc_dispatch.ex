@@ -18,6 +18,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   connected hit for a delayed one. A damaging skill hit also arms the caster's
   on-skill procs.
 
+  Polymorph closes the additional-effect stage: a weapon hit from a wearer
+  carrying `bClassChange` changes a monster that is not status-immune into a
+  random form from the pool, when the hit left it alive. A monster a player
+  summoned answers that stage with its master's procs; the counter stage and
+  the on-skill procs stay the attacker's own, as the reference's two stages do.
+
   Selection is pure (`EquipAutocast`, `EquipAutobonus`); each selected autocast
   goes to its wearer's session as `{:skill, {:equip_proc, candidate}}`, where the
   usability check and the level and chance draws run in their branch's order.
@@ -34,14 +40,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.MobManagement.PolymorphPool
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @grand_cross 254
   @lock {__MODULE__, :on_skill_lock}
+  @polymorph_scale 10_000
 
   @typedoc """
   One resolved hit as its procs see it.
@@ -208,18 +217,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
     do: match?({:ok, %{target_type: :ground}}, Catalog.by_id(skill_id))
 
   @doc """
-  Dispatches the attacker's side of one hit: attack-side autocasts, attack
-  autobonuses and, for a damaging skill hit, on-skill procs. Non-player
-  attackers wear nothing and dispatch nothing.
+  Dispatches the attacker's side of one hit: attack-side autocasts, polymorph,
+  attack autobonuses and, for a damaging skill hit, on-skill procs. A monster
+  that wears nothing dispatches nothing, except that a player's summon answers
+  the additional-effect stage with its master's procs.
   """
   @spec dispatch(Combatant.t(), Combatant.t(), event()) :: :ok
-  def dispatch(%Combatant{unit_type: :player} = attacker, %Combatant{} = target, event) do
-    if event.attack_effects? and event.hit_class == :hit do
-      attacker
-      |> EquipAutocast.on_attack(target, event.attack_flag, event.arrow_attack?)
-      |> send_candidates(attacker.unit_id)
-    end
+  def dispatch(%Combatant{} = attacker, %Combatant{} = target, event) do
+    dispatch_attack_effects(attacker, target, event)
+    dispatch_own_effects(attacker, target, event)
+  end
 
+  def dispatch(_attacker, _target, _event), do: :ok
+
+  # The additional-effect stage: attack autocasts and polymorph. A summon's
+  # master answers for this stage, per the reference's summon inheritance.
+  defp dispatch_attack_effects(attacker, target, event) do
+    case wearer(attacker) do
+      nil ->
+        :ok
+
+      wearer ->
+        if event.attack_effects? and event.hit_class == :hit do
+          wearer
+          |> EquipAutocast.on_attack(target, event.attack_flag, event.arrow_attack?)
+          |> send_candidates(wearer.unit_id)
+        end
+
+        if polymorph_target?(target, event), do: roll_polymorph(wearer, target)
+
+        :ok
+    end
+  end
+
+  # The counter stage and on-skill procs read the attacker itself: the
+  # reference hands a summon only its master's additional-effect stage down.
+  defp dispatch_own_effects(%Combatant{unit_type: :player} = attacker, target, event) do
     if event.counter_effects? do
       attacker.equip_autobonuses
       |> EquipAutobonus.on_attack(counter_flag(event, attacker.unit_id, ref(target)))
@@ -233,7 +266,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
     :ok
   end
 
-  def dispatch(_attacker, _target, _event), do: :ok
+  defp dispatch_own_effects(_attacker, _target, _event), do: :ok
+
+  # A player's hits wear the player's equipment. A monster summoned by a player
+  # lends its master's equipment procs to the summon's hits, so the reference
+  # passes the owner's bonuses down to what the summon attacks.
+  defp wearer(%Combatant{unit_type: :player} = attacker), do: attacker
+
+  defp wearer(%Combatant{unit_type: :mob, proc_owner_id: owner}) when is_integer(owner) do
+    case TargetResolver.resolve_combatant({:player, owner}) do
+      {:ok, master} -> master
+      _unresolved -> nil
+    end
+  end
+
+  defp wearer(_attacker), do: nil
+
+  # The reference rolls polymorph at the tail of its additional-effect stage:
+  # a weapon hit that left a living, status-immune-free monster can change its
+  # form to a random entry of the shared pool.
+  defp polymorph_target?(%Combatant{unit_type: :mob, status_immune: false}, event) do
+    event.attack_effects? and event.hit_class != :miss and
+      BattleFlags.weapon?(event.attack_flag)
+  end
+
+  defp polymorph_target?(_target, _event), do: false
+
+  defp roll_polymorph(wearer, target) do
+    rate = Map.get(wearer.equip_modifiers, :class_change, 0)
+
+    if is_integer(rate) and rate > 0 and :rand.uniform(@polymorph_scale) <= rate do
+      case PolymorphPool.pick() do
+        0 -> :ok
+        replacement_id -> polymorph(target.unit_id, replacement_id)
+      end
+    end
+
+    :ok
+  end
+
+  defp polymorph(unit_id, replacement_id) do
+    case UnitRegistry.get_unit(:mob, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) -> MobSession.polymorph(pid, replacement_id)
+      _unresolved -> :ok
+    end
+  end
 
   @doc """
   Dispatches the recipient's side of one hit from its own damage handler,

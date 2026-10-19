@@ -250,8 +250,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     assert_receive {:packet, @caster_id, %EstimationResult{target_id: @target_id}}
     refute_receive {:packet, 1_001, %EstimationResult{target_id: @target_id}}
 
-    assert {:error, :invalid_target} =
-             WzEstimation.validate(caster, {:unit, @caster_id}, 1, WzEstimation.definition())
+    # A player target passes validation and fails the completed cast, after the
+    # reference's cast-end check.
+    assert :ok = WzEstimation.validate(caster, {:unit, @caster_id}, 1, WzEstimation.definition())
+
+    assert {:failed, ^caster, :invalid_target} =
+             WzEstimation.cast(caster, {:unit, @caster_id}, 1, WzEstimation.definition())
   end
 
   test "Estimation is an ordinary Wizard and Sage tree entry" do

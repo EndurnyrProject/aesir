@@ -7,12 +7,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -81,11 +86,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     assert SpiritSpheres.count(settled.game_state.spirit_spheres) == 0
   end
 
-  test "monster absorption returns twice the level on the verified twenty-percent roll" do
-    target = %{mob_data: %{level: 12, modes: []}, is_dead: false}
+  test "monster absorption takes twice its runtime level and turns it on the caster" do
+    target = mob_state(level: 12)
     stub(TargetResolver, :resolve, fn 10 -> {:ok, self(), target, :mob} end)
     stub(TargetResolver, :ensure_targetable, fn ^target, :mob -> :ok end)
     :rand.seed(:exsss, {3, 2, 3})
+
+    expect(MobSession, :set_target, fn pid, target_ref ->
+      assert pid == self()
+      assert target_ref == {:player, 1}
+      :ok
+    end)
+
+    assert MobState.get_level(target) == 12
+    refute target.mob_data.level == 12
 
     assert {:deferred, _state, {:absorb_local, 24}} =
              MoAbsorbspirits.cast(
@@ -96,12 +110,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
              )
   end
 
-  test "monster absorption still settles its cost when the roll misses" do
-    target = %{mob_data: %{level: 12, modes: []}, is_dead: false}
+  test "a failed monster roll fails the completed cast instead of healing" do
+    target = mob_state(level: 12)
     stub(TargetResolver, :resolve, fn 10 -> {:ok, self(), target, :mob} end)
     :rand.seed(:exsss, {1, 2, 3})
 
-    assert {:deferred, _state, {:absorb_local, 0}} =
+    reject(MobSession, :set_target, 2)
+
+    assert {:failed, _state, :invalid_target} =
              MoAbsorbspirits.cast(
                player_state(1, 20),
                {:unit, 10},
@@ -110,18 +126,49 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
              )
   end
 
-  test "status-immune monsters are rejected" do
-    target = %{mob_data: %{level: 12, modes: [:status_immune]}, is_dead: false}
+  test "a status-immune monster validates, then refuses the completed cast" do
+    target = mob_state(level: 12, modes: [:status_immune])
     stub(TargetResolver, :resolve, fn 10 -> {:ok, self(), target, :mob} end)
     stub(TargetResolver, :ensure_targetable, fn ^target, :mob -> :ok end)
 
-    assert {:error, :invalid_target} =
+    assert :ok =
              MoAbsorbspirits.validate(
                player_state(1, 20),
                {:unit, 10},
                1,
                MoAbsorbspirits.definition()
              )
+
+    assert {:failed, _state, :invalid_target} =
+             MoAbsorbspirits.cast(
+               player_state(1, 20),
+               {:unit, 10},
+               1,
+               MoAbsorbspirits.definition()
+             )
+  end
+
+  defp mob_state(opts) do
+    {:ok, data} = MobManagement.get_mob_by_id(1002)
+    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5_000, spawn_area: nil}
+
+    state =
+      MobState.new(210, data, spawn, "prontera", 1, 1)
+      |> Map.put(:level, Keyword.fetch!(opts, :level))
+
+    case Keyword.get(opts, :modes, []) do
+      [] ->
+        state
+
+      modes ->
+        %{
+          state
+          | calculated: %{
+              state.calculated
+              | mode: Bitwise.bor(state.calculated.mode, MobMode.mask(modes))
+            }
+        }
+    end
   end
 
   test "coin-class players are rejected before the PvP check" do

@@ -8,10 +8,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.MobManagement.PolymorphPool
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  import Aesir.TestEtsSetup
+
   setup :set_mimic_private
+  setup :setup_ets_tables
 
   @cold_bolt 14
   @heal 28
@@ -388,6 +397,129 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
 
       assert_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^second}}}}
       refute_received {:"$gen_cast", {:skill, {:equip_proc, %{entry: ^first}}}}
+    end
+  end
+
+  # The reference rolls polymorph at the tail of skill_additional_effect: a
+  # weapon hit that left a living, non-status-immune monster can change its form
+  # to a random entry of the shared pool (skill.cpp:1578-1584, mob.cpp:3803).
+  describe "polymorph" do
+    @polymorph_target 3001
+
+    setup do
+      test_pid = self()
+      {:ok, data} = MobManagement.get_mob_by_id(1002)
+      spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5_000, spawn_area: nil}
+
+      stub(MobSession, :polymorph, fn pid, replacement_id ->
+        send(test_pid, {:polymorph, pid, replacement_id})
+        :ok
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, @polymorph_target ->
+        {:ok,
+         {MobState, MobState.new(@polymorph_target, data, spawn, "prontera", 1, 1), test_pid}}
+      end)
+
+      :ok
+    end
+
+    # A rate of 10_000 out of 10_000 always passes the roll, as in the source.
+    defp wearer_with_class_change(rate),
+      do: %{player(1001, []) | equip_modifiers: %{class_change: rate}}
+
+    defp polymorph_target, do: CombatTestHelper.create_mob_combatant(unit_id: @polymorph_target)
+
+    test "a weapon hit rolls the wearer's class change and polymorphs the monster" do
+      stub(PolymorphPool, :pick, fn -> 1001 end)
+
+      assert :ok =
+               EquipProcDispatch.dispatch(
+                 wearer_with_class_change(10_000),
+                 polymorph_target(),
+                 hit()
+               )
+
+      assert_received {:polymorph, _pid, 1001}
+    end
+
+    test "a zero class change never rolls the pool" do
+      reject(PolymorphPool, :pick, 0)
+
+      assert :ok =
+               EquipProcDispatch.dispatch(wearer_with_class_change(0), polymorph_target(), hit())
+
+      refute_received {:polymorph, _, _}
+    end
+
+    test "a missed, non-weapon or non-surviving hit never rolls the pool" do
+      reject(PolymorphPool, :pick, 0)
+
+      EquipProcDispatch.dispatch(
+        wearer_with_class_change(10_000),
+        polymorph_target(),
+        hit(hit_class: :miss)
+      )
+
+      EquipProcDispatch.dispatch(
+        wearer_with_class_change(10_000),
+        polymorph_target(),
+        hit(attack_flag: magic_skill())
+      )
+
+      EquipProcDispatch.dispatch(
+        wearer_with_class_change(10_000),
+        polymorph_target(),
+        hit(attack_effects?: false)
+      )
+
+      refute_received {:polymorph, _, _}
+    end
+
+    test "a status-immune monster keeps its form" do
+      reject(PolymorphPool, :pick, 0)
+      immune = %{polymorph_target() | status_immune: true}
+
+      assert :ok = EquipProcDispatch.dispatch(wearer_with_class_change(10_000), immune, hit())
+
+      refute_received {:polymorph, _, _}
+    end
+
+    test "a summoned monster lends its master's class change to its own hits" do
+      master = wearer_with_class_change(10_000)
+      summon = %{mob() | proc_owner_id: 1001}
+
+      stub(TargetResolver, :resolve_combatant, fn {:player, 1001} -> {:ok, master} end)
+      stub(PolymorphPool, :pick, fn -> 1001 end)
+
+      assert :ok = EquipProcDispatch.dispatch(summon, polymorph_target(), hit())
+
+      assert_received {:polymorph, _pid, 1001}
+    end
+
+    test "an ordinary monster attacker wears nothing" do
+      reject(PolymorphPool, :pick, 0)
+
+      assert :ok = EquipProcDispatch.dispatch(mob(), polymorph_target(), hit())
+
+      refute_received {:polymorph, _, _}
+    end
+
+    # The reference inherits only the additional-effect stage through a summon:
+    # the counter-stage autobonuses and the on-skill procs read the attacker.
+    test "a summoned monster does not run its master's counter or on-skill procs" do
+      master =
+        player(1001, [on_skill_autocast(@heal, @cold_bolt, @target_force)], %{
+          {10, 0} => autobonus(:attack, melee())
+        })
+
+      stub(TargetResolver, :resolve_combatant, fn {:player, 1001} -> {:ok, master} end)
+      summon = %{mob() | proc_owner_id: 1001}
+
+      assert :ok = EquipProcDispatch.dispatch(summon, polymorph_target(), hit(skill_id: @heal))
+
+      refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, _, _}}}
+      refute_received {:"$gen_cast", {:skill, {:equip_proc, _}}}
     end
   end
 
