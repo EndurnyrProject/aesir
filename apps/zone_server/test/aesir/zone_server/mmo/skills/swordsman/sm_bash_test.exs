@@ -65,20 +65,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
   end
 
   test "connected mob Bash dispatches ordinary damage without a learned Fatal Blow rider" do
-    caster = %MobState{
-      instance_id: 3000,
-      mob_id: 1002,
-      mob_data: %{element: {:neutral, 1}, race: :formless, modes: []},
-      spawn_ref: nil,
-      map_name: "bash",
-      x: 50,
-      y: 50,
-      hp: 100,
-      max_hp: 100,
-      sp: 10,
-      max_sp: 10,
-      spawned_at: 0
-    }
+    caster =
+      %MobState{
+        instance_id: 3000,
+        mob_id: 1002,
+        mob_data: Aesir.TestMob.definition(element: {:neutral, 1}, race: :formless, modes: []),
+        spawn_ref: nil,
+        map_name: "bash",
+        x: 50,
+        y: 50,
+        hp: 100,
+        sp: 10,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 10)
 
     expect(Combat, :execute_skill_attack, fn ^caster, {:homunculus, @target_id}, opts ->
       assert opts[:skill_ratio] == 280

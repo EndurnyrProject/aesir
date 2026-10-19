@@ -417,7 +417,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     now = System.system_time(:millisecond)
 
     if state.last_skillcheck == nil or
-         now - state.last_skillcheck > @skill_interval - div(state.walk_speed, 2) do
+         now - state.last_skillcheck > @skill_interval - div(state.calculated.speed, 2) do
       case use_skill(state, :tick, now) do
         {:used, state} -> {if(keeps_walking?(state), do: :continue, else: :stop), state}
         {:none, state} -> {:continue, state}

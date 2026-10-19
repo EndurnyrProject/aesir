@@ -284,14 +284,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.TarotTest do
   test "Death skips coma on a boss mob", %{caster: caster} do
     target = mob(42, 1002)
 
-    boss = %{
-      target
-      | mob_data: %{
-          target.mob_data
-          | modes:
-              Enum.uniq([:detector, :status_immune, :knockback_immune | target.mob_data.modes])
-        }
-    }
+    boss =
+      Aesir.TestMob.publish(%{
+        target
+        | mob_data: %{
+            target.mob_data
+            | modes:
+                Enum.uniq([:detector, :status_immune, :knockback_immune | target.mob_data.modes])
+          }
+      })
 
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, boss, self())
     stub(TarotDeck, :draw, fn -> :death end)

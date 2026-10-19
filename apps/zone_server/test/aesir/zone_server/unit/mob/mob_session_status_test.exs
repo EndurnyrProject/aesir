@@ -100,12 +100,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
                )
 
       # level 5 -> +15% of the 1000 base ceiling; current HP is untouched.
-      assert updated.max_hp == 1150
+      assert updated.calculated.max_hp == 1150
       assert updated.hp == state.hp
     end
 
     test "an SC_DELUGE removal caps overflow HP back down to the base ceiling" do
-      buffed = %MobState{build_mob_state() | max_hp: 1150, hp: 1150}
+      state = build_mob_state()
+      buffed = %MobState{state | calculated: %{state.calculated | max_hp: 1150}, hp: 1150}
       UnitRegistry.register_unit(:mob, buffed.instance_id, MobState, buffed, self())
 
       assert {:noreply, updated} =
@@ -114,12 +115,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
                  buffed
                )
 
-      assert updated.max_hp == 1000
+      assert updated.calculated.max_hp == 1000
       assert updated.hp == 1000
     end
 
     test "a non-:max_hp_rate status change never touches the HP ceiling" do
-      buffed = %MobState{build_mob_state() | max_hp: 1150, hp: 1150}
+      state = build_mob_state()
+      buffed = %MobState{state | calculated: %{state.calculated | max_hp: 1150}, hp: 1150}
       UnitRegistry.register_unit(:mob, buffed.instance_id, MobState, buffed, self())
 
       assert {:noreply, ^buffed} =

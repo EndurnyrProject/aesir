@@ -36,17 +36,16 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     %MobState{
       instance_id: @mob_id,
       mob_id: 1002,
-      mob_data: %{modes: modes},
+      mob_data: Aesir.TestMob.definition(modes: modes),
       spawn_ref: %{},
       x: x,
       y: y,
       map_name: @map_name,
       hp: 100,
-      max_hp: 100,
       sp: 50,
-      max_sp: 50,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish()
   end
 
   defp stub_movable_mob(opts \\ []) do

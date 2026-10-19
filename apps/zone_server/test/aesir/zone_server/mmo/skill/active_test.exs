@@ -11,20 +11,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ActiveTest do
   end
 
   test "returns a mob caster's instance id" do
-    caster = %MobState{
-      instance_id: 2_001,
-      mob_id: 1,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: 0,
-      y: 0,
-      map_name: "prontera",
-      hp: 1,
-      max_hp: 1,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    caster =
+      %MobState{
+        instance_id: 2_001,
+        mob_id: 1,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        x: 0,
+        y: 0,
+        map_name: "prontera",
+        hp: 1,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 1, max_sp: 0)
 
     assert Active.caster_unit_id(caster) == 2_001
   end

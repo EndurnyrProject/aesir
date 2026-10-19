@@ -11,8 +11,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShowerTest do
 
   setup :verify_on_exit!
 
-  @target_id 5000
-
   defp caster(equipment \\ %{}) do
     %PlayerState{
       character_id: 1_000,

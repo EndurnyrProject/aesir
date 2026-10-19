@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicFledAttackTest do
     Mimic.copy(ModifierCalculator)
 
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-    stub(ModifierCalculator, :get_all_modifiers, fn _type, _id -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _type, _id -> %{} end)
 
     CombatTestHelper.stub_element_coefficient(fn
       :poison, _, _, _ -> 2.0
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicFledAttackTest do
     end
 
     test "the Magnum Break share's base is the Star Crumb and sphere bonus alone" do
-      stub(ModifierCalculator, :get_all_modifiers, fn _type, _id ->
+      stub(ModifierCalculator, :get_battle_modifiers, fn _type, _id ->
         %{{:pseudo_element_atk, :fire} => 20}
       end)
 

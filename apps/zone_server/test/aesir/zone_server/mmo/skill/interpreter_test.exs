@@ -301,7 +301,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   defp stub_provoke_target(target_id) do
     stub(TargetResolver, :resolve, fn ^target_id ->
-      {:ok, self(), struct(MobState, instance_id: target_id, hp: 1, max_hp: 1), :mob}
+      {:ok, self(), struct(MobState, instance_id: target_id, hp: 1), :mob}
     end)
   end
 
@@ -338,17 +338,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     %MobState{
       instance_id: 2_000,
       mob_id: 1,
-      mob_data: nil,
+      mob_data: Aesir.TestMob.definition(),
       spawn_ref: nil,
       x: 14,
       y: 10,
       map_name: "prontera",
       hp: 100,
-      max_hp: 100,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
   end
 
   defp enemy_definition(range) do
@@ -1262,7 +1261,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     test "a mob caster gains nothing from the flag" do
       definition = %{enemy_definition(9) | vulture_range: true}
-      mob = struct(MobState, instance_id: 5000, mob_data: %{skill_range: 9})
+
+      mob =
+        struct(MobState, instance_id: 5000, mob_data: Aesir.TestMob.definition(skill_range: 9))
+        |> Aesir.TestMob.publish()
 
       assert Interpreter.effective_range(definition, mob, 1) == 9
     end
@@ -1312,7 +1314,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       # Resolve returns the real skill-unit type; sm_provoke must carry that
       # unit_type through to apply_status (not re-derive it via caster-only helpers).
       stub(TargetResolver, :resolve, fn ^target_id ->
-        {:ok, self(), struct(MobState, instance_id: target_id, hp: 1, max_hp: 1), :skill_unit}
+        {:ok, self(), struct(MobState, instance_id: target_id, hp: 1), :skill_unit}
       end)
 
       stub(Combat, :resolve_target_position, fn ^target_id ->

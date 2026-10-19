@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicMagnumBreakTest do
   end
 
   defp stub_modifiers(player_modifiers) do
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       :player, _id -> player_modifiers
       _type, _id -> %{}
     end)

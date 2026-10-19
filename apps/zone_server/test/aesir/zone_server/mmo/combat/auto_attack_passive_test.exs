@@ -89,7 +89,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
     struct(MobState, %{
       instance_id: combatant.unit_id,
       hp: 1_000,
-      max_hp: 1_000,
       is_dead: false,
       x: x,
       y: y,

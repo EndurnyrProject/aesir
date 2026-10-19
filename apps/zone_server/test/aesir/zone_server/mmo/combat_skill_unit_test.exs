@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     Mimic.copy(MapCache)
     Mimic.copy(ModifierCalculator)
     Mimic.copy(StatusInterpreter)
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :ok
   end
 
@@ -103,6 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       client_attack_motion: 500,
       damage_motion: 400,
       ai_type: 0,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: [],
       drops: []
     }
@@ -121,12 +122,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       y: 150,
       map_name: @map_name,
       hp: 100,
-      max_hp: 100,
       sp: 50,
-      max_sp: 50,
       spawned_at: System.system_time(:second),
       aggro_list: %{}
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 50)
   end
 
   test "prepared ground delivery uses the supplied amount without another element or calculation stage" do
@@ -277,7 +277,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
   test "ground survival and classification use post-absorption magic damage" do
     test_pid = self()
-    mob_state = %{build_mob_state(0) | x: 151, hp: 50, max_hp: 50}
+    mob_state = build_mob_state(0)
+    mob_state = %{mob_state | x: 151, hp: 50, calculated: %{mob_state.calculated | max_hp: 50}}
     attacker = %{caster(100) | position: {150, 150}, map_name: @map_name}
 
     stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
@@ -532,7 +533,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   test "final 1-point fixed ground magic participates in coma" do
     test_pid = self()
     mob_state = build_mob_state(0)
-    mob_state = %{mob_state | mob_data: %{mob_state.mob_data | element: {:neutral, 1}}}
+
+    mob_state =
+      Aesir.TestMob.publish(%{
+        mob_state
+        | mob_data: %{mob_state.mob_data | element: {:neutral, 1}}
+      })
+
     attacker = caster(100)
 
     stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
@@ -564,10 +571,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     test_pid = self()
     mob_state = build_mob_state(0)
 
-    mob_state = %{
-      mob_state
-      | mob_data: %{mob_state.mob_data | element: {:undead, 1}, modes: [:ignore_magic]}
-    }
+    mob_state =
+      Aesir.TestMob.publish(%{
+        mob_state
+        | mob_data: %{mob_state.mob_data | element: {:undead, 1}, modes: [:ignore_magic]}
+      })
 
     stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
       {:ok, {MobState, mob_state, test_pid}}

@@ -42,7 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -287,14 +286,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   defp check_concealment(_state, _target, _definition, _phase), do: :ok
 
-  defp concealment_caster(%MobState{instance_id: id, mob_data: mob_data}) do
-    modes = (mob_data && mob_data.modes) || []
-
+  defp concealment_caster(%MobState{instance_id: id} = state) do
     %{
       unit_type: :mob,
       unit_id: id,
-      class: MobMode.class(modes),
-      detector: :detector in modes
+      class: MobState.monster_class(state),
+      detector: MobState.detector?(state)
     }
   end
 
@@ -429,7 +426,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   defp on_map?(%MobState{} = mob), do: Unit.living?(mob)
   defp on_map?(%PlayerState{}), do: true
 
-  defp hp_rate(%MobState{hp: hp, max_hp: max_hp}), do: percentage(hp, max_hp)
+  defp hp_rate(%MobState{hp: hp, calculated: calculated}), do: percentage(hp, calculated.max_hp)
 
   defp hp_rate(%PlayerState{stats: stats}),
     do: percentage(stats.current_state.hp, stats.derived_stats.max_hp)

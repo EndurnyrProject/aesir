@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -129,7 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   defp hp_pair(%{stats: %{current_state: %{hp: hp}, derived_stats: %{max_hp: max_hp}}}),
     do: {hp, max_hp}
 
-  defp hp_pair(%{hp: hp, max_hp: max_hp}), do: {hp, max_hp}
+  defp hp_pair(%MobState{hp: hp, calculated: calculated}), do: {hp, calculated.max_hp}
 
   defp poison_react_level(%PlayerState{stats: %{progression: %{learned_skills: learned}}})
        when is_map(learned),

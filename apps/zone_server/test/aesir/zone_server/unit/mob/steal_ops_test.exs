@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOpsTest do
       attack_motion: 500,
       client_attack_motion: 500,
       damage_motion: 500,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(modes),
       modes: modes
     }
 
@@ -47,7 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOpsTest do
         drops: [%MobDrop{item: "Red_Potion", rate: drop_rate}]
     }
 
-    %{state | mob_data: mob_data}
+    Aesir.TestMob.publish(%{state | mob_data: mob_data})
   end
 
   @tag game_mode: :pre_renewal

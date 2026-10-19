@@ -120,7 +120,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
         MovementHandler.handle_movement_tick(walking_sphere(now + 3_000, now - 700))
 
       assert {stepped.x, stepped.y} == {31, 30}
-      assert stepped.walk_speed == 550
+      assert stepped.calculated.speed == 550
       assert stepped.movement_state == :moving
       assert stepped.last_skill_id == 332
       assert stepped.last_skillcheck >= now
@@ -136,7 +136,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
       assert stopped.movement_state == :standing
       assert stopped.trickcasting == nil
       refute stopped.can_escape
-      assert stopped.walk_speed == 800
+      assert stopped.calculated.speed == 800
       assert stopped.last_skillcheck == now + 500
     end
 
@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
       {:noreply, stepped} =
         MovementHandler.handle_movement_tick(walking_sphere(now + 3_000, now - 500))
 
-      assert stepped.walk_speed == 800
+      assert stepped.calculated.speed == 800
       assert stepped.last_skill_id == nil
       assert stepped.movement_state == :moving
     end
@@ -174,15 +174,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
     struct(MobState,
       instance_id: 7,
       mob_id: 1142,
+      mob_data: Aesir.TestMob.definition(id: 1142),
       map_name: @map,
       x: 30,
       y: 30,
       hp: 10,
-      max_hp: 10,
-      base_walk_speed: 800,
-      walk_speed: 800,
       last_skillcheck: System.system_time(:millisecond),
       is_dead: false
     )
+    |> Aesir.TestMob.publish(max_hp: 10, walk_speed: 800)
   end
 end

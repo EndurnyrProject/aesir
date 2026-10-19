@@ -140,9 +140,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.StateCommitTest do
     %{
       state
       | hp: Keyword.fetch!(opts, :hp),
-        max_hp: 1_000,
         sp: Keyword.fetch!(opts, :sp),
-        max_sp: 90
+        calculated: %{state.calculated | max_hp: 1_000, max_sp: 90}
     }
   end
 end

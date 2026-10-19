@@ -90,22 +90,22 @@ defmodule Aesir.ZoneServer.Integration.LootOwnershipIntegrationTest do
     first = start_looter("Tagger")
     later = start_looter("Later")
 
-    mob_state = %MobState{
-      instance_id: 1,
-      mob_id: 1002,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: 150,
-      y: 150,
-      map_name: @map,
-      hp: 0,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0,
-      aggro_list: %{first.character.id => 40, later.character.id => 60},
-      aggro_order: [later.character.id, first.character.id]
-    }
+    mob_state =
+      %MobState{
+        instance_id: 1,
+        mob_id: 1002,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        x: 150,
+        y: 150,
+        map_name: @map,
+        hp: 0,
+        sp: 0,
+        spawned_at: 0,
+        aggro_list: %{first.character.id => 40, later.character.id => 60},
+        aggro_order: [later.character.id, first.character.id]
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     ownership = LootOwnership.determine(mob_state)
     assert ownership == %LootOwnership{first: first.character.id, second: later.character.id}

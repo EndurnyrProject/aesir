@@ -781,21 +781,21 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
       damage_motion: 200
     }
 
-    mob = %MobState{
-      instance_id: id,
-      mob_id: definition.id,
-      mob_data: definition,
-      spawn_ref: nil,
-      x: x,
-      y: y,
-      map_name: @map,
-      hp: definition.hp,
-      max_hp: definition.hp,
-      sp: 0,
-      max_sp: 0,
-      target_ref: target_ref,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: id,
+        mob_id: definition.id,
+        mob_data: definition,
+        spawn_ref: nil,
+        x: x,
+        y: y,
+        map_name: @map,
+        hp: definition.hp,
+        sp: 0,
+        target_ref: target_ref,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: definition.hp, max_sp: 0)
 
     UnitRegistry.register_unit(:mob, id, MobState, mob, self())
     SpatialIndex.add_unit(:mob, id, x, y, @map)

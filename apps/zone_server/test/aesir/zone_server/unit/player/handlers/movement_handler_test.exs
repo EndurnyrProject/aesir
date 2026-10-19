@@ -580,23 +580,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [42] end)
       stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
 
-      mob_state = %MobState{
-        instance_id: 42,
-        mob_id: 1002,
-        mob_data: mob_definition(),
-        spawn_ref: nil,
-        map_name: "prontera",
-        x: 51,
-        y: 50,
-        dir: 0,
-        hp: 50,
-        max_hp: 60,
-        sp: 0,
-        max_sp: 0,
-        spawned_at: System.system_time(:second),
-        walk_speed: 200,
-        is_dead: false
-      }
+      mob_state =
+        %MobState{
+          instance_id: 42,
+          mob_id: 1002,
+          mob_data: mob_definition(),
+          spawn_ref: nil,
+          map_name: "prontera",
+          x: 51,
+          y: 50,
+          dir: 0,
+          hp: 50,
+          sp: 0,
+          spawned_at: System.system_time(:second),
+          is_dead: false
+        }
+        |> Aesir.TestMob.publish(max_hp: 60, max_sp: 0, walk_speed: 200)
 
       # Both the mob spawn and the mob despawn target the same observing player
       # session. Forward every cast to the test process so we can assert both.
@@ -967,13 +966,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       y: 50,
       dir: 0,
       hp: 50,
-      max_hp: 60,
       sp: 0,
-      max_sp: 0,
       spawned_at: System.system_time(:second),
-      walk_speed: 200,
       is_dead: false
     }
+    |> Aesir.TestMob.publish(max_hp: 60, max_sp: 0, walk_speed: 200)
   end
 
   defp mob_definition do
@@ -1001,6 +998,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       client_attack_motion: 500,
       damage_motion: 480,
       ai_type: 0,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: [],
       drops: []
     }

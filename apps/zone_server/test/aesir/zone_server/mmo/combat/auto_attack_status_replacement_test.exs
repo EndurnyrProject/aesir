@@ -87,7 +87,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
       struct(MobState, %{
         instance_id: @target_id,
         hp: 100,
-        max_hp: 100,
         is_dead: false,
         x: 150,
         y: 150,

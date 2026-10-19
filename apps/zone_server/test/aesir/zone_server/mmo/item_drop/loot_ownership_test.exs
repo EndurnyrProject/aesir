@@ -262,12 +262,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnershipTest do
       y: 0,
       map_name: "prontera",
       hp: 1,
-      max_hp: 1,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0,
       aggro_list: Map.new(damage_log),
       aggro_order: damage_log |> Enum.map(&elem(&1, 0)) |> Enum.reverse()
     }
+    |> Aesir.TestMob.publish(max_hp: 1, max_sp: 0)
   end
 end

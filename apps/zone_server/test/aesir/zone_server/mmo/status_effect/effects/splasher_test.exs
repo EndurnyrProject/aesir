@@ -82,20 +82,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
       :player, 4_000, :sc_splasher, _instance -> true
     end)
 
-    source = %MobState{
-      instance_id: 3_000,
-      mob_id: 1,
-      mob_data: %{},
-      spawn_ref: nil,
-      map_name: "prontera",
-      x: 40,
-      y: 40,
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    source =
+      %MobState{
+        instance_id: 3_000,
+        mob_id: 1,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        map_name: "prontera",
+        x: 40,
+        y: 40,
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     instance = %{
       entry(remaining_ms: 500, level: 1, poison_react_level: 99)

@@ -283,6 +283,10 @@ defmodule Aesir.ZoneServer.Map.BossRespawnTest do
       element: {:neutral, 1},
       race: :formless,
       size: :medium,
+      class:
+        Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(
+          if(boss?, do: [:detector, :status_immune, :knockback_immune], else: [])
+        ),
       modes: if(boss?, do: [:detector, :status_immune, :knockback_immune], else: [])
     }
   end

@@ -1436,7 +1436,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   defp sign(n) when n < 0, do: -1
   defp sign(_n), do: 0
 
-  defp walk_time(%MobState{walk_path: path, walk_speed: speed, x: x, y: y}) do
+  defp walk_time(%MobState{walk_path: path, calculated: %{speed: speed}, x: x, y: y}) do
     [{x, y} | path]
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.reduce(0, fn [{x1, y1}, {x2, y2}], acc ->
@@ -1599,6 +1599,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       element: {:neutral, 1},
       race: :formless,
       size: :medium,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(Keyword.get(opts, :modes, [])),
       modes: Keyword.get(opts, :modes, [])
     }
 

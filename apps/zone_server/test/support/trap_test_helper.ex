@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.TrapTestHelper do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.PlayerStateFixture
@@ -55,6 +56,7 @@ defmodule Aesir.ZoneServer.TrapTestHelper do
       attack_motion: 500,
       client_attack_motion: 500,
       damage_motion: 400,
+      class: MobMode.class(Keyword.get(opts, :modes, [])),
       modes: Keyword.get(opts, :modes, [])
     }
 

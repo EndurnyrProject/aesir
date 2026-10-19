@@ -97,6 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
       element: {:neutral, 1},
       race: :formless,
       size: :medium,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(modes),
       modes: modes
     }
 
@@ -110,6 +111,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
     state = MobState.new(@mob_instance_id, mob_data, spawn_ref, "prontera", 100, 100)
     UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
     state
+  end
+
+  defp snapshot(state, flags) do
+    entries = StatusStorage.get_unit_statuses(:mob, state.instance_id)
+    %{state | calculated: Aesir.ZoneServer.Unit.Mob.Stats.recalculate(state, entries, flags)}
   end
 
   defp attack(mob_state) do
@@ -166,7 +172,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
                    definition(unquote(name))
                  )
 
-        attack(mob)
+        attack(snapshot(mob, ["Def_Ele"]))
 
         assert_received {:defense_element, unquote(element), 1}
       end

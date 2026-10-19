@@ -180,6 +180,7 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       client_attack_motion: 500,
       damage_motion: 400,
       ai_type: 0,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(opts[:modes] || []),
       modes: opts[:modes] || [],
       drops: opts[:drops] || [],
       mvp_exp: opts[:mvp_exp] || 0,
@@ -199,22 +200,11 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       }
     }
 
-    # Create mob state with all required fields
-    mob_state = %MobState{
-      instance_id: unit_id,
-      mob_id: mob_id,
-      mob_data: mob_definition,
-      spawn_ref: mob_spawn,
-      x: x,
-      y: y,
-      map_name: map_name,
-      hp: opts[:hp] || opts[:max_hp] || 100,
-      max_hp: opts[:max_hp] || 100,
-      sp: opts[:sp] || 50,
-      max_sp: opts[:max_sp] || 50,
-      spawned_at: System.system_time(:second),
-      aggro_list: %{}
-    }
+    # Build the state through the production constructor so the published
+    # base/calculated snapshot exists, then apply the test's vitals.
+    mob_state =
+      MobState.new(unit_id, mob_definition, mob_spawn, map_name, x, y)
+      |> override_test_vitals(opts)
 
     # Start the MobSession with correct argument structure. Test mobs default to
     # dormant so their idle AI tick can't wander them out of range mid-test.
@@ -236,6 +226,22 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       mob_state: mob_state,
       map_name: map_name,
       position: {x, y}
+    }
+  end
+
+  # The spawned definition already carries the test's HP ceiling; this only
+  # applies the explicit current vitals and the optional SP ceiling.
+  defp override_test_vitals(state, opts) do
+    max_sp = opts[:max_sp] || state.calculated.max_sp
+    calculated = %{state.calculated | max_sp: max_sp}
+    base = %{state.base | max_sp: max_sp}
+
+    %{
+      state
+      | base: base,
+        calculated: calculated,
+        hp: opts[:hp] || opts[:max_hp] || state.calculated.max_hp,
+        sp: opts[:sp] || 50
     }
   end
 

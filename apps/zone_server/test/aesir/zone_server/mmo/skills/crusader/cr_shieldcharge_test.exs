@@ -56,17 +56,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
     %MobState{
       instance_id: 1,
       mob_id: 1_002,
-      mob_data: %{element: {:neutral, 1}, race: :formless, modes: []},
+      mob_data: Aesir.TestMob.definition(element: {:neutral, 1}, race: :formless, modes: []),
       spawn_ref: nil,
       x: 10,
       y: 20,
       map_name: "prontera",
       hp: 100,
-      max_hp: 100,
       sp: 10,
-      max_sp: 10,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 10)
   end
 
   describe "validate/4" do

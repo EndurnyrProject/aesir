@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
 
   setup do
     Mimic.copy(ModifierCalculator)
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :ok
   end
 
@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     defender_type = defender.unit_type
     defender_id = defender.unit_id
 
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       ^defender_type, ^defender_id -> modifiers
       _, _ -> %{}
     end)
@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
 
   describe "calculate_magic_damage/3" do
     test "unsupported plain-map unit types use no status modifiers" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :unknown, _id -> flunk("unsupported unit type reached modifier storage")
         _type, _id -> %{}
       end)
@@ -202,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "a skill's own base keeps cardfix and element when MDEF is ignored" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 -> %{{:magic_addsize, :large} => 20}
         _, _ -> %{}
       end)
@@ -232,14 +232,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "status damage_multiplier scales damage" do
-      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{damage_multiplier: 0.5} end)
+      stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{damage_multiplier: 0.5} end)
 
       assert {:ok, %{damage: mode_value(132, 130), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
     test "target race and size select the matching magic bonuses" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 ->
           %{
             {:magic_addsize, :large} => 20,
@@ -264,7 +264,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "target size and race bonuses surround the skill ratio by mode" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 ->
           %{{:magic_addsize, :large} => 5, {:magic_addrace, :demon} => 5}
 
@@ -285,7 +285,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "negative magic cardfix truncates the removed amount" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 -> %{{:magic_addsize, :large} => -5}
         _, _ -> %{}
       end)
@@ -299,7 +299,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "an attacker status magic_atk_ele boosts only spells of that element" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 -> %{{:magic_atk_ele, :holy} => 15}
         _, _ -> %{}
       end)
@@ -316,7 +316,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "race and size bonuses do not apply to a different target profile" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 ->
           %{{:magic_addsize, :large} => 20, {:magic_addrace, :demon} => 30}
 
@@ -348,7 +348,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "ignore_mdef keeps element and attacker cardfix stages" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 -> %{{:magic_addsize, :large} => 20}
         _, _ -> %{}
       end)
@@ -486,7 +486,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   describe "status magic modifiers (mdef_rate / magic_damage_reduction)" do
     test "mdef_rate raises the defender's hard MDEF and lowers damage" do
       # mdef_rate 100: hard 10 -> 20; 100 * 1020 / 1200 - 5 = 85 - 5 = 80
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :mob, 2001 -> %{mdef_rate: 100}
         _, _ -> %{}
       end)
@@ -496,7 +496,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "magic_damage_reduction follows the mode's defender cardfix stage" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :mob, 2001 -> %{magic_damage_reduction: 50}
         _, _ -> %{}
       end)
@@ -506,7 +506,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "magic_damage_reduction clamps at 100; only renewal keeps the pre-attribute minimum" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :mob, 2001 -> %{magic_damage_reduction: 150}
         _, _ -> %{}
       end)
@@ -623,7 +623,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "status and equipment magic_addrace sum once into a single cardfix step" do
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, 1001 -> %{{:magic_addrace, :demon} => 10}
         _, _ -> %{}
       end)
@@ -739,7 +739,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       attacker = c_attacker(100, %{}, unit_type: :mob, race: :formless)
       defender = c_defender(0, 0, unit_type: :player)
 
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         :player, _ -> %{subele_holy: 25}
         _, _ -> %{}
       end)

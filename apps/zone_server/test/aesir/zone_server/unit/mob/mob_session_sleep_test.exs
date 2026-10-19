@@ -141,10 +141,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
       x: 50,
       y: 50,
       hp: 60,
-      max_hp: 60,
       sp: 0,
-      max_sp: 0,
       spawned_at: System.system_time(:second)
     }
+    |> Aesir.TestMob.publish(max_hp: 60, max_sp: 0)
   end
 end

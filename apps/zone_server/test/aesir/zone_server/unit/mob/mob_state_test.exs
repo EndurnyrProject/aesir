@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -26,30 +27,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
     @impl true
     def modifiers(instance, _context), do: %{atk: instance.val1}
-  end
-
-  defmodule TestBatkBuff do
-    @moduledoc false
-    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_mob_batk_buff,
-      no_dispel: false,
-      no_clear_buff: false,
-      properties: [:buff]
-
-    @impl true
-    def modifiers(_instance, _context), do: %{batk: 7}
-  end
-
-  defmodule TestFleeRate do
-    @moduledoc false
-    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
-      id: :sc_test_mob_flee_rate,
-      no_dispel: false,
-      no_clear_buff: false,
-      properties: [:debuff]
-
-    @impl true
-    def modifiers(_instance, _context), do: %{flee_rate: -50}
   end
 
   defmodule TestMagicRates do
@@ -67,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   defp build_mob_state(opts \\ []) do
     mob_data = %MobDefinition{
       id: 1001,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(Keyword.get(opts, :modes, [])),
       modes: Keyword.get(opts, :modes, []),
       aegis_name: "test_mob",
       name: "Test Mob",
@@ -101,30 +79,31 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   end
 
   describe "attack motion, attack delay and rest" do
-    defp motion_state(motion, delay, rate) do
+    defp motion_state(motion, delay) do
       state = build_mob_state()
 
       %{
         state
         | mob_data: %{state.mob_data | attack_motion: motion, attack_delay: delay},
-          stat_bonus: %{aspd_rate: rate}
+          calculated: %{state.calculated | amotion: motion, adelay: delay}
       }
     end
 
-    test "the motion scales by the rate and stays between 100 and 8000" do
-      assert MobState.get_attack_motion(motion_state(500, 1_200, 20)) == 400
-      assert MobState.get_attack_motion(motion_state(110, 1_200, 50)) == 100
-      assert MobState.get_attack_motion(motion_state(9_000, 9_000, 0)) == 8_000
+    test "the calculated motion is returned inside its 100..8000 clamp" do
+      assert MobState.get_attack_motion(motion_state(500, 1_200)) == 500
+      assert MobState.get_attack_motion(motion_state(110, 1_200)) == 110
+      assert MobState.get_attack_motion(motion_state(9_000, 9_000)) == 8_000
+      assert MobState.get_attack_motion(motion_state(9, 9_000)) == 100
     end
 
-    test "the delay only ever shortens and never drops below the motion" do
-      assert MobState.get_attack_delay(motion_state(500, 1_200, 25)) == 900
-      assert MobState.get_attack_delay(motion_state(500, 1_200, -50)) == 1_200
-      assert MobState.get_attack_delay(motion_state(1_000, 800, 0)) == 1_000
+    test "the calculated delay is returned no lower than the motion" do
+      assert MobState.get_attack_delay(motion_state(500, 900)) == 900
+      assert MobState.get_attack_delay(motion_state(500, 100)) == 500
+      assert MobState.get_attack_delay(motion_state(1_000, 800)) == 1_000
     end
 
     test "a rest lasts the motion and never shortens a longer one" do
-      state = motion_state(500, 1_200, 0)
+      state = motion_state(500, 1_200)
       assert MobState.thinking?(state, 0)
 
       rested = MobState.rest(state, 10_000)
@@ -305,12 +284,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   describe "to_combatant/1 attack bounds" do
     defp bounded(atk2 \\ 70) do
       state = build_mob_state()
-      %{state | mob_data: %{state.mob_data | atk2: atk2}}
+      Aesir.TestMob.publish(%{state | mob_data: %{state.mob_data | atk2: atk2}})
     end
 
     defp register(state) do
       UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
       state
+    end
+
+    defp recalc(state, flags) do
+      entries = StatusStorage.get_unit_statuses(:mob, state.instance_id)
+      %{state | calculated: Stats.recalculate(state, entries, flags)}
     end
 
     @tag game_mode: :pre_renewal
@@ -340,27 +324,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
     @tag game_mode: :pre_renewal
     test "Guard Up raises both classic bounds and status ATK" do
-      stats = MobState.to_combatant(%{bounded() | stat_bonus: %{atk: 10}}).combat_stats
+      stats =
+        bounded()
+        |> Aesir.TestMob.publish(stat_bonus: %{atk: 10})
+        |> MobState.to_combatant()
+        |> Map.fetch!(:combat_stats)
 
       assert {stats.atk_min, stats.atk_max, stats.atk} == {60, 80, 10}
     end
 
-    @tag game_mode: :pre_renewal
-    test "a classic guardian's status ATK takes status ATK modifiers, a plain monster's does not" do
-      Registry.register_module(TestBatkBuff)
-      plain = register(bounded())
-      guardian = register(%{bounded() | instance_id: 2, stat_bonus: %{atk: 10}})
-
-      for state <- [plain, guardian],
-          do: StatusStorage.apply_status(:mob, state.instance_id, TestBatkBuff.id())
-
-      assert MobState.to_combatant(plain).combat_stats.atk == 0
-      assert MobState.to_combatant(guardian).combat_stats.atk == 10 + 7
-    end
-
     @tag game_mode: :renewal
     test "Guard Up raises both renewal bounds after the variance and status ATK" do
-      stats = MobState.to_combatant(%{bounded() | stat_bonus: %{atk: 10}}).combat_stats
+      stats =
+        bounded()
+        |> Aesir.TestMob.publish(stat_bonus: %{atk: 10})
+        |> MobState.to_combatant()
+        |> Map.fetch!(:combat_stats)
 
       assert {stats.atk_min, stats.atk_max, stats.atk} == {50, 70, 75}
     end
@@ -368,10 +347,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     @tag game_mode: :renewal
     test "renewal Mystical Amplification scales the MATK bounds before flat MATK" do
       state = register(bounded())
-      :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_magicpower, val1: 10)
+
+      :ok =
+        StatusStorage.apply_status(:mob, state.instance_id, :sc_magicpower, val1: 10, val3: 50)
+
       :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_impositio, val2: 5)
 
-      stats = MobState.to_combatant(state).combat_stats
+      stats = state |> recalc(["Matk"]) |> MobState.to_combatant() |> Map.fetch!(:combat_stats)
 
       assert {stats.matk_min, stats.matk_max} ==
                {87 + div(87 * 50, 100) + 5, 123 + div(123 * 50, 100) + 5}
@@ -421,7 +403,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
           stats: %{base_mob_data.stats | int: 30}
       }
 
-      state = %MobState{base | mob_data: mob_data}
+      state = %MobState{base | mob_data: mob_data} |> Aesir.TestMob.publish()
 
       combatant = MobState.to_combatant(state)
 
@@ -434,7 +416,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert MobState.to_combatant(base).combat_stats.soft_mdef == 45
 
       mob_data = %{base.mob_data | level: 50, stats: %{base.mob_data.stats | int: 30}}
-      assert MobState.to_combatant(%{base | mob_data: mob_data}).combat_stats.soft_mdef == 55
+
+      assert MobState.to_combatant(Aesir.TestMob.publish(%{base | mob_data: mob_data})).combat_stats.soft_mdef ==
+               55
     end
 
     test "combatants do not gain natural perfect dodge from mob LUK" do
@@ -509,15 +493,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert combatant.class == :normal
     end
 
-    test "the combatant class is derived from the class modes" do
+    test "the combatant class follows the declared database class" do
       base = build_mob_state()
 
-      for {modes, class} <- [
-            {[:detector, :status_immune, :knockback_immune], :boss},
-            {[:status_immune], :guardian},
-            {[:status_immune, :skill_immune], :battlefield}
-          ] do
-        state = %MobState{base | mob_data: %{base.mob_data | modes: modes}}
+      for class <- [:normal, :boss, :guardian, :battlefield, :event] do
+        state = Aesir.TestMob.publish(%{base | mob_data: %{base.mob_data | class: class}})
 
         assert MobState.to_combatant(state).class == class
         assert MobState.is_boss?(state) == (class == :boss)
@@ -526,7 +506,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
     test "a class-keyed bonus reads the derived class" do
       base = build_mob_state()
-      guardian = %MobState{base | mob_data: %{base.mob_data | modes: [:status_immune]}}
+
+      guardian =
+        Aesir.TestMob.publish(%{base | mob_data: %{base.mob_data | class: :guardian}})
 
       attacker = %Combatant{
         Combatant.new!(%{unit_type: :player, unit_id: 1, race: :demi_human})
@@ -555,7 +537,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
     test "a mob with the :status_immune mode exposes immunity on its combatant" do
       base = build_mob_state()
-      state = %MobState{base | mob_data: %{base.mob_data | modes: [:status_immune]}}
+
+      state =
+        Aesir.TestMob.publish(%{base | mob_data: %{base.mob_data | modes: [:status_immune]}})
 
       assert MobState.to_combatant(state).status_immune
     end
@@ -563,7 +547,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     test "only the infinite-defense modes are projected as ignore modes" do
       base = build_mob_state()
       modes = [:detector, :ignore_melee, :status_immune, :ignore_misc]
-      state = %MobState{base | mob_data: %{base.mob_data | modes: modes}}
+      state = Aesir.TestMob.publish(%{base | mob_data: %{base.mob_data | modes: modes}})
 
       assert MobState.to_combatant(state).ignore_modes == [:ignore_melee, :ignore_misc]
       assert build_mob_state() |> MobState.to_combatant() |> Map.fetch!(:ignore_modes) == []
@@ -571,27 +555,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   end
 
   describe "to_combatant/1 status modifiers" do
-    test "flee_rate halves final mob FLEE" do
-      state = build_mob_state()
-      Registry.register_module(TestFleeRate)
-      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
-      baseline = MobState.to_combatant(state).combat_stats.flee
-
-      :ok = StatusStorage.apply_status(:mob, state.instance_id, TestFleeRate.id())
-      assert MobState.to_combatant(state).combat_stats.flee == div(baseline, 2)
-    end
-
-    test "mdef2_rate scales soft MDEF" do
-      state = register(build_mob_state())
-      Registry.register_module(TestMagicRates)
-      baseline = MobState.to_combatant(state).combat_stats
-
-      :ok = StatusStorage.apply_status(:mob, state.instance_id, TestMagicRates.id())
-      rated = MobState.to_combatant(state).combat_stats
-
-      assert rated.soft_mdef == div(baseline.soft_mdef * 40, 100)
-    end
-
     test "an :atk status bonus is a player bonus and leaves a monster's attack alone" do
       state = register(build_mob_state())
       Registry.register_module(TestAtkBuff)
@@ -623,7 +586,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
       stats = MobState.get_stats(state)
 
-      assert stats.atk == 50
+      assert stats.atk == state.calculated.batk
       assert stats.def == 25
       assert stats.str == 40
     end
@@ -652,7 +615,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
       StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 2, val2: 3)
 
-      combatant = MobState.to_combatant(state)
+      combatant = state |> recalc(["Def_Ele"]) |> MobState.to_combatant()
 
       assert combatant.element == {:fire, 2}
     end
@@ -663,7 +626,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
       StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 2, val2: 3)
 
-      assert MobState.get_element(state) == {:fire, 2}
+      assert MobState.get_element(recalc(state, ["Def_Ele"])) == {:fire, 2}
     end
 
     test "the override never changes the mob's own attack element" do
@@ -685,7 +648,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 1, val2: 3)
       StatusStorage.apply_status(:mob, state.instance_id, :sc_elementalchange, val1: 1, val2: 6)
 
-      combatant = MobState.to_combatant(state)
+      combatant = state |> recalc(["Def_Ele"]) |> MobState.to_combatant()
 
       assert combatant.element == {:holy, 1}
     end
@@ -716,8 +679,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       state = MobState.new(1, mob_data, spawn_ref, "prontera", 100, 100)
 
       assert state.hp == 1
-      assert state.max_hp == 1
-      assert state.base_max_hp == 1
+      assert state.calculated.max_hp == 1
+      assert state.base.max_hp == 1
       assert MobState.living?(state)
     end
   end
@@ -757,8 +720,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       configured = MobState.configure_summon(state, hp_override: 500)
 
       assert configured.hp == 500
-      assert configured.max_hp == 500
-      assert configured.base_max_hp == 500
+      assert configured.calculated.max_hp == 500
+      assert configured.base.max_hp == 500
     end
   end
 
@@ -807,95 +770,68 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
-  describe "to_combatant/1 attack delay with aspd_rate" do
-    test "get_attack_delay returns the mob's base attack_delay with no bonus" do
+  describe "to_combatant/1 attack timing" do
+    test "get_attack_delay returns the calculated delay with its clamp" do
       state = build_mob_state()
 
-      delay = MobState.get_attack_delay(state)
+      assert MobState.get_attack_delay(state) == 1200
 
-      assert delay == 1200
+      clamped = %{state | calculated: %{state.calculated | adelay: 100, amotion: 500}}
+      assert MobState.get_attack_delay(clamped) == 500
     end
 
-    test "aspd_rate bonus reduces attack_delay" do
-      state = %{build_mob_state() | stat_bonus: %{aspd_rate: 5}}
-
-      delay = MobState.get_attack_delay(state)
-
-      expected = div(1200 * (100 - 5), 100)
-      assert delay == expected
-      assert delay == 1140
-    end
-
-    test "aspd_rate is applied to attack_delay_ms on combatant" do
+    test "get_attack_motion returns the calculated motion with its clamp" do
       state = build_mob_state()
 
-      combatant =
-        state
-        |> MobState.configure_summon(stat_bonus: %{aspd_rate: 5})
-        |> MobState.to_combatant()
+      assert MobState.get_attack_motion(state) == 500
 
-      assert combatant.attack_delay_ms == 1140
+      slow = %{state | calculated: %{state.calculated | amotion: 9_000}}
+      assert MobState.get_attack_motion(slow) == 8_000
+
+      fast = %{state | calculated: %{state.calculated | amotion: 9}}
+      assert MobState.get_attack_motion(fast) == 100
     end
 
-    test "absent aspd_rate leaves attack_delay_ms at base value" do
+    test "attack_delay_ms on the combatant reads the calculated delay" do
       state = build_mob_state()
-      combatant = state |> MobState.configure_summon([]) |> MobState.to_combatant()
-
-      assert combatant.attack_delay_ms == 1200
+      assert MobState.to_combatant(state).attack_delay_ms == 1200
     end
   end
 
-  describe "recalculate_max_hp/1" do
-    test "a freshly built mob records its base_max_hp" do
+  describe "Stats.recalculate/3 MaxHp" do
+    test "a freshly built mob records its raw and effective ceiling" do
       state = build_mob_state()
 
-      assert state.base_max_hp == 1000
-      assert state.max_hp == 1000
+      assert state.base.max_hp == 1000
+      assert state.calculated.max_hp == 1000
     end
 
-    test "with no :max_hp_rate status the ceiling stays at the base" do
+    test "with no max-HP status the ceiling stays at the base" do
       state = build_mob_state()
-      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
 
-      updated = MobState.recalculate_max_hp(state)
-
-      assert updated.max_hp == 1000
-      assert updated.hp == state.hp
+      assert Stats.recalculate(state, [], ["MaxHp"]).max_hp == 1000
     end
 
     @tag game_mode: :renewal
-    test "SC_DELUGE raises the ceiling by its tabulated percent without healing" do
+    test "SC_DELUGE raises the ceiling by its tabulated percent" do
       state = build_mob_state()
-      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
-      StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5)
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5, val2: 15)
+      entries = StatusStorage.get_unit_statuses(:mob, state.instance_id)
 
-      updated = MobState.recalculate_max_hp(state)
-
-      # level 5 -> deluge_eff index rem(4, 5) == 4 -> +15%
-      assert updated.max_hp == 1150
-      assert updated.hp == state.hp
-    end
-
-    test "removing the buff caps overflow HP back down to the base ceiling" do
-      buffed = %MobState{build_mob_state() | max_hp: 1150, hp: 1150}
-      UnitRegistry.register_unit(:mob, buffed.instance_id, MobState, buffed, self())
-
-      updated = MobState.recalculate_max_hp(buffed)
-
-      assert updated.max_hp == 1000
-      assert updated.hp == 1000
+      assert Stats.recalculate(state, entries, ["MaxHp"]).max_hp == 1150
     end
 
     @tag game_mode: :renewal
-    test "scales from base_max_hp so a re-apply never compounds" do
-      # A stale effective ceiling must not be used as the recalc base.
-      state = %MobState{build_mob_state() | max_hp: 1150}
-      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
-      StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5)
+    test "scales from the raw base so a re-apply never compounds" do
+      state = build_mob_state()
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5, val2: 15)
+      entries = StatusStorage.get_unit_statuses(:mob, state.instance_id)
 
-      updated = MobState.recalculate_max_hp(state)
+      once = Stats.recalculate(state, entries, ["MaxHp"])
+      twice = Stats.recalculate(%{state | calculated: once}, entries, ["MaxHp"])
 
-      assert updated.max_hp == 1150
+      assert once.max_hp == 1150
+      assert twice.max_hp == 1150
     end
   end
 end

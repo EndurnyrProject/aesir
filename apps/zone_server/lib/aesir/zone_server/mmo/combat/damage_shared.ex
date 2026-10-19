@@ -224,7 +224,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   @spec attacker_modifiers(map() | nil) :: map()
   def attacker_modifiers(%{unit_type: unit_type, unit_id: unit_id})
       when unit_type in [:player, :mob, :homunculus] and is_integer(unit_id) do
-    ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+    ModifierCalculator.get_battle_modifiers(unit_type, unit_id)
   end
 
   def attacker_modifiers(_attacker), do: %{}

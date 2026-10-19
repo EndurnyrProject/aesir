@@ -57,20 +57,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
 
     assert {:error, :hiding_required} = AsGrimtooth.validate(katar_user, target, 1, definition)
 
-    mob = %MobState{
-      instance_id: 300,
-      mob_id: 1,
-      mob_data: %{modes: []},
-      spawn_ref: nil,
-      map_name: "prontera",
-      x: 50,
-      y: 50,
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 300,
+        mob_id: 1,
+        mob_data: Aesir.TestMob.definition(modes: []),
+        spawn_ref: nil,
+        map_name: "prontera",
+        x: 50,
+        y: 50,
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     assert :ok = AsGrimtooth.validate(mob, target, 1, definition)
   end
@@ -318,6 +318,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
       attack_motion: 500,
       client_attack_motion: 500,
       damage_motion: 500,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(modes),
       modes: modes
     }
 
@@ -330,11 +331,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
       x: 55,
       y: 50,
       hp: 100,
-      max_hp: 100,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
   end
 
   defp player_state(id, weapon_id) do

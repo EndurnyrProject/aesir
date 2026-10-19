@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
@@ -112,7 +111,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       mob_data: mob_data()
     }
 
-    struct(MobState, Map.merge(base, Map.new(overrides)))
+    {publish, fields} = base |> Map.merge(Map.new(overrides)) |> Map.split([:max_hp, :stat_bonus])
+    MobState |> struct(fields) |> Aesir.TestMob.publish(Keyword.new(publish))
   end
 
   # A monster `MobState.to_combatant/1` can read, for the relation check.
@@ -154,8 +154,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   end
 
   defp mob_data(overrides \\ %{}) do
-    base = %{id: 1002, matk: 60, attack_range: 1, skill_range: 10}
-    struct(MobDefinition, Map.merge(base, Map.new(overrides)))
+    [id: 1002, matk: 60, attack_range: 1, skill_range: 10]
+    |> Keyword.merge(Enum.to_list(overrides))
+    |> Aesir.TestMob.definition()
   end
 
   defp row(overrides \\ %{}) do
@@ -186,7 +187,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       instance_id: instance_id,
       mob_id: mob_id,
       hp: hp,
-      max_hp: 1000,
       is_dead: dead?
     )
   end

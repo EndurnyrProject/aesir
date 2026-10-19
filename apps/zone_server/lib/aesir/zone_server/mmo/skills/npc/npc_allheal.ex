@@ -42,8 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcAllheal do
     combatant = caster.__struct__.to_combatant(caster)
 
     case UnitRegistry.get_unit(:mob, target_id) do
-      {:ok, {_module, %MobState{hp: hp, max_hp: max_hp}, _pid}} ->
-        Combat.apply_heal(:mob, target_id, max_hp - hp, combatant.unit_id)
+      {:ok, {_module, %MobState{hp: hp, calculated: calculated}, _pid}} ->
+        Combat.apply_heal(:mob, target_id, calculated.max_hp - hp, combatant.unit_id)
         {:ok, caster}
 
       {:error, :not_found} ->

@@ -352,6 +352,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
       attack_motion: 500,
       client_attack_motion: 400,
       damage_motion: 300,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(modes),
       modes: modes
     }
 

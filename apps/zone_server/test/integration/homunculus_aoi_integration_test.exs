@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
   test "a stationary observer crossed by the Homunculus sees spawn before movement and combat" do
     owner = owner_session()
     hom = PlayerSession.get_state(owner.pid).homunculus
-    observer = observer_session(:stationary, {hom.x + 22, hom.y})
+    _observer = observer_session(:stationary, {hom.x + 22, hom.y})
     flush_observer(:stationary)
 
     request(owner.pid, 10, {:move, %HomunculusMoveCommand{x: hom.x + 3, y: hom.y}})

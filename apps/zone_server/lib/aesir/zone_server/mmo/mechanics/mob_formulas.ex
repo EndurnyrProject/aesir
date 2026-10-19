@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
     |> Enum.max()
   end
 
-  defp speed_haste(held, mode) do
+  defp speed_haste(held, _mode) do
     [
       fixed(held, :sc_increaseagi, 25),
       2 * value(held, :sc_windwalk, :val1),
@@ -522,12 +522,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   end
 
   defp recalculate_misc(state, base, formulas) do
+    # `status_calc_misc` derives the monster's roll bounds from the raw database
+    # attack, not from an already variance-scaled bound.
     data = %{
       state.mob_data
       | level: runtime_level(state),
-        stats: Map.take(base, [:str, :agi, :vit, :int, :dex, :luk]),
-        atk: base.watk_min,
-        atk2: base.watk_max
+        stats: Map.take(base, [:str, :agi, :vit, :int, :dex, :luk])
     }
 
     misc = formulas.base(%{state | mob_data: data})

@@ -146,20 +146,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
   test "mob placement uses the shared ground path without player resource commitment" do
     definition = AsVenomdust.definition()
 
-    mob = %MobState{
-      instance_id: 3_000,
-      mob_id: 1,
-      mob_data: %{skill_range: 2},
-      spawn_ref: nil,
-      map_name: "prontera",
-      x: 90,
-      y: 90,
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 3_000,
+        mob_id: 1,
+        mob_data: Aesir.TestMob.definition(skill_range: 2),
+        spawn_ref: nil,
+        map_name: "prontera",
+        x: 90,
+        y: 90,
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     expect(Unit, :place, fn ^mob,
                             :as_venomdust,
@@ -257,11 +257,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
       x: 100,
       y: 100,
       hp: 100,
-      max_hp: 100,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
   end
 
   defp timed_group(group_id, opts) do

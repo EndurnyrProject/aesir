@@ -60,18 +60,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     %MobState{
       instance_id: id,
       mob_id: 1_002,
-      mob_data: %{element: {:neutral, 1}, race: :formless, modes: []},
+      mob_data: Aesir.TestMob.definition(element: {:neutral, 1}, race: :formless, modes: []),
       spawn_ref: nil,
       map_name: "backstab",
       x: x,
       y: y,
       dir: dir,
       hp: 100,
-      max_hp: 100,
       sp: 100,
-      max_sp: 100,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 100)
   end
 
   test "ratio is 300 plus 40 per level and bows halve the part above the base 100" do

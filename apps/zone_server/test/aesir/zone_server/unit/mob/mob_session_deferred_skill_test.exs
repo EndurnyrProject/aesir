@@ -146,11 +146,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDeferredSkillTest do
       map_name: "frost_mob_map",
       deferred_epoch: 7,
       hp: 100,
-      max_hp: 100,
       sp: 100,
-      max_sp: 100,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 100)
   end
 
   defp register(unit_type, unit_id, state) do

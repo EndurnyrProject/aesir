@@ -209,6 +209,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     }
 
     state = MobState.new(1, mob_data, spawn_ref, "prontera", 100, 100)
-    %{state | hp: opts[:hp], max_hp: opts[:max_hp]}
+    %{state | hp: opts[:hp], calculated: %{state.calculated | max_hp: opts[:max_hp]}}
   end
 end

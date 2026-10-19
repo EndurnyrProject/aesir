@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpiderWebTest do
       attack_motion: 672,
       client_attack_motion: 672,
       damage_motion: 480,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: []
     }
 

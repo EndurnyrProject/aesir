@@ -124,6 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
       element: {:fire, 2},
       race: :insect,
       size: :large,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(modes),
       modes: modes
     }
 

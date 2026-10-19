@@ -67,20 +67,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LongingTest do
     :ok = StatusStorage.apply_status(:mob, 19, :sc_test_support_block)
     assert Interpreter.support_blocked?(:mob, 19)
 
-    mob = %MobState{
-      instance_id: 19,
-      mob_id: 1,
-      mob_data: nil,
-      spawn_ref: nil,
-      map_name: "prontera",
-      x: 100,
-      y: 100,
-      hp: 100,
-      max_hp: 100,
-      sp: 100,
-      max_sp: 100,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 19,
+        mob_id: 1,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        map_name: "prontera",
+        x: 100,
+        y: 100,
+        hp: 100,
+        sp: 100,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 100)
 
     assert {:error, :status_blocked} =
              Executor.execute(mob, %{skill_id: 28, level: 1, target: :self})

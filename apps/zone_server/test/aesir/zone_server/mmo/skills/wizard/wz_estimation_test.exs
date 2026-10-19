@@ -125,7 +125,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
       hp: 9_999,
       def: 88,
       mdef: 44,
-      stats: %{},
+      atk: 100,
+      atk2: 100,
+      matk: 0,
+      stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       attack_range: 1,
       size: :large,
       race: :demon,
@@ -151,10 +154,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
       y: 10,
       map_name: "prontera",
       hp: 1_234,
-      max_hp: mob_data.hp,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: mob_data.hp, max_sp: 0)
   end
 end

@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedup do
     damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @behaviour Active
@@ -42,11 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedup do
     left = trickcasting - now
 
     if left >= @trick_stop do
-      faster =
-        MobState.recalculate_walk_speed(%{
-          caster
-          | base_walk_speed: max(caster.base_walk_speed - @speed_gain, @min_walk_speed)
-        })
+      base = %{caster.base | speed: max(caster.base.speed - @speed_gain, @min_walk_speed)}
+      faster = StatsHandler.replace_base(caster, base, ["Speed"])
 
       if left < @trick_stop + @skill_interval,
         do: {:ok, %{faster | last_skillcheck: now + 100}},

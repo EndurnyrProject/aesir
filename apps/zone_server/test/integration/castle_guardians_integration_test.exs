@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Integration.CastleGuardiansIntegrationTest do
   alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @castle_id 0
@@ -229,9 +230,10 @@ defmodule Aesir.ZoneServer.Integration.CastleGuardiansIntegrationTest do
         do: 50 * div(100, 5) + 1_000 * 100,
         else: 2_000 * 100
 
-    assert mob.max_hp == mob_db.hp + extra_hp
+    assert mob.calculated.max_hp == mob_db.hp + extra_hp
 
-    baseline = MobState.to_combatant(%{mob | stat_bonus: %{}})
+    unbonused = Stats.prepare_base(mob, [])
+    baseline = MobState.to_combatant(%{mob | base: unbonused, calculated: unbonused})
     scaled = MobState.to_combatant(mob)
 
     assert scaled.combat_stats.def == baseline.combat_stats.def + 34

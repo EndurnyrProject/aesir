@@ -95,11 +95,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
 
     state = reward_mob_state()
 
-    state = %{
-      state
-      | no_exp: false,
-        mob_data: %{state.mob_data | modes: [:detector, :status_immune, :knockback_immune]}
-    }
+    state =
+      Aesir.TestMob.publish(%{
+        state
+        | no_exp: false,
+          mob_data: %{
+            state.mob_data
+            | modes: [:detector, :status_immune, :knockback_immune],
+              class: :boss
+          }
+      })
 
     KillExp.distribute_typed(
       [entry({:player, 1}, 1, 100, 0)],
@@ -333,11 +338,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
       y: 0,
       map_name: "prontera",
       hp: 1,
-      max_hp: 1,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 1, max_sp: 0)
   end
 
   defp player_state(id, map, hp) do

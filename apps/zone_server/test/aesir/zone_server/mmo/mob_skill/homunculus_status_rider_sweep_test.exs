@@ -170,6 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
         element: {:neutral, 1},
         race: :formless,
         size: :medium,
+        class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
         modes: []
       },
       spawn_ref: nil,
@@ -177,11 +178,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
       x: 50,
       y: 50,
       hp: 1_000,
-      max_hp: 1_000,
       sp: 100,
-      max_sp: 100,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 1_000, max_sp: 100)
   end
 
   defp player do

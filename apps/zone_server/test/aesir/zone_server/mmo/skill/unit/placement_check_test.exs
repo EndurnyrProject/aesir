@@ -68,20 +68,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheckTest do
   end
 
   defp add_mob(id, {x, y}, mob_id) do
-    state = %MobState{
-      instance_id: id,
-      mob_id: mob_id,
-      mob_data: %{},
-      spawn_ref: nil,
-      map_name: @map,
-      x: x,
-      y: y,
-      hp: 10,
-      max_hp: 10,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    state =
+      %MobState{
+        instance_id: id,
+        mob_id: mob_id,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        map_name: @map,
+        x: x,
+        y: y,
+        hp: 10,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 10, max_sp: 0)
 
     :ok = UnitRegistry.register_unit(:mob, id, MobState, state, self())
     :ok = SpatialIndex.add_unit(:mob, id, x, y, @map)

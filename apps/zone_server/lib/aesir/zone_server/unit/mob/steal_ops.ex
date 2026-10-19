@@ -38,10 +38,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   @spec attempt_steal(MobState.t(), non_neg_integer(), pos_integer()) ::
           {:ok, non_neg_integer(), MobState.t()} | {:error, reason()}
   def attempt_steal(%MobState{mob_data: mob_data} = state, caster_dex, skill_level) do
-    rate = steal_rate(caster_dex, mob_data.stats.dex, skill_level)
+    rate = steal_rate(caster_dex, state.calculated.dex, skill_level)
 
     cond do
-      :status_immune in mob_data.modes ->
+      MobState.status_immune?(state) ->
         {:error, :boss}
 
       state.stolen_from ->

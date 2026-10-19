@@ -149,14 +149,21 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   @spec evaluate(atom(), map(), MobState.t(), map()) :: boolean()
   defp evaluate(:always, _condition, _mob_state, _env), do: true
 
-  defp evaluate(:myhpltmaxrate, %{value: value}, %MobState{hp: hp, max_hp: max_hp}, _env)
-       when is_integer(value) and max_hp > 0 do
+  defp evaluate(:myhpltmaxrate, %{value: value}, %MobState{hp: hp, calculated: calculated}, _env)
+       when is_integer(value) and calculated.max_hp > 0 do
+    max_hp = calculated.max_hp
+
     hp_rate(hp, max_hp) <= value
   end
 
-  defp evaluate(:myhpinrate, %{value: low, val1: high}, %MobState{hp: hp, max_hp: max_hp}, _env)
-       when is_integer(low) and is_integer(high) and max_hp > 0 do
-    rate = hp_rate(hp, max_hp)
+  defp evaluate(
+         :myhpinrate,
+         %{value: low, val1: high},
+         %MobState{hp: hp, calculated: calculated},
+         _env
+       )
+       when is_integer(low) and is_integer(high) and calculated.max_hp > 0 do
+    rate = hp_rate(hp, calculated.max_hp)
     rate >= low and rate <= high
   end
 
@@ -175,11 +182,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
            owner_player_id: owner_player_id,
            trickcasting: trickcasting,
            hp: hp,
-           max_hp: max_hp
+           calculated: calculated
          },
          _env
        ) do
-    owner_player_id != nil and trickcasting == nil and hp < max_hp
+    owner_player_id != nil and trickcasting == nil and hp < calculated.max_hp
   end
 
   defp evaluate(:trickcasting, _condition, %MobState{trickcasting: trickcasting}, _env),

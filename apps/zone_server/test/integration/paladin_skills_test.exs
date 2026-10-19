@@ -354,7 +354,7 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
     :ok = DevotedBy.link(crusader_id, devotee_id, link_id)
   end
 
-  defp target_mob(opts \\ []) do
+  defp target_mob(opts) do
     mob =
       start_mob_session(
         Keyword.merge(

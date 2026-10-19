@@ -134,7 +134,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       struct(MobState, %{
         instance_id: combatant.unit_id,
         hp: 1_000,
-        max_hp: 1_000,
         is_dead: false,
         x: x,
         y: y,
@@ -504,7 +503,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
       target = %{combatant(2001, :mob) | max_sp: 200}
-      target_state = %{living_mob_state(target, 150, 150) | sp: 100, max_sp: 200}
+      target_state = %{living_mob_state(target, 150, 150) | sp: 100}
       stub(MobState, :to_combatant, fn ^target_state -> target end)
 
       stub(UnitRegistry, :get_player_pid, fn _ -> {:error, :not_found} end)

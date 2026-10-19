@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Slaves do
       not match?({:ok, _}, SpatialIndex.get_unit_position(:mob, master.instance_id)) ->
         {:cont, state}
 
-      :can_move not in state.mob_data.modes and master.map_name != state.map_name and
+      not MobState.mode?(state, :can_move) and master.map_name != state.map_name and
           Rules.ground?(state.map_name) ->
         kill(state)
 

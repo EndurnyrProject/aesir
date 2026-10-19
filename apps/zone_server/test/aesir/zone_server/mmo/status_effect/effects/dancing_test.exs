@@ -279,17 +279,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     %MobState{
       instance_id: id,
       mob_id: 1002,
-      mob_data: nil,
+      mob_data: Aesir.TestMob.definition(),
       spawn_ref: nil,
       x: 100,
       y: 100,
       map_name: "prontera",
       hp: 100,
-      max_hp: 100,
       sp: sp,
-      max_sp: 1,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 1)
   end
 
   defp player(id) do

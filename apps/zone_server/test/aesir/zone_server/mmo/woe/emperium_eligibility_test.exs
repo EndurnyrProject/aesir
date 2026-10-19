@@ -310,7 +310,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
     stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
     stub(StatusInterpreter, :before_weapon_hit, fn :mob, ^target_id, _info -> :continue end)
 
-    stub(ModifierCalculator, :get_all_modifiers, fn :player, 10_001 ->
+    stub(ModifierCalculator, :get_battle_modifiers, fn :player, 10_001 ->
       %{attack_element: :fire}
     end)
 
@@ -352,7 +352,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
     stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
     stub(StatusInterpreter, :before_weapon_hit, fn :mob, ^target_id, _info -> :continue end)
 
-    stub(ModifierCalculator, :get_all_modifiers, fn :player, 10_001 ->
+    stub(ModifierCalculator, :get_battle_modifiers, fn :player, 10_001 ->
       %{attack_element: :fire}
     end)
 

@@ -56,6 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleTest do
       element: {:water, 1},
       race: :plant,
       size: :medium,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(modes),
       modes: modes
     }
 

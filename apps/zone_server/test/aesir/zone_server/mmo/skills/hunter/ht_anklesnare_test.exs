@@ -302,6 +302,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
         attack_motion: 500,
         client_attack_motion: 500,
         damage_motion: 400,
+        class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(Keyword.get(opts, :modes, [])),
         modes: Keyword.get(opts, :modes, []),
         drops: []
       }

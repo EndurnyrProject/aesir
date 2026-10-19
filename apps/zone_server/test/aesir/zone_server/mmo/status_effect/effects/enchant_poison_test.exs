@@ -214,6 +214,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnchantPoisonTest do
       element: {:neutral, 1},
       race: race,
       size: :medium,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: []
     }
 

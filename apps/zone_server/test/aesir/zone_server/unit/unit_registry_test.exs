@@ -82,35 +82,6 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
     UnitRegistry.register_unit(:mob, instance_id, MobState, state, nil)
   end
 
-  defp register_player(char_id, map_name) do
-    character = %Character{
-      id: char_id,
-      account_id: char_id * 100,
-      name: "P#{char_id}",
-      last_map: map_name,
-      last_x: 50,
-      last_y: 50,
-      sex: "M",
-      hair: 1,
-      hair_color: 0,
-      clothes_color: 0,
-      head_mid: 0,
-      head_bottom: 0,
-      robe: 0,
-      str: 1,
-      agi: 1,
-      vit: 1,
-      int: 1,
-      dex: 1,
-      luk: 1,
-      base_level: 1,
-      job_level: 1,
-      class: 0
-    }
-
-    UnitRegistry.register_player(PlayerState.new(character), nil)
-  end
-
   describe "count_living_owned_mobs/2" do
     test "filters by owner and mob class and reflects unregistering" do
       register_owned_mob(1, 42, 1002)

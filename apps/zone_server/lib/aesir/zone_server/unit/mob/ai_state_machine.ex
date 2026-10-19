@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   def process_attacked(%MobState{attacked_ref: nil} = state), do: {state, false}
 
   def process_attacked(%MobState{} = state) do
-    if :can_attack in (state.mob_data.modes || []) do
+    if MobState.mode?(state, :can_attack) do
       {state, rude?} = change_target(state, valid_target(state))
       {MobState.clear_attacked(state), rude?}
     else
@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   """
   @spec can_change_target?(MobState.t(), Ref.t()) :: boolean()
   def can_change_target?(%MobState{} = state, attacker) do
-    modes = state.mob_data.modes || []
+    modes = MobState.modes(state)
 
     case MobState.skill_state(state) do
       :berserk -> :change_target_melee in modes and state.norm_attacked_ref == attacker
@@ -172,7 +172,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   """
   @spec can_move?(MobState.t(), integer()) :: boolean()
   def can_move?(%MobState{} = state, mono) do
-    :can_move in (state.mob_data.modes || []) and
+    MobState.mode?(state, :can_move) and
       Interpreter.can_move?(:mob, state.instance_id) and
       not MobState.walk_delayed?(state, mono)
   end
@@ -423,7 +423,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   defp walking?(_state), do: false
 
   defp search(%MobState{} = state, view_range) do
-    modes = state.mob_data.modes || []
+    modes = MobState.modes(state)
 
     cond do
       (:aggressive in modes and
@@ -488,7 +488,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     do: if(walking?(state), do: MobState.get_chase_range(state), else: view_range)
 
   defp too_strong?(state, {type, id}) do
-    :target_weak in (state.mob_data.modes || []) and
+    MobState.mode?(state, :target_weak) and
       case UnitRegistry.get_unit(type, id) do
         {:ok, {module, unit, _pid}} ->
           module.get_stats(unit).base_level >= state.mob_data.level - 5
@@ -609,7 +609,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   # A mob that cannot chase: no move mode, or unable to move for a reason other
   # than a running walk delay.
   defp immobile?(state, can_move, mono) do
-    :can_move not in (state.mob_data.modes || []) or
+    not MobState.mode?(state, :can_move) or
       (not can_move and
          (not Interpreter.can_move?(:mob, state.instance_id) or
             not MobState.walk_delayed?(state, mono)))
@@ -657,7 +657,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp attack_target(state, target) do
-    if :random_target in (state.mob_data.modes || []) do
+    if MobState.mode?(state, :random_target) do
       range = min(MobState.get_attack_range(state), MobState.get_chase_range(state))
 
       candidates =
@@ -726,7 +726,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp attack_target_valid?(state, target) do
-    :can_attack in (state.mob_data.modes || []) and enemy?(state, target) and
+    MobState.mode?(state, :can_attack) and enemy?(state, target) and
       attack_visible?(state, target)
   end
 
@@ -986,7 +986,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   @spec random_walk(MobState.t(), integer(), integer()) ::
           {:ok, MobState.t()} | {:error, MobState.t()}
   def random_walk(%MobState{} = state, now, mono) do
-    modes = state.mob_data.modes || []
+    modes = MobState.modes(state)
 
     if state.next_walktime > now or :no_random_walk in modes or not can_move?(state, mono) do
       {:error, state}
@@ -1049,7 +1049,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   # The time to walk the current path: the walk speed per step, 14/10 of it
   # for a diagonal step.
-  defp walk_path_time(%MobState{walk_path: path, walk_speed: speed} = state) do
+  defp walk_path_time(%MobState{walk_path: path, calculated: calculated} = state) do
+    speed = calculated.speed
+
     [{state.x, state.y} | path]
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.reduce(0, fn [{x1, y1}, {x2, y2}], acc ->

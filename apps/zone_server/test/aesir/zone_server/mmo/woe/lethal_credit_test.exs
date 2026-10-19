@@ -161,7 +161,17 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LethalCreditTest do
   end
 
   defp start_victim(instance_id, hp) do
-    state = %{mob_state(instance_id) | hp: hp, max_hp: hp, no_exp: true, no_drops: true}
+    state = mob_state(instance_id)
+
+    state = %{
+      state
+      | hp: hp,
+        base: %{state.base | max_hp: hp},
+        calculated: %{state.calculated | max_hp: hp},
+        no_exp: true,
+        no_drops: true
+    }
+
     start_supervised!({MobSession, %{state: state, awake: false}})
   end
 

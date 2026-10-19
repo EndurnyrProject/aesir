@@ -13,11 +13,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateAggroOrderTest do
       y: 0,
       map_name: "test",
       hp: 100,
-      max_hp: 100,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
   end
 
   test "damage_log returns cumulative damage in first-hit order" do

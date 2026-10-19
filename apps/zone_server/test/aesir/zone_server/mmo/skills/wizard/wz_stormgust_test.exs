@@ -168,12 +168,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
           x: 150,
           y: 150,
           hp: 0,
-          max_hp: 100,
           sp: 0,
-          max_sp: 0,
           spawned_at: 0,
           is_dead: true
         )
+        |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
       UnitRegistry.register_unit(:mob, 2001, MobState, dead, self())
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, caster} end)

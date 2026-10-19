@@ -65,22 +65,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandlerTest do
   end
 
   defp attacker_at(id, x, y, reply \\ :ok) do
-    mob = %MobState{
-      instance_id: id,
-      mob_id: 1,
-      mob_data: nil,
-      spawn_ref: nil,
-      sp: 0,
-      max_sp: 0,
-      x: x,
-      y: y,
-      map_name: @map,
-      hp: 100,
-      max_hp: 100,
-      is_dead: false,
-      target_ref: {:player, 100},
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: id,
+        mob_id: 1,
+        mob_data: nil,
+        spawn_ref: nil,
+        sp: 0,
+        x: x,
+        y: y,
+        map_name: @map,
+        hp: 100,
+        is_dead: false,
+        target_ref: {:player, 100},
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_sp: 0, max_hp: 100)
 
     test_pid = self()
     pid = spawn_link(fn -> answer(mob, test_pid, reply) end)

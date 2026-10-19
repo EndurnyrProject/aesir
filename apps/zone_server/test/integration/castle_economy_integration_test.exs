@@ -207,7 +207,7 @@ defmodule Aesir.ZoneServer.Integration.CastleEconomyIntegrationTest do
       assert %{emperium_unit_id: unit_id} = CastleStore.get(@castle_id)
       {:ok, {_module, live_mob, _pid}} = UnitRegistry.get_unit(:mob, unit_id)
 
-      assert live_mob.max_hp == mob.hp + 1_000
+      assert live_mob.calculated.max_hp == mob.hp + 1_000
     end
 
     @tag game_mode: :pre_renewal, integration_re: false
@@ -232,7 +232,7 @@ defmodule Aesir.ZoneServer.Integration.CastleEconomyIntegrationTest do
       assert %{emperium_unit_id: unit_id} = CastleStore.get(@castle_id)
       {:ok, {_module, live_mob, _pid}} = UnitRegistry.get_unit(:mob, unit_id)
 
-      assert live_mob.max_hp == mob.hp + 100_000
+      assert live_mob.calculated.max_hp == mob.hp + 100_000
     end
   end
 

@@ -11,8 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView do
   @spec result(non_neg_integer(), MobState.t()) :: EstimationResult.t()
   # Interpolates over a fixed literal list of element names at compile time.
   # sobelow_skip ["DOS.BinToAtom"]
-  def result(target_id, %MobState{hp: hp, mob_data: mob_data}) do
-    {element, element_level} = mob_data.element
+  def result(target_id, %MobState{hp: hp, calculated: calculated} = state) do
+    mob_data = state.mob_data
+    {element, element_level} = MobState.get_element(state)
 
     modifiers =
       Map.new(@attack_elements, fn attack_element ->
@@ -25,12 +26,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView do
       Map.merge(modifiers, %{
         target_id: target_id,
         class_id: mob_data.id,
-        level: mob_data.level,
+        level: MobState.get_level(state),
         size: size_id(mob_data.size),
         hp: hp,
-        def: mob_data.def,
+        def: calculated.def,
         race: race_id(mob_data.race),
-        mdef: mob_data.mdef,
+        mdef: calculated.mdef,
         element: ElementModifiers.id(element),
         server_tick: ServerTick.now()
       })

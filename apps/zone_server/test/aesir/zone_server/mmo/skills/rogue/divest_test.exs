@@ -170,17 +170,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.DivestTest do
     %MobState{
       instance_id: id,
       mob_id: 1_002,
-      mob_data: %{},
+      mob_data: Aesir.TestMob.definition(),
       spawn_ref: nil,
       map_name: "prontera",
       x: 10,
       y: 10,
       hp: 100,
-      max_hp: 100,
       sp: 100,
-      max_sp: 100,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 100)
   end
 
   @tag game_mode: :renewal

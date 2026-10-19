@@ -142,20 +142,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
   test "mob casting keeps the immediate splash" do
     Mimic.copy(Resource)
 
-    mob = %MobState{
-      instance_id: @caster_id,
-      mob_id: 1002,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: 10,
-      y: 20,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 100,
-      max_sp: 100,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: @caster_id,
+        mob_id: 1002,
+        mob_data: nil,
+        spawn_ref: nil,
+        x: 10,
+        y: 20,
+        map_name: "prontera",
+        hp: 100,
+        sp: 100,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 100)
 
     expect(Combat, :splash_targets, fn "prontera", {10, 20}, 4, @caster_id ->
       [{:player, 2_000}]

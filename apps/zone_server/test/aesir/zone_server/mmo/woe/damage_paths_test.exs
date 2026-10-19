@@ -373,8 +373,16 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamagePathsTest do
     state = MobState.new(unit_id, mob_data, spawn, map_name, x, y)
 
     case hp do
-      nil -> state
-      hp -> %{state | hp: hp, max_hp: hp, base_max_hp: hp}
+      nil ->
+        state
+
+      hp ->
+        %{
+          state
+          | hp: hp,
+            base: %{state.base | max_hp: hp},
+            calculated: %{state.calculated | max_hp: hp}
+        }
     end
   end
 

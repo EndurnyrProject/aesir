@@ -162,12 +162,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       y: y,
       map_name: @map,
       hp: 1000,
-      max_hp: 1000,
       sp: 50,
-      max_sp: 50,
       spawned_at: System.system_time(:second),
       aggro_list: %{}
     )
+    |> Aesir.TestMob.publish(max_hp: 1000, max_sp: 50)
   end
 
   defp landmine_group do

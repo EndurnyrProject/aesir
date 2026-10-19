@@ -185,8 +185,8 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilder do
     build_entity(unit_id, state, hp, max_hp)
   end
 
-  defp to_entity(unit_id, %MobState{hp: hp, max_hp: max_hp} = state) do
-    build_entity(unit_id, state, hp, max_hp)
+  defp to_entity(unit_id, %MobState{hp: hp, calculated: calculated} = state) do
+    build_entity(unit_id, state, hp, calculated.max_hp)
   end
 
   defp to_entity(unit_id, %HomunculusState{hp: hp, max_hp: max_hp} = state) do

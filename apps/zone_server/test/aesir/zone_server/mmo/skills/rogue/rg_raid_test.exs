@@ -19,20 +19,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaidTest do
   test "players require Hiding while mob casters bypass the requirement" do
     player = %PlayerState{character_id: 1_000}
 
-    mob = %MobState{
-      instance_id: 2_000,
-      mob_id: 1,
-      mob_data: %{},
-      spawn_ref: nil,
-      x: 0,
-      y: 0,
-      map_name: "prontera",
-      hp: 1,
-      max_hp: 1,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 2_000,
+        mob_id: 1,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        x: 0,
+        y: 0,
+        map_name: "prontera",
+        hp: 1,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 1, max_sp: 0)
 
     assert {:error, :requires_hiding} = RgRaid.validate(player, :self, 1, RgRaid.definition())
 
@@ -118,17 +118,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaidTest do
     %MobState{
       instance_id: id,
       mob_id: 1,
-      mob_data: %{},
+      mob_data: Aesir.TestMob.definition(),
       spawn_ref: nil,
       x: x,
       y: y,
       map_name: "prontera",
       hp: 100,
-      max_hp: 100,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
   end
 
   @tag game_mode: :pre_renewal

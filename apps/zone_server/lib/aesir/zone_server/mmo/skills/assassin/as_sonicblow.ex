@@ -114,7 +114,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
   defp below_half?(%{stats: %{current_state: %{hp: hp}, derived_stats: %{max_hp: max_hp}}}),
     do: hp * 2 < max_hp
 
-  defp below_half?(%{hp: hp, max_hp: max_hp}), do: hp * 2 < max_hp
+  defp below_half?(%MobState{hp: hp, calculated: calculated}),
+    do: hp * 2 < calculated.max_hp
 
   defp apply_stun(caster, target_type, target_ref, level, definition) do
     {source_type, caster_id} = caster_ref(caster)

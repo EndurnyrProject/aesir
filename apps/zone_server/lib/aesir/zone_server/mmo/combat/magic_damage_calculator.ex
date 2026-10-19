@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
 
   defp combatant_modifiers(%{unit_type: type, unit_id: id})
        when type in [:homunculus, :mercenary, :mob, :npc, :pet, :player, :skill_unit],
-       do: ModifierCalculator.get_all_modifiers(type, id)
+       do: ModifierCalculator.get_battle_modifiers(type, id)
 
   defp combatant_modifiers(_combatant), do: %{}
 end

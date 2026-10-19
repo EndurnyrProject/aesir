@@ -167,7 +167,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   def normal_attack_hit_taken_flat(%Combatant{} = attacker, %Combatant{} = defender) do
     if DamageCalculator.ranged_hit?(attacker, []) do
       defender.unit_type
-      |> ModifierCalculator.get_all_modifiers(defender.unit_id)
+      |> ModifierCalculator.get_battle_modifiers(defender.unit_id)
       |> Map.get(:normal_ranged_hit_taken_flat, 0)
     else
       0

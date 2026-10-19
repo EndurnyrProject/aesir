@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
 
   def recipient(%MobState{} = mob) do
     %{base_stats: stats} = MobState.to_combatant(mob)
-    unit({:mob, mob.instance_id}, stats.vit, stats.int, mob.max_hp, 0)
+    unit({:mob, mob.instance_id}, stats.vit, stats.int, mob.calculated.max_hp, 0)
   end
 
   defp unit(ref, vit, int, max_hp, max_sp) do

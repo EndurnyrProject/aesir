@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ClassicStatusWatkTest do
 
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 50 end)
 
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       :player, _id -> %{level4_watk: 100}
       _type, _id -> %{}
     end)

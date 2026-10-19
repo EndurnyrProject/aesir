@@ -31,10 +31,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.ChaseWalkTest do
   test "random-target attack orders pick a visible living enemy, not the AI's dead target" do
     state = chasing_mob()
 
-    state = %{
-      state
-      | mob_data: %{state.mob_data | modes: [:can_attack, :can_move, :random_target]}
-    }
+    state =
+      Aesir.TestMob.publish(%{
+        state
+        | mob_data: %{state.mob_data | modes: [:can_attack, :can_move, :random_target]}
+      })
 
     dead = PlayerState.new(%Character{id: 17, hp: 0})
     living = PlayerState.new(%Character{id: 18, hp: 100})

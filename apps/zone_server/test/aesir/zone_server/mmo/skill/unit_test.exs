@@ -190,6 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
         client_attack_motion: 500,
         damage_motion: 400,
         ai_type: 0,
+        class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
         modes: [],
         drops: []
       },
@@ -203,11 +204,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       y: 60,
       map_name: "prontera",
       hp: 100,
-      max_hp: 100,
       sp: 50,
-      max_sp: 50,
       spawned_at: System.monotonic_time(:millisecond)
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 50)
   end
 
   describe "group visibility" do

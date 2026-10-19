@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.Calculated
   alias Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
@@ -805,7 +806,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   # left for a follow-up so summons don't ship a half-correct mode override.
   defp place_mob(mob_data, {x, y}, opts, state) do
     opts = Keyword.put(opts, :form_modes, mob_data.modes || [])
-    mob_data = slave_definition(mob_data, Keyword.get(opts, :master_id))
+    opts = put_master_speed(opts, mob_data)
     instance_id = generate_mob_instance_id()
     spawn_ref = Keyword.get_lazy(opts, :spawn_ref, fn -> summon_spawn_ref(mob_data, x, y) end)
 
@@ -834,17 +835,24 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
-  defp slave_definition(mob_data, master_id) when is_integer(master_id) and master_id > 0 do
-    speed =
-      case UnitRegistry.get_unit(:mob, master_id) do
-        {:ok, {_, %MobState{base_walk_speed: speed}, _}} -> speed
-        _missing -> mob_data.walk_speed
-      end
+  # A slave's base speed inherits its master's base speed; its mode selection is
+  # the held SC_MODECHANGE the owner starts post-spawn, never a form rewrite.
+  defp put_master_speed(opts, mob_data) do
+    case Keyword.get(opts, :master_id) do
+      master_id when is_integer(master_id) and master_id > 0 ->
+        Keyword.put(opts, :master_speed, master_base_speed(master_id, mob_data))
 
-    %{mob_data | modes: [:can_move, :no_random_walk, :can_attack], walk_speed: max(speed, 20)}
+      _none ->
+        opts
+    end
   end
 
-  defp slave_definition(mob_data, _master_id), do: mob_data
+  defp master_base_speed(master_id, mob_data) do
+    case UnitRegistry.get_unit(:mob, master_id) do
+      {:ok, {_, %MobState{base: %Calculated{speed: speed}}, _}} -> speed
+      _missing -> mob_data.walk_speed
+    end
+  end
 
   # Dispatches a dying mob's OnMyMobDead owner event (rAthena `mobkillevent`)
   # when it carries one and the killing blow lands from a live player session

@@ -55,8 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCallslaveTest do
         map_name: map,
         x: 160,
         y: 120,
-        hp: 100,
-        max_hp: 100
+        hp: 100
       })
 
     UnitRegistry.register_unit(:mob, id, MobState, slave, self())

@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RenewalMasteryAtkTest do
     Mimic.copy(ModifierCalculator)
 
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-    stub(ModifierCalculator, :get_all_modifiers, fn _type, _id -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _type, _id -> %{} end)
     CombatTestHelper.stub_element_coefficient(fn _element, _, _, _ -> 1.0 end)
     :ok
   end
@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RenewalMasteryAtkTest do
     bare_hands = hands(bare)
     bare_investigate = damage(bare, skill_id: @investigate)
 
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       :player, _id -> %{mastery_atk: 7}
       _type, _id -> %{}
     end)

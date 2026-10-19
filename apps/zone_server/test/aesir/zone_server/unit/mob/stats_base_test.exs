@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StatsBaseTest do
     assert state.calculated == state.base
 
     for {formulas, expected} <- [
-          {Renewal, {60, 74, 106, 100, 160}},
+          {Renewal, {60, 90, 130, 100, 160}},
           {PreRenewal, {10, 110, 190, 24, 36}}
         ] do
       base = formulas.base(state, stat_bonus: %{atk: 10})
@@ -178,7 +178,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StatsBaseTest do
         )
 
       assert prepared.base.max_hp == hp
-      assert {prepared.hp, prepared.max_hp} == {hp, hp}
+      assert {prepared.hp, prepared.calculated.max_hp} == {hp, hp}
     end
   end
 

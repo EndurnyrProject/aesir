@@ -269,6 +269,7 @@ defmodule Aesir.ZoneServer.Unit.WalkCornerTest do
       client_attack_motion: 500,
       damage_motion: 480,
       ai_type: 0,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(modes),
       modes: modes,
       drops: []
     }
@@ -285,16 +286,14 @@ defmodule Aesir.ZoneServer.Unit.WalkCornerTest do
       y: 5,
       dir: 0,
       hp: mob_data.hp,
-      max_hp: mob_data.hp,
       sp: 0,
-      max_sp: 0,
       spawned_at: System.system_time(:second),
-      walk_speed: mob_data.walk_speed,
       view_range: 12,
       is_dead: false,
       walk_path: path,
       movement_state: :moving
     }
+    |> Aesir.TestMob.publish(max_hp: mob_data.hp, max_sp: 0, walk_speed: mob_data.walk_speed)
   end
 
   defp character do

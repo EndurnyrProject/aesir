@@ -2868,20 +2868,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   test "natural field expiry ends the status of every occupant" do
     player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
 
-    mob = %MobState{
-      instance_id: 22,
-      mob_id: 1,
-      mob_data: %{},
-      spawn_ref: nil,
-      x: 100,
-      y: 100,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 10,
-      max_sp: 10,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 22,
+        mob_id: 1,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        x: 100,
+        y: 100,
+        map_name: "prontera",
+        hp: 100,
+        sp: 10,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 10)
 
     :ok = UnitRegistry.register_unit(:player, 21, PlayerState, player)
     :ok = UnitRegistry.register_unit(:mob, 22, MobState, mob)

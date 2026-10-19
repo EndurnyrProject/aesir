@@ -74,37 +74,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportTest do
   end
 
   defp mob(id, {x, y}) do
-    state = %MobState{
-      instance_id: id,
-      mob_id: 1002,
-      mob_data: %MobDefinition{
-        id: 1002,
-        aegis_name: "PORING",
-        name: "Poring",
-        level: 1,
+    state =
+      %MobState{
+        instance_id: id,
+        mob_id: 1002,
+        mob_data: %MobDefinition{
+          id: 1002,
+          aegis_name: "PORING",
+          name: "Poring",
+          level: 1,
+          hp: 100,
+          stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+          attack_range: 1,
+          size: :medium,
+          race: :plant,
+          element: {:water, 1},
+          walk_speed: 400,
+          attack_delay: 1_000,
+          attack_motion: 500,
+          client_attack_motion: 500,
+          damage_motion: 400,
+          class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
+          modes: []
+        },
+        spawn_ref: nil,
+        x: x,
+        y: y,
+        map_name: "prontera",
         hp: 100,
-        stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-        attack_range: 1,
-        size: :medium,
-        race: :plant,
-        element: {:water, 1},
-        walk_speed: 400,
-        attack_delay: 1_000,
-        attack_motion: 500,
-        client_attack_motion: 500,
-        damage_motion: 400,
-        modes: []
-      },
-      spawn_ref: nil,
-      x: x,
-      y: y,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     :ok = UnitRegistry.register_unit(:mob, id, MobState, state)
     :ok = SpatialIndex.add_unit(:mob, id, x, y, "prontera")

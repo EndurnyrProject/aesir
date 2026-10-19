@@ -188,7 +188,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.StatusAttackStagesTest do
     do: DamageInputs.player_attack_parts(attacker, [], path, false).weapon_atk
 
   defp stub_modifiers(modifiers) do
-    stub(ModifierCalculator, :get_all_modifiers, fn _type, _id -> modifiers end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _type, _id -> modifiers end)
   end
 
   defp attacker(right, left \\ nil) do

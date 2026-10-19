@@ -1912,7 +1912,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   defp physical_attack_element(attacker, calc_opts) do
     Keyword.get(calc_opts, :element) ||
       DamageShared.endow_element(
-        ModifierCalculator.get_all_modifiers(attacker.unit_type, attacker.unit_id)
+        ModifierCalculator.get_battle_modifiers(attacker.unit_type, attacker.unit_id)
       ) || attacker.weapon.element
   end
 

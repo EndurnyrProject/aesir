@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
   alias Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaos
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EternalChaos
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -107,6 +109,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
                StatusInterpreter.apply_status(unit_type, unit_id, :sc_eternalchaos,
                  bypass_resistance: true
                )
+
+      defender =
+        if unit_type == :mob do
+          entries = StatusStorage.get_unit_statuses(:mob, unit_id)
+          recalculated = Stats.recalculate(mob, entries, ["Def", "Def2"])
+          MobState.to_combatant(%{mob | calculated: recalculated})
+        else
+          defender
+        end
 
       :rand.seed(:exsss, {1, 2, 3})
 

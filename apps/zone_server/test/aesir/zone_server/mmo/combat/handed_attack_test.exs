@@ -243,7 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
     test "a ranged normal attack rolls against the defender's reduced hit rate" do
       defender = defender()
 
-      stub(ModifierCalculator, :get_all_modifiers, fn
+      stub(ModifierCalculator, :get_battle_modifiers, fn
         type, id when type == defender.unit_type and id == defender.unit_id ->
           %{normal_ranged_hit_taken_flat: 100}
 

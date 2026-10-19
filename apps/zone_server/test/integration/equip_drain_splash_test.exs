@@ -34,8 +34,8 @@ defmodule Aesir.ZoneServer.Integration.EquipDrainSplashTest do
       assert [_ | _] = damage_for(packets, neighbour.unit_id)
       assert damage_for(packets, bystander.unit_id) == []
 
-      assert get_mob_state(neighbour.pid).hp < neighbour.mob_state.max_hp
-      assert get_mob_state(bystander.pid).hp == bystander.mob_state.max_hp
+      assert get_mob_state(neighbour.pid).hp < neighbour.mob_state.calculated.max_hp
+      assert get_mob_state(bystander.pid).hp == bystander.mob_state.calculated.max_hp
     end
 
     test "a zero splash range leaves the neighbour untouched" do
@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Integration.EquipDrainSplashTest do
 
       assert length(damage_for(packets, primary.unit_id)) == 1
       assert damage_for(packets, neighbour.unit_id) == []
-      assert get_mob_state(neighbour.pid).hp == neighbour.mob_state.max_hp
+      assert get_mob_state(neighbour.pid).hp == neighbour.mob_state.calculated.max_hp
     end
   end
 

@@ -186,7 +186,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
   defp schedule_next_cell(state) do
     [next | _rest] = state.walk_path
-    schedule_step(state, MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, next))
+
+    schedule_step(
+      state,
+      MovementEngine.step_delay(state.calculated.speed, {state.x, state.y}, next)
+    )
   end
 
   @doc """

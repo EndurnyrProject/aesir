@@ -281,16 +281,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.TickTest do
     %MobState{
       instance_id: id,
       mob_id: 1002,
-      mob_data: nil,
+      mob_data: Aesir.TestMob.definition(),
       spawn_ref: nil,
       x: 2,
       y: 2,
       map_name: "prontera",
       hp: 100,
-      max_hp: 100,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
   end
 end

@@ -122,12 +122,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSpawnTest do
       y: 50,
       dir: 0,
       hp: 50,
-      max_hp: 60,
       sp: 0,
-      max_sp: 0,
       spawned_at: System.system_time(:second),
-      walk_speed: 200,
       is_dead: is_dead
     }
+    |> Aesir.TestMob.publish(max_hp: 60, max_sp: 0, walk_speed: 200)
   end
 end

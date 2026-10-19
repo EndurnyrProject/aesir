@@ -107,6 +107,6 @@ defmodule Aesir.ZoneServer.Unit.TargetCountTest do
   end
 
   defp mob(id) do
-    struct(MobState, instance_id: id, hp: 100, max_hp: 100, is_dead: false)
+    struct(MobState, instance_id: id, hp: 100, is_dead: false)
   end
 end

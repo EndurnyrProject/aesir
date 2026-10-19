@@ -247,20 +247,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     target = player_target(4_000)
     register_player(target)
 
-    caster = %MobState{
-      instance_id: 3_000,
-      mob_id: 3_740,
-      mob_data: %{skill_range: 1},
-      spawn_ref: nil,
-      map_name: "prontera",
-      x: 99,
-      y: 100,
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    caster =
+      %MobState{
+        instance_id: 3_000,
+        mob_id: 3_740,
+        mob_data: Aesir.TestMob.definition(skill_range: 1),
+        spawn_ref: nil,
+        map_name: "prontera",
+        x: 99,
+        y: 100,
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     assert {:ok, ^caster} =
              AsSplasher.cast(caster, {:unit, target.character_id}, 5, AsSplasher.definition())
@@ -398,7 +398,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
              )
 
     immune = mob_target(2_101)
-    immune = %{immune | mob_data: %{immune.mob_data | modes: [:status_immune]}}
+
+    immune =
+      Aesir.TestMob.publish(%{
+        immune
+        | mob_data: %{immune.mob_data | modes: [:status_immune], class: :guardian}
+      })
+
     register_mob(immune)
 
     assert {:error, :invalid_target} =
@@ -506,6 +512,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
       attack_motion: 500,
       client_attack_motion: 500,
       damage_motion: 500,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: []
     }
 
@@ -518,11 +525,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
       x: 100,
       y: 100,
       hp: 100,
-      max_hp: 100,
       sp: 0,
-      max_sp: 0,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
   end
 
   defp register_mob(mob) do

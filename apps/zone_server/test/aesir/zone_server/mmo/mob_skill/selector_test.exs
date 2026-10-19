@@ -20,10 +20,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       max_hp: 100,
       target_ref: {:player, 1},
       attacked_count: 0,
-      skill_cooldowns: %{}
+      skill_cooldowns: %{},
+      mob_data: Aesir.TestMob.definition()
     }
 
-    struct(MobState, Map.merge(base, Map.new(overrides)))
+    {max_hp, fields} = base |> Map.merge(Map.new(overrides)) |> Map.pop!(:max_hp)
+    MobState |> struct(fields) |> Aesir.TestMob.publish(max_hp: max_hp)
   end
 
   # MG_FIREBOLT: a real player skill (id 19), resolvable in Skill.Catalog with

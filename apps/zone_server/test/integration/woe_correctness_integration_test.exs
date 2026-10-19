@@ -69,8 +69,8 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
     :ok = WoeServer.start()
     unit_id = CastleStore.get(@castle_id).emperium_unit_id
     {:ok, {_module, mob, mob_pid}} = UnitRegistry.get_unit(:mob, unit_id)
-    assert mob.max_hp == if(GameMode.mode() == :renewal, do: 100, else: 68_430)
-    assert mob.hp == mob.max_hp
+    assert mob.calculated.max_hp == if(GameMode.mode() == :renewal, do: 100, else: 68_430)
+    assert mob.hp == mob.calculated.max_hp
 
     :ok =
       StatusInterpreter.apply_status(:mob, unit_id, :sc_aeterna, loaded: true, duration: 60_000)
@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
     assert {:error, :owner_guild} = attack(attacker, replacement)
     assert StatusStorage.has_status?(:mob, replacement, :sc_aeterna)
     {:ok, {_module, replacement_state, _pid}} = UnitRegistry.get_unit(:mob, replacement)
-    assert replacement_state.hp == replacement_state.max_hp
+    assert replacement_state.hp == replacement_state.calculated.max_hp
 
     :ok = WoeServer.stop()
     :ets.delete_all_objects(EtsTable.table_for(:castle_states))
@@ -306,7 +306,7 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
       flush_packets()
       assert :ok = SkillAttack.deliver_prepared_skill_hit(staged)
       refute_packet_sent(SkillDamage)
-      assert get_mob_state(fresh_pid).hp == fresh.max_hp
+      assert get_mob_state(fresh_pid).hp == fresh.calculated.max_hp
       assert StatusStorage.has_status?(:mob, replacement, :sc_aeterna)
     end
   end

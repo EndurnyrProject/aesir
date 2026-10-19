@@ -36,19 +36,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
     %MobState{
       instance_id: @target_id,
       mob_id: 1_002,
-      mob_data: %{modes: Keyword.get(opts, :modes, [])},
+      mob_data: Aesir.TestMob.definition(modes: Keyword.get(opts, :modes, [])),
       spawn_ref: nil,
       map_name: "prontera",
       x: 100,
       y: 100,
       hp: Keyword.get(opts, :hp, 1_000),
-      max_hp: Keyword.get(opts, :max_hp, 1_000),
       sp: 100,
-      max_sp: 100,
       spawned_at: 0,
       is_dead: Keyword.get(opts, :is_dead, false),
       casting: Keyword.get(opts, :casting)
     }
+    |> Aesir.TestMob.publish(max_hp: Keyword.get(opts, :max_hp, 1_000), max_sp: 100)
   end
 
   # Resolves the target as a mob whose session reports `states` in order, one per

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Mob.Stats
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -61,7 +62,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
 
       :ok = apply_assumptio(:mob, @boss_id, @boss_id + 1)
 
-      assert MobState.to_combatant(mob).combat_stats.def - before == 250
+      updated = snapshot(mob, ["Def"])
+      assert MobState.to_combatant(updated).combat_stats.def - before == 250
     end
 
     test "leaves incoming damage unchanged" do
@@ -130,6 +132,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
   defp kyrie_params,
     do: [val1: 10, val2: 1_000, val3: 10, duration: 120_000, caster_id: @player_id]
 
+  defp snapshot(state, flags) do
+    entries = StatusStorage.get_unit_statuses(:mob, state.instance_id)
+    %{state | calculated: Stats.recalculate(state, entries, flags)}
+  end
+
   defp register_boss do
     mob_data = %MobDefinition{
       id: 1086,
@@ -154,6 +161,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AssumptioTest do
       element: {:fire, 2},
       race: :insect,
       size: :large,
+      class:
+        Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([
+          :detector,
+          :status_immune,
+          :knockback_immune
+        ]),
       modes: [:detector, :status_immune, :knockback_immune]
     }
 

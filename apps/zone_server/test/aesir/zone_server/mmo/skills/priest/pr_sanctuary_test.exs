@@ -93,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       client_attack_motion: 500,
       damage_motion: 400,
       ai_type: 0,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: [],
       drops: []
     }
@@ -113,11 +114,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
       y: 150,
       map_name: "prontera",
       hp: hp,
-      max_hp: max_hp,
       sp: 1,
-      max_sp: 1,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: max_hp, max_sp: 1)
   end
 
   # The field's caster as the heal recipe reads it: a real player with no heal

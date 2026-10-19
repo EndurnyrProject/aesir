@@ -249,6 +249,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.KnockbackGroundTest do
         attack_motion: 500,
         client_attack_motion: 500,
         damage_motion: 400,
+        class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
         modes: []
       },
       spawn_ref: %{},
@@ -256,10 +257,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.KnockbackGroundTest do
       y: y,
       map_name: map_name,
       hp: 100,
-      max_hp: 100,
       sp: 50,
-      max_sp: 50,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 50)
   end
 end

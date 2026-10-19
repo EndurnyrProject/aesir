@@ -97,10 +97,15 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       dir: 1,
       movement_state: :moving,
       hp: 1000,
-      max_hp: 1000
+      mob_data: Aesir.TestMob.definition()
     }
 
-    mob = base |> Map.merge(Map.new(attrs)) |> then(&struct(MobState, &1))
+    mob =
+      base
+      |> Map.merge(Map.new(attrs))
+      |> then(&struct(MobState, &1))
+      |> Aesir.TestMob.publish(max_hp: 1000)
+
     SpatialIndex.add_unit(:mob, mob.instance_id, mob.x, mob.y, mob.map_name)
     UnitRegistry.register_unit(:mob, mob.instance_id, MobState, mob, nil)
     mob

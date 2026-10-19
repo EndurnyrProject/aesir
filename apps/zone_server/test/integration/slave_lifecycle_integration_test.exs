@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Integration.SlaveLifecycleIntegrationTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -62,8 +63,9 @@ defmodule Aesir.ZoneServer.Integration.SlaveLifecycleIntegrationTest do
     slaves = Slaves.linked(get_mob_state(master.pid))
     assert get_mob_state(master.pid).can_summon
     [{slave, slave_pid} | _] = slaves
-    assert slave.base_walk_speed == get_mob_state(master.pid).base_walk_speed
-    assert Enum.sort(slave.mob_data.modes) == Enum.sort([:can_move, :can_attack, :no_random_walk])
+    assert slave.base.speed == get_mob_state(master.pid).base.speed
+    slave_mask = MobMode.mask([:can_move, :can_attack, :no_random_walk])
+    assert_eventually(fn -> get_mob_state(slave_pid).calculated.mode == slave_mask end)
 
     MobSession.warp(slave_pid, @map, 30, 20)
     assert_eventually(fn -> get_mob_state(slave_pid).movement_state == :moving end)

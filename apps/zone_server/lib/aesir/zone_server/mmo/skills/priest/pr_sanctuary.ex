@@ -213,7 +213,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
        }),
        do: hp >= max_hp
 
-  defp full_hp?(%MobState{hp: hp, max_hp: max_hp}), do: hp >= max_hp
+  defp full_hp?(%MobState{hp: hp, calculated: calculated}), do: hp >= calculated.max_hp
   defp full_hp?(%HomunculusState{hp: hp, max_hp: max_hp}), do: hp >= max_hp
   defp full_hp?(_state), do: true
 

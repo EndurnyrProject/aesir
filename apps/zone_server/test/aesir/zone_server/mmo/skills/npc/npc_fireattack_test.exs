@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcFireattackTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcFireattack
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
@@ -51,11 +50,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcFireattackTest do
     }
 
     MobState.new(@caster_id, mob_data, spawn_ref, @map, 100, 100)
-  end
-
-  defp definition do
-    {:ok, definition} = Catalog.by_name(:npc_fireattack)
-    definition
   end
 
   for {module, element} <- [

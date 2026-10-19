@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
     # The flat BF_MISC path now resolves the attacker's status modifiers for the
     # element-ratio seam; default to none so existing damage assertions hold.
     Mimic.copy(ModifierCalculator)
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :ok
   end
 
@@ -145,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
     end
 
     test "a matching {:element_ratio, _} attacker modifier applies the active field rule" do
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
+      stub(ModifierCalculator, :get_battle_modifiers, fn :player, 1001 ->
         %{{:element_ratio, :fire} => 20}
       end)
 
@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
     end
 
     test "a non-matching {:element_ratio, _} modifier is ignored" do
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
+      stub(ModifierCalculator, :get_battle_modifiers, fn :player, 1001 ->
         %{{:element_ratio, :wind} => 20}
       end)
 
@@ -175,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
     end
 
     test "the field bonus preserves Renewal recovery but classic immunity" do
-      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
+      stub(ModifierCalculator, :get_battle_modifiers, fn :player, 1001 ->
         %{{:element_ratio, :poison} => 20}
       end)
 

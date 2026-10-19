@@ -150,8 +150,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
            Combat.prepare_skill_unit_hit(caster, {unit_type, target_id}, definition().id),
          {:ok, physical} <- physical_input(caster) do
       target = prepared.target
-      modifiers = ModifierCalculator.get_all_modifiers(caster.unit_type, caster.unit_id)
-      defender_modifiers = ModifierCalculator.get_all_modifiers(target.unit_type, target.unit_id)
+      modifiers = ModifierCalculator.get_battle_modifiers(caster.unit_type, caster.unit_id)
+
+      defender_modifiers =
+        ModifierCalculator.get_battle_modifiers(target.unit_type, target.unit_id)
 
       attack_flag =
         BattleFlags.build(

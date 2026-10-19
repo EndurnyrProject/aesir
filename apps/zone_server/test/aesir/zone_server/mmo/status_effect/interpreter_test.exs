@@ -655,18 +655,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
         struct!(MobState, %{
           instance_id: mob_id,
           mob_id: 1,
-          mob_data: nil,
+          mob_data: Aesir.TestMob.definition(),
           spawn_ref: nil,
           x: 0,
           y: 0,
           map_name: "test",
           hp: 1,
-          max_hp: 1,
           sp: 0,
-          max_sp: 0,
           spawned_at: 0,
           is_dead: false
         })
+        |> Aesir.TestMob.publish(max_hp: 1, max_sp: 0)
 
       stub(UnitRegistry, :get_unit, fn :mob, ^mob_id ->
         {:ok, {nil, living, test_pid}}

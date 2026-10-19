@@ -50,13 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
     }
 
     mob = MobState.new(42, definition, spawn, "prontera", 101, 100)
+    mob = %{mob | calculated: %{mob.calculated | max_hp: 2000}}
     %{caster: caster, mob: mob}
   end
 
   test "misc hits report delivered damage and exact lethal boundaries without waiting for the target",
        %{caster: caster, mob: mob} do
     for {hp, survives} <- [{999, false}, {1000, false}, {1001, true}] do
-      target = %{mob | hp: hp, max_hp: 2000}
+      target = %{mob | hp: hp}
       :ok = UnitRegistry.register_unit(:mob, 42, MobState, target, self())
       stub(TargetResolver, :resolve, fn {:mob, 42} -> {:ok, self(), target, :mob} end)
 
@@ -71,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
   end
 
   test "signed misc divisions normalize before target preparation", %{caster: caster, mob: mob} do
-    target = %{mob | hp: 1000, max_hp: 2000}
+    target = %{mob | hp: 1000}
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, target, self())
     stub(TargetResolver, :resolve, fn {:mob, 42} -> {:ok, self(), target, :mob} end)
 
@@ -92,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscHitReportTest do
   end
 
   test "survival uses settled rather than raw damage", %{caster: caster, mob: mob} do
-    target = %{mob | hp: 750, max_hp: 2000}
+    target = %{mob | hp: 750}
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, target, self())
     stub(TargetResolver, :resolve, fn {:mob, 42} -> {:ok, self(), target, :mob} end)
 

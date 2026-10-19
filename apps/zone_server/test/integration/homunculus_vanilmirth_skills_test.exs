@@ -876,22 +876,22 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
   end
 
   defp register_mob(id, x, y, target_ref, overrides \\ []) do
-    mob = %MobState{
-      instance_id: id,
-      mob_id: 1,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: x,
-      y: y,
-      map_name: "vanilmirth_skills_map",
-      hp: Keyword.get(overrides, :hp, 100),
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      is_dead: Keyword.get(overrides, :is_dead, false),
-      target_ref: target_ref,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: id,
+        mob_id: 1,
+        mob_data: Aesir.TestMob.definition(id: 1),
+        spawn_ref: nil,
+        x: x,
+        y: y,
+        map_name: "vanilmirth_skills_map",
+        hp: Keyword.get(overrides, :hp, 100),
+        sp: 0,
+        is_dead: Keyword.get(overrides, :is_dead, false),
+        target_ref: target_ref,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     :ok = UnitRegistry.register_unit(:mob, id, MobState, mob, self())
     :ok = SpatialIndex.add_unit(:mob, id, x, y, mob.map_name)

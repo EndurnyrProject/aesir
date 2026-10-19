@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
   defp attack_percent(attack, _caster, _skill_id, :renewal), do: attack
 
   defp attack_percent(attack, caster, skill_id, :pre_renewal) do
-    modifiers = ModifierCalculator.get_all_modifiers(caster.unit_type, caster.unit_id)
+    modifiers = ModifierCalculator.get_battle_modifiers(caster.unit_type, caster.unit_id)
     div(attack * AtkPercent.percent(caster.unit_type, skill_id, modifiers), 100)
   end
 

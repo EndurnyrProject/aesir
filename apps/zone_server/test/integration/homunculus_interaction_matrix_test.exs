@@ -287,20 +287,26 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
     state = PlayerSession.get_state(owner.pid)
     gid = state.homunculus.world_gid
 
-    mob = %MobState{
-      instance_id: gid,
-      mob_id: 1002,
-      mob_data: %{element: {:water, 1}, race: :plant, size: :medium, modes: []},
-      spawn_ref: nil,
-      hp: 500,
-      max_hp: 500,
-      sp: 10,
-      max_sp: 10,
-      map_name: @map,
-      x: 50,
-      y: 50,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: gid,
+        mob_id: 1002,
+        mob_data:
+          Aesir.TestMob.definition(
+            element: {:water, 1},
+            race: :plant,
+            size: :medium,
+            modes: []
+          ),
+        spawn_ref: nil,
+        hp: 500,
+        sp: 10,
+        map_name: @map,
+        x: 50,
+        y: 50,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish()
 
     :ok = UnitRegistry.register_unit(:mob, gid, MobState, mob, self())
     on_exit(fn -> UnitRegistry.unregister_unit(:mob, gid) end)
@@ -435,9 +441,7 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
       mob_id: 1002,
       spawn_ref: nil,
       hp: 100,
-      max_hp: 100,
       sp: 10,
-      max_sp: 10,
       spawned_at: 0,
       map_name: @map,
       x: 51,
@@ -452,6 +456,7 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
         race: :plant,
         element: {:water, 1},
         size: :medium,
+        class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
         modes: [],
         atk: 10,
         matk: 10,
@@ -466,5 +471,6 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
         damage_motion: 500
       }
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 10)
   end
 end

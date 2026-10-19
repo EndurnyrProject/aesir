@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       |> Map.merge(%{
         damage: min(damage, state.hp),
         hp_after: updated_mob.hp,
-        max_hp: state.max_hp,
+        max_hp: state.calculated.max_hp,
         attacker: attacker_ref
       })
     )
@@ -172,7 +172,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
         damage: 0,
         element: :neutral,
         hp_after: state.hp,
-        max_hp: state.max_hp,
+        max_hp: state.calculated.max_hp,
         attacker: typed_attacker(source)
       })
     )
@@ -217,7 +217,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   def handle_vanish(_hp_percent, _source, %{is_dead: true} = state), do: {:noreply, state}
 
   def handle_vanish(hp_percent, source, state) do
-    hp_amount = div(state.max_hp * max(hp_percent, 0), 100)
+    hp_amount = div(state.calculated.max_hp * max(hp_percent, 0), 100)
     hp_damage = min(hp_amount, max(state.hp - 1, 0))
 
     if hp_damage > 0,
@@ -236,7 +236,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     if DamageApplication.heal_refused?(:mob, state.instance_id) do
       {:noreply, state}
     else
-      state = StateCommit.commit(%{state | hp: min(state.hp + amount, state.max_hp)})
+      state = StateCommit.commit(%{state | hp: min(state.hp + amount, state.calculated.max_hp)})
       SpawnView.notify_hp_update(state)
       {:noreply, state}
     end

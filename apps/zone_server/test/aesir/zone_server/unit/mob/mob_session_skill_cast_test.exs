@@ -111,6 +111,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       element: {:neutral, 1},
       race: :formless,
       size: :medium,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([:can_attack]),
       modes: [:can_attack]
     }
 

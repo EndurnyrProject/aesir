@@ -109,20 +109,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTest do
 
     {:ok, data} = Mobs.by_id(1002)
 
-    mob = %MobState{
-      instance_id: 3,
-      mob_id: 1002,
-      mob_data: data,
-      spawn_ref: nil,
-      x: 8,
-      y: 8,
-      map_name: @map,
-      hp: 55,
-      max_hp: 55,
-      sp: 1,
-      max_sp: 1,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 3,
+        mob_id: 1002,
+        mob_data: data,
+        spawn_ref: nil,
+        x: 8,
+        y: 8,
+        map_name: @map,
+        hp: 55,
+        sp: 1,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 55, max_sp: 1)
 
     UnitRegistry.register_unit(:mob, 3, MobState, mob, self())
     assert {:ok, ^mob} = RgRaid.cast(mob, :self, 1, RgRaid.definition())

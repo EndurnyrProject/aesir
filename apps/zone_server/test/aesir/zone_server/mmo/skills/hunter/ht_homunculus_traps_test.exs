@@ -29,19 +29,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
   @cell {50, 50}
   @now 10_000
   @caster %MobState{
-    instance_id: 1000,
-    mob_id: 1002,
-    mob_data: %{element: {:neutral, 1}, race: :formless, modes: [], attack_motion: 500},
-    spawn_ref: nil,
-    map_name: "trap_hom",
-    x: 50,
-    y: 50,
-    hp: 100,
-    max_hp: 100,
-    sp: 10,
-    max_sp: 10,
-    spawned_at: 0
-  }
+            instance_id: 1000,
+            mob_id: 1002,
+            mob_data:
+              Aesir.TestMob.definition(
+                element: {:neutral, 1},
+                race: :formless,
+                modes: [],
+                attack_motion: 500
+              ),
+            spawn_ref: nil,
+            map_name: "trap_hom",
+            x: 50,
+            y: 50,
+            hp: 100,
+            sp: 10,
+            spawned_at: 0
+          }
+          |> Aesir.TestMob.publish(max_hp: 100, max_sp: 10)
 
   test "mob Land Mine uses the real hostile relation for Homunculus damage and Stun" do
     stub_units([mob(1000), homunculus(@gid, 3000)])

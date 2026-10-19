@@ -1219,14 +1219,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp attacker_status_modifiers(attacker) do
     {unit_type, unit_id} = get_unit_type_and_id(attacker)
-    ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+    ModifierCalculator.get_battle_modifiers(unit_type, unit_id)
   end
 
   defp player_damage_context(attacker, defender, opts, attack_path, defense_mode, parts, critical) do
     {attacker_type, attacker_id} = get_unit_type_and_id(attacker)
     {defender_type, defender_id} = get_unit_type_and_id(defender)
-    attacker_modifiers = ModifierCalculator.get_all_modifiers(attacker_type, attacker_id)
-    defender_modifiers = ModifierCalculator.get_all_modifiers(defender_type, defender_id)
+    attacker_modifiers = ModifierCalculator.get_battle_modifiers(attacker_type, attacker_id)
+    defender_modifiers = ModifierCalculator.get_battle_modifiers(defender_type, defender_id)
     element = Keyword.get(opts, :element) || resolve_attack_element(attacker, attacker_modifiers)
     skill_id = Keyword.get(opts, :skill_id)
 
@@ -1344,7 +1344,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     cards = %{
       elements: elements,
       ignore_element?: false,
-      status_modifiers: ModifierCalculator.get_all_modifiers(unit_type, unit_id),
+      status_modifiers: ModifierCalculator.get_battle_modifiers(unit_type, unit_id),
       attack_flag:
         BattleFlags.build(
           :weapon,
@@ -1737,7 +1737,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          def_formula
        ) do
     {unit_type, unit_id} = get_unit_type_and_id(defender)
-    modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+    modifiers = ModifierCalculator.get_battle_modifiers(unit_type, unit_id)
 
     {modified_hard_def, modified_soft_def} =
       DamageInputs.physical_defense(

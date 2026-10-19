@@ -68,20 +68,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
     assert {:error, _reason} = Interpreter.cast(caster, 138, 1, {:unit, 7})
     refute StatusStorage.has_status?(:player, 7, :sc_encpoison)
 
-    mob = %MobState{
-      instance_id: 100,
-      mob_id: 1002,
-      mob_data: %{modes: []},
-      spawn_ref: %{},
-      x: 51,
-      y: 50,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 100,
+        mob_id: 1002,
+        mob_data: Aesir.TestMob.definition(modes: []),
+        spawn_ref: %{},
+        x: 51,
+        y: 50,
+        map_name: "prontera",
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     :ok = UnitRegistry.register_unit(:mob, 100, MobState, mob, self())
     :ok = SpatialIndex.add_unit(:mob, 100, 51, 50, "prontera")

@@ -233,6 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
       attack_motion: 500,
       client_attack_motion: 400,
       damage_motion: 300,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: []
     }
 

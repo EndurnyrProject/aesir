@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Looting do
   end
 
   def search(%MobState{} = state, can_move, now) do
-    if can_move and :looter in (state.mob_data.modes || []) and state.target_ref == nil and
+    if can_move and MobState.mode?(state, :looter) and state.target_ref == nil and
          (state.act_delay_until == nil or now > state.act_delay_until) do
       item =
         state.map_name
@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Looting do
   end
 
   defp valid_floor_target?(state) do
-    modes = state.mob_data.modes || []
+    modes = MobState.modes(state)
 
     state.attack_timer_at != nil or
       (:can_attack in modes and :looter in modes and
@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Looting do
           List.last(state.walk_path) == {item.x, item.y} ->
         state
 
-      :can_move not in (state.mob_data.modes || []) ->
+      not MobState.mode?(state, :can_move) ->
         AIStateMachine.unlock_target(state, now)
 
       not can_move ->

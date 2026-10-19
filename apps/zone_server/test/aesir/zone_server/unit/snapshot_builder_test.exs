@@ -61,18 +61,21 @@ defmodule Aesir.ZoneServer.Unit.SnapshotBuilderTest do
   end
 
   defp mob_state(attrs) do
+    {max_hp, attrs} = Keyword.pop(attrs, :max_hp, 1000)
+
     %{
       instance_id: 5001,
+      mob_data: Aesir.TestMob.definition(),
       map_name: "prontera",
       x: 52,
       y: 50,
       dir: 1,
       movement_state: :standing,
-      hp: 1000,
-      max_hp: 1000
+      hp: 1000
     }
     |> Map.merge(Map.new(attrs))
     |> then(&struct(MobState, &1))
+    |> Aesir.TestMob.publish(max_hp: max_hp)
   end
 
   describe "entities_for/1" do

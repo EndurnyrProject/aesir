@@ -81,32 +81,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloakingTest do
   test "mob casting ignores adjacency and applies exactly ten seconds without a drain tick" do
     cache(MapData.new("open", 5, 5))
 
-    mob = %MobState{
-      instance_id: 3,
-      mob_id: 1002,
-      mob_data: %{
-        modes: [],
-        race: :formless,
-        element: {:neutral, 1},
-        size: :medium,
-        stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-        level: 1,
-        atk: 1,
-        matk: 1,
-        def: 0,
-        mdef: 0,
-        attack_delay: 1_000
-      },
-      spawn_ref: %{},
-      x: 2,
-      y: 2,
-      map_name: "open",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 3,
+        mob_id: 1002,
+        mob_data:
+          Aesir.TestMob.definition(
+            modes: [],
+            race: :formless,
+            element: {:neutral, 1},
+            size: :medium,
+            stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+            level: 1,
+            atk: 1,
+            matk: 1,
+            def: 0,
+            mdef: 0,
+            attack_delay: 1_000
+          ),
+        spawn_ref: %{},
+        x: 2,
+        y: 2,
+        map_name: "open",
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     :ok = UnitRegistry.register_unit(:mob, 3, MobState, mob, self())
 

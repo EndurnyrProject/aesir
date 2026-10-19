@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
   setup :set_mimic_from_context

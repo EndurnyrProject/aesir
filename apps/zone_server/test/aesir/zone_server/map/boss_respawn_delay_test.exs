@@ -165,6 +165,10 @@ defmodule Aesir.ZoneServer.Map.BossRespawnDelayTest do
       element: {:neutral, 1},
       race: :formless,
       size: :medium,
+      class:
+        Aesir.ZoneServer.Mmo.MobManagement.MobMode.class(
+          if(immune?, do: [:status_immune], else: [])
+        ),
       modes: if(immune?, do: [:status_immune], else: [])
     }
   end

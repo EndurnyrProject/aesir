@@ -56,11 +56,12 @@ defmodule Aesir.ZoneServer.Unit.AttackIntentTest do
       struct(MobState,
         instance_id: 2_001,
         is_dead: false,
-        mob_data: %{attack_range: 1},
+        mob_data: Aesir.TestMob.definition(attack_range: 1),
         map_name: "attack_intent_test",
         x: 0,
         y: 0
       )
+      |> Aesir.TestMob.publish()
 
     assert {:noreply, reacted} =
              MobSession.handle_info({:attack_intent, {:player, 1_001}}, state)

@@ -82,13 +82,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
     attacker = combatant(forged_weapon(1101, :fire, 0))
     defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
 
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :rand.seed(:exsss, {1, 2, 3})
 
     assert {:ok, %{damage: forged_damage}} =
              DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
 
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{attack_element: :water} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{attack_element: :water} end)
     :rand.seed(:exsss, {1, 2, 3})
 
     assert {:ok, %{damage: endow_damage}} =

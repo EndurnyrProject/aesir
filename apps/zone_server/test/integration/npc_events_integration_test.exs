@@ -305,7 +305,7 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
           |> MobState.new(mob_data, spawn_ref, map_name, x, y)
           |> MobState.set_owner_event(Keyword.get(opts, :event))
           |> Map.put(:hp, 1)
-          |> Map.put(:max_hp, 1)
+          |> then(&%{&1 | calculated: %{&1.calculated | max_hp: 1}})
 
         {:ok, pid} = MobSession.start_link(%{state: mob_state, awake: false})
         UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, pid)

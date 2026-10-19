@@ -105,7 +105,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatHandlerMasterCreditTest do
   end
 
   test "vanish takes a max-HP percentage without killing the mob and leaves its SP" do
-    victim = %{mob_state(1) | hp: 20, sp: 50, max_sp: 100}
+    victim = mob_state(1)
+    victim = %{victim | hp: 20, sp: 50, calculated: %{victim.calculated | max_sp: 100}}
 
     assert {:noreply, vanished} = CombatHandler.handle_vanish(100, {:player, 42}, victim)
 

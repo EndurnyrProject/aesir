@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedupTest do
 
     assert {:ok, faster} = NpcSpeedup.mob_cast(mob, {:unit, :mob, 7}, 1, definition(), %{})
 
-    assert faster.walk_speed == 550
+    assert faster.calculated.speed == 550
     assert faster.trickcasting == mob.trickcasting
     assert faster.last_skillcheck == now
     assert faster.can_escape
@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedupTest do
     mob =
       70_007
       |> MobState.new(mob_data(), spawn_ref(), "prontera", 30, 30)
-      |> Map.merge(%{base_walk_speed: 800, trickcasting: now + 3_000, last_skillcheck: now})
+      |> Map.merge(%{trickcasting: now + 3_000, last_skillcheck: now})
 
     UnitRegistry.register_unit(:mob, 70_007, MobState, mob, self())
     :ok = StatusStorage.apply_status(:mob, 70_007, :sc_decreaseagi, val1: 1, duration: 60_000)
@@ -39,9 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedupTest do
 
     assert {:ok, faster} = NpcSpeedup.mob_cast(mob, {:unit, :mob, 7}, 1, definition(), %{})
 
-    assert faster.base_walk_speed == 550
+    assert faster.base.speed == 550
     # Decrease AGI's 25% slow on the lowered base: 550 * 125 / 100.
-    assert faster.walk_speed == 687
+    assert faster.calculated.speed == 687
   end
 
   test "the last interval delays the next skill check by 100 ms" do
@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedupTest do
 
     assert {:ok, faster} = NpcSpeedup.mob_cast(mob, {:unit, :mob, 7}, 1, definition(), %{})
 
-    assert faster.walk_speed == 550
+    assert faster.calculated.speed == 550
     assert faster.last_skillcheck in (now + 100)..(System.system_time(:millisecond) + 100)
   end
 
@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedupTest do
     now = System.system_time(:millisecond)
     mob = mob(trickcasting: now + 3_000, walk_speed: 100)
 
-    assert {:ok, %MobState{walk_speed: 20}} =
+    assert {:ok, %MobState{calculated: %{speed: 20}}} =
              NpcSpeedup.mob_cast(mob, {:unit, :mob, 7}, 1, definition(), %{})
   end
 
@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedupTest do
 
     assert {:ok, stopped} = NpcSpeedup.mob_cast(mob, {:unit, :mob, 7}, 1, definition(), %{})
 
-    assert stopped.walk_speed == 800
+    assert stopped.calculated.speed == 800
     assert stopped.trickcasting == nil
     assert stopped.last_skillcheck == now + 500
     refute stopped.can_escape
@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedupTest do
 
     assert {:ok, stopped} = NpcSpeedup.mob_cast(mob, {:unit, :mob, 7}, 1, definition(), %{})
 
-    assert stopped.walk_speed == 800
+    assert stopped.calculated.speed == 800
     assert stopped.last_skillcheck == 0
     refute stopped.can_escape
   end
@@ -127,10 +127,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSpeedupTest do
   end
 
   defp mob(fields) do
-    fields = Keyword.merge([mob_id: 1142, walk_speed: 800, can_escape: true], fields)
+    {speed, fields} = Keyword.pop(fields, :walk_speed, 800)
+    fields = Keyword.merge([mob_id: 1142, can_escape: true], fields)
 
-    7
-    |> MobState.new(mob_data(), spawn_ref(), "prontera", 30, 30)
-    |> struct(Keyword.put_new(fields, :base_walk_speed, fields[:walk_speed]))
+    mob =
+      7
+      |> MobState.new(mob_data(), spawn_ref(), "prontera", 30, 30)
+      |> struct(fields)
+
+    %{mob | base: %{mob.base | speed: speed}, calculated: %{mob.calculated | speed: speed}}
   end
 end

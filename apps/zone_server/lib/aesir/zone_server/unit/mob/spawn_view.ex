@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
       object_type: ObjectType.mob(),
       aid: mob_state.instance_id,
       gid: mob_state.instance_id,
-      speed: mob_state.walk_speed,
+      speed: mob_state.calculated.speed,
       body_state: body_state,
       health_state: health_state,
       effect_state: effect_state,
@@ -43,8 +43,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
       x: mob_state.x,
       y: mob_state.y,
       dir: mob_state.dir,
-      clevel: mob_state.mob_data.level,
-      max_hp: mob_state.max_hp,
+      clevel: MobState.get_level(mob_state),
+      max_hp: mob_state.calculated.max_hp,
       hp: mob_state.hp,
       is_boss: MobState.is_boss?(mob_state),
       name: mob_state.mob_data.name,
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.SpawnView do
     packet = %UnitHp{
       id: mob_state.instance_id,
       hp: max(0, mob_state.hp),
-      max_hp: max(1, mob_state.max_hp)
+      max_hp: max(1, mob_state.calculated.max_hp)
     }
 
     broadcast_to_nearby_players(mob_state, packet)

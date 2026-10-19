@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
   setup :verify_on_exit!
 
   setup do
-    stub(ModifierCalculator, :get_all_modifiers, fn _type, _id -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _type, _id -> %{} end)
     :ok
   end
 
@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
   end
 
   test "the selected hand and explicit, status, then weapon element precedence are preserved" do
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       :player, 1102 -> %{attack_element: :neutral}
       :player, 1103 -> %{attack_element: :holy}
       _type, _id -> %{}

@@ -92,10 +92,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommoveTest do
       x: 30,
       y: 30,
       hp: 10,
-      max_hp: 10,
-      walk_speed: 800,
+      mob_data: Aesir.TestMob.definition(),
       last_skillcheck: System.system_time(:millisecond),
       is_dead: false
     )
+    |> Aesir.TestMob.publish(max_hp: 10, walk_speed: 800)
   end
 end

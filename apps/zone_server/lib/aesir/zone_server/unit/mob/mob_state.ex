@@ -11,11 +11,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Mmo.WalkSpeed
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.HitStop
   alias Aesir.ZoneServer.Unit.Mob.Calculated
@@ -31,12 +26,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
   @type skill_state :: :idle | :walk | :loot | :dead | :berserk | :angry | :rush | :follow
   @type movement_state :: :standing | :moving | :returning
-  @type stat_bonus :: %{
-          optional(:def) => integer(),
-          optional(:mdef) => integer(),
-          optional(:atk) => integer(),
-          optional(:aspd_rate) => 0..100
-        }
 
   @enforce_keys [
     :instance_id,
@@ -47,9 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     :y,
     :map_name,
     :hp,
-    :max_hp,
     :sp,
-    :max_sp,
     :spawned_at
   ]
   defstruct [
@@ -72,10 +59,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Movement state machine
     movement_state: :standing,
     walk_path: [],
-    # The speed statuses start from: the database walk speed, lowered by
-    # Speed Up. `walk_speed` is this through the active statuses.
-    base_walk_speed: 200,
-    walk_speed: 200,
     walk_delay_until: 0,
     # Where a move request made while walking redirects the walk once the
     # pending step lands.
@@ -158,7 +141,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     can_summon: false,
     owner_player_id: nil,
     guild_id: 0,
-    stat_bonus: %{},
     no_exp: false,
     no_drops: false,
     # True until the first AI tick after spawn has run skill selection; that
@@ -178,13 +160,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
     # Combat state
     hp: nil,
-    max_hp: nil,
-    # Immutable un-buffed HP ceiling. `max_hp` tracks the effective ceiling
-    # after `:max_hp_rate` statuses (e.g. SC_DELUGE); this is what the recalc
-    # scales from so a buff never compounds on a previous buff.
-    base_max_hp: nil,
     sp: nil,
-    max_sp: nil,
     is_dead: false,
 
     # Spatial awareness
@@ -235,8 +211,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           dir: integer(),
           movement_state: movement_state(),
           walk_path: list(),
-          base_walk_speed: integer(),
-          walk_speed: integer(),
           walk_delay_until: integer(),
           walk_target: {integer(), integer()} | nil,
           pending_step: HitStop.step(),
@@ -271,7 +245,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           can_summon: boolean(),
           owner_player_id: integer() | nil,
           guild_id: non_neg_integer(),
-          stat_bonus: stat_bonus(),
           no_exp: boolean(),
           no_drops: boolean(),
           spawn_tick_pending?: boolean(),
@@ -293,10 +266,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           last_attack_time: integer() | nil,
           next_think_at: integer() | nil,
           hp: integer(),
-          max_hp: integer(),
-          base_max_hp: integer() | nil,
           sp: integer(),
-          max_sp: integer(),
           is_dead: boolean(),
           view_range: integer(),
           visible_entities: MapSet.t(),
@@ -329,22 +299,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       y: y,
       spawn_point: {x, y},
       hp: max(mob_data.hp, 1),
-      max_hp: max(mob_data.hp, 1),
-      base_max_hp: max(mob_data.hp, 1),
       sp: mob_data.sp,
-      max_sp: mob_data.sp,
       spawned_at: current_time,
       last_ai_tick: current_time,
       status_effects: %{},
-      base_walk_speed: mob_data.walk_speed,
-      walk_speed: mob_data.walk_speed,
       view_range: mob_data.skill_range,
       respawn_delay: spawn_ref.respawn_time,
       aggressive: :angry in (mob_data.modes || [])
     }
 
     base = Stats.base(state)
-    %{state | base: base, calculated: base, sp: base.max_sp, max_sp: base.max_sp}
+    %{state | base: base, calculated: base, sp: base.max_sp}
   end
 
   @doc "The runtime level, which can differ from the current form's database level."
@@ -357,43 +322,53 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     mob_data.race
   end
 
-  # Reads the `:sc_elementalchange` entry directly instead of going through
-  # `Interpreter.get_all_modifiers/2`: that path builds a context for every
-  # active status via `ContextBuilder.get_unit_stats/2`, which calls back into
-  # `UnitRegistry.get_unit_info/2` -> `get_entity_info/1` ->
-  # `Unit.build_entity_info/2` -> this very function. Routing through the
-  # aggregator here would recurse forever the moment the mob carries any
-  # active status at all.
   @impl Aesir.ZoneServer.Unit
-  def get_element(%__MODULE__{instance_id: instance_id, mob_data: %{element: element}}) do
-    case StatusStorage.get_status(:mob, instance_id, :sc_elementalchange) do
-      nil -> element
-      instance -> ElementalChange.modifiers(instance, %{}).element_override
-    end
+  def get_element(%__MODULE__{calculated: %Calculated{def_ele: element, ele_lv: level}}) do
+    {element, level}
   end
 
-  @doc "The monster class the mob runs as, derived from its current modes."
+  def get_element(%__MODULE__{mob_data: %{element: element}}), do: element
+
+  @doc "The monster class the mob runs as, from its calculated mode."
   @spec monster_class(t()) :: MobMode.class()
-  def monster_class(%__MODULE__{mob_data: %{modes: modes}}), do: MobMode.class(modes)
+  def monster_class(%__MODULE__{calculated: %Calculated{class: class}}), do: class
+  def monster_class(%__MODULE__{mob_data: %{modes: modes}}), do: MobMode.class(modes || [])
+  def monster_class(%__MODULE__{}), do: :normal
+
+  @doc "The monster's calculated mode atoms."
+  @spec modes(t()) :: [atom()]
+  def modes(%__MODULE__{} = state), do: mode_atoms(state)
+
+  @doc "Whether the monster's calculated mode includes `mode`."
+  @spec mode?(t(), atom()) :: boolean()
+  def mode?(%__MODULE__{} = state, mode), do: mode in mode_atoms(state)
 
   @impl Aesir.ZoneServer.Unit
   def is_boss?(%__MODULE__{} = mob_state), do: monster_class(mob_state) == :boss
 
   @doc "Whether the monster resists being knocked back: the knockback-immune mode."
   @impl Aesir.ZoneServer.Unit
-  def knockback_immune?(%__MODULE__{mob_data: %{modes: modes}}), do: :knockback_immune in modes
+  def knockback_immune?(%__MODULE__{calculated: %Calculated{mode: mode}}),
+    do: :knockback_immune in MobMode.from_mask(mode)
+
+  def knockback_immune?(%__MODULE__{}), do: false
 
   @doc """
   Whether the monster is status-immune (MD_STATUSIMMUNE): the boss, guardian
   and battlefield classes.
   """
   @spec status_immune?(t()) :: boolean()
-  def status_immune?(%__MODULE__{mob_data: %{modes: modes}}), do: :status_immune in (modes || [])
+  def status_immune?(%__MODULE__{calculated: %Calculated{mode: mode}}),
+    do: :status_immune in MobMode.from_mask(mode)
+
   def status_immune?(%__MODULE__{}), do: false
 
   @doc "Whether the monster has detector mode, seeing through Hiding and Cloaking."
   @spec detector?(t()) :: boolean()
-  def detector?(%__MODULE__{mob_data: mob_data}), do: :detector in (mob_data.modes || [])
+  def detector?(%__MODULE__{calculated: %Calculated{mode: mode}}),
+    do: :detector in MobMode.from_mask(mode)
+
+  def detector?(%__MODULE__{}), do: false
 
   @impl Aesir.ZoneServer.Unit
   def get_size(%__MODULE__{mob_data: mob_data}) do
@@ -401,29 +376,30 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @impl Aesir.ZoneServer.Unit
-  def get_stats(%__MODULE__{mob_data: mob_data} = mob) do
-    # The status-effect view of a mob: primary stats, vitals, level and the
-    # database combat numbers. Derived combat stats live in `to_combatant/1`.
+  def get_stats(%__MODULE__{base: base, calculated: calculated} = mob) do
+    # The status-effect view of a mob: published primary stats, vitals, level
+    # and the calculated combat numbers. Derived combat stats live in
+    # `to_combatant/1`.
     %{
-      str: mob_data.stats.str,
-      agi: mob_data.stats.agi,
-      vit: mob_data.stats.vit,
-      int: mob_data.stats.int,
-      dex: mob_data.stats.dex,
-      luk: mob_data.stats.luk,
+      str: calculated.str,
+      agi: calculated.agi,
+      vit: calculated.vit,
+      int: calculated.int,
+      dex: calculated.dex,
+      luk: calculated.luk,
       # A mob carries no job, equipment or allocated split: its stats are calculated.
-      total_stats: primary_stats(mob_data.stats),
-      unbuffed_stats: primary_stats(mob_data.stats),
-      base_level: mob_data.level,
+      total_stats: primary_stats(calculated),
+      unbuffed_stats: primary_stats(base || calculated),
+      base_level: get_level(mob),
       job_level: 1,
       hp: mob.hp,
-      max_hp: mob.max_hp,
+      max_hp: calculated.max_hp,
       sp: mob.sp,
-      max_sp: mob.max_sp,
-      atk: mob_data.atk,
-      matk: mob_data.matk,
-      def: mob_data.def,
-      mdef: mob_data.mdef
+      max_sp: calculated.max_sp,
+      atk: calculated.batk,
+      matk: calculated.matk_max,
+      def: calculated.def,
+      mdef: calculated.mdef
     }
   end
 
@@ -459,8 +435,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @impl Aesir.ZoneServer.Unit
-  def get_custom_immunities(%__MODULE__{mob_data: mob_data}) do
-    modes = mob_data.modes || []
+  def get_custom_immunities(%__MODULE__{} = mob) do
+    modes = mode_atoms(mob)
     immunities = if :status_immune in modes, do: [:status_immune], else: []
 
     immunities =
@@ -492,22 +468,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = mob_state) do
     mob_data = mob_state.mob_data
-    formulas = Mechanics.mob_formulas()
-    modifiers = Interpreter.get_all_modifiers(:mob, mob_state.instance_id)
-
-    stat_bonus = mob_state.stat_bonus
-    str = mob_data.stats.str + modifier(modifiers, :str)
-    int = mob_data.stats.int + modifier(modifiers, :int)
-    guard_up = Map.get(stat_bonus, :atk, 0)
-    {atk_min, atk_max} = formulas.attack_bounds(mob_data, modifiers)
-    atk_max = atk_max + guard_up
-    {matk_min, matk_max} = formulas.magic_attack_bounds(mob_data, int, modifiers)
-    # Renewal Heal adds the database MATK on top of the base bounds again
-    # (`skill_calc_heal`'s weapon MATK, no variance for a monster).
-    {heal_matk_min, heal_matk_max} = formulas.magic_attack_bounds(mob_data, int, %{})
-
-    {heal_matk_min, heal_matk_max} =
-      {heal_matk_min + mob_data.matk, heal_matk_max + mob_data.matk}
+    calculated = mob_state.calculated
+    {heal_matk_min, heal_matk_max} = heal_matk(mob_state, calculated)
 
     Combatant.new!(%{
       unit_id: mob_state.instance_id,
@@ -516,105 +478,73 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       reward_root: nil,
       guild_id: mob_state.guild_id,
       base_stats: %{
-        str: str,
-        agi: mob_data.stats.agi + modifier(modifiers, :agi),
-        vit: mob_data.stats.vit + modifier(modifiers, :vit),
-        int: int,
-        dex: mob_data.stats.dex + modifier(modifiers, :dex),
-        luk: mob_data.stats.luk + modifier(modifiers, :luk)
+        str: calculated.str,
+        agi: calculated.agi,
+        vit: calculated.vit,
+        int: calculated.int,
+        dex: calculated.dex,
+        luk: calculated.luk
       },
       combat_stats: %{
-        hit: formulas.calculate_hit(mob_data) + modifier(modifiers, :hit),
-        flee:
-          max(
-            div(
-              (formulas.calculate_flee(mob_data) + modifier(modifiers, :flee)) *
-                (100 + modifier(modifiers, :flee_rate)),
-              100
-            ),
-            1
-          ),
-        perfect_dodge: formulas.calculate_perfect_dodge(mob_data),
-        def:
-          formulas.calculate_defense(mob_data) + modifier(modifiers, :def) +
-            Map.get(stat_bonus, :def, 0),
-        soft_def: formulas.calculate_soft_defense(mob_data),
-        atk: formulas.status_attack(mob_data, str, guard_up, modifiers),
-        atk_min: min(atk_min + guard_up, atk_max),
-        atk_max: atk_max,
-        matk: matk_max,
-        matk_min: matk_min,
-        matk_max: matk_max,
+        hit: calculated.hit,
+        flee: calculated.flee,
+        perfect_dodge: calculated.flee2,
+        def: calculated.def,
+        soft_def: calculated.def2,
+        atk: calculated.batk,
+        atk_min: min(calculated.watk_min, calculated.watk_max),
+        atk_max: calculated.watk_max,
+        matk: calculated.matk_max,
+        matk_min: calculated.matk_min,
+        matk_max: calculated.matk_max,
         heal_matk_min: heal_matk_min,
         heal_matk_max: heal_matk_max,
-        mdef:
-          formulas.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef) +
-            Map.get(stat_bonus, :mdef, 0),
-        soft_mdef:
-          apply_rate(formulas.calculate_soft_mdef(mob_data), modifier(modifiers, :mdef2_rate)),
+        mdef: calculated.mdef,
+        soft_mdef: calculated.mdef2,
         ignore_size_penalty: false,
         max_weapon_damage: false
       },
-      max_hp: mob_state.max_hp,
-      max_sp: mob_state.max_sp,
+      max_hp: calculated.max_hp,
+      max_sp: calculated.max_sp,
       progression: %{
-        base_level: mob_data.level,
+        base_level: get_level(mob_state),
         job_level: 1
       },
-      element: Map.get(modifiers, :element_override, mob_data.element),
-      race: mob_data.race,
+      element: {calculated.def_ele, calculated.ele_lv},
+      race: calculated.race,
       race2: mob_data.race_groups,
-      size: mob_data.size,
+      size: calculated.size,
       weapon: %{
         type: :fist,
-        element: elem(mob_data.element, 0),
-        size: mob_data.size
+        element: calculated.attack_element,
+        size: calculated.size
       },
       attack_range: mob_data.attack_range,
       attack_delay_ms: get_attack_delay(mob_state),
       amotion: get_attack_motion(mob_state),
       position: {mob_state.x, mob_state.y},
       map_name: mob_state.map_name,
-      class: monster_class(mob_state),
-      status_immune: :status_immune in mob_data.modes,
+      class: calculated.class,
+      status_immune: status_immune?(mob_state),
       detector: detector?(mob_state),
-      ignore_modes: Enum.filter(mob_data.modes, &(&1 in Combatant.ignore_modes())),
+      ignore_modes:
+        Enum.filter(MobMode.from_mask(calculated.mode), &(&1 in Combatant.ignore_modes())),
       monster_id: mob_state.mob_id,
       equip_modifiers: %{}
     })
   end
 
+  # Renewal Heal adds the database MATK on top of the base bounds again
+  # (`skill_calc_heal`'s weapon MATK, with no variance for a monster). The
+  # bounds come from the calculated INT and the runtime level, never from the
+  # amplified cached MATK band.
+  defp heal_matk(mob_state, calculated) do
+    data = %{mob_state.mob_data | level: get_level(mob_state)}
+    {minimum, maximum} = Mechanics.mob_formulas().magic_attack_bounds(data, calculated.int, %{})
+    {minimum + mob_state.mob_data.matk, maximum + mob_state.mob_data.matk}
+  end
+
   # State Management Functions
-
-  @doc """
-  Recomputes `walk_speed` from `base_walk_speed` and the mob's active statuses
-  (`WalkSpeed.calculate/3`). A new spawn has no statuses, so it walks at its
-  base speed.
-  """
-  @spec recalculate_walk_speed(t()) :: t()
-  def recalculate_walk_speed(%__MODULE__{instance_id: instance_id} = state) do
-    modifiers = ModifierCalculator.get_all_modifiers(:mob, instance_id, get_stats(state))
-    %{state | walk_speed: WalkSpeed.calculate(state.base_walk_speed, modifiers)}
-  end
-
-  @doc """
-  Recomputes `max_hp` from the immutable `base_max_hp` and the unit's aggregated
-  `:max_hp_rate` status modifier (e.g. SC_DELUGE), then clamps current HP to the
-  new ceiling.
-
-  Mirrors rAthena's `status_calc_maxhp` for non-PC units (`status.cpp:6213`,
-  `status.cpp:8712`): a buff raises the ceiling without healing, and its removal
-  caps any overflow HP back down. Unlike a player's cached stats, every other
-  mob combat number is folded live in `to_combatant/1`, so only the stored HP
-  ceiling needs an explicit recompute.
-  """
-  @spec recalculate_max_hp(t()) :: t()
-  def recalculate_max_hp(%__MODULE__{instance_id: instance_id} = state) do
-    base = state.base_max_hp || state.max_hp
-    rate = :mob |> Interpreter.get_all_modifiers(instance_id) |> Map.get(:max_hp_rate, 0)
-    new_max = max(1, div(base * (100 + rate), 100))
-    %{state | max_hp: new_max, hp: min(state.hp, new_max)}
-  end
 
   @doc """
   Sets the process PID for this mob state.
@@ -712,13 +642,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       when chase in [:rush, :follow],
       do: %{state | skill_state: if(aggressive, do: :follow, else: :rush)}
 
-  def set_state(%__MODULE__{mob_data: mob_data} = state, skill_state)
+  def set_state(%__MODULE__{} = state, skill_state)
       when skill_state in [:idle, :walk, :loot, :dead] do
-    %{state | skill_state: skill_state, aggressive: :angry in modes(mob_data)}
+    %{state | skill_state: skill_state, aggressive: :angry in mode_atoms(state)}
   end
 
-  defp modes(%{modes: modes}), do: modes || []
-  defp modes(_mob_data), do: []
+  # The mode bits a status can alter live in the calculated snapshot, never in
+  # the immutable form definition.
+  defp mode_atoms(%__MODULE__{calculated: %Calculated{mode: mode}}),
+    do: MobMode.from_mask(mode)
+
+  defp mode_atoms(%__MODULE__{mob_data: %{modes: modes}}), do: modes || []
+  defp mode_atoms(%__MODULE__{}), do: []
 
   @doc """
   Resets the mob as it leaves its map for a warp: the attack and chase orders,
@@ -891,26 +826,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         | owner_player_id: Keyword.get(opts, :owner_player_id),
           guild_id: Keyword.get(opts, :guild_id, 0),
           no_exp: Keyword.get(opts, :no_exp, false),
-          no_drops: Keyword.get(opts, :no_drops, false),
-          stat_bonus: Keyword.get(opts, :stat_bonus, %{})
+          no_drops: Keyword.get(opts, :no_drops, false)
       }
 
     level = if state.level in 1..275, do: state.level, else: state.mob_data.level
     state = %{state | level: level}
     base = Stats.prepare_base(state, opts)
 
-    %{
-      state
-      | base: base,
-        calculated: base,
-        hp: base.max_hp,
-        max_hp: base.max_hp,
-        base_max_hp: base.max_hp,
-        sp: base.max_sp,
-        max_sp: base.max_sp,
-        base_walk_speed: base.speed,
-        walk_speed: base.speed
-    }
+    %{state | base: base, calculated: base, hp: base.max_hp, sp: base.max_sp}
   end
 
   @doc """
@@ -1079,9 +1002,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   Checks if the mob should be aggressive towards players.
   """
   @spec aggressive?(t()) :: boolean()
-  def aggressive?(%__MODULE__{mob_data: mob_data}) do
-    :aggressive in (mob_data.modes || [])
-  end
+  def aggressive?(%__MODULE__{calculated: %Calculated{mode: mode}}),
+    do: :aggressive in MobMode.from_mask(mode)
+
+  def aggressive?(%__MODULE__{mob_data: mob_data}), do: :aggressive in (mob_data.modes || [])
 
   @doc """
   Gets the mob's attack range.
@@ -1108,27 +1032,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   and 8000.
   """
   @spec get_attack_delay(t()) :: integer()
-  def get_attack_delay(%__MODULE__{mob_data: mob_data, stat_bonus: stat_bonus} = state) do
-    rate = max(Map.get(stat_bonus, :aspd_rate, 0), 0)
-
-    (mob_data.attack_delay * (100 - rate))
-    |> div(100)
-    |> max(get_attack_motion(state))
-    |> min(@max_motion)
+  def get_attack_delay(%__MODULE__{calculated: %Calculated{adelay: adelay, amotion: amotion}}) do
+    adelay |> max(amotion) |> min(@max_motion)
   end
 
   @doc """
-  Gets the mob's attack motion in milliseconds: its database motion scaled by
-  its `aspd_rate` bonus, kept between 100 and 8000.
+  Gets the mob's attack motion in milliseconds: its calculated motion, kept
+  between 100 and 8000.
   """
   @spec get_attack_motion(t()) :: integer()
-  def get_attack_motion(%__MODULE__{mob_data: mob_data, stat_bonus: stat_bonus}) do
-    rate = Map.get(stat_bonus, :aspd_rate, 0)
-
-    (mob_data.attack_motion * (100 - rate))
-    |> div(100)
-    |> max(@min_amotion)
-    |> min(@max_motion)
+  def get_attack_motion(%__MODULE__{calculated: %Calculated{amotion: amotion}}) do
+    amotion |> max(@min_amotion) |> min(@max_motion)
   end
 
   @doc """
@@ -1144,10 +1058,4 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec thinking?(t(), integer()) :: boolean()
   def thinking?(%__MODULE__{next_think_at: nil}, _now), do: true
   def thinking?(%__MODULE__{next_think_at: next}, now), do: now >= next
-
-  # Private Helper Functions
-
-  defp modifier(modifiers, key), do: Map.get(modifiers, key, 0)
-
-  defp apply_rate(value, rate), do: div(value * (100 + rate), 100)
 end

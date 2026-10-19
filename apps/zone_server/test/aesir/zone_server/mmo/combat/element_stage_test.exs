@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
     Mimic.copy(SizeModifiers)
     Mimic.copy(ModifierCalculator)
     stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     test_pid = self()
 
     stub(ElementModifiers, :adjust_damage, fn damage, adjustment ->
@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementStageTest do
 
   @tag game_mode: :pre_renewal
   test "classic Magnum Break's share takes its own fire step on a player hit" do
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       :player, _id -> %{{:pseudo_element_atk, :fire} => 20}
       _type, _id -> %{}
     end)

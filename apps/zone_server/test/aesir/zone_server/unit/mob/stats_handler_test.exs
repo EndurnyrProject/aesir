@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StatsHandlerTest do
       assert {:noreply, lowered} =
                StatsHandler.handle_status_changed(:sc_incmhprate, :apply, state)
 
-      assert lowered.max_hp == 500
+      assert lowered.calculated.max_hp == 500
       assert lowered.hp == 500
       assert lowered.calculated.max_hp == 500
       assert {:ok, {MobState, registered, _pid}} = UnitRegistry.get_unit(:mob, state.instance_id)
@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StatsHandlerTest do
       :ok = StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5, val2: 15)
 
       assert {:noreply, raised} = StatsHandler.handle_status_changed(:sc_deluge, :apply, lowered)
-      assert raised.max_hp == 1150
+      assert raised.calculated.max_hp == 1150
       assert raised.hp == 500
     end
   end
@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StatsHandlerTest do
       assert {:noreply, slowed} =
                StatsHandler.handle_status_changed(:sc_decreaseagi, :apply, state)
 
-      assert slowed.walk_speed == 250
+      assert slowed.calculated.speed == 250
       assert slowed.walk_target == {32, 30}
       assert slowed.pending_step == {:pending, 123}
     end
@@ -158,8 +158,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.StatsHandlerTest do
       new_base = %{state.base | speed: 400}
       updated = StatsHandler.replace_base(%{state | calculated: state.base}, new_base, ["Speed"])
 
-      assert updated.walk_speed == 400
-      assert updated.base_walk_speed == 400
+      assert updated.calculated.speed == 400
+      assert updated.base.speed == 400
       assert updated.calculated.str == state.base.str
       assert {:ok, {MobState, registered, _pid}} = UnitRegistry.get_unit(:mob, state.instance_id)
       assert registered == state

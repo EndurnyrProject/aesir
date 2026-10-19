@@ -172,6 +172,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobAttackedThinkTest do
       element: {:neutral, 1},
       race: :formless,
       size: :medium,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([:can_move, :can_attack]),
       modes: [:can_move, :can_attack]
     }
 

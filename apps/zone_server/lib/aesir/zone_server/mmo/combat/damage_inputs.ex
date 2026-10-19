@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   defp summed_luk(unit) do
     status_luk =
       unit.unit_type
-      |> ModifierCalculator.get_all_modifiers(unit.unit_id)
+      |> ModifierCalculator.get_battle_modifiers(unit.unit_id)
       |> Map.get(:luk, 0)
 
     Map.get(unit.base_stats, :luk, 0) + Map.get(unit.equip_modifiers, :luk, 0) + status_luk
@@ -120,7 +120,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
   defp bare_hand_watk(attacker) do
     if GameMode.mode() == :pre_renewal,
-      do: :player |> ModifierCalculator.get_all_modifiers(attacker.unit_id) |> Map.get(:watk, 0),
+      do:
+        :player |> ModifierCalculator.get_battle_modifiers(attacker.unit_id) |> Map.get(:watk, 0),
       else: 0
   end
 
@@ -138,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   # level-4 weapon. Renewal: the right hand when it holds a weapon, else the
   # left; a second weapon never.
   defp status_watk(attacker, hand) do
-    modifiers = ModifierCalculator.get_all_modifiers(:player, attacker.unit_id)
+    modifiers = ModifierCalculator.get_battle_modifiers(:player, attacker.unit_id)
 
     case GameMode.mode() do
       :pre_renewal -> classic_status_watk(hand, modifiers)

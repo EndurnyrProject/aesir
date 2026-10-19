@@ -1637,7 +1637,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
     stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
 
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       :player, 1001 -> %{atk_rate: 50}
       _, _ -> %{}
     end)
@@ -1740,7 +1740,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       target_state = %TestUnit{combatant: target, hp: 100, x: 101, y: 100}
 
       # The held status is read by the gate only; its ASPD modifier is not under test.
-      stub(ModifierCalculator, :get_all_modifiers, fn _unit_type, _unit_id -> %{} end)
+      stub(ModifierCalculator, :get_battle_modifiers, fn _unit_type, _unit_id -> %{} end)
 
       stub(TargetResolver, :resolve, fn
         {:mob, 2001} -> {:ok, self(), target_state, :mob}

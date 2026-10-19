@@ -11,13 +11,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule UnitStub do
     def get_entity_info(_state), do: %{stats: %{}}
@@ -161,11 +159,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
       y: 20,
       map_name: "prontera",
       hp: 100,
-      max_hp: 100,
       sp: 100,
-      max_sp: 100,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 100)
   end
 
   @tag game_mode: :pre_renewal

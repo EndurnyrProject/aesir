@@ -187,7 +187,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.LootingTest do
     now = System.system_time(:millisecond)
     assert Looting.search(%{state | act_delay_until: now}, true, now).loot_target_id == nil
     assert Looting.search(state, false, now).loot_target_id == nil
-    non_looter = %{state | mob_data: %{state.mob_data | modes: [:can_move]}}
+
+    non_looter =
+      Aesir.TestMob.publish(%{state | mob_data: %{state.mob_data | modes: [:can_move]}})
+
     assert Looting.search(non_looter, true, now).loot_target_id == nil
     assert Looting.search(state, true, now).loot_target_id == item.id
     Mimic.copy(LineOfSight)

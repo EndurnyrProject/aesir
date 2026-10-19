@@ -328,6 +328,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
       client_attack_motion: 500,
       damage_motion: 400,
       ai_type: 0,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: [],
       drops: []
     }
@@ -348,11 +349,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
       y: y,
       map_name: "prontera",
       hp: 100,
-      max_hp: 100,
       sp: 50,
-      max_sp: 50,
       spawned_at: System.system_time(:second),
       aggro_list: %{}
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 50)
   end
 end

@@ -171,20 +171,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
   end
 
   defp stub_target do
-    target = %MobState{
-      instance_id: 2_000,
-      mob_id: 1_002,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: 18,
-      y: 10,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    target =
+      %MobState{
+        instance_id: 2_000,
+        mob_id: 1_002,
+        mob_data: nil,
+        spawn_ref: nil,
+        x: 18,
+        y: 10,
+        map_name: "prontera",
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), target, :mob} end)
     stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :mob, {18, 10, "prontera"}} end)

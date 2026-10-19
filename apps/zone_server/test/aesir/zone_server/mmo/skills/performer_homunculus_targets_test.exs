@@ -23,20 +23,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.PerformerHomunculusTargetsTest do
 
   for {skill, status} <- [{BaFrostjoker, :sc_freeze}, {DcScream, :sc_stun}] do
     test "#{skill} includes enemy homunculi in its delayed area" do
-      caster = %MobState{
-        instance_id: 1,
-        mob_id: 1002,
-        mob_data: %{},
-        spawn_ref: nil,
-        x: 100,
-        y: 100,
-        map_name: "prontera",
-        hp: 100,
-        max_hp: 100,
-        sp: 0,
-        max_sp: 0,
-        spawned_at: 0
-      }
+      caster =
+        %MobState{
+          instance_id: 1,
+          mob_id: 1002,
+          mob_data: Aesir.TestMob.definition(),
+          spawn_ref: nil,
+          x: 100,
+          y: 100,
+          map_name: "prontera",
+          hp: 100,
+          sp: 0,
+          spawned_at: 0
+        }
+        |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
       target = %HomunculusState{
         id: 3,

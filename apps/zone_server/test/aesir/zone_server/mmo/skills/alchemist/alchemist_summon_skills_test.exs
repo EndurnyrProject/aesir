@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
           |> MobState.configure_summon(opts)
 
         assert configured.hp == expected_hp
-        assert configured.max_hp == expected_hp
+        assert configured.calculated.max_hp == expected_hp
       end
     )
   end

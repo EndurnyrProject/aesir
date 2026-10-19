@@ -89,12 +89,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSummonslaveTest do
       instance_id: @caster_id,
       mob_data: data,
       hp: 100,
-      max_hp: 100,
-      base_walk_speed: data.walk_speed,
       map_name: @map,
       x: 100,
       y: 100
     })
+    |> Aesir.TestMob.publish(max_hp: 100, walk_speed: data.walk_speed)
   end
 
   defp row(vals, level \\ 2) do

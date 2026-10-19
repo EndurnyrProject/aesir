@@ -44,13 +44,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrustTest do
     attacker = CombatTestHelper.create_player_combatant()
     defender = CombatTestHelper.create_mob_combatant(def: 0)
 
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     :rand.seed(:exsss, {1, 2, 3})
     {:ok, base} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
 
     over_thrust = OverThrust.modifiers(%StatusEntry{val1: 25, state: %{}}, %{})
 
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       :player, 1001 -> over_thrust
       _, _ -> %{}
     end)

@@ -223,7 +223,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
           ref: {:mob, id},
           position: {x, y},
           hp: mob.hp,
-          max_hp: mob.max_hp,
+          max_hp: mob.calculated.max_hp,
           class_id: mob.mob_id,
           boss?: MobState.is_boss?(mob),
           claim_root: claim_root(mob)

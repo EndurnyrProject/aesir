@@ -20,10 +20,13 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -63,9 +66,20 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       assert mob.map_name == "prontera"
     end
 
-    test "a slave discards its species modes and copies its master's base speed" do
+    test "a slave holds the slave mode selection and copies its master's base speed" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
-      master = struct(MobState, %{instance_id: 42, base_walk_speed: 95, walk_speed: 700})
+
+      master =
+        MobState.new(
+          42,
+          Aesir.TestMob.definition(walk_speed: 95),
+          %{respawn_time: 0},
+          "prontera",
+          150,
+          100
+        )
+
+      master = %{master | calculated: %{master.calculated | speed: 700}}
       UnitRegistry.register_unit(:mob, 42, MobState, master, self())
       state = %Coordinator{map_name: "prontera", next_mob_id: 1}
 
@@ -78,11 +92,13 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
 
       assert {:ok, {MobState, slave, _}} = UnitRegistry.get_unit(:mob, id)
 
-      assert Enum.sort(slave.mob_data.modes) ==
-               Enum.sort([:can_move, :can_attack, :no_random_walk])
+      slave_mask = MobMode.mask([:can_move, :can_attack, :no_random_walk])
 
-      assert slave.walk_speed == 95
-      assert slave.base_walk_speed == 95
+      assert %StatusEntry{val2: ^slave_mask} =
+               StatusStorage.get_status(:mob, id, :sc_modechange)
+
+      assert slave.calculated.speed == 95
+      assert slave.base.speed == 95
     end
 
     test "a mob spawning on a ground unit's cell is placed by it" do
@@ -160,7 +176,6 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
                        %MobState{
                          owner_player_id: 42,
                          hp: 2_345,
-                         max_hp: 2_345,
                          no_exp: true,
                          no_drops: true
                        }, session_opts}

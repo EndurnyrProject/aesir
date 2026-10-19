@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler do
       flags ->
         committed = state |> recalculate(flags) |> StateCommit.commit()
 
-        if committed.max_hp != state.max_hp or committed.hp != state.hp,
+        if committed.calculated.max_hp != state.calculated.max_hp or committed.hp != state.hp,
           do: SpawnView.notify_hp_update(committed)
 
         {:noreply, committed}
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler do
   """
   @spec replace_base(MobState.t(), Calculated.t(), [CalcFlags.flag()]) :: MobState.t()
   def replace_base(%MobState{} = state, %Calculated{} = base, flags) do
-    %{state | base: base, base_max_hp: base.max_hp, base_walk_speed: base.speed}
+    %{state | base: base}
     |> recalculate(flags)
   end
 
@@ -107,31 +107,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler do
     calculated = Stats.recalculate(state, entries, expanded)
 
     state = %{state | calculated: calculated}
-    state = if MapSet.member?(selected, "Speed"), do: apply_speed(state, calculated), else: state
+    state = if MapSet.member?(selected, "Speed"), do: apply_speed(state), else: state
     state = if MapSet.member?(selected, "Mode"), do: apply_mode(state), else: state
 
     state =
       if MapSet.member?(selected, "MaxHp"),
-        do: clamp_resource(state, :max_hp, calculated.max_hp, :hp),
+        do: clamp_resource(state, calculated.max_hp, :hp),
         else: state
 
     if MapSet.member?(selected, "MaxSp"),
-      do: clamp_resource(state, :max_sp, calculated.max_sp, :sp),
+      do: clamp_resource(state, calculated.max_sp, :sp),
       else: state
   end
 
   # The source re-walks on a speed selection so the new speed prices the steps
-  # after the pending one, which keeps its own token, cost and deadline.
-  defp apply_speed(state, calculated) do
-    state
-    |> Map.put(:walk_speed, calculated.speed)
-    |> MovementHandler.rewalk_after_speed_change()
-  end
+  # after the pending one, which keeps its own token, cost and deadline. The
+  # speed itself already lives in the recalculated snapshot.
+  defp apply_speed(state), do: MovementHandler.rewalk_after_speed_change(state)
 
-  defp clamp_resource(state, maximum_field, maximum, current_field) do
-    state
-    |> Map.put(maximum_field, maximum)
-    |> Map.update!(current_field, &min(&1, maximum))
+  defp clamp_resource(state, maximum, current_field) do
+    Map.update!(state, current_field, &min(&1, maximum))
   end
 
   # A mode selection that drops attack or movement stops the mob, never its cast.

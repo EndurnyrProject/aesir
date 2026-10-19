@@ -275,17 +275,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
     %MobState{
       instance_id: @target_id,
       mob_id: 1_002,
-      mob_data: %{element: {:neutral, 1}, race: :formless, modes: [], level: 1},
+      mob_data:
+        Aesir.TestMob.definition(element: {:neutral, 1}, race: :formless, modes: [], level: 1),
       spawn_ref: nil,
       map_name: "prontera",
       x: 10,
       y: 11,
       hp: 100,
-      max_hp: 100,
       sp: 100,
-      max_sp: 100,
       spawned_at: 0,
       deferred_epoch: 3
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 100)
   end
 end

@@ -58,17 +58,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     %MobState{
       instance_id: id,
       mob_id: 1002,
-      mob_data: %{element: {:neutral, 1}, race: :formless, modes: []},
+      mob_data: Aesir.TestMob.definition(element: {:neutral, 1}, race: :formless, modes: []),
       spawn_ref: nil,
       map_name: "sonic",
       x: 10,
       y: 10,
       hp: hp,
-      max_hp: max_hp,
       sp: 100,
-      max_sp: 100,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: max_hp, max_sp: 100)
   end
 
   @tag game_mode: :renewal

@@ -131,37 +131,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
 
   @tag game_mode: :pre_renewal
   test "a monster performs a song field as its only performer and is unlocked when it ends" do
-    mob = %MobState{
-      instance_id: 42,
-      mob_id: 1002,
-      mob_data: %MobDefinition{
-        id: 1002,
-        aegis_name: "PORING",
-        name: "Poring",
-        level: 1,
+    mob =
+      %MobState{
+        instance_id: 42,
+        mob_id: 1002,
+        mob_data: %MobDefinition{
+          id: 1002,
+          aegis_name: "PORING",
+          name: "Poring",
+          level: 1,
+          hp: 100,
+          stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+          attack_range: 1,
+          size: :medium,
+          race: :plant,
+          element: {:water, 1},
+          walk_speed: 400,
+          attack_delay: 1_000,
+          attack_motion: 500,
+          client_attack_motion: 500,
+          damage_motion: 400,
+          class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
+          modes: []
+        },
+        spawn_ref: nil,
+        x: 10,
+        y: 10,
+        map_name: "prontera",
         hp: 100,
-        stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-        attack_range: 1,
-        size: :medium,
-        race: :plant,
-        element: {:water, 1},
-        walk_speed: 400,
-        attack_delay: 1_000,
-        attack_motion: 500,
-        client_attack_motion: 500,
-        damage_motion: 400,
-        modes: []
-      },
-      spawn_ref: nil,
-      x: 10,
-      y: 10,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 1,
-      max_sp: 1,
-      spawned_at: 0
-    }
+        sp: 1,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 1)
 
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, mob, self())
     {:ok, definition} = Catalog.by_name(:ba_dissonance)
@@ -243,20 +244,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
       :ok = SpatialIndex.add_unit(:player, state.character_id, 10, 10, "prontera")
     end
 
-    mob = %MobState{
-      instance_id: 42,
-      mob_id: 1002,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: 10,
-      y: 10,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: 42,
+        mob_id: 1002,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        x: 10,
+        y: 10,
+        map_name: "prontera",
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     :ok = UnitRegistry.register_unit(:mob, 42, MobState, mob, self())
     :ok = SpatialIndex.add_unit(:mob, 42, 10, 10, "prontera")
@@ -578,20 +579,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   defp register_mob(id, x, y) do
-    mob = %MobState{
-      instance_id: id,
-      mob_id: 1002,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: x,
-      y: y,
-      map_name: "prontera",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
+    mob =
+      %MobState{
+        instance_id: id,
+        mob_id: 1002,
+        mob_data: Aesir.TestMob.definition(),
+        spawn_ref: nil,
+        x: x,
+        y: y,
+        map_name: "prontera",
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+      |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
     :ok = UnitRegistry.register_unit(:mob, id, MobState, mob, self())
     :ok = SpatialIndex.add_unit(:mob, id, x, y, "prontera")

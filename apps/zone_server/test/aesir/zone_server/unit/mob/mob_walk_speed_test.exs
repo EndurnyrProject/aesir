@@ -37,8 +37,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobWalkSpeedTest do
                  mob()
                )
 
-      assert slowed.base_walk_speed == 200
-      assert slowed.walk_speed == 250
+      assert slowed.base.speed == 200
+      assert slowed.calculated.speed == 250
 
       {:noreply, walking} = MovementHandler.handle_move_to(slowed, 31, 30)
       assert {_due_at, 250, _ref} = walking.pending_step
@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobWalkSpeedTest do
       assert {:noreply, slowed} =
                MobSession.handle_cast({:casting, {:status_changed, :sc_quagmire, :apply}}, mob())
 
-      assert slowed.walk_speed == 300
+      assert slowed.calculated.speed == 300
 
       StatusStorage.remove_status(:mob, @mob_id, :sc_decreaseagi)
       StatusStorage.remove_status(:mob, @mob_id, :sc_quagmire)
@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobWalkSpeedTest do
                  mob()
                )
 
-      assert restored.walk_speed == 200
+      assert restored.calculated.speed == 200
     end
 
     test "a dead monster keeps its speed" do

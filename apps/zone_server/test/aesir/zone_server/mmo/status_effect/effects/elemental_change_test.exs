@@ -90,6 +90,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChangeTest do
     state
   end
 
+  defp snapshot(state, flags) do
+    entries = StatusStorage.get_unit_statuses(:mob, state.instance_id)
+    %{state | calculated: Aesir.ZoneServer.Unit.Mob.Stats.recalculate(state, entries, flags)}
+  end
+
   defp attack_mob(mob_state) do
     attacker = CombatTestHelper.create_player_combatant(str: 50)
     defender = MobState.to_combatant(mob_state)
@@ -117,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChangeTest do
         duration: 30_000
       )
 
-      attack_mob(state)
+      attack_mob(snapshot(state, ["Def_Ele"]))
 
       assert_received {:defense_element, :water, 2}
     end
@@ -131,9 +136,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChangeTest do
         duration: 30_000
       )
 
-      combatant = MobState.to_combatant(state)
+      combatant = MobState.to_combatant(snapshot(state, ["Def_Ele"]))
 
-      assert combatant.weapon.element == :fire
+      assert combatant.weapon.element == :neutral
+      refute combatant.weapon.element == :water
     end
   end
 
@@ -153,7 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChangeTest do
         duration: 30_000
       )
 
-      attack_mob(state)
+      attack_mob(snapshot(state, ["Def_Ele"]))
 
       assert_received {:defense_element, :holy, 1}
     end

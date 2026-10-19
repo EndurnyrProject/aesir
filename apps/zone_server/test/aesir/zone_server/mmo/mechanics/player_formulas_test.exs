@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   end
 
   test "real weapon damage uses mode-specific component eligibility rather than modifying aggregate ATK" do
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
     stats =
       %{stats_fixture() | modifiers: %Modifiers{status_effects: %{max_weapon_damage: true}}}
@@ -183,7 +183,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   end
 
   test "physical defense consumes effective soft stats separately from equipment hard DEF" do
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
     stats =
       %{
@@ -216,7 +216,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     expected_boosted = if GameMode.mode() == :renewal, do: 850, else: 640
     assert {:ok, ^expected_boosted} = DamageCalculator.apply_defense_formula(1_000, boosted)
 
-    stub(ModifierCalculator, :get_all_modifiers, fn
+    stub(ModifierCalculator, :get_battle_modifiers, fn
       :player, 1001 -> %{def2_rate: 20}
       _, _ -> %{}
     end)
@@ -239,7 +239,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   end
 
   test "legacy player defense derives soft DEF only when its snapshot is absent" do
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
     defender = CombatTestHelper.create_player_combatant(vit: 30, agi: 4, base_level: 7)
     defender = put_in(defender.combat_stats.def, 0)
     expected = if GameMode.mode() == :renewal, do: 981, else: 970
@@ -351,7 +351,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
   test "classic trait slots are always inert through stats and combat consumers" do
     stub(Mechanics, :player_formulas, fn -> PreRenewal end)
-    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
     fixture = stats_fixture()
 

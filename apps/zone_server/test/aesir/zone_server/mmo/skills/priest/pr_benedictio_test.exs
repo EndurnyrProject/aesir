@@ -117,6 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
       client_attack_motion: 500,
       damage_motion: 400,
       ai_type: 0,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: [],
       drops: []
     }
@@ -135,12 +136,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
       y: y,
       map_name: "prontera",
       hp: 1_000,
-      max_hp: 1_000,
       sp: 1,
-      max_sp: 1,
       is_dead: false,
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 1_000, max_sp: 1)
   end
 
   defp register_mob(%MobState{instance_id: id, x: x, y: y} = state) do

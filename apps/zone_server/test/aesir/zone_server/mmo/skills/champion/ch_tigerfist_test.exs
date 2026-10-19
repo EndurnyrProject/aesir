@@ -174,6 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfistTest do
       element: {:water, 1},
       race: :plant,
       size: :medium,
+      class: Aesir.ZoneServer.Mmo.MobManagement.MobMode.class([]),
       modes: []
     }
 

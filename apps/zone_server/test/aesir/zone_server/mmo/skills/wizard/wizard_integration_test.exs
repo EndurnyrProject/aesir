@@ -418,32 +418,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     %Aesir.ZoneServer.Unit.Mob.MobState{
       instance_id: @target_id,
       mob_id: 1,
-      mob_data: %Aesir.ZoneServer.Mmo.MobManagement.MobDefinition{
-        id: 1,
-        aegis_name: "TEST_MOB",
-        name: "Test Mob",
-        level: 1,
-        hp: 100,
-        def: 1,
-        mdef: 1,
-        stats: %{},
-        attack_range: 1,
-        size: :medium,
-        race: :formless,
-        element: {:neutral, 1},
-        walk_speed: 200,
-        attack_delay: 1_000,
-        attack_motion: 500,
-        client_attack_motion: 500,
-        damage_motion: 400
-      },
+      mob_data:
+        Aesir.TestMob.definition(
+          id: 1,
+          level: 1,
+          hp: 100,
+          def: 1,
+          mdef: 1,
+          element: {:neutral, 1}
+        ),
       x: 120,
       y: 120,
       map_name: @map,
       hp: 100,
-      max_hp: 100,
       sp: 0,
-      max_sp: 0,
       spawn_ref: %Aesir.ZoneServer.Mmo.MobManagement.MobSpawn{
         mob: 1,
         amount: 1,
@@ -452,5 +440,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
       },
       spawned_at: 0
     }
+    |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
   end
 end
