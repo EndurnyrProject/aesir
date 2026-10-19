@@ -100,7 +100,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurseTest do
     setup do
       Mimic.copy(Resistance)
 
-      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+      stub(UnitRegistry, :unit_exists?, fn
+        :mob, @target_id -> true
+        :player, _caster_id -> true
+      end)
 
       stub(UnitRegistry, :get_unit_info, fn
         :mob, @target_id ->

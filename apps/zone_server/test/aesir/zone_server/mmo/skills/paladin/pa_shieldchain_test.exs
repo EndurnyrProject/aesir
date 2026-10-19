@@ -163,7 +163,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchainTest do
         matk: 60,
         def: 25,
         mdef: 10,
-        attack_range: 2
+        attack_range: 2,
+        size: :medium,
+        race: :formless,
+        element: {:neutral, 1},
+        walk_speed: 300,
+        attack_delay: 1_000,
+        attack_motion: 500,
+        client_attack_motion: 500,
+        damage_motion: 500
       })
 
     spawn = %MobSpawn{
