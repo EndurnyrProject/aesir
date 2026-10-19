@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
+  alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -173,6 +174,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   @impl true
+  def castend_cost(caster, module, target, %{name: :al_warp} = definition, level) do
+    with {:ok, definition, cost, zeny} <-
+           resolve_requirement(caster, module, target, definition, level) do
+      {:ok, prepared(caster, module, definition, cost, min(zeny, caster.zeny))}
+    end
+  end
+
   def castend_cost(caster, module, target, definition, level) do
     with {:ok, definition, cost, zeny} <-
            resolve_requirement(caster, module, target, definition, level) do
@@ -196,7 +204,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @spec prepare_begin_cost(PlayerState.t(), module(), map(), Cost.t(), non_neg_integer()) ::
           {:ok, map()} | {:error, atom()}
   def prepare_begin_cost(caster, module, definition, cost, zeny) do
-    with :ok <- Cost.check_sp(caster, cost),
+    with :ok <- check_weight(caster),
+         :ok <- Cost.check_sp(caster, cost),
          :ok <- check_zeny(caster, zeny),
          :ok <- Cost.check_spheres(caster, cost) do
       {:ok, prepared(caster, module, definition, cost, zeny)}
@@ -218,12 +227,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
           non_neg_integer()
         ) :: {:ok, map()} | {:error, atom()}
   def prepare_castend_cost(caster, module, target, level, definition, cost, zeny) do
-    with :ok <- castend_requirement(module, caster, target, level, definition),
+    with :ok <- check_weight(caster),
+         :ok <- castend_requirement(module, caster, target, level, definition),
          :ok <- Cost.check_hp(caster, cost),
          :ok <- check_weapon(caster, definition),
          :ok <- check_ammo(caster, definition),
          :ok <- check_catalysts(caster, definition) do
       {:ok, prepared(caster, module, definition, cost, min(zeny, caster.zeny))}
+    end
+  end
+
+  @doc "Checks a menu-delayed skill's cast-end requirements and spends only its catalysts."
+  @spec consume_menu_items(PlayerState.t(), module(), term(), map(), pos_integer()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def consume_menu_items(caster, module, target, definition, level) do
+    with {:ok, definition, cost, zeny} <-
+           resolve_requirement(caster, module, target, definition, level),
+         {:ok, _prepared} <-
+           prepare_castend_cost(caster, module, target, level, definition, cost, zeny) do
+      {:ok, maybe_consume_catalysts(caster, definition, true)}
     end
   end
 
@@ -452,6 +474,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     if caster.zeny >= cost, do: :ok, else: {:error, :insufficient_zeny}
   end
 
+  defp check_weight(%PlayerState{
+         stats: %PlayerStats{progression: %{job_id: job_id}} = stats,
+         inventory: inventory
+       })
+       when is_map(inventory) and is_integer(job_id) do
+    maximum = Weight.max_weight(stats)
+
+    if maximum > 0 and Weight.current_weight(inventory) * 10 >= maximum * 9,
+      do: {:error, :overweight},
+      else: :ok
+  end
+
+  defp check_weight(_caster), do: :ok
+
   defp check_catalysts(caster, definition) do
     if Enum.all?(effective_item_cost(caster, definition), fn %{id: id, amount: amount} ->
          Inventory.held_amount(caster.inventory, id) >= amount
@@ -467,9 +503,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def effective_item_cost(_caster, %{item_cost: []}), do: []
 
   def effective_item_cost(caster, definition) do
-    if StatusStorage.has_status?(:player, caster.character_id, :sc_intoabyss),
-      do: waive_gemstones(definition),
-      else: definition.item_cost
+    if equip_modifier(caster, :no_gemstone) > 0 or
+         StatusStorage.has_status?(:player, caster.character_id, :sc_intoabyss),
+       do: waive_gemstones(definition),
+       else: definition.item_cost
   end
 
   # Hocus Pocus and Ganbantein only drop one of each gemstone, never below one.

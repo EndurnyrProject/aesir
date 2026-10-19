@@ -1261,7 +1261,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp check_cast_action(state, :item), do: check_cast_action(state, :start)
 
   defp check_cast_action(state, :start) do
-    if SessionState.interaction_blocked?(state) do
+    if SessionState.interaction_blocked?(state) or
+         match?(%{kind: :OPTIONS}, Map.get(state, :pending_skill_menu)) do
       {:error, :busy}
     else
       check_start_action(state)
@@ -1568,10 +1569,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp drain_menu_offer(%{game_state: game_state} = state) do
     %{skill_id: skill_id, kind: kind, entry_ids: entry_ids, level: level} =
+      offer =
       game_state.pending_menu_offer
 
+    opts = offer |> Map.take([:labels, :context]) |> Map.to_list()
+
     %{state | game_state: %{game_state | pending_menu_offer: nil}}
-    |> SkillMenuHandler.open(skill_id, kind, entry_ids, level)
+    |> SkillMenuHandler.open(skill_id, kind, entry_ids, level, opts)
   end
 
   @doc """
@@ -1761,6 +1765,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:insufficient_sp), do: :SKILL_CAST_FAILURE_REASON_INSUFFICIENT_SP
   defp failure_reason(:insufficient_zeny), do: :SKILL_CAST_FAILURE_REASON_INSUFFICIENT_ZENY
   defp failure_reason(:no_ammo), do: :SKILL_CAST_FAILURE_REASON_NO_AMMO
+  defp failure_reason(:overweight), do: :SKILL_CAST_FAILURE_REASON_OVERWEIGHT
   defp failure_reason(:on_cooldown), do: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
 
   defp failure_reason(reason) when reason in [:invalid_target, :different_map, :target_not_found],

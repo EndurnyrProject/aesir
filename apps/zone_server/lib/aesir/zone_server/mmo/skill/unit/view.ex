@@ -74,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
     }
   end
 
+  defp phase(%{portal: true, opened: false}), do: :SKILL_UNIT_PHASE_OPENING
   defp phase(%{trap: %TrapState{phase: :used}}), do: :SKILL_UNIT_PHASE_USED
   defp phase(%{trap: %TrapState{phase: :sprung}}), do: :SKILL_UNIT_PHASE_SPRUNG
   defp phase(%{trap: %TrapState{phase: :captured}}), do: :SKILL_UNIT_PHASE_CAPTURED

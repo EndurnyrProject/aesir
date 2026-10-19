@@ -61,6 +61,7 @@ defmodule Aesir.Commons.Models.Character do
           last_map: String.t(),
           last_x: integer(),
           last_y: integer(),
+          memo_points: [map()],
           save_map: String.t(),
           save_x: integer(),
           save_y: integer(),
@@ -147,6 +148,7 @@ defmodule Aesir.Commons.Models.Character do
     field :last_map, :string, default: "new_zone01"
     field :last_x, :integer, default: 53
     field :last_y, :integer, default: 111
+    field :memo_points, {:array, :map}, default: []
     field :save_map, :string, default: "new_zone01"
     field :save_x, :integer, default: 53
     field :save_y, :integer, default: 111
@@ -232,6 +234,7 @@ defmodule Aesir.Commons.Models.Character do
       :last_map,
       :last_x,
       :last_y,
+      :memo_points,
       :save_map,
       :save_x,
       :save_y,

@@ -278,6 +278,7 @@ message Envelope {
     // 218: a live skill-unit group moved with its caster
     SkillUnitMove skill_unit_move = 218;  // s2c zone world
     ItemSkillReady item_skill_ready = 219;  // s2c zone gameplay
+    MemoRequest memo_request = 220;  // c2s zone
   }
 }
 
@@ -2154,6 +2155,7 @@ enum SkillUnitPhase {
   SKILL_UNIT_PHASE_USED = 1;
   SKILL_UNIT_PHASE_SPRUNG = 2;
   SKILL_UNIT_PHASE_CAPTURED = 3;
+  SKILL_UNIT_PHASE_OPENING = 4; // The unit exists but cannot yet accept entry.
 }
 
 // Complete authoritative state for one persistent skill-unit cast. The stream
@@ -2275,12 +2277,18 @@ message SkillMenu {
     SKILLS = 0;
     ITEMS = 1;
     INVENTORY_SLOTS = 2; // entry_ids identify inventory slots rather than items.
+    OPTIONS = 3; // Server-labelled options; ids have no client-side catalog meaning.
   }
 
   uint32 src_skill_id = 1;
   Kind kind = 2;
   repeated uint32 entry_ids = 3;
+  repeated string labels = 4; // For OPTIONS, one display label per entry_id in the same order.
 }
+
+// Client -> server. Remember the authenticated character's current map/cell
+// as its newest Warp Portal memo point. No client-supplied position is trusted.
+message MemoRequest {}
 
 // Client -> server, the player's choice from the pending SkillMenu. `src_skill_id`
 // must match the offer the server is holding and `selected_id` must be one of its
@@ -2316,6 +2324,7 @@ enum SkillCastFailureReason {
   SKILL_CAST_FAILURE_REASON_VERSUS_MAP_ONLY = 11;
   // An NPC stands within 3 cells: no vending stall or chat room here.
   SKILL_CAST_FAILURE_REASON_NPC_NEARBY = 12;
+  SKILL_CAST_FAILURE_REASON_OVERWEIGHT = 13; // At least 90 percent of carrying capacity.
 }
 
 // Server -> client, caster-only feedback when an attempted skill cast is rejected.

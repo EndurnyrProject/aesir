@@ -5,7 +5,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   Static per-map flags are loaded once into `:persistent_term` from
   `Aesir.ZoneServer.Mmo.Woe.CastleDb` (every castle map carries
   `gvg_castle`, `nosave`, `noteleport`, `nowarp`, and `noreturn`) and
-  `StaticFlags` (per-map PvP flags from `priv/db/map_flags.yml`), plus a
+  `StaticFlags` (per-map PvP flags from `priv/db/map_flags.yml`) and
+  `PortalAccess` (mode-scoped memo and job-entry flags), plus a
   small runtime ETS overlay (`:map_flag_overrides`) carries flags toggled at
   runtime (WoE's `gvg`). `get/2` merges overlay over static; `reload/0`
   rebuilds the static index after the castle or flag data changes.
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   alias Aesir.ZoneServer.Db.Source
   alias Aesir.ZoneServer.Map.MapFlags.StaticFlags
   alias Aesir.ZoneServer.Mmo.DataLoader
+  alias Aesir.ZoneServer.Mmo.Skill.PortalAccess
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -53,6 +55,10 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
           | :pvp_noparty
           | :pvp_noguild
           | :nochat
+          | :nomemo
+          | :nowarpto
+          | :gvg_te
+          | :gvg_te_castle
   @type map_name :: String.t()
 
   @flags [
@@ -65,7 +71,11 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     :pvp,
     :pvp_noparty,
     :pvp_noguild,
-    :nochat
+    :nochat,
+    :nomemo,
+    :nowarpto,
+    :gvg_te,
+    :gvg_te_castle
   ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 
@@ -84,6 +94,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   """
   @spec reload() :: :ok
   def reload do
+    PortalAccess.reload()
     :persistent_term.put(@pt_key, build_static())
     :persistent_term.erase(@invincible_key)
     :ok
@@ -208,7 +219,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
     Map.merge(
       castle_flags,
-      StaticFlags.load(),
+      Map.merge(PortalAccess.map_flags(), StaticFlags.load(), fn _map, access, extra ->
+        Map.merge(access, extra)
+      end),
       fn _map, woe, extra -> Map.merge(woe, extra) end
     )
   end

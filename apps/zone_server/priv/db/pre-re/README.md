@@ -12,6 +12,7 @@ mix aesir.import.statpoint <rathena_root> --mode pre-re
 mix aesir.import.refine <rathena_root> --mode pre-re
 mix aesir.import.spawns <rathena_root> --mode pre-re
 mix aesir.import.warps <rathena_root> --mode pre-re
+mix aesir.import.portal_access <rathena_root> --mode pre-re
 mix aesir.import.quests <rathena_root> --mode pre-re
 mix aesir.import.shops <rathena_root> --mode pre-re
 mix aesir.import.produce <rathena_root> --mode pre-re

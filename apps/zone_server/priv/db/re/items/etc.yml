@@ -3484,6 +3484,10 @@
     - head_mid
     - head_top
   name: Mistress Card
+  on_equip: |-
+    ctx = bonus(ctx, :no_gemstone, 1)
+    ctx = bonus(ctx, :sp_cost_rate, 25)
+    ctx
   type: card
   weight: 10
 - aegis_name: Daydric_Card
@@ -7677,6 +7681,10 @@
     - head_mid
     - head_top
   name: Sealed Mistress Card
+  on_equip: |-
+    ctx = bonus(ctx, :no_gemstone, 1)
+    ctx = bonus(ctx, :sp_cost_rate, if((refine(ctx) > 14), do: 35, else: 50))
+    ctx
   type: card
   weight: 10
 - aegis_name: Sealed_Gloom_Card
@@ -39633,6 +39641,10 @@
     - head_mid
     - head_top
   name: Sealed Mistress Card
+  on_equip: |-
+    ctx = bonus(ctx, :no_gemstone, 1)
+    ctx = bonus(ctx, :sp_cost_rate, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Sealed_Atroce_Card_J
@@ -58742,6 +58754,7 @@
 - aegis_name: aegis_312446
   id: 312446
   name: Magic Ore
+  on_equip: bonus(ctx, :no_gemstone, 1)
   subtype: enchant
   type: card
 - aegis_name: Justice_Vigor_BO

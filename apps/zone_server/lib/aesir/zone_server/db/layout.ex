@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Db.Layout do
     "arrows.yml" => {:file, true, "aesir.import.arrows"},
     "map_flags.yml" => {:file, true, nil},
     "map_invincible_time.yml" => {:file, false, nil},
+    "portal_access.yml" => {:file, false, "aesir.import.portal_access"},
     "navigation.yml" => {:file, true, nil},
     "level_penalty.yml" => {:file, false, "aesir.import.level_penalty", [:renewal]},
     "level_penalty_exp.yml" => {:file, false, "aesir.import.level_penalty", [:renewal]},

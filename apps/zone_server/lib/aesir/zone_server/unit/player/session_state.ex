@@ -118,4 +118,13 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
     not is_nil(Map.get(state, :interaction_lock)) or
       not is_nil(Map.get(state, :pending_skill_text_input))
   end
+
+  @doc "Whether a labelled menu's client skill/NPC work flag remains held."
+  @spec menu_work_in_progress?(map()) :: boolean()
+  def menu_work_in_progress?(state) do
+    case Map.get(state, :pending_skill_menu) do
+      %{kind: :OPTIONS} = menu -> Map.get(menu, :work_in_progress?, true)
+      _ -> false
+    end
+  end
 end

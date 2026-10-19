@@ -371,8 +371,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "argument-less bonus with an unknown key stays unknown_bonus_key" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bNoGemStone"}}} =
-               compile("bonus bNoGemStone;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bNotAVocabularyKey"}}} =
+               compile("bonus bNotAVocabularyKey;")
     end
 
     test "BaseLevel and JobLevel compile to their level inputs" do

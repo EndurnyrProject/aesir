@@ -1,0 +1,2569 @@
+groups:
+  '0':
+    any_warp: false
+    level: 0
+  '1':
+    any_warp: false
+    level: 0
+  '10':
+    any_warp: true
+    level: 2
+  '2':
+    any_warp: false
+    level: 1
+  '3':
+    any_warp: true
+    level: 1
+  '4':
+    any_warp: true
+    level: 1
+  '5':
+    any_warp: false
+    level: 0
+  '99':
+    any_warp: true
+    level: 99
+jobs:
+  '4260':
+    group_level: 100
+    zone: 4112
+  '4065':
+    group_level: 100
+    zone: 4112
+  '4244':
+    group_level: 100
+    zone: 4112
+  '4259':
+    group_level: 100
+    zone: 4112
+  '4056':
+    group_level: 100
+    zone: 4112
+  '4083':
+    group_level: 100
+    zone: 4112
+  '4316':
+    group_level: 100
+    zone: 4112
+  '4072':
+    group_level: 100
+    zone: 4112
+  '4212':
+    group_level: 100
+    zone: 4112
+  '4111':
+    group_level: 100
+    zone: 4112
+  '4107':
+    group_level: 100
+    zone: 4112
+  '4082':
+    group_level: 100
+    zone: 4112
+  '4071':
+    group_level: 100
+    zone: 4112
+  '4096':
+    group_level: 100
+    zone: 4112
+  '4261':
+    group_level: 100
+    zone: 4112
+  '4211':
+    group_level: 100
+    zone: 4112
+  '4110':
+    group_level: 100
+    zone: 4112
+  '4241':
+    group_level: 100
+    zone: 4112
+  '4063':
+    group_level: 100
+    zone: 4112
+  '4087':
+    group_level: 100
+    zone: 4112
+  '4215':
+    group_level: 100
+    zone: 4112
+  '4254':
+    group_level: 100
+    zone: 4112
+  '4085':
+    group_level: 100
+    zone: 4112
+  '4062':
+    group_level: 100
+    zone: 4112
+  '4278':
+    group_level: 100
+    zone: 4112
+  '4064':
+    group_level: 100
+    zone: 4112
+  '4279':
+    group_level: 100
+    zone: 4112
+  '4105':
+    group_level: 100
+    zone: 4112
+  '4070':
+    group_level: 100
+    zone: 4112
+  '4224':
+    group_level: 100
+    zone: 4112
+  '4220':
+    group_level: 100
+    zone: 4112
+  '4223':
+    group_level: 100
+    zone: 4112
+  '4240':
+    group_level: 100
+    zone: 4112
+  '4078':
+    group_level: 100
+    zone: 4112
+  '4099':
+    group_level: 100
+    zone: 4112
+  '4077':
+    group_level: 100
+    zone: 4112
+  '4229':
+    group_level: 100
+    zone: 4112
+  '4190':
+    group_level: 100
+    zone: 4112
+  '4112':
+    group_level: 100
+    zone: 4112
+  '4303':
+    group_level: 100
+    zone: 4112
+  '4252':
+    group_level: 100
+    zone: 4112
+  '4098':
+    group_level: 100
+    zone: 4112
+  '4305':
+    group_level: 100
+    zone: 4112
+  '4086':
+    group_level: 100
+    zone: 4112
+  '4058':
+    group_level: 100
+    zone: 4112
+  '4191':
+    group_level: 100
+    zone: 4112
+  '4106':
+    group_level: 100
+    zone: 4112
+  '4076':
+    group_level: 100
+    zone: 4112
+  '4257':
+    group_level: 100
+    zone: 4112
+  '4239':
+    group_level: 100
+    zone: 4112
+  '4080':
+    group_level: 100
+    zone: 4112
+  '4074':
+    group_level: 100
+    zone: 4112
+  '4067':
+    group_level: 100
+    zone: 4112
+  '4060':
+    group_level: 100
+    zone: 4112
+  '4054':
+    group_level: 100
+    zone: 4112
+  '4304':
+    group_level: 100
+    zone: 4112
+  '4059':
+    group_level: 100
+    zone: 4112
+  '4243':
+    group_level: 100
+    zone: 4112
+  '4263':
+    group_level: 100
+    zone: 4112
+  '4068':
+    group_level: 100
+    zone: 4112
+  '4307':
+    group_level: 100
+    zone: 4112
+  '4057':
+    group_level: 100
+    zone: 4112
+  '4069':
+    group_level: 100
+    zone: 4112
+  '4306':
+    group_level: 100
+    zone: 4112
+  '4253':
+    group_level: 100
+    zone: 4112
+  '4308':
+    group_level: 100
+    zone: 4112
+  '4262':
+    group_level: 100
+    zone: 4112
+  '4256':
+    group_level: 100
+    zone: 4112
+  '4081':
+    group_level: 100
+    zone: 4112
+  '4055':
+    group_level: 100
+    zone: 4112
+  '4281':
+    group_level: 100
+    zone: 4112
+  '4101':
+    group_level: 100
+    zone: 4112
+  '4100':
+    group_level: 100
+    zone: 4112
+  '4218':
+    group_level: 100
+    zone: 4112
+  '4084':
+    group_level: 100
+    zone: 4112
+  '4066':
+    group_level: 100
+    zone: 4112
+  '4258':
+    group_level: 100
+    zone: 4112
+  '4061':
+    group_level: 100
+    zone: 4112
+  '4108':
+    group_level: 100
+    zone: 4112
+  '4075':
+    group_level: 100
+    zone: 4112
+  '4102':
+    group_level: 100
+    zone: 4112
+  '4103':
+    group_level: 100
+    zone: 4112
+  '4242':
+    group_level: 100
+    zone: 4112
+  '4079':
+    group_level: 100
+    zone: 4112
+  '4264':
+    group_level: 100
+    zone: 4112
+  '4104':
+    group_level: 100
+    zone: 4112
+  '4255':
+    group_level: 100
+    zone: 4112
+  '4280':
+    group_level: 100
+    zone: 4112
+  '4109':
+    group_level: 100
+    zone: 4112
+  '4073':
+    group_level: 100
+    zone: 4112
+  '4097':
+    group_level: 100
+    zone: 4112
+  '4302':
+    group_level: 100
+    zone: 4112
+maps:
+  prt_sewb1:
+    nomemo: true
+  mid_camp:
+    zone: 2048
+  prtg_cas02:
+    nomemo: true
+    nowarpto: true
+  bossnia_01:
+    nomemo: true
+    nowarpto: true
+  orcsdun02:
+    nomemo: true
+  1@dth3:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  3@thts:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ayo_dun01:
+    nomemo: true
+  nameless_n:
+    nomemo: true
+  1@drdo:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  moc_pryd06:
+    nomemo: true
+  arug_cas05:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  1@ch_t:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  xmas_in:
+    nomemo: true
+  arug_cas02:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  bat_c03:
+    nomemo: true
+    nowarpto: true
+  beach_dun3:
+    nomemo: true
+  5@tower:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  payg_cas05:
+    nomemo: true
+    nowarpto: true
+  dic_dun02:
+    nomemo: true
+  1@md_gef:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  bra_dun02:
+    nomemo: true
+  pay_dun03:
+    nomemo: true
+  new_5-4:
+    nomemo: true
+  ra_san04:
+    nomemo: true
+  prt_fild04:
+    nomemo: true
+  2009rwc_02:
+    nomemo: true
+    nowarpto: true
+  lou_dun03:
+    nomemo: true
+  iz_dun04:
+    nomemo: true
+  einbech:
+    nomemo: true
+    zone: 2048
+  abyss_01:
+    nomemo: true
+  anthell01:
+    nomemo: true
+  pvp_n_6-1:
+    nomemo: true
+  tha_t07:
+    nomemo: true
+  pay_fild04:
+    nomemo: true
+  ama_in01:
+    nomemo: true
+  turbo_n_8:
+    nomemo: true
+    nowarpto: true
+    zone: 32
+  mjolnir_04:
+    nomemo: true
+  ra_in01:
+    nomemo: true
+  job3_rune02:
+    nomemo: true
+  1@exsh:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ve_in:
+    nomemo: true
+  te_prtcas03:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  new_1-1:
+    nomemo: true
+  moc_prydn2:
+    nomemo: true
+    nowarpto: true
+  2@gl_k2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  thor_v03:
+    nomemo: true
+  prtg_cas04:
+    nomemo: true
+    nowarpto: true
+  gef_fild12:
+    nomemo: true
+  tha_t10:
+    nomemo: true
+  pvp_c_room:
+    nomemo: true
+  gld2_pay:
+    nomemo: true
+  lou_in02:
+    nomemo: true
+  bat_room:
+    nomemo: true
+    nowarpto: true
+  tha_t05:
+    nomemo: true
+  airport:
+    nomemo: true
+  alb_ship:
+    nomemo: true
+  1@mjo2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  cmd_fild05:
+    nomemo: true
+  job3_rune03:
+    nomemo: true
+  moc_fild03:
+    nomemo: true
+  pvp_y_2-1:
+    nomemo: true
+  c_tower2_:
+    nomemo: true
+  payg_cas02:
+    nomemo: true
+    nowarpto: true
+  pvp_y_5-4:
+    nomemo: true
+  quiz_00:
+    nomemo: true
+  pvp_y_4-5:
+    nomemo: true
+  1@gl_k:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_n_6-3:
+    nomemo: true
+  grademk:
+    nomemo: true
+    nowarpto: true
+  gld2_gef:
+    nomemo: true
+  job3_rune01:
+    nomemo: true
+  1@4inq:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  manuk:
+    nomemo: true
+    nowarpto: true
+    zone: 2048
+  niflheim:
+    nomemo: true
+    zone: 2048
+  new_3-4:
+    nomemo: true
+  1@oz:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  iz_d05_i:
+    nomemo: true
+    nowarpto: true
+  schg_dun01:
+    nomemo: true
+    nowarpto: true
+  c_tower2:
+    nomemo: true
+  ma_zif08:
+    nomemo: true
+  moc_pryd05:
+    nomemo: true
+  turbo_n_4:
+    nomemo: true
+    nowarpto: true
+    zone: 32
+  brasilis:
+    zone: 2048
+  pvp_y_6-1:
+    nomemo: true
+  jupe_cave:
+    nomemo: true
+  lasa_in01:
+    nomemo: true
+    nowarpto: true
+  prt_castle:
+    nomemo: true
+  pvp_n_2-2:
+    nomemo: true
+  pvp_n_8-4:
+    nomemo: true
+  ra_san03:
+    nomemo: true
+  1@sthd:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  rockmi2:
+    nomemo: true
+    nowarpto: true
+  juperos_01:
+    nomemo: true
+  pvp_n_7-1:
+    nomemo: true
+  lasa_dun01:
+    nomemo: true
+    nowarpto: true
+  ra_fild04:
+    nomemo: true
+  payg_cas01:
+    nomemo: true
+    nowarpto: true
+  tur_d03_i:
+    nomemo: true
+    nowarpto: true
+  pay_dun02:
+    nomemo: true
+  1@soul:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  7@thts:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  2@orcs:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gl_in01:
+    nomemo: true
+  int_land04:
+    nomemo: true
+    nowarpto: true
+  pvp_y_4-2:
+    nomemo: true
+  gl_sew02:
+    nomemo: true
+  itemmall:
+    nomemo: true
+  ra_san01:
+    nomemo: true
+  turbo_e_4:
+    nomemo: true
+    nowarpto: true
+    zone: 32
+  auction_01:
+    nomemo: true
+  ant_d02_i:
+    nomemo: true
+    nowarpto: true
+  nguild_alde:
+    nomemo: true
+    nowarpto: true
+  ama_dun03:
+    nomemo: true
+  aldeg_cas04:
+    nomemo: true
+    nowarpto: true
+  pvp_y_room:
+    nomemo: true
+  ve_fild03:
+    nomemo: true
+  pvp_y_2-5:
+    nomemo: true
+  tur_dun05:
+    nomemo: true
+  treasure01:
+    nomemo: true
+  prt_church:
+    nomemo: true
+  te_aldecas5:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  lasa_dun_q:
+    nomemo: true
+    nowarpto: true
+  mosk_dun01:
+    nomemo: true
+  pvp_n_3-3:
+    nomemo: true
+  1@ma_h:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  prt_in:
+    nomemo: true
+  in_orcs01:
+    nomemo: true
+  1@ma_b:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  lhz_in01:
+    nomemo: true
+  moscovia:
+    zone: 2048
+  1@jtb:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  job_knt:
+    nomemo: true
+  pvp_y_4-1:
+    nomemo: true
+  kh_dun02:
+    nomemo: true
+  pvp_y_3-3:
+    nomemo: true
+  yuno_fild03:
+    nomemo: true
+  new_2-3:
+    nomemo: true
+  pvp_y_3-4:
+    nomemo: true
+  schg_que01:
+    nomemo: true
+    nowarpto: true
+  kh_kiehl02:
+    nomemo: true
+  ra_temin:
+    nomemo: true
+  1@4sac:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  moc_fild17:
+    nomemo: true
+  splendide:
+    nomemo: true
+    nowarpto: true
+    zone: 2048
+  te_prtcas02:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  1@mist:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gefenia04:
+    nomemo: true
+  lasa_dun02:
+    nomemo: true
+    nowarpto: true
+  new_1-3:
+    nomemo: true
+  que_house_s:
+    nowarpto: true
+  gl_chyard:
+    nomemo: true
+  pay_dun04:
+    nomemo: true
+  pvp_n_6-5:
+    nomemo: true
+  ordeal_3-2:
+    nomemo: true
+  jupe_ele:
+    nomemo: true
+  einbroch:
+    nomemo: true
+    zone: 2048
+  gld_dun03:
+    nomemo: true
+  mjolnir_02:
+    nomemo: true
+  2@nyr:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_n_2-5:
+    nomemo: true
+  prt_prison:
+    nomemo: true
+    nowarpto: true
+  lhz_dun_n:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  thana_step:
+    nomemo: true
+  moc_fild22:
+    nomemo: true
+  valkyrie:
+    nomemo: true
+  tra_fild:
+    nomemo: true
+    nowarpto: true
+  kh_rossi:
+    nomemo: true
+  new_zone02:
+    nomemo: true
+  iz_dun03:
+    nomemo: true
+  gld_dun02:
+    nomemo: true
+  tur_dun02:
+    nomemo: true
+  eclage:
+    nomemo: true
+    zone: 2048
+  ba_in01:
+    nomemo: true
+    nowarpto: true
+  e_tower:
+    nomemo: true
+    nowarpto: true
+  new_zone03:
+    nomemo: true
+  bat_c01:
+    nomemo: true
+    nowarpto: true
+  gld_dun03_2:
+    nomemo: true
+  sec_in02:
+    nomemo: true
+  guild_vs1:
+    nomemo: true
+  1@tnm3:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  um_fild02:
+    nomemo: true
+  guild_vs3:
+    nomemo: true
+  prt_sewb3:
+    nomemo: true
+  job_cru:
+    nomemo: true
+  force_5-1:
+    nomemo: true
+    nowarpto: true
+    zone: 128
+  kh_mansion:
+    nomemo: true
+  ecl_tdun02:
+    nomemo: true
+  ra_fild10:
+    nomemo: true
+  prt_sewb2:
+    nomemo: true
+  prt_fild00:
+    nomemo: true
+  que_sign01:
+    nomemo: true
+  bat_c02:
+    nomemo: true
+    nowarpto: true
+  que_qsch01:
+    nomemo: true
+    nowarpto: true
+  iz_int03:
+    nowarpto: true
+  gld_dun02_2:
+    nomemo: true
+  pvp_n_1-1:
+    nomemo: true
+  cmd_in02:
+    nomemo: true
+  mal_in01:
+    nomemo: true
+  pub_cat:
+    nomemo: true
+    nowarpto: true
+  1@gef_in:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  umbala:
+    zone: 2048
+  1@def01:
+    nomemo: true
+    nowarpto: true
+    zone: 8192
+  int_land01:
+    nomemo: true
+    nowarpto: true
+  prtg_cas01:
+    nomemo: true
+    nowarpto: true
+  abbey03:
+    nomemo: true
+  thor_camp:
+    nomemo: true
+  moc_fild16:
+    nomemo: true
+  que_qaru02:
+    nomemo: true
+    nowarpto: true
+  iz_int01:
+    nowarpto: true
+  pvp_y_7-1:
+    nomemo: true
+  star_in:
+    nomemo: true
+    nowarpto: true
+  1@4mst:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  c_tower4:
+    nomemo: true
+  1@4drk:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  um_fild01:
+    nomemo: true
+  xmas_dun01:
+    nomemo: true
+  1@rev:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ve_fild06:
+    nomemo: true
+  ice_dun03:
+    nomemo: true
+  arug_cas01:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  prt_fild10:
+    nomemo: true
+  thana_boss:
+    nomemo: true
+  bossnia_04:
+    nomemo: true
+    nowarpto: true
+  que_qaru03:
+    nomemo: true
+    nowarpto: true
+  job_gun:
+    nomemo: true
+    nowarpto: true
+  ecl_hub01:
+    nomemo: true
+  dic_in01:
+    nomemo: true
+  abbey01:
+    nomemo: true
+  mal_in02:
+    nomemo: true
+  1@tnm1:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  1@nyr:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  moc_para01:
+    nomemo: true
+  gef_dun01:
+    nomemo: true
+  new_5-2:
+    nomemo: true
+  job_ko:
+    nomemo: true
+  moc_pryd01:
+    nomemo: true
+  izlude_b:
+    zone: 2048
+  2@thts:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ra_fild01:
+    nomemo: true
+  nameless_in:
+    nomemo: true
+  1@gl_he:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  5@thts:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  new_2-2:
+    nomemo: true
+  gld2_ald:
+    nomemo: true
+  1@ge_sn:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gld_dun01_2:
+    nomemo: true
+  gld2_prt:
+    nomemo: true
+  c_tower3:
+    nomemo: true
+  1@cata:
+    nomemo: true
+    nowarpto: true
+    zone: 512
+  spl_fild02:
+    nomemo: true
+    nowarpto: true
+  tra_fild01:
+    nomemo: true
+    nowarpto: true
+  cmd_fild02:
+    nomemo: true
+  1@sara:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  yuno_pre:
+    nomemo: true
+  malaya:
+    zone: 2048
+  1@tnm2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  tha_scene01:
+    nomemo: true
+  turbo_e_8:
+    nomemo: true
+    nowarpto: true
+    zone: 32
+  gon_dun02:
+    nomemo: true
+  pvp_n_6-4:
+    nomemo: true
+  ecl_tdun03:
+    nomemo: true
+  amatsu:
+    zone: 2048
+  oz_dun02:
+    nomemo: true
+    nowarpto: true
+  gl_sew04:
+    nomemo: true
+  schg_cas05:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  thor_v01:
+    nomemo: true
+  1@mcd:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  que_qsch02:
+    nomemo: true
+    nowarpto: true
+  pay_fild05:
+    nomemo: true
+  pay_d03_i:
+    nomemo: true
+    nowarpto: true
+  new_3-2:
+    nomemo: true
+  nguild_prt:
+    nomemo: true
+    nowarpto: true
+  prt_are01:
+    nomemo: true
+  louyang:
+    zone: 2048
+  job3_arch01:
+    nomemo: true
+  int_land02:
+    nomemo: true
+    nowarpto: true
+  gl_cas02_:
+    nomemo: true
+    nowarpto: true
+  gef_fild06:
+    nomemo: true
+  aldebaran:
+    zone: 2048
+  2@pump:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  moc_prydn1:
+    nomemo: true
+    nowarpto: true
+  ice_dun04:
+    nomemo: true
+  pvp_y_1-4:
+    nomemo: true
+  gl_church:
+    nomemo: true
+  prt_fild03:
+    nomemo: true
+  1@halo:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  2@cata:
+    nomemo: true
+    nowarpto: true
+    zone: 512
+  1@gl_prq:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  mjolnir_11:
+    nomemo: true
+  quiz_01:
+    nomemo: true
+  gef_d01_i:
+    nomemo: true
+    nowarpto: true
+  prt_mz03_i:
+    nomemo: true
+    nowarpto: true
+  que_qsch03:
+    nomemo: true
+    nowarpto: true
+  aldeg_cas03:
+    nomemo: true
+    nowarpto: true
+  1@odin:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  alberta_in:
+    nomemo: true
+  que_rachel:
+    nomemo: true
+    nowarpto: true
+  pay_dun01:
+    nomemo: true
+  teg_dun01:
+    nomemo: true
+    zone: 4096
+  job4_mag:
+    nomemo: true
+    nowarpto: true
+  tur_dun06:
+    nomemo: true
+  pvp_n_4-3:
+    nomemo: true
+  te_aldecas1:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  prt_sewb4:
+    nomemo: true
+  ein_in01:
+    nomemo: true
+  sec_pri:
+    nomemo: true
+    zone: 64
+  conch_in:
+    nomemo: true
+    nowarpto: true
+  1@tcamp:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  1@gef:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ra_temsky:
+    nomemo: true
+  1@uns:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ein_d02_i:
+    nomemo: true
+    nowarpto: true
+  mjolnir_10:
+    nomemo: true
+  prt_pri00:
+    nomemo: true
+    nowarpto: true
+  1@lab:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ein_dun01:
+    nomemo: true
+  mjolnir_08:
+    nomemo: true
+  te_prtcas05:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  que_ba:
+    nomemo: true
+  tha_t04:
+    nomemo: true
+  pvp_n_3-5:
+    nomemo: true
+  odin_tem01:
+    nomemo: true
+  cave:
+    nomemo: true
+    nowarpto: true
+  1@advs:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  1@cash:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  payon_in03:
+    nomemo: true
+  yuno_fild10:
+    nomemo: true
+  pvp_y_1-3:
+    nomemo: true
+  1@glast:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gon_test:
+    nomemo: true
+    nowarpto: true
+  treasure02:
+    nomemo: true
+  e_hugel:
+    nomemo: true
+    nowarpto: true
+  izlude_a:
+    zone: 2048
+  rgsr_in:
+    nomemo: true
+    nowarpto: true
+  pvp_y_7-5:
+    nomemo: true
+  tha_t01:
+    nomemo: true
+  ordeal_1-2:
+    nomemo: true
+  pvp_y_5-1:
+    nomemo: true
+  lighthalzen:
+    nomemo: true
+    zone: 2048
+  1@air1:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  oz_dun01:
+    nomemo: true
+    nowarpto: true
+  1@spa:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  prt_maze03:
+    nomemo: true
+  monk_in:
+    nomemo: true
+  te_prtcas01:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  c_tower3_:
+    nomemo: true
+  tra_fild02:
+    nomemo: true
+    nowarpto: true
+  1@crd:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  force_1-1:
+    nomemo: true
+    nowarpto: true
+    zone: 128
+  gef_dun00:
+    nomemo: true
+  mag_dun01:
+    nomemo: true
+  airplane:
+    nomemo: true
+  ve_fild02:
+    nomemo: true
+  nif_dun02:
+    nomemo: true
+    nowarpto: true
+  1@thts:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ra_fild03:
+    nomemo: true
+  1@ch_u:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  cmd_fild08:
+    nomemo: true
+  dali:
+    nomemo: true
+  prt_monk:
+    nomemo: true
+  prt_maze02:
+    nomemo: true
+  tur_dun04:
+    nomemo: true
+  gl_dun02:
+    nomemo: true
+  2009rwc_08:
+    nomemo: true
+    nowarpto: true
+  star_frst:
+    nomemo: true
+    nowarpto: true
+  ecl_in03:
+    nomemo: true
+  airplane_01:
+    nomemo: true
+  in_sphinx2:
+    nomemo: true
+  1@air2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_y_7-2:
+    nomemo: true
+  pvp_n_1-4:
+    nomemo: true
+  new_5-3:
+    nomemo: true
+  man_fild01:
+    nomemo: true
+    nowarpto: true
+  pvp_n_5-1:
+    nomemo: true
+  que_qsch04:
+    nomemo: true
+    nowarpto: true
+  mora:
+    nomemo: true
+    zone: 2048
+  dic_dun03:
+    nomemo: true
+  ma_scene01:
+    nomemo: true
+  gef_fild02:
+    nomemo: true
+  gefg_cas01:
+    nomemo: true
+    nowarpto: true
+  job3_guil02:
+    nomemo: true
+  aldeba_in:
+    nomemo: true
+  pvp_n_8-2:
+    nomemo: true
+  force_3-1:
+    nomemo: true
+    nowarpto: true
+    zone: 128
+  gl_dun01:
+    nomemo: true
+  prontera:
+    zone: 2048
+  odin_tem02:
+    nomemo: true
+  moc_fild15:
+    nomemo: true
+  1@os_b:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  que_god02:
+    nomemo: true
+  job3_rang02:
+    nomemo: true
+  1@4tro:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  nif_fild02:
+    nomemo: true
+  un_bk_q:
+    nowarpto: true
+  gon_in:
+    nomemo: true
+  morocc:
+    zone: 2048
+  ma_zif03:
+    nomemo: true
+  1@4igd:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  moc_prydb1:
+    nomemo: true
+  gl_step:
+    nomemo: true
+  morocc_in:
+    nomemo: true
+  paramk:
+    nomemo: true
+  gld_dun01:
+    nomemo: true
+  mosk_fild01:
+    nomemo: true
+  gl_sew01:
+    nomemo: true
+  ecl_in01:
+    nomemo: true
+  que_dan01:
+    nomemo: true
+    nowarpto: true
+  iz_int02:
+    nowarpto: true
+  ordeal_2-2:
+    nomemo: true
+  que_god01:
+    nomemo: true
+  job_sage:
+    nomemo: true
+  iz_dun00:
+    nomemo: true
+  job_soul:
+    nomemo: true
+  pay_fild09:
+    nomemo: true
+  iz_dun02:
+    nomemo: true
+  in_sphinx3:
+    nomemo: true
+  1@os_a:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gefg_cas03:
+    nomemo: true
+    nowarpto: true
+  pvp_n_6-2:
+    nomemo: true
+  gef_dun03:
+    nomemo: true
+  abbey02:
+    nomemo: true
+  job_thief1:
+    nomemo: true
+  kh_school:
+    nomemo: true
+  4@thts:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  xmas:
+    zone: 2048
+  moc_castle:
+    nomemo: true
+  new_4-2:
+    nomemo: true
+  bra_in01:
+    nomemo: true
+  turbo_e_16:
+    nomemo: true
+    nowarpto: true
+    zone: 32
+  job_hunte:
+    nomemo: true
+  1@gl_k2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  in_rogue:
+    nomemo: true
+  2012rwc_03:
+    nomemo: true
+    nowarpto: true
+  rockmi1:
+    nomemo: true
+    nowarpto: true
+  pvp_n_5-2:
+    nomemo: true
+  dic_fild01:
+    nomemo: true
+  monk_test:
+    nomemo: true
+  alde_dun03:
+    nomemo: true
+  lhz_d_n2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gl_prison:
+    nomemo: true
+  jupe_core:
+    nomemo: true
+  bossnia_02:
+    nomemo: true
+    nowarpto: true
+  jupe_area2:
+    nomemo: true
+  pvp_y_4-3:
+    nomemo: true
+  2009rwc_04:
+    nomemo: true
+    nowarpto: true
+  nyd_dun01:
+    nomemo: true
+    nowarpto: true
+  new_4-1:
+    nomemo: true
+  teg_dun02:
+    nomemo: true
+    zone: 4096
+  alde_dun02:
+    nomemo: true
+  pvp_n_4-5:
+    nomemo: true
+  jawaii_in:
+    nomemo: true
+  lhz_dun04:
+    nomemo: true
+    nowarpto: true
+  1@dth1:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  mag_dun03:
+    nomemo: true
+    nowarpto: true
+  mjolnir_05:
+    nomemo: true
+  izlude:
+    zone: 2048
+  ecl_tdun01:
+    nomemo: true
+  izlude_in:
+    nomemo: true
+  ma_zif01:
+    nomemo: true
+  lhz_airport:
+    nomemo: true
+  1@sthc:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  te_aldecas2:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  bif_fild01:
+    nomemo: true
+  bat_a02:
+    nomemo: true
+    nowarpto: true
+  cmd_in01:
+    nomemo: true
+  ayo_in02:
+    nomemo: true
+  prt_lib:
+    nomemo: true
+    nowarpto: true
+  pvp_y_3-2:
+    nomemo: true
+  gon_dun03:
+    nomemo: true
+  dali02:
+    nomemo: true
+  geffen:
+    zone: 2048
+  ordeal_1-1:
+    nomemo: true
+  new_1-4:
+    nomemo: true
+  pvp_y_2-4:
+    nomemo: true
+  1@lhz:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  iz_int:
+    nowarpto: true
+  pvp_y_2-2:
+    nomemo: true
+  1@bamn:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  2009rwc_07:
+    nomemo: true
+    nowarpto: true
+  ra_fild05:
+    nomemo: true
+  ice_d03_i:
+    nomemo: true
+    nowarpto: true
+  job3_war01:
+    nomemo: true
+  1@tre:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  1@mjo1:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  2@mir:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  bat_b02:
+    nomemo: true
+    nowarpto: true
+  te_aldecas3:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  nguild_gef:
+    nomemo: true
+    nowarpto: true
+  gefenia03:
+    nomemo: true
+  moc_pryd02:
+    nomemo: true
+  1@xm_d:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_y_5-5:
+    nomemo: true
+  in_sphinx4:
+    nomemo: true
+  schg_cas02:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  ein_dun03:
+    nomemo: true
+    nowarpto: true
+  tha_t12:
+    nomemo: true
+  turbo_room:
+    nomemo: true
+  alde_alche:
+    nomemo: true
+  2@gl_k:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gef_dun02:
+    nomemo: true
+  ma_zif05:
+    nomemo: true
+  s_atelier:
+    nomemo: true
+  guild_vs4:
+    nomemo: true
+  moc_fild22b:
+    nomemo: true
+    nowarpto: true
+  hugel:
+    zone: 2048
+  moc_fild09:
+    nomemo: true
+  poring_c01:
+    nomemo: true
+  thor_v02:
+    nomemo: true
+  beach_dun2:
+    nomemo: true
+  pvp_y_8-3:
+    nomemo: true
+  mjo_dun03:
+    nomemo: true
+  gef_fild10:
+    nomemo: true
+  2009rwc_06:
+    nomemo: true
+    nowarpto: true
+  in_hunter:
+    nomemo: true
+  gl_cas02:
+    nomemo: true
+  mjolnir_07:
+    nomemo: true
+  alde_dun04:
+    nomemo: true
+  beach_dun:
+    nomemo: true
+  lou_in01:
+    nomemo: true
+  pvp_y_3-1:
+    nomemo: true
+  mag_dun02:
+    nomemo: true
+  ecl_in02:
+    nomemo: true
+  pvp_n_7-2:
+    nomemo: true
+  iz_dun05:
+    nomemo: true
+  spl_in01:
+    nomemo: true
+    nowarpto: true
+  n_castle:
+    nomemo: true
+    nowarpto: true
+  gld_dun04:
+    nomemo: true
+  lhz_dun03:
+    nomemo: true
+    nowarpto: true
+  1@begi:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  bat_a01:
+    nomemo: true
+    nowarpto: true
+  tha_t06:
+    nomemo: true
+  yuno_in05:
+    nomemo: true
+  sec_in01:
+    nomemo: true
+  lhz_dun01:
+    nomemo: true
+  pay_arche:
+    nomemo: true
+    zone: 2048
+  que_qsch05:
+    nomemo: true
+    nowarpto: true
+  2012rwc_01:
+    nomemo: true
+    nowarpto: true
+  que_dan02:
+    nomemo: true
+    nowarpto: true
+  pvp_2vs2:
+    nomemo: true
+  jupe_core2:
+    nomemo: true
+  pvp_y_3-5:
+    nomemo: true
+  har_in01:
+    nomemo: true
+    nowarpto: true
+  iz_d04_i:
+    nomemo: true
+    nowarpto: true
+  3@ch_t:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  man_fild03:
+    nomemo: true
+    nowarpto: true
+  mjo_dun01:
+    nomemo: true
+  pvp_y_7-4:
+    nomemo: true
+  comodo:
+    zone: 2048
+  prt_maze01:
+    nomemo: true
+  job_monk:
+    nomemo: true
+  nif_fild01:
+    nomemo: true
+  moc_ruins:
+    zone: 2048
+  pvp_y_1-1:
+    nomemo: true
+  moc_fild20:
+    nomemo: true
+  pvp_n_3-2:
+    nomemo: true
+  lasa_dun03:
+    nomemo: true
+    nowarpto: true
+  moc_fild21:
+    nomemo: true
+  payg_cas03:
+    nomemo: true
+    nowarpto: true
+  new_zone01:
+    nomemo: true
+  tur_d04_i:
+    nomemo: true
+    nowarpto: true
+  gefg_cas05:
+    nomemo: true
+    nowarpto: true
+  dic_fild02:
+    nomemo: true
+  lhz_in03:
+    nomemo: true
+  gef_tower:
+    nomemo: true
+  turbo_n_1:
+    nomemo: true
+    nowarpto: true
+    zone: 32
+  yuno_in02:
+    nomemo: true
+  lou_dun02:
+    nomemo: true
+  pvp_y_5-3:
+    nomemo: true
+  ama_in02:
+    nomemo: true
+  que_hugel:
+    nomemo: true
+  arena_room:
+    nomemo: true
+  que_swat:
+    nomemo: true
+    nowarpto: true
+  2009rwc_01:
+    nomemo: true
+    nowarpto: true
+  ayo_dun02:
+    nomemo: true
+  mosk_in:
+    nomemo: true
+  1@xm_d2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  prtg_cas03:
+    nomemo: true
+    nowarpto: true
+  man_fild02:
+    nomemo: true
+    nowarpto: true
+  1@dth2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  yggdrasil01:
+    nomemo: true
+  arug_cas03:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  alberta:
+    zone: 2048
+  job3_sha01:
+    nomemo: true
+  com_d02_i:
+    nomemo: true
+    nowarpto: true
+  ra_fild02:
+    nomemo: true
+  ayo_fild02:
+    nomemo: true
+  nyd_dun02:
+    nomemo: true
+    nowarpto: true
+  2@ch_t:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gld_dun04_2:
+    nomemo: true
+  tur_dun01:
+    nomemo: true
+  1@pump:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  job3_war02:
+    nomemo: true
+  1@infi:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gef_fild11:
+    nomemo: true
+  1@4mag:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_n_3-4:
+    nomemo: true
+  dicastes01:
+    nomemo: true
+    zone: 2048
+  jawaii:
+    zone: 2048
+  yuno_fild04:
+    nomemo: true
+  int_land03:
+    nomemo: true
+    nowarpto: true
+  mosk_fild02:
+    nomemo: true
+  payg_cas04:
+    nomemo: true
+    nowarpto: true
+  ice_dun02:
+    nomemo: true
+  1@def02:
+    nomemo: true
+    nowarpto: true
+    zone: 8192
+  pvp_n_5-3:
+    nomemo: true
+  ice_dun01:
+    nomemo: true
+  bif_fild02:
+    nomemo: true
+  juperos_02:
+    nomemo: true
+  1@adv:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  payon_in02:
+    nomemo: true
+  pvp_n_8-3:
+    nomemo: true
+  2012rwc_04:
+    nomemo: true
+    nowarpto: true
+  yuno:
+    nomemo: true
+    zone: 2048
+  ama_dun02:
+    nomemo: true
+  dew_dun02:
+    nomemo: true
+  1@orcs:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gefg_cas02:
+    nomemo: true
+    nowarpto: true
+  gl_knt01:
+    nomemo: true
+  yuno_fild08:
+    nomemo: true
+  mjolnir_03:
+    nomemo: true
+  job_sword1:
+    nomemo: true
+  veins:
+    zone: 2048
+  ma_zif07:
+    nomemo: true
+  1@herbs:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  int_land:
+    nomemo: true
+    nowarpto: true
+  ve_in02:
+    nomemo: true
+  payon_in01:
+    nomemo: true
+  pvp_n_room:
+    nomemo: true
+  tha_t11:
+    nomemo: true
+  job3_arch03:
+    nomemo: true
+  que_thr:
+    nomemo: true
+    nowarpto: true
+  xmas_dun02:
+    nomemo: true
+  2009rwc_03:
+    nomemo: true
+    nowarpto: true
+  ma_zif02:
+    nomemo: true
+  1@4cdn:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  1@swat:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_n_1-5:
+    nomemo: true
+  dew_dun01:
+    nomemo: true
+  ma_zif04:
+    nomemo: true
+  6@tower:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gl_cas01:
+    nomemo: true
+  cmd_fild01:
+    nomemo: true
+  job_star:
+    nomemo: true
+  que_qaru04:
+    nomemo: true
+    nowarpto: true
+  prt_lib_q:
+    nomemo: true
+    nowarpto: true
+  cmd_fild03:
+    nomemo: true
+  gef_fild08:
+    nomemo: true
+  izlude_d:
+    zone: 2048
+  arug_dun01:
+    nomemo: true
+    nowarpto: true
+  rebel_in:
+    nomemo: true
+    nowarpto: true
+  pvp_y_7-3:
+    nomemo: true
+  alde_tt02:
+    zone: 32
+  mjolnir_01:
+    nomemo: true
+  new_3-1:
+    nomemo: true
+  pvp_y_8-1:
+    nomemo: true
+  iz_int04:
+    nowarpto: true
+  lhz_cube:
+    nomemo: true
+  pay_fild11:
+    nomemo: true
+  que_thor:
+    nomemo: true
+  prt_fild09:
+    nomemo: true
+  nif_dun01:
+    nomemo: true
+    nowarpto: true
+  abyss_03:
+    nomemo: true
+  lhz_dun02:
+    nomemo: true
+  gef_fild14:
+    nomemo: true
+  ama_dun01:
+    nomemo: true
+  cmd_fild07:
+    nomemo: true
+  poring_w02:
+    nomemo: true
+    nowarpto: true
+  orcsdun01:
+    nomemo: true
+  8@thts:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  4@tower:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  arug_cas04:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  2012rwc_08:
+    nomemo: true
+    nowarpto: true
+  ve_fild01:
+    nomemo: true
+  ma_dun01:
+    nomemo: true
+  pvp_n_7-4:
+    nomemo: true
+  ein_dun02:
+    nomemo: true
+  mosk_dun02:
+    nomemo: true
+  1@tower:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_n_4-4:
+    nomemo: true
+  ayothaya:
+    zone: 2048
+  1@gol1:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  job3_arch02:
+    nomemo: true
+  pvp_n_7-5:
+    nomemo: true
+  pvp_y_8-5:
+    nomemo: true
+  2@tower:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  alde_dun01:
+    nomemo: true
+  1@gl_he2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  schg_cas04:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  1@md_pay:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  izlu2dun:
+    nomemo: true
+  gefenia02:
+    nomemo: true
+  1@ghg:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  tha_t09:
+    nomemo: true
+  malangdo:
+    zone: 2048
+  1@gol2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  1@def03:
+    nomemo: true
+    nowarpto: true
+    zone: 8192
+  pvp_y_5-2:
+    nomemo: true
+  job3_rang01:
+    nomemo: true
+  que_lhz:
+    nomemo: true
+    nowarpto: true
+  tur_dun03:
+    nomemo: true
+  prt_cas:
+    nomemo: true
+    nowarpto: true
+  spl_in02:
+    nomemo: true
+  ecl_fild01:
+    nomemo: true
+  ra_fild06:
+    nomemo: true
+  prt_fild11:
+    nomemo: true
+  gl_chyard_:
+    nomemo: true
+    nowarpto: true
+  tha_t02:
+    nomemo: true
+  alb2trea:
+    nomemo: true
+  p_track02:
+    nomemo: true
+    nowarpto: true
+  kh_dun01:
+    nomemo: true
+  3@tower:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_y_4-4:
+    nomemo: true
+  job3_gen01:
+    nomemo: true
+  1@eom:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  guild_vs2:
+    nomemo: true
+  nguild_pay:
+    nomemo: true
+    nowarpto: true
+  dew_in01:
+    nomemo: true
+  wolfvill:
+    nomemo: true
+    nowarpto: true
+    zone: 2048
+  moc_fild18:
+    nomemo: true
+  job4_bio:
+    nomemo: true
+    nowarpto: true
+  new_5-1:
+    nomemo: true
+  2012rwc_02:
+    nomemo: true
+    nowarpto: true
+  hu_fild01:
+    nomemo: true
+  pvp_y_6-4:
+    nomemo: true
+  cmd_fild09:
+    nomemo: true
+  ama_test:
+    nomemo: true
+    nowarpto: true
+  pvp_n_2-4:
+    nomemo: true
+  jupe_gate:
+    nomemo: true
+  lhz_in02:
+    nomemo: true
+  1@mir:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_n_5-4:
+    nomemo: true
+  job_duncer:
+    nomemo: true
+  dewata:
+    zone: 2048
+  tha_t08:
+    nomemo: true
+  force_1-3:
+    nomemo: true
+    nowarpto: true
+    zone: 128
+  ma_zif06:
+    nomemo: true
+  rachel:
+    zone: 2048
+  prt_are_in:
+    nomemo: true
+    nowarpto: true
+    zone: 128
+  poring_w01:
+    nomemo: true
+    nowarpto: true
+  bossnia_03:
+    nomemo: true
+    nowarpto: true
+  pvp_n_1-3:
+    nomemo: true
+  pay_fild10:
+    nomemo: true
+  pvp_y_6-2:
+    nomemo: true
+  um_dun02:
+    nomemo: true
+  pvp_n_4-1:
+    nomemo: true
+  1@ge_st:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_y_8-4:
+    nomemo: true
+  yuno_fild05:
+    nomemo: true
+  yuno_fild02:
+    nomemo: true
+  yuno_in01:
+    nomemo: true
+  ecl_tdun04:
+    nomemo: true
+  kh_vila:
+    nomemo: true
+  ve_fild04:
+    nomemo: true
+  pay_dun00:
+    nomemo: true
+  job3_guil01:
+    nomemo: true
+  yuno_fild07:
+    nomemo: true
+  prt_q:
+    nomemo: true
+    nowarpto: true
+  um_in:
+    nomemo: true
+  prtg_cas05:
+    nomemo: true
+    nowarpto: true
+  force_1-2:
+    nomemo: true
+    nowarpto: true
+    zone: 128
+  moc_pryd03:
+    nomemo: true
+  gl_sew03:
+    nomemo: true
+  in_sphinx1:
+    nomemo: true
+  gef_fild03:
+    nomemo: true
+  1@face:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ordeal_3-1:
+    nomemo: true
+  payon:
+    zone: 2048
+  turbo_n_16:
+    nomemo: true
+    nowarpto: true
+    zone: 32
+  hu_in01:
+    nomemo: true
+  kh_kiehl01:
+    nomemo: true
+  2009rwc_05:
+    nomemo: true
+    nowarpto: true
+  jupe_area1:
+    nomemo: true
+  1@bamq:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  1@nyd:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  moc_fild02:
+    nomemo: true
+  aldeg_cas02:
+    nomemo: true
+    nowarpto: true
+  1@sthb:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  lou_dun01:
+    nomemo: true
+  tra_fild03:
+    nomemo: true
+    nowarpto: true
+  nif_in:
+    nomemo: true
+  lasagna:
+    zone: 2048
+  geffen_in:
+    nomemo: true
+  job_wiz:
+    nomemo: true
+  pvp_n_8-5:
+    nomemo: true
+  dic_dun01:
+    nomemo: true
+  ra_san02:
+    nomemo: true
+  prt_cas_q:
+    nomemo: true
+    nowarpto: true
+  pvp_y_8-2:
+    nomemo: true
+  pvp_n_3-1:
+    nomemo: true
+  in_moc_16:
+    nomemo: true
+  force_2-1:
+    nomemo: true
+    nowarpto: true
+    zone: 128
+  gefenia01:
+    nomemo: true
+  pvp_n_8-1:
+    nomemo: true
+  pvp_n_4-2:
+    nomemo: true
+  te_aldecas4:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  pvp_n_2-3:
+    nomemo: true
+  ecl_in04:
+    nomemo: true
+  new_3-3:
+    nomemo: true
+  moro_cav:
+    nomemo: true
+    nowarpto: true
+  1@ecl:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  slabw01:
+    nomemo: true
+    nowarpto: true
+  te_prtcas04:
+    gvg_te: true
+    nomemo: true
+    nowarpto: true
+  new_zone04:
+    nomemo: true
+  1@rgsr:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  yuno_in04:
+    nomemo: true
+  mjo_dun02:
+    nomemo: true
+  6@thts:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  2012rwc_07:
+    nomemo: true
+    nowarpto: true
+  cmd_fild04:
+    nomemo: true
+  bat_b01:
+    nomemo: true
+    nowarpto: true
+  p_track01:
+    nomemo: true
+    nowarpto: true
+  pvp_y_6-5:
+    nomemo: true
+  force_4-1:
+    nomemo: true
+    nowarpto: true
+    zone: 128
+  moc_pryd04:
+    nomemo: true
+  mid_campin:
+    nomemo: true
+    nowarpto: true
+  c_tower1:
+    nomemo: true
+  poring_c02:
+    nomemo: true
+  que_san04:
+    nomemo: true
+    nowarpto: true
+  job4_tro:
+    nomemo: true
+    nowarpto: true
+  pvp_n_5-5:
+    nomemo: true
+  2012rwc_06:
+    nomemo: true
+    nowarpto: true
+  gon_dun01:
+    nomemo: true
+  pvp_y_1-5:
+    nomemo: true
+  job3_guil03:
+    nomemo: true
+  new_4-4:
+    nomemo: true
+  cmd_fild06:
+    nomemo: true
+  yuno_in03:
+    nomemo: true
+  tha_t03:
+    nomemo: true
+  gl_prison1:
+    nomemo: true
+  pay_fild02:
+    nomemo: true
+  1@ma_c:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  que_qaru01:
+    nomemo: true
+    nowarpto: true
+  pvp_n_1-2:
+    nomemo: true
+  ordeal_2-1:
+    nomemo: true
+  um_dun01:
+    nomemo: true
+  hu_fild05:
+    nomemo: true
+  izlude_c:
+    zone: 2048
+  man_in01:
+    nomemo: true
+    nowarpto: true
+  new_1-2:
+    nomemo: true
+  aldeg_cas01:
+    nomemo: true
+    nowarpto: true
+  pvp_n_7-3:
+    nomemo: true
+  mosk_ship:
+    nomemo: true
+  2@nyd:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  gl_knt02:
+    nomemo: true
+  schg_cas03:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  new_2-4:
+    nomemo: true
+  in_sphinx5:
+    nomemo: true
+  ma_zif09:
+    nomemo: true
+  mal_dun01:
+    nomemo: true
+  new_2-1:
+    nomemo: true
+  new_4-3:
+    nomemo: true
+  y_airport:
+    nomemo: true
+  pvp_y_6-3:
+    nomemo: true
+  que_qaru05:
+    nomemo: true
+    nowarpto: true
+  pvp_y_1-2:
+    nomemo: true
+  nameless_i:
+    nomemo: true
+  glast_01:
+    nomemo: true
+  1@slw:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ayo_in01:
+    nomemo: true
+  que_ng:
+    nomemo: true
+  spl_fild03:
+    nomemo: true
+    nowarpto: true
+  2009rwc_f01:
+    nomemo: true
+    nowarpto: true
+  2012rwc_05:
+    nomemo: true
+    nowarpto: true
+  un_myst:
+    nomemo: true
+    nowarpto: true
+  1@cor:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  pvp_n_2-1:
+    nomemo: true
+  pvp_y_2-3:
+    nomemo: true
+  spl_fild01:
+    nomemo: true
+    nowarpto: true
+  dicastes02:
+    nomemo: true
+  um_fild03:
+    nomemo: true
+  yuno_fild09:
+    nomemo: true
+  iz_dun01:
+    nomemo: true
+  aldeg_cas05:
+    nomemo: true
+    nowarpto: true
+  1@lost:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  guild_vs5:
+    nomemo: true
+  auction_02:
+    nomemo: true
+  jupe_ele_r:
+    nomemo: true
+  gefg_cas04:
+    nomemo: true
+    nowarpto: true
+  bra_dun01:
+    nomemo: true
+  ma_in01:
+    nomemo: true
+  1@spa2:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  odin_tem03:
+    nomemo: true
+  abyss_02:
+    nomemo: true
+  job_prist:
+    nomemo: true
+  1@4win:
+    nomemo: true
+    nowarpto: true
+    zone: 1024
+  ra_san05:
+    nomemo: true
+  gonryun:
+    zone: 2048
+  arug_que01:
+    nomemo: true
+    nowarpto: true
+  mosk_dun03:
+    nomemo: true
+  que_bingo:
+    nomemo: true
+  schg_cas01:
+    nomemo: true
+    nowarpto: true
+    zone: 256
+  moc_fild01:
+    nomemo: true
+  anthell02:
+    nomemo: true

@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
   end
 
   defp open_state(attrs \\ %{}) do
-    Map.merge(%{dest: @dest, uses: 8, opens_at: now_ms() - 1}, attrs)
+    Map.merge(%{dest: @dest, uses: 8, opens_at: now_ms() - 1, opened: true}, attrs)
   end
 
   defp stub_target_session(player_id, waiting_room \\ nil) do
@@ -45,6 +45,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
     stub(UnitRegistry, :get_unit, fn :player, ^player_id ->
       state = %PlayerState{
         character_id: player_id,
+        map_name: "prt_fild08",
+        x: 100,
+        y: 100,
         action_state: :idle,
         stats: %{current_state: %{hp: 1}},
         waiting_room: waiting_room
@@ -83,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
 
   describe "on_place/1" do
     @tag game_mode: :renewal
-    test "stamps the caster's save point, level + 6 uses, and the 2s opening delay" do
+    test "stamps the selected destination, level + 6 uses, and the 2s opening delay" do
       stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
         {:ok,
          {PlayerState,
@@ -92,15 +95,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       end)
 
       before = now_ms()
-      assert {:ok, placement} = AlWarp.on_place(group(%{}))
+      assert {:ok, placement} = AlWarp.on_place(group(%{dest: @dest}))
 
       assert placement.cells == [{100, 100}]
       assert placement.state.dest == @dest
       assert placement.state.uses == 8
       assert placement.state.opens_at >= before + 2_000
       assert placement.state.opens_at <= now_ms() + 2_000
-      # 2s opening phase + the level 2 portal lifetime
-      assert placement.duration == 2_000 + 15_000
+      assert placement.duration == 15_000
     end
 
     @tag game_mode: :pre_renewal
@@ -112,11 +114,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
           self()}}
       end)
 
-      assert {:ok, placement} = AlWarp.on_place(group(%{}))
+      assert {:ok, placement} = AlWarp.on_place(group(%{dest: @dest}))
 
       assert placement.state.uses == 8
-      # 2s opening phase + the level 2 portal lifetime
-      assert placement.duration == 2_000 + 10_000
+      assert placement.duration == 10_000
     end
   end
 
@@ -191,7 +192,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       stub(SpatialIndex, :units_in_cell, fn "prt_fild08", 100, 100 -> [{:player, 3000}] end)
 
       assert {:ok, %Group{state: %{uses: 8}}} =
-               AlWarp.on_interval(group(open_state()), now_ms())
+               AlWarp.on_interval(group(open_state(%{opened: false})), now_ms())
 
       refute_received {:"$gen_cast", _}
     end
@@ -204,7 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       end)
 
       assert {:ok, %Group{state: %{uses: 7}}} =
-               AlWarp.on_interval(group(open_state()), now_ms())
+               AlWarp.on_interval(group(open_state(%{opened: false})), now_ms())
 
       assert_received {:"$gen_cast", {:movement, {:warp, "prontera", 155, 180}}}
     end
@@ -215,7 +216,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       stub(SpatialIndex, :units_in_cell, fn _, _, _ -> [{:player, 3000}] end)
 
       assert {:expire, %Group{state: %{uses: 0}}} =
-               AlWarp.on_interval(group(open_state(%{uses: 1})), now_ms())
+               AlWarp.on_interval(group(open_state(%{uses: 1, opened: false})), now_ms())
     end
 
     test "the last use goes to the first player in the cell's block order" do
@@ -224,6 +225,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       stub(UnitRegistry, :get_unit, fn :player, player_id ->
         state = %PlayerState{
           character_id: player_id,
+          map_name: "prt_fild08",
+          x: 100,
+          y: 100,
           action_state: :idle,
           stats: %{current_state: %{hp: 1}}
         }
@@ -237,7 +241,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       end)
 
       assert {:expire, %Group{state: %{uses: 0}}} =
-               AlWarp.on_interval(group(open_state(%{uses: 1})), now_ms())
+               AlWarp.on_interval(group(open_state(%{uses: 1, opened: false})), now_ms())
 
       assert_received {:warped, 3001}
       refute_received {:warped, 3000}

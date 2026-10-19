@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   the session, since a reply is client input and may be stale or forged.
 
   The menu is per-session, not persisted: it is cleared on death and on warp
-  (`clear/1`), and disconnect discards it with the session process.
+  (`clear/1`), and disconnect discards it with the session process. A labelled
+  menu's work lock is separate from its descriptor: any reply releases the
+  work lock, while a skill may retain its descriptor without showing failure.
 
   This module owns the transport only. An accepted selection is routed back to
   the skill that opened the menu through its `Skill.Menu` capability, which does
@@ -25,13 +27,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.StateCommit
 
   @typedoc "The offer parked on the session while the client is deciding."
   @type pending :: %{
+          optional(:context) => map(),
+          optional(:work_in_progress?) => boolean(),
           skill_id: non_neg_integer(),
           kind: SkillMenu.Kind.t(),
           entry_ids: [non_neg_integer()],
@@ -53,24 +61,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
           [non_neg_integer()],
           non_neg_integer()
         ) :: map()
-  def open(state, skill_id, kind, entry_ids, level) do
+  def open(state, skill_id, kind, entry_ids, level),
+    do: open(state, skill_id, kind, entry_ids, level, [])
+
+  @doc "Opens a menu with optional labels and server-owned reply context."
+  @spec open(
+          map(),
+          non_neg_integer(),
+          SkillMenu.Kind.t(),
+          [non_neg_integer()],
+          non_neg_integer(),
+          keyword()
+        ) :: map()
+  def open(state, skill_id, kind, entry_ids, level, opts) do
     if SessionState.interaction_blocked?(state) do
       state
     else
       MessageRouter.send_to(state.connection_pid, %SkillMenu{
         src_skill_id: skill_id,
         kind: kind,
-        entry_ids: entry_ids
+        entry_ids: entry_ids,
+        labels: Keyword.get(opts, :labels, [])
       })
 
       %{
         state
-        | pending_skill_menu: %{
-            skill_id: skill_id,
-            kind: kind,
-            entry_ids: entry_ids,
-            level: level
-          }
+        | pending_skill_menu:
+            %{skill_id: skill_id, kind: kind, entry_ids: entry_ids, level: level}
+            |> Map.merge(Map.new(Keyword.take(opts, [:context])))
       }
     end
   end
@@ -109,18 +127,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
         %{pending_skill_menu: %{skill_id: pending_skill_id}} = state
       )
       when src_skill_id != pending_skill_id do
+    state = release_work_lock(state)
     debug_drop(state, "pending menu is skill #{pending_skill_id}", reply)
     {:noreply, state}
   end
 
-  def handle_reply(%SkillMenuReply{cancel: true}, state) do
-    {:noreply, clear(state)}
+  def handle_reply(reply, %{pending_skill_menu: %{kind: :OPTIONS}} = state) do
+    state = release_work_lock(state)
+
+    if options_reply_allowed?(state) do
+      handle_selection(reply, Invincibility.stop(state))
+    else
+      {:noreply, clear(state)}
+    end
   end
 
-  def handle_reply(
-        %SkillMenuReply{selected_id: selected_id} = reply,
-        %{pending_skill_menu: %{entry_ids: entry_ids}} = state
-      ) do
+  def handle_reply(reply, state), do: handle_selection(reply, state)
+
+  defp handle_selection(
+         %SkillMenuReply{cancel: true},
+         %{pending_skill_menu: %{kind: :OPTIONS}} = state
+       ) do
+    module = menu_module(state.pending_skill_menu.skill_id)
+
+    cleared =
+      if function_exported?(module, :on_menu_cancel, 1) do
+        StateCommit.commit(clear(state), module.on_menu_cancel(state.game_state))
+      else
+        clear(state)
+      end
+
+    {:noreply, cleared}
+  end
+
+  defp handle_selection(%SkillMenuReply{cancel: true}, state), do: {:noreply, clear(state)}
+
+  defp handle_selection(
+         %SkillMenuReply{selected_id: selected_id} = reply,
+         %{pending_skill_menu: %{entry_ids: entry_ids}} = state
+       ) do
     if selected_id in entry_ids do
       selection = %{id: selected_id, extras: reply.extra_ids}
       {:noreply, accept(state, selection)}
@@ -148,7 +193,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
     case menu_reply(module, state, selection, level) do
       {:ok, game_state} ->
         game_state = InventoryStaging.drain(state.connection_pid, game_state)
-        %{cleared | game_state: drain_production_result(state.connection_pid, game_state)}
+        StateCommit.commit(cleared, drain_production_result(state.connection_pid, game_state))
+
+      {:silent, game_state} ->
+        StateCommit.commit(cleared, InventoryStaging.drain(state.connection_pid, game_state))
+
+      {:pending, game_state} ->
+        StateCommit.commit(state, game_state)
+
+      {:failed, game_state, reason} ->
+        game_state = InventoryStaging.drain(state.connection_pid, game_state)
+        SkillHandler.report_cast_failure(skill_id, state.game_state.character_id, reason)
+        StateCommit.commit(cleared, game_state)
 
       {:error, reason} ->
         Logger.debug(
@@ -164,11 +220,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   defp menu_reply(module, state, selection, level) do
     if function_exported?(module, :on_menu_reply, 4) do
       module.on_menu_reply(state.game_state, selection, level, %{
-        homunculus: Map.get(state, :homunculus)
+        homunculus: Map.get(state, :homunculus),
+        menu: state.pending_skill_menu
       })
     else
       module.on_menu_reply(state.game_state, selection, level)
     end
+  end
+
+  defp release_work_lock(%{pending_skill_menu: %{kind: :OPTIONS} = menu} = state),
+    do: %{state | pending_skill_menu: Map.put(menu, :work_in_progress?, false)}
+
+  defp release_work_lock(state), do: state
+
+  defp options_reply_allowed?(%{game_state: player} = state) do
+    storage? = player.storage != nil or Map.get(state, :guild_storage_ctx) != nil
+    free_body? = StatusDisplay.spawn_state(:player, player.character_id).body_state in [0, 7]
+
+    can_act? =
+      Map.get(state, :interaction_lock) == nil and player.waiting_room == nil and
+        player.action_state != :vending and Map.get(state, :trade) == nil and free_body?
+
+    (storage? or can_act?) and StatusInterpreter.can_use_skill?(:player, player.character_id)
   end
 
   defp drain_production_result(_connection_pid, %{pending_production_result: nil} = game_state),

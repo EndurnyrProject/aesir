@@ -1067,7 +1067,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp compile_amount_bonus(key, amount, env) do
     with {:ok, dest} <- destination(key),
          {:ok, expr} <- compile_expr(amount, env) do
-      {:ok, {:bonus, dest, scale(dest, expr)}}
+      value = if dest == :no_gemstone, do: 1, else: scale(dest, expr)
+      {:ok, {:bonus, dest, value}}
     end
   end
 

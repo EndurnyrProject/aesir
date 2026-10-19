@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.HomunculusRequest
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MapLoaded
+  alias Aesir.Net.MemoRequest
   alias Aesir.Net.MountRequest
   alias Aesir.Net.MoveFromCartRequest
   alias Aesir.Net.MoveRequest
@@ -103,6 +104,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MemoHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NameHandler
@@ -309,6 +311,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   def handle_message(%SkillTextInputReply{} = message, state) do
     SkillTextInputHandler.handle_reply(message, state)
   end
+
+  def handle_message(%MemoRequest{}, state), do: MemoHandler.handle_request(state)
 
   # LearnSkill - Player spends a skill point to learn/raise a skill (protobuf
   # analogue of CZ_UPGRADE_SKILLLEVEL 0x0112)

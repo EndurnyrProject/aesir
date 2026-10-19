@@ -1,42 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
   @moduledoc """
-  Warp Portal (AL_WARP). Ground-targeted portal that warps players who step
-  onto it to the caster's save point.
+  Warp Portal offers the caster's save point and, at cast levels two through
+  four, up to three memo maps. The cast spends SP and commits its pacing; the
+  accepted destination spends the gemstone and places the portal at the chosen
+  ground cell. Cancel does not refund the first cast.
 
-  ## Shared behaviour
+  The portal opens after two seconds and visits its occupants once. Later
+  entries require a player's walk destination to be the portal cell. Chat-room
+  occupants and corpses cannot enter. Each qualifying entry spends one of
+  `level + 6` uses before checking destination access. An exact same-map,
+  same-cell destination puts the whole portal into its working state, preventing
+  further player entries. A caster may hold three live portals.
 
-    - Four levels, SP 35/32/29/26, one Blue Gemstone per portal, range nine,
-      single-cell footprint.
-    - The portal spends two seconds opening before it accepts anyone, then runs
-      out its own lifetime and warps whoever is already standing on the cell at
-      the moment it opens. Aesir models the opening as an `opens_at` timestamp:
-      touches before it are ignored, and the group's total lifetime is the two
-      seconds plus the portal's own duration.
-    - A portal closes after `level + 6` warps.
-    - A caster keeps at most three live portals; a fourth cast fails before
-      anything is spent. So does a cast whose cell holds a portal, a trap or
-      Venom Dust, or anyone, dead or alive.
-    - Only players are warped. The caster is warped like anyone else.
-
-  ## Renewal
-
-  No variable cast: a flat one-second fixed cast and a one-second after-cast
-  delay. The portal lasts 10/15/20/25 seconds by level.
-
-  ## Pre-renewal
-
-  A flat one-second variable cast, no fixed component and no after-cast delay at
-  all, so the caster chains straight into the next action. The portal is shorter
-  lived: 5/10/15/20 seconds by level.
-
-  ## Deviations (both modes)
-
-    - Destination: always the caster's save point, captured at placement. The
-      source lets the caster pick the save point or one of up to three memorised
-      points from a client menu; Aesir has neither memo points nor a warp-list
-      message in the wire protocol yet, so the memo destinations are deferred.
-    - The source only warps a player whose walk destination is the portal cell;
-      Aesir warps on any cell entry, matching its NPC warp triggers.
+  Renewal uses a one-second fixed cast and one-second act delay, with total
+  lifetimes of 10/15/20/25 seconds. Pre-renewal uses a one-second variable cast,
+  no act delay, and total lifetimes of 5/10/15/20 seconds. Both lifetimes include
+  the opening phase, and selection places at the caster's current effective
+  skill level (or the level of the outstanding item-granted cast).
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 27,
@@ -61,73 +41,207 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
     sp_cost: [35, 32, 29, 26],
     item_cost: [%{id: 717, amount: 1}]
 
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Ground
+  alias Aesir.ZoneServer.Mmo.Skill.Menu
+  alias Aesir.ZoneServer.Mmo.Skill.PortalAccess
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  @behaviour Active
   @behaviour Ground
-
+  @behaviour Menu
   @open_delay 2_000
+
+  @impl Active
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster(), :no_consume}
+  def cast(caster, target, level, definition),
+    do: cast_with_origin(caster, target, level, definition, :normal)
+
+  @impl Active
+  @spec cast_with_origin(
+          Active.caster(),
+          Active.target(),
+          pos_integer(),
+          Definition.t(),
+          Active.cast_origin()
+        ) :: {:ok, Active.caster(), :no_consume}
+  def cast_with_origin(%PlayerState{} = caster, {:ground, x, y}, level, _definition, origin) do
+    maps = caster |> destinations() |> Enum.take(level) |> Enum.map(& &1["map"])
+    maps = Enum.reject(maps, &(&1 in [nil, ""]))
+
+    offer = %{
+      skill_id: 27,
+      kind: :OPTIONS,
+      entry_ids: Enum.map(Enum.with_index(maps), &elem(&1, 1)),
+      labels: maps,
+      level: level,
+      context: %{maps: maps, cell: {x, y}, origin: origin, consume_items?: origin != :item}
+    }
+
+    {:ok, %{caster | pending_menu_offer: offer}, :no_consume}
+  end
+
+  def cast_with_origin(caster, _target, _level, _definition, _origin),
+    do: {:ok, caster, :no_consume}
+
+  @impl Menu
+  @spec on_menu_reply(PlayerState.t(), Menu.selection(), pos_integer()) :: Menu.result()
+  def on_menu_reply(_caster, _selection, _level), do: {:error, :invalid_target}
+
+  @impl Menu
+  @spec on_menu_reply(PlayerState.t(), Menu.selection(), pos_integer(), Menu.context()) ::
+          Menu.result()
+  def on_menu_reply(caster, selection, cast_level, %{menu: %{context: context}}) do
+    caster = on_menu_cancel(caster)
+
+    level =
+      min(if(context.origin == :item, do: cast_level, else: Player.skill_level(caster, 27)), 4)
+
+    map = Enum.at(context.maps, selection.id)
+
+    cond do
+      not Unit.living?(caster) or
+          not StatusInterpreter.can_use_skill?(:player, caster.character_id) ->
+        {:silent, caster}
+
+      MapCache.get(map) == {:error, :not_found} ->
+        {:failed, caster, :skill_failed}
+
+      length(Storage.get_groups_by_skill_and_caster(:al_warp, :player, caster.character_id)) >= 3 ->
+        {:failed, caster, :skill_failed}
+
+      level <= 0 ->
+        {:pending, caster}
+
+      true ->
+        select_destination(caster, context, level, map)
+    end
+  end
+
+  defp select_destination(caster, context, level, map) do
+    case Enum.find(Enum.take(destinations(caster), level), &(&1["map"] == map)) do
+      nil -> {:silent, caster}
+      destination -> place_destination(caster, context, level, map, destination)
+    end
+  end
+
+  defp place_destination(caster, context, level, map, destination) do
+    case consume_items(caster, context, level) do
+      {:ok, paid} ->
+        case SkillUnit.place(paid, :al_warp, level, context.cell,
+               state: %{dest: {map, destination["x"], destination["y"]}}
+             ) do
+          {:ok, _group} -> {:ok, paid}
+          {:error, _reason} -> {:silent, paid}
+        end
+
+      {:error, reason} ->
+        {:failed, caster, reason}
+    end
+  end
+
+  @impl Menu
+  @spec on_menu_cancel(PlayerState.t()) :: PlayerState.t()
+  def on_menu_cancel(caster) do
+    caster = PlayerState.clear_combat_intent(caster)
+    action = if caster.action_state == :attacking, do: :idle, else: caster.action_state
+    %{caster | target_id: nil, action_state: action}
+  end
+
+  defp destinations(caster),
+    do: [
+      %{"map" => caster.save_map, "x" => caster.save_x, "y" => caster.save_y} | caster.memo_points
+    ]
+
+  defp consume_items(caster, %{consume_items?: false}, _level), do: {:ok, caster}
+
+  defp consume_items(caster, context, level),
+    do:
+      Player.consume_menu_items(
+        caster,
+        __MODULE__,
+        ground_target(context.cell),
+        definition(),
+        level
+      )
+
+  defp ground_target({x, y}), do: {:ground, x, y}
+
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
-  def on_place(%Group{center: center, level: level, caster_type: ct, caster_id: cid}) do
-    definition = definition()
-    {:ok, {_module, %PlayerState{} = caster, _pid}} = UnitRegistry.get_unit(ct, cid)
-    now = System.monotonic_time(:millisecond)
+  def on_place(%Group{center: center, level: level, state: %{dest: dest}}) do
+    duration = Enum.at(definition().unit_duration, level - 1)
 
     {:ok,
      %{
        cells: [center],
        state: %{
-         dest: {caster.save_map, caster.save_x, caster.save_y},
+         dest: dest,
          uses: level + 6,
-         opens_at: now + @open_delay
+         portal: true,
+         opened: false,
+         working: false,
+         opens_at: System.monotonic_time(:millisecond) + @open_delay
        },
-       interval: definition.hit_interval,
-       duration: @open_delay + Enum.at(definition.unit_duration, level - 1)
+       initial_delay: @open_delay,
+       interval: duration,
+       duration: duration
      }}
   end
 
-  # Warps players already standing on the portal cell once the opening phase
-  # ends, in the cell's block order: when the uses run out, the rest stay.
+  @impl Ground
+  @spec schedule(Group.t(), (pos_integer() -> non_neg_integer())) :: {:ok, Group.t()}
+  def schedule(%Group{created_at: created} = group, _rng) do
+    {:ok,
+     %{
+       group
+       | next_tick_at: created + @open_delay,
+         state: %{group.state | opens_at: created + @open_delay}
+     }}
+  end
+
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
   def on_interval(%Group{} = group, now) do
-    if now >= group.state.opens_at do
-      warp_occupants(group)
+    if now >= group.state.opens_at and not Map.get(group.state, :opened, false) do
+      warp_occupants(%{group | state: Map.put(group.state, :opened, true)})
     else
       {:ok, group}
     end
   end
 
-  @spec warp_occupants(Group.t()) :: {:ok, Group.t()} | {:expire, Group.t()}
   defp warp_occupants(%Group{center: {cx, cy}, map_name: map_name} = group) do
     updated =
       map_name
       |> SpatialIndex.units_in_cell(cx, cy)
-      |> Enum.filter(&match?({:player, _id}, &1))
-      |> Enum.reduce(group, fn {:player, player_id}, acc -> consume_warp(acc, player_id) end)
+      |> Enum.reduce(group, fn
+        {:player, player_id}, acc -> consume_warp(acc, player_id)
+        _, acc -> acc
+      end)
 
-    case updated do
-      %Group{state: %{uses: uses}} when uses <= 0 -> {:expire, updated}
-      _ -> {:ok, updated}
-    end
+    if updated.state.uses <= 0, do: {:expire, updated}, else: {:ok, updated}
   end
 
   @impl Ground
   @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
   def on_touch(%Group{} = group, {:player, player_id}) do
-    if System.monotonic_time(:millisecond) >= group.state.opens_at and
-         Targeting.placement_reaches?(definition(), {:player, player_id}) do
-      case consume_warp(group, player_id) do
-        %Group{state: %{uses: uses}} when uses <= 0 -> :expire
-        updated -> {:ok, updated}
-      end
+    if Map.get(group.state, :opened, false) and
+         System.monotonic_time(:millisecond) >= group.state.opens_at do
+      updated = consume_warp(group, player_id)
+      if updated.state.uses <= 0, do: :expire, else: {:ok, updated}
     else
       {:ok, group}
     end
@@ -135,24 +249,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
 
   def on_touch(%Group{} = group, _mover), do: {:ok, group}
 
-  # Delivers the warp through the player's session (the single writer for
-  # player state) and spends one use; a vanished session, a corpse, or a
-  # chat-room member spends nothing.
-  @spec consume_warp(Group.t(), integer()) :: Group.t()
-  defp consume_warp(
-         %Group{state: %{uses: uses, dest: {map, x, y}} = group_state} = group,
-         player_id
-       )
+  defp consume_warp(%Group{state: %{uses: uses, dest: {map, x, y}} = state} = group, player_id)
        when uses > 0 do
-    with {:ok, {_module, target_state, pid}} <- UnitRegistry.get_unit(:player, player_id),
-         true <- Unit.living?(target_state),
-         nil <- target_state.waiting_room do
-      PlayerSession.warp(pid, map, x, y)
-      %{group | state: %{group_state | uses: uses - 1}}
+    with false <- Map.get(state, :working, false),
+         {:ok, {_module, target, pid}} <- UnitRegistry.get_unit(:player, player_id),
+         true <- Unit.living?(target),
+         nil <- target.waiting_room,
+         true <- walk_destination(target) == group.center,
+         true <- Targeting.placement_reaches?(definition(), {:player, player_id}) do
+      working = target.map_name == map and {target.x, target.y} == {x, y}
+      updated = %{group | state: state |> Map.put(:uses, uses - 1) |> Map.put(:working, working)}
+      if PortalAccess.allowed?(target, map), do: PlayerSession.warp(pid, map, x, y)
+      updated
     else
       _ -> group
     end
   end
 
   defp consume_warp(%Group{} = group, _player_id), do: group
+
+  defp walk_destination(player),
+    do: player.walk_target || List.last(player.walk_path || []) || {player.x, player.y}
 end

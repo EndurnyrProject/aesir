@@ -904,6 +904,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         input: :without_input,
         origin: :item
       })
+      |> retain_menu_requirements(true)
     end
   end
 
@@ -921,8 +922,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
        |> put_cooldown(skill_id, definition, level, now)
        |> rearm_cooldowns(module, level, definition, now)
        |> put_act_delay(definition, level, now)}
+      |> retain_menu_requirements(false)
     end
   end
+
+  defp retain_menu_requirements(
+         {:ok, %{pending_menu_offer: %{context: context} = offer} = caster},
+         keep?
+       ) do
+    offer = %{offer | context: Map.put(context, :consume_items?, keep?)}
+    {:ok, %{caster | pending_menu_offer: offer}}
+  end
+
+  defp retain_menu_requirements(result, _keep?), do: result
 
   defp validate_item_cast(caster, target, level, definition, keep?) do
     with {:ok, module} <-

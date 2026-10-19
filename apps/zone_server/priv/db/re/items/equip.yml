@@ -24141,6 +24141,16 @@
   locations:
     - left_hand
   name: Ahura Mazdah
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 50)
+    ctx = bonus(ctx, :mdef, 100)
+    ctx = bonus(ctx, :unbreakable_shield, 1)
+    ctx = bonus(ctx, :no_magic_damage, 100)
+    ctx = bonus(ctx, :no_gemstone, 1)
+    ctx = bonus(ctx, :movement_speed, 25)
+    ctx = bonus(ctx, :no_walk_delay, 1)
+    ctx = bonus(ctx, :max_hp, 1000000)
+    ctx
   type: armor
   view: 1
   weight: 10
@@ -102479,6 +102489,36 @@
     - head_mid
     - head_top
   name: Blessing of Gemstone
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_helm, 1)
+    ctx = bonus(ctx, :no_gemstone, 1)
+    ctx = bonus(ctx, :matk, stat(ctx, :int))
+    ctx = bonus(ctx, :sp_cost_rate, 100)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :sp_cost_rate, -25)
+      ctx = bonus(ctx, :matk_rate, 3)
+      ctx = bonus(ctx, :heal_power, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :sp_cost_rate, -25)
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = bonus(ctx, :heal_power, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :sp_cost_rate, -25)
+      ctx = bonus(ctx, :matk_rate, 7)
+      ctx = bonus(ctx, :heal_power, 7)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -146321,6 +146361,36 @@
     - right_hand
   magic_attack: 115
   name: Lesser Guild Member's Arc Wand
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (5 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:magic_addrace, :player_doram}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_mdef_race, :player_doram}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_mdef_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_addrace, :player_human}, 5)
+      ctx = bonus(ctx, {:magic_addrace, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, {:skill_varcast_rate, 288}, -30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :no_gemstone, 1}], trigger: {:on_skill, 286}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :no_gemstone, 1}], trigger: {:on_skill, 287}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :no_gemstone, 1}], trigger: {:on_skill, 285}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -226628,6 +226698,36 @@
     - right_hand
   magic_attack: 140
   name: Intermediate Guild Member's Arc Wand
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (5 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:magic_addrace, :player_doram}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_mdef_race, :player_doram}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_mdef_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_addrace, :player_human}, 5)
+      ctx = bonus(ctx, {:magic_addrace, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, {:skill_varcast_rate, 288}, -30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :no_gemstone, 1}], trigger: {:on_skill, 286}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :no_gemstone, 1}], trigger: {:on_skill, 287}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :no_gemstone, 1}], trigger: {:on_skill, 285}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1

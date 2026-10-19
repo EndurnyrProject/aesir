@@ -3412,6 +3412,10 @@
     - head_mid
     - head_top
   name: Mistress Card
+  on_equip: |-
+    ctx = bonus(ctx, :no_gemstone, 1)
+    ctx = bonus(ctx, :sp_cost_rate, 25)
+    ctx
   type: card
   weight: 10
 - aegis_name: Daydric_Card

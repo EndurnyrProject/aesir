@@ -1864,7 +1864,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         :ok = Storage.update(updated)
 
         if trap_view_changed?(original, updated) do
-          publish_trap_replacement(updated, cells)
+          publish_group_replacement(updated, cells)
         end
 
         :ok
@@ -1876,7 +1876,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       original.state.trap.phase != updated.state.trap.phase
   end
 
-  defp publish_trap_replacement(%Group{} = group, cells) do
+  defp publish_group_replacement(%Group{} = group, cells) do
     cell_ids = cells |> Enum.map(& &1.cell_id) |> Enum.sort()
 
     despawn = %SkillUnitDespawn{
@@ -2407,7 +2407,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
           cleanup(live, module, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
         else
           Storage.update(updated)
+
+          publish_opening_transition(live, updated)
         end
+    end
+  end
+
+  defp publish_opening_transition(live, updated) do
+    if Map.get(updated.state, :portal, false) and
+         Map.get(live.state, :opened, false) != Map.get(updated.state, :opened, false) do
+      publish_group_replacement(updated, Storage.get_cells_by_group(updated.group_id))
     end
   end
 

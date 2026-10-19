@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
 
   # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1, so
@@ -278,7 +279,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   defp item_use_enabled?(%{game_state: %PlayerState{disable_item_use: true}}),
     do: {:error, :disabled}
 
-  defp item_use_enabled?(%{}), do: :ok
+  defp item_use_enabled?(state) do
+    if Map.get(state, :interaction_lock) != nil and SessionState.menu_work_in_progress?(state),
+      do: {:error, :disabled},
+      else: :ok
+  end
 
   @spec item_use_allowed?(PlayerState.t()) :: :ok | {:error, :status_blocked}
   defp item_use_allowed?(%PlayerState{character_id: character_id}) do

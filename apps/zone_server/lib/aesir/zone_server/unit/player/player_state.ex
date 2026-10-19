@@ -72,6 +72,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           y: integer(),
           map_name: String.t(),
           pending_map_load: :login | :warp | nil,
+          memo_points: [map()],
           save_map: String.t(),
           save_x: integer(),
           save_y: integer(),
@@ -256,6 +257,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Post-map-load and revive invincibility (`Unit.Player.Invincibility`).
     invincible_timer: nil,
     invincible_generation: 0,
+    memo_points: [],
     vars: %{},
     temp_vars: %{},
     # Quest log keyed by quest id, restored from character_quests on spawn
@@ -382,6 +384,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       x: character.last_x,
       y: character.last_y,
       pending_map_load: :login,
+      memo_points: character.memo_points || [],
       save_map: character.save_map,
       save_x: character.save_x,
       save_y: character.save_y,

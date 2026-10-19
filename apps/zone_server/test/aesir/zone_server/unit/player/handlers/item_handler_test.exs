@@ -63,6 +63,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     :ok
   end
 
+  test "a pending labelled skill menu permits ordinary item use" do
+    ScriptCompiler.compile_all!([item_def(@red_potion_id, "heal(ctx, hp: 50)")])
+    definition = usable_definition(@red_potion_id, "heal(ctx, hp: 50)")
+    stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+
+    expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+      {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+       {:reduced, @red_potion_slot, 4}}
+    end)
+
+    state = Map.put(state_with_potion(), :pending_skill_menu, %{kind: :OPTIONS})
+    assert {:noreply, committed} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+    assert committed.game_state.stats.current_state.hp == 150
+    assert committed.game_state.inventory[@red_potion_slot].amount == 4
+    assert committed.pending_skill_menu == state.pending_skill_menu
+  end
+
   describe "handle_use_item/2 with a usable item" do
     test "raises HP, consumes one unit, and sends ItemUseResult{ok: true}" do
       ScriptCompiler.compile_all!([item_def(@red_potion_id, "heal(ctx, hp: 50)")])

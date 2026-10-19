@@ -96,6 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :no_walk_delay,
     :no_cast_cancel,
     :no_cast_cancel2,
+    :no_gemstone,
     :sp_drain_rate,
     :sp_drain_percent
   ]

@@ -26,12 +26,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   @doc """
   Processes an NPC click (protobuf analogue of CZ_CONTACTNPC 0x0090).
 
-  Ignored while an interaction lock is held. A gid that resolves to neither a
-  shop nor an NPC module is ignored.
+  Ignored while an interaction lock or a labelled skill menu's work flag is
+  held. A gid that resolves to neither a shop nor an NPC module is ignored.
   """
   @spec handle_talk(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_talk(gid, %{game_state: game_state} = state) do
-    if SessionState.interaction_blocked?(state) do
+    if SessionState.interaction_blocked?(state) or SessionState.menu_work_in_progress?(state) do
       {:noreply, state}
     else
       case ShopRegistry.fetch(gid) do
