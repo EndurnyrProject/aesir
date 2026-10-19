@@ -45,7 +45,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.MobParametersTest do
       {:sc_impositio, %{val2: 15}},
       {:sc_explosionspirits, %{val2: 150}},
       {:sc_windwalk, %{val2: 2}},
-      {:sc_change, %{val2: 90, val3: 60}}
+      {:sc_change, %{val2: 90, val3: 60}},
+      {:sc_twohandquicken, %{val2: 300}},
+      {:sc_adrenaline, %{val3: 300}},
+      {:sc_adrenaline2, %{val3: 300}},
+      {:sc_aspdpotion0, %{val2: 100}},
+      {:sc_aspdpotion1, %{val2: 150}},
+      {:sc_aspdpotion2, %{val2: 200}},
+      {:sc_aspdpotion3, %{val2: 250}},
+      {:sc_fleet, %{val2: 90}},
+      {:sc_avoid, %{val2: 30}}
     ]
 
     drum_battle =
@@ -57,10 +66,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.MobParametersTest do
           [
             {:sc_whistle, %{val2: 24, val3: 20}},
             {:sc_humming, %{val2: 12}},
-            {:sc_fortunekiss, %{val2: 30}}
+            {:sc_fortunekiss, %{val2: 30}},
+            {:sc_assncross, %{val2: 5}},
+            {:sc_ensemblefatigue, %{val2: 30}},
+            {:sc_emergency_move, %{val2: 25}}
           ]
       else
-        cases
+        cases ++
+          [
+            {:sc_spearquicken, %{val2: 230}},
+            {:sc_gravitation, %{val2: 150}}
+          ]
       end
 
     cases = cases ++ [{:sc_drumbattle, drum_battle}]
@@ -102,6 +118,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.MobParametersTest do
 
       assert %{val2: ^rate, val3: ^enchant} = StatusStorage.get_status(:mob, id, :sc_deluge)
       assert :ok = Interpreter.remove_status(:mob, id, :sc_deluge)
+    end
+  end
+
+  test "an own-cast and a received adrenaline keep their source buckets", %{id: id} do
+    for status <- [:sc_adrenaline, :sc_adrenaline2], val2 <- [0, 1] do
+      assert :ok =
+               Interpreter.apply_status(:mob, id, status,
+                 val1: 3,
+                 val2: val2,
+                 duration: 10_000,
+                 bypass_resistance: true
+               )
+
+      assert %{val3: bucket} = StatusStorage.get_status(:mob, id, status)
+      assert bucket == if(val2 == 0, do: 200, else: 300)
+      assert :ok = Interpreter.remove_status(:mob, id, status)
     end
   end
 

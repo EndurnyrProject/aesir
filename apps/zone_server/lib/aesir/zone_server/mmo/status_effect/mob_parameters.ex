@@ -12,6 +12,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.MobParameters do
   alias Aesir.ZoneServer.Mmo.StatusEffect.FieldElement
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
+  @aspd_potion_tiers %{
+    sc_aspdpotion0: 100,
+    sc_aspdpotion1: 150,
+    sc_aspdpotion2: 200,
+    sc_aspdpotion3: 250
+  }
+
+  defp boss_level_bonus(level) when level > 10, do: 20 * (level - 10)
+  defp boss_level_bonus(_level), do: 0
+
   @doc "Initializes a new monster status from the recipient's captured entity information."
   @spec initialize(StatusEntry.t(), GameMode.t(), map()) :: StatusEntry.t()
   def initialize(%{type: type} = entry, _mode, _target)
@@ -81,6 +91,35 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.MobParameters do
 
   def initialize(%{type: :sc_drumbattle} = entry, :pre_renewal, _target),
     do: %{entry | val2: (entry.val1 + 1) * 25, val3: (entry.val1 + 1) * 2}
+
+  def initialize(%{type: :sc_twohandquicken} = entry, _mode, _target),
+    do: %{entry | val2: 300 + boss_level_bonus(entry.val1)}
+
+  def initialize(%{type: :sc_spearquicken} = entry, :pre_renewal, _target),
+    do: %{entry | val2: 200 + 10 * entry.val1}
+
+  def initialize(%{type: type} = entry, _mode, _target)
+      when type in [:sc_adrenaline, :sc_adrenaline2],
+      do: %{entry | val3: if(entry.val2 != 0, do: 300, else: 200)}
+
+  def initialize(%{type: :sc_assncross} = entry, :renewal, _target),
+    do: %{entry | val2: if(entry.val1 < 10, do: entry.val1 * 2 - 1, else: 20)}
+
+  def initialize(%{type: type} = entry, _mode, _target)
+      when type in [:sc_aspdpotion0, :sc_aspdpotion1, :sc_aspdpotion2, :sc_aspdpotion3],
+      do: %{entry | val2: Map.fetch!(@aspd_potion_tiers, type)}
+
+  def initialize(%{type: :sc_fleet} = entry, _mode, _target), do: %{entry | val2: 30 * entry.val1}
+
+  def initialize(%{type: :sc_avoid} = entry, _mode, _target), do: %{entry | val2: 10 * entry.val1}
+
+  def initialize(%{type: :sc_emergency_move} = entry, _mode, _target), do: %{entry | val2: 25}
+
+  def initialize(%{type: :sc_ensemblefatigue} = entry, :renewal, _target),
+    do: %{entry | val2: 30}
+
+  def initialize(%{type: :sc_gravitation} = entry, :pre_renewal, _target),
+    do: %{entry | val2: 50 * entry.val1}
 
   def initialize(%{type: :sc_blessing} = entry, _mode, target) do
     %{entry | val2: if(RaceModifiers.undead_or_demon?(target), do: 0, else: entry.val1)}

@@ -55,6 +55,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Renewal do
     do: Combat.recalculate(state, entries, flags, :renewal)
 
   @impl true
+  @spec recalculate(MobState.t(), [StatusEntry.t()], [CalcFlags.flag()]) :: Calculated.t()
+  def recalculate(state, entries, flags),
+    do: MobFormulas.recalculate(state, entries, flags, :renewal)
+
+  @impl true
   def calculate_hit(%MobDefinition{} = mob_data) do
     mob_data.level + mob_data.stats.dex + 150
   end

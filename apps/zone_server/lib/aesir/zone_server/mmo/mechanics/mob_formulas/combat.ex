@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Combat do
   @moduledoc false
 
+  import Aesir.ZoneServer.Mmo.Mechanics.MobFormulas, only: [fixed: 3, value: 3]
+
   alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Mob.Calculated
@@ -433,13 +435,4 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Combat do
 
   defp base_attack(str, level, :renewal), do: min(max(str + level, 0), 65_535)
   defp base_attack(_str, _level, :pre_renewal), do: 0
-
-  defp value(entries, status, field) do
-    case entries[status] do
-      nil -> 0
-      entry -> Map.fetch!(entry, field)
-    end
-  end
-
-  defp fixed(entries, status, amount), do: if(Map.has_key?(entries, status), do: amount, else: 0)
 end
