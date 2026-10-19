@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StealOps
@@ -100,18 +101,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   """
   @spec zap_hp(pid(), pos_integer()) :: :ok
   def zap_hp(pid, amount), do: GenServer.cast(pid, {:unit, {:zap_hp, amount}})
-
-  @doc """
-  Notifies the mob that one of its statuses was applied, ticked, or expired.
-
-  Status application and `StatusTickManager` send this asynchronously; a
-  `:max_hp_rate` status recomputes the mob's HP ceiling, and every change
-  recomputes its walk speed. It never interrupts an in-flight cast.
-  """
-  @spec notify_status_changed(pid(), atom(), atom()) :: :ok
-  def notify_status_changed(pid, status_id, event) do
-    GenServer.cast(pid, {:casting, {:status_changed, status_id, event}})
-  end
 
   @doc """
   Removes the mob for a script kill (`killmonster`, `killmonsterall`): its
@@ -377,12 +366,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     AiHandler.handle_hard_think(state, player_id)
   end
 
-  # Casting: a status apply/tick/expiry, which may recompute the mob's HP
-  # ceiling for a `:max_hp_rate` status and its walk speed.
+  # Casting: a committed status apply/removal/armed transition, reconciled by
+  # the owner's stats handler under one commit.
   @impl GenServer
-  def handle_cast({:casting, {:status_changed, status_id, _event}}, state) do
-    state = CombatHandler.handle_max_hp_status(status_id, state)
-    {:noreply, MovementHandler.handle_speed_status(state)}
+  def handle_cast({:casting, {:status_changed, status_id, event}}, state) do
+    StatsHandler.handle_status_changed(status_id, event, state)
   end
 
   # Movement: pathing kickoff, teleport, knockback/displacement landings and

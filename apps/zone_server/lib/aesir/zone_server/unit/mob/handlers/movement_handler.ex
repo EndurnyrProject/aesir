@@ -23,7 +23,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.Slaves
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
-  alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -284,20 +283,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
     do: handle_relocation(state, expected_x, expected_y, map_name, x, y)
 
   @doc """
-  Recomputes the mob's walk speed after one of its statuses started, ticked or
-  ended, publishing it when it moved. The next step and every walk-time read
-  use it. A dead mob keeps its speed.
+  Re-targets a moving mob after a speed selection, as the source's
+  `change_walk_target`: the pending step keeps its token, cost and deadline, and
+  the new speed prices the steps that start once it lands. A standing mob is
+  unchanged. This calculates nothing and publishes nothing itself.
   """
-  @spec handle_speed_status(MobState.t()) :: MobState.t()
-  def handle_speed_status(%MobState{is_dead: true} = state), do: state
-
-  def handle_speed_status(%MobState{} = state) do
-    updated = MobState.recalculate_walk_speed(state)
-
-    if updated.walk_speed == state.walk_speed,
-      do: state,
-      else: StateCommit.commit(updated)
+  @spec rewalk_after_speed_change(MobState.t()) :: MobState.t()
+  def rewalk_after_speed_change(%MobState{movement_state: :moving, walk_path: [_ | _]} = state) do
+    %{state | walk_target: state.walk_target || List.last(state.walk_path)}
   end
+
+  def rewalk_after_speed_change(%MobState{} = state), do: state
 
   @doc """
   Warps the mob to `(x, y)` on `map_name`, including a boss: a living mob lands

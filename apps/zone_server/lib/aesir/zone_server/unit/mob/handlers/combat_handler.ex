@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
-  alias Aesir.ZoneServer.Mmo.StatusEffect.CalcFlags
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -258,30 +257,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   def handle_zap_hp(_amount, state), do: {:noreply, state}
-
-  @doc """
-  Recomputes the HP ceiling after a `:max_hp_rate` status (SC_DELUGE and kin)
-  is applied or removed, publishing and broadcasting only when it moved.
-  Ordinary status ticks are gated out by the status's `calc_flags`. A dead
-  monster, whose statuses end at its death and removal, has no ceiling to move.
-  """
-  @spec handle_max_hp_status(atom(), MobState.t()) :: MobState.t()
-  def handle_max_hp_status(_status_id, %{is_dead: true} = state), do: state
-
-  def handle_max_hp_status(status_id, state) do
-    if max_hp_status?(status_id) do
-      updated = state |> MobState.recalculate_max_hp() |> StateCommit.commit()
-      unless updated.max_hp == state.max_hp, do: SpawnView.notify_hp_update(updated)
-      updated
-    else
-      state
-    end
-  end
-
-  defp max_hp_status?(status_id) do
-    flags = CalcFlags.for_event(status_id, :apply)
-    "MaxHp" in flags or "All" in flags
-  end
 
   defp maybe_add_aggro(state, _reward_owner_id, nil, _damage), do: state
 

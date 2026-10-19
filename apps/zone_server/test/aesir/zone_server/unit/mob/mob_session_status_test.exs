@@ -13,8 +13,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Deluge
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -91,7 +91,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
     test "an SC_DELUGE apply raises the HP ceiling without healing" do
       state = build_mob_state()
       UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
-      StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5)
+      :ok = Interpreter.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5)
 
       assert {:noreply, updated} =
                MobSession.handle_cast(

@@ -46,7 +46,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobWalkSpeedTest do
 
     test "a diagonal step takes 14/10 of the slowed speed" do
       :ok = StatusStorage.apply_status(:mob, @mob_id, :sc_decreaseagi, val1: 1, duration: 60_000)
-      slowed = MovementHandler.handle_speed_status(mob())
+
+      assert {:noreply, slowed} =
+               MobSession.handle_cast(
+                 {:casting, {:status_changed, :sc_decreaseagi, :apply}},
+                 mob()
+               )
 
       {:noreply, walking} = MovementHandler.handle_move_to(slowed, 31, 31)
       assert {_due_at, 350, _ref} = walking.pending_step
@@ -56,19 +61,32 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobWalkSpeedTest do
       :ok = StatusStorage.apply_status(:mob, @mob_id, :sc_decreaseagi, val1: 1, duration: 60_000)
       :ok = StatusStorage.apply_status(:mob, @mob_id, :sc_quagmire, val1: 1, duration: 60_000)
 
-      assert MovementHandler.handle_speed_status(mob()).walk_speed == 300
+      assert {:noreply, slowed} =
+               MobSession.handle_cast({:casting, {:status_changed, :sc_quagmire, :apply}}, mob())
+
+      assert slowed.walk_speed == 300
 
       StatusStorage.remove_status(:mob, @mob_id, :sc_decreaseagi)
       StatusStorage.remove_status(:mob, @mob_id, :sc_quagmire)
 
-      assert MovementHandler.handle_speed_status(%{mob() | walk_speed: 300}).walk_speed == 200
+      assert {:noreply, restored} =
+               MobSession.handle_cast(
+                 {:casting, {:status_changed, :sc_decreaseagi, :removed}},
+                 mob()
+               )
+
+      assert restored.walk_speed == 200
     end
 
     test "a dead monster keeps its speed" do
       :ok = StatusStorage.apply_status(:mob, @mob_id, :sc_decreaseagi, val1: 1, duration: 60_000)
       dead = %{mob() | is_dead: true}
 
-      assert MovementHandler.handle_speed_status(dead) == dead
+      assert {:noreply, ^dead} =
+               MobSession.handle_cast(
+                 {:casting, {:status_changed, :sc_decreaseagi, :apply}},
+                 dead
+               )
     end
   end
 

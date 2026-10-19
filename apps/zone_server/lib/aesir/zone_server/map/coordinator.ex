@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Movement
@@ -822,6 +823,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     case MobSupervisor.spawn_mob(state.map_name, mob_state, session_opts) do
       {:ok, mob_pid} ->
         UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
+        :ok = StatsHandler.initialize_slave_mode(mob_state)
         Trigger.on_appear({:mob, instance_id}, state.map_name, x, y)
         {{:ok, instance_id}, %{state | next_mob_id: state.next_mob_id + 1}}
 
