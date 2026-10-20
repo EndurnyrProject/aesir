@@ -41,8 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBladestop do
       duration: Enum.at(definition.duration, level - 1)
     ]
 
-    with :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_bladestop_wait, params) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_bladestop_wait, params)
+    {:ok, caster}
   end
 end

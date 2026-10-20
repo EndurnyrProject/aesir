@@ -20,14 +20,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExplosionspiritsTest do
     assert {:ok, ^caster} = MoExplosionspirits.cast(caster, :self, 3, definition)
   end
 
-  test "propagates Fury application failures" do
+  test "keeps the cast when Fury is refused" do
     caster = %{character_id: 1000}
 
     expect(StatusInterpreter, :apply_status, fn :player, 1000, :sc_explosionspirits, _params ->
       {:error, :conflict}
     end)
 
-    assert {:error, :conflict} =
+    assert {:ok, ^caster} =
              MoExplosionspirits.cast(caster, :self, 1, MoExplosionspirits.definition())
   end
 end

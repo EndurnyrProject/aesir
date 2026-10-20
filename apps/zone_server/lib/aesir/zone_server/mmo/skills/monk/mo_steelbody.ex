@@ -38,8 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSteelbody do
       duration: Enum.at(definition.duration, level - 1)
     ]
 
-    with :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_steelbody, params) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_steelbody, params)
+    {:ok, caster}
   end
 end

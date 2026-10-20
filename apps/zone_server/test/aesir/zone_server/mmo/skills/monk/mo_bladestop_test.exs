@@ -35,14 +35,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBladestopTest do
     assert {:ok, ^caster} = MoBladestop.cast(caster, :self, 3, MoBladestop.definition())
   end
 
-  test "propagates a waiting-stance application failure" do
+  test "keeps the cast when the waiting stance is refused" do
     caster = %{character_id: 1000}
 
     expect(StatusInterpreter, :apply_status, fn :player, 1000, :sc_bladestop_wait, _params ->
       {:error, :conflict}
     end)
 
-    assert {:error, :conflict} = MoBladestop.cast(caster, :self, 1, MoBladestop.definition())
+    assert {:ok, ^caster} = MoBladestop.cast(caster, :self, 1, MoBladestop.definition())
   end
 
   @tag game_mode: :pre_renewal

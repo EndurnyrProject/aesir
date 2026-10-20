@@ -33,13 +33,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
   @sphere_cap 5
 
   @impl Active
-  def validate(caster, {:unit, target_id}, _level, _definition) do
+  def validate(_caster, {:unit, target_id}, _level, _definition) do
     case UnitRegistry.get_unit(:player, target_id) do
-      {:ok, {_module, target, pid}} when is_pid(pid) ->
-        if eligible?(caster, target, pid), do: :ok, else: {:error, :invalid_target}
-
-      _ ->
-        {:error, :invalid_target}
+      {:ok, {_module, _target, pid}} when is_pid(pid) -> :ok
+      _ -> {:error, :invalid_target}
     end
   end
 
@@ -47,7 +44,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
 
   @impl Active
   def cast(caster, {:unit, target_id}, _level, _definition) do
-    {:deferred, caster, {:transfer_sphere, target_id}}
+    case UnitRegistry.get_unit(:player, target_id) do
+      {:ok, {_module, target, pid}} when is_pid(pid) ->
+        transfer(caster, target_id, target, pid)
+
+      _not_found ->
+        {:failed, caster, :invalid_target, :spare_items}
+    end
+  end
+
+  # The reference refuses an ineligible target from inside the implementation
+  # with `SKILL_NOCONSUME_REQ`: the requirement stays paid, the failure is
+  # reported and the items (and the untransferred sphere) are spared.
+  defp transfer(caster, target_id, target, pid) do
+    if eligible?(caster, target, pid),
+      do: {:deferred, caster, {:transfer_sphere, target_id}},
+      else: {:failed, caster, :invalid_target, :spare_items}
   end
 
   defp eligible?(caster, target, pid) do

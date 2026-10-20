@@ -101,8 +101,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     for target <- targets do
       :ok = UnitRegistry.register_player(target, self())
 
-      assert {:error, :invalid_target} =
-               MoKitranslation.validate(source, {:unit, 2}, 1, MoKitranslation.definition())
+      assert :ok = MoKitranslation.validate(source, {:unit, 2}, 1, MoKitranslation.definition())
+
+      assert {:failed, ^source, :invalid_target, :spare_items} =
+               MoKitranslation.cast(source, {:unit, 2}, 1, MoKitranslation.definition())
     end
   end
 

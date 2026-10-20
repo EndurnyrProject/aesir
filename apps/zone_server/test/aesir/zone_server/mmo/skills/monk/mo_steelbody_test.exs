@@ -34,14 +34,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSteelbodyTest do
     assert {:ok, ^caster} = MoSteelbody.cast(caster, :self, 4, MoSteelbody.definition())
   end
 
-  test "propagates Mental Strength application failures" do
+  test "keeps the cast when Mental Strength is refused" do
     caster = %{character_id: 1000}
 
     expect(StatusInterpreter, :apply_status, fn :player, 1000, :sc_steelbody, _params ->
       {:error, :conflict}
     end)
 
-    assert {:error, :conflict} = MoSteelbody.cast(caster, :self, 1, MoSteelbody.definition())
+    assert {:ok, ^caster} = MoSteelbody.cast(caster, :self, 1, MoSteelbody.definition())
   end
 
   @tag game_mode: :pre_renewal
