@@ -532,8 +532,13 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     assert_eventually(fn -> get_player_state(ordinary.pid).x == 152 end)
   end
 
-  test "Resurrection rejects castle corpses but its living undead attack still lands" do
-    caster = fighter(@map, skills: %{"54" => 4}, items: [%{nameid: 717, equip: 0}])
+  test "Resurrection refuses castle corpses after the requirement but its living undead attack lands" do
+    caster =
+      fighter(@map,
+        skills: %{"54" => 4},
+        items: [%{nameid: 717, equip: 0}, %{nameid: 717, equip: 0}]
+      )
+
     corpse = fighter(@map)
     :ok = PlayerSession.apply_damage(corpse.pid, hp(corpse), nil)
     assert_eventually(fn -> hp(corpse) == 0 end)
@@ -548,7 +553,13 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     assert_receive {:packet_sent, %SkillCastFailed{skill_id: 54}, _}, 1000
     assert hp(corpse) == 0
     assert inventory_amount(caster, 717) == 1
-    assert get_player_state(caster.pid).stats.current_state.sp == before_sp
+    assert get_player_state(caster.pid).stats.current_state.sp == before_sp - 60
+
+    # The refusal above armed its after-cast delay; clear the pacing so the
+    # follow-up cast is not refused for it.
+    :sys.replace_state(caster.pid, fn state ->
+      %{state | game_state: %{state.game_state | act_delay_until: 0}}
+    end)
 
     undead =
       start_mob_session(
@@ -579,7 +590,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
     assert inventory_amount(caster, 717) == 0
   end
 
-  test "Redemptio rejects revival before its caster self-cost on off-hours castle ground" do
+  test "Redemptio refuses off-hours castle ground after its caster self-cost" do
     caster = fighter(@map, class: 8, skills: %{"1014" => 1})
     corpse = fighter(@map)
     {:ok, party} = PartyManager.create("Rescue#{caster.character.id}", caster.character)
@@ -598,8 +609,12 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
       target_id: caster.character.id
     })
 
-    assert_receive {:packet_sent, %SkillCastFailed{skill_id: 1014}, _}, 1000
-    assert get_player_state(caster.pid).stats.current_state == before
+    # The cast runs its full time and then refuses, keeping the payment: one HP
+    # and, in pre-renewal, the whole SP pool.
+    assert_receive {:packet_sent, %SkillCastFailed{skill_id: 1014}, _}, 6_000
+    updated = get_player_state(caster.pid).stats.current_state
+    assert updated.hp == 1
+    assert updated.sp == if(GameMode.mode() == :renewal, do: before.sp - 800, else: 0)
     assert hp(corpse) == 0
   end
 

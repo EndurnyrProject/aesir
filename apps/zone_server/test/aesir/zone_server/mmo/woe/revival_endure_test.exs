@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RevivalEndureTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.ClusterTestHelper
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Repo
@@ -11,7 +12,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RevivalEndureTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection
-  alias Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RevivalEndureTest do
     :ok
   end
 
-  test "Resurrection rejects its corpse branch on castle ground" do
+  test "Resurrection refuses its corpse branch on castle ground after the requirement is paid" do
     caster = start_player_session(id: 11_001, name: "ReviveCaster", position: {150, 150})
     target = start_player_session(id: 11_002, name: "ReviveTarget", position: {151, 150})
 
@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RevivalEndureTest do
     assert {:ok, definition} = Catalog.by_id(54)
     caster_state = get_player_state(caster.pid)
 
-    assert {:error, :invalid_target} =
+    assert :ok =
              AllResurrection.validate(
                caster_state,
                {:unit, target.character.id},
@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RevivalEndureTest do
                definition
              )
 
-    assert {:error, :invalid_target} =
+    assert {:failed, _caster, :invalid_target} =
              AllResurrection.cast(caster_state, {:unit, target.character.id}, 4, definition)
 
     assert get_player_state(target.pid).action_state == :dead
@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RevivalEndureTest do
     refute StatusStorage.has_status?(:player, target_id, :sc_endure)
   end
 
-  test "Redemptio rejects castle ground before revival and its self-cost" do
+  test "Redemptio refuses castle ground after paying its self-cost" do
     caster_character =
       character("redcaster", "RedCaster", %{
         class: 8,
@@ -150,13 +150,16 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RevivalEndureTest do
     caster_state = get_player_state(caster.pid)
     caster_vitals = caster_state.stats.current_state
 
-    assert {:error, :invalid_target} =
-             PrRedemptio.validate(caster_state, :self, 1, PrRedemptio.definition())
-
-    assert {:error, :invalid_target} =
+    assert {:failed, updated, :invalid_target} =
              SkillInterpreter.complete_cast(caster_state, 1014, 1, :self)
 
-    assert get_player_state(caster.pid).stats.current_state == caster_vitals
+    # The refusal keeps the payment: the caster drops to one HP and, in
+    # pre-renewal, loses the whole SP pool.
+    assert updated.stats.current_state.hp == 1
+
+    assert updated.stats.current_state.sp ==
+             if(GameMode.mode() == :renewal, do: caster_vitals.sp - 800, else: 0)
+
     assert get_player_state(target.pid).action_state == :dead
   end
 

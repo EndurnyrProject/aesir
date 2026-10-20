@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -10,6 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  @caster_id 1_000
+  @ally_id 2_000
 
   setup :verify_on_exit!
 
@@ -26,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     %MobState{
       instance_id: 2_000,
       mob_id: 1,
-      mob_data: nil,
+      mob_data: Aesir.TestMob.definition(),
       spawn_ref: nil,
       x: 150,
       y: 150,
@@ -76,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     for {percent, level} <- Enum.with_index([10, 30, 50, 80], 1) do
       expect(PlayerSession, :resurrect, fn ^target_pid, 1_000, ^percent -> :ok end)
 
-      caster = %{character_id: 1_000}
+      caster = player(@caster_id, "Caster")
 
       assert {:ok, ^caster} =
                AllResurrection.cast(caster, {:unit, 2_000}, level, definition)
@@ -105,7 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(Rules, :ground?, fn "aldeg_cas01" -> true end)
     reject(&PlayerSession.resurrect/3)
 
-    caster = %{character_id: 1_000}
+    caster = player(@caster_id, "Caster")
 
     assert {:failed, ^caster, :invalid_target} =
              AllResurrection.cast(caster, {:unit, 2_000}, 1, AllResurrection.definition())
@@ -118,10 +122,46 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(MobState, :to_combatant, fn ^revived -> %{race: :formless, element: {:neutral, 1}} end)
     reject(&PlayerSession.resurrect/3)
 
-    caster = %{character_id: 1_000}
+    caster = player(@caster_id, "Caster")
 
     assert {:ok, ^caster} =
              AllResurrection.cast(caster, {:unit, 2_000}, 1, AllResurrection.definition())
+  end
+
+  test "an allied undead target is refused with a failure that spares the gemstone" do
+    caster = player(@caster_id, "Caster")
+    ally = player(@ally_id, "Ally")
+
+    caster_combatant = PlayerState.to_combatant(caster)
+    ally_combatant = %{PlayerState.to_combatant(ally) | element: {:undead, 1}}
+
+    stub(TargetResolver, :resolve, fn @ally_id -> {:ok, self(), ally, :player} end)
+
+    stub(PlayerState, :to_combatant, fn
+      ^caster -> caster_combatant
+      ^ally -> ally_combatant
+    end)
+
+    reject(&Combat.execute_magic_attack/3)
+
+    assert {:failed, ^caster, :invalid_target, :spare_items} =
+             AllResurrection.cast(caster, {:unit, @ally_id}, 1, AllResurrection.definition())
+  end
+
+  defp player(id, name) do
+    PlayerState.new(%Character{
+      id: id,
+      account_id: id,
+      name: name,
+      class: 4,
+      sex: "M",
+      last_map: "prontera",
+      last_x: 100,
+      last_y: 100,
+      base_level: 50,
+      hp: 100,
+      sp: 100
+    })
   end
 
   @tag game_mode: :renewal
@@ -132,9 +172,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living_undead, :mob} end)
 
-    stub(MobState, :to_combatant, fn ^living_undead ->
-      %{race: :formless, element: {:undead, 1}, status_immune: false}
-    end)
+    undead_combatant = %{
+      MobState.to_combatant(living_undead)
+      | race: :formless,
+        element: {:undead, 1},
+        status_immune: false
+    }
+
+    stub(MobState, :to_combatant, fn ^living_undead -> undead_combatant end)
 
     stub(MobState, :get_stats, fn ^living_undead -> %{hp: 100, max_hp: 100} end)
     stub(PlayerState, :get_stats, fn _caster -> %{luk: 0, int: 0, base_level: 0} end)
@@ -149,7 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
       {:ok, {:mob, 2_000}}
     end)
 
-    caster = %{character_id: 1_000}
+    caster = player(@caster_id, "Caster")
 
     assert :ok = AllResurrection.validate(caster, {:unit, 2_000}, 4, definition)
     assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 4, definition)
@@ -163,9 +208,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living_undead, :mob} end)
 
-    stub(MobState, :to_combatant, fn ^living_undead ->
-      %{race: :formless, element: {:undead, 1}, status_immune: false}
-    end)
+    undead_combatant = %{
+      MobState.to_combatant(living_undead)
+      | race: :formless,
+        element: {:undead, 1},
+        status_immune: false
+    }
+
+    stub(MobState, :to_combatant, fn ^living_undead -> undead_combatant end)
 
     stub(MobState, :get_stats, fn ^living_undead -> %{hp: 100, max_hp: 100} end)
     stub(PlayerState, :get_stats, fn _caster -> %{luk: 0, int: 0, base_level: 0} end)
@@ -179,7 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
       {:ok, {:mob, 2_000}}
     end)
 
-    caster = %{character_id: 1_000}
+    caster = player(@caster_id, "Caster")
 
     assert :ok = AllResurrection.validate(caster, {:unit, 2_000}, 4, definition)
     assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 4, definition)
@@ -230,9 +280,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living_undead, :mob} end)
 
-    stub(MobState, :to_combatant, fn ^living_undead ->
-      %{race: :undead, element: {:undead, 1}, status_immune: false}
-    end)
+    undead_combatant = %{
+      MobState.to_combatant(living_undead)
+      | race: :undead,
+        element: {:undead, 1},
+        status_immune: false
+    }
+
+    stub(MobState, :to_combatant, fn ^living_undead -> undead_combatant end)
 
     stub(MobState, :get_stats, fn ^living_undead -> %{hp: 100, max_hp: 100} end)
     stub(PlayerState, :get_stats, fn _caster -> %{luk: 400, int: 400, base_level: 300} end)
@@ -249,7 +304,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
       {:ok, {:mob, 2_000}}
     end)
 
-    caster = %{character_id: 1_000}
+    caster = player(@caster_id, "Caster")
     assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 1, definition)
   end
 
@@ -260,9 +315,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), boss_undead, :mob} end)
 
-    stub(MobState, :to_combatant, fn ^boss_undead ->
-      %{race: :undead, element: {:undead, 1}, class: :boss, status_immune: true}
-    end)
+    undead_combatant = %{
+      MobState.to_combatant(boss_undead)
+      | race: :undead,
+        element: {:undead, 1},
+        class: :boss,
+        status_immune: true
+    }
+
+    stub(MobState, :to_combatant, fn ^boss_undead -> undead_combatant end)
 
     stub(MobState, :get_stats, fn ^boss_undead -> %{hp: 100, max_hp: 100} end)
     stub(PlayerState, :get_stats, fn _caster -> %{luk: 400, int: 400, base_level: 300} end)
@@ -274,7 +335,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
       {:ok, {:mob, 2_000}}
     end)
 
-    caster = %{character_id: 1_000}
+    caster = player(@caster_id, "Caster")
     assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 4, definition)
   end
 
@@ -285,9 +346,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), boss_undead, :mob} end)
 
-    stub(MobState, :to_combatant, fn ^boss_undead ->
-      %{race: :undead, element: {:undead, 1}, class: :boss, status_immune: true}
-    end)
+    undead_combatant = %{
+      MobState.to_combatant(boss_undead)
+      | race: :undead,
+        element: {:undead, 1},
+        class: :boss,
+        status_immune: true
+    }
+
+    stub(MobState, :to_combatant, fn ^boss_undead -> undead_combatant end)
 
     stub(MobState, :get_stats, fn ^boss_undead -> %{hp: 100, max_hp: 100} end)
     stub(PlayerState, :get_stats, fn _caster -> %{luk: 400, int: 400, base_level: 300} end)
@@ -300,7 +367,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
       {:ok, {:mob, 2_000}}
     end)
 
-    caster = %{character_id: 1_000}
+    caster = player(@caster_id, "Caster")
     assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 4, definition)
   end
 end

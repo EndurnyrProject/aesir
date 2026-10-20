@@ -1,8 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   @moduledoc """
   Redemptio (PR_REDEMPTIO). The Priest platinum skill that revives every nearby
-  party corpse at half HP and leaves its caster at one HP. Unavailable on siege
-  ground in both modes.
+  party corpse at half HP and leaves its caster at one HP. Refused on siege
+  ground in both modes, after the cast and its cost: the caster still drops to
+  one HP and, in pre-renewal, still pays the experience penalty for the corpses
+  it counted.
 
   Renewal: 800 SP, a 3.2 s cast plus 0.8 s fixed (DEX does not shorten it), and no
   further cost. Pre-renewal: a 4 s cast, the caster's whole SP (at least the listed

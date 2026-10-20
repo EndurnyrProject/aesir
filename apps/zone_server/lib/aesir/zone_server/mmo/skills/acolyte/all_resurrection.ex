@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection.Damage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
@@ -69,7 +70,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
+          {:ok, PlayerState.t()}
+          | {:failed, PlayerState.t(), atom()}
+          | {:failed, PlayerState.t(), atom(), :spare_items}
+          | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
     with {:ok, target_pid, target_state, unit_type} <- TargetResolver.resolve(target_id) do
       case target_kind(unit_type, target_state) do
@@ -106,9 +110,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   end
 
   defp strike_undead(caster, target_id, target_state, level, definition) do
-    with {:ok, _ref} <- attack_undead(caster, target_id, target_state, level, definition) do
-      {:ok, caster}
+    if offensive?(caster, target_state) do
+      with {:ok, _ref} <- attack_undead(caster, target_id, target_state, level, definition) do
+        {:ok, caster}
+      end
+    else
+      {:failed, caster, :invalid_target, :spare_items}
     end
+  end
+
+  # Only an enemy undead may be attacked. The reference refuses the offensive
+  # conversion on every other undead target with a failure that keeps the
+  # requirement paid and spares the gemstone.
+  defp offensive?(caster, target_state) do
+    Targeting.enemy?(
+      caster.__struct__.to_combatant(caster),
+      target_state.__struct__.to_combatant(target_state)
+    )
   end
 
   defp hp_percent(level), do: Enum.at([10, 30, 50, 80], level - 1)
