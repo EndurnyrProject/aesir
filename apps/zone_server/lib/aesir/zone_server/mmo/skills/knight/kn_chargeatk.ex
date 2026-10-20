@@ -2,16 +2,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   @moduledoc """
   Charge Attack (KN_CHARGEATK), a gap-closing weapon strike.
 
-  Cast at an enemy up to 14 cells away along a straight, unobstructed walkable
-  line: the Knight charges to the cell adjacent to the target on the approach
-  side, strikes for a flat 700% weapon ratio, and knocks the target back two
-  cells directly away from the landing cell.
+  Cast at an enemy up to 14 cells away along a straight line the reference's cell-wall
+  test passes: only a cell that is neither walkable nor shootable blocks it, so cliffs and
+  water do not. The Knight charges to the cell adjacent to the target on the approach side,
+  strikes for a flat 700% weapon ratio, and knocks the target back two cells directly away
+  from the landing cell.
 
-  The self-reposition is staged as a `ForcedMovement` directive the session
-  drains after the cast commits (the same machinery Snap uses), so the caster's
-  cell is written and broadcast through the single-writer movement path. A
-  blocked line or an unwalkable landing cell fails the cast before any resource
-  is spent, leaving the caster in place.
+  The self-reposition is staged as a `ForcedMovement` directive the session drains after the
+  cast commits (the same machinery Snap uses), so the caster's cell is written and broadcast
+  through the single-writer movement path. It needs a walkable landing cell and a walkable
+  line; when either is refused the Knight stays where they are and still strikes. A blocked
+  cell-wall line fails the cast after the requirement is paid, with no cooldown or act delay.
 
   This module ships without a skill-tree entry or grant mechanism: it is a
   quest skill wired up separately.
@@ -51,8 +52,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(%PlayerState{} = caster, {:unit, target_id}, _level, definition) do
-    with {:ok, _plan} <- prepare(caster, target_id, definition) do
+  def validate(%PlayerState{} = caster, {:unit, target_id}, _level, _definition) do
+    with {:ok, _position} <- resolve_target_position(caster, target_id) do
       :ok
     end
   end
@@ -63,41 +64,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{} = caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{directive: directive, dest: destination, distance: distance}} <-
-           prepare(caster, target_id, definition),
-         :ok <- strike(caster, target_id, level, definition, destination, distance) do
-      {:ok, PlayerState.put_pending_forced_movement(caster, directive)}
+    with {:ok, {tx, ty, _target_map}} <- resolve_target_position(caster, target_id),
+         :ok <- ensure_clear_line(caster, tx, ty),
+         {dest_x, dest_y} = landing_cell(caster, tx, ty),
+         :ok <-
+           strike(
+             caster,
+             target_id,
+             level,
+             definition,
+             {dest_x, dest_y},
+             charge_distance(caster.x - tx, caster.y - ty)
+           ) do
+      {:ok, stage_movement(caster, dest_x, dest_y, definition)}
     end
   end
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
-  # Resolves the target, computes the landing cell adjacent to it on the caster's
-  # side, and validates both the landing cell (walkable, in range) and a straight
-  # walkable line for the charge. A blocked line or unwalkable landing fails here,
-  # before the interpreter commits any resource.
-  @spec prepare(PlayerState.t(), integer(), Definition.t()) ::
-          {:ok,
-           %{
-             directive: ForcedMovement.t(),
-             dest: {integer(), integer()},
-             distance: non_neg_integer()
-           }}
-          | {:error, atom()}
-  defp prepare(%PlayerState{map_name: map} = caster, target_id, definition) do
-    unit_type = target_unit_type(target_id)
-
-    with {:ok, {tx, ty, target_map}} <- resolve_position(unit_type, target_id),
-         :ok <- ensure_same_map(map, target_map),
-         {dest_x, dest_y} = landing_cell(caster, tx, ty),
-         {:ok, directive} <- ForcedMovement.validate(caster, dest_x, dest_y, definition.range),
-         :ok <- ensure_walkable_line(caster, tx, ty) do
-      {:ok,
-       %{
-         directive: directive,
-         dest: {dest_x, dest_y},
-         distance: charge_distance(caster.x - tx, caster.y - ty)
-       }}
+  @spec resolve_target_position(PlayerState.t(), integer()) ::
+          {:ok, {integer(), integer(), String.t()}}
+          | {:error, :invalid_target | :different_map}
+  defp resolve_target_position(%PlayerState{map_name: map} = _caster, target_id) do
+    with {:ok, {tx, ty, target_map}} <- resolve_position(target_unit_type(target_id), target_id),
+         :ok <- ensure_same_map(map, target_map) do
+      {:ok, {tx, ty, target_map}}
     end
   end
 
@@ -155,12 +146,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   defp ensure_same_map(map, map), do: :ok
   defp ensure_same_map(_caster_map, _target_map), do: {:error, :different_map}
 
-  @spec ensure_walkable_line(PlayerState.t(), integer(), integer()) ::
+  @spec ensure_clear_line(PlayerState.t(), integer(), integer()) ::
           :ok | {:error, :path_blocked}
-  defp ensure_walkable_line(%PlayerState{map_name: map, x: cx, y: cy}, tx, ty) do
-    if LineOfSight.walkable?(map, {cx, cy}, {tx, ty}),
+  defp ensure_clear_line(%PlayerState{map_name: map, x: cx, y: cy}, tx, ty) do
+    if LineOfSight.clear?(map, {cx, cy}, {tx, ty}),
       do: :ok,
       else: {:error, :path_blocked}
+  end
+
+  # The reference moves the caster only when the destination is passable and a
+  # walkable path reaches it; otherwise the strike still lands from where the
+  # caster stands.
+  @spec stage_movement(PlayerState.t(), integer(), integer(), Definition.t()) :: PlayerState.t()
+  defp stage_movement(%PlayerState{} = caster, dest_x, dest_y, definition) do
+    with {:ok, directive} <- ForcedMovement.validate(caster, dest_x, dest_y, definition.range),
+         true <- LineOfSight.walkable?(caster.map_name, {caster.x, caster.y}, {dest_x, dest_y}) do
+      PlayerState.put_pending_forced_movement(caster, directive)
+    else
+      _refused -> caster
+    end
   end
 
   # The cell adjacent to the target, one step back toward the caster.

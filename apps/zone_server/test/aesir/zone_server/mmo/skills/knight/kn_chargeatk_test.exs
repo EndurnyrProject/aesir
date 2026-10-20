@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
   end
 
   defp stub_clear_terrain do
+    stub(Cell, :blocks_projectiles?, fn "prontera", _x, _y -> false end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
     stub(Cell, :step_traversable?, fn "prontera", _prev, _cell -> true end)
   end
@@ -142,8 +143,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
              KnChargeatk.cast(caster(5, 10), {:unit, @target_id}, 1, definition)
   end
 
-  test "a diagonal corner-cut on the line fails the cast with no movement and no strike" do
-    stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
+  test "a diagonal corner cut still strikes but leaves the caster in place" do
+    stub_clear_terrain()
 
     stub(Cell, :step_traversable?, fn
       "prontera", {5, 5}, {6, 6} -> false
@@ -151,22 +152,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
     end)
 
     stub_target_at(15, 15)
-    stub_strike_guard()
+    expect_recording_strike()
 
     {:ok, definition} = Catalog.by_id(1001)
 
-    assert {:error, :path_blocked} =
-             KnChargeatk.cast(caster(5, 5), {:unit, @target_id}, 1, definition)
+    assert {:ok, updated} = KnChargeatk.cast(caster(5, 5), {:unit, @target_id}, 1, definition)
 
-    refute_received :struck
+    assert updated.pending_forced_movement == nil
+    assert_received {:strike, opts}
+    assert opts[:origin] == {14, 14}
   end
 
-  test "a wall on the line fails the cast with no movement and no strike" do
-    stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
+  test "a cell wall on the line fails the cast with no movement and no strike" do
+    stub_clear_terrain()
 
-    stub(Cell, :step_traversable?, fn
-      "prontera", _prev, {10, 10} -> false
-      "prontera", _prev, _cell -> true
+    stub(Cell, :blocks_projectiles?, fn
+      "prontera", 10, 10 -> true
+      "prontera", _x, _y -> false
     end)
 
     stub_target_at(15, 10)
@@ -177,28 +179,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
     assert {:error, :path_blocked} =
              KnChargeatk.cast(caster(5, 10), {:unit, @target_id}, 1, definition)
 
-    assert {:error, :path_blocked} =
-             KnChargeatk.validate(caster(5, 10), {:unit, @target_id}, 1, definition)
+    # The blocked line is refused at effect time, after the requirement is paid.
+    assert :ok = KnChargeatk.validate(caster(5, 10), {:unit, @target_id}, 1, definition)
 
     refute_received :struck
   end
 
-  test "an unwalkable landing cell fails the cast with no movement and no strike" do
+  test "an unreachable landing cell leaves the caster in place but still strikes" do
+    stub_clear_terrain()
+
     stub(Cell, :traversable?, fn
       "prontera", 14, 10 -> false
       "prontera", _x, _y -> true
     end)
 
-    stub(Cell, :step_traversable?, fn "prontera", _prev, _cell -> true end)
-
     stub_target_at(15, 10)
-    stub_strike_guard()
+    expect_recording_strike()
 
     {:ok, definition} = Catalog.by_id(1001)
 
-    assert {:error, :invalid_destination} =
-             KnChargeatk.cast(caster(5, 10), {:unit, @target_id}, 1, definition)
+    assert {:ok, updated} = KnChargeatk.cast(caster(5, 10), {:unit, @target_id}, 1, definition)
 
-    refute_received :struck
+    assert updated.pending_forced_movement == nil
+    assert_received {:strike, opts}
+    assert opts[:origin] == {14, 10}
   end
 end
