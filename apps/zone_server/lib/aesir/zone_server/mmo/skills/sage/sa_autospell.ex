@@ -82,7 +82,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
       ) do
     case eligible_bolts(learned, level) do
       [] ->
-        {:error, :no_eligible_skills}
+        # The reference sends the menu after the requirement is paid, empty or
+        # not, so the cast reports its failure with the cost kept.
+        {:failed, caster, :no_eligible_skills}
 
       entry_ids ->
         offer = %{skill_id: definition.id, kind: :SKILLS, entry_ids: entry_ids, level: level}

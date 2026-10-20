@@ -45,7 +45,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
   def cast(caster, :self, level, definition) do
     case Enum.filter(@recipes, fn {_id, materials} -> holds?(caster, materials) end) do
       [] ->
-        {:error, :no_materials}
+        # The reference sends the converter list after the requirement is paid,
+        # empty or not, so the cast reports its failure with the cost kept.
+        {:failed, caster, :no_materials}
 
       brewable ->
         offer = %{

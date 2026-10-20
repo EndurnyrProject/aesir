@@ -92,14 +92,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreateconTest do
     # A converter needs both halves of its recipe: the scroll alone brews nothing,
     # and neither does the elemental material alone.
     test "does not offer a converter when only one half of the recipe is held" do
-      assert {:error, :no_materials} = cast([{@blank_scroll, 10}])
-      assert {:error, :no_materials} = cast([{@red_blood, 10}, {@crystal_blue, 10}])
+      assert {:failed, _caster, :no_materials} = cast([{@blank_scroll, 10}])
+      assert {:failed, _caster, :no_materials} = cast([{@red_blood, 10}, {@crystal_blue, 10}])
     end
 
-    # Failing here means the interpreter charges no SP: it only consumes after the
-    # behaviour runs.
-    test "fails the cast when the caster holds no complete recipe" do
-      assert {:error, :no_materials} = cast([])
+    # The reference sends the converter list after the requirement is paid, empty
+    # or not, so the refusal keeps the SP and reports the failure.
+    test "fails the cast after the payment when the caster holds no complete recipe" do
+      assert {:failed, _caster, :no_materials} = cast([])
     end
   end
 

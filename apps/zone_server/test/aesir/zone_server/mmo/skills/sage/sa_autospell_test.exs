@@ -146,10 +146,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
              }
     end
 
-    # Without a bolt there is nothing to arm; failing here means the interpreter
-    # charges no SP for the cast, since it only charges after the behaviour runs.
-    test "fails the cast when the caster has learned no eligible bolt" do
-      assert {:error, :no_eligible_skills} = cast(%{}, 10)
+    # The reference sends the menu after the requirement is paid, empty or not,
+    # so the refusal keeps the SP and reports the failure.
+    test "fails the cast after the payment when the caster has learned no eligible bolt" do
+      assert {:failed, _caster, :no_eligible_skills} = cast(%{}, 10)
     end
   end
 
