@@ -68,8 +68,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCannibalize do
            no_exp: true,
            no_drops: true
          ) do
-      {:ok, _instance_id} -> {:ok, caster}
-      {:error, reason} -> {:error, reason}
+      {:ok, _instance_id} ->
+        {:ok, caster}
+
+      # A failed spawn summons nothing without failing the cast: the reference
+      # only enters its setup block when the spawn returned a mob.
+      {:error, _reason} ->
+        {:ok, caster}
     end
   end
 

@@ -131,6 +131,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
     assert sphere.inventory == %{}
   end
 
+  test "a failed spawn summons nothing and still keeps the cast paid" do
+    stub(UnitRegistry, :count_living_owned_mobs, fn @caster_id, _mob_id -> 0 end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+    stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+      {:error, :no_walkable_cell}
+    end)
+
+    assert {:ok, plant} =
+             Interpreter.cast(caster(%{232 => 1}, @plant_bottle), 232, 1, {:ground, 11, 10})
+
+    assert plant.stats.current_state.sp == 80
+    assert plant.inventory == %{}
+
+    assert {:ok, sphere} =
+             Interpreter.cast(caster(%{233 => 1}, @sphere_bottle), 233, 1, {:ground, 11, 10})
+
+    assert sphere.stats.current_state.sp == 90
+    assert sphere.inventory == %{}
+  end
+
   test "definitions expose ground targeting, costs, and cast timing" do
     for {definition, id, name, sp, bottle} <- [
           {AmCannibalize.definition(), 232, :am_cannibalize, 20, @plant_bottle},

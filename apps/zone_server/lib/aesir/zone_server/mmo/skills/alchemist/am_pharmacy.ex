@@ -29,12 +29,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPharmacy do
 
   @doc "Stages the recipes available at the cast Pharmacy level."
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, :no_materials}
+          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), :no_materials}
   @impl Aesir.ZoneServer.Mmo.Skill.Active
   def cast(%PlayerState{} = caster, :self, level, _definition) do
     case Recipes.offerable(@pharmacy_skill_id, level) do
       [] ->
-        {:error, :no_materials}
+        # The reference sends the (empty) recipe list after the requirement is
+        # paid, so the refusal keeps the cost and reports the failure.
+        {:failed, caster, :no_materials}
 
       recipes ->
         offer = %{
