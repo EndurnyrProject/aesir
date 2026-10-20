@@ -35,9 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoat do
 
   @impl Active
   def cast(%{character_id: caster_id} = caster, :self, _level, _definition) do
-    case StatusInterpreter.toggle_status(:player, caster_id, :sc_energycoat, []) do
-      {:ok, _} -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_energycoat, [])
+    {:ok, caster}
   end
 end

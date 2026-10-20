@@ -118,14 +118,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
       assert {:ok, ^mob} = CrDefender.cast(mob, :self, 5, %{})
     end
 
-    test "propagates a toggle error" do
+    test "keeps the cast when the toggle refuses" do
       caster = caster(%Equipment{left_hand: @shield_id})
 
       expect(StatusInterpreter, :toggle_status, fn :player, @caster_id, :sc_defender, _opts ->
         {:error, :status_blocked}
       end)
 
-      assert {:error, :status_blocked} = CrDefender.cast(caster, :self, 1, %{})
+      assert {:ok, ^caster} = CrDefender.cast(caster, :self, 1, %{})
     end
   end
 

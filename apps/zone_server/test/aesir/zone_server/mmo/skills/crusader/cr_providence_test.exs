@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidenceTest do
   end
 
   describe "validate/4" do
-    test "refuses a Crusader-class target" do
+    test "a Crusader-class target fails inside the implementation, not here" do
       caster = %{character_id: 1000}
       target_id = 2000
 
@@ -40,11 +40,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidenceTest do
         {:ok, {PlayerState, player_state(14), self()}}
       end)
 
-      assert {:error, :cannot_target_crusader} =
-               CrProvidence.validate(caster, {:unit, target_id}, 1, definition())
+      assert :ok = CrProvidence.validate(caster, {:unit, target_id}, 1, definition())
     end
 
-    test "refuses a Paladin-class target" do
+    test "a Paladin-class target fails inside the implementation, not here" do
       caster = %{character_id: 1000}
       target_id = 2001
 
@@ -52,19 +51,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidenceTest do
         {:ok, {PlayerState, player_state(4015), self()}}
       end)
 
-      assert {:error, :cannot_target_crusader} =
-               CrProvidence.validate(caster, {:unit, target_id}, 1, definition())
+      assert :ok = CrProvidence.validate(caster, {:unit, target_id}, 1, definition())
     end
 
-    test "refuses self when the caster is Crusader-class" do
+    test "self passes validation even when the caster is Crusader-class" do
       caster = %{character_id: 3000}
 
       stub(UnitRegistry, :get_unit, fn :player, 3000 ->
         {:ok, {PlayerState, player_state(14), self()}}
       end)
 
-      assert {:error, :cannot_target_crusader} =
-               CrProvidence.validate(caster, :self, 1, definition())
+      assert :ok = CrProvidence.validate(caster, :self, 1, definition())
     end
 
     test "allows a non-Crusader ally" do
@@ -117,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidenceTest do
       assert {:ok, ^caster} = CrProvidence.cast(caster, {:unit, target_id}, 5, definition())
     end
 
-    test "propagates an error from StatusInterpreter" do
+    test "keeps the cast when the status is refused" do
       caster = %{character_id: 1000}
       target_id = 2002
       stub(UnitRegistry, :unit_exists?, fn :mob, ^target_id -> false end)
@@ -126,7 +123,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidenceTest do
         {:error, :already_applied}
       end)
 
-      assert {:error, :already_applied} =
+      assert {:ok, ^caster} = CrProvidence.cast(caster, {:unit, target_id}, 1, definition())
+    end
+
+    test "a Crusader-class target is a reported failure from the implementation" do
+      caster = %{character_id: 1000}
+      target_id = 2002
+      stub(UnitRegistry, :unit_exists?, fn :mob, ^target_id -> false end)
+
+      stub(UnitRegistry, :get_unit, fn :player, ^target_id ->
+        {:ok, {PlayerState, player_state(14), self()}}
+      end)
+
+      assert {:failed, ^caster, :invalid_target} =
                CrProvidence.cast(caster, {:unit, target_id}, 1, definition())
     end
   end

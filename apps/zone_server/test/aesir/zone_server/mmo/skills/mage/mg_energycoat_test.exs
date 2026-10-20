@@ -34,33 +34,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoatTest do
       {:ok, definition} = Catalog.by_id(157)
       caster = %{character_id: 3000}
 
-      expect(StatusInterpreter, :toggle_status, fn :player, 3000, :sc_energycoat, [] ->
-        {:ok, :applied}
+      expect(StatusInterpreter, :apply_status, fn :player, 3000, :sc_energycoat, [] ->
+        :ok
       end)
 
       assert {:ok, ^caster} = MgEnergycoat.cast(caster, :self, 1, definition)
     end
 
-    test "removes SC_ENERGYCOAT on second cast" do
+    test "re-casting refreshes SC_ENERGYCOAT instead of toggling it off" do
       {:ok, definition} = Catalog.by_id(157)
       caster = %{character_id: 3000}
 
-      expect(StatusInterpreter, :toggle_status, fn :player, 3000, :sc_energycoat, [] ->
-        {:ok, :removed}
+      expect(StatusInterpreter, :apply_status, 2, fn :player, 3000, :sc_energycoat, [] ->
+        :ok
       end)
 
       assert {:ok, ^caster} = MgEnergycoat.cast(caster, :self, 1, definition)
+      assert {:ok, ^caster} = MgEnergycoat.cast(caster, :self, 1, definition)
     end
 
-    test "propagates error from toggle_status" do
+    test "keeps the cast when the status is refused" do
       {:ok, definition} = Catalog.by_id(157)
       caster = %{character_id: 3000}
 
-      expect(StatusInterpreter, :toggle_status, fn :player, 3000, :sc_energycoat, [] ->
+      expect(StatusInterpreter, :apply_status, fn :player, 3000, :sc_energycoat, [] ->
         {:error, :immune}
       end)
 
-      assert {:error, :immune} = MgEnergycoat.cast(caster, :self, 1, definition)
+      assert {:ok, ^caster} = MgEnergycoat.cast(caster, :self, 1, definition)
     end
   end
 end

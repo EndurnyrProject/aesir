@@ -35,10 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaSacrifice do
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, atom()}
   def cast(%PlayerState{character_id: id} = caster, _target, level, _definition) do
-    case StatusInterpreter.apply_status(:player, id, :sc_sacrifice, val1: level, caster_id: id) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(:player, id, :sc_sacrifice, val1: level, caster_id: id)
+    {:ok, caster}
   end
 
   def cast(%MobState{}, _target, _level, _definition), do: {:error, :player_only}

@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       assert %{val1: 3} = StatusStorage.get_status(:player, @victim_id, :sc_reflectshield)
     end
 
-    test "re-casting toggles the status back off" do
+    test "re-casting refreshes the status instead of toggling it off" do
       stub_unit_info(@victim_id)
       caster = caster(%Equipment{left_hand: @shield_id})
 
@@ -148,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
       assert StatusStorage.has_status?(:player, @victim_id, :sc_reflectshield)
 
       assert {:ok, ^caster} = CrReflectshield.cast(caster, :self, 3, %{})
-      refute StatusStorage.has_status?(:player, @victim_id, :sc_reflectshield)
+      assert StatusStorage.has_status?(:player, @victim_id, :sc_reflectshield)
     end
 
     test "a mistargeted {:unit, id} row still toggles the caster, not the given id" do

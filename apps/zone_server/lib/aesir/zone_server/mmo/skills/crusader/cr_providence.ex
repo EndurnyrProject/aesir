@@ -50,15 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidence do
   def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
     do: {:error, :invalid_target}
 
-  def validate(caster, target, _level, _definition) do
-    target_id = Active.resolve_target_id(caster, target)
-
-    if crusader_class?(target_id) do
-      {:error, :cannot_target_crusader}
-    else
-      :ok
-    end
-  end
+  def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -69,9 +61,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidence do
     {unit_type, target_id} = target_ref(target_id)
     params = [val1: level, caster_id: caster_id, duration: duration]
 
-    case StatusInterpreter.apply_status(unit_type, target_id, :sc_providence, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
+    # The reference refuses another Crusader from inside the implementation, so
+    # the requirement is already paid when it fails.
+    if unit_type == :player and crusader_class?(target_id) do
+      {:failed, caster, :invalid_target}
+    else
+      StatusInterpreter.apply_status(unit_type, target_id, :sc_providence, params)
+      {:ok, caster}
     end
   end
 

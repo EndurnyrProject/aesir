@@ -47,12 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguard do
     unit_type = caster.__struct__.get_unit_type(caster)
     unit_id = caster.__struct__.get_unit_id(caster)
 
-    case StatusInterpreter.toggle_status(unit_type, unit_id, :sc_autoguard, val1: level) do
-      {:ok, _action} ->
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        error
-    end
+    StatusInterpreter.toggle_status(unit_type, unit_id, :sc_autoguard, val1: level)
+    {:ok, caster}
   end
 end

@@ -71,9 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquicken do
     duration = Enum.at(definition.duration, level - 1)
     params = [val1: level, val2: @fixed_aspd, caster_id: unit_id, duration: duration]
 
-    case StatusInterpreter.apply_status(unit_type, unit_id, :sc_spearquicken, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_spearquicken, params)
+    {:ok, caster}
   end
 end
