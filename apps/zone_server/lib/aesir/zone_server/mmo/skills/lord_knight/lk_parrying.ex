@@ -57,13 +57,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkParrying do
     type = caster.__struct__.get_unit_type(caster)
     id = caster.__struct__.get_unit_id(caster)
 
-    case Interpreter.apply_status(type, id, :sc_parrying,
-           val1: level,
-           duration: Enum.at(definition.duration, level - 1),
-           caster_id: id
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    Interpreter.apply_status(type, id, :sc_parrying,
+      val1: level,
+      duration: Enum.at(definition.duration, level - 1),
+      caster_id: id
+    )
+
+    {:ok, caster}
   end
 end

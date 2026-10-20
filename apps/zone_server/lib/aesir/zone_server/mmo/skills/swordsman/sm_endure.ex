@@ -56,9 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndure do
     duration = Enum.at(definition.duration, level - 1)
     params = [val1: level, caster_id: caster_id, duration: duration]
 
-    case StatusInterpreter.apply_status(adapter.unit_type(caster), caster_id, :sc_endure, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(adapter.unit_type(caster), caster_id, :sc_endure, params)
+    {:ok, caster}
   end
 end

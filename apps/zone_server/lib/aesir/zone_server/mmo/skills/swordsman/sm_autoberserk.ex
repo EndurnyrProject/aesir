@@ -42,9 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmAutoberserk do
 
   @impl Active
   def cast(%{character_id: caster_id} = caster, :self, _level, _definition) do
-    case StatusInterpreter.toggle_status(:player, caster_id, :sc_autoberserk, []) do
-      {:ok, _} -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.toggle_status(:player, caster_id, :sc_autoberserk, [])
+    {:ok, caster}
   end
 end

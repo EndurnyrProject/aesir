@@ -63,14 +63,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
 
     with {:ok, pid, target, unit_type} <- TargetResolver.resolve(target_ref),
          target_id = target.__struct__.get_unit_id(target),
-         true <- lands?(caster, target, level),
-         :ok <- StatusInterpreter.apply_status(unit_type, target_id, :sc_provoke, params) do
-      taunt(unit_type, pid, caster)
-      coma(caster, unit_type, pid, target)
-      {:ok, caster}
+         true <- lands?(caster, target, level) do
+      provoke(caster, pid, target, unit_type, target_id, params)
     else
       false -> {:ok, caster}
       {:error, _reason} = error -> error
+    end
+  end
+
+  # The reference reports the failed chance from inside the implementation,
+  # after the requirement is paid, and only taunts on success.
+  defp provoke(caster, pid, target, unit_type, target_id, params) do
+    case StatusInterpreter.apply_status(unit_type, target_id, :sc_provoke, params) do
+      :ok ->
+        taunt(unit_type, pid, caster)
+        coma(caster, unit_type, pid, target)
+        {:ok, caster}
+
+      {:error, reason} ->
+        {:failed, caster, reason}
     end
   end
 

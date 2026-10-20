@@ -32,17 +32,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkTensionrelax do
     type = caster.__struct__.get_unit_type(caster)
     id = caster.__struct__.get_unit_id(caster)
 
-    case Interpreter.apply_status(type, id, :sc_tensionrelax,
-           val1: level,
-           duration: Enum.at(definition.duration, level - 1),
-           caster_id: id
-         ) do
-      :ok ->
-        if match?(%PlayerState{}, caster), do: PlayerSession.sit(self())
-        {:ok, caster}
+    Interpreter.apply_status(type, id, :sc_tensionrelax,
+      val1: level,
+      duration: Enum.at(definition.duration, level - 1),
+      caster_id: id
+    )
 
-      {:error, _reason} = error ->
-        error
-    end
+    if match?(%PlayerState{}, caster), do: PlayerSession.sit(self())
+    {:ok, caster}
   end
 end

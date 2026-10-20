@@ -116,10 +116,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
       duration: duration
     ]
 
-    case StatusInterpreter.apply_status(:player, caster_id, fire_aura_status(), params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(:player, caster_id, fire_aura_status(), params)
+    {:ok, caster}
   end
 
   defp fire_aura_status do

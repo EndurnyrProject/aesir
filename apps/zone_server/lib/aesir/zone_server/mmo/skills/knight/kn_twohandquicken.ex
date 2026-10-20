@@ -76,9 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquicken do
     duration = Enum.at(definition.duration, level - 1)
     params = [val1: level, val2: @fixed_aspd, caster_id: unit_id, duration: duration]
 
-    case StatusInterpreter.apply_status(unit_type, unit_id, :sc_twohandquicken, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_twohandquicken, params)
+    {:ok, caster}
   end
 end

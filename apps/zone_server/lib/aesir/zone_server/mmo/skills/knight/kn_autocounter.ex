@@ -74,14 +74,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
       duration: @counter_ms_per_level * level
     ]
 
-    with :ok <-
-           StatusInterpreter.apply_status(
-             adapter.unit_type(caster),
-             caster_id,
-             :sc_auto_counter,
-             params
-           ) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(
+      adapter.unit_type(caster),
+      caster_id,
+      :sc_auto_counter,
+      params
+    )
+
+    {:ok, caster}
   end
 end

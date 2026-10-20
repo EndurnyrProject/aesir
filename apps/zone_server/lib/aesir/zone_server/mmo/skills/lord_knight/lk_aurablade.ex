@@ -70,13 +70,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurablade do
     type = caster.__struct__.get_unit_type(caster)
     id = caster.__struct__.get_unit_id(caster)
 
-    case StatusInterpreter.apply_status(type, id, :sc_aurablade,
-           val1: level,
-           duration: Enum.at(definition.duration, level - 1),
-           caster_id: id
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(type, id, :sc_aurablade,
+      val1: level,
+      duration: Enum.at(definition.duration, level - 1),
+      caster_id: id
+    )
+
+    {:ok, caster}
   end
 end

@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
       assert Keyword.fetch!(params, :caster_id) == 4001
     end
 
-    test "propagates an application failure" do
+    test "keeps the cast when the counter status is refused" do
       caster = %PlayerState{character_id: 4002}
       {:ok, definition} = Catalog.by_id(61)
 
@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
         {:error, :immune}
       end)
 
-      assert {:error, :immune} = KnAutocounter.cast(caster, {:unit, 9002}, 5, definition)
+      assert {:ok, ^caster} = KnAutocounter.cast(caster, {:unit, 9002}, 5, definition)
     end
   end
 

@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmAutoberserkTest do
     assert {:ok, ^caster} = SmAutoberserk.cast(caster, :self, 1, definition)
   end
 
-  test "cast/4 propagates error from toggle_status" do
+  test "cast/4 keeps the cast when toggle_status refuses" do
     {:ok, definition} = Catalog.by_id(146)
     caster = %{character_id: 3000}
 
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmAutoberserkTest do
       {:error, :immune}
     end)
 
-    assert {:error, :immune} = SmAutoberserk.cast(caster, :self, 1, definition)
+    assert {:ok, ^caster} = SmAutoberserk.cast(caster, :self, 1, definition)
   end
 
   test "requires the listed SP to cast but spends none" do
