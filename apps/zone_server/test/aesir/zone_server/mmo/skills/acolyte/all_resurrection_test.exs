@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -18,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     Mimic.copy(MobState)
     Mimic.copy(Combat)
     Mimic.copy(TargetResolver)
+    Mimic.copy(Rules)
   end
 
   defp living_mob do
@@ -89,6 +91,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
 
     assert {:error, :invalid_target} =
              AllResurrection.validate(%{character_id: 1_000}, {:unit, 2_000}, 1, %{})
+  end
+
+  test "a siege-ground corpse refusal is reported after the requirement is paid" do
+    corpse = %PlayerState{
+      character_id: 2_000,
+      map_name: "aldeg_cas01",
+      action_state: :dead,
+      stats: %{current_state: %{hp: 0}}
+    }
+
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+    stub(Rules, :ground?, fn "aldeg_cas01" -> true end)
+    reject(&PlayerSession.resurrect/3)
+
+    caster = %{character_id: 1_000}
+
+    assert {:failed, ^caster, :invalid_target} =
+             AllResurrection.cast(caster, {:unit, 2_000}, 1, AllResurrection.definition())
+  end
+
+  test "a target revived during the cast ends the use without an effect or a failure" do
+    revived = living_mob()
+
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), revived, :mob} end)
+    stub(MobState, :to_combatant, fn ^revived -> %{race: :formless, element: {:neutral, 1}} end)
+    reject(&PlayerSession.resurrect/3)
+
+    caster = %{character_id: 1_000}
+
+    assert {:ok, ^caster} =
+             AllResurrection.cast(caster, {:unit, 2_000}, 1, AllResurrection.definition())
   end
 
   @tag game_mode: :renewal

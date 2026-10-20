@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State, as: PartyState
@@ -20,6 +21,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(Rules)
+  end
 
   defp mode_value(renewal, pre_renewal) do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
@@ -102,8 +107,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
   end
 
   test "requires party membership" do
-    assert {:error, :party_required} =
-             PrRedemptio.cast(caster(), :self, 1, PrRedemptio.definition())
+    caster = caster()
+
+    assert {:failed, ^caster, :party_required} =
+             PrRedemptio.cast(caster, :self, 1, PrRedemptio.definition())
+  end
+
+  test "a siege-ground cast fails after the payment and still leaves the caster at one HP" do
+    target = corpse(2_000, 114, 100)
+
+    stub(PartyManager, :get, fn 7 -> {:ok, party_state([1_000, 2_000])} end)
+
+    stub(UnitRegistry, :get_unit, fn :player, 2_000 ->
+      {:ok, {PlayerState, target, self()}}
+    end)
+
+    stub(Rules, :ground?, fn "prontera" -> true end)
+    reject(&PlayerSession.resurrect/3)
+
+    assert {:failed, updated, :invalid_target} =
+             PrRedemptio.cast(caster(7), :self, 1, PrRedemptio.definition())
+
+    assert updated.stats.current_state.hp == 1
   end
 
   test "is catalogued but unavailable through ordinary Priest skill-point learning" do
@@ -218,7 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
     reject(&PlayerSession.resurrect/3)
     original = caster(7)
 
-    assert {:error, :no_targets} =
+    assert {:failed, ^original, :no_targets} =
              PrRedemptio.cast(original, :self, 1, PrRedemptio.definition())
 
     assert original.stats.current_state.hp == 1_000

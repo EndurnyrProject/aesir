@@ -50,33 +50,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   # NOTE: Add restart-full, resurrection-EXP, and Redemptio-EXP options here when
   # Aesir gains a matching server-config surface or one of those rules becomes required.
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(%{party_id: 0}, :self, 1, _definition), do: {:error, :party_required}
-
-  def validate(%{party_id: party_id, map_name: map_name}, :self, 1, _definition)
-      when party_id > 0 do
-    if Rules.ground?(map_name), do: {:error, :invalid_target}, else: :ok
-  end
-
-  @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%{party_id: 0}, :self, 1, _definition), do: {:error, :party_required}
+          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()}
+  def cast(%{party_id: 0} = caster, :self, 1, _definition), do: {:failed, caster, :party_required}
 
   def cast(%{character_id: caster_id, party_id: party_id} = caster, :self, 1, definition) do
-    with false <- Rules.ground?(caster.map_name),
-         {:ok, party} <- PartyManager.get(party_id),
+    with {:ok, party} <- PartyManager.get(party_id),
          [_corpse | _rest] = corpses <- eligible_corpses(party, caster, definition.splash_radius) do
+      caster
+      |> set_hp_to_one()
+      |> classic_exp_penalty(length(corpses))
+      |> revive_corpses(caster_id, corpses)
+    else
+      [] -> {:failed, caster, :no_targets}
+      {:error, _reason} -> {:failed, caster, :party_required}
+    end
+  end
+
+  # A siege-ground refusal still charges the classic penalty and leaves the
+  # caster at one HP: the reference refuses each counted corpse after counting it.
+  defp revive_corpses(caster, caster_id, corpses) do
+    if Rules.ground?(caster.map_name) do
+      {:failed, caster, :invalid_target}
+    else
       Enum.each(corpses, fn {target_pid, _target_state} ->
         PlayerSession.resurrect(target_pid, caster_id, 50)
       end)
 
-      {:ok, caster |> set_hp_to_one() |> classic_exp_penalty(length(corpses))}
-    else
-      true -> {:error, :invalid_target}
-      [] -> {:error, :no_targets}
-      {:error, _reason} -> {:error, :party_required}
+      {:ok, caster}
     end
   end
 

@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
     with {:ok, _target_pid, target_state, unit_type} <- TargetResolver.resolve(target_id) do
       cond do
         unit_type == :player and Unit.corpse?(target_state) ->
-          ensure_revival_allowed(target_state)
+          :ok
 
         Unit.living?(target_state) and undead?(target_state) ->
           :ok
@@ -69,22 +69,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
-    with {:ok, target_pid, target_state, unit_type} <- TargetResolver.resolve(target_id),
-         target_kind <- target_kind(unit_type, target_state),
-         :ok <-
-           apply_resurrection(
-             target_kind,
-             caster,
-             caster_id,
-             target_id,
-             target_pid,
-             target_state,
-             level,
-             definition
-           ) do
-      {:ok, caster}
+    with {:ok, target_pid, target_state, unit_type} <- TargetResolver.resolve(target_id) do
+      case target_kind(unit_type, target_state) do
+        :corpse -> revive_corpse(caster, caster_id, target_pid, target_state, level)
+        :undead -> strike_undead(caster, target_id, target_state, level, definition)
+        :invalid -> {:ok, caster}
+      end
     end
   end
 
@@ -98,50 +90,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
     if Unit.living?(target_state) and undead?(target_state), do: :undead, else: :invalid
   end
 
-  defp apply_resurrection(
-         :corpse,
-         _caster,
-         caster_id,
-         _target_id,
-         target_pid,
-         target_state,
-         level,
-         _definition
-       ) do
-    with :ok <- ensure_revival_allowed(target_state) do
-      PlayerSession.resurrect(target_pid, caster_id, hp_percent(level))
+  # A corpse on siege ground is refused after the requirement is paid, with the
+  # failure shown. A corpse the caster revived during the cast ends the use with
+  # no effect and no failure.
+  defp revive_corpse(caster, caster_id, target_pid, %{map_name: map_name}, level) do
+    if Rules.ground?(map_name) do
+      {:failed, caster, :invalid_target}
+    else
+      case PlayerSession.resurrect(target_pid, caster_id, hp_percent(level)) do
+        :ok -> {:ok, caster}
+        {:error, :stale_target} -> {:ok, caster}
+        {:error, _reason} = error -> error
+      end
     end
   end
 
-  defp apply_resurrection(
-         :undead,
-         caster,
-         _caster_id,
-         target_id,
-         _target_pid,
-         target_state,
-         level,
-         definition
-       ) do
+  defp strike_undead(caster, target_id, target_state, level, definition) do
     with {:ok, _ref} <- attack_undead(caster, target_id, target_state, level, definition) do
-      :ok
+      {:ok, caster}
     end
-  end
-
-  defp apply_resurrection(
-         :invalid,
-         _caster,
-         _caster_id,
-         _target_id,
-         _target_pid,
-         _target_state,
-         _level,
-         _definition
-       ),
-       do: {:error, :invalid_target}
-
-  defp ensure_revival_allowed(%{map_name: map_name}) do
-    if Rules.ground?(map_name), do: {:error, :invalid_target}, else: :ok
   end
 
   defp hp_percent(level), do: Enum.at([10, 30, 50, 80], level - 1)
