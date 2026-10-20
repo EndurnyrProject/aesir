@@ -73,8 +73,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
            origin: :normal,
            state: %{paid_return?: paid_return?, message: text}
          ) do
-      {:ok, _group} -> {:ok, caster}
-      {:error, _reason} = error -> error
+      {:ok, _group} ->
+        {:ok, caster}
+
+      {:error, reason} ->
+        if SkillUnit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 

@@ -81,8 +81,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     CastendStrip.start(caster, origin, :sc_stripshield, @self_lock_ms, [:sc_ankle])
 
     case Unit.place(caster, :cr_grandcross, level, {caster.x, caster.y}) do
-      {:ok, _group} -> {:ok, caster}
-      {:error, _reason} = error -> error
+      {:ok, _group} ->
+        {:ok, caster}
+
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 

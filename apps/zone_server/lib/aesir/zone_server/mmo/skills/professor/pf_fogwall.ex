@@ -59,11 +59,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfFogwall do
         Enum.each(occupants(group), &blind_entrant(group, &1))
         {:ok, caster}
 
-      {:error, :no_walkable_cells} ->
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        error
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 

@@ -64,8 +64,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
           {:ok, map()} | {:error, term()}
   def cast(caster, {:ground, x, y}, level, _definition) do
     case Unit.place(caster, :wz_firepillar, level, {x, y}) do
-      {:ok, _group} -> {:ok, caster}
-      {:error, _reason} = error -> error
+      {:ok, _group} ->
+        {:ok, caster}
+
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 

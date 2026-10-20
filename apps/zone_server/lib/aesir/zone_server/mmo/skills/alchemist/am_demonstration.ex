@@ -60,8 +60,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
           {:ok, PlayerState.t()} | {:error, term()}
   def cast(caster, {:ground, x, y}, level, _definition) do
     case Unit.place(caster, :am_demonstration, level, {x, y}) do
-      {:ok, _group} -> {:ok, caster}
-      {:error, _reason} = error -> error
+      {:ok, _group} ->
+        {:ok, caster}
+
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 

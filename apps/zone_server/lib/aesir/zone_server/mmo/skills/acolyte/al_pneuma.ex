@@ -68,8 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
         CellStatus.grant_occupants(group, definition(), :sc_pneuma, grant_params(group))
         {:ok, caster}
 
-      {:error, _reason} = error ->
-        error
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 

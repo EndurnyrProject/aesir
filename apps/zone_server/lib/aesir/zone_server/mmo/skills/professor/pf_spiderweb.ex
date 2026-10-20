@@ -84,14 +84,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSpiderweb do
   end
 
   defp web(caster, level, cell) do
-    with {:ok, group} <- Unit.place(caster, :pf_spiderweb, level, cell) do
-      now = System.monotonic_time(:millisecond)
-      {victim, expires_at} = catch_standing(group, caster.__struct__.to_combatant(caster), now)
+    case Unit.place(caster, :pf_spiderweb, level, cell) do
+      {:ok, group} ->
+        now = System.monotonic_time(:millisecond)
 
-      if victim, do: Unit.update_state(group.group_id, %{victim: victim})
-      if expires_at, do: Manager.set_expires_at(group.group_id, expires_at)
+        {victim, expires_at} =
+          catch_standing(group, caster.__struct__.to_combatant(caster), now)
 
-      :ok
+        if victim, do: Unit.update_state(group.group_id, %{victim: victim})
+        if expires_at, do: Manager.set_expires_at(group.group_id, expires_at)
+
+        :ok
+
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: :ok, else: {:error, reason}
     end
   end
 

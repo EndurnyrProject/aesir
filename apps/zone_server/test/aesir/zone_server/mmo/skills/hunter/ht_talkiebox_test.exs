@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
                )
     end
 
-    test "propagates a placement failure" do
+    test "keeps the cast when the reference drops the footprint" do
       caster = %PlayerState{character_id: @caster_id, map_name: "prontera", x: 50, y: 50}
       definition = HtTalkiebox.definition()
 
@@ -112,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
         {:error, :no_walkable_cells}
       end)
 
-      assert {:error, :no_walkable_cells} =
+      assert {:ok, ^caster} =
                HtTalkiebox.cast_with_input(caster, {:ground, 50, 50}, 1, definition, "hi")
     end
 
