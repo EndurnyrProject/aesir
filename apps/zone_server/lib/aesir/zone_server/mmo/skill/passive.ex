@@ -13,6 +13,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @typedoc """
   Context passed to passive callbacks, describing the player's current state
   relevant for passive skill computations.
+
+  `learned_skills` carries every skill at its *effective* level (learned or
+  equipment-granted, whichever is higher), as the reference's `pc_checkskill`
+  reports it, so a passive term that reads another skill sees granted levels.
   """
   @type ctx :: %{
           weapon_type: atom(),

@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Passive
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Formulas
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSteelcrow
@@ -71,12 +72,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
         %{position: center} = hit,
         opts
       ) do
-    learned_level = Map.get(stats.progression.learned_skills, definition().id, 0)
+    skill_level = PlayerCaster.skill_level(player_state, definition().id)
 
     effective_level =
-      Formulas.auto_blitz_effective_level(learned_level, stats.progression.job_level)
+      Formulas.auto_blitz_effective_level(skill_level, stats.progression.job_level)
 
-    if automatic_eligible?(player_state, learned_level, effective_level) do
+    if automatic_eligible?(player_state, skill_level, effective_level) do
       luk = Stats.get_effective_stat(stats, :luk)
       threshold = Formulas.auto_blitz_chance(luk)
       rng = Keyword.get(opts, :rng, &default_roll/1)
@@ -119,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   end
 
   defp deliver(%PlayerState{stats: stats} = caster, center, primary, level, split?) do
-    steel_crow_level = Map.get(stats.progression.learned_skills, @steel_crow_id, 0)
+    steel_crow_level = PlayerCaster.skill_level(caster, @steel_crow_id)
 
     caster_stats = %{
       agi: Stats.get_effective_stat(stats, :agi),

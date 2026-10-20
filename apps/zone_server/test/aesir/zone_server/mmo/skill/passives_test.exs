@@ -275,7 +275,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def kill_sp_gain(level, %{mob_level: mob_level}), do: level + mob_level
   end
 
-  defp build_player(learned_skills, weapon_atom) do
+  defp build_player(learned_skills, weapon_atom, granted_skills \\ %{}) do
     inventory =
       if weapon_atom == :bare_hands do
         []
@@ -301,6 +301,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
         job_level: 30,
         learned_skills: learned_skills
       },
+      granted_skills: granted_skills,
       equipment: Stats.equipment_from_inventory(inventory)
     }
 
@@ -866,6 +867,57 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
 
     test "a player without computed stats is a no-op" do
       assert :ok = Passives.after_normal_hit(%PlayerState{}, @hit)
+    end
+  end
+
+  describe "effective skill levels" do
+    test "an equipment-granted passive counts at its granted level" do
+      stub(Catalog, :by_id, fn
+        9_900_001 -> {:ok, FleePassive.definition()}
+        _other -> :error
+      end)
+
+      stub(Catalog, :passive_module_for, fn :test_flee_passive -> {:ok, FleePassive} end)
+
+      player = build_player(%{}, :one_handed_sword, %{9_900_001 => 3})
+
+      assert Passives.flee_bonus(player) == 12
+    end
+
+    test "the higher of the learned and granted level wins" do
+      stub(Catalog, :by_id, fn
+        9_900_001 -> {:ok, FleePassive.definition()}
+        _other -> :error
+      end)
+
+      stub(Catalog, :passive_module_for, fn :test_flee_passive -> {:ok, FleePassive} end)
+
+      granted_above = build_player(%{9_900_001 => 2}, :one_handed_sword, %{9_900_001 => 5})
+      learned_above = build_player(%{9_900_001 => 5}, :one_handed_sword, %{9_900_001 => 2})
+
+      assert Passives.flee_bonus(granted_above) == 20
+      assert Passives.flee_bonus(learned_above) == 20
+    end
+
+    test "a granted level of zero adds no bonus" do
+      stub(Catalog, :by_id, fn
+        9_900_001 -> {:ok, FleePassive.definition()}
+        _other -> :error
+      end)
+
+      stub(Catalog, :passive_module_for, fn :test_flee_passive -> {:ok, FleePassive} end)
+
+      player = build_player(%{}, :one_handed_sword, %{9_900_001 => 0})
+
+      assert Passives.flee_bonus(player) == 0
+    end
+
+    test "the context carries the effective map, so a passive term reads a granted skill" do
+      # RG_SNATCHER at level 1, with TF_STEAL only granted at level 7: its
+      # chance is 15 + 55 + 70, the reference's pc_checkskill reading.
+      player = build_player(%{210 => 1}, :one_handed_sword, %{50 => 7})
+
+      assert Passives.steal_proc(player) == 140
     end
   end
 
