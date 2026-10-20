@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -104,6 +105,61 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
     test "a mob caster cannot devote" do
       assert {:error, :mob_cannot_devote} =
                CrDevotion.validate(mob_caster(), {:unit, 4001}, 1, definition())
+    end
+  end
+
+  describe "homunculus and foreign-link gates" do
+    test "the caster's own homunculus passes the party gate and is refused after the requirement is paid" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register_homunculus(5001, @crusader_id)
+
+      assert :ok = CrDevotion.validate(caster, {:unit, {:homunculus, 5001}}, 1, definition())
+
+      assert {:failed, ^caster, :invalid_target} =
+               CrDevotion.cast(caster, {:unit, {:homunculus, 5001}}, 1, definition())
+    end
+
+    test "a party member's homunculus passes the party gate through its owner" do
+      caster = register(player(@crusader_id, job_id: @crusader_class, party_id: 1))
+      register(player(4001, party_id: 1))
+      register_homunculus(5002, 4001)
+
+      assert :ok = CrDevotion.validate(caster, {:unit, {:homunculus, 5002}}, 1, definition())
+
+      assert {:failed, ^caster, :invalid_target} =
+               CrDevotion.cast(caster, {:unit, {:homunculus, 5002}}, 1, definition())
+    end
+
+    test "a stranger's homunculus is refused before the requirement is paid" do
+      caster = register(player(@crusader_id, job_id: @crusader_class, party_id: 1))
+      register(player(4001, party_id: 2))
+      register_homunculus(5003, 4001)
+
+      assert {:error, :not_same_party} =
+               CrDevotion.validate(caster, {:unit, {:homunculus, 5003}}, 1, definition())
+    end
+
+    test "a target already devoted by another Crusader is refused after the requirement is paid" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+
+      :ok =
+        StatusStorage.apply_status(:player, 4001, :sc_devotion,
+          caster_id: 4002,
+          duration: 30_000,
+          state: %{peer: {:player, 4002}, link_id: make_ref(), range: 7}
+        )
+
+      assert {:failed, ^caster, :devoted_by_another} =
+               CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
+    end
+
+    test "re-casting on the Crusader's own devotee still refreshes it" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+
+      assert {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
+      assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
     end
   end
 
@@ -317,6 +373,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
 
   defp register(%PlayerState{character_id: id} = state) do
     :ok = UnitRegistry.register_unit(:player, id, PlayerState, state, self())
+    state
+  end
+
+  defp register_homunculus(gid, owner_id) do
+    state = %HomunculusState{
+      id: gid,
+      world_gid: gid,
+      owner_character_id: owner_id,
+      class_id: 6001,
+      name: "DevotionHomunculus",
+      lifecycle: :active,
+      action_state: :idle,
+      hp: 100,
+      map_name: "prontera",
+      x: 50,
+      y: 50
+    }
+
+    :ok = UnitRegistry.register_unit(:homunculus, gid, HomunculusState, state, self())
     state
   end
 

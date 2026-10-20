@@ -40,6 +40,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -63,6 +66,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
           :ok | {:error, atom()}
   def validate(
         %PlayerState{character_id: crusader_id} = caster,
+        {:unit, {:homunculus, gid}},
+        _level,
+        _def
+      ) do
+    with :ok <- reject_self(crusader_id, {:homunculus, gid}) do
+      same_party_homunculus(caster, gid)
+    end
+  end
+
+  def validate(
+        %PlayerState{character_id: crusader_id} = caster,
         {:unit, devotee_id},
         _level,
         _def
@@ -81,6 +95,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
           {:ok, Active.caster()}
           | {:failed, Active.caster(), atom()}
           | {:error, atom()}
+  # A homunculus passes the party gate through its master, and the reference's
+  # implementation devotes players only: it fails after the requirement is paid.
+  def cast(%PlayerState{} = caster, {:unit, {:homunculus, _gid}}, _level, _definition),
+    do: {:failed, caster, :invalid_target}
+
   def cast(
         %PlayerState{character_id: crusader_id} = caster,
         {:unit, devotee_id},
@@ -105,8 +124,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
           :ok | {:error, atom()}
   defp cast_gate(%PlayerState{character_id: crusader_id} = caster, devotee, devotee_id, level) do
     with :ok <- reject_crusader_class(devotee),
+         :ok <- reject_foreign_devotion(crusader_id, devotee_id),
          :ok <- within_level_gap(caster, devotee) do
       slot_available(crusader_id, devotee_id, level)
+    end
+  end
+
+  # Another Crusader's link is not overwritten; the reference refuses it after
+  # the requirement is paid.
+  @spec reject_foreign_devotion(non_neg_integer(), non_neg_integer()) ::
+          :ok | {:error, :devoted_by_another}
+  defp reject_foreign_devotion(crusader_id, devotee_id) do
+    case StatusStorage.get_status(:player, devotee_id, :sc_devotion) do
+      %StatusEntry{state: %{peer: {:player, ^crusader_id}}} -> :ok
+      %StatusEntry{} -> {:error, :devoted_by_another}
+      _none -> :ok
     end
   end
 
@@ -139,7 +171,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
         {:ok, caster}
 
       {:error, _reason} ->
+        # The devotee's half of the link has no Crusader-side record; drop it so
+        # the pair is never half-linked.
+        StatusInterpreter.remove_status(:player, devotee_id, :sc_devotion)
         {:failed, caster, :devotion_link_failed}
+    end
+  end
+
+  # The reference judges a target that has a master through it: the caster's own
+  # homunculus counts as self (and so as party), a party member's through its
+  # owner.
+  @spec same_party_homunculus(PlayerState.t(), non_neg_integer()) ::
+          :ok | {:error, :target_not_found | :not_same_party}
+  defp same_party_homunculus(%PlayerState{character_id: crusader_id} = caster, gid) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {_module, %HomunculusState{owner_character_id: ^crusader_id}, _pid}} ->
+        :ok
+
+      {:ok, {_module, %HomunculusState{owner_character_id: owner_id}, _pid}} ->
+        with {:ok, owner} <- fetch_player(owner_id) do
+          same_party(caster, owner)
+        end
+
+      _gone ->
+        {:error, :target_not_found}
     end
   end
 
