@@ -100,6 +100,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitationTest do
     assert {:ok, ^caster} = cast(caster, 3)
   end
 
+  @tag game_mode: :pre_renewal
+  test "pre-renewal keeps the field when the caster's own status is refused" do
+    caster = player()
+    stub(Unit, :place, fn ^caster, :hw_gravitation, 3, {110, 100} -> {:ok, group(3)} end)
+
+    stub(StatusInterpreter, :apply_status, fn :player, 1001, :sc_gravitation, _params ->
+      {:error, :prevented}
+    end)
+
+    assert {:ok, ^caster} = cast(caster, 3)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "pre-renewal with a dropped footprint starts no field and no status" do
+    caster = player()
+
+    stub(Unit, :place, fn _caster, :hw_gravitation, 3, {110, 100} ->
+      {:error, :no_walkable_cells}
+    end)
+
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, ^caster} = cast(caster, 3)
+  end
+
   test "on_place covers a 5x5 field ticking every second for 4 s plus 1 s per level" do
     assert {:ok, placement} = HwGravitation.on_place(group(4))
 

@@ -2,6 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
   @moduledoc """
   Water Ball (WZ_WATERBALL) consumes nearby water into an invisible hit sequence.
 
+  The cast only starts while the caster stands on water the Land Protector does
+  not cover, a Deluge or Suiton field counting as water. A cell that loses its
+  water before the cast ends simply skips its ball with the requirement paid.
+
   Renewal and pre-renewal agree: 100% plus 30% per level MATK per ball. Renewal
   casts in 0.64 s per level plus a fixed part; pre-renewal in 1 s per level.
   """
@@ -43,6 +47,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
   @interval 150
   @duration 10_000
 
+  @doc """
+  The cast only starts on water: the reference checks the caster's cell for water
+  and against the Land Protector before it spends the cost.
+  """
+  @impl Active
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :water_required}
+  def begin_attempt(%{map_name: map_name, x: x, y: y} = caster, _target, _level, _definition) do
+    with :ok <- require_water(map_name, x, y), do: {:ok, caster}
+  end
+
   @impl Active
   def cast(
         %{character_id: caster_id, map_name: map_name, x: x, y: y} = caster,
@@ -50,29 +65,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
         level,
         _definition
       ) do
-    with {:ok, %{unit_type: target_type}} <- Combat.resolve_combatant(target_id),
-         :ok <- require_water(map_name, x, y),
-         {:ok, _group} <-
-           Manager.register_water_ball_sequence(
-             %Group{
-               group_id: System.unique_integer([:monotonic, :positive]),
-               skill_id: definition().id,
-               skill_name: :wz_waterball,
-               level: level,
-               caster_id: caster_id,
-               caster_type: :player,
-               target_id: target_id,
-               target_type: target_type,
-               map_name: map_name,
-               center: {x, y},
-               interval: @interval,
-               expires_at: System.monotonic_time(:millisecond) + @duration,
-               next_tick_at: System.monotonic_time(:millisecond),
-               visibility: :none,
-               state: %{water_ball_sequence: true}
-             },
-             unprotected_sources(map_name, {x, y}, level)
-           ) do
+    with {:ok, %{unit_type: target_type}} <- Combat.resolve_combatant(target_id) do
+      # A cell whose water is gone or Land Protected is skipped after the
+      # payment without failing the cast, so a refused sequence leaves no ball.
+      _registered =
+        Manager.register_water_ball_sequence(
+          %Group{
+            group_id: System.unique_integer([:monotonic, :positive]),
+            skill_id: definition().id,
+            skill_name: :wz_waterball,
+            level: level,
+            caster_id: caster_id,
+            caster_type: :player,
+            target_id: target_id,
+            target_type: target_type,
+            map_name: map_name,
+            center: {x, y},
+            interval: @interval,
+            expires_at: System.monotonic_time(:millisecond) + @duration,
+            next_tick_at: System.monotonic_time(:millisecond),
+            visibility: :none,
+            state: %{water_ball_sequence: true}
+          },
+          unprotected_sources(map_name, {x, y}, level)
+        )
+
       {:ok, caster}
     end
   end

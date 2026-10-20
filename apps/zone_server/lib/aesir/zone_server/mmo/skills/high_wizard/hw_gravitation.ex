@@ -101,17 +101,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighWizard.HwGravitation do
     )
   end
 
-  defp channel(%PlayerState{character_id: id} = caster, center, level, definition) do
-    with {:ok, %Group{group_id: group_id}} <- Unit.place(caster, :hw_gravitation, level, center),
-         :ok <-
-           StatusInterpreter.apply_status(:player, id, :sc_gravitation,
-             val1: level,
-             caster_id: id,
-             duration: Enum.at(definition.unit_duration, level - 1),
-             state: %{self?: true, group_id: group_id}
-           ) do
-      {:ok, caster}
+  defp channel(%PlayerState{} = caster, center, level, definition) do
+    case Unit.place(caster, :hw_gravitation, level, center) do
+      {:ok, %Group{group_id: group_id}} ->
+        lock(caster, group_id, level, definition)
+
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
+  end
+
+  # The reference ignores a refused self status, so the placed field stays and
+  # the cast succeeds with its requirement paid.
+  defp lock(%PlayerState{character_id: id} = caster, group_id, level, definition) do
+    StatusInterpreter.apply_status(:player, id, :sc_gravitation,
+      val1: level,
+      caster_id: id,
+      duration: Enum.at(definition.unit_duration, level - 1),
+      state: %{self?: true, group_id: group_id}
+    )
+
+    {:ok, caster}
   end
 
   @impl Ground

@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
   setup do
     Mimic.copy(MapCell)
     Mimic.copy(LineOfSight)
+    Mimic.copy(Manager)
     verify_on_exit!()
   end
 
@@ -145,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
     assert Enum.sort(sources) == for(x <- 100..101, y <- 99..101, do: {x, y})
   end
 
-  test "rejects a cast when the caster's water cell sits on a land protector" do
+  test "the cast does not start when the caster's water cell sits on a land protector" do
     :ok =
       Storage.insert(%Group{
         group_id: 99,
@@ -169,7 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
     end)
 
     assert {:error, :water_required} =
-             WzWaterball.cast(
+             WzWaterball.begin_attempt(
                %{character_id: 100, map_name: "prontera", x: 100, y: 100},
                {:unit, 200},
                1,
@@ -177,12 +178,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
              )
   end
 
-  test "rejects a cast when the caster is not in a water state" do
+  test "the cast does not start when the caster is not in a water state" do
     stub(Combat, :resolve_combatant, fn 200 -> {:ok, %{unit_type: :mob}} end)
     stub(MapCell, :water_source, fn "prontera", 100, 100 -> nil end)
 
     assert {:error, :water_required} =
-             WzWaterball.cast(
+             WzWaterball.begin_attempt(
                %{character_id: 100, map_name: "prontera", x: 100, y: 100},
                {:unit, 200},
                1,
@@ -198,12 +199,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
     end)
 
     assert {:error, :water_required} =
-             WzWaterball.cast(
+             WzWaterball.begin_attempt(
                %{character_id: 100, map_name: "prontera", x: 100, y: 100},
                {:unit, 200},
                1,
                %{}
              )
+  end
+
+  test "a sequence with no water source left is a paid success with no ball" do
+    stub(Combat, :resolve_combatant, fn 200 -> {:ok, %{unit_type: :mob}} end)
+
+    stub(Manager, :register_water_ball_sequence, fn _group, _cells ->
+      {:error, :no_water_source}
+    end)
+
+    caster = %{character_id: 100, map_name: "prontera", x: 100, y: 100}
+
+    assert {:ok, ^caster} = WzWaterball.cast(caster, {:unit, 200}, 1, %{})
   end
 
   test "signals a skipped shot without dealing damage when line of sight is blocked" do
