@@ -51,6 +51,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
 
   defp catalyst(amount), do: %InventoryItem{nameid: @catalyst_id, amount: amount, equip: 0}
 
+  defp armed_caster, do: caster(%Equipment{right_hand: @sword_id})
+
   defp stub_sword do
     stub(ItemManagement, :get_item_by_id, fn
       @sword_id ->
@@ -102,8 +104,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
   describe "cast/4" do
     @tag game_mode: :renewal
     test "applies sc_fireweapon with val1=level and the tabulated duration" do
+      stub_sword()
       {:ok, definition} = Catalog.by_name(:sa_flamelauncher)
-      caster = caster()
+      caster = armed_caster()
 
       expect(StatusInterpreter, :apply_status, fn :player, @caster_id, :sc_fireweapon, params ->
         assert params[:val1] == 3
@@ -117,8 +120,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
 
     @tag game_mode: :renewal
     test "targets an ally by unit id" do
+      stub_sword()
       {:ok, definition} = Catalog.by_name(:sa_flamelauncher)
-      caster = caster()
+      caster = armed_caster()
 
       expect(StatusInterpreter, :apply_status, fn :player, 2000, :sc_fireweapon, _params ->
         :ok
@@ -128,19 +132,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
     end
 
     @tag game_mode: :renewal
-    test "propagates the interpreter's error" do
+    test "keeps the cast when the status is refused" do
+      stub_sword()
       {:ok, definition} = Catalog.by_name(:sa_flamelauncher)
-      caster = caster()
+      caster = armed_caster()
 
       expect(StatusInterpreter, :apply_status, fn :player, @caster_id, :sc_fireweapon, _params ->
         {:error, :some_reason}
       end)
 
-      assert {:error, :some_reason} = SaFlamelauncher.cast(caster, :self, 1, definition)
+      assert {:ok, ^caster} = SaFlamelauncher.cast(caster, :self, 1, definition)
     end
   end
 
-  describe "validate/4 (bare-hand rejection)" do
+  describe "the bare-hand refusal (inside the implementation)" do
     test "allows a self-cast target with a weapon equipped" do
       stub_sword()
 
@@ -148,23 +153,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
                SaFlamelauncher.validate(caster(%Equipment{right_hand: @sword_id}), :self, 1, %{})
     end
 
-    test "rejects a bare-handed self-cast" do
-      assert {:error, :bare_handed} = SaFlamelauncher.validate(caster(), :self, 1, %{})
+    test "a bare-handed self-cast passes validation and fails as a prior attempt" do
+      assert :ok = SaFlamelauncher.validate(caster(), :self, 1, %{})
+
+      assert {:failed, _caster, :bare_handed} =
+               SaFlamelauncher.cast(caster(), :self, 1, %{})
     end
 
-    test "rejects a bare-handed self-cast targeted by unit id" do
-      assert {:error, :bare_handed} =
-               SaFlamelauncher.validate(caster(), {:unit, @caster_id}, 1, %{})
+    test "a bare-handed self-cast targeted by unit id fails the same way" do
+      assert :ok = SaFlamelauncher.validate(caster(), {:unit, @caster_id}, 1, %{})
+
+      assert {:failed, _caster, :bare_handed} =
+               SaFlamelauncher.cast(caster(), {:unit, @caster_id}, 1, %{})
     end
 
-    test "rejects a bare-handed ally target resolved through the unit registry" do
+    test "a bare-handed ally target fails the cast through the unit registry" do
       stub_sword()
       target = caster(%Equipment{})
 
       stub(UnitRegistry, :get_unit, fn :player, 2000 -> {:ok, {nil, target, self()}} end)
 
-      assert {:error, :bare_handed} =
+      assert :ok =
                SaFlamelauncher.validate(
+                 caster(%Equipment{right_hand: @sword_id}),
+                 {:unit, 2000},
+                 1,
+                 %{}
+               )
+
+      assert {:failed, _caster, :bare_handed} =
+               SaFlamelauncher.cast(
                  caster(%Equipment{right_hand: @sword_id}),
                  {:unit, 2000},
                  1,
@@ -177,23 +195,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
       stub_sword()
       stub(UnitRegistry, :get_unit, fn :player, 2000 -> {:ok, {nil, target, self()}} end)
 
-      assert :ok = SaFlamelauncher.validate(caster(), {:unit, 2000}, 1, %{})
+      assert :ok = SaFlamelauncher.validate(armed_caster(), {:unit, 2000}, 1, %{})
     end
 
     test "skips the check for a target that does not resolve to a player (no dstsd)" do
       stub(UnitRegistry, :get_unit, fn :player, 3000 -> {:error, :not_found} end)
 
-      assert :ok = SaFlamelauncher.validate(caster(), {:unit, 3000}, 1, %{})
+      assert :ok = SaFlamelauncher.validate(armed_caster(), {:unit, 3000}, 1, %{})
     end
   end
 
   describe "the validate-then-charge contract" do
-    test "a bare-handed target fails before SP or the catalyst is spent" do
+    test "a bare-handed target pays the requirement and reports the failure" do
       reject(&StatusInterpreter.apply_status/4)
 
-      gs = game_state(%{280 => 1}, %Equipment{}, %{0 => catalyst(1)})
+      {:ok, definition} = Catalog.by_id(280)
+      [%{id: catalyst_id, amount: 1}] = definition.item_cost
 
-      assert {:error, :bare_handed} = SkillInterpreter.cast(gs, 280, 1, :self)
+      gs =
+        game_state(%{280 => 1}, %Equipment{}, %{
+          0 => %InventoryItem{nameid: catalyst_id, amount: 1, equip: 0}
+        })
+
+      assert {:failed, failed, :bare_handed} = SkillInterpreter.cast(gs, 280, 1, :self)
+      assert failed.stats.current_state.sp == 60
+      assert failed.inventory == %{}
     end
 
     @tag game_mode: :renewal
@@ -220,8 +246,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
         stub_entity_info()
         StatusStorage.apply_status(:player, @caster_id, unquote(other), duration: 30_000, val1: 3)
 
+        stub_sword()
         {:ok, definition} = Catalog.by_name(:sa_flamelauncher)
-        assert {:ok, _} = SaFlamelauncher.cast(caster(), :self, 1, definition)
+        assert {:ok, _} = SaFlamelauncher.cast(armed_caster(), :self, 1, definition)
 
         refute StatusStorage.has_status?(:player, @caster_id, unquote(other))
         assert StatusStorage.has_status?(:player, @caster_id, :sc_fireweapon)

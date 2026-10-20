@@ -166,6 +166,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     {:noreply, StatusManager.recalculate_after_status_change(state)}
   end
 
+  @doc """
+  Unequips whatever is worn in `slot`, without a status.
+
+  Used by the classic Sage endows, whose failed roll unequips the target's
+  weapon instead of breaking it. A slot with nothing equipped is a no-op.
+  """
+  @spec handle_unequip_slot(atom(), map()) :: {:noreply, map()}
+  def handle_unequip_slot(slot, %{game_state: game_state} = state) do
+    case equipped_item_in_slot(game_state.inventory, slot) do
+      {server_index, _item} -> handle_unequip(server_index, state)
+      nil -> {:noreply, state}
+    end
+  end
+
   defp commit_equip(
          server_index,
          new_inventory,

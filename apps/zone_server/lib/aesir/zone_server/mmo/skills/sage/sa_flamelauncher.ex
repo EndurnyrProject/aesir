@@ -34,43 +34,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncher do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Sage.Endow
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :bare_handed}
-  def validate(caster, target, _level, _definition) do
-    check_weapon(caster, Active.resolve_target_id(caster, target))
-  end
+  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: :ok
+  def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+          {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()} | {:error, atom()}
   def cast(caster, target, level, definition),
     do: Endow.cast(caster, target, level, definition, :sc_fireweapon)
-
-  # Only a bare-handed player target is rejected; a target that is not a player
-  # skips the check.
-  @spec check_weapon(PlayerState.t(), non_neg_integer()) :: :ok | {:error, :bare_handed}
-  defp check_weapon(%{character_id: caster_id} = caster, caster_id) do
-    weapon_check(caster.stats.equipment)
-  end
-
-  defp check_weapon(_caster, target_id) do
-    case UnitRegistry.get_unit(:player, target_id) do
-      {:ok, {_module, target_state, _pid}} -> weapon_check(target_state.stats.equipment)
-      {:error, :not_found} -> :ok
-    end
-  end
-
-  defp weapon_check(equipment) do
-    if PlayerStats.weapon_type(equipment) == :fist do
-      {:error, :bare_handed}
-    else
-      :ok
-    end
-  end
 end

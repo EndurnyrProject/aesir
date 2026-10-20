@@ -22,12 +22,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSightTest do
       assert {:ok, @caster} = MgSight.cast(@caster, :self, 1, MgSight.definition())
     end
 
-    test "propagates an apply failure" do
+    test "keeps the cast when the status is refused" do
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_sight, _ ->
         {:error, :immune}
       end)
 
-      assert {:error, :immune} = MgSight.cast(@caster, :self, 1, MgSight.definition())
+      assert {:ok, @caster} = MgSight.cast(@caster, :self, 1, MgSight.definition())
     end
   end
 end

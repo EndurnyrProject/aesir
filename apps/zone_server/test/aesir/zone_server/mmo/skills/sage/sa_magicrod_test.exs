@@ -49,10 +49,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaMagicrodTest do
       assert {:ok, @caster} = SaMagicrod.cast(@caster, :self, 3, definition())
     end
 
-    test "propagates an apply failure" do
+    test "keeps the cast when the status is refused" do
       stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> {:error, :already_active} end)
 
-      assert {:error, :already_active} = SaMagicrod.cast(@caster, :self, 1, definition())
+      assert {:ok, @caster} = SaMagicrod.cast(@caster, :self, 1, definition())
     end
   end
 end

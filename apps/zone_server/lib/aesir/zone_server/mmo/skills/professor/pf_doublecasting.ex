@@ -33,13 +33,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfDoublecasting do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{character_id: id} = caster, :self, level, definition) do
-    with :ok <-
-           StatusInterpreter.apply_status(:player, id, :sc_doublecast,
-             val1: level,
-             caster_id: id,
-             duration: Enum.at(definition.duration, level - 1)
-           ) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(:player, id, :sc_doublecast,
+      val1: level,
+      caster_id: id,
+      duration: Enum.at(definition.duration, level - 1)
+    )
+
+    {:ok, caster}
   end
 end

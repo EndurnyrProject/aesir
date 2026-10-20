@@ -35,8 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaMagicrod do
       duration: Enum.at(definition.duration, level - 1)
     ]
 
-    with :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_magicrod, params) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_magicrod, params)
+    {:ok, caster}
   end
 end

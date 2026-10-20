@@ -33,13 +33,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster do
 
   @impl Active
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
-    case StatusInterpreter.apply_status(:player, caster_id, :sc_sightblaster,
-           caster_id: caster_id,
-           val1: level,
-           duration: hd(definition.duration)
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_sightblaster,
+      caster_id: caster_id,
+      val1: level,
+      duration: hd(definition.duration)
+    )
+
+    {:ok, caster}
   end
 end

@@ -585,6 +585,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:equipment, {:strip, slot, status_opts}})
   end
 
+  @doc "Force-unequips `slot` without applying a status (a failed Sage endow)."
+  @spec unequip_slot(pid(), atom()) :: :ok
+  def unequip_slot(pid, slot) do
+    GenServer.cast(pid, {:equipment, {:unequip_slot, slot}})
+  end
+
   @doc "Repairs one broken inventory row through its owning player session."
   @spec repair_item(pid(), non_neg_integer()) :: :ok | {:error, term()}
   def repair_item(pid, index) do
@@ -1223,6 +1229,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:equipment, {:strip, slot, status_opts}}, state) do
     EquipmentHandler.handle_strip(slot, status_opts, state)
+  end
+
+  @impl true
+  def handle_cast({:equipment, {:unequip_slot, slot}}, state) do
+    EquipmentHandler.handle_unequip_slot(slot, state)
   end
 
   # Skill: another unit cancels this player's cast (Mind Breaker, Spell Breaker).

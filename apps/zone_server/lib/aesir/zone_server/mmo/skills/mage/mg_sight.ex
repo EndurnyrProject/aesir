@@ -43,9 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSight do
     caster_id = adapter.id(caster)
     params = [caster_id: caster_id, duration: @duration]
 
-    case StatusInterpreter.apply_status(adapter.unit_type(caster), caster_id, :sc_sight, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(adapter.unit_type(caster), caster_id, :sc_sight, params)
+    {:ok, caster}
   end
 end

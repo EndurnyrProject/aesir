@@ -31,9 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfMemorize do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{character_id: id} = caster, :self, level, _definition) do
-    with :ok <-
-           StatusInterpreter.apply_status(:player, id, :sc_memorize, val1: level, caster_id: id) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(:player, id, :sc_memorize, val1: level, caster_id: id)
+    {:ok, caster}
   end
 end

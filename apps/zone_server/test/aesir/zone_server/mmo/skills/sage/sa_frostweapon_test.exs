@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
     @tag game_mode: :renewal
     test "applies sc_waterweapon with val1=level and the tabulated duration" do
       {:ok, definition} = Catalog.by_name(:sa_frostweapon)
-      caster = caster()
+      caster = caster(%Equipment{right_hand: 1201})
 
       expect(StatusInterpreter, :apply_status, fn :player, @caster_id, :sc_waterweapon, params ->
         assert params[:val1] == 2
@@ -91,9 +91,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
     end
   end
 
-  describe "validate/4 (bare-hand rejection)" do
-    test "rejects a bare-handed self-cast" do
-      assert {:error, :bare_handed} = SaFrostweapon.validate(caster(), :self, 1, %{})
+  describe "validate/4" do
+    test "a bare-handed self-cast passes validation and fails inside the implementation" do
+      assert :ok = SaFrostweapon.validate(caster(), :self, 1, %{})
+
+      assert {:failed, _caster, :bare_handed} = SaFrostweapon.cast(caster(), :self, 1, %{})
     end
 
     test "allows a self-cast target with a weapon equipped" do
@@ -102,15 +104,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
   end
 
   describe "the validate-then-charge contract" do
-    test "a bare-handed target fails before SP or the catalyst is spent" do
+    test "a bare-handed target pays the requirement and reports the failure" do
       reject(&StatusInterpreter.apply_status/4)
+
+      {:ok, definition} = Catalog.by_id(281)
+      [%{id: catalyst_id, amount: 1}] = definition.item_cost
 
       gs =
         game_state(%{281 => 1}, %Equipment{}, %{
-          0 => %InventoryItem{nameid: @catalyst_id, amount: 1, equip: 0}
+          0 => %InventoryItem{nameid: catalyst_id, amount: 1, equip: 0}
         })
 
-      assert {:error, :bare_handed} = SkillInterpreter.cast(gs, 281, 1, :self)
+      assert {:failed, failed, :bare_handed} = SkillInterpreter.cast(gs, 281, 1, :self)
+      assert failed.stats.current_state.sp == 60
+      assert failed.inventory == %{}
     end
   end
 
@@ -121,7 +128,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
       StatusStorage.apply_status(:player, @caster_id, :sc_aspersio, duration: 30_000, val1: 3)
 
       {:ok, definition} = Catalog.by_name(:sa_frostweapon)
-      assert {:ok, _} = SaFrostweapon.cast(caster(), :self, 1, definition)
+
+      assert {:ok, _} =
+               SaFrostweapon.cast(caster(%Equipment{right_hand: 1201}), :self, 1, definition)
 
       refute StatusStorage.has_status?(:player, @caster_id, :sc_aspersio)
       assert StatusStorage.has_status?(:player, @caster_id, :sc_waterweapon)
@@ -133,7 +142,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
       StatusStorage.apply_status(:player, @caster_id, :sc_aspersio, duration: 30_000, val1: 3)
 
       {:ok, definition} = Catalog.by_name(:sa_frostweapon)
-      assert {:ok, _} = SaFrostweapon.cast(caster(), :self, 5, definition)
+
+      assert {:ok, _} =
+               SaFrostweapon.cast(caster(%Equipment{right_hand: 1201}), :self, 5, definition)
 
       refute StatusStorage.has_status?(:player, @caster_id, :sc_aspersio)
       assert StatusStorage.has_status?(:player, @caster_id, :sc_waterweapon)
