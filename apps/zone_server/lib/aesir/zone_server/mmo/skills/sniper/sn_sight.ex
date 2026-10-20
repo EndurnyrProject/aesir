@@ -26,13 +26,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnSight do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{character_id: id} = caster, :self, level, definition) do
-    with :ok <-
-           StatusInterpreter.apply_status(:player, id, :sc_truesight,
-             val1: level,
-             caster_id: id,
-             duration: Enum.at(definition.duration, level - 1)
-           ) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(:player, id, :sc_truesight,
+      val1: level,
+      caster_id: id,
+      duration: Enum.at(definition.duration, level - 1)
+    )
+
+    {:ok, caster}
   end
 end

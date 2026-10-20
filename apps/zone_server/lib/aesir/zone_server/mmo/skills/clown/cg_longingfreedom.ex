@@ -51,13 +51,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgLongingfreedom do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{character_id: id} = caster, :self, level, _definition) do
-    with :ok <-
-           StatusInterpreter.apply_status(:player, id, :sc_longing,
-             caster_id: id,
-             val1: level,
-             duration: 180_000,
-             owner_refresh: :defer
-           ),
-         do: {:ok, caster}
+    StatusInterpreter.apply_status(:player, id, :sc_longing,
+      caster_id: id,
+      val1: level,
+      duration: 180_000,
+      owner_refresh: :defer
+    )
+
+    {:ok, caster}
   end
 end

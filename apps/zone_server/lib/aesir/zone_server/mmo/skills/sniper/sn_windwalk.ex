@@ -41,12 +41,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnWindwalk do
   def cast(%PlayerState{character_id: id} = caster, :self, level, definition) do
     params = [val1: level, caster_id: id, duration: Enum.at(definition.duration, level - 1)]
 
-    with :ok <- StatusInterpreter.apply_status(:player, id, :sc_windwalk, params) do
-      caster
-      |> PartySplash.nearby_member_ids(definition.splash_radius)
-      |> Enum.each(&StatusInterpreter.apply_status(:player, &1, :sc_windwalk, params))
+    StatusInterpreter.apply_status(:player, id, :sc_windwalk, params)
 
-      {:ok, caster}
-    end
+    caster
+    |> PartySplash.nearby_member_ids(definition.splash_radius)
+    |> Enum.each(&StatusInterpreter.apply_status(:player, &1, :sc_windwalk, params))
+
+    {:ok, caster}
   end
 end

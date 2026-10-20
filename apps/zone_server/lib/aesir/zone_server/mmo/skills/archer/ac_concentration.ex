@@ -60,10 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentration do
       duration: Enum.at(definition.duration, level - 1)
     ]
 
-    with :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_concentrate, params) do
-      reveal_hidden(caster_id, definition.splash_radius)
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_concentrate, params)
+
+    reveal_hidden(caster_id, definition.splash_radius)
+    {:ok, caster}
   end
 
   defp reveal_hidden(caster_id, radius) do

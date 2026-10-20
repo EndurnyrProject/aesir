@@ -77,15 +77,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentrationTest do
       assert {:ok, _} = AcConcentration.cast(@caster, :self, 1, AcConcentration.definition())
     end
 
-    test "propagates an apply failure and skips the reveal" do
+    test "keeps the cast and still reveals when the status is refused" do
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_concentrate, _ ->
         {:error, :immune}
       end)
 
-      reject(&SpatialIndex.get_all_units_in_range/4)
-      reject(&Helpers.remove_statuses/2)
+      stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> {:ok, {150, 150, "prontera"}} end)
 
-      assert {:error, :immune} =
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 3 ->
+        [{:player, 2000}]
+      end)
+
+      expect(Helpers, :remove_statuses, fn {:player, 2000}, [:sc_hiding, :sc_cloaking] -> :ok end)
+
+      assert {:ok, @caster} =
                AcConcentration.cast(@caster, :self, 1, AcConcentration.definition())
     end
   end

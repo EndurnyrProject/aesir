@@ -57,14 +57,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptation do
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
     case GameMode.mode() do
       :renewal ->
-        with :ok <-
-               StatusInterpreter.apply_status(:player, caster_id, :sc_adaptation,
-                 caster_id: caster_id,
-                 duration: Enum.at(definition.duration, level - 1),
-                 owner_refresh: :defer
-               ) do
-          {:ok, caster}
-        end
+        StatusInterpreter.apply_status(:player, caster_id, :sc_adaptation,
+          caster_id: caster_id,
+          duration: Enum.at(definition.duration, level - 1),
+          owner_refresh: :defer
+        )
+
+        {:ok, caster}
 
       :pre_renewal ->
         :ok =

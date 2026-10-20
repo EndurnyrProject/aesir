@@ -27,15 +27,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnWindwalkTest do
     for id <- [1, 2, 3], do: assert_received({:buff, ^id})
   end
 
-  test "caster prevention aborts the party splash" do
+  test "a refused caster application does not abort the party splash" do
     caster = %PlayerState{character_id: 1, party_id: 10}
 
     expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_windwalk, _params ->
       {:error, :prevented}
     end)
 
-    reject(&PartySplash.nearby_member_ids/2)
+    expect(PartySplash, :nearby_member_ids, fn ^caster, _radius -> [] end)
 
-    assert {:error, :prevented} = SnWindwalk.cast(caster, :self, 1, SnWindwalk.definition())
+    assert {:ok, ^caster} = SnWindwalk.cast(caster, :self, 1, SnWindwalk.definition())
   end
 end
