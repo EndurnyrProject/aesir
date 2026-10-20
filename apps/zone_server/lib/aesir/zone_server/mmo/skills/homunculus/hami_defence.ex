@@ -33,21 +33,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiDefence do
       owner_refresh: :notify
     ]
 
-    with :ok <-
-           StatusInterpreter.apply_status(
-             :player,
-             caster.owner_character_id,
-             :sc_defence,
-             params
-           ),
-         :ok <-
-           StatusInterpreter.apply_status(
-             :homunculus,
-             caster.world_gid,
-             :sc_defence,
-             params
-           ) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(:player, caster.owner_character_id, :sc_defence, params)
+
+    StatusInterpreter.apply_status(:homunculus, caster.world_gid, :sc_defence, params)
+
+    {:ok, caster}
   end
 end

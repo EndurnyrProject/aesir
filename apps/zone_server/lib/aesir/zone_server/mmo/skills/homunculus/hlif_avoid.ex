@@ -34,21 +34,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifAvoid do
       duration: duration
     ]
 
-    with :ok <-
-           StatusInterpreter.apply_status(
-             :player,
-             caster.owner_character_id,
-             :sc_avoid,
-             common |> Keyword.put(:val2, 10 * level) |> Keyword.put(:owner_refresh, :notify)
-           ),
-         :ok <-
-           StatusInterpreter.apply_status(
-             :homunculus,
-             caster.world_gid,
-             :sc_avoid,
-             Keyword.put(common, :val2, 40 * level)
-           ) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(
+      :player,
+      caster.owner_character_id,
+      :sc_avoid,
+      common |> Keyword.put(:val2, 10 * level) |> Keyword.put(:owner_refresh, :notify)
+    )
+
+    StatusInterpreter.apply_status(
+      :homunculus,
+      caster.world_gid,
+      :sc_avoid,
+      Keyword.put(common, :val2, 40 * level)
+    )
+
+    {:ok, caster}
   end
 end
