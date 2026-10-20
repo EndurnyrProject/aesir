@@ -124,7 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
     assert [_change] = updated.pending_inventory_persist
   end
 
-  test "failed placement commits neither SP nor Red Gemstone" do
+  test "a refused placement still commits SP and the Red Gemstone" do
     caster = player_caster()
     paid = put_in(caster.stats.current_state.sp, 80)
 
@@ -137,12 +137,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
       {:error, :land_protector}
     end)
 
-    assert {:error, :land_protector} =
+    assert {:ok, updated} =
              Interpreter.complete_cast(caster, 140, 3, {:ground, 100, 100})
 
-    assert caster.stats.current_state.sp == 100
-    assert %{0 => %InventoryItem{nameid: 716, amount: 1}} = caster.inventory
-    assert caster.pending_inventory_persist == []
+    assert updated.stats.current_state.sp == 80
+    assert updated.inventory == %{}
+    assert [_change] = updated.pending_inventory_persist
   end
 
   test "mob placement uses the shared ground path without player resource commitment" do

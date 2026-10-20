@@ -207,8 +207,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
                origin: origin,
                state: %{paid_return?: paid_return?}
              ) do
-          {:ok, _group} -> {:ok, caster}
-          {:error, _reason} = error -> error
+          {:ok, _group} ->
+            {:ok, caster}
+
+          # The reference drops blocked cells and deletes an empty group, then
+          # still runs its cast-end tail: the footprint refusal is not a cast
+          # failure and its items stay consumed.
+          {:error, reason} ->
+            if unquote(Unit).paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
         end
       end
     end

@@ -24,6 +24,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
+  @paid_refusals [:no_walkable_cells, :land_protector]
+
+  @doc """
+  Whether a placement refusal is one the reference pays for and ends silently.
+
+  The reference drops every blocked cell and deletes a group that keeps none
+  (`skill_unitsetting`), then still runs its cast-end tail: a footprint with no
+  surviving cell, or one Land Protector swept away, is not a cast failure. A
+  reiteration-cap refusal and an internal registry error keep their unpaid
+  contract.
+  """
+  @spec paid_refusal?(term()) :: boolean()
+  def paid_refusal?(reason), do: reason in @paid_refusals
+
   @doc """
   Places a ground skill-unit cast by `caster_state` at cell `{x, y}`.
 
