@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoudTest do
     end
 
     @tag game_mode: :pre_renewal
-    test "propagates error from apply_status" do
+    test "keeps the cast when apply_status refuses the caster" do
       {:ok, definition} = Catalog.by_id(155)
       caster = %{character_id: 4000}
 
@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoudTest do
         {:error, :immune}
       end)
 
-      assert {:error, :immune} = McLoud.cast(caster, :self, 1, definition)
+      assert {:ok, ^caster} = McLoud.cast(caster, :self, 1, definition)
     end
   end
 end

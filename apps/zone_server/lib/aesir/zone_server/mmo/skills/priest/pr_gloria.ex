@@ -40,9 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrGloria do
       duration: Enum.at(definition.duration, level - 1)
     ]
 
-    case PartyBuff.apply(caster, :sc_gloria, params, definition.splash_radius) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    PartyBuff.apply(caster, :sc_gloria, params, definition.splash_radius)
+    {:ok, caster}
   end
 end

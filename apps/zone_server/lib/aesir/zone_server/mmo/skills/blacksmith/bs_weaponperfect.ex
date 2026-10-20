@@ -37,9 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfect do
       own: [val2: 1]
     ]
 
-    case PartyBuff.apply(caster, :sc_weaponperfection, params, definition.splash_radius) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    PartyBuff.apply(caster, :sc_weaponperfection, params, definition.splash_radius)
+    {:ok, caster}
   end
 end

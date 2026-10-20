@@ -41,24 +41,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSuffragium do
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
     params = params(caster_id, level, definition)
 
-    with :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_suffragium, params) do
-      if definition.target_type == :self,
-        do: splash_to_party(caster, definition.splash_radius, params)
+    StatusInterpreter.apply_status(:player, caster_id, :sc_suffragium, params)
 
-      {:ok, caster}
-    end
+    if definition.target_type == :self,
+      do: splash_to_party(caster, definition.splash_radius, params)
+
+    {:ok, caster}
   end
 
   def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
-    with :ok <-
-           StatusInterpreter.apply_status(
-             :player,
-             target_id,
-             :sc_suffragium,
-             params(caster_id, level, definition)
-           ) do
-      {:ok, caster}
-    end
+    StatusInterpreter.apply_status(
+      :player,
+      target_id,
+      :sc_suffragium,
+      params(caster_id, level, definition)
+    )
+
+    {:ok, caster}
   end
 
   defp params(caster_id, level, definition) do

@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelusTest do
     assert {:ok, ^caster} = AlAngelus.cast(caster, :self, 10, definition)
   end
 
-  test "cast/4 propagates error from StatusInterpreter" do
+  test "cast/4 keeps the cast when the caster cannot receive the status" do
     {:ok, definition} = Catalog.by_id(33)
     caster = %{character_id: 500}
 
@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelusTest do
       {:error, :prevented}
     end)
 
-    assert {:error, :prevented} = AlAngelus.cast(caster, :self, 5, definition)
+    assert {:ok, ^caster} = AlAngelus.cast(caster, :self, 5, definition)
   end
 
   defp character(char_id, opts) do

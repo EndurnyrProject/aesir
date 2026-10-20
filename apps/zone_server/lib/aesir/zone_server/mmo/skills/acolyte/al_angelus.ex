@@ -48,14 +48,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelus do
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
     params = [val1: level, val2: 5 * level, caster_id: caster_id, duration: 30_000 * level]
 
-    case StatusInterpreter.apply_status(:player, caster_id, :sc_angelus, params) do
-      :ok ->
-        splash_to_party(caster, definition.splash_radius, params)
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        error
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_angelus, params)
+    splash_to_party(caster, definition.splash_radius, params)
+    {:ok, caster}
   end
 
   defp splash_to_party(caster, splash_radius, params) do

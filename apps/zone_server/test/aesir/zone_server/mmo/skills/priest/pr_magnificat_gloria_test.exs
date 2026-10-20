@@ -244,9 +244,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
     end
   end
 
-  test "a rejected caster application does not attempt party propagation" do
+  test "a rejected caster application still attempts party propagation" do
     caster = player_state(1, party_id: 10, map: "prontera", x: 150, y: 150)
-    reject(&PartyManager.get/1)
+    expect(PartyManager, :get, 2, fn 10 -> {:error, :not_found} end)
 
     expect(StatusInterpreter, :apply_status, 2, fn
       :player, 1, status, _params when status in [:sc_magnificat, :sc_gloria] ->
@@ -255,7 +255,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
 
     for {skill, skill_id} <- [{PrMagnificat, 74}, {PrGloria, 75}] do
       assert {:ok, definition} = Catalog.by_id(skill_id)
-      assert {:error, :prevented} = skill.cast(caster, :self, 1, definition)
+      assert {:ok, ^caster} = skill.cast(caster, :self, 1, definition)
     end
   end
 end

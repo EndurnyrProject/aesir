@@ -39,18 +39,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoud do
 
   @impl Active
   def cast(%{character_id: caster_id} = caster, :self, _level, definition) do
-    result =
-      case GameMode.mode() do
-        :renewal ->
-          PartyBuff.apply(caster, :sc_loud, [duration: @duration_ms], definition.splash_radius)
+    case GameMode.mode() do
+      :renewal ->
+        PartyBuff.apply(caster, :sc_loud, [duration: @duration_ms], definition.splash_radius)
 
-        :pre_renewal ->
-          StatusInterpreter.apply_status(:player, caster_id, :sc_loud, duration: @duration_ms)
-      end
-
-    case result do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
+      :pre_renewal ->
+        StatusInterpreter.apply_status(:player, caster_id, :sc_loud, duration: @duration_ms)
     end
+
+    {:ok, caster}
   end
 end

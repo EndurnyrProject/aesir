@@ -41,14 +41,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificat do
       duration: Enum.at(definition.duration, level - 1)
     ]
 
-    case StatusInterpreter.apply_status(:player, caster_id, :sc_magnificat, params) do
-      :ok ->
-        splash_to_party(caster, definition.splash_radius, params)
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        error
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_magnificat, params)
+    splash_to_party(caster, definition.splash_radius, params)
+    {:ok, caster}
   end
 
   defp splash_to_party(caster, splash_radius, params) do

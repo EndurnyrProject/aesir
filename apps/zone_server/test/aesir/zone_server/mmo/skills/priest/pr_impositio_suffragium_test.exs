@@ -186,7 +186,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
     assert_ineligible_members_skipped(PrImpositio, 66, :sc_impositio)
   end
 
-  test "Impositio Manus does not propagate when its caster cannot receive the status" do
+  @tag game_mode: :renewal
+  test "Impositio Manus still propagates when its caster cannot receive the status" do
     {:ok, definition} = Catalog.by_id(66)
     caster = caster_state(1, party_id: 10)
 
@@ -194,9 +195,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
       {:error, :prevented}
     end)
 
-    reject(&PartyManager.get/1)
+    expect(PartyManager, :get, fn 10 -> {:error, :not_found} end)
 
-    assert {:error, :prevented} = PrImpositio.cast(caster, :self, 1, definition)
+    assert {:ok, ^caster} = PrImpositio.cast(caster, :self, 1, definition)
   end
 
   defp character(char_id, opts) do
