@@ -51,30 +51,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
     refute StatusStorage.has_status?(:player, 18, :sc_marionette2)
   end
 
-  test "validation refuses self, another party, dead and same-sex performer targets", %{
+  test "validation refuses self, another party and dead targets before the cost", %{
     caster: caster
   } do
     assert {:error, :invalid_target} =
              CgMarionette.validate(caster, {:unit, 17}, 1, CgMarionette.definition())
 
-    for target <- [
-          %{player(18) | party_id: 3},
-          player(18, class: 4021, sex: "M"),
-          put_in(player(18).stats.current_state.hp, 0)
-        ] do
-      :ok = UnitRegistry.update_unit_state(:player, 18, target)
+    :ok = UnitRegistry.update_unit_state(:player, 18, %{player(18) | party_id: 3})
 
-      assert {:error, _} =
-               CgMarionette.validate(caster, {:unit, 18}, 1, CgMarionette.definition())
-    end
+    assert {:error, :not_same_party} =
+             CgMarionette.validate(caster, {:unit, 18}, 1, CgMarionette.definition())
+
+    :ok =
+      UnitRegistry.update_unit_state(:player, 18, put_in(player(18).stats.current_state.hp, 0))
+
+    assert {:error, :invalid_target} =
+             CgMarionette.validate(caster, {:unit, 18}, 1, CgMarionette.definition())
   end
 
-  test "Curse and Quagmire block the target", %{caster: caster} do
+  test "a same-sex performer target is refused after the requirement is paid", %{caster: caster} do
+    :ok = UnitRegistry.update_unit_state(:player, 18, player(18, class: 4021, sex: "M"))
+
+    assert {:failed, ^caster, :invalid_target, :spare_items} =
+             CgMarionette.cast(caster, {:unit, 18}, 1, CgMarionette.definition())
+  end
+
+  test "Curse and Quagmire block the target after the requirement is paid", %{caster: caster} do
     for status <- [:sc_curse, :sc_quagmire] do
       :ok = StatusStorage.apply_status(:player, 18, status)
 
-      assert {:error, :target_blocked} =
-               CgMarionette.validate(caster, {:unit, 18}, 1, CgMarionette.definition())
+      assert {:failed, ^caster, :target_blocked, :spare_items} =
+               CgMarionette.cast(caster, {:unit, 18}, 1, CgMarionette.definition())
 
       StatusStorage.remove_status(:player, 18, status)
     end
@@ -83,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
   test "already-linked participants cannot establish a second link", %{caster: caster} do
     assert {:ok, _} = CgMarionette.cast(caster, {:unit, 19}, 1, CgMarionette.definition())
 
-    assert {:error, :already_linked} =
+    assert {:failed, ^caster, :already_linked, :spare_items} =
              CgMarionette.cast(caster, {:unit, 18}, 1, CgMarionette.definition())
 
     :ok = Interpreter.remove_status(:player, 17, :sc_marionette)
@@ -93,28 +100,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
         state: %{peer: {:player, 19}, link_id: make_ref(), gains: %{}}
       )
 
-    assert {:error, :already_linked} =
+    assert {:failed, ^caster, :already_linked, :spare_items} =
              CgMarionette.cast(caster, {:unit, 18}, 1, CgMarionette.definition())
   end
 
-  test "a puppet cannot become a master and a master cannot become a puppet", %{caster: caster} do
+  test "a puppet cannot cast Marionette while a master can be made one", %{caster: caster} do
     :ok =
       StatusStorage.apply_status(:player, 17, :sc_marionette2,
         state: %{peer: {:player, 19}, link_id: make_ref(), gains: %{}}
       )
 
-    assert {:error, :already_linked} =
-             CgMarionette.cast(caster, {:unit, 18}, 1, CgMarionette.definition())
+    # Wearing a puppet's half blocks the skill before the cost is spent.
+    assert {:error, :invalid_target} =
+             CgMarionette.validate(caster, {:unit, 18}, 1, CgMarionette.definition())
 
     StatusStorage.remove_status(:player, 17, :sc_marionette2)
 
+    # Only the caster's marionette and the target's marionette2 gate the pair,
+    # so a target that is another link's master joins this one.
     :ok =
       StatusStorage.apply_status(:player, 18, :sc_marionette,
         state: %{peer: {:player, 19}, link_id: make_ref(), halves: %{}}
       )
 
-    assert {:error, :already_linked} =
+    assert {:ok, ^caster} =
              CgMarionette.cast(caster, {:unit, 18}, 1, CgMarionette.definition())
+
+    assert StatusStorage.has_status?(:player, 17, :sc_marionette)
   end
 
   defp player(id, opts \\ []) do
