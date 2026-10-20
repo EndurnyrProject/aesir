@@ -103,7 +103,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
   def validate(%PlayerState{character_id: id} = caster, _target, _level, _definition) do
     cond do
       GameMode.mode() == :renewal or anchored?(id) -> :ok
-      Storage.land_protected?(caster.map_name, caster.x, caster.y) -> {:error, :land_protector}
       not clear_area?(caster) -> {:error, :blocked_area}
       true -> :ok
     end
@@ -278,8 +277,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
   end
 
   defp raise_sanctuary(%PlayerState{x: x, y: y} = caster, level, definition) do
-    with {:ok, group} <- Unit.place(caster, :hp_basilica, level, {x, y}) do
-      lock(caster, level, group, definition)
+    # The reference refuses a Land Protector centre inside the implementation
+    # and sets `SKILL_NOCONSUME_REQ`: the failure is reported and the items are
+    # spared.
+    if Storage.land_protected?(caster.map_name, x, y) do
+      {:failed, caster, :land_protector, :spare_items}
+    else
+      place_sanctuary(caster, level, definition, {x, y})
+    end
+  end
+
+  defp place_sanctuary(caster, level, definition, cell) do
+    case Unit.place(caster, :hp_basilica, level, cell) do
+      {:ok, group} ->
+        lock(caster, level, group, definition)
+
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 

@@ -163,10 +163,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
       assert {:error, :blocked_area} = HpBasilica.validate(caster, :self, 1, definition())
     end
 
-    test "refuses a Land Protector cell", %{caster: caster} do
+    test "a Land Protector centre fails the cast and spares its items", %{caster: caster} do
       :ok = Storage.insert(group(9_301, :sa_landprotector, [{20, 20}], %{land_protector: true}))
 
-      assert {:error, :land_protector} = HpBasilica.validate(caster, :self, 1, definition())
+      assert :ok = HpBasilica.validate(caster, :self, 1, definition())
+
+      assert {:failed, ^caster, :land_protector, :spare_items} =
+               HpBasilica.cast(caster, :self, 1, definition())
     end
 
     test "places a 5x5 sanctuary and locks the caster to it", %{caster: caster} do

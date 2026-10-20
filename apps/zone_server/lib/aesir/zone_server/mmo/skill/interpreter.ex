@@ -1208,6 +1208,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:failed, _game_state, _reason} = failed ->
         failed
 
+      {:failed, game_state, reason, :spare_items} ->
+        {:failed, game_state, reason}
+
       {:skipped, _game_state, _reason} = skipped ->
         skipped
 
@@ -1288,6 +1291,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       {:failed, game_state, reason} ->
         {:failed, settle_cast(game_state, module, level, definition, prepared_cost, opts), reason}
+
+      {:failed, game_state, reason, :spare_items} ->
+        {:failed, settle_skipped(%{context | game_state: game_state}), reason}
 
       # The reference ends this use without its effect and without a failure
       # message: a dead target, or an implementation whose early return skips
@@ -2267,6 +2273,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       {:failed, caster, reason} ->
         valid_cast_result(adapter, caster, fn -> {:failed, caster, reason} end)
+
+      {:failed, caster, reason, :spare_items} ->
+        valid_cast_result(adapter, caster, fn -> {:failed, caster, reason, :spare_items} end)
 
       {:skipped, caster, reason} ->
         valid_cast_result(adapter, caster, fn -> {:skipped, caster, reason} end)

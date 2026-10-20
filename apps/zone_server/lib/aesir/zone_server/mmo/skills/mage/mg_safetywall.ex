@@ -67,8 +67,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
         CellStatus.grant_occupants(group, definition(), :sc_safetywall, grant_params(group))
         {:ok, caster}
 
-      {:error, _reason} = error ->
-        error
+      # The reference places over a Land Protector and sets
+      # `SKILL_NOCONSUME_REQ`: the cast ends silently and the Blue Gemstone is
+      # spared.
+      {:error, :land_protector} ->
+        {:ok, caster, :no_consume}
+
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 

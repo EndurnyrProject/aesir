@@ -63,7 +63,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   the reference refuses after the requirement is paid but before its cast-end
   tail (a dead target, an implementation's early return): the requirement and
   its pacing stay, the catalysts and the cast-end hooks do not, and the caster
-  sees no failure.
+  sees no failure. `{:failed, state, reason, :spare_items}` is the same reported
+  failure with the catalysts spared, for an implementation the reference marks
+  `SKILL_NOCONSUME_REQ` (classic Basilica on Land Protector).
   """
   @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
               {:ok, caster()}
@@ -71,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               | {:local_effects, caster(), [effect()]}
               | {:deferred, caster(), term()}
               | {:failed, caster(), atom()}
+              | {:failed, caster(), atom(), :spare_items}
               | {:skipped, caster(), atom()}
               | {:error, atom()}
 
