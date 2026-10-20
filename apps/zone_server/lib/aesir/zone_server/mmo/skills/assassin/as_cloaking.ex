@@ -68,8 +68,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloaking do
       {:ok, :removed} ->
         {:ok, caster}
 
-      {:error, _reason} = error ->
-        error
+      # The reference reports the refusal from inside the implementation, after
+      # the requirement is paid.
+      {:error, reason} ->
+        {:failed, caster, reason}
     end
   end
 

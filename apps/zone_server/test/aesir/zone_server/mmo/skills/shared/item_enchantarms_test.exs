@@ -62,9 +62,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.ItemEnchantarmsTest do
     end
   end
 
-  test "a failed status application fails the cast" do
+  test "keeps the cast when the status is refused" do
     stub(StatusInterpreter, :apply_status, fn _, _, _, _ -> {:error, :immune} end)
 
-    assert {:error, :immune} = ItemEnchantarms.cast(%{character_id: 42}, :self, 4, definition())
+    assert {:ok, _caster} = ItemEnchantarms.cast(%{character_id: 42}, :self, 4, definition())
   end
 end

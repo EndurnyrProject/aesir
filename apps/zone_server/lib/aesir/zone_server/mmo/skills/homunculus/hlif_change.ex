@@ -34,9 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifChange do
       duration: Enum.fetch!(definition.duration, level - 1)
     ]
 
-    case StatusInterpreter.apply_status(:homunculus, caster.world_gid, :sc_change, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(:homunculus, caster.world_gid, :sc_change, params)
+    {:ok, caster}
   end
 end

@@ -24,20 +24,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiBloodlust do
   @spec cast(HomunculusState.t(), :self, 1..3, map()) ::
           {:ok, HomunculusState.t()} | {:error, atom()}
   def cast(%HomunculusState{} = caster, :self, level, definition) do
-    case StatusInterpreter.apply_status(
-           :homunculus,
-           caster.world_gid,
-           :sc_bloodlust,
-           duration: Enum.fetch!(definition.duration, level - 1),
-           caster_id: caster.world_gid,
-           source_type: :homunculus,
-           val1: level,
-           val2: 20 + 10 * level,
-           val3: 9 * level,
-           val4: 20
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(
+      :homunculus,
+      caster.world_gid,
+      :sc_bloodlust,
+      duration: Enum.fetch!(definition.duration, level - 1),
+      caster_id: caster.world_gid,
+      source_type: :homunculus,
+      val1: level,
+      val2: 20 + 10 * level,
+      val3: 9 * level,
+      val4: 20
+    )
+
+    {:ok, caster}
   end
 end

@@ -51,16 +51,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   @impl Active
   @spec validate(struct(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
+  # The reference's status-immunity and classic HP checks live inside the
+  # implementation, so they are paid failures rather than cast-begin refusals.
   def validate(_caster, {:unit, target_id}, _level, _definition) do
-    with {:ok, _pid, target, unit_type} <- TargetResolver.resolve(target_id),
-         true <- unit_type in [:player, :mob, :homunculus],
-         true <- Unit.living?(target),
-         true <- hp_low_enough?(target),
-         {:ok, entity_info} <- UnitRegistry.get_unit_info(unit_type, target_id),
-         false <- PropertyChecker.check_immunity(entity_info, Splasher.metadata()) do
-      :ok
-    else
-      _invalid -> {:error, :invalid_target}
+    case TargetResolver.resolve(target_id) do
+      {:ok, _pid, target, unit_type} when unit_type in [:player, :mob, :homunculus] ->
+        if Unit.living?(target), do: :ok, else: {:error, :invalid_target}
+
+      _invalid ->
+        {:error, :invalid_target}
     end
   end
 
@@ -70,15 +69,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   @spec cast(struct(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, struct()} | {:error, atom()}
   def cast(caster, {:unit, target_id}, level, _definition) do
-    with {:ok, _pid, _target, target_type} <- TargetResolver.resolve(target_id),
-         :ok <- arm(caster, target_type, target_id, level) do
-      {:ok, caster}
-    else
-      {:error, _reason} = error -> error
+    case TargetResolver.resolve(target_id) do
+      {:ok, _pid, target, target_type} ->
+        if refused?(target_type, target_id, target) do
+          # The reference reports this refusal from inside the implementation.
+          {:failed, caster, :invalid_target}
+        else
+          # A refused status start is not a cast failure; the items still settle.
+          _ = arm(caster, target_type, target_id, level)
+          {:ok, caster}
+        end
+
+      {:error, _reason} = error ->
+        error
     end
   end
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_target}
+
+  defp refused?(unit_type, target_id, target),
+    do: not hp_low_enough?(target) or immune?(unit_type, target_id)
+
+  defp immune?(unit_type, target_id) do
+    case UnitRegistry.get_unit_info(unit_type, target_id) do
+      {:ok, entity_info} -> PropertyChecker.check_immunity(entity_info, Splasher.metadata())
+      {:error, _reason} -> false
+    end
+  end
 
   defp arm(caster, target_type, target_id, level) do
     countdown_ms = (12 - level) * 1_000

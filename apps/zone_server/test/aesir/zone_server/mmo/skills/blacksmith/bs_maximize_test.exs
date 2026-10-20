@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsMaximizeTest do
     assert {:ok, ^caster} = BsMaximize.cast(caster, :self, 1, definition)
   end
 
-  test "cast/4 propagates errors from toggling Maximize Power" do
+  test "cast/4 keeps the cast when toggling Maximize Power refuses" do
     {:ok, definition} = Catalog.by_id(114)
     caster = %{character_id: 3000}
 
@@ -38,6 +38,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsMaximizeTest do
       {:error, :immune}
     end)
 
-    assert {:error, :immune} = BsMaximize.cast(caster, :self, 1, definition)
+    assert {:ok, ^caster} = BsMaximize.cast(caster, :self, 1, definition)
   end
 end

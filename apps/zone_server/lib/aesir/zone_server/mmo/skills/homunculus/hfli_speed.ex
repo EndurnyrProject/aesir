@@ -29,9 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HfliSpeed do
       duration: Enum.at(definition.duration, level - 1)
     ]
 
-    case StatusInterpreter.apply_status(:homunculus, caster.world_gid, :sc_speed, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(:homunculus, caster.world_gid, :sc_speed, params)
+    {:ok, caster}
   end
 end

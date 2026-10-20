@@ -130,7 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
 
   test "a player arms target-owned tickless state with a Poison React snapshot" do
     caster = player_caster(%{139 => 7})
-    target = mob_target(2_000)
+    target = %{mob_target(2_000) | hp: 75}
     register_mob(target)
 
     assert {:ok, ^caster} =
@@ -274,7 +274,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
 
   test "replacement and every ordinary cleanup path leave exact timers stale" do
     caster = player_caster(%{139 => 4})
-    target = mob_target(2_050)
+    target = %{mob_target(2_050) | hp: 75}
     register_mob(target)
 
     assert {:ok, ^caster} =
@@ -365,7 +365,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
 
   test "an exact tick cleans a target lost outside ordinary session teardown" do
     caster = player_caster(%{139 => 1})
-    target = mob_target(2_075)
+    target = %{mob_target(2_075) | hp: 75}
     register_mob(target)
 
     assert {:ok, ^caster} =
@@ -385,7 +385,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert StatusStorage.get_status(:mob, target.instance_id, :sc_splasher) == nil
   end
 
-  test "validation rejects dead and status-immune targets" do
+  test "a dead target is rejected at validation, immunity inside the implementation" do
     dead = %{mob_target(2_100) | hp: 0, is_dead: true}
     register_mob(dead)
 
@@ -407,8 +407,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
 
     register_mob(immune)
 
-    assert {:error, :invalid_target} =
+    assert :ok =
              AsSplasher.validate(
+               player_caster(%{}),
+               {:unit, immune.instance_id},
+               1,
+               AsSplasher.definition()
+             )
+
+    assert {:failed, _caster, :invalid_target} =
+             AsSplasher.cast(
                player_caster(%{}),
                {:unit, immune.instance_id},
                1,
@@ -417,18 +425,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic validation refuses a target above three quarters of its HP" do
+  test "classic fails a target above three quarters of its HP inside the implementation" do
     full = mob_target(2_200)
     register_mob(full)
 
-    assert {:error, :invalid_target} =
+    assert :ok =
              AsSplasher.validate(player_caster(%{}), {:unit, 2_200}, 1, AsSplasher.definition())
+
+    assert {:failed, _caster, :invalid_target} =
+             AsSplasher.cast(player_caster(%{}), {:unit, 2_200}, 1, AsSplasher.definition())
 
     weakened = %{mob_target(2_201) | hp: 75}
     register_mob(weakened)
 
     assert :ok =
              AsSplasher.validate(player_caster(%{}), {:unit, 2_201}, 1, AsSplasher.definition())
+
+    assert {:ok, _caster} =
+             AsSplasher.cast(player_caster(%{}), {:unit, 2_201}, 1, AsSplasher.definition())
   end
 
   defp drive_manager_ticks(message, state, due_at) do
@@ -479,6 +493,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     |> PlayerStateFixture.build()
   end
 
+  # At or below three quarters of max HP, so the classic HP gate admits it.
   defp player_target(character_id) do
     %PlayerState{
       character_id: character_id,
@@ -488,7 +503,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
       y: 100,
       stats: %{
         combat_stats: %CombatStats{},
-        current_state: %{hp: 100, sp: 100},
+        current_state: %{hp: 75, sp: 100},
         progression: %{learned_skills: %{}}
       }
     }

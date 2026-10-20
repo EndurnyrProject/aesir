@@ -30,11 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsMaximize do
   @spec cast(PlayerState.t(), :self, pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, :self, level, _definition) do
-    case StatusInterpreter.toggle_status(:player, caster_id, :sc_maximizepower,
-           tick: level * 1_000
-         ) do
-      {:ok, _} -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.toggle_status(:player, caster_id, :sc_maximizepower, tick: level * 1_000)
+
+    {:ok, caster}
   end
 end

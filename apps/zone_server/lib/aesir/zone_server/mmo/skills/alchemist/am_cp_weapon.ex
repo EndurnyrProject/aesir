@@ -23,24 +23,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpWeapon do
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.Skills.Alchemist.ChemicalProtection
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @behaviour Active
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%{character_id: caster_id} = caster, target, level, definition) do
-    target_id = Active.resolve_target_id(caster, target)
-
-    case StatusInterpreter.apply_status(:player, target_id, :sc_cp_weapon,
-           val1: level,
-           caster_id: caster_id,
-           duration: Enum.at(definition.duration, level - 1)
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
-  end
+          {:ok, PlayerState.t()}
+          | {:failed, PlayerState.t(), atom(), :spare_items}
+  def cast(caster, target, level, definition),
+    do: ChemicalProtection.cast(caster, target, level, definition, :sc_cp_weapon, :weapon)
 end

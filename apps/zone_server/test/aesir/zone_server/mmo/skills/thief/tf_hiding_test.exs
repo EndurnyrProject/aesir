@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHidingTest do
     assert {:ok, ^caster} = TfHiding.cast(caster, :self, 5, definition)
   end
 
-  test "cast/4 propagates an error from toggle_status" do
+  test "cast/4 keeps the cast when toggle_status refuses" do
     {:ok, definition} = Catalog.by_id(51)
     caster = %PlayerState{character_id: 3000}
 
@@ -40,6 +40,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHidingTest do
       {:error, :immune}
     end)
 
-    assert {:error, :immune} = TfHiding.cast(caster, :self, 5, definition)
+    assert {:ok, ^caster} = TfHiding.cast(caster, :self, 5, definition)
   end
 end

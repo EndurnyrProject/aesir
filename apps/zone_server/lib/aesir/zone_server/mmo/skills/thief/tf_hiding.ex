@@ -35,14 +35,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding do
   def cast(caster, :self, level, _definition) do
     adapter = Caster.for(caster)
 
-    case StatusInterpreter.toggle_status(
-           adapter.unit_type(caster),
-           adapter.id(caster),
-           :sc_hiding,
-           duration: 30_000 * level
-         ) do
-      {:ok, _} -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.toggle_status(
+      adapter.unit_type(caster),
+      adapter.id(caster),
+      :sc_hiding,
+      duration: 30_000 * level
+    )
+
+    {:ok, caster}
   end
 end

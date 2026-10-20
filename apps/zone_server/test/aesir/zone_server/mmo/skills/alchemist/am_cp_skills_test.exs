@@ -25,9 +25,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
   setup do
     caster = player_state(@caster_id)
     target = player_state(@target_id)
+    equipment = %Equipment{right_hand: 1101, left_hand: 2101, armor: 2301, head_top: 5001}
 
-    :ok = UnitRegistry.register_player(caster, self())
-    :ok = UnitRegistry.register_player(target, self())
+    :ok =
+      UnitRegistry.register_player(player_state(@caster_id, equipment), self())
+
+    :ok = UnitRegistry.register_player(player_state(@target_id, equipment), self())
+
     :ok = SpatialIndex.add_player(@caster_id, caster.x, caster.y, caster.map_name)
     :ok = SpatialIndex.add_player(@target_id, target.x, target.y, target.map_name)
 
@@ -110,7 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
     |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
-  defp player_state(character_id) do
+  defp player_state(character_id, equipment \\ %Equipment{}) do
     %Character{
       id: character_id,
       account_id: character_id,
@@ -130,6 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
       luk: 1
     }
     |> PlayerState.new()
+    |> then(fn state -> %{state | stats: %{state.stats | equipment: equipment}} end)
   end
 
   @tag game_mode: :pre_renewal

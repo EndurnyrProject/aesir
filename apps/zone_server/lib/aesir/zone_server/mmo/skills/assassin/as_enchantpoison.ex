@@ -75,7 +75,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
            duration: Enum.at(definition.duration, level - 1)
          ) do
       :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
+      # The reference reports the refusal from inside the implementation.
+      {:error, reason} -> {:failed, caster, reason}
     end
   end
 end

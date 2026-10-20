@@ -40,15 +40,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsPoisonreact do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{character_id: caster_id} = caster, :self, level, definition) do
-    case StatusInterpreter.apply_status(:player, caster_id, :sc_poisonreact,
-           val1: level,
-           duration: Enum.at(definition.duration, level - 1),
-           caster_id: caster_id,
-           source_type: :player
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_poisonreact,
+      val1: level,
+      duration: Enum.at(definition.duration, level - 1),
+      caster_id: caster_id,
+      source_type: :player
+    )
+
+    {:ok, caster}
   end
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_target}
