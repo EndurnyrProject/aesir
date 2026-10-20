@@ -52,8 +52,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
   defp catalyst(amount), do: %InventoryItem{nameid: @catalyst_id, amount: amount, equip: 0}
 
   defp stub_sword do
-    stub(ItemManagement, :get_item_by_id, fn @sword_id ->
-      {:ok, %ItemDefinition{id: @sword_id, aegis_name: "sword", name: "Sword", subtype: :sword}}
+    stub(ItemManagement, :get_item_by_id, fn
+      @sword_id ->
+        {:ok, %ItemDefinition{id: @sword_id, aegis_name: "sword", name: "Sword", subtype: :sword}}
+
+      item_id ->
+        Mimic.call_original(ItemManagement, :get_item_by_id, [item_id])
     end)
   end
 
