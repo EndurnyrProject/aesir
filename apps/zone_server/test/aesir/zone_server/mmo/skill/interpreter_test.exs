@@ -2774,13 +2774,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   defp stub_offensive_resurrection(delivery_result) do
     undead = resurrection_mob()
+    combatant = %{MobState.to_combatant(undead) | race: :undead, element: {:undead, 1}}
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), undead, :mob} end)
     stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :mob, {14, 10, "prontera"}} end)
 
-    stub(MobState, :to_combatant, fn ^undead ->
-      %{race: :undead, element: {:undead, 1}, class: :normal}
-    end)
+    stub(MobState, :to_combatant, fn ^undead -> combatant end)
 
     stub(MobState, :get_stats, fn ^undead -> %{hp: 100, max_hp: 100} end)
     stub(PlayerState, :get_stats, fn _caster -> %{luk: 0, int: 0, base_level: 0} end)
