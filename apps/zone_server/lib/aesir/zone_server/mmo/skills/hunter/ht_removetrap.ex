@@ -25,17 +25,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrap do
 
   @behaviour Active
 
-  @trap_item_id 1065
-
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(caster, {:ground, _x, _y}, _level, _definition) do
-    case preflight_item(caster) do
-      {:ok, _item_def} -> :ok
-      {:error, _reason} = error -> error
-    end
-  end
+  def validate(_caster, {:ground, _x, _y}, _level, _definition), do: :ok
 
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
@@ -43,26 +36,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrap do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(caster, {:ground, x, y}, _level, _definition) do
-    with {:ok, item_def} <- preflight_item(caster),
-         {:ok, _transition} <-
-           Manager.reclaim_trap({:player, caster.character_id}, caster.map_name, x, y),
-         {:ok, persisted, change} <-
-           InventoryOps.add(caster.character_id, caster.inventory, caster.stats, item_def, 1) do
-      updated =
-        caster
-        |> Map.put(:inventory, persisted)
-        |> Map.update!(:pending_inventory_notify, &(&1 ++ [change]))
+    case Manager.reclaim_trap({:player, caster.character_id}, caster.map_name, x, y) do
+      {:ok, %{item_id: nil}} ->
+        {:ok, caster}
 
-      {:ok, updated}
+      {:ok, %{item_id: item_id}} ->
+        return_item(caster, item_id)
+
+      {:error, reason} ->
+        {:failed, caster, reason}
     end
   end
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
-  defp preflight_item(caster) do
-    with {:ok, item_def} <- ItemManagement.get_item_by_id(@trap_item_id),
-         :ok <- InventoryOps.can_add(caster.inventory, caster.stats, item_def, 1) do
-      {:ok, item_def}
+  # The reference removes the trap before adding the item and reports a failed
+  # add without undoing the removal, so an item that does not fit is still a
+  # completed cast.
+  defp return_item(caster, item_id) do
+    with {:ok, item_def} <- ItemManagement.get_item_by_id(item_id),
+         {:ok, persisted, change} <-
+           InventoryOps.add(caster.character_id, caster.inventory, caster.stats, item_def, 1) do
+      {:ok,
+       caster
+       |> Map.put(:inventory, persisted)
+       |> Map.update!(:pending_inventory_notify, &(&1 ++ [change]))}
+    else
+      {:error, _reason} -> {:ok, caster}
     end
   end
 end

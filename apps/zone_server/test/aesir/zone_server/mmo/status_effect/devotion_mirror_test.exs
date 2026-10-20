@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirrorTest do
       end
     end
 
-    test "toggling off removes the mirror from every devotee" do
+    test "re-casting refreshes the mirror on every devotee" do
       caster = register(player(@crusader_id, job_id: @crusader_class))
       register(player(4001))
       register(player(4002))
@@ -87,10 +87,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirrorTest do
       assert StatusStorage.has_status?(:player, 4001, :sc_reflectshield)
       assert StatusStorage.has_status?(:player, 4002, :sc_reflectshield)
 
+      # Reflect Shield is a plain status start in the reference, so a recast
+      # refreshes it and keeps every devotee's mirror.
       {:ok, ^caster} = CrReflectshield.cast(caster, :self, 4, def_of(:cr_reflectshield))
 
-      refute StatusStorage.has_status?(:player, 4001, :sc_reflectshield)
-      refute StatusStorage.has_status?(:player, 4002, :sc_reflectshield)
+      assert StatusStorage.has_status?(:player, @crusader_id, :sc_reflectshield)
+      assert StatusStorage.has_status?(:player, 4001, :sc_reflectshield)
+      assert StatusStorage.has_status?(:player, 4002, :sc_reflectshield)
     end
 
     test "a Crusader with no devotees fanning a toggle is a no-op" do

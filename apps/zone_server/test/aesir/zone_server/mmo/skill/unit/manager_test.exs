@@ -1116,13 +1116,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  )
                )
 
-      before = Map.new(1..5, &{&1, Storage.get(&1)})
+      before = Map.new([1, 3, 4], &{&1, Storage.get(&1)})
 
       assert {:error, :not_owner} =
                Manager.reclaim_trap(manager, {:player, 1}, "prontera", 100, 100)
-
-      assert {:error, :already_spent} =
-               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 101, 100)
 
       assert {:error, :invalid_trap_state} =
                Manager.reclaim_trap(manager, {:player, 1}, "prontera", 102, 100)
@@ -1130,13 +1127,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :unsupported_trap} =
                Manager.reclaim_trap(manager, {:player, 1}, "prontera", 103, 100)
 
-      assert {:error, :unsupported_trap} =
-               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 104, 100)
-
       assert {:error, :not_found} =
                Manager.reclaim_trap(manager, {:player, 1}, "geffen", 100, 100)
 
-      assert before == Map.new(1..5, &{&1, Storage.get(&1)})
+      # A trap past its armed phase is removed without returning an item, and
+      # any trap item is returned for an armed one.
+      assert {:ok, %{group_id: 2, item_id: nil}} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 101, 100)
+
+      assert {:ok, %{group_id: 5, item_id: 1066}} =
+               Manager.reclaim_trap(manager, {:player, 1}, "prontera", 104, 100)
+
+      assert before == Map.new([1, 3, 4], &{&1, Storage.get(&1)})
+      assert Storage.get(2) == nil
+      assert Storage.get(5) == nil
     end
 
     test "springs the lowest-ID eligible trap when groups overlap" do
@@ -1354,13 +1358,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         end)
 
       spring = Task.async(fn -> Manager.spring_trap(manager, "prontera", 100, 100) end)
-      results = [Task.await(reclaim), Task.await(spring)]
+      reclaim_result = Task.await(reclaim)
+      spring_result = Task.await(spring)
 
-      assert Enum.count(results, &match?({:ok, %{group_id: 1}}, &1)) == 1
+      # The armed trap is acted on exactly once. The loser finds it gone, and a
+      # reclaim that runs second removes the sprung trap without an item, which
+      # the reference allows.
+      armed_actions =
+        Enum.count([reclaim_result, spring_result], fn
+          {:ok, %{item_id: 1065}} -> true
+          {:ok, %{expires_at: _}} -> true
+          _other -> false
+        end)
 
-      assert Enum.any?(results, fn result ->
-               result in [{:error, :not_found}, {:error, :already_spent}]
-             end)
+      assert armed_actions == 1
+
+      assert reclaim_result in [
+               {:ok, %{group_id: 1, item_id: 1065}},
+               {:ok, %{group_id: 1, item_id: nil}},
+               {:error, :not_found}
+             ]
+
+      assert spring_result in [
+               {:ok, %{group_id: 1, expires_at: 11_500}},
+               {:error, :not_found},
+               {:error, :already_spent}
+             ]
+
+      assert Storage.get(1) == nil
     end
 
     test "rejects ineligible spring targets without mutation" do

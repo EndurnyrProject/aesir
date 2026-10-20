@@ -215,6 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Monk.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Monk.Fury,
       Aesir.ZoneServer.Mmo.Skills.Monk.Root,
+      Aesir.ZoneServer.Mmo.Skills.Alchemist.ChemicalProtection,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementField,
       Aesir.ZoneServer.Mmo.Skills.Sage.Endow,

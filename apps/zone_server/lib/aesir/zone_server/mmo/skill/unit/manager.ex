@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell, as: MapCell
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Origin
@@ -44,7 +45,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @tick_interval 100
   @sprung_trap_lifetime 1_500
-  @trap_item_id 1065
   @safetywall_skill_id 12
   @venom_dust_skill_id 140
 
@@ -2028,9 +2028,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     groups = map_name |> Storage.get_groups_at_cell(x, y) |> Enum.sort_by(& &1.group_id)
 
     case select_trap(groups, &reclaim_eligibility(&1, owner)) do
-      {:ok, %Group{state: %{trap: %TrapState{reclaim_item_id: item_id}}} = group} ->
+      {:ok, %Group{state: %{trap: %TrapState{phase: :armed, reclaim_item_id: item_id}}} = group} ->
         cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
         {:ok, %{group_id: group.group_id, item_id: item_id}}
+
+      {:ok, %Group{} = group} ->
+        cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+        {:ok, %{group_id: group.group_id, item_id: nil}}
 
       {:error, _reason} = error ->
         error
@@ -2186,22 +2190,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp reclaim_eligibility(%Group{} = group, owner) do
     case trap_state(group) do
-      {:ok, %TrapState{phase: :armed}} -> reclaim_armed_trap(group, owner)
-      {:ok, %TrapState{}} -> {:error, :already_spent}
-      {:error, _reason} = error -> error
+      {:ok, %TrapState{}} ->
+        # The reference allows the owner's traps everywhere and any trap on a Vs
+        # map; a trap past its armed phase is still removed, just without
+        # returning an item.
+        if reclaim_allowed?(group, owner), do: :eligible, else: {:error, :not_owner}
+
+      {:error, _reason} = error ->
+        error
     end
   end
 
-  defp reclaim_armed_trap(
-         %Group{state: %{trap: %TrapState{reclaim_item_id: @trap_item_id}}} = group,
-         owner
-       ) do
-    if {group.caster_type, group.caster_id} == owner,
-      do: :eligible,
-      else: {:error, :not_owner}
+  defp reclaim_allowed?(%Group{} = group, owner) do
+    {group.caster_type, group.caster_id} == owner or MapFlags.versus?(group.map_name)
   end
-
-  defp reclaim_armed_trap(_group, _owner), do: {:error, :unsupported_trap}
 
   defp trap_state(%Group{state: %{trap: %TrapState{} = trap}}) do
     case TrapState.new(Map.from_struct(trap)) do

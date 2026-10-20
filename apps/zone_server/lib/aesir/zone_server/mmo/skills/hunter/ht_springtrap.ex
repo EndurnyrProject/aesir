@@ -37,9 +37,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrap do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(caster, {:ground, x, y}, _level, _definition) do
-    with {:ok, _transition} <- Manager.spring_trap(caster.map_name, x, y) do
-      {:ok, caster}
-    end
+    # The reference sends the skill animation and springs only an eligible trap:
+    # an armed Ankle Snare holding a target, a spent trap and a non-trap cell are
+    # all no-ops that still complete the cast.
+    _ = Manager.spring_trap(caster.map_name, x, y)
+    {:ok, caster}
   end
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_target}

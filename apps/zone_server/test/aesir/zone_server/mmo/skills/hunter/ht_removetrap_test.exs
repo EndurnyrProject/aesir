@@ -43,20 +43,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrapTest do
     )
   end
 
-  test "preflights capacity for one trap item" do
+  test "validation no longer preflights capacity" do
     definition = HtRemovetrap.definition()
     caster = caster()
 
-    expect(ItemManagement, :get_item_by_id, fn 1065 -> {:ok, @trap_item} end)
+    reject(&ItemManagement.get_item_by_id/1)
+    reject(&InventoryOps.can_add/4)
 
-    expect(InventoryOps, :can_add, fn inventory, stats, @trap_item, 1 ->
-      assert inventory == caster.inventory
-      assert stats == caster.stats
-      {:error, :inventory_full}
-    end)
-
-    assert {:error, :inventory_full} =
-             HtRemovetrap.validate(caster, {:ground, 51, 50}, 1, definition)
+    assert :ok = HtRemovetrap.validate(caster, {:ground, 51, 50}, 1, definition)
   end
 
   test "atomically claims the caster's trap and adds exactly the returned item" do
@@ -66,7 +60,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrapTest do
     change = {:added, 0, %{nameid: 1065, amount: 1}}
 
     expect(ItemManagement, :get_item_by_id, fn 1065 -> {:ok, @trap_item} end)
-    expect(InventoryOps, :can_add, fn %{}, %Stats{}, @trap_item, 1 -> :ok end)
 
     expect(Manager, :reclaim_trap, fn {:player, 1000}, "prontera", 51, 50 ->
       {:ok, %{group_id: 44, item_id: 1065}}
@@ -81,29 +74,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrapTest do
     assert updated.pending_inventory_notify == [change]
   end
 
-  test "a failed preflight never claims the trap" do
+  test "an item that does not fit still completes the removal" do
     definition = HtRemovetrap.definition()
     caster = caster()
 
     expect(ItemManagement, :get_item_by_id, fn 1065 -> {:ok, @trap_item} end)
 
-    expect(InventoryOps, :can_add, fn %{}, %Stats{}, @trap_item, 1 ->
+    expect(Manager, :reclaim_trap, fn {:player, 1000}, "prontera", 51, 50 ->
+      {:ok, %{group_id: 44, item_id: 1065}}
+    end)
+
+    expect(InventoryOps, :add, fn 1000, %{}, %Stats{}, @trap_item, 1 ->
       {:error, :inventory_full}
     end)
 
-    reject(&Manager.reclaim_trap/4)
-    reject(&InventoryOps.add/5)
-
-    assert {:error, :inventory_full} =
-             HtRemovetrap.cast(caster, {:ground, 51, 50}, 1, definition)
+    assert {:ok, ^caster} = HtRemovetrap.cast(caster, {:ground, 51, 50}, 1, definition)
   end
 
-  test "a persistence failure after the claim returns the error without staging a reward" do
+  test "a persistence failure after the claim still completes the removal" do
     definition = HtRemovetrap.definition()
     caster = caster()
 
     expect(ItemManagement, :get_item_by_id, fn 1065 -> {:ok, @trap_item} end)
-    expect(InventoryOps, :can_add, fn %{}, %Stats{}, @trap_item, 1 -> :ok end)
 
     expect(Manager, :reclaim_trap, fn {:player, 1000}, "prontera", 51, 50 ->
       {:ok, %{group_id: 44, item_id: 1065}}
@@ -113,31 +105,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrapTest do
       {:error, :persistence_failed}
     end)
 
-    assert {:error, :persistence_failed} =
-             HtRemovetrap.cast(caster, {:ground, 51, 50}, 1, definition)
+    assert {:ok, ^caster} = HtRemovetrap.cast(caster, {:ground, 51, 50}, 1, definition)
 
     assert caster.inventory == %{}
     assert caster.pending_inventory_notify == []
   end
 
-  test "missing, foreign, spent, and unsupported traps grant no item" do
+  test "missing, foreign, and non-trap targets are reported failures" do
     definition = HtRemovetrap.definition()
     caster = caster()
 
-    stub(ItemManagement, :get_item_by_id, fn 1065 -> {:ok, @trap_item} end)
-    stub(InventoryOps, :can_add, fn %{}, %Stats{}, @trap_item, 1 -> :ok end)
+    reject(&ItemManagement.get_item_by_id/1)
+    reject(&InventoryOps.add/5)
 
-    errors = %{51 => :not_found, 52 => :not_owner, 53 => :already_spent, 54 => :unsupported_trap}
+    errors = %{51 => :not_found, 52 => :not_owner, 54 => :unsupported_trap}
 
     stub(Manager, :reclaim_trap, fn {:player, 1000}, "prontera", x, 50 ->
       {:error, Map.fetch!(errors, x)}
     end)
 
-    reject(&InventoryOps.add/5)
-
     Enum.each(errors, fn {x, reason} ->
-      assert {:error, ^reason} =
+      assert {:failed, ^caster, ^reason} =
                HtRemovetrap.cast(caster, {:ground, x, 50}, 1, definition)
     end)
+  end
+
+  test "a used trap is removed without returning an item" do
+    definition = HtRemovetrap.definition()
+    caster = caster()
+
+    reject(&ItemManagement.get_item_by_id/1)
+    reject(&InventoryOps.add/5)
+
+    stub(Manager, :reclaim_trap, fn {:player, 1000}, "prontera", 51, 50 ->
+      {:ok, %{group_id: 44, item_id: nil}}
+    end)
+
+    assert {:ok, ^caster} = HtRemovetrap.cast(caster, {:ground, 51, 50}, 1, definition)
   end
 end

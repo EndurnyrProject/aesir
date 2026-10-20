@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrapTest do
     assert updated == caster
   end
 
-  test "manager failures propagate without changing player state" do
+  test "an ineligible spring is a silent no-op" do
     definition = HtSpringtrap.definition()
     caster = caster(Option.id(:falcon))
     errors = %{51 => :not_found, 52 => :already_spent, 53 => :unsupported_trap}
@@ -62,8 +62,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrapTest do
       {:error, Map.fetch!(errors, x)}
     end)
 
-    Enum.each(errors, fn {x, reason} ->
-      assert {:error, ^reason} = HtSpringtrap.cast(caster, {:ground, x, 50}, 1, definition)
+    Enum.each(errors, fn {x, _reason} ->
+      assert {:ok, ^caster} = HtSpringtrap.cast(caster, {:ground, x, 50}, 1, definition)
     end)
   end
 end
