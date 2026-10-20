@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
     end
   end
 
-  describe "validate/4" do
+  describe "gates" do
     test "refuses devoting yourself" do
       caster = register(player(@crusader_id, job_id: @crusader_class))
 
@@ -74,27 +74,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
                CrDevotion.validate(caster, {:unit, 4001}, 1, definition())
     end
 
-    test "refuses a Crusader-class target" do
+    test "a Crusader-class target is refused after the requirement is paid" do
       caster = register(player(@crusader_id, job_id: @crusader_class))
       register(player(4001, job_id: @crusader_class))
 
-      assert {:error, :target_is_crusader} =
-               CrDevotion.validate(caster, {:unit, 4001}, 1, definition())
+      assert :ok = CrDevotion.validate(caster, {:unit, 4001}, 1, definition())
+
+      assert {:failed, ^caster, :target_is_crusader} =
+               CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
     end
 
-    test "refuses a target beyond the base-level gap" do
+    test "a target beyond the base-level gap is refused after the requirement is paid" do
       caster = register(player(@crusader_id, job_id: @crusader_class, base_level: 90))
       register(player(4001, base_level: 79))
 
-      assert {:error, :level_gap_too_large} =
-               CrDevotion.validate(caster, {:unit, 4001}, 1, definition())
+      assert :ok = CrDevotion.validate(caster, {:unit, 4001}, 1, definition())
+
+      assert {:failed, ^caster, :level_gap_too_large} =
+               CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
     end
 
     test "accepts a target exactly at the base-level gap limit" do
       caster = register(player(@crusader_id, job_id: @crusader_class, base_level: 90))
       register(player(4001, base_level: 80))
 
-      assert :ok = CrDevotion.validate(caster, {:unit, 4001}, 1, definition())
+      assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
     end
 
     test "a mob caster cannot devote" do
@@ -110,14 +114,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       register(player(4002))
       register(player(4003))
 
-      assert :ok = CrDevotion.validate(caster, {:unit, 4001}, 2, definition())
       assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4001}, 2, definition())
       assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4002}, 2, definition())
 
-      assert {:error, :devotion_slots_full} =
-               CrDevotion.validate(caster, {:unit, 4003}, 2, definition())
+      # A full devotee set is refused after the requirement is paid.
+      assert {:failed, ^caster, :devotion_slots_full} =
+               CrDevotion.cast(caster, {:unit, 4003}, 2, definition())
 
-      assert :ok = CrDevotion.validate(caster, {:unit, 4001}, 2, definition())
+      assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4001}, 2, definition())
 
       assert devoted_by_count(@crusader_id) == 2
     end
