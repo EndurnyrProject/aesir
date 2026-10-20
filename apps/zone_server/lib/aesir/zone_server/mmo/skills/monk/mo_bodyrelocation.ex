@@ -43,12 +43,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(caster, {:ground, x, y}, _level, _definition) do
-    case ForcedMovement.validate(caster, x, y, Formulas.snap_range()) do
-      {:ok, _directive} -> :ok
-      {:error, reason} -> {:error, reason}
-    end
-  end
+  # The reference re-checks the destination inside its implementation only, so
+  # a ground cast is never refused here.
+  def validate(_caster, {:ground, _x, _y}, _level, _definition), do: :ok
 
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
@@ -65,8 +62,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(caster, {:ground, x, y}, _level, _definition) do
-    with {:ok, directive} <- ForcedMovement.validate(caster, x, y, Formulas.snap_range()) do
-      {:ok, PlayerState.put_pending_forced_movement(caster, directive)}
+    # A destination the move refuses is a no-op: the reference's unit_movepos
+    # leaves the caster where they stand and the cast keeps its requirement.
+    case ForcedMovement.validate(caster, x, y, Formulas.snap_range()) do
+      {:ok, directive} ->
+        {:ok, PlayerState.put_pending_forced_movement(caster, directive)}
+
+      {:error, _reason} ->
+        {:ok, caster}
     end
   end
 

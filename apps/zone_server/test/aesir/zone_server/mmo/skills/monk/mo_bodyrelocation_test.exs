@@ -69,14 +69,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocationTest do
              MoBodyrelocation.dynamic_cost(caster, {:ground, 14, 17}, 1, definition)
   end
 
-  test "invalid destinations fail before staging" do
+  test "an invalid destination stages nothing and keeps the cast paid" do
     stub(Cell, :traversable?, fn "prontera", 14, 17 -> false end)
     caster = %PlayerState{map_name: "prontera", x: 10, y: 13}
     {:ok, definition} = Catalog.by_id(264)
 
-    assert {:error, :invalid_destination} =
-             MoBodyrelocation.cast(caster, {:ground, 14, 17}, 1, definition)
+    assert :ok = MoBodyrelocation.validate(caster, {:ground, 14, 17}, 1, definition)
 
+    assert {:ok, ^caster} = MoBodyrelocation.cast(caster, {:ground, 14, 17}, 1, definition)
     assert caster.pending_forced_movement == nil
   end
 end
