@@ -1109,13 +1109,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-      assert :remove =
-               Sightblaster.on_contact(
-                 {:player, @caster_id},
-                 %{val1: 1},
-                 {:skill_unit, cell_id},
-                 %{}
-               )
+      assert :remove = Sightblaster.on_tick({:player, @caster_id}, %{val1: 1, state: %{}}, %{})
 
       assert %{hp: 390} = Storage.get_cell(cell.cell_id)
     end
