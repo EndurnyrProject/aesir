@@ -92,7 +92,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
       :ok
     end)
 
-    expect(ClearBuffs, :clear, fn {:player, @caster_id}, [:buffs, :debuffs, :chem_protect] ->
+    expect(ClearBuffs, :clear, fn {:player, @caster_id}, families, opts ->
+      assert families == [:buffs, :debuffs, :chem_protect]
+      assert opts[:except] == [:sc_gospel]
       :ok
     end)
 
@@ -108,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
     end)
 
     stub(Interpreter, :apply_status, fn :player, _id, :sc_gospel, _p -> {:error, :prevented} end)
-    reject(&ClearBuffs.clear/2)
+    reject(&ClearBuffs.clear/3)
     reject(&Unit.destroy_async/1)
 
     assert {:ok, ^caster} = PaGospel.cast(caster, :self, 1, definition)
@@ -120,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
   } do
     stub(Unit, :place, fn _c, _n, _l, _cell -> {:error, :no_walkable_cells} end)
     reject(&Interpreter.apply_status/4)
-    reject(&ClearBuffs.clear/2)
+    reject(&ClearBuffs.clear/3)
 
     assert {:ok, ^caster} = PaGospel.cast(caster, :self, 1, definition)
   end
@@ -140,7 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
     definition: definition
   } do
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_gospel, val1: 1, val2: 503)
-    reject(&ClearBuffs.clear/2)
+    reject(&ClearBuffs.clear/3)
     reject(&Unit.place/4)
     expect(Interpreter, :remove_status, fn :player, @caster_id, :sc_gospel -> :ok end)
 

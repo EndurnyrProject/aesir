@@ -39,16 +39,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ClearBuffs do
     hermode: :remove_on_hermode
   }
 
-  @doc "Ends the target's statuses of the requested families."
-  @spec clear(Definition.target(), [family()]) :: :ok
-  def clear({unit_type, unit_id}, families) do
+  @doc """
+  Ends the target's statuses of the requested families.
+
+  `except:` names status ids the clearing never touches, for a caller that holds
+  a status of one of the families and must survive its own wipe (Gospel's
+  chant).
+  """
+  @spec clear(Definition.target(), [family()], keyword()) :: :ok
+  def clear(target, families, opts \\ [])
+
+  def clear({unit_type, unit_id}, families, opts) do
+    except = Keyword.get(opts, :except, [])
+
     held =
       unit_type
       |> StatusStorage.get_unit_statuses(unit_id)
       |> Enum.map(&{&1.type, Registry.get_definition(&1.type)})
 
     if Enum.any?(held, fn {_id, definition} -> not definition.engine_only end) do
-      clearable = Enum.reject(held, fn {_id, definition} -> definition.no_clear_buff end)
+      clearable =
+        Enum.reject(held, fn {id, definition} ->
+          definition.no_clear_buff or id in except
+        end)
 
       if List.keymember?(clearable, :sc_berserk, 0), do: disarm_berserk(unit_type, unit_id)
 

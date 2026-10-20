@@ -143,14 +143,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
 
   # A refused chant status keeps the field and the requirement: the reference
   # ignores the status result, and its wipe runs inside the status start, so a
-  # refused status leaves the caster's buffs and debuffs alone.
+  # refused status leaves the caster's buffs and debuffs alone. The wipe spares
+  # the chant, which the reference stores only after the wipe has run.
   defp lock(%PlayerState{character_id: id} = caster, level, %Group{group_id: group_id}) do
     params = [val1: level, val2: group_id, duration: @duration, caster_id: id]
 
-    if StatusInterpreter.apply_status(:player, id, :sc_gospel, params) == :ok do
-      ClearBuffs.clear({:player, id}, [:buffs, :debuffs, :chem_protect])
-    end
+    case StatusInterpreter.apply_status(:player, id, :sc_gospel, params) do
+      :ok ->
+        ClearBuffs.clear({:player, id}, [:buffs, :debuffs, :chem_protect], except: [:sc_gospel])
 
-    {:ok, caster}
+        {:ok, caster}
+
+      {:error, _reason} ->
+        {:ok, caster}
+    end
   end
 end
