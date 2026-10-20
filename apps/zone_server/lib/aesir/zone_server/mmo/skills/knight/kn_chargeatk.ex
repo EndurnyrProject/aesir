@@ -157,6 +157,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   # The reference moves the caster only when the destination is passable and a
   # walkable path reaches it; otherwise the strike still lands from where the
   # caster stands.
+  # NOTE: `unit_movepos` searches for any reachable route; this stages the move
+  # only when the straight line is walkable, so a landing cell reachable by a
+  # detour alone leaves the Knight in place.
+  # NOTE: `skill_check_unit_movepos(5, ...)` also blocks the move on battleground
+  # and gvg2 maps and under SC_SV_ROOTTWIST; none of the three is modelled here.
   @spec stage_movement(PlayerState.t(), integer(), integer(), Definition.t()) :: PlayerState.t()
   defp stage_movement(%PlayerState{} = caster, dest_x, dest_y, definition) do
     with {:ok, directive} <- ForcedMovement.validate(caster, dest_x, dest_y, definition.range),
