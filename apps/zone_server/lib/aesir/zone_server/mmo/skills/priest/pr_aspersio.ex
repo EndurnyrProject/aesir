@@ -33,18 +33,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
 
   @behaviour Active
 
-  @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(_caster, :self, _level, _definition), do: :ok
-
-  def validate(_caster, {:unit, target_id}, _level, _definition) do
-    case target_kind(target_id) do
-      {:error, _reason} = error -> error
-      _kind -> :ok
-    end
-  end
-
+  # The whole target decision is the implementation's, after the requirement is
+  # paid: the reference refuses only a non-undead monster there, and it reports
+  # that with the animation rather than a cast failure. A target that cannot be
+  # resolved at all is already refused before the cost by the interpreter's own
+  # target checks.
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}

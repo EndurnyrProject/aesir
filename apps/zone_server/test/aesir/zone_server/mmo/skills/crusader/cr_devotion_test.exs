@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
@@ -15,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -160,6 +162,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
 
       assert {:ok, _} = CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
       assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4001}, 1, definition())
+    end
+  end
+
+  describe "dead player targets" do
+    test "a dead non-party player is refused before the requirement while a dead party member is skipped" do
+      caster = register(player(@crusader_id, job_id: @crusader_class, party_id: 1))
+      register(%{player(4001, party_id: 2) | action_state: :dead})
+      register(%{player(4002, party_id: 1) | action_state: :dead})
+
+      # The party gate runs before the requirement is paid; the dead-target
+      # early return sits below it, inside the implementation.
+      assert {:error, :not_same_party} =
+               SkillInterpreter.complete_cast(caster, 255, 1, {:unit, 4001})
+
+      assert {:skipped, _skipped, :target_dead} =
+               SkillInterpreter.complete_cast(caster, 255, 1, {:unit, 4002})
     end
   end
 
@@ -373,6 +391,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
 
   defp register(%PlayerState{character_id: id} = state) do
     :ok = UnitRegistry.register_unit(:player, id, PlayerState, state, self())
+    :ok = SpatialIndex.add_player(id, state.x, state.y, state.map_name)
     state
   end
 

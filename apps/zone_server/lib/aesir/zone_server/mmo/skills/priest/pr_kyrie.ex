@@ -27,20 +27,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
-  @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :invalid_target}
-  def validate(_caster, :self, _level, _definition), do: :ok
-
-  def validate(_caster, {:unit, target_id}, _level, _definition) do
-    if UnitRegistry.unit_exists?(:player, target_id), do: :ok, else: {:error, :invalid_target}
-  end
-
+  # A missing or unreachable target is refused before the cost by the
+  # interpreter's own target checks; the shield's own target resolution is the
+  # implementation's business, so this module declares no cast-begin gate.
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, :invalid_target}

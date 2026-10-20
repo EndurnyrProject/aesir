@@ -1719,15 +1719,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  # The reference's dead-target early return sits above the skill's
-  # implementation, so the implementation and its own pre-checks never run for a
-  # dead target: the use pays its requirement and ends without its effect.
-  defp validate_module(%CastContext{target: target} = context) do
-    if dead_target_skip?(context.definition, target) do
-      :ok
-    else
-      context.module.validate(context.caster, context.target, context.level, context.definition)
-    end
+  # The module's `validate/4` carries the reference's pre-payment gates (its
+  # `skill_castend_id_check` target-type and party checks and the skill's own
+  # cast-end conditions), which run before the requirement is paid whatever the
+  # target's state. The dead-target early return sits below them, inside the
+  # implementation, so it settles the cast (`dead_target_skip?/2`) rather than
+  # skipping the gates.
+  defp validate_module(%CastContext{} = context) do
+    context.module.validate(context.caster, context.target, context.level, context.definition)
   end
 
   defp begin_context(context, false), do: {:ok, context}

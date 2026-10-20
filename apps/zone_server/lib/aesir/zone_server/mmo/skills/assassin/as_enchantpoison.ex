@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -58,13 +57,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
+  # A dead party member passes these pre-payment gates: the reference's
+  # implementation returns before its effect and the interpreter settles such a
+  # cast as a paid skip, so liveness is not a gate here.
   defp eligible_ally?(caster, target, pid) do
     Process.alive?(pid) and
       caster.character_id != target.character_id and
       caster.map_name == target.map_name and
       caster.party_id != 0 and
-      caster.party_id == target.party_id and
-      Unit.living?(target)
+      caster.party_id == target.party_id
   end
 
   defp apply_endow(caster, caster_id, target_id, level, definition) do
