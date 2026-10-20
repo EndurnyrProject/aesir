@@ -75,10 +75,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi do
 
     # NOTE: Aesir has no SC_CHANGEUNDEAD player misc-attack path. When it exists, add
     # Increase AGI's transformed-player removal/attack branch and remove this note.
-    case StatusInterpreter.apply_status(unit_type, target_id, :sc_increaseagi, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(unit_type, target_id, :sc_increaseagi, params)
+    {:ok, caster}
   end
 
   defp target_ref(caster, target), do: Active.target_unit_ref(caster, target)

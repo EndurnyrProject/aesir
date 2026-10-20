@@ -40,9 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
 
   def validate(_caster, {:unit, target_id}, _level, _definition) do
     case target_kind(target_id) do
-      kind when kind in [:player, :undead_enemy] -> :ok
-      :invalid -> {:error, :invalid_target}
       {:error, _reason} = error -> error
+      _kind -> :ok
     end
   end
 
@@ -50,14 +49,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
-    apply_endow(caster, caster_id, caster_id, level, definition)
+    apply_endow(caster, :player, caster_id, caster_id, level, definition)
   end
 
   def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
     case target_kind(target_id) do
-      :player -> apply_endow(caster, caster_id, target_id, level, definition)
+      :player -> apply_endow(caster, :player, caster_id, target_id, level, definition)
+      :homunculus -> apply_endow(caster, :homunculus, caster_id, target_id, level, definition)
       :undead_enemy -> damage_undead(caster, target_id, level, definition)
-      :invalid -> {:error, :invalid_target}
+      # A non-undead monster is refused inside the implementation, which only
+      # reports the animation: the cast succeeds and its item is consumed.
+      :invalid -> {:ok, caster}
       {:error, _reason} = error -> error
     end
   end
@@ -76,15 +78,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
     end
   end
 
-  defp apply_endow(caster, caster_id, target_id, level, definition) do
-    case StatusInterpreter.apply_status(:player, target_id, :sc_aspersio,
-           val1: level,
-           caster_id: caster_id,
-           duration: Enum.at(definition.duration, level - 1)
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+  defp apply_endow(caster, unit_type, caster_id, target_id, level, definition) do
+    StatusInterpreter.apply_status(unit_type, target_id, :sc_aspersio,
+      val1: level,
+      caster_id: caster_id,
+      duration: Enum.at(definition.duration, level - 1)
+    )
+
+    {:ok, caster}
   end
 
   defp undead?(target), do: RaceModifiers.undead_target?(target)
@@ -92,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
   defp target_kind(target_id) do
     case Combat.resolve_combatant(target_id) do
       {:ok, %{unit_type: :player}} -> :player
+      {:ok, %{unit_type: :homunculus}} -> :homunculus
       {:ok, %{unit_type: :mob} = target} -> if undead?(target), do: :undead_enemy, else: :invalid
       {:ok, _target} -> :invalid
       {:error, _reason} = error -> error

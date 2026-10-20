@@ -47,15 +47,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie do
   def cast(caster, target, level, definition) do
     caster_id = Active.caster_unit_id(caster)
 
-    with {:ok, target_id, target_state} <- resolve_player_target(caster, target),
-         :ok <-
-           StatusInterpreter.apply_status(:player, target_id, :sc_kyrie,
-             val1: level,
-             val2: barrier_hp(target_state, level),
-             val3: div(level, 2) + 5,
-             caster_id: caster_id,
-             duration: Enum.at(definition.duration, level - 1)
-           ) do
+    with {:ok, target_id, target_state} <- resolve_player_target(caster, target) do
+      StatusInterpreter.apply_status(:player, target_id, :sc_kyrie,
+        val1: level,
+        val2: barrier_hp(target_state, level),
+        val3: div(level, 2) + 5,
+        caster_id: caster_id,
+        duration: Enum.at(definition.duration, level - 1)
+      )
+
       {:ok, caster}
     end
   end

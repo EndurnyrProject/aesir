@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwachTest do
     assert {:ok, ^caster} = AlRuwach.cast(caster, :self, 1, definition)
   end
 
-  test "cast/4 propagates error from StatusInterpreter" do
+  test "cast/4 keeps the cast when the status is refused" do
     {:ok, definition} = Catalog.by_id(24)
     caster = %{character_id: 100}
 
@@ -30,6 +30,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwachTest do
       {:error, :prevented}
     end)
 
-    assert {:error, :prevented} = AlRuwach.cast(caster, :self, 1, definition)
+    assert {:ok, ^caster} = AlRuwach.cast(caster, :self, 1, definition)
   end
 end

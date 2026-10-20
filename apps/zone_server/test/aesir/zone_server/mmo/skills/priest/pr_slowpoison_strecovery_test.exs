@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
     assert {:ok, ^caster} = PrSlowpoison.cast(caster, :self, 3, definition)
   end
 
-  test "Slow Poison returns the status-application error" do
+  test "Slow Poison keeps the cast when the status is refused" do
     {:ok, definition} = Catalog.by_id(71)
     caster = %{character_id: 1_000}
 
@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
       {:error, :immune}
     end)
 
-    assert {:error, :immune} = PrSlowpoison.cast(caster, :self, 1, definition)
+    assert {:ok, ^caster} = PrSlowpoison.cast(caster, :self, 1, definition)
   end
 
   @tag game_mode: :renewal

@@ -36,12 +36,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwach do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, :self, _level, _definition) do
-    case StatusInterpreter.apply_status(:player, caster_id, :sc_ruwach,
-           val1: 1,
-           caster_id: caster_id
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(:player, caster_id, :sc_ruwach,
+      val1: 1,
+      caster_id: caster_id
+    )
+
+    {:ok, caster}
   end
 end

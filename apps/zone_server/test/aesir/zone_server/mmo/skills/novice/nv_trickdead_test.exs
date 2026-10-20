@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvTrickdeadTest do
     assert {:ok, ^caster} = NvTrickdead.cast(caster, :self, 1, definition)
   end
 
-  test "cast/4 propagates error from toggle_status" do
+  test "cast/4 keeps the cast when toggle_status refuses" do
     {:ok, definition} = Catalog.by_id(143)
     caster = %{character_id: 5000}
 
@@ -38,6 +38,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvTrickdeadTest do
       {:error, :immune}
     end)
 
-    assert {:error, :immune} = NvTrickdead.cast(caster, :self, 1, definition)
+    assert {:ok, ^caster} = NvTrickdead.cast(caster, :self, 1, definition)
   end
 end

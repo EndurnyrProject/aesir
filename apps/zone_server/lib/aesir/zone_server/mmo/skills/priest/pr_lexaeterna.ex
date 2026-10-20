@@ -36,12 +36,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexaeterna do
   def cast(caster, {:unit, target_id}, level, definition) do
     caster_id = Caster.for(caster).id(caster)
 
-    with {:ok, %{unit_type: unit_type}} <- Combat.resolve_combatant(target_id),
-         :ok <-
-           StatusInterpreter.apply_status(unit_type, target_id, :sc_aeterna,
-             caster_id: caster_id,
-             duration: Enum.at(definition.duration, level - 1)
-           ) do
+    with {:ok, %{unit_type: unit_type}} <- Combat.resolve_combatant(target_id) do
+      StatusInterpreter.apply_status(unit_type, target_id, :sc_aeterna,
+        caster_id: caster_id,
+        duration: Enum.at(definition.duration, level - 1)
+      )
+
       {:ok, caster}
     end
   end

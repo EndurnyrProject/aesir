@@ -70,12 +70,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoison do
   defp apply_slow_poison(unit_type, target_id, caster_id, level, definition, caster) do
     duration = Enum.at(definition.duration, level - 1)
 
-    case StatusInterpreter.apply_status(unit_type, target_id, :sc_slowpoison,
-           caster_id: caster_id,
-           duration: duration
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(unit_type, target_id, :sc_slowpoison,
+      caster_id: caster_id,
+      duration: duration
+    )
+
+    {:ok, caster}
   end
 end

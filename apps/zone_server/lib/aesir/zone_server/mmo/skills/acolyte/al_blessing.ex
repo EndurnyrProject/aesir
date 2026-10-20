@@ -81,10 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
 
       # NOTE: Aesir has no SC_CHANGEUNDEAD player misc-attack path. When it exists, add
       # Blessing's transformed-player removal/attack branch and remove this note.
-      case StatusInterpreter.apply_status(unit_type, unit_id, :sc_blessing, params) do
-        :ok -> {:ok, caster}
-        {:error, _reason} = error -> error
-      end
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_blessing, params)
+      {:ok, caster}
     end
   end
 

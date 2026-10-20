@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptio do
     ],
     duration: [20_000, 40_000, 60_000, 80_000, 100_000]
 
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -52,7 +53,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptio do
   def validate(_caster, :self, _level, _definition), do: :ok
 
   def validate(_caster, {:unit, target_id}, _level, _definition) do
-    if UnitRegistry.unit_exists?(:player, target_id), do: :ok, else: {:error, :invalid_target}
+    if UnitRegistry.unit_exists?(:player, target_id) or
+         UnitRegistry.unit_exists?(:homunculus, target_id) or
+         UnitRegistry.unit_exists?(:mob, target_id),
+       do: :ok,
+       else: {:error, :invalid_target}
   end
 
   @impl Active
@@ -61,8 +66,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptio do
   def cast(caster, :self, level, definition),
     do: bless(caster, {:player, Active.caster_unit_id(caster)}, level, definition)
 
-  def cast(caster, {:unit, target_id}, level, definition),
-    do: bless(caster, {:player, target_id}, level, definition)
+  # The reference reports the failure for a monster target from inside the
+  # implementation, so that refusal is a paid failure, not a cast-begin one.
+  def cast(caster, {:unit, target_id}, level, definition) do
+    case Combat.resolve_combatant(target_id) do
+      {:ok, %{unit_type: :mob}} -> {:failed, caster, :invalid_target}
+      {:ok, %{unit_type: unit_type}} -> bless(caster, {unit_type, target_id}, level, definition)
+      {:error, _reason} = error -> error
+    end
+  end
 
   @impl Active
   @spec mob_cast(MobState.t(), {:unit, atom(), integer()}, pos_integer(), Definition.t(), map()) ::
@@ -80,9 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptio do
       [val1: level, caster_id: caster_id, duration: Enum.at(definition.duration, level - 1)] ++
         refresh
 
-    case StatusInterpreter.apply_status(unit_type, unit_id, :sc_assumptio, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
+    StatusInterpreter.apply_status(unit_type, unit_id, :sc_assumptio, params)
+    {:ok, caster}
   end
 end

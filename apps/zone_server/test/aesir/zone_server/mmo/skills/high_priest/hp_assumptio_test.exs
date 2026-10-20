@@ -77,11 +77,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
     assert StatusStorage.has_status?(:player, @caster_id, :sc_assumptio)
   end
 
-  test "a player cannot target a mob", %{caster: caster} do
+  test "a player's mob target is refused inside the implementation", %{caster: caster} do
     register_mob(@mob_id, [])
 
-    assert {:error, :invalid_target} =
-             HpAssumptio.validate(caster, {:unit, @mob_id}, 5, definition())
+    assert :ok = HpAssumptio.validate(caster, {:unit, @mob_id}, 5, definition())
+
+    assert {:failed, ^caster, :invalid_target} =
+             HpAssumptio.cast(caster, {:unit, @mob_id}, 5, definition())
   end
 
   test "a mob caster passes validation with the executor's adapted target" do

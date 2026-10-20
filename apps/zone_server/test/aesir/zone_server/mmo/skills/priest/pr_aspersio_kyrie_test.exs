@@ -170,7 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
     assert caster.stats.current_state.sp == 100
   end
 
-  test "an invalid Aspersio target retains Holy Water and SP" do
+  test "a non-undead monster target is refused inside the implementation" do
     caster = game_state(%{68 => 1}, %{0 => catalyst(1)})
     target = living_mob()
 
@@ -186,9 +186,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
 
     reject(&StatusInterpreter.apply_status/4)
 
-    assert {:error, :invalid_target} = SkillInterpreter.cast(caster, 68, 1, {:unit, 2_000})
-    assert caster.stats.current_state.sp == 100
-    assert caster.inventory == %{0 => catalyst(1)}
+    assert {:ok, updated} = SkillInterpreter.cast(caster, 68, 1, {:unit, 2_000})
+    assert updated.stats.current_state.sp < 100
+    assert updated.inventory == %{}
   end
 
   test "a successful offensive Aspersio pays its SP before and its Holy Water after damage delivery" do

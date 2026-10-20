@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessingTest do
     assert {:ok, ^caster} = AlBlessing.cast(caster, :self, 10, definition)
   end
 
-  test "cast/4 propagates error from StatusInterpreter" do
+  test "cast/4 keeps the cast when the status is refused" do
     {:ok, definition} = Catalog.by_id(34)
     caster = %{character_id: 3000}
 
@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessingTest do
       {:error, :already_applied}
     end)
 
-    assert {:error, :already_applied} = AlBlessing.cast(caster, :self, 5, definition)
+    assert {:ok, ^caster} = AlBlessing.cast(caster, :self, 5, definition)
   end
 
   test "cast/4 blesses an undead-race mob whose defence element is not undead" do
