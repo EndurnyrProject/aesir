@@ -454,4 +454,73 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(), [skill_used], opts()) == nil
     end
   end
+
+  describe "attack and cast-targeted events" do
+    test "the cast-targeted event fires only casttargeted rows" do
+      targeted = row(%{condition: %{type: :casttargeted, value: 0}})
+      always = row(%{condition: %{type: :always}})
+      event = opts(event: :casttargeted)
+
+      assert Selector.select(mob(), [always, targeted], event) == {:cast, targeted}
+      assert Selector.select(mob(), [targeted], opts()) == nil
+    end
+
+    test "a close-attack event fires its rows, and a damage-threshold row under the damage" do
+      closed = row(%{condition: %{type: :closedattacked, value: 0}})
+      low = row(%{condition: %{type: :damagedgt, value: 100}})
+      high = row(%{condition: %{type: :damagedgt, value: 1_000}})
+      event = opts(event: {:attacked, :closed, 500})
+
+      assert Selector.select(mob(), [closed], event) == {:cast, closed}
+      assert Selector.select(mob(), [low], event) == {:cast, low}
+      assert Selector.select(mob(), [high], event) == nil
+
+      assert Selector.select(mob(), [closed], opts(event: {:attacked, :closed, 0})) ==
+               {:cast, closed}
+    end
+
+    test "a long-range event fires its rows and the damage-threshold rows, never an always row" do
+      long = row(%{condition: %{type: :longrangeattacked, value: 0}})
+      closed = row(%{condition: %{type: :closedattacked, value: 0}})
+      always = row(%{condition: %{type: :always}})
+      damaged = row(%{condition: %{type: :damagedgt, value: 100}})
+      event = opts(event: {:attacked, :long, 500})
+
+      assert Selector.select(mob(), [long], event) == {:cast, long}
+      assert Selector.select(mob(), [closed], event) == nil
+      assert Selector.select(mob(), [always], event) == nil
+      assert Selector.select(mob(), [damaged], event) == {:cast, damaged}
+    end
+
+    test "the any-damage event fires only the damage-threshold rows it passes" do
+      low = row(%{condition: %{type: :damagedgt, value: 100}})
+      high = row(%{condition: %{type: :damagedgt, value: 1_000}})
+      event = opts(event: {:attacked, :other, 500})
+
+      assert Selector.select(mob(), [low], event) == {:cast, low}
+      assert Selector.select(mob(), [high], event) == nil
+      assert Selector.select(mob(), [row()], event) == nil
+      assert Selector.select(mob(), [low], opts(event: {:attacked, :other, 0})) == nil
+    end
+
+    test "a skill-used event of a ground skill that took HP fires groundattacked rows" do
+      ground = row(%{condition: %{type: :groundattacked, value: 0}})
+      other = row(%{condition: %{type: :longrangeattacked, value: 0}})
+
+      # MG_FIREWALL (18) is a ground skill, MG_FIREBOLT (19) is not.
+      event = opts(event: {:skillused, 18, 500})
+      ungrounded = opts(event: {:skillused, 19, 500})
+
+      assert Selector.select(mob(), [other, ground], event) == {:cast, ground}
+      assert Selector.select(mob(), [ground], ungrounded) == nil
+      assert Selector.select(mob(), [ground], opts(event: {:skillused, 18})) == nil
+    end
+
+    test "a skill-used event never fires the damage-threshold rows" do
+      damaged = row(%{condition: %{type: :damagedgt, value: 100}})
+      event = opts(event: {:skillused, 19, 500})
+
+      assert Selector.select(mob(), [damaged], event) == nil
+    end
+  end
 end

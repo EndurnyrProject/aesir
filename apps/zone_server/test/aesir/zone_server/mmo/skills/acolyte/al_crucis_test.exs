@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucisTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucis
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -261,5 +262,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucisTest do
     reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, @caster} = AlCrucis.cast(@caster, :self, 5, definition())
+  end
+
+  describe "cast/4 — per-target cast-end tail" do
+    test "tells every enemy in range, including one the debuff cannot land on" do
+      :rand.seed(:exsss, {1, 2, 3})
+      stub_living_targets()
+      stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
+
+      stub(Combat, :splash_targets, fn @map, @center, @radius, 1000 ->
+        [{:mob, 2001}, {:mob, 2002}]
+      end)
+
+      stub(Combat, :resolve_combatant, fn _id ->
+        {:ok, make_combatant(10, :brute, {:fire, 1})}
+      end)
+
+      reject(&StatusInterpreter.apply_status/4)
+
+      test_pid = self()
+
+      stub(CastEnd, :complete_target, fn _caster, 32, {:unit, {:mob, id}}, [] ->
+        send(test_pid, {:tail, id})
+        :ok
+      end)
+
+      assert {:ok, @caster} = AlCrucis.cast(@caster, :self, 5, definition())
+      assert_received {:tail, 2001}
+      assert_received {:tail, 2002}
+    end
   end
 end

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   caster and charge only SP. Item casts are player-only because item scripts
   operate on player inventories.
   """
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Config
@@ -36,8 +37,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.MobSkill.Event, as: MobSkillEvent
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.CastContext
@@ -1807,6 +1810,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:casting, Active.caster(), cast_info()}
           | {:error, atom()}
   defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared) do
+    notify_cast_targeted(game_state, prepared.definition, target, false)
     now = System.monotonic_time(:millisecond)
     started = cast_start(game_state, prepared.adapter, skill_id)
 
@@ -1817,6 +1821,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp schedule(%{fixed: fixed, total: total}, game_state, skill_id, level, target, prepared) do
+    notify_cast_targeted(game_state, prepared.definition, target, true)
+
     info = %{
       skill_id: skill_id,
       level: level,
@@ -1827,6 +1833,55 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     }
 
     {:casting, game_state, info}
+  end
+
+  # A player's accepted cast at a monster tells that monster so, before the
+  # cast's own effects: the reference's cast-targeted event at its cast start.
+  # Renewal fires it for every cast; pre-renewal only for a cast with a cast
+  # time or for a skill the reference forces to cast now.
+  defp notify_cast_targeted(%PlayerState{} = caster, definition, target, timed?) do
+    if timed? or GameMode.mode() == :renewal or forced_cast?(definition, target) do
+      MobSkillEvent.deliver_target(
+        {:player, caster.character_id},
+        :casttargeted,
+        target,
+        System.system_time(:millisecond)
+      )
+    end
+
+    :ok
+  end
+
+  defp notify_cast_targeted(_caster, _definition, _target, _timed?), do: :ok
+
+  # The reference's own cast-time override list (`unit.cpp`): these skills set
+  # its `combo` flag after it was cleared, so pre-renewal treats them as an
+  # immediate cast even without a cast time. Asura Strike and Spell Breaker
+  # always; Resurrection only against an undead target (its level 4 has no
+  # cast time at all). The reference's Gate of Hell and Tiger Cannon are the
+  # other two and are not implemented here.
+  @forced_cast_skills [:mo_extremityfist, :sa_spellbreaker]
+
+  @spec forced_cast?(Definition.t(), Active.target()) :: boolean()
+  defp forced_cast?(%{name: name}, _target) when name in @forced_cast_skills, do: true
+  defp forced_cast?(%{name: :all_resurrection}, target), do: undead_target?(target)
+  defp forced_cast?(_definition, _target), do: false
+
+  @spec undead_target?(Active.target()) :: boolean()
+  defp undead_target?({:unit, target}), do: undead_combatant?(target)
+  defp undead_target?({:unit, type, id}), do: undead_combatant?({type, id})
+  defp undead_target?(target) when is_integer(target), do: undead_combatant?(target)
+
+  defp undead_target?({type, _id} = ref) when type in [:player, :mob, :homunculus],
+    do: undead_combatant?(ref)
+
+  defp undead_target?(_target), do: false
+
+  defp undead_combatant?(target) do
+    case TargetResolver.resolve_combatant(target) do
+      {:ok, combatant} -> RaceModifiers.undead_target?(combatant)
+      {:error, _reason} -> false
+    end
   end
 
   # The cast-start effects of an instant cast run before its effect, as a timed

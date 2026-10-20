@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung
@@ -227,6 +228,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
       after_cast_delay: [2_000],
       duration: [4_500]
     }
+  end
+
+  test "tells every splash target's monster that the skill was used on it" do
+    caster = caster()
+
+    stub(Combat, :resolve_combatant, fn @primary_target_id ->
+      {:ok, %{unit_type: :mob, unit_id: @primary_target_id, position: {101, 100}}}
+    end)
+
+    stub_damaging_strike()
+
+    # The struck target is in the source's splash range too: it takes no
+    # knockback and no stun, but its cast-end tail still runs.
+    stub(Combat, :splash_targets, fn _map, _center, _radius, _caster ->
+      [{:mob, @primary_target_id}, {:mob, @splash_target_id}]
+    end)
+
+    stub(TargetResolver, :resolve, fn {:mob, @splash_target_id} ->
+      {:ok, self(), %{id: @splash_target_id}, :mob}
+    end)
+
+    stub(Knockback, :knockback, fn :mob, @splash_target_id, _x, _y, _count, _opts -> :ok end)
+    stub(StatusInterpreter, :apply_status, fn :mob, @splash_target_id, :sc_stun, _opts -> :ok end)
+
+    test_pid = self()
+
+    stub(CastEnd, :complete_target, fn _caster, 1_016, {:unit, {:mob, id}}, [] ->
+      send(test_pid, {:tail, id})
+      :ok
+    end)
+
+    assert {:ok, ^caster} =
+             MoBalkyoung.cast(caster, {:unit, @primary_target_id}, 1, definition())
+
+    assert_received {:tail, @primary_target_id}
+    assert_received {:tail, @splash_target_id}
   end
 
   @tag game_mode: :pre_renewal

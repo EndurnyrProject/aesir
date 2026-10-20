@@ -144,3 +144,4 @@ Mimic.copy(Aesir.Repo)
 # Bump the default `assert_receive`/`refute_receive` timeout (100ms) to absorb
 # timing jitter in the full-stack integration tests (e.g. npc_events warp flakes).
 GameModeTestSupport.start(assert_receive_timeout: 500)
+Mimic.copy(Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler)

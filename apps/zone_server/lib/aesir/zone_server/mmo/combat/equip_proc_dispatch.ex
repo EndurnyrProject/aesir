@@ -401,6 +401,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   defp castend_unit(:self), do: :self
   defp castend_unit(_target), do: nil
 
+  @doc """
+  The on-skill target of one target's per-target cast-end tail: the hit
+  target's unit id, or `nil` for a target with no unit (a cell).
+  """
+  @spec hit_target(term()) :: {:unit, integer()} | nil
+  def hit_target(target), do: castend_unit(target)
+
   @renewal_self_units [:cr_grandcross, :pa_gospel, :cg_moonlit]
   @classic_self_units @renewal_self_units ++
                         [

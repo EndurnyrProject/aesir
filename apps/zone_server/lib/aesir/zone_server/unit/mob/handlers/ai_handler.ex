@@ -205,8 +205,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   end
 
   @doc """
-  Runs a skill event on this mob: `{:skillused, skill_id}` when `source_ref`
-  used that skill on it at `tick`.
+  Runs a skill event on this mob, by `source_ref` at `tick`. The event's own
+  damage (an `{:attacked, kind, damage}` event) is what the picker's
+  damage-threshold and ground-attacked conditions read.
 
   A mob without a target takes the source as its target while its event rows
   are picked at `tick`. The previous target comes back when no row fired or

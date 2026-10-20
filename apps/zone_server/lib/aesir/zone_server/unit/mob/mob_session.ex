@@ -164,7 +164,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   @doc """
   Delivers a skill event to the mob: `{:skillused, skill_id}` when
-  `source_ref` used that skill on it at `tick` (milliseconds). The mob reacts
+  `source_ref` used that skill on it at `tick` (milliseconds), an
+  `{:attacked, kind, damage}` event when a hit landed on it. The mob reacts
   in its own session; the caller never waits.
   """
   @spec skill_event(pid(), Ref.t(), MobSkillSelector.event(), integer()) :: :ok

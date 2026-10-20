@@ -30,12 +30,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     * `:rng` - a 1-arg fun `(pos_integer -> non_neg_integer)` returning a
       zero-based roll below its argument (default uniform); injected so tests
       are deterministic.
-    * `:event` - the AI event driving this selection (default `:tick`); set to
-      `:spawn` for the spawn event use, where only `onspawn` rows fire, and to
-      `:rudeattacked` for the rude-attacked event use, where only `rudeattacked`
-      rows fire, and to `{:skillused, skill_id}` when a skill was used on the
-      mob, where only `skillused` rows naming that skill (or no skill) fire. On a `:tick`, a `rudeattacked` row needs a rude-attack count of
-      at least 1; the caller resets the count when such a row is picked.
+    * `:event` - the AI event driving this selection (default `:tick`). The
+      event names match the source's translated events: `:spawn`,
+      `:rudeattacked` and `:casttargeted` fire only their own rows;
+      `{:attacked, kind, damage}` is a landed hit (`:closed`, `:long`, or
+      `:other` for any damage type the source maps to neither); and
+      `{:skillused, skill_id}` (no damage reported) or
+      `{:skillused, skill_id, damage}` fires the `skillused` rows naming that
+      skill (or no skill) and, with damage, the `groundattacked` rows of a
+      ground skill. The carried damage is what the source's `damagedgt`
+      threshold and its ground-attacked requirement read. On a `:tick`, a
+      `rudeattacked` row needs a rude-attack count of at least 1; the caller
+      resets the count when such a row is picked.
     * `:count_living_slaves` - a 1-arg fun `(master instance id -> count)` for
       the `slavele` gate (default `SlaveSummon.count_living_slaves/1`). Like
       `:rng`, this is the escape hatch keeping the module testable: the default
@@ -60,16 +66,19 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
       visual area, the mob included, for `mobnearbygt` (default
       `MobSkill.Executor.count_nearby_mobs/1`).
 
-  Event conditions (`casttargeted`, `skillused`, `closedattacked`,
-  `longrangeattacked`, `groundattacked`, `damagedgt`) fire only from their
-  events, never from a periodic check. `trickcasting` holds while the mob
-  keeps a trick cast (`MobState.trickcasting`); `alchemist` needs a
-  player-owned, hurt mob without one.
+  Event conditions fire only from their events, never from a periodic check.
+  The source evaluates one ordered chain per row, so a `damagedgt` row also
+  fires from a closed, long or other attack event (and from no skill-used or
+  periodic event), and a `groundattacked` row fires from a skill-used event of
+  a ground skill that took HP. `trickcasting` holds while the mob keeps a
+  trick cast (`MobState.trickcasting`); `alchemist` needs a player-owned, hurt
+  mob without one.
   """
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -77,8 +86,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   @typedoc "A mob skill row as produced by `MobSkill.Db`."
   @type row :: map()
 
+  @typedoc "A landed hit's event: its range kind and the HP damage it took."
+  @type attack_event :: {:attacked, :closed | :long | :other, non_neg_integer()}
+
   @typedoc "The AI event a selection runs for."
-  @type event :: :tick | :spawn | :rudeattacked | {:skillused, pos_integer()}
+  @type event ::
+          :tick
+          | :spawn
+          | :rudeattacked
+          | :casttargeted
+          | attack_event()
+          | {:skillused, pos_integer()}
+          | {:skillused, pos_integer(), non_neg_integer()}
 
   @spec select(MobState.t(), [row()], keyword()) :: {:cast, row()} | nil
   def select(%MobState{} = mob_state, rows, opts \\ []) when is_list(rows) do
@@ -143,24 +162,77 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     end
   end
 
+  # One ordered chain per row, as the source evaluates it: an exact event
+  # match, the skill-used match, the ground-attacked match, the damage
+  # threshold, and last - only for the periodic check - the state conditions.
   @spec condition_holds?(row(), MobState.t(), map()) :: boolean()
-  defp condition_holds?(%{condition: %{type: type}}, _mob_state, %{event: :rudeattacked})
-       when type != :rudeattacked,
-       do: false
-
-  defp condition_holds?(%{condition: %{type: :skillused} = condition}, _mob_state, %{
-         event: {:skillused, skill_id}
-       }),
-       do: Map.get(condition, :value) in [skill_id, 0, nil]
-
-  defp condition_holds?(_row, _mob_state, %{event: {:skillused, _skill_id}}), do: false
-
-  defp condition_holds?(%{condition: %{type: type}}, _mob_state, %{event: :spawn})
-       when type != :onspawn,
-       do: false
-
   defp condition_holds?(%{condition: condition}, mob_state, env) do
-    evaluate(condition.type, condition, mob_state, env)
+    cond do
+      condition.type == exact_event_condition(env.event) ->
+        true
+
+      condition.type == :skillused ->
+        skill_used?(condition, env)
+
+      condition.type == :groundattacked ->
+        event_damage(env) > 0 and ground_skill_used?(env)
+
+      condition.type == :damagedgt ->
+        damage_threshold?(condition, env)
+
+      env.event == :tick ->
+        evaluate(condition.type, condition, mob_state, env)
+
+      true ->
+        false
+    end
+  end
+
+  @spec exact_event_condition(event()) :: atom() | nil
+  defp exact_event_condition({:attacked, :closed, _damage}), do: :closedattacked
+  defp exact_event_condition({:attacked, :long, _damage}), do: :longrangeattacked
+  defp exact_event_condition(:casttargeted), do: :casttargeted
+  defp exact_event_condition(:rudeattacked), do: :rudeattacked
+  defp exact_event_condition(:spawn), do: :onspawn
+  defp exact_event_condition(_event), do: nil
+
+  # The source skips the damage threshold on a skill-used event.
+  @spec damage_threshold?(map(), map()) :: boolean()
+  defp damage_threshold?(%{value: value}, env) do
+    damage = event_damage(env)
+    not skill_used_event?(env) and damage > 0 and damage > value
+  end
+
+  @spec event_damage(map()) :: integer()
+  defp event_damage(%{event: {:attacked, _kind, damage}}), do: damage
+  defp event_damage(%{event: {:skillused, _skill_id, damage}}), do: damage
+  defp event_damage(_env), do: 0
+
+  @spec skill_used_event?(map()) :: boolean()
+  defp skill_used_event?(%{event: {:skillused, _skill_id}}), do: true
+  defp skill_used_event?(%{event: {:skillused, _skill_id, _damage}}), do: true
+  defp skill_used_event?(_env), do: false
+
+  @spec skill_used?(map(), map()) :: boolean()
+  defp skill_used?(%{value: value}, %{event: {:skillused, skill_id}}),
+    do: value in [skill_id, 0, nil]
+
+  defp skill_used?(%{value: value}, %{event: {:skillused, skill_id, _damage}}),
+    do: value in [skill_id, 0, nil]
+
+  defp skill_used?(_condition, _env), do: false
+
+  @spec ground_skill_used?(map()) :: boolean()
+  defp ground_skill_used?(%{event: {:skillused, skill_id}}), do: ground_skill?(skill_id)
+  defp ground_skill_used?(%{event: {:skillused, skill_id, _damage}}), do: ground_skill?(skill_id)
+  defp ground_skill_used?(_env), do: false
+
+  # The source's INF_GROUND_SKILL bit, which its skill DB sets from the
+  # skill's ground target type.
+  @spec ground_skill?(integer()) :: boolean()
+  defp ground_skill?(skill_id) do
+    with {:ok, definition} <- SkillCatalog.by_id(skill_id),
+         do: Definition.cast_type(definition) == :ground
   end
 
   @spec evaluate(atom(), map(), MobState.t(), map()) :: boolean()
@@ -209,14 +281,12 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   defp evaluate(:trickcasting, _condition, %MobState{trickcasting: trickcasting}, _env),
     do: trickcasting != nil
 
-  defp evaluate(:rudeattacked, _condition, _mob_state, %{event: :rudeattacked}), do: true
-
   defp evaluate(:rudeattacked, _condition, %MobState{attacked_count: count}, %{event: :tick}),
     do: count >= 1
 
   defp evaluate(:rudeattacked, _condition, _mob_state, _env), do: false
 
-  defp evaluate(:onspawn, _condition, _mob_state, env), do: env.event == :spawn
+  defp evaluate(:onspawn, _condition, _mob_state, _env), do: false
 
   defp evaluate(:slavelt, %{value: value}, %MobState{instance_id: instance_id}, env)
        when is_integer(value) do

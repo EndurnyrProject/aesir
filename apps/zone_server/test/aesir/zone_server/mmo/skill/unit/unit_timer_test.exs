@@ -91,6 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -498,5 +499,55 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimerTest do
       end
 
     assert [2, 3, 1] = cells |> UnitTimer.order() |> Enum.map(& &1.x)
+  end
+
+  describe "the ground-unit skill-used tail" do
+    test "a struck monster is told the field's skill was used on it", %{manager: manager} do
+      :ok = Manager.register(manager, field(1, [{50, 50}]))
+      mob_at(1, 50, 50)
+      UnitRegistry.register_unit(:mob, 1, MobState, mob_state(1), self())
+
+      :ok = Manager.tick(manager, 1_000)
+
+      assert_received {:struck, 1, {50, 50}, {:mob, 1}, 1_000}
+
+      assert_received {:"$gen_cast", {:ai, {:skill_event, {:player, 1}, {:skillused, 89}, 1_000}}}
+    end
+
+    test "a monster the field does not strike is told nothing", %{manager: manager} do
+      :ok = Manager.register(manager, field(1, [{50, 50}]))
+      mob_at(1, 60, 60)
+      UnitRegistry.register_unit(:mob, 1, MobState, mob_state(1), self())
+
+      :ok = Manager.tick(manager, 1_000)
+
+      refute_received {:"$gen_cast", {:ai, {:skill_event, _source, _event, _tick}}}
+    end
+
+    test "a field's own monster caster is not told", %{manager: manager} do
+      :ok = Manager.register(manager, field(1, [{50, 50}], caster_type: :mob))
+      mob_at(1, 50, 50)
+      UnitRegistry.register_unit(:mob, 1, MobState, mob_state(1), self())
+
+      :ok = Manager.tick(manager, 1_000)
+
+      assert_received {:struck, 1, {50, 50}, {:mob, 1}, 1_000}
+      refute_received {:"$gen_cast", {:ai, {:skill_event, _source, _event, _tick}}}
+    end
+  end
+
+  defp mob_state(id) do
+    struct!(MobState,
+      instance_id: id,
+      mob_id: 1002,
+      mob_data: Aesir.TestMob.definition(),
+      spawn_ref: "",
+      x: 50,
+      y: 50,
+      map_name: @map,
+      hp: 100,
+      sp: 10,
+      spawned_at: 0
+    )
   end
 end

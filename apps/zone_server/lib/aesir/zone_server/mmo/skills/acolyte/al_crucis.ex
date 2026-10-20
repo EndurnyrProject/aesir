@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucis do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
@@ -52,25 +53,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucis do
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%{character_id: caster_id} = caster, :self, level, definition) do
+  def cast(%{character_id: _} = caster, :self, level, definition) do
     %{base_level: caster_base_level} = PlayerState.get_stats(caster)
-    splash_enemies(caster_id, caster_base_level, level, definition)
+    splash_enemies(caster, caster_base_level, level, definition)
     {:ok, caster}
   end
 
-  defp splash_enemies(caster_id, caster_base_level, level, definition) do
-    case SpatialIndex.get_unit_position(:player, caster_id) do
+  defp splash_enemies(caster, caster_base_level, level, definition) do
+    case SpatialIndex.get_unit_position(:player, caster.character_id) do
       {:ok, {cx, cy, map_name}} ->
         map_name
-        |> Combat.splash_targets({cx, cy}, definition.splash_radius, caster_id)
-        |> Enum.each(&try_apply_to_target(&1, level, caster_id, caster_base_level))
+        |> Combat.splash_targets({cx, cy}, definition.splash_radius, caster.character_id)
+        |> Enum.each(&strike(caster, caster_base_level, level, definition, &1))
 
       {:error, _} ->
         :ok
     end
   end
 
-  defp try_apply_to_target({unit_type, target_id}, level, caster_id, caster_base_level) do
+  # Each enemy in range runs the debuff roll and then the cast-end tail the
+  # source's per-target re-entry makes, whether or not it was eligible for the
+  # debuff.
+  defp strike(caster, caster_base_level, level, definition, target_ref) do
+    apply_debuff(target_ref, level, caster.character_id, caster_base_level)
+    CastEnd.complete_target(caster, definition.id, {:unit, target_ref}, [])
+    :ok
+  end
+
+  defp apply_debuff({unit_type, target_id}, level, caster_id, caster_base_level) do
     with {:ok, {_module, target_state, _pid}} <- UnitRegistry.get_unit(unit_type, target_id),
          true <- Unit.living?(target_state),
          {:ok, combatant} <- Combat.resolve_combatant(target_id),

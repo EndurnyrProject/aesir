@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   """
 
   alias Aesir.ZoneServer.Map.LineOfSight
+  alias Aesir.ZoneServer.Mmo.MobSkill.Event, as: MobSkillEvent
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
@@ -226,6 +227,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
           {later, now_commands} = Enum.split_with(commands, &match?({:after_cell, _}, &1))
           by_id = Map.put(by_id, group.group_id, {struck, module, outcome(tag, outcome)})
           by_id = run_commands(now_commands, by_id, group.group_id, env)
+          notify_skill_used(group, ref, now)
           continue_cell(group, cell, by_id, ticksets, deferred ++ unwrap(later))
       end
     end)
@@ -235,6 +237,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.UnitTimer do
   defp outcome(:ok, outcome), do: outcome
 
   defp unwrap(after_cell), do: Enum.map(after_cell, fn {:after_cell, command} -> command end)
+
+  # The source's ground-unit tail, the last thing its per-target interval pass
+  # does: a struck monster is told the field's skill was used on it, unless
+  # that monster is the field's own source.
+  defp notify_skill_used(%Group{skill_id: skill_id, caster_type: type, caster_id: id}, ref, now) do
+    if {type, id} == ref,
+      do: :ok,
+      else: MobSkillEvent.deliver({type, id}, {:skillused, skill_id}, ref, now)
+  end
 
   # A replaced or removed unit strikes nobody else in the cell.
   defp continue_cell(group, cell, by_id, ticksets, deferred) do

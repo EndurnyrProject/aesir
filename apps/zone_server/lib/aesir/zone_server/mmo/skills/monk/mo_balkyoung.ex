@@ -36,9 +36,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @behaviour Active
 
@@ -68,16 +70,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
 
     combatant.map_name
     |> Combat.splash_targets(primary.position, definition.splash_radius, combatant)
-    |> Enum.reject(&(&1 == {primary.unit_type, primary.unit_id}))
     |> Enum.each(fn {unit_type, target_id} = target_ref ->
-      Knockback.knockback(unit_type, target_id, cx, cy, definition.knockback,
-        source_boss?: combatant.class == :boss
-      )
+      # The reference's re-entry runs for the struck target too; only its
+      # knockback and its additional effect skip it (its own strike already
+      # carried the weapon hit), while the cast-end tail runs for every target.
+      unless target_ref == {primary.unit_type, primary.unit_id} do
+        Knockback.knockback(unit_type, target_id, cx, cy, definition.knockback,
+          source_boss?: combatant.class == :boss
+        )
 
-      OnHitEffects.direct(combatant, target_ref, BattleFlags.type_bit(:misc), definition.id)
-      apply_splash_effects(caster, target_ref)
+        OnHitEffects.direct(combatant, target_ref, BattleFlags.type_bit(:misc), definition.id)
+        apply_splash_effects(caster, target_ref)
+      end
+
+      notify_skill_used(caster, definition, target_ref)
     end)
   end
+
+  # The source's per-target no-damage tail of the splash: each neighbour's
+  # monster is told the skill was used on it. Only a player caster has that
+  # tail, since a mob's cast can only reach players here.
+  defp notify_skill_used(%PlayerState{} = caster, definition, target_ref),
+    do: CastEnd.complete_target(caster, definition.id, {:unit, target_ref}, [])
+
+  defp notify_skill_used(_caster, _definition, _target_ref), do: :ok
 
   defp apply_splash_effects(caster, {unit_type, target_id} = target_ref) do
     case TargetResolver.resolve(target_ref) do

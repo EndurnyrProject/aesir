@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Mob.Calculated
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Mob.HitSkillEvents
   alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.Looting
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -94,6 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
     case status do
       :alive ->
+        updated_mob = HitSkillEvents.run(updated_mob, damage, attacker_ref, metadata, now())
         AttackedEvent.schedule(updated_mob, damage, attacker_ref, metadata)
         {:noreply, updated_mob |> maybe_hit_stop(metadata) |> StateCommit.commit()}
 
@@ -107,6 +109,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
         )
     end
   end
+
+  defp now, do: System.system_time(:millisecond)
 
   @doc "Kills a slave only when the death belongs to its current master."
   @spec handle_master_death(integer(), MobState.t()) :: {:noreply, MobState.t()}

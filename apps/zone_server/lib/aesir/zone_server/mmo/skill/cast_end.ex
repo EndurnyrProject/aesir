@@ -12,14 +12,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastEnd do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
-  alias Aesir.ZoneServer.Mmo.MobSkill.Selector
+  alias Aesir.ZoneServer.Mmo.MobSkill.Event, as: MobSkillEvent
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc "Runs the closing hooks of a player's completed use of `skill_id` at `target`."
   @spec complete(PlayerState.t(), integer(), Active.target()) :: :ok
@@ -29,19 +27,47 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastEnd do
       if on_skill_target != nil,
         do: tell_monster({:player, caster.character_id}, skill_id, target)
 
-      EquipProcDispatch.on_skill(
-        %{
-          unit_id: caster.character_id,
-          equip_modifiers: caster.stats.modifiers.equipment,
-          equip_autobonuses: caster.stats.equip_autobonuses
-        },
-        skill_id,
-        on_skill_target
-      )
+      equip_on_skill(caster, skill_id, on_skill_target)
     end
 
     :ok
   end
+
+  @doc """
+  Runs the cast-end tail of one target of an area no-damage skill, as the
+  reference's per-target re-entry into its no-damage cast end does: the
+  monster skill-used event for that target and, with `on_skill: true` (a
+  re-entry without the reference's area bit, Hammer Fall), the caster's
+  on-skill procs for it too.
+
+  The reference's area re-entry with the bit set (Signum Crucis, Ki
+  Explosion's splash) tells the monster and stops there, since the whole
+  use's requirement and on-skill tail runs once at the caster's own cast end.
+  """
+  @spec complete_target(PlayerState.t(), integer(), Active.target(), keyword()) :: :ok
+  def complete_target(caster, skill_id, target, opts \\ []) do
+    tell_monster({:player, caster.character_id}, skill_id, target)
+
+    if Keyword.get(opts, :on_skill, false),
+      do: equip_on_skill(caster, skill_id, EquipProcDispatch.hit_target(target))
+
+    :ok
+  end
+
+  # A caster with no equipment stats has no equipment to arm.
+  defp equip_on_skill(%{stats: %{}} = caster, skill_id, target) do
+    EquipProcDispatch.on_skill(
+      %{
+        unit_id: caster.character_id,
+        equip_modifiers: caster.stats.modifiers.equipment,
+        equip_autobonuses: caster.stats.equip_autobonuses
+      },
+      skill_id,
+      target
+    )
+  end
+
+  defp equip_on_skill(_caster, _skill_id, _target), do: :ok
 
   @doc """
   Runs the closing hook of a non-player caster's completed use of
@@ -62,30 +88,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastEnd do
   defp target_self?({type, id}, {:unit, {type, id}}), do: true
   defp target_self?(_source_ref, _target), do: false
 
-  defp tell_monster(source_ref, skill_id, target) do
-    with {:ok, {:mob, id}} <- monster_ref(source_ref, target),
-         {:ok, {_module, _state, pid}} <- UnitRegistry.get_unit(:mob, id) do
-      MobSession.skill_event(pid, source_ref, skill_used(skill_id), now())
-    end
-
-    :ok
-  end
-
-  @spec skill_used(integer()) :: Selector.event()
-  defp skill_used(skill_id), do: {:skillused, skill_id}
-
-  defp monster_ref({:mob, _id} = source_ref, :self), do: {:ok, source_ref}
-  defp monster_ref(_source_ref, {:unit, :mob, id}), do: {:ok, {:mob, id}}
-  defp monster_ref(_source_ref, {:unit, {:mob, id}}), do: {:ok, {:mob, id}}
-
-  defp monster_ref(_source_ref, {:unit, id}) when is_integer(id) do
-    case UnitRegistry.unit_type_for(id) do
-      {:ok, :mob} -> {:ok, {:mob, id}}
-      _other -> :none
-    end
-  end
-
-  defp monster_ref(_source_ref, _target), do: :none
+  defp tell_monster(source_ref, skill_id, target),
+    do: MobSkillEvent.deliver_target(source_ref, {:skillused, skill_id}, target, now())
 
   defp now, do: System.system_time(:millisecond)
 end
