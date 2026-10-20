@@ -59,7 +59,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   caller that settles the descriptor. `{:failed, state, reason}` is an effect
   that failed after the requirement was spent: the cast settles as a success
   (resources, catalysts, cooldown, act delay) but reports `reason` to the
-  caster instead of showing the skill.
+  caster instead of showing the skill. `{:skipped, state, reason}` is an effect
+  the reference refuses after the requirement is paid but before its cast-end
+  tail (a dead target, an implementation's early return): the requirement and
+  its pacing stay, the catalysts and the cast-end hooks do not, and the caster
+  sees no failure.
   """
   @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
               {:ok, caster()}
@@ -67,6 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               | {:local_effects, caster(), [effect()]}
               | {:deferred, caster(), term()}
               | {:failed, caster(), atom()}
+              | {:skipped, caster(), atom()}
               | {:error, atom()}
 
   @doc """

@@ -1794,7 +1794,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   end
 
   describe "execute_skill_attack/3 projectile line of sight" do
-    test "a ranged physical skill blocked by a projectile-blocking cell fails" do
+    # The cast-end walk-path refusal is the interpreter's (it applies to every
+    # damage cast), so the combat layer no longer re-checks the line.
+    test "a ranged physical skill does not re-check the cast line here" do
       Mimic.copy(Cell)
       stub(Cell, :blocks_projectiles?, fn "prontera", x, y -> {x, y} == {150, 151} end)
 
@@ -1805,9 +1807,15 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 153, "prontera"}} end)
-      reject(&MobSession.apply_damage/4)
 
-      assert {:error, :projectile_blocked} =
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id, _metadata -> :ok end)
+
+      assert :ok =
                Combat.execute_skill_attack(player_state, 2001,
                  skill_id: 7,
                  skill_level: 1,

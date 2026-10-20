@@ -1546,16 +1546,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       )
 
     delivery =
-      apply_and_broadcast_magic_damage(
-        target_type,
-        target_pid,
-        target_id,
-        damage,
-        prepared_hit_info,
-        attacker,
-        target,
-        packet
-      )
+      case apply_and_broadcast_magic_damage(
+             target_type,
+             target_pid,
+             target_id,
+             damage,
+             prepared_hit_info,
+             attacker,
+             target,
+             packet
+           ) do
+        # The reference's siege refusal zeroes this hit inside its damage
+        # calculation: the packet already shows no damage and the cast still
+        # succeeds, so the delivery is not a cast failure.
+        {:error, _reason} when is_map_key(prepared_hit_info, :settlement_error) -> :ok
+        other -> other
+      end
 
     if delivery == :ok or match?({:local_effects, _effects}, delivery) do
       OnHitEffects.attack_stage(prepared_hit_info, damage)

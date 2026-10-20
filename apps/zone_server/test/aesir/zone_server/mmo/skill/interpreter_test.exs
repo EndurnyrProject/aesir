@@ -680,29 +680,92 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
              Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, {:unit, 2000})
   end
 
-  test "ordinary enemy skills reject corpse targets before charging SP" do
-    corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+  test "ordinary enemy skills pay for a corpse target and end without their effect" do
+    :ok = MapFlags.set_runtime("prontera", :pvp, true)
+    on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :pvp) end)
 
-    Mimic.copy(TargetResolver)
-    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+    register_player(7001, %{action_state: :dead, stats: %{current_state: %{hp: 0}}})
+    stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
 
-    assert {:error, :target_dead} =
-             Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
+    assert {:skipped, caster, :target_dead} =
+             Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 7001})
+
+    assert caster.stats.current_state.sp == 91
   end
 
-  test "ordinary ally and target-any skills reject corpse targets" do
+  test "ordinary ally and target-any skills pay for a corpse and end without their effect" do
     corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
 
     Mimic.copy(TargetResolver)
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
+    stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {14, 10, "prontera"}} end)
 
     for target_type <- [:target_ally, :target_any] do
       stub(Catalog, :by_id, fn 29 ->
         {:ok, %{definition_with_cooldown([]) | target_type: target_type}}
       end)
 
-      assert {:error, :target_dead} =
+      assert {:skipped, caster, :target_dead} =
                Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, {:unit, 2_000})
+
+      assert caster.stats.current_state.sp < 100
+    end
+  end
+
+  describe "paid refusals the reference keeps" do
+    setup do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :pvp) end)
+      register_player(7001)
+      :ok
+    end
+
+    test "an Emperium refusal keeps the type-1 requirement and nothing else" do
+      stub(Catalog, :by_id, fn 6 ->
+        {:ok, %{enemy_definition(9) | cooldown: [10_000], after_cast_delay: [1_000]}}
+      end)
+
+      stub(SmProvoke, :cast, fn _caster, _target, _level, _definition ->
+        {:error, :skill_not_allowed}
+      end)
+
+      gs = game_state(100, %{6 => 1})
+
+      assert {:failed, caster, :skill_not_allowed, :type1_only} =
+               Interpreter.cast(gs, 6, 1, {:unit, 7001})
+
+      assert caster.stats.current_state.sp == 91
+      assert caster.skill_cooldowns == %{}
+      assert caster.act_delay_until == gs.act_delay_until
+    end
+
+    test "a blocked walk path keeps the requirement and its items, without pacing" do
+      Mimic.copy(Cell)
+      stub(Cell, :blocks_projectiles?, fn "prontera", x, y -> {x, y} == {12, 10} end)
+
+      stub(Catalog, :by_id, fn 6 ->
+        {:ok,
+         %{
+           enemy_definition(9)
+           | damage_type: nil,
+             cooldown: [10_000],
+             after_cast_delay: [1_000],
+             item_cost: [%{id: 717, amount: 1}]
+         }}
+      end)
+
+      gs = %{
+        game_state(100, %{6 => 1})
+        | inventory: %{0 => %InventoryItem{nameid: 717, amount: 2, equip: 0}}
+      }
+
+      assert {:failed, caster, :projectile_blocked, :requirements_only} =
+               Interpreter.cast(gs, 6, 1, {:unit, 7001})
+
+      assert caster.stats.current_state.sp == 91
+      assert Inventory.held_amount(caster.inventory, 717) == 1
+      assert caster.skill_cooldowns == %{}
+      assert caster.act_delay_until == gs.act_delay_until
     end
   end
 

@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.RequirementTimingTest do
   import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -69,6 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.RequirementTimingTest do
 
     defp resolve(:deferred, caster), do: {:deferred, caster, :probe}
     defp resolve(:no_consume, caster), do: {:ok, caster, :no_consume}
+    defp resolve(:skipped, caster), do: {:skipped, caster, :target_dead}
     defp resolve(other, _caster), do: other
   end
 
@@ -177,6 +179,41 @@ defmodule Aesir.ZoneServer.Mmo.Skill.RequirementTimingTest do
                Interpreter.cast(caster(), @probe_id, 1, :self)
 
       assert_received {:castend_failed_saw, 50}
+    end
+
+    test "a skipped use spares the ammo the reference's early return never spends" do
+      ammo_bit = EquipLocation.location_bit(:ammo)
+
+      caster =
+        caster(%{
+          inventory: %{
+            0 => %InventoryItem{nameid: @gem_id, amount: 2, equip: 0},
+            1 => %InventoryItem{nameid: 1_751, amount: 5, equip: ammo_bit}
+          }
+        })
+
+      stub_probe(definition(requires_ammo: true, cooldown: [], after_cast_delay: []))
+
+      Process.put(:probe_result, :skipped)
+      assert {:skipped, skipped, :target_dead} = Interpreter.cast(caster, @probe_id, 1, :self)
+      assert skipped.inventory[1].amount == 5
+
+      Process.delete(:probe_result)
+      assert {:ok, consumed} = Interpreter.cast(caster, @probe_id, 1, :self)
+      assert consumed.inventory[1].amount == 4
+    end
+
+    test "a use the reference ends without its effect keeps the requirement and spares its items" do
+      stub_probe(definition(cooldown: [10_000], after_cast_delay: [1_000]))
+      Process.put(:probe_result, :skipped)
+      before = System.monotonic_time(:millisecond)
+
+      assert {:skipped, caster, :target_dead} = Interpreter.cast(caster(), @probe_id, 1, :self)
+
+      assert_received {:effect_saw, %CurrentState{hp: 90, sp: 30}, 70, 1, 2, 0}
+      assert Inventory.held_amount(caster.inventory, @gem_id) == 2
+      assert caster.skill_cooldowns[@probe_id] >= before + 10_000
+      assert caster.act_delay_until >= before + 1_000
     end
 
     test "a deferred cast carries only the item left to settle" do

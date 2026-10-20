@@ -231,6 +231,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, target, reason)}
 
+      {:failed, new_game_state, reason, _variant} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
+
+        {:noreply,
+         commit_requirement_only_failure(state, new_game_state, skill_id, level, reason)}
+
+      {:skipped, new_game_state, _reason} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
+        {:noreply, commit_skipped_use(state, new_game_state, skill_id, level)}
+
       {:castend_failed, new_game_state, reason} ->
         {:noreply, commit_castend_failure(state, new_game_state, skill_id, level, reason)}
 
@@ -336,6 +346,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
         {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
 
+      {:failed, new_game_state, reason, _variant} ->
+        new_state =
+          commit_requirement_only_failure(
+            state,
+            new_game_state,
+            ctx.skill_id,
+            ctx.skill_level,
+            reason
+          )
+
+        resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
+        {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
+
+      {:skipped, new_game_state, _reason} ->
+        new_state = commit_skipped_use(state, new_game_state, ctx.skill_id, ctx.skill_level)
+        resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
+        {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
+
       {:castend_failed, new_game_state, reason} ->
         new_state =
           commit_castend_failure(state, new_game_state, ctx.skill_id, ctx.skill_level, reason)
@@ -355,6 +383,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     report_cast_failure(skill_id, new_state.game_state.character_id, reason)
     CastEnd.complete(new_state.game_state, skill_id, target)
     new_state
+  end
+
+  # The reference pays the requirement but arms neither the after-cast delay nor
+  # the cooldown and never runs the cast-end tail (the Emperium refusal, a
+  # blocked walk path): the spend commits, the caster sees the failure.
+  defp commit_requirement_only_failure(state, new_game_state, skill_id, level, reason) do
+    new_state = commit_cast(state, new_game_state, skill_id, level, false)
+    report_cast_failure(skill_id, new_state.game_state.character_id, reason)
+    %{new_state | game_state: end_cast(new_state.game_state)}
+  end
+
+  # The reference ends a use whose target died before its effect: the paid
+  # requirement and the after-cast delay stay, the effect and its cast-end tail
+  # do not run, and the caster sees no failure.
+  defp commit_skipped_use(state, new_game_state, skill_id, level) do
+    new_state = commit_cast(state, new_game_state, skill_id, level)
+    %{new_state | game_state: end_cast(new_state.game_state)}
   end
 
   # A cast end refused by a cast-end check whose skill reacts to the failure
@@ -651,6 +696,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp handle_begin_error(state, game_state, skill_id, level, target, locked, error) do
     case error do
+      {:failed, new_game_state, reason, _variant} ->
+        sync_cast_start_stats(state, game_state, new_game_state)
+
+        {:noreply,
+         commit_requirement_only_failure(state, new_game_state, skill_id, level, reason)}
+
+      {:skipped, new_game_state, _reason} ->
+        sync_cast_start_stats(state, game_state, new_game_state)
+        {:noreply, commit_skipped_use(state, new_game_state, skill_id, level)}
+
       {:error, :out_of_range, refreshed} ->
         committed = commit_failed_attempt(state, game_state, refreshed, skill_id, :out_of_range)
         initiate_skill_movement(committed, skill_id, level, target, locked)
@@ -1246,8 +1301,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  # A dead player stays a legal approach target: the reference walks to it and
+  # the cast end then ends without its effect. A dead monster is off the map.
   defp ensure_living_target({:unit, unit_id}) do
     case TargetResolver.resolve(unit_id) do
+      {:ok, _pid, _target_state, :player} ->
+        :ok
+
       {:ok, _pid, target_state, unit_type} ->
         TargetResolver.ensure_targetable(target_state, unit_type)
 

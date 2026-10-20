@@ -359,21 +359,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @doc """
   Settles what a prepared cost has left after the effect. A cast that spares its
   requirement (`consume_catalysts?: false`) skips the items and whatever else is
-  paid after the effect (Item Appraisal's SP); the ammo is spent either way.
+  paid after the effect (Item Appraisal's SP); `consume_ammo?: false` spares the
+  ammo a refusal before the cast-end tail never spends.
   """
   @impl true
-  def commit(caster, %{
-        commitment: commitment,
-        zeny: zeny,
-        definition: definition,
-        consume_catalysts?: consume_catalysts?
-      }) do
+  def commit(
+        caster,
+        %{
+          commitment: commitment,
+          zeny: zeny,
+          definition: definition,
+          consume_catalysts?: consume_catalysts?
+        } = prepared
+      ) do
     caster
     |> apply_remaining(commitment, consume_catalysts?)
     |> deduct_zeny(zeny)
     |> maybe_consume_catalysts(definition, consume_catalysts?)
-    |> consume_ammo(definition)
+    |> maybe_consume_ammo(definition, Map.get(prepared, :consume_ammo?, true))
   end
+
+  defp maybe_consume_ammo(caster, _definition, false), do: caster
+  defp maybe_consume_ammo(caster, definition, true), do: consume_ammo(caster, definition)
 
   @impl true
   def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id, now, :begin) do

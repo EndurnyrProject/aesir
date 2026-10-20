@@ -218,27 +218,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
     assert updated.inventory == %{}
   end
 
-  test "a dead target retains Aspersio's Holy Water and SP" do
+  test "a dead target keeps SP and is spared Aspersio's Holy Water" do
     dead_target = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), dead_target, :player} end)
+
+    stub(Combat, :resolve_target_position, fn 2_000 ->
+      {:ok, :player, {10, 10, "prontera"}}
+    end)
 
     caster = game_state(%{68 => 1}, %{0 => catalyst(1)})
 
-    assert {:error, :target_dead} = SkillInterpreter.cast(caster, 68, 1, {:unit, 2_000})
-    assert caster.stats.current_state.sp == 100
-    assert caster.inventory == %{0 => catalyst(1)}
+    assert {:skipped, skipped, :target_dead} =
+             SkillInterpreter.cast(caster, 68, 1, {:unit, 2_000})
+
+    assert skipped.stats.current_state.sp < 100
+    assert skipped.inventory == %{0 => catalyst(1)}
   end
 
-  test "a dead Kyrie target retains SP" do
+  test "a dead Kyrie target keeps SP and gains no shield" do
     dead_target = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), dead_target, :player} end)
 
+    stub(Combat, :resolve_target_position, fn 2_000 ->
+      {:ok, :player, {10, 10, "prontera"}}
+    end)
+
     caster = game_state(%{73 => 1}, %{})
 
-    assert {:error, :target_dead} = SkillInterpreter.cast(caster, 73, 1, {:unit, 2_000})
-    assert caster.stats.current_state.sp == 100
+    assert {:skipped, skipped, :target_dead} =
+             SkillInterpreter.cast(caster, 73, 1, {:unit, 2_000})
+
+    assert skipped.stats.current_state.sp < 100
+    refute StatusStorage.has_status?(:player, 2_000, :sc_kyrie)
   end
 
   test "Aspersio replaces an existing weapon endow" do

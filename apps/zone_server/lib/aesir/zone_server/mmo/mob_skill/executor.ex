@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.Net.CastCancel
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector
@@ -254,6 +255,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
          :ok <- check_concealment(state, target, definition, phase),
          {:ok, adapted_target} <- adapt_target(target, definition, state),
          :ok <- check_placement(state, definition, adapted_target),
+         :ok <- check_walk_path(state, definition, target),
          :ok <- module.validate(state, adapted_target, row.level, definition),
          :ok <- check_castend_target(state, target, definition) do
       invoke(module, state, target, adapted_target, row, definition)
@@ -294,6 +296,28 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
       class: MobState.monster_class(state),
       detector: MobState.detector?(state)
     }
+  end
+
+  # The reference path-searches the cast line for every damage cast before its
+  # implementation: a blocked line aborts the cast with no effect and no pacing.
+  defp check_walk_path(state, definition, adapted_target) do
+    if Definition.cast_type(definition) == :damage and walk_line_blocked?(state, adapted_target),
+      do: {:error, :projectile_blocked},
+      else: :ok
+  end
+
+  defp walk_line_blocked?(state, {:unit, type, id}) when is_atom(type) do
+    case SpatialIndex.get_unit_position(type, id) do
+      {:ok, {tx, ty, map_name}} -> blocked_line?(state, map_name, {tx, ty})
+      {:error, _reason} -> false
+    end
+  end
+
+  defp walk_line_blocked?(_state, _target), do: false
+
+  defp blocked_line?(state, map_name, {tx, ty}) do
+    map_name == state.map_name and {state.x, state.y} != {tx, ty} and
+      not LineOfSight.clear?(map_name, {state.x, state.y}, {tx, ty})
   end
 
   # A ground cast end checks the unit placement as a monster: only a unit
@@ -370,6 +394,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   defp collapse({:ok, _state}), do: :ok
   defp collapse({:ok, _state, :no_consume}), do: :ok
   defp collapse({:failed, _state, _reason}), do: :ok
+  defp collapse({:failed, _state, _reason, _variant}), do: :ok
+  defp collapse({:skipped, _state, _reason}), do: :ok
   defp collapse({:error, _reason} = error), do: error
 
   defp property(skill_id) do

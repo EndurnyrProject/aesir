@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
@@ -104,6 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:failed, PlayerState.t(), atom()}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
           | {:error, atom(), PlayerState.t()}
@@ -154,6 +157,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:deferred, Active.caster(), term()}
           | {:casting, Active.caster(), cast_info()}
           | {:failed, Active.caster(), atom()}
+          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only}
+          | {:skipped, Active.caster(), atom()}
           | {:castend_failed, Active.caster(), atom()}
           | {:error, atom()}
           | {:error, atom(), Active.caster()}
@@ -359,6 +364,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         if early.reactions == [],
           do: {:error, reason},
           else: {:error, reason, caster}
+
+      # A performance has no damage cast and no cast-end requirement, so the
+      # paid refusals do not reach it; pass any other outcome through.
+      other ->
+        other
     end
   end
 
@@ -468,6 +478,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, Active.caster(), [Active.effect()]}
           | {:deferred, Active.caster(), term()}
           | {:failed, Active.caster(), atom()}
+          | {:failed, Active.caster(), atom(), :type1_only | :requirements_only}
+          | {:skipped, Active.caster(), atom()}
           | {:castend_failed, Active.caster(), atom()}
           | {:error, atom()}
   def complete_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0,
@@ -491,6 +503,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:local_effects, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:failed, PlayerState.t(), atom()}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:skipped, PlayerState.t(), atom()}
           | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
   def complete_cast_with_input(game_state, skill_id, level, target, input)
@@ -664,6 +678,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         {:failed, game_state, reason} ->
           {:failed, put_act_delay(game_state, definition, level, now, 0), reason}
 
+        {:skipped, game_state, _reason} ->
+          {:ok, put_act_delay(game_state, definition, level, now, 0)}
+
         {:error, reason} ->
           {:error, reason, put_act_delay(charged, definition, level, now, 0)}
 
@@ -752,6 +769,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         {:failed, game_state, reason} ->
           {:failed, proc_act_delay(game_state, definition, level, now), reason}
 
+        {:skipped, game_state, _reason} ->
+          {:ok, proc_act_delay(game_state, definition, level, now)}
+
         {:error, reason} ->
           proc_failure(reason, game_state, charged, definition, level, now)
 
@@ -827,8 +847,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           (PlayerState.t() -> {:ok, PlayerState.t()} | {:error, atom()})
         ) ::
           {:instant, PlayerState.t()}
+          | {:instant, PlayerState.t(), [Active.effect()]}
+          | {:deferred, PlayerState.t(), term()}
           | {:casting, PlayerState.t(), cast_info()}
           | {:failed, PlayerState.t(), atom()}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:skipped, PlayerState.t(), atom()}
+          | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
           | {:error, atom(), PlayerState.t(), :before_start | :after_start}
   def begin_item_cast(caster, skill_id, level, target, on_ready),
@@ -844,8 +869,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           boolean()
         ) ::
           {:instant, PlayerState.t()}
+          | {:instant, PlayerState.t(), [Active.effect()]}
+          | {:deferred, PlayerState.t(), term()}
           | {:casting, PlayerState.t(), cast_info()}
           | {:failed, PlayerState.t(), atom()}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:skipped, PlayerState.t(), atom()}
+          | {:castend_failed, PlayerState.t(), atom()}
           | {:error, atom()}
           | {:error, atom(), PlayerState.t(), :before_start | :after_start}
   def begin_item_cast(%PlayerState{} = caster, skill_id, level, target, on_ready, keep?)
@@ -899,11 +929,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     if timing.total == 0 do
       started = cast_start(refreshed, Caster.Player, skill_id)
 
-      case complete_item_cast(started, skill_id, level, target, keep?) do
-        {:ok, finished} -> {:instant, finished}
-        {:failed, _finished, _reason} = failed -> failed
-        {:error, reason} -> {:error, reason, started, :after_start}
-      end
+      started
+      |> complete_item_cast(skill_id, level, target, keep?)
+      |> item_attempt_outcome(started)
     else
       {:casting, refreshed,
        %{
@@ -918,6 +946,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
        }}
     end
   end
+
+  defp item_attempt_outcome({:ok, finished}, _started), do: {:instant, finished}
+
+  defp item_attempt_outcome({:local_effects, finished, effects}, _started),
+    do: {:instant, finished, effects}
+
+  defp item_attempt_outcome({:deferred, finished, descriptor}, _started),
+    do: {:deferred, finished, descriptor}
+
+  defp item_attempt_outcome({:failed, _finished, _reason} = failed, _started), do: failed
+
+  defp item_attempt_outcome({:failed, _finished, _reason, _variant} = failed, _started),
+    do: failed
+
+  defp item_attempt_outcome({:skipped, _finished, _reason} = skipped, _started), do: skipped
+  defp item_attempt_outcome({:castend_failed, _finished, _reason} = failed, _started), do: failed
+
+  defp item_attempt_outcome({:error, reason}, started),
+    do: {:error, reason, started, :after_start}
 
   @doc """
   Completes an item skill against the current target without learned or resource checks.
@@ -960,17 +1007,37 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_placement(caster, definition, target),
          {:ok, module} <- validate_item_cast(caster, target, level, definition, false),
          :ok <- check_castend_target(caster, target, definition) do
-      case run_unconditional(module, caster, target, level, definition, :item, false) do
-        {:ok, caster} ->
+      cond do
+        dead_target_skip?(definition, target) ->
           {:ok, pace_item_cast(caster, module, skill_id, definition, level, now)}
           |> retain_menu_requirements(false)
 
-        {:failed, caster, reason} ->
-          {:failed, pace_item_cast(caster, module, skill_id, definition, level, now), reason}
+        walk_path_blocked?(definition, caster, target) ->
+          {:error, :projectile_blocked}
 
-        error ->
-          error
+        true ->
+          run_item_effect(module, caster, target, level, definition, now)
       end
+    end
+  end
+
+  defp run_item_effect(module, caster, target, level, definition, now) do
+    skill_id = definition.id
+
+    case run_unconditional(module, caster, target, level, definition, :item, false) do
+      {:ok, caster} ->
+        {:ok, pace_item_cast(caster, module, skill_id, definition, level, now)}
+        |> retain_menu_requirements(false)
+
+      {:failed, caster, reason} ->
+        {:failed, pace_item_cast(caster, module, skill_id, definition, level, now), reason}
+
+      {:skipped, caster, _reason} ->
+        {:ok, pace_item_cast(caster, module, skill_id, definition, level, now)}
+        |> retain_menu_requirements(false)
+
+      error ->
+        error
     end
   end
 
@@ -1141,6 +1208,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:failed, _game_state, _reason} = failed ->
         failed
 
+      {:skipped, _game_state, _reason} = skipped ->
+        skipped
+
       {:error, _reason} = error ->
         error
     end
@@ -1164,7 +1234,46 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     unpaid = game_state
     {game_state, prepared_cost} = adapter.commit_primary(game_state, prepared_cost)
 
-    case run_cast(module, game_state, target, level, definition, origin, input, adapter) do
+    context = %{
+      unpaid: unpaid,
+      game_state: game_state,
+      module: module,
+      skill_id: skill_id,
+      level: level,
+      target: target,
+      definition: definition,
+      prepared_cost: prepared_cost,
+      opts: opts,
+      player?: is_struct(unpaid, PlayerState)
+    }
+
+    cond do
+      # The reference path-searches the cast line for every damage cast before
+      # its implementation, ahead of its dead-target early return.
+      walk_path_blocked?(definition, game_state, target) ->
+        settle_refusal(:projectile_blocked, context)
+
+      dead_target_skip?(definition, target) ->
+        {:skipped, settle_skipped(context), :target_dead}
+
+      true ->
+        result = run_cast(module, game_state, target, level, definition, origin, input, adapter)
+        resolve_effect(result, context)
+    end
+  end
+
+  defp resolve_effect(result, context) do
+    %{
+      module: module,
+      skill_id: skill_id,
+      level: level,
+      target: target,
+      definition: definition,
+      prepared_cost: prepared_cost,
+      opts: opts
+    } = context
+
+    case result do
       {:deferred, game_state, descriptor} ->
         deferred_result(game_state, descriptor, prepared_cost, skill_id, level, target)
 
@@ -1180,10 +1289,155 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:failed, game_state, reason} ->
         {:failed, settle_cast(game_state, module, level, definition, prepared_cost, opts), reason}
 
+      # The reference ends this use without its effect and without a failure
+      # message: a dead target, or an implementation whose early return skips
+      # the cast-end tail. The requirement stays paid and its items are spared.
+      {:skipped, game_state, reason} ->
+        {:skipped, settle_skipped(%{context | game_state: game_state}), reason}
+
       # An effect refusal is a cast-end check made late: nothing is paid unless
-      # the skill reacts to a refused cast end.
+      # the skill reacts to a refused cast end, the target is a dead player, the
+      # target is the Emperium, or the walk path blocks the skill.
       {:error, reason} ->
-        castend_failure(unpaid, skill_id, level, target, reason)
+        settle_refusal(reason, context)
+    end
+  end
+
+  # The reference refuses a dead target at the top of its damage and no-damage
+  # cast ends, after the requirement is paid: the use ends without its effect,
+  # without its items, its cast-end tail or a failure message. Five skills may
+  # run on the dead; only the two implemented here are listed.
+  @cast_on_dead_skills [:all_resurrection, :pr_redemptio]
+
+  defp dead_target_skip?(%{name: name}, _target) when name in @cast_on_dead_skills, do: false
+
+  defp dead_target_skip?(%{target_type: type}, _target)
+       when type in [:target_corpse, :target_resurrection],
+       do: false
+
+  defp dead_target_skip?(_definition, :self), do: false
+
+  defp dead_target_skip?(_definition, target) do
+    case player_target_state(target) do
+      {:ok, false} -> true
+      _alive_other_or_gone -> false
+    end
+  end
+
+  # The reference's OFFICIAL_WALKPATH check runs for every cast whose type is
+  # not no-damage, whatever the caster's weapon reach.
+  defp walk_path_blocked?(definition, caster, target) do
+    Definition.cast_type(definition) == :damage and line_blocked?(caster, target)
+  end
+
+  defp line_blocked?(caster, target) do
+    with {:ok, target_id} <- unit_target_id(target),
+         {:ok, {tx, ty, target_map}} <- resolve_unit_position(target_id),
+         true <- target_map == caster.map_name and {caster.x, caster.y} != {tx, ty} do
+      not LineOfSight.clear?(caster.map_name, {caster.x, caster.y}, {tx, ty})
+    else
+      _other -> false
+    end
+  end
+
+  defp unit_target_id({:unit, {:player, id}}), do: {:ok, id}
+  defp unit_target_id({:unit, {:mob, id}}), do: {:ok, id}
+  defp unit_target_id({:unit, {:homunculus, id}}), do: {:ok, id}
+  defp unit_target_id({:unit, id}) when is_integer(id), do: {:ok, id}
+  defp unit_target_id(_target), do: :error
+
+  # A use the reference ends without its effect: the paid requirement and its
+  # pacing stay, its items and ammo do not, the cast-end tail does not run, and
+  # the caster sees no failure.
+  defp settle_skipped(%{
+         game_state: game_state,
+         module: module,
+         level: level,
+         definition: definition,
+         prepared_cost: prepared_cost,
+         opts: opts
+       }) do
+    prepared_cost =
+      prepared_cost
+      |> Map.put(:consume_catalysts?, false)
+      |> Map.put(:consume_ammo?, false)
+
+    settle_cast(game_state, module, level, definition, prepared_cost, opts)
+  end
+
+  # Settles a refusal by the outcome the reference gives it: nothing (unpaid),
+  # the requirement with its pacing (a dead player or an early return), the
+  # requirement alone (a player's Emperium refusal), or the requirement and its
+  # items (a player's blocked walk path; a non-player's walk refusal breaks
+  # before it pays anything).
+  defp settle_refusal(reason, context) do
+    settle_for(failure_settlement(reason, context), reason, context)
+  end
+
+  defp settle_for(:unpaid, reason, context) do
+    castend_failure(context.unpaid, context.skill_id, context.level, context.target, reason)
+  end
+
+  defp settle_for(:skipped, reason, context) do
+    {:skipped, settle_skipped(context), reason}
+  end
+
+  defp settle_for(variant, reason, %{game_state: game_state} = context)
+       when variant in [:type1_only, :requirements_only] do
+    paid_items =
+      if variant == :type1_only do
+        game_state
+      else
+        prepared = Map.put(context.prepared_cost, :consume_ammo?, false)
+        context.opts.adapter.commit(game_state, prepared)
+      end
+
+    {:failed, paid_items, reason, variant}
+  end
+
+  # Which refusals the reference pays for. Everything else keeps the current
+  # unpaid contract. A dead player stays on the map, so the reference pays the
+  # requirement and its implementation returns; a dead monster or homunculus is
+  # already gone, so that refusal stays unpaid.
+  defp failure_settlement(:target_dead, context) do
+    if player_target?(context.target), do: :skipped, else: :unpaid
+  end
+
+  # The Emperium refusal is inside the reference's `if (sd)`: a player keeps the
+  # requirement and sees the failure, while a homunculus' hit is nulled inside
+  # the implementation and its cast settles normally.
+  defp failure_settlement(reason, %{player?: true})
+       when reason in [:skill_not_allowed, :approval_required],
+       do: :type1_only
+
+  defp failure_settlement(reason, %{player?: false})
+       when reason in [:skill_not_allowed, :approval_required],
+       do: :skipped
+
+  defp failure_settlement(reason, %{player?: true})
+       when reason in [:projectile_blocked, :path_blocked],
+       do: :requirements_only
+
+  defp failure_settlement(_reason, _context), do: :unpaid
+
+  defp player_target?(target), do: match?({:ok, _living}, player_target_state(target))
+
+  defp player_target_state({:unit, {:player, id}}), do: player_liveness(id)
+  defp player_target_state({:unit, :player, id}), do: player_liveness(id)
+
+  defp player_target_state({:unit, id}) do
+    case TargetResolver.resolve(id) do
+      {:ok, _pid, state, :player} -> {:ok, Unit.living?(state)}
+      _other -> :error
+    end
+  end
+
+  defp player_target_state(_target), do: :error
+
+  defp player_liveness(id) do
+    case TargetResolver.resolve(:player, id) do
+      {:ok, _pid, state, :player} -> {:ok, Unit.living?(state)}
+      _other -> :error
     end
   end
 
@@ -1459,8 +1713,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp validate_module(%CastContext{} = context),
-    do: context.module.validate(context.caster, context.target, context.level, context.definition)
+  # The reference's dead-target early return sits above the skill's
+  # implementation, so the implementation and its own pre-checks never run for a
+  # dead target: the use pays its requirement and ends without its effect.
+  defp validate_module(%CastContext{target: target} = context) do
+    if dead_target_skip?(context.definition, target) do
+      :ok
+    else
+      context.module.validate(context.caster, context.target, context.level, context.definition)
+    end
+  end
 
   defp begin_context(context, false), do: {:ok, context}
 
@@ -1589,6 +1851,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         {:local_effects, game_state, effects} -> {:instant, game_state, effects}
         {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
         {:failed, game_state, reason} -> {:failed, game_state, reason}
+        {:failed, game_state, reason, variant} -> {:failed, game_state, reason, variant}
+        {:skipped, game_state, reason} -> {:skipped, game_state, reason}
         {:castend_failed, game_state, reason} -> {:castend_failed, game_state, reason}
         {:error, reason} -> {:error, reason}
       end
@@ -1725,7 +1989,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # `:skill_unit` for a cell the registry already confirmed is targetable, so
   # it is a valid enemy target by construction.
   defp check_default_target(game_state, {:unit, target_id}, %{target_type: :target_enemy}) do
-    with :ok <- ensure_living_target(target_id) do
+    with :ok <- ensure_targetable_unit(target_id) do
       case unit_type_of(target_id) do
         :mob -> :ok
         :skill_unit -> :ok
@@ -1737,7 +2001,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp check_default_target(_game_state, {:unit, target_id}, %{target_type: target_type})
        when target_type in [:target_ally, :target_any],
-       do: ensure_living_target(target_id)
+       do: ensure_targetable_unit(target_id)
 
   defp check_default_target(_game_state, {:unit, target_id}, %{target_type: :target_corpse}),
     do: ensure_corpse_target(target_id)
@@ -1861,8 +2125,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp ensure_living_target(unit_id) do
+  # A dead player is a legal cast target: the reference pays the requirement and
+  # its cast end returns before the effect (see `dead_target_skip?/2`). A dead
+  # monster or homunculus is removed from the map, so it stays refused here.
+  defp ensure_targetable_unit(unit_id) do
     case TargetResolver.resolve(unit_id) do
+      {:ok, _pid, _target_state, :player} ->
+        :ok
+
       {:ok, _pid, target_state, unit_type} ->
         TargetResolver.ensure_targetable(target_state, unit_type)
 
@@ -1876,7 +2146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp validate_enemy_player(game_state, target_id) do
     case TargetResolver.resolve(:player, target_id) do
       {:ok, _pid, target_state, :player} ->
-        Targeting.validate_enemy_relation(game_state, target_state)
+        Targeting.validate_enemy_relation_allow_dead(game_state, target_state)
 
       _ ->
         {:error, :invalid_target}
@@ -1997,6 +2267,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       {:failed, caster, reason} ->
         valid_cast_result(adapter, caster, fn -> {:failed, caster, reason} end)
+
+      {:skipped, caster, reason} ->
+        valid_cast_result(adapter, caster, fn -> {:skipped, caster, reason} end)
 
       {:deferred, caster, descriptor} ->
         {:deferred, caster, descriptor}

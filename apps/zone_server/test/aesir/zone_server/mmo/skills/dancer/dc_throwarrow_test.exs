@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcThrowarrowTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -91,6 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcThrowarrowTest do
   test "ordinary completion spends 12 SP and persists exactly one arrow after the attack succeeds" do
     caster = player_state()
     stub_target_at(18, 10)
+    Mimic.copy(Cell)
+    stub(Cell, :blocks_projectiles?, fn _map, _x, _y -> false end)
 
     expect(Combat, :execute_skill_attack, fn paid, @target_id, opts ->
       assert paid == paid(caster, 3)
@@ -114,6 +117,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcThrowarrowTest do
   test "a failed aggregate attack spends no SP, arrow, delay, or cooldown" do
     caster = player_state()
     stub_target_at(18, 10)
+    Mimic.copy(Cell)
+    stub(Cell, :blocks_projectiles?, fn _map, _x, _y -> false end)
 
     expect(Combat, :execute_skill_attack, fn paid, @target_id, _opts ->
       assert paid == paid(caster, 3)
@@ -221,6 +226,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcThrowarrowTest do
   test "classic completion spends the level SP, shows one hit, and arms no delay" do
     caster = player_state()
     stub_target_at(18, 10)
+    Mimic.copy(Cell)
+    stub(Cell, :blocks_projectiles?, fn _map, _x, _y -> false end)
 
     expect(Combat, :execute_skill_attack, fn paid, @target_id, opts ->
       assert paid == paid(caster, 3)

@@ -842,8 +842,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     ]) ++ shield_base_opts(caster_state, opts)
   end
 
-  defp physical_skill_validator_opts(opts),
-    do: Keyword.take(opts, [:skip_range]) ++ [projectile?: true]
+  # The cast-end walk-path refusal is the interpreter's (it applies to every
+  # damage cast, not only to a ranged weapon).
+  defp physical_skill_validator_opts(opts), do: Keyword.take(opts, [:skip_range])
 
   defp multi_target_opts(opts) do
     skill_id = Keyword.fetch!(opts, :skill_id)

@@ -413,6 +413,18 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     CastingHandler.cancel(casting)
   end
 
+  test "a use the reference ends without its effect commits the homunculus silently" do
+    session = active_session()
+
+    stub(Aesir.ZoneServer.Mmo.Skill.Interpreter, :begin_cast, fn _, 8_001, 1, _target ->
+      {:skipped, session.homunculus, :target_dead}
+    end)
+
+    assert {:ok, committed} = CastingHandler.begin(session, 8_001, 1, :self)
+    assert committed.homunculus.action_state == :idle
+    assert committed.homunculus.casting == nil
+  end
+
   test "missing food falls through to aggressive combat instead of selecting feed forever" do
     register_mob(900, 8, 2)
 

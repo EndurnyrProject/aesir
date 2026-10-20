@@ -118,8 +118,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   (`castend_refused?/2`).
   """
   @spec validate_enemy_relation(map(), map()) :: :ok | {:error, atom()}
-  def validate_enemy_relation(attacker, target) do
-    if alive?(target) do
+  def validate_enemy_relation(attacker, target),
+    do: validate_enemy_relation(attacker, target, false)
+
+  @doc """
+  Validates the enemy relationship without refusing a dead target.
+
+  The reference's cast-end target checks never inspect the target's life, so an
+  attack aimed at a dead player starts, pays its requirement and then ends
+  without its effect. A dead monster or homunculus is off the map and never
+  reaches this check.
+  """
+  @spec validate_enemy_relation_allow_dead(map(), map()) :: :ok | {:error, atom()}
+  def validate_enemy_relation_allow_dead(attacker, target),
+    do: validate_enemy_relation(attacker, target, true)
+
+  defp validate_enemy_relation(attacker, target, allow_dead?) do
+    if allow_dead? or alive?(target) do
       attacker_combatant = relationship_combatant(attacker)
       target_combatant = relationship_combatant(target)
       versus = versus_context(target_combatant.map_name)

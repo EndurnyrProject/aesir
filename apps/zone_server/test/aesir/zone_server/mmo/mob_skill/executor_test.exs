@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.Commons.GameMode
   alias Aesir.Net.SkillCasting
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
@@ -887,6 +888,32 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
                {:error, :no_target}
 
       refute_received {:cast, _, _, _, _}
+    end
+
+    test "a damage skill whose cast line is blocked aborts without casting" do
+      stub_skill(9011, :fake_skill, CastOnly, %{target_type: :target_enemy, damage_type: nil})
+      stub_living_player_target()
+      Mimic.copy(Cell)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 42 -> {:ok, {110, 100, @map}} end)
+      stub(Cell, :blocks_projectiles?, fn @map, x, y -> {x, y} == {105, 100} end)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9011, target: :target})) ==
+               {:error, :projectile_blocked}
+
+      refute_received {:cast, _, _, _, _}
+    end
+
+    test "a damage skill whose cast line is clear runs" do
+      stub_skill(9012, :fake_skill, CastOnly, %{target_type: :target_enemy, damage_type: nil})
+      stub_living_player_target()
+      Mimic.copy(Cell)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 42 -> {:ok, {110, 100, @map}} end)
+      stub(Cell, :blocks_projectiles?, fn _map, _x, _y -> false end)
+
+      assert Executor.execute(mob(), row(%{skill_id: 9012, target: :target})) == :ok
+      assert_received {:cast, 5001, {:unit, 42}, 3, 9012}
     end
 
     test "dispatches mob origin when the skill supports origin-aware casting" do

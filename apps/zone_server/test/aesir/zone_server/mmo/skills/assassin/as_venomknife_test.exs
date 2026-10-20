@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -134,6 +135,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
     caster = player_state(1771)
     paid = put_in(caster.stats.current_state.sp, 65)
     stub_target()
+    Mimic.copy(Cell)
+    stub(Cell, :blocks_projectiles?, fn _map, _x, _y -> false end)
 
     expect(SkillAttack, :execute_forced_no_card_attack, fn ^paid, 2_000, _opts ->
       {:ok, %{hit?: true, damage: 100, target_survives?: true}}

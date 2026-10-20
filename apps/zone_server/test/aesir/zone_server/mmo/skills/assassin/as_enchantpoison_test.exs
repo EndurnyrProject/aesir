@@ -34,12 +34,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
     assert_status(2, 10, 165_000)
   end
 
-  test "dead, non-party, cross-map, out-of-range, missing, and non-player targets fail uncommitted" do
+  test "non-party, cross-map, out-of-range, missing, and non-player targets fail uncommitted" do
     caster = player_state(1, party_id: 7)
     register_player(caster)
 
     targets = [
-      {2, player_state(2, party_id: 7) |> put_in([Access.key!(:action_state)], :dead), 51, 50},
       {3, player_state(3, party_id: 0), 51, 50},
       {4, player_state(4, party_id: 8), 51, 50},
       {5, player_state(5, party_id: 7, map_name: "geffen"), 51, 50},
@@ -52,6 +51,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
       assert caster.stats.current_state.sp == 100
       refute StatusStorage.has_status?(:player, id, :sc_encpoison)
     end
+
+    dead = player_state(2, party_id: 7) |> put_in([Access.key!(:action_state)], :dead)
+    register_player(dead, 51, 50)
+
+    assert {:skipped, dead_caster, :target_dead} = Interpreter.cast(caster, 138, 1, {:unit, 2})
+    assert dead_caster.stats.current_state.sp < 100
+    refute StatusStorage.has_status?(:player, 2, :sc_encpoison)
 
     assert {:error, _reason} = Interpreter.cast(caster, 138, 1, {:unit, 99})
     refute StatusStorage.has_status?(:player, 99, :sc_encpoison)

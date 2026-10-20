@@ -1234,9 +1234,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert Keyword.get(opts, :skill_initiated) == true
     end
 
-    test "an out-of-range skill does not approach a corpse" do
-      state = casting_state(45)
-      corpse = %PlayerState{action_state: :dead, stats: %{current_state: %{hp: 0}}}
+    test "an out-of-range skill approaches a dead player target" do
+      corpse = %PlayerState{
+        character_id: 2_000,
+        action_state: :dead,
+        stats: %{current_state: %{hp: 0}}
+      }
 
       Mimic.copy(TargetResolver)
       stub(Interpreter, :begin_cast, fn _gs, 29, 1, {:unit, 2_000} -> {:error, :out_of_range} end)
@@ -1254,9 +1257,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         {:ok, [{151, 150}]}
       end)
 
-      reject(&MovementHandler.handle_request_move/4)
+      test_pid = self()
 
-      assert {:noreply, ^state} = SkillHandler.handle_use_skill(state, 29, 1, 2_000)
+      stub(MovementHandler, :handle_request_move, fn state, x, y, opts ->
+        send(test_pid, {:move, state.game_state, x, y, opts})
+        {:noreply, state}
+      end)
+
+      assert {:noreply, _} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 2_000)
+
+      assert_received {:move, moving_gs, 151, 150, opts}
+      assert Keyword.get(opts, :skill_initiated) == true
+      assert moving_gs.action_state == :skill_moving
     end
 
     test "reaching casting range re-dispatches the pending skill from context" do
@@ -1444,6 +1456,79 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert completed.game_state.action_state == :idle
       assert completed.game_state.stats.current_state.sp == 27
       assert_received {:to_player, %SkillCastFailed{skill_id: 29}}
+    end
+
+    test "a use the reference ends without its effect commits silently" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, %{sp: 27}, _opts -> {:ok, %{}} end)
+
+      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+      token = casting.game_state.state_context.token
+
+      stub(Interpreter, :complete_cast, fn game_state, 29, 1, _target ->
+        {:skipped, put_in(game_state.stats.current_state.sp, 27), :target_dead}
+      end)
+
+      reject(&CastEnd.complete/3)
+
+      assert {:noreply, completed} = SkillHandler.handle_cast_complete(casting, token)
+
+      assert completed.game_state.action_state == :idle
+      assert completed.game_state.stats.current_state.sp == 27
+      refute_received {:to_player, %SkillCastFailed{}}
+    end
+
+    test "a requirement-only failure reports without the cast-end tail" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, %{sp: 27}, _opts -> {:ok, %{}} end)
+
+      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+      token = casting.game_state.state_context.token
+
+      stub(Interpreter, :complete_cast, fn game_state, 29, 1, _target ->
+        {:failed, put_in(game_state.stats.current_state.sp, 27), :skill_not_allowed, :type1_only}
+      end)
+
+      reject(&CastEnd.complete/3)
+
+      assert {:noreply, completed} = SkillHandler.handle_cast_complete(casting, token)
+
+      assert completed.game_state.action_state == :idle
+      assert completed.game_state.stats.current_state.sp == 27
+      assert_received {:to_player, %SkillCastFailed{skill_id: 29}}
+    end
+
+    test "an instant use the reference ends without its effect commits silently" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+
+      stub(Interpreter, :begin_cast, fn game_state, 29, 1, _target ->
+        {:skipped, put_in(game_state.stats.current_state.sp, 27), :target_dead}
+      end)
+
+      reject(&CastEnd.complete/3)
+
+      assert {:noreply, completed} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+
+      assert completed.game_state.action_state == :idle
+      assert completed.game_state.stats.current_state.sp == 27
+      refute_received {:to_player, %SkillCastFailed{}}
     end
 
     test "an instant cast failing after its requirement commits the spend and reports it" do

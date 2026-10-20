@@ -135,6 +135,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
       {:instant, updated} -> finish(session, updated, [])
       {:instant, updated, effects} -> finish(session, updated, effects)
       {:casting, updated, info} -> schedule(session, updated, info)
+      {:failed, updated, _reason} -> finish(session, updated, [])
+      {:failed, updated, _reason, _variant} -> finish(session, updated, [])
+      {:skipped, updated, _reason} -> finish(session, updated, [])
       {:error, reason, refreshed} -> {:error, reason, StateCommit.commit(session, refreshed)}
       {:error, reason} -> {:error, reason, session}
     end
@@ -149,6 +152,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
          ) do
       {:ok, updated} -> finish_completed(session, updated, [])
       {:local_effects, updated, effects} -> finish_completed(session, updated, effects)
+      {:failed, updated, _reason} -> finish_completed(session, updated, [])
+      {:failed, updated, _reason, _variant} -> finish_completed(session, updated, [])
+      {:skipped, updated, _reason} -> finish_completed(session, updated, [])
       {:error, _reason} -> {:noreply, clear_cast(session)}
     end
   end
