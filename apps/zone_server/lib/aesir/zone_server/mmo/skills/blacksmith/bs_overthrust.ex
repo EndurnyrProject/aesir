@@ -78,17 +78,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrust do
     # second apply always wins; do not collapse these two calls into one. The
     # caster receives a duplicate status-icon broadcast as a result, which is
     # cosmetic and client-idempotent.
-    with :ok <-
-           PartyBuff.apply(
-             caster,
-             :sc_overthrust,
-             recipient_params,
-             definition.splash_radius,
-             &eligible_weapon?(&1, definition.require_weapon)
-           ),
-         :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_overthrust, caster_params) do
-      {:ok, caster}
-    end
+    PartyBuff.apply(
+      caster,
+      :sc_overthrust,
+      recipient_params,
+      definition.splash_radius,
+      &eligible_weapon?(&1, definition.require_weapon)
+    )
+
+    # The reference ignores both status results, so a refused self application
+    # still leaves the cast with its requirement paid.
+    StatusInterpreter.apply_status(:player, caster_id, :sc_overthrust, caster_params)
+
+    {:ok, caster}
   end
 
   # Party recipients get 5, 10, or 15% by level band in renewal and a flat 5% in classic.

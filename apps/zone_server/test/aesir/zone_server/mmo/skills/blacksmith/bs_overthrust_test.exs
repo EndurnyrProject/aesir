@@ -95,6 +95,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrustTest do
     assert {:ok, ^caster} = BsOverthrust.cast(caster, :self, 1, definition)
   end
 
+  test "a refused self application still leaves the cast with its requirement paid" do
+    assert {:ok, definition} = Catalog.by_id(113)
+
+    caster = player_state(1)
+    stub(PartyManager, :get, fn _party_id -> {:error, :not_found} end)
+
+    stub(StatusInterpreter, :apply_status, fn :player, 1, :sc_overthrust, _params ->
+      {:error, :prevented}
+    end)
+
+    assert {:ok, ^caster} = BsOverthrust.cast(caster, :self, 1, definition)
+  end
+
   defp player_state(char_id) do
     %Character{
       id: char_id,
