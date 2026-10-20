@@ -48,23 +48,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
 
   @impl Active
   def cast(caster, {:unit, target_ref}, level, definition) do
-    with {:ok, _pid, target, target_type} <- TargetResolver.resolve(target_ref),
-         {:ok, destination} <- approach(caster, target) do
-      break_hiding(caster)
-      {attacker, moved} = slip(caster, destination)
+    with {:ok, _pid, target, target_type} <- TargetResolver.resolve(target_ref) do
+      case approach(caster, target) do
+        {:ok, destination} ->
+          break_hiding(caster)
+          {attacker, moved} = slip(caster, destination)
 
-      opts =
-        mode_opts() ++
-          [
-            skill_id: definition.id,
-            skill_level: level,
-            skill_ratio: backstab_ratio(caster, level),
-            hit_divisions: hit_divisions(caster, definition, level),
-            skip_range: true,
-            report_hit: true
-          ]
+          opts =
+            mode_opts() ++
+              [
+                skill_id: definition.id,
+                skill_level: level,
+                skill_ratio: backstab_ratio(caster, level),
+                hit_divisions: hit_divisions(caster, definition, level),
+                skip_range: true,
+                report_hit: true
+              ]
 
-      strike(attacker, moved, target_type, target_ref, level, opts)
+          strike(attacker, moved, target_type, target_ref, level, opts)
+
+        # The reference reports a failed reposition from inside the
+        # implementation, after the requirement is paid.
+        {:error, reason} ->
+          {:failed, caster, reason}
+      end
     end
   end
 

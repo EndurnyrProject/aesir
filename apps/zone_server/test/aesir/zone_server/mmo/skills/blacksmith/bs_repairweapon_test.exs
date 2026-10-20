@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
     for item_id <- [1341, 15_282] do
       register(player(2, %{0 => item(item_id, 1)}))
 
-      assert {:error, :no_repairable_items} =
+      assert {:failed, ^caster, :no_repairable_items} =
                BsRepairweapon.cast(caster, {:unit, 2}, 1, definition())
 
       assert {:error, :unrepairable_item} =
@@ -127,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
       assert :error = Items.by_id(item_id)
       register(player(2, %{0 => item(item_id, 1)}))
 
-      assert {:error, :no_repairable_items} =
+      assert {:failed, ^caster, :no_repairable_items} =
                BsRepairweapon.cast(caster, {:unit, 2}, 1, definition())
 
       assert {:error, :unknown_item} =

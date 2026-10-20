@@ -31,7 +31,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart do
   def cast(%{cart_type: 0}, :self, _level, _definition), do: {:error, :no_cart}
 
   def cast(caster, :self, _level, _definition) do
-    CartHandler.change_cart_tier(caster, base_level(caster))
+    case CartHandler.change_cart_tier(caster, base_level(caster)) do
+      {:ok, updated} ->
+        {:ok, updated}
+
+      # The reference always succeeds and pays; the tier choice is a separate
+      # packet with its own level gate.
+      {:error, :no_cart_upgrade} ->
+        {:ok, caster}
+    end
   end
 
   @spec base_level(map()) :: non_neg_integer()

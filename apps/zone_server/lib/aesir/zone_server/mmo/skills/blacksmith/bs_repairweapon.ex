@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon do
       {:ok, %{caster | target_id: target_id, pending_menu_offer: offer}}
     else
       {:error, reason} -> {:error, reason}
-      [] -> {:error, :no_repairable_items}
+      # The reference reports this from inside the implementation.
+      [] -> {:failed, caster, :no_repairable_items}
     end
   end
 

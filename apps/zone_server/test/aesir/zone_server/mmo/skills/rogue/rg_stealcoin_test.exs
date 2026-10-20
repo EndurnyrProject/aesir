@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
       {:error, :no_coin}
     end)
 
-    assert {:error, :no_coin} =
+    assert {:failed, ^mugged, :no_coin} =
              RgStealcoin.cast(mugged, {:unit, @target_id}, 6, RgStealcoin.definition())
   end
 
@@ -96,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
 
     reject(&Combat.execute_zero_damage_hit/3)
 
-    assert {:error, :immune} =
+    assert {:failed, ^caster, :immune} =
              RgStealcoin.cast(caster, {:unit, @target_id}, 1, RgStealcoin.definition())
 
     assert caster.zeny == 1_000

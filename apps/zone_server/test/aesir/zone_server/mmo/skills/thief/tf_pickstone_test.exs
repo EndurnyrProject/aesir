@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstoneTest do
     assert updated.pending_inventory_notify == [change]
   end
 
-  test "propagates {:error, :overweight} when carry limit is exceeded" do
+  test "keeps the cast when the stone cannot be added" do
     {:ok, definition} = Catalog.by_id(151)
     item_def = %{id: 7049, weight: 10}
 
@@ -55,6 +55,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstoneTest do
       {:error, :overweight}
     end)
 
-    assert {:error, :overweight} = TfPickstone.cast(@caster, :self, 1, definition)
+    assert {:ok, @caster} = TfPickstone.cast(@caster, :self, 1, definition)
   end
 end

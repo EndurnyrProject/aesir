@@ -47,10 +47,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{} = caster, {:unit, target_id}, level, _definition) do
-    with {:ok, {_module, _state, pid}} <- UnitRegistry.get_unit(:mob, target_id),
-         {:ok, zeny} <- MobSession.attempt_mug(pid, mug_caster(caster), level) do
-      mugged = %{caster | zeny: min(caster.zeny + zeny, Zeny.max_zeny())}
-      {:ok, Combat.execute_zero_damage_hit(mugged, target_id, @mug_hit_flag)}
+    with {:ok, {_module, _state, pid}} <- UnitRegistry.get_unit(:mob, target_id) do
+      case MobSession.attempt_mug(pid, mug_caster(caster), level) do
+        {:ok, zeny} ->
+          mugged = %{caster | zeny: min(caster.zeny + zeny, Zeny.max_zeny())}
+          {:ok, Combat.execute_zero_damage_hit(mugged, target_id, @mug_hit_flag)}
+
+        # The reference reports the failed roll from inside the implementation.
+        {:error, reason} ->
+          {:failed, caster, reason}
+      end
     end
   end
 

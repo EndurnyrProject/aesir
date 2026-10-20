@@ -118,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     reject(&Combat.execute_skill_attack/3)
     reject(&StatusInterpreter.apply_status/4)
 
-    assert {:error, :must_be_behind} =
+    assert {:failed, ^caster, :must_be_behind} =
              RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
@@ -211,7 +211,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     stub(Cell, :traversable?, fn "backstab", x, y -> {x, y} != {8, 10} end)
     reject(&Combat.execute_skill_attack/3)
 
-    assert {:error, :invalid_destination} =
+    assert {:failed, ^caster, :invalid_destination} =
              RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
@@ -223,7 +223,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     stub(Cell, :traversable?, fn "backstab", x, y -> {x, y} != {10, 11} end)
     reject(&Combat.execute_skill_attack/3)
 
-    assert {:error, :invalid_destination} =
+    assert {:failed, ^caster, :invalid_destination} =
              RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
   end
 

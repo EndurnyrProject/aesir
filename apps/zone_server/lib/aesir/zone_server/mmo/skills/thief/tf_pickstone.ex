@@ -42,6 +42,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstone do
         |> Map.update!(:pending_inventory_notify, &(&1 ++ [change]))
 
       {:ok, updated}
+    else
+      # The reference reports the failed add and still completes the cast.
+      {:error, _reason} -> {:ok, caster}
     end
   end
 end

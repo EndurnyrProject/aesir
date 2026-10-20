@@ -35,13 +35,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecartTest do
                McChangecart.cast(caster, :self, 1, McChangecart.definition())
     end
 
-    test "propagates a no-upgrade error from the handler" do
+    test "keeps the cast when the handler has no upgrade to make" do
       caster = caster(cart_type: 1, base_level: 30)
 
       expect(CartHandler, :change_cart_tier, fn ^caster, 30 -> {:error, :no_cart_upgrade} end)
 
-      assert {:error, :no_cart_upgrade} =
-               McChangecart.cast(caster, :self, 1, McChangecart.definition())
+      assert {:ok, ^caster} = McChangecart.cast(caster, :self, 1, McChangecart.definition())
     end
   end
 end

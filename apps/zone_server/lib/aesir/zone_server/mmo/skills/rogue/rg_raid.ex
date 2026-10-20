@@ -67,8 +67,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
           {:ok, %{hit?: false}} ->
             {:cont, :ok}
 
-          {:error, _reason} = error ->
-            {:halt, error}
+          # The reference never fails the cast per target: a target lost
+          # between the filter and the hit is simply skipped.
+          {:error, _reason} ->
+            {:cont, :ok}
         end
       end)
 
