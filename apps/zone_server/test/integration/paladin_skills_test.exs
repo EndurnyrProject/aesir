@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
       assert eventually(fn -> afflicted?(mob, mob_hp) end)
     end
 
-    test "recasting ends the chant and the field without charging SP" do
+    test "recasting ends the chant and the field, paying the cast's SP" do
       %{paladin: paladin} = party_pair()
       cast(paladin, @gospel, 1)
       group_id = await_chant(paladin)
@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer.Integration.PaladinSkillsTest do
                  SkillUnitStorage.get(group_id) == nil
              end)
 
-      assert get_player_state(paladin.pid).stats.current_state.sp == sp
+      assert get_player_state(paladin.pid).stats.current_state.sp == sp - 80
     end
 
     test "an unpaid upkeep tick and Silence each end the chant" do

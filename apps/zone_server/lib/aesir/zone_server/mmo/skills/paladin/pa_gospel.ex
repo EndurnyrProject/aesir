@@ -3,10 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   Battle Chant (PA_GOSPEL). The Paladin plants a 33-cell thick cross (seven
   long, three wide) at their feet for 60 seconds and chants: rooted, unable to
   cast anything but Gospel itself, paying HP and SP every 10 seconds (see
-  `StatusEffect.Effects.Gospel`). Once the field is accepted the caster's buffs
-  and debuffs are wiped. Recasting while chanting ends the chant and costs
-  nothing. 80 SP at
-  levels 1-5, 100 SP at 6-10.
+  `StatusEffect.Effects.Gospel`). Starting the chant wipes the caster's buffs
+  and debuffs. Recasting while chanting ends the chant and spares the skill's
+  items; its SP is spent like any other cast. 80 SP at levels 1-5, 100 SP at
+  6-10.
 
   Each field cell is a unit acting on the 100 ms unit pass: a unit standing on
   the field other than the caster is struck once every 10 seconds, starting
@@ -14,13 +14,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   random effect: party members (and party homunculi) a blessing, enemies an
   affliction (`PaGospel.Tick` and `PaGospel.Effects`). The interval is shared
   by every Gospel. A cell on Land Protector does nothing. Two Gospels may not
-  overlap; the skill-unit manager refuses the second.
+  overlap; the skill-unit manager refuses the second before the cast is paid.
+
+  A dropped footprint leaves neither field nor chant, and a refused chant status
+  keeps the field without wiping anything: the wipe runs inside the status start.
 
   Identical in both game modes except the enemy slow's attack-speed magnitude
   (`StatusEffect.Effects.GospelSlow`). Player-only: no monster casts it.
-
-  Accepted deviation: a magic-immune caster keeps their statuses (the wipe is
-  skipped) but still chants; the reference wipes regardless.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 369,
@@ -36,7 +36,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
     damage_kind: :misc
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
@@ -59,28 +58,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, Active.caster()} | {:error, atom()}
+          {:ok, Active.caster()} | {:ok, Active.caster(), :no_consume} | {:error, atom()}
   def cast(%PlayerState{character_id: id} = caster, _target, level, _definition) do
     if chanting?(id) do
       StatusInterpreter.remove_status(:player, id, :sc_gospel)
-      {:ok, caster}
+      {:ok, caster, :no_consume}
     else
       start_chant(caster, level)
     end
   end
 
   def cast(%MobState{}, _target, _level, _definition), do: {:error, :player_only}
-
-  @doc "Recasting to end the chant costs nothing; starting one costs the listed SP."
-  @impl Active
-  @spec dynamic_cost(Active.caster(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
-  def dynamic_cost(%PlayerState{character_id: id} = caster, _target, level, definition) do
-    sp = if chanting?(id), do: 0, else: Cost.resolve_sp(caster, definition, level)
-    Cost.from_definition(caster, definition, level, sp: sp)
-  end
-
-  def dynamic_cost(caster, _target, level, definition),
-    do: Cost.from_definition(caster, definition, level)
 
   @doc "The 33 cells of the Gospel footprint: a seven-long, three-wide cross around `center`."
   @spec thick_cross({integer(), integer()}) :: [Ground.cell()]
@@ -140,25 +128,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
 
   defp chanting?(id), do: StatusStorage.has_status?(:player, id, :sc_gospel)
 
-  # The wipe runs only once the field is accepted, so a refused placement (an
-  # overlapping Gospel) leaves the caster's statuses alone.
-  defp start_chant(%PlayerState{character_id: id, x: x, y: y} = caster, level) do
-    with {:ok, group} <- Unit.place(caster, :pa_gospel, level, {x, y}) do
-      ClearBuffs.clear({:player, id}, [:buffs, :debuffs, :chem_protect])
-      lock(caster, level, group)
+  # A dropped footprint leaves neither field nor chant: the requirement stays
+  # paid and its items are consumed, while the manager's reiteration refusal is
+  # raised before the cast is charged.
+  defp start_chant(%PlayerState{x: x, y: y} = caster, level) do
+    case Unit.place(caster, :pa_gospel, level, {x, y}) do
+      {:ok, group} ->
+        lock(caster, level, group)
+
+      {:error, reason} ->
+        if Unit.paid_refusal?(reason), do: {:ok, caster}, else: {:error, reason}
     end
   end
 
+  # A refused chant status keeps the field and the requirement: the reference
+  # ignores the status result, and its wipe runs inside the status start, so a
+  # refused status leaves the caster's buffs and debuffs alone.
   defp lock(%PlayerState{character_id: id} = caster, level, %Group{group_id: group_id}) do
     params = [val1: level, val2: group_id, duration: @duration, caster_id: id]
 
-    case StatusInterpreter.apply_status(:player, id, :sc_gospel, params) do
-      :ok ->
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        Unit.destroy_async(group_id)
-        error
+    if StatusInterpreter.apply_status(:player, id, :sc_gospel, params) == :ok do
+      ClearBuffs.clear({:player, id}, [:buffs, :debuffs, :chem_protect])
     end
+
+    {:ok, caster}
   end
 end

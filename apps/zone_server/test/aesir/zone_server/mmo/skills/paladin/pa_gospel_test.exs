@@ -76,15 +76,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
     assert length(cells) == 33
   end
 
-  test "casting wipes the caster's statuses, plants the field, and locks the caster", %{
+  test "casting plants the field, starts the chant, and wipes the caster's statuses", %{
     caster: caster,
     definition: definition
   } do
     group = %Group{group_id: 501, skill_name: :pa_gospel}
-
-    expect(ClearBuffs, :clear, fn {:player, @caster_id}, [:buffs, :debuffs, :chem_protect] ->
-      :ok
-    end)
 
     expect(Unit, :place, fn ^caster, :pa_gospel, 4, {120, 80} -> {:ok, group} end)
 
@@ -96,26 +92,50 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
       :ok
     end)
 
+    expect(ClearBuffs, :clear, fn {:player, @caster_id}, [:buffs, :debuffs, :chem_protect] ->
+      :ok
+    end)
+
     assert {:ok, ^caster} = PaGospel.cast(caster, :self, 4, definition)
   end
 
-  test "a failed lock tears the freshly placed field down", %{
+  test "a refused chant status keeps the field and leaves the caster's statuses alone", %{
     caster: caster,
     definition: definition
   } do
-    stub(ClearBuffs, :clear, fn _target, _families -> :ok end)
-
     stub(Unit, :place, fn _c, _n, _l, _cell ->
       {:ok, %Group{group_id: 502, skill_name: :pa_gospel}}
     end)
 
     stub(Interpreter, :apply_status, fn :player, _id, :sc_gospel, _p -> {:error, :prevented} end)
-    expect(Unit, :destroy_async, fn 502 -> :ok end)
+    reject(&ClearBuffs.clear/2)
+    reject(&Unit.destroy_async/1)
 
-    assert {:error, :prevented} = PaGospel.cast(caster, :self, 1, definition)
+    assert {:ok, ^caster} = PaGospel.cast(caster, :self, 1, definition)
   end
 
-  test "recasting while chanting ends the chant for free", %{
+  test "a dropped footprint plants nothing and starts no chant", %{
+    caster: caster,
+    definition: definition
+  } do
+    stub(Unit, :place, fn _c, _n, _l, _cell -> {:error, :no_walkable_cells} end)
+    reject(&Interpreter.apply_status/4)
+    reject(&ClearBuffs.clear/2)
+
+    assert {:ok, ^caster} = PaGospel.cast(caster, :self, 1, definition)
+  end
+
+  test "a refused reiteration still raises the placement error", %{
+    caster: caster,
+    definition: definition
+  } do
+    stub(Unit, :place, fn _c, _n, _l, _cell -> {:error, :unit_placement_refused} end)
+    reject(&Interpreter.apply_status/4)
+
+    assert {:error, :unit_placement_refused} = PaGospel.cast(caster, :self, 1, definition)
+  end
+
+  test "recasting while chanting ends the chant and spares the skill's items", %{
     caster: caster,
     definition: definition
   } do
@@ -124,12 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospelTest do
     reject(&Unit.place/4)
     expect(Interpreter, :remove_status, fn :player, @caster_id, :sc_gospel -> :ok end)
 
-    assert PaGospel.dynamic_cost(caster, :self, 1, definition).sp == 0
-    assert {:ok, ^caster} = PaGospel.cast(caster, :self, 1, definition)
-  end
-
-  test "the cost is the full SP when not chanting", %{caster: caster, definition: definition} do
-    assert PaGospel.dynamic_cost(caster, :self, 6, definition).sp == 100
+    assert {:ok, ^caster, :no_consume} = PaGospel.cast(caster, :self, 1, definition)
   end
 
   test "the field ending removes the caster lock" do
