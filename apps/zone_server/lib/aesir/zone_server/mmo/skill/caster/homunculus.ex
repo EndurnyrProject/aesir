@@ -131,6 +131,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
     end
   end
 
+  @doc "A homunculus pays its SP before the effect; nothing is left to settle after it."
+  @impl true
+  def commit_primary(%HomunculusState{} = caster, %{sp_cost: sp_cost} = prepared),
+    do: {%{caster | sp: caster.sp - sp_cost}, %{prepared | sp_cost: 0}}
+
   @impl true
   def commit(%HomunculusState{} = caster, %{sp_cost: sp_cost}) do
     %{caster | sp: caster.sp - sp_cost}

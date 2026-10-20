@@ -48,13 +48,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   player may use the skill, and its splash or ground hits still land while the
   caster stays hidden. It is mode-keyable.
 
-  `cost_before_effect` makes the interpreter spend the prepared HP, SP and
-  sphere cost before the effect runs instead of after it, for a skill whose
-  effect reads or sets the caster's own pool (Indulge, Soul Exhale, Soul
-  Siphon). The effect then works on the paid pool. Such a skill must not
-  return a deferred result, whose settlement would spend the cost again. It is
-  mode-invariant.
-
   `active_instance`, `no_reiteration`, `no_footset`, `unit_layout` and
   `unit_range` mirror the source's ActiveInstance, the NoReiteration and
   NoFootSet unit flags, and the unit Layout and Range. They decide whether a
@@ -177,7 +170,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             is_npc: false,
             damage_splash: false,
             allow_when_hidden: false,
-            cost_before_effect: false,
             active_instance: 0,
             no_reiteration: false,
             no_footset: false,
@@ -238,7 +230,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           is_npc: boolean(),
           damage_splash: boolean(),
           allow_when_hidden: boolean(),
-          cost_before_effect: boolean(),
           active_instance: non_neg_integer(),
           no_reiteration: boolean(),
           no_footset: boolean(),
@@ -307,7 +298,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     is_npc: :boolean,
     damage_splash: :boolean,
     allow_when_hidden: :boolean,
-    cost_before_effect: :boolean,
     active_instance: {:integer, {:gte, 0}},
     no_reiteration: :boolean,
     no_footset: :boolean,
@@ -360,7 +350,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     is_npc: false,
     damage_splash: false,
     allow_when_hidden: false,
-    cost_before_effect: false,
     active_instance: 0,
     no_reiteration: false,
     no_footset: false,

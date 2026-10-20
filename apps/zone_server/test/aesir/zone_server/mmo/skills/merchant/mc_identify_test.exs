@@ -19,9 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McIdentifyTest do
            }
   end
 
-  test "rejects a cast with no unidentified items" do
-    assert {:error, :no_unidentified_items} =
-             McIdentify.cast(caster(%{0 => item(1101, 1)}), :self, 1, definition())
+  test "with no unidentified items the cast completes silently and spends nothing" do
+    state = caster(%{0 => item(1101, 1)})
+    assert {:ok, ^state, :no_consume} = McIdentify.cast(state, :self, 1, definition())
   end
 
   test "identifies only the selected row when item ids match" do

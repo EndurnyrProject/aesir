@@ -340,4 +340,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
 
     refute_received {:damage, 3_004, _damage, _opts}
   end
+
+  test "the caster's own SP gate is checked before payment, so the paid caster still blesses" do
+    test_pid = self()
+    {caster, _west, _east} = register_formation(sp: 25)
+    assert :ok = PrBenedictio.validate(caster, {:ground, 160, 160}, 1, PrBenedictio.definition())
+
+    paid = put_in(caster.stats.current_state.sp, 5)
+    register_player(real_player(2_001, 160, 160), test_pid)
+
+    stub(PlayerSession, :try_consume_sp, fn pid, 10 ->
+      send(test_pid, {:charge, pid})
+      :ok
+    end)
+
+    stub(StatusInterpreter, :apply_status, fn :player, target_id, :sc_benedictio, _params ->
+      send(test_pid, {:buff, target_id})
+      :ok
+    end)
+
+    stub(Combat, :splash_targets, fn "prontera", {160, 160}, 1, @caster_id -> [] end)
+
+    assert {:ok, ^paid} =
+             PrBenedictio.cast(paid, {:ground, 160, 160}, 1, PrBenedictio.definition())
+
+    assert_received {:buff, 2_001}
+    assert_received {:charge, _pid}
+    assert_received {:charge, _pid}
+  end
 end

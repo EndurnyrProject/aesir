@@ -191,8 +191,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
     assert caster.inventory == %{0 => catalyst(1)}
   end
 
-  test "a successful offensive Aspersio consumes Holy Water and SP after damage delivery" do
+  test "a successful offensive Aspersio pays its SP before and its Holy Water after damage delivery" do
     caster = game_state(%{68 => 1}, %{0 => catalyst(1)})
+    paid = put_in(caster.stats.current_state.sp, 86)
     target = living_mob()
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), target, :mob} end)
@@ -205,7 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
       {:ok, %{unit_type: :mob, race: :undead, element: {:undead, 1}}}
     end)
 
-    expect(Combat, :execute_magic_attack, fn ^caster, 2_000, opts ->
+    expect(Combat, :execute_magic_attack, fn ^paid, 2_000, opts ->
       assert opts[:base_damage] == 40
       {:ok, {:mob, 2_000}}
     end)

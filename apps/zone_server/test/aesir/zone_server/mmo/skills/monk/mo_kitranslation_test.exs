@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     assert definition.after_cast_delay == [1_000]
   end
 
-  test "an eligible party target produces the post-commit transfer descriptor" do
+  test "an eligible party target pays its SP and leaves the sphere to the transfer descriptor" do
     source = player_state(1, party_id: 10) |> with_sphere()
     target = player_state(2, party_id: 10)
     :ok = UnitRegistry.register_player(target, self())
@@ -51,12 +51,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     assert :ok =
              MoKitranslation.validate(source, {:unit, 2}, 1, MoKitranslation.definition())
 
-    assert {:deferred, ^source,
+    assert {:deferred, paid,
             %Interpreter.Deferred{
               effect: {:transfer_sphere, 2},
-              cost: %Cost{sp: 40, spheres: 1},
+              cost: %Cost{sp: 0, spheres: 1},
               skill_id: 1_015
             }} = Interpreter.cast(source, 1_015, 1, {:unit, 2})
+
+    assert paid.stats.current_state.sp == source.stats.current_state.sp - 40
+    assert paid.spirit_spheres == source.spirit_spheres
   end
 
   test "the session commits Ki costs before sending its single delivery" do

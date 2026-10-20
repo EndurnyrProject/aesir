@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburn do
     damage_kind: :magic,
     range: 9,
     sp_cost: [80, 90, 100, 110, 120],
-    cost_before_effect: true,
     cooldown: [10_000, 10_000, 10_000, 10_000, 15_000]
 
   alias Aesir.ZoneServer.Mmo.Combat

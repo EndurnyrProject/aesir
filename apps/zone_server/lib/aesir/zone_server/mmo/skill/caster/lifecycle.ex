@@ -43,6 +43,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle do
   """
   @callback castend_cost(state(), module(), Active.target(), Definition.t(), pos_integer()) ::
               {:ok, prepared()} | {:error, atom()}
+  @doc """
+  Pays a prepared cost's primary requirements (HP, SP, spirit spheres, zeny),
+  which a cast spends before its effect runs. Returns the paid caster and the
+  prepared cost left to settle after the effect, with the primary part zeroed
+  so it cannot be paid twice.
+  """
+  @callback commit_primary(state(), prepared()) :: {state(), prepared()}
+  @doc "Settles what is left of a prepared cost once the effect has run."
   @callback commit(state(), prepared()) :: state()
   @callback cooldown_ready?(state(), integer(), integer(), phase()) :: boolean()
   @callback put_cooldown(state(), integer(), integer()) :: state()

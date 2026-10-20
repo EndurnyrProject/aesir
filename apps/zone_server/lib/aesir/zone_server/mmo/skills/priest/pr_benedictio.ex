@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, :insufficient_companions}
   def cast(caster, {:ground, x, y}, level, definition) do
-    case companions(caster) do
+    case partners(caster) do
       [first, second] ->
         charge_companions([first, second])
         bless_players(caster, x, y, level, definition)
@@ -73,10 +73,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     end
   end
 
+  # The partner check runs before the cast is paid and reads the caster's own
+  # SP against the companions' share; the effect takes the partners again
+  # without it, from the paid caster.
   defp companions(%{stats: %{current_state: %{sp: sp}}}) when sp < @participant_sp_cost, do: []
+  defp companions(caster), do: partners(caster)
 
   # The first two eligible companions in the map's block order take part.
-  defp companions(%PlayerState{} = caster) do
+  defp partners(%PlayerState{} = caster) do
     caster.map_name
     |> SpatialIndex.units_in_area(caster.x - 1, caster.y - 1, caster.x + 1, caster.y + 1)
     |> Enum.filter(&match?({:player, id} when id != caster.character_id, &1))

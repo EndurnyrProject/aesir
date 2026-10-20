@@ -46,18 +46,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     assert definition.fixed_cast_time == [500]
   end
 
-  test "self absorption clears every sphere and defers cost-before-reward settlement" do
+  test "self absorption pays its SP, clears every sphere and defers the reward" do
     game_state = player_state(1, 100, %{262 => 1}) |> with_spheres(2)
 
     assert {:deferred, effect_state,
             %Interpreter.Deferred{
               effect: {:absorb_local, 14},
-              cost: %Cost{sp: 5},
+              cost: %Cost{sp: 0},
               skill_id: 262
             }} = Interpreter.cast(game_state, 262, 1, :self)
 
     assert SpiritSpheres.count(effect_state.spirit_spheres) == 0
-    assert effect_state.stats.current_state.sp == 100
+    assert effect_state.stats.current_state.sp == 95
   end
 
   @tag game_mode: :renewal

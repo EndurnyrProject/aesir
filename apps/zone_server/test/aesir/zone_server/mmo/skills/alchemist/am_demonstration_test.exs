@@ -98,8 +98,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
 
     test "consumes one Fire Bottle after a successful placement" do
       caster = caster_with_bottle()
+      {:ok, definition} = Catalog.by_id(229)
+      paid_sp = caster.stats.current_state.sp - Enum.at(definition.sp_cost, 2)
+      paid = put_in(caster.stats.current_state.sp, paid_sp)
       stub(Storage, :get_groups_at_cell, fn _map_name, _x, _y -> [] end)
-      stub(Unit, :place, fn ^caster, :am_demonstration, 3, @center -> {:ok, group(3)} end)
+      stub(Unit, :place, fn ^paid, :am_demonstration, 3, @center -> {:ok, group(3)} end)
 
       assert {:ok, updated} = Interpreter.complete_cast(caster, 229, 3, {:ground, 150, 150})
       assert updated.inventory == %{}

@@ -107,8 +107,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
     assert updated.combo.stage == :idle
   end
 
-  test "Thrust pays a sphere, so four held spheres leave too few for Asura" do
-    caster = asura_ready_caster(spheres: 4)
+  test "Thrust pays a sphere, so the three spheres left of four are too few for Asura" do
+    caster = asura_ready_caster(spheres: 3)
 
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {60, 50, "prontera"}} end)
     stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> :ok end)

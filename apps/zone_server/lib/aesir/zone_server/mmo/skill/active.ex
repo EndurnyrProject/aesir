@@ -109,6 +109,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               :ok | {:error, atom()}
 
   @doc """
+  Optional reaction to a player's cast end refused by a cast-end check (the
+  target, range, placement or cast-end requirements). Returns the caster with
+  whatever the skill does on such a failure, which the owner commits like a
+  cast with no cooldown, delay or cast-end tail; `:none` keeps the ordinary
+  silent refusal. An interrupted cast never reaches it.
+  """
+  @callback castend_failed(caster(), target(), pos_integer(), Definition.t()) ::
+              {:ok, caster()} | :none
+
+  @doc """
   Optional cast-begin condition, run after `validate/4` and before the cost
   check when an ordinary or Encore attempt begins (and by preflight). It returns
   the caster carrying whatever the attempt's completion reads. Completion never
@@ -213,6 +223,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
                       cast_with_input: 5,
                       validate: 4,
                       castend_requirement: 4,
+                      castend_failed: 4,
                       begin_attempt: 4,
                       deferred: 2,
                       mob_cast: 5,

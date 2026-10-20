@@ -248,4 +248,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
     assert {:ok, ^caster} =
              MoInvestigate.cast(caster, {:unit, @target_id}, 1, MoInvestigate.definition())
   end
+
+  test "the sphere bonus counts the strike plus the spheres the paid caster still holds" do
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+
+    {spheres, _entry} =
+      Aesir.ZoneServer.Unit.Player.SpiritSpheres.summon(
+        Aesir.ZoneServer.Unit.Player.SpiritSpheres.new(),
+        600_000,
+        5
+      )
+
+    paid = %{caster() | spirit_spheres: spheres}
+
+    expect(Combat, :execute_skill_attack, fn ^paid, @target_id, opts ->
+      assert opts[:spirit_spheres] == 2
+      :ok
+    end)
+
+    assert {:ok, ^paid} =
+             MoInvestigate.cast(paid, {:unit, @target_id}, 3, MoInvestigate.definition())
+  end
 end

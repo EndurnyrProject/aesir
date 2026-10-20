@@ -40,4 +40,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmAutoberserkTest do
 
     assert {:error, :immune} = SmAutoberserk.cast(caster, :self, 1, definition)
   end
+
+  test "requires the listed SP to cast but spends none" do
+    {:ok, definition} = Catalog.by_id(146)
+
+    caster =
+      Aesir.ZoneServer.Unit.Player.PlayerState.new(%Aesir.Commons.Models.Character{
+        id: 3000,
+        account_id: 3000,
+        name: "Swordsman",
+        last_map: "prontera",
+        last_x: 50,
+        last_y: 50,
+        sex: "M",
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        base_level: 10,
+        job_level: 10,
+        class: 1
+      })
+
+    assert %Aesir.ZoneServer.Mmo.Skill.Cost{sp: 0, sp_requirement: 1} =
+             SmAutoberserk.dynamic_cost(caster, :self, 1, definition)
+  end
 end

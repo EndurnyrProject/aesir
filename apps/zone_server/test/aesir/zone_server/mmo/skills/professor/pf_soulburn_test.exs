@@ -112,10 +112,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulburnTest do
     assert untouched.stats.current_state.sp == 50
   end
 
-  test "spends its SP before the effect so a backfire burns the paid pool" do
-    assert PfSoulburn.definition().cost_before_effect
-  end
-
   test "a failed level 5 roll empties the caster" do
     reject(&Resource.drain_sp_percent/2)
     stub(MagicAttack, :execute_self_magic_attack, fn _caster, _opts -> {:ok, {:player, 1001}} end)

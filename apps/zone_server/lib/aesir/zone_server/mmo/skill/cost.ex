@@ -19,13 +19,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Cost do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
-  defstruct hp: 0, sp_requirement: nil, sp: 0, spheres: 0
+  defstruct hp: 0, sp_requirement: nil, sp: 0, spheres: 0, spheres_old: nil
 
+  @typedoc """
+  A resolved cost. `spheres_old` is the sphere count a skill's cast-begin
+  requirement check records for its own damage (`nil` records nothing).
+  """
   @type t() :: %__MODULE__{
           hp: non_neg_integer(),
           sp_requirement: non_neg_integer() | nil,
           sp: non_neg_integer(),
-          spheres: non_neg_integer()
+          spheres: non_neg_integer(),
+          spheres_old: non_neg_integer() | nil
         }
 
   defmodule Commitment do

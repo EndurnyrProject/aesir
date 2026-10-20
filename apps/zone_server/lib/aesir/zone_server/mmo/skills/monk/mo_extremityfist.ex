@@ -5,12 +5,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   Every fallible check runs before any irreversible effect: the target, its
   range, the caster's Fury requirement, the spirit-point and sphere costs, and
   the three-cell relocation destination are all resolved first, so a rejected
-  cast spends nothing and moves no one. The blow's power scales with the
-  caster's spirit energy - damage is read from the pre-drain spirit-point pool,
-  dealt once, and only afterward are the spheres and the entire pool consumed
-  (by the skill interpreter's cost commitment), Fury, Root and the combo window
-  ended, the recovery penalty applied, and the prevalidated relocation staged
-  for the session to apply after commitment.
+  cast spends nothing and moves no one. The cast pays its 1 SP and spheres
+  first; the blow's power then scales with the SP left, it is dealt once, and
+  only afterward is the rest of the pool emptied, Fury, Root and the combo
+  window ended, the recovery penalty applied, and the prevalidated relocation
+  staged for the session to apply after commitment. The sphere bonus counts
+  the spheres held when the cast began (a Root follow-up records none and reads
+  the previous cast's count).
 
   Four cast contexts change only the sphere requirement and how the cast is
   reached; the caster must hold Fury in every one:
@@ -35,7 +36,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   the caster cannot regain SP for 3 s. Pre-renewal: a 4 s cast shrinking 0.5 s
   per level, the strike ignores DEF entirely, a follow-up after Raging Thrust spends four
   spheres, and SP regeneration stops for 5 minutes. Both drain all SP and deal
-  800 plus ten times the remaining SP percent plus 250 plus 150 per level ATK.
+  800 plus ten times the SP left after the cost percent plus 250 plus 150 per
+  level ATK; renewal doubles the percent when the cast began with more than
+  five spheres.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -63,7 +66,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
     after_cast_delay: [3_000, 2_500, 2_000, 1_500, 1_000]
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -73,6 +79,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Fury
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
@@ -100,16 +108,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
 
   @impl Active
   @spec dynamic_cost(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
-  def dynamic_cost(
-        %{spirit_spheres: spheres, stats: %{current_state: %{sp: sp}}} = caster,
-        {:unit, target_id},
-        _level,
-        _definition
-      ) do
+  def dynamic_cost(%{spirit_spheres: spheres} = caster, {:unit, target_id}, level, definition) do
+    held = SpiritSpheres.count(spheres)
+    context = context(caster, target_id)
+    sp = Cost.resolve_sp(caster, definition, level)
+
     %Cost{
+      sp_requirement: sp,
       sp: sp,
-      spheres:
-        Formulas.asura_sphere_cost(context(caster, target_id), SpiritSpheres.count(spheres))
+      spheres: Formulas.asura_sphere_cost(context, held),
+      spheres_old: if(context == :root, do: nil, else: held)
     }
   end
 
@@ -141,6 +149,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
 
       {:ok,
        caster
+       |> empty_sp()
        |> Map.update!(:combo, &Combo.cancel/1)
        |> stage_movement(target_x, target_y)}
     end
@@ -148,11 +157,65 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
-  # Damage reads the pre-drain spirit-point pool: the interpreter applies the
-  # all-SP cost commitment only after this behaviour returns.
+  @doc """
+  A cast end refused by a cast-end check still spends the requirement (up to
+  what is held), empties the SP, starts the recovery penalty, ends Fury and
+  Root, and moves the Monk three cells toward a target still on the map,
+  showing a zero-damage blow. It arms no cooldown and leaves no act delay. A
+  Monk standing in a Fog Wall fails without any of it.
+  """
+  @impl Active
+  @spec castend_failed(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | :none
+  def castend_failed(%PlayerState{character_id: caster_id} = caster, target, level, definition) do
+    if StatusStorage.has_status?(:player, caster_id, :sc_fogwall) do
+      :none
+    else
+      paid = pay_requirement(caster, target, level, definition)
+      :ok = StatusInterpreter.remove_status(:player, caster_id, @fury)
+      :ok = Root.close(:player, caster_id)
+      :ok = apply_recovery(caster_id, level)
+      {:ok, paid |> empty_sp() |> Map.put(:act_delay_until, 0) |> lunge(target, level)}
+    end
+  end
+
+  def castend_failed(_caster, _target, _level, _definition), do: :none
+
+  defp pay_requirement(caster, {:unit, _target_id} = target, level, definition) do
+    cost = dynamic_cost(caster, target, level, definition)
+    Cost.apply_commitment(caster, Cost.prepare_clamped(caster, cost))
+  end
+
+  defp pay_requirement(caster, _target, _level, _definition), do: caster
+
+  defp lunge(%{map_name: map} = caster, {:unit, target_id}, level) do
+    case Combat.resolve_target_position(target_id) do
+      {:ok, _type, {target_x, target_y, ^map}} ->
+        show_failed_blow(caster, target_id, level)
+        stage_movement(caster, target_x, target_y)
+
+      _elsewhere ->
+        caster
+    end
+  end
+
+  defp lunge(caster, _target, _level), do: caster
+
+  defp show_failed_blow(%{map_name: map, x: x, y: y} = caster, target_id, level) do
+    packet =
+      caster.character_id
+      |> PacketFactory.build_splash_damage_packet(target_id, @skill_id, level, 0)
+      |> Map.put(:src_delay, AttackSpeed.amotion_from_stats(caster.stats))
+
+    Broadcast.to_in_range(map, x, y, Config.view_range(), packet)
+  end
+
+  # Damage reads the SP left once the cost is paid, before the pool is emptied.
   defp deal_damage(caster, target_id, level, definition) do
+    spheres_old = Map.get(caster, :spirit_spheres_old, 0)
+
     %{skill_ratio: skill_ratio, bonus_atk: bonus_atk} =
-      Formulas.asura_damage_components(level, caster.stats.current_state.sp)
+      Formulas.asura_damage_components(level, caster.stats.current_state.sp, spheres_old)
 
     opts = [
       skill_id: definition.id,
@@ -160,11 +223,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
       skill_ratio: skill_ratio,
       bonus_atk: bonus_atk,
       skip_crit: true,
-      ignore_flee: true
+      ignore_flee: true,
+      spirit_spheres: spheres_old
     ]
 
     Combat.execute_skill_attack(caster, target_id, mode_opts() ++ opts)
   end
+
+  defp empty_sp(%{stats: %{current_state: current} = stats} = caster),
+    do: %{caster | stats: %{stats | current_state: %{current | sp: 0}}}
 
   defp mode_opts do
     case GameMode.mode() do

@@ -56,7 +56,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(caster, {:unit, target_id}, level, definition) do
     now = now()
-    own_cost = Enum.at(definition.sphere_cost, level - 1, 0)
     duration = Enum.at(definition.after_cast_delay, level - 1, 0)
 
     with :ok <- Root.check_cast(:player, caster.character_id, definition.id),
@@ -77,8 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
              @accepted_stages,
              target,
              now,
-             duration,
-             own_cost
+             duration
            ) do
       {:ok, %{caster | combo: combo}}
     end
@@ -92,8 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
       skill_level: level,
       skill_ratio: Formulas.chain_crush_ratio(level, caster.stats.progression.base_level),
       hit_divisions: Definition.hit_count_at_level(definition, level),
-      skip_crit: true,
-      spirit_spheres: Combo.spheres_after(caster, Enum.at(definition.sphere_cost, level - 1, 0))
+      skip_crit: true
     ]
   end
 

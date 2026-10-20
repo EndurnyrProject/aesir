@@ -151,9 +151,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
 
   @type asura_damage_components :: %{skill_ratio: pos_integer(), bonus_atk: pos_integer()}
 
-  @spec asura_damage_components(pos_integer(), non_neg_integer()) :: asura_damage_components()
-  def asura_damage_components(level, current_sp) do
-    %{skill_ratio: min(800 + current_sp * 10, 500_000), bonus_atk: 250 + 150 * level}
+  @doc """
+  Asura Strike's ratio and flat ATK from the SP left after its cost. Renewal
+  doubles the ratio when the cast began with more than five spheres; the ratio
+  is capped after that.
+  """
+  @spec asura_damage_components(pos_integer(), non_neg_integer(), non_neg_integer()) ::
+          asura_damage_components()
+  def asura_damage_components(level, current_sp, spheres_old \\ 0) do
+    ratio = 800 + current_sp * 10
+    ratio = if GameMode.mode() == :renewal and spheres_old > 5, do: ratio * 2, else: ratio
+    %{skill_ratio: min(ratio, 500_000), bonus_atk: 250 + 150 * level}
   end
 
   @spec asura_recovery_duration() :: pos_integer()

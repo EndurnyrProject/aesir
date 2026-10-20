@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
          :ok <- Combat.execute_skill_attack(caster, target_id, opts),
          delay <- Enum.at(definition.after_cast_delay, level - 1, 0),
          {:ok, combo} <-
-           Combo.open_follow_up(caster, :quadruple, :quadruple, target, now, delay, 0) do
+           Combo.open_follow_up(caster, :quadruple, :quadruple, target, now, delay) do
       {:ok, %{caster | combo: combo}}
     end
   end

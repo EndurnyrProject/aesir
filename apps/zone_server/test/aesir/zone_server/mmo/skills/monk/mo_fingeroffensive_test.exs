@@ -317,6 +317,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
     assert MoFingeroffensive.dynamic_cost(caster(), {:unit, 1}, 4, definition).spheres == 4
   end
 
+  @tag game_mode: :renewal
+  test "renewal's sphere bonus counts the spheres recorded at cast begin plus those left" do
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+    paid = %{with_spheres(caster(), 2) | spirit_spheres_old: 1}
+
+    expect(Combat, :execute_skill_attack, fn ^paid, @target_id, opts ->
+      assert opts[:hit_divisions] == -5
+      assert opts[:spirit_spheres] == 3
+      :ok
+    end)
+
+    assert {:ok, _updated} =
+             MoFingeroffensive.cast(paid, {:unit, @target_id}, 1, MoFingeroffensive.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic throws up to the recorded spheres plus those left, and its bonus adds those left" do
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+    paid = %{with_spheres(caster(), 1) | spirit_spheres_old: 3}
+
+    expect(Combat, :execute_skill_attack, fn ^paid, @target_id, opts ->
+      assert opts[:hit_divisions] == 4
+      assert opts[:spirit_spheres] == 5
+      :ok
+    end)
+
+    assert {:ok, _updated} =
+             MoFingeroffensive.cast(paid, {:unit, @target_id}, 5, MoFingeroffensive.definition())
+  end
+
+  test "the cost records the spheres it spends for the strike" do
+    definition = MoFingeroffensive.definition()
+    cost = MoFingeroffensive.dynamic_cost(with_spheres(caster(), 2), {:unit, 1}, 5, definition)
+    assert cost.spheres_old == cost.spheres
+  end
+
   defp mode_value(renewal, pre_renewal),
     do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

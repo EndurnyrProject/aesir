@@ -17,10 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversionTest do
   defp definition, do: PfHpconversion.definition()
   defp vitals(%PlayerState{stats: %{current_state: %{hp: hp, sp: sp}}}), do: {hp, sp}
 
-  test "spends its SP before the effect so the regained SP sits on the paid pool" do
-    assert PfHpconversion.definition().cost_before_effect
-  end
-
   test "pays a tenth of max HP to regain that per level in SP, clamped at max SP" do
     assert {:ok, converted} = PfHpconversion.cast(caster(500, 7), :self, 3, definition())
     assert vitals(converted) == {400, 7 + 300}

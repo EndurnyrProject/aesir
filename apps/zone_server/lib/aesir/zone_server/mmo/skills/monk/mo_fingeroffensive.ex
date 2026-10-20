@@ -13,9 +13,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
   0.5 s cast plus 0.5 s fixed, and a 1 s cooldown. Pre-renewal: 100 plus 50 per
   level percent repeated once per level, spending one sphere per level, 10 SP,
   a 1 s cast, and no cooldown. A classic Monk holding fewer spheres than the
-  level still casts, spends every sphere held, and throws that many; a
-  restricted invocation (an item cast) spends none and throws the spheres
-  held, down to none at all.
+  level still casts, spends every sphere held, and throws that many.
+
+  The cast-begin check records the spheres the cast will spend; the strike's
+  sphere bonus and classic throw count read that record plus the spheres left
+  after paying. A restricted invocation (an item cast) records nothing and
+  spends none, so it reads the record of the last ordinary cast.
   """
 
   @sp_costs Enum.map(
@@ -65,7 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
   @doc """
   Resolves the cast's cost. A classic Monk holding at least one sphere but
   fewer than the level spends only the spheres held; an empty hand keeps the
-  full requirement and fails validation.
+  full requirement and fails validation. The sphere count spent is recorded
+  for the strike.
   """
   @impl Active
   @spec dynamic_cost(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
@@ -77,7 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
 
     held = held_spheres(caster)
 
-    if held > 0 and held < cost.spheres, do: %{cost | spheres: held}, else: cost
+    spheres = if held > 0 and held < cost.spheres, do: held, else: cost.spheres
+    %{cost | spheres: spheres, spheres_old: spheres}
   end
 
   @impl Active
@@ -114,20 +119,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
       skill_level: level,
       skill_ratio:
         Formulas.throw_spirit_sphere_ratio(level, Root.rooted?(target_type, target_id)),
-      hit_divisions: hit_divisions(caster, definition, level),
       skip_crit: true,
       skip_range: true
-    ]
+    ] ++ sphere_opts(caster, definition, level)
   end
 
-  # Classic throws at most the spheres the Monk holds when the attack resolves,
-  # which the cost has not yet consumed: a restricted invocation may throw none.
-  defp hit_divisions(caster, definition, level) do
+  # Renewal adds the recorded spheres to those left for the sphere bonus.
+  # Classic throws at most the recorded spheres plus those left, and its bonus
+  # counts the throws plus the spheres left.
+  defp sphere_opts(caster, definition, level) do
     declared = Definition.hit_count_at_level(definition, level)
+    left = held_spheres(caster)
+    recorded = Map.get(caster, :spirit_spheres_old, 0)
 
     case GameMode.mode() do
-      :renewal -> declared
-      :pre_renewal -> min(declared, held_spheres(caster))
+      :renewal ->
+        [hit_divisions: declared, spirit_spheres: recorded + left]
+
+      :pre_renewal ->
+        throws = min(declared, recorded + left)
+        [hit_divisions: throws, spirit_spheres: throws + left]
     end
   end
 

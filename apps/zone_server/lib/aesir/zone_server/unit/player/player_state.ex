@@ -114,6 +114,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           continuous_attack_timer: reference() | nil,
           pending_forced_movement: ForcedMovement.t() | nil,
           spirit_spheres: SpiritSpheres.t(),
+          spirit_spheres_old: non_neg_integer(),
           spirit_sphere_timer: reference() | nil,
           spirit_sphere_timer_plan: %{generation: non_neg_integer(), expires_at: integer()} | nil,
           spirit_sphere_timer_generation: non_neg_integer(),
@@ -250,6 +251,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     visible_homunculi: MapSet.new(),
     combo: Combo.new(),
     spirit_spheres: SpiritSpheres.new(),
+    # The sphere count a skill's cast-begin requirement check recorded for its
+    # own damage (Finger Offensive, Asura Strike); kept until the next one.
+    spirit_spheres_old: 0,
     spirit_sphere_timer: nil,
     spirit_sphere_timer_plan: nil,
     spirit_sphere_timer_generation: 0,

@@ -117,10 +117,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchangeTest do
     assert sp(again) == 101
   end
 
-  test "spends its SP before the effect so the exchange works on the paid pool" do
-    assert PfSoulchange.definition().cost_before_effect
-  end
-
   test "a swap with an empty ally leaves the caster at zero" do
     register_ally(0)
     expect_set_sp()

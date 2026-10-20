@@ -28,6 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @waivable_gemstone_ids [715, 716, 717]
   @gem_floor_skills [:hw_ganbantein, :sa_abracadabra]
   @holy_light 156
+  @identify 40
+  @ki_translation 1_015
 
   # Guild skills (GD_*) are learned by the guild, not the character: their rank
   # resolves against the guild entry, never against the caster's progression.
@@ -316,17 +318,49 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     do: prepared(caster, module, definition, cost, min(zeny, caster.zeny))
 
   @doc """
-  Spends a prepared cost's HP, SP and spheres ahead of the effect and returns
-  the caster with the prepared cost left to settle only its zeny, catalysts
-  and ammo.
+  Pays a prepared cost's HP, SP, spirit spheres and zeny before the effect.
+
+  Item Appraisal's HP and SP and Ki Translation's spheres are not part of it:
+  the appraisal pays them once the effect has run and the transfer spends its
+  sphere itself. The returned prepared cost keeps only what is left, so a
+  deferred cast settles it without paying the primary part twice.
   """
-  @spec spend_before_effect(PlayerState.t(), map()) :: {PlayerState.t(), map()}
-  def spend_before_effect(caster, %{commitment: commitment} = prepared) do
-    spent = Cost.apply_commitment(caster, commitment)
-    settled = %Cost.Commitment{hp: 0, sp: 0, spheres: commitment.spheres, write_spheres?: false}
-    {spent, %{prepared | commitment: settled}}
+  @impl true
+  def commit_primary(caster, %{commitment: commitment, zeny: zeny, cost: cost} = prepared) do
+    {primary, remaining} = split_commitment(commitment, prepared.definition)
+    paid = caster |> Cost.apply_commitment(primary) |> deduct_zeny(zeny)
+
+    {paid,
+     %{
+       prepared
+       | commitment: remaining,
+         zeny: 0,
+         cost: remaining_cost(cost, prepared.definition)
+     }}
   end
 
+  defp split_commitment(commitment, %{id: @identify}),
+    do: {%{commitment | hp: 0, sp: 0}, %{commitment | write_spheres?: false}}
+
+  defp split_commitment(commitment, %{id: @ki_translation}),
+    do: {%{commitment | write_spheres?: false}, %{commitment | hp: 0, sp: 0}}
+
+  defp split_commitment(commitment, _definition),
+    do: {commitment, %{commitment | hp: 0, sp: 0, write_spheres?: false}}
+
+  defp remaining_cost(cost, %{id: @identify}), do: %{cost | spheres: 0}
+
+  defp remaining_cost(cost, %{id: @ki_translation}),
+    do: %{cost | hp: 0, sp: 0, sp_requirement: 0}
+
+  defp remaining_cost(cost, _definition),
+    do: %{cost | hp: 0, sp: 0, sp_requirement: 0, spheres: 0}
+
+  @doc """
+  Settles what a prepared cost has left after the effect. A cast that spares its
+  requirement (`consume_catalysts?: false`) skips the items and whatever else is
+  paid after the effect (Item Appraisal's SP); the ammo is spent either way.
+  """
   @impl true
   def commit(caster, %{
         commitment: commitment,
@@ -335,7 +369,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
         consume_catalysts?: consume_catalysts?
       }) do
     caster
-    |> Cost.apply_commitment(commitment)
+    |> apply_remaining(commitment, consume_catalysts?)
     |> deduct_zeny(zeny)
     |> maybe_consume_catalysts(definition, consume_catalysts?)
     |> consume_ammo(definition)
@@ -530,6 +564,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       :ok
     end
   end
+
+  defp apply_remaining(caster, commitment, true), do: Cost.apply_commitment(caster, commitment)
+  defp apply_remaining(caster, _commitment, false), do: caster
 
   defp deduct_zeny(caster, 0), do: caster
   defp deduct_zeny(caster, cost), do: %{caster | zeny: caster.zeny - cost}

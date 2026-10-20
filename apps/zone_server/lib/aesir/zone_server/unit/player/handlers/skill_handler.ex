@@ -231,6 +231,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, target, reason)}
 
+      {:castend_failed, new_game_state, reason} ->
+        {:noreply, commit_castend_failure(state, new_game_state, skill_id, level, reason)}
+
       {:error, reason} ->
         report_cast_failure(skill_id, state.game_state.character_id, reason)
         {:noreply, state}
@@ -288,6 +291,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           Interpreter.complete_cast(game_state, ctx.skill_id, ctx.skill_level, ctx.target)
       end
 
+    resolve_completion(state, game_state, ctx, expected_id, result)
+  end
+
+  defp resolve_completion(state, game_state, ctx, expected_id, result) do
     case result do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
@@ -329,6 +336,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
         {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
 
+      {:castend_failed, new_game_state, reason} ->
+        new_state =
+          commit_castend_failure(state, new_game_state, ctx.skill_id, ctx.skill_level, reason)
+
+        {:noreply, %{new_state | game_state: end_cast(new_state.game_state)}}
+
       {:error, reason} ->
         reject_completed_cast(state, game_state, ctx.skill_id, reason)
     end
@@ -341,6 +354,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     new_state = commit_cast(state, new_game_state, skill_id, level)
     report_cast_failure(skill_id, new_state.game_state.character_id, reason)
     CastEnd.complete(new_state.game_state, skill_id, target)
+    new_state
+  end
+
+  # A cast end refused by a cast-end check whose skill reacts to the failure
+  # (Asura Strike): what it spent and did commits like a cast, with no
+  # aftercast display or cast-end tail, and the caster sees the failure.
+  defp commit_castend_failure(state, new_game_state, skill_id, level, reason) do
+    new_state = commit_cast(state, new_game_state, skill_id, level, false)
+    report_cast_failure(skill_id, new_state.game_state.character_id, reason)
     new_state
   end
 
@@ -618,6 +640,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         sync_cast_start_stats(state, game_state, new_game_state)
         {:noreply, commit_spent_failure(state, new_game_state, skill_id, level, target, reason)}
 
+      {:castend_failed, new_game_state, reason} ->
+        sync_cast_start_stats(state, game_state, new_game_state)
+        {:noreply, commit_castend_failure(state, new_game_state, skill_id, level, reason)}
+
       error ->
         handle_begin_error(state, game_state, skill_id, level, target, locked, error)
     end
@@ -727,8 +753,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         count
       ) do
     cancel_deferred_timer(pending)
-    state = %{state | deferred_skill_result: nil}
+    settle_absorb(%{state | deferred_skill_result: nil}, pending, count)
+  end
 
+  def handle_spirit_absorb_result(state, _token, _target_id, _count), do: {:noreply, state}
+
+  # The SP was paid when the cast ended; the reply (or its absence) only decides
+  # the reward, while the cooldown and act delay are armed either way.
+  defp settle_absorb(state, pending, count) do
     case Interpreter.settle_deferred(state.game_state, pending.descriptor) do
       {:ok, charged} ->
         rewarded = restore_sp(charged, count * 7)
@@ -755,16 +787,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  def handle_spirit_absorb_result(state, _token, _target_id, _count), do: {:noreply, state}
-
-  @doc "Drops a matching deferred skill after its one-second reply window."
+  @doc """
+  Closes a matching deferred skill after its one-second reply window as if the
+  target held no spheres: no reward, but the cooldown and act delay still arm.
+  """
   @spec handle_deferred_timeout(SessionState.t(), reference()) :: {:noreply, SessionState.t()}
   def handle_deferred_timeout(
         %{deferred_skill_result: %{token: token} = pending} = state,
         token
       ) do
-    state = %{state | deferred_skill_result: nil}
-    {:noreply, maybe_resume_lock(state, pending.combat_target_id)}
+    settle_absorb(%{state | deferred_skill_result: nil}, pending, 0)
   end
 
   def handle_deferred_timeout(state, _token), do: {:noreply, state}
@@ -1594,9 +1626,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   The restricted interpreter entry does the mechanics (2/3 SP, no cast time, no
   catalyst, aftercast delay); this commits the result the way a real cast does, so
-  the drained SP is persisted and synced. A proc that fizzles - almost always
-  insufficient SP - leaves the session untouched and tells the player nothing,
-  which is rAthena's behaviour.
+  the drained SP is persisted and synced. A proc without the SP leaves the
+  session untouched and tells the player nothing; one whose effect fails after
+  the SP was charged commits the charge and its delay just as silently.
   """
   @spec handle_auto_cast(SessionState.t(), integer(), pos_integer(), Active.target()) ::
           {:noreply, SessionState.t()}
@@ -1609,6 +1641,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       {:failed, new_game_state, reason} ->
         {:noreply, close_failed_auto_use(state, new_game_state, skill_id, level, target, reason)}
+
+      {:error, _reason, charged} ->
+        {:noreply, commit_cast(state, charged, skill_id, level, false)}
 
       {:error, _reason} ->
         {:noreply, state}

@@ -92,7 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     caster = player_state()
     stub_target_at(18, 10)
 
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+    expect(Combat, :execute_skill_attack, fn paid, @target_id, opts ->
+      assert paid == paid(caster, 3)
       assert opts[:hit_divisions] == 2
       :ok
     end)
@@ -114,7 +115,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     caster = player_state()
     stub_target_at(18, 10)
 
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
+    expect(Combat, :execute_skill_attack, fn paid, @target_id, _opts ->
+      assert paid == paid(caster, 3)
       {:error, :target_dead}
     end)
 
@@ -205,7 +207,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     caster = player_state()
     stub_target_at(18, 10)
 
-    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+    expect(Combat, :execute_skill_attack, fn paid, @target_id, opts ->
+      assert paid == paid(caster, 3)
       assert opts[:hit_divisions] == 1
       :ok
     end)
@@ -234,5 +237,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
       assert {:ok, ^caster} =
                BaMusicalstrike.cast(caster, {:unit, @target_id}, level, definition)
     end
+  end
+
+  # The attack runs on the caster with the level's SP already paid.
+  defp paid(caster, level) do
+    cost = Enum.at(BaMusicalstrike.definition().sp_cost, level - 1)
+    put_in(caster.stats.current_state.sp, caster.stats.current_state.sp - cost)
   end
 end

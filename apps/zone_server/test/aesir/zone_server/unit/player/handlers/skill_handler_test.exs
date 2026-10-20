@@ -714,21 +714,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert settled.deferred_skill_result == nil
     end
 
-    test "timeout clears a deferred absorb and a late result is ignored" do
+    test "timeout settles a deferred absorb without a reward and a late result is ignored" do
       state = instant_state(45)
       game_state = state.game_state
-      descriptor = deferred_descriptor()
+      paid = put_in(game_state.stats.current_state.sp, 40)
+      descriptor = %{deferred_descriptor() | cost: %Cost{}}
 
       expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self ->
-        {:deferred, game_state, descriptor}
+        {:deferred, paid, descriptor}
       end)
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(after_cast_delay: [1_000])} end)
+      stub_commit()
+      before = System.monotonic_time(:millisecond)
 
       assert {:noreply, pending} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
       %{token: token} = pending.deferred_skill_result
+      assert pending.game_state.stats.current_state.sp == 40
 
       assert {:noreply, timed_out} = SkillHandler.handle_deferred_timeout(pending, token)
       assert timed_out.deferred_skill_result == nil
-      assert timed_out.game_state.stats.current_state.sp == 45
+      assert timed_out.game_state.stats.current_state.sp == 40
+      assert timed_out.game_state.act_delay_until >= before + 1_000
 
       assert {:noreply, ^timed_out} =
                SkillHandler.handle_spirit_absorb_result(timed_out, token, 2000, 2)

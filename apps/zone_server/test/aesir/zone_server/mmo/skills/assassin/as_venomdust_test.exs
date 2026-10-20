@@ -107,8 +107,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
 
   test "commits one Red Gemstone only after player placement succeeds" do
     caster = player_caster()
+    paid = put_in(caster.stats.current_state.sp, 80)
 
-    expect(Unit, :place, fn ^caster,
+    expect(Unit, :place, fn ^paid,
                             :as_venomdust,
                             3,
                             @center,
@@ -125,8 +126,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
 
   test "failed placement commits neither SP nor Red Gemstone" do
     caster = player_caster()
+    paid = put_in(caster.stats.current_state.sp, 80)
 
-    expect(Unit, :place, fn ^caster,
+    expect(Unit, :place, fn ^paid,
                             :as_venomdust,
                             3,
                             @center,

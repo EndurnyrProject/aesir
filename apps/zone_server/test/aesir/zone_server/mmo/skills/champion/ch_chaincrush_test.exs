@@ -65,10 +65,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrushTest do
     assert Cost.from_definition(caster(:extremity), ChChaincrush.definition(), 1).spheres == 2
     stub(Combat, :execute_skill_attack, fn _caster, @target_id, _opts -> :ok end)
 
-    glacier = caster(:extremity, spheres: 3, learned: %{372 => 10, 371 => 5})
+    glacier = caster(:extremity, spheres: 1, learned: %{372 => 10, 371 => 5})
     assert {:ok, %{combo: %{stage: :chain_crush}}} = cast(glacier, 1)
 
-    short = caster(:extremity, spheres: 2, learned: %{372 => 10, 371 => 5})
+    short = caster(:extremity, spheres: 0, learned: %{372 => 10, 371 => 5})
     assert {:ok, %{combo: %{stage: :idle}}} = cast(short, 1)
   end
 

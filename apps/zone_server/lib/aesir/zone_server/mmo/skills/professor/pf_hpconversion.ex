@@ -17,7 +17,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion do
     damage_type: :no_damage,
     damage_kind: :magic,
     sp_cost: [1, 2, 3, 4, 5],
-    cost_before_effect: true,
     after_cast_delay: [
       renewal: List.duplicate(500, 5),
       pre_renewal: [1_000, 1_200, 1_400, 1_600, 1_800]

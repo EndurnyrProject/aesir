@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
     damage_type: :no_damage,
     range: 9,
     sp_cost: [5],
-    cost_before_effect: true,
     cast_time: [renewal: [], pre_renewal: [3_000]],
     fixed_cast_time: [renewal: [3_000], pre_renewal: []],
     after_cast_delay: [renewal: [], pre_renewal: [5_000]],

@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmAutoberserk do
 
   The taunt is granted when the carrier takes damage rather than by a polling
   timer, and it is not withdrawn again when health climbs back above a quarter.
+
+  Both modes require the listed 1 SP to cast but never spend it.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 146,
@@ -25,9 +27,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmAutoberserk do
     quest_owner_job: :swordman
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @behaviour Active
+
+  @doc "Requires the resolved SP to cast but spends none."
+  @impl Active
+  def dynamic_cost(caster, _target, level, definition) do
+    caster
+    |> Cost.from_definition(definition, level, sp: 0)
+    |> Map.put(:sp_requirement, Cost.resolve_sp(caster, definition, level))
+  end
 
   @impl Active
   def cast(%{character_id: caster_id} = caster, :self, _level, _definition) do

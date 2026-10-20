@@ -132,9 +132,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
   @tag game_mode: :renewal
   test "successful completion spends 35 SP and stages exactly one Venom Knife removal" do
     caster = player_state(1771)
+    paid = put_in(caster.stats.current_state.sp, 65)
     stub_target()
 
-    expect(SkillAttack, :execute_forced_no_card_attack, fn ^caster, 2_000, _opts ->
+    expect(SkillAttack, :execute_forced_no_card_attack, fn ^paid, 2_000, _opts ->
       {:ok, %{hit?: true, damage: 100, target_survives?: true}}
     end)
 

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
@@ -46,12 +47,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
   end
 
   describe "dynamic_cost/4" do
-    test "a normal cast drains every spirit point and requires five spheres" do
+    test "a normal cast costs its listed SP, requires five spheres and records those held" do
       stub(Combat, :resolve_target_position, fn @target_id ->
         {:ok, :mob, {12, 10, "prontera"}}
       end)
 
-      assert %Cost{hp: 0, sp: 250, spheres: 5} =
+      assert %Cost{hp: 0, sp: 1, spheres: 5, spheres_old: 5} =
                MoExtremityfist.dynamic_cost(
                  caster(sp: 250, spheres: 5),
                  {:unit, @target_id},
@@ -60,14 +61,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
                )
     end
 
-    test "a Root follow-up against the caught peer costs one fewer sphere" do
+    test "a Root follow-up against the caught peer costs one fewer sphere and records none" do
       link_pair(@caster_id, {:mob, @target_id}, 5)
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, @caster_id -> %{} end)
 
       stub(Combat, :resolve_target_position, fn @target_id ->
         {:ok, :mob, {12, 10, "prontera"}}
       end)
 
-      assert %Cost{sp: 250, spheres: 4} =
+      assert %Cost{sp: 1, spheres: 4, spheres_old: nil} =
                MoExtremityfist.dynamic_cost(
                  caster(sp: 250, spheres: 5),
                  {:unit, @target_id},
@@ -84,12 +86,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
 
       held = combo_caster(sp: 250, spheres: 3)
 
-      assert %Cost{sp: 250, spheres: 3} =
+      assert %Cost{sp: 1, spheres: 3, spheres_old: 3} =
                MoExtremityfist.dynamic_cost(held, {:unit, @target_id}, 5, definition())
 
       empty = combo_caster(sp: 250, spheres: 0)
 
-      assert %Cost{sp: 250, spheres: 1} =
+      assert %Cost{sp: 1, spheres: 1, spheres_old: 0} =
                MoExtremityfist.dynamic_cost(empty, {:unit, @target_id}, 5, definition())
     end
   end
@@ -368,7 +370,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
 
     held = combo_caster(sp: 250, spheres: 5)
 
-    assert %Cost{sp: 250, spheres: 4} =
+    assert %Cost{sp: 1, spheres: 4, spheres_old: 5} =
              MoExtremityfist.dynamic_cost(held, {:unit, @target_id}, 5, definition())
   end
 
@@ -402,4 +404,105 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
 
   defp mode_value(renewal, pre_renewal),
     do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+
+  describe "requirement timing" do
+    setup do
+      stub(Cell, :traversable?, fn "prontera", 13, 10 -> true end)
+
+      stub(Combat, :resolve_target_position, fn @target_id ->
+        {:ok, :mob, {12, 10, "prontera"}}
+      end)
+
+      :ok
+    end
+
+    test "the strike reads the SP left after its cost and the recorded spheres, then empties the pool" do
+      stub(StatusInterpreter, :remove_status, fn :player, @caster_id, _status -> :ok end)
+
+      stub(StatusInterpreter, :apply_status, fn :player, @caster_id, :sc_extremityfist, _ ->
+        :ok
+      end)
+
+      expect(Combat, :execute_skill_attack, fn _caster, @target_id, opts ->
+        assert opts[:skill_ratio] == 800 + 249 * 10
+        assert opts[:spirit_spheres] == 5
+        :ok
+      end)
+
+      paid = %{combo_caster(sp: 249, spheres: 0) | spirit_spheres_old: 5}
+
+      assert {:ok, updated} = MoExtremityfist.cast(paid, {:unit, @target_id}, 5, definition())
+      assert updated.stats.current_state.sp == 0
+    end
+
+    test "the cost is the listed SP and records the spheres held, except as a Root follow-up" do
+      cost =
+        MoExtremityfist.dynamic_cost(
+          caster(sp: 250, spheres: 5),
+          {:unit, @target_id},
+          5,
+          definition()
+        )
+
+      assert %Cost{sp: 1, sp_requirement: 1, spheres: 5, spheres_old: 5} = cost
+    end
+
+    test "a refused cast end spends the requirement, empties SP, ends Fury and Root and lunges" do
+      expect(StatusInterpreter, :remove_status, 2, fn :player, @caster_id, status ->
+        assert status in [:sc_explosionspirits, :sc_bladestop]
+        :ok
+      end)
+
+      expect(StatusInterpreter, :apply_status, fn :player,
+                                                  @caster_id,
+                                                  :sc_extremityfist,
+                                                  params ->
+        assert params[:val1] == 5
+        :ok
+      end)
+
+      monk = %{real_caster(sp: 250, spheres: 5) | act_delay_until: 99_999}
+
+      assert {:ok, failed} =
+               MoExtremityfist.castend_failed(monk, {:unit, @target_id}, 5, definition())
+
+      assert failed.stats.current_state.sp == 0
+      assert SpiritSpheres.count(failed.spirit_spheres) == 0
+      assert failed.act_delay_until == 0
+      assert %ForcedMovement{map_name: "prontera", x: 13, y: 10} = failed.pending_forced_movement
+    end
+
+    test "a Monk in a Fog Wall fails without the reaction" do
+      reject(&StatusInterpreter.apply_status/4)
+      monk = real_caster(sp: 250, spheres: 5)
+      :ok = StatusStorage.apply_status(:player, @caster_id, :sc_fogwall, duration: 10_000)
+
+      assert :none = MoExtremityfist.castend_failed(monk, {:unit, @target_id}, 5, definition())
+    end
+  end
+
+  defp real_caster(opts) do
+    base =
+      PlayerState.new(%Aesir.Commons.Models.Character{
+        id: @caster_id,
+        account_id: @caster_id,
+        name: "Monk",
+        last_map: "prontera",
+        last_x: 10,
+        last_y: 10,
+        sex: "M",
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        base_level: 90,
+        job_level: 50,
+        class: 15
+      })
+
+    paid = put_in(base.stats.current_state.sp, Keyword.fetch!(opts, :sp))
+    %{paid | spirit_spheres: spheres(Keyword.fetch!(opts, :spheres))}
+  end
 end

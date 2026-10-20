@@ -399,7 +399,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
       assert params[:val2] > 0
       assert opts[:kind] == :song
       assert opts[:upkeep] == 5
-      {:ok, Song.remember(caster, 319, 5)}
+      {:ok, Song.remember(performer, 319, 5)}
     end)
 
     assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)
@@ -476,10 +476,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     caster = player(%{skill_id: 317, level: 5})
     reject(&Combat.execute_magic_splash/4)
 
-    expect(Performance, :perform, fn ^caster, _definition, 5, nil, [], opts ->
+    expect(Performance, :perform, fn performer, _definition, 5, nil, [], opts ->
+      assert performer.character_id == caster.character_id
       assert opts[:tick] == :dissonance
       assert opts[:kind] == :song
-      {:ok, Song.remember(caster, 317, 5)}
+      {:ok, Song.remember(performer, 317, 5)}
     end)
 
     assert {:ok, encore} = Interpreter.cast(caster, @encore_id, 1, :self)

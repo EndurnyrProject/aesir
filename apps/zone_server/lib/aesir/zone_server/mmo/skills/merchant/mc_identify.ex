@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McIdentify do
   and identifies the selected row.
 
   Renewal and pre-renewal agree: a menu of unidentified inventory slots, identifying the chosen one for 10 SP.
+  The SP is paid once the cast has run; with nothing to appraise the cast still
+  completes, silently, and spends nothing.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 40,
@@ -28,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McIdentify do
     slots = unidentified_slots(caster.inventory)
 
     if slots == [] do
-      {:error, :no_unidentified_items}
+      {:ok, caster, :no_consume}
     else
       offer = %{skill_id: definition.id, kind: :INVENTORY_SLOTS, entry_ids: slots, level: level}
       {:ok, %{caster | pending_menu_offer: offer}}

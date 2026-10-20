@@ -770,7 +770,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert updated.stats.current_state.sp == 100 - 18
   end
 
-  test "all-SP costs leave pre-drain SP available to the effect" do
+  test "an all-SP cost resolves against the whole pool, which the effect sees paid" do
     definition = %Definition{
       id: 29,
       name: :cost_skill,
@@ -784,7 +784,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, StaticCostSkill} end)
 
     assert {:ok, updated} = Interpreter.cast(game_state(50, %{29 => 1}), 29, 1, :self)
-    assert_received {:cost_skill_sp, 50}
+    assert_received {:cost_skill_sp, 0}
     assert updated.stats.current_state.sp == 0
   end
 
@@ -834,7 +834,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     assert_received {:dynamic_cost_prepared, 60}
     refute_received {:dynamic_cost_prepared, 60}
-    assert_received {:cost_skill_sp, 50}
+    assert_received {:cost_skill_sp, 0}
     assert updated.stats.current_state.sp == 0
   end
 
@@ -857,7 +857,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     depleted = put_in(started.stats.current_state.sp, 5)
     assert {:ok, updated} = Interpreter.complete_cast(depleted, 29, 1, :self)
-    assert_received {:cost_skill_sp, 5}
+    assert_received {:cost_skill_sp, 0}
     assert updated.stats.current_state.sp == 0
   end
 
@@ -950,7 +950,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     refute_received :completion_validation_effect
   end
 
-  test "commits fixed HP, SP, and sphere costs only after the effect" do
+  test "commits fixed HP, SP, and sphere costs before the effect" do
     definition = %Definition{
       id: 29,
       name: :cost_skill,
@@ -974,13 +974,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     game_state = Map.put(game_state(50, %{29 => 1}), :spirit_spheres, spheres)
 
     assert {:ok, updated} = Interpreter.cast(game_state, 29, 1, :self)
-    assert_received {:cost_skill_sp, 50}
+    assert_received {:cost_skill_sp, 30}
     assert updated.stats.current_state.hp == 90
     assert updated.stats.current_state.sp == 30
     assert SpiritSpheres.count(updated.spirit_spheres) == 0
   end
 
-  test "preserves a deferred descriptor without committing costs or delay" do
+  test "a deferred descriptor carries what is left after the paid primary cost, without delay" do
     definition = %Definition{
       id: 29,
       name: :cost_skill,
@@ -998,24 +998,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     game_state = game_state(50, %{29 => 1})
 
-    assert {:deferred, ^game_state,
+    assert {:deferred, paid,
             %Interpreter.Deferred{
               effect: :spirit_action,
-              cost: %Cost{hp: 10, sp: 20},
+              cost: %Cost{hp: 0, sp: 0},
               skill_id: 29,
               level: 1,
               target: :self
             } = deferred} = Interpreter.cast(game_state, 29, 1, :self)
 
-    assert {:ok, drained} =
-             Interpreter.settle_deferred(
-               put_in(game_state.stats.current_state.sp, 10),
-               deferred
-             )
+    assert paid.stats.current_state.hp == 90
+    assert paid.stats.current_state.sp == 30
+    assert paid.act_delay_until == 0
 
-    assert drained.stats.current_state.sp == 0
-
-    assert {:ok, settled} = Interpreter.settle_deferred(game_state, deferred)
+    assert {:ok, settled} = Interpreter.settle_deferred(paid, deferred)
     assert settled.stats.current_state.hp == 90
     assert settled.stats.current_state.sp == 30
     assert settled.skill_cooldowns[29] > System.monotonic_time(:millisecond)
@@ -3464,7 +3460,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
-  describe "cost_before_effect" do
+  describe "costs paid before the effect" do
     setup do
       definition = PfHpconversion.definition()
       stub(Catalog, :by_id, fn 373 -> {:ok, definition} end)

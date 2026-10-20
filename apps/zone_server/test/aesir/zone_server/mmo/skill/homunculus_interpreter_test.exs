@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
 
     assert {:ok, updated} = Interpreter.auto_cast(homunculus(), definition.id, 1, :self)
     assert updated.sp == 92
-    assert_received {:auto_cast_sp, 100}
+    assert_received {:auto_cast_sp, 92}
   end
 
   test "a Homunculus ground cast broadcasts its world GID in an encodable packet" do

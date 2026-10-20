@@ -86,11 +86,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfistTest do
   test "opens the Chain Crush window when two spheres remain after its own" do
     stub(Resistance, :roll_success, fn _ -> false end)
 
-    ready = caster(:extremity, spheres: 3)
+    ready = caster(:extremity, spheres: 2)
     expect_attack(ready, true)
     assert {:ok, %{combo: %{stage: :tiger_fist, target: {:mob, @target_id}}}} = cast(ready, 1)
 
-    short = caster(:extremity, spheres: 2)
+    short = caster(:extremity, spheres: 1)
     expect_attack(short, true)
     assert {:ok, %{combo: %{stage: :idle}}} = cast(short, 1)
   end

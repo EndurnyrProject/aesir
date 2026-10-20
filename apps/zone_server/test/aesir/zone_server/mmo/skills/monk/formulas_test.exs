@@ -194,4 +194,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.asura_sphere_cost(:chain_crush_combo, 0) == 1
     assert Formulas.asura_sphere_cost(:chain_crush_combo, 3) == 3
   end
+
+  test "Asura doubles its ratio before the cap only in renewal and above five recorded spheres" do
+    doubled = mode_value(2_030 * 2, 2_030)
+    assert Formulas.asura_damage_components(3, 123, 6) == %{skill_ratio: doubled, bonus_atk: 700}
+    assert Formulas.asura_damage_components(3, 123, 5) == %{skill_ratio: 2_030, bonus_atk: 700}
+
+    assert Formulas.asura_damage_components(5, 30_000, 6).skill_ratio ==
+             mode_value(500_000, 300_800)
+  end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[Aesir.Commons.GameMode.mode()]
 end

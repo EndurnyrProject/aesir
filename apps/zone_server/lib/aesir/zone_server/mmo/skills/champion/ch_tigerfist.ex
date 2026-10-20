@@ -59,7 +59,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
   def cast(caster, {:unit, target_id}, level, definition) do
     now = now()
     stages = accepted_stages()
-    own_cost = Enum.at(definition.sphere_cost, level - 1, 0)
     duration = Enum.at(definition.after_cast_delay, level - 1, 0)
 
     with :ok <- Root.check_cast(:player, caster.character_id, definition.id),
@@ -67,10 +66,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
          {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
          {:ok, target} <- Combo.validate(caster.combo, stages, {target_type, target_id}, now),
          {:ok, %{hit?: hit?}} <-
-           Combat.execute_skill_attack(caster, target_id, attack_options(caster, level, own_cost)),
+           Combat.execute_skill_attack(caster, target_id, attack_options(caster, level)),
          :ok <- if(hit?, do: maybe_immobilise(caster, target, level), else: :ok),
          {:ok, combo} <-
-           Combo.open_follow_up(caster, :tiger_fist, stages, target, now, duration, own_cost) do
+           Combo.open_follow_up(caster, :tiger_fist, stages, target, now, duration) do
       {:ok, %{caster | combo: combo}}
     end
   end
@@ -84,14 +83,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
     end
   end
 
-  defp attack_options(caster, level, own_cost) do
+  defp attack_options(caster, level) do
     [
       skill_id: 371,
       skill_level: level,
       skill_ratio: Formulas.glacier_ratio(level, caster.stats.progression.base_level),
       skip_crit: true,
-      report_hit: true,
-      spirit_spheres: Combo.spheres_after(caster, own_cost)
+      report_hit: true
     ]
   end
 
