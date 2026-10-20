@@ -136,11 +136,13 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
       flush_packets()
 
       # Real eligibility over the live registry: same-party member is valid, an
-      # unpartied stranger is not.
+      # unpartied stranger is refused inside the implementation, after the
+      # requirement is paid and with the requirement's items spared.
       assert :ok = MoKitranslation.validate(source, {:unit, 5_002}, 1, kitranslation_definition())
+      assert :ok = MoKitranslation.validate(source, {:unit, 5_099}, 1, kitranslation_definition())
 
-      assert {:error, :invalid_target} =
-               MoKitranslation.validate(source, {:unit, 5_099}, 1, kitranslation_definition())
+      assert {:failed, ^source, :invalid_target, :spare_items} =
+               MoKitranslation.cast(source, {:unit, 5_099}, 1, kitranslation_definition())
 
       # The source stages exactly one best-effort delivery to the target's session.
       assert :ok = SpiritExchangeHandler.transfer(%{game_state: source}, 5_002)
