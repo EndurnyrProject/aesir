@@ -98,6 +98,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   end
 
   @tag game_mode: :pre_renewal
+  test "a refused performer lock keeps the field and does not lock the partner" do
+    caster = player(17)
+    :ok = UnitRegistry.register_player(caster, self())
+    :ok = SpatialIndex.add_unit(:player, 17, 10, 10, "prontera")
+    :ok = UnitRegistry.register_player(player(18), self())
+    :ok = SpatialIndex.add_unit(:player, 18, 11, 10, "prontera")
+    {:ok, definition} = Catalog.by_name(:ba_whistle)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 17, :sc_dancing, _params ->
+      {:error, :status_not_allowed}
+    end)
+
+    assert {:ok, remembered} =
+             Field.start(caster, definition, 5, :sc_whistle, [],
+               kind: :song,
+               upkeep: 5,
+               linger_ms: 20_000,
+               partners: [18]
+             )
+
+    assert remembered.last_song == %{skill_id: definition.id, level: 5}
+    assert [_group] = Storage.get_groups_by_caster(:player, 17)
+    refute StatusStorage.has_status?(:player, 17, :sc_dancing)
+    refute StatusStorage.has_status?(:player, 18, :sc_dancing)
+  end
+
+  @tag game_mode: :pre_renewal
   test "field reach includes the performer, never placed on its own song; a dissonant cell grants nothing; expiry unlocks" do
     caster = player(17)
     :ok = UnitRegistry.register_player(caster, self())

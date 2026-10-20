@@ -110,6 +110,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   defp player_performers(:player, id, partners), do: [id | partners]
   defp player_performers(_type, _id, _partners), do: []
 
+  # The reference's `sc_start(SC_DANCING)` gates only the ensemble partner
+  # check: a refused performer lock still leaves the field placed and the cast
+  # succeeding, so the group is kept and no partner is locked.
   defp finish_start(caster, definition, level, perf, group, partners) do
     {_type, caster_id} = ref = performer(caster)
 
@@ -120,12 +123,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
           remember_for_partner(partner, definition.id, level)
         end)
 
-        {:ok, remember(caster, definition.id, level)}
-
-      {:error, _reason} = error ->
-        Unit.destroy_async(group.group_id)
-        error
+      {:error, _reason} ->
+        :ok
     end
+
+    {:ok, remember(caster, definition.id, level)}
   end
 
   defp remember(%PlayerState{} = caster, skill_id, level),
