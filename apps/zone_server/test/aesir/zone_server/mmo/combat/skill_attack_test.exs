@@ -530,6 +530,55 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
            ]
   end
 
+  test "only a skill that declares ammunition resolves in the arrow-attack state" do
+    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})
+    caster_state = %TestUnit{combatant: attacker, hp: 100, x: 100, y: 100}
+    target_state = %TestUnit{combatant: target, hp: 1_000, x: 101, y: 100}
+    test_pid = self()
+
+    stub(SpatialIndex, :get_all_units_in_range, fn "test_map", 100, 100, 2 -> [{:mob, 2001}] end)
+
+    stub(TargetResolver, :resolve, fn
+      :mob, 2001 -> {:ok, self(), target_state, :mob}
+    end)
+
+    stub(TargetResolver, :resolve, fn {:mob, 2001} -> {:ok, self(), target_state, :mob} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info -> :continue end)
+    stub(StatusInterpreter, :absorb_hit, fn :mob, 2001, 40, _hit_info -> {40, :hit} end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 40, 1001, _metadata -> :ok end)
+    stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+    stub(Knockback, :skill, fn ^attacker, ^target, _skill_id, _result, _opts -> :ok end)
+
+    stub(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    expect(EquipProcDispatch, :dispatch_delivered, 2, fn :ok, hit_info, _damage ->
+      send(test_pid, {:arrow_attack?, hit_info.proc.arrow_attack?})
+      :ok
+    end)
+
+    # Arrow Shower is a ground cast that requires ammunition; Storm Gust is a
+    # ground cast that requires none.
+    for skill_id <- [47, 89] do
+      assert [_target] =
+               SkillAttack.execute_splash_attack(caster_state, {100, 100}, 2,
+                 skill_id: skill_id,
+                 skill_level: 1,
+                 ignore_flee: true,
+                 delivery: {:splash, nil}
+               )
+    end
+
+    assert_received {:arrow_attack?, true}
+    assert_received {:arrow_attack?, false}
+  end
+
   test "negative divisions floor the total to an equal split before the target sees it" do
     attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
     target = CombatTestHelper.create_mob_combatant(unit_id: 2001, position: {101, 100})

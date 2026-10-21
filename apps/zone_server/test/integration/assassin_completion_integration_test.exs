@@ -561,7 +561,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          range: 9,
          sp_cost: mode_value([35], [15]),
          duration: mode_value([18_000], [60_000]),
-         requires_ammo: true,
+         require_ammo: [:dagger],
+         ammo_qty: [1],
          quest_skill: true,
          quest_owner_job: :assassin,
          ignore_atk_card: true

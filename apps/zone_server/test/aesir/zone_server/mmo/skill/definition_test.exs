@@ -405,6 +405,46 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
     end
   end
 
+  describe "ammo_qty_at_level/2" do
+    test "defaults to no ammunition at every level" do
+      defn = Definition.build!(@required_opts, __MODULE__)
+
+      assert defn.require_ammo == []
+      assert defn.ammo_qty == []
+      assert Definition.ammo_qty_at_level(defn, 1) == 0
+    end
+
+    test "reads the level's declared amount" do
+      defn =
+        Definition.build!(
+          @required_opts ++ [require_ammo: [:arrow], ammo_qty: [1, 3, 5, 7, 10]],
+          __MODULE__
+        )
+
+      assert Definition.ammo_qty_at_level(defn, 1) == 1
+      assert Definition.ammo_qty_at_level(defn, 3) == 5
+      assert Definition.ammo_qty_at_level(defn, 5) == 10
+    end
+
+    test "requires nothing past the declared amounts or below one unit" do
+      defn =
+        Definition.build!(
+          @required_opts ++ [require_ammo: [:arrow], ammo_qty: [2, 0]],
+          __MODULE__
+        )
+
+      assert Definition.ammo_qty_at_level(defn, 1) == 2
+      assert Definition.ammo_qty_at_level(defn, 2) == 0
+      assert Definition.ammo_qty_at_level(defn, 9) == 0
+    end
+
+    test "requires nothing when a type is declared without an amount" do
+      defn = Definition.build!(@required_opts ++ [require_ammo: [:arrow]], __MODULE__)
+
+      assert Definition.ammo_qty_at_level(defn, 1) == 0
+    end
+  end
+
   describe "ignore_noncrit_atk_bonus" do
     test "is true in Renewal and false in classic for every declaring skill" do
       modules = [

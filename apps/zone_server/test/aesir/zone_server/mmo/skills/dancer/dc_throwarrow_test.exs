@@ -57,7 +57,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcThrowarrowTest do
     assert definition.damage_kind == :weapon
     assert definition.range == 9
     assert definition.require_weapon == [:whip]
-    assert definition.requires_ammo
+    assert definition.require_ammo == [:arrow]
+    assert definition.ammo_qty == List.duplicate(1, 5)
     assert definition.hit_count == 2
     assert definition.sp_cost == List.duplicate(12, 5)
     assert definition.cast_time == List.duplicate(500, 5)

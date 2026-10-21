@@ -3045,7 +3045,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   describe "ammo requirement" do
     @ammo_bit 0x008000
 
-    defp ammo_definition(requires_ammo) do
+    defp ammo_definition(requires_ammo?) do
       %Definition{
         id: 6,
         name: :sm_provoke,
@@ -3054,7 +3054,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         target_type: :self,
         damage_type: :no_damage,
         sp_cost: List.duplicate(9, 10),
-        requires_ammo: requires_ammo
+        require_ammo: if(requires_ammo?, do: [:arrow], else: []),
+        ammo_qty: if(requires_ammo?, do: [1], else: [])
       }
     end
 
@@ -3065,14 +3066,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       })
     end
 
-    test "requires_ammo skill with no arrow equipped returns :no_ammo without running the behavior" do
+    test "an ammo-requiring skill with no arrow equipped returns :no_ammo without running the behavior" do
       stub(Catalog, :by_id, fn 6 -> {:ok, ammo_definition(true)} end)
       reject(&SmProvoke.cast/4)
 
       assert {:error, :no_ammo} = Interpreter.cast(ammo_game_state(%{}), 6, 1, :self)
     end
 
-    test "requires_ammo skill consumes exactly one arrow and records the inventory delta" do
+    test "an ammo-requiring skill consumes exactly one arrow and records the inventory delta" do
       stub(Catalog, :by_id, fn 6 -> {:ok, ammo_definition(true)} end)
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
 
@@ -3083,7 +3084,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert [{_before, _after, {:reduced, 0, 29}}] = updated.pending_inventory_persist
     end
 
-    test "requires_ammo: false skill consumes no arrow and records no delta" do
+    test "a skill without an ammo requirement consumes no arrow and records no delta" do
       stub(Catalog, :by_id, fn 6 -> {:ok, ammo_definition(false)} end)
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
 
@@ -3623,7 +3624,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
           sp_cost: List.duplicate(9, 10),
           zeny_cost: List.duplicate(100, 10),
           item_cost: [%{id: @gem_id, amount: 1}],
-          requires_ammo: true,
+          require_ammo: [:arrow],
+          ammo_qty: [1],
           after_cast_delay: List.duplicate(700, 10),
           cooldown: List.duplicate(3000, 10)
         },
@@ -3682,7 +3684,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
 
     test "keep_requirement charges the skill's own SP after the delayed item claim" do
-      definition = item_definition(%{zeny_cost: [], item_cost: [], requires_ammo: false})
+      definition =
+        item_definition(%{zeny_cost: [], item_cost: [], require_ammo: [], ammo_qty: []})
+
       stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
       test_pid = self()
 
@@ -3727,7 +3731,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:ok, _updated} = Interpreter.item_cast(gs, 6, 1, :self)
     end
 
-    test "casts with no arrow equipped despite requires_ammo, and consumes none" do
+    test "casts with no arrow equipped despite the ammo requirement, and consumes none" do
       gs = %{item_game_state() | inventory: %{}}
 
       assert {:ok, updated} = Interpreter.item_cast(gs, 6, 1, :self)

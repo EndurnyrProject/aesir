@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcDouble do
     range: 9,
     vulture_range: true,
     hit_count: 2,
-    requires_ammo: true,
+    require_ammo: [:arrow],
+    ammo_qty: List.duplicate(1, 10),
     require_weapon: [:bow],
     sp_cost: List.duplicate(12, 10),
     after_cast_delay: [renewal: List.duplicate(100, 10), pre_renewal: []]

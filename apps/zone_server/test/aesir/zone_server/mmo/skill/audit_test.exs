@@ -230,6 +230,53 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
 
       assert Enum.any?(Audit.compare(definition, row, :renewal), &(&1.field == :element))
     end
+
+    test "a matching ammunition type and per-level amount is not a finding" do
+      definition = %{@definition | require_ammo: [:arrow], ammo_qty: List.duplicate(1, 10)}
+      row = with_ammo(@matching_row, ["Arrow"], 1)
+
+      assert Audit.compare(definition, row, :renewal) == []
+    end
+
+    test "a declared ammunition type the source does not name is a finding" do
+      definition = %{@definition | require_ammo: [:dagger], ammo_qty: List.duplicate(1, 10)}
+      row = with_ammo(@matching_row, ["Arrow"], 1)
+
+      assert [%{field: :require_ammo, aesir: [:dagger], source: [:arrow]}] =
+               Enum.filter(
+                 Audit.compare(definition, row, :renewal),
+                 &(&1.field == :require_ammo)
+               )
+    end
+
+    test "a per-level ammunition amount must match the source row" do
+      definition = %{@definition | require_ammo: [:arrow], ammo_qty: List.duplicate(2, 10)}
+      row = with_ammo(@matching_row, ["Arrow"], 1)
+
+      assert [%{field: :ammo_qty, source: source}] =
+               Enum.filter(Audit.compare(definition, row, :renewal), &(&1.field == :ammo_qty))
+
+      assert source == List.duplicate(1, 10)
+    end
+
+    test "an ammunition type declared without an amount requires nothing" do
+      definition = %{@definition | require_ammo: [:arrow], ammo_qty: List.duplicate(1, 10)}
+      row = with_ammo(@matching_row, ["Arrow"], nil)
+
+      assert Audit.compare(@definition, row, :renewal) == []
+
+      assert [%{field: :require_ammo, source: []}, %{field: :ammo_qty, source: amounts}] =
+               Audit.compare(definition, row, :renewal)
+
+      assert amounts == List.duplicate(0, 10)
+    end
+  end
+
+  defp with_ammo(row, types, amount) do
+    ammo = Map.new(types, &{&1, true})
+    requires = row |> Map.fetch!("Requires") |> Map.put("Ammo", ammo)
+    requires = if amount, do: Map.put(requires, "AmmoAmount", amount), else: requires
+    Map.put(row, "Requires", requires)
   end
 
   describe "negative_hit_count_levels/2" do

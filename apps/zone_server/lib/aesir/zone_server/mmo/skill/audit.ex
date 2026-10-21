@@ -124,7 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
         &compare_numeric_field(&1, definition, source_row, max_level)
       ) ++
       compare_element(definition, source_row, max_level) ++
-      compare_requires_ammo(definition, source_row) ++
+      compare_ammo(definition, source_row, max_level) ++
       compare_require_weapon(definition, source_row) ++
       compare_vulture_range(definition, source_row) ++
       compare_item_cost(definition, source_row)
@@ -321,14 +321,56 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
     Map.get_lazy(@element_overrides, name, fn -> name |> String.downcase() |> String.to_atom() end)
   end
 
-  @spec compare_requires_ammo(Definition.t(), map()) :: [finding()]
-  defp compare_requires_ammo(%Definition{requires_ammo: aesir_flag}, source_row) do
-    source_flag =
-      source_row |> fetch_path(["Requires", "Ammo"], %{}) |> Map.values() |> Enum.any?(& &1)
+  # The skill DB's `Requires: Ammo` mask names the ammunition subtypes the cast
+  # end accepts, and `AmmoAmount` the units it requires per level. The source
+  # only resolves the mask when a level's amount is nonzero, so a declared type
+  # without an amount requires nothing and Aesir must declare nothing.
+  @spec compare_ammo(Definition.t(), map(), pos_integer()) :: [finding()]
+  defp compare_ammo(definition, source_row, max_level) do
+    {source_types, source_amounts} = source_ammo(source_row, max_level)
 
-    if source_flag == aesir_flag,
-      do: [],
-      else: [%{field: :requires_ammo, aesir: aesir_flag, source: source_flag}]
+    type_findings =
+      if Enum.sort(definition.require_ammo) == source_types,
+        do: [],
+        else: [%{field: :require_ammo, aesir: definition.require_ammo, source: source_types}]
+
+    amount_findings =
+      if aesir_numeric_sequence(definition.ammo_qty, max_level, false) == source_amounts,
+        do: [],
+        else: [%{field: :ammo_qty, aesir: definition.ammo_qty, source: source_amounts}]
+
+    type_findings ++ amount_findings
+  end
+
+  @ammo_names %{
+    "Arrow" => :arrow,
+    "Bullet" => :bullet,
+    "Cannonball" => :cannonball,
+    "Dagger" => :dagger,
+    "Grenade" => :grenade,
+    "Kunai" => :kunai,
+    "Shell" => :shell,
+    "Shuriken" => :shuriken,
+    "Throwweapon" => :throw_weapon
+  }
+
+  @spec source_ammo(map(), pos_integer()) :: {[atom()], [non_neg_integer()]}
+  defp source_ammo(source_row, max_level) do
+    declared_types =
+      source_row
+      |> fetch_path(["Requires", "Ammo"], %{})
+      |> Enum.filter(fn {name, required?} -> required? and name != "None" end)
+      |> Enum.map(fn {name, _required?} -> Map.fetch!(@ammo_names, name) end)
+      |> Enum.sort()
+
+    amounts =
+      source_row
+      |> fetch_path(["Requires", "AmmoAmount"], 0)
+      |> expand_levels("Amount", max_level)
+
+    if Enum.all?(amounts, &(&1 == 0)),
+      do: {[], List.duplicate(0, max_level)},
+      else: {declared_types, amounts}
   end
 
   @spec compare_require_weapon(Definition.t(), map()) :: [finding()]

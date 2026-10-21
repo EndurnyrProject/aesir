@@ -20,7 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgArrowvulcan do
     range: 9,
     hit_count: -9,
     require_weapon: [:musical, :whip],
-    requires_ammo: true,
+    require_ammo: [:arrow],
+    ammo_qty: List.duplicate(1, 10),
     sp_cost: [12, 14, 16, 18, 20, 22, 24, 26, 28, 30],
     cast_time: [
       renewal: List.duplicate(1500, 10),

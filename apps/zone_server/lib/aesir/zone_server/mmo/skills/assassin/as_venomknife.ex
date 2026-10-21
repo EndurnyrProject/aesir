@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
   @moduledoc """
   Throw Venom Knife (AS_VENOMKNIFE). The Assassin platinum skill: throws one
-  equipped Venom Knife at 9 cells as a forced ranged hit that always poisons.
+  equipped dagger-class ammunition at 9 cells as a forced ranged hit that
+  always poisons, its attack added to the hit.
 
-  The equipped ammunition must be a Venom Knife when the cast ends.
+  The cast end requires one ammunition unit whose subtype is a dagger.
 
   Renewal: 500% weapon damage, 35 SP, poison 18 s. Pre-renewal: 100% weapon
   damage, 15 SP, poison 60 s.
@@ -20,7 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
     range: 9,
     sp_cost: [renewal: [35], pre_renewal: [15]],
     duration: [renewal: [18_000], pre_renewal: [60_000]],
-    requires_ammo: true,
+    require_ammo: [:dagger],
+    ammo_qty: [1],
     quest_skill: true,
     quest_owner_job: :assassin
 
@@ -33,15 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
-
-  @impl Active
-  def castend_requirement(%PlayerState{inventory: inventory}, _target, _level, _definition) do
-    case Ammo.equipped_ammo(inventory) do
-      {:ok, %{nameid: 1771}, %{id: 1771}} -> :ok
-      {:error, :no_ammo} -> {:error, :no_ammo}
-      _other -> {:error, :wrong_ammo}
-    end
-  end
 
   @impl Active
   def cast(%PlayerState{} = caster, {:unit, target}, level, definition) do

@@ -4,10 +4,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
@@ -35,6 +37,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   # resolves against the guild entry, never against the caster's progression.
   @guild_skill_range 10_000..10_019
   @emergency_calls [10_013, 10_015]
+
+  # Renewal requires one extra ammunition unit for these casts (2016-10-26 kRO
+  # update), checked at the cast end and never consumed.
+  @extra_ammo_skills [2_418, 2_561, 2_565, 2_567]
 
   @impl true
   def kind, do: :player
@@ -171,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def cost(caster, module, target, definition, level) do
     with {:ok, definition, cost, zeny} <-
            resolve_requirement(caster, module, target, definition, level) do
-      prepare_begin_cost(caster, module, definition, cost, zeny)
+      prepare_begin_cost(caster, module, definition, cost, zeny, level)
     end
   end
 
@@ -179,7 +185,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def castend_cost(caster, module, target, %{name: :al_warp} = definition, level) do
     with {:ok, definition, cost, zeny} <-
            resolve_requirement(caster, module, target, definition, level) do
-      {:ok, prepared(caster, module, definition, cost, min(zeny, caster.zeny))}
+      {:ok,
+       prepared(
+         caster,
+         module,
+         definition,
+         cost,
+         min(zeny, caster.zeny),
+         ammo_qty(definition, level)
+       )}
     end
   end
 
@@ -200,24 +214,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   @doc """
-  Checks a resolved cost's cast-begin requirements in order: SP, zeny, then
-  spirit spheres. HP, ammo and items wait for the cast end.
+  Checks a resolved cost's cast-begin requirements in order: the 90% weight
+  limit, SP, zeny, then spirit spheres. HP, ammo and items wait for the cast
+  end.
   """
-  @spec prepare_begin_cost(PlayerState.t(), module(), map(), Cost.t(), non_neg_integer()) ::
-          {:ok, map()} | {:error, atom()}
-  def prepare_begin_cost(caster, module, definition, cost, zeny) do
+  @spec prepare_begin_cost(
+          PlayerState.t(),
+          module(),
+          map(),
+          Cost.t(),
+          non_neg_integer(),
+          pos_integer()
+        ) :: {:ok, map()} | {:error, atom()}
+  def prepare_begin_cost(caster, module, definition, cost, zeny, level) do
     with :ok <- check_weight(caster),
          :ok <- Cost.check_sp(caster, cost),
          :ok <- check_zeny(caster, zeny),
          :ok <- Cost.check_spheres(caster, cost) do
-      {:ok, prepared(caster, module, definition, cost, zeny)}
+      {:ok, prepared(caster, module, definition, cost, zeny, ammo_qty(definition, level))}
     end
   end
 
   @doc """
-  Checks a resolved cost's cast-end requirements in order: the skill's own
-  cast-end requirement, HP, weapon, ammo, then items. SP, zeny and spheres are
-  not checked again; the commitment spends each up to what the caster holds.
+  Checks a resolved cost's cast-end requirements in order: the 90% weight
+  limit, the skill's own cast-end requirement, HP, weapon, ammunition, then
+  items. SP, zeny and spheres are not checked again; the commitment spends each
+  up to what the caster holds.
   """
   @spec prepare_castend_cost(
           PlayerState.t(),
@@ -233,9 +255,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
          :ok <- castend_requirement(module, caster, target, level, definition),
          :ok <- Cost.check_hp(caster, cost),
          :ok <- check_weapon(caster, definition),
-         :ok <- check_ammo(caster, definition),
+         :ok <- check_ammo(caster, definition, level),
          :ok <- check_catalysts(caster, definition) do
-      {:ok, prepared(caster, module, definition, cost, min(zeny, caster.zeny))}
+      {:ok,
+       prepared(
+         caster,
+         module,
+         definition,
+         cost,
+         min(zeny, caster.zeny),
+         ammo_qty(definition, level)
+       )}
     end
   end
 
@@ -257,14 +287,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       else: :ok
   end
 
-  defp prepared(caster, module, definition, cost, zeny) do
+  defp prepared(caster, module, definition, cost, zeny, ammo_qty) do
     %{
       definition: definition,
       module: module,
       cost: cost,
       commitment: Cost.prepare_clamped(caster, cost),
       zeny: zeny,
-      consume_catalysts?: true
+      consume_catalysts?: true,
+      ammo_qty: ammo_qty
     }
   end
 
@@ -310,12 +341,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @doc """
   Prepares a deferred cast's settlement without checking anything again: its
   requirements were checked when the cast ended, so the SP, HP, spheres and
-  zeny are each spent up to what the caster holds.
+  zeny are each spent up to what the caster holds and its ammunition is spent
+  at this level's amount.
   """
-  @spec prepare_settlement(PlayerState.t(), module(), map(), Cost.t(), non_neg_integer()) ::
-          map()
-  def prepare_settlement(caster, module, definition, cost, zeny),
-    do: prepared(caster, module, definition, cost, min(zeny, caster.zeny))
+  @spec prepare_settlement(
+          PlayerState.t(),
+          module(),
+          map(),
+          Cost.t(),
+          non_neg_integer(),
+          pos_integer()
+        ) :: map()
+  def prepare_settlement(caster, module, definition, cost, zeny, level),
+    do:
+      prepared(
+        caster,
+        module,
+        definition,
+        cost,
+        min(zeny, caster.zeny),
+        ammo_qty(definition, level)
+      )
 
   @doc """
   Pays a prepared cost's HP, SP, spirit spheres and zeny before the effect.
@@ -360,7 +406,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   Settles what a prepared cost has left after the effect. A cast that spares its
   requirement (`consume_catalysts?: false`) skips the items and whatever else is
   paid after the effect (Item Appraisal's SP); `consume_ammo?: false` spares the
-  ammo a refusal before the cast-end tail never spends.
+  ammo a refusal before the cast-end tail never spends. The ammunition consumed
+  is the level's amount (`ammo_qty`), never the renewal extra unit the cast-end
+  check requires.
   """
   @impl true
   def commit(
@@ -376,11 +424,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     |> apply_remaining(commitment, consume_catalysts?)
     |> deduct_zeny(zeny)
     |> maybe_consume_catalysts(definition, consume_catalysts?)
-    |> maybe_consume_ammo(definition, Map.get(prepared, :consume_ammo?, true))
+    |> maybe_consume_ammo(
+      Map.get(prepared, :ammo_qty, 0),
+      Map.get(prepared, :consume_ammo?, true)
+    )
   end
 
-  defp maybe_consume_ammo(caster, _definition, false), do: caster
-  defp maybe_consume_ammo(caster, definition, true), do: consume_ammo(caster, definition)
+  defp maybe_consume_ammo(caster, _ammo_qty, false), do: caster
+  defp maybe_consume_ammo(caster, 0, _consume?), do: caster
+
+  defp maybe_consume_ammo(caster, ammo_qty, true) do
+    case Ammo.consume(caster.inventory, ammo_qty) do
+      {:ok, inventory, change} -> record_inventory_change(caster, inventory, change)
+      {:error, _reason} -> caster
+    end
+  end
 
   @impl true
   def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id, now, :begin) do
@@ -564,13 +622,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   defp waive_gemstones(%{item_cost: cost}),
     do: Enum.reject(cost, &(&1.id in @waivable_gemstone_ids))
 
-  defp check_ammo(caster, definition) do
-    if definition.requires_ammo and Ammo.equipped_ammo_index(caster.inventory) == nil do
-      {:error, :no_ammo}
-    else
-      :ok
+  defp check_ammo(caster, definition, level) do
+    case ammo_qty(definition, level) do
+      0 ->
+        :ok
+
+      needed ->
+        Ammo.check(caster.inventory, definition.require_ammo, needed + extra_ammo(definition))
     end
   end
+
+  defp ammo_qty(definition, level), do: Definition.ammo_qty_at_level(definition, level)
+
+  defp extra_ammo(%{id: skill_id}) when skill_id in @extra_ammo_skills do
+    if GameMode.mode() == :renewal, do: 1, else: 0
+  end
+
+  defp extra_ammo(_definition), do: 0
 
   defp apply_remaining(caster, commitment, true), do: Cost.apply_commitment(caster, commitment)
   defp apply_remaining(caster, _commitment, false), do: caster
@@ -584,15 +652,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     Enum.reduce(effective_item_cost(caster, definition), caster, fn
       %{id: id, amount: amount}, state -> remove_item(state, id, amount)
     end)
-  end
-
-  defp consume_ammo(caster, %{requires_ammo: false}), do: caster
-
-  defp consume_ammo(caster, %{requires_ammo: true}) do
-    case Ammo.consume_one(caster.inventory) do
-      {:ok, inventory, change} -> record_inventory_change(caster, inventory, change)
-      {:error, _reason} -> caster
-    end
   end
 
   defp remove_item(caster, _id, 0), do: caster

@@ -106,7 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
       sp_cost: [12],
       zeny_cost: [100],
       item_cost: [%{id: 716, amount: 1}],
-      requires_ammo: true
+      require_ammo: [:arrow],
+      ammo_qty: [1]
     }
 
     stub(Catalog, :by_id, fn

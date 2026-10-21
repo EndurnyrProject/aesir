@@ -38,7 +38,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
     assert definition.damage_type == :damage
     assert definition.range == 9
     assert definition.sp_cost == [35]
-    assert definition.requires_ammo
+    assert definition.require_ammo == [:dagger]
+    assert definition.ammo_qty == [1]
     assert definition.quest_skill
     assert definition.quest_owner_job == :assassin
   end
@@ -49,36 +50,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
     assert definition.sp_cost == [15]
     assert definition.duration == [60_000]
     assert AsVenomknife.skill_ratio() == 100
-  end
-
-  test "the cast end requires the equipped Venom Knife item" do
-    definition = AsVenomknife.definition()
-    venom_knife = %InventoryItem{nameid: 1771, amount: 2, equip: 0x008000}
-    arrow = %InventoryItem{nameid: 1750, amount: 2, equip: 0x008000}
-
-    assert {:error, :no_ammo} =
-             AsVenomknife.castend_requirement(
-               %PlayerState{inventory: %{}},
-               {:unit, 2_000},
-               1,
-               definition
-             )
-
-    assert {:error, :wrong_ammo} =
-             AsVenomknife.castend_requirement(
-               %PlayerState{inventory: %{1 => arrow}},
-               {:unit, 2_000},
-               1,
-               definition
-             )
-
-    assert :ok =
-             AsVenomknife.castend_requirement(
-               %PlayerState{inventory: %{1 => venom_knife}},
-               {:unit, 2_000},
-               1,
-               definition
-             )
   end
 
   @tag game_mode: :renewal
@@ -126,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
     assert {:error, :no_ammo} = Interpreter.cast(no_ammo, 1004, 1, {:unit, 2_000})
     assert_uncommitted(no_ammo)
 
-    assert {:error, :wrong_ammo} = Interpreter.cast(wrong_ammo, 1004, 1, {:unit, 2_000})
+    assert {:error, :no_ammo} = Interpreter.cast(wrong_ammo, 1004, 1, {:unit, 2_000})
     assert_uncommitted(wrong_ammo)
   end
 

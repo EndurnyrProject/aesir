@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.GameMode
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen
   alias Aesir.ZoneServer.Mmo.Mechanics.CastTime.PreRenewal
@@ -12,11 +13,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -165,6 +168,202 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
              gravitation
              | item_cost: [%{id: 717, amount: 1}]
            }) == []
+  end
+
+  describe "the cast-end ammunition requirement" do
+    test "accepts an arrow of the required type and consumes the level's amount" do
+      caster = ammo_caster(1_750, 3)
+      definition = ammo_definition([])
+
+      assert {:ok, prepared} =
+               Caster.Player.castend_cost(caster, __MODULE__, {:unit, 9_999}, definition, 1)
+
+      assert prepared.ammo_qty == 1
+
+      paid = Caster.Player.commit(caster, prepared)
+      assert paid.inventory[1].amount == 2
+      assert [{_old, new_inventory, {:reduced, 1, 2}}] = paid.pending_inventory_persist
+      assert new_inventory == paid.inventory
+    end
+
+    test "refuses ammunition of a subtype the skill does not allow" do
+      caster = ammo_caster(1_750, 3)
+      definition = ammo_definition(require_ammo: [:dagger])
+
+      assert {:error, :no_ammo} =
+               Caster.Player.castend_cost(caster, __MODULE__, {:unit, 9_999}, definition, 1)
+    end
+
+    test "refuses a stack shorter than the level's amount" do
+      caster = ammo_caster(1_750, 4)
+      definition = ammo_definition(ammo_qty: List.duplicate(5, 10))
+
+      assert {:error, :no_ammo} =
+               Caster.Player.castend_cost(caster, __MODULE__, {:unit, 9_999}, definition, 1)
+    end
+
+    test "refuses an empty ammo slot" do
+      caster =
+        PlayerStateFixture.build(%{
+          character_id: 101,
+          stats: %PlayerStats{},
+          inventory: %{}
+        })
+
+      assert {:error, :no_ammo} =
+               Caster.Player.castend_cost(
+                 caster,
+                 __MODULE__,
+                 {:unit, 9_999},
+                 ammo_definition([]),
+                 1
+               )
+    end
+
+    @tag game_mode: :renewal
+    test "renewal checks one extra arrow for Severe Rainstorm and consumes its own amount" do
+      definition =
+        ammo_definition(
+          id: 2_418,
+          name: :wm_severe_rainstorm,
+          ammo_qty: List.duplicate(10, 10)
+        )
+
+      assert {:error, :no_ammo} =
+               Caster.Player.castend_cost(
+                 ammo_caster(1_750, 10),
+                 __MODULE__,
+                 {:unit, 9_999},
+                 definition,
+                 1
+               )
+
+      caster = ammo_caster(1_750, 11)
+
+      assert {:ok, prepared} =
+               Caster.Player.castend_cost(caster, __MODULE__, {:unit, 9_999}, definition, 1)
+
+      assert prepared.ammo_qty == 10
+      assert Caster.Player.commit(caster, prepared).inventory[1].amount == 1
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal checks no extra arrow for Severe Rainstorm" do
+      definition =
+        ammo_definition(
+          id: 2_418,
+          name: :wm_severe_rainstorm,
+          ammo_qty: List.duplicate(10, 10)
+        )
+
+      caster = ammo_caster(1_750, 10)
+
+      assert {:ok, prepared} =
+               Caster.Player.castend_cost(caster, __MODULE__, {:unit, 9_999}, definition, 1)
+
+      refute Map.has_key?(Caster.Player.commit(caster, prepared).inventory, 1)
+    end
+  end
+
+  describe "the 90 percent weight refusal" do
+    test "refuses at exactly the threshold at cast begin and cast end, and allows one potion less" do
+      definition = weight_definition()
+
+      at_limit = potion_caster(261)
+      at_limit_cost = Cost.from_definition(at_limit, definition, 1, sp: 0)
+
+      assert {:error, :overweight} =
+               Caster.Player.prepare_begin_cost(
+                 at_limit,
+                 __MODULE__,
+                 definition,
+                 at_limit_cost,
+                 0,
+                 1
+               )
+
+      assert {:error, :overweight} =
+               Caster.Player.prepare_castend_cost(
+                 at_limit,
+                 __MODULE__,
+                 {:unit, 9_999},
+                 1,
+                 definition,
+                 at_limit_cost,
+                 0
+               )
+
+      under_limit = potion_caster(260)
+      under_limit_cost = Cost.from_definition(under_limit, definition, 1, sp: 0)
+
+      assert {:ok, _prepared} =
+               Caster.Player.prepare_begin_cost(
+                 under_limit,
+                 __MODULE__,
+                 definition,
+                 under_limit_cost,
+                 0,
+                 1
+               )
+
+      assert {:ok, _prepared} =
+               Caster.Player.prepare_castend_cost(
+                 under_limit,
+                 __MODULE__,
+                 {:unit, 9_999},
+                 1,
+                 definition,
+                 under_limit_cost,
+                 0
+               )
+    end
+  end
+
+  # A novice's 20_000 carry weight plus the fixture's 1 STR (300) is 20_300, so
+  # 90 percent is 18_270: 261 Red Potions (70 each) sit exactly on the limit.
+  defp potion_caster(potions) do
+    PlayerStateFixture.build(%{
+      character_id: 101,
+      stats: %PlayerStats{},
+      inventory: %{1 => %InventoryItem{nameid: 501, amount: potions}}
+    })
+  end
+
+  defp weight_definition do
+    %Definition{
+      id: 46,
+      name: :ac_double,
+      display_name: "Double Strafe",
+      max_level: 10,
+      target_type: :target_enemy,
+      damage_type: :damage,
+      sp_cost: [0]
+    }
+  end
+
+  defp ammo_caster(nameid, amount) do
+    PlayerStateFixture.build(%{
+      character_id: 101,
+      stats: %PlayerStats{},
+      inventory: %{1 => %InventoryItem{nameid: nameid, amount: amount, equip: 0x008000}}
+    })
+  end
+
+  defp ammo_definition(attrs) do
+    struct!(
+      %Definition{
+        id: 46,
+        name: :ac_double,
+        display_name: "Double Strafe",
+        max_level: 10,
+        target_type: :target_enemy,
+        damage_type: :damage,
+        sp_cost: List.duplicate(12, 10),
+        require_ammo: [:arrow],
+        ammo_qty: List.duplicate(1, 10)
+      },
+      attrs
+    )
   end
 
   defp emitted_cast_modifiers(rate) do

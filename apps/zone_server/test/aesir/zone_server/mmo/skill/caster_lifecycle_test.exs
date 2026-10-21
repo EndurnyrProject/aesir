@@ -134,7 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
         definition(
           zeny_cost: [3],
           item_cost: [%{id: 717, amount: 1}],
-          requires_ammo: true
+          require_ammo: [:arrow],
+          ammo_qty: [1]
         )
 
       {:ok, prepared} = Caster.Player.cost(caster, DynamicCost, :self, definition, 1)

@@ -44,16 +44,42 @@ defmodule Aesir.ZoneServer.Unit.Inventory.Ammo do
   end
 
   @doc """
-  Removes one unit from the equipped ammo stack.
+  Checks a skill's cast-end ammunition requirement.
 
-  Returns `{:ok, new_inventory, change}` (the slot is dropped when the stack
-  reaches zero) or `{:error, :no_ammo}` when nothing is equipped in the ammo slot.
+  The ammo slot must hold an item whose subtype is one of `allowed` and whose
+  stack holds at least `needed` units. A missing slot, an unknown item and a
+  foreign subtype refuse with `{:error, :no_ammo}`, the reference's no-ammo
+  failure; a short stack refuses with the same reason, though the reference
+  names its own message for a short bullet, grenade, shell or kunai stack,
+  which the wire protocol does not distinguish yet.
   """
-  @spec consume_one(Inventory.t()) :: Inventory.op_result()
-  def consume_one(inventory) when is_map(inventory) do
-    case equipped_ammo_index(inventory) do
-      nil -> {:error, :no_ammo}
-      index -> Inventory.remove(inventory, index, 1)
+  @spec check(Inventory.t(), [atom()], pos_integer()) :: :ok | {:error, :no_ammo}
+  def check(inventory, allowed, needed) when is_map(inventory) do
+    with {:ok, row, definition} <- equipped_ammo(inventory),
+         true <- row.amount >= needed and definition.subtype in allowed do
+      :ok
+    else
+      _refused -> {:error, :no_ammo}
     end
   end
+
+  @doc """
+  Removes `amount` units from the equipped ammo stack.
+
+  Returns `{:ok, new_inventory, change}` (the slot is dropped when the stack
+  reaches zero) or `{:error, :no_ammo}` when nothing is equipped in the ammo
+  slot, and `{:error, :insufficient_amount}` when the stack is shorter than
+  `amount`.
+  """
+  @spec consume(Inventory.t(), pos_integer()) :: Inventory.op_result()
+  def consume(inventory, amount) when is_map(inventory) do
+    case equipped_ammo_index(inventory) do
+      nil -> {:error, :no_ammo}
+      index -> Inventory.remove(inventory, index, amount)
+    end
+  end
+
+  @doc "Removes one unit from the equipped ammo stack, as a basic attack does."
+  @spec consume_one(Inventory.t()) :: Inventory.op_result()
+  def consume_one(inventory), do: consume(inventory, 1)
 end

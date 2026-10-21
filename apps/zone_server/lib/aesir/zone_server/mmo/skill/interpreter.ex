@@ -450,7 +450,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, cost} <- Cost.validate_resolved(cost) do
       case phase do
         :begin ->
-          Caster.Player.prepare_begin_cost(caster, module, definition, cost, 0)
+          Caster.Player.prepare_begin_cost(caster, module, definition, cost, 0, level)
 
         :completion ->
           Caster.Player.prepare_castend_cost(caster, module, target, level, definition, cost, 0)
@@ -622,7 +622,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           __MODULE__,
           definition,
           deferred.cost,
-          deferred.zeny
+          deferred.zeny,
+          deferred.level
         )
 
       {:ok,

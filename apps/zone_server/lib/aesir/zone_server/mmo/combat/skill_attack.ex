@@ -1898,9 +1898,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   defp flag_type(:misc), do: :misc
 
   # The arrow-attack state holds only while a player's arrow skill resolves its
-  # own cast: an arrow skill's immediate hits from the caster itself.
+  # own cast: an arrow skill's immediate hits from the caster itself. The skill
+  # declares an ammo type, so the equipped stack is the ammunition it fired; the
+  # per-level amount decides the units, never whether the state applies.
   defp arrow_skill?(%{unit_type: :player}, skill_id, delivery) when delivery != :unit,
-    do: match?({:ok, %{requires_ammo: true}}, Catalog.by_id(skill_id))
+    do: match?({:ok, %{require_ammo: [_ | _]}}, Catalog.by_id(skill_id))
 
   defp arrow_skill?(_attacker, _skill_id, _delivery), do: false
 

@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
       assert HtPhantasmic.definition(:pre_renewal).sp_cost == [10]
       assert HtPhantasmic.definition(:pre_renewal).element == :neutral
       assert d.item_cost == []
-      assert d.requires_ammo == false
+      assert d.require_ammo == []
       assert d.quest_skill == true
       assert d.quest_owner_job == :hunter
     end

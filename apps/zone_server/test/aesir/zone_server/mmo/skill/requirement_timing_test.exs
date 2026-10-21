@@ -192,7 +192,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.RequirementTimingTest do
           }
         })
 
-      stub_probe(definition(requires_ammo: true, cooldown: [], after_cast_delay: []))
+      stub_probe(
+        definition(require_ammo: [:arrow], ammo_qty: [1], cooldown: [], after_cast_delay: [])
+      )
 
       Process.put(:probe_result, :skipped)
       assert {:skipped, skipped, :target_dead} = Interpreter.cast(caster, @probe_id, 1, :self)

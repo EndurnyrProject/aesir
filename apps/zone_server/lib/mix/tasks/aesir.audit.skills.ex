@@ -15,10 +15,10 @@ defmodule Mix.Tasks.Aesir.Audit.Skills do
   `range`, `hit_count`, `element`, `splash_radius`, `knockback`, `cast_time`,
   `fixed_cast_time` (renewal only), `after_cast_delay`, `cooldown`,
   `sp_cost`, `hp_cost`, `hp_cost_rate`, `zeny_cost`, `sphere_cost`,
-  `item_cost`, `requires_ammo`, `require_weapon`, `vulture_range`. A skill
-  present in the
-  job's tree but absent from the source database is a strict finding for a
-  renewal run (`missing in source`); for a pre-renewal run it is only
+  `item_cost`, `require_ammo`, `ammo_qty`, `require_weapon`, `vulture_range`.
+  A skill present in the job's tree but absent from the source database is a
+  strict finding for a renewal run (`missing in source`); for a pre-renewal run
+  it is only
   informational (`renewal-only`), since renewal-only content is expected to
   be absent from the pre-renewal database.
 

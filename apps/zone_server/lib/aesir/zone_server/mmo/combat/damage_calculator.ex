@@ -1327,12 +1327,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp attacker_cards(_attacker, _defender, _opts, _attack_path, _modifiers), do: []
 
   # An arrow attack is a bow or gun normal attack, or a skill that uses
-  # ammunition.
+  # ammunition: its definition declares an ammo type, so the equipped stack is
+  # the ammunition the cast fired.
   defp arrow_attack?(attacker, nil),
     do: attacker.weapon |> Map.get(:type) |> WeaponTypes.requires_ammo?()
 
   defp arrow_attack?(_attacker, skill_id),
-    do: match?({:ok, %{requires_ammo: true}}, Catalog.by_id(skill_id))
+    do: match?({:ok, %{require_ammo: [_ | _]}}, Catalog.by_id(skill_id))
 
   # The target's cards against a physical hit, only for a player target:
   # `weapon` with the element resists of `elements` (the right hand's attack

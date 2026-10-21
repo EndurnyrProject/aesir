@@ -16,6 +16,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `require_weapon` restricts ordinary player casts to the listed equipped
   right-hand weapon subtypes. An empty list (the default) accepts any weapon.
 
+  `require_ammo` lists the ammunition subtypes the cast end accepts in the ammo
+  slot, and `ammo_qty` holds the units it requires per level (the skill DB's
+  `Requires: Ammo` mask and `AmmoAmount`). An empty `require_ammo`, or a level
+  whose amount is not positive, requires no ammunition at all: the cast end
+  only checks presence, type and amount when the source's requirement resolved
+  a nonzero quantity. Both are mode-keyable; read the required amount through
+  `ammo_qty_at_level/2`.
+
   `fixed_cast_time` is additional to variable `cast_time`. An absent entry is
   zero; a negative sentinel requests the configured fixed/variable split.
 
@@ -188,7 +196,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             # explicit `requires: []` (or a narrower set). This default makes the
             # crash-a-MobSession class structurally impossible.
             requires: [:player_state],
-            requires_ammo: false,
+            require_ammo: [],
+            ammo_qty: [],
             require_weapon: [],
             vulture_range: false,
             status: nil,
@@ -243,7 +252,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           damage_base: damage_base(),
           item_cost: [item_cost_entry()],
           requires: [Requirement.t()],
-          requires_ammo: boolean(),
+          require_ammo: [atom()],
+          ammo_qty: [non_neg_integer()],
           require_weapon: [atom()],
           vulture_range: boolean(),
           status: atom() | nil,
@@ -311,7 +321,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_base: {:enum, [:weapon, :shield]},
     item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}},
     requires: {:list, {:enum, Requirement.all()}},
-    requires_ammo: :boolean,
+    require_ammo: {:list, :atom},
+    ammo_qty: {:list, {:integer, {:gte, 0}}},
     require_weapon: {:list, :atom},
     vulture_range: :boolean,
     status: :atom,
@@ -363,7 +374,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_base: :weapon,
     item_cost: [],
     requires: [:player_state],
-    requires_ammo: false,
+    require_ammo: [],
+    ammo_qty: [],
     require_weapon: [],
     vulture_range: false,
     status: nil,
@@ -412,7 +424,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :cooldown,
     :item_cost,
     :require_weapon,
-    :requires_ammo,
+    :require_ammo,
+    :ammo_qty,
     :max_level
   ]
 
@@ -514,5 +527,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
 
   def hit_count_at_level(%__MODULE__{hit_count: counts}, level) when is_list(counts) do
     Enum.at(counts, max(level - 1, 0), List.last(counts))
+  end
+
+  @doc """
+  Resolves the ammunition units a skill level requires in the ammo slot.
+
+  Returns `0` when the skill declares no ammo type, or when the level's amount
+  is not positive: the source only checks ammunition when the resolved
+  quantity is nonzero, so a declared type alone requires nothing.
+  """
+  @spec ammo_qty_at_level(t(), non_neg_integer()) :: non_neg_integer()
+  def ammo_qty_at_level(%__MODULE__{require_ammo: []}, _level), do: 0
+
+  def ammo_qty_at_level(%__MODULE__{ammo_qty: amounts}, level) do
+    case Enum.at(amounts, max(level - 1, 0), 0) do
+      qty when is_integer(qty) and qty > 0 -> qty
+      _none -> 0
+    end
   end
 end
