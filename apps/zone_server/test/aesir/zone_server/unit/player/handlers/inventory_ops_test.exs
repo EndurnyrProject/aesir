@@ -126,8 +126,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
 
       before = NaiveDateTime.utc_now()
 
-      assert {:ok, inventory, []} = Inventory.give_group(char.id, %{}, stats, grants)
+      assert {:ok, inventory, successes, []} = Inventory.give_group(char.id, %{}, stats, grants)
       assert map_size(inventory) == 2
+      assert Enum.map(successes, &elem(&1, 0)) == [@sword, @dagger]
 
       assert [
                %InventoryItem{
@@ -153,7 +154,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
     } do
       grants = [grant(@potion, identify?: false), grant(@sword, identify?: true)]
 
-      assert {:ok, inventory, []} = Inventory.give_group(char.id, %{}, stats, grants)
+      assert {:ok, inventory, successes, []} = Inventory.give_group(char.id, %{}, stats, grants)
+      assert length(successes) == 2
 
       assert %{
                0 => %InventoryItem{nameid: @potion, identify: 1},
@@ -169,11 +171,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       sword = def!(@sword)
       amount = div(Weight.max_weight(tiny), sword.weight) + 1
 
-      assert {:ok, inventory, failures} =
+      assert {:ok, inventory, successes, failures} =
                Inventory.give_group(char.id, %{}, tiny, [grant(@sword, amount: amount)])
 
       assert failures != []
       assert Enum.uniq(failures) == [:overweight]
+      assert length(successes) + length(failures) == amount
       assert Inventory.held_amount(inventory, @sword) + length(failures) == amount
       assert [_ | _] = Persistence.load_inventory(char.id)
     end
@@ -187,7 +190,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
           {index, %InventoryItem{nameid: 90_000 + index, amount: 1, identify: 1}}
         end)
 
-      assert {:ok, ^full, [:inventory_full]} =
+      assert {:ok, ^full, [], [:inventory_full]} =
                Inventory.give_group(char.id, full, stats, [grant(@sword)])
 
       assert map_size(full) == Inventory.capacity()
@@ -206,7 +209,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
           {:error, InventoryItem.changeset(%InventoryItem{}, %{})}
       end)
 
-      assert {:ok, inventory, [_reason]} =
+      assert {:ok, inventory, [{@sword, false}], [_reason]} =
                Inventory.give_group(char.id, %{}, stats, [grant(@sword), grant(@dagger)])
 
       assert [%InventoryItem{nameid: @sword}] = Map.values(inventory)

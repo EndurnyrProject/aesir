@@ -48,6 +48,54 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
            ]
   end
 
+  test "pick_grant picks one entry and uses the requested quantity" do
+    group =
+      group(:pick_quantity, [
+        %SubGroup{
+          number: 1,
+          algorithm: :random,
+          entries: [entry(901, rate: 1), entry(902, rate: 1)]
+        }
+      ])
+
+    assert %{item_id: item_id, amount: 5, identify?: false, refine: 0, bound: nil} =
+             Roller.pick_grant(group, 1, 5, fn _max -> 1 end)
+
+    assert item_id in [901, 902]
+  end
+
+  test "pick_grant with quantity zero uses the entry's own amount" do
+    group =
+      group(:pick_default_amount, [
+        %SubGroup{number: 2, algorithm: :all, entries: [entry(903, amount: 7)]}
+      ])
+
+    assert %{item_id: 903, amount: 7} = Roller.pick_grant(group, 2, 0, fn _max -> 1 end)
+  end
+
+  test "pick_grant consumes one shared-pool copy" do
+    group =
+      group(:pick_pool, [
+        %SubGroup{number: 5, algorithm: :shared_pool, entries: [entry(850, rate: 1)]}
+      ])
+
+    :persistent_term.put(ItemGroups, %{group.key => group})
+
+    assert %{item_id: 850, amount: 2, drawn: {5, [850]}} =
+             Roller.pick_grant(group, 5, 2)
+
+    owner = ItemGroupPool.ensure_pool(group.key)
+    assert %{5 => %{}} = :sys.get_state(owner).subs
+    on_exit(fn -> if Process.alive?(owner), do: send(owner, :timeout) end)
+  end
+
+  test "pick_grant returns nil for a missing subgroup" do
+    group =
+      group(:pick_missing, [%SubGroup{number: 1, algorithm: :random, entries: [entry(501)]}])
+
+    assert Roller.pick_grant(group, 9, 1) == nil
+  end
+
   test "pick_id uses catalog weights without starting or depleting a shared pool" do
     subgroup = %SubGroup{
       number: 3,

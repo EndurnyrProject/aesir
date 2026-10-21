@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Script.Dsl.Announce
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.ItemContainer
@@ -64,6 +65,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:give_item, integer(), pos_integer()}
           | {:give_item2, integer(), pos_integer(), map()}
           | {:give_group_items, [map()]}
+          | {:give_rand_group_items, [map()]}
           | {:get_named_item, integer(), String.t() | integer()}
           | {:give_item_rental, integer(), pos_integer(), keyword()}
           | {:give_item_bound, integer(), pos_integer(), 1 | 4}
@@ -169,7 +171,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
              :give_item_bound,
              :give_item_rental,
              :get_named_item,
-             :give_group_items
+             :give_group_items,
+             :give_rand_group_items
            ] ->
         :inventory_changed
 
@@ -231,13 +234,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
-  def apply_op({:give_group_items, grants}, %{game_state: gs} = state) do
-    case Inventory.give_group(gs.character_id, gs.inventory, gs.stats, grants) do
-      {:ok, inventory, failures} ->
-        Enum.each(failures, &InventoryManager.notify_add_failed(state.connection_pid, &1))
-        commit(state, %{gs | inventory: inventory})
-    end
-  end
+  def apply_op({:give_group_items, grants}, state), do: give_group_items(state, grants, false)
+  def apply_op({:give_rand_group_items, grants}, state), do: give_group_items(state, grants, true)
 
   def apply_op({:get_named_item, item_id, target}, %{game_state: gs} = state) do
     with {:ok, definition} <- fetch_definition(item_id),
@@ -645,6 +643,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       {:error, reason} ->
         {{:error, reason}, state}
     end
+  end
+
+  defp give_group_items(%{game_state: gs} = state, grants, halt?) do
+    {:ok, inventory, successes, failures} =
+      Inventory.give_group(gs.character_id, gs.inventory, gs.stats, grants, halt?: halt?)
+
+    Enum.each(failures, &InventoryManager.notify_add_failed(state.connection_pid, &1))
+    announce_granted(successes)
+
+    new_gs = %{gs | inventory: inventory}
+    committed = StateCommit.commit(state, new_gs)
+
+    if halt? and failures != [] do
+      if successes != [], do: PlayerEvents.inventory_changed(gs.character_id)
+      {{:error, List.first(failures)}, committed}
+    else
+      {{:ok, new_gs}, committed}
+    end
+  end
+
+  # One announcement per successful unit, exactly what the reference announces
+  # inside its add loop; an entry whose every unit was refused announces nothing.
+  defp announce_granted(successes) do
+    Enum.each(successes, fn
+      {item_id, true} -> Announce.announce_all("Obtained item #{item_id}.", 0)
+      _unit -> :ok
+    end)
   end
 
   defp stage_item_skill(skill_id, level, item, keep?, %{game_state: gs} = state) do

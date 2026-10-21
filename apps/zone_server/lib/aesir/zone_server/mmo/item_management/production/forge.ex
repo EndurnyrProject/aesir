@@ -2,8 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   @moduledoc """
   Orchestrates a production attempt inside the caster's player session.
 
-  Capacity and possession are checked before materials are consumed. A failed
-  production attempt still consumes its materials and catalysts.
+  Possession is checked before materials are consumed. The product is added
+  afterwards, as the reference does: a refused add still leaves the materials
+  and catalysts spent, reports the reason to the client, and does not undo the
+  production result.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -48,7 +50,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
     {crumb_count, element, catalyst_ids} = catalysts(recipe, chosen_catalyst_ids)
 
     with {:ok, item_def} <- ItemManagement.get_item_by_id(recipe.product_id),
-         :ok <- InventoryOps.can_add(caster.inventory, caster.stats, item_def, 1),
          :ok <- check_materials(caster.inventory, recipe.materials, catalyst_ids) do
       consumed = consume_all(caster, recipe.materials, catalyst_ids)
       chance = success_chance(consumed, recipe, crumb_count, element, instruction_change_rank)

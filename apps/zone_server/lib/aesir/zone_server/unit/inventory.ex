@@ -72,6 +72,16 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   def capacity, do: @max_inventory
 
   @doc """
+  Number of unused slots inside the inventory's slot cap.
+
+  Keys outside `0..capacity-1` are not slots and do not count.
+  """
+  @spec blank_slots(t()) :: non_neg_integer()
+  def blank_slots(inventory) when is_map(inventory) do
+    @max_inventory - Enum.count(inventory, fn {index, _item} -> index < @max_inventory end)
+  end
+
+  @doc """
   Adds a fresh grant of `amount` of `item_def`, built from `opts`, with the
   inventory recipe (`ItemContainer.put/6`).
 
@@ -116,57 +126,97 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   Gives every concrete item-group grant in order, as the reference does.
 
   Each entry is added on its own: a stackable entry in one call, a
-  non-stackable entry one unit per call, continuing past a refusal. The
-  already-granted entries stay granted and a later failure never undoes them,
-  so the returned failures are only what the client must be told about.
-  Unique-id requests currently persist `0` because Aesir has no durable
-  item-serial generator.
+  non-stackable entry one unit per call. The already-granted units stay granted
+  and a later failure never undoes them. `successes` carries one
+  `{item_id, announced?}` per successful unit so the caller can announce exactly
+  what the reference announces; `failures` carries one reason per refused unit.
+  With `halt?: true` the grant stops at the first refusal (the
+  `getrandgroupitem` rule); otherwise it continues (`getgroupitem`). Unique-id
+  requests currently persist `0` because Aesir has no durable item-serial
+  generator.
   """
-  @spec give_group(pos_integer(), t(), Stats.t(), [Group.grant()]) ::
-          {:ok, t(), [term()]}
-  def give_group(char_id, inventory, %Stats{} = stats, grants)
+  @spec give_group(pos_integer(), t(), Stats.t(), [Group.grant()], keyword()) ::
+          {:ok, t(), [{integer(), boolean()}], [term()]}
+  def give_group(char_id, inventory, %Stats{} = stats, grants, opts \\ [])
       when is_integer(char_id) and char_id > 0 and is_map(inventory) and is_list(grants) do
+    halt? = Keyword.get(opts, :halt?, false)
     now = NaiveDateTime.utc_now()
 
-    Enum.reduce(grants, {:ok, inventory, []}, fn grant, {:ok, current, failures} ->
-      case ItemManagement.get_item_by_id(grant.item_id) do
-        {:ok, item_def} ->
-          opts = grant_opts(char_id, grant, item_def, now)
-
-          {inventory, failures} =
-            give_entry_units(char_id, current, stats, item_def, grant.amount, opts, failures)
-
-          {:ok, inventory, failures}
-
-        {:error, _reason} ->
-          {:ok, current, failures}
-      end
+    Enum.reduce_while(grants, {:ok, inventory, [], []}, fn grant, acc ->
+      step_grant(char_id, stats, grant, now, acc, halt?)
     end)
   end
 
-  defp give_entry_units(char_id, inventory, stats, item_def, amount, opts, failures) do
-    if ItemDefinition.stackable?(item_def) do
-      give_stack_entry(char_id, inventory, stats, item_def, amount, opts, failures)
+  defp step_grant(
+         char_id,
+         stats,
+         grant,
+         now,
+         {:ok, current, successes, failures},
+         halt?
+       ) do
+    case ItemManagement.get_item_by_id(grant.item_id) do
+      {:ok, item_def} ->
+        add_opts = grant_opts(char_id, grant, item_def, now)
+        acc = {current, successes, failures}
+
+        acc =
+          if ItemDefinition.stackable?(item_def) do
+            give_stack_entry(char_id, stats, item_def, grant, add_opts, acc)
+          else
+            give_unit_entries(char_id, stats, item_def, grant, add_opts, acc, halt?)
+          end
+
+        {inventory, successes, failures} = acc
+        result = {:ok, inventory, successes, failures}
+        continue_or_halt(result, halt?, failures)
+
+      {:error, _reason} ->
+        {:cont, {:ok, current, successes, failures}}
+    end
+  end
+
+  defp continue_or_halt(result, true, [_reason | _rest]), do: {:halt, result}
+  defp continue_or_halt(result, _halt?, _failures), do: {:cont, result}
+
+  defp give_stack_entry(char_id, stats, item_def, grant, opts, {inventory, successes, failures}) do
+    case give_grant(char_id, inventory, stats, item_def, grant.amount, opts) do
+      {:ok, persisted} -> {persisted, successes ++ [success(grant)], failures}
+      {:error, reason, unchanged} -> {unchanged, successes, failures ++ [reason]}
+    end
+  end
+
+  defp give_unit_entries(
+         char_id,
+         stats,
+         item_def,
+         grant,
+         opts,
+         {inventory, successes, failures},
+         halt?
+       ) do
+    if grant.amount < 1 do
+      {inventory, successes, failures}
     else
-      give_unit_entries(char_id, inventory, stats, item_def, amount, opts, failures)
+      Enum.reduce_while(1..grant.amount, {inventory, successes, failures}, fn _unit, acc ->
+        step_unit(char_id, stats, item_def, grant, opts, acc, halt?)
+      end)
     end
   end
 
-  defp give_stack_entry(char_id, inventory, stats, item_def, amount, opts, failures) do
-    case give_grant(char_id, inventory, stats, item_def, amount, opts) do
-      {:ok, persisted} -> {persisted, failures}
-      {:error, reason, unchanged} -> {unchanged, failures ++ [reason]}
+  defp step_unit(char_id, stats, item_def, grant, opts, {inventory, successes, failures}, halt?) do
+    case give_grant(char_id, inventory, stats, item_def, 1, opts) do
+      {:ok, persisted} ->
+        {:cont, {persisted, successes ++ [success(grant)], failures}}
+
+      {:error, reason, unchanged} ->
+        result = {unchanged, successes, failures ++ [reason]}
+
+        if halt?, do: {:halt, result}, else: {:cont, result}
     end
   end
 
-  defp give_unit_entries(char_id, inventory, stats, item_def, amount, opts, failures) do
-    Enum.reduce(1..amount, {inventory, failures}, fn _unit, {current, acc} ->
-      case give_grant(char_id, current, stats, item_def, 1, opts) do
-        {:ok, persisted} -> {persisted, acc}
-        {:error, reason, unchanged} -> {unchanged, acc ++ [reason]}
-      end
-    end)
-  end
+  defp success(grant), do: {grant.item_id, grant.announced?}
 
   @spec give_grant(pos_integer(), t(), Stats.t(), ItemDefinition.t(), pos_integer(), map()) ::
           {:ok, t()} | {:error, ItemContainer.add_error(), t()}

@@ -70,20 +70,59 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     assert result.game_state.inventory[1].nameid == 502
   end
 
-  test "get_rand_group_item grants the requested subgroup quantity" do
+  test "get_rand_group_item grants the requested quantity of one picked entry" do
     install_group(:rand_box, [
       %SubGroup{number: 3, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
     ])
 
-    stub(InventoryOps, :add, fn 1, inventory, _stats, definition, 1, _opts ->
+    stub(InventoryOps, :add, fn 1, inventory, _stats, definition, amount, _opts ->
       index = map_size(inventory)
-      added = %InventoryItem{nameid: definition.id, amount: 1}
+      added = %InventoryItem{nameid: definition.id, amount: amount}
       {:ok, Map.put(inventory, index, added), {:added, index, added}}
     end)
 
     result = Dsl.get_rand_group_item(item_ctx(), :rand_box, 2, 3)
 
-    assert map_size(result.game_state.inventory) == 2
+    assert result.status == :ok
+    assert %{0 => %InventoryItem{nameid: 501, amount: 2}} = result.game_state.inventory
+  end
+
+  test "get_rand_group_item sends one grant and halts on a refusal" do
+    install_group(:rand_one, [
+      %SubGroup{
+        number: 1,
+        algorithm: :random,
+        entries: [%Entry{item_id: 501, rate: 1}, %Entry{item_id: 502, rate: 1}]
+      }
+    ])
+
+    {:ok, session} =
+      StubSession.start_link(fn {:give_rand_group_items, _grants} ->
+        {:error, :overweight}
+      end)
+
+    result = Dsl.get_rand_group_item(npc_ctx(session), :rand_one, 2, 1)
+
+    assert result.status == {:error, :overweight}
+    assert_received {:script_apply, {:give_rand_group_items, [grant]}}
+    assert grant.item_id in [501, 502]
+    assert grant.amount == 2
+  end
+
+  test "get_rand_group_item refuses before any call when the inventory has no blank slot" do
+    install_group(:rand_full, [
+      %SubGroup{number: 1, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
+    ])
+
+    {:ok, session} = StubSession.start_link(fn _op -> {:ok, item_ctx().game_state} end)
+
+    full =
+      Map.new(0..99, fn index -> {index, %InventoryItem{nameid: 90_000 + index, amount: 1}} end)
+
+    ctx = %{npc_ctx(session) | game_state: %{item_ctx().game_state | inventory: full}}
+
+    assert Dsl.get_rand_group_item(ctx, :rand_full, 1, 1).status == {:error, :inventory_full}
+    refute_received {:script_apply, _op}
   end
 
   test "get_group_item routes NPC grants through the session seam" do
@@ -147,7 +186,7 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     assert pool_counts(owner) != before_counts
   end
 
-  test "announced grants use the global announcement path" do
+  test "a detached ctx announces successful grants" do
     test_pid = self()
 
     expect(Announcement, :to_all, fn opts ->
@@ -155,10 +194,15 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
       :ok
     end)
 
-    {:ok, session} = StubSession.start_link(fn _op -> {:ok, item_ctx().game_state} end)
-    grant = grant(501, announced?: true)
+    stub(InventoryOps, :add, fn 1, inventory, _stats, definition, amount, _opts ->
+      index = map_size(inventory)
+      added = %InventoryItem{nameid: definition.id, amount: amount}
+      {:ok, Map.put(inventory, index, added), {:added, index, added}}
+    end)
 
-    assert Dsl.commit_grants(npc_ctx(session), [grant]).status == :ok
+    result = Dsl.commit_grants(item_ctx(), [grant(501, announced?: true)])
+
+    assert result.status == :ok
     assert_receive {:announced, %{text: "Obtained item 501.", style: :TOP}}
   end
 

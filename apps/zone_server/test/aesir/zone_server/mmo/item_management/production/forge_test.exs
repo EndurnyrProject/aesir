@@ -135,16 +135,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     assert failed.pending_production_result == %{success: false, item_id: 501}
   end
 
-  test "full inventory and stale materials are rejected before consumption", %{caster: caster} do
-    material = item(998, 2)
+  test "a full inventory spends the materials and reports the refused add", %{caster: caster} do
+    Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+    material = item(998, 3)
 
     full =
       1..99
-      |> Map.new(fn index -> {index, %{item(501 + index, 1) | equip: 1}} end)
+      |> Map.new(fn index -> {index, item(90_000 + index, 1)} end)
       |> Map.put(0, material)
 
-    assert {:error, :inventory_full} = Forge.run(%{caster | inventory: full}, weapon_recipe(), [])
-    assert full[0].amount == 2
+    assert {:ok, staged} = Forge.run(%{caster | inventory: full}, weapon_recipe(), [])
+
+    assert ItemContainer.held_amount(staged.inventory, 998) == 1
+    assert staged.pending_item_add_failures == [:inventory_full]
+    assert staged.pending_production_result == %{success: true, item_id: 1101}
 
     assert {:error, :no_materials} = Forge.run(%{caster | inventory: %{}}, weapon_recipe(), [])
   end

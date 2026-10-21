@@ -59,6 +59,72 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
     end
   end
 
+  @doc """
+  Picks one entry from `sub` and shapes it as a single grant of `qty` units.
+
+  This is the reference's single-entry buildin: `:random` picks weighted,
+  `:all` picks uniformly, and `:shared_pool` consumes one copy from the pool.
+  A `qty` of 0 takes the entry's own amount. Only the item id and the identify
+  rule carry over; the entry's other attributes belong to the per-entry grant,
+  not this one. Returns `nil` when the subgroup has no selectable entry.
+  """
+  @spec pick_grant(Group.t(), non_neg_integer(), non_neg_integer(), rng()) :: Group.grant() | nil
+  def pick_grant(group, sub, qty, rng \\ :rand) do
+    case pick_entry(group, sub, rng) do
+      {:ok, entry, drawn} -> single_grant(entry, qty, drawn)
+      :error -> nil
+    end
+  end
+
+  defp pick_entry(%Group{subgroups: subgroups, key: key}, sub, rng) do
+    case Enum.find(subgroups, &(&1.number == sub)) do
+      %SubGroup{algorithm: :random, entries: entries} -> random_entry(entries, rng)
+      %SubGroup{algorithm: :all, entries: entries} -> uniform_entry(entries, rng)
+      %SubGroup{algorithm: :shared_pool} = subgroup -> pool_entry(key, sub, subgroup)
+      nil -> :error
+    end
+  end
+
+  defp random_entry(entries, rng) do
+    if Enum.any?(entries, &(&1.rate > 0)),
+      do: {:ok, weighted_pick(entries, rng), nil},
+      else: :error
+  end
+
+  defp uniform_entry([], _rng), do: :error
+
+  defp uniform_entry(entries, rng),
+    do: {:ok, Enum.at(entries, uniform(rng, length(entries)) - 1), nil}
+
+  defp pool_entry(key, sub, subgroup) do
+    case ItemGroupPool.draw(key, sub, 1) do
+      {:ok, [item_id]} ->
+        case Enum.find(subgroup.entries, &(&1.item_id == item_id)) do
+          nil -> :error
+          entry -> {:ok, entry, {sub, [item_id]}}
+        end
+
+      {:error, :empty} ->
+        :error
+    end
+  end
+
+  defp single_grant(entry, qty, drawn) do
+    %{
+      item_id: entry.item_id,
+      amount: if(qty > 0, do: qty, else: entry.amount),
+      identify?: false,
+      refine: 0,
+      grade: 0,
+      bound: nil,
+      unique_id?: false,
+      duration_min: 0,
+      named?: false,
+      announced?: false,
+      drawn: drawn
+    }
+  end
+
   @doc "Returns one weighted catalog item id without depleting shared-pool state."
   @spec pick_id(Group.t(), non_neg_integer(), rng()) :: {:ok, pos_integer()} | :error
   def pick_id(group, sub, rng \\ :rand) do

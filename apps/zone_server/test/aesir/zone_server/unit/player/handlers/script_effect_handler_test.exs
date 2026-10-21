@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.Net.QuestStateChanged
   alias Aesir.Net.SpriteChange
   alias Aesir.Net.StorageResult
+  alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -335,6 +336,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert {:ok, game_state} = reply
       assert game_state.inventory == %{0 => added}
       assert new_state.game_state.inventory == %{0 => added}
+    end
+
+    test "announces a successful entry and not a refused one" do
+      added = %InventoryItem{nameid: 501, amount: 1}
+      test = self()
+
+      stub(InventoryOps, :add, fn
+        1000, %{}, _stats, %{id: 501}, 1, _opts ->
+          {:ok, %{0 => added}, {:added, 0, added}}
+
+        _char_id, _inventory, _stats, _definition, 1, _opts ->
+          {:error, :overweight}
+      end)
+
+      expect(Announcement, :to_all, fn opts ->
+        send(test, {:announced, opts})
+        :ok
+      end)
+
+      grants = [
+        Map.put(group_grant(501), :announced?, true),
+        Map.put(group_grant(1101), :announced?, true)
+      ]
+
+      {reply, _new_state} =
+        ScriptEffectHandler.apply_op({:give_group_items, grants}, base_state())
+
+      assert {:ok, _game_state} = reply
+      assert_receive {:announced, %{text: "Obtained item 501."}}
+      refute_received {:announced, %{text: "Obtained item 1101."}}
     end
 
     test "reports a refused entry and keeps the entries that fit" do

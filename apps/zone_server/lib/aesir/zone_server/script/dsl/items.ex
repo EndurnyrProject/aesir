@@ -91,28 +91,38 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
         group
         |> Roller.roll_full()
         |> stamp_group_key(group_key)
-        |> then(&commit_grants(ctx, &1))
+        |> then(&commit_grants(ctx, &1, false))
 
       :error ->
         Ctx.halt(ctx, :unknown_item_group)
     end
   end
 
-  @doc "Rolls and grants `qty` results from one item-group subgroup."
-  @spec get_rand_group_item(Ctx.t(), atom(), pos_integer(), non_neg_integer()) :: Ctx.t()
+  @doc """
+  Grants `qty` units of one entry picked from a subgroup.
+
+  This is the reference's single-entry buildin: the pick is one entry (weighted,
+  uniform, or one shared-pool copy depending on the subgroup algorithm), the
+  grant is `qty` units of it (`0` takes the entry's own amount), and a grant
+  that needs more blank slots than the inventory has is refused before any add.
+  The grant halts at the first refused unit.
+  """
+  @spec get_rand_group_item(Ctx.t(), atom(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
   def get_rand_group_item(%Ctx{status: {:error, _}} = ctx, _group_key, _qty, _sub), do: ctx
 
-  def get_rand_group_item(%Ctx{} = ctx, group_key, qty, sub)
-      when is_integer(qty) and qty > 0 and is_integer(sub) and sub >= 0 do
-    case ItemGroups.fetch(group_key) do
-      {:ok, group} ->
-        group
-        |> Roller.roll_n(sub, qty)
-        |> stamp_group_key(group_key)
-        |> then(&commit_grants(ctx, &1))
+  def get_rand_group_item(%Ctx{game_state: nil} = ctx, _group_key, _qty, _sub),
+    do: Ctx.halt(ctx, :no_player)
 
-      :error ->
-        Ctx.halt(ctx, :unknown_item_group)
+  def get_rand_group_item(%Ctx{} = ctx, group_key, qty, sub)
+      when is_integer(qty) and qty >= 0 and is_integer(sub) and sub >= 0 do
+    with {:ok, group} <- ItemGroups.fetch(group_key),
+         grant when is_map(grant) <- Roller.pick_grant(group, sub, qty),
+         true <- blank_slots?(ctx, grant) do
+      commit_grants(ctx, [Map.put(grant, :group_key, group_key)], true)
+    else
+      :error -> Ctx.halt(ctx, :unknown_item_group)
+      nil -> Ctx.halt(ctx, :no_group_entry)
+      false -> Ctx.halt(ctx, :inventory_full)
     end
   end
 
@@ -131,41 +141,61 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
 
   @doc "Commits concrete item-group grants through the current script context."
   @spec commit_grants(Ctx.t(), [Group.grant()]) :: Ctx.t()
-  def commit_grants(%Ctx{} = ctx, []), do: ctx
-  def commit_grants(%Ctx{status: {:error, _}} = ctx, _grants), do: ctx
+  def commit_grants(ctx, grants), do: commit_grants(ctx, grants, false)
 
-  def commit_grants(%Ctx{session_pid: session_pid} = ctx, grants) when is_pid(session_pid) do
-    case apply_op(ctx, {:give_group_items, grants}) do
-      %Ctx{status: {:error, _reason}} = halted -> halted
-      %Ctx{} = committed -> maybe_announce(committed, grants)
-    end
+  @spec commit_grants(Ctx.t(), [Group.grant()], boolean()) :: Ctx.t()
+  def commit_grants(%Ctx{} = ctx, [], _halt?), do: ctx
+  def commit_grants(%Ctx{status: {:error, _}} = ctx, _grants, _halt?), do: ctx
+
+  def commit_grants(%Ctx{session_pid: session_pid} = ctx, grants, halt?)
+      when is_pid(session_pid) do
+    op = if halt?, do: {:give_rand_group_items, grants}, else: {:give_group_items, grants}
+    apply_op(ctx, op)
   end
 
-  def commit_grants(%Ctx{session_pid: nil, game_state: nil} = ctx, _grants),
+  def commit_grants(%Ctx{session_pid: nil, game_state: nil} = ctx, _grants, _halt?),
     do: Ctx.halt(ctx, :no_player)
 
-  def commit_grants(%Ctx{session_pid: nil, game_state: game_state} = ctx, grants) do
-    {:ok, inventory, _failures} =
-      Inventory.give_group(ctx.char_id, game_state.inventory, game_state.stats, grants)
+  def commit_grants(%Ctx{session_pid: nil, game_state: game_state} = ctx, grants, halt?) do
+    {:ok, inventory, successes, failures} =
+      Inventory.give_group(ctx.char_id, game_state.inventory, game_state.stats, grants,
+        halt?: halt?
+      )
 
-    maybe_announce(%{ctx | game_state: %{game_state | inventory: inventory}}, grants)
+    ctx = announce_successes(%{ctx | game_state: %{game_state | inventory: inventory}}, successes)
+
+    case {halt?, failures} do
+      {true, [reason | _]} -> Ctx.halt(ctx, reason)
+      _ -> ctx
+    end
   end
 
   @spec stamp_group_key([Group.grant()], atom()) :: [Group.grant()]
   defp stamp_group_key(grants, group_key),
     do: Enum.map(grants, &Map.put(&1, :group_key, group_key))
 
-  @spec maybe_announce(Ctx.t(), [Group.grant()]) :: Ctx.t()
-  defp maybe_announce(ctx, grants) do
-    Enum.each(grants, fn
-      %{announced?: true, item_id: item_id} ->
-        Announce.announce_all("Obtained item #{item_id}.", 0)
-
-      _grant ->
-        :ok
+  # The handler announces on the session path, where the per-unit successes are
+  # known; a detached ctx announces here from the same success list.
+  @spec announce_successes(Ctx.t(), [{integer(), boolean()}]) :: Ctx.t()
+  defp announce_successes(ctx, successes) do
+    Enum.each(successes, fn
+      {item_id, true} -> Announce.announce_all("Obtained item #{item_id}.", 0)
+      _unit -> :ok
     end)
 
     ctx
+  end
+
+  @spec blank_slots?(Ctx.t(), Group.grant()) :: boolean()
+  defp blank_slots?(%Ctx{game_state: %{inventory: inventory}}, grant) do
+    case ItemManagement.get_item_by_id(grant.item_id) do
+      {:ok, item_def} ->
+        needed = if ItemDefinition.stackable?(item_def), do: 1, else: grant.amount
+        Inventory.blank_slots(inventory) >= needed
+
+      {:error, _reason} ->
+        false
+    end
   end
 
   @doc """

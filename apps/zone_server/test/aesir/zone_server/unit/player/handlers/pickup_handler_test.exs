@@ -272,6 +272,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
                       %PickupResult{ground_id: @ground_id, result: :INVENTORY_FULL}}}
   end
 
+  test "a stack refusal maps to INVENTORY_FULL without claiming" do
+    for reason <- [:over_amount, :stack_limit] do
+      stub(GroundItemStore, :query_in_range, fn _, _, _, _ ->
+        [ground_item(@ground_id, 100, 100)]
+      end)
+
+      stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
+      stub(InventoryOps, :can_add, fn _, _, _, _ -> {:error, reason} end)
+      reject(&Coordinator.claim_item/4)
+
+      assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
+
+      assert_received {:send, :world,
+                       {:pickup_result,
+                        %PickupResult{ground_id: @ground_id, result: :INVENTORY_FULL}}}
+    end
+  end
+
   test "already-claimed or expired item replies GONE" do
     stub(GroundItemStore, :query_in_range, fn _, _, _, _ ->
       [ground_item(@ground_id, 100, 100)]
