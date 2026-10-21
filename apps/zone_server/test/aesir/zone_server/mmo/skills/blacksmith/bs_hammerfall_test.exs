@@ -139,8 +139,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
   end
 
   @tag game_mode: :renewal
-  test "delayed impacts attempt level-scaled stun on mobs without dealing damage" do
+  test "delayed impacts attempt level-scaled stun on every captured enemy without dealing damage" do
     caster = living_caster()
+    test_pid = self()
     chances = [30, 40, 50, 60, 70]
 
     stub_living_targets()
@@ -148,16 +149,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
     reject(&Combat.apply_skill_unit_damage/7)
     reject(&Combat.execute_skill_attack/3)
 
-    for {chance, level} <- Enum.with_index(chances, 1) do
-      expect(StatusInterpreter, :apply_status, fn
-        :mob,
-        target_id,
-        :sc_stun,
-        [caster_id: 1_000, val1: ^level, duration: 4_500, success_rate: ^chance] ->
-          assert target_id == 2_000 + level
-          :ok
-      end)
+    stub(StatusInterpreter, :apply_status, fn unit_type, target_id, :sc_stun, opts ->
+      send(test_pid, {:stun, unit_type, target_id, opts})
+      :ok
+    end)
 
+    for {chance, level} <- Enum.with_index(chances, 1) do
       payload = %{
         caster_id: 1_000,
         map_name: "prontera",
@@ -167,6 +164,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
       }
 
       assert :ok = BsHammerfall.deferred(payload, caster)
+
+      # Every enemy the area held is stunned, an enemy player included.
+      assert_received {:stun, :mob, target_id, opts}
+      assert target_id == 2_000 + level
+      assert opts == [caster_id: 1_000, val1: level, duration: 4_500, success_rate: chance]
+      assert_received {:stun, :player, target_id, ^opts}
+      assert target_id == 3_000 + level
     end
   end
 

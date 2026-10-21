@@ -121,14 +121,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
 
   defp perform_castend_tail(_no_player_caster, _target_ref), do: :ok
 
-  defp stun({:mob, target_id}, level, caster_id) do
-    StatusInterpreter.apply_status(:mob, target_id, :sc_stun,
+  # Every enemy the area held is stunned, whatever its type: the reference's
+  # re-entry runs over BL_CHAR and its timer applies the status to the recorded
+  # target, so an enemy player on a PvP map is stunned too.
+  defp stun({unit_type, target_id}, level, caster_id) do
+    StatusInterpreter.apply_status(unit_type, target_id, :sc_stun,
       caster_id: caster_id,
       val1: level,
       duration: Enum.at(definition().duration, level - 1),
       success_rate: 20 + level * 10
     )
   end
-
-  defp stun(_other, _level, _caster_id), do: :ok
 end
