@@ -68,10 +68,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
   rule carry over; the entry's other attributes belong to the per-entry grant,
   not this one. Returns `nil` when the subgroup has no selectable entry.
   """
-  @spec pick_grant(Group.t(), non_neg_integer(), non_neg_integer(), rng()) :: Group.grant() | nil
-  def pick_grant(group, sub, qty, rng \\ :rand) do
+  @spec pick_grant(Group.t(), non_neg_integer(), non_neg_integer(), keyword()) ::
+          Group.grant() | nil
+  def pick_grant(group, sub, qty, opts \\ []) do
+    rng = Keyword.get(opts, :rng, :rand)
+    identify? = Keyword.get(opts, :identify?, false)
+
     case pick_entry(group, sub, rng) do
-      {:ok, entry, drawn} -> single_grant(entry, qty, drawn)
+      {:ok, entry, drawn} -> single_grant(entry, qty, drawn, identify?)
       :error -> nil
     end
   end
@@ -109,11 +113,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
     end
   end
 
-  defp single_grant(entry, qty, drawn) do
+  defp single_grant(entry, qty, drawn, identify?) do
     %{
       item_id: entry.item_id,
       amount: if(qty > 0, do: qty, else: entry.amount),
-      identify?: false,
+      identify?: identify?,
       refine: 0,
       grade: 0,
       bound: nil,
@@ -121,18 +125,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
       duration_min: 0,
       named?: false,
       announced?: false,
+      stacked?: true,
       drawn: drawn
     }
   end
 
-  @doc "Returns one weighted catalog item id without depleting shared-pool state."
+  @doc """
+  Returns the item id one entry pick would grant, honoring the subgroup
+  algorithm.
+
+  `:random` is weighted, `:all` is uniform, and `:shared_pool` consumes one
+  copy, exactly as the reference's `get_random_entry` does for
+  `grouprandomitem`.
+  """
   @spec pick_id(Group.t(), non_neg_integer(), rng()) :: {:ok, pos_integer()} | :error
   def pick_id(group, sub, rng \\ :rand) do
-    with %SubGroup{entries: entries} <- Enum.find(group.subgroups, &(&1.number == sub)),
-         true <- Enum.any?(entries, &(&1.rate > 0)) do
-      {:ok, weighted_pick(entries, rng).item_id}
-    else
-      _ -> :error
+    case pick_entry(group, sub, rng) do
+      {:ok, entry, _drawn} -> {:ok, entry.item_id}
+      :error -> :error
     end
   end
 
@@ -168,6 +178,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
       duration_min: entry.duration_min,
       named?: entry.named?,
       announced?: entry.announced?,
+      stacked?: entry.stacked?,
       drawn: drawn
     }
   end

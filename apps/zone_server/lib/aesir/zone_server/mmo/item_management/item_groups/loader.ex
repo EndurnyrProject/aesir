@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Loader do
     "rate" => :rate,
     "refine_maximum" => :refine_max,
     "refine_minimum" => :refine_min,
+    "stacked" => :stacked?,
     "unique_id" => :unique_id?
   }
 

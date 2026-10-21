@@ -161,7 +161,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
         acc = {current, successes, failures}
 
         acc =
-          if ItemDefinition.stackable?(item_def) do
+          if ItemDefinition.stackable?(item_def) and grant.stacked? do
             give_stack_entry(char_id, stats, item_def, grant, add_opts, acc)
           else
             give_unit_entries(char_id, stats, item_def, grant, add_opts, acc, halt?)

@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
   use ExUnit.Case, async: false
 
-  alias Aesir.Commons.Cluster
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
@@ -59,9 +58,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
       ])
 
     assert %{item_id: item_id, amount: 5, identify?: false, refine: 0, bound: nil} =
-             Roller.pick_grant(group, 1, 5, fn _max -> 1 end)
+             Roller.pick_grant(group, 1, 5, rng: fn _max -> 1 end)
 
     assert item_id in [901, 902]
+  end
+
+  test "pick_grant carries the identify request" do
+    group =
+      group(:pick_identify, [
+        %SubGroup{number: 1, algorithm: :random, entries: [entry(904, rate: 1)]}
+      ])
+
+    assert %{item_id: 904, identify?: true} =
+             Roller.pick_grant(group, 1, 1, identify?: true, rng: fn _max -> 1 end)
   end
 
   test "pick_grant with quantity zero uses the entry's own amount" do
@@ -70,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
         %SubGroup{number: 2, algorithm: :all, entries: [entry(903, amount: 7)]}
       ])
 
-    assert %{item_id: 903, amount: 7} = Roller.pick_grant(group, 2, 0, fn _max -> 1 end)
+    assert %{item_id: 903, amount: 7} = Roller.pick_grant(group, 2, 0, rng: fn _max -> 1 end)
   end
 
   test "pick_grant consumes one shared-pool copy" do
@@ -96,19 +105,35 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
     assert Roller.pick_grant(group, 9, 1) == nil
   end
 
-  test "pick_id uses catalog weights without starting or depleting a shared pool" do
+  test "pick_id is algorithm-aware and consumes a shared-pool copy" do
     subgroup = %SubGroup{
       number: 3,
       algorithm: :shared_pool,
-      entries: [entry(801, rate: 1), entry(802, rate: 2)]
+      entries: [entry(801, rate: 2)]
     }
 
-    group = group(:non_depleting_pick, [subgroup])
-    registry_key = {:item_group_pool, group.key}
+    group = group(:depleting_pick, [subgroup])
+    :persistent_term.put(ItemGroups, %{group.key => group})
 
-    assert Horde.Registry.lookup(Cluster.registry(), registry_key) == []
-    assert Roller.pick_id(group, 3, fn max -> max end) == {:ok, 802}
-    assert Horde.Registry.lookup(Cluster.registry(), registry_key) == []
+    assert Roller.pick_id(group, 3) == {:ok, 801}
+
+    owner = ItemGroupPool.ensure_pool(group.key)
+    assert %{3 => %{801 => 1}} = :sys.get_state(owner).subs
+    on_exit(fn -> if Process.alive?(owner), do: send(owner, :timeout) end)
+  end
+
+  test "pick_id uses the random subgroup weights" do
+    group =
+      group(:weighted_pick, [
+        %SubGroup{
+          number: 1,
+          algorithm: :random,
+          entries: [entry(601, rate: 1), entry(602, rate: 3)]
+        }
+      ])
+
+    assert Roller.pick_id(group, 1, fn _max -> 1 end) == {:ok, 601}
+    assert Roller.pick_id(group, 1, fn max -> max end) == {:ok, 602}
   end
 
   test "roll_full draws one grant from a shared-pool subgroup" do
@@ -177,7 +202,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
         grade_min: 1,
         grade_max: 3,
         named?: true,
-        announced?: true
+        announced?: true,
+        stacked?: false
       )
 
     subgroup = %SubGroup{number: 7, algorithm: :random, entries: [selected]}
@@ -195,6 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
              duration_min: 10,
              named?: true,
              announced?: true,
+             stacked?: false,
              drawn: nil
            }
   end

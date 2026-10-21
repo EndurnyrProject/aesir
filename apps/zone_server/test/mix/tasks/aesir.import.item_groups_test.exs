@@ -100,7 +100,8 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroupsTest do
                     "GradeMinimum" => 1,
                     "GradeMaximum" => 2,
                     "Named" => true,
-                    "Announced" => true
+                    "Announced" => true,
+                    "Stacked" => false
                   },
                   %{"Index" => 1, "Item" => "Unknown_Item", "Rate" => 99}
                 ]
@@ -164,6 +165,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroupsTest do
                        "rate" => 1,
                        "refine_maximum" => 5,
                        "refine_minimum" => 3,
+                       "stacked" => false,
                        "unique_id" => true
                      }
                    ],

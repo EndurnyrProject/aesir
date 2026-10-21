@@ -1213,10 +1213,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
-  defp emit_mapped(name, %{shape: :item_group_optional, dsl: dsl, args: types}, args, env) do
+  defp emit_mapped(
+         name,
+         %{shape: :item_group_optional, dsl: dsl, args: types} = rule,
+         args,
+         env
+       ) do
     {pre, args} = hoist_all(args, env)
+    defaults = Map.get(rule, :defaults, ["1"])
 
-    case item_group_optional_args(args, types, env) do
+    case item_group_optional_args(args, types, defaults, env) do
       {:ok, rendered} ->
         {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
 
@@ -2340,11 +2346,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp hoist_walk({:call, name, args}, env, pre) do
     case CommandMap.call_read(name) do
-      {:ok, %{shape: :item_group_optional, dsl: dsl, args: types}} ->
+      {:ok, %{shape: :item_group_optional, dsl: dsl, args: types} = rule} ->
         {args, pre} = hoist_list(args, env, pre)
         tmp = tmp_var()
+        defaults = Map.get(rule, :defaults, ["1"])
 
-        case item_group_optional_args(args, types, env) do
+        case item_group_optional_args(args, types, defaults, env) do
           {:ok, rendered} ->
             {{:temp, tmp}, ["#{tmp} = #{dsl}(ctx, #{Enum.join(rendered, ", ")})" | pre]}
 
@@ -2688,8 +2695,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       {:ok, %{shape: :quest_check, dsl: dsl}} ->
         quest_check_call(dsl, name, args, env)
 
-      {:ok, %{shape: :item_group_optional, dsl: dsl, args: types}} ->
-        item_group_optional_call(dsl, name, args, types, env)
+      {:ok, %{shape: :item_group_optional, dsl: dsl, args: types} = rule} ->
+        item_group_optional_call(dsl, name, args, types, Map.get(rule, :defaults, ["1"]), env)
 
       {:ok, %{dsl: dsl, args: types}} ->
         rendered =
@@ -2753,19 +2760,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp npc_var_of_key({:var, :npc, name, type}), do: {:ok, scope_var_key(name, type)}
   defp npc_var_of_key(_ref), do: :error
 
-  defp item_group_optional_args(args, types, env) do
-    case length(args) - length(types) do
-      0 -> {:ok, Enum.zip_with(args, types, &typed_arg(&1, &2, env)) ++ ["0"]}
-      1 -> {:ok, Enum.zip_with(args, types ++ [:int], &typed_arg(&1, &2, env))}
-      _other -> :error
+  defp item_group_optional_args(args, types, defaults, env) do
+    required = length(types) - length(defaults)
+
+    if length(args) >= required and length(args) <= length(types) do
+      typed = Enum.zip_with(args, Enum.take(types, length(args)), &typed_arg(&1, &2, env))
+      missing = length(types) - length(args)
+      pads = defaults |> Enum.drop(length(args) - required) |> Enum.take(missing)
+      {:ok, typed ++ pads}
+    else
+      :error
     end
   end
 
   # `getrandgroupitem`/`groupranditem`: render the item-group read/command,
-  # appending the default subgroup `0` when omitted; any other arity stays a
-  # stub.
-  defp item_group_optional_call(dsl, name, args, types, env) do
-    case item_group_optional_args(args, types, env) do
+  # filling the reference defaults for its trailing optional arguments (the
+  # subgroup defaults to 1); any other arity stays a stub.
+  defp item_group_optional_call(dsl, name, args, types, defaults, env) do
+    case item_group_optional_args(args, types, defaults, env) do
       {:ok, rendered} -> "#{dsl}(#{Enum.join(["ctx" | rendered], ", ")})"
       :error -> unsupported_call(name, args, env)
     end

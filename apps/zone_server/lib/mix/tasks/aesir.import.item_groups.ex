@@ -9,10 +9,9 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
   Entries resolve against the selected canonical `db/item_db.yml`; unknown item
   names are dropped and reported. Output is deterministic.
 
-  Two source attributes are intentionally NOT imported (spec non-goals):
-  `RandomOptionGroup` (needs a random-option roller subsystem) and `Stacked`
-  (`Stacked: false` means the box grants separate, non-stacking rows). The grant
-  core treats such entries as ordinary stackables for now.
+  `RandomOptionGroup` is intentionally NOT imported (spec non-goal: it needs a
+  random-option roller subsystem). `Stacked: false` is imported: that entry is
+  granted one unit per add even when the item itself is stackable.
   """
   use Mix.Task
 
@@ -32,6 +31,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
     "Rate" => "rate",
     "RefineMaximum" => "refine_maximum",
     "RefineMinimum" => "refine_minimum",
+    "Stacked" => "stacked",
     "UniqueId" => "unique_id"
   }
 

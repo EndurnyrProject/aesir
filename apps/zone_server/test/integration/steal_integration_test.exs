@@ -120,7 +120,7 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
 
   describe "a player's failed Steal through the real sessions" do
     @rogue 17
-    @emotion 197
+    @npc_agiup 350
 
     setup do
       ClownSessions.blank_map("prontera")
@@ -129,8 +129,8 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
 
     defp reacts_to_steal do
       %{
-        skill: "NPC_EMOTION",
-        skill_id: @emotion,
+        skill: "NPC_AGIUP",
+        skill_id: @npc_agiup,
         state: :any,
         level: 1,
         target: :self,
@@ -157,7 +157,7 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
 
       assert_packet_sent(SkillCastFailed)
       assert_eventually(fn -> get_player_state(session.pid).stats.current_state.sp == 990 end)
-      assert_eventually(fn -> get_mob_state(mob.pid).last_skill_id == @emotion end)
+      assert_eventually(fn -> get_mob_state(mob.pid).last_skill_id == @npc_agiup end)
       refute get_mob_state(mob.pid).stolen_from
     end
 

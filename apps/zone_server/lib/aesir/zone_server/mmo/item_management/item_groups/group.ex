@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry do
             grade_min: 0,
             grade_max: 0,
             named?: false,
-            announced?: false
+            announced?: false,
+            stacked?: true
 
   @type t() :: %__MODULE__{
           item_id: pos_integer(),
@@ -29,7 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry do
           grade_min: non_neg_integer(),
           grade_max: non_neg_integer(),
           named?: boolean(),
-          announced?: boolean()
+          announced?: boolean(),
+          stacked?: boolean()
         }
 end
 
@@ -76,6 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group do
           duration_min: non_neg_integer(),
           named?: boolean(),
           announced?: boolean(),
+          stacked?: boolean(),
           drawn: {non_neg_integer(), [pos_integer()]} | nil
         }
 end

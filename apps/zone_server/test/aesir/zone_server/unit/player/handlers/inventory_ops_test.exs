@@ -163,6 +163,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
              } = inventory
     end
 
+    test "adds a stacked entry once and a non-stacked entry one unit per add", %{
+      character: char,
+      stats: stats
+    } do
+      assert {:ok, stacked_inventory, [{@potion, false}], []} =
+               Inventory.give_group(char.id, %{}, stats, [grant(@potion, amount: 3)])
+
+      assert %{0 => %InventoryItem{nameid: @potion, amount: 3}} = stacked_inventory
+
+      assert {:ok, unit_inventory, unit_successes, []} =
+               Inventory.give_group(char.id, %{}, stats, [
+                 grant(@potion, amount: 3, stacked?: false)
+               ])
+
+      assert %{0 => %InventoryItem{nameid: @potion, amount: 3}} = unit_inventory
+      assert length(unit_successes) == 3
+    end
+
     test "keeps the units that fit and reports the ones that do not", %{
       character: char,
       stats: stats
@@ -564,6 +582,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
         duration_min: 0,
         named?: false,
         announced?: false,
+        stacked?: true,
         drawn: nil
       },
       Map.new(overrides)

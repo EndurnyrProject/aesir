@@ -206,13 +206,13 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     assert_receive {:announced, %{text: "Obtained item 501.", style: :TOP}}
   end
 
-  test "group_rand_item returns a valid id without depleting a shared pool" do
+  test "group_rand_item consumes one shared-pool copy" do
     install_pool_group(:read_pool, 501, 2, 1)
     owner = ItemGroupPool.ensure_pool(:read_pool)
     before_counts = pool_counts(owner)
 
     assert Dsl.group_rand_item(item_ctx(), :read_pool, 0) == 501
-    assert pool_counts(owner) == before_counts
+    assert pool_counts(owner) != before_counts
   end
 
   test "unknown groups halt effects and raise for a read op" do
@@ -254,6 +254,7 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
       duration_min: 0,
       named?: false,
       announced?: Keyword.get(opts, :announced?, false),
+      stacked?: true,
       drawn: nil
     }
   end

@@ -108,15 +108,23 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   The grant halts at the first refused unit.
   """
   @spec get_rand_group_item(Ctx.t(), atom(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
-  def get_rand_group_item(%Ctx{status: {:error, _}} = ctx, _group_key, _qty, _sub), do: ctx
+  def get_rand_group_item(ctx, group_key, qty, sub),
+    do: get_rand_group_item(ctx, group_key, qty, sub, 0)
 
-  def get_rand_group_item(%Ctx{game_state: nil} = ctx, _group_key, _qty, _sub),
+  @spec get_rand_group_item(Ctx.t(), atom(), non_neg_integer(), non_neg_integer(), term()) ::
+          Ctx.t()
+  def get_rand_group_item(%Ctx{status: {:error, _}} = ctx, _group_key, _qty, _sub, _identify),
+    do: ctx
+
+  def get_rand_group_item(%Ctx{game_state: nil} = ctx, _group_key, _qty, _sub, _identify),
     do: Ctx.halt(ctx, :no_player)
 
-  def get_rand_group_item(%Ctx{} = ctx, group_key, qty, sub)
+  def get_rand_group_item(%Ctx{} = ctx, group_key, qty, sub, identify)
       when is_integer(qty) and qty >= 0 and is_integer(sub) and sub >= 0 do
+    identify? = identify not in [0, false, nil]
+
     with {:ok, group} <- ItemGroups.fetch(group_key),
-         grant when is_map(grant) <- Roller.pick_grant(group, sub, qty),
+         grant when is_map(grant) <- Roller.pick_grant(group, sub, qty, identify?: identify?),
          true <- blank_slots?(ctx, grant) do
       commit_grants(ctx, [Map.put(grant, :group_key, group_key)], true)
     else

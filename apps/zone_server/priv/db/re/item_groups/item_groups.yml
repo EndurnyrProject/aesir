@@ -16216,6 +16216,7 @@
       entries:
         - amount: 10
           item_id: 17016
+          stacked: false
           unique_id: true
       number: 0
 - key: aquarius_diadem_scroll
@@ -17548,6 +17549,7 @@
       entries:
         - amount: 10
           item_id: 17050
+          stacked: false
           unique_id: true
       number: 0
 - key: armor_card_scroll
@@ -28294,6 +28296,7 @@
       entries:
         - amount: 10
           item_id: 16996
+          stacked: false
           unique_id: true
       number: 0
 - key: capricon_di_scroll
@@ -28351,6 +28354,7 @@
       entries:
         - amount: 10
           item_id: 17011
+          stacked: false
           unique_id: true
       number: 0
 - key: caracas_ring_box
@@ -43800,6 +43804,7 @@
       entries:
         - amount: 10
           item_id: 17035
+          stacked: false
           unique_id: true
       number: 0
 - key: energetic_pisces_scroll
@@ -48648,6 +48653,7 @@
       entries:
         - amount: 10
           item_id: 17107
+          stacked: false
           unique_id: true
       number: 0
 - key: gemi_diadem_scroll
@@ -48690,6 +48696,7 @@
       entries:
         - amount: 10
           item_id: 17082
+          stacked: false
           unique_id: true
       number: 0
 - key: gemstone
@@ -60182,6 +60189,7 @@
       entries:
         - amount: 10
           item_id: 17024
+          stacked: false
           unique_id: true
       number: 0
 - key: lovely_aquarius_scroll
@@ -69322,6 +69330,7 @@
       entries:
         - amount: 10
           item_id: 17028
+          stacked: false
           unique_id: true
       number: 0
 - key: pisces_diadem_scroll
@@ -77743,6 +77752,7 @@
       entries:
         - amount: 10
           item_id: 16990
+          stacked: false
           unique_id: true
       number: 0
 - key: sagittar_diadem_scroll
@@ -77796,6 +77806,7 @@
       entries:
         - amount: 10
           item_id: 16775
+          stacked: false
           unique_id: true
       number: 0
 - key: sagittarius_scroll
@@ -91408,6 +91419,7 @@
       entries:
         - amount: 10
           item_id: 17077
+          stacked: false
           unique_id: true
       number: 0
 - key: taurus_di_scroll_box
@@ -91416,6 +91428,7 @@
       entries:
         - amount: 10
           item_id: 17062
+          stacked: false
           unique_id: true
       number: 0
 - key: taurus_diadem_scroll
