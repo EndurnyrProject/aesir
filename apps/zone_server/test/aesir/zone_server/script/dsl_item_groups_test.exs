@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
@@ -18,9 +20,11 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :set_mimic_private
   setup :verify_on_exit!
+  setup :setup_ets_tables
 
   defmodule StubSession do
     use GenServer
@@ -122,6 +126,75 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     ctx = %{npc_ctx(session) | game_state: %{item_ctx().game_state | inventory: full}}
 
     assert Dsl.get_rand_group_item(ctx, :rand_full, 1, 1).status == {:error, :inventory_full}
+    refute_received {:script_apply, _op}
+  end
+
+  test "get_rand_group_item grants to an explicit char_id through that session" do
+    install_group(:target_box, [
+      %SubGroup{number: 1, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
+    ])
+
+    test_pid = self()
+
+    {:ok, speaker} =
+      StubSession.start_link(fn _op ->
+        send(test_pid, :speaker_called)
+        {:ok, item_ctx().game_state}
+      end)
+
+    {:ok, target} =
+      StubSession.start_link(fn {:give_rand_group_items, [grant]} ->
+        send(test_pid, {:target_grant, grant})
+        {:ok, %{inventory: %{}}}
+      end)
+
+    :ok = UnitRegistry.register_unit(:player, 4242, nil, %{inventory: %{}}, target)
+
+    result = Dsl.get_rand_group_item(npc_ctx(speaker), :target_box, 2, 1, 1, 4242)
+
+    assert result.status == :ok
+    assert_received {:target_grant, %{item_id: 501, amount: 2, identify?: true}}
+    refute_received :speaker_called
+  end
+
+  test "a target refusal halts the caller" do
+    install_group(:target_box, [
+      %SubGroup{number: 1, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
+    ])
+
+    {:ok, target} = StubSession.start_link(fn _op -> {:error, :overweight} end)
+    :ok = UnitRegistry.register_unit(:player, 4242, nil, %{inventory: %{}}, target)
+
+    assert Dsl.get_rand_group_item(npc_ctx(item_ctx()), :target_box, 1, 1, 0, 4242).status ==
+             {:error, :overweight}
+  end
+
+  test "an unknown target silently succeeds without granting" do
+    install_group(:target_box, [
+      %SubGroup{number: 1, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
+    ])
+
+    result = Dsl.get_rand_group_item(npc_ctx(item_ctx()), :target_box, 1, 1, 0, 4242)
+
+    assert result.status == :ok
+    refute_received {:script_apply, _op}
+  end
+
+  test "a target without a blank slot halts before the session call" do
+    install_group(:target_box, [
+      %SubGroup{number: 1, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
+    ])
+
+    {:ok, target} = StubSession.start_link(fn _op -> {:ok, %{inventory: %{}}} end)
+
+    full =
+      Map.new(0..99, fn index -> {index, %InventoryItem{nameid: 90_000 + index, amount: 1}} end)
+
+    :ok = UnitRegistry.register_unit(:player, 4242, nil, %{inventory: full}, target)
+
+    assert Dsl.get_rand_group_item(npc_ctx(item_ctx()), :target_box, 1, 1, 0, 4242).status ==
+             {:error, :inventory_full}
+
     refute_received {:script_apply, _op}
   end
 
@@ -255,6 +328,10 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
       named?: false,
       announced?: Keyword.get(opts, :announced?, false),
       stacked?: true,
+      refine_min: 0,
+      refine_max: 0,
+      grade_min: 0,
+      grade_max: 0,
       drawn: nil
     }
   end

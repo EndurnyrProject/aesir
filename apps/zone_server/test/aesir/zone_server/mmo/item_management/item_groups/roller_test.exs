@@ -222,6 +222,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
              named?: true,
              announced?: true,
              stacked?: false,
+             refine_min: 2,
+             refine_max: 4,
+             grade_min: 1,
+             grade_max: 3,
              drawn: nil
            }
   end

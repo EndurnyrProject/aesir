@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
   alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Inventory.Weight
@@ -30,6 +31,9 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   import Bitwise
 
   @max_inventory 100
+
+  # The reference's itemdb_isequip2: only these types roll refine/grade.
+  @refinable_types [:weapon, :armor, :ammo, :shadow_gear]
 
   @equippable_types [
     :weapon,
@@ -140,10 +144,11 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   def give_group(char_id, inventory, %Stats{} = stats, grants, opts \\ [])
       when is_integer(char_id) and char_id > 0 and is_map(inventory) and is_list(grants) do
     halt? = Keyword.get(opts, :halt?, false)
+    rng = Keyword.get(opts, :rng, :rand)
     now = NaiveDateTime.utc_now()
 
     Enum.reduce_while(grants, {:ok, inventory, [], []}, fn grant, acc ->
-      step_grant(char_id, stats, grant, now, acc, halt?)
+      step_grant(char_id, stats, grant, now, acc, halt?, rng)
     end)
   end
 
@@ -153,7 +158,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
          grant,
          now,
          {:ok, current, successes, failures},
-         halt?
+         halt?,
+         rng
        ) do
     case ItemManagement.get_item_by_id(grant.item_id) do
       {:ok, item_def} ->
@@ -164,7 +170,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
           if ItemDefinition.stackable?(item_def) and grant.stacked? do
             give_stack_entry(char_id, stats, item_def, grant, add_opts, acc)
           else
-            give_unit_entries(char_id, stats, item_def, grant, add_opts, acc, halt?)
+            give_unit_entries(char_id, stats, item_def, grant, add_opts, acc, halt?, rng)
           end
 
         {inventory, successes, failures} = acc
@@ -193,18 +199,30 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
          grant,
          opts,
          {inventory, successes, failures},
-         halt?
+         halt?,
+         rng
        ) do
     if grant.amount < 1 do
       {inventory, successes, failures}
     else
-      Enum.reduce_while(1..grant.amount, {inventory, successes, failures}, fn _unit, acc ->
-        step_unit(char_id, stats, item_def, grant, opts, acc, halt?)
+      Enum.reduce_while(1..grant.amount, {inventory, successes, failures}, fn unit, acc ->
+        step_unit(char_id, stats, item_def, grant, opts, acc, halt?, {unit, rng})
       end)
     end
   end
 
-  defp step_unit(char_id, stats, item_def, grant, opts, {inventory, successes, failures}, halt?) do
+  defp step_unit(
+         char_id,
+         stats,
+         item_def,
+         grant,
+         opts,
+         {inventory, successes, failures},
+         halt?,
+         {unit, rng}
+       ) do
+    opts = per_unit_opts(grant, item_def, opts, unit, rng)
+
     case give_grant(char_id, inventory, stats, item_def, 1, opts) do
       {:ok, persisted} ->
         {:cont, {persisted, successes ++ [success(grant)], failures}}
@@ -215,6 +233,22 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
         if halt?, do: {:halt, result}, else: {:cont, result}
     end
   end
+
+  defp per_unit_opts(_grant, _item_def, opts, 1, _rng), do: opts
+
+  defp per_unit_opts(grant, item_def, opts, _unit, rng) do
+    if refinable?(item_def) do
+      %{
+        opts
+        | refine: Roller.roll_refine(grant, rng),
+          enchant_grade: Roller.roll_grade(grant, rng)
+      }
+    else
+      opts
+    end
+  end
+
+  defp refinable?(%ItemDefinition{type: type}), do: type in @refinable_types
 
   defp success(grant), do: {grant.item_id, grant.announced?}
 
@@ -234,8 +268,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
     %{
       identify:
         if(grant.identify? or ItemDefinition.identified_on_obtain?(item_def), do: 1, else: 0),
-      refine: grant.refine,
-      enchant_grade: grant.grade,
+      refine: if(refinable?(item_def), do: grant.refine, else: 0),
+      enchant_grade: if(refinable?(item_def), do: grant.grade, else: 0),
       bound: bound_value(grant.bound),
       unique_id: 0,
       expire_time: expire_time(grant.duration_min, now),

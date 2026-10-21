@@ -202,15 +202,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       getrandgroupitem IG_Ore, 2;
       getrandgroupitem IG_Ore, 3, 1;
       getrandgroupitem IG_Ore, 4, 1, 1;
+      getrandgroupitem IG_Ore, 5, 1, 1, 123;
       getrandgroupitem IG_Ore;
       close;
       """)
 
     assert src =~ "get_group_item(:bluebox)"
-    assert src =~ "get_rand_group_item(:ore, 2, 1, 0)"
-    assert src =~ "get_rand_group_item(:ore, 3, 1, 0)"
-    assert src =~ "get_rand_group_item(:ore, 4, 1, 1)"
-    assert src =~ "get_rand_group_item(:ore, 0, 1, 0)"
+    assert src =~ "get_rand_group_item(:ore, 2, 1, 0, 0)"
+    assert src =~ "get_rand_group_item(:ore, 3, 1, 0, 0)"
+    assert src =~ "get_rand_group_item(:ore, 4, 1, 1, 0)"
+    assert src =~ "get_rand_group_item(:ore, 5, 1, 1, 123)"
+    assert src =~ "get_rand_group_item(:ore, 0, 1, 0, 0)"
     refute src =~ "todo(ctx, :getgroupitem"
     refute src =~ "todo(ctx, :getrandgroupitem"
   end

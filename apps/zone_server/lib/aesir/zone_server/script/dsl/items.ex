@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1
   # (it does not exist at compile time); `consumeitem/2` dispatches into it.
@@ -109,28 +110,74 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   """
   @spec get_rand_group_item(Ctx.t(), atom(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
   def get_rand_group_item(ctx, group_key, qty, sub),
-    do: get_rand_group_item(ctx, group_key, qty, sub, 0)
+    do: get_rand_group_item(ctx, group_key, qty, sub, 0, 0)
 
   @spec get_rand_group_item(Ctx.t(), atom(), non_neg_integer(), non_neg_integer(), term()) ::
           Ctx.t()
-  def get_rand_group_item(%Ctx{status: {:error, _}} = ctx, _group_key, _qty, _sub, _identify),
+  def get_rand_group_item(ctx, group_key, qty, sub, identify),
+    do: get_rand_group_item(ctx, group_key, qty, sub, identify, 0)
+
+  @spec get_rand_group_item(
+          Ctx.t(),
+          atom(),
+          non_neg_integer(),
+          non_neg_integer(),
+          term(),
+          integer() | nil
+        ) :: Ctx.t()
+  def get_rand_group_item(%Ctx{status: {:error, _}} = ctx, _group_key, _qty, _sub, _i, _char_id),
     do: ctx
 
-  def get_rand_group_item(%Ctx{game_state: nil} = ctx, _group_key, _qty, _sub, _identify),
+  def get_rand_group_item(%Ctx{game_state: nil} = ctx, _group_key, _qty, _sub, _i, _char_id),
     do: Ctx.halt(ctx, :no_player)
 
-  def get_rand_group_item(%Ctx{} = ctx, group_key, qty, sub, identify)
-      when is_integer(qty) and qty >= 0 and is_integer(sub) and sub >= 0 do
+  def get_rand_group_item(%Ctx{} = ctx, group_key, qty, sub, identify, char_id)
+      when is_integer(qty) and qty >= 0 and is_integer(sub) and sub >= 0 and
+             (is_integer(char_id) or is_nil(char_id)) do
     identify? = identify not in [0, false, nil]
 
     with {:ok, group} <- ItemGroups.fetch(group_key),
-         grant when is_map(grant) <- Roller.pick_grant(group, sub, qty, identify?: identify?),
-         true <- blank_slots?(ctx, grant) do
-      commit_grants(ctx, [Map.put(grant, :group_key, group_key)], true)
+         grant when is_map(grant) <- Roller.pick_grant(group, sub, qty, identify?: identify?) do
+      grant = Map.put(grant, :group_key, group_key)
+      deliver_group(ctx, char_id, grant)
     else
       :error -> Ctx.halt(ctx, :unknown_item_group)
       nil -> Ctx.halt(ctx, :no_group_entry)
-      false -> Ctx.halt(ctx, :inventory_full)
+    end
+  end
+
+  @spec deliver_group(Ctx.t(), integer() | nil, Group.grant()) :: Ctx.t()
+  defp deliver_group(%Ctx{game_state: game_state} = ctx, char_id, grant)
+       when char_id in [nil, 0] do
+    if blank_slots?(game_state.inventory, grant),
+      do: commit_grants(ctx, [grant], true),
+      else: Ctx.halt(ctx, :inventory_full)
+  end
+
+  defp deliver_group(%Ctx{char_id: char_id} = ctx, char_id, grant) do
+    if blank_slots?(ctx.game_state.inventory, grant),
+      do: commit_grants(ctx, [grant], true),
+      else: Ctx.halt(ctx, :inventory_full)
+  end
+
+  defp deliver_group(ctx, char_id, grant) do
+    case UnitRegistry.get_unit(:player, char_id) do
+      {:ok, {_module, target_state, pid}} when is_pid(pid) ->
+        deliver_to_target(ctx, target_state, pid, grant)
+
+      _offline_or_detached ->
+        ctx
+    end
+  end
+
+  defp deliver_to_target(ctx, target_state, pid, grant) do
+    if blank_slots?(Map.get(target_state, :inventory, %{}), grant) do
+      case PlayerSession.script_apply(pid, {:give_rand_group_items, [grant]}) do
+        {:ok, _target_state} -> ctx
+        {:error, reason} -> Ctx.halt(ctx, reason)
+      end
+    else
+      Ctx.halt(ctx, :inventory_full)
     end
   end
 
@@ -194,8 +241,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
     ctx
   end
 
-  @spec blank_slots?(Ctx.t(), Group.grant()) :: boolean()
-  defp blank_slots?(%Ctx{game_state: %{inventory: inventory}}, grant) do
+  @spec blank_slots?(Inventory.t(), Group.grant()) :: boolean()
+  defp blank_slots?(inventory, grant) do
     case ItemManagement.get_item_by_id(grant.item_id) do
       {:ok, item_def} ->
         needed = if ItemDefinition.stackable?(item_def), do: 1, else: grant.amount

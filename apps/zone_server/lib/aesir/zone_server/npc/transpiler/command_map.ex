@@ -113,8 +113,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getrandgroupitem" => %{
       shape: :item_group_optional,
       dsl: "get_rand_group_item",
-      args: [:item_group, :int, :int, :int],
-      defaults: ["0", "1", "0"]
+      args: [:item_group, :int, :int, :int, :int],
+      defaults: ["0", "1", "0", "0"]
     },
     "getnameditem" => %{dsl: "get_named_item", args: [:item, :string]},
     "rentitem" => %{dsl: "give_item_rental", args: [:item, :int]},

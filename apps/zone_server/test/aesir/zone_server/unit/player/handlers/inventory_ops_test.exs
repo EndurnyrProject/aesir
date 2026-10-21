@@ -181,6 +181,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       assert length(unit_successes) == 3
     end
 
+    test "rolls a non-stacked equipment grant's refine per unit", %{
+      character: char,
+      stats: stats
+    } do
+      grant =
+        grant(@sword,
+          amount: 3,
+          stacked?: false,
+          refine: 1,
+          refine_min: 1,
+          refine_max: 5
+        )
+
+      assert {:ok, _inventory, successes, []} =
+               Inventory.give_group(char.id, %{}, stats, [grant], rng: fn _max -> 2 end)
+
+      assert length(successes) == 3
+      assert [1, 2, 2] = Persistence.load_inventory(char.id) |> Enum.map(& &1.refine)
+    end
+
     test "keeps the units that fit and reports the ones that do not", %{
       character: char,
       stats: stats
@@ -583,6 +603,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
         named?: false,
         announced?: false,
         stacked?: true,
+        refine_min: 0,
+        refine_max: 0,
+        grade_min: 0,
+        grade_max: 0,
         drawn: nil
       },
       Map.new(overrides)

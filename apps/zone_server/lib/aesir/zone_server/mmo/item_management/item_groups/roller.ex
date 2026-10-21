@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
   always returns the requested number of grants.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool
@@ -120,6 +121,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
       identify?: identify?,
       refine: 0,
       grade: 0,
+      refine_min: 0,
+      refine_max: 0,
+      grade_min: 0,
+      grade_max: 0,
       bound: nil,
       unique_id?: false,
       duration_min: 0,
@@ -171,8 +176,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
       item_id: entry.item_id,
       amount: entry.amount,
       identify?: entry.identify?,
-      refine: uniform_range(entry.refine_min, entry.refine_max, rng),
-      grade: uniform_range(entry.grade_min, entry.grade_max, rng),
+      refine: roll_refine_range(entry.refine_min, entry.refine_max, rng),
+      grade: roll_grade_range(entry.grade_min, entry.grade_max, rng),
+      refine_min: entry.refine_min,
+      refine_max: entry.refine_max,
+      grade_min: entry.grade_min,
+      grade_max: entry.grade_max,
       bound: entry.bound,
       unique_id?: entry.unique_id?,
       duration_min: entry.duration_min,
@@ -181,6 +190,48 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
       stacked?: entry.stacked?,
       drawn: drawn
     }
+  end
+
+  @doc "Rolls a grant's refine level from its entry ranges, as the reference does."
+  @spec roll_refine(Group.grant(), rng()) :: non_neg_integer()
+  def roll_refine(grant, rng \\ :rand),
+    do: roll_refine_range(grant.refine_min, grant.refine_max, rng)
+
+  @doc "Rolls a grant's enchant grade from its entry ranges, as the reference does."
+  @spec roll_grade(Group.grant(), rng()) :: non_neg_integer()
+  def roll_grade(grant, rng \\ :rand),
+    do: roll_grade_range(grant.grade_min, grant.grade_max, rng)
+
+  defp roll_refine_range(min, max, rng) when min > 0 and max > 0,
+    do: uniform_range(min, max, rng)
+
+  defp roll_refine_range(min, _max, rng) when min > 0,
+    do: uniform_range(min, max_refine(), rng)
+
+  defp roll_refine_range(_min, max, rng) when max > 0, do: uniform_range(1, max, rng)
+  defp roll_refine_range(_min, _max, _rng), do: 0
+
+  defp roll_grade_range(min, max, rng) when min > 0 and max > 0,
+    do: uniform_range(min, max, rng)
+
+  defp roll_grade_range(min, _max, rng) when min > 0,
+    do: uniform_range(min, max_grade(), rng)
+
+  defp roll_grade_range(_min, max, rng) when max > 0, do: uniform_range(0, max, rng)
+  defp roll_grade_range(_min, _max, _rng), do: 0
+
+  defp max_refine do
+    case GameMode.mode() do
+      :pre_renewal -> 10
+      _renewal -> 20
+    end
+  end
+
+  defp max_grade do
+    case GameMode.mode() do
+      :pre_renewal -> 0
+      _renewal -> 4
+    end
   end
 
   @spec uniform_range(non_neg_integer(), non_neg_integer(), rng()) :: non_neg_integer()

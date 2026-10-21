@@ -1107,6 +1107,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       named?: false,
       announced?: false,
       stacked?: true,
+      refine_min: 0,
+      refine_max: 0,
+      grade_min: 0,
+      grade_max: 0,
       drawn: nil
     }
   end

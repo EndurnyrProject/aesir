@@ -37,8 +37,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
             %{
               shape: :item_group_optional,
               dsl: "get_rand_group_item",
-              args: [:item_group, :int, :int, :int],
-              defaults: ["0", "1", "0"]
+              args: [:item_group, :int, :int, :int, :int],
+              defaults: ["0", "1", "0", "0"]
             }} = CommandMap.command("getrandgroupitem")
 
     assert {:ok,

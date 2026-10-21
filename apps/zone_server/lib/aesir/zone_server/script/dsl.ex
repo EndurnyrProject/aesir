@@ -152,6 +152,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate give_item(ctx, item_id, qty), to: Items
   defdelegate get_group_item(ctx, group_key), to: Items
   defdelegate get_rand_group_item(ctx, group_key, qty, sub), to: Items
+  defdelegate get_rand_group_item(ctx, group_key, qty, sub, identify), to: Items
+  defdelegate get_rand_group_item(ctx, group_key, qty, sub, identify, char_id), to: Items
   defdelegate group_rand_item(ctx, group_key, sub), to: Items
   defdelegate commit_grants(ctx, grants), to: Items
   defdelegate get_named_item(ctx, item_id, target), to: Items

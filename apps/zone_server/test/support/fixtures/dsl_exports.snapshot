@@ -71,6 +71,8 @@ get_npc_var/3
 get_npc_var_of/3
 get_npc_var_of/4
 get_rand_group_item/4
+get_rand_group_item/5
+get_rand_group_item/6
 get_server_temp_var/2
 get_server_temp_var/3
 get_server_var/2
