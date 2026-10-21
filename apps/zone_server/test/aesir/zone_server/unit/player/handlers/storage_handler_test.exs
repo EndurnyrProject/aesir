@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandlerTest do
   alias Aesir.Net.StorageItemRemoved
   alias Aesir.Net.StorageOpened
   alias Aesir.Net.StorageResult
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageOps
@@ -263,6 +264,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandlerTest do
 
       assert_received {:send, :gameplay,
                        {:item_added, %ItemAdded{index: ^client_index, nameid: 501, amount: 3}}}
+
+      assert_received {:send, :gameplay, {:storage_result, %StorageResult{result: :STORAGE_OK}}}
+    end
+
+    test "deletes an expired rental as soon as it re-enters the inventory" do
+      stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
+
+      expired = %{item(501, 3) | expire_time: ~N[2020-01-01 00:00:00]}
+      moved_inventory = %{0 => expired}
+
+      stub(StorageOps, :withdraw, fn @account_id, @char_id, _inv, _storage, _stats, 0, 3 ->
+        {:ok, moved_inventory, %{}, {:added, 0, expired}, {:removed, 0}}
+      end)
+
+      expect(InventoryOps, :remove, fn @char_id, ^moved_inventory, 0, 3 ->
+        {:ok, %{}, {:removed, 0}}
+      end)
+
+      base = state(storage: %{0 => expired})
+      client_index = PlayerState.client_index(0)
+
+      assert {:noreply, committed} = StorageHandler.withdraw(client_index, 3, base)
+      assert committed.game_state.inventory == %{}
+
+      assert_received {:send, :gameplay, {:item_added, %ItemAdded{index: ^client_index}}}
+
+      assert_received {:send, :gameplay,
+                       {:item_removed, %ItemRemoved{index: ^client_index, amount: 3}}}
 
       assert_received {:send, :gameplay, {:storage_result, %StorageResult{result: :STORAGE_OK}}}
     end

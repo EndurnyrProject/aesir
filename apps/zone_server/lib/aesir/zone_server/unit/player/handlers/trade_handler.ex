@@ -443,11 +443,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
 
       {:stacked, index, _total} ->
         send_item_added(connection_pid, inventory, index)
-
-      {:split, indices} ->
-        Enum.each(indices, fn {index, _amount} ->
-          send_item_added(connection_pid, inventory, index)
-        end)
     end)
   end
 

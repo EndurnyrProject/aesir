@@ -142,45 +142,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
       assert carded.enchant_grade == 2
     end
 
-    test "accepts non-rentals and rejects rentals without moving either item", %{
+    test "stores a rental item with its expiry", %{
       account: account,
       character: char
     } do
-      seed_inv(char.id, @potion, 1)
+      expire_time = ~N[2030-01-01 00:00:00]
+      seed_inv(char.id, @potion, 1, %{expire_time: expire_time})
       inventory = inv_map(char.id)
       index = index_of(inventory, @potion)
 
-      assert {:ok, %{}, %{0 => %InventoryItem{nameid: @potion, amount: 1}}, _, _} =
+      assert {:ok, %{}, %{0 => %InventoryItem{expire_time: ^expire_time}}, _, _} =
                StorageOps.deposit(account.id, char.id, inventory, %{}, index, 1)
 
-      expire_time = ~N[2030-01-01 00:00:00]
-      rental = seed_inv(char.id, @potion, 1, %{expire_time: expire_time})
-      rental_inventory = inv_map(char.id)
-      rental_index = index_of(rental_inventory, @potion)
+      assert [] = InventoryPersistence.load_inventory(char.id)
 
-      assert {:error, :not_storable} =
-               StorageOps.deposit(
-                 account.id,
-                 char.id,
-                 rental_inventory,
-                 %{0 => rental},
-                 rental_index,
-                 1
-               )
-
-      assert [
-               %InventoryItem{
-                 id: rental_id,
-                 nameid: @potion,
-                 amount: 1,
-                 expire_time: ^expire_time
-               }
-             ] =
-               InventoryPersistence.load_inventory(char.id)
-
-      assert rental_id == rental.id
-
-      assert [%StorageItem{nameid: @potion, amount: 1}] =
+      assert [%StorageItem{nameid: @potion, amount: 1, expire_time: ^expire_time}] =
                StoragePersistence.load_storage(account.id)
     end
 
@@ -199,7 +175,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
       assert [] = StoragePersistence.load_storage(account.id)
     end
 
-    test "rejects a guild-bound item with :not_storable and writes nothing", %{
+    test "rejects a guild-bound item with :bound and writes nothing", %{
       account: account,
       character: char
     } do
@@ -207,7 +183,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
       inventory = inv_map(char.id)
       index = index_of(inventory, @potion)
 
-      assert {:error, :not_storable} =
+      assert {:error, :bound} =
                StorageOps.deposit(account.id, char.id, inventory, %{}, index, 1)
 
       assert [%InventoryItem{amount: 1}] = InventoryPersistence.load_inventory(char.id)

@@ -36,6 +36,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
   @class_tokens Map.new(@classes, &{Atom.to_string(&1), &1})
   @gender_tokens Map.new(@genders, &{Atom.to_string(&1), &1})
   @location_tokens Map.new(@locations, &{Atom.to_string(&1), &1})
+  @stack_container_tokens Map.new(
+                            ~w(inventory cart storage guild_storage)a,
+                            &{Atom.to_string(&1), &1}
+                          )
 
   # Valid YAML keys -> struct field atoms. Sourced from the struct so the atoms
   # are guaranteed to exist regardless of load order, and unknown keys raise.
@@ -137,6 +141,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
 
   defp convert(:locations, value, source),
     do: decode_list!(:locations, value, @location_tokens, source)
+
+  defp convert(:stack_limit, value, source) when is_map(value) do
+    Map.new(value, fn {container, amount} ->
+      {decode_token!(:stack_limit, container, @stack_container_tokens, source), amount}
+    end)
+  end
 
   defp convert(key, value, _source) when key in [:on_equip, :on_unequip],
     do: EquipScript.parse!(value)

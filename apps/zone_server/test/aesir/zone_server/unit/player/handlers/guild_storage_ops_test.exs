@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOpsTest do
       assert [%GuildStorageItem{amount: 8}] = GuildStoragePersistence.load_storage(guild.id)
     end
 
-    test "conditionally tops a stack before inserting the split remainder", %{
+    test "refuses a deposit that would pass the 30,000 stack, writing nothing", %{
       ctx: ctx,
       character: character,
       guild: guild
@@ -136,13 +136,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOpsTest do
       storage = guild_storage_map(guild.id)
       index = index_of(inventory, @potion)
 
-      assert {:ok, %{}, persisted_storage, {:removed, ^index}, {:split, [{0, 30_000}, {1, 3}]}} =
-               GuildStorageOps.deposit(ctx, inventory, storage, index, 5)
+      assert {:error, :storage_full} = GuildStorageOps.deposit(ctx, inventory, storage, index, 5)
 
-      assert %{0 => %InventoryItem{amount: 30_000}, 1 => %InventoryItem{amount: 3}} =
-               persisted_storage
+      assert [%InventoryItem{amount: 5}] = InventoryPersistence.load_inventory(character.id)
 
-      assert [%GuildStorageItem{amount: 30_000}, %GuildStorageItem{amount: 3}] =
+      assert [%GuildStorageItem{amount: 29_998}] =
                GuildStoragePersistence.load_storage(guild.id)
     end
 
@@ -160,9 +158,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOpsTest do
 
       for {item, reason} <- [
             {equipped, :item_equipped},
-            {bound, :not_storable},
-            {rental, :rental},
-            {restricted, :no_guild_storage}
+            {bound, :bound},
+            {rental, :restricted},
+            {restricted, :restricted}
           ] do
         index = index_of_id(inventory, item.id)
         assert {:error, ^reason} = GuildStorageOps.deposit(ctx, inventory, %{}, index, 1)

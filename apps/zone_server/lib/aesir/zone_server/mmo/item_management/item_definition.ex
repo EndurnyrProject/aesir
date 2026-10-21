@@ -3,10 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   Static item definition (the `item_db` record).
 
   Loaded as data from `priv/db/re/items/*.yml` into `:persistent_term`; never a
-  per-record module. Carries the loot/equip essentials only. The `NoTrade` and
-  `NoGuildStorage` restrictions are modelled (`no_trade`, `no_guild_storage`);
-  the other nested Trade/NoUse/Delay/Stack restrictions remain intentionally
-  unmodelled.
+  per-record module. Carries the loot/equip essentials only. The `NoTrade`,
+  `NoCart`, `NoStorage` and `NoGuildStorage` restrictions are modelled
+  (`no_trade`, `no_cart`, `no_storage`, `no_guild_storage`), and the `Stack`
+  block as `stack_limit`, the per-container stack cap. The other nested
+  Trade/NoUse/Delay restrictions remain intentionally unmodelled.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
@@ -29,6 +30,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           | :delay_consume
           | :shadow_gear
           | :cash
+
+  @typedoc "An item container a stack limit can apply to."
+  @type container :: :inventory | :cart | :storage | :guild_storage
 
   @enforce_keys [:id, :aegis_name, :name]
   defstruct id: nil,
@@ -56,7 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
             refineable: false,
             bind_on_equip: false,
             no_trade: false,
+            no_cart: false,
+            no_storage: false,
             no_guild_storage: false,
+            stack_limit: %{},
             on_use: nil,
             on_equip: nil,
             on_unequip: nil,
@@ -88,7 +95,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           refineable: boolean(),
           bind_on_equip: boolean(),
           no_trade: boolean(),
+          no_cart: boolean(),
+          no_storage: boolean(),
           no_guild_storage: boolean(),
+          stack_limit: %{optional(container()) => non_neg_integer()},
           on_use: String.t() | nil,
           on_equip: EquipScript.program() | nil,
           on_unequip: EquipScript.program() | nil,
@@ -123,6 +133,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   @spec identified_on_obtain?(t() | %{required(:type) => item_type()}) :: boolean()
   def identified_on_obtain?(%{type: type}),
     do: type not in [:weapon, :armor, :pet_armor, :shadow_gear]
+
+  @doc """
+  Whether copies of this item share one slot.
+
+  Weapons, armour, pet eggs, pet armour and shadow gear take one slot per
+  copy; every other type, ammunition included, stacks. Accepts a definition or
+  any map carrying its `:type`.
+  """
+  @spec stackable?(t() | %{required(:type) => item_type()}) :: boolean()
+  def stackable?(%{type: type}),
+    do: type not in [:weapon, :armor, :pet_egg, :pet_armor, :shadow_gear]
+
+  @doc """
+  The most copies one stack of this item may hold in `container`, or `nil`
+  when only the shared 30,000 cap applies.
+  """
+  @spec stack_limit(t(), container()) :: non_neg_integer() | nil
+  def stack_limit(%__MODULE__{stack_limit: limits}, container), do: Map.get(limits, container)
 
   @doc """
   The item's sell price, applying the rAthena default: when `sell` is unset

@@ -255,6 +255,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   defp error_code(:storage_full), do: :STORAGE_FULL
   defp error_code(:inventory_full), do: :STORAGE_INVENTORY_FULL
   defp error_code(:overweight), do: :STORAGE_OVERWEIGHT
+
+  defp error_code(reason) when reason in [:over_amount, :stack_limit],
+    do: :STORAGE_INVENTORY_FULL
+
+  defp error_code(:invalid), do: :STORAGE_INVALID_AMOUNT
+  defp error_code(:restricted), do: :STORAGE_NO_GUILD_STORAGE
+  defp error_code(:bound), do: :STORAGE_NOT_STORABLE
   defp error_code(:not_storable), do: :STORAGE_NOT_STORABLE
   defp error_code(:item_equipped), do: :STORAGE_ITEM_EQUIPPED
   defp error_code(:rental), do: :STORAGE_RENTAL

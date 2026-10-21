@@ -8,11 +8,8 @@ defmodule Aesir.ZoneServer.Guild.Storage do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Guild.State
-  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.ItemContainer
-  alias Aesir.ZoneServer.Unit.Rental
 
   @guild_storage 10_016
   @slots_per_level 100
@@ -29,41 +26,31 @@ defmodule Aesir.ZoneServer.Guild.Storage do
     end
   end
 
-  @doc "Adds an item while preserving its attributes and stacking rules."
-  @spec add(t(), ItemDefinition.t(), pos_integer(), pos_integer(), InventoryItem.t()) ::
+  @doc """
+  Adds `amount` copies of `item` with the guild storage recipe
+  (`ItemContainer.put/6`) into a storage of `capacity` slots.
+
+  Refusals are `:invalid`, `:storage_full` (the stack limit), `:restricted`
+  (the item or a slotted card may not enter guild storage, or it expires),
+  `:bound` (account bound, or bound past the guild) and `:storage_full` (a
+  full stack or no free slot), in that order.
+  """
+  @spec add(t(), ItemDefinition.t(), integer(), pos_integer(), InventoryItem.t()) ::
           ItemContainer.op_result()
-  defdelegate add(storage, item_def, amount, capacity, item),
-    to: ItemContainer,
-    as: :add_preserving
+  def add(storage, %ItemDefinition{} = item_def, amount, capacity, %InventoryItem{} = item) do
+    room = %{capacity: capacity, weight: :infinity}
+    ItemContainer.put(storage, :guild_storage, item_def, item, amount, room)
+  end
 
   @doc "Removes an amount from the item at a storage index."
   @spec remove(t(), non_neg_integer(), pos_integer()) :: ItemContainer.op_result()
   defdelegate remove(storage, index, amount), to: ItemContainer
 
-  @doc "Returns whether an item may be deposited into guild storage."
-  @spec depositable(InventoryItem.t(), ItemDefinition.t()) :: :ok | {:error, atom()}
-  def depositable(%InventoryItem{} = item, %ItemDefinition{} = item_def) do
-    cond do
-      item.equip != 0 or item.equip_switch != 0 -> {:error, :item_equipped}
-      not Bound.guild_storable?(item) -> {:error, :not_storable}
-      not Rental.transferable?(item) -> {:error, :rental}
-      item_def.no_guild_storage -> {:error, :no_guild_storage}
-      card_blocked?(item) -> {:error, :no_guild_storage}
-      true -> :ok
-    end
-  end
-
-  @spec card_blocked?(InventoryItem.t()) :: boolean()
-  defp card_blocked?(%InventoryItem{} = item) do
-    item
-    |> InventoryItem.cards()
-    |> Enum.reject(&(&1 in [0, nil]))
-    # Unknown card ids are unrestricted so custom or corrupted items remain depositable.
-    |> Enum.any?(fn nameid ->
-      match?(
-        {:ok, %ItemDefinition{no_guild_storage: true}},
-        ItemManagement.get_item_by_id(nameid)
-      )
-    end)
-  end
+  @doc """
+  Returns whether an inventory item may leave for guild storage: a worn item
+  may not. What guild storage accepts is decided by `add/5`.
+  """
+  @spec depositable(InventoryItem.t()) :: :ok | {:error, :item_equipped}
+  def depositable(%InventoryItem{equip: 0, equip_switch: 0}), do: :ok
+  def depositable(%InventoryItem{}), do: {:error, :item_equipped}
 end

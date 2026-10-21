@@ -10,15 +10,14 @@ defmodule Aesir.ZoneServer.Unit.Storage do
   `Aesir.ZoneServer.Unit.Storage.Persistence`.
 
   There is no database access or socket side effect here beyond the
-  persistence delegate; the `storable?/1` bound-type policy check is the only
-  storage-specific rule.
+  persistence delegate. What may be stored is decided by the storage add
+  recipe (`add_item/4`).
   """
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.StorageItem
-  alias Aesir.ZoneServer.Unit.Bound
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.ItemContainer
-  alias Aesir.ZoneServer.Unit.Rental
   alias Aesir.ZoneServer.Unit.Storage.Persistence
 
   @max_storage 600
@@ -61,11 +60,18 @@ defmodule Aesir.ZoneServer.Unit.Storage do
   defdelegate stackable_index(storage, nameid), to: ItemContainer
 
   @doc """
-  Checks whether an item may enter personal storage based on its `bound` value.
+  Adds `amount` copies of `item` with the storage recipe
+  (`ItemContainer.put/6`).
 
-  Unbound (`0`) and account-bound (`1`) items are storable; guild-bound (`2`),
-  party-bound (`3`), and character-bound (`4`) items are rejected.
+  Refusals are `:invalid`, `:storage_full` (the stack limit), `:restricted`
+  (the item or a slotted card may not be stored), `:bound` (bound past the
+  account) and `:storage_full` (a full stack or no free slot), in that order.
+  Rental items are storable and keep their expiry.
   """
-  @spec storable?(InventoryItem.t()) :: boolean()
-  def storable?(%InventoryItem{} = item), do: Bound.storable?(item) and Rental.transferable?(item)
+  @spec add_item(t(), ItemDefinition.t(), InventoryItem.t(), integer()) ::
+          ItemContainer.op_result()
+  def add_item(storage, %ItemDefinition{} = item_def, %InventoryItem{} = item, amount) do
+    room = %{capacity: @max_storage, weight: :infinity}
+    ItemContainer.put(storage, :storage, item_def, item, amount, room)
+  end
 end

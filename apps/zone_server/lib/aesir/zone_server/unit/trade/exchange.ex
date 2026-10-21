@@ -18,7 +18,6 @@ defmodule Aesir.ZoneServer.Unit.Trade.Exchange do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Inventory.Weight
-  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Trade
@@ -208,13 +207,7 @@ defmodule Aesir.ZoneServer.Unit.Trade.Exchange do
       %{row: source, amount: amount, item_def: item_def} = offered_item
 
       with {:ok, new_inventory, change} <-
-             ItemContainer.add_preserving(
-               current,
-               item_def,
-               amount,
-               Inventory.capacity(),
-               source
-             ),
+             Inventory.add_item(current, item_def, source, amount, :infinity),
            {:ok, persisted} <- persist_change(char_id, current, new_inventory, change) do
         {:cont, {:ok, persisted, [change | changes]}}
       else
@@ -235,22 +228,6 @@ defmodule Aesir.ZoneServer.Unit.Trade.Exchange do
 
   defp persist_change(_char_id, old, new_inventory, {:stacked, index, amount}) do
     update_at(old, new_inventory, index, %{amount: amount})
-  end
-
-  defp persist_change(char_id, old, new_inventory, {
-         :split,
-         [{topped_index, amount}, {new_index, _}]
-       }) do
-    inserted = PlayerState.get_by_index(new_inventory, new_index)
-    topped = PlayerState.get_by_index(old, topped_index)
-
-    with {:ok, topped_row} <- Persistence.update_item(topped, %{amount: amount}),
-         {:ok, inserted_row} <- Persistence.insert_item(char_id, item_attrs(inserted)) do
-      {:ok,
-       new_inventory
-       |> PlayerState.put_item(topped_index, topped_row)
-       |> PlayerState.put_item(new_index, inserted_row)}
-    end
   end
 
   defp update_at(old, new_inventory, index, attrs) do

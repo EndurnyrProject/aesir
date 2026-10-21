@@ -112,6 +112,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   }
 
   @always [:id, :aegis_name, :name, :type]
+
+  @stack_containers [
+    {"Inventory", :inventory},
+    {"Cart", :cart},
+    {"Storage", :storage},
+    {"GuildStorage", :guild_storage}
+  ]
   @defaults Map.from_struct(struct(ItemDefinition, %{}))
 
   @class_groups %{
@@ -276,6 +283,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
 
   defp encode_value(:jobs, :all), do: "all"
 
+  defp encode_value(:stack_limit, limits),
+    do: Map.new(limits, fn {container, amount} -> {Atom.to_string(container), amount} end)
+
   defp encode_value(field, value) when field in [:jobs, :classes, :locations],
     do: Enum.map(value, &Atom.to_string/1)
 
@@ -320,11 +330,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
         refineable: Map.get(entry, "Refineable", false),
         bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
         no_trade: get_in(entry, ["Trade", "NoTrade"]) || false,
+        no_cart: get_in(entry, ["Trade", "NoCart"]) || false,
+        no_storage: get_in(entry, ["Trade", "NoStorage"]) || false,
         no_guild_storage: get_in(entry, ["Trade", "NoGuildStorage"]) || false,
+        stack_limit: parse_stack(Map.get(entry, "Stack"), type),
         attack_element: parse_attack_element(Map.get(entry, "Script"))
       }
 
       {:ok, ItemDefinition.normalize_gender(definition)}
+    end
+  end
+
+  # Every container flag defaults to false; a missing Amount, or any Amount on
+  # a non-stackable type, caps at 0.
+  @spec parse_stack(map() | nil, ItemDefinition.item_type()) ::
+          %{optional(ItemDefinition.container()) => non_neg_integer()}
+  defp parse_stack(nil, _type), do: %{}
+
+  defp parse_stack(stack, type) do
+    amount =
+      if ItemDefinition.stackable?(%{type: type}), do: Map.get(stack, "Amount", 0), else: 0
+
+    for {key, container} <- @stack_containers, Map.get(stack, key, false), into: %{} do
+      {container, amount}
     end
   end
 

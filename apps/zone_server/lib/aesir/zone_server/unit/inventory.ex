@@ -74,22 +74,45 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   def capacity, do: @max_inventory
 
   @doc """
-  Adds `amount` of `item_def` to `inventory`, reusing the container core.
+  Adds a fresh grant of `amount` of `item_def`, built from `opts`, with the
+  inventory recipe (`ItemContainer.put/6`).
 
-  Stacks into an existing stackable item (same `nameid`, not equipped, no cards,
-  no random options) up to the shared 30,000 cap and spills the overflow into
-  the lowest free index(es). With no stackable target it creates a new item at
-  the lowest free index. The add is all-or-nothing: if any required slot is
-  missing the inventory is left untouched and `{:error, :inventory_full}` is
-  returned. The 100-slot cap is enforced via `ItemContainer`.
-
-  Weight is intentionally NOT enforced here; the orchestrator enforces it.
+  `weight_room` is the weight still free (`weight_room/2`); the default
+  `:infinity` is for a caller that has already settled the weight of a whole
+  batch. Refusals are `:invalid`, `:over_amount`, `:stack_limit`,
+  `:overweight` and `:inventory_full`, in that order.
   """
-  @spec add(t(), ItemDefinition.t(), pos_integer(), map()) :: op_result()
-  def add(inventory, %ItemDefinition{} = item_def, amount, opts \\ %{})
-      when is_map(inventory) and is_integer(amount) and amount > 0 do
-    ItemContainer.add(inventory, item_def, amount, @max_inventory, opts)
+  @spec add(t(), ItemDefinition.t(), integer(), map(), integer() | :infinity) :: op_result()
+  def add(inventory, %ItemDefinition{} = item_def, amount, opts \\ %{}, weight_room \\ :infinity)
+      when is_map(inventory) and is_integer(amount) do
+    add_item(inventory, item_def, ItemContainer.new_item(item_def, opts), amount, weight_room)
   end
+
+  @doc """
+  Adds `amount` copies of an existing `item` (a row moved from another
+  container or player) with the inventory recipe, as `add/5` does.
+  """
+  @spec add_item(t(), ItemDefinition.t(), InventoryItem.t(), integer(), integer() | :infinity) ::
+          op_result()
+  def add_item(
+        inventory,
+        %ItemDefinition{} = item_def,
+        %InventoryItem{} = item,
+        amount,
+        weight_room
+      ) do
+    ItemContainer.put(inventory, :inventory, item_def, item, amount, %{
+      capacity: @max_inventory,
+      weight: weight_room
+    })
+  end
+
+  @doc """
+  The weight a player with `stats` can still carry on top of `inventory`.
+  """
+  @spec weight_room(t(), Stats.t()) :: integer()
+  def weight_room(inventory, %Stats{} = stats),
+    do: Weight.max_weight(stats) - Weight.current_weight(inventory)
 
   @doc """
   Gives a batch of concrete item-group grants atomically.

@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.RentalExpiry
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -110,7 +111,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   Mirrors `deposit/3`: rejected the same way when the window is closed or
   `amount` is invalid, otherwise it commits both container maps and emits the
   paired client deltas (storage `StorageItemRemoved` + inventory `ItemAdded`)
-  followed by `StorageResult(STORAGE_OK)`.
+  followed by `StorageResult(STORAGE_OK)`. A rental that has already expired
+  is deleted as soon as it re-enters the inventory.
   """
   @spec withdraw(non_neg_integer(), integer(), map()) :: {:noreply, map()}
   def withdraw(index, amount, %{game_state: game_state} = state) do
@@ -138,6 +140,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
 
       notify_storage_removed(committed.connection_pid, storage_change, amount)
       InventoryManager.notify_added(committed.connection_pid, new_inventory, inv_change)
+      committed = RentalExpiry.sweep(committed, NaiveDateTime.utc_now())
       send_result(committed.connection_pid, :STORAGE_OK)
 
       {:noreply, committed}
@@ -204,6 +207,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   defp error_code(:storage_full), do: :STORAGE_FULL
   defp error_code(:inventory_full), do: :STORAGE_INVENTORY_FULL
   defp error_code(:overweight), do: :STORAGE_OVERWEIGHT
+
+  defp error_code(reason) when reason in [:over_amount, :stack_limit],
+    do: :STORAGE_INVENTORY_FULL
+
+  defp error_code(:invalid), do: :STORAGE_INVALID_AMOUNT
+  defp error_code(reason) when reason in [:restricted, :bound], do: :STORAGE_NOT_STORABLE
   defp error_code(:not_storable), do: :STORAGE_NOT_STORABLE
   defp error_code(:item_equipped), do: :STORAGE_ITEM_EQUIPPED
   defp error_code(:insufficient_amount), do: :STORAGE_INVALID_AMOUNT

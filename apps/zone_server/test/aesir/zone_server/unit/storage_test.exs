@@ -6,11 +6,12 @@ defmodule Aesir.ZoneServer.Unit.StorageTest do
   structs via `PlayerState.from_list/1` and item definitions come from
   `priv/db/re/items/` resolved through `ItemManagement.get_item_by_id/1`.
   Storage reuses the pure `ItemContainer` core, so these mirror the cart core
-  tests aside from the `storable?/1` policy check.
+  tests aside from the storage add recipe.
   """
   use ExUnit.Case, async: true
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Storage
 
@@ -38,6 +39,11 @@ defmodule Aesir.ZoneServer.Unit.StorageTest do
   end
 
   defp storage(items), do: PlayerState.from_list(items)
+
+  defp def!(id) do
+    {:ok, d} = ItemManagement.get_item_by_id(id)
+    d
+  end
 
   describe "capacity/0" do
     test "returns 600" do
@@ -82,25 +88,34 @@ defmodule Aesir.ZoneServer.Unit.StorageTest do
     end
   end
 
-  describe "storable?/1" do
+  describe "add_item/4" do
     test "accepts unbound items" do
-      assert Storage.storable?(item(bound: 0))
+      assert {:ok, _s, {:added, 0, _item}} =
+               Storage.add_item(%{}, def!(@red_potion), item(bound: 0), 1)
     end
 
     test "accepts account-bound items" do
-      assert Storage.storable?(item(bound: 1))
+      assert {:ok, _s, {:added, 0, _item}} =
+               Storage.add_item(%{}, def!(@red_potion), item(bound: 1), 1)
     end
 
     test "rejects guild-bound items" do
-      refute Storage.storable?(item(bound: 2))
+      assert {:error, :bound} = Storage.add_item(%{}, def!(@red_potion), item(bound: 2), 1)
     end
 
     test "rejects party-bound items" do
-      refute Storage.storable?(item(bound: 3))
+      assert {:error, :bound} = Storage.add_item(%{}, def!(@red_potion), item(bound: 3), 1)
     end
 
     test "rejects character-bound items" do
-      refute Storage.storable?(item(bound: 4))
+      assert {:error, :bound} = Storage.add_item(%{}, def!(@red_potion), item(bound: 4), 1)
+    end
+
+    test "accepts a rental item, keeping its expiry" do
+      expire_time = ~N[2030-01-01 00:00:00]
+
+      assert {:ok, _s, {:added, 0, %InventoryItem{expire_time: ^expire_time}}} =
+               Storage.add_item(%{}, def!(@red_potion), item(expire_time: expire_time), 1)
     end
   end
 end

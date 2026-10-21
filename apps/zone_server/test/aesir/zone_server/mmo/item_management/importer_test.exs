@@ -213,6 +213,44 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
                Importer.to_definition(plain, :renewal)
     end
 
+    test "maps the Stack block per container; a missing flag is off and a missing Amount is 0" do
+      entry = %{
+        "Id" => 12_333,
+        "AegisName" => "Ansila",
+        "Name" => "Ancilla",
+        "Type" => "Usable",
+        "Stack" => %{"Amount" => 3, "Inventory" => true, "Storage" => true}
+      }
+
+      assert {:ok, definition = %ItemDefinition{stack_limit: %{inventory: 3, storage: 3}}} =
+               Importer.to_definition(entry, :renewal)
+
+      assert %{"stack_limit" => %{"inventory" => 3, "storage" => 3}} =
+               Importer.to_yaml_map(definition, :renewal)
+
+      no_amount = %{entry | "Stack" => %{"Cart" => true}}
+
+      assert {:ok, %ItemDefinition{stack_limit: %{cart: 0}}} =
+               Importer.to_definition(no_amount, :renewal)
+
+      equipment = %{entry | "Type" => "Weapon"}
+
+      assert {:ok, %ItemDefinition{stack_limit: %{inventory: 0, storage: 0}}} =
+               Importer.to_definition(equipment, :renewal)
+    end
+
+    test "maps the cart and storage restrictions" do
+      entry = %{
+        "Id" => 1201,
+        "AegisName" => "Knife",
+        "Name" => "Knife",
+        "Trade" => %{"NoCart" => true, "NoStorage" => true}
+      }
+
+      assert {:ok, %ItemDefinition{no_cart: true, no_storage: true}} =
+               Importer.to_definition(entry, :renewal)
+    end
+
     test "defaults missing Type to :etc (rAthena default)" do
       entry = %{"Id" => 909, "AegisName" => "Jellopy", "Name" => "Jellopy", "Weight" => 1}
 

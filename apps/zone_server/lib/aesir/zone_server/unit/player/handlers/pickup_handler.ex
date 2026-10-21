@@ -219,6 +219,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
   defp pickup_code(:too_far), do: :TOO_FAR
   defp pickup_code(:overweight), do: :OVERWEIGHT
   defp pickup_code(:inventory_full), do: :INVENTORY_FULL
+  defp pickup_code(reason) when reason in [:invalid, :over_amount, :stack_limit], do: :FAILED
   defp pickup_code(:gone), do: :GONE
   defp pickup_code(:item_not_found), do: :GONE
   defp pickup_code(:protected), do: :LOOT_PROTECTED

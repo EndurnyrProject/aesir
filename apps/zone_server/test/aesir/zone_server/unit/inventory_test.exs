@@ -84,14 +84,12 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
       assert %{0 => %InventoryItem{amount: 8}} = new_inv
     end
 
-    test "does not stack onto an equipped item; creates a new slot" do
+    test "stacks onto an equipped stack" do
       def_ = def!(501)
       inv = inventory([item(nameid: 501, amount: 5, equip: 2)])
 
-      assert {:ok, new_inv, {:added, 1, %InventoryItem{nameid: 501, amount: 3}}} =
-               Inventory.add(inv, def_, 3)
-
-      assert map_size(new_inv) == 2
+      assert {:ok, new_inv, {:stacked, 0, 8}} = Inventory.add(inv, def_, 3)
+      assert %{0 => %InventoryItem{amount: 8, equip: 2}} = new_inv
     end
 
     test "does not stack onto an item carrying cards" do
@@ -101,13 +99,11 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
       assert {:ok, _inv, {:added, 1, _item}} = Inventory.add(inv, def_, 3)
     end
 
-    test "overflow past max stack tops the existing stack and splits remainder into a new slot" do
+    test "refuses with :over_amount when the stack would pass 30,000" do
       def_ = def!(501)
       inv = inventory([item(nameid: 501, amount: 29_999)])
 
-      assert {:ok, new_inv, {:split, splits}} = Inventory.add(inv, def_, 5)
-      assert splits == [{0, 30_000}, {1, 4}]
-      assert %{0 => %InventoryItem{amount: 30_000}, 1 => %InventoryItem{amount: 4}} = new_inv
+      assert {:error, :over_amount} = Inventory.add(inv, def_, 5)
     end
 
     test "rejects with :inventory_full when there is no free index, leaving the map unchanged" do
@@ -117,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
       assert {:error, :inventory_full} = Inventory.add(full, def_, 1)
     end
 
-    test "rejects the whole add when the split remainder has no free slot" do
+    test "a full stack refuses with :over_amount even when no slot is free" do
       def_ = def!(501)
 
       items =
@@ -127,7 +123,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
       inv = inventory(items)
       assert map_size(inv) == 100
 
-      assert {:error, :inventory_full} = Inventory.add(inv, def_, 5)
+      assert {:error, :over_amount} = Inventory.add(inv, def_, 5)
     end
   end
 

@@ -259,6 +259,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
       case Inventory.add(inv, def, amount) do
         {:ok, new_inv, _change} -> {:cont, {:ok, new_inv}}
         {:error, :inventory_full} -> {:halt, {:error, :no_slots}}
+        {:error, _over_amount_or_stack_limit} -> {:halt, {:error, :overweight}}
       end
     end)
     |> case do

@@ -14,8 +14,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Inventory
-  alias Aesir.ZoneServer.Unit.Inventory.Weight
-  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -40,10 +38,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps do
       when is_integer(amount) and amount > 0 do
     with {:ok, item} <- fetch(inventory, index, amount),
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
-         :ok <- Storage.depositable(item, item_def),
+         :ok <- Storage.depositable(item),
          {:ok, new_inventory, inv_change} <- Inventory.remove(inventory, index, amount),
          {:ok, new_storage, storage_change} <-
-           add_to_storage(storage, item_def, amount, ctx.capacity, item),
+           Storage.add(storage, item_def, amount, ctx.capacity, item),
          {:ok, persisted_inventory, persisted_storage} <-
            transact(
              ctx,
@@ -72,16 +70,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps do
       when is_integer(amount) and amount > 0 do
     with {:ok, item} <- fetch(storage, index, amount),
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
-         :ok <- ensure_inventory_capacity(inventory, stats, item_def.weight * amount),
-         {:ok, new_storage, storage_change} <- Storage.remove(storage, index, amount),
          {:ok, new_inventory, inv_change} <-
-           ItemContainer.add_preserving(
+           Inventory.add_item(
              inventory,
              item_def,
+             item,
              amount,
-             Inventory.capacity(),
-             item
+             Inventory.weight_room(inventory, stats)
            ),
+         {:ok, new_storage, storage_change} <- Storage.remove(storage, index, amount),
          {:ok, persisted_inventory, persisted_storage} <-
            transact(
              ctx,
@@ -133,13 +130,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps do
     end
   end
 
-  defp add_to_storage(storage, item_def, amount, capacity, item) do
-    case Storage.add(storage, item_def, amount, capacity, item) do
-      {:error, :inventory_full} -> {:error, :storage_full}
-      result -> result
-    end
-  end
-
   defp ensure_holder(%{guild_id: guild_id, session_pid: session_pid}) do
     if Lock.held_by?(guild_id, session_pid), do: :ok, else: {:error, :not_holder}
   end
@@ -166,33 +156,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps do
     end
   end
 
-  defp persist(
-         guild_id,
-         old_storage,
-         new_storage,
-         {:split, [{topped_index, amount}, {new_index, _}]}
-       ) do
-    inserted = PlayerState.get_by_index(new_storage, new_index)
-
-    with {:ok, storage} <-
-           update_at(guild_id, old_storage, new_storage, topped_index, amount),
-         {:ok, row} <- Persistence.insert_item(guild_id, Persistence.to_row_attrs(inserted)) do
-      {:ok, PlayerState.put_item(storage, new_index, %{inserted | id: row.id})}
-    end
-  end
-
   defp update_at(guild_id, old_storage, new_storage, index, amount) do
     old_item = PlayerState.get_by_index(old_storage, index)
 
     with :ok <- Persistence.update_amount(guild_id, old_item.id, old_item.amount, amount) do
       {:ok, new_storage}
     end
-  end
-
-  defp ensure_inventory_capacity(inventory, stats, added_weight) do
-    if Weight.would_exceed?(inventory, stats, added_weight),
-      do: {:error, :overweight},
-      else: :ok
   end
 
   defp fetch(container, index, amount) do

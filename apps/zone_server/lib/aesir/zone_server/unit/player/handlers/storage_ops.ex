@@ -25,23 +25,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOps do
   `Storage.Persistence.transaction/1` (a single `Repo.transact/1`), so a failure
   on either side rolls back both: the inventory side is committed by reusing
   `InventoryOps.apply_change/4` (which nests within the same transaction) and
-  the storage side by this module's `persist/4`. Deposits reject an equipped or
-  unstorable (guild/party/character-bound) item before any write; withdraws
-  validate the player's STR-derived inventory weight cap before any write.
-
-  The moved item's full attribute set (identify/refine/attribute/cards/random
-  options/craft/bound/`unique_id`/`enchant_grade`/`expire_time`) is preserved across
-  the move via `Aesir.ZoneServer.Unit.ItemContainer.add_preserving/5`, the
-  shared transfer-fidelity add: a plain item may stack, anything distinguishing
-  always takes a fresh slot.
+  the storage side by this module's `persist/4`. A deposit enters storage with
+  the storage add recipe (`Storage.add_item/4`) and a withdraw enters the
+  inventory with the inventory recipe (`Inventory.add_item/5`, weight
+  included); either refusal returns before any write.
   """
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Inventory
-  alias Aesir.ZoneServer.Unit.Inventory.Weight, as: InventoryWeight
-  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -60,11 +53,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOps do
   Moves `amount` of the inventory item at `index` into account storage, atomically.
 
   Rejects with `{:error, :item_equipped}` when the item is worn (`equip` or
-  `equip_switch` non-zero) and `{:error, :not_storable}` when its bind type is
-  guild/party/character-bound, both before any write. The 600-slot cap is
-  enforced while adding; a full storage is reported as `{:error, :storage_full}`.
-  The item's full attribute set is preserved so it arrives unchanged. The
-  inventory removal and the storage add commit in one transaction.
+  `equip_switch` non-zero), then with any refusal of the storage recipe
+  (`Storage.add_item/4`), both before any write. The inventory removal and the
+  storage add commit in one transaction.
   """
   @spec deposit(integer(), integer(), inventory(), storage(), non_neg_integer(), pos_integer()) ::
           transfer_result()
@@ -72,10 +63,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOps do
       when is_integer(amount) and amount > 0 do
     with {:ok, item} <- fetch(inventory, index, amount),
          :ok <- ensure_not_equipped(item),
-         :ok <- ensure_storable(item),
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
          {:ok, new_inventory, inv_change} <- Inventory.remove(inventory, index, amount),
-         {:ok, new_storage, storage_change} <- add_to_storage(storage, item_def, amount, item),
+         {:ok, new_storage, storage_change} <- Storage.add_item(storage, item_def, item, amount),
          {:ok, persisted_inventory, persisted_storage} <-
            transact(
              account_id,
@@ -94,11 +84,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOps do
   @doc """
   Moves `amount` of the storage item at `index` back into the inventory, atomically.
 
-  Items re-entering the inventory count toward the player's STR-derived weight,
-  so the inventory cap is validated first and `{:error, :overweight}` is
-  returned when it would be exceeded. Attributes are preserved exactly as in
-  `deposit/6`. The storage removal and the inventory add commit in one
-  transaction.
+  The item enters with the inventory recipe (`Inventory.add_item/5`), weighed
+  against the player's free weight; a refusal returns before any write. The
+  storage removal and the inventory add commit in one transaction.
   """
   @spec withdraw(
           integer(),
@@ -113,10 +101,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOps do
       when is_integer(amount) and amount > 0 do
     with {:ok, item} <- fetch(storage, index, amount),
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
-         :ok <- ensure_inventory_capacity(inventory, stats, item_def.weight * amount),
-         {:ok, new_storage, storage_change} <- Storage.remove(storage, index, amount),
          {:ok, new_inventory, inv_change} <-
-           ItemContainer.add_preserving(inventory, item_def, amount, Inventory.capacity(), item),
+           Inventory.add_item(
+             inventory,
+             item_def,
+             item,
+             amount,
+             Inventory.weight_room(inventory, stats)
+           ),
+         {:ok, new_storage, storage_change} <- Storage.remove(storage, index, amount),
          {:ok, persisted_inventory, persisted_storage} <-
            transact(
              account_id,
@@ -171,31 +164,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOps do
     end
   end
 
-  @spec add_to_storage(storage(), ItemDefinition.t(), pos_integer(), InventoryItem.t()) ::
-          ItemContainer.op_result()
-  defp add_to_storage(storage, %ItemDefinition{} = item_def, amount, %InventoryItem{} = item) do
-    case ItemContainer.add_preserving(storage, item_def, amount, Storage.capacity(), item) do
-      {:error, :inventory_full} -> {:error, :storage_full}
-      result -> result
-    end
-  end
-
   @spec ensure_not_equipped(InventoryItem.t()) :: :ok | {:error, :item_equipped}
   defp ensure_not_equipped(%InventoryItem{equip: 0, equip_switch: 0}), do: :ok
   defp ensure_not_equipped(%InventoryItem{}), do: {:error, :item_equipped}
-
-  @spec ensure_storable(InventoryItem.t()) :: :ok | {:error, :not_storable}
-  defp ensure_storable(%InventoryItem{} = item) do
-    if Storage.storable?(item), do: :ok, else: {:error, :not_storable}
-  end
-
-  @spec ensure_inventory_capacity(inventory(), Stats.t(), integer()) ::
-          :ok | {:error, :overweight}
-  defp ensure_inventory_capacity(inventory, stats, added_weight) do
-    if InventoryWeight.would_exceed?(inventory, stats, added_weight),
-      do: {:error, :overweight},
-      else: :ok
-  end
 
   @spec fetch(map(), non_neg_integer(), pos_integer()) ::
           {:ok, InventoryItem.t()} | {:error, atom()}
@@ -216,21 +187,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOps do
 
   defp persist(account_id, old_storage, new_storage, {:stacked, index, amount}) do
     update_at(account_id, old_storage, new_storage, index, %{amount: amount})
-  end
-
-  defp persist(
-         account_id,
-         old_storage,
-         new_storage,
-         {:split, [{topped_index, amount}, {new_index, _}]}
-       ) do
-    inserted = PlayerState.get_by_index(new_storage, new_index)
-
-    with {:ok, storage} <-
-           update_at(account_id, old_storage, new_storage, topped_index, %{amount: amount}),
-         {:ok, row} <- Persistence.insert_item(account_id, item_attrs(inserted)) do
-      {:ok, PlayerState.put_item(storage, new_index, %{inserted | id: row.id})}
-    end
   end
 
   defp persist(account_id, old_storage, new_storage, {:removed, index}) do

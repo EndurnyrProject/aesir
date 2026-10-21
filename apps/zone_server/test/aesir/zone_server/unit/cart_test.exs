@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.CartTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @red_potion 501
+  @weightless_prize 12_137
   @sword 1101
 
   defp item(attrs) do
@@ -62,20 +63,18 @@ defmodule Aesir.ZoneServer.Unit.CartTest do
       assert %{0 => %InventoryItem{amount: 8}} = new_c
     end
 
-    test "overflow past max stack tops the existing stack and splits the remainder" do
-      def_ = def!(@red_potion)
-      c = cart([item(nameid: @red_potion, amount: 29_999)])
+    test "refuses with :over_amount when the stack would pass 30,000" do
+      def_ = def!(@weightless_prize)
+      c = cart([item(nameid: @weightless_prize, amount: 29_999)])
 
-      assert {:ok, new_c, {:split, splits}} = Cart.add(c, def_, 5)
-      assert splits == [{0, 30_000}, {1, 4}]
-      assert %{0 => %InventoryItem{amount: 30_000}, 1 => %InventoryItem{amount: 4}} = new_c
+      assert {:error, :over_amount} = Cart.add(c, def_, 5)
     end
 
-    test "rejects with :inventory_full when the 100-slot cap is reached" do
+    test "rejects with :over_amount when the 100-slot cap is reached" do
       def_ = def!(@sword)
       full = cart(for n <- 1..100, do: item(nameid: 600 + n, amount: 1))
 
-      assert {:error, :inventory_full} = Cart.add(full, def_, 1)
+      assert {:error, :over_amount} = Cart.add(full, def_, 1)
     end
   end
 

@@ -1725,7 +1725,9 @@
   locations:
     - both_hand
   name: Muramasa
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :critical, 30)
@@ -1825,6 +1827,7 @@
   locations:
     - both_hand
   name: Muramash
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -1984,6 +1987,7 @@
   locations:
     - both_hand
   name: Brave Assaulter's Katzbalger
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -2011,6 +2015,7 @@
   locations:
     - both_hand
   name: Valorous Assaulter's Katzbalger
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -2084,7 +2089,9 @@
   locations:
     - both_hand
   name: Glorious Claymore
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 70)
@@ -2184,7 +2191,9 @@
   locations:
     - both_hand
   name: Claymore
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 40)
   range: 1
@@ -4125,7 +4134,9 @@
   locations:
     - both_hand
   name: Infiltrator
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 70)
@@ -4224,6 +4235,7 @@
   locations:
     - both_hand
   name: Scratcher
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -4367,6 +4379,7 @@
   locations:
     - both_hand
   name: Brave Carnage Katar
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -4394,6 +4407,7 @@
   locations:
     - both_hand
   name: Valorous Carnage Katar
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -4421,7 +4435,9 @@
   locations:
     - both_hand
   name: Glorious Bloody Roar
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 70)
@@ -4459,7 +4475,9 @@
   locations:
     - both_hand
   name: Glorious Jamadhar
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 70)
@@ -4496,7 +4514,9 @@
   locations:
     - both_hand
   name: Katar Of Speed
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:skill_atk, 136}, 25)
@@ -4553,7 +4573,9 @@
   locations:
     - both_hand
   name: Jamadhar
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_weapon, 1)
@@ -4805,7 +4827,9 @@
   locations:
     - right_hand
   name: Glorious Cleaver
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   refineable: true
@@ -4872,7 +4896,9 @@
   locations:
     - right_hand
   name: Orcish Axe
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 70)
   range: 1
@@ -4898,7 +4924,9 @@
   locations:
     - right_hand
   name: Tourist Axe
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :str, 2)
   range: 1
@@ -5477,7 +5505,9 @@
   locations:
     - both_hand
   name: Light Epsilon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = set(ctx, :atk_ele, :holy)
@@ -5656,6 +5686,7 @@
   locations:
     - both_hand
   name: Valorous Insane Battle Axe
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -5686,6 +5717,7 @@
   locations:
     - both_hand
   name: Brave Insane Battle Axe
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -5714,7 +5746,9 @@
   locations:
     - both_hand
   name: Novice Battle Axe
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   slots: 3
@@ -5736,7 +5770,9 @@
   locations:
     - both_hand
   name: Glorious Two-Handed Axe
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   refineable: true
@@ -5869,7 +5905,9 @@
   locations:
     - both_hand
   name: Doom Slayer
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     if (stat(ctx, :str) >= 95) do
@@ -5924,7 +5962,9 @@
   locations:
     - both_hand
   name: Two-Handed Axe
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 40)
   range: 1
@@ -6350,7 +6390,9 @@
   locations:
     - right_hand
   name: Pole Axe
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :str, 1)
@@ -6455,6 +6497,7 @@
   locations:
     - right_hand
   name: Pole XO
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -6493,6 +6536,7 @@
   locations:
     - right_hand
   name: Assaulter Spear
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -6525,7 +6569,9 @@
   locations:
     - right_hand
   name: Glorious Spear
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 3
   refineable: true
@@ -6543,7 +6589,9 @@
   locations:
     - right_hand
   name: Spear Of Excellent
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:skill_atk, 7}, 25)
@@ -6568,6 +6616,7 @@
   locations:
     - right_hand
   name: Long Horn
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -6597,6 +6646,7 @@
   locations:
     - right_hand
   name: Hunting Spear
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -6623,7 +6673,9 @@
   locations:
     - right_hand
   name: Pike
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 70)
   range: 3
@@ -7349,6 +7401,7 @@
   locations:
     - both_hand
   name: Assaulter Lance
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -7441,7 +7494,9 @@
   locations:
     - both_hand
   name: Glorious Lance
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 3
   refineable: true
@@ -7459,7 +7514,9 @@
   locations:
     - both_hand
   name: Lance
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 50)
   range: 3
@@ -8283,7 +8340,9 @@
   locations:
     - right_hand
   name: Warrior's Balmung
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 5)
   range: 1
@@ -8364,6 +8423,7 @@
   locations:
     - right_hand
   name: Good Morning Star
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -8512,6 +8572,7 @@
   locations:
     - right_hand
   name: Valorous Battlefield Morning Star
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -8548,6 +8609,7 @@
   locations:
     - right_hand
   name: Brave Battlefield Morning Star
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -8614,7 +8676,9 @@
   locations:
     - right_hand
   name: Novice Mace
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   slots: 3
@@ -8641,7 +8705,9 @@
   locations:
     - right_hand
   name: Glorious Morning Star
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 75)
@@ -8689,7 +8755,9 @@
   locations:
     - right_hand
   name: Mace Of Madness
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:skill_atk, 153}, 25)
@@ -9037,7 +9105,9 @@
   locations:
     - right_hand
   name: Sage's Diary
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :matk_rate, 20)
@@ -9103,6 +9173,7 @@
   locations:
     - right_hand
   name: Diary Of Great Basil
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -9270,6 +9341,7 @@
   locations:
     - right_hand
   name: Brave Battle Strategy Book
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -9299,6 +9371,7 @@
   locations:
     - right_hand
   name: Valorous Battle Strategy Book
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -9326,7 +9399,9 @@
   locations:
     - right_hand
   name: Glorious Tablet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :matk_rate, 15)
@@ -9367,7 +9442,9 @@
   locations:
     - right_hand
   name: Glorious Apocalypse
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :matk_rate, 15)
@@ -9407,7 +9484,9 @@
   locations:
     - right_hand
   name: Book Of Prayer
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :vit, 2)
@@ -9430,6 +9509,7 @@
   locations:
     - right_hand
   name: Book of the Dead
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   range: 1
@@ -9449,7 +9529,9 @@
   locations:
     - right_hand
   name: Giant Encyclopedia
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :matk_rate, 15)
@@ -10107,7 +10189,9 @@
   locations:
     - right_hand
   name: Mighty Staff
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :str, 10)
@@ -10212,6 +10296,7 @@
   locations:
     - right_hand
   name: Staffy
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -10340,6 +10425,7 @@
   locations:
     - right_hand
   name: Warlock's Magic Wand
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -10372,6 +10458,7 @@
   locations:
     - right_hand
   name: Warlock's Battle Wand
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -10404,6 +10491,7 @@
   locations:
     - right_hand
   name: Strong Recovery Wand
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -10433,6 +10521,7 @@
   locations:
     - right_hand
   name: Speedy Recovery Wand
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -10515,7 +10604,9 @@
   locations:
     - right_hand
   name: Staff Of Healing
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = set(ctx, :atk_ele, :holy)
@@ -10544,7 +10635,9 @@
   locations:
     - right_hand
   name: Novice Rod
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :matk_rate, 16)
   range: 1
@@ -10568,7 +10661,9 @@
   locations:
     - right_hand
   name: Glorious Arc Wand
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :matk_rate, 15)
@@ -10607,7 +10702,9 @@
   locations:
     - right_hand
   name: Glorious Cure Wand
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :matk_rate, 15)
@@ -10653,7 +10750,9 @@
   locations:
     - right_hand
   name: Staff Of Darkness
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :varcast_rate, -5)
@@ -10715,6 +10814,7 @@
   locations:
     - right_hand
   name: Staff of Piercing
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -10747,6 +10847,7 @@
   locations:
     - right_hand
   name: Lich's Bone Wand
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   range: 1
@@ -10904,7 +11005,9 @@
   locations:
     - both_hand
   name: Bow
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:add_damage_class, 1002}, 500)
@@ -11398,7 +11501,9 @@
   locations:
     - both_hand
   name: Ballista
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :long_atk_rate, 20)
   range: 5
@@ -11545,6 +11650,7 @@
   locations:
     - both_hand
   name: Kkakkung
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -11608,6 +11714,7 @@
   locations:
     - both_hand
   name: Valorous Battle CrossBow
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -11636,6 +11743,7 @@
   locations:
     - both_hand
   name: Brave Battle CrossBow
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -11709,7 +11817,9 @@
   locations:
     - both_hand
   name: Novice Composite Bow
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 5
   slots: 3
@@ -11729,7 +11839,9 @@
   locations:
     - both_hand
   name: Glorious Hunter Bow
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 55)
@@ -11771,7 +11883,9 @@
   locations:
     - both_hand
   name: Bow Of Evil
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:skill_atk, 46}, 25)
@@ -12122,7 +12236,9 @@
   locations:
     - right_hand
   name: Kaiser Knuckle
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
@@ -12247,6 +12363,7 @@
   locations:
     - right_hand
   name: Valorous Battle Fist
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -12275,6 +12392,7 @@
   locations:
     - right_hand
   name: Brave Battle Fist
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -12321,7 +12439,9 @@
   locations:
     - right_hand
   name: Glorious Claw
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 95)
@@ -12362,7 +12482,9 @@
   locations:
     - right_hand
   name: Glorious Fist
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 95)
@@ -12402,7 +12524,9 @@
   locations:
     - right_hand
   name: Monk Knuckle
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :int, 2)
@@ -12422,7 +12546,9 @@
   locations:
     - right_hand
   name: Fist
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 40)
   range: 1
@@ -12823,6 +12949,7 @@
   locations:
     - right_hand
   name: Gun Moon Gom
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -12863,6 +12990,7 @@
   locations:
     - right_hand
   name: Valorous Battlefield Guitar
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -12889,6 +13017,7 @@
   locations:
     - right_hand
   name: Brave Battlefield Guitar
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -12968,7 +13097,9 @@
   locations:
     - right_hand
   name: Glorious Guitar
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 95)
@@ -13007,7 +13138,9 @@
   locations:
     - right_hand
   name: Spirited Guitar
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :aspd_rate, 100)
@@ -13029,7 +13162,9 @@
   locations:
     - right_hand
   name: Guitar
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 40)
   range: 1
@@ -13538,6 +13673,7 @@
   locations:
     - right_hand
   name: Queen Is Whip
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -13578,6 +13714,7 @@
   locations:
     - right_hand
   name: Valorous Battle Lariat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -13604,6 +13741,7 @@
   locations:
     - right_hand
   name: Brave Battle Lariat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -13683,7 +13821,9 @@
   locations:
     - right_hand
   name: Glorious Lariat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 95)
@@ -13721,7 +13861,9 @@
   locations:
     - right_hand
   name: Phenomena Whip
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :dex, 2)
@@ -13741,7 +13883,9 @@
   locations:
     - right_hand
   name: Rante Whip
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 40)
   range: 2
@@ -13815,7 +13959,9 @@
   locations:
     - both_hand
   name: Glorious Destruction Staff
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :matk_rate, (15 + refine(ctx)))
@@ -13859,6 +14005,7 @@
   locations:
     - both_hand
   name: Staff of Destruction
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -14652,6 +14799,7 @@
   locations:
     - left_hand
   name: Secular Mission
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:subclass, :all}, 25)
@@ -14754,7 +14902,9 @@
   locations:
     - left_hand
   name: Shell Of Resistance
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   view: 2
@@ -19231,6 +19381,7 @@
   locations:
     - armor
   name: Golden Armor
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :mdef, 4)
@@ -19280,7 +19431,9 @@
   locations:
     - armor
   name: Freyja Overcoat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_armor, 1)
@@ -19296,6 +19449,7 @@
   locations:
     - armor
   name: Used Mage Coat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -19442,6 +19596,7 @@
   locations:
     - armor
   name: Assaulter Plate
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -19466,6 +19621,7 @@
   locations:
     - armor
   name: Elite Engineer Armor
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -19491,6 +19647,7 @@
   locations:
     - armor
   name: Assassin Robe
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -19516,6 +19673,7 @@
   locations:
     - armor
   name: Warlock's Battle Robe
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -19540,6 +19698,7 @@
   locations:
     - armor
   name: Medic's Robe
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -19564,6 +19723,7 @@
   locations:
     - armor
   name: Elite Archer Suit
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -19586,6 +19746,7 @@
   locations:
     - armor
   name: Elite Shooter Suit
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -19625,7 +19786,9 @@
   locations:
     - armor
   name: Spiritual Tunic
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp, 800)
@@ -19648,7 +19811,9 @@
   locations:
     - armor
   name: Recuperative Armor
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :no_regen, 1)
@@ -19863,7 +20028,9 @@
   locations:
     - armor
   name: Novice Adventurer's Suit
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   slots: 1
   type: armor
@@ -19912,7 +20079,9 @@
   locations:
     - armor
   name: Glorious Suit
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp_rate, 20)
@@ -19966,7 +20135,9 @@
   locations:
     - armor
   name: Glorious Popularized Suit
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp, 600)
@@ -20018,7 +20189,9 @@
   locations:
     - armor
   name: Glorious Mass-Production Suit
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :max_hp, 500)
   refineable: true
@@ -20084,6 +20257,7 @@
   locations:
     - armor
   name: Sniping Suit
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -21077,6 +21251,7 @@
   locations:
     - shoes
   name: Golden Shoes
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :mdef, 4)
@@ -21152,7 +21327,9 @@
   locations:
     - shoes
   name: Iron Boots
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -21164,7 +21341,9 @@
   locations:
     - shoes
   name: Iron Boots
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -21177,6 +21356,7 @@
   locations:
     - shoes
   name: Valley Shoes
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -21346,6 +21526,7 @@
   locations:
     - shoes
   name: Battle Greaves
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -21377,6 +21558,7 @@
   locations:
     - shoes
   name: Combat Boots
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -21399,6 +21581,7 @@
   locations:
     - shoes
   name: Battle Boots
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -21418,6 +21601,7 @@
   locations:
     - shoes
   name: Paw Of Cat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -21435,7 +21619,9 @@
   locations:
     - shoes
   name: Refresh Shoes
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp_rate, 17)
@@ -21563,7 +21749,9 @@
   locations:
     - shoes
   name: Glorious Shoes
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp_rate, 10)
@@ -21618,7 +21806,9 @@
   locations:
     - shoes
   name: Glorious Popularized Shoes
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp_rate, 5)
@@ -21670,7 +21860,9 @@
   locations:
     - shoes
   name: Glorious Mass-Production Shoes
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :max_hp_rate, 5)
   refineable: true
@@ -21781,6 +21973,7 @@
   locations:
     - shoes
   name: Variant Shoes
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -23058,6 +23251,7 @@
   locations:
     - garment
   name: Ruffler
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -23195,6 +23389,7 @@
   locations:
     - garment
   name: Captain's Manteau
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -23226,6 +23421,7 @@
   locations:
     - garment
   name: Commander's Manteau
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -23248,6 +23444,7 @@
   locations:
     - garment
   name: Sheriff's Manteau
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -23343,7 +23540,9 @@
   locations:
     - garment
   name: Sylphid Manteau
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :flee, 13)
@@ -23542,7 +23741,9 @@
   locations:
     - garment
   name: Glorious Muffler
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp_rate, 5)
@@ -23609,6 +23810,7 @@
   locations:
     - garment
   name: Crest of the Rider
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :agi, 2)
@@ -23637,6 +23839,7 @@
   locations:
     - garment
   name: Mithril Magic Manteau
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   refineable: true
@@ -24779,7 +24982,9 @@
   locations:
     - both_accessory
   name: Wedding Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Bride_Ring
@@ -24789,7 +24994,9 @@
   locations:
     - both_accessory
   name: Wedding Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Gold_Ring_
@@ -24914,7 +25121,9 @@
   locations:
     - both_accessory
   name: Serin's Gold Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Serin's_Gold_Ring_
@@ -24933,7 +25142,9 @@
   locations:
     - both_accessory
   name: The Sign
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -24973,7 +25184,9 @@
   locations:
     - both_accessory
   name: Nile Rose
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :max_hp, 10)
   slots: 1
@@ -25607,7 +25820,9 @@
   locations:
     - both_accessory
   name: Woman Glory
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   weight: 500
@@ -25631,6 +25846,7 @@
   locations:
     - both_accessory
   name: Ring of Longing
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :flee, 5)
@@ -25742,7 +25958,9 @@
   locations:
     - both_accessory
   name: Warrior's Shining Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :atk, 10)
@@ -25758,7 +25976,9 @@
   locations:
     - both_accessory
   name: Ring of Honor
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Lord_Ring
@@ -25779,7 +25999,9 @@
   locations:
     - both_accessory
   name: Hunter's Earring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:add_monster_drop, 7618}, 100)
   type: armor
@@ -26132,7 +26354,9 @@
   locations:
     - head_mid
   name: Elven Ears
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :int, 1)
   type: armor
@@ -26183,7 +26407,9 @@
   locations:
     - head_low
   name: Steel Flower
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:subrace, :plant}, 3)
   type: armor
@@ -26233,7 +26459,9 @@
   locations:
     - both_accessory
   name: Critical Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :critical, 10)
   type: armor
@@ -26282,7 +26510,9 @@
   locations:
     - both_accessory
   name: Earring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :int, 3)
   type: armor
@@ -26331,7 +26561,9 @@
   locations:
     - both_accessory
   name: Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :str, 4)
   type: armor
@@ -26380,7 +26612,9 @@
   locations:
     - both_accessory
   name: Necklace
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :vit, 4)
   type: armor
@@ -26429,7 +26663,9 @@
   locations:
     - both_accessory
   name: Glove
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :dex, 4)
   type: armor
@@ -26478,7 +26714,9 @@
   locations:
     - both_accessory
   name: Brooch
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :agi, 4)
   type: armor
@@ -26527,7 +26765,9 @@
   locations:
     - both_accessory
   name: Rosary
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :mdef, 5)
@@ -26580,7 +26820,9 @@
   locations:
     - both_accessory
   name: Safety Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :mdef, 5)
   type: armor
@@ -26630,7 +26872,9 @@
   locations:
     - both_accessory
   name: Vesper Core 01
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :mdef, 3)
@@ -26684,7 +26928,9 @@
   locations:
     - both_accessory
   name: Vesper Core 02
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :mdef, 3)
@@ -26738,7 +26984,9 @@
   locations:
     - both_accessory
   name: Vesper Core 03
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :mdef, 3)
@@ -26792,7 +27040,9 @@
   locations:
     - both_accessory
   name: Vesper Core 04
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :mdef, 3)
@@ -26983,6 +27233,7 @@
   locations:
     - both_accessory
   name: Golden Accessories
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :mdef, 4)
@@ -26996,6 +27247,7 @@
   locations:
     - both_accessory
   name: Golden Accessories
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:add_monster_drop, 12018}, 500)
@@ -27023,6 +27275,7 @@
   locations:
     - both_accessory
   name: Chinese Handicraft
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: 'auto_cast(ctx, %{force: 1, flag: 593, trigger: :attack, skill_id: 19}, 5, 300)'
@@ -27118,7 +27371,9 @@
   locations:
     - both_accessory
   name: Certificate
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Marvelous_Pandent
@@ -27223,7 +27478,9 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -27248,7 +27505,9 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -27272,7 +27531,9 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -27296,7 +27557,9 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -27319,7 +27582,9 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -27343,7 +27608,9 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -27517,6 +27784,7 @@
   locations:
     - both_accessory
   name: Seal of Continental Guard
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -27571,6 +27839,7 @@
   locations:
     - both_accessory
   name: Rune Spellstone
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -27625,6 +27894,7 @@
   locations:
     - both_accessory
   name: Death Loop
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :critical, 5)
@@ -27642,6 +27912,7 @@
   locations:
     - both_accessory
   name: Sheriff Badge
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -27663,7 +27934,9 @@
   locations:
     - both_accessory
   name: Directive
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Directive_B
@@ -27676,7 +27949,9 @@
   locations:
     - both_accessory
   name: Directive
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Navel_Ring
@@ -27788,7 +28063,9 @@
   locations:
     - both_accessory
   name: Shiny Coin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 6)
@@ -27801,7 +28078,9 @@
   locations:
     - both_accessory
   name: Ordinary Coin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -27814,7 +28093,9 @@
   locations:
     - both_accessory
   name: Rusty Coin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 3)
@@ -27828,7 +28109,9 @@
   locations:
     - both_accessory
   name: All In One Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 1)
@@ -28031,6 +28314,7 @@
   locations:
     - both_accessory
   name: Academy Of Badge
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -28051,7 +28335,9 @@
   locations:
     - both_accessory
   name: Praccsinos
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
@@ -28065,7 +28351,9 @@
   locations:
     - both_accessory
   name: Beholder Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :formless}, 15)
   type: armor
@@ -28076,7 +28364,9 @@
   locations:
     - both_accessory
   name: Hallow Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Clamorous_Ring
@@ -28086,7 +28376,9 @@
   locations:
     - both_accessory
   name: Clamorous Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :brute}, 15)
   type: armor
@@ -28097,7 +28389,9 @@
   locations:
     - both_accessory
   name: Chemical Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :plant}, 15)
   type: armor
@@ -28108,7 +28402,9 @@
   locations:
     - both_accessory
   name: Insecticide Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :insect}, 15)
   type: armor
@@ -28119,7 +28415,9 @@
   locations:
     - both_accessory
   name: Fischer Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :fish}, 15)
   type: armor
@@ -28130,7 +28428,9 @@
   locations:
     - both_accessory
   name: Decussate Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :demon}, 15)
   type: armor
@@ -28141,7 +28441,9 @@
   locations:
     - both_accessory
   name: Bloody Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :demi_human}, 15)
   type: armor
@@ -28152,7 +28454,9 @@
   locations:
     - both_accessory
   name: Satanic Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :angel}, 15)
   type: armor
@@ -28163,7 +28467,9 @@
   locations:
     - both_accessory
   name: Dragon Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_race, :dragon}, 15)
   type: armor
@@ -28381,7 +28687,9 @@
   locations:
     - both_accessory
   name: Glorious Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp, 300)
@@ -28439,7 +28747,9 @@
   locations:
     - both_accessory
   name: Glorious Mass-Production Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 2)
   type: armor
@@ -28487,7 +28797,9 @@
   locations:
     - both_accessory
   name: Glorious Popularized Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 1)
   type: armor
@@ -28588,6 +28900,7 @@
   locations:
     - both_accessory
   name: Ring of the Ancient Wise King
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -28668,6 +28981,7 @@
   locations:
     - both_accessory
   name: Orlean's Gloves
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -28933,7 +29247,9 @@
   locations:
     - both_accessory
   name: Magic Stone Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :str, 2)
   slots: 1
@@ -28982,7 +29298,9 @@
   locations:
     - both_accessory
   name: Green Apple Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 6)
@@ -29005,7 +29323,9 @@
   locations:
     - both_accessory
   name: Rocks
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:add_damage_class, 2047}, 10)
@@ -29026,7 +29346,9 @@
   locations:
     - both_accessory
   name: Rocks
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:add_damage_class, 2049}, 10)
@@ -29045,7 +29367,9 @@
   locations:
     - both_accessory
   name: Will Of Exhausted Angel
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     if (char_info(ctx, 3) == "job3_arch02") do
@@ -29230,7 +29554,9 @@
   locations:
     - both_accessory
   name: Swordsman Manual
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_sp, 100)
@@ -29250,7 +29576,9 @@
   locations:
     - both_accessory
   name: Thief Manual
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_sp, 100)
@@ -29271,7 +29599,9 @@
   locations:
     - both_accessory
   name: Acolyte Manual
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_sp, 100)
@@ -29291,7 +29621,9 @@
   locations:
     - both_accessory
   name: Archer Manual
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_sp, 100)
@@ -29310,7 +29642,9 @@
   locations:
     - both_accessory
   name: Merchant Manual
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_sp, 100)
@@ -29331,7 +29665,9 @@
   locations:
     - both_accessory
   name: Mage Manual
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_sp, 100)
@@ -32948,6 +33284,7 @@
   locations:
     - head_top
   name: Angeling Hat
+  no_cart: true
   no_guild_storage: true
   on_equip: |-
     ctx = bonus(ctx, {:subrace, :demi_human}, 10)
@@ -33432,6 +33769,7 @@
   locations:
     - head_mid
   name: Father's Sunglasses
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: armor
@@ -33444,6 +33782,7 @@
   locations:
     - head_low
   name: Father's White Moustache
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :atk, 20)
@@ -33457,6 +33796,7 @@
   locations:
     - head_low
   name: Father's Mask
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :matk_rate, 1)
@@ -34468,7 +34808,9 @@
   locations:
     - head_top
   name: Party Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -35253,6 +35595,7 @@
   locations:
     - head_top
   name: Red Deviruchi Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35309,6 +35652,7 @@
   locations:
     - head_top
   name: Gray Deviruchi Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35365,6 +35709,7 @@
   locations:
     - head_top
   name: Brown Deviruchi Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35420,6 +35765,7 @@
   locations:
     - head_top
   name: Gray Drooping Cat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35475,6 +35821,7 @@
   locations:
     - head_top
   name: Brown Drooping Cat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35530,6 +35877,7 @@
   locations:
     - head_top
   name: Pink Drooping Cat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35585,6 +35933,7 @@
   locations:
     - head_top
   name: Blue Drooping Cat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35640,6 +35989,7 @@
   locations:
     - head_top
   name: Yellow Drooping Cat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35658,6 +36008,7 @@
   locations:
     - head_top
   name: Brown Beanie
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :luk, 1)
@@ -35673,6 +36024,7 @@
   locations:
     - head_top
   name: Blue Beanie
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :luk, 1)
@@ -35688,6 +36040,7 @@
   locations:
     - head_top
   name: Pink Beanie
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :luk, 1)
@@ -35708,6 +36061,7 @@
   locations:
     - head_top
   name: Red Mage Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35731,6 +36085,7 @@
   locations:
     - head_top
   name: Gray Mage Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35754,6 +36109,7 @@
   locations:
     - head_top
   name: Brown Mage Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35777,6 +36133,7 @@
   locations:
     - head_top
   name: Blue Mage Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -35800,6 +36157,7 @@
   locations:
     - head_top
   name: Yellow Mage Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -36303,7 +36661,9 @@
   locations:
     - head_top
   name: Apple of Archer
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :dex, 4)
   type: armor
@@ -36317,7 +36677,9 @@
   locations:
     - head_top
   name: Bunny Band
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :mdef, 5)
@@ -36334,7 +36696,9 @@
   locations:
     - head_top
   name: Sakkat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :agi, 3)
   type: armor
@@ -36385,7 +36749,9 @@
   locations:
     - head_top
   name: Grand Circlet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :str, 3)
@@ -36975,6 +37341,7 @@
     - head_mid
     - head_top
   name: Golden Bandana
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :mdef, 4)
@@ -37167,6 +37534,7 @@
   locations:
     - head_low
   name: Pirate Dagger
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :atk, 5)
@@ -37217,7 +37585,9 @@
   locations:
     - head_top
   name: Freya's Crown
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:subrace, :demi_human}, 5)
@@ -37423,6 +37793,7 @@
   locations:
     - head_top
   name: Poring Party Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 3)
@@ -37525,6 +37896,7 @@
   locations:
     - head_top
   name: Champion Wreath
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -37556,6 +37928,7 @@
   locations:
     - head_top
   name: Kerchief
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -37574,6 +37947,7 @@
   locations:
     - head_top
   name: Misstrance Crown
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 2)
@@ -37900,7 +38274,9 @@
   locations:
     - head_top
   name: Bf Recruiter Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -37913,7 +38289,9 @@
   locations:
     - head_top
   name: Friend Recruiter Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -38031,7 +38409,9 @@
   locations:
     - head_top
   name: Gf Recruiter Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -38382,6 +38762,7 @@
     - head_mid
     - head_top
   name: Wings Of Victory
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -38589,6 +38970,7 @@
   locations:
     - head_top
   name: White Wing
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:add_monster_drop, 12280}, 300)
@@ -38604,6 +38986,7 @@
   locations:
     - head_top
   name: Dark Wing
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:add_monster_drop, 12279}, 300)
@@ -39011,7 +39394,9 @@
   locations:
     - head_low
   name: Toast
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :max_hp, 100)
@@ -39054,7 +39439,9 @@
   locations:
     - head_low
   name: Bubblegum
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Tiraya_Bonnet
@@ -39271,6 +39658,7 @@
   locations:
     - head_top
   name: Academy Freshman Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -39288,6 +39676,7 @@
   locations:
     - head_top
   name: Academy Completion Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :max_sp, 30)
@@ -39739,6 +40128,7 @@
     - head_mid
     - head_top
   name: RWC Anniversary Bread Envelope
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -40248,6 +40638,7 @@
   locations:
     - head_top
   name: Solar Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   refineable: true
@@ -40263,6 +40654,7 @@
   locations:
     - head_top
   name: RWC 2008 Dragon Helm Gold
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -40284,6 +40676,7 @@
   locations:
     - head_top
   name: RWC 2008 Dragon Helm Silver
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -40304,6 +40697,7 @@
   locations:
     - head_top
   name: RWC 2008 Dragon Helm Copper
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -40437,7 +40831,9 @@
   locations:
     - head_top
   name: Evolved Dragon Skull Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 2)
@@ -40458,7 +40854,9 @@
     - head_mid
     - head_top
   name: Evolved Whisper Mask
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :dex, 3)
@@ -40514,7 +40912,9 @@
   locations:
     - head_top
   name: Zaha Doll Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :int, 2)
@@ -40823,7 +41223,9 @@
   locations:
     - head_top
   name: Student Cap
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :mdef, 3)
@@ -40876,7 +41278,9 @@
   locations:
     - head_top
   name: Ulle's Cap
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :dex, 2)
@@ -40896,7 +41300,9 @@
     - head_low
     - head_top
   name: Sphinx Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :str, 5)
   type: armor
@@ -41455,7 +41861,9 @@
   locations:
     - head_low
   name: Angry Mouth
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :delay_rate, -3)
   type: armor
@@ -41719,7 +42127,9 @@
   locations:
     - head_low
   name: Spare Card
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:add_monster_drop, 6187}, 1000)
   type: armor
@@ -41854,6 +42264,7 @@
   locations:
     - head_top
   name: Time Keeper Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -42197,7 +42608,9 @@
     - head_low
     - head_mid
   name: Dragon Arhat Mask
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 10)
@@ -42214,7 +42627,9 @@
     - head_low
     - head_mid
   name: Tiger Arhat Mask
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:addrace, :demi_human}, 2)
@@ -42450,7 +42865,9 @@
   locations:
     - head_top
   name: Eden Team Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -42512,7 +42929,9 @@
   locations:
     - head_top
   name: Mosquito Coil
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -42598,7 +43017,9 @@
   locations:
     - head_low
   name: 4Leaf Clover In Mouth
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :mdef, 2)
   type: armor
@@ -42612,7 +43033,9 @@
   locations:
     - head_low
   name: Bubble Gum In Mouth
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :mdef, 2)
   type: armor
@@ -42642,6 +43065,7 @@
   locations:
     - head_top
   name: RTC First Place
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 3)
@@ -42658,6 +43082,7 @@
   locations:
     - head_top
   name: RTC Second Place
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 2)
@@ -42674,6 +43099,7 @@
   locations:
     - head_top
   name: RTC Third Place
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 1)
@@ -42843,7 +43269,9 @@
   locations:
     - head_top
   name: Weird Pumpkin Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :mdef, 5)
   refineable: true
@@ -43051,7 +43479,9 @@
   locations:
     - head_top
   name: Eternal Egg Shell
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -43135,6 +43565,7 @@
   locations:
     - head_mid
   name: Ancient Elven Ear
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, :luk, 1)
@@ -43199,7 +43630,9 @@
   locations:
     - head_low
   name: Cheer Scarf
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   view: 369
@@ -43210,7 +43643,9 @@
   locations:
     - head_low
   name: Cheer Scarf2
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   view: 369
@@ -43221,7 +43656,9 @@
   locations:
     - head_low
   name: Cheer Scarf3
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   view: 369
@@ -43232,7 +43669,9 @@
   locations:
     - head_low
   name: Cheer Scarf4
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   view: 369
@@ -43315,6 +43754,7 @@
   locations:
     - head_top
   name: Victorious Coronet
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -43332,6 +43772,7 @@
   locations:
     - head_top
   name: Poet Natalie's Hat
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: armor
@@ -43505,7 +43946,9 @@
   locations:
     - head_top
   name: Hat Of Expert
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   refineable: true
   type: armor
@@ -43545,7 +43988,9 @@
   locations:
     - both_accessory
   name: Valentine Pledge
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :all_stats, 2)
@@ -43559,7 +44004,9 @@
   locations:
     - head_top
   name: Carnival Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 3)
   refineable: true
@@ -43572,7 +44019,9 @@
   locations:
     - head_top
   name: Carnival Circlet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 3)
   refineable: true
@@ -43586,7 +44035,9 @@
   locations:
     - head_top
   name: Gold Tulip Hairpin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:exp_add_class, :all}, 5)
   refineable: true
@@ -43601,7 +44052,9 @@
   locations:
     - head_top
   name: Love Chick Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :luk, 4)
@@ -43714,7 +44167,9 @@
   locations:
     - head_top
   name: Passion FB Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :str, 2)
@@ -43734,7 +44189,9 @@
   locations:
     - head_top
   name: Cool FB Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :int, 2)
@@ -43754,7 +44211,9 @@
   locations:
     - head_top
   name: Victory FB Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :int, 2)
@@ -43774,7 +44233,9 @@
   locations:
     - head_top
   name: Glory FB Hat
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 1)
   refineable: true
@@ -43921,6 +44382,7 @@
   buy: 20
   id: 9028
   name: Hard Rice Cake
+  no_cart: true
   no_guild_storage: true
   type: pet_egg
 - aegis_name: Santa_Goblin_Egg
@@ -44787,7 +45249,9 @@
   locations:
     - right_hand
   name: Warrior's Balmung
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :all_stats, 5)
   range: 1
@@ -44822,7 +45286,9 @@
   locations:
     - right_hand
   name: Combat Knife
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 100)
@@ -44850,7 +45316,9 @@
   locations:
     - right_hand
   name: Dagger of Counter
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :critical, 90)
   range: 1
@@ -44867,7 +45335,9 @@
   locations:
     - right_hand
   name: Ashura
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :matk_rate, 15)
   range: 1
@@ -45063,6 +45533,7 @@
   locations:
     - right_hand
   name: Prinsense Knife
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -45267,6 +45738,7 @@
   locations:
     - right_hand
   name: Brave Assassin's Damascus
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -45316,6 +45788,7 @@
   locations:
     - right_hand
   name: Valorous Assassin's Damascus
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -45424,7 +45897,9 @@
   locations:
     - right_hand
   name: Novice Cutter
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   slots: 3
@@ -45458,7 +45933,9 @@
   locations:
     - right_hand
   name: Novice Main Gauche
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   slots: 3
@@ -45493,7 +45970,9 @@
   locations:
     - right_hand
   name: Glorious Gladius
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   refineable: true
@@ -45524,7 +46003,9 @@
   locations:
     - right_hand
   name: Fortune Sword
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :luk, 5)
   range: 1
@@ -45555,7 +46036,9 @@
   locations:
     - right_hand
   name: Ice Pick
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   subtype: dagger
@@ -45569,7 +46052,9 @@
   locations:
     - right_hand
   name: Kamaitachi
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 2
   subtype: dagger
@@ -45650,7 +46135,9 @@
   locations:
     - right_hand
   name: Damascus
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 40)
   range: 1
@@ -45811,6 +46298,7 @@
   locations:
     - both_hand
   name: Soldier Revolver
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -45856,7 +46344,9 @@
   locations:
     - both_hand
   name: Glorious Pistol
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 7
   refineable: true
@@ -45872,7 +46362,9 @@
   locations:
     - both_hand
   name: Eden Revlover I
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :hit, -5)
   range: 7
@@ -45888,7 +46380,9 @@
   locations:
     - both_hand
   name: Eden Revlover II
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, :hit, -5)
   range: 7
@@ -46306,6 +46800,7 @@
   locations:
     - both_hand
   name: Soldier Rifle
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   range: 9
@@ -46322,6 +46817,7 @@
   locations:
     - both_hand
   name: Soldier Gatling Gun
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -46347,6 +46843,7 @@
   locations:
     - both_hand
   name: Soldier Shotgun
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -46373,6 +46870,7 @@
   locations:
     - both_hand
   name: Soldier Grenade Launcher
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -46398,7 +46896,9 @@
   locations:
     - both_hand
   name: Lever Action Rifle
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :hit, 20)
@@ -46418,7 +46918,9 @@
   locations:
     - both_hand
   name: Glorious Rifle
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 9
   refineable: true
@@ -46434,7 +46936,9 @@
   locations:
     - both_hand
   name: Glorious Gatling Gun
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 9
   refineable: true
@@ -46450,7 +46954,9 @@
   locations:
     - both_hand
   name: Glorious Shotgun
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 9
   refineable: true
@@ -46466,7 +46972,9 @@
   locations:
     - both_hand
   name: Glorious Grenade Launcher
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 9
   refineable: true
@@ -46588,6 +47096,7 @@
   locations:
     - both_hand
   name: Brave Huuma Front Shuriken
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -46614,6 +47123,7 @@
   locations:
     - both_hand
   name: Valorous Huuma Front Shuriken
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   range: 1
@@ -46631,7 +47141,9 @@
   locations:
     - both_hand
   name: Glorious Shuriken
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   refineable: true
@@ -46647,7 +47159,9 @@
   locations:
     - both_hand
   name: Huuma Blaze Shuriken
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_weapon, 1)
@@ -46667,7 +47181,9 @@
   locations:
     - both_hand
   name: Huuma Giant Wheel Shuriken
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addsize, :all}, 80)
   range: 1
@@ -46723,7 +47239,9 @@
   locations:
     - right_hand
   name: Excalibur
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :int, 10)
@@ -46864,6 +47382,7 @@
   locations:
     - right_hand
   name: Edger
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: bonus(ctx, {:addclass, :all}, 50)
@@ -46974,6 +47493,7 @@
   locations:
     - right_hand
   name: Valorous Gladiator Blade
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   on_equip: |-
@@ -47010,7 +47530,9 @@
   locations:
     - right_hand
   name: Brave Gladiator Blade
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :str, 1)
@@ -47148,7 +47670,9 @@
   locations:
     - right_hand
   name: Novice Falchion
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   slots: 3
@@ -47175,7 +47699,9 @@
   locations:
     - right_hand
   name: Glorious Flamberge
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   refineable: true
@@ -47202,7 +47728,9 @@
   locations:
     - right_hand
   name: Glorious Rapier
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :int, (refine(ctx) - 5))
@@ -47239,7 +47767,9 @@
   locations:
     - right_hand
   name: Glorious Holy Avenger
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :int, 6)
@@ -47284,7 +47814,9 @@
   locations:
     - right_hand
   name: Holy saber
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   range: 1
   subtype: one_handed_sword
@@ -47357,7 +47889,9 @@
   locations:
     - right_hand
   name: Flamberge
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_weapon, 1)
@@ -47436,7 +47970,9 @@
   locations:
     - armor
   name: Odin's Blessing
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
 - aegis_name: Erde
@@ -47525,7 +48061,9 @@
   locations:
     - right_hand
   name: Stunner
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, {:add_eff, :sc_stun}, 1000)
@@ -47670,7 +48208,9 @@
   locations:
     - head_low
   name: Cheer Scarf6
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   view: 369
@@ -47681,7 +48221,9 @@
   locations:
     - head_low
   name: Cheer Scarf8
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   view: 369
@@ -47692,7 +48234,9 @@
   locations:
     - head_low
   name: Cheer Scarf10
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: armor
   view: 369

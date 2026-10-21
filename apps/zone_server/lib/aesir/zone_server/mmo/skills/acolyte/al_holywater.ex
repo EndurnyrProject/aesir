@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
             pending_inventory_notify: caster.pending_inventory_notify ++ [change]
         }
 
-      {:error, reason} when reason in [:overweight, :inventory_full] ->
+      {:error, _reason} ->
         caster
     end
   end

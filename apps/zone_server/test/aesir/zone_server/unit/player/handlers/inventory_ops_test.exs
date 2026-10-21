@@ -239,7 +239,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
     end
   end
 
-  describe "apply_change/4 — stacked and split" do
+  describe "apply_change/4 — stacked" do
     test "stacked updates the existing row amount", %{character: char} do
       seed_item(char.id, @potion, 5)
       inv = load(char.id)
@@ -250,24 +250,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       assert {:ok, persisted} = InventoryOps.apply_change(char.id, inv, new_inv, change)
       assert %{0 => %InventoryItem{amount: 8}} = persisted
       assert [%InventoryItem{amount: 8}] = Persistence.load_inventory(char.id)
-    end
-
-    test "split tops the existing row and inserts the remainder, both persisted", %{
-      character: char
-    } do
-      seed_item(char.id, @potion, 29_999)
-      inv = load(char.id)
-      def_ = def!(@potion)
-
-      {:ok, new_inv, {:split, [{0, 30_000}, {1, 4}]} = change} = Inventory.add(inv, def_, 5)
-
-      assert {:ok, persisted} = InventoryOps.apply_change(char.id, inv, new_inv, change)
-      assert %{0 => %InventoryItem{amount: 30_000}, 1 => %InventoryItem{amount: 4}} = persisted
-      assert %{1 => %InventoryItem{id: id}} = persisted
-      assert is_integer(id)
-
-      rows = Persistence.load_inventory(char.id)
-      assert Enum.map(rows, & &1.amount) |> Enum.sort() == [4, 30_000]
     end
   end
 

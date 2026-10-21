@@ -24,15 +24,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   `Cart.Persistence.transaction/1` (a single `Repo.transact/1`), so a failure on
   either side rolls back both: the inventory side is committed by reusing
   `InventoryOps.apply_change/4` (which nests within the same transaction) and the
-  cart side by this module's `apply_change/4`. Removing from a container never
-  needs a weight check; only the destination is validated, against the cart's
-  flat 8000 cap or the player's STR-derived inventory cap respectively.
-
-  The moved item's full attribute set (identify/refine/attribute/cards/random
-  options/craft/bound/favorite/`unique_id`/`enchant_grade`/`expire_time`) is preserved
-  across the move via `Aesir.ZoneServer.Unit.ItemContainer.add_preserving/5`, the
-  shared transfer-fidelity add: a plain item may stack, anything distinguishing
-  always takes a fresh slot.
+  cart side by this module's `apply_change/4`. Only the destination is
+  checked: an item enters the cart with the cart add recipe (`Cart.add_item/4`,
+  the flat weight cap included) and the inventory with the inventory recipe
+  (`Inventory.add_item/5`, the player's free weight included); either refusal
+  returns before any write.
   """
 
   alias Aesir.Commons.Models.CartItem
@@ -41,10 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Cart.Persistence
-  alias Aesir.ZoneServer.Unit.Cart.Weight, as: CartWeight
   alias Aesir.ZoneServer.Unit.Inventory
-  alias Aesir.ZoneServer.Unit.Inventory.Weight, as: InventoryWeight
-  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -73,11 +66,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   @doc """
   Moves `amount` of the inventory item at `index` into the cart, atomically.
 
-  Validates the cart's flat weight cap for the moved item before any write and
-  rejects with `{:error, :overweight}` when it would be exceeded; the 100-slot
-  cap is enforced while adding. The item's full attribute set is preserved so it
-  arrives unchanged (a carded or refined item never merges with a plain stack).
-  The inventory removal and the cart add commit in one transaction.
+  The item enters with the cart recipe (`Cart.add_item/4`); a refusal returns
+  before any write. The inventory removal and the cart add commit in one
+  transaction.
   """
   @spec move_to_cart(integer(), inventory(), cart(), non_neg_integer(), pos_integer()) ::
           move_result()
@@ -85,10 +76,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
       when is_integer(amount) and amount > 0 do
     with {:ok, item} <- fetch(inventory, index, amount),
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
-         :ok <- ensure_cart_capacity(cart, item_def.weight * amount),
+         {:ok, new_cart, cart_change} <- Cart.add_item(cart, item_def, item, amount),
          {:ok, new_inventory, inv_change} <- Inventory.remove(inventory, index, amount),
-         {:ok, new_cart, cart_change} <-
-           ItemContainer.add_preserving(cart, item_def, amount, Cart.capacity(), item),
          {:ok, persisted_inventory, persisted_cart} <-
            transact_move(
              char_id,
@@ -106,11 +95,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   @doc """
   Moves `amount` of the cart item at `index` back into the inventory, atomically.
 
-  Items re-entering the inventory count toward the player's STR-derived weight,
-  so the inventory cap is validated first and `{:error, :overweight}` is returned
-  when it would be exceeded. Attributes are preserved exactly as in
-  `move_to_cart/5`. The cart removal and the inventory add commit in one
-  transaction.
+  The item enters with the inventory recipe (`Inventory.add_item/5`), weighed
+  against the player's free weight; a refusal returns before any write. The
+  cart removal and the inventory add commit in one transaction.
   """
   @spec move_to_inventory(
           integer(),
@@ -125,10 +112,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
       when is_integer(amount) and amount > 0 do
     with {:ok, item} <- fetch(cart, index, amount),
          {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(item.nameid),
-         :ok <- ensure_inventory_capacity(inventory, stats, item_def.weight * amount),
-         {:ok, new_cart, cart_change} <- Cart.remove(cart, index, amount),
          {:ok, new_inventory, inv_change} <-
-           ItemContainer.add_preserving(inventory, item_def, amount, Inventory.capacity(), item),
+           Inventory.add_item(
+             inventory,
+             item_def,
+             item,
+             amount,
+             Inventory.weight_room(inventory, stats)
+           ),
+         {:ok, new_cart, cart_change} <- Cart.remove(cart, index, amount),
          {:ok, persisted_inventory, persisted_cart} <-
            transact_move(
              char_id,
@@ -169,19 +161,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
     end
   end
 
-  @spec ensure_cart_capacity(cart(), integer()) :: :ok | {:error, :overweight}
-  defp ensure_cart_capacity(cart, added_weight) do
-    if CartWeight.would_exceed?(cart, added_weight), do: {:error, :overweight}, else: :ok
-  end
-
-  @spec ensure_inventory_capacity(inventory(), Stats.t(), integer()) ::
-          :ok | {:error, :overweight}
-  defp ensure_inventory_capacity(inventory, stats, added_weight) do
-    if InventoryWeight.would_exceed?(inventory, stats, added_weight),
-      do: {:error, :overweight},
-      else: :ok
-  end
-
   @spec fetch(map(), non_neg_integer(), pos_integer()) ::
           {:ok, InventoryItem.t()} | {:error, atom()}
   defp fetch(container, index, amount) do
@@ -201,15 +180,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
 
   defp persist(_char_id, old_cart, new_cart, {:stacked, index, amount}) do
     update_at(old_cart, new_cart, index, %{amount: amount})
-  end
-
-  defp persist(char_id, old_cart, new_cart, {:split, [{topped_index, amount}, {new_index, _}]}) do
-    inserted = PlayerState.get_by_index(new_cart, new_index)
-
-    with {:ok, cart} <- update_at(old_cart, new_cart, topped_index, %{amount: amount}),
-         {:ok, row} <- Persistence.insert_item(char_id, item_attrs(inserted)) do
-      {:ok, PlayerState.put_item(cart, new_index, %{inserted | id: row.id, char_id: row.char_id})}
-    end
   end
 
   defp persist(_char_id, old_cart, new_cart, {:removed, index}) do

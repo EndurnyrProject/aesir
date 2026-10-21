@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
-  alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -52,22 +52,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   end
 
   @doc """
-  Adds `amount` of `item_def`, enforcing max weight, then persists.
+  Adds a fresh grant of `amount` of `item_def` with the inventory recipe, then
+  persists.
 
-  Rejects with `{:error, :overweight}` before any DB write when the add would
-  push the player past their max weight. Otherwise runs the pure `add`, persists
-  the change, and returns `{:ok, persisted_inventory, change}`.
+  A refusal (see `Inventory.add/5`, weight included) returns before any DB
+  write. Otherwise persists the change and returns
+  `{:ok, persisted_inventory, change}`.
   """
-  @spec add(integer(), inventory(), Stats.t(), ItemDefinition.t(), pos_integer(), map()) ::
+  @spec add(integer(), inventory(), Stats.t(), ItemDefinition.t(), integer(), map()) ::
           {:ok, inventory(), Inventory.change()} | {:error, term()}
   def add(char_id, inventory, %Stats{} = stats, %ItemDefinition{} = item_def, amount, opts \\ %{}) do
-    if Weight.would_exceed?(inventory, stats, item_def.weight * amount) do
-      {:error, :overweight}
-    else
-      with {:ok, new_inventory, change} <- Inventory.add(inventory, item_def, amount, opts),
-           {:ok, persisted} <- apply_change(char_id, inventory, new_inventory, change) do
-        {:ok, persisted, change}
-      end
+    room = Inventory.weight_room(inventory, stats)
+
+    with {:ok, new_inventory, change} <- Inventory.add(inventory, item_def, amount, opts, room),
+         {:ok, persisted} <- apply_change(char_id, inventory, new_inventory, change) do
+      {:ok, persisted, change}
     end
   end
 
@@ -123,25 +122,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   end
 
   @doc """
-  Whether `amount` of `item_def` can be added without a write.
+  Whether a fresh grant of `amount` of `item_def` can be added without a
+  write.
 
-  Runs the same checks `add/6` enforces before its DB write — max weight first,
-  then slot availability — so a pre-check (e.g. ground-item pickup) can refuse
-  before committing to an irreversible step. Returns `:ok`, `{:error, :overweight}`
-  or `{:error, :inventory_full}`.
+  Runs the inventory recipe `add/6` runs before its DB write, so a pre-check
+  (e.g. ground-item pickup) can refuse before committing to an irreversible
+  step. Returns `:ok` or the recipe's refusal.
   """
-  @spec can_add(inventory(), Stats.t(), ItemDefinition.t(), pos_integer()) ::
-          :ok | {:error, :overweight | :inventory_full}
+  @spec can_add(inventory(), Stats.t(), ItemDefinition.t(), integer()) ::
+          :ok | {:error, ItemContainer.add_error()}
   def can_add(inventory, %Stats{} = stats, %ItemDefinition{} = item_def, amount) do
-    cond do
-      Weight.would_exceed?(inventory, stats, item_def.weight * amount) ->
-        {:error, :overweight}
+    room = Inventory.weight_room(inventory, stats)
 
-      match?({:error, :inventory_full}, Inventory.add(inventory, item_def, amount)) ->
-        {:error, :inventory_full}
-
-      true ->
-        :ok
+    case Inventory.add(inventory, item_def, amount, %{}, room) do
+      {:ok, _inventory, _change} -> :ok
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -168,24 +163,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
 
   def persist_change(_char_id, old_inventory, new_inventory, {:stacked, index, amount}) do
     update_at(old_inventory, new_inventory, index, %{amount: amount})
-  end
-
-  def persist_change(
-        char_id,
-        old_inventory,
-        new_inventory,
-        {:split, [{topped_index, amount}, {new_index, _}]}
-      ) do
-    inserted = PlayerState.get_by_index(new_inventory, new_index)
-    topped_row = PlayerState.get_by_index(old_inventory, topped_index)
-
-    with {:ok, topped} <- Persistence.update_item(topped_row, %{amount: amount}),
-         {:ok, inserted_row} <- Persistence.insert_item(char_id, item_attrs(inserted)) do
-      {:ok,
-       new_inventory
-       |> PlayerState.put_item(topped_index, topped)
-       |> PlayerState.put_item(new_index, inserted_row)}
-    end
   end
 
   def persist_change(_char_id, old_inventory, new_inventory, {:removed, index}) do

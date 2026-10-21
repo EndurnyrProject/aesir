@@ -201,6 +201,33 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
+    test "decodes per-container stack limits", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 12333
+        aegis_name: Ansila
+        name: Ancilla
+        stack_limit:
+          inventory: 3
+          guild_storage: 3
+      """)
+
+      assert %{stack_limit: %{inventory: 3, guild_storage: 3}} = Loader.load().by_id[12_333]
+    end
+
+    @tag :tmp_dir
+    test "rejects an unknown stack limit container", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 12333
+        aegis_name: Ansila
+        name: Ancilla
+        stack_limit:
+          vault: 3
+      """)
+
+      assert_raise ArgumentError, ~r/unknown stack_limit token "vault"/, fn -> Loader.load() end
+    end
+
+    @tag :tmp_dir
     test "reuses the cache while it is newer than the sources", %{tmp_dir: dir} do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load()

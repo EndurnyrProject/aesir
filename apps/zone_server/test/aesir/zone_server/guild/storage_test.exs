@@ -59,39 +59,47 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
     end
   end
 
-  describe "depositable/2" do
+  describe "depositable/1 and add/5" do
     test "accepts an unbound item" do
-      assert :ok = Storage.depositable(item(), def!(@red_potion))
+      assert {:ok, _s, {:added, 0, _item}} = Storage.add(%{}, def!(@red_potion), 1, 200, item())
     end
 
     test "accepts a guild-bound item" do
-      assert :ok = Storage.depositable(item(bound: 2), def!(@red_potion))
+      assert {:ok, _s, {:added, 0, _item}} =
+               Storage.add(%{}, def!(@red_potion), 1, 200, item(bound: 2))
     end
 
     test "rejects an equipped or equipment-switch item" do
       for attrs <- [[equip: 1], [equip_switch: 1]] do
-        assert {:error, :item_equipped} = Storage.depositable(item(attrs), def!(@red_potion))
+        assert {:error, :item_equipped} = Storage.depositable(item(attrs))
       end
+
+      assert :ok = Storage.depositable(item())
     end
 
     test "rejects account-bound, party-bound, and character-bound items" do
       for bound <- [1, 3, 4] do
-        assert {:error, :not_storable} =
-                 Storage.depositable(item(bound: bound), def!(@red_potion))
+        assert {:error, :bound} = Storage.add(%{}, def!(@red_potion), 1, 200, item(bound: bound))
       end
     end
 
     test "rejects a rental item" do
-      assert {:error, :rental} =
-               Storage.depositable(item(expire_time: ~N[2026-08-25 00:00:00]), def!(@red_potion))
+      assert {:error, :restricted} =
+               Storage.add(
+                 %{},
+                 def!(@red_potion),
+                 1,
+                 200,
+                 item(expire_time: ~N[2026-08-25 00:00:00])
+               )
     end
 
     test "rejects an item with the guild storage restriction" do
-      assert {:error, :no_guild_storage} =
-               Storage.depositable(item(nameid: @restricted_item), def!(@restricted_item))
+      assert {:error, :restricted} =
+               Storage.add(%{}, def!(@restricted_item), 1, 200, item(nameid: @restricted_item))
     end
 
-    test "rejects an item holding a restricted card in any card slot" do
+    test "rejects an item holding a restricted card in any of its slots" do
       card = def!(@restricted_card)
 
       # Classic ships no restricted card, so clone a real shared card privately
@@ -101,14 +109,17 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
         item_id -> Mimic.call_original(ItemManagement, :get_item_by_id, [item_id])
       end)
 
+      slotted = %{def!(@red_potion) | slots: 4}
+
       for card_slot <- [:card0, :card1, :card2, :card3] do
-        assert {:error, :no_guild_storage} =
-                 Storage.depositable(item([{card_slot, @restricted_card}]), def!(@red_potion))
+        assert {:error, :restricted} =
+                 Storage.add(%{}, slotted, 1, 200, item([{card_slot, @restricted_card}]))
       end
     end
 
     test "accepts an item with an unrecognised card" do
-      assert :ok = Storage.depositable(item(card0: @unknown_card), def!(@red_potion))
+      assert {:ok, _s, _change} =
+               Storage.add(%{}, def!(@red_potion), 1, 200, item(card0: @unknown_card))
     end
   end
 

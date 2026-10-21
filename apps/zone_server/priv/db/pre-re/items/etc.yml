@@ -7922,6 +7922,7 @@
 - aegis_name: Dark_Ashes
   id: 6000
   name: Ashes of Darkness
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -7948,6 +7949,7 @@
 - aegis_name: New_Year_Rice_Cake
   id: 6005
   name: New Year Rice Cake
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -7955,14 +7957,18 @@
 - aegis_name: Rice_Cake_Delivery_Box
   id: 6006
   name: Rice Cake Delivery Box
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: New_Year_Rice_Cake_Soup
   id: 6007
   name: New Year Rice Cake Soup
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -7974,7 +7980,9 @@
 - aegis_name: Large_Magical_Fan
   id: 6009
   name: Big Fan Of Magic
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Pickaxe
@@ -8119,7 +8127,9 @@
 - aegis_name: Piece_Of_Fish
   id: 6039
   name: Piece of Fish
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -8155,7 +8165,9 @@
 - aegis_name: Unidentified_Mineral
   id: 6048
   name: Unidentified Mineral
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -8172,7 +8184,9 @@
 - aegis_name: Gray_Hollow
   id: 6051
   name: Gray Hollow
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -8180,7 +8194,9 @@
   buy: 1
   id: 6052
   name: Ornament Hairpin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Yuanbao
@@ -8223,7 +8239,9 @@
   buy: 10
   id: 6060
   name: Month Viewing Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -8284,6 +8302,7 @@
 - aegis_name: Shaman's_Old_Paper
   id: 6070
   name: Shaman's Document
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -8291,6 +8310,7 @@
 - aegis_name: Broken_Sword
   id: 6071
   name: Broken Sword
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -8298,6 +8318,7 @@
 - aegis_name: Wing_Of_Bizofnil
   id: 6072
   name: Bijofnil Feather
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -8305,61 +8326,81 @@
 - aegis_name: Dragon's_Mane
   id: 6073
   name: Dragon's Mane
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bazett's_Order
   id: 6074
   name: Bazett's Order
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Crystalized_Teardrop
   id: 6075
   name: Crystalized Teardrop
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Portable_Toolbox
   id: 6076
   name: Portable Toolbox
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Rough_Mineral
   id: 6077
   name: Rough Mineral
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Stone_Fragments
   id: 6078
   name: Stone Fragment
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Flower_Of_Alfheim
   id: 6079
   name: Flower Of Alfheim
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Manuk_Coin
   id: 6080
   name: Manuk Coin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Splendide_Coin
   id: 6081
   name: Splendide Coin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Spirit_Of_Alfheim
   id: 6082
   name: Spirit Of Alfheim
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Dolly_Capsule
@@ -8370,13 +8411,17 @@
 - aegis_name: Bradium_Fragments
   id: 6084
   name: Bradium Fragments
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Shaggy_Muffler
   id: 6085
   name: Shaggy Muffler
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Withered_Flower
@@ -8423,7 +8468,9 @@
 - aegis_name: Egg_Of_Draco
   id: 6093
   name: Draco's Egg
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Traditional_Cookie
@@ -8471,19 +8518,25 @@
 - aegis_name: Attendance_Card
   id: 6101
   name: Attendance Card
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Report_On_Splendide
   id: 6102
   name: Report On Splendide
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Report_On_Manuk
   id: 6103
   name: Report On Manuk
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Big_Cell
@@ -8561,19 +8614,25 @@
 - aegis_name: Succu_Pet_Coupon
   id: 6116
   name: Succubus Pet Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Imp_Pet_Coupon
   id: 6117
   name: Imp Pet Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Chung_E_Pet_Coupon
   id: 6118
   name: Chung E Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Natural_Leather
@@ -8590,14 +8649,18 @@
   buy: 10
   id: 6121
   name: Makeover Brush
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Paint_Brush
   buy: 10
   id: 6122
   name: Paint Brush
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Surface_Paint
@@ -8610,27 +8673,35 @@
   buy: 10
   id: 6124
   name: Wolf Flute
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Lucky_Box
   buy: 10
   id: 6125
   name: Spring Time Box
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Happy_Box
   buy: 10
   id: 6126
   name: Summer Happy Box
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Purification_Stone
   id: 6127
   name: Purification Stone
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guillotine_Antidote
@@ -8640,91 +8711,121 @@
 - aegis_name: Ticket_Nightmare
   id: 6129
   name: Nightmare Terror Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Loli_Ruri
   id: 6130
   name: Loli Ruri Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Goblin_Leader
   id: 6131
   name: Goblin Leader Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Incubus
   id: 6132
   name: Incubus Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Miyabi_Ningyo
   id: 6133
   name: Miyabi Ningyo Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Whisper
   id: 6134
   name: Giant Whisper Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Wicked_Nymph
   id: 6135
   name: Evil Nymph Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Medusa
   id: 6136
   name: Medusa Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Stoneshooter
   id: 6137
   name: Stone Shooter Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Marionette
   id: 6138
   name: Marionette Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Leafcat
   id: 6139
   name: Leaf Cat Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Dullahan
   id: 6140
   name: Dullahan Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Shinobi
   id: 6141
   name: Shinobi Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Golem
   id: 6142
   name: Golem Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ticket_Civil_Servant
   id: 6143
   name: Civil Servant Exchange Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Heartbroken_Tears
@@ -8754,43 +8855,57 @@
 - aegis_name: Chocolate_Of_Eternity
   id: 6148
   name: Eternity Of Chocolate
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Plain_Chocolate
   id: 6149
   name: Simple Chocolate
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Key_Of_The_Mansion
   id: 6150
   name: Key of The Mansion
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Peice_Of_Great_Bradium
   id: 6151
   name: Giant Bradium Fragment
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Glittering_Crystal
   id: 6152
   name: Glittering Crystal
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Special_Exchange_Coupon
   id: 6153
   name: Special Exchange Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Broken_Horn_Pipe
   id: 6154
   name: Broken Horn Pipe
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -8801,7 +8916,9 @@
 - aegis_name: Approval_Report
   id: 6156
   name: Approval Report
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -9010,19 +9127,25 @@
 - aegis_name: I_Love_You
   id: 6206
   name: I Love You
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Thank_You
   id: 6207
   name: Thank You
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: I_Respect_You
   id: 6208
   name: I Respect You
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Glory_Of_Knights
@@ -9080,13 +9203,17 @@
 - aegis_name: Disin_Delivery_Box
   id: 6218
   name: Delivery_Daishin_Box
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Para_Team_Mark
   id: 6219
   name: Eden Group Mark
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Mysterious_Dyestuff
@@ -9118,6 +9245,7 @@
 - aegis_name: HD_Carnium
   id: 6225
   name: HD Carnium
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -9125,6 +9253,7 @@
 - aegis_name: HD_Bradium
   id: 6226
   name: HD Bradium
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -9132,72 +9261,86 @@
 - aegis_name: Guarantee_Weapon_9Up
   id: 6228
   name: +9 Weapon Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Weapon_8Up
   id: 6229
   name: +8 Weapon Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Weapon_7Up
   id: 6230
   name: +7 Weapon Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Weapon_6Up
   id: 6231
   name: +6 Weapon Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Armor_9Up
   id: 6232
   name: +9 Armor Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Armor_8Up
   id: 6233
   name: +8 Armor Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Armor_7Up
   id: 6234
   name: +7 Armor Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Armor_6Up
   id: 6235
   name: +6 Armor Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Blue_Card_7
   id: 6236
   name: Blue Card 7
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarana_Fruit
   id: 6237
   name: Guarana Fruit
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Weapon_11Up
   id: 6238
   name: +11 Weapon Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Armor_11Up
   id: 6239
   name: +11 Armor Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -9205,6 +9348,7 @@
   buy: 20
   id: 6240
   name: HD Oridecon
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -9213,6 +9357,7 @@
   buy: 20
   id: 6241
   name: HD Elunium
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -9363,79 +9508,105 @@
 - aegis_name: Cheat_Key
   id: 6266
   name: Key Of Deception
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Virtual_Key
   id: 6267
   name: Key Of Illusion
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Mirth_Key
   id: 6268
   name: Key Of Gaiety
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Master_Brush
   id: 6269
   name: A Master's Blush
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Mins_Picture
   id: 6270
   name: A Picture Of Minstrel Song
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Mins_Receipt
   id: 6271
   name: Receipt
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Experiment_Seed
   id: 6272
   name: Experiment Seed
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Altered_Seed
   id: 6273
   name: Seed For Experiment
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Saint_Cloth_Piece
   id: 6274
   name: A Piece Of Cloth Of A Saint
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: King_Shield
   id: 6275
   name: Shield Of King
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Clear_Reagent
   id: 6276
   name: Clear Reagent
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Red_Reagent
   id: 6277
   name: Red Reagent
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Black_Reagent
   id: 6278
   name: Black Reagent
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Apple_Bomb_CB
@@ -9535,7 +9706,9 @@
   buy: 20
   id: 6296
   name: Training Notice
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -9549,14 +9722,18 @@
   buy: 20
   id: 6298
   name: Pumpkin Head Crushed
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Worn_Cloth_Piece
   buy: 20
   id: 6299
   name: Worn Cloth Piece
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: J_7Draw
@@ -9661,7 +9838,9 @@
   buy: 20
   id: 6320
   name: Premium Reset Stone
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Rakehorn_Helm
@@ -9787,7 +9966,9 @@
 - aegis_name: Love_Ball
   id: 6345
   name: Love Ball
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Seagate_Mark
@@ -9798,90 +9979,116 @@
   buy: 4020
   id: 6347
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper2
   buy: 4020
   id: 6348
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper3
   buy: 4020
   id: 6349
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper4
   buy: 4020
   id: 6350
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper5
   buy: 4020
   id: 6351
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper6
   buy: 4020
   id: 6352
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper7
   buy: 4020
   id: 6353
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper8
   buy: 4020
   id: 6354
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper9
   buy: 4020
   id: 6355
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bless_Word_Paper10
   buy: 4020
   id: 6356
   name: Bless Word Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Fortune_Cookie_Fail
   buy: 4020
   id: 6357
   name: Fortune Cookie Fail
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: Free_Cash_Coupon
   id: 6358
   name: Free Cash Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guidebook_Exchange
   id: 6359
   name: Guidebook Exchange
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Scarlet_Pts
@@ -9944,6 +10151,7 @@
   buy: 20
   id: 6377
   name: Buy Market Permit
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -10052,12 +10260,14 @@
 - aegis_name: Guarantee_Weapon_5Up
   id: 6456
   name: +5 Weapon Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Guarantee_Armor_5Up
   id: 6457
   name: +5 Armor Refine Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -10245,6 +10455,7 @@
   buy: 30000
   id: 7025
   name: Lucifer's Lament
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -11145,13 +11356,17 @@
 - aegis_name: Part_Of_Star's_Sob
   id: 7177
   name: Crumb of Sobbing Starlight
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Star's_Sob
   id: 7178
   name: Sobbing Starlight
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Donation_Card
@@ -11694,14 +11909,18 @@
 - aegis_name: Ancient_Document
   id: 7275
   name: Record of Ancient Language
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: Picture_Letter
   id: 7276
   name: Doodled Message
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Munak_Doll
@@ -11862,37 +12081,49 @@
 - aegis_name: Witch's_Spell_Book
   id: 7304
   name: Witch's Spell Scroll
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Authority_Of_Nine_World
   id: 7305
   name: Symbol of the Nine Realms
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Fragment_Of_Soul
   id: 7306
   name: Piece of Spirit
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Whisper_Of_Soul
   id: 7307
   name: Spiritual Whispers
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Witch's_Potion
   id: 7308
   name: Witch's Tonic
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Wing_Of_Crow
   id: 7309
   name: Crow Wing
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Free_Peco_Ticket
@@ -11922,7 +12153,9 @@
   buy: 2
   id: 7314
   name: The Sign
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Dark_Crystal_Fragment
@@ -12021,31 +12254,41 @@
 - aegis_name: Slate
   id: 7332
   name: Complete Tablet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Piece_Of_Slate_1
   id: 7333
   name: Prontera Tablet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Piece_Of_Slate_2
   id: 7334
   name: Payon Tablet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Piece_Of_Slate_3
   id: 7335
   name: Morocc Tablet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Piece_Of_Slate_4
   id: 7336
   name: Geffen Tablet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Eye_Of_Hellion
@@ -12059,7 +12302,9 @@
 - aegis_name: RO_Transportation_Card_
   id: 7339
   name: Commemorative Travel Card
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Will_Of_Darkness
@@ -12072,28 +12317,36 @@
   buy: 20
   id: 7341
   name: Old Pendant
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: File01
   buy: 20
   id: 7342
   name: File Folder
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: File02
   buy: 20
   id: 7343
   name: Sealed File Folder
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: File03
   buy: 20
   id: 7344
   name: Shinokas Case File
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Armlet_Of_Prisoner
@@ -12106,7 +12359,9 @@
   buy: 20
   id: 7346
   name: Ymir's Heart Piece
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Lab_Staff_Record
@@ -12125,7 +12380,9 @@
   buy: 20
   id: 7349
   name: Archive Permit
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Pass
@@ -12138,7 +12395,9 @@
   buy: 20
   id: 7351
   name: Friend's Diary
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Transparent_Plate01
@@ -12489,18 +12748,21 @@
 - aegis_name: Letter_Of_Recommend
   id: 7416
   name: Letter of Recommendation
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Mission_ScrollA
   id: 7417
   name: Written Request(A)
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Mission_ScrollB
   id: 7418
   name: Written Request(B)
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -12513,79 +12775,105 @@
 - aegis_name: Skull_
   id: 7420
   name: Skull
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Key_Red
   id: 7421
   name: Red Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Key_Yellow
   id: 7422
   name: Yellow Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Key_Blue
   id: 7423
   name: Blue Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Key_Green
   id: 7424
   name: Green Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Key_Black
   id: 7425
   name: Black Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Magic_Gem_Red
   id: 7426
   name: Red Charm Stone
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Magic_Gem_Yellow
   id: 7427
   name: Yellow Charm Stone
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Magic_Gem_Blue
   id: 7428
   name: Blue Charm Stone
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Magic_Gem_Green
   id: 7429
   name: Green Charm Stone
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Magic_Gem_Black
   id: 7430
   name: Black Charm Stone
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Several_Books
   id: 7431
   name: Pile of Books
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Leather_Pouch
   id: 7432
   name: Leather Pouch
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Scroll
@@ -12884,142 +13172,188 @@
 - aegis_name: Warrior_Symbol
   id: 7484
   name: Symbol of a Brave Warrior
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: 2nd_Floor_Pass
   id: 7485
   name: Cloud General
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: 3rd_Floor_Pass
   id: 7486
   name: Wind General
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: Tavern_Wine
   id: 7487
   name: Culinary Wine
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Delivery_Box
   id: 7488
   name: Delivery Package
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Villa_Spare_Key
   id: 7489
   name: Cottage Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Kyll_Hire_Letter
   id: 7490
   name: Letter to Elly
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Iron_Box
   id: 7491
   name: Steel Box
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Yellow_Key_Card
   id: 7492
   name: Yellow Keycard
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Golden_Key
   id: 7493
   name: Golden Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Kiel_Button
   id: 7494
   name: Luxurious Button
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Blue_Key_Card
   id: 7495
   name: Blue Keycard
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Red_Key_Card
   id: 7496
   name: Red Keycard
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Steel_Piece
   id: 7497
   name: Metal Fragment
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Rosimier_Key
   id: 7498
   name: Rosimier Mansion Keys
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Family_Portrait
   id: 7499
   name: Family Portrait
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Elysia_Portrait
   id: 7500
   name: Woman's Portrait
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Kyll_Hire_Letter2
   id: 7501
   name: K.H's Letter
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Piece_Memo_Of_James
   id: 7502
   name: James's Note
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Man_Portrait
   id: 7503
   name: Man's Portrait
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Toy_Motor
   id: 7504
   name: Power Device
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Toy_Key
   id: 7505
   name: Toy Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Black_Key_Card
   id: 7506
   name: Black Keycard
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Sturdy_Iron_Piece
@@ -13031,12 +13365,15 @@
 - aegis_name: Elysia_Ring
   id: 7508
   name: Allysia's Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Fancy_Key_Card
   id: 7509
   name: Luxurious Keycard
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -13073,13 +13410,17 @@
   buy: 2
   id: 7515
   name: Prize Medal
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Green_Key_Card
   id: 7516
   name: Green Keycard
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Gold_Coin_
@@ -13091,7 +13432,9 @@
 - aegis_name: Women's_Medal
   id: 7518
   name: Women's Medal
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13133,7 +13476,9 @@
   buy: 10
   id: 7525
   name: Summer Festival Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13145,7 +13490,9 @@
 - aegis_name: Life_Book
   id: 7527
   name: Book About True Life
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 100
@@ -13160,61 +13507,81 @@
 - aegis_name: Travel_Brochure_01
   id: 7530
   name: Travel Brochure [Amatsu]
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Travel_Brochure_02
   id: 7531
   name: Travel Brochure [Kunlun]
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Travel_Brochure_03
   id: 7532
   name: Travel Brochure [Luoyang]
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Travel_Brochure_04
   id: 7533
   name: Travel Brochure [Ayothaya]
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Photo_Album_01
   id: 7534
   name: Amatsu Completed Photo Album
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Photo_Album_02
   id: 7535
   name: Kunlun Completed Photo Album
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Photo_Album_03
   id: 7536
   name: Luoyang Completed Photo Album
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Photo_Album_04
   id: 7537
   name: Ayothaya Completed Photo Album
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Sifted_Sand
   id: 7538
   name: Sand for Work
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Poring_Coin
   id: 7539
   name: Poring Coin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Lotto39
@@ -13256,7 +13623,9 @@
   buy: 20
   id: 7547
   name: Soccer Ball
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13264,7 +13633,9 @@
   buy: 20
   id: 7548
   name: Soccer Shoes
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13272,7 +13643,9 @@
   buy: 20
   id: 7549
   name: Brazilian Flag
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13280,7 +13653,9 @@
   buy: 20
   id: 7550
   name: 6.13 Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13288,7 +13663,9 @@
   buy: 20
   id: 7551
   name: 6.18 Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13296,49 +13673,61 @@
   buy: 20
   id: 7552
   name: 6.22 Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: Lotus_Flower
   id: 7553
   name: Lotus Flower
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Striped_Candle
   id: 7554
   name: Striped Candle
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Green_Incense
   id: 7555
   name: Green Incense
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Longing_Heart
   id: 7556
   name: Longing Heart
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Invitation_Letter
   id: 7557
   name: Invitation Letter
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Invitation_Ticket
   id: 7558
   name: Invitation Ticket
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Key_Of_Flower_Garden
   id: 7559
   name: Key to the Secret Garden
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -13397,6 +13786,7 @@
 - aegis_name: Hammer_Of_Wind
   id: 7569
   name: Wind Hammer
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -13412,12 +13802,14 @@
 - aegis_name: Magic_Necklace
   id: 7572
   name: Ashy Necklace
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Magic_Necklace_
   id: 7573
   name: Sparkling Necklace
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -13429,21 +13821,27 @@
   buy: 20
   id: 7575
   name: Red Jewel
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Blue_Jewel_
   buy: 20
   id: 7576
   name: Blue Jewel
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Golden_Jewel_
   buy: 20
   id: 7577
   name: Yellow Jewel
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 50
@@ -13457,7 +13855,9 @@
   buy: 20
   id: 7579
   name: Silk Handkerchief of Zhi Nu
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13465,7 +13865,9 @@
   buy: 20
   id: 7580
   name: Black Marble
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13485,7 +13887,9 @@
   buy: 10
   id: 7583
   name: Evil Mind
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13493,7 +13897,9 @@
   buy: 10
   id: 7584
   name: Guard's First Proof
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13501,7 +13907,9 @@
   buy: 10
   id: 7585
   name: Guard's Second Proof
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13509,7 +13917,9 @@
   buy: 10
   id: 7586
   name: Guard's Third Proof
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13517,7 +13927,9 @@
   buy: 10
   id: 7587
   name: Guard's Fourth Proof
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13525,7 +13937,9 @@
   buy: 10
   id: 7588
   name: IPOD Coupon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13586,7 +14000,9 @@
 - aegis_name: RO_Party_Ticket
   id: 7603
   name: RO Party Invitation Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13648,7 +14064,9 @@
   buy: 10
   id: 7614
   name: Wrapping Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13674,7 +14092,9 @@
   buy: 2
   id: 7618
   name: Monster Crystal
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 100
@@ -13682,6 +14102,7 @@
   buy: 2
   id: 7619
   name: Enriched Elunium
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -13690,6 +14111,7 @@
   buy: 2
   id: 7620
   name: Enriched Oridecon
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -13698,6 +14120,7 @@
   buy: 2
   id: 7621
   name: Token Of Siegfried
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -13712,14 +14135,18 @@
   buy: 2
   id: 7623
   name: Ticket Of Identification
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Spring_Stanza23
   buy: 2
   id: 7624
   name: Spring Stanza23
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -13744,7 +14171,9 @@
 - aegis_name: Pink_Gift_Box
   id: 7629
   name: Pink Gift Box
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Clean_Beach_Brush
@@ -14076,7 +14505,9 @@
   buy: 20
   id: 7759
   name: Geologist's Report
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Yaga_Magic_Book
@@ -14119,6 +14550,7 @@
   buy: 20
   id: 7766
   name: Bok Choy
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14127,6 +14559,7 @@
   buy: 20
   id: 7767
   name: Green Maiden's Cake
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14159,7 +14592,9 @@
 - aegis_name: War_Badge
   id: 7773
   name: War Badge
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Chung_E_Ticket
@@ -14175,6 +14610,7 @@
 - aegis_name: Max_Weight_Up_Scroll
   id: 7776
   name: Gym Pass
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14217,6 +14653,7 @@
 - aegis_name: Fawner_Coupon1
   id: 7784
   name: Free Coupon 1
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14224,6 +14661,7 @@
 - aegis_name: Fawner_Coupon2
   id: 7785
   name: Free Coupon 2
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14231,6 +14669,7 @@
 - aegis_name: Fawner_Coupon3
   id: 7786
   name: Free Coupon 3
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14238,6 +14677,7 @@
 - aegis_name: Fawner_Coupon4
   id: 7787
   name: Free Coupon 4
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14245,6 +14685,7 @@
 - aegis_name: Fawner_Coupon5
   id: 7788
   name: Free Coupon 5
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14252,6 +14693,7 @@
 - aegis_name: Fawner_Coupon6
   id: 7789
   name: Free Coupon 6
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14259,6 +14701,7 @@
 - aegis_name: Fawner_Coupon7
   id: 7790
   name: Free Coupon 7
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14266,6 +14709,7 @@
 - aegis_name: Fawner_Coupon8
   id: 7791
   name: Free Coupon 8
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14278,12 +14722,14 @@
 - aegis_name: Golden_Apple
   id: 7793
   name: Golden Apple
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Fate_Of_Crow
   id: 7794
   name: The Crow of Destiny
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14320,19 +14766,24 @@
 - aegis_name: Golden_Apple_
   id: 7800
   name: Golden Charm Apple
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Girl_Fan_Letter
   id: 7801
   name: Girl's Letter
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Autograph_Book
   id: 7802
   name: Signature Notebook
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Battle_Manual_TW
@@ -14418,13 +14869,16 @@
 - aegis_name: Morroc_Skin
   id: 7820
   name: Piece of Morocc Skin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Green_Apple
   buy: 20
   id: 7821
   name: Green Apple
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14433,6 +14887,7 @@
   buy: 20
   id: 7822
   name: Whole Barbecue
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14441,6 +14896,7 @@
   buy: 20
   id: 7823
   name: Meat Veg Skewer
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14449,6 +14905,7 @@
   buy: 20
   id: 7824
   name: Spirit Liquor
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14462,7 +14919,9 @@
 - aegis_name: Continental_Guard_Paper
   id: 7826
   name: Continental Guard Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Mineral_Report
@@ -14472,12 +14931,14 @@
 - aegis_name: BF_Badge1
   id: 7828
   name: Bravery Badge
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: BF_Badge2
   id: 7829
   name: Valor Badge
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14538,37 +14999,49 @@
 - aegis_name: Crystal_Key
   id: 7839
   name: Crystal Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Valkyrie_Gift
   id: 7840
   name: Valkyrie's Gift
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Spotted_Paper
   id: 7841
   name: Stained Piece Of Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Torn_Paper
   id: 7842
   name: Torn Piece Of Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Old_Paper
   id: 7843
   name: Old Piece Of Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Burnt_Paper
   id: 7844
   name: Burnt Pieces Of Paper
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Copy_Of_Spotted_Paper
@@ -14675,6 +15148,7 @@
   buy: 20
   id: 7863
   name: Special Gold
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14689,14 +15163,18 @@
   buy: 10
   id: 7865
   name: Gold Pouch
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Certificate
   buy: 10
   id: 7866
   name: Certificate
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: SesamePouch
@@ -14751,72 +15229,91 @@
   buy: 300000
   id: 7875
   name: Pirate Treasure
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Gold_Key
   id: 7876
   name: Golden Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 50
 - aegis_name: Red_Ring
   id: 7877
   name: Red Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 100
 - aegis_name: Lusalka_Hair
   id: 7878
   name: Lusalka's Hair
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: Golden_Thread
   id: 7879
   name: Golden Thread
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: Babayaga_Silver_Spoon
   id: 7880
   name: Baba Yaga's Silver Spoon
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: Book_Of_Magic
   id: 7881
   name: Mystery Magic Book
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 50
 - aegis_name: Pointed_Branch
   id: 7882
   name: Sharp Branch
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Pointed_Wooden_Flute
   id: 7883
   name: Wooden Flute
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Jade_Plate
   id: 7884
   name: Jade Plate
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
 - aegis_name: Sacred_Arrow
   id: 7885
   name: Sacred Arrow
+  no_cart: true
   no_guild_storage: true
   no_trade: true
   type: etc
@@ -14867,61 +15364,81 @@
 - aegis_name: TRO_Memory_Book01
   id: 7895
   name: Rama5 Book
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: TRO_Memory_Book02
   id: 7896
   name: Loykrathong Book
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: TRO_Memory_Book03
   id: 7897
   name: Constitution Book
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: VVS_Balmung
   id: 7898
   name: VV Strong Balmung
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Spiritualist_Dagger
   id: 7899
   name: Dagger Of Psychic
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Jenoss_Ring1
   id: 7900
   name: Jonathan Family Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Jenoss_Ring2
   id: 7901
   name: Jillberriel Family Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Jenoss_Ring3
   id: 7902
   name: Jessur Family Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Jenoss_Ring4
   id: 7903
   name: Jenoss Family Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Piano_Key
   id: 7904
   name: Piano Key
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Rok_Star_Badge_
@@ -14933,14 +15450,18 @@
 - aegis_name: Poppy_Wreath
   id: 7906
   name: Poppy Wreath
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Bobbin_Of_Goddess
   buy: 20
   id: 7907
   name: Bobbin Of Goddess
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -14967,20 +15488,26 @@
 - aegis_name: Portable_Snowman
   id: 7912
   name: Portable Snowman Machine
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Test_Certificate
   id: 7913
   name: Battle Test Certificate
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ancient_Document_TW
   buy: 10
   id: 7914
   name: Ancient Language Document
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Copper_Coin_
@@ -15026,14 +15553,18 @@
 - aegis_name: KRATHONG_
   id: 7923
   name: Krathong
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Brazilian_Flag_
   buy: 10
   id: 7928
   name: Brazil National Flag
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15041,14 +15572,18 @@
   buy: 10
   id: 7929
   name: Gold Coin
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
 - aegis_name: Cowking's_Nose_Ring
   id: 7930
   name: Devil's Cattle Ring
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 1000
@@ -15158,40 +15693,52 @@
   buy: 10
   id: 7949
   name: Woven Wool
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Ayothaya_Ticket
   buy: 10
   id: 7950
   name: Ayothaya Fest Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Gold_Tulip
   buy: 10
   id: 7951
   name: Golden Tulip Flower
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Gift_From_Romiros
   id: 7952
   name: Gift Of Lomi Ross
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Gift_From_Juliedge
   id: 7953
   name: Gift Of Juliet
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Festival_Ticket_
   buy: 10
   id: 7954
   name: Summer Festival Ticket
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15228,63 +15775,81 @@
 - aegis_name: Weapon_Exchange
   id: 7961
   name: Weapon Exchange
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Treasure_Map1
   buy: 10
   id: 7962
   name: Treasure Map1
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Treasure_Map2
   buy: 10
   id: 7963
   name: Treasure Map2
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Treasure_Map3
   buy: 10
   id: 7964
   name: Treasure Map3
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Treasure_Map4
   buy: 10
   id: 7965
   name: Treasure Map4
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Weird_Parchment1
   buy: 10
   id: 7966
   name: Weird Parchment1
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Weird_Parchment2
   buy: 10
   id: 7967
   name: Weird Parchment2
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Weird_Parchment3
   buy: 10
   id: 7968
   name: Weird Parchment3
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Weird_Parchment4
   buy: 10
   id: 7969
   name: Weird Parchment4
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Unwritten_Letter1
@@ -15303,14 +15868,18 @@
   buy: 20
   id: 7973
   name: Immortality Egg
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Illusion_Piece
   buy: 20
   id: 7974
   name: Illusion Piece
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
 - aegis_name: Cupid_Choco
@@ -15330,7 +15899,9 @@
   buy: 2
   id: 7978
   name: Spring Stanza1
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15338,7 +15909,9 @@
   buy: 2
   id: 7979
   name: Spring Stanza2
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15346,7 +15919,9 @@
   buy: 2
   id: 7980
   name: Spring Stanza3
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15354,7 +15929,9 @@
   buy: 2
   id: 7981
   name: Spring Stanza4
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15362,7 +15939,9 @@
   buy: 2
   id: 7982
   name: Spring Stanza5
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15370,7 +15949,9 @@
   buy: 2
   id: 7983
   name: Spring Stanza6
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15378,7 +15959,9 @@
   buy: 2
   id: 7984
   name: Spring Stanza7
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15386,7 +15969,9 @@
   buy: 2
   id: 7985
   name: Spring Stanza8
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15394,7 +15979,9 @@
   buy: 2
   id: 7986
   name: Spring Stanza9
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15402,7 +15989,9 @@
   buy: 2
   id: 7987
   name: Spring Stanza10
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15410,7 +15999,9 @@
   buy: 2
   id: 7988
   name: Spring Stanza11
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15418,7 +16009,9 @@
   buy: 2
   id: 7989
   name: Spring Stanza12
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15426,7 +16019,9 @@
   buy: 2
   id: 7990
   name: Spring Stanza13
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15434,7 +16029,9 @@
   buy: 2
   id: 7991
   name: Spring Stanza14
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15442,7 +16039,9 @@
   buy: 2
   id: 7992
   name: Spring Stanza15
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15450,7 +16049,9 @@
   buy: 2
   id: 7993
   name: Spring Stanza16
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15458,7 +16059,9 @@
   buy: 2
   id: 7994
   name: Spring Stanza17
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15466,7 +16069,9 @@
   buy: 2
   id: 7995
   name: Spring Stanza18
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15474,7 +16079,9 @@
   buy: 2
   id: 7996
   name: Spring Stanza19
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15482,7 +16089,9 @@
   buy: 2
   id: 7997
   name: Spring Stanza20
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15490,7 +16099,9 @@
   buy: 2
   id: 7998
   name: Spring Stanza21
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10
@@ -15498,7 +16109,9 @@
   buy: 2
   id: 7999
   name: Spring Stanza22
+  no_cart: true
   no_guild_storage: true
+  no_storage: true
   no_trade: true
   type: etc
   weight: 10

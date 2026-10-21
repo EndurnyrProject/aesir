@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -266,45 +267,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
       assert {:noreply, ^base} = CartHandler.move_to_cart(client_index, 1, base)
     end
 
-    test "is rejected for a favorited source item, writing nothing" do
-      reject(&CartOps.move_to_cart/5)
-
-      favorited = %{item(501, 4) | favorite: 1}
-      base = state(cart_type: 1, inventory: %{0 => favorited})
-      client_index = PlayerState.client_index(0)
-
-      assert {:noreply, ^base} = CartHandler.move_to_cart(client_index, 4, base)
-    end
-
-    test "rejects a rental source item while moving an otherwise-identical item" do
+    test "moves a favourite or rental source item" do
       test_pid = self()
       stub_item_definition()
       stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
 
-      rental = %{item(501, 4) | expire_time: ~N[2030-01-01 00:00:00]}
-      base = state(cart_type: 1, inventory: %{0 => rental})
-      client_index = PlayerState.client_index(0)
-
-      stub(CartOps, :move_to_cart, fn @char_id, _inventory, _cart, 0, 4 ->
+      stub(CartOps, :move_to_cart, fn @char_id, inventory, _cart, 0, 4 ->
         send(test_pid, :cart_move)
-        moved = %{rental | expire_time: nil}
+        moved = Map.fetch!(inventory, 0)
         {:ok, %{}, %{0 => moved}, {:removed, 0}, {:added, 0, moved}}
       end)
 
-      assert {:noreply, ^base} = CartHandler.move_to_cart(client_index, 4, base)
-      assert base.game_state.inventory == %{0 => rental}
-      assert base.game_state.cart == %{}
-      refute_received :cart_move
-      refute_received {:send, :gameplay, {:item_removed, _}}
-      refute_received {:send, :gameplay, {:cart_item_added, _}}
+      client_index = PlayerState.client_index(0)
 
-      non_rental = %{rental | expire_time: nil}
-      non_rental_base = state(cart_type: 1, inventory: %{0 => non_rental})
+      for source <- [
+            %{item(501, 4) | favorite: 1},
+            %{item(501, 4) | expire_time: ~N[2030-01-01 00:00:00]}
+          ] do
+        base = state(cart_type: 1, inventory: %{0 => source})
 
-      assert {:noreply, %{game_state: %{inventory: %{}, cart: %{0 => ^non_rental}}}} =
-               CartHandler.move_to_cart(client_index, 4, non_rental_base)
+        assert {:noreply, %{game_state: %{inventory: %{}, cart: %{0 => ^source}}}} =
+                 CartHandler.move_to_cart(client_index, 4, base)
 
-      assert_received :cart_move
+        assert_received :cart_move
+      end
     end
   end
 
@@ -333,6 +319,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
 
       assert_received {:send, :gameplay,
                        {:item_added, %ItemAdded{index: ^client_index, nameid: 501, amount: 3}}}
+    end
+
+    test "deletes an expired rental as soon as it re-enters the inventory" do
+      stub_item_definition()
+      stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
+
+      expired = %{item(501, 3) | expire_time: ~N[2020-01-01 00:00:00]}
+      moved_inventory = %{0 => expired}
+
+      stub(CartOps, :move_to_inventory, fn @char_id, _inv, _cart, %Stats{}, 0, 3 ->
+        {:ok, moved_inventory, %{}, {:added, 0, expired}, {:removed, 0}}
+      end)
+
+      expect(InventoryOps, :remove, fn @char_id, ^moved_inventory, 0, 3 ->
+        {:ok, %{}, {:removed, 0}}
+      end)
+
+      base = state(cart_type: 1, cart: %{0 => expired})
+      client_index = PlayerState.client_index(0)
+
+      assert {:noreply, committed} = CartHandler.move_to_inventory(client_index, 3, base)
+      assert committed.game_state.inventory == %{}
+
+      assert_received {:send, :gameplay, {:item_added, %ItemAdded{index: ^client_index}}}
+
+      assert_received {:send, :gameplay,
+                       {:item_removed, %ItemRemoved{index: ^client_index, amount: 3}}}
     end
 
     test "is rejected while the cart is not mounted, writing nothing" do

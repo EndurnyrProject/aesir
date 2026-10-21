@@ -44,11 +44,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.RentalExpiry
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
-  alias Aesir.ZoneServer.Unit.Rental
 
   @status_id :sc_push_cart
   @first_tier 1
@@ -113,8 +113,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   Moves `amount` of the inventory item at the client `index` into the cart.
 
   Rejected (no state change, no client delta) when the cart is not mounted or the
-  source item is equipped or favorited: the server is authoritative and must not
-  trust a client requesting an illegal move. An unmounted move would otherwise
+  source item is equipped: the server is authoritative and must not trust a
+  client requesting an illegal move. Favourite and rental items may be moved. An unmounted move would otherwise
   commit a `cart_inventory` row that orphans against `character.cart = 0` and is
   lost on relog (`load_on_spawn/2` short-circuits when the character has no cart).
   Otherwise it delegates the atomic cross-container move to `CartOps`, commits
@@ -160,8 +160,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   Otherwise it delegates the atomic cross-container move to `CartOps`, commits
   both container maps, and emits the paired client deltas (cart `CartItemRemoved`
   + inventory `ItemAdded`). A weight/availability error from `CartOps` is handled
-  the same way. No equipped/favorite guard is needed here: cart items are never
-  equipped or favorited.
+  the same way. A rental that has already expired is deleted as soon as it
+  re-enters the inventory.
   """
   @spec move_to_inventory(non_neg_integer(), non_neg_integer(), map()) :: {:noreply, map()}
   def move_to_inventory(index, amount, %{game_state: game_state} = state)
@@ -184,7 +184,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
 
       notify_cart_removed(committed.connection_pid, cart_change, amount)
       InventoryManager.notify_added(committed.connection_pid, inventory, inv_change)
-      {:noreply, committed}
+      {:noreply, RentalExpiry.sweep(committed, NaiveDateTime.utc_now())}
     else
       {:error, reason} ->
         Logger.debug("move_to_inventory rejected for #{char_id}: #{inspect(reason)}")
@@ -320,16 +320,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   defp ensure_mounted(%{cart_type: 0}), do: {:error, :no_cart}
   defp ensure_mounted(_game_state), do: :ok
 
-  # rAthena blocks moving an equipped or favorited item into the cart; an
-  # equipped move would also implicitly unequip the item with no stat/appearance
+  # An equipped move would implicitly unequip the item with no stat/appearance
   # recalc, desyncing the player. A missing slot is left to `CartOps` to reject.
   @spec ensure_movable_to_cart(%{non_neg_integer() => InventoryItem.t()}, non_neg_integer()) ::
-          :ok | {:error, :equipped | :favorite | :rental}
+          :ok | {:error, :equipped}
   defp ensure_movable_to_cart(inventory, server_index) do
     case PlayerState.get_by_index(inventory, server_index) do
       %InventoryItem{equip: equip} when equip > 0 -> {:error, :equipped}
-      %InventoryItem{favorite: 1} -> {:error, :favorite}
-      %InventoryItem{} = item -> if Rental.transferable?(item), do: :ok, else: {:error, :rental}
       _ -> :ok
     end
   end

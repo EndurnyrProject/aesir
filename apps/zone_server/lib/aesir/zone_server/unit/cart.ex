@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Cart do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Cart.Persistence
+  alias Aesir.ZoneServer.Unit.Cart.Weight
   alias Aesir.ZoneServer.Unit.ItemContainer
 
   @max_cart 100
@@ -42,14 +43,26 @@ defmodule Aesir.ZoneServer.Unit.Cart do
   def capacity, do: @max_cart
 
   @doc """
-  Adds `amount` of `item_def` to `cart`, reusing the shared container core.
-
-  Stacks, splits, and the 100-slot cap behave exactly as `Inventory.add/4`;
-  weight is enforced by the orchestrator, not here.
+  Adds a fresh grant of `amount` of `item_def`, built from `opts`, with the
+  cart recipe; see `add_item/4`.
   """
-  @spec add(t(), ItemDefinition.t(), pos_integer(), map()) :: ItemContainer.op_result()
+  @spec add(t(), ItemDefinition.t(), integer(), map()) :: ItemContainer.op_result()
   def add(cart, %ItemDefinition{} = item_def, amount, opts \\ %{}) do
-    ItemContainer.add(cart, item_def, amount, @max_cart, opts)
+    add_item(cart, item_def, ItemContainer.new_item(item_def, opts), amount)
+  end
+
+  @doc """
+  Adds `amount` copies of an existing `item` with the cart recipe
+  (`ItemContainer.put/6`), weighing it against the cart's flat cap.
+
+  Refusals are `:invalid`, `:stack_limit`, `:restricted`, `:overweight` and
+  `:over_amount` (a full stack or no free slot), in that order.
+  """
+  @spec add_item(t(), ItemDefinition.t(), InventoryItem.t(), integer()) ::
+          ItemContainer.op_result()
+  def add_item(cart, %ItemDefinition{} = item_def, %InventoryItem{} = item, amount) do
+    room = %{capacity: @max_cart, weight: Weight.max_weight() - Weight.current_weight(cart)}
+    ItemContainer.put(cart, :cart, item_def, item, amount, room)
   end
 
   @doc """
