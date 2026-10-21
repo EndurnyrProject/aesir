@@ -1140,8 +1140,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
                  )
              }
            ) do
-      OnHitEffects.after_hit(attacker, splash_target, stages,
-        attack_flag: normal_attack_flag(attacker)
+      attack_flag = normal_attack_flag(attacker)
+
+      OnHitEffects.after_hit(attacker, splash_target, stages, attack_flag: attack_flag)
+
+      EquipProcDispatch.dispatch_breaks(
+        attacker,
+        %{type: target_type, id: target_id, pid: target_pid, state: target_state},
+        stages,
+        attack_flag,
+        nil
       )
     end
 
@@ -1440,12 +1448,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
   # A player's summon answers the additional-effect stage with its master's
   # equipment breaks. The survival gate needs the target's pre-hit HP, which
-  # this path does not otherwise carry, so it is read only for a summon.
-  defp dispatch_summon_breaks(
+  # this path does not otherwise carry: it is read before the hit is delivered,
+  # and only for a summon, so the ordinary monster path stays lookup-free.
+  defp summon_break_hit(
          %{unit_type: :mob, proc_owner_id: owner} = attacker,
          target_type,
          target_id,
-         damage
+         damage,
+         hit_info
        )
        when is_integer(owner) do
     case TargetResolver.resolve(target_type, target_id) do
@@ -1453,20 +1463,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         attack_flag = normal_attack_flag(attacker)
         hp = target_state.__struct__.get_stats(target_state).hp
 
-        EquipProcDispatch.dispatch_breaks(
-          attacker,
-          %{type: target_type, id: target_id, pid: target_pid, state: target_state},
-          EquipProcDispatch.event(attack_flag, damage, %{}, target_survives?: hp > damage),
-          attack_flag,
-          nil
-        )
+        event =
+          EquipProcDispatch.event(attack_flag, damage, hit_info, target_survives?: hp > damage)
+
+        {:ok, attacker, %{type: target_type, id: target_id, pid: target_pid, state: target_state},
+         event, attack_flag}
 
       _unresolved ->
-        :ok
+        :none
     end
   end
 
-  defp dispatch_summon_breaks(_attacker, _target_type, _target_id, _damage), do: :ok
+  defp summon_break_hit(_attacker, _target_type, _target_id, _damage, _hit_info), do: :none
+
+  defp dispatch_summon_breaks(:none, _delivery), do: :ok
+  defp dispatch_summon_breaks(_hit, {:error, _reason}), do: :ok
+
+  defp dispatch_summon_breaks({:ok, attacker, target, event, attack_flag}, _delivery) do
+    EquipProcDispatch.dispatch_breaks(attacker, target, event, attack_flag, nil)
+  end
 
   defp handle_mob_attack_hit(
          damage_result,
@@ -1522,16 +1537,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     DamageApplication.broadcast_nearby(target_combatant, attack_packet)
 
-    DamageApplication.apply_unit_damage(
-      target_type,
-      target_pid,
-      target_id,
-      damage,
-      hit_info,
-      mob_damage_source(target_type, attacker_combatant.unit_id)
-    )
+    break_hit =
+      summon_break_hit(attacker_combatant, target_type, target_id, damage, hit_info)
 
-    dispatch_summon_breaks(attacker_combatant, target_type, target_id, damage)
+    delivery =
+      DamageApplication.apply_unit_damage(
+        target_type,
+        target_pid,
+        target_id,
+        damage,
+        hit_info,
+        mob_damage_source(target_type, attacker_combatant.unit_id)
+      )
+
+    dispatch_summon_breaks(break_hit, delivery)
 
     OnHitEffects.after_hit(
       attacker_combatant,

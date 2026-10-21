@@ -1475,6 +1475,72 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert_receive {:"$gen_cast", {:unit, {:apply_damage, 50, {:player, 1001}, _metadata}}}
       refute_received {:"$gen_cast", {:unit, {:apply_damage, _, _, _metadata}}}
     end
+
+    test "a splash second hit rolls the swing's equipment breaks for its own target" do
+      test_pid = self()
+
+      {stats, player_state} = dagger_player()
+
+      stats = %{
+        stats
+        | modifiers: %{
+            stats.modifiers
+            | equipment: %{splash_range: 3}
+          }
+      }
+
+      player_state = %{player_state | stats: stats}
+
+      target_state = %{player_state | character_id: 3001}
+      mob_target = combatant(2001, :mob)
+      mob_state = living_mob_state(mob_target, 150, 150)
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {FakeUnit, mob_state, test_pid}}
+        :player, 3001 -> {:ok, {PlayerState, target_state, test_pid}}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn
+        3001 -> {:ok, test_pid}
+        _ -> {:error, :not_found}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 ->
+        {:ok, {150, 150, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map_name, _cx, _cy, _radius ->
+        [{:player, 3001}]
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, _packet -> :ok end)
+
+      stub(EquipBreak, :resolve, fn
+        %Combatant{unit_id: 1001}, {:player, 3001, _stats} -> [{:target, :weapon}]
+        _wearer, _target -> []
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      assert_receive {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
+    end
   end
 
   test "target relay remains available when damage dispatch is delayed" do

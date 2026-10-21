@@ -253,15 +253,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
         ) :: :ok
   def dispatch_breaks(attacker, target, event, attack_flag, skill_id) do
     if target.type != :skill_unit and break_hit?(event, attack_flag, skill_id) do
-      with {:ok, wearer} <- break_wearer(attacker),
-           [_ | _] = decisions <- EquipBreak.resolve(wearer, break_target(target)) do
-        Enum.each(decisions, &dispatch_break(&1, wearer, target))
-      else
-        _no_wearer_or_decisions -> :ok
+      case wearer(attacker) do
+        nil -> :ok
+        wearer -> dispatch_wearer_breaks(wearer, target)
       end
     end
 
     :ok
+  end
+
+  defp dispatch_wearer_breaks(wearer, target) do
+    case EquipBreak.resolve(wearer, break_target(target)) do
+      [] -> :ok
+      decisions -> Enum.each(decisions, &dispatch_break(&1, wearer, target))
+    end
   end
 
   defp break_hit?(nil, _attack_flag, _skill_id), do: false
@@ -270,17 +275,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
     event.attack_effects? and event.hit_class == :hit and
       BattleFlags.weapon?(attack_flag) and skill_id not in @excluded_break_skills
   end
-
-  defp break_wearer(%Combatant{unit_type: :player} = wearer), do: {:ok, wearer}
-
-  defp break_wearer(%Combatant{unit_type: :mob, proc_owner_id: owner}) when is_integer(owner) do
-    case TargetResolver.resolve(:player, owner) do
-      {:ok, _pid, state, :player} -> {:ok, state.__struct__.to_combatant(state)}
-      _unresolved -> :error
-    end
-  end
-
-  defp break_wearer(_attacker), do: :error
 
   defp wearer_pid(%Combatant{unit_id: id}) do
     case UnitRegistry.get_player_pid(id) do

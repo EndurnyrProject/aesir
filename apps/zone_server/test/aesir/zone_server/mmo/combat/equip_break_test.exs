@@ -137,6 +137,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
              ) == [{:self, :weapon}, {:target, :weapon}, {:target, :armor}]
     end
 
+    test "Chemical Protection (Weapon) vetoes the self break before its roll" do
+      stub(Config, :natural_break_rate, fn -> 10_000 end)
+      StatusStorage.apply_status(:player, 1001, :sc_cp_weapon)
+
+      assert EquipBreak.resolve(wearer(%{}), player_target(), rng: worst_roll()) == []
+    end
+
     test "an immune weapon type or unbreakable_weapon vetoes its self break" do
       stub(Config, :natural_break_rate, fn -> 10_000 end)
 

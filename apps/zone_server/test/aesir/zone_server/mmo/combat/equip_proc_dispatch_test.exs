@@ -530,13 +530,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   end
 
   describe "dispatch_breaks/5" do
-    defmodule MasterUnit do
-      @moduledoc false
-      defstruct [:combatant]
-
-      def to_combatant(%__MODULE__{combatant: combatant}), do: combatant
-    end
-
     setup do
       stub(Config, :natural_break_rate, fn -> 0 end)
       :ok
@@ -563,9 +556,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
     defp summon(owner), do: %{mob() | proc_owner_id: owner}
 
     defp stub_master(master) do
-      stub(TargetResolver, :resolve, fn :player, 1001 ->
-        {:ok, self(), %MasterUnit{combatant: master}, :player}
-      end)
+      stub(TargetResolver, :resolve_combatant, fn {:player, 1001} -> {:ok, master} end)
     end
 
     test "a weapon hit rolls the wearer's target rates against a player victim" do

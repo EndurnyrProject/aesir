@@ -58,7 +58,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   confirmed weapon hit.
 
   The target rates come from the attacker's equipment; the self-break uses the
-  configured natural rate and the attacker's own weapon and prevention.
+  configured natural rate and the attacker's own weapon, prevention and, for a
+  combatant (whose unit id is known), Chemical Protection (Weapon).
   """
   @spec resolve(Stats.t() | Combatant.t(), target(), keyword()) :: [decision()]
   def resolve(wearer, target, opts \\ [])
@@ -121,8 +122,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   defp self_weapon(wearer, rng) do
     rate = apply_stat_prevention(Config.natural_break_rate(), wearer, :weapon)
 
-    if weapon_breakable?(wearer) and broke?(rate, rng), do: {:self, :weapon}
+    if weapon_breakable?(wearer) and not slot_chemical_protected?(wearer_id(wearer), :weapon) and
+         broke?(rate, rng),
+       do: {:self, :weapon}
   end
+
+  @spec wearer_id(Stats.t() | Combatant.t()) :: integer() | nil
+  defp wearer_id(%Combatant{unit_id: id}), do: id
+  defp wearer_id(%Stats{}), do: nil
 
   @spec target_slot(integer(), target(), slot(), rng()) :: {:target, slot()} | nil
   defp target_slot(rate, _target, _slot, _rng) when rate <= 0, do: nil
@@ -164,7 +171,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     stat_slot_masked?(victim, slot) or slot_chemical_protected?(victim_id, slot)
   end
 
-  @spec slot_chemical_protected?(integer(), slot()) :: boolean()
+  @spec slot_chemical_protected?(integer() | nil, slot()) :: boolean()
+  defp slot_chemical_protected?(nil, _slot), do: false
+
   defp slot_chemical_protected?(victim_id, slot) do
     case Map.get(@chemical_protection, slot) do
       nil -> false

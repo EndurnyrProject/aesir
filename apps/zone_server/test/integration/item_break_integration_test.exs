@@ -117,6 +117,35 @@ defmodule Aesir.ZoneServer.Integration.ItemBreakIntegrationTest do
     end
   end
 
+  describe "natural break on a summon's hit" do
+    test "a player-owned summon rolls its master's natural break" do
+      Application.put_env(:zone_server, :natural_break_rate, 10_000)
+
+      master = insert_character()
+      seed_inventory(master.id, nameid: @sword, amount: 1, equip: @right_hand)
+      master_session = start_session(master)
+
+      victim =
+        insert_character(%{
+          base_level: 1,
+          agi: 1,
+          vit: 1,
+          luk: 0,
+          hp: 1_000_000,
+          max_hp: 1_000_000
+        })
+
+      _victim_session = start_session(victim, {152, 150})
+
+      summond = start_mob()
+      summon_state = %{summond.mob_state | owner_player_id: master.id, summon_kind: :flora}
+
+      Enum.each(1..20, fn _ -> Combat.execute_mob_attack(summon_state, victim.id) end)
+
+      assert %InventoryItem{attribute: 1, equip: 0} = wait_for_break(master_session.pid)
+    end
+  end
+
   describe "@repairall then re-equip" do
     test "repair clears the broken flag and re-equipping restores atk" do
       Application.put_env(:zone_server, :natural_break_rate, 10_000)
@@ -198,8 +227,8 @@ defmodule Aesir.ZoneServer.Integration.ItemBreakIntegrationTest do
     end)
   end
 
-  defp start_session(character) do
-    session = start_player_session(character: character, map_name: @map, position: @player_pos)
+  defp start_session(character, position \\ @player_pos) do
+    session = start_player_session(character: character, map_name: @map, position: position)
     on_exit(fn -> end_player_session(session) end)
     flush_packets()
     session
@@ -248,7 +277,7 @@ defmodule Aesir.ZoneServer.Integration.ItemBreakIntegrationTest do
     inventory |> Map.values() |> Enum.find(&(&1.nameid == nameid))
   end
 
-  defp insert_character do
+  defp insert_character(attrs \\ %{}) do
     uniq = System.unique_integer([:positive])
     {x, y} = @player_pos
 
@@ -264,27 +293,32 @@ defmodule Aesir.ZoneServer.Integration.ItemBreakIntegrationTest do
 
     {:ok, character} =
       %Character{}
-      |> Character.changeset(%{
-        account_id: account.id,
-        char_num: 0,
-        name: "Breaker#{uniq}",
-        class: 0,
-        base_level: 99,
-        job_level: 50,
-        str: 99,
-        agi: 10,
-        vit: 10,
-        int: 10,
-        dex: 99,
-        luk: 10,
-        zeny: 0,
-        last_map: @map,
-        last_x: x,
-        last_y: y,
-        save_map: @map,
-        save_x: x,
-        save_y: y
-      })
+      |> Character.changeset(
+        Map.merge(
+          %{
+            account_id: account.id,
+            char_num: 0,
+            name: "Breaker#{uniq}",
+            class: 0,
+            base_level: 99,
+            job_level: 50,
+            str: 99,
+            agi: 10,
+            vit: 10,
+            int: 10,
+            dex: 99,
+            luk: 10,
+            zeny: 0,
+            last_map: @map,
+            last_x: x,
+            last_y: y,
+            save_map: @map,
+            save_x: x,
+            save_y: y
+          },
+          attrs
+        )
+      )
       |> Repo.insert()
 
     character
