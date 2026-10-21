@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Menu
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
 
   @behaviour Active
@@ -85,19 +86,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
     end
   end
 
-  # The converter is added before the materials are taken because the add is the
-  # only step that can still fail. Aesir has no ground-item fallback for this
-  # path, so it refuses the brew intact rather than consuming the materials.
+  # The materials are taken before the converter is added, as the reference
+  # consumes them before its 100% success roll; an add that still fails leaves
+  # them spent and reports the reason to the client.
   defp brew(caster, converter_id, materials) do
-    with {:ok, item_def} <- ItemManagement.get_item_by_id(converter_id),
-         {:ok, persisted, change} <-
-           InventoryOps.add(caster.character_id, caster.inventory, caster.stats, item_def, 1) do
-      brewed =
-        caster
-        |> Map.put(:inventory, persisted)
-        |> Map.update!(:pending_inventory_notify, &(&1 ++ [change]))
+    with {:ok, item_def} <- ItemManagement.get_item_by_id(converter_id) do
+      consumed =
+        Enum.reduce(materials, caster, fn {id, amount}, acc -> consume(acc, id, amount) end)
 
-      {:ok, Enum.reduce(materials, brewed, fn {id, amount}, acc -> consume(acc, id, amount) end)}
+      case InventoryOps.add(
+             consumed.character_id,
+             consumed.inventory,
+             consumed.stats,
+             item_def,
+             1
+           ) do
+        {:ok, persisted, change} ->
+          {:ok,
+           %{
+             consumed
+             | inventory: persisted,
+               pending_inventory_notify: consumed.pending_inventory_notify ++ [change]
+           }}
+
+        {:error, reason} ->
+          {:ok, InventoryManager.stage_add_failure(consumed, reason)}
+      end
     end
   end
 

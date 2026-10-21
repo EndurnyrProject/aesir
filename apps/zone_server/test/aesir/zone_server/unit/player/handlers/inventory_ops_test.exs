@@ -106,7 +106,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
     end
   end
 
-  describe "give_many/4" do
+  describe "give_group/4" do
     test "persists a fitting grant batch with item-group attributes", %{
       character: char,
       stats: stats
@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
 
       before = NaiveDateTime.utc_now()
 
-      assert {:ok, inventory} = Inventory.give_many(char.id, %{}, stats, grants)
+      assert {:ok, inventory, []} = Inventory.give_group(char.id, %{}, stats, grants)
       assert map_size(inventory) == 2
 
       assert [
@@ -153,7 +153,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
     } do
       grants = [grant(@potion, identify?: false), grant(@sword, identify?: true)]
 
-      assert {:ok, inventory} = Inventory.give_many(char.id, %{}, stats, grants)
+      assert {:ok, inventory, []} = Inventory.give_group(char.id, %{}, stats, grants)
 
       assert %{
                0 => %InventoryItem{nameid: @potion, identify: 1},
@@ -161,18 +161,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
              } = inventory
     end
 
-    test "rejects an overweight batch without writing", %{character: char, stats: stats} do
+    test "keeps the units that fit and reports the ones that do not", %{
+      character: char,
+      stats: stats
+    } do
       tiny = put_in(stats.base_stats.str, 1)
       sword = def!(@sword)
       amount = div(Weight.max_weight(tiny), sword.weight) + 1
 
-      assert {:error, :insufficient_space} =
-               Inventory.give_many(char.id, %{}, tiny, [grant(@sword, amount: amount)])
+      assert {:ok, inventory, failures} =
+               Inventory.give_group(char.id, %{}, tiny, [grant(@sword, amount: amount)])
 
-      assert [] = Persistence.load_inventory(char.id)
+      assert failures != []
+      assert Enum.uniq(failures) == [:overweight]
+      assert Inventory.held_amount(inventory, @sword) + length(failures) == amount
+      assert [_ | _] = Persistence.load_inventory(char.id)
     end
 
-    test "rejects a batch when the slot fold reaches inventory capacity", %{
+    test "reports a full inventory without dropping the earlier entries", %{
       character: char,
       stats: stats
     } do
@@ -181,14 +187,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
           {index, %InventoryItem{nameid: 90_000 + index, amount: 1, identify: 1}}
         end)
 
-      assert {:error, :insufficient_space} =
-               Inventory.give_many(char.id, full, stats, [grant(@sword)])
+      assert {:ok, ^full, [:inventory_full]} =
+               Inventory.give_group(char.id, full, stats, [grant(@sword)])
 
       assert map_size(full) == Inventory.capacity()
       assert [] = Persistence.load_inventory(char.id)
     end
 
-    test "rolls back all rows when a later insert fails", %{character: char, stats: stats} do
+    test "keeps the rows granted before a later insert fails", %{
+      character: char,
+      stats: stats
+    } do
       stub(Persistence, :insert_item, fn
         char_id, %{nameid: @sword} = attrs ->
           Mimic.call_original(Persistence, :insert_item, [char_id, attrs])
@@ -197,10 +206,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
           {:error, InventoryItem.changeset(%InventoryItem{}, %{})}
       end)
 
-      assert {:error, :insufficient_space} =
-               Inventory.give_many(char.id, %{}, stats, [grant(@sword), grant(@dagger)])
+      assert {:ok, inventory, [_reason]} =
+               Inventory.give_group(char.id, %{}, stats, [grant(@sword), grant(@dagger)])
 
-      assert [] = Persistence.load_inventory(char.id)
+      assert [%InventoryItem{nameid: @sword}] = Map.values(inventory)
+      assert [%InventoryItem{nameid: @sword}] = Persistence.load_inventory(char.id)
     end
   end
 

@@ -14,9 +14,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrow do
   dialog (this module's `on_talk/1`) listing the craftable materials instead -
   the same window the NPC scripts use.
 
-  The original also refuses the cast while the archer is overweight; the
-  interpreter has no weight-state gate yet, so that requirement is not
-  enforced.
+  The original also refuses the cast while the archer is in the overweight state
+  the natural-heal rate defines; `require_recovered_weight` enforces it at cast
+  begin.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 147,
@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrow do
     max_level: 1,
     target_type: :self,
     sp_cost: [10],
+    require_recovered_weight: true,
     quest_skill: true,
     quest_owner_job: :archer
 

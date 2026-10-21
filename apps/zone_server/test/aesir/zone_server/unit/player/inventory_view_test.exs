@@ -49,6 +49,19 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryViewTest do
     end
   end
 
+  test "maps every inventory add refusal to its reference result code" do
+    assert %{result: :ITEM_ADD_RESULT_INVALID} = InventoryView.item_add_failed(:invalid)
+    assert %{result: :ITEM_ADD_RESULT_OVERWEIGHT} = InventoryView.item_add_failed(:overweight)
+    assert %{result: :ITEM_ADD_RESULT_OVERITEM} = InventoryView.item_add_failed(:inventory_full)
+    assert %{result: :ITEM_ADD_RESULT_OVERAMOUNT} = InventoryView.item_add_failed(:over_amount)
+    assert %{result: :ITEM_ADD_RESULT_STACKLIMIT} = InventoryView.item_add_failed(:stack_limit)
+
+    assert InventoryView.item_add_failed(:storage_full) == nil
+    assert InventoryView.item_add_failed(:restricted) == nil
+    assert InventoryView.item_add_failed(:bound) == nil
+    assert InventoryView.item_add_failed(:persistence_failed) == nil
+  end
+
   test "projects the bound type on the inventory dump" do
     %{normal: [unbound_view, account_view, char_view]} =
       InventoryView.inventory_list(%{0 => item(), 1 => item(bound: 1), 2 => item(bound: 4)})

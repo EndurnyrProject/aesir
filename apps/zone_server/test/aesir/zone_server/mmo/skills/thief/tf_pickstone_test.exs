@@ -55,6 +55,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstoneTest do
       {:error, :overweight}
     end)
 
-    assert {:ok, @caster} = TfPickstone.cast(@caster, :self, 1, definition)
+    assert {:ok, updated} = TfPickstone.cast(@caster, :self, 1, definition)
+    assert updated.inventory == @caster.inventory
+    assert updated.pending_item_add_failures == [:overweight]
   end
 end

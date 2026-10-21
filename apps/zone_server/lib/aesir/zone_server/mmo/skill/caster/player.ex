@@ -228,6 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
         ) :: {:ok, map()} | {:error, atom()}
   def prepare_begin_cost(caster, module, definition, cost, zeny, level) do
     with :ok <- check_weight(caster),
+         :ok <- check_recovered_weight(caster, definition),
          :ok <- Cost.check_sp(caster, cost),
          :ok <- check_zeny(caster, zeny),
          :ok <- Cost.check_spheres(caster, cost) do
@@ -586,6 +587,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   defp check_weight(_caster), do: :ok
+
+  # `Requires: State: Recover_Weight_Rate` (the skill DB gate, not the global
+  # 90% refusal above): the caster must be under the natural-heal weight rate.
+  defp check_recovered_weight(
+         %PlayerState{stats: stats, inventory: inventory},
+         %Definition{require_recovered_weight: true}
+       )
+       when is_map(inventory) do
+    maximum = Weight.max_weight(stats)
+
+    if maximum > 0 and Weight.current_weight(inventory) * 100 >= maximum * recover_weight_rate(),
+      do: {:error, :overweight},
+      else: :ok
+  end
+
+  defp check_recovered_weight(_caster, _definition), do: :ok
+
+  defp recover_weight_rate do
+    case GameMode.mode() do
+      :pre_renewal -> 50
+      _renewal -> 70
+    end
+  end
 
   defp check_catalysts(caster, definition) do
     if Enum.all?(effective_item_cost(caster, definition), fn %{id: id, amount: amount} ->

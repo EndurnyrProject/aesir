@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstone do
     sp_cost: [renewal: [2], pre_renewal: [3]],
     cast_time: [renewal: [], pre_renewal: [500]],
     fixed_cast_time: [renewal: [500], pre_renewal: []],
+    require_recovered_weight: true,
     quest_skill: true,
     quest_owner_job: :thief,
     damage_kind: :none
@@ -22,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstone do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -44,7 +46,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstone do
       {:ok, updated}
     else
       # The reference reports the failed add and still completes the cast.
-      {:error, _reason} -> {:ok, caster}
+      {:error, reason} ->
+        {:ok, InventoryManager.stage_add_failure(caster, reason)}
     end
   end
 end

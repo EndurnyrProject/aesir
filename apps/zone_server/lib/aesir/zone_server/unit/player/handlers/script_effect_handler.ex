@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
@@ -61,7 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
           | {:give_item2, integer(), pos_integer(), map()}
-          | {:give_items_atomic, [map()]}
+          | {:give_group_items, [map()]}
           | {:get_named_item, integer(), String.t() | integer()}
           | {:give_item_rental, integer(), pos_integer(), keyword()}
           | {:give_item_bound, integer(), pos_integer(), 1 | 4}
@@ -167,7 +169,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
              :give_item_bound,
              :give_item_rental,
              :get_named_item,
-             :give_items_atomic
+             :give_group_items
            ] ->
         :inventory_changed
 
@@ -211,13 +213,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     commit(state, new_gs)
   end
 
-  def apply_op({:give_item, item_id, qty}, %{game_state: gs} = state) do
-    with {:ok, definition} <- fetch_definition(item_id),
-         {:ok, persisted, change} <-
-           InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty) do
-      push_added(state.connection_pid, persisted, change)
-      commit(state, %{gs | inventory: persisted})
-    else
+  def apply_op({:give_item, item_id, qty}, state) do
+    case fetch_definition(item_id) do
+      {:ok, definition} -> give_units(state, definition, qty, :plain)
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -226,21 +224,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   # attributes through `InventoryOps.add`'s opts map. `attr` (the element
   # attribute) has no Aesir inventory field and is dropped by the DSL before
   # this op is built.
-  def apply_op({:give_item2, item_id, qty, attrs}, %{game_state: gs} = state) do
-    with {:ok, definition} <- fetch_definition(item_id),
-         {:ok, persisted, change} <-
-           InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty, attrs) do
-      push_added(state.connection_pid, persisted, change)
-      commit(state, %{gs | inventory: persisted})
-    else
+  def apply_op({:give_item2, item_id, qty, attrs}, state) do
+    case fetch_definition(item_id) do
+      {:ok, definition} -> give_units(state, definition, qty, {:opts, attrs})
       {:error, reason} -> {{:error, reason}, state}
     end
   end
 
-  def apply_op({:give_items_atomic, grants}, %{game_state: gs} = state) do
-    case Inventory.give_many(gs.character_id, gs.inventory, gs.stats, grants) do
-      {:ok, inventory} -> commit(state, %{gs | inventory: inventory})
-      {:error, :insufficient_space} -> {{:error, :insufficient_space}, state}
+  def apply_op({:give_group_items, grants}, %{game_state: gs} = state) do
+    case Inventory.give_group(gs.character_id, gs.inventory, gs.stats, grants) do
+      {:ok, inventory, failures} ->
+        Enum.each(failures, &InventoryManager.notify_add_failed(state.connection_pid, &1))
+        commit(state, %{gs | inventory: inventory})
     end
   end
 
@@ -279,19 +274,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       push_added(state.connection_pid, persisted, change)
       commit(state, %{gs | inventory: persisted})
     else
-      {:error, reason} -> {{:error, reason}, state}
+      {:error, reason} ->
+        InventoryManager.notify_add_failed(state.connection_pid, reason)
+        {{:error, reason}, state}
     end
   end
 
-  def apply_op({:give_item_bound, item_id, qty, bound}, %{game_state: gs} = state) do
-    with {:ok, definition} <- fetch_definition(item_id),
-         {:ok, persisted, change} <-
-           InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty, %{
-             bound: bound
-           }) do
-      push_added(state.connection_pid, persisted, change)
-      commit(state, %{gs | inventory: persisted})
-    else
+  def apply_op({:give_item_bound, item_id, qty, bound}, state) do
+    case fetch_definition(item_id) do
+      {:ok, definition} -> give_units(state, definition, qty, {:opts, %{bound: bound}})
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -684,6 +675,79 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}
+
+  # The reference `getitem` family grants a stackable amount in one call and a
+  # non-stackable one unit per call, halting the script at the first refusal
+  # and keeping the units already granted.
+  @spec give_units(state(), ItemDefinition.t(), pos_integer(), :plain | {:opts, map()}) ::
+          {reply(), state()}
+  defp give_units(%{game_state: gs} = state, %ItemDefinition{}, qty, _opts) when qty <= 0,
+    do: {{:ok, gs}, state}
+
+  defp give_units(state, %ItemDefinition{} = definition, qty, opts) do
+    if ItemDefinition.stackable?(definition) do
+      give_amount(state, definition, qty, opts)
+    else
+      give_units_one_by_one(state, definition, qty, opts)
+    end
+  end
+
+  defp give_units_one_by_one(state, definition, qty, opts) do
+    1..qty
+    |> Enum.reduce_while({:ok, state}, fn _unit, {:ok, current} ->
+      step_unit(current, definition, opts)
+    end)
+    |> normalize_units_result(state)
+  end
+
+  defp step_unit(current, definition, opts) do
+    case give_amount(current, definition, 1, opts) do
+      {{:ok, _gs}, next} ->
+        {:cont, {:ok, next}}
+
+      {{:error, reason}, partial} ->
+        {:halt, {{:error, reason}, StateCommit.commit(partial, partial.game_state)}}
+    end
+  end
+
+  defp normalize_units_result({:ok, next}, _initial), do: {{:ok, next.game_state}, next}
+
+  defp normalize_units_result({{:error, _reason} = reply, partial}, initial) do
+    {reply, announce_partial(partial, initial)}
+  end
+
+  # A halt after some units landed is still a committed inventory change: the
+  # earlier rows are saved, so the reactors that re-check on change must run even
+  # though the op replies with the refusal.
+  defp announce_partial(partial, initial) do
+    if partial.game_state.inventory != initial.game_state.inventory,
+      do: PlayerEvents.inventory_changed(partial.game_state.character_id)
+
+    partial
+  end
+
+  @spec give_amount(state(), ItemDefinition.t(), pos_integer(), :plain | {:opts, map()}) ::
+          {reply(), state()}
+  defp give_amount(%{game_state: gs} = state, %ItemDefinition{} = definition, amount, mode) do
+    result =
+      case mode do
+        :plain ->
+          InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, amount)
+
+        {:opts, opts} ->
+          InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, amount, opts)
+      end
+
+    case result do
+      {:ok, persisted, change} ->
+        push_added(state.connection_pid, persisted, change)
+        commit(state, %{gs | inventory: persisted})
+
+      {:error, reason} ->
+        InventoryManager.notify_add_failed(state.connection_pid, reason)
+        {{:error, reason}, state}
+    end
+  end
 
   # Maps a validated rAthena look-type id to the `PlayerState`/`Character`
   # appearance field it writes. Only the fields the Character persists are

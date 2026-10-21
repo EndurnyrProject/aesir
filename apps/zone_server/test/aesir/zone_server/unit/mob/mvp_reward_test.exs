@@ -61,20 +61,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
   defp register_player(char_id, opts \\ []) do
     pid = Keyword.get(opts, :pid, self())
 
-    UnitRegistry.register_unit(
-      :player,
-      char_id,
-      PlayerState,
-      %{
-        map_name: Keyword.get(opts, :map_name, "gld_dun03"),
-        character_name: Keyword.get(opts, :name, "Player#{char_id}"),
-        stats: %{
-          current_state: %{hp: Keyword.get(opts, :hp, 100)},
-          progression: %{base_level: Keyword.get(opts, :base_level, 81)}
-        }
-      },
-      pid
-    )
+    state = %{
+      map_name: Keyword.get(opts, :map_name, "gld_dun03"),
+      character_name: Keyword.get(opts, :name, "Player#{char_id}"),
+      stats: %{
+        current_state: %{hp: Keyword.get(opts, :hp, 100)},
+        progression: %{base_level: Keyword.get(opts, :base_level, 81)}
+      }
+    }
+
+    state =
+      Enum.reduce([:x, :y], state, fn key, acc ->
+        case Keyword.fetch(opts, key) do
+          {:ok, value} -> Map.put(acc, key, value)
+          :error -> acc
+        end
+      end)
+
+    UnitRegistry.register_unit(:player, char_id, PlayerState, state, pid)
 
     PubSub.subscribe(Aesir.PubSub, "player:#{char_id}")
     pid
@@ -314,6 +318,31 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
       assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77,
                       ownership: {%LootOwnership{first: 1, second: 2, third: 3}, true}}
+    end
+
+    test "drops an overweight fallback on the MVP's own cell" do
+      test = self()
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+
+      stub(Coordinator, :drop_items, fn map, items, x, y, opts ->
+        send(test, {:floor, map, items, x, y, opts})
+        :ok
+      end)
+
+      stub_items()
+      register_player(1, pid: fake_session({:error, :overweight}), x: 43, y: 78)
+
+      MvpReward.grant(
+        %{1 => 100},
+        mob(mvp_drops: [drop("FIRST")]),
+        "gld_dun03",
+        42,
+        77,
+        ownership()
+      )
+
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 43, 78, true}], 43, 78,
+                      ownership: {%LootOwnership{first: 1, second: nil, third: nil}, true}}
     end
 
     test "scatters the item when the winner's session died before delivery" do

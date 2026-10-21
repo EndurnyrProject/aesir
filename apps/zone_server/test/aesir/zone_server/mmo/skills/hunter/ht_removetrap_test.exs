@@ -88,7 +88,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrapTest do
       {:error, :inventory_full}
     end)
 
-    assert {:ok, ^caster} = HtRemovetrap.cast(caster, {:ground, 51, 50}, 1, definition)
+    assert {:ok, updated} = HtRemovetrap.cast(caster, {:ground, 51, 50}, 1, definition)
+    assert updated.inventory == caster.inventory
+    assert updated.pending_item_add_failures == [:inventory_full]
   end
 
   test "a persistence failure after the claim still completes the removal" do

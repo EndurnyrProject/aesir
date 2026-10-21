@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   alias Aesir.Net.CartItemRemoved
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
+  alias Aesir.Net.ItemAddFailed
   alias Aesir.Net.ItemBound
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.StorageItemAdded
@@ -44,6 +45,21 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       |> Map.merge(%{index: PlayerState.client_index(server_index), result: 0})
     )
   end
+
+  @doc """
+  Builds the `ItemAddFailed` an inventory add refusal reports.
+
+  `reason` is an `ItemContainer.add_error/0` from the inventory recipe; a
+  reason no inventory add can produce returns `nil` so a caller never sends a
+  meaningless code. Mirrors the reference's `clif_additem(sd, 0, 0, flag)`.
+  """
+  @spec item_add_failed(atom()) :: ItemAddFailed.t() | nil
+  def item_add_failed(:invalid), do: %ItemAddFailed{result: :ITEM_ADD_RESULT_INVALID}
+  def item_add_failed(:overweight), do: %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERWEIGHT}
+  def item_add_failed(:inventory_full), do: %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERITEM}
+  def item_add_failed(:over_amount), do: %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERAMOUNT}
+  def item_add_failed(:stack_limit), do: %ItemAddFailed{result: :ITEM_ADD_RESULT_STACKLIMIT}
+  def item_add_failed(_reason), do: nil
 
   @spec item_bound(non_neg_integer(), non_neg_integer()) :: ItemBound.t()
   def item_bound(server_index, bound) do

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandlerTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.StorageItem
   alias Aesir.Net.ItemAdded
+  alias Aesir.Net.ItemAddFailed
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.StorageItemAdded
   alias Aesir.Net.StorageItemRemoved
@@ -308,6 +309,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandlerTest do
 
       assert_received {:send, :gameplay,
                        {:storage_result, %StorageResult{result: :STORAGE_OVERWEIGHT}}}
+
+      assert_received {:send, :gameplay,
+                       {:item_add_failed, %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERWEIGHT}}}
     end
   end
 

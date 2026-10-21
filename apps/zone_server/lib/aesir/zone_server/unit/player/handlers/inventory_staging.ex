@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
   Drains the inventory changes a skill staged on `PlayerState` while it ran.
 
   A skill's `cast/4` (and `Skill.Menu.on_menu_reply/3`) only ever sees the player
-  state, never the connection or the repo, so it records what it did on two
-  staging fields instead of acting:
+  state, never the connection or the repo, so it records what it did on staging
+  fields instead of acting:
 
     * `:pending_inventory_persist` — `{old_inventory, new_inventory, change}`
       deltas whose DB write is still owed, staged by the paths that mutate the
@@ -12,8 +12,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
       SA_CREATECON's material consumption).
     * `:pending_inventory_notify` — `change` descriptors for rows already
       written through by `InventoryOps.add/6`, owing only an `ItemAdded` packet.
+    * `:pending_item_add_failures` — refusal reasons staged by a grant that
+      could not add, owing one `ItemAddFailed` each.
 
-  `drain/2` settles both and clears the fields. It runs on every path that
+  `drain/2` settles all three and clears the fields. It runs on every path that
   commits a skill's work: `SkillHandler.commit_cast/5` for a cast, and
   `SkillMenuHandler` for a menu reply, which produces items without a cast to
   ride on.
@@ -31,8 +33,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @doc """
-  Writes through the staged persists, emits the staged notifications, and returns
-  the game state with both staging fields cleared.
+  Writes through the staged persists, emits the staged notifications and
+  add-failure reasons, and returns the game state with the staging fields
+  cleared.
 
   A failed write is logged and skipped rather than raised: the caller has already
   committed the rest of the skill's effects, and losing the session over a row
@@ -43,6 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
     game_state
     |> persist()
     |> notify(connection_pid)
+    |> notify_failures(connection_pid)
   end
 
   # Each delta is persisted against the snapshot it was computed from, and the
@@ -82,5 +86,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging do
   defp notify(%{pending_inventory_notify: changes} = game_state, connection_pid) do
     Enum.each(changes, &InventoryManager.notify_added(connection_pid, game_state.inventory, &1))
     %{game_state | pending_inventory_notify: []}
+  end
+
+  defp notify_failures(%{pending_item_add_failures: []} = game_state, _connection_pid),
+    do: game_state
+
+  defp notify_failures(%{pending_item_add_failures: reasons} = game_state, connection_pid) do
+    Enum.each(reasons, &InventoryManager.notify_add_failed(connection_pid, &1))
+    %{game_state | pending_item_add_failures: []}
   end
 end

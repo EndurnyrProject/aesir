@@ -180,6 +180,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
       {:noreply, committed}
     else
       {:error, reason} ->
+        InventoryManager.notify_add_failed(state.connection_pid, reason)
         send_result(state.connection_pid, error_code(reason))
         {:noreply, state}
     end

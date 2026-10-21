@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
   The single-item operations are pure over the indexed inventory map carried by
   `PlayerState` (`%{non_neg_integer() => InventoryItem.t()}`) and return change
-  descriptors. `give_many/4` composes those operations for capacity prechecks and
-  delegates its atomic persistence to `InventoryOps`.
+  descriptors. `give_group/4` composes those operations per item-group entry and
+  delegates each entry's persistence to `InventoryOps`.
 
   Reading static item definitions through `ItemManagement.get_item_by_id/1` and
   the location/job lookup helpers are deterministic static reads, not side
@@ -28,8 +28,6 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   alias Aesir.ZoneServer.Unit.Rental
 
   import Bitwise
-
-  require Logger
 
   @max_inventory 100
 
@@ -115,72 +113,68 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
     do: Weight.max_weight(stats) - Weight.current_weight(inventory)
 
   @doc """
-  Gives a batch of concrete item-group grants atomically.
+  Gives every concrete item-group grant in order, as the reference does.
 
-  Weight and slot capacity are checked before persistence. All row writes run in
-  one transaction, so a failed grant leaves both persistence and the supplied
-  inventory unchanged. Item-group unique-id requests currently persist `0`
-  because Aesir has no durable item-serial generator.
+  Each entry is added on its own: a stackable entry in one call, a
+  non-stackable entry one unit per call, continuing past a refusal. The
+  already-granted entries stay granted and a later failure never undoes them,
+  so the returned failures are only what the client must be told about.
+  Unique-id requests currently persist `0` because Aesir has no durable
+  item-serial generator.
   """
-  @spec give_many(pos_integer(), t(), Stats.t(), [Group.grant()]) ::
-          {:ok, t()} | {:error, :insufficient_space}
-  def give_many(char_id, inventory, %Stats{} = stats, grants)
+  @spec give_group(pos_integer(), t(), Stats.t(), [Group.grant()]) ::
+          {:ok, t(), [term()]}
+  def give_group(char_id, inventory, %Stats{} = stats, grants)
       when is_integer(char_id) and char_id > 0 and is_map(inventory) and is_list(grants) do
     now = NaiveDateTime.utc_now()
 
-    with {:ok, prepared} <- prepare_grants(char_id, grants, now),
-         :ok <- precheck_weight(inventory, stats, prepared),
-         {:ok, _preview} <- precheck_slots(inventory, prepared),
-         {:ok, persisted} <- InventoryOps.add_many(char_id, inventory, prepared) do
-      {:ok, persisted}
+    Enum.reduce(grants, {:ok, inventory, []}, fn grant, {:ok, current, failures} ->
+      case ItemManagement.get_item_by_id(grant.item_id) do
+        {:ok, item_def} ->
+          opts = grant_opts(char_id, grant, item_def, now)
+
+          {inventory, failures} =
+            give_entry_units(char_id, current, stats, item_def, grant.amount, opts, failures)
+
+          {:ok, inventory, failures}
+
+        {:error, _reason} ->
+          {:ok, current, failures}
+      end
+    end)
+  end
+
+  defp give_entry_units(char_id, inventory, stats, item_def, amount, opts, failures) do
+    if ItemDefinition.stackable?(item_def) do
+      give_stack_entry(char_id, inventory, stats, item_def, amount, opts, failures)
     else
-      {:error, reason} when reason in [:overweight, :inventory_full] ->
-        {:error, :insufficient_space}
-
-      {:error, reason} ->
-        Logger.warning(
-          "Inventory.give_many for char #{char_id} dropped grants: #{inspect(reason)}"
-        )
-
-        {:error, :insufficient_space}
+      give_unit_entries(char_id, inventory, stats, item_def, amount, opts, failures)
     end
   end
 
-  defp prepare_grants(char_id, grants, now) do
-    Enum.reduce_while(grants, {:ok, []}, fn grant, {:ok, prepared} ->
-      case ItemManagement.get_item_by_id(grant.item_id) do
-        {:ok, item_def} ->
-          entry = {item_def, grant.amount, grant_opts(char_id, grant, item_def, now)}
-          {:cont, {:ok, [entry | prepared]}}
+  defp give_stack_entry(char_id, inventory, stats, item_def, amount, opts, failures) do
+    case give_grant(char_id, inventory, stats, item_def, amount, opts) do
+      {:ok, persisted} -> {persisted, failures}
+      {:error, reason, unchanged} -> {unchanged, failures ++ [reason]}
+    end
+  end
 
-        {:error, reason} ->
-          {:halt, {:error, reason}}
+  defp give_unit_entries(char_id, inventory, stats, item_def, amount, opts, failures) do
+    Enum.reduce(1..amount, {inventory, failures}, fn _unit, {current, acc} ->
+      case give_grant(char_id, current, stats, item_def, 1, opts) do
+        {:ok, persisted} -> {persisted, acc}
+        {:error, reason, unchanged} -> {unchanged, acc ++ [reason]}
       end
-    end)
-    |> then(fn
-      {:ok, prepared} -> {:ok, Enum.reverse(prepared)}
-      {:error, reason} -> {:error, reason}
     end)
   end
 
-  defp precheck_weight(inventory, stats, prepared) do
-    added_weight =
-      Enum.reduce(prepared, 0, fn {item_def, amount, _opts}, total ->
-        total + item_def.weight * amount
-      end)
-
-    if Weight.would_exceed?(inventory, stats, added_weight),
-      do: {:error, :overweight},
-      else: :ok
-  end
-
-  defp precheck_slots(inventory, prepared) do
-    Enum.reduce_while(prepared, {:ok, inventory}, fn {item_def, amount, opts}, {:ok, inv} ->
-      case add(inv, item_def, amount, opts) do
-        {:ok, next, _change} -> {:cont, {:ok, next}}
-        {:error, reason} -> {:halt, {:error, reason}}
-      end
-    end)
+  @spec give_grant(pos_integer(), t(), Stats.t(), ItemDefinition.t(), pos_integer(), map()) ::
+          {:ok, t()} | {:error, ItemContainer.add_error(), t()}
+  defp give_grant(char_id, inventory, stats, item_def, amount, opts) do
+    case InventoryOps.add(char_id, inventory, stats, item_def, amount, opts) do
+      {:ok, persisted, _change} -> {:ok, persisted}
+      {:error, reason} -> {:error, reason, inventory}
+    end
   end
 
   # An item-group grant's own identify request wins; otherwise the source's

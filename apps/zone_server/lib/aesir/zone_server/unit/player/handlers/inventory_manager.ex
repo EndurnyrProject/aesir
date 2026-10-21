@@ -148,6 +148,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
       {:error, reason} ->
         log_give_failure(game_state.character_id, item_def.id, amount, reason)
+        notify_add_failed(state.connection_pid, reason)
         {:error, reason, state}
     end
   end
@@ -171,35 +172,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
       {:error, reason} ->
         log_give_failure(state.character_id, item_def.id, amount, reason)
-        {:error, reason, state}
+
+        {:error, reason,
+         %{state | pending_item_add_failures: state.pending_item_add_failures ++ [reason]}}
     end
   end
 
   @doc """
   GenServer-native entry point for the session's `{:inventory, {:give_item, ...}}` cast.
 
-  Wraps `handle_give_item/3`, discarding the error reason on failure and
-  returning the untouched state, so a lost add never crashes or stalls the
-  session. `PickupHandler` calls `handle_give_item/3` directly instead: it
-  needs the error reason to re-place a claimed ground item.
+  Runs the source's per-unit grant: a stackable item is added in one call, a
+  non-stackable one unit at a time with every refusal reported and the loop
+  continuing, as `atcommand_item` does. The untouched state is returned on a
+  refusal, so a lost add never crashes or stalls the session. `PickupHandler`
+  calls `handle_give_item/3` directly instead: it needs the error reason, and
+  it always adds one unit at a time.
   """
   @spec handle_give_item_cast(ItemDefinition.t(), pos_integer(), SessionState.t()) ::
           {:noreply, SessionState.t()}
-  def handle_give_item_cast(item_def, amount, state) do
-    case handle_give_item(item_def, amount, state) do
-      {:ok, new_state} -> {:noreply, new_state}
-      {:error, _reason, unchanged_state} -> {:noreply, unchanged_state}
-    end
-  end
+  def handle_give_item_cast(item_def, amount, state),
+    do: handle_give_item_cast(item_def, amount, state, [])
 
   @spec handle_give_item_cast(ItemDefinition.t(), pos_integer(), SessionState.t(), keyword()) ::
           {:noreply, SessionState.t()}
   def handle_give_item_cast(item_def, amount, state, opts) do
-    case handle_give_item(item_def, amount, state, true, Keyword.get(opts, :bound, 0)) do
-      {:ok, new_state} -> {:noreply, new_state}
-      {:error, _reason, unchanged_state} -> {:noreply, unchanged_state}
-    end
+    give_opts = %{identify: 1, bound: Keyword.get(opts, :bound, 0)}
+
+    state =
+      if ItemDefinition.stackable?(item_def) do
+        settle_give(handle_give_item(item_def, amount, state, give_opts))
+      else
+        Enum.reduce(1..max(amount, 1), state, fn _unit, current ->
+          settle_give(handle_give_item(item_def, 1, current, give_opts))
+        end)
+      end
+
+    {:noreply, state}
   end
+
+  defp settle_give({:ok, new_state}), do: new_state
+  defp settle_give({:error, _reason, unchanged_state}), do: unchanged_state
 
   @doc """
   Breaks the item equipped in `slot` via the single-writer handler, then
@@ -257,6 +269,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
       {:error, _reason} ->
         {:noreply, state}
+    end
+  end
+
+  @doc """
+  Stages an inventory add refusal on a skill's bare `PlayerState`.
+
+  The session commits the cast and `InventoryStaging` drains the reason into an
+  `ItemAddFailed`; a reason the inventory recipe never produces stages nothing.
+  """
+  @spec stage_add_failure(map(), atom()) :: map()
+  def stage_add_failure(state, reason) do
+    if InventoryView.item_add_failed(reason) do
+      Map.update(state, :pending_item_add_failures, [reason], &(&1 ++ [reason]))
+    else
+      state
+    end
+  end
+
+  @doc """
+  Emits the `ItemAddFailed` an inventory add refusal reports.
+
+  A reason the inventory recipe never produces sends nothing, so a DB failure
+  or another subsystem's error is never reported as a "cannot carry".
+  """
+  @spec notify_add_failed(pid(), atom()) :: :ok
+  def notify_add_failed(connection_pid, reason) do
+    case InventoryView.item_add_failed(reason) do
+      nil -> :ok
+      message -> MessageRouter.send_to(connection_pid, message)
     end
   end
 

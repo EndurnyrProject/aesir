@@ -40,8 +40,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.StealOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -86,8 +88,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal do
           updated
 
         {:error, _reason, updated} ->
+          notify_add_failures(updated)
           SkillHandler.report_cast_failure(@gank_id, caster.character_id, :steal_failed)
-          updated
+          %{updated | pending_item_add_failures: []}
       end
     else
       caster
@@ -123,17 +126,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal do
           {:ok, PlayerState.t()} | {:error, failure(), PlayerState.t()}
   defp steal(caster, mob_pid, level) do
     with {:ok, item_id} <- MobSession.attempt_steal(mob_pid, item_caster(caster), level),
-         {:ok, item_def} <- ItemManagement.get_item_by_id(item_id),
-         {:ok, inventory, change} <- add_item(caster, item_def) do
-      {:ok,
-       %{
-         caster
-         | inventory: inventory,
-           pending_inventory_notify: caster.pending_inventory_notify ++ [change]
-       }}
+         {:ok, item_def} <- ItemManagement.get_item_by_id(item_id) do
+      case add_item(caster, item_def) do
+        {:ok, inventory, change} ->
+          {:ok,
+           %{
+             caster
+             | inventory: inventory,
+               pending_inventory_notify: caster.pending_inventory_notify ++ [change]
+           }}
+
+        {:error, _reason, staged} ->
+          {:error, :item_rejected, staged}
+      end
     else
-      {:error, reason} ->
-        {:error, failure_reason(reason), caster}
+      {:error, reason} -> {:error, failure_reason(reason), caster}
     end
   end
 
@@ -141,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal do
        when reason in [:immune, :protected, :already_stolen, :status_blocked, :miss, :no_drop],
        do: reason
 
-  defp failure_reason(_inventory_rejection), do: :item_rejected
+  defp failure_reason(_reason), do: :item_rejected
 
   defp item_caster(caster) do
     %{
@@ -150,10 +157,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal do
     }
   end
 
-  defp add_item(%{character_id: id, inventory: inventory, stats: stats}, item_def) do
-    if ItemDefinition.identified_on_obtain?(item_def),
-      do: InventoryOps.add(id, inventory, stats, item_def, 1),
-      else: InventoryOps.add(id, inventory, stats, item_def, 1, %{identify: 0})
+  defp add_item(caster, item_def) do
+    result =
+      if ItemDefinition.identified_on_obtain?(item_def),
+        do: InventoryOps.add(caster.character_id, caster.inventory, caster.stats, item_def, 1),
+        else:
+          InventoryOps.add(caster.character_id, caster.inventory, caster.stats, item_def, 1, %{
+            identify: 0
+          })
+
+    case result do
+      {:error, reason} ->
+        {:error, reason, InventoryManager.stage_add_failure(caster, reason)}
+
+      ok ->
+        ok
+    end
+  end
+
+  defp notify_add_failures(caster) do
+    Enum.each(caster.pending_item_add_failures, fn reason ->
+      case InventoryView.item_add_failed(reason) do
+        nil -> :ok
+        message -> Broadcast.to_player(caster.character_id, message)
+      end
+    end)
   end
 
   defp show_gank(caster, mob_id, {x, y}) do

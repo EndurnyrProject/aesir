@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.SubGroup
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -56,14 +57,10 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
       %SubGroup{number: 1, algorithm: :random, entries: [%Entry{item_id: 502, rate: 1}]}
     ])
 
-    expect(InventoryOps, :add_many, fn 1, %{}, prepared ->
-      assert Enum.map(prepared, fn {definition, _, _} -> definition.id end) == [501, 502]
-
-      {:ok,
-       %{
-         0 => %InventoryItem{nameid: 501, amount: 1},
-         1 => %InventoryItem{nameid: 502, amount: 1}
-       }}
+    stub(InventoryOps, :add, fn 1, inventory, _stats, definition, 1, _opts ->
+      index = map_size(inventory)
+      added = %InventoryItem{nameid: definition.id, amount: 1}
+      {:ok, Map.put(inventory, index, added), {:added, index, added}}
     end)
 
     result = Dsl.get_group_item(item_ctx(), :item_box)
@@ -78,14 +75,10 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
       %SubGroup{number: 3, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
     ])
 
-    expect(InventoryOps, :add_many, fn 1, %{}, prepared ->
-      assert Enum.map(prepared, fn {definition, _, _} -> definition.id end) == [501, 501]
-
-      {:ok,
-       %{
-         0 => %InventoryItem{nameid: 501, amount: 1},
-         1 => %InventoryItem{nameid: 501, amount: 1}
-       }}
+    stub(InventoryOps, :add, fn 1, inventory, _stats, definition, 1, _opts ->
+      index = map_size(inventory)
+      added = %InventoryItem{nameid: definition.id, amount: 1}
+      {:ok, Map.put(inventory, index, added), {:added, index, added}}
     end)
 
     result = Dsl.get_rand_group_item(item_ctx(), :rand_box, 2, 3)
@@ -100,7 +93,7 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     ])
 
     {:ok, session} =
-      StubSession.start_link(fn {:give_items_atomic, grants} ->
+      StubSession.start_link(fn {:give_group_items, grants} ->
         inventory =
           grants
           |> Enum.with_index()
@@ -118,23 +111,29 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
              502
            ]
 
-    assert_received {:script_apply, {:give_items_atomic, grants}}
+    assert_received {:script_apply, {:give_group_items, grants}}
     assert Enum.map(grants, & &1.item_id) == [501, 502]
   end
 
-  test "item-use failure rolls shared-pool draws back and halts inventory_full" do
+  test "an overflowing grant keeps its shared-pool draw" do
+    stub(InventoryOps, :add, fn _char_id, inventory, _stats, item_def, amount, opts ->
+      case Inventory.add(inventory, item_def, amount, opts, :infinity) do
+        {:ok, new_inventory, change} -> {:ok, new_inventory, change}
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+
     install_pool_group(:item_full, 1101, 2, 101)
     owner = ItemGroupPool.ensure_pool(:item_full)
     before_counts = pool_counts(owner)
 
     result = Dsl.get_group_item(item_ctx(), :item_full)
 
-    assert result.status == {:error, :inventory_full}
-    assert result.game_state.inventory == %{}
-    assert pool_counts(owner) == before_counts
+    assert result.status == :ok
+    assert pool_counts(owner) != before_counts
   end
 
-  test "NPC failure rolls shared-pool draws back and halts inventory_full" do
+  test "an NPC session error halts without rolling the shared-pool draw back" do
     install_pool_group(:npc_full, 501, 2, 1)
     owner = ItemGroupPool.ensure_pool(:npc_full)
     before_counts = pool_counts(owner)
@@ -143,9 +142,9 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
 
     result = Dsl.get_group_item(%{npc_ctx(session) | game_state: original}, :npc_full)
 
-    assert result.status == {:error, :inventory_full}
+    assert result.status == {:error, :insufficient_space}
     assert result.game_state.inventory == %{}
-    assert pool_counts(owner) == before_counts
+    assert pool_counts(owner) != before_counts
   end
 
   test "announced grants use the global announcement path" do

@@ -121,8 +121,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfStealTest do
     stub(ItemManagement, :get_item_by_id, fn 909 -> {:ok, @jellopy} end)
     stub(InventoryOps, :add, fn _id, _inventory, _stats, _item, 1 -> {:error, :overweight} end)
 
-    assert {:failed, ^caster, :item_rejected} =
+    assert {:failed, rejected, :item_rejected} =
              TfSteal.cast(caster, {:unit, @target_id}, 1, definition())
+
+    assert rejected.inventory == caster.inventory
+    assert rejected.pending_item_add_failures == [:overweight]
   end
 
   test "a non-monster target is a paid failure that never reaches any monster" do

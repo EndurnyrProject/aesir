@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ItemAdded
+  alias Aesir.Net.ItemAddFailed
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ItemSkillReady
   alias Aesir.Net.ParamChange
@@ -80,7 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     test "puts the string-keyed value into vars, persists, and returns the new game_state" do
       test_pid = self()
 
-      expect(CharacterPersistence, :update_character, fn 1000, %{vars: vars}, async: true ->
+      expect(CharacterPersistence, :update_character, fn 1000, %{vars: vars}, [async: true] ->
         send(test_pid, {:persisted_vars, vars})
         {:ok, %Character{}}
       end)
@@ -112,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     test "writes and persists the appearance field, then pushes a SpriteChange to self and observers" do
       test_pid = self()
 
-      expect(CharacterPersistence, :update_character, fn 1000, %{hair: 5}, async: true ->
+      expect(CharacterPersistence, :update_character, fn 1000, %{hair: 5}, [async: true] ->
         send(test_pid, {:persisted_look, :hair})
         {:ok, %Character{}}
       end)
@@ -146,7 +147,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
           ] do
         expect(CharacterPersistence, :update_character, fn 1000,
                                                            %{^field => ^value},
-                                                           async: true ->
+                                                           [async: true] ->
           {:ok, %Character{}}
         end)
 
@@ -162,7 +163,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     test "debits, pushes the zeny param, persists, returns the new game_state" do
       test_pid = self()
 
-      expect(CharacterPersistence, :update_character, fn 1000, %{zeny: zeny}, async: true ->
+      expect(CharacterPersistence, :update_character, fn 1000, %{zeny: zeny}, [async: true] ->
         send(test_pid, {:persisted_zeny, zeny})
         {:ok, %Character{}}
       end)
@@ -193,7 +194,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
 
     expect(CharacterPersistence, :update_character, fn 1000,
                                                        %{zeny: 1_000_000_000},
-                                                       async: true ->
+                                                       [async: true] ->
       send(test_pid, :zeny_persisted)
       {:ok, %Character{}}
     end)
@@ -211,7 +212,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     test "credits, pushes the zeny param, persists, returns the new game_state" do
       test_pid = self()
 
-      expect(CharacterPersistence, :update_character, fn 1000, %{zeny: zeny}, async: true ->
+      expect(CharacterPersistence, :update_character, fn 1000, %{zeny: zeny}, [async: true] ->
         send(test_pid, {:persisted_zeny, zeny})
         {:ok, %Character{}}
       end)
@@ -259,7 +260,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert_received {:send, _ch, {:item_added, %ItemAdded{}}}
     end
 
-    test "rejects :inventory_full and mutates nothing" do
+    test "rejects :inventory_full, mutates nothing and reports the reason" do
       definition = item_definition(@sphmask_id)
       stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
       stub(InventoryOps, :add, fn _, _, _, _, _ -> {:error, :inventory_full} end)
@@ -270,6 +271,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert reply == {:error, :inventory_full}
       assert new_state == state
       refute_received {:send, _ch, {:item_added, _}}
+
+      assert_received {:send, _ch,
+                       {:item_add_failed, %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERITEM}}}
+    end
+
+    test "adds a non-stackable one unit per call and keeps the units before a refusal" do
+      definition = item_definition(@sphmask_id, type: :weapon)
+      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+
+      calls = :counters.new(1, [])
+
+      stub(InventoryOps, :add, fn 1000, inventory, _stats, ^definition, 1 ->
+        :counters.add(calls, 1, 1)
+
+        if :counters.get(calls, 1) == 3 do
+          {:error, :overweight}
+        else
+          index = map_size(inventory)
+          added = %InventoryItem{nameid: @sphmask_id, amount: 1}
+          {:ok, Map.put(inventory, index, added), {:added, index, added}}
+        end
+      end)
+
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:give_item, @sphmask_id, 4}, base_state())
+
+      assert reply == {:error, :overweight}
+      assert_receive :inventory_changed
+      assert map_size(new_state.game_state.inventory) == 2
+      assert :counters.get(calls, 1) == 3
+
+      assert_received {:send, _ch,
+                       {:item_add_failed, %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERWEIGHT}}}
     end
 
     test "rejects :item_not_found for an unknown item id" do
@@ -284,30 +320,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
-  describe "{:give_items_atomic, grants}" do
-    test "commits the batch inventory through the single-writer handler" do
+  describe "{:give_group_items, grants}" do
+    test "commits the granted entries through the single-writer handler" do
       added = %InventoryItem{nameid: 501, amount: 1}
 
-      expect(InventoryOps, :add_many, fn 1000, %{}, [{definition, 1, _opts}] ->
+      expect(InventoryOps, :add, fn 1000, %{}, _stats, definition, 1, _opts ->
         assert definition.id == 501
-        {:ok, %{0 => added}}
+        {:ok, %{0 => added}, {:added, 0, added}}
       end)
 
       {reply, new_state} =
-        ScriptEffectHandler.apply_op({:give_items_atomic, [group_grant(501)]}, base_state())
+        ScriptEffectHandler.apply_op({:give_group_items, [group_grant(501)]}, base_state())
 
       assert {:ok, game_state} = reply
       assert game_state.inventory == %{0 => added}
       assert new_state.game_state.inventory == %{0 => added}
     end
 
-    test "surfaces insufficient_space and leaves state untouched" do
-      reject(&InventoryOps.add_many/3)
-      state = base_state()
-      grant = %{group_grant(1101) | amount: 101}
+    test "reports a refused entry and keeps the entries that fit" do
+      added = %InventoryItem{nameid: 501, amount: 1}
 
-      assert ScriptEffectHandler.apply_op({:give_items_atomic, [grant]}, state) ==
-               {{:error, :insufficient_space}, state}
+      stub(InventoryOps, :add, fn
+        1000, %{}, _stats, %{id: 501}, 1, _opts ->
+          {:ok, %{0 => added}, {:added, 0, added}}
+
+        _char_id, _inventory, _stats, _definition, 1, _opts ->
+          {:error, :overweight}
+      end)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op(
+          {:give_group_items, [group_grant(501), group_grant(1101)]},
+          base_state()
+        )
+
+      assert {:ok, game_state} = reply
+      assert game_state.inventory == %{0 => added}
+      assert new_state.game_state.inventory == %{0 => added}
+
+      assert_received {:send, _ch,
+                       {:item_add_failed, %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERWEIGHT}}}
     end
   end
 
@@ -424,6 +476,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert reply == {:error, :inventory_full}
       assert new_state == state
       refute_received {:send, _ch, {:item_added, _}}
+
+      assert_received {:send, _ch,
+                       {:item_add_failed, %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERITEM}}}
     end
   end
 

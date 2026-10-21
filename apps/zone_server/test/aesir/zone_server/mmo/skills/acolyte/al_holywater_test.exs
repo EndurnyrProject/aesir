@@ -144,12 +144,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
       assert {:failed, @caster, :brew_failed} = AlHolywater.cast(@caster, :self, 1, definition)
     end
 
-    test "fails before taking the bottle when the Holy Water stack is full" do
+    test "takes the bottle and reports the full stack when the Holy Water stack is full" do
       {:ok, definition} = Catalog.by_id(31)
-      reject(&InventoryOps.add/5)
       caster = holder(1, %{1 => %InventoryItem{nameid: 523, amount: 30_000}})
 
-      assert {:failed, ^caster, :brew_failed} = AlHolywater.cast(caster, :self, 1, definition)
+      expect(InventoryOps, :add, fn 1000, _inventory, _stats, %{id: 523}, 1 ->
+        {:error, :over_amount}
+      end)
+
+      assert {:ok, updated} = AlHolywater.cast(caster, :self, 1, definition)
+      assert %{1 => %InventoryItem{nameid: 523, amount: 30_000}} = updated.inventory
+      assert updated.pending_item_add_failures == [:over_amount]
     end
   end
 end

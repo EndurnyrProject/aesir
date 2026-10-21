@@ -279,6 +279,8 @@ message Envelope {
     SkillUnitMove skill_unit_move = 218;  // s2c zone world
     ItemSkillReady item_skill_ready = 219;  // s2c zone gameplay
     MemoRequest memo_request = 220;  // c2s zone
+    // 221: an inventory add was refused, with the reference reason
+    ItemAddFailed item_add_failed = 221;  // s2c zone gameplay
   }
 }
 
@@ -1072,6 +1074,26 @@ message ItemAdded {
   string signer_name = 14;
   uint32 creator_id = 15;
   CreatorKind creator_kind = 16;
+}
+
+// Why an inventory add was refused. Mirrors the reference `e_additem_result`
+// codes; SUCCESS is present so the enum is a faithful mirror and is never sent.
+enum ItemAddResult {
+  ITEM_ADD_RESULT_SUCCESS = 0;
+  ITEM_ADD_RESULT_INVALID = 1;
+  ITEM_ADD_RESULT_OVERWEIGHT = 2;
+  ITEM_ADD_RESULT_ITEM = 3;
+  ITEM_ADD_RESULT_OVERITEM = 4;
+  ITEM_ADD_RESULT_OVERAMOUNT = 5;
+  ITEM_ADD_RESULT_REFUSED_TIME = 6;
+  ITEM_ADD_RESULT_STACKLIMIT = 7;
+}
+
+// Server -> client, an inventory add was refused. Carries only the reason, as
+// the reference's `clif_additem(sd, 0, 0, reason)` does; the client shows its
+// "cannot carry" notice.
+message ItemAddFailed {
+  ItemAddResult result = 1;
 }
 
 // Server -> client, an item was removed from the inventory (replaces RO ZC_DELETE_ITEM_FROM_BODY 0x07FA).

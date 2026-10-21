@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManagerTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.ItemAddFailed
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
@@ -129,6 +130,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManagerTest do
              })
 
     assert [] = Persistence.load_inventory(char.id)
+  end
+
+  test "reports an add refusal to the client", %{character: char, stats: stats} do
+    {:ok, item_def} = ItemManagement.get_item_by_id(@sword)
+
+    full_inventory =
+      Map.new(0..99, fn index ->
+        {index, %InventoryItem{nameid: -index - 1, amount: 1}}
+      end)
+
+    session = state(char.id, stats)
+    session = %{session | game_state: %{session.game_state | inventory: full_inventory}}
+
+    assert {:error, :inventory_full, ^session} =
+             InventoryManager.handle_give_item(item_def, 1, session)
+
+    assert_received {:send, :gameplay,
+                     {:item_add_failed, %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERITEM}}}
   end
 
   test "purges expired rentals while loading inventory", %{character: char, stats: stats} do

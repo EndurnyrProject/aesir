@@ -12,10 +12,12 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
 
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Net.ItemAddFailed
   alias Aesir.Net.SkillCastFailed
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.TestSupport.ClownSessions
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Mob.MobSession
 
   # Jellopy, Empty Bottle, Apple - real ids from priv/db/re/items.
@@ -157,6 +159,40 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
       assert_eventually(fn -> get_player_state(session.pid).stats.current_state.sp == 990 end)
       assert_eventually(fn -> get_mob_state(mob.pid).last_skill_id == @emotion end)
       refute get_mob_state(mob.pid).stolen_from
+    end
+
+    test "a stolen item the caster cannot carry reports the reason" do
+      mob =
+        start_mob_session(
+          dex: 1,
+          drops: [%MobDrop{item: "Barrier_Builder", rate: 10_000, steal_protected: false}],
+          position: {151, 150}
+        )
+
+      character =
+        ClownSessions.character(
+          :novice,
+          "prontera",
+          {150, 150},
+          %{50 => 10},
+          %{class: @rogue, dex: 100}
+        )
+
+      {:ok, _heavy} =
+        InventoryPersistence.insert_item(character.id, %{nameid: 2806, amount: 3})
+
+      session = ClownSessions.start_session(character)
+
+      ClownSessions.cast(session, 50, 10, mob.unit_id)
+
+      assert_packet_sent_with(ItemAddFailed, fn packet ->
+        assert packet.result == :ITEM_ADD_RESULT_OVERWEIGHT
+      end)
+
+      assert_packet_sent(SkillCastFailed)
+
+      assert [{0, %{nameid: 2806, amount: 3}}] =
+               Enum.to_list(get_player_state(session.pid).inventory)
     end
   end
 end

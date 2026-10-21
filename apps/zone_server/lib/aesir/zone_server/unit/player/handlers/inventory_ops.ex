@@ -71,33 +71,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   end
 
   @doc """
-  Persists a prechecked batch of item additions in one transaction.
-
-  Each entry is applied against the inventory returned by the previous entry,
-  preserving stacking and stable session indices. Any failed row write rolls
-  back the entire batch.
-  """
-  @spec add_many(
-          integer(),
-          inventory(),
-          [{ItemDefinition.t(), pos_integer(), map()}]
-        ) :: {:ok, inventory()} | {:error, term()}
-  def add_many(char_id, inventory, entries) when is_list(entries) do
-    Persistence.transaction(fn ->
-      Enum.reduce_while(entries, {:ok, inventory}, &persist_add(char_id, &1, &2))
-    end)
-  end
-
-  defp persist_add(char_id, {item_def, amount, opts}, {:ok, current}) do
-    with {:ok, next, change} <- Inventory.add(current, item_def, amount, opts),
-         {:ok, persisted} <- persist_change(char_id, current, next, change) do
-      {:cont, {:ok, persisted}}
-    else
-      {:error, reason} -> {:halt, {:error, reason}}
-    end
-  end
-
-  @doc """
   Unequips and persists every requested inventory index atomically.
 
   An empty index list returns the original inventory without opening a transaction.

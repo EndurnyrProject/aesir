@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrap do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -62,7 +63,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrap do
        |> Map.put(:inventory, persisted)
        |> Map.update!(:pending_inventory_notify, &(&1 ++ [change]))}
     else
-      {:error, _reason} -> {:ok, caster}
+      {:error, reason} ->
+        {:ok, InventoryManager.stage_add_failure(caster, reason)}
     end
   end
 end

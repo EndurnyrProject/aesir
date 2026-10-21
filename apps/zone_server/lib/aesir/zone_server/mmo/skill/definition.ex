@@ -16,6 +16,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `require_weapon` restricts ordinary player casts to the listed equipped
   right-hand weapon subtypes. An empty list (the default) accepts any weapon.
 
+  `require_recovered_weight` mirrors the source's `Requires: State:
+  Recover_Weight_Rate`: the cast begins only while the caster is below the
+  natural-heal weight rate (70% renewal, 50% pre-renewal), an earlier gate than
+  the 90% major-overweight refusal every skill has.
+
   `require_ammo` lists the ammunition subtypes the cast end accepts in the ammo
   slot, and `ammo_qty` holds the units it requires per level (the skill DB's
   `Requires: Ammo` mask and `AmmoAmount`). An empty `require_ammo`, or a level
@@ -199,6 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             require_ammo: [],
             ammo_qty: [],
             require_weapon: [],
+            require_recovered_weight: false,
             vulture_range: false,
             status: nil,
             quest_skill: false,
@@ -255,6 +261,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           require_ammo: [atom()],
           ammo_qty: [non_neg_integer()],
           require_weapon: [atom()],
+          require_recovered_weight: boolean(),
           vulture_range: boolean(),
           status: atom() | nil,
           quest_skill: boolean(),
@@ -324,6 +331,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     require_ammo: {:list, :atom},
     ammo_qty: {:list, {:integer, {:gte, 0}}},
     require_weapon: {:list, :atom},
+    require_recovered_weight: :boolean,
     vulture_range: :boolean,
     status: :atom,
     quest_skill: :boolean,
@@ -377,6 +385,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     require_ammo: [],
     ammo_qty: [],
     require_weapon: [],
+    require_recovered_weight: false,
     vulture_range: false,
     status: nil,
     quest_skill: false,
@@ -424,6 +433,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :cooldown,
     :item_cost,
     :require_weapon,
+    :require_recovered_weight,
     :require_ammo,
     :ammo_qty,
     :max_level

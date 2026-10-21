@@ -17,7 +17,6 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Script.Ctx
@@ -136,17 +135,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   def commit_grants(%Ctx{status: {:error, _}} = ctx, _grants), do: ctx
 
   def commit_grants(%Ctx{session_pid: session_pid} = ctx, grants) when is_pid(session_pid) do
-    case apply_op(ctx, {:give_items_atomic, grants}) do
-      %Ctx{status: {:error, :insufficient_space}} = halted ->
-        rollback_pool(grants)
-        Ctx.halt(halted, :inventory_full)
-
-      %Ctx{status: {:error, _reason}} = halted ->
-        rollback_pool(grants)
-        halted
-
-      %Ctx{} = committed ->
-        maybe_announce(committed, grants)
+    case apply_op(ctx, {:give_group_items, grants}) do
+      %Ctx{status: {:error, _reason}} = halted -> halted
+      %Ctx{} = committed -> maybe_announce(committed, grants)
     end
   end
 
@@ -154,35 +145,15 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
     do: Ctx.halt(ctx, :no_player)
 
   def commit_grants(%Ctx{session_pid: nil, game_state: game_state} = ctx, grants) do
-    case Inventory.give_many(
-           ctx.char_id,
-           game_state.inventory,
-           game_state.stats,
-           grants
-         ) do
-      {:ok, inventory} ->
-        maybe_announce(%{ctx | game_state: %{game_state | inventory: inventory}}, grants)
+    {:ok, inventory, _failures} =
+      Inventory.give_group(ctx.char_id, game_state.inventory, game_state.stats, grants)
 
-      {:error, :insufficient_space} ->
-        rollback_pool(grants)
-        Ctx.halt(ctx, :inventory_full)
-    end
+    maybe_announce(%{ctx | game_state: %{game_state | inventory: inventory}}, grants)
   end
 
   @spec stamp_group_key([Group.grant()], atom()) :: [Group.grant()]
   defp stamp_group_key(grants, group_key),
     do: Enum.map(grants, &Map.put(&1, :group_key, group_key))
-
-  @spec rollback_pool([Group.grant()]) :: :ok
-  defp rollback_pool(grants) do
-    Enum.each(grants, fn
-      %{group_key: group_key, drawn: {sub, item_ids}} ->
-        ItemGroupPool.rollback(group_key, sub, item_ids)
-
-      _grant ->
-        :ok
-    end)
-  end
 
   @spec maybe_announce(Ctx.t(), [Group.grant()]) :: Ctx.t()
   defp maybe_announce(ctx, grants) do

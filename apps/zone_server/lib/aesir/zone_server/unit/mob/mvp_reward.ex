@@ -209,11 +209,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
       Task.Supervisor.start_child(@task_supervisor, fn ->
         case give_item(pid, grant) do
           :ok -> :ok
-          {:error, _reason} -> scatter(grant, map_name, x, y, winner, ownership)
+          {:error, _reason} -> fail_drop(grant, map_name, x, y, winner, ownership)
         end
       end)
 
     :ok
+  end
+
+  # The give already told the MVP why the prize could not be carried (the
+  # session's grant op emits the add-failure message); the reference still drops
+  # it on that player's own cell, loot-protected for the kill's owners.
+  defp fail_drop(grant, map_name, x, y, winner, ownership) do
+    {drop_map, drop_x, drop_y} = winner_position(winner, map_name, x, y)
+    scatter(grant, drop_map, drop_x, drop_y, winner, ownership)
+  end
+
+  defp winner_position({char_id, _name, _base_level, _pid}, fallback_map, fallback_x, fallback_y) do
+    case UnitRegistry.get_unit(:player, char_id) do
+      {:ok, {_module, player_state, _pid}} ->
+        {
+          Map.get(player_state, :map_name, fallback_map),
+          Map.get(player_state, :x, fallback_x),
+          Map.get(player_state, :y, fallback_y)
+        }
+
+      {:error, :not_found} ->
+        {fallback_map, fallback_x, fallback_y}
+    end
   end
 
   # A winner who logs out or crashes between the registry lookup and this call

@@ -321,6 +321,86 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
 
   # A novice's 20_000 carry weight plus the fixture's 1 STR (300) is 20_300, so
   # 90 percent is 18_270: 261 Red Potions (70 each) sit exactly on the limit.
+  describe "the Recover_Weight_Rate cast-begin requirement" do
+    @tag game_mode: :renewal
+    test "refuses at the renewal natural-heal rate and allows one potion less" do
+      definition = %{weight_definition() | require_recovered_weight: true}
+
+      at_limit = potion_caster(203)
+      at_limit_cost = Cost.from_definition(at_limit, definition, 1, sp: 0)
+
+      assert {:error, :overweight} =
+               Caster.Player.prepare_begin_cost(
+                 at_limit,
+                 __MODULE__,
+                 definition,
+                 at_limit_cost,
+                 0,
+                 1
+               )
+
+      under_limit = potion_caster(202)
+      under_limit_cost = Cost.from_definition(under_limit, definition, 1, sp: 0)
+
+      assert {:ok, _prepared} =
+               Caster.Player.prepare_begin_cost(
+                 under_limit,
+                 __MODULE__,
+                 definition,
+                 under_limit_cost,
+                 0,
+                 1
+               )
+    end
+
+    @tag game_mode: :pre_renewal
+    test "refuses at the pre-renewal natural-heal rate" do
+      definition = %{weight_definition() | require_recovered_weight: true}
+
+      at_limit = potion_caster(145)
+      at_limit_cost = Cost.from_definition(at_limit, definition, 1, sp: 0)
+
+      assert {:error, :overweight} =
+               Caster.Player.prepare_begin_cost(
+                 at_limit,
+                 __MODULE__,
+                 definition,
+                 at_limit_cost,
+                 0,
+                 1
+               )
+
+      under_limit = potion_caster(144)
+      under_limit_cost = Cost.from_definition(under_limit, definition, 1, sp: 0)
+
+      assert {:ok, _prepared} =
+               Caster.Player.prepare_begin_cost(
+                 under_limit,
+                 __MODULE__,
+                 definition,
+                 under_limit_cost,
+                 0,
+                 1
+               )
+    end
+
+    test "does not gate a definition that does not require it" do
+      definition = weight_definition()
+      caster = potion_caster(203)
+      cost = Cost.from_definition(caster, definition, 1, sp: 0)
+
+      assert {:ok, _prepared} =
+               Caster.Player.prepare_begin_cost(
+                 caster,
+                 __MODULE__,
+                 definition,
+                 cost,
+                 0,
+                 1
+               )
+    end
+  end
+
   defp potion_caster(potions) do
     PlayerStateFixture.build(%{
       character_id: 101,

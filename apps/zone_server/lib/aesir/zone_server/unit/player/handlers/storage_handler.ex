@@ -147,6 +147,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
     else
       {:error, reason} ->
         Logger.debug("Storage withdraw rejected for #{char_id}: #{inspect(reason)}")
+        InventoryManager.notify_add_failed(state.connection_pid, reason)
         send_result(state.connection_pid, error_code(reason))
         {:noreply, state}
     end

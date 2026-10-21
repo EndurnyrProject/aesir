@@ -5,9 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
 
   The Empty Bottle is a material of the brew, not a requirement of the skill:
   the skill has no item cost. The cast starts only while a bottle is held. When
-  it ends, the SP is spent first; the brew then fails with nothing made if no
-  bottle is left or the Holy Water stack is full, and otherwise takes the bottle
-  and adds the Holy Water, which is lost if it cannot be carried.
+  it ends, the SP is spent first; the brew fails with nothing made only when no
+  bottle is left, and otherwise takes the bottle and adds the Holy Water, which
+  is lost (and reported to the client) if it cannot be carried.
 
   Renewal: single level, ten SP, an 800ms variable cast plus a fixed 200ms, and
   a 500ms after-cast delay.
@@ -35,12 +35,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @holy_water_id 523
   @empty_bottle_id 713
-  @max_stack 30_000
 
   @behaviour Active
 
@@ -76,16 +76,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
     with {:ok, item_def} <- ItemManagement.get_item_by_id(@holy_water_id) do
       bottle = ItemContainer.stackable_index(caster.inventory, @empty_bottle_id)
 
-      if is_nil(bottle) or stack_full?(caster.inventory),
+      if is_nil(bottle),
         do: {:failed, caster, :brew_failed},
         else: {:ok, caster |> take_bottle(bottle) |> add_holy_water(item_def)}
-    end
-  end
-
-  defp stack_full?(inventory) do
-    case ItemContainer.stackable_index(inventory, @holy_water_id) do
-      nil -> false
-      index -> inventory[index].amount + 1 > @max_stack
     end
   end
 
@@ -111,8 +104,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
             pending_inventory_notify: caster.pending_inventory_notify ++ [change]
         }
 
-      {:error, _reason} ->
-        caster
+      {:error, reason} ->
+        InventoryManager.stage_add_failure(caster, reason)
     end
   end
 end

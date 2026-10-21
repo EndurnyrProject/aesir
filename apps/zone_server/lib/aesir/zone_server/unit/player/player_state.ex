@@ -135,6 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
              term()}
           ],
           pending_inventory_notify: [tuple()],
+          pending_item_add_failures: [atom()],
           cart: %{non_neg_integer() => InventoryItem.t()},
           pending_cart_persist: [
             {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
@@ -285,6 +286,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Inventory-add change descriptors staged by a skill cast so the session
     # handler can emit an ItemAdded for each new/affected slot, then clear them.
     pending_inventory_notify: [],
+    # Inventory-add refusals staged by a skill or script cast so the session
+    # handler can emit one ItemAddFailed per refusal, then clear them.
+    pending_item_add_failures: [],
     # Cart keyed by stable session index, mirroring inventory
     cart: %{},
     pending_cart_persist: [],

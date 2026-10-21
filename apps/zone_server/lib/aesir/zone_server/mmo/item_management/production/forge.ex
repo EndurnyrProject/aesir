@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -198,7 +199,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
         {:ok, stage_result(forged, recipe.product_id, true)}
 
       {:error, reason} ->
-        {:error, reason}
+        # The craft already succeeded and its materials are spent; the reference
+        # still reports the production result and tells the client why the
+        # product could not be carried.
+        {:ok,
+         stage_result(InventoryManager.stage_add_failure(caster, reason), recipe.product_id, true)}
     end
   end
 
