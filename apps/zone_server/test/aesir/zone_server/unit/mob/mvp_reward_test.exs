@@ -189,6 +189,39 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
     end
   end
 
+  describe "grant/6 drop identification" do
+    test "an unidentified pet armour MVP drop is granted unidentified and scatters unidentified" do
+      test = self()
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+
+      stub(Coordinator, :drop_items, fn map, items, x, y, opts ->
+        send(test, {:floor, map, items, x, y, opts})
+        :ok
+      end)
+
+      stub(Items, :by_aegis, fn "PET_ARMOR" ->
+        {:ok,
+         %ItemDefinition{id: 10_001, aegis_name: "PET_ARMOR", name: "Pet Armor", type: :pet_armor}}
+      end)
+
+      register_player(1, pid: fake_session({:error, :overweight}))
+
+      MvpReward.grant(
+        %{1 => 100},
+        mob(mvp_drops: [drop("PET_ARMOR")]),
+        "gld_dun03",
+        42,
+        77,
+        ownership()
+      )
+
+      assert_receive {:session_call,
+                      {:npc, {:script_apply, {:give_item2, 10_001, 1, %{identify: 0}}}}}
+
+      assert_receive {:floor, "gld_dun03", [{10_001, 1, 42, 77, false}], 42, 77, _opts}
+    end
+  end
+
   describe "grant/6 MVP loot restriction" do
     test "a NoMvpLoot map grants no MVP item while its experience still lands" do
       stub(Announcement, :to_all, fn _opts -> :ok end)

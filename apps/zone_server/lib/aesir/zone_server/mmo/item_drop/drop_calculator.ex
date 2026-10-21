@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
@@ -130,9 +131,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
     if :rand.uniform(@max_rate) <= chance do
       case ItemGroups.fetch(group_key) do
         {:ok, group} ->
-          Enum.map(Roller.roll_full(group), fn grant ->
-            {grant.item_id, grant.amount, grant.identify?}
-          end)
+          group
+          |> Roller.roll_full()
+          |> Enum.flat_map(&group_grant/1)
 
         :error ->
           []
@@ -142,12 +143,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
     end
   end
 
+  # A monster's group bonus drop builds each item the same way as its table
+  # entries, so the type rule decides identification; the group entry's own
+  # flag is not read on this route. An unresolvable id cannot drop at all.
+  @spec group_grant(ItemGroups.Group.grant()) :: [{integer(), integer(), boolean()}]
+  defp group_grant(%{item_id: item_id, amount: amount}) do
+    case ItemManagement.get_item_by_id(item_id) do
+      {:ok, item} -> [{item_id, amount, ItemDefinition.identified_on_obtain?(item)}]
+      {:error, _reason} -> []
+    end
+  end
+
   @spec maybe_bonus_drop(integer(), integer()) :: [{integer(), integer(), boolean()}]
   defp maybe_bonus_drop(nameid, chance) do
     case ItemManagement.get_item_by_id(nameid) do
-      {:ok, %{type: type}} ->
+      {:ok, item} ->
         if :rand.uniform(@max_rate) <= chance,
-          do: [{nameid, 1, type not in [:weapon, :armor]}],
+          do: [{nameid, 1, ItemDefinition.identified_on_obtain?(item)}],
           else: []
 
       {:error, _reason} ->
@@ -202,7 +214,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
          opts
        ) do
     case ItemManagement.get_item_by_aegis(aegis) do
-      {:ok, %{id: nameid, type: type}} ->
+      {:ok, item} ->
         rate =
           drop_rate(
             base,
@@ -210,12 +222,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
             killer_base_level,
             mob_level,
             drop_bonus,
-            Config.drop_category(type),
+            Config.drop_category(item.type),
             opts
           )
 
-        identified = type not in [:weapon, :armor]
-        if :rand.uniform(@max_rate) <= rate, do: [{nameid, 1, identified}], else: []
+        identified = ItemDefinition.identified_on_obtain?(item)
+        if :rand.uniform(@max_rate) <= rate, do: [{item.id, 1, identified}], else: []
 
       {:error, _reason} ->
         []

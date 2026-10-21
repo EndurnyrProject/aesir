@@ -197,6 +197,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
                DropCalculator.roll([drop(10_000), drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
     end
 
+    test "marks dropped pet armour and shadow gear unidentified" do
+      stub(ItemManagement, :get_item_by_aegis, fn
+        "Pet_Armor" -> {:ok, %{id: 10_011, type: :pet_armor}}
+        "Shadow_Armor" -> {:ok, %{id: 2401, type: :shadow_gear}}
+      end)
+
+      drops = [
+        %MobDrop{item: "Pet_Armor", rate: 10_000},
+        %MobDrop{item: "Shadow_Armor", rate: 10_000}
+      ]
+
+      assert [{10_011, 1, _, _, false}, {2401, 1, _, _, false}] =
+               DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
+    end
+
     test "marks dropped weapons and armor unidentified while other items stay identified" do
       stub(ItemManagement, :get_item_by_aegis, fn
         "Knife" -> {:ok, %{id: 1201, type: :weapon}}
@@ -289,6 +304,51 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
 
       assert [{1201, 1, _, _, false}] =
                DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
+    end
+
+    test "a dropped pet armour is unidentified" do
+      stub(ItemManagement, :get_item_by_id, fn
+        10_011 -> {:ok, %{id: 10_011, type: :pet_armor}}
+        _other -> {:error, :item_not_found}
+      end)
+
+      mods = %{{:add_monster_drop, 10_011} => 10_000}
+
+      assert [{10_011, 1, _, _, false}] =
+               DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
+    end
+
+    test "a group bonus drop identifies by item type, not the entry's own flag" do
+      previous_catalog = :persistent_term.get(ItemGroups, :missing)
+
+      on_exit(fn ->
+        case previous_catalog do
+          :missing -> :persistent_term.erase(ItemGroups)
+          catalog -> :persistent_term.put(ItemGroups, catalog)
+        end
+      end)
+
+      group = %Group{
+        key: :type_rule_drop,
+        subgroups: [
+          %SubGroup{
+            number: 0,
+            algorithm: :all,
+            entries: [
+              %Entry{item_id: 501, identify?: false},
+              %Entry{item_id: 1201, identify?: true}
+            ]
+          }
+        ]
+      }
+
+      :persistent_term.put(ItemGroups, %{type_rule_drop: group})
+      mods = %{{:add_monster_drop_group, :type_rule_drop} => 10_000}
+
+      assert [
+               {501, 1, _, _, true},
+               {1201, 1, _, _, false}
+             ] = DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
     end
 
     test "a guaranteed item-group bonus rolls and scatters every grant" do

@@ -156,12 +156,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
     else
       case roll(drops, level, base_level(winner, level), fixed_item_drop?) do
         nil -> :ok
-        nameid -> deliver(winner, nameid, map_name, x, y, ownership)
+        grant -> deliver(winner, grant, map_name, x, y, ownership)
       end
     end
   end
 
-  @spec roll([MobDrop.t()], integer(), integer(), boolean()) :: non_neg_integer() | nil
+  # The winning MVP drop: its item id and whether it arrives identified.
+  @typep drop_grant() :: {non_neg_integer(), boolean()}
+
+  @spec roll([MobDrop.t()], integer(), integer(), boolean()) :: drop_grant() | nil
   defp roll(drops, mob_level, base_level, fixed_item_drop?) do
     penalty =
       if fixed_item_drop?, do: @no_penalty, else: LevelPenalty.mvp_drop(mob_level, base_level)
@@ -177,9 +180,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
         |> max(min_rate)
         |> min(max_rate)
 
-      with {:ok, %ItemDefinition{id: nameid}} <- Items.by_aegis(aegis),
+      with {:ok, %ItemDefinition{} = item} <- Items.by_aegis(aegis),
            true <- :rand.uniform(@max_rate) <= rate do
-        nameid
+        {item.id, ItemDefinition.identified_on_obtain?(item)}
       else
         _ -> nil
       end
@@ -192,21 +195,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   # in-flight one of those until both sides time out and crash.
   @spec deliver(
           winner() | nil,
-          non_neg_integer(),
+          drop_grant(),
           String.t(),
           integer(),
           integer(),
           LootOwnership.t()
         ) :: :ok
-  defp deliver(nil, nameid, map_name, x, y, ownership),
-    do: scatter(nameid, map_name, x, y, nil, ownership)
+  defp deliver(nil, grant, map_name, x, y, ownership),
+    do: scatter(grant, map_name, x, y, nil, ownership)
 
-  defp deliver({_char_id, _name, _base_level, pid} = winner, nameid, map_name, x, y, ownership) do
+  defp deliver({_char_id, _name, _base_level, pid} = winner, grant, map_name, x, y, ownership) do
     {:ok, _pid} =
       Task.Supervisor.start_child(@task_supervisor, fn ->
-        case give_item(pid, nameid) do
+        case give_item(pid, grant) do
           :ok -> :ok
-          {:error, _reason} -> scatter(nameid, map_name, x, y, winner, ownership)
+          {:error, _reason} -> scatter(grant, map_name, x, y, winner, ownership)
         end
       end)
 
@@ -217,9 +220,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   # makes `GenServer.call` *exit* rather than reply, which would kill the task
   # and lose the drop entirely. Both failure shapes have to reach the same floor
   # fallback, so the exit is caught and normalized into an error tuple.
-  @spec give_item(pid(), non_neg_integer()) :: :ok | {:error, term()}
-  defp give_item(pid, nameid) do
-    case PlayerSession.script_apply(pid, {:give_item, nameid, 1}) do
+  @spec give_item(pid(), drop_grant()) :: :ok | {:error, term()}
+  defp give_item(pid, {nameid, identified}) do
+    case PlayerSession.script_apply(pid, grant_op(nameid, identified)) do
       {:error, reason} -> {:error, reason}
       _delivered -> :ok
     end
@@ -227,18 +230,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
     :exit, reason -> {:error, reason}
   end
 
-  @spec scatter(
-          non_neg_integer(),
-          String.t(),
-          integer(),
-          integer(),
-          winner() | nil,
-          LootOwnership.t()
-        ) :: :ok
-  defp scatter(nameid, map_name, x, y, winner, ownership) do
+  # An MVP drop the reference leaves unidentified needs the explicit-attribute
+  # grant; an identified one is the plain `getitem` shape.
+  @spec grant_op(non_neg_integer(), boolean()) :: tuple()
+  defp grant_op(nameid, true), do: {:give_item, nameid, 1}
+  defp grant_op(nameid, false), do: {:give_item2, nameid, 1, %{identify: 0}}
+
+  @spec scatter(drop_grant(), String.t(), integer(), integer(), winner() | nil, LootOwnership.t()) ::
+          :ok
+  defp scatter({nameid, identified}, map_name, x, y, winner, ownership) do
     Coordinator.drop_items(
       map_name,
-      [{nameid, 1, x, y, true}],
+      [{nameid, 1, x, y, identified}],
       x,
       y,
       ownership: {fallback_ownership(winner, ownership), true}

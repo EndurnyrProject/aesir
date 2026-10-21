@@ -43,6 +43,8 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
   @sword 1101
   # Guard: a left-hand shield, armor type, armor-level 1, refineable.
   @guard 2101
+  # Skull helm: pet armour, unidentified on obtain but forced identified by `getitem2`.
+  @skull_helm 10_001
   # Red Potion: not equipment, not refineable.
   @potion 501
   # Poring Card: a card type.
@@ -306,6 +308,33 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
                           card2: 0,
                           card3: 0
                         }}}
+    end
+
+    test "getitem2 forces an identified copy for a type that cannot arrive unidentified" do
+      session = start_stub(fn _op -> {:ok, %PlayerState{}} end)
+      ctx = build_ctx(session: session)
+
+      Dsl.getitem2(ctx, @potion, 1, 0, 0, 0, 0, 0, 0, 0)
+
+      assert_received {:script_apply, {:give_item2, @potion, 1, %{identify: 1}}}
+    end
+
+    test "getitem2 forces pet armour identified, although it drops unidentified" do
+      session = start_stub(fn _op -> {:ok, %PlayerState{}} end)
+      ctx = build_ctx(session: session)
+
+      Dsl.getitem2(ctx, @skull_helm, 1, 0, 0, 0, 0, 0, 0, 0)
+
+      assert_received {:script_apply, {:give_item2, @skull_helm, 1, %{identify: 1}}}
+    end
+
+    test "getitem2 keeps the script's identify flag for weapon, armor and shadow gear" do
+      session = start_stub(fn _op -> {:ok, %PlayerState{}} end)
+      ctx = build_ctx(session: session)
+
+      Dsl.getitem2(ctx, @sword, 1, 0, 0, 0, 0, 0, 0, 0)
+
+      assert_received {:script_apply, {:give_item2, @sword, 1, %{identify: 0}}}
     end
 
     test "delequip resolves the equipped index and routes a {:delequip, index, nameid} op" do

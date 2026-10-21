@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
@@ -224,13 +226,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
       entries = OreTable.entries()
       {item_id, rate} = Enum.fetch!(entries, rng.(length(entries)) - 1)
 
-      if rng.(10_000) <= rate, do: drops ++ [{item_id, 1, x, y, true}], else: drops
+      if rng.(10_000) <= rate,
+        do: drops ++ [{item_id, 1, x, y, identified_on_obtain(item_id)}],
+        else: drops
     else
       drops
     end
   end
 
   defp maybe_discover_ore(drops, _learned_skills, _x, _y, _rng, _final_source), do: drops
+
+  # Ore discovery builds its item through the same drop-item construction as
+  # the monster's table, so the obtain rule decides identification. An
+  # unresolvable id is an ETC item there, which is identified.
+  defp identified_on_obtain(item_id) do
+    case ItemManagement.get_item_by_id(item_id) do
+      {:ok, item} -> ItemDefinition.identified_on_obtain?(item)
+      {:error, _reason} -> true
+    end
+  end
 
   defp persist_quest_changes(char_id, quest_log, changes) do
     changes

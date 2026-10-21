@@ -127,7 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
     Enum.reduce_while(grants, {:ok, []}, fn grant, {:ok, prepared} ->
       case ItemManagement.get_item_by_id(grant.item_id) do
         {:ok, item_def} ->
-          entry = {item_def, grant.amount, grant_opts(char_id, grant, now)}
+          entry = {item_def, grant.amount, grant_opts(char_id, grant, item_def, now)}
           {:cont, {:ok, [entry | prepared]}}
 
         {:error, reason} ->
@@ -160,9 +160,13 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
     end)
   end
 
-  defp grant_opts(char_id, grant, now) do
+  # An item-group grant's own identify request wins; otherwise the source's
+  # obtain rule identifies everything but weapons, armour, pet armour and
+  # shadow gear.
+  defp grant_opts(char_id, grant, item_def, now) do
     %{
-      identify: if(grant.identify?, do: 1, else: 0),
+      identify:
+        if(grant.identify? or ItemDefinition.identified_on_obtain?(item_def), do: 1, else: 0),
       refine: grant.refine,
       enchant_grade: grant.grade,
       bound: bound_value(grant.bound),

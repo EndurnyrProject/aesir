@@ -117,10 +117,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   Whether a newly obtained copy of this item starts identified.
 
   Weapons, armour, pet armour and shadow gear arrive unidentified; every other
-  type is identified.
+  type is identified. Accepts a definition or any map carrying its `:type`, so
+  catalog preview shapes read the same rule.
   """
-  @spec identified_on_obtain?(t()) :: boolean()
-  def identified_on_obtain?(%__MODULE__{type: type}),
+  @spec identified_on_obtain?(t() | %{required(:type) => item_type()}) :: boolean()
+  def identified_on_obtain?(%{type: type}),
     do: type not in [:weapon, :armor, :pet_armor, :shadow_gear]
 
   @doc """

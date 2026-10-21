@@ -147,6 +147,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       assert NaiveDateTime.diff(expiry, before, :second) in 599..601
     end
 
+    test "identifies an item-group grant by item type unless the grant asks otherwise", %{
+      character: char,
+      stats: stats
+    } do
+      grants = [grant(@potion, identify?: false), grant(@sword, identify?: true)]
+
+      assert {:ok, inventory} = Inventory.give_many(char.id, %{}, stats, grants)
+
+      assert %{
+               0 => %InventoryItem{nameid: @potion, identify: 1},
+               1 => %InventoryItem{nameid: @sword, identify: 1}
+             } = inventory
+    end
+
     test "rejects an overweight batch without writing", %{character: char, stats: stats} do
       tiny = put_in(stats.base_stats.str, 1)
       sword = def!(@sword)

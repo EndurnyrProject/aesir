@@ -367,7 +367,22 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
       card3: card4
     }
 
-    apply_op(ctx, {:give_item2, item, qty, attrs})
+    apply_op(ctx, {:give_item2, item, qty, given_attributes(item, attrs)})
+  end
+
+  # rAthena's `getitem2` keeps the script's identify flag only for the three
+  # gear types it can create unidentified; every other type (pet armour and pet
+  # eggs included) is forced identified, so a script cannot hand out an
+  # unidentified potion.
+  @spec given_attributes(integer(), map()) :: map()
+  defp given_attributes(item, attrs) do
+    case ItemManagement.get_item_by_id(item) do
+      {:ok, %ItemDefinition{type: type}} ->
+        if type in [:weapon, :armor, :shadow_gear], do: attrs, else: Map.put(attrs, :identify, 1)
+
+      {:error, _reason} ->
+        attrs
+    end
   end
 
   @doc """
