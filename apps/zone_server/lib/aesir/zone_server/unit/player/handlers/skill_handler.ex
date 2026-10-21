@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
+  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -73,6 +74,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @cast_cancel_id 275
   @encore_id 305
   @brandish_spear 57
+  @auto_counter 61
   @combo_followup_ids [271, 272, 273, 371, 372]
 
   @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer() | tuple()) ::
@@ -1947,15 +1949,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # A completed skill use, ordinary or automatic: shows the skill to onlookers
   # and arms the caster's on-skill procs for a no-damage or ground skill. A
   # damage skill arms them per damaging hit from the combat layer instead.
+  # The forge and mineral skills open the production menu instead of being cast:
+  # the reference never casts them (their rows declare no target type, so its
+  # skill-use packets drop the request) and reaches its production list from the
+  # hammer and furnace items instead. This client asks for the menu with a skill
+  # cast (`ForgeSkill.skill_ids/0`), and that request stays silent: no skill
+  # visual and no on-skill proc, as the reference's absent cast has neither.
   defp broadcast_skill_use(game_state, skill_id, level, target) do
-    broadcast_skill_effect(game_state, skill_id, level, target)
-    CastEnd.complete(game_state, skill_id, target)
+    if skill_id in ForgeSkill.skill_ids() do
+      :ok
+    else
+      broadcast_skill_effect(game_state, skill_id, level, target)
+      CastEnd.complete(game_state, skill_id, target)
+    end
   end
 
   defp broadcast_skill_effect(_game_state, _skill_id, _level, {:ground, _x, _y}), do: :ok
 
   # Brandish Spear is a no-damage cast whose only visuals are its hits.
   defp broadcast_skill_effect(_game_state, @brandish_spear, _level, _target), do: :ok
+
+  # Auto Counter's cast starts no visual of its own: its stance effect reaches
+  # onlookers 100 ms later, sent by the skill module itself.
+  defp broadcast_skill_effect(_game_state, @auto_counter, _level, _target), do: :ok
 
   # A no-damage cast shows the skill's effect; a damage cast's visuals are its hits.
   defp broadcast_skill_effect(game_state, skill_id, level, target) do

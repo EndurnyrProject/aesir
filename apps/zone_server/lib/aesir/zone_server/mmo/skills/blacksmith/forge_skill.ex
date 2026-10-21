@@ -7,6 +7,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill do
   Weaponry Research level, 1% per Oridecon Research level for level 3 weapons,
   minus 25% for an elemental stone and 15% per Star Crumb, plus the anvil bonus.
   Renewal and pre-renewal agree.
+
+  These skills declare no target type in the reference skill database, so a
+  client skill-use of one is refused before any cast happens: neither the
+  targeted nor the ground packet accepts it. The reference opens its production
+  list from the hammer and furnace items' `produce` script instead, with the
+  trigger selecting the ore, stone or weapon tier, and these rows only gate the
+  recipes (the learned smithing skill and its level) and feed the success
+  chance. Aesir has no production script yet, so this menu is the client's entry
+  point, the skills declare `target_type: :self` to receive the request, and the
+  requesting cast stays silent: `SkillHandler` sends no skill visual and arms no
+  on-skill proc for it, as the reference's absent cast produces neither.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge
@@ -16,6 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @craft_skill_ids [94, 95, 96] ++ Enum.to_list(98..104)
+
+  @doc "Every skill that stages this production menu."
+  @spec skill_ids() :: [integer()]
+  def skill_ids, do: @craft_skill_ids
 
   @doc "Stages the products available at the cast skill level."
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::

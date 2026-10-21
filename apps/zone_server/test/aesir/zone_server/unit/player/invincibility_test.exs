@@ -169,6 +169,14 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
       assert ended?(Invincibility.end_on_request(started, {:skill, @fire_bolt}))
     end
 
+    test "a forge request keeps it, since it only asks for the production menu", %{
+      started: started
+    } do
+      refute ended?(Invincibility.end_on_request(started, {:skill, 98}))
+      refute ended?(Invincibility.end_on_request(started, {:skill, 94}))
+      assert ended?(Invincibility.end_on_request(started, {:skill, @first_aid}))
+    end
+
     test "an item skill ends it unless it targets the user", %{started: started} do
       self_item = %{started | pending_item_skill: item_skill(@first_aid)}
       refute ended?(Invincibility.end_on_request(self_item, {:skill, @first_aid}))

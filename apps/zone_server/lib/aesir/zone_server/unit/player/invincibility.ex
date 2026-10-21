@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
+  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
@@ -191,13 +192,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
   defp ends_on?(state, {:skill, skill_id}) do
     item? = item_skill?(state, skill_id)
 
-    target_type(skill_id) not in [nil, :ground, :passive] and
-      skill_act_allowed?(state, skill_id) and not sitting?(state) and
-      not skill_not_ok?(state, skill_id) and
-      skill_ready?(state, skill_id, item?, [@cast_cancel]) and
-      not basilica_locked?(state, skill_id) and
-      not menu_open?(state) and
-      not (item? and target_type(skill_id) == :self)
+    not forge_request?(skill_id) and
+      target_type(skill_id) not in [nil, :ground, :passive] and
+      skill_request_allowed?(state, skill_id, item?)
   end
 
   defp ends_on?(state, {:ground_skill, skill_id}) do
@@ -274,6 +271,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
 
   defp npc_near?(%PlayerState{map_name: map_name, x: x, y: y}),
     do: Proximity.npc_near?(map_name, x, y)
+
+  # The request must be one the player could make right now: awake, standing,
+  # not map-restricted or on cooldown, not locked by Basilica, with no menu open
+  # and, for an item skill, not aimed at the player.
+  defp skill_request_allowed?(state, skill_id, item?) do
+    skill_act_allowed?(state, skill_id) and not sitting?(state) and
+      not skill_not_ok?(state, skill_id) and
+      skill_ready?(state, skill_id, item?, [@cast_cancel]) and
+      not basilica_locked?(state, skill_id) and
+      not menu_open?(state) and
+      not (item? and target_type(skill_id) == :self)
+  end
+
+  # A forge request only asks for the production menu: the reference refuses the
+  # skill-use packet outright, before its spawn protection would end.
+  defp forge_request?(skill_id), do: skill_id in ForgeSkill.skill_ids()
 
   defp self_skill?(skill_id), do: target_type(skill_id) == :self
 
