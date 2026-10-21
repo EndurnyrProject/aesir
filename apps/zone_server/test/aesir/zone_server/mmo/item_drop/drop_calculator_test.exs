@@ -116,6 +116,34 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
     end
   end
 
+  describe "fixed-item-drop monsters" do
+    setup do
+      stub(LevelPenalty, :drop, fn _, _ -> 0 end)
+      :ok
+    end
+
+    test "drop_rate/7 keeps the fixed rate instead of applying the level penalty" do
+      # The penalty floors at 1; the exemption leaves the base rate alone.
+      assert DropCalculator.drop_rate(4_000, 0, 1, 100, 0, :common) == 1
+
+      assert DropCalculator.drop_rate(4_000, 0, 1, 100, 0, :common, fixed_item_drop: true) ==
+               4_000
+    end
+
+    test "roll/9 keeps a guaranteed slot guaranteed under the level penalty" do
+      stub(ItemManagement, :get_item_by_aegis, fn "Red_Potion" ->
+        {:ok, %{id: 501, type: :healing}}
+      end)
+
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 300, 300)})
+
+      assert [{501, 1, 150, 150, true}] =
+               DropCalculator.roll([drop(10_000)], 0, 1, 100, 0, "prontera", 150, 150,
+                 fixed_item_drop: true
+               )
+    end
+  end
+
   describe "roll/8" do
     setup do
       stub(LevelPenalty, :drop, fn _, _ -> 100 end)

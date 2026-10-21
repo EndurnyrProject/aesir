@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -154,6 +155,61 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
       MvpReward.grant(%{1 => 100}, mob(mvp_exp: 1000), "gld_dun03", 10, 10, ownership())
 
+      assert_receive {:progression, {:mob_kill_exp, 500, 0, _race, _mob_class}}
+    end
+  end
+
+  describe "grant/6 fixed-item-drop monsters" do
+    test "skips the drop penalty but keeps the mvp experience penalty" do
+      test = self()
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+
+      stub(LevelPenalty, :mvp_exp, fn 81, 99 -> 50 end)
+
+      stub(LevelPenalty, :mvp_drop, fn _mob_level, _base_level ->
+        send(test, :drop_penalty_read)
+        0
+      end)
+
+      stub_items()
+      register_player(1, base_level: 99, pid: fake_session({:ok, %{}}))
+
+      MvpReward.grant(
+        %{1 => 100},
+        mob(mvp_exp: 700, mvp_drops: [drop("FIRST")], modes: [:fixed_item_drop]),
+        "gld_dun03",
+        10,
+        10,
+        ownership()
+      )
+
+      refute_received :drop_penalty_read
+      assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
+      assert_receive {:progression, {:mob_kill_exp, 350, 0, _race, _mob_class}}
+    end
+  end
+
+  describe "grant/6 MVP loot restriction" do
+    test "a NoMvpLoot map grants no MVP item while its experience still lands" do
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+      reject(&Coordinator.drop_items/4)
+      reject(&Coordinator.drop_items/5)
+      stub_items()
+      register_player(1, pid: fake_session({:ok, %{}}))
+
+      :ok = MapFlags.set_runtime("gld_dun03", :nomvploot, true)
+      on_exit(fn -> MapFlags.clear_runtime("gld_dun03", :nomvploot) end)
+
+      MvpReward.grant(
+        %{1 => 100},
+        mob(mvp_exp: 500, mvp_drops: [drop("FIRST")]),
+        "gld_dun03",
+        10,
+        10,
+        ownership()
+      )
+
+      refute_receive {:session_call, _msg}
       assert_receive {:progression, {:mob_kill_exp, 500, 0, _race, _mob_class}}
     end
   end

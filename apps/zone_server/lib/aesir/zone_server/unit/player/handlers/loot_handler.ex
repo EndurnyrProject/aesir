@@ -186,7 +186,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
 
     items =
       drops
-      |> DropCalculator.roll(luk, base_level, mob_level, drop_bonus, map, x, y)
+      |> DropCalculator.roll(luk, base_level, mob_level, drop_bonus, map, x, y,
+        fixed_item_drop: Map.get(payload, :fixed_item_drop?, false)
+      )
       |> Kernel.++(equip_drops)
       |> maybe_discover_ore(
         stats.progression.learned_skills,

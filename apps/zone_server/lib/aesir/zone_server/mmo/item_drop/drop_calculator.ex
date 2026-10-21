@@ -7,7 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   (no-op today), the caller-supplied `drop_bonus` (e.g. Bubble Gum's SC_ITEMBOOST),
   the 90% drop-rate cap (only for items not already above it), the renewal
   level-penalty modifier, and the configured per-category floor/ceiling
-  (`Config.item_drop_bounds/1`, default 1..10000). Items that pass are scattered
+  (`Config.item_drop_bounds/1`, default 1..10000). A monster whose definition
+  carries the fixed-item-drop mode is exempt from the level penalty: its drop
+  rates stay at their fixed values. Items that pass are scattered
   onto walkable cells around the death position (death cell first, then the
   rAthena SE -> W -> N cycle). Placement is guaranteed: a scatter cell whose
   spiral search finds no traversable cell falls back to the death cell, and
@@ -42,6 +44,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   @doc """
   Rolls a mob's drop table and returns the items that dropped, each scattered to
   a walkable cell around `{x, y}`.
+
+  `opts` accepts `:fixed_item_drop` (default `false`): a monster whose
+  definition carries the fixed-item-drop mode keeps its fixed rates and is
+  never scaled by the level penalty.
   """
   @spec roll(
           [MobDrop.t()],
@@ -51,11 +57,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
           integer(),
           String.t(),
           integer(),
-          integer()
+          integer(),
+          keyword()
         ) :: [drop()]
-  def roll(drops, killer_luk, killer_base_level, mob_level, drop_bonus, map_name, x, y) do
+  # One positional argument per source ingredient plus the optional roll flags;
+  # folding them into a wrapper would only move the fields, not the contract.
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def roll(
+        drops,
+        killer_luk,
+        killer_base_level,
+        mob_level,
+        drop_bonus,
+        map_name,
+        x,
+        y,
+        opts \\ []
+      ) do
     drops
-    |> Enum.flat_map(&roll_slot(&1, killer_luk, killer_base_level, mob_level, drop_bonus))
+    |> Enum.flat_map(&roll_slot(&1, killer_luk, killer_base_level, mob_level, drop_bonus, opts))
     |> scatter(map_name, x, y)
   end
 
@@ -148,6 +168,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   after the server per-category rate multiplier, the LUK hook, the caller-supplied
   drop bonus, the 90% cap, the renewal level penalty, and the per-category
   floor/ceiling clamp.
+
+  `opts` accepts `:fixed_item_drop` (default `false`), which skips the level
+  penalty for a fixed-item-drop monster.
   """
   @spec drop_rate(
           integer(),
@@ -155,26 +178,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
           integer(),
           integer(),
           integer(),
-          :common | :heal | :use | :equip | :card
+          :common | :heal | :use | :equip | :card,
+          keyword()
         ) :: integer()
-  def drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus, category) do
+  def drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus, category, opts \\ []) do
     base
     |> apply_rate(Config.item_drop_rate(category))
     |> apply_luk_bonus(killer_luk)
     |> apply_rate(100 + drop_bonus)
     |> cap_rate(base)
-    |> apply_rate(LevelPenalty.drop(mob_level, killer_base_level))
+    |> apply_level_penalty(mob_level, killer_base_level, opts)
     |> clamp_rate(category)
   end
 
-  @spec roll_slot(MobDrop.t(), integer(), integer(), integer(), integer()) ::
+  @spec roll_slot(MobDrop.t(), integer(), integer(), integer(), integer(), keyword()) ::
           [{integer(), integer(), boolean()}]
   defp roll_slot(
          %MobDrop{item: aegis, rate: base},
          killer_luk,
          killer_base_level,
          mob_level,
-         drop_bonus
+         drop_bonus,
+         opts
        ) do
     case ItemManagement.get_item_by_aegis(aegis) do
       {:ok, %{id: nameid, type: type}} ->
@@ -185,7 +210,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
             killer_base_level,
             mob_level,
             drop_bonus,
-            Config.drop_category(type)
+            Config.drop_category(type),
+            opts
           )
 
         identified = type not in [:weapon, :armor]
@@ -193,6 +219,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
 
       {:error, _reason} ->
         []
+    end
+  end
+
+  # The level penalty reads the monster definition's fixed-item-drop mode and
+  # leaves the rate alone when it is set (the modifier resolves to 100).
+  @spec apply_level_penalty(integer(), integer(), integer(), keyword()) :: integer()
+  defp apply_level_penalty(rate, mob_level, killer_base_level, opts) do
+    if Keyword.get(opts, :fixed_item_drop, false) do
+      rate
+    else
+      apply_rate(rate, LevelPenalty.drop(mob_level, killer_base_level))
     end
   end
 

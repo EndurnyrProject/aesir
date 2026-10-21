@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.Endure
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
@@ -380,6 +381,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   defp handle_death(state, attacker_ref, reward_owner_id, kill_blow, kill_credit) do
     exp_bonus = kill_exp_bonus(state.instance_id)
+    drops_suppressed? = drops_suppressed?(state)
 
     # Mark as dead and publish before announcing, so observers reacting to
     # the death already read a dead snapshot.
@@ -395,8 +397,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     SpawnView.notify_despawn(updated_state)
     Lifecycle.publish_death(:mob, state.instance_id, state.map_name, kill_credit)
 
-    if state.no_drops or not is_integer(reward_owner_id), do: Looting.drop_on_death(state)
-    announce_kill(state, attacker_ref, reward_owner_id, kill_blow, exp_bonus)
+    if drops_suppressed? or not is_integer(reward_owner_id),
+      do: Looting.drop_on_death(state)
+
+    announce_kill(state, attacker_ref, reward_owner_id, kill_blow, exp_bonus, drops_suppressed?)
     Slaves.master_died(updated_state)
 
     # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
@@ -427,14 +431,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   # session when one exists. A rootless final source still completes shared
   # rewards but has no session to receive kill-local rewards. `exp_bonus` is a
   # percent applied to both rate-scaled amounts before they are shared.
-  defp announce_kill(_state, nil, _reward_owner_id, _kill_blow, _exp_bonus), do: :ok
+  defp announce_kill(_state, nil, _reward_owner_id, _kill_blow, _exp_bonus, _drops_suppressed?),
+    do: :ok
 
   defp announce_kill(
          %MobState{mob_data: mob_data, aggro_list: aggro_list} = state,
          attacker_ref,
          reward_owner_id,
          kill_blow,
-         exp_bonus
+         exp_bonus,
+         drops_suppressed?
        ) do
     ownership = LootOwnership.determine_typed(state)
 
@@ -456,7 +462,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       QuestHuntCredit.credit(reward_owner_id, mob_data.id, state.map_name, {state.x, state.y})
       announce_kill_gain(reward_owner_id, attacker_ref, mob_data, kill_blow)
 
-      unless state.no_drops do
+      unless drops_suppressed? do
         PubSub.broadcast(
           Aesir.PubSub,
           "player:#{reward_owner_id}",
@@ -468,6 +474,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
               looted_items: state.looted_items,
               mob_level: mob_data.level,
               mob_race: mob_data.race,
+              fixed_item_drop?: :fixed_item_drop in (mob_data.modes || []),
               map: state.map_name,
               x: state.x,
               y: state.y,
@@ -479,6 +486,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       end
     end
   end
+
+  # A dead monster rolls no drops when its own rewards are suppressed (a
+  # player summon) or when the map forbids monster loot. Its carried loot is
+  # returned to the floor either way, by `Looting.drop_on_death/1`.
+  @spec drops_suppressed?(MobState.t()) :: boolean()
+  defp drops_suppressed?(%MobState{no_drops: no_drops, map_name: map_name}),
+    do: no_drops or MapFlags.get(map_name, :nomobloot)
 
   # Grants the killer the on-kill HP/SP gain equipment bonuses, decoupled from
   # drops so a no-drop mob still heals its killer. Only weapon/magic blows are

@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   use Mimic
 
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -141,6 +143,48 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     refute_receive {:loot, {:mob_killed, _payload}}
   end
 
+  test "an event monster's payload carries its fixed-item-drop mode" do
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
+
+    :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
+
+    state =
+      build_mob_state(hp: 1, max_hp: 1000, drops: [], modes: [:fixed_item_drop])
+
+    {:noreply, _state} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
+
+    assert_receive {:loot, {:mob_killed, payload}}
+    assert payload.fixed_item_drop?
+  end
+
+  test "a NoMobLoot map suppresses drop rolling but still returns carried loot" do
+    test = self()
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
+
+    stub(Coordinator, :drop_items, fn map, items, x, y, opts ->
+      send(test, {:floor, map, items, x, y, opts})
+      :ok
+    end)
+
+    :ok = MapFlags.set_runtime("prontera", :nomobloot, true)
+    on_exit(fn -> MapFlags.clear_runtime("prontera", :nomobloot) end)
+    :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
+
+    state =
+      build_mob_state(hp: 1, max_hp: 1000, drops: [%MobDrop{item: "Red_Potion", rate: 10_000}])
+
+    state = %{state | looted_items: [GroundItem.new(501, 3, 100, 100)]}
+
+    {:noreply, _state} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
+
+    refute_receive {:loot, {:mob_killed, _payload}}
+    assert_receive {:floor, "prontera", [{501, 3, _x, _y, true}], 100, 100, _opts}
+    # The gate covers the drop pools only: kill credit still reaches the killer.
+    assert_receive {:loot, {:quest_kill, 1001}}
+  end
+
   test "a mob death with no killer broadcasts nothing" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
@@ -183,6 +227,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
       base_exp: 100,
       job_exp: 50,
       drops: opts[:drops],
+      modes: Keyword.get(opts, :modes, []),
       hp: opts[:max_hp],
       sp: 0,
       stats: %{str: 40, agi: 30, vit: 50, int: 20, dex: 35, luk: 15},

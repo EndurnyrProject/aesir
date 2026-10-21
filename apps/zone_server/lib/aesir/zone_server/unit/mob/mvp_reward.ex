@@ -16,13 +16,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   The winner receives base-only MVP experience (the job component is always
   zero) and at most one MVP drop: the entries are rolled **in order and the
   roll stops at the first success**. Both are scaled by the MVP level-penalty
-  tables.
+  tables, except that a monster whose definition carries the fixed-item-drop
+  mode keeps its fixed MVP drop rates: only the drop penalty is exempt, never
+  the MVP experience penalty. A map flagged as forbidding MVP loot grants no
+  MVP item at all, while its experience still lands.
   """
 
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -36,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   alias Phoenix.PubSub
 
   @max_rate 10_000
+  @no_penalty 100
   @task_supervisor Aesir.ZoneServer.TaskSupervisor
 
   @typep winner ::
@@ -138,21 +143,29 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
         ) :: :ok
   defp grant_drop(
          winner,
-         %MobDefinition{mvp_drops: drops, level: level},
+         %MobDefinition{mvp_drops: drops, level: level, modes: modes},
          map_name,
          x,
          y,
          ownership
        ) do
-    case roll(drops, level, base_level(winner, level)) do
-      nil -> :ok
-      nameid -> deliver(winner, nameid, map_name, x, y, ownership)
+    fixed_item_drop? = :fixed_item_drop in (modes || [])
+
+    if MapFlags.get(map_name, :nomvploot) do
+      :ok
+    else
+      case roll(drops, level, base_level(winner, level), fixed_item_drop?) do
+        nil -> :ok
+        nameid -> deliver(winner, nameid, map_name, x, y, ownership)
+      end
     end
   end
 
-  @spec roll([MobDrop.t()], integer(), integer()) :: non_neg_integer() | nil
-  defp roll(drops, mob_level, base_level) do
-    penalty = LevelPenalty.mvp_drop(mob_level, base_level)
+  @spec roll([MobDrop.t()], integer(), integer(), boolean()) :: non_neg_integer() | nil
+  defp roll(drops, mob_level, base_level, fixed_item_drop?) do
+    penalty =
+      if fixed_item_drop?, do: @no_penalty, else: LevelPenalty.mvp_drop(mob_level, base_level)
+
     server_rate = Config.item_drop_rate(:mvp)
     {min_rate, max_rate} = Config.item_drop_bounds(:mvp)
 

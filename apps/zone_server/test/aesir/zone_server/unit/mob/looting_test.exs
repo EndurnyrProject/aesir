@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.LootingTest do
 
   test "the reward owner places normal drops before retained loot in one map delivery" do
     Mimic.copy(DropCalculator)
-    stub(DropCalculator, :roll, fn _, _, _, _, _, _, _, _ -> [{502, 1, 100, 100, true}] end)
+    stub(DropCalculator, :roll, fn _, _, _, _, _, _, _, _, _ -> [{502, 1, 100, 100, true}] end)
     parent = self()
 
     stub(Coordinator, :drop_items, fn "prontera", items, 100, 100 ->

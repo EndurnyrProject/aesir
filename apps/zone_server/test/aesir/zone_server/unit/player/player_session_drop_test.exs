@@ -82,11 +82,49 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     rolled = [{501, 1, 200, 90, true}]
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+
+    expect(DropCalculator, :roll, fn ^drops,
+                                     7,
+                                     50,
+                                     50,
+                                     0,
+                                     "morocc",
+                                     200,
+                                     90,
+                                     [fixed_item_drop: false] ->
+      rolled
+    end)
+
     expect(Coordinator, :drop_items, fn "morocc", ^rolled, 200, 90 -> :ok end)
 
     {:noreply, _state} =
       PlayerSession.handle_info({:loot, {:mob_killed, payload(drops)}}, state())
+  end
+
+  test "threads a fixed-item-drop monster's flag into the roll" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
+
+    expect(DropCalculator, :roll, fn ^drops,
+                                     7,
+                                     50,
+                                     50,
+                                     0,
+                                     "morocc",
+                                     200,
+                                     90,
+                                     [fixed_item_drop: true] ->
+      []
+    end)
+
+    reject(&Coordinator.drop_items/4)
+
+    {:noreply, _state} =
+      PlayerSession.handle_info(
+        {:loot, {:mob_killed, Map.put(payload(drops), :fixed_item_drop?, true)}},
+        state()
+      )
   end
 
   test "threads ownership through to the coordinator" do
@@ -96,7 +134,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     owned_payload = Map.merge(payload(drops), %{ownership: ownership, boss?: true})
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+
+    expect(DropCalculator, :roll, fn ^drops,
+                                     7,
+                                     50,
+                                     50,
+                                     0,
+                                     "morocc",
+                                     200,
+                                     90,
+                                     [fixed_item_drop: false] ->
+      rolled
+    end)
 
     expect(Coordinator, :drop_items, fn "morocc",
                                         ^rolled,
@@ -115,7 +164,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     rolled = [{501, 1, 200, 90, true}]
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
-    stub(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+
+    stub(DropCalculator, :roll, fn ^drops,
+                                   7,
+                                   50,
+                                   50,
+                                   0,
+                                   "morocc",
+                                   200,
+                                   90,
+                                   [fixed_item_drop: false] ->
+      rolled
+    end)
+
     reject(&OreTable.entries/0)
     expect(Coordinator, :drop_items, fn "morocc", ^rolled, 200, 90 -> :ok end)
 
@@ -129,7 +190,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     expected = rolled ++ [{700, 1, 200, 90, true}]
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
-    stub(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+
+    stub(DropCalculator, :roll, fn ^drops,
+                                   7,
+                                   50,
+                                   50,
+                                   0,
+                                   "morocc",
+                                   200,
+                                   90,
+                                   [fixed_item_drop: false] ->
+      rolled
+    end)
+
     stub(OreTable, :entries, fn -> [{700, 10_000}] end)
     expect(Coordinator, :drop_items, fn "morocc", ^expected, 200, 90 -> :ok end)
 
@@ -147,7 +220,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     typed_payload = Map.put(payload(drops), :final_source, {:homunculus, 20})
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+
+    expect(DropCalculator, :roll, fn ^drops,
+                                     7,
+                                     50,
+                                     50,
+                                     0,
+                                     "morocc",
+                                     200,
+                                     90,
+                                     [fixed_item_drop: false] ->
+      rolled
+    end)
+
     reject(&OreTable.entries/0)
     expect(Coordinator, :drop_items, fn "morocc", ^rolled, 200, 90 -> :ok end)
 
@@ -164,7 +249,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     expected = [{701, 1, 200, 90, true}]
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
-    stub(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> [] end)
+
+    stub(DropCalculator, :roll, fn ^drops,
+                                   7,
+                                   50,
+                                   50,
+                                   0,
+                                   "morocc",
+                                   200,
+                                   90,
+                                   [fixed_item_drop: false] ->
+      []
+    end)
+
     stub(OreTable, :entries, fn -> [{700, 1}, {701, 5_000}] end)
     expect(Coordinator, :drop_items, fn "morocc", ^expected, 200, 90 -> :ok end)
 
@@ -186,7 +283,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{drop_rate: 100} end)
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 100, "morocc", 200, 90 -> [] end)
+
+    expect(DropCalculator, :roll, fn ^drops,
+                                     7,
+                                     50,
+                                     50,
+                                     100,
+                                     "morocc",
+                                     200,
+                                     90,
+                                     [fixed_item_drop: false] ->
+      []
+    end)
+
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} =
@@ -199,7 +308,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     race_payload = Map.put(payload(drops), :mob_race, :brute)
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{drop_rate: 100} end)
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 150, "morocc", 200, 90 -> [] end)
+
+    expect(DropCalculator, :roll, fn ^drops,
+                                     7,
+                                     50,
+                                     50,
+                                     150,
+                                     "morocc",
+                                     200,
+                                     90,
+                                     [fixed_item_drop: false] ->
+      []
+    end)
+
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} =
@@ -215,7 +336,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     race_payload = Map.put(payload(drops), :mob_race, :demon)
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{drop_rate: 100} end)
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 130, "morocc", 200, 90 -> [] end)
+
+    expect(DropCalculator, :roll, fn ^drops,
+                                     7,
+                                     50,
+                                     50,
+                                     130,
+                                     "morocc",
+                                     200,
+                                     90,
+                                     [fixed_item_drop: false] ->
+      []
+    end)
+
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} =
@@ -228,7 +361,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
   test "an empty roll does not call the coordinator" do
     drops = [%MobDrop{item: "Red_Potion", rate: 1}]
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
-    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> [] end)
+
+    expect(DropCalculator, :roll, fn ^drops,
+                                     7,
+                                     50,
+                                     50,
+                                     0,
+                                     "morocc",
+                                     200,
+                                     90,
+                                     [fixed_item_drop: false] ->
+      []
+    end)
+
     reject(&Coordinator.drop_items/4)
 
     {:noreply, _state} =
