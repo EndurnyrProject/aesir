@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   counterpart, so their protection lookup yields none.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   @type decision :: {:self, :weapon} | {:target, slot()}
   @type target :: {:player, integer(), Stats.t()} | {atom(), term()}
   @type rng :: (pos_integer() -> pos_integer())
+  @type context :: %{wearer: Stats.t() | Combatant.t(), attacker: {atom(), integer()} | nil}
 
   @weapon_break_immune_types ~w(
     fist one_handed_axe two_handed_axe mace two_handed_mace staff two_handed_staff book huuma
@@ -52,27 +54,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   }
 
   @default_rng &:rand.uniform/1
+  @overthrust_bonus 10
 
   @doc """
   Resolves natural self-weapon break and target weapon/armor break rates for a
   confirmed weapon hit.
 
-  The target rates come from the attacker's equipment; the self-break uses the
-  configured natural rate and the attacker's own weapon, prevention and, for a
-  combatant (whose unit id is known), Chemical Protection (Weapon).
+  The target rates come from the wearer's equipment; the self-break uses the
+  configured natural rate plus the pre-renewal Over Thrust terms of the
+  **attacking unit's** status container (which stays the summon's for a summon's
+  hit), and the wearer's own weapon, prevention and Chemical Protection
+  (Weapon). A bare wearer is its own attacking unit.
   """
-  @spec resolve(Stats.t() | Combatant.t(), target(), keyword()) :: [decision()]
-  def resolve(wearer, target, opts \\ [])
-      when is_struct(wearer, Stats) or is_struct(wearer, Combatant) do
+  @spec resolve(context() | Stats.t() | Combatant.t(), target(), keyword()) :: [decision()]
+  def resolve(wearer_or_context, target, opts \\ [])
+
+  def resolve(%{wearer: wearer, attacker: attacker}, target, opts) do
     rng = Keyword.get(opts, :rng, @default_rng)
 
     decisions(
       wearer,
+      self_break_bonus(attacker),
       equipment_modifier(wearer, :break_weapon_rate),
       equipment_modifier(wearer, :break_armor_rate),
       target,
       rng
     )
+  end
+
+  def resolve(wearer, target, opts)
+      when is_struct(wearer, Stats) or is_struct(wearer, Combatant) do
+    resolve(%{wearer: wearer, attacker: unit_ref(wearer)}, target, opts)
   end
 
   @doc """
@@ -102,10 +114,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     end
   end
 
-  @spec decisions(Stats.t() | Combatant.t(), integer(), integer(), target(), rng()) ::
+  @spec decisions(Stats.t() | Combatant.t(), integer(), integer(), integer(), target(), rng()) ::
           [decision()]
-  defp decisions(wearer, weapon_rate, armor_rate, target, rng) do
-    [self_weapon(wearer, rng) | target_decisions(weapon_rate, armor_rate, target, rng)]
+  defp decisions(wearer, self_bonus, weapon_rate, armor_rate, target, rng) do
+    [
+      self_weapon(wearer, self_bonus, rng)
+      | target_decisions(weapon_rate, armor_rate, target, rng)
+    ]
     |> Enum.reject(&is_nil/1)
   end
 
@@ -118,14 +133,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     |> Enum.reject(&is_nil/1)
   end
 
-  @spec self_weapon(Stats.t() | Combatant.t(), rng()) :: {:self, :weapon} | nil
-  defp self_weapon(wearer, rng) do
-    rate = apply_stat_prevention(Config.natural_break_rate(), wearer, :weapon)
+  @spec self_weapon(Stats.t() | Combatant.t(), integer(), rng()) :: {:self, :weapon} | nil
+  defp self_weapon(wearer, self_bonus, rng) do
+    rate = apply_stat_prevention(Config.natural_break_rate() + self_bonus, wearer, :weapon)
 
     if weapon_breakable?(wearer) and not slot_chemical_protected?(wearer_id(wearer), :weapon) and
          broke?(rate, rng),
        do: {:self, :weapon}
   end
+
+  # Pre-renewal only: each held Over Thrust status adds 10 to the natural rate.
+  # The statuses are read from the attacking unit's container, which stays the
+  # summon's for a summon's hit, so a master's Over Thrust never leaks into its
+  # summon's self break.
+  @spec self_break_bonus({atom(), integer()} | nil) :: non_neg_integer()
+  defp self_break_bonus({unit_type, unit_id}) when is_integer(unit_id) do
+    if GameMode.mode() == :pre_renewal do
+      [:sc_overthrust, :sc_maxoverthrust]
+      |> Enum.count(&StatusStorage.has_status?(unit_type, unit_id, &1))
+      |> Kernel.*(@overthrust_bonus)
+    else
+      0
+    end
+  end
+
+  defp self_break_bonus(_attacker), do: 0
+
+  @spec unit_ref(Stats.t() | Combatant.t()) :: {atom(), integer()} | nil
+  defp unit_ref(%Combatant{unit_type: type, unit_id: id}), do: {type, id}
+  defp unit_ref(%Stats{}), do: nil
 
   @spec wearer_id(Stats.t() | Combatant.t()) :: integer() | nil
   defp wearer_id(%Combatant{unit_id: id}), do: id

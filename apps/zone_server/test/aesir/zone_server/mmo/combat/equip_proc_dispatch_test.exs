@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.PolymorphPool
   alias Aesir.ZoneServer.Mmo.Skill.Origin
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -695,6 +696,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
                )
 
       assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
+    end
+
+    test "a summon's self break reads the summon's Over Thrust, not its master's" do
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+      stub_master(break_wearer(%{}))
+      StatusStorage.apply_status(:player, 1001, :sc_overthrust)
+      reject(&PlayerSession.break_equip/2)
+
+      assert :ok =
+               EquipProcDispatch.dispatch_breaks(
+                 summon(1001),
+                 player_target(),
+                 hit(),
+                 melee(),
+                 nil
+               )
     end
 
     test "a monster victim takes no break" do

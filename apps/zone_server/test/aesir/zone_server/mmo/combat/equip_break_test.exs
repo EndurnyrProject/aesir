@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
@@ -135,6 +136,50 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
                player_target(),
                rng: worst_roll()
              ) == [{:self, :weapon}, {:target, :weapon}, {:target, :armor}]
+    end
+
+    test "pre-renewal Over Thrust adds 10 to the natural rate before prevention" do
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+      stub(Config, :natural_break_rate, fn -> 0 end)
+      StatusStorage.apply_status(:player, 1001, :sc_overthrust)
+
+      assert EquipBreak.resolve(wearer(%{}), player_target(), rng: best_roll()) == [
+               {:self, :weapon}
+             ]
+    end
+
+    test "Over Thrust Max adds another 10 and both resolve one self break" do
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+      stub(Config, :natural_break_rate, fn -> 0 end)
+      StatusStorage.apply_status(:player, 1001, :sc_overthrust)
+      StatusStorage.apply_status(:player, 1001, :sc_maxoverthrust)
+
+      assert EquipBreak.resolve(wearer(%{}), player_target(), rng: best_roll()) == [
+               {:self, :weapon}
+             ]
+    end
+
+    test "renewal never adds the Over Thrust term" do
+      stub(GameMode, :mode, fn -> :renewal end)
+      stub(Config, :natural_break_rate, fn -> 0 end)
+      StatusStorage.apply_status(:player, 1001, :sc_overthrust)
+
+      assert EquipBreak.resolve(wearer(%{}), player_target(), rng: best_roll()) == []
+    end
+
+    test "the term comes from the attacking unit's statuses, not the wearer's" do
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+      stub(Config, :natural_break_rate, fn -> 0 end)
+      StatusStorage.apply_status(:player, 1001, :sc_overthrust)
+      context = %{wearer: wearer(%{}), attacker: {:mob, 5001}}
+
+      assert EquipBreak.resolve(context, player_target(), rng: best_roll()) == []
+
+      StatusStorage.apply_status(:mob, 5001, :sc_overthrust)
+
+      assert EquipBreak.resolve(context, player_target(), rng: best_roll()) == [
+               {:self, :weapon}
+             ]
     end
 
     test "Chemical Protection (Weapon) vetoes the self break before its roll" do

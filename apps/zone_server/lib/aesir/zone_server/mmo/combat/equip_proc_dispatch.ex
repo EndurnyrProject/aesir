@@ -255,15 +255,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
     if target.type != :skill_unit and break_hit?(event, attack_flag, skill_id) do
       case wearer(attacker) do
         nil -> :ok
-        wearer -> dispatch_wearer_breaks(wearer, target)
+        wearer -> dispatch_wearer_breaks(attacker, wearer, target)
       end
     end
 
     :ok
   end
 
-  defp dispatch_wearer_breaks(wearer, target) do
-    case EquipBreak.resolve(wearer, break_target(target)) do
+  defp dispatch_wearer_breaks(attacker, wearer, target) do
+    case EquipBreak.resolve(
+           %{wearer: wearer, attacker: {attacker.unit_type, attacker.unit_id}},
+           break_target(target)
+         ) do
       [] -> :ok
       decisions -> Enum.each(decisions, &dispatch_break(&1, wearer, target))
     end

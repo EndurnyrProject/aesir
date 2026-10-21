@@ -279,7 +279,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       expect(MobSession, :apply_damage, fn _pid, 350, {:player, 1001}, _metadata -> :ok end)
       expect(Passives, :after_normal_hit, fn ^player_state, _hit -> :ok end)
-      expect(EquipBreak, :resolve, fn %Combatant{unit_id: 1001}, {:mob, ^target_state} -> [] end)
+
+      expect(
+        EquipBreak,
+        :resolve,
+        fn %{wearer: %Combatant{unit_id: 1001}}, {:mob, ^target_state} -> [] end
+      )
+
       expect(StatusInterpreter, :on_dealt_damage, fn :player, 1001, _hit -> [] end)
       expect(OnHitEffects, :after_hit, fn _attacker, ^target, %{damage: 350}, _opts -> :ok end)
       expect(HpDrain, :roll, fn _attacker, 350 -> 0 end)
@@ -1531,8 +1537,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, _packet -> :ok end)
 
       stub(EquipBreak, :resolve, fn
-        %Combatant{unit_id: 1001}, {:player, 3001, _stats} -> [{:target, :weapon}]
-        _wearer, _target -> []
+        %{wearer: %Combatant{unit_id: 1001}}, {:player, 3001, _stats} -> [{:target, :weapon}]
+        _context, _target -> []
       end)
 
       capture_log(fn ->
