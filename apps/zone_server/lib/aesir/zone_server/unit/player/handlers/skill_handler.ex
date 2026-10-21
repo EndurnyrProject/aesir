@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -77,27 +78,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @auto_counter 61
   @combo_followup_ids [271, 272, 273, 371, 372]
 
-  @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer() | tuple()) ::
+  @spec handle_use_skill(SessionState.t(), integer(), non_neg_integer(), integer() | tuple()) ::
           {:noreply, SessionState.t()}
   def handle_use_skill(
-        %{pending_item_skill: %{skill_id: skill_id, level: level}} = state,
+        %{pending_item_skill: %{skill_id: skill_id, level: item_level}} = state,
         skill_id,
-        level,
+        _requested_level,
         target_id
       ) do
     target = resolve_target(state.game_state, target_id)
-    drive_item_cast(state, skill_id, level, target)
+    drive_item_cast(state, skill_id, item_level, target)
   end
 
-  def handle_use_skill(state, skill_id, level, target_id) do
-    state = maybe_cancel_combo(state, skill_id, target_id)
-    dispatch_use_skill(state, skill_id, level, target_id)
-  end
+  # A targeted request runs at its level (at least 1) capped by the player's
+  # own level in the skill, read once the request passes the session's cast
+  # gate; one that caps to 0 is dropped there without a reply.
+  def handle_use_skill(state, skill_id, level, target_id),
+    do: dispatch_use_skill(state, skill_id, max(level, 1), target_id)
 
-  defp dispatch_use_skill(%{game_state: game_state} = state, @cast_cancel_id, level, _target_id) do
+  defp dispatch_use_skill(%{game_state: game_state} = state, @cast_cancel_id, level, target_id) do
     case cast_gate(state, @cast_cancel_id, :restricted) do
       {:ok, ready_state} ->
-        cast_cancel(ready_state, level)
+        case Caster.Player.request_level(game_state, @cast_cancel_id, level) do
+          0 ->
+            {:noreply, state}
+
+          level ->
+            ready_state |> maybe_cancel_combo(@cast_cancel_id, target_id) |> cast_cancel(level)
+        end
 
       {:error, _reason} ->
         broadcast_cast_cancel(game_state)
@@ -106,7 +114,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp dispatch_use_skill(%{game_state: game_state} = state, skill_id, level, target_id) do
-    drive_cast(state, skill_id, level, resolve_target(game_state, target_id))
+    target = resolve_target(game_state, target_id)
+    locked = game_state.combat_target_id
+
+    with {:ok, ready_state} <- cast_gate(state, skill_id),
+         capped when capped > 0 <- Caster.Player.request_level(game_state, skill_id, level) do
+      ready_state
+      |> maybe_cancel_combo(skill_id, target_id)
+      |> drive_cast_after_gate(skill_id, capped, target, locked)
+    else
+      0 -> {:noreply, state}
+      {:error, reason} -> reject_cast_gate(state, skill_id, reason)
+    end
   end
 
   # Mirrors rAthena's ordering (`skills/mage/castcancel.cpp`): the requirement is
@@ -160,37 +179,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     %{game_state | stats: %{stats | current_state: current}}
   end
 
-  @spec handle_use_skill_ground(SessionState.t(), integer(), pos_integer(), integer(), integer()) ::
+  @spec handle_use_skill_ground(
+          SessionState.t(),
+          integer(),
+          non_neg_integer(),
+          integer(),
+          integer()
+        ) ::
           {:noreply, SessionState.t()}
   def handle_use_skill_ground(
-        %{pending_item_skill: %{skill_id: skill_id, level: level}} = state,
+        %{pending_item_skill: %{skill_id: skill_id, level: item_level}} = state,
         skill_id,
-        level,
+        _requested_level,
         x,
         y
       ) do
-    drive_item_cast(state, skill_id, level, {:ground, x, y})
+    drive_item_cast(state, skill_id, item_level, {:ground, x, y})
   end
 
+  # A ground request that passes the session's cast gate runs at its level
+  # capped by the player's own level in the skill, and is dropped there without
+  # a reply when the player has none.
   def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
     target = {:ground, x, y}
     locked = game_state.combat_target_id
 
-    case cast_gate(state, skill_id) do
-      {:ok, ready_state} ->
-        if SkillTextInputHandler.input_required?(skill_id) do
-          SkillTextInputHandler.stage(ready_state, skill_id, level, target)
-        else
-          ready_state = %{
-            ready_state
-            | game_state: PlayerState.cancel_combo(ready_state.game_state)
-          }
+    with {:ok, ready_state} <- cast_gate(state, skill_id),
+         capped when capped > 0 <-
+           Caster.Player.request_level(game_state, skill_id, max(level, 1)) do
+      drive_ground_request(ready_state, skill_id, min(level, capped), target, locked)
+    else
+      0 -> {:noreply, state}
+      {:error, reason} -> reject_cast_gate(state, skill_id, reason)
+    end
+  end
 
-          drive_cast_after_gate(ready_state, skill_id, level, target, locked)
-        end
-
-      {:error, reason} ->
-        reject_cast_gate(state, skill_id, reason)
+  defp drive_ground_request(ready_state, skill_id, level, target, locked) do
+    if SkillTextInputHandler.input_required?(skill_id) do
+      SkillTextInputHandler.stage(ready_state, skill_id, level, target)
+    else
+      ready_state = %{ready_state | game_state: PlayerState.cancel_combo(ready_state.game_state)}
+      drive_cast_after_gate(ready_state, skill_id, level, target, locked)
     end
   end
 

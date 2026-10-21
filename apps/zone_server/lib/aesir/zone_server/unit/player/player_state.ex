@@ -23,7 +23,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Race
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.HitStop
@@ -1037,7 +1036,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = state) do
     weapon_type = PlayerStats.weapon_type(state.stats.equipment)
-    learned = state.stats.progression.learned_skills
 
     Combatant.new!(%{
       unit_id: state.character_id,
@@ -1066,13 +1064,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       amotion: AttackSpeed.amotion_from_stats(state.stats),
       position: {state.x, state.y},
       map_name: state.map_name,
-      divine_protection_level: Learned.learned_level(learned, 22),
-      demon_bane_level: Learned.learned_level(learned, 23),
-      beast_bane_level: Learned.learned_level(learned, 126),
-      dragonology_level: Learned.learned_level(learned, 284),
-      faith_level: Learned.learned_level(learned, 248),
-      skin_temper_level: Learned.learned_level(learned, 109),
-      vulture_eye_level: Learned.learned_level(learned, 44),
+      divine_protection_level: PlayerStats.skill_level(state.stats, 22),
+      demon_bane_level: PlayerStats.skill_level(state.stats, 23),
+      beast_bane_level: PlayerStats.skill_level(state.stats, 126),
+      dragonology_level: PlayerStats.skill_level(state.stats, 284),
+      faith_level: PlayerStats.skill_level(state.stats, 248),
+      skin_temper_level: PlayerStats.skill_level(state.stats, 109),
+      vulture_eye_level: PlayerStats.skill_level(state.stats, 44),
       class: :normal,
       riding: riding?(state.option),
       equip_modifiers: state.stats.modifiers.equipment,

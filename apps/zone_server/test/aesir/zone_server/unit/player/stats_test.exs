@@ -2804,7 +2804,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert gated_again.modifiers.equipment.atk == 7
     end
 
-    test "merges active primaries in worn source order rather than row-id order" do
+    test "merges active primaries in the order their sources run rather than row-id order" do
       autobonus = fn element ->
         {:autobonus,
          %{
@@ -2834,7 +2834,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert active.equip_autobonuses[{90, 0}].source_order == {0, 0}
       assert active.equip_autobonuses[{10, 0}].source_order == {1, 0}
-      assert active.modifiers.equipment.atk_ele == :wind
+      assert active.modifiers.equipment.atk_ele == :fire
     end
 
     test "rejects an autobonus source without persistent row identity" do
@@ -2984,7 +2984,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       base = swordman(%Equipment{}, %{})
 
       both = EquipmentFold.apply_equipment_modifiers(base, [first_row, second_row])
-      assert both.equip_statuses == %{summer: {:infinite, 3}}
+      assert both.equip_statuses == %{summer: {1_500, 2}}
 
       one = EquipmentFold.apply_equipment_modifiers(both, [first_row])
       assert one.equip_statuses == %{summer: {1_500, 2}}
@@ -3179,7 +3179,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.modifiers.equipment.aspd_rate == 115
     end
 
-    test "a :set instruction stores the constant and the last equipped item wins" do
+    test "a :set instruction stores the constant and the last script to run wins" do
       fire = scripted_item(90_216, on_equip: [{:set, :atk_ele, :fire}])
       wind = scripted_item(90_217, on_equip: [{:set, :atk_ele, :wind}])
 
@@ -3191,13 +3191,13 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       one = with_equipped_items([equipped(90_216, @right_hand)])
       assert one.modifiers.equipment.atk_ele == :fire
 
-      # Constants overwrite rather than sum, so the last item folded in wins. Lists
-      # preserve caller order; indexed maps fold in canonical key order.
+      # Constants overwrite rather than sum, so the script that runs last wins:
+      # the left hand's runs before the right hand's whatever the list order.
       both = with_equipped_items([equipped(90_216, @right_hand), equipped(90_217, @left_hand)])
-      assert both.modifiers.equipment.atk_ele == :wind
+      assert both.modifiers.equipment.atk_ele == :fire
     end
 
-    test "defender proc fields use last-equipped-item semantics" do
+    test "defender proc fields keep the value of the script that runs last" do
       key = {:def_set_race_rate, :player_human}
       first = scripted_item(90_250, on_equip: [{:bonus, key, 10_000}])
       second = scripted_item(90_251, on_equip: [{:bonus, key, 5_000}])
@@ -3210,7 +3210,111 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       result =
         with_equipped_items([equipped(90_250, @right_hand), equipped(90_251, @left_hand)])
 
-      assert result.modifiers.equipment[key] == 5_000
+      assert result.modifiers.equipment[key] == 10_000
+    end
+
+    test "a worn script reads the skills granted by the scripts that ran before it, in slot order" do
+      reader =
+        scripted_item(90_260,
+          on_equip: [{:if, {:>, {:skill_lv, 157}, 0}, [{:bonus, :def, 300}], []}]
+        )
+
+      granter = scripted_item(90_261, on_equip: [{:grant_skill, 157, 1}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_260 -> {:ok, reader}
+        90_261 -> {:ok, granter}
+      end)
+
+      base = swordman(%Equipment{}, %{})
+
+      granted_first =
+        EquipmentFold.apply_equipment_modifiers(base, [
+          equipped(90_260, @armor_pos),
+          equipped(90_261, @garment_pos)
+        ])
+
+      granted_after =
+        EquipmentFold.apply_equipment_modifiers(base, [
+          equipped(90_261, @armor_pos),
+          equipped(90_260, @garment_pos)
+        ])
+
+      assert granted_first.modifiers.equipment.def == 300
+      assert granted_after.modifiers.equipment.def == 0
+      assert granted_after.granted_skills == %{157 => 1}
+    end
+
+    test "an active autobonus's grant is seen by every worn script" do
+      autobonus =
+        {:autobonus,
+         %{trigger: :attack, battle_flag: 0, primary: [{:grant_skill, 157, 1}], secondary: []},
+         1_000, 10_000}
+
+      granter = scripted_item(90_267, on_equip: [autobonus])
+
+      reader =
+        scripted_item(90_268,
+          on_equip: [{:if, {:>, {:skill_lv, 157}, 0}, [{:bonus, :def, 300}], []}]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_267 -> {:ok, granter}
+        90_268 -> {:ok, reader}
+      end)
+
+      rows = [equipped_row(70, 90_267, @garment_pos), equipped_row(71, 90_268, @armor_pos)]
+      folded = EquipmentFold.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+
+      active =
+        EquipmentFold.apply_equipment_modifiers(%{folded | active_autobonuses: %{{70, 0} => 1}})
+
+      assert folded.modifiers.equipment.def == 0
+      assert active.active_autobonuses == %{{70, 0} => 1}
+      assert active.modifiers.equipment.def == 300
+      assert active.granted_skills == %{157 => 1}
+    end
+
+    test "cards run after every worn item's own script" do
+      reader_host =
+        scripted_item(90_262,
+          on_equip: [{:if, {:>, {:skill_lv, 157}, 0}, [{:bonus, :def, 300}], []}]
+        )
+
+      granting_host = scripted_item(90_263, slots: 1, on_equip: [{:grant_skill, 157, 1}])
+      reading_host = scripted_item(90_264, slots: 1)
+      granting_card = scripted_item(90_265, type: :card, on_equip: [{:grant_skill, 157, 1}])
+
+      reading_card =
+        scripted_item(90_266,
+          type: :card,
+          on_equip: [{:if, {:>, {:skill_lv, 157}, 0}, [{:bonus, :mdef, 15}], []}]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_262 -> {:ok, reader_host}
+        90_263 -> {:ok, granting_host}
+        90_264 -> {:ok, reading_host}
+        90_265 -> {:ok, granting_card}
+        90_266 -> {:ok, reading_card}
+      end)
+
+      base = swordman(%Equipment{}, %{})
+
+      card_grant =
+        EquipmentFold.apply_equipment_modifiers(base, [
+          %{equipped(90_264, @garment_pos) | card0: 90_265},
+          equipped(90_262, @armor_pos)
+        ])
+
+      host_grant =
+        EquipmentFold.apply_equipment_modifiers(base, [
+          %{equipped(90_264, @garment_pos) | card0: 90_266},
+          equipped(90_263, @armor_pos)
+        ])
+
+      assert card_grant.modifiers.equipment.def == 0
+      assert host_grant.modifiers.equipment.mdef == 15
     end
 
     test "bSpeedRate does not stack across items — the strongest one wins" do

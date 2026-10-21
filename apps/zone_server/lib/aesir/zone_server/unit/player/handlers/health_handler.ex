@@ -30,7 +30,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.PlagiarismCopyable
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -56,6 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -290,16 +290,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   defp maybe_record_plagiarism(
-         %PlayerState{
-           character_id: character_id,
-           stats: %{progression: %{learned_skills: learned}}
-         } =
-           game_state,
+         %PlayerState{character_id: character_id, stats: stats} = game_state,
          skill_id,
          skill_level
        )
-       when is_integer(skill_id) and is_integer(skill_level) and skill_level > 0 do
-    plagiarism_level = Learned.learned_level(learned, @plagiarism_skill_id)
+       when is_map(stats) and is_integer(skill_id) and is_integer(skill_level) and
+              skill_level > 0 do
+    plagiarism_level = PlayerStats.skill_level(stats, @plagiarism_skill_id)
 
     if plagiarism_level > 0 and PlagiarismCopyable.copyable?(skill_id) and
          not StatusStorage.has_status?(:player, character_id, :sc_preserve) do

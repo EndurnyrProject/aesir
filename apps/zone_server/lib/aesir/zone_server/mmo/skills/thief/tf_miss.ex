@@ -17,8 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfMiss do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passive
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @behaviour Passive
 
@@ -28,14 +28,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfMiss do
   def flee_bonus(level, ctx), do: per_level(ctx) * level
 
   @doc """
-  The walk haste, in percent, Improve Dodge gives a player's stats: the
-  learned level for the Assassin branch (Assassin and its transcendent, baby
+  The walk haste, in percent, Improve Dodge gives a player's stats: its
+  level (learned or granted) for the Assassin branch (Assassin and its transcendent, baby
   and third forms), 0 for every other job. Both modes.
   """
   @spec move_haste(map()) :: non_neg_integer()
-  def move_haste(%{progression: %{job_id: job_id, learned_skills: learned}})
-      when is_integer(job_id) do
-    if assassin_family?(job_id), do: Learned.learned_level(learned, 49), else: 0
+  def move_haste(%{progression: %{job_id: job_id}} = stats) when is_integer(job_id) do
+    if assassin_family?(job_id), do: PlayerStats.skill_level(stats, 49), else: 0
   end
 
   def move_haste(_stats), do: 0

@@ -54,11 +54,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic do
   }
 
   @doc """
-  Gate for a basic action: returns `:ok` when the player's learned NV_BASIC
-  level meets the action's requirement, otherwise `{:error, :basic_skill_level}`.
+  Gate for a basic action: returns `:ok` when the player's NV_BASIC level
+  meets the action's requirement, otherwise `{:error, :basic_skill_level}`.
 
-  `learned_skills` is the player's `%{skill_id => level}` map
-  (`PlayerProgression.learned_skills`); an unlearned skill is treated as level 0.
+  `learned_skills` is the player's `%{skill_id => level}` map at current levels
+  (`Stats.effective_skills/1`: learned or granted); a missing skill is level 0.
   """
   @spec allows_action?(Learned.t(), action()) :: :ok | {:error, :basic_skill_level}
   def allows_action?(learned_skills, action) when is_map(learned_skills) and is_atom(action) do

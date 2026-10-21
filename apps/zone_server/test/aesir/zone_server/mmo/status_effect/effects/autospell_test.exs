@@ -80,6 +80,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutospellTest do
                hook(instance, rolls([0, 0]), %{target: {:player, 42}, damage: 10})
     end
 
+    test "a proc at an armed level of 0 casts nothing" do
+      instance = armed(:mg_firebolt, 0, 100)
+
+      for level_roll <- [0, 15, 50] do
+        assert {:ok, ^instance} = hook(instance, rolls([0, level_roll]))
+      end
+    end
+
     test "the level roll is threaded through proc_level, halving at 50" do
       instance = armed(:mg_thunderstorm, 4, 100)
 

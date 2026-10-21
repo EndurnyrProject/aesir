@@ -50,61 +50,49 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspiritsTest do
     assert SpiritSpheres.count(state.spirit_spheres) == 1
   end
 
-  test "requested cast level does not lower the learned sphere cap" do
+  test "a cast refuses to begin while the caster holds as many spheres as its level" do
     now = System.monotonic_time(:millisecond)
     {spheres, first} = SpiritSpheres.summon(SpiritSpheres.new(), now + 60_000, 5)
     {spheres, second} = SpiritSpheres.summon(spheres, now + 120_000, 5)
+    state = interpreter_state(50, spheres, 5)
 
-    {:ok, state} = Interpreter.cast(interpreter_state(50, spheres, 5), 261, 1, :self)
+    assert {:error, :spheres_full} = Interpreter.begin_cast(state, 261, 2, :self)
+    assert {:error, :spheres_full} = Interpreter.cast(state, 261, 1, :self)
 
-    assert [^first, ^second, _new] = SpiritSpheres.entries(state.spirit_spheres)
+    {:ok, cast} = Interpreter.cast(state, 261, 3, :self)
+
+    assert cast.stats.current_state.sp == 42
+    assert [^first, ^second, _new] = SpiritSpheres.entries(cast.spirit_spheres)
   end
 
-  test "missing or unlearned progression rejects the sphere effect" do
+  test "the effect summons at the cast level whatever the progression" do
     {:ok, definition} = Catalog.by_id(261)
     learned = caster(50, SpiritSpheres.new(), 1)
     unlearned = put_in(learned.stats.progression.learned_skills, %{})
     missing = update_in(learned.stats, &Map.delete(&1, :progression))
 
     for state <- [unlearned, missing] do
-      assert {:error, :skill_not_learned} =
-               MoCallspirits.cast(state, :self, 1, definition)
-
-      assert SpiritSpheres.count(state.spirit_spheres) == 0
+      assert {:ok, updated} = MoCallspirits.cast(state, :self, 1, definition)
+      assert SpiritSpheres.count(updated.spirit_spheres) == 1
     end
   end
 
-  test "completion rejects a requested level above the current learned level" do
-    timer = make_ref()
-
-    starting =
-      interpreter_state(50, SpiritSpheres.new(), 5)
-      |> Map.merge(%{
-        spirit_sphere_revision: 7,
-        spirit_sphere_timer_generation: 4,
-        spirit_sphere_timer: timer
-      })
+  test "completion summons at the cast level after the learned level drops" do
+    starting = interpreter_state(50, SpiritSpheres.new(), 5)
 
     assert {:casting, ^starting, _info} = Interpreter.begin_cast(starting, 261, 5, :self)
 
     downgraded = put_in(starting.stats.progression.learned_skills, %{261 => 1})
 
-    assert {:error, :skill_not_learned} =
-             Interpreter.complete_cast(downgraded, 261, 5, :self)
-
-    assert downgraded.stats.current_state.sp == 50
-    assert SpiritSpheres.count(downgraded.spirit_spheres) == 0
-    assert downgraded.spirit_sphere_revision == 7
-    assert downgraded.spirit_sphere_timer_generation == 4
-    assert downgraded.spirit_sphere_timer == timer
+    assert {:ok, completed} = Interpreter.complete_cast(downgraded, 261, 5, :self)
+    assert completed.stats.current_state.sp == 42
+    assert SpiritSpheres.count(completed.spirit_spheres) == 1
   end
 
-  test "learned levels above the definition maximum are rejected" do
+  test "the learned level does not cap the cast level" do
     state = interpreter_state(50, SpiritSpheres.new(), 6)
 
-    assert {:error, :skill_not_learned} = Interpreter.begin_cast(state, 261, 1, :self)
-    assert state.stats.current_state.sp == 50
-    assert SpiritSpheres.count(state.spirit_spheres) == 0
+    assert {:casting, ^state, _info} = Interpreter.begin_cast(state, 261, 1, :self)
   end
 
   defp interpreter_state(sp, spirit_spheres, learned_level \\ 1) do

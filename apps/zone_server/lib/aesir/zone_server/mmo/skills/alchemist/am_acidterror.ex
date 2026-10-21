@@ -41,11 +41,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @behaviour Active
 
@@ -87,9 +87,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
     end
   end
 
-  defp learning_potion_level(%{stats: %{progression: %{learned_skills: learned_skills}}}) do
+  defp learning_potion_level(%{stats: stats}) do
     case Catalog.by_name(:am_learningpotion) do
-      {:ok, %{id: skill_id}} -> Learned.learned_level(learned_skills, skill_id)
+      {:ok, %{id: skill_id}} -> PlayerStats.skill_level(stats, skill_id)
       :error -> 0
     end
   end

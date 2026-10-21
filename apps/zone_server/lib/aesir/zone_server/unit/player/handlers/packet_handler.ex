@@ -277,7 +277,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # requirement recipe, even when the id has an ordinary skill-specific route.
   def handle_message(
         %SkillCast{skill_id: skill_id, level: level, target_id: target_id},
-        %{pending_item_skill: %{skill_id: skill_id, level: level}} = state
+        %{pending_item_skill: %{skill_id: skill_id}} = state
       ) do
     state
     |> Invincibility.end_on_request({:skill, skill_id})
@@ -738,15 +738,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # Reads the player's learned NV_BASIC level and gates the action via
   # `NvBasic.allows_action?/2`. Returns `:ok` when the player lacks a stats
   # struct (e.g. pre-spawn), so an early client action never crashes the session.
-  defp nv_basic_gate(
-         %{
-           game_state: %PlayerState{stats: %Stats{progression: %{learned_skills: learned_skills}}}
-         },
-         action
-       )
-       when is_map(learned_skills) do
-    NvBasic.allows_action?(learned_skills, action)
-  end
+  defp nv_basic_gate(%{game_state: %PlayerState{stats: %Stats{} = stats}}, action),
+    do: NvBasic.allows_action?(Stats.effective_skills(stats), action)
 
   defp nv_basic_gate(_state, _action), do: :ok
 

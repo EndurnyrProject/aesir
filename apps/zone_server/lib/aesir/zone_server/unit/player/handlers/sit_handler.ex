@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -61,12 +61,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
     end
   end
 
-  defp gangster_sitting?(%{
-         action_state: :sitting,
-         stats: %{progression: %{learned_skills: learned_skills}}
-       }) do
-    Learned.learned_level(learned_skills, @skill_id) > 0
-  end
+  defp gangster_sitting?(%{action_state: :sitting, stats: stats}) when is_map(stats),
+    do: PlayerStats.skill_level(stats, @skill_id) > 0
 
   defp gangster_sitting?(_player), do: false
 end

@@ -36,13 +36,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   alias Aesir.Net.MountResult
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Option
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnCavaliermastery
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnRiding
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @status_id :sc_riding
   @riding_bit Option.id(:riding)
@@ -243,16 +243,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
 
   @spec riding_learned?(map()) :: boolean()
   defp riding_learned?(game_state) do
-    learned_level(game_state, KnRiding.definition().id) > 0
+    skill_level(game_state, KnRiding.definition().id) > 0
   end
 
   @spec cavalier_level(map()) :: non_neg_integer()
   defp cavalier_level(game_state) do
-    learned_level(game_state, KnCavaliermastery.definition().id)
+    skill_level(game_state, KnCavaliermastery.definition().id)
   end
 
-  @spec learned_level(map(), integer()) :: non_neg_integer()
-  defp learned_level(%{stats: %{progression: %{learned_skills: learned}}}, skill_id) do
-    Learned.learned_level(learned, skill_id)
-  end
+  @spec skill_level(map(), integer()) :: non_neg_integer()
+  defp skill_level(%{stats: stats}, skill_id), do: PlayerStats.skill_level(stats, skill_id)
 end

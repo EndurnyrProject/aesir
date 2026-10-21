@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @type session_state :: SessionState.t()
@@ -105,7 +106,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   end
 
   defp basic_skill_allows?(game_state),
-    do: NvBasic.allows_action?(game_state.stats.progression.learned_skills, :chat_room) == :ok
+    do: NvBasic.allows_action?(PlayerStats.effective_skills(game_state.stats), :chat_room) == :ok
 
   @doc """
   Joins the room `room_id` with `pass` (only checked for private rooms). A GM at

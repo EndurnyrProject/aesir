@@ -1,14 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autospell do
   @moduledoc """
   SC_AUTOSPELL - the bolt armed by `SA_AUTOSPELL`, procced by the holder's weapon
-  hits (rAthena battle.cpp:7489-7527).
+  hits.
 
   The instance's `state` carries the whole proc:
 
     * `:skill` - the catalog name of the armed bolt
-    * `:max_level` - the highest level it may proc at (`SA_AUTOSPELL.max_level/2`)
-    * `:chance` - the per-hit proc chance, `2 * autospell_level` percent
-      (status.cpp:10988, renewal branch)
+    * `:max_level` - the highest level it may proc at (`SaAutospell.max_level/3`);
+      renewal Hindsight 1 arms 0, and a proc rolled at level 0 casts nothing
+    * `:chance` - the per-hit proc chance (`SaAutospell.proc_chance/1`)
 
   Recursion is structurally impossible and needs no guard: `on_dealt_damage/4`
   fires only from the weapon-attack path (`Combat.dispatch_dealt_damage/4`) and
@@ -41,9 +41,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autospell do
 
     if roll.() < chance do
       {_victim_type, victim_id} = hit_info.target
-      level = proc_level(max_level, roll.())
 
-      {:ok, instance, [{:auto_cast, skill, level, {:unit, victim_id}}]}
+      case proc_level(max_level, roll.()) do
+        0 -> {:ok, instance}
+        level -> {:ok, instance, [{:auto_cast, skill, level, {:unit, victim_id}}]}
+      end
     else
       {:ok, instance}
     end
@@ -53,10 +55,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autospell do
   The level the bolt procs at, given the armed `max_level` and a 0..99 roll.
 
   A roll of 50+ halves the level, 15+ subtracts one, below that it is untouched;
-  a level-1 bolt is never reduced (battle.cpp:7497-7501).
+  a level-1 (or level-0) bolt is never reduced.
   """
-  @spec proc_level(pos_integer(), non_neg_integer()) :: pos_integer()
-  def proc_level(1, _roll), do: 1
+  @spec proc_level(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
+  def proc_level(level, _roll) when level <= 1, do: level
   def proc_level(level, roll) when roll >= 50, do: div(level, 2)
   def proc_level(level, roll) when roll >= 15, do: level - 1
   def proc_level(level, _roll), do: level

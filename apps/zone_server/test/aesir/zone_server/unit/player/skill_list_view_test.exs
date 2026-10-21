@@ -204,6 +204,19 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
       assert Enum.count(skills, &(&1.skill_id == @sm_bash_id)) == 1
     end
 
+    test "an equipment grant at or below the learned level keeps the level but blocks raising it" do
+      state = %PlayerState{
+        stats: %{
+          progression: progression(skill_point: 1, learned_skills: %{@sm_sword_id => 3}),
+          granted_skills: %{@sm_sword_id => 1}
+        },
+        plagiarized: nil
+      }
+
+      assert %SkillInfo{level: 3, upgradable: false} =
+               SkillListView.build(state) |> by_id(@sm_sword_id)
+    end
+
     test "a non-area skill (SM_SWORD) reports splash_radius 0" do
       sword = SkillListView.build(progression(skill_point: 0)) |> by_id(@sm_sword_id)
       assert sword.splash_radius == 0

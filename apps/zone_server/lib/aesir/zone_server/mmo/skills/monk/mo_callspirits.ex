@@ -5,6 +5,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspirits do
   The player session commits the returned sphere collection and owns its timer,
   revision, and broadcasts through `SpiritSphereHandler`.
 
+  Summons one sphere, holding at most as many as the cast level: at the cap the
+  oldest sphere is replaced. A cast is refused when it begins while the caster
+  already holds that many spheres.
+
   Renewal: a 0.5 s cast plus 0.5 s fixed. Pre-renewal: a 1 s cast. Spheres last 10
   minutes and cost 8 SP in both modes.
   """
@@ -22,52 +26,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspirits do
     damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
 
   @behaviour Active
 
   @impl Active
-  def validate(caster, :self, requested_level, definition) do
-    case validated_cap(caster, requested_level, definition) do
-      {:ok, _cap} -> :ok
-      {:error, :skill_not_learned} = error -> error
-    end
+  def begin_attempt(caster, :self, level, _definition) do
+    if SpiritSpheres.count(spheres(caster)) >= level,
+      do: {:error, :spheres_full},
+      else: {:ok, caster}
   end
 
   @impl Active
-  def cast(caster, :self, requested_level, definition) do
-    spheres = Map.get(caster, :spirit_spheres, SpiritSpheres.new())
+  def cast(caster, :self, level, _definition) do
     expires_at = System.monotonic_time(:millisecond) + Formulas.spirit_sphere_duration()
 
-    with {:ok, cap} <- validated_cap(caster, requested_level, definition) do
-      {%SpiritSpheres{} = updated_spheres, %SpiritSpheres.Entry{}} =
-        SpiritSpheres.summon(spheres, expires_at, cap)
+    {%SpiritSpheres{} = updated_spheres, %SpiritSpheres.Entry{}} =
+      SpiritSpheres.summon(spheres(caster), expires_at, level)
 
-      {:ok, Map.put(caster, :spirit_spheres, updated_spheres)}
-    end
+    {:ok, Map.put(caster, :spirit_spheres, updated_spheres)}
   end
 
-  defp validated_cap(caster, requested_level, definition) do
-    with {:ok, cap} <- sphere_cap(caster, definition),
-         true <- requested_level <= cap do
-      {:ok, cap}
-    else
-      _invalid -> {:error, :skill_not_learned}
-    end
-  end
-
-  defp sphere_cap(
-         %{stats: %{progression: %{learned_skills: learned}}},
-         %{id: skill_id, max_level: max_level}
-       )
-       when is_map(learned) do
-    case Learned.learned_level(learned, skill_id) do
-      level when is_integer(level) and level > 0 and level <= max_level -> {:ok, level}
-      _level -> {:error, :skill_not_learned}
-    end
-  end
-
-  defp sphere_cap(_caster, _definition), do: {:error, :skill_not_learned}
+  defp spheres(caster), do: Map.get(caster, :spirit_spheres, SpiritSpheres.new())
 end

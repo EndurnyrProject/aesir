@@ -192,6 +192,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
                         %LearnSkillResult{skill_id: ^skill_id, ok: false, reason: 1}}}
     end
 
+    test "drops a raise while worn equipment grants the skill, even at a lower level" do
+      sword_id = catalog_id(:sm_sword)
+      state = swordman_state(3, %{sword_id => 3})
+      state = put_in(state.game_state.stats.granted_skills, %{sword_id => 1})
+
+      reject(&CharacterPersistence.update_character/3)
+
+      assert {:noreply, ^state} = SkillLearningHandler.handle_learn_skill(sword_id, state)
+      refute_received {:send, _channel, _message}
+    end
+
     test "learns Estimation from the Wizard tree" do
       state = player_state(@wizard_id, 1, %{})
       skill_id = catalog_id(:wz_estimation)

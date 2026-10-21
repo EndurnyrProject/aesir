@@ -210,15 +210,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
 
   # Returns `:ok` when the player lacks a stats struct (e.g. pre-spawn), so an
   # early client action never crashes the session.
-  defp nv_basic_gate(
-         %{
-           game_state: %PlayerState{stats: %Stats{progression: %{learned_skills: learned_skills}}}
-         },
-         action
-       )
-       when is_map(learned_skills) do
-    NvBasic.allows_action?(learned_skills, action)
-  end
+  defp nv_basic_gate(%{game_state: %PlayerState{stats: %Stats{} = stats}}, action),
+    do: NvBasic.allows_action?(Stats.effective_skills(stats), action)
 
   defp nv_basic_gate(_state, _action), do: :ok
 

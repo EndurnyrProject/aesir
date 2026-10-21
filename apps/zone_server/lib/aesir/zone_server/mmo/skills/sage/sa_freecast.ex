@@ -19,17 +19,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast do
     damage_type: :damage
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @skill_id 278
 
   @doc """
-  The caster's learned Free Cast level, `0` when unlearned.
+  The caster's Free Cast level (learned or granted), `0` when it has neither.
   """
   @spec level(map()) :: non_neg_integer()
-  def level(%{stats: %{progression: %{learned_skills: learned}}}) do
-    Learned.learned_level(learned, @skill_id)
-  end
+  def level(%{stats: stats}) when is_map(stats), do: PlayerStats.skill_level(stats, @skill_id)
 
   def level(_game_state), do: 0
 

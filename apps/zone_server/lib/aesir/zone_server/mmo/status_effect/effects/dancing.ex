@@ -32,13 +32,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     icon: :bdplaying
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
@@ -110,8 +110,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
 
   defp lesson(id) do
     case UnitRegistry.get_unit(:player, id) do
-      {:ok, {_module, %{sex: sex, stats: %{progression: %{learned_skills: learned}}}, _pid}} ->
-        Learned.learned_level(learned, if(sex == "M", do: 315, else: 323))
+      {:ok, {_module, %{sex: sex, stats: stats}, _pid}} when is_map(stats) ->
+        PlayerStats.skill_level(stats, if(sex == "M", do: 315, else: 323))
 
       _unavailable ->
         0

@@ -33,11 +33,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Option
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFalcon
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @status_id :sc_falcon
   @falcon_bit Option.id(:falcon)
@@ -170,7 +170,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler do
   end
 
   @spec falconry_level(map()) :: non_neg_integer()
-  defp falconry_level(%{stats: %{progression: %{learned_skills: learned}}}) do
-    Learned.learned_level(learned, HtFalcon.definition().id)
-  end
+  defp falconry_level(%{stats: stats}),
+    do: PlayerStats.skill_level(stats, HtFalcon.definition().id)
 end

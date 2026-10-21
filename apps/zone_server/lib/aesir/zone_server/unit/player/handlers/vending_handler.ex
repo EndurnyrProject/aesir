@@ -32,7 +32,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McVending
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -688,8 +687,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
 
   @spec ensure_vending_learned(PlayerState.t()) ::
           {:ok, pos_integer()} | {:error, :skill_not_learned}
-  defp ensure_vending_learned(%{stats: %{progression: %{learned_skills: learned}}}) do
-    case Learned.learned_level(learned, McVending.definition().id) do
+  defp ensure_vending_learned(%{stats: stats}) do
+    case Stats.skill_level(stats, McVending.definition().id) do
       level when level > 0 -> {:ok, level}
       _ -> {:error, :skill_not_learned}
     end

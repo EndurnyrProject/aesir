@@ -42,12 +42,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler do
 
   # Returns `:ok` when the player lacks a stats struct (e.g. pre-spawn), so an
   # early client action never crashes the session.
-  defp nv_basic_allows?(%PlayerState{
-         stats: %Stats{progression: %{learned_skills: learned_skills}}
-       })
-       when is_map(learned_skills) do
-    NvBasic.allows_action?(learned_skills, :emotion) == :ok
-  end
+  defp nv_basic_allows?(%PlayerState{stats: %Stats{} = stats}),
+    do: NvBasic.allows_action?(Stats.effective_skills(stats), :emotion) == :ok
 
   defp nv_basic_allows?(_game_state), do: true
 

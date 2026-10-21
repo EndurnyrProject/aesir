@@ -105,9 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
     end
   end
 
-  defp accelerated?(%PlayerState{stats: %{progression: %{learned_skills: learned}}}) do
-    Map.get(learned, AsSonicaccel.definition().id, 0) > 0
-  end
+  defp accelerated?(%PlayerState{stats: stats}),
+    do: Stats.skill_level(stats, AsSonicaccel.definition().id) > 0
 
   defp accelerated?(_caster), do: false
 

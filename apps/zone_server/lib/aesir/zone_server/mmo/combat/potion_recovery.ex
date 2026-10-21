@@ -27,7 +27,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
   """
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -75,8 +74,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
   @spec thrower(PlayerState.t()) :: thrower()
   def thrower(%PlayerState{stats: stats}) do
     %{
-      pitcher: learned(stats, @potion_pitcher),
-      learning_potion: learned(stats, @learning_potion),
+      pitcher: PlayerStats.skill_level(stats, @potion_pitcher),
+      learning_potion: PlayerStats.skill_level(stats, @learning_potion),
       group_hp_rate: equipment(stats, {:add_item_group_heal, :potion}),
       group_sp_rate: equipment(stats, {:add_item_group_sp_heal, :potion}),
       skill_heal:
@@ -95,8 +94,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
       int: PlayerStats.get_effective_stat(stats, :int),
       max_hp: stats.derived_stats.max_hp,
       max_sp: stats.derived_stats.max_sp,
-      hp_recovery: learned(stats, @sm_recovery),
-      sp_recovery: learned(stats, @mg_srecovery),
+      hp_recovery: PlayerStats.skill_level(stats, @sm_recovery),
+      sp_recovery: PlayerStats.skill_level(stats, @mg_srecovery),
       received_heal:
         equipment(stats, :heal_power2) + equipment(stats, {:skill_heal2, @potion_pitcher})
     }
@@ -209,9 +208,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PotionRecovery do
 
   defp percent(amount, 0), do: amount
   defp percent(amount, rate), do: amount + div(amount * rate, 100)
-
-  defp learned(stats, skill_id),
-    do: Learned.learned_level(stats.progression.learned_skills, skill_id)
 
   defp equipment(stats, key), do: PlayerStats.get_equipment_modifier(stats, key)
 end

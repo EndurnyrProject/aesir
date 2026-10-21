@@ -49,9 +49,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   Two constructs read/grant player skills rather than folding a stat:
 
   - `{:skill_lv, id}` (source `skill_lv(ctx, id)`) is an expression that reads
-    the wearer's learned level of skill `id`, `0` when unlearned. It consults
-    the optional `:learned_skills` input; an item that never uses it needs no
-    such input.
+    the wearer's current level of skill `id`, `0` when it has none. It consults
+    the optional `:learned_skills` input, the skills the wearer has when the
+    program starts (the equipment fold passes the learned levels joined with
+    what earlier scripts granted), and sees a grant this program made before
+    the read; an item that never uses it needs no such input.
   - `{:grant_skill, id, expr}` (source `grant_skill(ctx, id, expr)`) grants the
     wearer a castable skill at the evaluated level while the item is worn. It
     folds into a reserved `{:granted_skill, id}` accumulator key with `max`
@@ -744,7 +746,33 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp eval_instrs(instrs, inputs, acc) do
-    Enum.reduce(instrs, acc, &eval_instr(&1, inputs, &2))
+    {result, _inputs} =
+      Enum.reduce(instrs, {acc, inputs}, fn instr, {result, inputs} ->
+        result = eval_instr(instr, inputs, result)
+        {result, see_own_grants(instr, inputs, result)}
+      end)
+
+    result
+  end
+
+  # A skill the program grants is visible to every instruction after the grant,
+  # including one made inside a branch that has finished.
+  defp see_own_grants({:grant_skill, skill_id, _expr}, inputs, %Result{modifiers: modifiers}),
+    do: see_grant(inputs, skill_id, Map.fetch!(modifiers, {:granted_skill, skill_id}))
+
+  defp see_own_grants({:if, _condition, _then, _else}, inputs, %Result{modifiers: modifiers}) do
+    Enum.reduce(modifiers, inputs, fn
+      {{:granted_skill, skill_id}, level}, acc -> see_grant(acc, skill_id, level)
+      _modifier, acc -> acc
+    end)
+  end
+
+  defp see_own_grants(_instr, inputs, _result), do: inputs
+
+  defp see_grant(inputs, skill_id, level) do
+    Map.update(inputs, :learned_skills, %{skill_id => level}, fn skills ->
+      Map.update(skills, skill_id, level, &max(&1, level))
+    end)
   end
 
   defp eval_instr({:bonus, key, expr}, inputs, %Result{} = result) do

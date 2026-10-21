@@ -20,13 +20,13 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Npc.Shop, as: ShopData
   alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Rental
   alias Aesir.ZoneServer.Unit.Zeny
 
@@ -317,8 +317,8 @@ defmodule Aesir.ZoneServer.Unit.Shop do
 
   defp apply_rate(price, rate), do: div(price * (100 + rate), 100)
 
-  defp skill_rate(%PlayerState{stats: %{progression: %{learned_skills: learned}}}, skill_id) do
-    case Learned.learned_level(learned, skill_id) do
+  defp skill_rate(%PlayerState{stats: stats}, skill_id) do
+    case PlayerStats.skill_level(stats, skill_id) do
       0 ->
         0
 

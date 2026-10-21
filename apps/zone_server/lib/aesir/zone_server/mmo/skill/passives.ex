@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
     ctx = build_ctx(stats)
 
     stats
-    |> effective_skills()
+    |> PlayerStats.effective_skills()
     |> Enum.sort_by(&elem(&1, 0))
     |> Enum.reduce_while(:normal, fn {skill_id, level}, :normal ->
       case replacement_for(skill_id, level, ctx) do
@@ -645,7 +645,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @spec learned_passives(PlayerStats.t()) :: [{module(), pos_integer()}]
   defp learned_passives(%PlayerStats{} = stats) do
     stats
-    |> effective_skills()
+    |> PlayerStats.effective_skills()
     |> Enum.flat_map(fn {skill_id, level} ->
       with {:ok, definition} <- Catalog.by_id(skill_id),
            {:ok, module} <- Catalog.passive_module_for(definition.name) do
@@ -669,23 +669,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
       vit: stats.base_stats.vit,
       int: stats.base_stats.int,
       riding: stats.riding,
-      learned_skills: effective_skills(stats),
+      learned_skills: PlayerStats.effective_skills(stats),
       statuses_active?: Map.get(stats.modifiers, :statuses_active?, false)
     }
-  end
-
-  # Every skill a passive hook may read, at the level the reference's
-  # `pc_checkskill` reports: what the character learned joined with what
-  # equipment grants it, the higher level winning. A skill only equipment
-  # grants is present too (its granted level is the effective one).
-  @spec effective_skills(PlayerStats.t()) :: %{integer() => pos_integer()}
-  defp effective_skills(%PlayerStats{} = stats) do
-    granted = Map.get(stats, :granted_skills) || %{}
-
-    stats.progression.learned_skills
-    |> Map.merge(granted, fn _skill_id, learned, granted -> max(learned, granted) end)
-    |> Enum.reject(fn {_skill_id, level} -> level in [nil, 0] end)
-    |> Map.new()
   end
 
   # `dex_bonus`/`hit_bonus`/`range_bonus` are aggregated before derived stats

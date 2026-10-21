@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Fury
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @asura 271
   @thrust 273
@@ -160,7 +161,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
         ) :: {:ok, t()} | {:error, :invalid_combo}
   def open_follow_up(caster, opener, expected, target, now, delay) do
     ctx = %{
-      learned: caster.stats.progression.learned_skills,
+      learned: PlayerStats.effective_skills(caster.stats),
       spheres: SpiritSpheres.count(caster.spirit_spheres),
       fury?: Fury.active?(caster.character_id)
     }

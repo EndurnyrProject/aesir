@@ -16,7 +16,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
 
   alias Aesir.Net.StorageResult
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
@@ -25,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Storage.Persistence, as: StoragePersistence
 
   @min_basic_skill_level 6
@@ -186,9 +186,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   end
 
   @spec basic_skill_level(map()) :: non_neg_integer()
-  defp basic_skill_level(%{stats: %{progression: %{learned_skills: learned}}}) do
+  defp basic_skill_level(%{stats: stats}) do
     case Catalog.by_name(:nv_basic) do
-      {:ok, %{id: id}} -> Learned.learned_level(learned, id)
+      {:ok, %{id: id}} -> PlayerStats.skill_level(stats, id)
       :error -> 0
     end
   end

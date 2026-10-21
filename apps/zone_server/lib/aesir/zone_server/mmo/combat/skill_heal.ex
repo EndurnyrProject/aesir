@@ -62,7 +62,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillHeal do
   # Skills the caster's heal power never reaches.
   @no_heal_power [@slim_pitcher, @apple_of_idun]
 
-  @typedoc "What the recipe reads from the caster, taken from its live state by `caster/1`."
+  @typedoc """
+  What the recipe reads from the caster, taken from its live state by `caster/1`.
+  `learned` holds every skill at the player's current level, learned or granted.
+  """
   @type caster :: %{
           player?: boolean(),
           base_level: non_neg_integer(),
@@ -84,7 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillHeal do
       base_level: stats.progression.base_level,
       int: Stats.get_effective_stat(stats, :int),
       vit: Stats.get_effective_stat(stats, :vit),
-      learned: stats.progression.learned_skills || %{},
+      learned: Stats.effective_skills(stats),
       brain_rate: 0,
       equipment: stats.modifiers.equipment,
       heal_matk_min: stats.combat_stats.heal_matk_min,

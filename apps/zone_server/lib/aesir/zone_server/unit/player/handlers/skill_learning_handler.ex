@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
@@ -40,14 +41,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   """
   @spec handle_learn_skill(non_neg_integer(), map()) :: {:noreply, map()}
   def handle_learn_skill(skill_id, %{game_state: game_state} = state) do
-    case SkillTree.learn(game_state.stats.progression, skill_id) do
-      {:ok, progression} ->
-        commit(skill_id, progression, state, game_state)
-
-      {:error, reason} ->
-        reject(skill_id, reason, state)
+    with false <- granted?(game_state.stats, skill_id),
+         {:ok, progression} <- SkillTree.learn(game_state.stats.progression, skill_id) do
+      commit(skill_id, progression, state, game_state)
+    else
+      true -> {:noreply, state}
+      {:error, reason} -> reject(skill_id, reason, state)
     end
   end
+
+  # Worn equipment granting the skill, at any level, holds its learned level:
+  # the request is dropped without a reply until the grant is gone.
+  defp granted?(stats, skill_id), do: Map.get(Stats.granted_skills(stats), skill_id, 0) > 0
 
   @doc "Maxes the current job's inherited skills and lineage quest skills without spending points."
   @spec give_all_skills(map()) :: {:noreply, map()}
@@ -88,7 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
       |> maybe_recompute_riding(KnCavaliermastery.definition().id)
 
     persist(game_state.character_id, new_state.game_state.stats)
-    sync(state.connection_pid, progression)
+    sync(state.connection_pid, new_state.game_state)
 
     {:noreply, new_state}
   end
@@ -114,7 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
       |> maybe_recompute_riding(skill_id)
 
     persist(char_id, stats)
-    sync(state.connection_pid, progression)
+    sync(state.connection_pid, new_state.game_state)
 
     {:noreply, new_state}
   end
@@ -166,7 +171,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
       async: true
     )
 
-    MessageRouter.send_to(state.connection_pid, SkillListView.build(progression))
+    MessageRouter.send_to(state.connection_pid, SkillListView.build(new_game_state))
 
     %{state | game_state: new_game_state}
   end
@@ -198,11 +203,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
     )
   end
 
-  defp sync(connection_pid, progression) do
-    MessageRouter.send_to(connection_pid, SkillListView.build(progression))
+  defp sync(connection_pid, game_state) do
+    MessageRouter.send_to(connection_pid, SkillListView.build(game_state))
 
     StatusSync.send_params(connection_pid, %{
-      StatusParams.skill_point() => progression.skill_point
+      StatusParams.skill_point() => game_state.stats.progression.skill_point
     })
   end
 

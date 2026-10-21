@@ -35,7 +35,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.CartMountResult
   alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McPushcart
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -49,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @status_id :sc_push_cart
   @first_tier 1
@@ -332,9 +332,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   end
 
   @spec pushcart_level(map()) :: non_neg_integer()
-  defp pushcart_level(%{stats: %{progression: %{learned_skills: learned}}}) do
-    Learned.learned_level(learned, McPushcart.definition().id)
-  end
+  defp pushcart_level(%{stats: stats}),
+    do: PlayerStats.skill_level(stats, McPushcart.definition().id)
 
   @spec persist_cart_type(integer(), non_neg_integer()) :: :ok
   defp persist_cart_type(char_id, tier) do

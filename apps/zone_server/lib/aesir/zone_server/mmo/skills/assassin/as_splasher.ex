@@ -35,7 +35,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
@@ -44,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -149,9 +149,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasher do
 
   defp hp_pair(%MobState{hp: hp, calculated: calculated}), do: {hp, calculated.max_hp}
 
-  defp poison_react_level(%PlayerState{stats: %{progression: %{learned_skills: learned}}})
-       when is_map(learned),
-       do: Learned.learned_level(learned, 139)
+  defp poison_react_level(%PlayerState{stats: stats}) when is_map(stats),
+    do: PlayerStats.skill_level(stats, 139)
 
   defp poison_react_level(_caster), do: 0
 

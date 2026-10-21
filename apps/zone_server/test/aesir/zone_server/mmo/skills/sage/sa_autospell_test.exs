@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
   @frostdiver 15
   @thunderstorm 21
   @heavendrive 91
+  @napalmbeat 11
 
   @all_bolts %{
     @firebolt => 10,
@@ -32,6 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
   }
 
   describe "eligible_bolts/2 tiers" do
+    @describetag game_mode: :renewal
+
     test "autospell level 1 offers only the three basic bolts" do
       assert SaAutospell.eligible_bolts(@all_bolts, 1) == [@firebolt, @coldbolt, @lightningbolt]
     end
@@ -94,22 +97,90 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
     end
   end
 
-  # skill.cpp:10709-10752. The Soul Linker branch (`maxlv = 10` under SC_SPIRIT
-  # / SL_SAGE) is deliberately absent: Aesir has no Soul Linker.
-  describe "max_level/2" do
+  describe "eligible_bolts/2 classic tiers" do
+    @describetag game_mode: :pre_renewal
+
+    @classic_bolts %{
+      @napalmbeat => 10,
+      @coldbolt => 10,
+      @firebolt => 10,
+      @lightningbolt => 10,
+      @soulstrike => 10,
+      @fireball => 10,
+      @frostdiver => 10,
+      @earthspike => 5,
+      @thunderstorm => 10,
+      @heavendrive => 5
+    }
+
+    test "each classic tier opens one level past its requirement, in the classic menu order" do
+      assert SaAutospell.eligible_bolts(@classic_bolts, 1) == [@napalmbeat]
+
+      assert SaAutospell.eligible_bolts(@classic_bolts, 2) == [
+               @napalmbeat,
+               @coldbolt,
+               @firebolt,
+               @lightningbolt
+             ]
+
+      refute @soulstrike in SaAutospell.eligible_bolts(@classic_bolts, 4)
+      assert @soulstrike in SaAutospell.eligible_bolts(@classic_bolts, 5)
+      refute @fireball in SaAutospell.eligible_bolts(@classic_bolts, 7)
+      assert @fireball in SaAutospell.eligible_bolts(@classic_bolts, 8)
+      refute @frostdiver in SaAutospell.eligible_bolts(@classic_bolts, 9)
+
+      assert SaAutospell.eligible_bolts(@classic_bolts, 10) == [
+               @napalmbeat,
+               @coldbolt,
+               @firebolt,
+               @lightningbolt,
+               @soulstrike,
+               @fireball,
+               @frostdiver
+             ]
+    end
+  end
+
+  # The Soul Linker branch (`maxlv = 10` under SC_SPIRIT / SL_SAGE) is
+  # deliberately absent: Aesir has no Soul Linker.
+  describe "max_level/3" do
+    @tag game_mode: :renewal
     test "is half the autospell level, floored" do
-      assert SaAutospell.max_level(10, 10) == 5
-      assert SaAutospell.max_level(10, 9) == 4
-      assert SaAutospell.max_level(10, 8) == 4
+      assert SaAutospell.max_level(@firebolt, 10, 10) == 5
+      assert SaAutospell.max_level(@firebolt, 10, 9) == 4
+      assert SaAutospell.max_level(@firebolt, 10, 8) == 4
     end
 
-    test "is capped by the learned level of the chosen bolt" do
-      assert SaAutospell.max_level(3, 10) == 3
-      assert SaAutospell.max_level(1, 10) == 1
+    @tag game_mode: :renewal
+    test "is capped by the caster's level in the chosen bolt" do
+      assert SaAutospell.max_level(@firebolt, 3, 10) == 3
+      assert SaAutospell.max_level(@firebolt, 1, 10) == 1
     end
 
-    test "never drops below 1, though autospell level 1 halves to 0" do
-      assert SaAutospell.max_level(10, 1) == 1
+    @tag game_mode: :renewal
+    test "autospell level 1 arms level 0" do
+      assert SaAutospell.max_level(@firebolt, 10, 1) == 0
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic arms each bolt from its level table, capped by the caster's level" do
+      assert SaAutospell.max_level(@napalmbeat, 10, 1) == 3
+      assert SaAutospell.max_level(@napalmbeat, 2, 10) == 2
+
+      for {level, expected} <- [{2, 1}, {3, 2}, {4, 3}, {10, 3}] do
+        assert SaAutospell.max_level(@coldbolt, 10, level) == expected
+      end
+
+      for {level, expected} <- [{5, 1}, {6, 2}, {7, 3}, {10, 3}] do
+        assert SaAutospell.max_level(@soulstrike, 10, level) == expected
+      end
+
+      for {level, expected} <- [{8, 1}, {9, 2}, {10, 2}] do
+        assert SaAutospell.max_level(@fireball, 10, level) == expected
+      end
+
+      assert SaAutospell.max_level(@frostdiver, 10, 10) == 1
+      assert SaAutospell.max_level(@soulstrike, 1, 10) == 1
     end
   end
 
@@ -135,6 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "stages the eligible bolts as a menu offer carrying the cast level" do
       assert {:ok, staged} = cast(@all_bolts, 4)
 
@@ -221,6 +293,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
       assert {:error, :immune} = reply(@all_bolts, @firebolt, 4)
     end
 
+    test "arms nothing when the caster no longer has the chosen bolt" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, _} = reply(Map.delete(@all_bolts, @firebolt), @firebolt, 4)
+    end
+
+    @tag game_mode: :renewal
+    test "autospell level 1 arms its bolt at level 0" do
+      expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, params ->
+        assert params[:state].max_level == 0
+        :ok
+      end)
+
+      assert {:ok, _} = reply(@all_bolts, @firebolt, 1)
+    end
+
+    @tag game_mode: :renewal
     test "arms the bolt named by the reply, not the first offered" do
       expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, params ->
         assert params[:state].skill == :mg_thunderstorm

@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{stats: stats} = caster, {:unit, target_id}, level, definition) do
-    steel_crow = Map.get(stats.progression.learned_skills, @steel_crow_id, 0)
+    steel_crow = Stats.skill_level(stats, @steel_crow_id)
 
     effective_stats = %{
       agi: Stats.get_effective_stat(stats, :agi),

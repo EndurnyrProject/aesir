@@ -61,14 +61,18 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
 
   # Overrides a tree entry with the equipment-granted level when the grant is
   # higher than what the player has learned, so the list matches the level the
-  # cast authority (`Caster.Player.knows?`) will allow.
+  # cast authority (`Caster.Player.knows?`) will allow. Any grant on the skill,
+  # even a lower one, makes it not upgradable while worn.
   defp bump_granted(%SkillInfo{skill_id: id, level: level} = info, granted, job_id) do
     case Map.get(granted, id, 0) do
       granted_level when granted_level > level ->
         case standalone_skill_info(id, granted_level, job_id) do
           [bumped] -> bumped
-          [] -> info
+          [] -> %{info | upgradable: false}
         end
+
+      granted_level when granted_level > 0 ->
+        %{info | upgradable: false}
 
       _ ->
         info

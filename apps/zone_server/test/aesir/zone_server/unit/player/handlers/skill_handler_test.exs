@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.CastCancel
   alias Aesir.Net.GroundSkillCast
@@ -97,6 +98,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert %SkillInfo{name: "SM_SWORD", level: 3} = sword
     end
   end
+
+  # The player knows `skill_id` at `level`, as a request needs to reach its cast.
+  defp knowing(%SessionState{} = state, skill_id, level),
+    do: put_in(state.game_state.stats.progression.learned_skills[skill_id], level)
 
   defp instant_state(sp) do
     state = casting_state(sp)
@@ -251,7 +256,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
           {:error, :invalid_target}
         end)
 
-        SkillHandler.handle_use_skill(state, skill_id, 1, 2000)
+        SkillHandler.handle_use_skill(knowing(state, skill_id, 1), skill_id, 1, 2000)
       end
     end
 
@@ -266,7 +271,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         {:error, :invalid_target}
       end)
 
-      SkillHandler.handle_use_skill(state, 271, 1, 2001)
+      SkillHandler.handle_use_skill(knowing(state, 271, 1), 271, 1, 2001)
     end
 
     test "successful named skill use dispatches its equipment autobonus" do
@@ -798,7 +803,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       state = instant_state(100)
       stats = state.game_state.stats
       stats = put_in(stats.derived_stats.max_sp, 100)
-      state = %{state | game_state: %{state.game_state | stats: stats}}
+      state = knowing(%{state | game_state: %{state.game_state | stats: stats}}, 262, 1)
+      stats = state.game_state.stats
       game_state = state.game_state
 
       descriptor = %Interpreter.Deferred{
@@ -953,18 +959,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 279, 10, 1000)
 
+      # Each mode's menu order: renewal lists Fire Bolt first, classic Cold Bolt.
+      entry_ids = if GameMode.mode() == :renewal, do: [19, 14], else: [14, 19]
+
       assert_receive {:send, :world,
                       {:skill_menu,
                        %Aesir.Net.SkillMenu{
                          src_skill_id: 279,
                          kind: :SKILLS,
-                         entry_ids: [19, 14]
+                         entry_ids: ^entry_ids
                        }}}
 
       assert new_state.pending_skill_menu == %{
                skill_id: 279,
                kind: :SKILLS,
-               entry_ids: [19, 14],
+               entry_ids: entry_ids,
                level: 10
              }
 
@@ -1034,7 +1043,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
 
-      assert {:noreply, new_state} = SkillHandler.handle_use_skill(base, 31, 1, 1000)
+      assert {:noreply, new_state} =
+               SkillHandler.handle_use_skill(knowing(base, 31, 1), 31, 1, 1000)
 
       assert_received {:send, :gameplay, {:item_added, %ItemAdded{nameid: 523}}}
       assert new_state.game_state.pending_inventory_notify == []
@@ -1082,7 +1092,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       expect(CharacterPersistence, :update_character, fn 1000, %{sp: 12}, _opts -> {:ok, %{}} end)
 
       assert {:noreply, new_state} =
-               SkillHandler.handle_use_skill_ground(instant_state(30), 89, 1, 12, 12)
+               SkillHandler.handle_use_skill_ground(
+                 knowing(instant_state(30), 89, 1),
+                 89,
+                 1,
+                 12,
+                 12
+               )
 
       assert new_state.game_state.stats.current_state.sp == 12
     end
@@ -1112,7 +1128,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(Interpreter, :begin_cast, fn _gs, _id, _lvl, _target -> {:error, :invalid_target} end)
       reject(&CharacterPersistence.update_character/3)
 
-      s = instant_state(30)
+      s = knowing(instant_state(30), 89, 1)
       assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
     end
   end
@@ -1353,7 +1369,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
       stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
 
-      assert {:noreply, new_state} = SkillHandler.handle_use_skill(base, 46, 1, 2000)
+      assert {:noreply, new_state} =
+               SkillHandler.handle_use_skill(knowing(base, 46, 1), 46, 1, 2000)
 
       # Recalc ran with current equipment (3-arity): the bow survives, the spent
       # arrow is gone, so its ATK/element drops out instead of lingering.
@@ -1545,7 +1562,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       end)
 
       assert {:noreply, failed} =
-               SkillHandler.handle_use_skill_ground(casting_state(45), 12, 1, 12, 12)
+               SkillHandler.handle_use_skill_ground(
+                 knowing(casting_state(45), 12, 1),
+                 12,
+                 1,
+                 12,
+                 12
+               )
 
       assert failed.game_state.stats.current_state.sp == 40
       assert_received {:to_player, %SkillCastFailed{skill_id: 12}}
@@ -1564,7 +1587,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       expect(CastEnd, :complete, fn %{character_id: 1000}, 12, {:ground, 12, 12} -> :ok end)
 
-      SkillHandler.handle_use_skill_ground(casting_state(45), 12, 1, 12, 12)
+      SkillHandler.handle_use_skill_ground(knowing(casting_state(45), 12, 1), 12, 1, 12, 12)
     end
 
     test "a stale token is ignored and the cast continues" do
@@ -1834,6 +1857,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
+  describe "requested skill level" do
+    test "a request above the player's level runs at the player's level" do
+      expect(Interpreter, :begin_cast, fn _gs, 29, 10, :self -> {:error, :invalid_target} end)
+
+      SkillHandler.handle_use_skill(casting_state(45), 29, 99, 1000)
+    end
+
+    test "a request at level 0 runs at level 1" do
+      expect(Interpreter, :begin_cast, fn _gs, 29, 1, :self -> {:error, :invalid_target} end)
+
+      SkillHandler.handle_use_skill(casting_state(45), 29, 0, 1000)
+    end
+
+    test "a request for a skill the player does not have is dropped without a reply" do
+      reject(&Interpreter.begin_cast/4)
+      reject(&Broadcast.to_player/2)
+
+      s = casting_state(45)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 28, 1, 1000)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 12, 1, 12, 12)
+    end
+
+    test "a pending item skill runs at the item's level whatever level was requested" do
+      state = %{
+        casting_state(45)
+        | pending_item_skill: %{
+            skill_id: 28,
+            level: 3,
+            keep_requirement?: false,
+            item_index: 0,
+            item_nameid: 545
+          }
+      }
+
+      expect(Interpreter, :begin_item_cast, fn gs, 28, 3, :self, _claim, false ->
+        {:error, :invalid_target, gs, :before_start}
+      end)
+
+      SkillHandler.handle_use_skill(state, 28, 1, 1000)
+    end
+  end
+
   describe "skill action-gating" do
     test "the reusable gate rechecks a status that lands between staging and resume" do
       state = casting_state(45)
@@ -1862,7 +1927,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       test_pid = self()
       stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
 
-      s = casting_state(45)
+      s = knowing(casting_state(45), 12, 1)
       assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 12, 1, 12, 12)
 
       assert_received {:to_player,
@@ -2168,7 +2233,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         {:ok, session_state}
       end)
 
-      assert {:noreply, new_state} = SkillHandler.handle_use_skill(base, 26, 1, 1000)
+      assert {:noreply, new_state} =
+               SkillHandler.handle_use_skill(knowing(base, 26, 1), 26, 1, 1000)
+
       assert Map.get(new_state.game_state, :pending_warp) == nil
     end
 
@@ -2189,7 +2256,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         {:error, :map_not_found}
       end)
 
-      assert {:noreply, new_state} = SkillHandler.handle_use_skill(base, 26, 1, 1000)
+      assert {:noreply, new_state} =
+               SkillHandler.handle_use_skill(knowing(base, 26, 1), 26, 1, 1000)
+
       assert Map.get(new_state.game_state, :pending_warp) == nil
     end
 
@@ -2236,7 +2305,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         :ok
       end)
 
-      assert {:noreply, _new_state} = SkillHandler.handle_use_skill(base, 26, 1, 1000)
+      assert {:noreply, _new_state} =
+               SkillHandler.handle_use_skill(knowing(base, 26, 1), 26, 1, 1000)
 
       assert_received {:broadcast, "prontera", 150, 150,
                        %SkillEffect{skill_id: 26, level: 1, src_id: 1000, target_id: 1000}}
@@ -2259,7 +2329,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         :ok
       end)
 
-      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 35, 1, 2000)
+      assert {:noreply, _} =
+               SkillHandler.handle_use_skill(knowing(instant_state(30), 35, 1), 35, 1, 2000)
 
       assert_received {:broadcast,
                        %SkillEffect{skill_id: 35, level: 1, src_id: 1000, target_id: 2000}}
@@ -2284,7 +2355,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         :ok
       end)
 
-      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 57, 1, 2000)
+      assert {:noreply, _} =
+               SkillHandler.handle_use_skill(knowing(instant_state(30), 57, 1), 57, 1, 2000)
 
       refute_received {:broadcast, %SkillEffect{}}
     end
@@ -2315,7 +2387,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         :ok
       end)
 
-      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 61, 1, 1000)
+      assert {:noreply, _} =
+               SkillHandler.handle_use_skill(knowing(instant_state(30), 61, 1), 61, 1, 1000)
 
       refute_received {:broadcast, %SkillEffect{}}
     end
@@ -2346,7 +2419,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         :ok
       end)
 
-      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 98, 1, 1000)
+      assert {:noreply, _} =
+               SkillHandler.handle_use_skill(knowing(instant_state(30), 98, 1), 98, 1, 1000)
 
       refute_received {:broadcast, %SkillEffect{}}
     end
@@ -2366,7 +2440,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         :ok
       end)
 
-      assert {:noreply, _} = SkillHandler.handle_use_skill(instant_state(30), 72, 1, 2000)
+      assert {:noreply, _} =
+               SkillHandler.handle_use_skill(knowing(instant_state(30), 72, 1), 72, 1, 2000)
 
       assert_received {:broadcast,
                        %SkillEffect{skill_id: 72, level: 1, src_id: 1000, target_id: 2000}}

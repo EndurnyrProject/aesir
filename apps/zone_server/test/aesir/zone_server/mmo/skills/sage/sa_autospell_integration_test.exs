@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.SkillMenuReply
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
@@ -110,10 +111,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
 
   describe "the armed bolt procs on a weapon hit" do
     test "a landed hit returns the auto-cast the combat path drains" do
+      armed_level = armed_level()
       assert {:noreply, _} = inject(selected_id: @coldbolt)
       :rand.seed(:exsss, @procs_seed)
 
-      assert [{:auto_cast, :mg_coldbolt, 5, {:unit, @victim_id}}] = weapon_hit()
+      assert [{:auto_cast, :mg_coldbolt, ^armed_level, {:unit, @victim_id}}] = weapon_hit()
     end
 
     # The proc names the skill by catalog name; the combat drain resolves it to
@@ -142,10 +144,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
   # guard anywhere, and none is needed.
   describe "recursion is structurally impossible" do
     test "casting the procced bolt fires no second proc" do
+      armed_level = armed_level()
       assert {:noreply, _} = inject(selected_id: @firebolt)
       :rand.seed(:exsss, @procs_seed)
 
-      assert [{:auto_cast, :mg_firebolt, 5, _}] = weapon_hit()
+      assert [{:auto_cast, :mg_firebolt, ^armed_level, _}] = weapon_hit()
 
       # A bolt cast is magic damage, and magic never calls the attacker-side
       # hook: the only caller is the weapon path. Rig the roll so that *any*
@@ -269,4 +272,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
       }
     }
   end
+
+  # Hindsight 10 arms half its level in renewal; classic arms Cold and Fire Bolt at 3.
+  defp armed_level, do: if(GameMode.mode() == :renewal, do: 5, else: 3)
 end

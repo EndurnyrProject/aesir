@@ -25,9 +25,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Edp do
     icon: :edp
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
@@ -43,9 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Edp do
   @doc "The live player's Research New Poison duration extension, or zero for other units."
   @spec duration_bonus(Definition.target()) :: non_neg_integer()
   def duration_bonus({:player, id}) do
-    with {:ok, {_, %{stats: %{progression: %{learned_skills: learned}}}, _}} <-
-           UnitRegistry.get_unit(:player, id),
-         level when level > 0 <- Learned.learned_level(learned, 2024) do
+    with {:ok, {_, %{stats: stats}, _}} when is_map(stats) <- UnitRegistry.get_unit(:player, id),
+         level when level > 0 <- PlayerStats.skill_level(stats, 2024) do
       30_000 + 15_000 * level
     else
       _none -> 0

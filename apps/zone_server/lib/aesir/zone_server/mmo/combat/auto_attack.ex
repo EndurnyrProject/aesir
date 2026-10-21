@@ -34,7 +34,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal
@@ -43,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.Resource
@@ -653,14 +653,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     })
   end
 
-  # A caught player attacker's own Blade Stop level (0 when unlearned) drives their
-  # Root record's follow-up gate, read from the real player progression's
-  # `learned_skills` map. The fallback fires only when the caster state carries no
-  # such map (a mob combatant reused as a caster, or a bare test fixture), never
-  # crashing the swing; a real player always hits the first clause.
-  defp attacker_root_level(%{stats: %{progression: %{learned_skills: learned}}})
-       when is_map(learned),
-       do: Learned.learned_level(learned, @bladestop_skill_id)
+  # A caught player attacker's own Blade Stop level (learned or granted, 0 when it
+  # has neither) drives their Root record's follow-up gate. The fallback fires
+  # only when the caster state carries no stats map (a mob combatant reused as a
+  # caster, or a bare test fixture), never crashing the swing.
+  defp attacker_root_level(%{stats: stats}) when is_map(stats),
+    do: PlayerStats.skill_level(stats, @bladestop_skill_id)
 
   defp attacker_root_level(_state), do: 0
 

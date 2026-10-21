@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -22,6 +21,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
+
+  @finding_ore 106
 
   @doc """
   Routes a `:loot`-enveloped session message to its handler. `PlayerSession`'s
@@ -193,7 +194,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
       )
       |> Kernel.++(equip_drops)
       |> maybe_discover_ore(
-        stats.progression.learned_skills,
+        Stats.skill_level(stats, @finding_ore),
         x,
         y,
         rng,
@@ -221,8 +222,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   defp bonus_race(:player), do: RaceModifiers.player_race()
   defp bonus_race(race) when is_atom(race), do: race
 
-  defp maybe_discover_ore(drops, learned_skills, x, y, rng, {:player, _id}) do
-    if Learned.learned_level(learned_skills, 106) > 0 do
+  defp maybe_discover_ore(drops, finding_ore_level, x, y, rng, {:player, _id}) do
+    if finding_ore_level > 0 do
       entries = OreTable.entries()
       {item_id, rate} = Enum.fetch!(entries, rng.(length(entries)) - 1)
 
@@ -234,7 +235,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
     end
   end
 
-  defp maybe_discover_ore(drops, _learned_skills, _x, _y, _rng, _final_source), do: drops
+  defp maybe_discover_ore(drops, _finding_ore_level, _x, _y, _rng, _final_source), do: drops
 
   # Ore discovery builds its item through the same drop-item construction as
   # the monster's table, so the obtain rule decides identification. An

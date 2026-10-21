@@ -11,10 +11,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @doc """
   Routes a state-mutating op through the single-writer session (always a
@@ -59,13 +59,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   end
 
   @doc """
-  Learned level of `skill` (id or catalog name atom) from a game state's
-  progression; `0` for an unknown skill or name (the `getskilllv` core).
+  The player's current level (learned or granted) of `skill` (id or catalog
+  name atom); `0` for an unknown skill or name (the `getskilllv` core).
   """
-  @spec learned_level(struct(), integer() | atom()) :: non_neg_integer()
-  def learned_level(gs, skill) do
+  @spec skill_level(struct(), integer() | atom()) :: non_neg_integer()
+  def skill_level(gs, skill) do
     case resolve_skill_id(skill) do
-      {:ok, skill_id} -> Learned.learned_level(gs.stats.progression.learned_skills, skill_id)
+      {:ok, skill_id} -> PlayerStats.skill_level(gs.stats, skill_id)
       {:error, _reason} -> 0
     end
   end

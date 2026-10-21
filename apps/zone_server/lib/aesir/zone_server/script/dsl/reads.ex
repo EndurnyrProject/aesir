@@ -31,8 +31,6 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
@@ -152,32 +150,25 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   @basic_skill_job_req 9
 
   @doc """
-  Whether the player meets the Basic Skill requirement to change job — a learned
-  `NV_BASIC` at level #{@basic_skill_job_req} (rAthena `F_CanChangeJob`).
+  Whether the player meets the Basic Skill requirement to change job — an
+  `NV_BASIC` (learned or granted) at level #{@basic_skill_job_req} (rAthena `F_CanChangeJob`).
   """
   @spec can_change_job?(Ctx.t()) :: boolean()
   def can_change_job?(%Ctx{game_state: nil}), do: no_player!("can_change_job?/1")
 
-  def can_change_job?(%Ctx{game_state: gs}) do
-    case Catalog.by_name(:nv_basic) do
-      {:ok, %{id: id}} ->
-        Learned.learned_level(gs.stats.progression.learned_skills, id) >= @basic_skill_job_req
-
-      :error ->
-        false
-    end
-  end
+  def can_change_job?(%Ctx{game_state: gs}),
+    do: Internal.skill_level(gs, :nv_basic) >= @basic_skill_job_req
 
   @doc """
-  The player's learned level of a skill (rAthena `getskilllv`), `0` when not
-  learned. `skill` is a skill id or its catalog name atom; an unknown skill
+  The player's current level of a skill, learned or granted by equipment
+  (rAthena `getskilllv`), `0` when it has neither. `skill` is a skill id or its catalog name atom; an unknown skill
   returns `0`, matching rAthena's unknown-skill result. Pure read over the
   ctx snapshot.
   """
   @spec getskilllv(Ctx.t(), integer() | atom()) :: non_neg_integer()
   def getskilllv(%Ctx{game_state: nil}, _skill), do: no_player!("getskilllv/2")
 
-  def getskilllv(%Ctx{game_state: gs}, skill), do: Internal.learned_level(gs, skill)
+  def getskilllv(%Ctx{game_state: gs}, skill), do: Internal.skill_level(gs, skill)
 
   @doc "`strcharinfo(type)` for the attached character (see `Rathena.strcharinfo/2`)."
   @spec char_name(Ctx.t(), integer()) :: String.t()

@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Trade
   alias Aesir.ZoneServer.Unit.Trade.Session, as: TradeSession
@@ -356,8 +357,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
   defp ensure_empty(nil, nil), do: :ok
   defp ensure_empty(_trade, _pending), do: {:error, :busy}
 
-  defp nv_basic(%PlayerState{stats: %{progression: %{learned_skills: learned_skills}}}) do
-    case NvBasic.allows_action?(learned_skills, :trade) do
+  defp nv_basic(%PlayerState{stats: stats}) do
+    case NvBasic.allows_action?(PlayerStats.effective_skills(stats), :trade) do
       :ok -> :ok
       {:error, _reason} -> {:error, :invalid}
     end

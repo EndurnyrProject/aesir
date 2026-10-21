@@ -117,6 +117,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     }
   end
 
+  # The scripts run in the order `status_calc_pc` runs them: the active
+  # autobonus programs, then each worn item's own script by equipment slot (the
+  # ammunition's after every other item), then every worn item's cards by
+  # equipment slot and card slot. Their bonuses merge in that order, and a
+  # script's `skill_lv` reads see the learned levels joined with what the
+  # scripts before it granted. An active autobonus that grants a skill makes
+  # the worn scripts run again with that grant visible.
   defp equipment_fold_result(stats, worn_items, extra_inputs) do
     inputs =
       stats.progression
@@ -125,7 +132,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       |> Map.merge(extra_inputs)
       |> Map.put_new_lazy(:local_time, &NaiveDateTime.local_now/0)
 
-    fold = fold_worn_items(worn_items, inputs)
+    {_fold, _active, active_results} =
+      first_pass = fold_with_actives(stats, worn_items, inputs, inputs)
+
+    active_grants = granted_by(active_results)
+
+    {fold, active, active_results} =
+      if active_grants == %{},
+        do: first_pass,
+        else: fold_with_actives(stats, worn_items, inputs, see_grants(inputs, active_grants))
+
+    auto_casts = active_auto_casts(active_results, worn_items) ++ fold.auto_casts
+    add_effs = active_add_effs(active_results, worn_items) ++ fold.add_effs
+
+    bonuses =
+      active_results
+      |> Enum.map(fn {_registration, result} -> result.modifiers end)
+      |> Enum.concat(Enum.reverse(fold.modifier_steps))
+      |> Enum.reduce(fold.bonuses, &merge_equip_modifiers(&2, &1))
+      |> register_auto_casts(auto_casts)
+      |> register_add_effs(add_effs)
+      |> finalize_equipment_bonuses()
+
+    %{fold | bonuses: bonuses} |> Map.put(:active, active)
+  end
+
+  defp fold_with_actives(stats, worn_items, active_inputs, worn_inputs) do
+    fold = fold_worn_items(worn_items, worn_inputs)
 
     active =
       retain_active_autobonuses(
@@ -134,29 +167,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         fold.registrations
       )
 
-    active_results =
-      active
-      |> Enum.sort_by(fn {key, _generation} -> fold.registrations[key].source_order end)
-      |> Enum.map(fn {key, _generation} ->
-        registration = Map.fetch!(fold.registrations, key)
-        active_inputs = %{inputs | refine: registration.refine}
-        {registration, EquipScript.evaluate(registration.primary, active_inputs)}
-      end)
-
-    auto_casts = active_auto_casts(active_results, worn_items) ++ fold.auto_casts
-    add_effs = active_add_effs(active_results, worn_items) ++ fold.add_effs
-
-    bonuses =
-      active_results
-      |> Enum.reduce(fold.bonuses, fn {_registration, result}, acc ->
-        merge_equip_modifiers(acc, result.modifiers)
-      end)
-      |> register_auto_casts(auto_casts)
-      |> register_add_effs(add_effs)
-      |> finalize_equipment_bonuses()
-
-    Map.put(fold, :active, active) |> Map.put(:bonuses, bonuses)
+    {fold, active, evaluate_actives(active, fold.registrations, worn_items, active_inputs)}
   end
+
+  # The active programs run before any worn script, so they see the learned
+  # levels and the grants of the active programs before them only.
+  defp evaluate_actives(active, registrations, worn_items, inputs) do
+    active
+    |> Enum.map(fn {key, _generation} -> Map.fetch!(registrations, key) end)
+    |> Enum.sort_by(&active_order(&1, worn_items))
+    |> Enum.map_reduce(inputs, fn registration, inputs ->
+      result = EquipScript.evaluate(registration.primary, %{inputs | refine: registration.refine})
+      {{registration, result}, see_grants(inputs, granted_by([{registration, result}]))}
+    end)
+    |> elem(0)
+  end
+
+  defp granted_by(results) do
+    Enum.reduce(results, %{}, fn {_source, result}, acc ->
+      Enum.reduce(result.modifiers, acc, fn
+        {{:granted_skill, skill_id}, level}, acc ->
+          Map.update(acc, skill_id, level, &max(&1, level))
+
+        _modifier, acc ->
+          acc
+      end)
+    end)
+  end
+
+  defp see_grants(inputs, grants),
+    do: Map.update!(inputs, :learned_skills, &with_grants(&1, grants))
+
+  defp with_grants(skills, grants),
+    do: Map.merge(skills, grants, fn _skill_id, held, granted -> max(held, granted) end)
 
   # Autocasts register in the order the worn scripts run: the active autobonus
   # programs first (attack, then when-hit, then on-skill autobonuses), then each
@@ -386,36 +429,59 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   defp fold_worn_items(worn_items, inputs) do
     worn_items
     |> Enum.with_index()
+    |> Enum.flat_map(fn {item, worn_ordinal} -> item_sources(item, worn_ordinal) end)
+    |> Enum.sort_by(& &1.order)
     |> Enum.reduce(
       %{
         bonuses: empty_equipment_bonuses(),
+        modifier_steps: [],
+        visible: inputs.learned_skills,
         auto_casts: [],
         add_effs: [],
         registrations: %{},
         statuses: %{},
         card_cleanups: %{}
       },
-      fn {item, worn_ordinal}, fold -> fold_worn_item(item, worn_ordinal, fold, inputs) end
+      &apply_equipment_source(&1, inputs, &2)
     )
   end
 
-  defp fold_worn_item(item, worn_ordinal, fold, inputs) do
+  # A worn item's script sources: its own script, then its in-range cards. The
+  # autobonus statements are numbered per worn item across them in that order,
+  # which keys their registrations whatever order the scripts run in.
+  defp item_sources(item, worn_ordinal) do
     case ItemManagement.get_item_by_id(item.nameid) do
       {:ok, %ItemDefinition{} = item_def} ->
-        item_inputs = Map.put(inputs, :refine, item.refine)
-        fold = %{fold | bonuses: accumulate_item_bonus(fold.bonuses, item_def, item.refine)}
+        slot = EquipLocation.equip_index(item.equip)
+
+        host_phase =
+          if :ammo in EquipLocation.bitmask_to_location_atoms(item.equip), do: 2, else: 1
 
         [{item_def, nil} | card_sources(item, item_def)]
-        |> Enum.reduce({fold, 0}, fn {_def, card_slot} = source, {acc, next_slot} ->
-          source_inputs = put_lr_flag(item_inputs, lr_flag(item, item_def, card_slot))
-          apply_equipment_source(source, item, source_inputs, worn_ordinal, acc, next_slot)
+        |> Enum.map_reduce(0, fn {source_def, card_slot}, next_slot ->
+          {program, next_slot} = number_autobonuses(source_def.on_equip || [], next_slot)
+
+          source = %{
+            order: source_order(host_phase, slot, card_slot),
+            source_def: source_def,
+            host_def: item_def,
+            card_slot: card_slot,
+            item: item,
+            worn_ordinal: worn_ordinal,
+            program: program
+          }
+
+          {source, next_slot}
         end)
         |> elem(0)
 
       _ ->
-        fold
+        []
     end
   end
+
+  defp source_order(host_phase, slot, nil), do: {host_phase, {slot, -1}}
+  defp source_order(_host_phase, slot, card_slot), do: {3, {slot, card_slot}}
 
   defp put_lr_flag(inputs, nil), do: inputs
   defp put_lr_flag(inputs, lr_flag), do: Map.put(inputs, :lr_flag, lr_flag)
@@ -434,26 +500,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     end
   end
 
-  defp apply_equipment_source(
-         {%ItemDefinition{} = source_def, card_slot},
-         item,
-         inputs,
-         worn_ordinal,
-         fold,
-         next_slot
-       ) do
-    result = evaluate_equip_script(source_def.on_equip, inputs)
-    {next_slot, lexical_registrations} = isolate_autobonuses(source_def.on_equip || [], next_slot)
+  defp apply_equipment_source(%{item: item, card_slot: card_slot} = source, inputs, fold) do
+    source_def = source.source_def
+
+    source_inputs =
+      inputs
+      |> Map.put(:refine, item.refine)
+      |> Map.put(:learned_skills, fold.visible)
+      |> put_lr_flag(lr_flag(item, source.host_def, card_slot))
+
+    result = EquipScript.evaluate(source.program, source_inputs)
 
     registrations =
-      install_lexical_autobonuses(
-        lexical_registrations,
+      install_autobonuses(
+        result.autobonuses,
         fold.registrations,
         autobonus_source_identity(source_def.id, card_slot),
         source_def.id,
         item,
-        inputs,
-        worn_ordinal
+        source_inputs,
+        source.worn_ordinal
       )
 
     card_cleanups =
@@ -462,22 +528,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         source_def,
         card_slot,
         item,
-        inputs,
-        worn_ordinal
+        source_inputs,
+        source.worn_ordinal
       )
 
     auto_casts = source_auto_casts(result.auto_casts, item, card_slot, source_def.id)
 
-    {%{
-       fold
-       | bonuses: merge_equip_modifiers(fold.bonuses, result.modifiers),
-         auto_casts: fold.auto_casts ++ auto_casts,
-         add_effs: fold.add_effs ++ source_add_effs(result.add_effs, item, card_slot),
-         registrations: registrations,
-         statuses: install_equip_statuses(fold.statuses, result.effects),
-         card_cleanups: card_cleanups
-     }, next_slot}
+    %{
+      fold
+      | bonuses: accumulate_host_bonus(fold.bonuses, source),
+        modifier_steps: [result.modifiers | fold.modifier_steps],
+        visible: with_grants(fold.visible, granted_by([{source, result}])),
+        auto_casts: fold.auto_casts ++ auto_casts,
+        add_effs: fold.add_effs ++ source_add_effs(result.add_effs, item, card_slot),
+        registrations: registrations,
+        statuses: install_equip_statuses(fold.statuses, result.effects),
+        card_cleanups: card_cleanups
+    }
   end
+
+  defp accumulate_host_bonus(bonuses, %{card_slot: nil, host_def: item_def, item: item}),
+    do: accumulate_item_bonus(bonuses, item_def, item.refine)
+
+  defp accumulate_host_bonus(bonuses, _card_source), do: bonuses
 
   defp install_card_cleanup(cleanups, _source_def, nil, _item, _inputs, _worn_ordinal),
     do: cleanups
@@ -546,7 +619,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   defp autobonus_source_identity(item_id, nil), do: {:host, item_id}
   defp autobonus_source_identity(item_id, card_slot), do: {:card, card_slot, item_id}
 
-  defp install_lexical_autobonuses(
+  defp install_autobonuses(
          [],
          registrations,
          _source_identity,
@@ -557,8 +630,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
        ),
        do: registrations
 
-  defp install_lexical_autobonuses(
-         slots,
+  defp install_autobonuses(
+         autobonuses,
          registrations,
          source_identity,
          source_item_id,
@@ -568,75 +641,40 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
        ) do
     row_id = registration_row_id!(item)
 
-    Enum.reduce(slots, registrations, fn slot, acc ->
-      install_autobonus_slot(
-        acc,
-        slot,
-        row_id,
-        source_identity,
-        source_item_id,
-        item,
-        inputs,
-        worn_ordinal
-      )
+    Enum.reduce(autobonuses, registrations, fn %{lexical_slot: lexical_slot} = autobonus, acc ->
+      autobonus = Map.delete(autobonus, :lexical_slot)
+      primary = EquipScript.evaluate(autobonus.primary, inputs)
+      secondary = EquipScript.evaluate(autobonus.secondary, inputs)
+
+      registration =
+        Map.merge(autobonus, %{
+          item_id: source_item_id,
+          source_identity: source_identity,
+          refine: item.refine,
+          source_order: {worn_ordinal, lexical_slot},
+          primary_effects: primary.effects,
+          secondary_effects: secondary.effects
+        })
+
+      Map.put(acc, {row_id, lexical_slot}, registration)
     end)
   end
 
-  defp install_autobonus_slot(
-         registrations,
-         {lexical_slot, isolated_program},
-         row_id,
-         source_identity,
-         source_item_id,
-         item,
-         inputs,
-         worn_ordinal
-       ) do
-    case EquipScript.evaluate(isolated_program, inputs).autobonuses do
-      [] ->
-        registrations
+  # Numbers each autobonus statement of a program in lexical order (a branch's
+  # then-part before its else-part), continuing from `next_slot`, whether or not
+  # its condition holds when the program runs.
+  defp number_autobonuses(program, next_slot) do
+    Enum.map_reduce(program, next_slot, fn
+      {:autobonus, spec, rate, duration}, slot ->
+        {{:autobonus, Map.put(spec, :lexical_slot, slot), rate, duration}, slot + 1}
 
-      [autobonus] ->
-        primary = EquipScript.evaluate(autobonus.primary, inputs)
-        secondary = EquipScript.evaluate(autobonus.secondary, inputs)
+      {:if, condition, then_branch, else_branch}, slot ->
+        {then_branch, slot} = number_autobonuses(then_branch, slot)
+        {else_branch, slot} = number_autobonuses(else_branch, slot)
+        {{:if, condition, then_branch, else_branch}, slot}
 
-        registration =
-          Map.merge(autobonus, %{
-            item_id: source_item_id,
-            source_identity: source_identity,
-            refine: item.refine,
-            source_order: {worn_ordinal, lexical_slot},
-            primary_effects: primary.effects,
-            secondary_effects: secondary.effects
-          })
-
-        Map.put(registrations, {row_id, lexical_slot}, registration)
-    end
-  end
-
-  defp isolate_autobonuses(program, next_slot) do
-    Enum.reduce(program, {next_slot, []}, fn
-      {:autobonus, _spec, _rate, _duration} = autobonus, {slot, registrations} ->
-        {slot + 1, registrations ++ [{slot, [autobonus]}]}
-
-      {:if, condition, then_branch, else_branch}, {slot, registrations} ->
-        {after_then, then_registrations} = isolate_autobonuses(then_branch, slot)
-        {after_else, else_registrations} = isolate_autobonuses(else_branch, after_then)
-
-        wrapped_then =
-          Enum.map(then_registrations, fn {index, branch} ->
-            {index, [{:if, condition, branch, []}]}
-          end)
-
-        wrapped_else =
-          Enum.map(else_registrations, fn {index, branch} ->
-            {index, [{:if, condition, [], branch}]}
-          end)
-
-        {after_else, registrations ++ wrapped_then ++ wrapped_else}
-
-      _instruction, acc ->
-        acc
+      instruction, slot ->
+        {instruction, slot}
     end)
   end
 
@@ -682,9 +720,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   # accumulator, so each bonus is merged with `Map.update/4`; downstream readers
   # all use `Map.get(..., 0)`. Numeric bonuses sum except for non-stackable
   # destinations, while constant-valued destinations use last-source-wins.
-
-  defp evaluate_equip_script(nil, inputs), do: EquipScript.evaluate([], inputs)
-  defp evaluate_equip_script(program, inputs), do: EquipScript.evaluate(program, inputs)
 
   defp equip_script_inputs(progression, stat_params, refine) do
     %{

@@ -632,4 +632,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @spec granted_skills(t()) :: %{integer() => non_neg_integer()}
   def granted_skills(%__MODULE__{granted_skills: granted}) when is_map(granted), do: granted
   def granted_skills(%__MODULE__{}), do: %{}
+
+  @doc """
+  The player's current level in a skill: the higher of its learned level and the
+  level worn equipment grants, `0` when it has neither. Every game rule that asks
+  "what level does the player have" reads this; only learning (skill points,
+  prerequisites, resets, persistence) reads the learned map alone.
+
+  Accepts the bare-map `stats` shape some callers carry, where a missing
+  progression or grant map counts as nothing learned or granted.
+  """
+  @spec skill_level(t() | map(), integer()) :: non_neg_integer()
+  def skill_level(stats, skill_id) when is_map(stats) and is_integer(skill_id),
+    do: max(learned_level(stats, skill_id), Map.get(granted_map(stats), skill_id, 0))
+
+  @doc """
+  Every skill the player has at its `skill_level/2`, as `%{skill_id => level}`:
+  the learned map joined with the granted one, the higher level winning, without
+  zero-level entries.
+  """
+  @spec effective_skills(t() | map()) :: %{integer() => pos_integer()}
+  def effective_skills(stats) when is_map(stats) do
+    stats
+    |> learned_map()
+    |> Map.merge(granted_map(stats), fn _skill_id, learned, granted -> max(learned, granted) end)
+    |> Map.reject(fn {_skill_id, level} -> level in [nil, 0] end)
+  end
+
+  defp learned_level(stats, skill_id), do: Learned.learned_level(learned_map(stats), skill_id)
+
+  defp learned_map(%{progression: %{learned_skills: learned}}) when is_map(learned), do: learned
+  defp learned_map(_stats), do: %{}
+
+  defp granted_map(stats), do: Map.get(stats, :granted_skills) || %{}
 end

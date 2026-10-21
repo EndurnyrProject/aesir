@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @weapon_skill_ids 98..104
   @pharmacy_skill_id 228
@@ -118,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
          _instruction_change_rank
        )
        when skill_id in @weapon_skill_ids do
-    learned = caster.stats.progression.learned_skills
+    learned = PlayerStats.effective_skills(caster.stats)
 
     SuccessRate.weapon(%{
       job_level: caster.stats.progression.job_level,
@@ -142,7 +143,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
          _element,
          instruction_change_rank
        ) do
-    learned = caster.stats.progression.learned_skills
+    learned = PlayerStats.effective_skills(caster.stats)
 
     SuccessRate.pharmacy(recipe.product_id, %{
       job_level: caster.stats.progression.job_level,
@@ -157,7 +158,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   end
 
   defp success_chance(caster, recipe, _crumbs, _element, _instruction_change_rank) do
-    learned = caster.stats.progression.learned_skills
+    learned = PlayerStats.effective_skills(caster.stats)
 
     SuccessRate.mineral(mineral_kind(recipe), %{
       job_level: caster.stats.progression.job_level,

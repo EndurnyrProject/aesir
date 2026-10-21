@@ -50,7 +50,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
@@ -60,6 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   # Vulture's Eye: the passive whose learned level widens a `vulture_range` skill.
   @vulture_skill_id 44
@@ -2144,8 +2144,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     do: SkillRange.database_range(definition, level) + vulture_range_bonus(definition, game_state)
 
   defp vulture_range_bonus(%{vulture_range: true}, %PlayerState{} = game_state) do
-    game_state.stats.progression.learned_skills
-    |> Learned.learned_level(@vulture_skill_id)
+    PlayerStats.skill_level(game_state.stats, @vulture_skill_id)
   end
 
   defp vulture_range_bonus(_definition, _game_state), do: 0

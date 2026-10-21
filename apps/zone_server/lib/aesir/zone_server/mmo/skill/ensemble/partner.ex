@@ -10,7 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
@@ -61,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
     candidate.character_id != caster.character_id and
       same_party?(candidate, caster) and
       opposite_performer?(candidate, caster_job) and
-      Learned.learned_level(candidate.stats.progression.learned_skills, skill_id) > 0 and
+      PlayerStats.skill_level(candidate.stats, skill_id) > 0 and
       PlayerStats.weapon_type(candidate.stats.equipment) in @performer_weapons and
       available?(candidate)
   end

@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   # resolves against the guild entry, never against the caster's progression.
   @guild_skill_range 10_000..10_019
   @emergency_calls [10_013, 10_015]
+  @charge_shout_beating 10_018
 
   # Renewal requires one extra ammunition unit for these casts (2016-10-26 kRO
   # update), checked at the cast end and never consumed.
@@ -513,6 +514,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   defp effective_skill?(caster, skill_id), do: effective_skill_level(caster, skill_id) > 0
+
+  @doc """
+  The level a player's request to use `skill_id` at `requested` runs at, `0`
+  when the request is dropped. A guild skill runs at the guild's level when the
+  caster is the guild's master (Charge Shout Beating for any member) and is
+  dropped otherwise, whatever level was asked for. Any other skill runs at the
+  requested level capped by the caster's own level in it: learned, granted by
+  equipment or copied by Plagiarism.
+  """
+  @spec request_level(PlayerState.t(), integer(), non_neg_integer()) :: non_neg_integer()
+  def request_level(%PlayerState{} = caster, skill_id, _requested)
+      when skill_id in @guild_skill_range,
+      do: guild_request_level(caster, skill_id)
+
+  def request_level(%PlayerState{} = caster, skill_id, requested) do
+    own_level = max(effective_skill_level(caster, skill_id), copied_level(caster, skill_id))
+    min(requested, own_level)
+  end
+
+  defp guild_request_level(%PlayerState{guild_id: guild_id}, _skill_id)
+       when guild_id in [nil, 0],
+       do: 0
+
+  defp guild_request_level(%PlayerState{guild_id: guild_id, character_id: char_id}, skill_id) do
+    case GuildManager.get(guild_id) do
+      {:ok, %GuildState{master_char_id: master} = guild}
+      when master == char_id or skill_id == @charge_shout_beating ->
+        GuildState.skill_level(guild, skill_id)
+
+      _not_master_or_missing ->
+        0
+    end
+  end
+
+  defp copied_level(%PlayerState{plagiarized: %{skill_id: skill_id, level: level}}, skill_id),
+    do: level
+
+  defp copied_level(_caster, _skill_id), do: 0
 
   @doc """
   The caster's level in a skill: the higher of its learned and equipment-granted

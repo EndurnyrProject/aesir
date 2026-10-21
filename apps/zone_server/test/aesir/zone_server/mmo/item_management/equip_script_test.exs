@@ -1097,6 +1097,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.eval(program, on(0, learned_skills: %{87 => 4})) == %{heal_power: 4}
     end
 
+    test "skill_lv sees the program's own grant only after it" do
+      program = [
+        {:if, {:==, {:skill_lv, 157}, 1}, [{:bonus, :def, 300}], []},
+        {:if, {:>, :refine, 7}, [{:grant_skill, 157, 1}], []},
+        {:bonus, :mdef, {:skill_lv, 157}}
+      ]
+
+      assert EquipScript.eval(program, on(8)) == %{{:granted_skill, 157} => 1, mdef: 1}
+
+      assert EquipScript.eval(program, on(8, learned_skills: %{157 => 1})) ==
+               %{{:granted_skill, 157} => 1, def: 300, mdef: 1}
+
+      assert EquipScript.eval(program, on(0)) == %{mdef: 0}
+    end
+
     test "skill_lv defaults to 0 when the learned-skills input is absent" do
       program = [{:if, {:>, {:skill_lv, 87}, 0}, [{:bonus, :int, 3}], []}]
 

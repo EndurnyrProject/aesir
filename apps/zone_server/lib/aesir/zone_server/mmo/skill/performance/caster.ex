@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Caster do
   fall back to the allocated points and a lesson level of zero.
   """
 
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
 
@@ -21,11 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Caster do
 
   def stat(_caster, _stat_name), do: 0
 
-  @doc "The performer's learned level of the given lesson skill."
+  @doc "The performer's level (learned or granted) of the given lesson skill."
   @spec lesson_level(map(), integer()) :: non_neg_integer()
-  def lesson_level(%{stats: %{progression: %{learned_skills: learned}}}, skill_id)
-      when is_map(learned),
-      do: Learned.learned_level(learned, skill_id)
+  def lesson_level(%{stats: stats}, skill_id) when is_map(stats),
+    do: Stats.skill_level(stats, skill_id)
 
   def lesson_level(_caster, _skill_id), do: 0
 end

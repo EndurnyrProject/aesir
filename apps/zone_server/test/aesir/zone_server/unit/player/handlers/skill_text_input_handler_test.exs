@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
     expect(Interpreter, :preflight_cast, fn _game_state, 9_001, 1, {:ground, 151, 150} -> :ok end)
 
     assert {:noreply, staged} =
-             SkillHandler.handle_use_skill_ground(state(), 9_001, 1, 151, 150)
+             SkillHandler.handle_use_skill_ground(knowing(state(), 9_001, 1), 9_001, 1, 151, 150)
 
     assert staged.pending_skill_text_input.skill_id == 9_001
   end
@@ -339,6 +339,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandlerTest do
       connection_pid: self(),
       client_capabilities: [:FEATURE_CAPABILITY_SKILL_TEXT_INPUT]
     }
+  end
+
+  # The player knows `skill_id` at `level`, as a request needs to reach its cast.
+  defp knowing(%SessionState{game_state: game_state} = state, skill_id, level) do
+    progression = %Stats.PlayerProgression{learned_skills: %{skill_id => level}}
+    %{state | game_state: %{game_state | stats: %Stats{progression: progression}}}
   end
 
   defp moving_state(sp) do

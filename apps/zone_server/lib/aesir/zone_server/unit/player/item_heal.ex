@@ -18,7 +18,6 @@ defmodule Aesir.ZoneServer.Unit.Player.ItemHeal do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
-  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -34,11 +33,11 @@ defmodule Aesir.ZoneServer.Unit.Player.ItemHeal do
   @spec amounts(PlayerState.t(), pos_integer() | nil, integer(), integer()) ::
           {integer(), integer()}
   def amounts(%PlayerState{stats: stats, character_id: char_id}, item_id, hp, sp) do
-    potion_research = 5 * learned(stats, @am_learningpotion)
+    potion_research = 5 * PlayerStats.skill_level(stats, @am_learningpotion)
 
     hp_bonus =
       (100 + 2 * PlayerStats.get_effective_stat(stats, :vit) +
-         10 * learned(stats, @sm_recovery) + potion_research +
+         10 * PlayerStats.skill_level(stats, @sm_recovery) + potion_research +
          PlayerStats.get_item_heal_rate(stats))
       |> compound(group_rate(stats, :add_item_group_heal, item_id))
       |> compound(PlayerStats.get_equipment_modifier(stats, {:add_item_heal, item_id}))
@@ -46,16 +45,13 @@ defmodule Aesir.ZoneServer.Unit.Player.ItemHeal do
 
     sp_bonus =
       (100 + 2 * PlayerStats.get_effective_stat(stats, :int) +
-         10 * learned(stats, @mg_srecovery) + potion_research +
+         10 * PlayerStats.skill_level(stats, @mg_srecovery) + potion_research +
          PlayerStats.get_equipment_modifier(stats, :item_sp_heal_rate))
       |> compound(group_rate(stats, :add_item_group_sp_heal, item_id))
       |> compound(PlayerStats.get_equipment_modifier(stats, {:add_item_sp_heal, item_id}))
 
     apply_statuses(raise_by(hp, hp_bonus), raise_by(sp, sp_bonus), char_id)
   end
-
-  defp learned(stats, skill_id),
-    do: Learned.learned_level(stats.progression.learned_skills, skill_id)
 
   defp compound(bonus, rate), do: bonus + div(bonus * rate, 100)
 
