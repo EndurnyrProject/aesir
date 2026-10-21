@@ -1,12 +1,16 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
+  alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -14,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
   @map "mob_escape_walk_map"
 
   setup :setup_ets_tables
+  setup :set_mimic_private
 
   setup do
     :ets.insert(EtsTable.table_for(:map_cache), {@map, MapData.new(@map, 60, 60)})
@@ -115,6 +120,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
   describe "walk-time skill check" do
     test "Speed Up keeps a trick-casting mob walking, faster" do
       now = System.system_time(:millisecond)
+      test_pid = self()
+      stub_position_fixes(test_pid)
 
       {:noreply, stepped} =
         MovementHandler.handle_movement_tick(walking_sphere(now + 3_000, now - 700))
@@ -124,10 +131,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
       assert stepped.movement_state == :moving
       assert stepped.last_skill_id == 332
       assert stepped.last_skillcheck >= now
+      refute_received {:fixpos, %MoveStop{}}
     end
 
     test "Speed Up stops the walk once under 700 ms of trick cast are left" do
       now = System.system_time(:millisecond)
+      test_pid = self()
+      stub_position_fixes(test_pid)
 
       {:noreply, stopped} =
         MovementHandler.handle_movement_tick(walking_sphere(now + 500, now - 700))
@@ -138,6 +148,31 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
       refute stopped.can_escape
       assert stopped.calculated.speed == 800
       assert stopped.last_skillcheck == now + 500
+      assert_received {:fixpos, %MoveStop{gid: 7, x: 31, y: 30}}
+    end
+
+    test "a walk skill that stops the walk fixes the position it redirects from" do
+      {:noreply, walking} = MovementHandler.handle_move_to(mob(), 30, 33)
+      test_pid = self()
+      stub_position_fixes(test_pid)
+
+      checks = :counters.new(1, [])
+
+      stub(AiHandler, :walk_skill_check, fn state ->
+        :counters.add(checks, 1, 1)
+
+        if :counters.get(checks, 1) == 1,
+          do: {:stop, %{state | walk_target: {33, 30}}},
+          else: {:continue, state}
+      end)
+
+      {:noreply, redirected} = MovementHandler.handle_movement_tick(walking)
+
+      assert_received {:fixpos, %MoveStop{gid: 7, x: 30, y: 31}}
+      assert {redirected.x, redirected.y} == {30, 31}
+      assert redirected.movement_state == :moving
+      assert redirected.walk_target == nil
+      assert List.last(redirected.walk_path) == {33, 30}
     end
 
     test "no skill is checked within the skill interval less half the speed" do
@@ -164,6 +199,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobEscapeWalkTest do
         can_escape: true,
         last_skillcheck: last_skillcheck
     }
+  end
+
+  defp stub_position_fixes(test_pid) do
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      send(test_pid, {:fixpos, packet})
+      :ok
+    end)
   end
 
   defp block_cell(x, y) do

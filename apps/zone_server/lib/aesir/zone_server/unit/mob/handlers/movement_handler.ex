@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   """
 
   alias Aesir.Net.Knockback
+  alias Aesir.Net.MoveStop
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
@@ -165,12 +166,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   defp enter_chase(state), do: state
 
   # Before each cell of a walk (its first included) the mob checks its skills
-  # (`AiHandler.walk_skill_check/1`). A walk the skill asked for starts from
-  # this cell; a skill that stops the walk leaves the mob standing here.
+  # (`AiHandler.walk_skill_check/1`). A skill that stops the walk fixes the
+  # mob's position on this cell, since clients were interpolating the cancelled
+  # path; the mob then either stands here or walks the path the skill asked for.
   defp next_cell(state, progressed? \\ false) do
     case AiHandler.walk_skill_check(state) do
-      {_continue_or_stop, %MobState{walk_target: {_x, _y}} = redirected} ->
-        redirect_walk(redirected)
+      {stop_or_continue, %MobState{walk_target: {_x, _y}} = redirected} ->
+        redirected |> publish_position_fix(stop_or_continue) |> redirect_walk()
 
       {:continue, state} ->
         case AiHandler.walk_chase(state, progressed?, length(state.walk_path) == 1) do
@@ -180,9 +182,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
         end
 
       {:stop, state} ->
-        stop_walk(state)
+        state |> stop_walk() |> publish_position_fix(:stop)
     end
   end
+
+  defp publish_position_fix(state, :stop) do
+    packet = %MoveStop{gid: state.instance_id, x: state.x, y: state.y}
+    Broadcast.to_in_range(state.map_name, state.x, state.y, Config.view_range(), packet)
+    state
+  end
+
+  defp publish_position_fix(state, :continue), do: state
 
   defp schedule_next_cell(state) do
     [next | _rest] = state.walk_path

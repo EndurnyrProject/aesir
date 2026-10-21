@@ -1,10 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   import Aesir.TestEtsSetup
   import Aesir.TestWait
   import Aesir.ZoneServer.SessionHelpers
 
+  alias Aesir.Net.Emotion
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -13,10 +15,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.StatusTickManager
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
+  setup :set_mimic_private
 
   test "charmed_against?/3 reads the mob's status, not the candidate's" do
     StatusStorage.apply_status(:mob, 100, :sc_winkcharm, caster_id: 200)
@@ -37,17 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
   end
 
   test "a charm ending on a monster unlocks its target" do
-    {:ok, definition} = Mobs.by_id(1002)
-
-    spawn = %MobSpawn{
-      mob: 1002,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %SpawnArea{x: 100, y: 100}
-    }
-
-    mob = MobState.new(100, definition, spawn, "prontera", 100, 100)
-    :ok = UnitRegistry.register_unit(:mob, 100, MobState, mob, self())
+    register_watched_mob(100)
     StatusStorage.apply_status(:mob, 100, :sc_winkcharm, caster_id: 200)
 
     Interpreter.remove_status(:mob, 100, :sc_winkcharm)
@@ -130,6 +125,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
     refute Interpreter.charmed_against?(:mob, mob.unit_id, 200)
   end
 
+  test "the charm shows the throb emote every 2250 ms while it is held" do
+    watched_mob = register_watched_mob(100)
+    stub_emote_broadcast()
+
+    assert :ok = apply_charm(watched_mob)
+
+    applied = StatusStorage.get_status(:mob, watched_mob, :sc_winkcharm)
+    assert applied.next_tick_at - applied.started_at == 2_250
+
+    run_due_ticks()
+    refute_received {:packet, %Emotion{}}
+
+    first_tick = due(watched_mob)
+    run_due_ticks()
+
+    assert_received {:packet, %Emotion{gid: 100, type: 3}}
+
+    ticked = StatusStorage.get_status(:mob, watched_mob, :sc_winkcharm)
+    assert ticked.tick_count == 1
+    assert ticked.next_tick_at == first_tick + 2_250
+  end
+
   test "metadata contains only the upstream debuff and dispel disposition" do
     metadata = WinkCharm.metadata()
 
@@ -137,6 +154,52 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.WinkCharmTest do
     assert metadata.no_dispel == false
     assert metadata.no_save == false
     assert metadata.remove_on_map_change == false
+  end
+
+  defp register_watched_mob(mob_id) do
+    {:ok, definition} = Mobs.by_id(1002)
+
+    spawn = %MobSpawn{
+      mob: 1002,
+      amount: 1,
+      respawn_time: 5_000,
+      spawn_area: %SpawnArea{x: 100, y: 100}
+    }
+
+    mob = MobState.new(mob_id, definition, spawn, "prontera", 100, 100)
+    :ok = UnitRegistry.register_unit(:mob, mob_id, MobState, mob, self())
+    :ok = SpatialIndex.add_unit(:mob, mob_id, 100, 100, "prontera")
+    mob_id
+  end
+
+  defp stub_emote_broadcast do
+    test_pid = self()
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      send(test_pid, {:packet, packet})
+      :ok
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet, _opts ->
+      send(test_pid, {:packet, packet})
+      :ok
+    end)
+  end
+
+  defp run_due_ticks do
+    assert {:noreply, %StatusTickManager.State{}} =
+             StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
+  end
+
+  defp due(mob_id) do
+    deadline = System.monotonic_time(:millisecond) - 1
+
+    :ok =
+      StatusStorage.update_status(:mob, mob_id, :sc_winkcharm, fn status ->
+        %{status | next_tick_at: deadline}
+      end)
+
+    deadline
   end
 
   defp apply_charm(mob_id) do
