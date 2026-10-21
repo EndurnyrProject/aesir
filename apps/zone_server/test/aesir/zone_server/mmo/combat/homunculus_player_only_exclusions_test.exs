@@ -18,10 +18,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HomunculusPlayerOnlyExclusionsTest do
       )
 
     assert source =~ "dispatch_normal_hit_passives(player_state"
-    assert source =~ "roll_equipment_breaks(player_state"
+    assert source =~ "EquipProcDispatch.dispatch_breaks("
     assert source =~ "drain_hp(attacker"
     refute homunculus_path =~ "dispatch_normal_hit_passives("
-    refute homunculus_path =~ "roll_equipment_breaks("
+    refute homunculus_path =~ "dispatch_breaks("
     refute homunculus_path =~ "drain_hp("
   end
 

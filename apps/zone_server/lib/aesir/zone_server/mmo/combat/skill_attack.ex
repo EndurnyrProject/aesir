@@ -1882,9 +1882,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       )
 
     if delivered?(delivery) do
-      OnHitEffects.after_hit(attacker, target, EquipProcDispatch.hit_event(hit_info, damage),
+      event = EquipProcDispatch.hit_event(hit_info, damage)
+
+      OnHitEffects.after_hit(attacker, target, event,
         attack_flag: attack_flag,
         skill_id: skill_id
+      )
+
+      EquipProcDispatch.dispatch_breaks(
+        attacker,
+        %{
+          type: target_type,
+          id: target.unit_id,
+          pid: target_pid,
+          state: hit_metadata.target_state
+        },
+        event,
+        attack_flag,
+        skill_id
       )
     end
 

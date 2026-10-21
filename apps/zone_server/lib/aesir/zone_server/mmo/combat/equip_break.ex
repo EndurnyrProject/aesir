@@ -2,9 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   @moduledoc """
   Resolves equipment-break attempts for player targets.
 
-  `resolve/3` handles the weapon and armor rates attached to normal weapon hits.
+  `resolve/3` handles the weapon and armor rates attached to weapon hits. Its
+  wearer may be a `%Stats{}` or a `%Combatant{}`; a player summon's hits resolve
+  their master's combatant, whose rates its equipment carries. `resolve_rates/4`
+  resolves the two target rates alone, for a caller that already has them.
   `resolve_slot/4` is the slot-specific entry point for skills that supply their
-  own break rate. Both paths apply equipment-based prevention and the matching
+  own break rate. Every path applies equipment-based prevention and the matching
   Chemical Protection status before rolling.
 
   Player targets include the character id because status effects are stored by
@@ -19,12 +22,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   """
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @type slot :: :weapon | :shield | :armor | :helm | :garment | :shoes
   @type decision :: {:self, :weapon} | {:target, slot()}
   @type target :: {:player, integer(), Stats.t()} | {atom(), term()}
+  @type rng :: (pos_integer() -> pos_integer())
 
   @weapon_break_immune_types ~w(
     fist one_handed_axe two_handed_axe mace two_handed_mace staff two_handed_staff book huuma
@@ -51,22 +56,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   @doc """
   Resolves natural self-weapon break and target weapon/armor break rates for a
   confirmed weapon hit.
+
+  The target rates come from the attacker's equipment; the self-break uses the
+  configured natural rate and the attacker's own weapon and prevention.
   """
-  @spec resolve(Stats.t(), target(), keyword()) :: [decision()]
-  def resolve(%Stats{} = attacker, target, opts \\ []) do
+  @spec resolve(Stats.t() | Combatant.t(), target(), keyword()) :: [decision()]
+  def resolve(wearer, target, opts \\ [])
+      when is_struct(wearer, Stats) or is_struct(wearer, Combatant) do
     rng = Keyword.get(opts, :rng, @default_rng)
 
-    [
-      self_weapon(attacker, rng),
-      target_slot(
-        Stats.get_equipment_modifier(attacker, :break_weapon_rate),
-        target,
-        :weapon,
-        rng
-      ),
-      target_slot(Stats.get_equipment_modifier(attacker, :break_armor_rate), target, :armor, rng)
-    ]
-    |> Enum.reject(&is_nil/1)
+    decisions(
+      wearer,
+      equipment_modifier(wearer, :break_weapon_rate),
+      equipment_modifier(wearer, :break_armor_rate),
+      target,
+      rng
+    )
+  end
+
+  @doc """
+  Resolves the target weapon and armor break rates alone, without the
+  self-break. The rates are 1/10000 chances, as `resolve/3` derives them.
+  """
+  @spec resolve_rates(integer(), integer(), target(), keyword()) :: [decision()]
+  def resolve_rates(weapon_rate, armor_rate, target, opts \\ []) do
+    rng = Keyword.get(opts, :rng, @default_rng)
+    target_decisions(weapon_rate, armor_rate, target, rng)
   end
 
   @doc """
@@ -86,16 +101,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     end
   end
 
-  @spec self_weapon(Stats.t(), (pos_integer() -> pos_integer())) ::
-          {:self, :weapon} | nil
-  defp self_weapon(attacker, rng) do
-    rate = apply_stat_prevention(Config.natural_break_rate(), attacker, :weapon)
-
-    if weapon_breakable?(attacker) and broke?(rate, rng), do: {:self, :weapon}
+  @spec decisions(Stats.t() | Combatant.t(), integer(), integer(), target(), rng()) ::
+          [decision()]
+  defp decisions(wearer, weapon_rate, armor_rate, target, rng) do
+    [self_weapon(wearer, rng) | target_decisions(weapon_rate, armor_rate, target, rng)]
+    |> Enum.reject(&is_nil/1)
   end
 
-  @spec target_slot(integer(), target(), slot(), (pos_integer() -> pos_integer())) ::
-          {:target, slot()} | nil
+  @spec target_decisions(integer(), integer(), target(), rng()) :: [decision()]
+  defp target_decisions(weapon_rate, armor_rate, target, rng) do
+    [
+      target_slot(weapon_rate, target, :weapon, rng),
+      target_slot(armor_rate, target, :armor, rng)
+    ]
+    |> Enum.reject(&is_nil/1)
+  end
+
+  @spec self_weapon(Stats.t() | Combatant.t(), rng()) :: {:self, :weapon} | nil
+  defp self_weapon(wearer, rng) do
+    rate = apply_stat_prevention(Config.natural_break_rate(), wearer, :weapon)
+
+    if weapon_breakable?(wearer) and broke?(rate, rng), do: {:self, :weapon}
+  end
+
+  @spec target_slot(integer(), target(), slot(), rng()) :: {:target, slot()} | nil
   defp target_slot(rate, _target, _slot, _rng) when rate <= 0, do: nil
 
   defp target_slot(rate, {:player, victim_id, %Stats{} = victim}, slot, rng) do
@@ -115,8 +144,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     end
   end
 
-  @spec apply_stat_prevention(integer(), Stats.t(), slot()) :: integer()
-  defp apply_stat_prevention(rate, %Stats{} = victim, slot) do
+  @spec apply_stat_prevention(integer(), Stats.t() | Combatant.t(), slot()) :: integer()
+  defp apply_stat_prevention(rate, victim, slot) do
     if stat_slot_masked?(victim, slot) do
       0
     else
@@ -124,9 +153,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     end
   end
 
-  @spec apply_percentage_prevention(integer(), Stats.t()) :: integer()
+  @spec apply_percentage_prevention(integer(), Stats.t() | Combatant.t()) :: integer()
   defp apply_percentage_prevention(rate, victim) do
-    unbreakable = Stats.get_equipment_modifier(victim, :unbreakable)
+    unbreakable = equipment_modifier(victim, :unbreakable)
     max(0, rate - div(rate * unbreakable, 100))
   end
 
@@ -143,10 +172,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     end
   end
 
-  @spec stat_slot_masked?(Stats.t(), slot()) :: boolean()
+  @spec stat_slot_masked?(Stats.t() | Combatant.t(), slot()) :: boolean()
   defp stat_slot_masked?(victim, slot) do
     victim
-    |> Stats.get_equipment_modifier(Map.fetch!(@unbreakable_modifiers, slot))
+    |> equipment_modifier(Map.fetch!(@unbreakable_modifiers, slot))
     |> Kernel.>(0)
   end
 
@@ -154,12 +183,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   defp slot_breakable?(:weapon, victim), do: weapon_breakable?(victim)
   defp slot_breakable?(_slot, _victim), do: true
 
-  @spec weapon_breakable?(Stats.t()) :: boolean()
+  @spec weapon_breakable?(Stats.t() | Combatant.t()) :: boolean()
   defp weapon_breakable?(%Stats{equipment: equipment}) do
     Stats.weapon_type(equipment) not in @weapon_break_immune_types
   end
 
-  @spec broke?(integer(), (pos_integer() -> pos_integer())) :: boolean()
+  defp weapon_breakable?(%Combatant{weapon: %{type: type}}),
+    do: type not in @weapon_break_immune_types
+
+  @spec equipment_modifier(Stats.t() | Combatant.t(), atom()) :: integer()
+  defp equipment_modifier(%Stats{} = wearer, key),
+    do: Stats.get_equipment_modifier(wearer, key)
+
+  defp equipment_modifier(%Combatant{equip_modifiers: modifiers}, key),
+    do: Map.get(modifiers, key, 0)
+
+  @spec broke?(integer(), rng()) :: boolean()
   defp broke?(rate, _rng) when rate <= 0, do: false
   defp broke?(rate, rng), do: rng.(10_000) <= rate
 end

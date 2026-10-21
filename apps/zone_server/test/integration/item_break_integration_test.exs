@@ -52,6 +52,7 @@ defmodule Aesir.ZoneServer.Integration.ItemBreakIntegrationTest do
   @sword 1101
   # EQP_HAND_R equip bitmask / EquipItem position for a right-hand weapon.
   @right_hand 2
+  @bash 5
 
   setup do
     prev_rate = Application.get_env(:zone_server, :natural_break_rate)
@@ -90,6 +91,29 @@ defmodule Aesir.ZoneServer.Integration.ItemBreakIntegrationTest do
       assert %InventoryItem{attribute: 1, equip: 0} =
                InventoryPersistence.load_inventory(character.id)
                |> Enum.find(&(&1.nameid == @sword))
+    end
+  end
+
+  describe "natural break on a physical skill hit" do
+    test "a weapon skill hit rolls the wearer's natural break and breaks its weapon" do
+      Application.put_env(:zone_server, :natural_break_rate, 10_000)
+
+      character = insert_character()
+      seed_inventory(character.id, nameid: @sword, amount: 1, equip: @right_hand)
+
+      session = start_session(character)
+      mob = start_undodgeable_mob()
+
+      assert :ok =
+               Combat.execute_skill_attack(
+                 get_player_state(session.pid),
+                 {:mob, mob.unit_id},
+                 skill_id: @bash,
+                 skill_level: 1,
+                 ignore_flee: true
+               )
+
+      assert %InventoryItem{attribute: 1, equip: 0} = wait_for_break(session.pid)
     end
   end
 

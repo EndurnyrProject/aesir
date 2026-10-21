@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
+  alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.PolymorphPool
@@ -45,12 +46,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @grand_cross 254
   @lock {__MODULE__, :on_skill_lock}
   @polymorph_scale 10_000
+  # The two weapon skills whose hits never roll the natural break rates.
+  @excluded_break_skills [337, 485]
 
   @typedoc """
   One resolved hit as its procs see it.
@@ -215,6 +220,98 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch do
 
   def immediate?(skill_id, _delivery),
     do: match?({:ok, %{target_type: :ground}}, Catalog.by_id(skill_id))
+
+  @typedoc """
+  One hit's target as the natural break roll needs it: its identity, its live
+  session, and its pre-hit state (a player target's state carries the stats the
+  prevention reads).
+  """
+  @type hit_target :: %{
+          required(:type) => :player | :mob | :homunculus | :skill_unit,
+          required(:id) => integer(),
+          optional(:pid) => pid() | nil,
+          optional(:state) => term()
+        }
+
+  @doc """
+  Rolls the wearer's natural equipment breaks for one weapon hit and sends each
+  decision to the owning session.
+
+  The roll belongs to the additional-effect stage: it runs on a connected hit
+  that left the target alive, never on a miss or a blocked hit, and only for a
+  weapon hit. A player summon's hit answers with its master's equipment rates,
+  while the master is also the wearer the self-break aims at. `target` is a
+  `t:hit_target/0`; a skill unit holds no status container, so it takes no
+  break roll at all.
+  """
+  @spec dispatch_breaks(
+          Combatant.t(),
+          hit_target(),
+          event() | nil,
+          BattleFlags.flag(),
+          pos_integer() | nil
+        ) :: :ok
+  def dispatch_breaks(attacker, target, event, attack_flag, skill_id) do
+    if target.type != :skill_unit and break_hit?(event, attack_flag, skill_id) do
+      with {:ok, wearer} <- break_wearer(attacker),
+           [_ | _] = decisions <- EquipBreak.resolve(wearer, break_target(target)) do
+        Enum.each(decisions, &dispatch_break(&1, wearer, target))
+      else
+        _no_wearer_or_decisions -> :ok
+      end
+    end
+
+    :ok
+  end
+
+  defp break_hit?(nil, _attack_flag, _skill_id), do: false
+
+  defp break_hit?(event, attack_flag, skill_id) do
+    event.attack_effects? and event.hit_class == :hit and
+      BattleFlags.weapon?(attack_flag) and skill_id not in @excluded_break_skills
+  end
+
+  defp break_wearer(%Combatant{unit_type: :player} = wearer), do: {:ok, wearer}
+
+  defp break_wearer(%Combatant{unit_type: :mob, proc_owner_id: owner}) when is_integer(owner) do
+    case TargetResolver.resolve(:player, owner) do
+      {:ok, _pid, state, :player} -> {:ok, state.__struct__.to_combatant(state)}
+      _unresolved -> :error
+    end
+  end
+
+  defp break_wearer(_attacker), do: :error
+
+  defp wearer_pid(%Combatant{unit_id: id}) do
+    case UnitRegistry.get_player_pid(id) do
+      {:ok, pid} -> {:ok, pid}
+      _unresolved -> :error
+    end
+  end
+
+  defp break_target(%{type: :player, id: id, state: %{stats: %Stats{} = stats}}),
+    do: {:player, id, stats}
+
+  defp break_target(%{type: :player, id: id}), do: {:player, id, nil}
+
+  defp break_target(%{type: type} = target), do: {type, Map.get(target, :state)}
+
+  defp dispatch_break({:self, slot}, wearer, _target) do
+    with {:ok, wearer_pid} <- wearer_pid(wearer),
+         do: PlayerSession.break_equip(wearer_pid, break_slot(slot))
+  end
+
+  defp dispatch_break({:target, slot}, _wearer, %{pid: pid}) when is_pid(pid),
+    do: PlayerSession.break_equip(pid, break_slot(slot))
+
+  defp dispatch_break({:target, _slot}, _wearer, _target), do: :ok
+
+  defp break_slot(:weapon), do: :right_hand
+  # The left hand may hold a two-handed weapon's composite bit; the first
+  # shield-break caller must guard on the item being armor-typed first.
+  defp break_slot(:shield), do: :left_hand
+  defp break_slot(:armor), do: :armor
+  defp break_slot(:helm), do: :head_top
 
   @doc """
   Dispatches the attacker's side of one hit: attack-side autocasts, polymorph,

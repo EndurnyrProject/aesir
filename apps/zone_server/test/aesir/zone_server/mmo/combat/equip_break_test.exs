@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -98,6 +99,54 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
       decisions = EquipBreak.resolve(attacker, player_target(), rng: worst_roll())
 
       refute Enum.any?(decisions, fn {_side, slot} -> slot in [:garment, :shoes] end)
+    end
+  end
+
+  describe "resolve_rates/4" do
+    test "resolves the target rates alone and never the wearer's self break" do
+      stub(Config, :natural_break_rate, fn -> 10_000 end)
+
+      assert EquipBreak.resolve_rates(10_000, 10_000, player_target(), rng: worst_roll()) == [
+               {:target, :weapon},
+               {:target, :armor}
+             ]
+    end
+
+    test "a zero rate alone emits nothing" do
+      assert EquipBreak.resolve_rates(0, 0, player_target(), rng: best_roll()) == []
+    end
+  end
+
+  describe "combatant wearer" do
+    defp wearer(equipment_mods \\ %{}, weapon_type \\ :one_handed_sword) do
+      struct(Combatant, %{
+        unit_id: 1001,
+        unit_type: :player,
+        equip_modifiers: equipment_mods,
+        weapon: %{type: weapon_type, element: :neutral, size: :medium}
+      })
+    end
+
+    test "reads its equipment rates and keeps the natural self break" do
+      stub(Config, :natural_break_rate, fn -> 10_000 end)
+
+      assert EquipBreak.resolve(
+               wearer(%{break_weapon_rate: 10_000, break_armor_rate: 10_000}),
+               player_target(),
+               rng: worst_roll()
+             ) == [{:self, :weapon}, {:target, :weapon}, {:target, :armor}]
+    end
+
+    test "an immune weapon type or unbreakable_weapon vetoes its self break" do
+      stub(Config, :natural_break_rate, fn -> 10_000 end)
+
+      assert EquipBreak.resolve(wearer(%{}, :mace), player_target(), rng: best_roll()) == []
+
+      assert EquipBreak.resolve(
+               wearer(%{unbreakable_weapon: 1}),
+               player_target(),
+               rng: best_roll()
+             ) == []
     end
   end
 

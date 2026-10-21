@@ -4,9 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.AutospellForceFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
+  alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement
@@ -15,6 +17,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   import Aesir.TestEtsSetup
@@ -520,6 +526,198 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipProcDispatchTest do
 
       refute_received {:"$gen_cast", {:equipment, {:autobonus_activate, _, _}}}
       refute_received {:"$gen_cast", {:skill, {:equip_proc, _}}}
+    end
+  end
+
+  describe "dispatch_breaks/5" do
+    defmodule MasterUnit do
+      @moduledoc false
+      defstruct [:combatant]
+
+      def to_combatant(%__MODULE__{combatant: combatant}), do: combatant
+    end
+
+    setup do
+      stub(Config, :natural_break_rate, fn -> 0 end)
+      :ok
+    end
+
+    defp break_wearer(mods, weapon_type \\ :one_handed_sword) do
+      %{
+        player(1001, [])
+        | equip_modifiers: mods,
+          weapon: %{type: weapon_type, element: :neutral, size: :medium}
+      }
+    end
+
+    defp victim_stats do
+      %Stats{
+        equipment: %Equipment{right_hand: 1101},
+        modifiers: %Modifiers{equipment: %{}}
+      }
+    end
+
+    defp player_target(id \\ 2001),
+      do: %{type: :player, id: id, pid: self(), state: %{stats: victim_stats()}}
+
+    defp summon(owner), do: %{mob() | proc_owner_id: owner}
+
+    defp stub_master(master) do
+      stub(TargetResolver, :resolve, fn :player, 1001 ->
+        {:ok, self(), %MasterUnit{combatant: master}, :player}
+      end)
+    end
+
+    test "a weapon hit rolls the wearer's target rates against a player victim" do
+      wearer = break_wearer(%{break_weapon_rate: 10_000, break_armor_rate: 0})
+
+      assert :ok =
+               EquipProcDispatch.dispatch_breaks(
+                 wearer,
+                 player_target(),
+                 hit(skill_id: @triple_attack),
+                 melee(),
+                 @triple_attack
+               )
+
+      assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
+    end
+
+    test "non-weapon, unconnected and non-surviving hits never roll" do
+      reject(&EquipBreak.resolve/2)
+      wearer = break_wearer(%{break_weapon_rate: 10_000, break_armor_rate: 10_000})
+      target = player_target()
+
+      EquipProcDispatch.dispatch_breaks(
+        wearer,
+        target,
+        hit(attack_flag: magic_skill()),
+        magic_skill(),
+        @cold_bolt
+      )
+
+      misc_flag = BattleFlags.build(:misc, :long, true)
+
+      EquipProcDispatch.dispatch_breaks(
+        wearer,
+        target,
+        hit(attack_flag: misc_flag),
+        misc_flag,
+        @cold_bolt
+      )
+
+      EquipProcDispatch.dispatch_breaks(wearer, target, hit(hit_class: :miss), melee(), nil)
+      EquipProcDispatch.dispatch_breaks(wearer, target, hit(hit_class: :block), melee(), nil)
+      EquipProcDispatch.dispatch_breaks(wearer, target, hit(attack_effects?: false), melee(), nil)
+
+      EquipProcDispatch.dispatch_breaks(
+        wearer,
+        %{type: :skill_unit, id: 900, pid: nil},
+        hit(),
+        melee(),
+        nil
+      )
+
+      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
+    end
+
+    test "Cart Termination and Tomahawk never roll the natural breaks" do
+      reject(&EquipBreak.resolve/2)
+      wearer = break_wearer(%{break_weapon_rate: 10_000, break_armor_rate: 10_000})
+
+      for skill_id <- [337, 485] do
+        assert :ok =
+                 EquipProcDispatch.dispatch_breaks(
+                   wearer,
+                   player_target(),
+                   hit(skill_id: skill_id),
+                   melee(),
+                   skill_id
+                 )
+      end
+
+      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
+    end
+
+    test "an ordinary monster and a masterless summon roll nothing" do
+      reject(&EquipBreak.resolve/2)
+
+      EquipProcDispatch.dispatch_breaks(mob(), player_target(), hit(), melee(), nil)
+
+      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
+    end
+
+    test "a player-owned summon rolls its master's target rates" do
+      stub_master(break_wearer(%{break_weapon_rate: 10_000, break_armor_rate: 0}))
+
+      assert :ok =
+               EquipProcDispatch.dispatch_breaks(
+                 summon(1001),
+                 player_target(),
+                 hit(),
+                 melee(),
+                 nil
+               )
+
+      assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
+    end
+
+    test "the natural self break aims at the wearer and honors the configured rate" do
+      stub(Config, :natural_break_rate, fn -> 10_000 end)
+
+      assert :ok =
+               EquipProcDispatch.dispatch_breaks(
+                 break_wearer(%{}),
+                 player_target(),
+                 hit(),
+                 melee(),
+                 nil
+               )
+
+      assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
+    end
+
+    test "the pinned default natural break rate never breaks the wearer" do
+      reject(&PlayerSession.break_equip/2)
+
+      assert :ok =
+               EquipProcDispatch.dispatch_breaks(
+                 break_wearer(%{}),
+                 player_target(),
+                 hit(),
+                 melee(),
+                 nil
+               )
+    end
+
+    test "a summon's self break aims at its master's session" do
+      stub(Config, :natural_break_rate, fn -> 10_000 end)
+      stub_master(break_wearer(%{}))
+
+      assert :ok =
+               EquipProcDispatch.dispatch_breaks(
+                 summon(1001),
+                 player_target(),
+                 hit(),
+                 melee(),
+                 nil
+               )
+
+      assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
+    end
+
+    test "a monster victim takes no break" do
+      reject(&PlayerSession.break_equip/2)
+      wearer = break_wearer(%{break_weapon_rate: 10_000, break_armor_rate: 10_000})
+
+      assert :ok =
+               EquipProcDispatch.dispatch_breaks(
+                 wearer,
+                 %{type: :mob, id: 3001, pid: nil},
+                 hit(),
+                 melee(),
+                 nil
+               )
     end
   end
 

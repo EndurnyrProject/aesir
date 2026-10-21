@@ -279,7 +279,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       expect(MobSession, :apply_damage, fn _pid, 350, {:player, 1001}, _metadata -> :ok end)
       expect(Passives, :after_normal_hit, fn ^player_state, _hit -> :ok end)
-      expect(EquipBreak, :resolve, fn ^stats, {:mob, ^target_state} -> [] end)
+      expect(EquipBreak, :resolve, fn %Combatant{unit_id: 1001}, {:mob, ^target_state} -> [] end)
       expect(StatusInterpreter, :on_dealt_damage, fn :player, 1001, _hit -> [] end)
       expect(OnHitEffects, :after_hit, fn _attacker, ^target, %{damage: 350}, _opts -> :ok end)
       expect(HpDrain, :roll, fn _attacker, 350 -> 0 end)
@@ -1177,6 +1177,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      stub(UnitRegistry, :get_player_pid, fn
+        1001 -> {:ok, self()}
+        _id -> {:error, :not_found}
+      end)
 
       stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
         {:ok, %{damage: 50, is_critical: false}}

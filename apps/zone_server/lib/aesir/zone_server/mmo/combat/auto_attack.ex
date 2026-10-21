@@ -3,11 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   Basic (auto) attack execution for players and mobs.
 
   Runs the full swing: hit/miss/perfect-dodge roll, damage calculation,
-  multi-hit passives, equipment-break rolls, attacker-side `on_dealt_damage`
-  status procs, HP drain, and the equipment-granted splash around the target.
-  `execute_attack/3` runs inside the attacker's `PlayerSession`, so
-  self-directed effects (breaks, auto-casts, drain heals) are messages to
-  `self()`.
+  multi-hit passives, the wearer's equipment-break roll, attacker-side
+  `on_dealt_damage` status procs, HP drain, and the equipment-granted splash
+  around the target. `execute_attack/3` runs inside the attacker's
+  `PlayerSession`, so self-directed effects (auto-casts, drain heals) are
+  messages to `self()`; equipment breaks resolve the wearer's own session.
   """
 
   require Logger
@@ -20,7 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
-  alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
@@ -43,7 +42,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Ref
@@ -827,7 +825,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       if connected?(stages) do
         dispatch_normal_hit_passives(player_state, target_type, target_id, target)
         roll_enchant_poison(attacker, target_type, target_id)
-        roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
+
+        EquipProcDispatch.dispatch_breaks(
+          attacker,
+          %{type: target_type, id: target_id, pid: target_pid, state: target_state},
+          stages,
+          attack_flag,
+          nil
+        )
       end
 
       dispatch_dealt_damage(
@@ -1002,7 +1007,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       snatched = maybe_snatch(player_state, target_type, target_id, target_pid, target)
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
       roll_enchant_poison(attacker, target_type, target_id)
-      roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
+
+      EquipProcDispatch.dispatch_breaks(
+        attacker,
+        %{type: target_type, id: target_id, pid: target_pid, state: target_state},
+        stages,
+        stages.attack_flag,
+        nil
+      )
+
       snatched
     else
       player_state
@@ -1149,43 +1162,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         error
     end
   end
-
-  # Rolls equipment breaks once per confirmed weapon hit (never once per
-  # multi-hit) and dispatches each decision to the owning session. `execute_attack`
-  # runs inside the attacker's `PlayerSession`, so a `:self` break is a cast to
-  # `self()`; a `:target` break goes to `target_pid`. The resolver only emits
-  # `:target` decisions for player victims (mob "equipment" never breaks in
-  # Renewal), so mob targets receive nothing.
-  #
-  defp roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid) do
-    target_type
-    |> break_target(target_id, target_state)
-    |> maybe_roll(player_state, target_pid)
-  end
-
-  defp break_target(:player, target_id, target_state),
-    do: {:player, target_id, target_state.stats}
-
-  defp break_target(target_type, _target_id, target_state), do: {target_type, target_state}
-
-  defp maybe_roll(target, player_state, target_pid) do
-    player_state.stats
-    |> EquipBreak.resolve(target)
-    |> Enum.each(&dispatch_break(&1, target_pid))
-  end
-
-  defp dispatch_break({:self, slot}, _target_pid),
-    do: PlayerSession.break_equip(self(), break_slot(slot))
-
-  defp dispatch_break({:target, slot}, target_pid),
-    do: PlayerSession.break_equip(target_pid, break_slot(slot))
-
-  defp break_slot(:weapon), do: :right_hand
-  # Left hand may hold a two-handed weapon's composite bit; the first shield-break
-  # caller must guard on the item being armor-typed before breaking this slot.
-  defp break_slot(:shield), do: :left_hand
-  defp break_slot(:armor), do: :armor
-  defp break_slot(:helm), do: :head_top
 
   # Fires the attacker's `on_dealt_damage` statuses once per confirmed weapon
   # swing (never per multi-hit), the attacker-side counterpart of the victim's
@@ -1462,6 +1438,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     DamageApplication.broadcast_nearby(target, packet)
   end
 
+  # A player's summon answers the additional-effect stage with its master's
+  # equipment breaks. The survival gate needs the target's pre-hit HP, which
+  # this path does not otherwise carry, so it is read only for a summon.
+  defp dispatch_summon_breaks(
+         %{unit_type: :mob, proc_owner_id: owner} = attacker,
+         target_type,
+         target_id,
+         damage
+       )
+       when is_integer(owner) do
+    case TargetResolver.resolve(target_type, target_id) do
+      {:ok, target_pid, target_state, ^target_type} ->
+        attack_flag = normal_attack_flag(attacker)
+        hp = target_state.__struct__.get_stats(target_state).hp
+
+        EquipProcDispatch.dispatch_breaks(
+          attacker,
+          %{type: target_type, id: target_id, pid: target_pid, state: target_state},
+          EquipProcDispatch.event(attack_flag, damage, %{}, target_survives?: hp > damage),
+          attack_flag,
+          nil
+        )
+
+      _unresolved ->
+        :ok
+    end
+  end
+
+  defp dispatch_summon_breaks(_attacker, _target_type, _target_id, _damage), do: :ok
+
   defp handle_mob_attack_hit(
          damage_result,
          attacker_combatant,
@@ -1479,9 +1485,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     # Show the hit animation/damage number first, then apply HP loss so the
     # SP_HP update (and any death) follows the visible strike.
-    # NOTE: no equipment-break roll on the mob path — mob attackers carry no break
-    # bonuses and natural break is player-only; this is the future hook for
-    # mob-skill-driven breaks (rAthena `skill_break_equip`) once those exist.
     hit_info = %{
       dmg_type: :physical,
       is_short: attacker_combatant.attack_range <= 3,
@@ -1527,6 +1530,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       hit_info,
       mob_damage_source(target_type, attacker_combatant.unit_id)
     )
+
+    dispatch_summon_breaks(attacker_combatant, target_type, target_id, damage)
 
     OnHitEffects.after_hit(
       attacker_combatant,
