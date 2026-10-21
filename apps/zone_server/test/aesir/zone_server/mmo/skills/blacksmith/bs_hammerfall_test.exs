@@ -9,9 +9,44 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  # A living player caster; the delayed stun needs it alive.
+  defp living_caster do
+    struct(PlayerState,
+      character_id: 1_000,
+      map_name: "prontera",
+      x: 10,
+      y: 20,
+      action_state: :idle,
+      stats: %{current_state: %{hp: 100}}
+    )
+  end
+
+  # The units the captured targets resolve to while the timer fires.
+  defp stub_living_targets do
+    stub(UnitRegistry, :get_unit, fn
+      :mob, id ->
+        {:ok,
+         {MobState,
+          struct(MobState, %{instance_id: id, hp: 1, is_dead: false, map_name: "prontera"}),
+          self()}}
+
+      :player, id ->
+        {:ok,
+         {PlayerState,
+          struct(PlayerState, %{
+            character_id: id,
+            action_state: :idle,
+            map_name: "prontera",
+            stats: %{current_state: %{hp: 100}}
+          }), self()}}
+    end)
+  end
 
   test "stuns for 4.5 seconds in renewal and 5 seconds in classic" do
     assert BsHammerfall.definition(:renewal).duration == List.duplicate(4_500, 5)
@@ -20,9 +55,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
 
   @tag game_mode: :pre_renewal
   test "classic impacts stun for 5 seconds" do
-    caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 10, y: 20}
-
-    expect(Combat, :splash_targets, fn "prontera", {30, 40}, 2, 1_000 -> [{:mob, 2_003}] end)
+    caster = living_caster()
+    stub_living_targets()
+    reject(&Combat.splash_targets/4)
 
     expect(StatusInterpreter, :apply_status, fn :mob,
                                                 2_003,
@@ -36,7 +71,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
       :ok
     end)
 
-    payload = %{caster_id: 1_000, map_name: "prontera", center: {30, 40}, level: 3}
+    payload = %{
+      caster_id: 1_000,
+      map_name: "prontera",
+      center: {30, 40},
+      level: 3,
+      targets: [{:mob, 2_003}]
+    }
+
     assert :ok = BsHammerfall.deferred(payload, caster)
   end
 
@@ -98,17 +140,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
 
   @tag game_mode: :renewal
   test "delayed impacts attempt level-scaled stun on mobs without dealing damage" do
-    caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 10, y: 20}
+    caster = living_caster()
     chances = [30, 40, 50, 60, 70]
 
+    stub_living_targets()
+    reject(&Combat.splash_targets/4)
     reject(&Combat.apply_skill_unit_damage/7)
     reject(&Combat.execute_skill_attack/3)
 
     for {chance, level} <- Enum.with_index(chances, 1) do
-      expect(Combat, :splash_targets, fn "prontera", {30, 40}, 2, 1_000 ->
-        [{:mob, 2_000 + level}, {:player, 3_000 + level}]
-      end)
-
       expect(StatusInterpreter, :apply_status, fn
         :mob,
         target_id,
@@ -118,7 +158,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
           :ok
       end)
 
-      payload = %{caster_id: 1_000, map_name: "prontera", center: {30, 40}, level: level}
+      payload = %{
+        caster_id: 1_000,
+        map_name: "prontera",
+        center: {30, 40},
+        level: level,
+        targets: [{:mob, 2_000 + level}, {:player, 3_000 + level}]
+      }
+
       assert :ok = BsHammerfall.deferred(payload, caster)
     end
   end
@@ -142,14 +189,89 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
   end
 
   test "only the stun is delayed: the delayed impact runs no cast-end tail" do
-    caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 10, y: 20}
-
-    stub(Combat, :splash_targets, fn "prontera", {30, 40}, 2, 1_000 -> [{:mob, 2_003}] end)
+    caster = living_caster()
+    stub_living_targets()
     reject(&CastEnd.complete_target/4)
 
     expect(StatusInterpreter, :apply_status, fn :mob, 2_003, :sc_stun, _opts -> :ok end)
 
-    payload = %{caster_id: 1_000, map_name: "prontera", center: {30, 40}, level: 3}
+    payload = %{
+      caster_id: 1_000,
+      map_name: "prontera",
+      center: {30, 40},
+      level: 3,
+      targets: [{:mob, 2_003}]
+    }
+
+    assert :ok = BsHammerfall.deferred(payload, caster)
+  end
+
+  test "the delayed stun uses the captured targets, not whoever stands there now" do
+    caster = living_caster()
+    stub_living_targets()
+    reject(&Combat.splash_targets/4)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, 2_003, :sc_stun, _opts -> :ok end)
+
+    payload = %{
+      caster_id: 1_000,
+      map_name: "prontera",
+      center: {30, 40},
+      level: 3,
+      targets: [{:mob, 2_003}]
+    }
+
+    assert :ok = BsHammerfall.deferred(payload, caster)
+  end
+
+  test "a captured target dead, gone or on another map is not stunned" do
+    caster = living_caster()
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, 2_003 ->
+        {:ok,
+         {MobState,
+          struct(MobState, %{instance_id: 2_003, hp: 0, is_dead: true, map_name: "prontera"}),
+          self()}}
+
+      :mob, 2_004 ->
+        {:ok,
+         {MobState,
+          struct(MobState, %{instance_id: 2_004, hp: 10, is_dead: false, map_name: "geffen"}),
+          self()}}
+
+      :mob, 2_005 ->
+        {:ok,
+         {MobState,
+          struct(MobState, %{instance_id: 2_005, hp: 10, is_dead: false, map_name: "prontera"}),
+          self()}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, 2_005, :sc_stun, _opts -> :ok end)
+
+    payload = %{
+      caster_id: 1_000,
+      map_name: "prontera",
+      center: {30, 40},
+      level: 3,
+      targets: [{:mob, 2_003}, {:mob, 2_004}, {:mob, 2_005}]
+    }
+
+    assert :ok = BsHammerfall.deferred(payload, caster)
+  end
+
+  test "a dead caster stuns nobody when the timer fires" do
+    caster = struct(PlayerState, action_state: :dead, stats: %{current_state: %{hp: 0}})
+    stub_living_targets()
+    reject(&StatusInterpreter.apply_status/4)
+
+    payload = %{
+      caster_id: 1_000,
+      map_name: "prontera",
+      center: {30, 40},
+      level: 3,
+      targets: [{:mob, 2_003}]
+    }
 
     assert :ok = BsHammerfall.deferred(payload, caster)
   end

@@ -29,18 +29,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
   @delay_ms 1_000
 
-  @typedoc "The ground impact captured when Hammer Fall is cast."
+  @typedoc """
+  The ground impact captured when Hammer Fall is cast: the caster, the cell and
+  level, and the enemies standing in the area then (the reference arms one
+  stun timer per target it found at cast end, keeping that target's id).
+  """
   @type impact :: %{
           caster_id: pos_integer(),
           map_name: String.t(),
           center: {integer(), integer()},
-          level: pos_integer()
+          level: pos_integer(),
+          targets: [Ref.t()]
         }
 
   @impl Active
@@ -54,29 +62,55 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
       ) do
     # The reference's ground cast end re-enters its no-damage cast end for every
     # enemy in the area at once: each target's cast-end tail runs then, and its
-    # own one-second stun timer is armed from there. Only the stun lands later.
-    for_each_enemy(map_name, {x, y}, caster_id, fn target_ref ->
-      perform_castend_tail(caster, target_ref)
-    end)
+    # own one-second stun timer is armed from there with that target's id.
+    targets = Combat.splash_targets(map_name, {x, y}, definition().splash_radius, caster_id)
+    Enum.each(targets, &perform_castend_tail(caster, &1))
 
-    payload = %{caster_id: caster_id, map_name: map_name, center: {x, y}, level: level}
+    payload = %{
+      caster_id: caster_id,
+      map_name: map_name,
+      center: {x, y},
+      level: level,
+      targets: targets
+    }
+
     Skill.defer(__MODULE__, payload, @delay_ms)
     {:ok, caster}
   end
 
-  @doc "Attempts Hammer Fall's delayed stun against enemies in the targeted area."
+  @doc """
+  Attempts Hammer Fall's delayed stun on the enemies the cast captured.
+
+  The reference's timer keeps each target's id and stuns it only while that
+  target and the caster are still alive and on the same map; a target that left
+  the area keeps its stun and one that entered after the cast never gets one.
+  """
   @impl Active
   @spec deferred(impact(), PlayerState.t() | nil) :: :ok
-  def deferred(%{caster_id: caster_id, map_name: map_name, center: center, level: level}, _caster) do
-    for_each_enemy(map_name, center, caster_id, fn target_ref ->
-      stun(target_ref, level, caster_id)
+  def deferred(%{caster_id: caster_id, level: level, targets: targets} = impact, caster) do
+    map_name = caster_map(caster, impact)
+
+    Enum.each(targets, fn target_ref ->
+      if caster_alive?(caster) and present?(target_ref, map_name),
+        do: stun(target_ref, level, caster_id)
     end)
   end
 
-  defp for_each_enemy(map_name, center, caster_id, fun) do
-    map_name
-    |> Combat.splash_targets(center, definition().splash_radius, caster_id)
-    |> Enum.each(fun)
+  defp caster_map(%PlayerState{map_name: map_name}, _impact), do: map_name
+  defp caster_map(_caster, %{map_name: map_name}), do: map_name
+
+  defp caster_alive?(%PlayerState{} = caster), do: Unit.living?(caster)
+  defp caster_alive?(_caster), do: true
+
+  # The recorded target, still registered and alive on the caster's map.
+  defp present?({unit_type, target_id}, map_name) do
+    case UnitRegistry.get_unit(unit_type, target_id) do
+      {:ok, {_module, state, _pid}} ->
+        Unit.living?(state) and Map.get(state, :map_name) == map_name
+
+      {:error, _reason} ->
+        false
+    end
   end
 
   # The cast-end tail of one target, as the reference's per-target re-entry
