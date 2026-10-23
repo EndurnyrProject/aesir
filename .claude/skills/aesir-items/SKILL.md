@@ -60,6 +60,48 @@ is `:demihuman` (RC_DemiHuman gear does not affect players in renewal; in pre-re
 ARE demi-human — a mode divergence, see `aesir-game-modes`); `:race2` params are
 case-insensitive; `:item` params pass verbatim.
 
+## Random options
+
+- An item's `random_options` (inventory, cart, storage, guild storage) is the reference's
+  positional option array: a list of up to five `%{id, value, param}` slots held by the
+  `Aesir.Commons.Models.ItemOptions` Ecto type over a jsonb column. Index `i` is slot `i`;
+  an id-0 slot is empty; only trailing all-zero slots are trimmed. Never key options by id
+  (duplicates are legal and order is the run order).
+- Data: `mix aesir.import.random_options` -> `priv/db/<mode>/random_options/{options,groups}.yml`
+  (pre-renewal ships none: rAthena loads the renewal files only in Renewal mode). Option
+  scripts are equip-script programs; `getrandomoptinfo(ROA_*)` is the `random_option(ctx, field)`
+  read, 0 outside an option. An option whose script uses an unsupported bonus key loads
+  with `program: nil` and adds nothing (the importer lists them).
+- Rolling: `RandomOptions.Roller.roll/2` is the group apply (fixed-slot retries, forced pick,
+  `max_random` positions counting the fixed slots, gap compaction). Item-group entries roll
+  per add for equipment types only; monster normal/MVP drops roll for any type (the drop row
+  keeps the group name, resolved at drop time); Steal does not (config default off). A
+  ground drop carries options as an optional sixth tuple element through pickup, looting
+  and Greed.
+- The equipment fold runs option scripts after every card, by equip slot then option slot,
+  never the ammunition's, `:weapon` in an item worn only in the left hand.
+
+- Script buildins: `getitem3`/`getitembound3`/`rentitem3`/`makeitem3` take the three option
+  arrays (`random_options/3`), `countitem3`/`delitem3` match them, and `getrandomoptinfo`,
+  `getequiprandomoption`, `setrandomoption` (forced unequip, set, re-equip in the owner's
+  session) and `randomoptgroup` read or write them. `addmonsterdrop` can attach a group to a
+  drop row; `Mobs.update_drops/2` edits a kind's table and `Mobs.current_drops/1` is what
+  deaths and Steal read, so the edit reaches monsters already spawned.
+- Scripts compare a signed or forged item by `ItemCraft.card_words/1` (the reference's
+  CARD0_CREATE/CARD0_FORGE card values), never by Aesir's raw card fields.
+
+## Map restrictions (NoEquip)
+
+- `mix aesir.import.item_noequip` -> `priv/db/<mode>/item_noequip.yml` (restriction mask per
+  item); `mix aesir.import.map_flags` -> `priv/db/<mode>/map_flags/scripts.yml` (the GvG,
+  castle, dungeon, battleground and restricted-zone flags of the mode's mapflag scripts).
+- `ItemManagement.NoEquip.restricted?/2` is `itemdb_isNoEquip`. On a restricting map an
+  item's own script, a card's script (by the card's mask) and the item's option scripts add
+  no bonus; the statuses an equip script starts follow the map the row was put on (login,
+  equip, refine); flat item bonuses still apply. A restricted usable item is refused
+  (`ItemUseResult` reason 5) and not consumed. Items are never refused or unequipped (the
+  reference's default config), and no player group bypasses the check.
+
 ## itemskill and status-granting consumables
 
 - `itemskill` in an item script routes through `Skill.Interpreter.item_cast/4` — bypasses
