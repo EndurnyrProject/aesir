@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmic
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -46,19 +47,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
     end
   end
 
-  describe "validate/4 (equipment)" do
+  describe "the engine weapon check (bow)" do
     test "requires an equipped bow, rejecting every other weapon" do
       stub(Stats, :weapon_type, fn
         %Equipment{right_hand: 1_701} -> :bow
         _equipment -> :dagger
       end)
 
-      assert :ok = HtPhantasmic.validate(caster(), {:unit, @target_id}, 1, definition())
+      assert :ok = PlayerCaster.check_weapon(caster(), definition())
 
       unarmed = caster(%Equipment{right_hand: nil})
 
-      assert {:error, :bow_not_equipped} =
-               HtPhantasmic.validate(unarmed, {:unit, @target_id}, 1, definition())
+      assert {:error, :wrong_weapon} =
+               PlayerCaster.check_weapon(unarmed, definition())
     end
 
     test "does not require an equipped arrow" do
@@ -66,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
 
       no_arrow = caster(%Equipment{right_hand: 1_701, ammo: nil})
 
-      assert :ok = HtPhantasmic.validate(no_arrow, {:unit, @target_id}, 1, definition())
+      assert :ok = PlayerCaster.check_weapon(no_arrow, definition())
     end
   end
 

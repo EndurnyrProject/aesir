@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
 
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Jointbeat
@@ -126,11 +127,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeatTest do
       stats: %Stats{equipment: %Equipment{right_hand: 1101}}
     }
 
-    assert {:error, :requires_spear} =
-             LkJointbeat.validate(swordsman, {:unit, 6_150}, 1, definition)
+    assert {:error, :wrong_weapon} =
+             PlayerCaster.check_weapon(swordsman, definition)
 
     spearman = %{swordsman | stats: %Stats{equipment: %Equipment{right_hand: 1401}}}
-    assert :ok = LkJointbeat.validate(spearman, {:unit, 6_150}, 1, definition)
+    assert :ok = PlayerCaster.check_weapon(spearman, definition)
   end
 
   defp spear_caster do

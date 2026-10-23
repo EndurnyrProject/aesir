@@ -2,13 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurabladeTest do
   use ExUnit.Case, async: true
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurablade
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -22,9 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurabladeTest do
     assert {:ok, definition} = Catalog.by_name(:lk_aurablade)
 
     player = player()
-    assert {:error, :wrong_weapon} = LkAurablade.validate(player, :self, 3, definition)
+    assert {:error, :wrong_weapon} = PlayerCaster.check_weapon(player, definition)
     sword = put_in(player.stats.equipment, %Equipment{right_hand: 1101})
-    assert :ok = LkAurablade.validate(sword, :self, 3, definition)
+    assert :ok = PlayerCaster.check_weapon(sword, definition)
     :ok = UnitRegistry.register_player(sword, self())
 
     assert {:ok, ^sword} = LkAurablade.cast(sword, :self, 3, definition)
@@ -39,38 +36,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurabladeTest do
       assert :bow in definition.require_weapon
       assert :knuckle in definition.require_weapon
       refute :fist in definition.require_weapon
-      assert :ok = LkAurablade.validate(bow, :self, 1, definition)
+      assert :ok = PlayerCaster.check_weapon(bow, definition)
     end
-  end
-
-  test "mob caster bypasses the player weapon gate" do
-    mob_data = %MobDefinition{
-      id: 1003,
-      aegis_name: "test_lk",
-      name: "Test LK",
-      level: 50,
-      hp: 1_000,
-      stats: %{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-      element: {:neutral, 1},
-      race: :formless,
-      size: :medium,
-      attack_range: 1,
-      walk_speed: 200,
-      attack_delay: 1_000,
-      attack_motion: 500,
-      client_attack_motion: 400,
-      damage_motion: 300
-    }
-
-    spawn = %MobSpawn{
-      mob: 1003,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %SpawnArea{x: 50, y: 50}
-    }
-
-    mob = MobState.new(9_001, mob_data, spawn, "prontera", 50, 50)
-    assert :ok = LkAurablade.validate(mob, :self, 1, %{})
   end
 
   defp player do

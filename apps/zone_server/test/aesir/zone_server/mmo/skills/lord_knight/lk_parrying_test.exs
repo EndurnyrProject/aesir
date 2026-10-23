@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkParryingTest do
   use ExUnit.Case, async: true
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.LordKnight.LkParrying
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -18,12 +19,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkParryingTest do
     assert {:ok, definition} = Catalog.by_name(:lk_parrying)
     player = player()
 
-    assert {:error, :wrong_weapon} = LkParrying.validate(player, :self, 7, definition)
+    assert {:error, :wrong_weapon} = PlayerCaster.check_weapon(player, definition)
     one_hand = put_in(player.stats.equipment, %Equipment{right_hand: 1101})
-    assert {:error, :wrong_weapon} = LkParrying.validate(one_hand, :self, 7, definition)
+    assert {:error, :wrong_weapon} = PlayerCaster.check_weapon(one_hand, definition)
 
     two_hand = put_in(player.stats.equipment, %Equipment{right_hand: 1116, left_hand: 1116})
-    assert :ok = LkParrying.validate(two_hand, :self, 7, definition)
+    assert :ok = PlayerCaster.check_weapon(two_hand, definition)
     :ok = UnitRegistry.register_player(two_hand, self())
     assert {:ok, ^two_hand} = LkParrying.cast(two_hand, :self, 7, definition)
     assert %{val1: 7} = StatusStorage.get_status(:player, two_hand.character_id, :sc_parrying)

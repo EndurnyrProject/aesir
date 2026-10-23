@@ -265,6 +265,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
     end
   end
 
+  describe "the weapon requirement" do
+    test "never refuses a monster, whose skills ignore the weapon types" do
+      mob = %MobState{
+        instance_id: 1,
+        mob_id: 1_002,
+        mob_data: nil,
+        spawn_ref: nil,
+        x: 10,
+        y: 10,
+        map_name: "prontera",
+        hp: 100,
+        sp: 0,
+        spawned_at: 0
+      }
+
+      assert Caster.Player.check_weapon(mob, %{require_weapon: [:one_handed_spear]}) == :ok
+    end
+  end
+
   describe "the 90 percent weight refusal" do
     test "refuses at exactly the threshold at cast begin and cast end, and allows one potion less" do
       definition = weight_definition()

@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquickenTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquicken
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -20,6 +21,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquickenTest do
 
   defp caster(equipment \\ %Equipment{}),
     do: %PlayerState{character_id: @caster_id, stats: %{equipment: equipment}}
+
+  defp definition do
+    {:ok, definition} = Catalog.by_name(:kn_twohandquicken)
+    definition
+  end
 
   defp mob_caster do
     mob_data = %MobDefinition{
@@ -51,35 +57,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquickenTest do
     MobState.new(9002, mob_data, spawn_ref, "prontera", 100, 100)
   end
 
-  describe "validate/4 (player weapon gate)" do
+  describe "the engine weapon check (player)" do
     test "rejects a cast without a two-handed sword equipped" do
       assert {:error, :wrong_weapon} =
-               KnTwohandquicken.validate(
-                 caster(%Equipment{right_hand: @dagger_id}),
-                 :self,
-                 1,
-                 %{}
-               )
+               PlayerCaster.check_weapon(caster(%Equipment{right_hand: @dagger_id}), definition())
     end
 
     test "rejects a bare-handed cast" do
-      assert {:error, :wrong_weapon} = KnTwohandquicken.validate(caster(), :self, 1, %{})
+      assert {:error, :wrong_weapon} = PlayerCaster.check_weapon(caster(), definition())
     end
 
     test "allows a cast with a two-handed sword equipped" do
       assert :ok =
-               KnTwohandquicken.validate(
+               PlayerCaster.check_weapon(
                  caster(%Equipment{right_hand: @two_handed_sword_id}),
-                 :self,
-                 1,
-                 %{}
+                 definition()
                )
-    end
-  end
-
-  describe "validate/4 (mob caster bypass)" do
-    test "always allows a mob caster regardless of weapon" do
-      assert :ok = KnTwohandquicken.validate(mob_caster(), :self, 1, %{})
     end
   end
 

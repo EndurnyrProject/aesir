@@ -41,26 +41,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquicken do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @behaviour Active
 
   @fixed_aspd 7
-
-  @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :wrong_weapon}
-  def validate(%PlayerState{} = caster, _target, _level, _definition) do
-    if PlayerStats.weapon_type(caster.stats.equipment) == :two_handed_sword do
-      :ok
-    else
-      {:error, :wrong_weapon}
-    end
-  end
-
-  def validate(%MobState{}, _target, _level, _definition), do: :ok
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquicken
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -81,30 +82,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
     MobState.new(9003, mob_data, spawn_ref, "prontera", 100, 100)
   end
 
-  describe "validate/4 (player weapon gate)" do
+  describe "the engine weapon check (player)" do
     test "rejects a cast without a spear equipped" do
-      assert {:error, :requires_spear} =
-               CrSpearquicken.validate(
-                 caster(@dagger_id),
-                 :self,
-                 1,
-                 definition()
-               )
+      assert {:error, :wrong_weapon} =
+               PlayerCaster.check_weapon(caster(@dagger_id), definition())
     end
 
     test "rejects a bare-handed cast" do
-      assert {:error, :requires_spear} = CrSpearquicken.validate(caster(), :self, 1, definition())
+      assert {:error, :wrong_weapon} = PlayerCaster.check_weapon(caster(), definition())
     end
 
     @tag game_mode: :renewal
     test "allows a cast with a one-handed spear equipped" do
       assert :ok =
-               CrSpearquicken.validate(
-                 caster(@one_handed_spear_id),
-                 :self,
-                 1,
-                 definition()
-               )
+               PlayerCaster.check_weapon(caster(@one_handed_spear_id), definition())
     end
 
     @tag game_mode: :pre_renewal
@@ -113,23 +104,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
       assert definition.require_weapon == [:two_handed_spear]
 
       caster = caster(@one_handed_spear_id)
-      assert {:error, :requires_spear} = CrSpearquicken.validate(caster, :self, 1, definition)
+      assert {:error, :wrong_weapon} = PlayerCaster.check_weapon(caster, definition)
     end
 
     test "allows a cast with a two-handed spear equipped" do
       assert :ok =
-               CrSpearquicken.validate(
-                 caster(@two_handed_spear_id),
-                 :self,
-                 1,
-                 definition()
-               )
-    end
-  end
-
-  describe "validate/4 (mob caster bypass)" do
-    test "always allows a mob caster regardless of weapon" do
-      assert :ok = CrSpearquicken.validate(mob_caster(), :self, 1, definition())
+               PlayerCaster.check_weapon(caster(@two_handed_spear_id), definition())
     end
   end
 

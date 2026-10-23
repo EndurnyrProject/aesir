@@ -5,13 +5,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerangTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
-  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerang
   alias Aesir.ZoneServer.Unit.Inventory
-  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -61,27 +58,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerangTest do
     end
   end
 
-  describe "validate/4 (weapon gate only - range is enforced by the interpreter's built-in per-level range check, not this callback)" do
+  describe "the engine weapon check (spear)" do
     test "a spear-wielding player passes regardless of target distance or level" do
       caster = spear_caster(x: 0, y: 0)
       reject(&Combat.resolve_target_position/1)
 
-      assert :ok = KnSpearboomerang.validate(caster, {:unit, @target_id}, 1, definition())
+      assert :ok = PlayerCaster.check_weapon(caster, definition())
     end
 
     test "a bare-handed player is rejected" do
       caster = unarmed_caster(x: 0, y: 0)
       reject(&Combat.resolve_target_position/1)
 
-      assert {:error, :requires_spear} =
-               KnSpearboomerang.validate(caster, {:unit, @target_id}, 1, definition())
-    end
-
-    test "a mob caster bypasses the weapon gate entirely" do
-      caster = mob_caster(x: 0, y: 0)
-      reject(&Combat.resolve_target_position/1)
-
-      assert :ok = KnSpearboomerang.validate(caster, {:unit, @target_id}, 1, definition())
+      assert {:error, :wrong_weapon} =
+               PlayerCaster.check_weapon(caster, definition())
     end
   end
 
@@ -127,41 +117,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerangTest do
 
     stats = %{base.stats | equipment: Stats.equipment_from_inventory(inventory)}
     %{base | stats: stats}
-  end
-
-  defp mob_caster(x: x, y: y) do
-    mob_data =
-      struct(MobDefinition, %{
-        id: 1_002,
-        aegis_name: "TEST_MOB",
-        name: "Test Mob",
-        level: 25,
-        hp: 1_000,
-        stats: %{str: 40, agi: 30, vit: 50, int: 20, dex: 35, luk: 15},
-        atk: 50,
-        matk: 60,
-        def: 25,
-        mdef: 10,
-        attack_range: 2,
-        skill_range: 11,
-        chase_range: 12,
-        walk_speed: 200,
-        attack_delay: 1_200,
-        attack_motion: 500,
-        client_attack_motion: 400,
-        damage_motion: 300,
-        element: {:neutral, 1},
-        race: :formless,
-        size: :medium
-      })
-
-    spawn_ref = %MobSpawn{
-      mob: 1_002,
-      amount: 1,
-      respawn_time: 5_000,
-      spawn_area: %SpawnArea{x: x, y: y}
-    }
-
-    MobState.new(@caster_id, mob_data, spawn_ref, @map, x, y)
   end
 end

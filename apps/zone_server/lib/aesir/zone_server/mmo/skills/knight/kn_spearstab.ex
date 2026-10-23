@@ -30,23 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstab do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @behaviour Active
-
-  @spear_weapons [:one_handed_spear, :two_handed_spear]
-
-  @impl Active
-  def validate(%PlayerState{} = caster, _target, _level, _definition) do
-    if PlayerStats.weapon_type(caster.stats.equipment) in @spear_weapons do
-      :ok
-    else
-      {:error, :requires_spear}
-    end
-  end
-
-  def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do

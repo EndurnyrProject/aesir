@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstab
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -65,23 +66,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
     definition
   end
 
-  describe "validate/4" do
+  describe "the engine weapon check" do
     test "accepts a one-handed or two-handed spear" do
       for weapon_id <- [@spear, 1410] do
         caster = build_caster(weapon_id)
         assert caster.stats.equipment.right_hand == weapon_id
-        assert :ok = KnSpearstab.validate(caster, {:unit, @target_id}, 5, definition())
+        assert :ok = PlayerCaster.check_weapon(caster, definition())
       end
     end
 
     test "rejects a player wielding any other weapon" do
-      assert {:error, :requires_spear} =
-               KnSpearstab.validate(build_caster(@sword), {:unit, @target_id}, 5, definition())
-    end
-
-    test "bypasses the gate for a mob caster" do
-      mob = %{instance_id: 3000}
-      assert :ok = KnSpearstab.validate(mob, {:unit, @target_id}, 5, definition())
+      assert {:error, :wrong_weapon} =
+               PlayerCaster.check_weapon(build_caster(@sword), definition())
     end
   end
 

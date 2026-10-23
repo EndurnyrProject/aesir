@@ -30,22 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkParrying do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
 
   @behaviour Active
-
-  @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :wrong_weapon}
-  def validate(%PlayerState{} = caster, _target, _level, _definition) do
-    if Stats.weapon_type(caster.stats.equipment) == :two_handed_sword,
-      do: :ok,
-      else: {:error, :wrong_weapon}
-  end
-
-  def validate(%MobState{}, _target, _level, _definition), do: :ok
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::

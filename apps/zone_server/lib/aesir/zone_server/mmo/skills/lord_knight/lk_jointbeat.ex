@@ -26,22 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkJointbeat do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
 
   @behaviour Active
-
-  @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :requires_spear}
-  def validate(%PlayerState{stats: %{equipment: equipment}}, _target, _level, _definition) do
-    if Stats.weapon_type(equipment) in [:one_handed_spear, :two_handed_spear],
-      do: :ok,
-      else: {:error, :requires_spear}
-  end
-
-  def validate(%MobState{}, _target, _level, _definition), do: :ok
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::

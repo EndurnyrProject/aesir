@@ -40,17 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerang do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @behaviour Active
-
-  @spear_types [:one_handed_spear, :two_handed_spear]
-
-  @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(caster, _target, _level, _definition), do: check_weapon(caster)
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
@@ -69,15 +60,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerang do
       {:error, _reason} = error -> error
     end
   end
-
-  @spec check_weapon(Active.caster()) :: :ok | {:error, :requires_spear}
-  defp check_weapon(%PlayerState{stats: %{equipment: equipment}}) do
-    if PlayerStats.weapon_type(equipment) in @spear_types do
-      :ok
-    else
-      {:error, :requires_spear}
-    end
-  end
-
-  defp check_weapon(_caster), do: :ok
 end

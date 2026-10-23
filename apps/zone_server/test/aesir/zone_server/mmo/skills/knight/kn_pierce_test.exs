@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce
   alias Aesir.ZoneServer.Unit.Inventory
@@ -49,36 +50,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
     %PlayerState{character_id: 1000, inventory: inventory, stats: stats}
   end
 
-  describe "validate/4 (spear requirement)" do
+  describe "the engine weapon check (spear)" do
     test "a one-handed spear passes" do
       caster = build_caster(@one_handed_spear)
-      assert :ok = KnPierce.validate(caster, {:unit, @target_id}, 1, definition())
+      assert :ok = PlayerCaster.check_weapon(caster, definition())
     end
 
     test "a two-handed spear passes" do
       caster = build_caster(@two_handed_spear, @both_hand)
-      assert :ok = KnPierce.validate(caster, {:unit, @target_id}, 1, definition())
+      assert :ok = PlayerCaster.check_weapon(caster, definition())
     end
 
-    test "a non-spear weapon fails with :requires_spear" do
+    test "a non-spear weapon fails with :wrong_weapon" do
       caster = build_caster(@sword)
 
-      assert {:error, :requires_spear} =
-               KnPierce.validate(caster, {:unit, @target_id}, 1, definition())
+      assert {:error, :wrong_weapon} =
+               PlayerCaster.check_weapon(caster, definition())
     end
 
     test "bare-fixture player state with no stats is tolerated" do
       assert :ok =
-               KnPierce.validate(
-                 %PlayerState{character_id: 1000},
-                 {:unit, @target_id},
-                 1,
-                 definition()
-               )
-    end
-
-    test "a non-player caster (mob) bypasses the weapon gate" do
-      assert :ok = KnPierce.validate(%{instance_id: 1}, {:unit, @target_id}, 1, definition())
+               PlayerCaster.check_weapon(%PlayerState{character_id: 1000}, definition())
     end
   end
 

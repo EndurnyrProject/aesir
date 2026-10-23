@@ -33,23 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
 
   @behaviour Active
-
-  @spear_weapon_types [:one_handed_spear, :two_handed_spear]
-
-  @impl Active
-  def validate(%PlayerState{stats: %{equipment: equipment}}, _target, _level, _definition) do
-    if Stats.weapon_type(equipment) in @spear_weapon_types do
-      :ok
-    else
-      {:error, :requires_spear}
-    end
-  end
-
-  def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do

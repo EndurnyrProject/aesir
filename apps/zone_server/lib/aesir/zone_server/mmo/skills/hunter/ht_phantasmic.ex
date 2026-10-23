@@ -30,19 +30,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmic do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
 
   @behaviour Active
 
   @doc "Renewal strikes for 500% weapon damage; classic for 150%."
   @spec skill_ratio() :: pos_integer()
   def skill_ratio, do: if(GameMode.mode() == :renewal, do: 500, else: 150)
-
-  @impl Active
-  def validate(%PlayerState{stats: %{equipment: equipment}}, _target, _level, _definition) do
-    if Stats.weapon_type(equipment) == :bow, do: :ok, else: {:error, :bow_not_equipped}
-  end
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do
