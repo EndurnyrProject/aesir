@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
   owning player's HP by `Combat.SkillHeal`'s recipe from Lif's level, INT and
   Brain Surgery rank (and its MATK in renewal) and the owner's received-heal
   bonuses. The Homunculus is never healed by this skill.
+
+  Both modes: a missing owner refuses the cast; a dead owner does not, the
+  cast spends its SP and potion and heals nothing.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -27,16 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
   @behaviour Active
 
   @impl Active
-  def validate(
-        %HomunculusState{owner_character_id: owner_character_id},
-        :self,
-        _level,
-        _definition
-      ) do
-    case TargetResolver.resolve({:player, owner_character_id}) do
-      {:ok, _pid, owner, :player} -> if Unit.living?(owner), do: :ok, else: {:error, :owner_dead}
-      {:error, _reason} -> {:error, :owner_not_found}
-    end
+  def validate(%HomunculusState{} = caster, :self, _level, _definition) do
+    with {:ok, _owner} <- resolve_owner(caster), do: :ok
   end
 
   @impl Active
@@ -46,10 +41,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
         level,
         %{item_cost: [%{id: item_id, amount: amount}]}
       ) do
+    cost = {:owner_item_cost, item_id, amount}
+
+    if owner_dead?(caster),
+      do: {:local_effects, caster, [cost]},
+      else: {:local_effects, caster, [cost, heal(caster, level)]}
+  end
+
+  defp owner_dead?(caster) do
+    case resolve_owner(caster) do
+      {:ok, owner} -> not Unit.living?(owner)
+      {:error, _reason} -> false
+    end
+  end
+
+  defp heal(caster, level) do
     owner = {:player, caster.owner_character_id}
     restored = SkillHeal.amount(SkillHeal.caster(caster), owner, definition().id, level, true)
-    heal = {:player, {:apply_heal, restored, {:homunculus, caster.world_gid}}}
+    {:player, {:apply_heal, restored, {:homunculus, caster.world_gid}}}
+  end
 
-    {:local_effects, caster, [{:owner_item_cost, item_id, amount}, heal]}
+  defp resolve_owner(%HomunculusState{owner_character_id: owner_character_id}) do
+    case TargetResolver.resolve({:player, owner_character_id}) do
+      {:ok, _pid, owner, :player} -> {:ok, owner}
+      {:error, _reason} -> {:error, :owner_not_found}
+    end
   end
 end

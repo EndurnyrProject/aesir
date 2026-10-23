@@ -1,5 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
-  @moduledoc "Castling (HAMI_CASTLE)."
+  @moduledoc """
+  Castling (HAMI_CASTLE). The homunculus swaps places with its owner at
+  20 percent per level.
+
+  Both modes: a missing owner, or one on another map, refuses the cast; a
+  dead owner does not, the cast spends its SP and swaps nothing.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 8005,
@@ -17,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
@@ -26,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
          {:ok, {PlayerState, owner, owner_pid}} <-
            Movement.swap_ready(:player, caster.owner_character_id),
          true <- owner_pid == caster.owner_session_pid,
-         true <- Unit.living?(owner),
          true <- owner.map_name == caster.map_name,
          {:ok, {HomunculusState, ^caster, ^owner_pid}} <-
            Movement.swap_ready(:homunculus, caster.world_gid) do
@@ -40,10 +46,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
   @spec cast(HomunculusState.t(), :self, 1..5, map()) ::
           {:ok, HomunculusState.t()} | {:local_effects, HomunculusState.t(), [tuple()]}
   def cast(%HomunculusState{} = caster, :self, level, _definition) do
-    if chance_success?(level, :rand.uniform(100)) do
+    if owner_living?(caster) and chance_success?(level, :rand.uniform(100)) do
       {:local_effects, caster, [{:homunculus, {:castling_swap, caster.world_gid}}]}
     else
       {:ok, caster}
+    end
+  end
+
+  defp owner_living?(%HomunculusState{owner_character_id: owner_id}) do
+    case UnitRegistry.get_unit(:player, owner_id) do
+      {:ok, {_module, owner, _pid}} -> Unit.living?(owner)
+      _gone -> false
     end
   end
 

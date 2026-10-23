@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
     refute_packet_sent(ParamChange)
   end
 
-  test "Healing Touch rejects a dead owner without consuming resources or notifying" do
+  test "Healing Touch on a dead owner spends its SP and potion and heals nothing" do
     session = start_lif(potions: 1, learned_skills: %{"8001" => 1})
     owner = PlayerSession.get_state(session.pid).game_state
 
@@ -134,10 +134,11 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
     before = PlayerSession.get_state(session.pid)
     clear_packet_inbox()
 
-    assert {:error, :owner_dead, ^before} = direct_cast(session.pid, 8_001, 1)
-    assert_healing_touch_unchanged(session, before)
-    refute_packet_sent(ItemRemoved)
-    refute_packet_sent(ParamChange)
+    assert {:ok, after_state} = direct_cast(session.pid, 8_001, 1)
+    assert after_state.game_state.stats.current_state.hp == 0
+    assert after_state.homunculus.sp == before.homunculus.sp - 13
+    assert Inventory.held_amount(after_state.game_state.inventory, @red_slim_potion) == 0
+    assert_packet_sent_with(ItemRemoved, fn packet -> assert packet.amount == 1 end)
   end
 
   test "persistence failure rolls back the staged potion cast before healing or notification" do
