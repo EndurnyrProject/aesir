@@ -1736,6 +1736,27 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.const!"
   end
 
+  test "random option buildins emit their DSL calls, setrandomoption threading the ctx" do
+    src =
+      gen!("""
+      .@v = getequiprandomoption(EQI_HAND_R, 1, ROA_VALUE);
+      .@o = getequiprandomoption(EQI_HAND_R, 0, ROA_ID, 150001);
+      .@i = getrandomoptinfo(ROA_PARAM);
+      setrandomoption EQI_HAND_R, 0, 3, 5, 0;
+      if (setrandomoption(EQI_HAND_R, 1, 3, 5, 0)) .@ok = 1;
+      randomoptgroup 7;
+      close;
+      """)
+
+    assert src =~ "getequiprandomoption(ctx, 9, 1, 1)"
+    assert src =~ "getequiprandomoption(ctx, 9, 0, 0, 150_001)"
+    assert src =~ "getrandomoptinfo(ctx, 2)"
+    assert src =~ ~r/\{ctx, _\} = .*setrandomoption\((ctx, )?9, 0, 3, 5, 0\)/
+    assert src =~ ~r/\{ctx, \w+\} = setrandomoption\(ctx, 9, 1, 3, 5, 0\)/
+    assert src =~ ~r/randomoptgroup\((ctx, )?7\)/
+    refute src =~ "Todo."
+  end
+
   test "equip/item reads emit DSL calls with resolved EQI_/refine/iteminfo constants" do
     src =
       gen!("""

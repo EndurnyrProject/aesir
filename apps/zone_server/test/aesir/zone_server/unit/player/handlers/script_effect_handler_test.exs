@@ -28,7 +28,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
   alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
@@ -40,6 +42,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
+  alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @sphmask_id 7114
@@ -94,6 +98,87 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert game_state.vars == %{"sphmask_q" => 1}
       assert new_state.game_state.vars == %{"sphmask_q" => 1}
       assert_received {:persisted_vars, %{"sphmask_q" => 1}}
+    end
+  end
+
+  describe "{:set_random_option, location, index, option}" do
+    setup do
+      Mimic.copy(Persistence)
+      stub(InventoryOps, :apply_change, fn 1000, _old, new, _change -> {:ok, new} end)
+      stub(Persistence, :update_item, fn item, attrs -> {:ok, struct(item, attrs)} end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+      :ok
+    end
+
+    defp sword_state(options) do
+      sword = %InventoryItem{
+        nameid: 1101,
+        amount: 1,
+        identify: 1,
+        equip: 2,
+        random_options: options
+      }
+
+      game_state =
+        PlayerState.new(%Character{
+          id: 1000,
+          account_id: 2000,
+          name: "Optioned",
+          last_map: "prontera",
+          last_x: 150,
+          last_y: 150,
+          sex: "M",
+          str: 1,
+          agi: 1,
+          vit: 1,
+          int: 1,
+          dex: 1,
+          luk: 1,
+          base_level: 99,
+          job_level: 1,
+          class: 1
+        })
+
+      %{connection_pid: self(), game_state: %{game_state | inventory: %{0 => sword}}}
+    end
+
+    test "takes the item off, sets the slot and puts it back on in the same position" do
+      state = sword_state([%{id: 3, value: 1, param: 0}])
+      option = %{id: 4, value: 9, param: 1}
+
+      assert {{:ok, game_state}, _state} =
+               ScriptEffectHandler.apply_op({:set_random_option, :right_hand, 2, option}, state)
+
+      assert %InventoryItem{equip: 2, random_options: options} = game_state.inventory[0]
+      assert options == [%{id: 3, value: 1, param: 0}, %{id: 0, value: 0, param: 0}, option]
+
+      assert_received {:send, :gameplay, {:unequip_result, _}}
+      assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{index: 2, amount: 1}}}
+      assert_received {:send, :gameplay, {:item_added, %ItemAdded{index: 2}}}
+      assert_received {:send, :gameplay, {:equip_result, _}}
+    end
+
+    test "takes the item off even while statuses forbid it, and leaves it off when they forbid wearing it" do
+      stub(StatusInterpreter, :equip_change_blocked?, fn :player, 1000 -> true end)
+      option = %{id: 4, value: 9, param: 1}
+
+      assert {{:ok, game_state}, _state} =
+               ScriptEffectHandler.apply_op(
+                 {:set_random_option, :right_hand, 0, option},
+                 sword_state([])
+               )
+
+      assert %InventoryItem{equip: 0, random_options: [^option]} = game_state.inventory[0]
+    end
+
+    test "refuses an empty slot" do
+      assert {{:error, :no_item}, _state} =
+               ScriptEffectHandler.apply_op(
+                 {:set_random_option, :armor, 0, %{id: 4, value: 1, param: 0}},
+                 sword_state([])
+               )
     end
   end
 

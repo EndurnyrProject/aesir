@@ -1431,6 +1431,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ [call], :cont}
   end
 
+  defp emit_mapped(_name, %{shape: :returning, dsl: dsl, args: types}, args, env) do
+    {pre, args} = hoist_all(args, env)
+
+    {pre ++ ["{ctx, _} = #{dsl}(#{Enum.join(["ctx" | typed_args(args, types, env)], ", ")})"],
+     :cont}
+  end
+
   defp emit_mapped(name, %{shape: :rentitem3}, args, env) do
     {pre, args} = hoist_all(args, env)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
@@ -1660,6 +1667,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp sprite_arg(expr, env), do: {:ok, render(expr, env)}
+
+  # Renders call arguments by their declared types; arguments past the
+  # declared ones (an optional trailing target) render as integers.
+  defp typed_args(args, types, env) do
+    args
+    |> Enum.zip(types ++ List.duplicate(:int, max(length(args) - length(types), 0)))
+    |> Enum.map(fn {arg, type} -> typed_arg(arg, type, env) end)
+  end
 
   defp typed_arg({:int, n}, _type, _env), do: to_string(n)
 
@@ -2345,6 +2360,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp hoist_walk({:call, name, args}, env, pre) do
     case CommandMap.call_read(name) do
+      {:ok, %{shape: :returning, dsl: dsl, args: types}} ->
+        {args, pre} = hoist_list(args, env, pre)
+        tmp = tmp_var()
+        rendered = Enum.join(["ctx" | typed_args(args, types, env)], ", ")
+        {{:temp, tmp}, ["{ctx, #{tmp}} = #{dsl}(#{rendered})" | pre]}
+
       {:ok, %{shape: :item_group_optional, dsl: dsl, args: types} = rule} ->
         {args, pre} = hoist_list(args, env, pre)
         tmp = tmp_var()
@@ -2698,12 +2719,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         item_group_optional_call(dsl, name, args, types, Map.get(rule, :defaults, ["1"]), env)
 
       {:ok, %{dsl: dsl, args: types}} ->
-        rendered =
-          args
-          |> Enum.zip(types ++ List.duplicate(:int, max(length(args) - length(types), 0)))
-          |> Enum.map(fn {arg, type} -> typed_arg(arg, type, env) end)
-
-        "#{dsl}(#{Enum.join(["ctx" | rendered], ", ")})"
+        "#{dsl}(#{Enum.join(["ctx" | typed_args(args, types, env)], ", ")})"
 
       :error ->
         render_global_read(name, args, env)

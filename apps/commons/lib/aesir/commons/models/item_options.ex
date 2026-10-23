@@ -24,6 +24,11 @@ defmodule Aesir.Commons.Models.ItemOptions do
   @spec max_options() :: pos_integer()
   def max_options, do: @max_options
 
+  @doc "Returns the options padded with empty slots to all five slots."
+  @spec pad(t()) :: t()
+  def pad(options),
+    do: options ++ List.duplicate(%{id: 0, value: 0, param: 0}, @max_options - length(options))
+
   @doc "Returns the options without the all-zero slots after the last other one."
   @spec trim(t()) :: t()
   def trim(options) do

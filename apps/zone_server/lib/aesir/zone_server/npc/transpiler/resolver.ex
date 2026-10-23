@@ -37,6 +37,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   # implements, emitted as its native atom rather than a char-var lookup.
   def constant("SKILL_PERM"), do: {:ok, ":permanent"}
 
+  # Random option attribute types (`getequiprandomoption`, `getrandomoptinfo`).
+  def constant("ROA_ID"), do: {:ok, "0"}
+  def constant("ROA_VALUE"), do: {:ok, "1"}
+  def constant("ROA_PARAM"), do: {:ok, "2"}
+
   # rAthena refine cost variants, emitted as the `RefineDatabase.cost_type`
   # atoms `getequiprefinecost`/`getequippercentrefinery` select on.
   def constant("REFINE_COST_NORMAL"), do: {:ok, ":normal"}

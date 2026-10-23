@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Script.Dsl.NpcControl
   alias Aesir.ZoneServer.Script.Dsl.PlayerEffects
   alias Aesir.ZoneServer.Script.Dsl.Quest
+  alias Aesir.ZoneServer.Script.Dsl.RandomOptions
   alias Aesir.ZoneServer.Script.Dsl.Reads
   alias Aesir.ZoneServer.Script.Dsl.Skills
   alias Aesir.ZoneServer.Script.Dsl.Variables
@@ -158,6 +159,14 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate commit_grants(ctx, grants), to: Items
   defdelegate get_named_item(ctx, item_id, target), to: Items
   defdelegate random_options(ids, values, params), to: Items
+  defdelegate getrandomoptinfo(ctx, type), to: RandomOptions
+  defdelegate getequiprandomoption(ctx, slot, index, type), to: RandomOptions
+  defdelegate getequiprandomoption(ctx, slot, index, type, char_id), to: RandomOptions
+  defdelegate randomoptgroup(ctx, id), to: RandomOptions
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate setrandomoption(ctx, slot, index, id, value, param), to: RandomOptions
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate setrandomoption(ctx, slot, index, id, value, param, char_id), to: RandomOptions
   defdelegate give_item_rental(ctx, item_id, seconds), to: Items
   defdelegate give_item_rental(ctx, item_id, seconds, opts), to: Items
   defdelegate give_item_bound(ctx, item_id, qty, bound), to: Items

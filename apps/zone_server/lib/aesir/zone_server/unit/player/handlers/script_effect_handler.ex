@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   """
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Commons.Models.ItemOptions
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.ItemSkillReady
   alias Aesir.Net.SpriteChange
@@ -29,8 +30,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Dsl.Announce
+  alias Aesir.ZoneServer.Script.Dsl.Internal
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
@@ -72,6 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:delitem, integer(), pos_integer()}
           | {:delequip, non_neg_integer(), integer()}
           | {:successrefitem, non_neg_integer(), integer(), pos_integer()}
+          | {:set_random_option, atom(), 0..4, ItemOptions.option()}
           | {:failedrefitem, non_neg_integer(), integer()}
           | {:disable_items}
           | {:nude}
@@ -339,6 +343,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
       {_gs, {:error, reason}} ->
         {{:error, reason}, state}
+    end
+  end
+
+  # `setrandomoption`: the worn item at `location` is taken off (whatever the
+  # statuses forbid), its option slot `index` set, the client's row refreshed,
+  # and the item put back on at the position it was worn at, which can fail as
+  # any equip does.
+  def apply_op({:set_random_option, location, index, option}, %{game_state: gs} = state) do
+    case Internal.find_equipped_entry(gs.inventory, location) do
+      {server_index, %InventoryItem{equip: position}} ->
+        {:noreply, state} = EquipmentHandler.force_unequip(server_index, state)
+        set_option_slot(state, server_index, position, index, option)
+
+      nil ->
+        {{:error, :no_item}, state}
     end
   end
 
@@ -700,6 +719,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}
+
+  defp set_option_slot(%{game_state: gs} = state, server_index, position, index, option) do
+    item = Map.fetch!(gs.inventory, server_index)
+
+    options =
+      item.random_options
+      |> ItemOptions.pad()
+      |> List.replace_at(index, option)
+      |> ItemOptions.trim()
+
+    case InventoryPersistence.update_item(item, %{random_options: options}) do
+      {:ok, row} ->
+        gs = %{gs | inventory: PlayerState.put_item(gs.inventory, server_index, row)}
+
+        MessageRouter.send_to(
+          state.connection_pid,
+          InventoryView.item_removed(server_index, 1, 3)
+        )
+
+        MessageRouter.send_to(state.connection_pid, InventoryView.item_added(row, server_index))
+
+        {:noreply, state} =
+          EquipmentHandler.handle_equip(server_index, position, %{state | game_state: gs})
+
+        {{:ok, state.game_state}, state}
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
 
   # The reference `getitem` family grants a stackable amount in one call and a
   # non-stackable one unit per call, halting the script at the first refusal

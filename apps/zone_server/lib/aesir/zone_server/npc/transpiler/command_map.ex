@@ -51,6 +51,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     zero args → `name(ctx, true)`; one arg → `name(ctx, <n> != 0)` (a literal
     `0` dismounts, anything else mounts, matching rAthena); any longer form
     stays a stub.
+  - `%{shape: :returning, dsl: name, args: types}` — a buildin that changes the
+    player and returns a value (`setrandomoption`): the DSL returns
+    `{ctx, value}`, so a statement binds `{ctx, _} =` and an expression hoists
+    `{ctx, tmp} =`.
   - `%{shape: :rentitem3}` — an extended rental grant: preserves its fixed
     refine/card attributes and reads three parallel option arrays into the
     ordered option slots of `random_options/3`; any other arity stays a stub.
@@ -119,6 +123,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getnameditem" => %{dsl: "get_named_item", args: [:item, :string]},
     "rentitem" => %{dsl: "give_item_rental", args: [:item, :int]},
     "rentitem3" => %{shape: :rentitem3},
+    "setrandomoption" => %{
+      shape: :returning,
+      dsl: "setrandomoption",
+      args: [:equip_slot, :int, :int, :int, :int]
+    },
+    "randomoptgroup" => %{dsl: "randomoptgroup", args: [:int]},
     "getitembound" => %{dsl: "give_item_bound", args: [:item, :int, :bound]},
     "getitem2" => %{
       dsl: "getitem2",
@@ -260,6 +270,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getequipcardid" => %{dsl: "getequipcardid", args: [:equip_slot, :int]},
     "getequipisequiped" => %{dsl: "getequipisequiped", args: [:equip_slot]},
     "getequiprefinerycnt" => %{dsl: "getequiprefinerycnt", args: [:equip_slot]},
+    "getequiprandomoption" => %{dsl: "getequiprandomoption", args: [:equip_slot, :int, :int]},
+    "getrandomoptinfo" => %{dsl: "getrandomoptinfo", args: [:int]},
+    "setrandomoption" => %{
+      shape: :returning,
+      dsl: "setrandomoption",
+      args: [:equip_slot, :int, :int, :int, :int]
+    },
     "getequipname" => %{dsl: "getequipname", args: [:equip_slot]},
     "getequipweaponlv" => %{dsl: "getequipweaponlv", args: [:equip_slot]},
     "getequiparmorlv" => %{dsl: "getequiparmorlv", args: [:equip_slot]},

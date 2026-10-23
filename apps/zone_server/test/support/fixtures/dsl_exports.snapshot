@@ -90,6 +90,8 @@ getequipisequiped/2
 getequipname/2
 getequippercentrefinery/2
 getequippercentrefinery/3
+getequiprandomoption/4
+getequiprandomoption/5
 getequiprefinecost/4
 getequiprefinerycnt/2
 getequipweaponlv/2
@@ -105,6 +107,7 @@ getnpcid/2
 getnpctimer/1
 getnpctimer/2
 getpartnerid/1
+getrandomoptinfo/2
 getskilllv/2
 gettimetick/2
 getwaitingroomstate/2
@@ -169,6 +172,7 @@ questinfo/4
 questprogress/2
 questprogress/3
 random_options/3
+randomoptgroup/2
 refinable?/2
 refine/3
 refine/4
@@ -202,6 +206,8 @@ setd/3
 setfalcon/2
 setlook/3
 setquest/2
+setrandomoption/6
+setrandomoption/7
 sex/1
 skill/4
 skill_point/1

@@ -107,6 +107,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   end
 
   @doc """
+  Takes off the item at `server_index` whatever the wearer's statuses forbid,
+  as a script that rewrites a worn item does. A row that is not worn is left
+  alone.
+  """
+  @spec force_unequip(non_neg_integer(), map()) :: {:noreply, map()}
+  def force_unequip(server_index, %{game_state: game_state} = state) do
+    case Inventory.unequip(game_state.inventory, server_index) do
+      {:ok, new_inventory, {:unequipped, _index} = change} ->
+        commit_unequip(server_index, new_inventory, change, state)
+
+      {:error, _reason} ->
+        {:noreply, state}
+    end
+  end
+
+  @doc """
   Unequips every worn item disallowed by a proposed character identity.
 
   The proposed context is used only for eligibility checks. The session's
