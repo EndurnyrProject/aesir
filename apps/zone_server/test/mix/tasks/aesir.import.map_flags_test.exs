@@ -34,12 +34,13 @@ defmodule Mix.Tasks.Aesir.Import.MapFlagsTest do
       "arena\tmapflag\tnoskill\n",
       "field\tmapflag\tnowarp\n",
       "field\tmapflag\tnoicewall\n",
-      "field\tmapflag\tnoicewall\toff\n"
+      "field\tmapflag\tnoicewall\toff\n",
+      "field\tmapflag\tnovending\n"
     ]
 
     assert rows(lines) == [
              %{"map" => "arena", "flags" => ["noskill", "noteleport"]},
-             %{"map" => "field", "flags" => ["nowarp"]}
+             %{"map" => "field", "flags" => ["novending", "nowarp"]}
            ]
   end
 

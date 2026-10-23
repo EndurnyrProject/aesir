@@ -8,13 +8,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UseRestrictions do
   `noskill` map flag refuses silently unless an item skill is pending; a running
   cooldown refuses with the delay reply; an item skill that keeps no
   requirement passes the rest; the skill's map restriction mask shows the area
-  notice; then Teleport, Warp Portal, Vending, Ice Wall and Urgent Call check
+  notice; then Teleport, Warp Portal, Vending (its map and cell `novending` flags
+  with a text line and a failure, then a nearby NPC), Ice Wall and Urgent Call check
   their own map rules.
 
   An act delay or cooldown refusal is reported only to a player who turned
   delay notices on (`@showdelay`).
   """
 
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.NoCast
@@ -29,10 +32,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UseRestrictions do
   @emergency_calls [10_013, 10_015]
 
   @typedoc """
-  The reply a refusal sends: nothing, a skill failure with its reason, or a
-  client notice.
+  The reply a refusal sends: nothing, a skill failure with its reason, a
+  client notice, or a server text line followed by another reply.
   """
-  @type reply :: :silent | {:fail, atom()} | {:notice, atom()}
+  @type reply ::
+          :silent | {:fail, atom()} | {:notice, atom()} | {:message, String.t(), reply()}
 
   @typedoc "A pending item skill: the skill, its level and whether it keeps its requirement."
   @type item_skill :: %{
@@ -97,8 +101,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UseRestrictions do
         {:notice, :SYSTEM_NOTICE_ID_MAP_CANT_TELEPORT}
       )
 
-  defp skill_rule(%PlayerState{map_name: map_name, x: x, y: y}, @vending),
-    do: check(not Proximity.npc_near?(map_name, x, y), {:fail, :npc_nearby})
+  defp skill_rule(%PlayerState{map_name: map_name, x: x, y: y}, @vending) do
+    cond do
+      MapFlags.get(map_name, :novending) ->
+        {:refuse, {:message, "You can't open a shop on this map", {:fail, :failed}}}
+
+      novending_cell?(map_name, x, y) ->
+        {:refuse, {:message, "You can't open a shop on this cell.", {:fail, :failed}}}
+
+      true ->
+        check(not Proximity.npc_near?(map_name, x, y), {:fail, :npc_nearby})
+    end
+  end
 
   defp skill_rule(_game_state, @identify), do: :ok
 
@@ -110,6 +124,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UseRestrictions do
        do: check(MapFlags.gvg2?(map_name), {:fail, :failed})
 
   defp skill_rule(_game_state, _skill_id), do: :ok
+
+  defp novending_cell?(map_name, x, y) do
+    case MapCache.get(map_name) do
+      {:ok, map_data} -> MapData.check_cell(map_data, x, y, :chk_novending)
+      _missing -> false
+    end
+  end
 
   defp check(true, _reply), do: :ok
   defp check(false, reply), do: {:refuse, reply}

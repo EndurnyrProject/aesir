@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
   (`npc/scripts_mapflags.conf`, then `npc/re/` or `npc/pre-re/scripts_mapflags.conf`)
   and writes the resulting `gvg`, `gvg_te`, `gvg_castle`, `gvg_te_castle`,
   `gvg_dungeon`, `battleground`, `noskill`, `noteleport`, `nowarp`,
-  `noicewall` and `restricted` zone flags to
+  `noicewall`, `novending` and `restricted` zone flags to
   `apps/zone_server/priv/db/<mode>/map_flags/scripts.yml`.
 
       mix aesir.import.map_flags [<rathena_root>] [--mode re|pre-re]
@@ -40,6 +40,7 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
     :noicewall,
     :noskill,
     :noteleport,
+    :novending,
     :nowarp
   ]
   @gvg_flags [:gvg, :gvg_te, :gvg_dungeon, :gvg_castle, :gvg_te_castle]

@@ -2723,4 +2723,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       fields
     )
   end
+
+  describe "report_cast_failure/3 with a text line" do
+    test "sends the line to the caster, then the failure" do
+      test_pid = self()
+
+      stub(Broadcast, :to_player, fn 1000, packet ->
+        send(test_pid, {:to_player, packet})
+        :ok
+      end)
+
+      reply = {:message, "You can't open a shop on this map", {:fail, :failed}}
+      SkillHandler.report_cast_failure(41, 1000, {:not_ok, reply})
+
+      assert_received {:to_player,
+                       %Aesir.Net.ChatMessage{
+                         gid: 1000,
+                         message: "You can't open a shop on this map"
+                       }}
+
+      assert_received {:to_player, %Aesir.Net.SkillCastFailed{skill_id: 41}}
+    end
+  end
 end

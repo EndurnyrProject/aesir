@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequestTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.NoCast
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -192,6 +194,29 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequestTest do
 
       stub(MapFlags, :gvg2?, fn "prontera" -> true end)
       assert {:use, _} = targeted(state, @emergency_call)
+    end
+
+    test "Vending refuses a novending map with its line and a failure, before the cell", %{
+      state: state
+    } do
+      stub(MapFlags, :get, fn _map, flag -> flag == :novending end)
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map} end)
+      stub(MapData, :check_cell, fn :map, 50, 50, :chk_novending -> true end)
+      stub(Proximity, :npc_near?, fn _map, _x, _y -> true end)
+
+      assert SkillRequest.not_ok(state, 41, @now) ==
+               {:refuse, {:message, "You can't open a shop on this map", {:fail, :failed}}}
+    end
+
+    test "Vending refuses a novending cell with its line and a failure, before a nearby NPC", %{
+      state: state
+    } do
+      stub(MapCache, :get, fn "prontera" -> {:ok, :map} end)
+      stub(MapData, :check_cell, fn :map, 50, 50, :chk_novending -> true end)
+      stub(Proximity, :npc_near?, fn _map, _x, _y -> true end)
+
+      assert SkillRequest.not_ok(state, 41, @now) ==
+               {:refuse, {:message, "You can't open a shop on this cell.", {:fail, :failed}}}
     end
 
     test "Vending refuses with an NPC within three cells", %{state: state} do
