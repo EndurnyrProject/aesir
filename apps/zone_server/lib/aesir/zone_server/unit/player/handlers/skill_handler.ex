@@ -2023,6 +2023,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:spirits), do: :SKILL_CAST_FAILURE_REASON_SPIRITS
   defp failure_reason(:cart), do: :SKILL_CAST_FAILURE_REASON_CART
   defp failure_reason(:need_equipment), do: :SKILL_CAST_FAILURE_REASON_NEED_EQUIPMENT
+  defp failure_reason(:skill_failed), do: :SKILL_CAST_FAILURE_REASON_FAILED
   defp failure_reason(_reason), do: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
 
   defp resolve_target(%{character_id: caster_id}, target_id) when target_id == caster_id,

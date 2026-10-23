@@ -2410,6 +2410,8 @@ enum SkillCastFailureReason {
   SKILL_CAST_FAILURE_REASON_CART = 17;
   // The skill needs an equipped item; `detail` is its item id.
   SKILL_CAST_FAILURE_REASON_NEED_EQUIPMENT = 18;
+  // A plain failure the skill reports instead of UNSPECIFIED's generic one.
+  SKILL_CAST_FAILURE_REASON_FAILED = 19;
 }
 
 // Server -> client, caster-only feedback when an attempted skill cast is rejected.
