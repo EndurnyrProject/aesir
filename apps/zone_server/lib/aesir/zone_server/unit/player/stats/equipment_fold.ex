@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
@@ -43,7 +44,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   in `worn_items`,
   and folds each host's flat `item_db` bonuses followed by the host and valid
   in-range card `on_equip` programs into modifiers, proc registrations, desired
-  direct statuses, and retained card cleanup effects. Surviving active proc
+  direct statuses, and retained card cleanup effects. A program whose item the
+  `:map_name` input's map restricts (`NoEquip`) runs nothing. Surviving active proc
   generations re-evaluate their primary programs through
   the same equipment merge rules. `extra_inputs` is merged into every program's
   inputs: `:character_info` (the wearer's `PlayerState`, read by `strcharinfo`)
@@ -95,7 +97,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
           card2: &1.card2,
           card3: &1.card3,
           craft: &1.craft,
-          random_options: &1.random_options
+          random_options: &1.random_options,
+          equipped_on: equipped_on(stats.worn_items, &1, Map.get(extra_inputs, :map_name))
         }
       )
 
@@ -105,6 +108,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
     |> fold_equipment(worn_items, extra_inputs)
     |> put_weapon_hands(worn_items)
   end
+
+  # The map an item was put on: a row already worn keeps the map it was put on
+  # with, a newly worn one (or every row at login) takes the current map. A
+  # worn row whose refine changed was refined, which takes the item off and
+  # puts it back on, so it takes the current map too.
+  defp equipped_on(worn_items, %{id: id, refine: refine}, map_name) when is_integer(id) do
+    case Enum.find(worn_items, &(&1.id == id)) do
+      %{refine: ^refine, equipped_on: equipped_on} -> equipped_on
+      _ -> map_name
+    end
+  end
+
+  defp equipped_on(_worn_items, _row, map_name), do: map_name
 
   defp fold_equipment(stats, worn_items, extra_inputs) do
     fold = equipment_fold_result(stats, worn_items, extra_inputs)
@@ -449,9 +465,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         statuses: %{},
         card_cleanups: %{}
       },
-      &apply_source(&1, inputs, &2)
+      &apply_source(restrict(&1, Map.get(inputs, :map_name)), inputs, &2)
     )
   end
+
+  # On a map that restricts it, an item's own script, a card's script (by the
+  # card's restriction) and the item's random option scripts add no bonus and
+  # arm no proc; the item's flat bonuses and a card's unequip cleanup still
+  # apply. The statuses an item's or card's equip script starts follow the map
+  # the item was put on, as the equip script runs only when it is put on.
+  defp restrict(%{option: _option} = source, map_name) do
+    if NoEquip.restricted?(restricting_item(source), map_name),
+      do: %{source | program: []},
+      else: source
+  end
+
+  defp restrict(source, map_name) do
+    item_id = restricting_item(source)
+
+    Map.merge(source, %{
+      restricted?: NoEquip.restricted?(item_id, map_name),
+      equip_restricted?: NoEquip.restricted?(item_id, Map.get(source.item, :equipped_on))
+    })
+  end
+
+  defp gate(result, %{restricted?: restricted?, equip_restricted?: equip_restricted?}) do
+    result =
+      if restricted?,
+        do: %{result | modifiers: %{}, auto_casts: [], add_effs: [], autobonuses: []},
+        else: result
+
+    if equip_restricted?, do: %{result | effects: []}, else: result
+  end
+
+  defp restricting_item(%{option: _option, item: item}), do: item.nameid
+  defp restricting_item(%{card_slot: nil, host_def: host_def}), do: host_def.id
+  defp restricting_item(%{source_def: card_def}), do: card_def.id
 
   defp apply_source(%{option: _option} = source, inputs, fold),
     do: apply_option_source(source, inputs, fold)
@@ -598,7 +647,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
       |> Map.put(:learned_skills, fold.visible)
       |> put_lr_flag(lr_flag(item, source.host_def, card_slot))
 
-    result = EquipScript.evaluate(source.program, source_inputs)
+    result = source.program |> EquipScript.evaluate(source_inputs) |> gate(source)
 
     registrations =
       install_autobonuses(

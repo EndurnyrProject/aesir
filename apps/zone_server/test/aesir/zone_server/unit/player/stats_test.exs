@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
@@ -1882,6 +1883,70 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         ])
 
       refute Map.has_key?(arrow, :str)
+    end
+
+    test "on a map that restricts them, an item's own script, its card and its options do not run" do
+      stub(RandomOptions, :option, fn 3 ->
+        {:ok, %Option{id: 3, name: "STR", program: [{:bonus, :str, {:random_option, :value}}]}}
+      end)
+
+      item = fn id, fields ->
+        struct!(ItemDefinition, [id: id, aegis_name: "ne_#{id}", name: "Ne #{id}"] ++ fields)
+      end
+
+      defs = %{
+        90_151 =>
+          item.(90_151, type: :armor, slots: 1, defense: 7, on_equip: [{:bonus, :agi, 1}]),
+        90_152 => item.(90_152, type: :card, on_equip: [{:bonus, :vit, 2}])
+      }
+
+      stub(ItemManagement, :get_item_by_id, &Map.fetch(defs, &1))
+
+      row = %{
+        equipped(90_151, @armor_pos)
+        | card0: 90_152,
+          random_options: [%{id: 3, value: 4, param: 0}]
+      }
+
+      equipment = fn restricted_id ->
+        stub(NoEquip, :restricted?, fn id, map -> map == "gvg_map" and id == restricted_id end)
+        stats = Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, [row], "gvg_map")
+        Map.take(stats.modifiers.equipment, [:agi, :vit, :str, :def])
+      end
+
+      assert equipment.(nil) == %{agi: 1, vit: 2, str: 4, def: 7}
+      assert equipment.(90_151) == %{vit: 2, def: 7}
+      assert equipment.(90_152) == %{agi: 1, str: 4, def: 7}
+    end
+
+    test "an equip script's statuses follow the map the item was put on, its bonuses the current map" do
+      armor = %ItemDefinition{
+        id: 90_161,
+        aegis_name: "ne_status",
+        name: "Ne Status",
+        type: :armor,
+        on_equip: [{:bonus, :agi, 1}, {:status_start, :sc_endure, 10_000, 1}]
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_161 -> {:ok, armor} end)
+      stub(NoEquip, :restricted?, fn 90_161, map -> map == "gvg_map" end)
+      row = %{equipped(90_161, @armor_pos) | id: 7}
+
+      fold = fn stats, rows, map -> Calculator.calculate_stats(stats, nil, rows, map) end
+      worn_free = fold.(swordman(%Equipment{}, %{}), [row], "prontera")
+      moved = fold.(worn_free, nil, "gvg_map")
+
+      assert Map.has_key?(moved.equip_statuses, :sc_endure)
+      refute Map.has_key?(moved.modifiers.equipment, :agi)
+
+      worn_restricted = fold.(swordman(%Equipment{}, %{}), [row], "gvg_map")
+      back = fold.(worn_restricted, nil, "prontera")
+
+      refute Map.has_key?(back.equip_statuses, :sc_endure)
+      assert back.modifiers.equipment[:agi] == 1
+
+      refined = fold.(worn_restricted, [%{row | refine: 1}], "prontera")
+      assert Map.has_key?(refined.equip_statuses, :sc_endure)
     end
 
     test "Soul Staff contributes its mode-specific MATK band" do

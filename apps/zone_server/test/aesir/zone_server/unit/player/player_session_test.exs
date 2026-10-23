@@ -232,7 +232,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "reconciles loaded equip statuses after restore and keeps a stronger restored status", %{
       character: character
     } do
-      expect(Calculator, :calculate_stats, fn stats, 1, [] ->
+      expect(Calculator, :calculate_stats, fn stats, 1, [], "prontera" ->
         %{stats | equip_statuses: %{sc_summer: {:infinite, 1}}}
       end)
 

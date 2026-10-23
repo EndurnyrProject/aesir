@@ -150,6 +150,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManagerTest do
                      {:item_add_failed, %ItemAddFailed{result: :ITEM_ADD_RESULT_OVERITEM}}}
   end
 
+  test "loading the inventory puts the worn items on in the character's map", %{
+    character: char,
+    stats: stats
+  } do
+    {:ok, worn} = Persistence.insert_item(char.id, %{nameid: @sword, amount: 1, equip: 2})
+    game_state = %{state(char.id, stats).game_state | map_name: "gef_fild10"}
+
+    assert {:ok, %{stats: %{worn_items: [row]}}} =
+             InventoryManager.load_character_inventory(char, game_state)
+
+    assert %{id: id, equipped_on: "gef_fild10"} = row
+    assert id == worn.id
+  end
+
   test "purges expired rentals while loading inventory", %{character: char, stats: stats} do
     now = NaiveDateTime.utc_now()
     expired_at = NaiveDateTime.add(now, -1, :second)

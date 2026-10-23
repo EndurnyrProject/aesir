@@ -1,0 +1,262 @@
+---
+- flags: []
+  map: 1@cata
+  zone: 512
+- flags: []
+  map: 1@nyd
+  zone: 1024
+- flags: []
+  map: 1@orcs
+  zone: 1024
+- flags: []
+  map: 1@tower
+  zone: 1024
+- flags: []
+  map: 2@cata
+  zone: 512
+- flags: []
+  map: 2@nyd
+  zone: 1024
+- flags: []
+  map: 2@orcs
+  zone: 1024
+- flags: []
+  map: 2@tower
+  zone: 1024
+- flags: []
+  map: 3@tower
+  zone: 1024
+- flags: []
+  map: 4@tower
+  zone: 1024
+- flags: []
+  map: 5@tower
+  zone: 1024
+- flags: []
+  map: 6@tower
+  zone: 1024
+- flags: []
+  map: alberta
+  zone: 2048
+- flags: []
+  map: alde_tt02
+  zone: 32
+- flags: []
+  map: aldebaran
+  zone: 2048
+- flags:
+    - gvg_castle
+  map: aldeg_cas01
+- flags:
+    - gvg_castle
+  map: aldeg_cas02
+- flags:
+    - gvg_castle
+  map: aldeg_cas03
+- flags:
+    - gvg_castle
+  map: aldeg_cas04
+- flags:
+    - gvg_castle
+  map: aldeg_cas05
+- flags: []
+  map: amatsu
+  zone: 2048
+- flags:
+    - gvg_castle
+  map: arug_cas01
+  zone: 256
+- flags:
+    - gvg_castle
+  map: arug_cas02
+  zone: 256
+- flags:
+    - gvg_castle
+  map: arug_cas03
+  zone: 256
+- flags:
+    - gvg_dungeon
+  map: arug_dun01
+- flags: []
+  map: ayothaya
+  zone: 2048
+- flags:
+    - battleground
+  map: bat_a01
+- flags:
+    - battleground
+  map: bat_b01
+- flags:
+    - battleground
+  map: bat_c01
+- flags: []
+  map: brasilis
+  zone: 2048
+- flags: []
+  map: comodo
+  zone: 2048
+- flags: []
+  map: einbech
+  zone: 2048
+- flags: []
+  map: einbroch
+  zone: 2048
+- flags: []
+  map: geffen
+  zone: 2048
+- flags:
+    - gvg_castle
+  map: gefg_cas01
+- flags:
+    - gvg_castle
+  map: gefg_cas02
+- flags:
+    - gvg_castle
+  map: gefg_cas03
+- flags:
+    - gvg_castle
+  map: gefg_cas04
+- flags:
+    - gvg_castle
+  map: gefg_cas05
+- flags:
+    - gvg_dungeon
+  map: gld_dun01
+- flags:
+    - gvg_dungeon
+  map: gld_dun02
+- flags:
+    - gvg_dungeon
+  map: gld_dun03
+- flags:
+    - gvg_dungeon
+  map: gld_dun04
+- flags: []
+  map: gonryun
+  zone: 2048
+- flags:
+    - gvg
+  map: guild_vs1
+- flags:
+    - gvg
+  map: guild_vs2
+- flags:
+    - gvg
+  map: guild_vs3
+- flags:
+    - gvg
+  map: guild_vs4
+- flags:
+    - gvg
+  map: guild_vs5
+- flags: []
+  map: hugel
+  zone: 2048
+- flags: []
+  map: izlude
+  zone: 2048
+- flags: []
+  map: jawaii
+  zone: 2048
+- flags: []
+  map: lighthalzen
+  zone: 2048
+- flags: []
+  map: louyang
+  zone: 2048
+- flags: []
+  map: manuk
+  zone: 2048
+- flags: []
+  map: mid_camp
+  zone: 2048
+- flags: []
+  map: moc_ruins
+  zone: 2048
+- flags: []
+  map: morocc
+  zone: 2048
+- flags: []
+  map: moscovia
+  zone: 2048
+- flags: []
+  map: niflheim
+  zone: 2048
+- flags: []
+  map: pay_arche
+  zone: 2048
+- flags:
+    - gvg_castle
+  map: payg_cas01
+- flags:
+    - gvg_castle
+  map: payg_cas02
+- flags:
+    - gvg_castle
+  map: payg_cas03
+- flags:
+    - gvg_castle
+  map: payg_cas04
+- flags:
+    - gvg_castle
+  map: payg_cas05
+- flags: []
+  map: payon
+  zone: 2048
+- flags: []
+  map: prontera
+  zone: 2048
+- flags: []
+  map: prt_are_in
+  zone: 128
+- flags:
+    - gvg_castle
+  map: prtg_cas01
+- flags:
+    - gvg_castle
+  map: prtg_cas02
+- flags:
+    - gvg_castle
+  map: prtg_cas03
+- flags:
+    - gvg_castle
+  map: prtg_cas04
+- flags:
+    - gvg_castle
+  map: prtg_cas05
+- flags: []
+  map: rachel
+  zone: 2048
+- flags:
+    - gvg_castle
+  map: schg_cas01
+  zone: 256
+- flags:
+    - gvg_castle
+  map: schg_cas02
+  zone: 256
+- flags:
+    - gvg_castle
+  map: schg_cas03
+  zone: 256
+- flags:
+    - gvg_dungeon
+  map: schg_dun01
+- flags: []
+  map: sec_pri
+  zone: 64
+- flags: []
+  map: splendide
+  zone: 2048
+- flags: []
+  map: umbala
+  zone: 2048
+- flags: []
+  map: veins
+  zone: 2048
+- flags: []
+  map: xmas
+  zone: 2048
+- flags: []
+  map: yuno
+  zone: 2048

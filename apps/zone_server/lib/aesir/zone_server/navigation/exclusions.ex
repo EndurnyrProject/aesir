@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Navigation.Exclusions do
   @doc "Returns the static-tier source paths so dependent caches can invalidate."
   @spec sources() :: [Path.t()]
   def sources do
-    ["navigation.yml", "map_flags.yml", "castles"]
+    ["navigation.yml", "map_flags.yml", "map_flags/scripts.yml", "castles"]
     |> Enum.flat_map(&Source.sources/1)
   end
 

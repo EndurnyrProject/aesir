@@ -182,7 +182,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           card2: integer(),
           card3: integer(),
           craft: map() | nil,
-          random_options: ItemOptions.t()
+          random_options: ItemOptions.t(),
+          equipped_on: String.t() | nil
         }
 
   defstruct base_stats: nil,

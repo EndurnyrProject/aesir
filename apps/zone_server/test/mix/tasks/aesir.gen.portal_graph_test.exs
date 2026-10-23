@@ -26,6 +26,7 @@ defmodule Mix.Tasks.Aesir.Gen.PortalGraphTest do
     for mode <- ["re", "pre-re"] do
       write_file(root, "#{mode}/warps/fixture.yml", "[]")
       write_file(root, "#{mode}/castles/fixture.yml", "[]")
+      write_file(root, "#{mode}/map_flags/scripts.yml", "[]")
     end
 
     on_exit(fn ->

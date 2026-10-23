@@ -1502,7 +1502,9 @@ message UseItem {
   uint32 index = 1;
 }
 
-// Server -> client, result of a use-item attempt; reason 0 = ok, else the rejection code.
+// Server -> client, result of a use-item attempt; reason 0 = ok, else the rejection code:
+// 1 item not found, 2 not usable, 3 refused, 4 item use disabled, 5 the map restricts
+// the item (the client shows "This item cannot be used within this area").
 message ItemUseResult {
   uint32 index = 1;
   bool ok = 2;

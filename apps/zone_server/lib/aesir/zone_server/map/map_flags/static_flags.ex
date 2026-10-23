@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Map.MapFlags.StaticFlags do
   @moduledoc """
-  Loads per-map PvP flags from `priv/db/map_flags.yml` into a static index.
+  Loads per-map flags into a static index: the curated PvP flags of
+  `priv/db/map_flags.yml` and the GvG, battleground and castle flags imported
+  from the mode's mapflag scripts (`priv/db/<mode>/map_flags/scripts.yml`),
+  whose rows may also carry a restricted-zone mask (`load_zones/0`).
 
   Returns `%{map_name => %{flag => true}}`. `MapFlags.build_static/0` merges
   this over the CastleDb-derived WoE flags, so boot-time PvP map data loads
@@ -16,6 +19,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags.StaticFlags do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.DataLoader
 
+  @domains ["map_flags/scripts.yml", "map_flags.yml"]
+
   @typedoc "A static per-map flag index: map name => flag => `true`."
   @type static_index :: %{MapFlags.map_name() => %{MapFlags.flag() => true}}
 
@@ -24,11 +29,25 @@ defmodule Aesir.ZoneServer.Map.MapFlags.StaticFlags do
   """
   @spec load() :: static_index()
   def load do
-    "map_flags.yml"
+    @domains
+    |> Enum.map(&(&1 |> rows() |> to_index!()))
+    |> Enum.reduce(%{}, &Map.merge(&2, &1, fn _map, a, b -> Map.merge(a, b) end))
+  end
+
+  @doc "Loads each map's restricted-zone mask from the imported mapflag scripts."
+  @spec load_zones() :: %{MapFlags.map_name() => pos_integer()}
+  def load_zones do
+    for %{"map" => map, "zone" => zone} <- rows("map_flags/scripts.yml"),
+        is_integer(zone) and zone > 0,
+        into: %{},
+        do: {map, zone}
+  end
+
+  defp rows(domain) do
+    domain
     |> Source.sources()
-    |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+    |> Enum.flat_map(&(YamlElixir.read_from_file!(&1) || []))
     |> DataLoader.merge_by_key(& &1["map"])
-    |> to_index!()
   end
 
   @doc """

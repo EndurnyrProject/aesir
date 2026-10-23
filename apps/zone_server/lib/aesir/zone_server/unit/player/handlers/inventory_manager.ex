@@ -58,7 +58,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     with {:ok, indices} <- Inventory.ineligible_equipment(inventory, context, GameMode.mode()),
          {:ok, persisted} <- InventoryOps.unequip_many(character.id, inventory, indices) do
       equipped = Map.values(Inventory.equipped_items(persisted))
-      stats = Calculator.calculate_stats(game_state.stats, character.id, equipped)
+
+      stats =
+        Calculator.calculate_stats(game_state.stats, character.id, equipped, game_state.map_name)
 
       {:ok, %{game_state | inventory: persisted, stats: stats}}
     end

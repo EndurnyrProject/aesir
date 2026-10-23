@@ -248,6 +248,8 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
       mode_dir = Path.join(root, Layout.mode_dir(GameMode.mode()))
       File.mkdir_p!(mode_dir)
       File.write!(Path.join(mode_dir, "portal_access.yml"), "maps: {}\njobs: {}\ngroups: {}\n")
+      File.mkdir_p!(Path.join(mode_dir, "map_flags"))
+      File.write!(Path.join([mode_dir, "map_flags", "scripts.yml"]), "[]\n")
 
       import = Path.join([root, "import", "map_flags.yml"])
       File.mkdir_p!(Path.dirname(import))
@@ -279,6 +281,8 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
       File.mkdir_p!(mode_dir)
 
       File.write!(Path.join(mode_dir, "portal_access.yml"), "maps: {}\njobs: {}\ngroups: {}\n")
+      File.mkdir_p!(Path.join(mode_dir, "map_flags"))
+      File.write!(Path.join([mode_dir, "map_flags", "scripts.yml"]), "[]\n")
 
       File.write!(Path.join(mode_dir, "map_invincible_time.yml"), """
       - map: castle

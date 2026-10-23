@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -70,7 +71,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     }
 
     with :ok <- usable?(definition),
-         :ok <- Eligibility.check(definition, context) do
+         :ok <- Eligibility.check(definition, context),
+         :ok <- map_allows?(definition, state.game_state) do
       run_effect(client_index, server_index, definition, state)
     else
       {:error, reason} -> reject(client_index, reason, state)
@@ -274,6 +276,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   defp usable?(%{on_use: nil}), do: {:error, :not_usable}
   defp usable?(%{on_use: _source}), do: :ok
 
+  # An item the map restricts is refused before its effect runs and is not
+  # consumed, whatever its consumption type.
+  @spec map_allows?(map(), PlayerState.t()) :: :ok | {:error, :restricted_area}
+  defp map_allows?(definition, game_state) do
+    if NoEquip.restricted?(definition.id, game_state.map_name),
+      do: {:error, :restricted_area},
+      else: :ok
+  end
+
   # The script `disable_items` buildin suppresses item use while active.
   @spec item_use_enabled?(map()) :: :ok | {:error, :disabled}
   defp item_use_enabled?(%{game_state: %PlayerState{disable_item_use: true}}),
@@ -298,6 +309,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   defp code(:not_found), do: 1
   defp code(:not_usable), do: 2
   defp code(:disabled), do: 4
+  defp code(:restricted_area), do: 5
   defp code(:status_blocked), do: 3
   defp code(_reason), do: 3
 end

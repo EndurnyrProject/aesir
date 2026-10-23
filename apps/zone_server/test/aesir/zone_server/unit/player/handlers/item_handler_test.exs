@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.ItemManagement.NoEquip
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
@@ -321,6 +322,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
                         }}}
 
       refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+
+    test "refuses a consumable the map restricts without running or consuming it" do
+      source = "heal(ctx, hp: 50)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+      state = state_with_potion()
+
+      stub(Items, :by_id, fn @red_potion_id ->
+        {:ok, usable_definition(@red_potion_id, source)}
+      end)
+
+      stub(NoEquip, :restricted?, fn @red_potion_id, map ->
+        assert map == state.game_state.map_name
+        true
+      end)
+
+      reject(&InventoryOps.remove/4)
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, :gameplay,
+                       {:item_use_result,
+                        %ItemUseResult{index: @red_potion_client_index, ok: false, reason: 5}}}
     end
 
     test "rejects class, gender, and level restrictions before scripts run" do

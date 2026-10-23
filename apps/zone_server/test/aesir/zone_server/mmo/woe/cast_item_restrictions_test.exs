@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastItemRestrictionsTest do
     end
   end
 
-  test "delay-consume scrolls stage item skills on castle ground without early loss" do
+  defp use_scrolls_on_castle_ground do
     definitions = [
       %{
         item_definition(@greed_scroll)
@@ -98,15 +98,31 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastItemRestrictionsTest do
     stub(Items, :by_id, fn id -> {:ok, Enum.find(definitions, &(&1.id == id))} end)
     reject(&InventoryOps.remove/4)
 
-    for {item_id, skill_id} <- [{@greed_scroll, 1013}, {@anodyne, 8}] do
+    Map.new([@greed_scroll, @anodyne], fn item_id ->
       state = Map.put(item_state(item_id, @castle), :pending_item_skill, nil)
-      assert {:noreply, staged} = ItemHandler.handle_use_item(2, state)
-      assert staged.pending_item_skill.skill_id == skill_id
-      assert staged.game_state.inventory[0].amount == 2
-      assert staged.game_state.stats.current_state.hp == 100
-      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: true}}}
+      assert {:noreply, used} = ItemHandler.handle_use_item(2, state)
+      assert used.game_state.inventory[0].amount == 2
       refute_received {:send, :gameplay, {:item_removed, _}}
+      assert_received {:send, :gameplay, {:item_use_result, result}}
+      {item_id, {used.pending_item_skill, result}}
+    end)
+  end
+
+  @tag game_mode: :renewal
+  test "castle ground refuses Greed Scroll and Anodyne, whose masks carry the GvG bit" do
+    uses = use_scrolls_on_castle_ground()
+
+    for item_id <- [@greed_scroll, @anodyne] do
+      assert {nil, %ItemUseResult{ok: false, reason: 5}} = uses[item_id]
     end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "castle ground refuses Greed Scroll but stages Anodyne, whose mask lacks the GvG bit" do
+    uses = use_scrolls_on_castle_ground()
+
+    assert {nil, %ItemUseResult{ok: false, reason: 5}} = uses[@greed_scroll]
+    assert {%{skill_id: 8}, %ItemUseResult{ok: true}} = uses[@anodyne]
   end
 
   test "a nonrestricted item still executes and consumes on castle ground" do

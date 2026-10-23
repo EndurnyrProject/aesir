@@ -28,10 +28,21 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
     warp_source = write_file(root, mode_path("warps", "fixture.yml"), "[]")
     exclusion_source = write_file(root, "navigation.yml", "[]")
     map_flags_source = write_file(root, "map_flags.yml", "[]")
+
+    scripts_source =
+      write_file(root, Layout.rel_path("map_flags/scripts.yml", GameMode.mode()), "[]")
+
     castle_source = write_file(root, mode_path("castles", "fixture.yml"), "[]")
     map_source = write_file(root, "maps.mcache", "fixture")
 
-    for source <- [warp_source, exclusion_source, map_flags_source, castle_source, map_source] do
+    for source <- [
+          warp_source,
+          exclusion_source,
+          map_flags_source,
+          scripts_source,
+          castle_source,
+          map_source
+        ] do
       File.touch!(source, 1_000_000)
     end
 

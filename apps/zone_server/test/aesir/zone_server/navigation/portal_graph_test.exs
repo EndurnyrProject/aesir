@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraphTest do
       write_file(root, mode_path("warps", "fixture.yml"), "[]"),
       write_file(root, "navigation.yml", "[]"),
       write_file(root, "map_flags.yml", "[]"),
+      write_file(root, Layout.rel_path("map_flags/scripts.yml", GameMode.mode()), "[]"),
       write_file(root, mode_path("castles", "fixture.yml"), "[]")
     ]
 

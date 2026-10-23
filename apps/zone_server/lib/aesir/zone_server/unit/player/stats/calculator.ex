@@ -75,7 +75,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.Calculator do
   defp calculate_stats(stats, player_id, equipped_items, map_name, character_info) do
     stats
     |> apply_job_bonuses()
-    |> EquipmentFold.apply_equipment_modifiers(equipped_items, %{character_info: character_info})
+    |> EquipmentFold.apply_equipment_modifiers(equipped_items, %{
+      character_info: character_info,
+      map_name: map_name
+    })
     |> apply_status_effects(player_id)
     |> apply_passive_modifiers()
     |> calculate_derived_stats()

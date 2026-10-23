@@ -5,7 +5,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   Static per-map flags are loaded once into `:persistent_term` from
   `Aesir.ZoneServer.Mmo.Woe.CastleDb` (every castle map carries
   `gvg_castle`, `nosave`, `noteleport`, `nowarp`, and `noreturn`) and
-  `StaticFlags` (per-map PvP flags from `priv/db/map_flags.yml`) and
+  `StaticFlags` (per-map PvP flags from `priv/db/map_flags.yml`, and the GvG,
+  castle, GvG dungeon and battleground flags imported from the mode's mapflag
+  scripts, whose restricted zones `zone/1` reads) and
   `PortalAccess` (mode-scoped memo and job-entry flags), plus a
   small runtime ETS overlay (`:map_flag_overrides`) carries flags toggled at
   runtime (WoE's `gvg`). `get/2` merges overlay over static; `reload/0`
@@ -40,6 +42,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   @pt_key __MODULE__
   @invincible_key {__MODULE__, :invincible_time}
+  @zone_key {__MODULE__, :zone}
 
   @typedoc """
   A map flag. The WoE set drives castle behavior; the PvP set drives
@@ -62,6 +65,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
           | :gvg_te_castle
           | :nomobloot
           | :nomvploot
+          | :gvg_dungeon
+          | :battleground
   @type map_name :: String.t()
 
   @flags [
@@ -80,7 +85,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     :gvg_te,
     :gvg_te_castle,
     :nomobloot,
-    :nomvploot
+    :nomvploot,
+    :gvg_dungeon,
+    :battleground
   ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 
@@ -102,7 +109,28 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     PortalAccess.reload()
     :persistent_term.put(@pt_key, build_static())
     :persistent_term.erase(@invincible_key)
+    :persistent_term.erase(@zone_key)
     :ok
+  end
+
+  @doc """
+  Returns the map's restricted-zone mask: bit `1 << (n + 4)` for each
+  `restricted <n>` zone the mapflag scripts give it, `0` for none.
+  """
+  @spec zone(map_name()) :: non_neg_integer()
+  def zone(map_name) do
+    @zone_key
+    |> :persistent_term.get(nil)
+    |> case do
+      nil ->
+        zones = StaticFlags.load_zones()
+        :persistent_term.put(@zone_key, zones)
+        zones
+
+      zones ->
+        zones
+    end
+    |> Map.get(map_name, 0)
   end
 
   @doc """

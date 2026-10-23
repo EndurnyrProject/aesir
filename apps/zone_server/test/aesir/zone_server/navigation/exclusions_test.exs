@@ -54,10 +54,11 @@ defmodule Aesir.ZoneServer.Navigation.ExclusionsTest do
         """
       )
 
+    scripts = write_file(root, Layout.rel_path("map_flags/scripts.yml", GameMode.mode()), "[]")
     castles = write_file(root, mode_path("castles", "castles.yml"), "[]")
 
     assert Source.sources("navigation.yml") == [base, import]
-    assert Exclusions.sources() == [base, import, map_flags, castles]
+    assert Exclusions.sources() == [base, import, map_flags, scripts, castles]
     :ok = Exclusions.reload()
 
     for map_name <- [
