@@ -166,23 +166,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           | {:castend_failed, Active.caster(), atom()}
           | {:error, atom()}
           | {:error, atom(), Active.caster()}
-  def begin_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+  def begin_cast(game_state, skill_id, level, target),
+    do: begin_cast(game_state, skill_id, level, target, [])
+
+  @doc """
+  `begin_cast/4` with options. `attack_reach: true` marks a player's combo used
+  while swinging at its target: it has the attack's reach, so the skill's range
+  is not checked (the walking step rule still is).
+  """
+  @spec begin_cast(Active.caster(), integer(), pos_integer(), Active.target(), keyword()) ::
+          term()
+  def begin_cast(game_state, skill_id, level, target, opts)
+      when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
     with {:ok, definition} <- fetch_definition(skill_id),
          {:ok, adapter} <- lifecycle_adapter(game_state) do
-      begin_real_attempt(game_state, skill_id, level, target, definition, adapter, now)
+      begin_real_attempt(game_state, skill_id, level, target, definition, adapter, now, opts)
     end
   end
 
-  def begin_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+  def begin_cast(_game_state, _skill_id, _level, _target, _opts), do: {:error, :invalid_level}
 
-  defp begin_real_attempt(caster, skill_id, level, target, definition, adapter, now) do
+  defp begin_real_attempt(caster, skill_id, level, target, definition, adapter, now, opts) do
     inputs = :erlang.apply(adapter, :cast_stats, [caster, skill_id])
     early = CastTime.early(definition, level, inputs)
     refreshed = Caster.apply_cast_reactions(caster, early.reactions)
 
-    case validate_cast(refreshed, skill_id, level, target, now) do
+    case validate_cast(refreshed, skill_id, level, target, now, :cast_begin, opts) do
       {:ok, context} ->
         finish_attempt(context.caster, skill_id, level, target, context, early)
 
@@ -282,15 +293,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   range is remembered rather than refused.
 
   Returns `:in_range` when the cast would start now (the caller stops the walk
-  and begins it with `begin_cast/4`, which runs the attempt for real),
+  and begins it with `begin_cast/5`, which runs the attempt for real),
   `{:step, caster}` when it is remembered, or `{:error, reason, caster}` when
-  a check refuses it. The attempt's early cast-time reactions (Memorize,
-  Suffragium) are spent in the last two cases, as a real attempt would.
+  a check refuses it. The attempt's early cast-time reactions (Memorize, which
+  the source spends computing the cast time before every attempt) are spent
+  in the last two cases. Takes `begin_cast/5`'s options.
   """
-  @spec walking_attempt(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+  @spec walking_attempt(PlayerState.t(), integer(), pos_integer(), Active.target(), keyword()) ::
           :in_range | {:step, PlayerState.t()} | {:error, term(), PlayerState.t()}
-  def walking_attempt(%PlayerState{} = caster, skill_id, level, target) do
-    case validate_player_cast(caster, skill_id, level, target, :cast_begin) do
+  def walking_attempt(%PlayerState{} = caster, skill_id, level, target, opts \\ []) do
+    case validate_player_cast(caster, skill_id, level, target, :cast_begin, opts) do
       {:ok, _context} -> :in_range
       {:error, :step_action} -> {:step, spend_early_reactions(caster, skill_id, level)}
       {:error, reason} -> {:error, reason, spend_early_reactions(caster, skill_id, level)}
@@ -1567,23 +1579,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp put_resolved_combo_delay(definition, _level, _delay), do: definition
 
-  defp validate_cast(caster, skill_id, level, target, now, phase \\ :cast_begin)
+  defp validate_cast(caster, skill_id, level, target, now, phase \\ :cast_begin, opts \\ [])
 
-  defp validate_cast(caster, skill_id, level, target, now, phase) when is_struct(caster),
-    do: validate_owned_cast(caster, skill_id, level, target, now, phase)
+  defp validate_cast(caster, skill_id, level, target, now, phase, opts) when is_struct(caster),
+    do: validate_owned_cast(caster, skill_id, level, target, now, phase, opts)
 
-  defp validate_cast(caster, skill_id, level, target, now, phase) do
+  defp validate_cast(caster, skill_id, level, target, now, phase, opts) do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition) do
-      validate_owned_cast(caster, skill_id, level, target, now, phase)
+      validate_owned_cast(caster, skill_id, level, target, now, phase, opts)
     end
   end
 
-  defp validate_owned_cast(%PlayerState{} = caster, skill_id, level, target, _now, phase),
-    do: validate_player_cast(caster, skill_id, level, target, phase)
+  defp validate_owned_cast(%PlayerState{} = caster, skill_id, level, target, _now, phase, opts),
+    do: validate_player_cast(caster, skill_id, level, target, phase, opts)
 
-  defp validate_owned_cast(caster, skill_id, level, target, now, phase) do
+  defp validate_owned_cast(caster, skill_id, level, target, now, phase, _opts) do
     with {:ok, adapter} <- lifecycle_adapter(caster),
          :ok <- :erlang.apply(adapter, :castable_state, [caster, skill_id, :begin]),
          {:ok, definition} <- fetch_definition(skill_id),
@@ -1618,7 +1630,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # target suits the skill and the skill's own `validate/4` are cast-end
   # checks (`check_player_castend/4`); a staged input cast, validated as it
   # ends, runs them last.
-  defp validate_player_cast(caster, skill_id, level, target, phase) do
+  defp validate_player_cast(caster, skill_id, level, target, phase, opts) do
     adapter = Caster.Player
 
     with :ok <- adapter.castable_state(caster, skill_id, :begin),
@@ -1635,7 +1647,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, prepared} <- castbegin(context, phase == :cast_begin),
          :ok <- check_start_placement(prepared.caster, definition, target, phase),
          :ok <- check_end_placement(caster, definition, target, phase),
-         :ok <- check_use_range(caster, target, definition, level),
+         :ok <- check_use_range(caster, target, definition, level, opts),
          :ok <- optional_check(prepared, :after_range_check),
          :ok <- check_input_castend(prepared, phase) do
       {:ok, record_spheres_old(prepared, phase)}
@@ -1658,18 +1670,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # no wall between them. While the player walks, a target not reached at one
   # cell less is remembered instead (`:step_action`), to be tried again as the
   # walk goes on. A ground cell must also hold a unit placement.
-  defp check_use_range(_caster, :self, _definition, _level), do: :ok
+  # A combo used while swinging at its target (`attack_reach: true`) has the
+  # attack's reach: only the walking step rule applies.
+  defp check_use_range(_caster, :self, _definition, _level, _opts), do: :ok
 
-  defp check_use_range(caster, target, definition, level) do
-    if self_target?(caster, target),
-      do: :ok,
-      else: check_reach(caster, target, effective_range(definition, caster, level))
+  defp check_use_range(caster, target, definition, level, opts) do
+    if self_target?(caster, target) do
+      :ok
+    else
+      range = effective_range(definition, caster, level)
+      check_reach(caster, target, range, Keyword.get(opts, :attack_reach, false))
+    end
   end
 
-  defp check_reach(caster, target, range) do
+  defp check_reach(caster, target, range, attack_reach?) do
     with {:ok, cell} <- use_target_cell(target) do
       cond do
         walking?(caster) and not reaches?(caster, cell, range - 1) -> {:error, :step_action}
+        attack_reach? -> :ok
         not reaches?(caster, cell, range) -> {:error, :out_of_range}
         true -> check_use_cell(caster, target)
       end

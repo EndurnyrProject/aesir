@@ -571,8 +571,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # yet is remembered; one out of range after the walk is dropped. Every other
   # refusal answers as the cast would and leaves the walk alone.
   defp attempt_use(%{game_state: game_state} = state, skill_id, level, target, locked, opts) do
-    aimed = use_target(game_state, skill_id, level, target, locked)
-
+    {aimed, combo?} = aim_use(game_state, skill_id, level, target, locked)
+    # A combo used while swinging at its target has the attack's reach.
+    opts = Keyword.put(opts, :attack_reach, combo? and game_state.action_state == :attacking)
     checked? = game_state.movement_state == :moving or not Keyword.get(opts, :approach?, true)
 
     case LifecycleSkillHandler.preflight(state, skill_id, level) do
@@ -583,7 +584,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp checked_use(%{game_state: game_state} = state, skill_id, level, aimed, locked, opts) do
-    case Interpreter.walking_attempt(game_state, skill_id, level, aimed) do
+    case walking_attempt(game_state, skill_id, level, aimed, opts) do
       :in_range ->
         start_use(state, skill_id, level, aimed, locked, opts)
 
@@ -603,11 +604,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     case ensure_idle_for_cast(state, opts) do
       {:ok, ready} ->
-        begin_preflighted_cast(ready, ready.game_state, skill_id, level, target, locked)
+        result = begin_cast(ready.game_state, skill_id, level, target, opts)
+        handle_begin_result(ready, ready.game_state, skill_id, level, target, locked, result)
 
       :busy ->
         reject_cast_gate(state, skill_id, :busy)
     end
+  end
+
+  # Only a combo with the attack's reach passes options to the interpreter.
+  defp walking_attempt(game_state, skill_id, level, target, opts) do
+    if Keyword.get(opts, :attack_reach, false),
+      do: Interpreter.walking_attempt(game_state, skill_id, level, target, attack_reach: true),
+      else: Interpreter.walking_attempt(game_state, skill_id, level, target)
+  end
+
+  defp begin_cast(game_state, skill_id, level, target, opts) do
+    if Keyword.get(opts, :attack_reach, false),
+      do: Interpreter.begin_cast(game_state, skill_id, level, target, attack_reach: true),
+      else: Interpreter.begin_cast(game_state, skill_id, level, target)
   end
 
   defp remember_step(state, skill_id, level, target, locked) do
@@ -796,11 +811,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp consume_pending_item(_state, caster), do: {:ok, caster}
-
-  defp begin_preflighted_cast(state, game_state, skill_id, level, target, locked) do
-    result = Interpreter.begin_cast(game_state, skill_id, level, target)
-    handle_begin_result(state, game_state, skill_id, level, target, locked, result)
-  end
 
   defp handle_begin_result(state, game_state, skill_id, level, target, locked, result) do
     case result do
@@ -2090,7 +2100,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:versus_map_only), do: :SKILL_CAST_FAILURE_REASON_VERSUS_MAP_ONLY
   defp failure_reason(:npc_nearby), do: :SKILL_CAST_FAILURE_REASON_NPC_NEARBY
   defp failure_reason(:to_target), do: :SKILL_CAST_FAILURE_REASON_TO_TARGET
-  defp failure_reason(:hp_insufficient), do: :SKILL_CAST_FAILURE_REASON_HP_INSUFFICIENT
+
+  defp failure_reason(reason) when reason in [:hp_insufficient, :insufficient_hp],
+    do: :SKILL_CAST_FAILURE_REASON_HP_INSUFFICIENT
+
   defp failure_reason(:spirits), do: :SKILL_CAST_FAILURE_REASON_SPIRITS
   defp failure_reason(:cart), do: :SKILL_CAST_FAILURE_REASON_CART
   defp failure_reason(:need_equipment), do: :SKILL_CAST_FAILURE_REASON_NEED_EQUIPMENT
@@ -2099,8 +2112,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   # A combo skill's use is aimed at the unit the player was attacking when the
   # request came (captured before the cast cleared the attack).
-  defp use_target(game_state, skill_id, level, target, attack_target) do
-    Combo.use_target(game_state, skill_id, target, attack_target, fn ->
+  defp aim_use(game_state, skill_id, level, target, attack_target) do
+    Combo.aim(game_state, skill_id, target, attack_target, fn ->
       Interpreter.castbegin_passes?(game_state, skill_id, level, target)
     end)
   end

@@ -4032,6 +4032,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:error, :invalid_target} = Interpreter.complete_cast(caster, 6, 1, {:unit, 2_000})
     end
 
+    test "a combo with the attack's reach skips the range, but not the walking step rule" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_enemy, 1)} end)
+      :ok = SpatialIndex.add_unit(:player, 2_000, 18, 10, "prontera")
+      gs = game_state(100, %{6 => 1})
+
+      assert {:error, :out_of_range} = Interpreter.preflight_cast(gs, 6, 1, {:unit, 2_000})
+      assert :in_range = Interpreter.walking_attempt(gs, 6, 1, {:unit, 2_000}, attack_reach: true)
+
+      walking = %{gs | movement_state: :moving}
+
+      assert {:step, _caster} =
+               Interpreter.walking_attempt(walking, 6, 1, {:unit, 2_000}, attack_reach: true)
+    end
+
     test "ending an active toggle skips the rest of its cast-begin conditions and its SP" do
       gs = game_state(0, %{135 => 1})
 

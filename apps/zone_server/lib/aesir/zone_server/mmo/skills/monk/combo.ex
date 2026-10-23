@@ -77,21 +77,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   keeps its target. `{:unit, 0}` names no unit.
   """
   @spec use_target(map(), integer(), term(), integer() | nil, (-> boolean())) :: term()
-  def use_target(%{combo: combo} = caster, skill_id, target, attack_target, castbegin_ok)
+  def use_target(caster, skill_id, target, attack_target, castbegin_ok),
+    do: caster |> aim(skill_id, target, attack_target, castbegin_ok) |> elem(0)
+
+  @doc """
+  `use_target/5`, plus whether the use counts as a combo: aimed by its window
+  or as a self-aimed follow-up. A combo used while its caster is swinging at
+  its attack target has the attack's reach and skips the skill's range check.
+  """
+  @spec aim(map(), integer(), term(), integer() | nil, (-> boolean())) :: {term(), boolean()}
+  def aim(%{combo: combo} = caster, skill_id, target, attack_target, castbegin_ok)
       when skill_id in @combo_skills do
     now = System.monotonic_time(:millisecond)
 
-    target =
+    {target, combo?} =
       cond do
-        open?(combo, now) and castbegin_ok.() -> attack_target(target, attack_target)
-        skill_id in @self_aimed and target == :self -> attack_target(target, attack_target)
-        true -> target
+        open?(combo, now) and castbegin_ok.() ->
+          {attack_target(target, attack_target), true}
+
+        skill_id in @self_aimed and target == :self ->
+          {attack_target(target, attack_target), true}
+
+        true ->
+          {target, false}
       end
 
-    root_target(caster, skill_id, target)
+    {root_target(caster, skill_id, target), combo?}
   end
 
-  def use_target(_caster, _skill_id, target, _attack_target, _castbegin_ok), do: target
+  def aim(_caster, _skill_id, target, _attack_target, _castbegin_ok), do: {target, false}
 
   defp attack_target(_target, attack_target) when is_integer(attack_target) and attack_target > 0,
     do: {:unit, attack_target}

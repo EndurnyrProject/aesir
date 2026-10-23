@@ -70,6 +70,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
       assert Combo.use_target(caster, 271, :self, 9, fn -> false end) == :self
     end
 
+    test "marks a use aimed by its window or as a self-aimed follow-up as a combo",
+         %{caster: caster} do
+      assert {{:unit, 9}, true} = Combo.aim(caster, 272, :self, 9, fn -> true end)
+      assert {{:unit, 9}, true} = Combo.aim(caster, 273, :self, 9, fn -> false end)
+      assert {{:unit, 7}, false} = Combo.aim(caster, 271, {:unit, 7}, 9, fn -> false end)
+    end
+
     test "leaves other skills alone", %{caster: caster} do
       assert Combo.use_target(caster, 5, :self, 9, fn -> true end) == :self
     end
