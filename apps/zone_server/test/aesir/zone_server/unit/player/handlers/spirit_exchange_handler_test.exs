@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandlerTest do
   test "an accepted absorb request clears the target and replies once with the count" do
     Mimic.copy(Broadcast)
     Mimic.copy(Targeting)
-    stub(Targeting, :validate_enemy, fn _source, _target -> :ok end)
+    stub(Targeting, :validate_enemy_relation_allow_dead, fn _source, _target -> :ok end)
     expect(Broadcast, :to_visible_players, fn _state, _update, exclude_id: 2 -> :ok end)
 
     source = player_state(1)
@@ -110,6 +110,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandlerTest do
 
     assert {:noreply, ^state} = SpiritExchangeHandler.absorb_spheres(state, request)
     refute_receive {:"$gen_cast", {:skill, {:spirit_absorb_result, ^token, 2, _count}}}
+  end
+
+  test "a dead enemy target still absorbs: the relation alone decides" do
+    Mimic.copy(Targeting)
+    reject(&Targeting.validate_enemy/2)
+    stub(Targeting, :validate_enemy_relation_allow_dead, fn _source, _target -> :ok end)
+
+    source = player_state(1)
+    target = %{player_state(2) | action_state: :dead} |> with_spheres(1)
+    :ok = UnitRegistry.register_player(source, self())
+    token = make_ref()
+    request = %{source_id: 1, source_pid: self(), target_id: 2, token: token}
+    state = %{connection_pid: self(), game_state: target}
+
+    assert {:noreply, updated} = SpiritExchangeHandler.absorb_spheres(state, request)
+    assert SpiritSpheres.count(updated.game_state.spirit_spheres) == 0
+    assert_receive {:"$gen_cast", {:skill, {:spirit_absorb_result, ^token, 2, 1}}}
   end
 
   test "player absorb rejects a current coin-user target before the PvP check" do

@@ -58,7 +58,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
     )
   end
 
-  @doc "Clears an eligible player target's spheres and replies once with their count."
+  @doc """
+  Clears an eligible player target's spheres and replies once with their count.
+
+  The target's relation alone decides: a dead player's spheres are still
+  absorbed, as the reference's absorb effect never checks the target's life.
+  """
   @spec absorb_spheres(session_state(), request() | %{required(:token) => reference()}) ::
           {:noreply, session_state()}
   def absorb_spheres(%{game_state: target} = state, %{token: token} = request) do
@@ -66,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler do
          true <- request.target_id == target.character_id,
          true <- source.map_name == target.map_name,
          false <- coin_job?(target),
-         :ok <- Targeting.validate_enemy(source, target) do
+         :ok <- Targeting.validate_enemy_relation_allow_dead(source, target) do
       count = SpiritSpheres.count(target.spirit_spheres)
       state = SpiritSphereHandler.clear(state)
 

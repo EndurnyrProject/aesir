@@ -195,6 +195,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
              )
   end
 
+  test "a dead enemy player is still absorbed: the reference never checks the target's life" do
+    target = %{player_state(2, 20) | action_state: :dead}
+    stub(TargetResolver, :resolve, fn 2 -> {:ok, self(), target, :player} end)
+
+    stub(Targeting, :validate_enemy_relation_allow_dead, fn _caster, _target -> :ok end)
+
+    assert {:deferred, _caster, {:absorb_player, 2}} =
+             MoAbsorbspirits.cast(
+               player_state(1, 20),
+               {:unit, 2},
+               1,
+               MoAbsorbspirits.definition()
+             )
+  end
+
   defp settlement_state do
     Mimic.copy(Broadcast)
     Mimic.copy(CharacterPersistence)

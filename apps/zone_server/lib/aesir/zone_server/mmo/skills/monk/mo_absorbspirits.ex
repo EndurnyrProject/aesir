@@ -6,8 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
   exchange path and are gated by the server's current PvP policy. Every
   target check is made by the effect, once the SP is spent: a coin class, a
   player that is not an enemy, or any other kind of unit fails the cast with
-  the skill failure. Another player's Homunculus is refused silently before
-  the cast begins.
+  the skill failure. A dead player still counts by their relation alone, as the
+  reference never inspects the target's life here. Another player's Homunculus
+  is refused silently before the cast begins.
 
   A monster that is status-immune, or that fails the 20% roll, makes the
   completed cast fail: its SP is already spent and the caster sees the skill
@@ -92,11 +93,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
   end
 
   # Coin classes and players that are neither the caster nor an enemy fail the
-  # paid effect with the skill failure.
+  # paid effect with the skill failure. A dead target is judged by its relation
+  # only, so an enemy's spheres are still absorbed.
   defp absorb_from_player(caster, target_id, target) do
-    if not coin_job?(target) and Targeting.validate_enemy_relation(caster, target) == :ok,
-      do: {:deferred, caster, {:absorb_player, target_id}},
-      else: {:failed, caster, :invalid_target}
+    if not coin_job?(target) and
+         Targeting.validate_enemy_relation_allow_dead(caster, target) == :ok,
+       do: {:deferred, caster, {:absorb_player, target_id}},
+       else: {:failed, caster, :invalid_target}
   end
 
   defp absorb_from_monster(caster, pid, %MobState{} = target) do
