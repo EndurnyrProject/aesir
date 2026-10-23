@@ -1378,6 +1378,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     attacker_modifiers = DamageShared.attacker_modifiers(attacker)
     hit_info = Map.merge(hit_info, %{reflected: true, div: divisions})
     source = damage_source(reflector, attacker.unit_type)
+    reduction = reflected_magic_reduction(attacker)
 
     prepared_hits =
       Enum.map(damages, fn damage ->
@@ -1385,6 +1386,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         |> DamageShared.apply_element_step(hit_info.element, attacker, attacker,
           attacker_modifiers: attacker_modifiers
         )
+        |> reduce_reflected_magic(reduction, divisions)
         |> then(&prepare_magic_hit(attacker.unit_type, attacker.unit_id, &1, hit_info, source))
       end)
 
@@ -1412,6 +1414,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
        queue_reflected_damage(attacker, damage, prepared_hit_info, source, {reflector, proc_opts})}
     end)
   end
+
+  # The caster's own bReduceDamageReturn cuts the equipment-reflected spell
+  # after its element step; a positive amount keeps at least one per division.
+  defp reflected_magic_reduction(%{unit_type: :player} = caster),
+    do: Map.get(caster.equip_modifiers, :reduce_damage_return, 0)
+
+  defp reflected_magic_reduction(_caster), do: 0
+
+  defp reduce_reflected_magic(damage, 0, _divisions), do: damage
+  defp reduce_reflected_magic(damage, _rate, _divisions) when damage <= 0, do: damage
+
+  defp reduce_reflected_magic(damage, rate, divisions),
+    do: max(damage - div(damage * min(100, rate), 100), divisions)
 
   # A reflected bolt's on-hit effect lands on the caster, sourced from the reflector.
   defp run_reflected_bolt_effect({settled, settled_info} = reflected_hit, opts, reflector, caster) do

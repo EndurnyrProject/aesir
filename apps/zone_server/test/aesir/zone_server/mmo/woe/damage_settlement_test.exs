@@ -179,6 +179,27 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamageSettlementTest do
     assert :ok = deliver(target, 42, hit_info, {:player, 32})
   end
 
+  test "the returned player's bReduceDamageReturn cuts each return separately, keeping 1" do
+    attacker = register_player(80, @castle_map, %{reduce_damage_return: 50})
+    target = register_player(81, @castle_map, %{short_weapon_damage_return: 30})
+    :ok = StatusInterpreter.apply_status(:player, 81, :sc_reflectshield, val1: 10)
+
+    # Status: 40% of the settled 80 = 32, 80% on castle ground = 25, halved to 13.
+    # Equipment: 30% of the raw 100 = 30, 80% = 24, halved to 12.
+    expect_damage(target.pid, 80, {:player, 80})
+    expect_damage(attacker.pid, 25, {:player, 81})
+
+    assert {80, hit_info} = prepare(81, 100, ordinary_hit(), {:player, 80})
+    assert :ok = deliver(target, 80, hit_info, {:player, 80})
+  end
+
+  test "reduce_return caps the reduction at 100 and floors a positive return at 1" do
+    assert DamageApplication.reduce_return(25, 50) == 13
+    assert DamageApplication.reduce_return(25, 150) == 1
+    assert DamageApplication.reduce_return(25, -20) == 30
+    assert DamageApplication.reduce_return(0, 50) == 0
+  end
+
   test "each positive return has its own minimum but a rounded-zero return stays zero" do
     attacker = register_player(34, @castle_map)
     target = register_player(35, @castle_map, %{short_weapon_damage_return: 20})

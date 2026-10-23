@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
@@ -869,9 +870,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         Map.put(status_hit, :damage, hit_info.equipment_return_basis)
       )
 
-    amount = apply_ground_rate(status_return, rate) + apply_ground_rate(equipment_return, rate)
+    returns = [
+      apply_ground_rate(status_return, rate),
+      apply_ground_rate(equipment_return, rate)
+    ]
 
-    apply_reflected_damage(amount, reflection_target(attacker), {target_type, target_id}, %{
+    apply_reflected_damage(returns, reflection_target(attacker), {target_type, target_id}, %{
       reflected: true,
       div: 1,
       pre_delivery_prepared?: true
@@ -890,7 +894,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     equip_reflect = equipment_damage_return(target_type, target_id, delivered_hit)
 
     apply_reflected_damage(
-      status_reflect + equip_reflect,
+      [status_reflect, equip_reflect],
       reflection_target(attacker),
       {target_type, target_id}
     )
@@ -908,48 +912,90 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
          hit_info \\ %{reflected: true, div: 1}
        )
 
-  defp apply_reflected_damage(amount, attacker_id, reflector, hit_info)
-       when amount > 0 and is_integer(attacker_id) do
-    case TargetResolver.resolve(attacker_id) do
-      {:ok, attacker_pid, attacker_state, attacker_type} ->
-        apply_unit_damage(
-          attacker_type,
-          attacker_pid,
-          attacker_id,
-          amount,
-          Map.put(hit_info, :coma?, reflected_coma?(reflector, attacker_type, attacker_state)),
-          reflector
-        )
+  defp apply_reflected_damage(returns, attacker_id, reflector, hit_info)
+       when is_integer(attacker_id) do
+    if returnable?(returns) do
+      case TargetResolver.resolve(attacker_id) do
+        {:ok, attacker_pid, attacker_state, attacker_type} ->
+          deliver_returned_damage(
+            returns,
+            attacker_state,
+            {attacker_type, attacker_pid, attacker_id},
+            reflector,
+            hit_info
+          )
 
-      {:error, _reason} ->
-        :ok
+        {:error, _reason} ->
+          :ok
+      end
+    else
+      :ok
     end
   end
 
   defp apply_reflected_damage(
-         amount,
+         returns,
          {attacker_type, attacker_id} = attacker_ref,
          reflector,
          hit_info
-       )
-       when amount > 0 do
-    case TargetResolver.resolve(attacker_ref) do
-      {:ok, attacker_pid, attacker_state, ^attacker_type} ->
+       ) do
+    if returnable?(returns) do
+      case TargetResolver.resolve(attacker_ref) do
+        {:ok, attacker_pid, attacker_state, ^attacker_type} ->
+          deliver_returned_damage(
+            returns,
+            attacker_state,
+            {attacker_type, attacker_pid, attacker_id},
+            reflector,
+            hit_info
+          )
+
+        {:error, _reason} ->
+          :ok
+      end
+    else
+      :ok
+    end
+  end
+
+  defp apply_reflected_damage(_returns, _attacker, _reflector, _hit_info), do: :ok
+
+  # Nothing returns to a hit whose returns are all empty, as a zero return
+  # never needs the unit it would have gone back to.
+  defp returnable?(returns), do: Enum.any?(returns, &(&1 > 0))
+
+  # The unit the damage is returned to cuts each return by its own
+  # `bReduceDamageReturn` percent (`battle_calc_return_damage`); only players
+  # carry equipment, and the two returns are reduced separately.
+  defp deliver_returned_damage(
+         returns,
+         attacker_state,
+         {attacker_type, pid, id},
+         reflector,
+         hit_info
+       ) do
+    reduction = returned_damage_rate(attacker_state)
+
+    case returns |> Enum.map(&reduce_return(&1, reduction)) |> Enum.sum() do
+      amount when amount > 0 ->
         apply_unit_damage(
           attacker_type,
-          attacker_pid,
-          attacker_id,
+          pid,
+          id,
           amount,
           Map.put(hit_info, :coma?, reflected_coma?(reflector, attacker_type, attacker_state)),
           reflector
         )
 
-      {:error, _reason} ->
+      _nothing ->
         :ok
     end
   end
 
-  defp apply_reflected_damage(_amount, _attacker, _reflector, _hit_info), do: :ok
+  defp returned_damage_rate(%PlayerState{stats: %{modifiers: %{equipment: equip}}}),
+    do: Map.get(equip, :reduce_damage_return, 0)
+
+  defp returned_damage_rate(_attacker_state), do: 0
 
   # A forwarded or returned hit is its own battle hit: its source rolls its own
   # coma against its new victim. Only a player source carries coma bonuses,
@@ -978,6 +1024,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
        do: EquipComa.trigger?(owner, victim_state.__struct__.to_combatant(victim_state))
 
   defp owner_coma?(_owner, _victim_type, _victim_state), do: false
+
+  @doc """
+  Takes the returned unit's `bReduceDamageReturn` percent (at most 100) off one
+  returned amount, which then keeps at least 1. The equipment return and the
+  status return are separate returns, each reduced and floored on its own.
+  """
+  @spec reduce_return(integer(), integer()) :: integer()
+  def reduce_return(amount, _rate) when amount <= 0, do: amount
+  def reduce_return(amount, rate), do: max(amount - div(amount * min(100, rate), 100), 1)
 
   # Equipment-granted melee damage reflect (`bShortWeaponDamageReturn`): the
   # defender's gear returns a percent of the supplied basis to the attacker on
