@@ -7,9 +7,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions do
   `reload/0` rebuilds it after the data files change in a running session.
   """
 
+  alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Group
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Loader
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Roller
 
   @pt_key __MODULE__
 
@@ -20,6 +22,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions do
   @doc "Resolves a random option group by id."
   @spec group(integer()) :: {:ok, Group.t()} | :error
   def group(id), do: Map.fetch(index().groups, id)
+
+  @doc "Resolves a random option group by name."
+  @spec group_by_name(String.t()) :: {:ok, Group.t()} | :error
+  def group_by_name(name) do
+    case Map.fetch(index().group_ids, name) do
+      {:ok, id} -> group(id)
+      :error -> :error
+    end
+  end
+
+  @doc """
+  Rolls the options of the group named `name`, as a monster drop row does;
+  no name, or a name no group carries, gives none.
+  """
+  @spec roll_named(String.t() | nil) :: ItemOptions.t()
+  def roll_named(nil), do: []
+
+  def roll_named(name) do
+    case group_by_name(name) do
+      {:ok, group} -> Roller.roll(group)
+      :error -> []
+    end
+  end
 
   @doc "Returns every random option group, by id."
   @spec groups() :: %{pos_integer() => Group.t()}

@@ -226,6 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.RollerTest do
              refine_max: 4,
              grade_min: 1,
              grade_max: 3,
+             random_option_group: nil,
              drawn: nil
            }
   end

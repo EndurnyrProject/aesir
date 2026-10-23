@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsTest do
     yaml = write_yaml(dir, @group_yaml)
     assert %{test_group: %Group{}} = Loader.load()
 
-    cache = Path.join([dir, ".cache", "item_groups_v1.etf"])
+    cache = Path.join([dir, ".cache", "item_groups_v2.etf"])
     File.write!(yaml, String.replace(@group_yaml, "test_group", "changed_group"))
     File.touch!(yaml, 1_000_000)
     File.touch!(cache, 2_000_000)
@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsTest do
     yaml = write_yaml(dir, @group_yaml)
     assert %{test_group: %Group{}} = Loader.load()
 
-    cache = Path.join([dir, ".cache", "item_groups_v1.etf"])
+    cache = Path.join([dir, ".cache", "item_groups_v2.etf"])
     File.write!(yaml, String.replace(@group_yaml, "test_group", "changed_group"))
     File.touch!(cache, 1_000_000)
     File.touch!(yaml, 2_000_000)

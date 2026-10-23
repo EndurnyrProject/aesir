@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Roller, as: RandomOptionRoller
   alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Inventory.Weight
@@ -163,7 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
        ) do
     case ItemManagement.get_item_by_id(grant.item_id) do
       {:ok, item_def} ->
-        add_opts = grant_opts(char_id, grant, item_def, now)
+        add_opts = grant_opts(char_id, grant, item_def, now, rng)
         acc = {current, successes, failures}
 
         acc =
@@ -241,10 +243,22 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
       %{
         opts
         | refine: Roller.roll_refine(grant, rng),
-          enchant_grade: Roller.roll_grade(grant, rng)
+          enchant_grade: Roller.roll_grade(grant, rng),
+          random_options: roll_options(grant, rng)
       }
     else
       opts
+    end
+  end
+
+  # An equipment grant whose entry names a random option group rolls fresh
+  # options for every add; other grants carry none.
+  defp roll_options(grant, rng) do
+    with id when is_integer(id) <- Map.get(grant, :random_option_group),
+         {:ok, group} <- RandomOptions.group(id) do
+      RandomOptionRoller.roll(group, rng)
+    else
+      _ -> []
     end
   end
 
@@ -264,7 +278,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   # An item-group grant's own identify request wins; otherwise the source's
   # obtain rule identifies everything but weapons, armour, pet armour and
   # shadow gear.
-  defp grant_opts(char_id, grant, item_def, now) do
+  defp grant_opts(char_id, grant, item_def, now, rng) do
     %{
       identify:
         if(grant.identify? or ItemDefinition.identified_on_obtain?(item_def), do: 1, else: 0),
@@ -273,7 +287,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
       bound: bound_value(grant.bound),
       unique_id: 0,
       expire_time: expire_time(grant.duration_min, now),
-      craft: craft(grant.named?, char_id)
+      craft: craft(grant.named?, char_id),
+      random_options: if(refinable?(item_def), do: roll_options(grant, rng), else: [])
     }
   end
 

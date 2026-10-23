@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   level-penalty modifier, and the configured per-category floor/ceiling
   (`Config.item_drop_bounds/1`, default 1..10000). A monster whose definition
   carries the fixed-item-drop mode is exempt from the level penalty: its drop
-  rates stay at their fixed values. Items that pass are scattered
+  rates stay at their fixed values. An item whose drop row names a random
+  option group gets that group's options, whatever its type, and its drop
+  carries them as a sixth element. Items that pass are scattered
   onto walkable cells around the death position (death cell first, then the
   rAthena SE -> W -> N cycle). Placement is guaranteed: a scatter cell whose
   spiral search finds no traversable cell falls back to the death cell, and
@@ -23,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   the killer's merged status modifiers, so no status lookups happen here.
   """
 
+  alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
@@ -31,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
   @drop_rate_cap 9000
@@ -38,9 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
 
   @scatter_offsets [{1, -1}, {-1, 0}, {0, 1}]
 
-  @type drop ::
-          {nameid :: integer(), amount :: integer(), x :: integer(), y :: integer(),
-           identified :: boolean()}
+  @typedoc "A placed drop; a drop that rolled random options carries them sixth."
+  @type drop :: GroundItem.drop_entry()
 
   @doc """
   Rolls a mob's drop table and returns the items that dropped, each scattered to
@@ -204,9 +207,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   end
 
   @spec roll_slot(MobDrop.t(), integer(), integer(), integer(), integer(), keyword()) ::
-          [{integer(), integer(), boolean()}]
+          [{integer(), integer(), boolean(), ItemOptions.t()}]
   defp roll_slot(
-         %MobDrop{item: aegis, rate: base},
+         %MobDrop{item: aegis, rate: base, random_option_group: group_name},
          killer_luk,
          killer_base_level,
          mob_level,
@@ -227,7 +230,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
           )
 
         identified = ItemDefinition.identified_on_obtain?(item)
-        if :rand.uniform(@max_rate) <= rate, do: [{item.id, 1, identified}], else: []
+
+        if :rand.uniform(@max_rate) <= rate,
+          do: [{item.id, 1, identified, RandomOptions.roll_named(group_name)}],
+          else: []
 
       {:error, _reason} ->
         []
@@ -274,19 +280,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
     |> Enum.with_index(3)
     |> Enum.map(fn {item, index} ->
       {cx, cy} = resolve_cell(index, map_name, x, y)
-      {item.nameid, item.amount, cx, cy, item.identified}
+      GroundItem.drop_entry(%{item | x: cx, y: cy})
     end)
   end
 
-  @spec scatter([{integer(), integer(), boolean()}], String.t(), integer(), integer()) :: [drop()]
+  @spec scatter([tuple()], String.t(), integer(), integer()) :: [drop()]
   defp scatter(items, map_name, x, y) do
     items
     |> Enum.with_index()
-    |> Enum.map(fn {{nameid, amount, identified}, index} ->
+    |> Enum.map(fn {item, index} ->
       {cx, cy} = resolve_cell(index, map_name, x, y)
-      {nameid, amount, cx, cy, identified}
+      placed(item, cx, cy)
     end)
   end
+
+  defp placed({nameid, amount, identified}, x, y), do: {nameid, amount, x, y, identified}
+
+  defp placed({nameid, amount, identified, options}, x, y),
+    do: GroundItem.entry(nameid, amount, x, y, identified, options)
 
   # Guarantees a cell for every drop slot: the death cell slot (index 0)
   # falls back to its own requested coordinates when its spiral search finds

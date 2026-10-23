@@ -68,7 +68,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreed do
   end
 
   defp give_claimed(item_def, item, %GroundItem{} = claimed, %PlayerState{} = caster) do
-    case InventoryManager.handle_give_item(item_def, item.amount, caster, item.identified) do
+    case InventoryManager.handle_give_item(
+           item_def,
+           item.amount,
+           caster,
+           GroundItem.grant_attrs(item)
+         ) do
       {:ok, collected} ->
         collected
 
@@ -82,7 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreed do
   defp re_drop_claimed(map_name, %GroundItem{owners: nil} = item) do
     Coordinator.drop_items(
       map_name,
-      [{item.nameid, item.amount, item.x, item.y, item.identified}],
+      [GroundItem.drop_entry(item)],
       item.x,
       item.y
     )
@@ -91,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreed do
   defp re_drop_claimed(map_name, %GroundItem{} = item) do
     Coordinator.drop_items(
       map_name,
-      [{item.nameid, item.amount, item.x, item.y, item.identified}],
+      [GroundItem.drop_entry(item)],
       item.x,
       item.y,
       ownership: {item.owners, item.unlock_at}

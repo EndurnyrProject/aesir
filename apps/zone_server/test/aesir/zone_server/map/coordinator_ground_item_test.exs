@@ -95,6 +95,20 @@ defmodule Aesir.ZoneServer.Map.CoordinatorGroundItemTest do
                        }}}
     end
 
+    test "keeps a drop entry's random options on the ground item, and none for a plain entry" do
+      options = [%{id: 3, value: 7, param: 0}]
+
+      Coordinator.handle_cast(
+        {:drop_items, [{501, 1, 50, 50, false, options}, {502, 1, 50, 50, true}], 50, 50, []},
+        coordinator_state()
+      )
+
+      items = GroundItemStore.query_in_range(@map_name, 50, 50, 0)
+
+      assert %GroundItem{random_options: ^options} = Enum.find(items, &(&1.nameid == 501))
+      assert %GroundItem{random_options: []} = Enum.find(items, &(&1.nameid == 502))
+    end
+
     test "stamps normal ownership with cumulative deadlines" do
       set_windows(
         item_first_get_time: 30,

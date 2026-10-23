@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.SubGroup
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
   setup :setup_ets_tables
@@ -165,6 +166,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
       stub(ItemManagement, :get_item_by_aegis, fn _ -> {:error, :item_not_found} end)
 
       assert [] = DropCalculator.roll([drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
+    end
+
+    test "a drop row's random option group rolls options onto the dropped item" do
+      stub(RandomOptions, :roll_named, fn
+        "Group_1" -> [%{id: 3, value: 7, param: 2}]
+        _unknown -> []
+      end)
+
+      drops = [
+        %MobDrop{item: "Red_Potion", rate: 10_000, random_option_group: "Group_1"},
+        %MobDrop{item: "Red_Potion", rate: 10_000, random_option_group: "No_Group"}
+      ]
+
+      assert [
+               {501, 1, 150, 150, true, [%{id: 3, value: 7, param: 2}]},
+               {501, 1, _x, _y, true}
+             ] = DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
     end
 
     test "scatters multiple drops onto walkable cells around the death cell" do

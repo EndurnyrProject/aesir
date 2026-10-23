@@ -21815,6 +21815,7 @@
         - item_id: 19245
           rate: 1
         - item_id: 19241
+          random_option_group: 112
           rate: 1
       number: 1
 - key: booster_call_package
@@ -28115,18 +28116,21 @@
     - algorithm: all
       entries:
         - item_id: 20844
+          random_option_group: 111
       number: 0
 - key: candy_bag_scroll_melee
   subgroups:
     - algorithm: all
       entries:
         - item_id: 20842
+          random_option_group: 109
       number: 0
 - key: candy_bag_scroll_range
   subgroups:
     - algorithm: all
       entries:
         - item_id: 20843
+          random_option_group: 110
       number: 0
 - key: candy_box
   subgroups:
@@ -32295,82 +32299,102 @@
     - algorithm: shared_pool
       entries:
         - item_id: 24269
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24270
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24271
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24272
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24273
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24274
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24275
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24276
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24277
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24278
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24279
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24280
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24281
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24402
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24403
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24404
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24408
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24410
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24412
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24414
+          random_option_group: 104
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
@@ -32380,26 +32404,32 @@
     - algorithm: shared_pool
       entries:
         - item_id: 24246
+          random_option_group: 108
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24247
+          random_option_group: 108
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24248
+          random_option_group: 108
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24249
+          random_option_group: 108
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 28391
+          random_option_group: 108
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 28392
+          random_option_group: 108
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
@@ -32409,26 +32439,32 @@
     - algorithm: shared_pool
       entries:
         - item_id: 24250
+          random_option_group: 107
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24251
+          random_option_group: 107
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24252
+          random_option_group: 107
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24253
+          random_option_group: 107
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24254
+          random_option_group: 107
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24255
+          random_option_group: 107
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
@@ -32438,78 +32474,97 @@
     - algorithm: shared_pool
       entries:
         - item_id: 24301
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24302
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24303
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24304
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24305
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24306
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24307
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24308
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24309
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24310
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24311
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24312
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24313
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24314
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24315
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24316
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24317
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24318
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24319
+          random_option_group: 106
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
@@ -32519,82 +32574,102 @@
     - algorithm: shared_pool
       entries:
         - item_id: 24256
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24257
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24258
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24259
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24260
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24261
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24262
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24263
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24264
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24265
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24266
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24267
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24268
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24405
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24406
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24407
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24409
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24411
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24413
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24415
+          random_option_group: 105
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
@@ -32604,78 +32679,97 @@
     - algorithm: shared_pool
       entries:
         - item_id: 24282
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24283
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24284
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24285
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24286
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24287
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24288
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24289
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24290
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24291
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24292
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24293
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24294
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24295
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24296
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24297
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24298
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24299
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
         - item_id: 24300
+          random_option_group: 103
           rate: 1
           refine_maximum: 10
           refine_minimum: 1
@@ -46848,6 +46942,7 @@
     - algorithm: all
       entries:
         - item_id: 28439
+          random_option_group: 101
       number: 0
 - key: fan_upgrade_kit_ex_10
   subgroups:
@@ -51365,6 +51460,7 @@
     - algorithm: all
       entries:
         - item_id: 19157
+          random_option_group: 100
       number: 0
 - key: gunslinger_scroll
   subgroups:
@@ -61674,6 +61770,7 @@
     - algorithm: all
       entries:
         - item_id: 19242
+          random_option_group: 113
       number: 0
 - key: magical_s_package
   subgroups:
@@ -89131,6 +89228,7 @@
     - algorithm: all
       entries:
         - item_id: 15186
+          random_option_group: 102
       number: 0
 - key: summer_scroll2
   subgroups:

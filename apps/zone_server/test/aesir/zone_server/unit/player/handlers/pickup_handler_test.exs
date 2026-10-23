@@ -149,6 +149,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
                      {:pickup_result, %PickupResult{ground_id: @ground_id, result: :OK}}}
   end
 
+  test "picking up an item with random options gives it with those options" do
+    options = [%{id: 3, value: 7, param: 0}]
+    optioned = %{ground_item(@ground_id, 101, 100, false) | random_options: options}
+
+    stub(GroundItemStore, :query_in_range, fn _, _, _, _ -> [optioned] end)
+    stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
+    stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
+    stub(Coordinator, :claim_item, fn _, _, _, _ -> {:ok, optioned} end)
+
+    expect(InventoryManager, :handle_give_item, fn @item_def,
+                                                   1,
+                                                   st,
+                                                   %{identify: 0, random_options: ^options} ->
+      {:ok, st}
+    end)
+
+    assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
+  end
+
   test "give failure after claim re-places the item and replies FAILED" do
     claimed = ground_item(@ground_id, 101, 100)
 

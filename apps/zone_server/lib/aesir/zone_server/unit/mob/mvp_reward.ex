@@ -22,15 +22,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   MVP item at all, while its experience still lands.
   """
 
+  alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
@@ -161,8 +164,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
     end
   end
 
-  # The winning MVP drop: its item id and whether it arrives identified.
-  @typep drop_grant() :: {non_neg_integer(), boolean()}
+  # The winning MVP drop: its item id, whether it arrives identified, and the
+  # random options its drop row's group rolled.
+  @typep drop_grant() :: {non_neg_integer(), boolean(), ItemOptions.t()}
 
   @spec roll([MobDrop.t()], integer(), integer(), boolean()) :: drop_grant() | nil
   defp roll(drops, mob_level, base_level, fixed_item_drop?) do
@@ -172,7 +176,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
     server_rate = Config.item_drop_rate(:mvp)
     {min_rate, max_rate} = Config.item_drop_bounds(:mvp)
 
-    Enum.find_value(drops, fn %MobDrop{item: aegis, rate: base} ->
+    Enum.find_value(drops, fn %MobDrop{item: aegis, rate: base} = drop ->
       rate =
         base
         |> apply_rate(server_rate)
@@ -182,7 +186,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
 
       with {:ok, %ItemDefinition{} = item} <- Items.by_aegis(aegis),
            true <- :rand.uniform(@max_rate) <= rate do
-        {item.id, ItemDefinition.identified_on_obtain?(item)}
+        {item.id, ItemDefinition.identified_on_obtain?(item),
+         RandomOptions.roll_named(drop.random_option_group)}
       else
         _ -> nil
       end
@@ -243,8 +248,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   # and lose the drop entirely. Both failure shapes have to reach the same floor
   # fallback, so the exit is caught and normalized into an error tuple.
   @spec give_item(pid(), drop_grant()) :: :ok | {:error, term()}
-  defp give_item(pid, {nameid, identified}) do
-    case PlayerSession.script_apply(pid, grant_op(nameid, identified)) do
+  defp give_item(pid, grant) do
+    case PlayerSession.script_apply(pid, grant_op(grant)) do
       {:error, reason} -> {:error, reason}
       _delivered -> :ok
     end
@@ -252,18 +257,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
     :exit, reason -> {:error, reason}
   end
 
-  # An MVP drop the reference leaves unidentified needs the explicit-attribute
-  # grant; an identified one is the plain `getitem` shape.
-  @spec grant_op(non_neg_integer(), boolean()) :: tuple()
-  defp grant_op(nameid, true), do: {:give_item, nameid, 1}
-  defp grant_op(nameid, false), do: {:give_item2, nameid, 1, %{identify: 0}}
+  # An MVP drop the reference leaves unidentified, or one with random options,
+  # needs the explicit-attribute grant; any other is the plain `getitem` shape.
+  @spec grant_op(drop_grant()) :: tuple()
+  defp grant_op({nameid, true, []}), do: {:give_item, nameid, 1}
+  defp grant_op({nameid, false, []}), do: {:give_item2, nameid, 1, %{identify: 0}}
+
+  defp grant_op({nameid, identified, options}),
+    do:
+      {:give_item2, nameid, 1,
+       %{identify: if(identified, do: 1, else: 0), random_options: options}}
 
   @spec scatter(drop_grant(), String.t(), integer(), integer(), winner() | nil, LootOwnership.t()) ::
           :ok
-  defp scatter({nameid, identified}, map_name, x, y, winner, ownership) do
+  defp scatter({nameid, identified, options}, map_name, x, y, winner, ownership) do
     Coordinator.drop_items(
       map_name,
-      [{nameid, 1, x, y, identified}],
+      [GroundItem.entry(nameid, 1, x, y, identified, options)],
       x,
       y,
       ownership: {fallback_ownership(winner, ownership), true}

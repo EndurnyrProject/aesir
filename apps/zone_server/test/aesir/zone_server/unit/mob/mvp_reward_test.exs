@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Unit.Mob.MvpReward
@@ -223,6 +224,33 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
                       {:npc, {:script_apply, {:give_item2, 10_001, 1, %{identify: 0}}}}}
 
       assert_receive {:floor, "gld_dun03", [{10_001, 1, 42, 77, false}], 42, 77, _opts}
+    end
+
+    test "an MVP drop row's random option group rolls options onto the prize and its fallback" do
+      test = self()
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+
+      stub(Coordinator, :drop_items, fn map, items, x, y, opts ->
+        send(test, {:floor, map, items, x, y, opts})
+        :ok
+      end)
+
+      stub_items()
+      stub(RandomOptions, :roll_named, fn "Group_1" -> [%{id: 3, value: 7, param: 0}] end)
+
+      register_player(1, pid: fake_session({:error, :overweight}))
+      prize = %MobDrop{item: "FIRST", rate: 10_000, random_option_group: "Group_1"}
+
+      MvpReward.grant(%{1 => 100}, mob(mvp_drops: [prize]), "gld_dun03", 42, 77, ownership())
+
+      options = [%{id: 3, value: 7, param: 0}]
+
+      assert_receive {:session_call,
+                      {:npc,
+                       {:script_apply,
+                        {:give_item2, 1001, 1, %{identify: 1, random_options: ^options}}}}}
+
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true, ^options}], 42, 77, _opts}
     end
   end
 

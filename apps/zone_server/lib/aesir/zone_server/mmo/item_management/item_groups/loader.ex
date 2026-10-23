@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Loader do
 
   @type index() :: %{atom() => Group.t()}
 
-  @cache_file "item_groups_v1.etf"
+  @cache_file "item_groups_v2.etf"
 
   @entry_fields %{
     "amount" => :amount,
@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Loader do
     "identify" => :identify?,
     "item_id" => :item_id,
     "named" => :named?,
+    "random_option_group" => :random_option_group,
     "rate" => :rate,
     "refine_maximum" => :refine_max,
     "refine_minimum" => :refine_min,

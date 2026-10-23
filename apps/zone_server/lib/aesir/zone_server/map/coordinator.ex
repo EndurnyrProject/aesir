@@ -107,16 +107,15 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @doc """
   Places rolled drops on the ground around `{x, y}`.
 
-  Each entry is `{nameid, amount, item_x, item_y, identified}` as produced by
-  `DropCalculator` (scatter already resolved). The coordinator is the single
+  Each entry is a `GroundItem.drop_entry/0`, `{nameid, amount, item_x, item_y,
+  identified}` with the item's random options as an optional sixth element, as
+  produced by `DropCalculator` (scatter already resolved). The coordinator is the single
   writer of the ground-item store, so placement routes through here. Pass an
   `ownership:` option to stamp pickup rights onto every item in the call.
   """
   @spec drop_items(
           String.t(),
-          [
-            {non_neg_integer(), pos_integer(), non_neg_integer(), non_neg_integer(), boolean()}
-          ],
+          [GroundItem.drop_entry()],
           integer(),
           integer(),
           keyword()
@@ -282,8 +281,10 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   def handle_cast({:drop_items, items, _x, _y, opts}, state) do
     stamp = ownership_stamp(opts)
 
-    Enum.each(items, fn {nameid, amount, item_x, item_y, identified} ->
-      item = GroundItem.new(nameid, amount, item_x, item_y, identified, stamp)
+    Enum.each(items, fn entry ->
+      {nameid, amount, item_x, item_y, identified, options} = with_options(entry)
+      item_opts = Keyword.put(stamp, :random_options, options)
+      item = GroundItem.new(nameid, amount, item_x, item_y, identified, item_opts)
       GroundItemStore.put(state.map_name, item)
 
       Broadcast.to_in_range(
@@ -346,6 +347,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
     %{state | respawn_timers: new_timers}
   end
+
+  defp with_options({nameid, amount, x, y, identified}),
+    do: {nameid, amount, x, y, identified, []}
+
+  defp with_options({_nameid, _amount, _x, _y, _identified, _options} = entry), do: entry
 
   defp ownership_stamp(opts) do
     case Keyword.fetch(opts, :ownership) do

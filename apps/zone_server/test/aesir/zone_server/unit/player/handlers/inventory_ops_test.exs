@@ -10,6 +10,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Entry
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Group
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Inventory.Weight
@@ -199,6 +202,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
 
       assert length(successes) == 3
       assert [1, 2, 2] = Persistence.load_inventory(char.id) |> Enum.map(& &1.refine)
+    end
+
+    test "rolls an equipment grant's random options per unit and gives others none", %{
+      character: char,
+      stats: stats
+    } do
+      entry = %Entry{option_id: 3, min: 1, max: 9, param: 4, chance: 10_000}
+
+      stub(RandomOptions, :group, fn 7 ->
+        {:ok, %Group{id: 7, name: "G", slots: [[entry]], max_random: 0, random: []}}
+      end)
+
+      rolls =
+        Stream.cycle([5, 6]) |> Enum.take(10) |> then(&Agent.start_link(fn -> &1 end)) |> elem(1)
+
+      rng = fn max -> min(max, Agent.get_and_update(rolls, fn [r | rest] -> {r, rest} end)) end
+
+      grants = [
+        grant(@sword, amount: 2, stacked?: false, random_option_group: 7),
+        grant(@potion, random_option_group: 7)
+      ]
+
+      assert {:ok, _inventory, _successes, []} =
+               Inventory.give_group(char.id, %{}, stats, grants, rng: rng)
+
+      options = Persistence.load_inventory(char.id) |> Enum.map(&{&1.nameid, &1.random_options})
+
+      assert {@sword, [%{id: 3, value: 6, param: 4}]} in options
+      assert {@sword, [%{id: 3, value: 5, param: 4}]} in options
+      assert {@potion, []} in options
     end
 
     test "keeps the units that fit and reports the ones that do not", %{

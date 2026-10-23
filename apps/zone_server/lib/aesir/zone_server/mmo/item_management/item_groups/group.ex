@@ -15,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry do
             grade_max: 0,
             named?: false,
             announced?: false,
-            stacked?: true
+            stacked?: true,
+            random_option_group: nil
 
   @type t() :: %__MODULE__{
           item_id: pos_integer(),
@@ -31,7 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry do
           grade_max: non_neg_integer(),
           named?: boolean(),
           announced?: boolean(),
-          stacked?: boolean()
+          stacked?: boolean(),
+          random_option_group: pos_integer() | nil
         }
 end
 
@@ -68,6 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group do
   @typedoc "A concrete item grant produced by an item-group roll."
   @type grant() :: %{
           optional(:group_key) => atom(),
+          optional(:random_option_group) => pos_integer() | nil,
           item_id: pos_integer(),
           amount: pos_integer(),
           identify?: boolean(),

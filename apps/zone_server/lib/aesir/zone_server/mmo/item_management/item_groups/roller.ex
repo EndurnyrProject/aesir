@@ -188,6 +188,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller do
       named?: entry.named?,
       announced?: entry.announced?,
       stacked?: entry.stacked?,
+      random_option_group: entry.random_option_group,
       drawn: drawn
     }
   end

@@ -183,4 +183,70 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroupsTest do
              }
            ]
   end
+
+  @tag :tmp_dir
+  test "imports an entry's random option group as its id and aborts on an unknown one", %{
+    tmp_dir: tmp_dir
+  } do
+    write_db!(tmp_dir, "item_db.yml", "ITEM_DB", [%{"Id" => 1201, "AegisName" => "Knife"}])
+
+    write_db!(tmp_dir, "item_randomopt_group.yml", "RANDOM_OPTION_GROUP", [
+      %{"Id" => 7, "Group" => "Group_7"}
+    ])
+
+    group = fn option_group ->
+      [
+        %{
+          "Group" => "BOX",
+          "SubGroups" => [
+            %{
+              "SubGroup" => 1,
+              "List" => [
+                %{
+                  "Index" => 0,
+                  "Item" => "Knife",
+                  "Rate" => 1,
+                  "RandomOptionGroup" => option_group
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    end
+
+    reject(&Items.loaded?/0)
+    reject(&Items.by_aegis/1)
+    reject(&ItemGroups.loaded?/0)
+    reject(&ItemGroups.fetch/1)
+
+    write_db!(tmp_dir, "item_group_db.yml", "ITEM_GROUP_DB", group.("Group_7"))
+    capture_io(fn -> Task.run([tmp_dir]) end)
+
+    assert [%{"subgroups" => [%{"entries" => [%{"random_option_group" => 7}]}]}] =
+             YamlElixir.read_from_file!(@out_file)
+
+    write_db!(tmp_dir, "item_group_db.yml", "ITEM_GROUP_DB", group.("Group_8"))
+
+    assert_raise Mix.Error, ~r/unknown random option group "Group_8"/, fn ->
+      capture_io(fn -> Task.run([tmp_dir]) end)
+    end
+  end
+
+  defp write_db!(tmp_dir, file, type, body) do
+    root = Path.join([tmp_dir, "db", file])
+    source = Path.join([tmp_dir, "db", "re", file])
+    File.mkdir_p!(Path.dirname(source))
+    header = %{"Type" => type, "Version" => 1}
+
+    File.write!(
+      root,
+      Ymlr.document!(%{
+        "Header" => header,
+        "Footer" => %{"Imports" => [%{"Path" => "db/re/#{file}", "Mode" => "Renewal"}]}
+      })
+    )
+
+    File.write!(source, Ymlr.document!(%{"Header" => header, "Body" => body}))
+  end
 end

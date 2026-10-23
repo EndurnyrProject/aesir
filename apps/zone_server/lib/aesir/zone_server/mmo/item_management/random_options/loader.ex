@@ -16,15 +16,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Loader do
 
   @type index() :: %{
           options: %{pos_integer() => Option.t()},
-          groups: %{pos_integer() => Group.t()}
+          groups: %{pos_integer() => Group.t()},
+          group_ids: %{String.t() => pos_integer()}
         }
 
   @spec load() :: index()
   def load do
+    groups = load_domain("random_options/groups.yml", "random_option_groups_v1.etf", &to_group!/1)
+
     %{
       options: load_domain("random_options/options.yml", "random_options_v1.etf", &to_option!/1),
-      groups:
-        load_domain("random_options/groups.yml", "random_option_groups_v1.etf", &to_group!/1)
+      groups: groups,
+      group_ids: Map.new(groups, fn {id, group} -> {group.name, id} end)
     }
   end
 
