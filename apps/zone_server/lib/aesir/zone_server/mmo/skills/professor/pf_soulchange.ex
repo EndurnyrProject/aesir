@@ -52,7 +52,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
         Targeting.validate_enemy(caster, mob)
 
       {:ok, :player, target, _pid} ->
-        if comrade?(caster, target), do: :ok, else: {:error, :invalid_target}
+        if comrade?(caster, target) or
+             Targeting.validate_enemy_relation_allow_dead(caster, target) == :ok,
+           do: :ok,
+           else: {:error, :invalid_target}
 
       error ->
         error

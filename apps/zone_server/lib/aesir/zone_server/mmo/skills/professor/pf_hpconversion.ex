@@ -28,18 +28,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion do
 
   @behaviour Active
 
+  @doc "A player whose SP is full cannot begin the cast; the refusal is silent."
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :sp_full}
-  def validate(
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :caster_restricted}
+  def begin_attempt(
         %PlayerState{stats: %{current_state: %{sp: sp}, derived_stats: %{max_sp: sp}}},
         _target,
         _level,
         _definition
       ),
-      do: {:error, :sp_full}
+      do: {:error, :caster_restricted}
 
-  def validate(_caster, _target, _level, _definition), do: :ok
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::

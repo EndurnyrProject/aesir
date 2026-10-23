@@ -30,8 +30,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversionTest do
     assert vitals(failed) == {100, 7}
   end
 
-  test "is unusable at full SP" do
-    assert PfHpconversion.validate(caster(500, 500), :self, 1, definition()) == {:error, :sp_full}
-    assert PfHpconversion.validate(caster(500, 499), :self, 1, definition()) == :ok
+  # skill.cpp:8691-8693: full SP refuses the cast begin with no message.
+  test "cannot begin at full SP, silently" do
+    assert PfHpconversion.begin_attempt(caster(500, 500), :self, 1, definition()) ==
+             {:error, :caster_restricted}
+
+    below = caster(500, 499)
+    assert PfHpconversion.begin_attempt(below, :self, 1, definition()) == {:ok, below}
   end
 end

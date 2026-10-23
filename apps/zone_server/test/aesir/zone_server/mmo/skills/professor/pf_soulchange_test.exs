@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchangeTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange
@@ -140,5 +141,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchangeTest do
 
     assert PfSoulchange.validate(caster(), {:unit, @caster_id}, 1, definition) ==
              {:error, :invalid_target}
+  end
+
+  # skill.cpp:4783-4823: an Attack-type skill keeps BCT_ENEMY beside its party and
+  # guild flags, so an enemy player passes the cast-end relation check.
+  test "an enemy player on a PvP map is a valid player target" do
+    stub(MapFlags, :gvg?, fn _map -> false end)
+    stub(MapFlags, :get, fn _map, flag -> flag == :pvp end)
+    register_ally(40, party_id: 0)
+
+    assert PfSoulchange.validate(caster(100), {:unit, @ally_id}, 1, PfSoulchange.definition()) ==
+             :ok
   end
 end
