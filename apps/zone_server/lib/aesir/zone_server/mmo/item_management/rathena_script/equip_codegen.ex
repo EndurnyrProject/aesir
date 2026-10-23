@@ -93,7 +93,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     `{:ternary, cond, a, b}`, `getskilllv(<skill>)` -> `{:skill_lv, id}`
     (the wearer's learned level of a skill, resolved like a `bonus2` skill
     param), `readparam(<stat>)` -> `{:stat, atom}` (the wearer's base stat,
-    for the base/trait stat constants only), and the pure two-argument integer
+    for the base/trait stat constants only), `getrandomoptinfo(<ROA_*>)` ->
+    `{:random_option, field}` (the running random option's id, value or param),
+    and the pure two-argument integer
     combinators `min(a,b)`, `max(a,b)` and `pow(base,exp)` over the same
     input-pure operands, and a bare comparison used as an integer
     (`2+3*(getrefine()>5)`) -> `{:bool, cond}` (1/0). `rand(...)` and every other
@@ -105,6 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
@@ -117,6 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   @type dest :: atom() | {atom(), param()} | {atom(), integer(), atom()}
 
   @arith_ops [:+, :-, :*, :/]
+  @element_all_id 10
   @compare_ops [:>, :<, :>=, :<=, :==, :!=]
   @logic_ops [:&&, :||]
   @normal_vanish_flag BattleFlags.fill_battle(BattleFlag.id(:normal))
@@ -182,11 +186,124 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     end
   end
 
+  defp step({:for, inits, cond_ast, steps, body}, env, context) do
+    stmts = unblock_all(body)
+
+    with :ok <- counters_untouched(stmts, inits),
+         {:ok, iterations, final} <- unroll(inits, cond_ast, steps),
+         {:ok, {instrs, env}} <-
+           reduce(Enum.flat_map(iterations, &substitute(stmts, &1)), env, context) do
+      {:ok, {instrs, Map.merge(env, final)}}
+    end
+  end
+
   defp step(stmt, env, context) do
     with {:ok, instrs} <- compile_instrs(stmt, env, context) do
       {:ok, {instrs, env}}
     end
   end
+
+  @max_unrolled_iterations 256
+
+  # A `for` loop whose counters start, test and step on transpile-time
+  # constants unrolls into one copy of its body per iteration, each with the
+  # counters substituted by their integer values; the counters keep their final
+  # values afterwards. Any other loop is unsupported.
+  @spec unroll([tuple()], term(), [tuple()]) ::
+          {:ok, [%{String.t() => integer()}], %{String.t() => integer()}}
+          | {:error, {:unsupported, detail()}}
+  defp unroll(inits, cond_ast, steps) do
+    with {:ok, bindings} <- run_assigns(inits, %{}) do
+      unroll_from(bindings, cond_ast, steps, [])
+    end
+  end
+
+  defp unroll_from(_bindings, _cond_ast, _steps, acc)
+       when length(acc) > @max_unrolled_iterations,
+       do: unsupported({:statement, :for_too_long})
+
+  defp unroll_from(bindings, cond_ast, steps, acc) do
+    case const_value(cond_ast, bindings) do
+      {:ok, 0} ->
+        {:ok, Enum.reverse(acc), bindings}
+
+      {:ok, _true} ->
+        with {:ok, next} <- run_assigns(steps, bindings),
+             do: unroll_from(next, cond_ast, steps, [bindings | acc])
+
+      :error ->
+        unsupported({:statement, :for})
+    end
+  end
+
+  defp run_assigns(assigns, bindings) do
+    Enum.reduce_while(assigns, {:ok, bindings}, fn
+      {:assign, {:var, :local, name, :int}, ast}, {:ok, bindings} ->
+        case const_value(ast, bindings) do
+          {:ok, value} -> {:cont, {:ok, Map.put(bindings, name, value)}}
+          :error -> {:halt, unsupported({:statement, :for})}
+        end
+
+      _other, _acc ->
+        {:halt, unsupported({:statement, :for})}
+    end)
+  end
+
+  @const_ops [:+, :-, :*, :<, :<=, :>, :>=, :==, :!=]
+
+  defp const_value({:int, n}, _bindings), do: {:ok, n}
+  defp const_value({:var, :local, name, :int}, bindings), do: Map.fetch(bindings, name)
+
+  defp const_value({:name, const}, _bindings) do
+    case Resolver.resolve_element(const) do
+      {:ok, :all} -> {:ok, @element_all_id}
+      {:ok, element} -> {:ok, Element.id(element)}
+      _ -> :error
+    end
+  end
+
+  defp const_value({:bin, op, lhs, rhs}, bindings) when op in @const_ops do
+    with {:ok, l} <- const_value(lhs, bindings),
+         {:ok, r} <- const_value(rhs, bindings),
+         do: {:ok, const_op(op, l, r)}
+  end
+
+  defp const_value(_ast, _bindings), do: :error
+
+  defp const_op(op, l, r) when op in [:+, :-, :*], do: apply(Kernel, op, [l, r])
+  defp const_op(op, l, r), do: if(apply(Kernel, op, [l, r]), do: 1, else: 0)
+
+  defp counters_untouched(stmts, inits) do
+    counters = for {:assign, {:var, :local, name, :int}, _} <- inits, do: name
+
+    if assigns_any?(stmts, counters), do: unsupported({:statement, :for}), else: :ok
+  end
+
+  defp assigns_any?({:assign, {:var, :local, name, _type}, _ast}, counters),
+    do: name in counters
+
+  defp assigns_any?(list, counters) when is_list(list),
+    do: Enum.any?(list, &assigns_any?(&1, counters))
+
+  defp assigns_any?(tuple, counters) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> assigns_any?(counters)
+
+  defp assigns_any?(_other, _counters), do: false
+
+  defp substitute({:var, :local, name, :int} = var, bindings) do
+    case Map.fetch(bindings, name) do
+      {:ok, value} -> {:int, value}
+      :error -> var
+    end
+  end
+
+  defp substitute(list, bindings) when is_list(list),
+    do: Enum.map(list, &substitute(&1, bindings))
+
+  defp substitute(tuple, bindings) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> substitute(bindings) |> List.to_tuple()
+
+  defp substitute(other, _bindings), do: other
 
   # Merges the two branch environments back into the pre-`if` environment: a
   # variable an `if` may have reassigned takes the branch-selecting ternary
@@ -1128,6 +1245,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
          do: {:ok, {family, element}}
   end
 
+  defp resolve_param(%{family: family, param: :element}, {:int, id}) do
+    cond do
+      id == @element_all_id -> {:ok, {family, :all}}
+      id in 0..9 -> {:ok, {family, Element.from_id!(id)}}
+      true -> unsupported({:unresolved_param, {:int, id}})
+    end
+  end
+
   defp resolve_param(%{family: family, param: :size}, {:name, const}) do
     with {:ok, size} <- resolve(&Resolver.resolve_size/1, const), do: {:ok, {family, size}}
   end
@@ -1266,6 +1391,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # unsupported.
   defp compile_expr({:call, "readparam", [{:name, const}]}, _env) do
     with {:ok, stat} <- resolve(&Resolver.resolve_stat_param/1, const), do: {:ok, {:stat, stat}}
+  end
+
+  # `getrandomoptinfo(<type>)` reads a field of the random option whose script
+  # is running; an attribute type other than ROA_ID/ROA_VALUE/ROA_PARAM reads 0.
+  defp compile_expr({:call, "getrandomoptinfo", [type_ast]}, _env) do
+    case type_ast do
+      {:name, "ROA_ID"} -> {:ok, {:random_option, :id}}
+      {:name, "ROA_VALUE"} -> {:ok, {:random_option, :value}}
+      {:name, "ROA_PARAM"} -> {:ok, {:random_option, :param}}
+      {:int, 0} -> {:ok, {:random_option, :id}}
+      {:int, 1} -> {:ok, {:random_option, :value}}
+      {:int, 2} -> {:ok, {:random_option, :param}}
+      {:int, _other} -> {:ok, 0}
+      other -> unsupported({:unresolved_param, other})
+    end
   end
 
   # `pow`, `min` and `max` are pure two-argument integer combinators over the

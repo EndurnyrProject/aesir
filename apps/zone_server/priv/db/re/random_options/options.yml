@@ -1,0 +1,757 @@
+---
+- id: 1
+  name: VAR_MAXHPAMOUNT
+  script: bonus(ctx, :max_hp, random_option(ctx, :value))
+- id: 2
+  name: VAR_MAXSPAMOUNT
+  script: bonus(ctx, :max_sp, random_option(ctx, :value))
+- id: 3
+  name: VAR_STRAMOUNT
+  script: bonus(ctx, :str, random_option(ctx, :value))
+- id: 4
+  name: VAR_AGIAMOUNT
+  script: bonus(ctx, :agi, random_option(ctx, :value))
+- id: 5
+  name: VAR_VITAMOUNT
+  script: bonus(ctx, :vit, random_option(ctx, :value))
+- id: 6
+  name: VAR_INTAMOUNT
+  script: bonus(ctx, :int, random_option(ctx, :value))
+- id: 7
+  name: VAR_DEXAMOUNT
+  script: bonus(ctx, :dex, random_option(ctx, :value))
+- id: 8
+  name: VAR_LUKAMOUNT
+  script: bonus(ctx, :luk, random_option(ctx, :value))
+- id: 9
+  name: VAR_MAXHPPERCENT
+  script: bonus(ctx, :max_hp_rate, random_option(ctx, :value))
+- id: 10
+  name: VAR_MAXSPPERCENT
+  script: bonus(ctx, :max_sp_rate, random_option(ctx, :value))
+- id: 11
+  name: VAR_HPACCELERATION
+  script: bonus(ctx, :hp_regen, random_option(ctx, :value))
+- id: 12
+  name: VAR_SPACCELERATION
+  script: bonus(ctx, :sp_regen, random_option(ctx, :value))
+- id: 13
+  name: VAR_ATKPERCENT
+  script: bonus(ctx, :atk_rate, random_option(ctx, :value))
+- id: 14
+  name: VAR_MAGICATKPERCENT
+  script: bonus(ctx, :matk_rate, random_option(ctx, :value))
+- id: 15
+  name: VAR_PLUSASPD
+  script: bonus(ctx, :aspd, random_option(ctx, :value))
+- id: 16
+  name: VAR_PLUSASPDPERCENT
+  script: bonus(ctx, :aspd_rate, random_option(ctx, :value))
+- id: 17
+  name: VAR_ATTPOWER
+  script: bonus(ctx, :atk, random_option(ctx, :value))
+- id: 18
+  name: VAR_HITSUCCESSVALUE
+  script: bonus(ctx, :hit, random_option(ctx, :value))
+- id: 19
+  name: VAR_ATTMPOWER
+  script: bonus(ctx, :matk, random_option(ctx, :value))
+- id: 20
+  name: VAR_ITEMDEFPOWER
+  script: bonus(ctx, :def, random_option(ctx, :value))
+- id: 21
+  name: VAR_MDEFPOWER
+  script: bonus(ctx, :mdef, random_option(ctx, :value))
+- id: 22
+  name: VAR_AVOIDSUCCESSVALUE
+  script: bonus(ctx, :flee, random_option(ctx, :value))
+- id: 23
+  name: VAR_PLUSAVOIDSUCCESSVALUE
+  script: bonus(ctx, :perfect_dodge, (random_option(ctx, :value) * 10))
+- id: 24
+  name: VAR_CRITICALSUCCESSVALUE
+  script: bonus(ctx, :critical, random_option(ctx, :value))
+- id: 25
+  name: ATTR_TOLERACE_NOTHING
+  script: bonus(ctx, {:subele, :neutral}, random_option(ctx, :value))
+- id: 26
+  name: ATTR_TOLERACE_WATER
+  script: bonus(ctx, {:subele, :water}, random_option(ctx, :value))
+- id: 27
+  name: ATTR_TOLERACE_GROUND
+  script: bonus(ctx, {:subele, :earth}, random_option(ctx, :value))
+- id: 28
+  name: ATTR_TOLERACE_FIRE
+  script: bonus(ctx, {:subele, :fire}, random_option(ctx, :value))
+- id: 29
+  name: ATTR_TOLERACE_WIND
+  script: bonus(ctx, {:subele, :wind}, random_option(ctx, :value))
+- id: 30
+  name: ATTR_TOLERACE_POISON
+  script: bonus(ctx, {:subele, :poison}, random_option(ctx, :value))
+- id: 31
+  name: ATTR_TOLERACE_SAINT
+  script: bonus(ctx, {:subele, :holy}, random_option(ctx, :value))
+- id: 32
+  name: ATTR_TOLERACE_DARKNESS
+  script: bonus(ctx, {:subele, :shadow}, random_option(ctx, :value))
+- id: 33
+  name: ATTR_TOLERACE_TELEKINESIS
+  script: bonus(ctx, {:subele, :ghost}, random_option(ctx, :value))
+- id: 34
+  name: ATTR_TOLERACE_UNDEAD
+  script: bonus(ctx, {:subele, :undead}, random_option(ctx, :value))
+- id: 35
+  name: ATTR_TOLERACE_ALLBUTNOTHING
+  script: |-
+    ctx = bonus(ctx, {:subele, :water}, random_option(ctx, :value))
+    ctx = bonus(ctx, {:subele, :earth}, random_option(ctx, :value))
+    ctx = bonus(ctx, {:subele, :fire}, random_option(ctx, :value))
+    ctx = bonus(ctx, {:subele, :wind}, random_option(ctx, :value))
+    ctx = bonus(ctx, {:subele, :poison}, random_option(ctx, :value))
+    ctx = bonus(ctx, {:subele, :holy}, random_option(ctx, :value))
+    ctx = bonus(ctx, {:subele, :shadow}, random_option(ctx, :value))
+    ctx = bonus(ctx, {:subele, :ghost}, random_option(ctx, :value))
+    ctx
+- id: 36
+  name: DAMAGE_PROPERTY_NOTHING_USER
+  script: bonus(ctx, {:sub_def_ele, :neutral}, random_option(ctx, :value))
+- id: 37
+  name: DAMAGE_PROPERTY_NOTHING_TARGET
+  script: bonus(ctx, {:addele, :neutral}, random_option(ctx, :value))
+- id: 38
+  name: DAMAGE_PROPERTY_WATER_USER
+  script: bonus(ctx, {:sub_def_ele, :water}, random_option(ctx, :value))
+- id: 39
+  name: DAMAGE_PROPERTY_WATER_TARGET
+  script: bonus(ctx, {:addele, :water}, random_option(ctx, :value))
+- id: 40
+  name: DAMAGE_PROPERTY_GROUND_USER
+  script: bonus(ctx, {:sub_def_ele, :earth}, random_option(ctx, :value))
+- id: 41
+  name: DAMAGE_PROPERTY_GROUND_TARGET
+  script: bonus(ctx, {:addele, :earth}, random_option(ctx, :value))
+- id: 42
+  name: DAMAGE_PROPERTY_FIRE_USER
+  script: bonus(ctx, {:sub_def_ele, :fire}, random_option(ctx, :value))
+- id: 43
+  name: DAMAGE_PROPERTY_FIRE_TARGET
+  script: bonus(ctx, {:addele, :fire}, random_option(ctx, :value))
+- id: 44
+  name: DAMAGE_PROPERTY_WIND_USER
+  script: bonus(ctx, {:sub_def_ele, :wind}, random_option(ctx, :value))
+- id: 45
+  name: DAMAGE_PROPERTY_WIND_TARGET
+  script: bonus(ctx, {:addele, :wind}, random_option(ctx, :value))
+- id: 46
+  name: DAMAGE_PROPERTY_POISON_USER
+  script: bonus(ctx, {:sub_def_ele, :poison}, random_option(ctx, :value))
+- id: 47
+  name: DAMAGE_PROPERTY_POISON_TARGET
+  script: bonus(ctx, {:addele, :poison}, random_option(ctx, :value))
+- id: 48
+  name: DAMAGE_PROPERTY_SAINT_USER
+  script: bonus(ctx, {:sub_def_ele, :holy}, random_option(ctx, :value))
+- id: 49
+  name: DAMAGE_PROPERTY_SAINT_TARGET
+  script: bonus(ctx, {:addele, :holy}, random_option(ctx, :value))
+- id: 50
+  name: DAMAGE_PROPERTY_DARKNESS_USER
+  script: bonus(ctx, {:sub_def_ele, :shadow}, random_option(ctx, :value))
+- id: 51
+  name: DAMAGE_PROPERTY_DARKNESS_TARGET
+  script: bonus(ctx, {:addele, :shadow}, random_option(ctx, :value))
+- id: 52
+  name: DAMAGE_PROPERTY_TELEKINESIS_USER
+  script: bonus(ctx, {:sub_def_ele, :ghost}, random_option(ctx, :value))
+- id: 53
+  name: DAMAGE_PROPERTY_TELEKINESIS_TARGET
+  script: bonus(ctx, {:addele, :ghost}, random_option(ctx, :value))
+- id: 54
+  name: DAMAGE_PROPERTY_UNDEAD_USER
+  script: bonus(ctx, {:sub_def_ele, :undead}, random_option(ctx, :value))
+- id: 55
+  name: DAMAGE_PROPERTY_UNDEAD_TARGET
+  script: bonus(ctx, {:addele, :undead}, random_option(ctx, :value))
+- id: 56
+  name: MDAMAGE_PROPERTY_NOTHING_USER
+  script:
+- id: 57
+  name: MDAMAGE_PROPERTY_NOTHING_TARGET
+  script: bonus(ctx, {:magic_addele, :neutral}, random_option(ctx, :value))
+- id: 58
+  name: MDAMAGE_PROPERTY_WATER_USER
+  script:
+- id: 59
+  name: MDAMAGE_PROPERTY_WATER_TARGET
+  script: bonus(ctx, {:magic_addele, :water}, random_option(ctx, :value))
+- id: 60
+  name: MDAMAGE_PROPERTY_GROUND_USER
+  script:
+- id: 61
+  name: MDAMAGE_PROPERTY_GROUND_TARGET
+  script: bonus(ctx, {:magic_addele, :earth}, random_option(ctx, :value))
+- id: 62
+  name: MDAMAGE_PROPERTY_FIRE_USER
+  script:
+- id: 63
+  name: MDAMAGE_PROPERTY_FIRE_TARGET
+  script: bonus(ctx, {:magic_addele, :fire}, random_option(ctx, :value))
+- id: 64
+  name: MDAMAGE_PROPERTY_WIND_USER
+  script:
+- id: 65
+  name: MDAMAGE_PROPERTY_WIND_TARGET
+  script: bonus(ctx, {:magic_addele, :wind}, random_option(ctx, :value))
+- id: 66
+  name: MDAMAGE_PROPERTY_POISON_USER
+  script:
+- id: 67
+  name: MDAMAGE_PROPERTY_POISON_TARGET
+  script: bonus(ctx, {:magic_addele, :poison}, random_option(ctx, :value))
+- id: 68
+  name: MDAMAGE_PROPERTY_SAINT_USER
+  script:
+- id: 69
+  name: MDAMAGE_PROPERTY_SAINT_TARGET
+  script: bonus(ctx, {:magic_addele, :holy}, random_option(ctx, :value))
+- id: 70
+  name: MDAMAGE_PROPERTY_DARKNESS_USER
+  script:
+- id: 71
+  name: MDAMAGE_PROPERTY_DARKNESS_TARGET
+  script: bonus(ctx, {:magic_addele, :shadow}, random_option(ctx, :value))
+- id: 72
+  name: MDAMAGE_PROPERTY_TELEKINESIS_USER
+  script:
+- id: 73
+  name: MDAMAGE_PROPERTY_TELEKINESIS_TARGET
+  script: bonus(ctx, {:magic_addele, :ghost}, random_option(ctx, :value))
+- id: 74
+  name: MDAMAGE_PROPERTY_UNDEAD_USER
+  script:
+- id: 75
+  name: MDAMAGE_PROPERTY_UNDEAD_TARGET
+  script: bonus(ctx, {:magic_addele, :undead}, random_option(ctx, :value))
+- id: 76
+  name: BODY_ATTR_NOTHING
+  script: set(ctx, :def_ele, :neutral)
+- id: 77
+  name: BODY_ATTR_WATER
+  script: set(ctx, :def_ele, :water)
+- id: 78
+  name: BODY_ATTR_GROUND
+  script: set(ctx, :def_ele, :earth)
+- id: 79
+  name: BODY_ATTR_FIRE
+  script: set(ctx, :def_ele, :fire)
+- id: 80
+  name: BODY_ATTR_WIND
+  script: set(ctx, :def_ele, :wind)
+- id: 81
+  name: BODY_ATTR_POISON
+  script: set(ctx, :def_ele, :poison)
+- id: 82
+  name: BODY_ATTR_SAINT
+  script: set(ctx, :def_ele, :holy)
+- id: 83
+  name: BODY_ATTR_DARKNESS
+  script: set(ctx, :def_ele, :shadow)
+- id: 84
+  name: BODY_ATTR_TELEKINESIS
+  script: set(ctx, :def_ele, :ghost)
+- id: 85
+  name: BODY_ATTR_UNDEAD
+  script: set(ctx, :def_ele, :undead)
+- id: 87
+  name: RACE_TOLERACE_NOTHING
+  script: bonus(ctx, {:subrace, :formless}, random_option(ctx, :value))
+- id: 88
+  name: RACE_TOLERACE_UNDEAD
+  script: bonus(ctx, {:subrace, :undead}, random_option(ctx, :value))
+- id: 89
+  name: RACE_TOLERACE_ANIMAL
+  script: bonus(ctx, {:subrace, :brute}, random_option(ctx, :value))
+- id: 90
+  name: RACE_TOLERACE_PLANT
+  script: bonus(ctx, {:subrace, :plant}, random_option(ctx, :value))
+- id: 91
+  name: RACE_TOLERACE_INSECT
+  script: bonus(ctx, {:subrace, :insect}, random_option(ctx, :value))
+- id: 92
+  name: RACE_TOLERACE_FISHS
+  script: bonus(ctx, {:subrace, :fish}, random_option(ctx, :value))
+- id: 93
+  name: RACE_TOLERACE_DEVIL
+  script: bonus(ctx, {:subrace, :demon}, random_option(ctx, :value))
+- id: 94
+  name: RACE_TOLERACE_HUMAN
+  script: bonus(ctx, {:subrace, :demi_human}, random_option(ctx, :value))
+- id: 95
+  name: RACE_TOLERACE_ANGEL
+  script: bonus(ctx, {:subrace, :angel}, random_option(ctx, :value))
+- id: 96
+  name: RACE_TOLERACE_DRAGON
+  script: bonus(ctx, {:subrace, :dragon}, random_option(ctx, :value))
+- id: 97
+  name: RACE_DAMAGE_NOTHING
+  script: bonus(ctx, {:addrace, :formless}, random_option(ctx, :value))
+- id: 98
+  name: RACE_DAMAGE_UNDEAD
+  script: bonus(ctx, {:addrace, :undead}, random_option(ctx, :value))
+- id: 99
+  name: RACE_DAMAGE_ANIMAL
+  script: bonus(ctx, {:addrace, :brute}, random_option(ctx, :value))
+- id: 100
+  name: RACE_DAMAGE_PLANT
+  script: bonus(ctx, {:addrace, :plant}, random_option(ctx, :value))
+- id: 101
+  name: RACE_DAMAGE_INSECT
+  script: bonus(ctx, {:addrace, :insect}, random_option(ctx, :value))
+- id: 102
+  name: RACE_DAMAGE_FISHS
+  script: bonus(ctx, {:addrace, :fish}, random_option(ctx, :value))
+- id: 103
+  name: RACE_DAMAGE_DEVIL
+  script: bonus(ctx, {:addrace, :demon}, random_option(ctx, :value))
+- id: 104
+  name: RACE_DAMAGE_HUMAN
+  script: bonus(ctx, {:addrace, :demi_human}, random_option(ctx, :value))
+- id: 105
+  name: RACE_DAMAGE_ANGEL
+  script: bonus(ctx, {:addrace, :angel}, random_option(ctx, :value))
+- id: 106
+  name: RACE_DAMAGE_DRAGON
+  script: bonus(ctx, {:addrace, :dragon}, random_option(ctx, :value))
+- id: 107
+  name: RACE_MDAMAGE_NOTHING
+  script: bonus(ctx, {:magic_addrace, :formless}, random_option(ctx, :value))
+- id: 108
+  name: RACE_MDAMAGE_UNDEAD
+  script: bonus(ctx, {:magic_addrace, :undead}, random_option(ctx, :value))
+- id: 109
+  name: RACE_MDAMAGE_ANIMAL
+  script: bonus(ctx, {:magic_addrace, :brute}, random_option(ctx, :value))
+- id: 110
+  name: RACE_MDAMAGE_PLANT
+  script: bonus(ctx, {:magic_addrace, :plant}, random_option(ctx, :value))
+- id: 111
+  name: RACE_MDAMAGE_INSECT
+  script: bonus(ctx, {:magic_addrace, :insect}, random_option(ctx, :value))
+- id: 112
+  name: RACE_MDAMAGE_FISHS
+  script: bonus(ctx, {:magic_addrace, :fish}, random_option(ctx, :value))
+- id: 113
+  name: RACE_MDAMAGE_DEVIL
+  script: bonus(ctx, {:magic_addrace, :demon}, random_option(ctx, :value))
+- id: 114
+  name: RACE_MDAMAGE_HUMAN
+  script: bonus(ctx, {:magic_addrace, :demi_human}, random_option(ctx, :value))
+- id: 115
+  name: RACE_MDAMAGE_ANGEL
+  script: bonus(ctx, {:magic_addrace, :angel}, random_option(ctx, :value))
+- id: 116
+  name: RACE_MDAMAGE_DRAGON
+  script: bonus(ctx, {:magic_addrace, :dragon}, random_option(ctx, :value))
+- id: 117
+  name: RACE_CRI_PERCENT_NOTHING
+  script: bonus(ctx, {:critical_add_race, :formless}, div(random_option(ctx, :value), 10))
+- id: 118
+  name: RACE_CRI_PERCENT_UNDEAD
+  script: bonus(ctx, {:critical_add_race, :undead}, div(random_option(ctx, :value), 10))
+- id: 119
+  name: RACE_CRI_PERCENT_ANIMAL
+  script: bonus(ctx, {:critical_add_race, :brute}, div(random_option(ctx, :value), 10))
+- id: 120
+  name: RACE_CRI_PERCENT_PLANT
+  script: bonus(ctx, {:critical_add_race, :plant}, div(random_option(ctx, :value), 10))
+- id: 121
+  name: RACE_CRI_PERCENT_INSECT
+  script: bonus(ctx, {:critical_add_race, :insect}, div(random_option(ctx, :value), 10))
+- id: 122
+  name: RACE_CRI_PERCENT_FISHS
+  script: bonus(ctx, {:critical_add_race, :fish}, div(random_option(ctx, :value), 10))
+- id: 123
+  name: RACE_CRI_PERCENT_DEVIL
+  script: bonus(ctx, {:critical_add_race, :demon}, div(random_option(ctx, :value), 10))
+- id: 124
+  name: RACE_CRI_PERCENT_HUMAN
+  script: bonus(ctx, {:critical_add_race, :demi_human}, div(random_option(ctx, :value), 10))
+- id: 125
+  name: RACE_CRI_PERCENT_ANGEL
+  script: bonus(ctx, {:critical_add_race, :angel}, div(random_option(ctx, :value), 10))
+- id: 126
+  name: RACE_CRI_PERCENT_DRAGON
+  script: bonus(ctx, {:critical_add_race, :dragon}, div(random_option(ctx, :value), 10))
+- id: 127
+  name: RACE_IGNORE_DEF_PERCENT_NOTHING
+  script: bonus(ctx, {:ignore_def_race, :formless}, random_option(ctx, :value))
+- id: 128
+  name: RACE_IGNORE_DEF_PERCENT_UNDEAD
+  script: bonus(ctx, {:ignore_def_race, :undead}, random_option(ctx, :value))
+- id: 129
+  name: RACE_IGNORE_DEF_PERCENT_ANIMAL
+  script: bonus(ctx, {:ignore_def_race, :brute}, random_option(ctx, :value))
+- id: 130
+  name: RACE_IGNORE_DEF_PERCENT_PLANT
+  script: bonus(ctx, {:ignore_def_race, :plant}, random_option(ctx, :value))
+- id: 131
+  name: RACE_IGNORE_DEF_PERCENT_INSECT
+  script: bonus(ctx, {:ignore_def_race, :insect}, random_option(ctx, :value))
+- id: 132
+  name: RACE_IGNORE_DEF_PERCENT_FISHS
+  script: bonus(ctx, {:ignore_def_race, :fish}, random_option(ctx, :value))
+- id: 133
+  name: RACE_IGNORE_DEF_PERCENT_DEVIL
+  script: bonus(ctx, {:ignore_def_race, :demon}, random_option(ctx, :value))
+- id: 134
+  name: RACE_IGNORE_DEF_PERCENT_HUMAN
+  script: bonus(ctx, {:ignore_def_race, :demi_human}, random_option(ctx, :value))
+- id: 135
+  name: RACE_IGNORE_DEF_PERCENT_ANGEL
+  script: bonus(ctx, {:ignore_def_race, :angel}, random_option(ctx, :value))
+- id: 136
+  name: RACE_IGNORE_DEF_PERCENT_DRAGON
+  script: bonus(ctx, {:ignore_def_race, :dragon}, random_option(ctx, :value))
+- id: 137
+  name: RACE_IGNORE_MDEF_PERCENT_NOTHING
+  script: bonus(ctx, {:ignore_mdef_race, :formless}, random_option(ctx, :value))
+- id: 138
+  name: RACE_IGNORE_MDEF_PERCENT_UNDEAD
+  script: bonus(ctx, {:ignore_mdef_race, :undead}, random_option(ctx, :value))
+- id: 139
+  name: RACE_IGNORE_MDEF_PERCENT_ANIMAL
+  script: bonus(ctx, {:ignore_mdef_race, :brute}, random_option(ctx, :value))
+- id: 140
+  name: RACE_IGNORE_MDEF_PERCENT_PLANT
+  script: bonus(ctx, {:ignore_mdef_race, :plant}, random_option(ctx, :value))
+- id: 141
+  name: RACE_IGNORE_MDEF_PERCENT_INSECT
+  script: bonus(ctx, {:ignore_mdef_race, :insect}, random_option(ctx, :value))
+- id: 142
+  name: RACE_IGNORE_MDEF_PERCENT_FISHS
+  script: bonus(ctx, {:ignore_mdef_race, :fish}, random_option(ctx, :value))
+- id: 143
+  name: RACE_IGNORE_MDEF_PERCENT_DEVIL
+  script: bonus(ctx, {:ignore_mdef_race, :demon}, random_option(ctx, :value))
+- id: 144
+  name: RACE_IGNORE_MDEF_PERCENT_HUMAN
+  script: bonus(ctx, {:ignore_mdef_race, :demi_human}, random_option(ctx, :value))
+- id: 145
+  name: RACE_IGNORE_MDEF_PERCENT_ANGEL
+  script: bonus(ctx, {:ignore_mdef_race, :angel}, random_option(ctx, :value))
+- id: 146
+  name: RACE_IGNORE_MDEF_PERCENT_DRAGON
+  script: bonus(ctx, {:ignore_mdef_race, :dragon}, random_option(ctx, :value))
+- id: 147
+  name: CLASS_DAMAGE_NORMAL_TARGET
+  script: bonus(ctx, {:addclass, :normal}, random_option(ctx, :value))
+- id: 148
+  name: CLASS_DAMAGE_BOSS_TARGET
+  script: bonus(ctx, {:addclass, :boss}, random_option(ctx, :value))
+- id: 149
+  name: CLASS_DAMAGE_NORMAL_USER
+  script: bonus(ctx, {:subclass, :normal}, random_option(ctx, :value))
+- id: 150
+  name: CLASS_DAMAGE_BOSS_USER
+  script: bonus(ctx, {:subclass, :boss}, random_option(ctx, :value))
+- id: 151
+  name: CLASS_MDAMAGE_NORMAL
+  script: bonus(ctx, {:magic_addclass, :normal}, random_option(ctx, :value))
+- id: 152
+  name: CLASS_MDAMAGE_BOSS
+  script: bonus(ctx, {:magic_addclass, :boss}, random_option(ctx, :value))
+- id: 153
+  name: CLASS_IGNORE_DEF_PERCENT_NORMAL
+  script: bonus(ctx, {:ignore_def_class, :normal}, random_option(ctx, :value))
+- id: 154
+  name: CLASS_IGNORE_DEF_PERCENT_BOSS
+  script: bonus(ctx, {:ignore_def_class, :boss}, random_option(ctx, :value))
+- id: 155
+  name: CLASS_IGNORE_MDEF_PERCENT_NORMAL
+  script: bonus(ctx, {:ignore_mdef_class, :normal}, random_option(ctx, :value))
+- id: 156
+  name: CLASS_IGNORE_MDEF_PERCENT_BOSS
+  script: bonus(ctx, {:ignore_mdef_class, :boss}, random_option(ctx, :value))
+- id: 157
+  name: DAMAGE_SIZE_SMALL_TARGET
+  script: bonus(ctx, {:addsize, :small}, random_option(ctx, :value))
+- id: 158
+  name: DAMAGE_SIZE_MIDIUM_TARGET
+  script: bonus(ctx, {:addsize, :medium}, random_option(ctx, :value))
+- id: 159
+  name: DAMAGE_SIZE_LARGE_TARGET
+  script: bonus(ctx, {:addsize, :large}, random_option(ctx, :value))
+- id: 160
+  name: DAMAGE_SIZE_SMALL_USER
+  script: bonus(ctx, {:subsize, :small}, random_option(ctx, :value))
+- id: 161
+  name: DAMAGE_SIZE_MIDIUM_USER
+  script: bonus(ctx, {:subsize, :medium}, random_option(ctx, :value))
+- id: 162
+  name: DAMAGE_SIZE_LARGE_USER
+  script: bonus(ctx, {:subsize, :large}, random_option(ctx, :value))
+- id: 163
+  name: DAMAGE_SIZE_PERFECT
+  script: bonus(ctx, :no_size_fix, 1)
+- id: 164
+  name: DAMAGE_CRI_TARGET
+  script: bonus(ctx, :crit_atk_rate, random_option(ctx, :value))
+- id: 165
+  name: DAMAGE_CRI_USER
+  script:
+- id: 166
+  name: RANGE_ATTACK_DAMAGE_TARGET
+  script: bonus(ctx, :long_atk_rate, random_option(ctx, :value))
+- id: 167
+  name: RANGE_ATTACK_DAMAGE_USER
+  script: bonus(ctx, :long_atk_def, random_option(ctx, :value))
+- id: 168
+  name: HEAL_VALUE
+  script: bonus(ctx, :heal_power, random_option(ctx, :value))
+- id: 169
+  name: HEAL_MODIFY_PERCENT
+  script: bonus(ctx, :heal_power2, random_option(ctx, :value))
+- id: 170
+  name: DEC_SPELL_CAST_TIME
+  script: bonus(ctx, :varcast_rate, (0 - random_option(ctx, :value)))
+- id: 171
+  name: DEC_SPELL_DELAY_TIME
+  script: bonus(ctx, :delay_rate, (0 - random_option(ctx, :value)))
+- id: 172
+  name: DEC_SP_CONSUMPTION
+  script: bonus(ctx, :sp_cost_rate, (0 - random_option(ctx, :value)))
+- id: 175
+  name: WEAPON_ATTR_NOTHING
+  script: set(ctx, :atk_ele, :neutral)
+- id: 176
+  name: WEAPON_ATTR_WATER
+  script: set(ctx, :atk_ele, :water)
+- id: 177
+  name: WEAPON_ATTR_GROUND
+  script: set(ctx, :atk_ele, :earth)
+- id: 178
+  name: WEAPON_ATTR_FIRE
+  script: set(ctx, :atk_ele, :fire)
+- id: 179
+  name: WEAPON_ATTR_WIND
+  script: set(ctx, :atk_ele, :wind)
+- id: 180
+  name: WEAPON_ATTR_POISON
+  script: set(ctx, :atk_ele, :poison)
+- id: 181
+  name: WEAPON_ATTR_SAINT
+  script: set(ctx, :atk_ele, :holy)
+- id: 182
+  name: WEAPON_ATTR_DARKNESS
+  script: set(ctx, :atk_ele, :shadow)
+- id: 183
+  name: WEAPON_ATTR_TELEKINESIS
+  script: set(ctx, :atk_ele, :ghost)
+- id: 184
+  name: WEAPON_ATTR_UNDEAD
+  script: set(ctx, :atk_ele, :undead)
+- id: 185
+  name: WEAPON_INDESTRUCTIBLE
+  script: bonus(ctx, :unbreakable_weapon, 1)
+- id: 186
+  name: BODY_INDESTRUCTIBLE
+  script: bonus(ctx, :unbreakable_armor, 1)
+- id: 187
+  name: MDAMAGE_SIZE_SMALL_TARGET
+  script: bonus(ctx, {:magic_addsize, :small}, random_option(ctx, :value))
+- id: 188
+  name: MDAMAGE_SIZE_MIDIUM_TARGET
+  script: bonus(ctx, {:magic_addsize, :medium}, random_option(ctx, :value))
+- id: 189
+  name: MDAMAGE_SIZE_LARGE_TARGET
+  script: bonus(ctx, {:magic_addsize, :large}, random_option(ctx, :value))
+- id: 190
+  name: MDAMAGE_SIZE_SMALL_USER
+  script:
+- id: 191
+  name: MDAMAGE_SIZE_MIDIUM_USER
+  script:
+- id: 192
+  name: MDAMAGE_SIZE_LARGE_USER
+  script:
+- id: 193
+  name: ATTR_TOLERACE_ALL
+  script: bonus(ctx, {:subele, :all}, random_option(ctx, :value))
+- id: 194
+  name: RACE_WEAPON_TOLERACE_NOTHING
+  script: bonus(ctx, {:subrace, {:formless, 849}}, random_option(ctx, :value))
+- id: 195
+  name: RACE_WEAPON_TOLERACE_UNDEAD
+  script: bonus(ctx, {:subrace, {:undead, 849}}, random_option(ctx, :value))
+- id: 196
+  name: RACE_WEAPON_TOLERACE_ANIMAL
+  script: bonus(ctx, {:subrace, {:brute, 849}}, random_option(ctx, :value))
+- id: 197
+  name: RACE_WEAPON_TOLERACE_PLANT
+  script: bonus(ctx, {:subrace, {:plant, 849}}, random_option(ctx, :value))
+- id: 198
+  name: RACE_WEAPON_TOLERACE_INSECT
+  script: bonus(ctx, {:subrace, {:insect, 849}}, random_option(ctx, :value))
+- id: 199
+  name: RACE_WEAPON_TOLERACE_FISHS
+  script: bonus(ctx, {:subrace, {:fish, 849}}, random_option(ctx, :value))
+- id: 200
+  name: RACE_WEAPON_TOLERACE_DEVIL
+  script: bonus(ctx, {:subrace, {:demon, 849}}, random_option(ctx, :value))
+- id: 201
+  name: RACE_WEAPON_TOLERACE_HUMAN
+  script: bonus(ctx, {:subrace, {:demi_human, 849}}, random_option(ctx, :value))
+- id: 202
+  name: RACE_WEAPON_TOLERACE_ANGEL
+  script: bonus(ctx, {:subrace, {:angel, 849}}, random_option(ctx, :value))
+- id: 203
+  name: RACE_WEAPON_TOLERACE_DRAGON
+  script: bonus(ctx, {:subrace, {:dragon, 849}}, random_option(ctx, :value))
+- id: 206
+  name: RACE_TOLERACE_PLAYER_HUMAN
+  script: bonus(ctx, {:subrace, :player_human}, random_option(ctx, :value))
+- id: 207
+  name: RACE_TOLERACE_PLAYER_DORAM
+  script: bonus(ctx, {:subrace, :player_doram}, random_option(ctx, :value))
+- id: 208
+  name: RACE_DAMAGE_PLAYER_HUMAN
+  script: bonus(ctx, {:addrace, :player_human}, random_option(ctx, :value))
+- id: 209
+  name: RACE_DAMAGE_PLAYER_DORAM
+  script: bonus(ctx, {:addrace, :player_doram}, random_option(ctx, :value))
+- id: 210
+  name: RACE_MDAMAGE_PLAYER_HUMAN
+  script: bonus(ctx, {:magic_addrace, :player_human}, random_option(ctx, :value))
+- id: 211
+  name: RACE_MDAMAGE_PLAYER_DORAM
+  script: bonus(ctx, {:magic_addrace, :player_doram}, random_option(ctx, :value))
+- id: 212
+  name: RACE_CRI_PERCENT_PLAYER_HUMAN
+  script: bonus(ctx, {:critical_add_race, :player_human}, random_option(ctx, :value))
+- id: 213
+  name: RACE_CRI_PERCENT_PLAYER_DORAM
+  script: bonus(ctx, {:critical_add_race, :player_doram}, random_option(ctx, :value))
+- id: 214
+  name: RACE_IGNORE_DEF_PERCENT_PLAYER_HUMAN
+  script: bonus(ctx, {:ignore_def_race, :player_human}, random_option(ctx, :value))
+- id: 215
+  name: RACE_IGNORE_DEF_PERCENT_PLAYER_DORAM
+  script: bonus(ctx, {:ignore_def_race, :player_doram}, random_option(ctx, :value))
+- id: 216
+  name: RACE_IGNORE_MDEF_PERCENT_PLAYER_HUMAN
+  script: bonus(ctx, {:ignore_mdef_race, :player_human}, random_option(ctx, :value))
+- id: 217
+  name: RACE_IGNORE_MDEF_PERCENT_PLAYER_DORAM
+  script: bonus(ctx, {:ignore_mdef_race, :player_doram}, random_option(ctx, :value))
+- id: 218
+  name: REFLECT_DAMAGE_PERCENT
+  script:
+- id: 219
+  name: MELEE_ATTACK_DAMAGE_TARGET
+  script: bonus(ctx, :short_atk_rate, random_option(ctx, :value))
+- id: 220
+  name: MELEE_ATTACK_DAMAGE_USER
+  script: bonus(ctx, :near_atk_def, random_option(ctx, :value))
+- id: 221
+  name: ADDSKILLMDAMAGE_NOTHING
+  script: bonus(ctx, {:magic_atk_ele, :neutral}, random_option(ctx, :value))
+- id: 222
+  name: ADDSKILLMDAMAGE_WATER
+  script: bonus(ctx, {:magic_atk_ele, :water}, random_option(ctx, :value))
+- id: 223
+  name: ADDSKILLMDAMAGE_GROUND
+  script: bonus(ctx, {:magic_atk_ele, :earth}, random_option(ctx, :value))
+- id: 224
+  name: ADDSKILLMDAMAGE_FIRE
+  script: bonus(ctx, {:magic_atk_ele, :fire}, random_option(ctx, :value))
+- id: 225
+  name: ADDSKILLMDAMAGE_WIND
+  script: bonus(ctx, {:magic_atk_ele, :wind}, random_option(ctx, :value))
+- id: 226
+  name: ADDSKILLMDAMAGE_POISON
+  script: bonus(ctx, {:magic_atk_ele, :poison}, random_option(ctx, :value))
+- id: 227
+  name: ADDSKILLMDAMAGE_SAINT
+  script: bonus(ctx, {:magic_atk_ele, :holy}, random_option(ctx, :value))
+- id: 228
+  name: ADDSKILLMDAMAGE_DARKNESS
+  script: bonus(ctx, {:magic_atk_ele, :shadow}, random_option(ctx, :value))
+- id: 229
+  name: ADDSKILLMDAMAGE_TELEKINESIS
+  script: bonus(ctx, {:magic_atk_ele, :ghost}, random_option(ctx, :value))
+- id: 230
+  name: ADDSKILLMDAMAGE_UNDEAD
+  script: bonus(ctx, {:magic_atk_ele, :undead}, random_option(ctx, :value))
+- id: 231
+  name: ADDSKILLMDAMAGE_ALL
+  script: bonus(ctx, {:magic_atk_ele, :all}, random_option(ctx, :value))
+- id: 232
+  name: ADDEXPPERCENT_KILLRACE_NOTHING
+  script: bonus(ctx, {:exp_add_race, :formless}, random_option(ctx, :value))
+- id: 233
+  name: ADDEXPPERCENT_KILLRACE_UNDEAD
+  script: bonus(ctx, {:exp_add_race, :undead}, random_option(ctx, :value))
+- id: 234
+  name: ADDEXPPERCENT_KILLRACE_ANIMAL
+  script: bonus(ctx, {:exp_add_race, :brute}, random_option(ctx, :value))
+- id: 235
+  name: ADDEXPPERCENT_KILLRACE_PLANT
+  script: bonus(ctx, {:exp_add_race, :plant}, random_option(ctx, :value))
+- id: 236
+  name: ADDEXPPERCENT_KILLRACE_INSECT
+  script: bonus(ctx, {:exp_add_race, :insect}, random_option(ctx, :value))
+- id: 237
+  name: ADDEXPPERCENT_KILLRACE_FISHS
+  script: bonus(ctx, {:exp_add_race, :fish}, random_option(ctx, :value))
+- id: 238
+  name: ADDEXPPERCENT_KILLRACE_DEVIL
+  script: bonus(ctx, {:exp_add_race, :demon}, random_option(ctx, :value))
+- id: 239
+  name: ADDEXPPERCENT_KILLRACE_HUMAN
+  script: bonus(ctx, {:exp_add_race, :demi_human}, random_option(ctx, :value))
+- id: 240
+  name: ADDEXPPERCENT_KILLRACE_ANGEL
+  script: bonus(ctx, {:exp_add_race, :angel}, random_option(ctx, :value))
+- id: 241
+  name: ADDEXPPERCENT_KILLRACE_DRAGON
+  script: bonus(ctx, {:exp_add_race, :dragon}, random_option(ctx, :value))
+- id: 242
+  name: ADDEXPPERCENT_KILLRACE_ALL
+  script: bonus(ctx, {:exp_add_race, :all}, random_option(ctx, :value))
+- id: 243
+  name: VAR_POWAMOUNT
+  script: bonus(ctx, :pow, random_option(ctx, :value))
+- id: 244
+  name: VAR_SPLAMOUNT
+  script: bonus(ctx, :spl, random_option(ctx, :value))
+- id: 245
+  name: VAR_STAAMOUNT
+  script: bonus(ctx, :sta, random_option(ctx, :value))
+- id: 246
+  name: VAR_WISAMOUNT
+  script: bonus(ctx, :wis, random_option(ctx, :value))
+- id: 247
+  name: VAR_CONAMOUNT
+  script: bonus(ctx, :con, random_option(ctx, :value))
+- id: 248
+  name: VAR_CRTAMOUNT
+  script: bonus(ctx, :crt, random_option(ctx, :value))
+- id: 249
+  name: VAR_PATKAMOUNT
+  script: bonus(ctx, :patk, random_option(ctx, :value))
+- id: 250
+  name: VAR_SMATKAMOUNT
+  script: bonus(ctx, :smatk, random_option(ctx, :value))
+- id: 251
+  name: VAR_RESAMOUNT
+  script: bonus(ctx, :res, random_option(ctx, :value))
+- id: 252
+  name: VAR_MRESAMOUNT
+  script: bonus(ctx, :mres, random_option(ctx, :value))
+- id: 253
+  name: VAR_HEAL_PLUS
+  script:
+- id: 254
+  name: VAR_CRITICAL_RATE
+  script: bonus(ctx, :crit_rate, random_option(ctx, :value))

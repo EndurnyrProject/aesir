@@ -32,6 +32,8 @@ defmodule Aesir.ZoneServer.Db.Layout do
     "shops" => {:glob, false, "aesir.import.shops"},
     "statpoint" => {:glob, false, "aesir.import.statpoint"},
     "item_groups" => {:glob, false, "aesir.import.item_groups"},
+    "random_options/options.yml" => {:file, false, "aesir.import.random_options"},
+    "random_options/groups.yml" => {:file, false, "aesir.import.random_options"},
     "skill_tree" => {:glob, false, "aesir.import.skill_tree"},
     "castles" => {:glob, false, "aesir.import.castles"},
     "homunculus/species.yml" => {:file, false, "aesir.import.homunculi"},

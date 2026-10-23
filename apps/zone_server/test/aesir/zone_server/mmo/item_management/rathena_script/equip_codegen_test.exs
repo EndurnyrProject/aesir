@@ -1382,6 +1382,43 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
   end
 
+  describe "getrandomoptinfo read" do
+    test "reads the running option's id, value and param" do
+      assert {:ok, [{:bonus, :max_hp, {:random_option, :value}}]} =
+               compile("bonus bMaxHP,getrandomoptinfo(ROA_VALUE);")
+
+      assert {:ok, [{:bonus, :str, {:+, {:random_option, :id}, {:random_option, :param}}}]} =
+               compile("bonus bStr,getrandomoptinfo(ROA_ID)+getrandomoptinfo(ROA_PARAM);")
+    end
+
+    test "a constant for loop unrolls, its counter usable as an element param" do
+      script = """
+      for(.@i = Ele_Water; .@i < Ele_Undead; ++.@i)
+        bonus2 bSubEle,.@i,getrandomoptinfo(ROA_VALUE);
+      """
+
+      unrolled =
+        ~w(Ele_Water Ele_Earth Ele_Fire Ele_Wind Ele_Poison Ele_Holy Ele_Dark Ele_Ghost)
+        |> Enum.map_join(&"bonus2 bSubEle,#{&1},getrandomoptinfo(ROA_VALUE);")
+
+      assert {:ok, program} = compile(script)
+      assert length(program) == 8
+      assert {:ok, program} == compile(unrolled)
+    end
+
+    test "a for loop whose bounds are not constant is unsupported" do
+      assert {:error, {:unsupported, _}} =
+               compile("for(.@i = 0; .@i < getrefine(); ++.@i) bonus bStr,1;")
+
+      assert {:error, {:unsupported, _}} =
+               compile("for(.@i = 0; .@i < 3; ++.@i) { .@i = 5; bonus bStr,1; }")
+    end
+
+    test "an attribute type outside ROA_ID..ROA_PARAM reads 0" do
+      assert {:ok, [{:bonus, :str, 0}]} = compile("bonus bStr,getrandomoptinfo(3);")
+    end
+  end
+
   describe "min/max/pow math combinators" do
     test "min over a level input clamps then scales" do
       assert {:ok, [{:bonus, :atk, {:div, {:min, :base_level, 195}, 15}}]} =

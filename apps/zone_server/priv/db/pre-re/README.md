@@ -3,6 +3,7 @@
 ```sh
 mix compile --warnings-as-errors
 mix aesir.import.item_groups <rathena_root> --mode pre-re
+mix aesir.import.random_options <rathena_root> --mode pre-re
 mix aesir.import.items <rathena_root> --mode pre-re
 mix aesir.import.mobs <rathena_root> --mode pre-re
 mix aesir.import.mob_skills <rathena_root> --mode pre-re

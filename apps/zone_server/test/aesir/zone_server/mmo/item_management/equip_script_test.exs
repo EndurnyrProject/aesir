@@ -666,6 +666,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       end
     end
 
+    test "parses a random option read and rejects an unknown attribute" do
+      assert [{:bonus, :atk, {:random_option, :value}}] =
+               EquipScript.parse!("bonus(ctx, :atk, random_option(ctx, :value))")
+
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("bonus(ctx, :atk, random_option(ctx, :chance))")
+      end
+    end
+
     test "rejects malformed equipped item id lists" do
       invalid_conditions = [
         "equipped(ctx, [])",
@@ -787,6 +796,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
                autobonuses: [],
                effects: []
              }
+    end
+
+    test "a random option read takes the running option's fields, 0 outside an option" do
+      program = [{:bonus, :str, {:+, {:random_option, :value}, {:random_option, :param}}}]
+      option = %{id: 3, value: 4, param: 2}
+
+      assert EquipScript.evaluate(program, Map.put(on(0), :random_option, option)).modifiers ==
+               %{str: 6}
+
+      assert EquipScript.evaluate(program, on(0)).modifiers == %{str: 0}
     end
 
     test "on-hit status bonuses are ordered registrations, a bonus4 duration on its bonus" do

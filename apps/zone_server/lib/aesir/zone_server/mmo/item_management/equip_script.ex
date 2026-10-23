@@ -71,6 +71,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   supported atoms are the six base stats (`:str :agi :vit :int :dex :luk`) and
   the six trait stats (`:pow :sta :wis :spl :con :crt`).
 
+  ## Random-option constructs
+
+  `{:random_option, field}` (source `random_option(ctx, :value)`) reads the
+  `:id`, `:value` or `:param` of the random option whose script is running,
+  from the optional `:random_option` input (rAthena `getrandomoptinfo`). A
+  script that is not an option's, which has no such input, reads `0`.
+
   ## Job-aware constructs
 
   Two constructs gate on the wearer's job, reading the optional `:job_id` input
@@ -99,6 +106,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @type compare_op :: :> | :< | :>= | :<= | :== | :!=
   @type logic_op :: :and | :or
 
+  @typedoc "A field of the random option whose script is running."
+  @type random_option_field :: :id | :value | :param
+
   @typedoc "A wearer job reader: current job, first-job lineage, or trans/baby-collapsed job."
   @type job_reader :: :class | :base_class | :base_job
 
@@ -118,7 +128,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:equipped_item_counts) => %{pos_integer() => pos_integer()},
           optional(:local_time) => NaiveDateTime.t(),
           optional(:character_info) => Rathena.character_info() | nil,
-          optional(:lr_flag) => BonusKeys.lr_flag()
+          optional(:lr_flag) => BonusKeys.lr_flag(),
+          optional(:random_option) => %{id: integer(), value: integer(), param: integer()}
         }
 
   @typedoc """
@@ -137,6 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | {:ternary, condition(), expr(), expr()}
           | {:skill_lv, pos_integer()}
           | {:stat, atom()}
+          | {:random_option, random_option_field()}
           | {:bool, condition()}
           | {:gettime, expr()}
 
@@ -371,6 +383,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_expr(:job_level), do: "job_level(ctx)"
   defp render_expr({:skill_lv, id}), do: "skill_lv(ctx, #{id})"
   defp render_expr({:stat, stat}), do: "stat(ctx, #{inspect(stat)})"
+  defp render_expr({:random_option, field}), do: "random_option(ctx, #{inspect(field)})"
   defp render_expr({:bool, condition}), do: "bool(ctx, #{render_cond(condition)})"
   defp render_expr({:gettime, selector}), do: "gettime(ctx, #{render_expr(selector)})"
   defp render_expr({:div, l, r}), do: "div(#{render_expr(l)}, #{render_expr(r)})"
@@ -491,6 +504,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp parse_expr!({:stat, _, [{:ctx, _, c}, stat]}) when is_atom(c),
     do: {:stat, validate_stat!(stat)}
+
+  defp parse_expr!({:random_option, _, [{:ctx, _, c}, field]})
+       when is_atom(c) and field in [:id, :value, :param],
+       do: {:random_option, field}
 
   defp parse_expr!({:bool, _, [{:ctx, _, c}, condition]}) when is_atom(c),
     do: {:bool, parse_cond!(condition)}
@@ -930,6 +947,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp eval_expr({:stat, stat}, inputs),
     do: inputs |> Map.get(:stats, %{}) |> Map.get(stat, 0)
+
+  defp eval_expr({:random_option, field}, inputs),
+    do: inputs |> Map.get(:random_option, %{}) |> Map.get(field, 0)
 
   defp eval_expr({:bool, condition}, inputs), do: if(eval_cond(condition, inputs), do: 1, else: 0)
 

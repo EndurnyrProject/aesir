@@ -21,6 +21,8 @@ All paths below are relative to `priv/db`. Base files load before import files; 
 | shops | `import/shops/*.yml` | Append-only |
 | statpoint | `import/statpoint/*.yml` | Whole entry override by level |
 | item_groups | `import/item_groups/*.yml` | Whole entry override by group key |
+| random options | `import/random_options/options.yml` | Whole entry override by option `id` |
+| random option groups | `import/random_options/groups.yml` | Whole entry override by group `id` |
 | skill_tree | `import/skill_tree/*.yml` | Whole entry override by job name |
 | castles | `import/castles/*.yml` | Whole entry override by `id` |
 | homunculus species | `import/homunculus/species.yml` | Whole entry override by `id` |
