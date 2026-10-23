@@ -107,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptationTest do
   @tag game_mode: :pre_renewal
   test "classic refuses Adaptation without an active performing lock" do
     assert {:error, :not_performing} =
-             BdAdaptation.validate(game_state(1), :self, 1, BdAdaptation.definition())
+             BdAdaptation.begin_attempt(game_state(1), :self, 1, BdAdaptation.definition())
   end
 
   @tag game_mode: :pre_renewal

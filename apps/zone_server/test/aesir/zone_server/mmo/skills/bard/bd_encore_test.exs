@@ -117,6 +117,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert caster.act_delay_until == 0
   end
 
+  test "a remembered song no longer learned fails with the generic reply" do
+    caster = player(%{skill_id: 319, level: 1}, %{@encore_id => 1})
+
+    assert {:error, :replay_not_learned} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert caster.stats.current_state.sp == 100
+  end
+
   test "the remembered level stays castable while any rank remains learned" do
     caster = player(%{skill_id: 319, level: 3}, %{319 => 2, @encore_id => 1})
 

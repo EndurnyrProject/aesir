@@ -40,15 +40,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptation do
     |> Map.put(:sp_requirement, hd(definition.sp_cost))
   end
 
+  @doc """
+  Pre-renewal starts the cast only while performing, with the generic failure
+  otherwise; renewal has no such condition.
+  """
   @impl Active
-  def validate(%{character_id: id}, :self, _level, _definition) do
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), term()) ::
+          {:ok, Active.caster()} | {:error, :not_performing}
+  def begin_attempt(%{character_id: id} = caster, :self, _level, _definition) do
     case GameMode.mode() do
       :renewal ->
-        :ok
+        {:ok, caster}
 
       :pre_renewal ->
         if StatusStorage.has_status?(:player, id, :sc_dancing),
-          do: :ok,
+          do: {:ok, caster},
           else: {:error, :not_performing}
     end
   end

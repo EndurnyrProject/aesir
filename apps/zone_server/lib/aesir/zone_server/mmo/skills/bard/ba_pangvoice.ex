@@ -34,13 +34,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
 
   @behaviour Active
 
+  @doc """
+  A player's use on a boss-class target is refused before anything else is
+  checked, with the target failure.
+  """
   @impl Active
-  def validate(%PlayerState{}, {:unit, target_id}, _level, _definition) do
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), term()) ::
+          :ok | {:error, atom()}
+  def skilluse_check(%PlayerState{}, {:unit, target_id}, _level, _definition) do
     with {:ok, _pid, target, _unit_type} <- TargetResolver.resolve(target_id) do
-      if target.__struct__.is_boss?(target), do: {:error, :boss_immune}, else: :ok
+      if target.__struct__.is_boss?(target), do: {:error, :to_target}, else: :ok
     end
   end
 
+  def skilluse_check(_caster, _target, _level, _definition), do: :ok
+
+  @impl Active
   def validate(_caster, {:unit, target_id}, _level, _definition) do
     with {:ok, _pid, _target, _unit_type} <- TargetResolver.resolve(target_id), do: :ok
   end

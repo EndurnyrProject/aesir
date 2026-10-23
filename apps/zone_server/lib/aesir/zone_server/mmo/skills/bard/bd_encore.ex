@@ -31,8 +31,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
 
   @behaviour Active
 
+  @doc """
+  Encore is refused before anything else is checked, with the generic failure,
+  when no performance is remembered or the remembered one is no longer learned.
+  """
   @impl Active
-  def validate(caster, :self, _level, _definition) do
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), term()) ::
+          :ok | {:error, atom()}
+  def skilluse_check(caster, :self, _level, _definition) do
     with {:ok, %{skill_id: skill_id}} <- replay_memory(caster),
          true <- Catalog.replayable?(skill_id),
          {:ok, remembered} <- Catalog.by_id(skill_id),
@@ -41,9 +47,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
     else
       false -> {:error, :skill_not_replayable}
       :error -> {:error, :unknown_skill}
+      {:error, :skill_not_learned} -> {:error, :replay_not_learned}
       error -> error
     end
   end
+
+  def skilluse_check(_caster, _target, _level, _definition), do: :ok
+
+  @impl Active
+  def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
   def dynamic_cost(_caster, :self, _level, _definition),

@@ -58,11 +58,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
   test "a boss-class target is refused for a player caster only" do
     boss = register_mob([:detector, :status_immune, :knockback_immune], 11, 10)
 
-    assert {:error, :boss_immune} =
-             BaPangvoice.validate(player_state(), {:unit, boss.instance_id}, 1, nil)
+    assert {:error, :to_target} =
+             BaPangvoice.skilluse_check(player_state(), {:unit, boss.instance_id}, 1, nil)
+
+    assert :ok = BaPangvoice.validate(player_state(), {:unit, boss.instance_id}, 1, nil)
 
     assert :ok =
-             BaPangvoice.validate(
+             BaPangvoice.skilluse_check(
                mob_state(@caster_id, [], 10, 10),
                {:unit, boss.instance_id},
                1,
@@ -95,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
 
     reject(&StatusInterpreter.apply_status/4)
 
-    assert {:error, :boss_immune} =
+    assert {:error, :to_target} =
              Interpreter.cast(caster, 1010, 1, {:unit, boss.instance_id})
 
     assert caster.stats.current_state.sp == 100
