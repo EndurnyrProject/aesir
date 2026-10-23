@@ -505,34 +505,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert_received {:send, _ch, {:item_added, %ItemAdded{}}}
     end
 
-    test "rejects a non-positive duration without adding an item" do
-      definition = item_definition(@sphmask_id, type: :weapon)
-      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
-      reject(&InventoryOps.add/6)
-
-      state = base_state()
-
-      {reply, new_state} =
-        ScriptEffectHandler.apply_op({:give_item_rental, @sphmask_id, 0, []}, state)
-
-      assert reply == {:error, :bad_duration}
-      assert new_state == state
-      refute_received {:send, _ch, {:item_added, _}}
-    end
-
-    test "rejects a non-rentable item type without adding an item" do
+    test "rents any item type for any duration, as a script rental does" do
       definition = item_definition(@sphmask_id, type: :usable)
       stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
-      reject(&InventoryOps.add/6)
 
-      state = base_state()
+      expect(InventoryOps, :add, fn 1000, %{}, _stats, ^definition, 1, %{expire_time: expiry} ->
+        item = %InventoryItem{nameid: @sphmask_id, amount: 1, expire_time: expiry}
+        {:ok, %{0 => item}, {:added, 0, item}}
+      end)
 
-      {reply, new_state} =
-        ScriptEffectHandler.apply_op({:give_item_rental, @sphmask_id, 60, []}, state)
+      {reply, _state} =
+        ScriptEffectHandler.apply_op({:give_item_rental, @sphmask_id, 0, []}, base_state())
 
-      assert reply == {:error, :not_rentable}
-      assert new_state == state
-      refute_received {:send, _ch, {:item_added, _}}
+      assert {:ok, %{inventory: %{0 => %InventoryItem{expire_time: expiry}}}} = reply
+      assert expiry != nil
     end
 
     test "passes rental item attributes to the inventory add" do

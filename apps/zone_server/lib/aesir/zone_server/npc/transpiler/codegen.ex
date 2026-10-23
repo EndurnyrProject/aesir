@@ -1367,68 +1367,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx)"], :cont}
   end
 
-  defp emit_mapped(
-         _name,
-         %{shape: :rentitem3},
-         [
-           item,
-           seconds,
-           identify,
-           refine,
-           attribute,
-           card0,
-           card1,
-           card2,
-           card3,
-           option_ids,
-           option_values,
-           option_params
-         ],
-         env
-       ) do
-    {pre,
-     [
-       item,
-       seconds,
-       _,
-       refine,
-       _,
-       card0,
-       card1,
-       card2,
-       card3,
-       option_ids,
-       option_values,
-       option_params
-     ]} =
-      hoist_all(
-        [
-          item,
-          seconds,
-          identify,
-          refine,
-          attribute,
-          card0,
-          card1,
-          card2,
-          card3,
-          option_ids,
-          option_values,
-          option_params
-        ],
-        env
-      )
+  # An attribute-carrying item grant: its fixed arguments by type, then (for
+  # the option variants) the three option arrays folded into one options
+  # list, then the optional target as given.
+  defp emit_mapped(name, %{shape: :item_grant, dsl: dsl, args: types} = rule, args, env) do
+    {pre, args} = hoist_all(args, env)
+    array_count = if rule.arrays, do: 3, else: 0
 
-    options = rental_random_options(option_ids, option_values, option_params, env)
+    if length(args) < length(types) + array_count do
+      rendered = Enum.map_join(args, ", ", &render(&1, env))
+      {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+    else
+      {fixed, rest} = Enum.split(args, length(types))
+      {arrays, target} = Enum.split(rest, array_count)
 
-    call =
-      "ctx = give_item_rental(ctx, #{typed_arg(item, :item, env)}, " <>
-        "#{typed_arg(seconds, :int, env)}, refine: #{render(refine, env)}, " <>
-        "card0: #{render(card0, env)}, card1: #{render(card1, env)}, " <>
-        "card2: #{render(card2, env)}, card3: #{render(card3, env)}, " <>
-        "random_options: #{options})"
+      options =
+        case arrays do
+          [ids, values, params] -> [rental_random_options(ids, values, params, env)]
+          [] -> []
+        end
 
-    {pre ++ [call], :cont}
+      rendered =
+        Enum.zip_with(fixed, types, &typed_arg(&1, &2, env)) ++
+          options ++ Enum.map(target, &render(&1, env))
+
+      {pre ++ ["ctx = #{dsl}(#{Enum.join(["ctx" | rendered], ", ")})"], :cont}
+    end
   end
 
   defp emit_mapped(_name, %{shape: :returning, dsl: dsl, args: types}, args, env) do
@@ -1436,12 +1400,6 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
     {pre ++ ["{ctx, _} = #{dsl}(#{Enum.join(["ctx" | typed_args(args, types, env)], ", ")})"],
      :cont}
-  end
-
-  defp emit_mapped(name, %{shape: :rentitem3}, args, env) do
-    {pre, args} = hoist_all(args, env)
-    rendered = Enum.map_join(args, ", ", &render(&1, env))
-    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
   # Trailing/optional buildin args beyond the declared arity (e.g. `emotion`'s

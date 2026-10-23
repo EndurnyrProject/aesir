@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:give_group_items, [map()]}
           | {:give_rand_group_items, [map()]}
           | {:get_named_item, integer(), String.t() | integer()}
-          | {:give_item_rental, integer(), pos_integer(), keyword()}
+          | {:give_item_rental, integer(), integer(), keyword()}
           | {:give_item_bound, integer(), pos_integer(), 1 | 4}
           | {:delitem, integer(), pos_integer()}
           | {:delequip, non_neg_integer(), integer()}
@@ -227,13 +227,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
-  # rAthena `getitem2`: grants an item with explicit identify/refine/card
-  # attributes through `InventoryOps.add`'s opts map. `attr` (the element
-  # attribute) has no Aesir inventory field and is dropped by the DSL before
-  # this op is built.
+  # The `getitem2`/`rentitem2` family: grants an item with the identify,
+  # refine, attribute, card, binding and option attributes the DSL settled,
+  # through `InventoryOps.add`'s opts map; a rental's `expire_seconds` becomes
+  # its expiry at the moment of the grant.
   def apply_op({:give_item2, item_id, qty, attrs}, state) do
     case fetch_definition(item_id) do
-      {:ok, definition} -> give_units(state, definition, qty, {:opts, attrs})
+      {:ok, definition} -> give_units(state, definition, qty, {:opts, expiry(attrs)})
       {:error, reason} -> {{:error, reason}, state}
     end
   end
@@ -259,8 +259,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   def apply_op({:give_item_rental, item_id, seconds, opts}, %{game_state: gs} = state) do
     with {:ok, definition} <- fetch_definition(item_id),
-         true <- seconds > 0 || {:error, :bad_duration},
-         true <- Rental.rentable_type?(definition) || {:error, :not_rentable},
          {:ok, persisted, change} <-
            InventoryOps.add(
              gs.character_id,
@@ -716,6 +714,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   defp item_skill_target_kind(:self), do: :SELF
   defp item_skill_target_kind(:ground), do: :GROUND
   defp item_skill_target_kind(_unit), do: :UNIT
+
+  # A rental's seconds count from the moment of the grant.
+  defp expiry(%{expire_seconds: seconds} = attrs) do
+    attrs
+    |> Map.delete(:expire_seconds)
+    |> Map.put(:expire_time, Rental.expire_at(seconds, NaiveDateTime.utc_now()))
+  end
+
+  defp expiry(attrs), do: attrs
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}

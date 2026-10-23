@@ -102,6 +102,13 @@ getequipweaponlv/2
 getexp/3
 getguildname/2
 getitem2/10
+getitem2/11
+getitem3/11
+getitem3/12
+getitembound2/11
+getitembound2/12
+getitembound3/12
+getitembound3/13
 getiteminfo/3
 getlook/2
 getmapusers/2
@@ -183,6 +190,10 @@ refine/4
 refine_cost/3
 refine_rate/3
 refine_targets/1
+rentitem2/10
+rentitem2/11
+rentitem3/11
+rentitem3/12
 repair/2
 repairall/1
 reset_skills/1

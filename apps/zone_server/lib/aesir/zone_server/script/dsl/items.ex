@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Announce
+  alias Aesir.ZoneServer.Script.Dsl.ItemGrants
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
@@ -293,12 +294,17 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   end
 
   @doc """
-  Gives one time-limited rental item through the session seam.
+  Gives one time-limited rental item through the session seam (rAthena
+  `rentitem`): any item type, for any number of seconds. An integer last
+  argument is the account id of the player to rent it to.
   """
-  @spec give_item_rental(Ctx.t(), integer(), pos_integer(), keyword()) :: Ctx.t()
+  @spec give_item_rental(Ctx.t(), integer(), integer(), keyword() | integer()) :: Ctx.t()
   def give_item_rental(ctx, item_id, seconds, opts \\ [])
 
   def give_item_rental(%Ctx{status: {:error, _}} = ctx, _id, _secs, _opts), do: ctx
+
+  def give_item_rental(%Ctx{} = ctx, item_id, seconds, account_id) when is_integer(account_id),
+    do: ItemGrants.rentitem(ctx, item_id, seconds, account_id)
 
   def give_item_rental(%Ctx{} = ctx, item_id, seconds, opts),
     do: apply_op(ctx, {:give_item_rental, item_id, seconds, opts})
@@ -393,82 +399,6 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   @spec disable_items(Ctx.t()) :: Ctx.t()
   def disable_items(%Ctx{status: {:error, _}} = ctx), do: ctx
   def disable_items(%Ctx{} = ctx), do: apply_op(ctx, {:disable_items})
-
-  @doc """
-  Gives `qty` of item `item_id` with explicit attributes through the session
-  seam (rAthena `getitem2`): `identify`, `refine`, and the four card values
-  (`card1`..`card4` map to `card0`..`card3`). The element attribute has no
-  Aesir inventory field and is accepted-but-ignored, as documented. Halts
-  `:no_player` on a detached ctx.
-  """
-  @spec getitem2(
-          Ctx.t(),
-          integer(),
-          pos_integer(),
-          0 | 1,
-          non_neg_integer(),
-          integer(),
-          integer(),
-          integer(),
-          integer(),
-          integer()
-        ) :: Ctx.t()
-  # The rAthena `getitem2` buildin carries nine positional args (id, count,
-  # identify, refine, attr, four cards); the arity is inherent.
-  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
-  def getitem2(
-        %Ctx{status: {:error, _}} = ctx,
-        _item,
-        _qty,
-        _identify,
-        _refine,
-        _attr,
-        _card1,
-        _card2,
-        _card3,
-        _card4
-      ),
-      do: ctx
-
-  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
-  def getitem2(
-        %Ctx{} = ctx,
-        item,
-        qty,
-        identify,
-        refine,
-        _attr,
-        card1,
-        card2,
-        card3,
-        card4
-      ) do
-    attrs = %{
-      identify: identify,
-      refine: refine,
-      card0: card1,
-      card1: card2,
-      card2: card3,
-      card3: card4
-    }
-
-    apply_op(ctx, {:give_item2, item, qty, given_attributes(item, attrs)})
-  end
-
-  # rAthena's `getitem2` keeps the script's identify flag only for the three
-  # gear types it can create unidentified; every other type (pet armour and pet
-  # eggs included) is forced identified, so a script cannot hand out an
-  # unidentified potion.
-  @spec given_attributes(integer(), map()) :: map()
-  defp given_attributes(item, attrs) do
-    case ItemManagement.get_item_by_id(item) do
-      {:ok, %ItemDefinition{type: type}} ->
-        if type in [:weapon, :armor, :shadow_gear], do: attrs, else: Map.put(attrs, :identify, 1)
-
-      {:error, _reason} ->
-        attrs
-    end
-  end
 
   @doc """
   Runs item `item_id`'s use script on the invoking player (rAthena

@@ -40,6 +40,6 @@ defmodule Aesir.ZoneServer.Unit.Rental do
   @doc """
   Returns the rental expiry after a duration in seconds.
   """
-  @spec expire_at(pos_integer(), NaiveDateTime.t()) :: NaiveDateTime.t()
+  @spec expire_at(integer(), NaiveDateTime.t()) :: NaiveDateTime.t()
   def expire_at(seconds, now), do: NaiveDateTime.add(now, seconds, :second)
 end

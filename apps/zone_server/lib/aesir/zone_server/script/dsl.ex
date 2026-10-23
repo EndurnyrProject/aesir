@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Script.Dsl.Announce
   alias Aesir.ZoneServer.Script.Dsl.Castle
   alias Aesir.ZoneServer.Script.Dsl.Dialog
+  alias Aesir.ZoneServer.Script.Dsl.ItemGrants
   alias Aesir.ZoneServer.Script.Dsl.Items
   alias Aesir.ZoneServer.Script.Dsl.MonsterDrops
   alias Aesir.ZoneServer.Script.Dsl.Movement
@@ -183,7 +184,64 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate disable_items(ctx), to: Items
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defdelegate getitem2(ctx, item, qty, identify, refine, attr, card1, card2, card3, card4),
-    to: Items
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate getitem2(ctx, item, qty, identify, refine, attr, c1, c2, c3, c4, account_id),
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate getitem3(ctx, item, qty, identify, refine, attr, c1, c2, c3, c4, options),
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate getitem3(ctx, item, qty, iden, ref, attr, c1, c2, c3, c4, options, account_id),
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate getitembound2(ctx, item, qty, iden, ref, attr, c1, c2, c3, c4, bound),
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate getitembound2(ctx, item, qty, iden, ref, attr, c1, c2, c3, c4, bound, account_id),
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate getitembound3(ctx, item, qty, iden, ref, attr, c1, c2, c3, c4, bound, options),
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate getitembound3(
+                ctx,
+                item,
+                qty,
+                iden,
+                ref,
+                attr,
+                c1,
+                c2,
+                c3,
+                c4,
+                bound,
+                options,
+                account_id
+              ),
+              to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate rentitem2(ctx, item, seconds, iden, ref, attr, c1, c2, c3, c4), to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate rentitem2(ctx, item, seconds, iden, ref, attr, c1, c2, c3, c4, account_id),
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate rentitem3(ctx, item, seconds, iden, ref, attr, c1, c2, c3, c4, options),
+    to: ItemGrants
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  defdelegate rentitem3(ctx, item, seconds, iden, ref, attr, c1, c2, c3, c4, options, account_id),
+    to: ItemGrants
 
   defdelegate consumeitem(ctx, item_id), to: Items
   defdelegate repair(ctx, index), to: Items

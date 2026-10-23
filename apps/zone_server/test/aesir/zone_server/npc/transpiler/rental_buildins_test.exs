@@ -71,11 +71,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.RentalBuildinsTest do
         module: inspect(module)
       )
 
-    assert src =~ "give_item_rental(ctx, 2101, 3600"
-    assert src =~ "refine: 7"
-    assert src =~ "card0: 4001"
-    assert src =~ "random_options:"
-    assert src =~ "random_options(\n"
+    assert src =~ "rentitem3(\n"
+    assert src =~ ~r/2101,\s+3600,\s+1,\s+7,\s+0,\s+4001,\s+4002,\s+4003,\s+4004,/
+    assert src =~ "random_options("
+
+    definition = %ItemDefinition{id: 2101, aegis_name: "Sword", name: "Sword", type: :weapon}
+    stub(Items, :by_id, fn 2101 -> {:ok, definition} end)
 
     Code.compile_string(src)
     on_exit(fn -> :code.delete(module) end)
@@ -93,21 +94,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.RentalBuildinsTest do
 
     assert %{status: :ok} = module.on_talk(ctx)
 
-    assert_received {:script_apply, {:give_item_rental, 2101, 3600, opts} = op}
+    assert_received {:script_apply, {:give_item2, 2101, 1, attrs} = op}
 
-    assert opts == [
+    assert attrs == %{
+             identify: 1,
              refine: 7,
+             attribute: 0,
              card0: 4001,
              card1: 4002,
              card2: 4003,
              card3: 4004,
+             expire_seconds: 3600,
              random_options: [%{id: 1, value: 50, param: 7}, %{id: 2, value: 60, param: 8}]
-           ]
-
-    definition = %ItemDefinition{id: 2101, aegis_name: "Sword", name: "Sword", type: :weapon}
-    stub(Items, :by_id, fn 2101 -> {:ok, definition} end)
+           }
 
     expect(InventoryOps, :add, fn 1, %{}, %{}, ^definition, 1, opts ->
+      assert opts.identify == 1
+      assert opts.attribute == 0
       assert opts.refine == 7
       assert opts.card0 == 4001
       assert opts.card1 == 4002

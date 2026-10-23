@@ -1736,6 +1736,27 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.const!"
   end
 
+  test "attribute-carrying item grants keep every argument and the account target" do
+    src =
+      gen!("""
+      getitem2 1101, 1, 1, 7, 2, 4001, 0, 0, 0, 2000001;
+      getitembound2 1101, 1, 1, 0, 0, 0, 0, 0, 0, Bound_Char;
+      rentitem2 501, 60, 1, 0, 0, 0, 0, 0, 0;
+      setarray .@i[0], 3; setarray .@v[0], 5; setarray .@p[0], 0;
+      getitem3 1101, 1, 1, 0, 0, 0, 0, 0, 0, .@i, .@v, .@p;
+      getitembound3 1101, 1, 1, 0, 0, 0, 0, 0, 0, Bound_Account, .@i, .@v, .@p;
+      close;
+      """)
+
+    flat = String.replace(src, ~r/\s+/, " ")
+    assert flat =~ "getitem2(1101, 1, 1, 7, 2, 4001, 0, 0, 0, 2_000_001)"
+    assert flat =~ "getitembound2(1101, 1, 1, 0, 0, 0, 0, 0, 0, 4)"
+    assert flat =~ "rentitem2(501, 60, 1, 0, 0, 0, 0, 0, 0)"
+    assert flat =~ "getitem3( ctx, 1101, 1, 1, 0, 0, 0, 0, 0, 0, random_options("
+    assert flat =~ "getitembound3( 1101, 1, 1, 0, 0, 0, 0, 0, 0, 1, random_options("
+    refute src =~ "Todo."
+  end
+
   test "random option buildins emit their DSL calls, setrandomoption threading the ctx" do
     src =
       gen!("""
