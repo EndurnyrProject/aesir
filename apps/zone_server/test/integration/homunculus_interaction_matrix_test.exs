@@ -207,6 +207,8 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
     before_homunculus = PlayerSession.get_state(owner.pid).homunculus
     before_statuses = StatusStorage.get_unit_statuses(:homunculus, gid)
 
+    # Every one is refused silently before the cast (status.cpp:2265-2266 via
+    # unit.cpp:2217).
     for {module, level} <- [
           {AlCure, 1},
           {TfDetoxify, 1},
@@ -224,10 +226,7 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
       })
 
       skill_id = module.definition().id
-
-      if module in [AlCure, AlIncagi],
-        do: refute_receive({:packet_sent, %SkillCastFailed{skill_id: ^skill_id}, _}, 200),
-        else: assert_receive({:packet_sent, %SkillCastFailed{skill_id: ^skill_id}, _}, 1_000)
+      refute_receive {:packet_sent, %SkillCastFailed{skill_id: ^skill_id}, _}, 300
 
       after_caster = PlayerSession.get_state(foreign.pid).game_state
       assert after_caster.stats.current_state.sp == before_caster.stats.current_state.sp
