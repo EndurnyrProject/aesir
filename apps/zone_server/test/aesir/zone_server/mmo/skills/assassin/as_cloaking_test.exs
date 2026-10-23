@@ -21,15 +21,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloakingTest do
     cache(MapData.new("open", 5, 5))
 
     assert {:error, :impassable_neighbor_required} =
-             AsCloaking.validate(player, :self, 1, AsCloaking.definition())
+             AsCloaking.begin_attempt(player, :self, 1, AsCloaking.definition())
 
     assert {:error, :impassable_neighbor_required} =
-             AsCloaking.validate(player, :self, 2, AsCloaking.definition())
+             AsCloaking.begin_attempt(player, :self, 2, AsCloaking.definition())
 
-    assert :ok = AsCloaking.validate(player, :self, 3, AsCloaking.definition())
+    assert {:ok, ^player} = AsCloaking.begin_attempt(player, :self, 3, AsCloaking.definition())
 
     cache(MapData.new("open", 5, 5) |> MapData.set_cell(2, 1, GatType.wall()))
-    assert :ok = AsCloaking.validate(player, :self, 1, AsCloaking.definition())
+    assert {:ok, ^player} = AsCloaking.begin_attempt(player, :self, 1, AsCloaking.definition())
   end
 
   test "activation stores the cadence and wall state, clears intent, and recast toggles off" do
@@ -59,7 +59,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloakingTest do
              StatusStorage.get_status(:player, 2, :sc_cloaking)
 
     cache(MapData.new("open", 5, 5))
-    assert :ok = AsCloaking.validate(activated, :self, 1, AsCloaking.definition())
     assert {:ok, ^activated} = AsCloaking.cast(activated, :self, 1, AsCloaking.definition())
     refute StatusStorage.has_status?(:player, 2, :sc_cloaking)
   end
@@ -111,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloakingTest do
 
     :ok = UnitRegistry.register_unit(:mob, 3, MobState, mob, self())
 
-    assert :ok = AsCloaking.validate(mob, :self, 1, AsCloaking.definition())
+    assert {:ok, ^mob} = AsCloaking.begin_attempt(mob, :self, 1, AsCloaking.definition())
     assert :ok = AsCloaking.mob_cast(mob, {:unit, :player, 99}, 1, AsCloaking.definition(), %{})
 
     assert %{val1: 1, tick: 0, expires_at: expires_at} =

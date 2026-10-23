@@ -4035,7 +4035,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "ending an active toggle skips the rest of its cast-begin conditions and its SP" do
       gs = game_state(0, %{135 => 1})
 
-      assert {:error, :insufficient_sp} = Interpreter.preflight_cast(gs, 135, 1, :self)
+      assert {:error, :impassable_neighbor_required} =
+               Interpreter.preflight_cast(gs, 135, 1, :self)
 
       stub(StatusStorage, :has_status?, fn
         :player, 1000, :sc_cloaking -> true

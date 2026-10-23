@@ -29,10 +29,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AssassinCross.AscEdpTest do
 
   test "renewal requires a right-hand weapon, classic permits bare hands" do
     player = player()
-    expected = if GameMode.mode() == :renewal, do: {:error, :wrong_weapon}, else: :ok
-    assert AscEdp.validate(player, :self, 1, AscEdp.definition()) == expected
+    expected = if GameMode.mode() == :renewal, do: {:error, :wrong_weapon}, else: {:ok, player}
+    assert AscEdp.begin_attempt(player, :self, 1, AscEdp.definition()) == expected
     equipped = put_in(player.stats.equipment.right_hand, 1201)
-    assert :ok = AscEdp.validate(equipped, :self, 1, AscEdp.definition())
+    assert {:ok, ^equipped} = AscEdp.begin_attempt(equipped, :self, 1, AscEdp.definition())
   end
 
   test "bottle selection respects mode, preferring the bound renewal bottle even in a later slot" do

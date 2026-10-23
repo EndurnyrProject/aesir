@@ -48,9 +48,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
   # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1.
   @compile {:no_warn_undefined, CompiledItemScripts}
 
+  @doc """
+  A player's throw at a Homunculus other than their own is refused silently
+  before anything else is checked.
+  """
+  @impl Active
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def skilluse_check(%PlayerState{} = caster, {:unit, {:homunculus, gid}}, _level, _definition) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {HomunculusState, %HomunculusState{} = target, _pid}} ->
+        if Targeting.direct_support?(caster, target), do: :ok, else: {:error, :target_restricted}
+
+      _other ->
+        {:error, :target_restricted}
+    end
+  end
+
+  def skilluse_check(_caster, _target, _level, _definition), do: :ok
+
+  @doc """
+  The cast end accepts the thrower, the thrower's own Homunculus, and a party
+  or guild member; another player is the generic failure. A dead recipient
+  passes here and the paid throw ends without effect.
+  """
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :invalid_target}
+          :ok | {:error, atom()}
   def validate(%PlayerState{character_id: id}, target, _level, _definition)
       when target in [:self, {:unit, id}],
       do: :ok
@@ -58,23 +82,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
   def validate(%PlayerState{} = caster, {:unit, {:player, target_id}}, level, definition),
     do: validate(caster, {:unit, target_id}, level, definition)
 
-  def validate(%PlayerState{} = caster, {:unit, {:homunculus, gid}}, _level, _definition) do
-    case UnitRegistry.get_unit(:homunculus, gid) do
-      {:ok, {HomunculusState, %HomunculusState{} = target, _pid}} ->
-        if Unit.living?(target) and Targeting.direct_support?(caster, target),
-          do: :ok,
-          else: {:error, :invalid_target}
-
-      _other ->
-        {:error, :invalid_target}
-    end
-  end
+  def validate(%PlayerState{} = caster, {:unit, {:homunculus, _gid}} = target, level, definition),
+    do: skilluse_check(caster, target, level, definition)
 
   def validate(%PlayerState{} = caster, {:unit, target_id}, _level, _definition)
       when is_integer(target_id) do
     case UnitRegistry.get_unit(:player, target_id) do
       {:ok, {PlayerState, %PlayerState{} = target, _pid}} ->
-        if Unit.living?(target) and allied?(caster, target),
+        if allied?(caster, target),
           do: :ok,
           else: {:error, :invalid_target}
 
@@ -89,11 +104,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
 
   @impl Active
   @spec cast(PlayerState.t() | MobState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:deferred, PlayerState.t(), tuple()} | {:ok, MobState.t()} | {:error, atom()}
+          {:deferred, PlayerState.t(), tuple()}
+          | {:skipped, PlayerState.t(), :target_dead}
+          | {:ok, MobState.t()}
+          | {:error, atom()}
   def cast(%PlayerState{} = caster, target, level, definition) do
     item_id = potion_for_level(level)
 
     with :ok <- validate(caster, target, level, definition),
+         :ok <- living_recipient(target),
          index when not is_nil(index) <- ItemContainer.stackable_index(caster.inventory, item_id),
          {:ok, recipient} <- recipient(caster, target),
          {:ok, potion} <- read_potion(caster, item_id),
@@ -109,6 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
 
       {:deferred, updated, {:potion_delivery, recipient.ref, {:potion, hp, sp}}}
     else
+      :recipient_dead -> {:skipped, caster, :target_dead}
       nil -> {:error, :missing_potion}
       {:error, :not_found} -> {:error, :missing_potion}
       {:error, :insufficient_amount} -> {:error, :missing_potion}
@@ -162,6 +182,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
   defp record({:potion_pitch, :flat, hp, sp}, potion), do: %{potion | hp: hp, sp: sp}
   defp record({:potion_pitch, :percent, hp, sp}, potion), do: %{potion | per_hp: hp, per_sp: sp}
   defp record(_effect, potion), do: potion
+
+  # A dead recipient ends the paid throw without effect or failure.
+  defp living_recipient({:unit, {:homunculus, gid}}), do: living(:homunculus, gid)
+  defp living_recipient({:unit, {:player, id}}), do: living(:player, id)
+  defp living_recipient({:unit, id}) when is_integer(id), do: living(:player, id)
+  defp living_recipient(_target), do: :ok
+
+  defp living(type, id) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, target, _pid}} -> if Unit.living?(target), do: :ok, else: :recipient_dead
+      _missing -> {:error, :invalid_target}
+    end
+  end
 
   defp recipient(%PlayerState{character_id: id} = caster, target)
        when target in [:self, {:unit, id}, {:unit, {:player, id}}],

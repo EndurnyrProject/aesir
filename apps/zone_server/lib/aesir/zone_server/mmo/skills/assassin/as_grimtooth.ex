@@ -24,37 +24,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
+  @doc """
+  A player's cast starts only from Hiding (the generic failure otherwise); the
+  katar is the engine's weapon requirement, checked after it.
+  """
   @impl Active
-  def validate(caster, {:unit, target_id}, _level, _definition) do
-    if TrapCombatTarget.targetable?({:skill_unit, target_id}) do
-      {:error, :invalid_target}
-    else
-      validate_player_requirements(caster)
-    end
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :hiding_required}
+  def begin_attempt(%PlayerState{character_id: id} = caster, _target, _level, _definition) do
+    if StatusStorage.has_status?(:player, id, :sc_hiding),
+      do: {:ok, caster},
+      else: {:error, :hiding_required}
   end
 
-  defp validate_player_requirements(%PlayerState{
-         character_id: id,
-         stats: %{equipment: equipment}
-       }) do
-    cond do
-      Stats.weapon_type(equipment) != :katar -> {:error, :katar_not_equipped}
-      not StatusStorage.has_status?(:player, id, :sc_hiding) -> {:error, :hiding_required}
-      true -> :ok
-    end
-  end
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
-  defp validate_player_requirements(%MobState{}), do: :ok
+  @doc "A trap cannot be the target; the cast end refuses it silently."
+  @impl Active
+  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def validate(_caster, {:unit, target_id}, _level, _definition) do
+    if TrapCombatTarget.targetable?({:skill_unit, target_id}),
+      do: {:error, :target_restricted},
+      else: :ok
+  end
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do

@@ -245,8 +245,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcherTest do
     assert :ok =
              AmPotionpitcher.validate(caster(501), {:unit, {:homunculus, 30}}, 1, definition)
 
-    assert {:error, :invalid_target} =
-             AmPotionpitcher.validate(caster(501), {:unit, {:homunculus, 31}}, 1, definition)
+    assert {:error, :target_restricted} =
+             AmPotionpitcher.skilluse_check(
+               caster(501),
+               {:unit, {:homunculus, 31}},
+               1,
+               definition
+             )
   end
 
   test "stranger is rejected without consumption", %{definition: definition} do
@@ -258,12 +263,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcherTest do
     assert ItemContainer.held_amount(state.inventory, 501) == 2
   end
 
-  test "dead ally is rejected without consumption", %{definition: definition} do
+  test "a dead ally passes the cast end and the throw ends without effect", %{
+    definition: definition
+  } do
     dead = target(id: 20, party_id: 7, action_state: :dead, hp: 0)
     stub(UnitRegistry, :get_unit, fn :player, 20 -> {:ok, {PlayerState, dead, self()}} end)
     state = caster(501, party_id: 7)
 
-    assert {:error, :invalid_target} = AmPotionpitcher.cast(state, {:unit, 20}, 1, definition)
+    assert :ok = AmPotionpitcher.validate(state, {:unit, 20}, 1, definition)
+
+    assert {:skipped, ^state, :target_dead} =
+             AmPotionpitcher.cast(state, {:unit, 20}, 1, definition)
+
     assert ItemContainer.held_amount(state.inventory, 501) == 2
   end
 

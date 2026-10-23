@@ -23,7 +23,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloaking do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -31,17 +30,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloaking do
 
   @drain_intervals [500 | Enum.to_list(1_000..9_000//1_000)]
 
+  @doc """
+  Below level 3 the cloak starts only beside an impassable cell; ending an
+  active cloak skips this check.
+  """
+  @impl Active
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :impassable_neighbor_required}
+  def begin_attempt(%PlayerState{} = caster, _target, level, _definition) when level in 1..2 do
+    if MapCache.adjacent_impassable?(caster.map_name, caster.x, caster.y),
+      do: {:ok, caster},
+      else: {:error, :impassable_neighbor_required}
+  end
+
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
+
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(%PlayerState{character_id: caster_id} = caster, :self, level, _definition)
-      when level in 1..2 do
-    if StatusStorage.has_status?(:player, caster_id, :sc_cloaking) or
-         MapCache.adjacent_impassable?(caster.map_name, caster.x, caster.y),
-       do: :ok,
-       else: {:error, :impassable_neighbor_required}
-  end
-
   def validate(%PlayerState{}, :self, _level, _definition), do: :ok
   def validate(%MobState{}, :self, _level, _definition), do: :ok
 

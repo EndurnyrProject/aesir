@@ -40,19 +40,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.AssassinCross.AscEdp do
 
   @behaviour Active
 
+  @doc """
+  Renewal refuses the cast to a player with no right-hand weapon, with the
+  weapon failure; pre-renewal permits bare hands.
+  """
   @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(
-        %PlayerState{stats: %{equipment: %{right_hand: nil}}},
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :wrong_weapon}
+  def begin_attempt(
+        %PlayerState{stats: %{equipment: %{right_hand: nil}}} = caster,
         _target,
         _level,
         _definition
       ) do
-    if GameMode.mode() == :renewal, do: {:error, :wrong_weapon}, else: :ok
+    if GameMode.mode() == :renewal, do: {:error, :wrong_weapon}, else: {:ok, caster}
   end
 
-  def validate(_caster, _target, _level, _definition), do: :ok
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   @doc "Selects the mode's bottle requirement from the current inventory."

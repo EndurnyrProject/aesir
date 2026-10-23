@@ -38,24 +38,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
     assert AsGrimtooth.skill_ratio(5) == 200
   end
 
-  test "players require both a Katar and active Hiding while mobs bypass both gates" do
+  test "a player's cast begins only from Hiding while mobs bypass the gate" do
     katar_user = player_state(1, 1250)
-    dagger_user = player_state(2, 1201)
     target = {:unit, 100}
     definition = AsGrimtooth.definition()
 
     :ok = StatusStorage.apply_status(:player, 1, :sc_hiding, duration: 5_000)
-    :ok = StatusStorage.apply_status(:player, 2, :sc_hiding, duration: 5_000)
 
+    assert {:ok, ^katar_user} = AsGrimtooth.begin_attempt(katar_user, target, 1, definition)
     assert :ok = AsGrimtooth.validate(katar_user, target, 1, definition)
-
-    assert {:error, :katar_not_equipped} =
-             AsGrimtooth.validate(dagger_user, target, 1, definition)
 
     :ok = StatusStorage.remove_status(:player, 1, :sc_hiding)
     :ok = StatusStorage.apply_status(:player, 1, :sc_cloaking, duration: 5_000)
 
-    assert {:error, :hiding_required} = AsGrimtooth.validate(katar_user, target, 1, definition)
+    assert {:error, :hiding_required} =
+             AsGrimtooth.begin_attempt(katar_user, target, 1, definition)
 
     mob =
       %MobState{
@@ -72,6 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
       }
       |> Aesir.TestMob.publish(max_hp: 100, max_sp: 0)
 
+    assert {:ok, ^mob} = AsGrimtooth.begin_attempt(mob, target, 1, definition)
     assert :ok = AsGrimtooth.validate(mob, target, 1, definition)
   end
 
@@ -120,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
     assert :ok = Manager.register(manager, trap)
     assert [cell] = Storage.get_cells_by_group(trap.group_id)
 
-    assert {:error, :invalid_target} =
+    assert {:error, :target_restricted} =
              Interpreter.cast(caster, 137, 1, {:unit, cell.cell_id})
 
     assert caster.stats.current_state.sp == 20
