@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewall do
 
   Each cell starts with 200 plus 200 per level HP and loses 50 HP every second. The unit
   manager owns the cell mutation, visibility updates, target indexes, and terrain
-  cleanup; this skill only describes its placement and refuses to cast under Volcano.
+  cleanup; this skill only describes its placement. A player standing under
+  Volcano may not cast it, while a monster's cast has no such row.
   The wall stops movement but permits projectiles.
 
   Renewal and pre-renewal agree on the wall: 20 SP and a 4 s per level plus 4 s lifetime.
@@ -12,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewall do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 87,
     name: :wz_icewall,
-    requires: [:player_state],
+    requires: [],
     display_name: "Ice Wall",
     max_level: 10,
     target_type: :ground,

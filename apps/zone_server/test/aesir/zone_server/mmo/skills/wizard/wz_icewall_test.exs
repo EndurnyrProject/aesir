@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewallTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewall
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -29,6 +30,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewallTest do
       cells: [],
       state: %{}
     }
+  end
+
+  test "a monster can cast it: the Volcano refusal is a player's" do
+    assert :ok = Castability.check(WzIcewall.definition(), :mob)
+  end
+
+  test "a player under Volcano may not cast it" do
+    player = %{character_id: @caster_id, option: 0}
+
+    assert :ok = WzIcewall.skilluse_check(player, {:ground, 150, 150}, 1, WzIcewall.definition())
+
+    :ok = StatusStorage.apply_status(:player, @caster_id, :sc_volcano, val1: 1, duration: 60_000)
+
+    assert {:error, :status_blocked} =
+             WzIcewall.skilluse_check(player, {:ground, 150, 150}, 1, WzIcewall.definition())
   end
 
   test "places five directional targetable terrain cells with canonical HP and decay" do

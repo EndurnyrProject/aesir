@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
   @moduledoc """
   Falcon Assault sends an equipped falcon for one neutral misc hit that never misses.
+  A player needs an equipped falcon when the cast begins; a monster has none to
+  check and casts it with no Steel Crow bonus, using its own AGI, DEX and INT.
 
   Both modes deal five Blitz Beat base hits times `(150 + 70 * level)%`.
   Renewal's base uses AGI, DEX, Steel Crow and the Assault level; pre-renewal
@@ -10,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 381,
     name: :sn_falconassault,
+    requires: [],
     display_name: "Falcon Assault",
     max_level: 5,
     ignore_noncrit_atk_bonus: [renewal: true, pre_renewal: false],
@@ -30,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSteelcrow
   alias Aesir.ZoneServer.Mmo.Skills.Sniper.Formulas
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -38,13 +42,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
 
   @steel_crow_id HtSteelcrow.definition(:renewal).id
 
-  @doc "The cast begins only with a falcon."
+  @doc "A player's cast begins only with a falcon; a monster's has no such row."
   @impl Active
-  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, :falcon_not_equipped}
+  @spec begin_attempt(
+          PlayerState.t() | MobState.t(),
+          Active.target(),
+          pos_integer(),
+          Definition.t()
+        ) ::
+          {:ok, PlayerState.t() | MobState.t()} | {:error, :falcon_not_equipped}
   def begin_attempt(%PlayerState{} = caster, _target, _level, _definition) do
     if FalconHandler.falcon?(caster), do: {:ok, caster}, else: {:error, :falcon_not_equipped}
   end
+
+  def begin_attempt(%MobState{} = caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -67,5 +78,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
       :ok -> {:ok, caster}
       {:error, _reason} = error -> error
     end
+  end
+
+  @impl Active
+  @spec mob_cast(MobState.t(), term(), pos_integer(), Definition.t(), map()) ::
+          :ok | {:error, atom()}
+  def mob_cast(%MobState{} = caster, {:unit, type, id}, level, definition, _row) do
+    stats = MobState.get_stats(caster)
+
+    Combat.execute_misc_attack(caster, {type, id},
+      skill_id: definition.id,
+      skill_level: level,
+      base_damage:
+        Formulas.falcon_assault_damage(level, 0, %{agi: stats.agi, dex: stats.dex, int: stats.int}),
+      element: :neutral
+    )
   end
 end
