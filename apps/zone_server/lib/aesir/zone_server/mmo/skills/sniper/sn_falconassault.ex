@@ -38,11 +38,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassault do
 
   @steel_crow_id HtSteelcrow.definition(:renewal).id
 
+  @doc "The cast begins only with a falcon."
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :falcon_not_equipped}
-  def validate(%PlayerState{} = caster, _target, _level, _definition) do
-    if FalconHandler.falcon?(caster), do: :ok, else: {:error, :falcon_not_equipped}
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :falcon_not_equipped}
+  def begin_attempt(%PlayerState{} = caster, _target, _level, _definition) do
+    if FalconHandler.falcon?(caster), do: {:ok, caster}, else: {:error, :falcon_not_equipped}
   end
 
   @impl Active

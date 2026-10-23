@@ -10,14 +10,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sniper.SnFalconassaultTest do
     definition = SnFalconassault.definition()
 
     assert {:error, :falcon_not_equipped} =
-             SnFalconassault.validate(caster, {:unit, 2001}, 5, definition)
+             SnFalconassault.begin_attempt(caster, {:unit, 2001}, 5, definition)
 
-    assert :ok =
-             SnFalconassault.validate(
-               %{caster | option: Option.id(:falcon)},
-               {:unit, 2001},
-               5,
-               definition
-             )
+    falconer = %{caster | option: Option.id(:falcon)}
+
+    assert {:ok, ^falconer} =
+             SnFalconassault.begin_attempt(falconer, {:unit, 2001}, 5, definition)
   end
 end
