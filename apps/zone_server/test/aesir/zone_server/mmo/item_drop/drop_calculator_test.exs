@@ -180,7 +180,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
       ]
 
       assert [
-               {501, 1, 150, 150, true, [%{id: 3, value: 7, param: 2}]},
+               {501, 1, 150, 150, true, %{random_options: [%{id: 3, value: 7, param: 2}]}},
                {501, 1, _x, _y, true}
              ] = DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
     end

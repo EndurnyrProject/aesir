@@ -3,6 +3,9 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
   use Mimic
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.ItemDrop.FloorCell
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Script.Ctx
@@ -49,7 +52,7 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
       account_id: 100,
       connection_pid: self(),
       session_pid: session,
-      game_state: %PlayerState{character_id: 1},
+      game_state: %PlayerState{character_id: 1, map_name: "prontera"},
       source: {:npc, :test}
     }
   end
@@ -125,6 +128,61 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
 
       assert %Ctx{status: {:error, :bad_bound}} =
                Dsl.getitembound2(ctx(s), @sword, 1, 1, 0, 0, 0, 0, 0, 0, 5)
+    end
+  end
+
+  describe "makeitem2/3" do
+    setup do
+      stub(MapCache, :get, fn
+        "prontera" -> {:ok, %{xs: 400, ys: 400}}
+        _other -> {:error, :not_found}
+      end)
+
+      stub(FloorCell, :around, fn _map, x, y -> {x + 1, y} end)
+
+      stub(Coordinator, :drop_items, fn map, items, x, y ->
+        send(self(), {:floor, map, items, x, y})
+        :ok
+      end)
+
+      :ok
+    end
+
+    test "puts the item with the type's attributes next to the cell", %{session: s} do
+      Dsl.makeitem2(ctx(s), @sword, 1, "prontera", 100, 120, 0, 99, 2, 4001, 0, 0, 0)
+
+      refine = max_refine()
+
+      assert_received {:floor, "prontera",
+                       [
+                         {@sword, 1, 101, 120, false,
+                          %{refine: ^refine, attribute: 2, cards: [4001, 0, 0, 0]}}
+                       ], 101, 120}
+
+      Dsl.makeitem3(ctx(s), @potion, 3, "this", 10, 10, 0, 5, 2, 0, 0, 0, 0, [
+        %{id: 3, value: 1, param: 0}
+      ])
+
+      assert_received {:floor, "prontera",
+                       [
+                         {@potion, 3, 11, 10, true,
+                          %{random_options: [%{id: 3, value: 1, param: 0}]}}
+                       ], 11, 10}
+    end
+
+    test "an unknown map does nothing and an unknown item stops the script", %{session: s} do
+      assert %Ctx{status: :ok} =
+               Dsl.makeitem2(ctx(s), @sword, 1, "nowhere", 1, 1, 1, 0, 0, 0, 0, 0, 0)
+
+      refute_received {:floor, _, _, _, _}
+
+      assert %Ctx{status: {:error, :unknown_item}} =
+               Dsl.makeitem2(ctx(s), 1, 1, "prontera", 1, 1, 1, 0, 0, 0, 0, 0, 0)
+
+      detached = %{ctx(s) | game_state: nil}
+
+      assert %Ctx{status: {:error, :no_player}} =
+               Dsl.makeitem2(detached, @sword, 1, "this", 1, 1, 1, 0, 0, 0, 0, 0, 0)
     end
   end
 

@@ -1771,6 +1771,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       setarray .@i[0], 3; setarray .@v[0], 5; setarray .@p[0], 0;
       getitem3 1101, 1, 1, 0, 0, 0, 0, 0, 0, .@i, .@v, .@p;
       getitembound3 1101, 1, 1, 0, 0, 0, 0, 0, 0, Bound_Account, .@i, .@v, .@p;
+      makeitem2 15066,1,"this",159,138,0,0,0,0,0,0,0;
+      makeitem3 1101,1,"prontera",10,10,1,4,0,0,0,0,0,.@i,.@v,.@p,1;
       close;
       """)
 
@@ -1780,6 +1782,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert flat =~ "rentitem2(501, 60, 1, 0, 0, 0, 0, 0, 0)"
     assert flat =~ "getitem3( ctx, 1101, 1, 1, 0, 0, 0, 0, 0, 0, random_options("
     assert flat =~ "getitembound3( 1101, 1, 1, 0, 0, 0, 0, 0, 0, 1, random_options("
+    assert flat =~ ~r/makeitem2\((ctx, )?15066, 1, "this", 159, 138, 0, 0, 0, 0, 0, 0, 0\)/
+
+    assert flat =~
+             ~r/makeitem3\(( ctx,)? 1101, 1, "prontera", 10, 10, 1, 4, 0, 0, 0, 0, 0, random_options\(.*\), 1 \)/
+
     refute src =~ "Todo."
   end
 

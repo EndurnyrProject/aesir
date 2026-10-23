@@ -109,6 +109,30 @@ defmodule Aesir.ZoneServer.Map.CoordinatorGroundItemTest do
       assert %GroundItem{random_options: []} = Enum.find(items, &(&1.nameid == 502))
     end
 
+    test "keeps a drop entry's refine, attribute and cards, and picking it up grants them" do
+      extras = %{refine: 7, attribute: 1, cards: [4001, 0, 0, 0]}
+
+      Coordinator.handle_cast(
+        {:drop_items, [{1101, 1, 50, 50, true, extras}], 50, 50, []},
+        coordinator_state()
+      )
+
+      [item] = GroundItemStore.query_in_range(@map_name, 50, 50, 0)
+
+      assert %GroundItem{refine: 7, attribute: 1, cards: [4001, 0, 0, 0]} = item
+      assert GroundItem.drop_entry(item) == {1101, 1, 50, 50, true, extras}
+
+      assert GroundItem.grant_attrs(item) == %{
+               identify: 1,
+               refine: 7,
+               attribute: 1,
+               card0: 4001,
+               card1: 0,
+               card2: 0,
+               card3: 0
+             }
+    end
+
     test "stamps normal ownership with cumulative deadlines" do
       set_windows(
         item_first_get_time: 30,

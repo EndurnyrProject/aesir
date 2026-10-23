@@ -29,6 +29,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
     :dropped_at,
     owners: nil,
     unlock_at: nil,
+    refine: 0,
+    attribute: 0,
+    cards: [0, 0, 0, 0],
     random_options: []
   ]
 
@@ -55,23 +58,37 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
           dropped_at: integer(),
           owners: owners(),
           unlock_at: unlock_at(),
+          refine: non_neg_integer(),
+          attribute: non_neg_integer(),
+          cards: [integer()],
           random_options: ItemOptions.t()
         }
 
   @typedoc """
+  The attributes a ground item carries beyond its id and identify flag, when
+  they are not the defaults (unrefined, no attribute, no cards, no options).
+  """
+  @type extras :: %{
+          optional(:refine) => non_neg_integer(),
+          optional(:attribute) => non_neg_integer(),
+          optional(:cards) => [integer()],
+          optional(:random_options) => ItemOptions.t()
+        }
+
+  @typedoc """
   An item to place on the ground at a cell: the plain item, or the item with
-  its random options.
+  its non-default attributes.
   """
   @type drop_entry ::
           {non_neg_integer(), pos_integer(), integer(), integer(), boolean()}
-          | {non_neg_integer(), pos_integer(), integer(), integer(), boolean(), ItemOptions.t()}
+          | {non_neg_integer(), pos_integer(), integer(), integer(), boolean(), extras()}
 
   @doc """
   Builds a `GroundItem`, generating a fresh unique `id`, a random sub-cell
   position, and stamping `dropped_at` with the current monotonic time in
   milliseconds. Pass `owners:` and `unlock_at:` to attach an immutable ownership
-  stamp; omit both for a public item. `random_options:` carries the item's
-  option slots.
+  stamp; omit both for a public item. `refine:`, `attribute:`, `cards:` and
+  `random_options:` carry the item's attributes.
   """
   @spec new(
           non_neg_integer(),
@@ -94,6 +111,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
       dropped_at: System.monotonic_time(:millisecond),
       owners: Keyword.get(opts, :owners),
       unlock_at: Keyword.get(opts, :unlock_at),
+      refine: Keyword.get(opts, :refine, 0),
+      attribute: Keyword.get(opts, :attribute, 0),
+      cards: Keyword.get(opts, :cards, [0, 0, 0, 0]),
       random_options: Keyword.get(opts, :random_options, [])
     }
   end
@@ -101,31 +121,59 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItem do
   @doc "Returns the drop entry that puts `item` back on its own cell."
   @spec drop_entry(t()) :: drop_entry()
   def drop_entry(%__MODULE__{} = item),
-    do: entry(item.nameid, item.amount, item.x, item.y, item.identified, item.random_options)
+    do: entry(item.nameid, item.amount, item.x, item.y, item.identified, extras(item))
 
-  @doc "Returns the drop entry of an item at a cell, with its options only when it has any."
+  @doc """
+  Returns the drop entry of an item at a cell, carrying `extras` (or just
+  random options) only when they differ from the defaults.
+  """
   @spec entry(
           non_neg_integer(),
           pos_integer(),
           integer(),
           integer(),
           boolean(),
-          ItemOptions.t()
+          extras() | ItemOptions.t()
         ) :: drop_entry()
-  def entry(nameid, amount, x, y, identified, []), do: {nameid, amount, x, y, identified}
+  def entry(nameid, amount, x, y, identified, options) when is_list(options),
+    do: entry(nameid, amount, x, y, identified, %{random_options: options})
 
-  def entry(nameid, amount, x, y, identified, options),
-    do: {nameid, amount, x, y, identified, options}
+  def entry(nameid, amount, x, y, identified, extras) do
+    case non_default(extras) do
+      empty when empty == %{} -> {nameid, amount, x, y, identified}
+      extras -> {nameid, amount, x, y, identified, extras}
+    end
+  end
 
   @doc """
   Returns the inventory grant attributes of picking `item` up: its identify
-  flag, with its random options when it has any.
+  flag, with its other attributes when it has any.
   """
   @spec grant_attrs(t()) :: boolean() | map()
-  def grant_attrs(%__MODULE__{random_options: []} = item), do: item.identified
+  def grant_attrs(%__MODULE__{} = item) do
+    case extras(item) do
+      empty when empty == %{} ->
+        item.identified
 
-  def grant_attrs(%__MODULE__{} = item),
-    do: %{identify: if(item.identified, do: 1, else: 0), random_options: item.random_options}
+      extras ->
+        {cards, extras} = Map.pop(extras, :cards, [0, 0, 0, 0])
+        [c0, c1, c2, c3] = cards
+
+        Map.merge(extras, %{
+          identify: if(item.identified, do: 1, else: 0),
+          card0: c0,
+          card1: c1,
+          card2: c2,
+          card3: c3
+        })
+    end
+  end
+
+  @defaults %{refine: 0, attribute: 0, cards: [0, 0, 0, 0], random_options: []}
+
+  defp extras(item), do: non_default(Map.take(item, Map.keys(@defaults)))
+
+  defp non_default(extras), do: Map.reject(extras, fn {key, value} -> @defaults[key] == value end)
 
   # Mirrors rAthena's map_addflooritem, which scatters stacked drops across a
   # 4x4 sub-grid within the cell: each axis is one of {3, 6, 9, 12}.

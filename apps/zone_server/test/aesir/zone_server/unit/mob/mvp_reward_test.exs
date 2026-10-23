@@ -250,7 +250,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
                        {:script_apply,
                         {:give_item2, 1001, 1, %{identify: 1, random_options: ^options}}}}}
 
-      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true, ^options}], 42, 77, _opts}
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true, %{random_options: ^options}}],
+                      42, 77, _opts}
     end
   end
 

@@ -165,6 +165,10 @@ kickwaitingroomall/2
 killmonster/3
 killmonsterall/2
 logmes/2
+makeitem2/13
+makeitem2/14
+makeitem3/14
+makeitem3/15
 mapannounce/4
 mapannounce/5
 mapwarp/5

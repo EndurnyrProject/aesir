@@ -108,7 +108,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   Places rolled drops on the ground around `{x, y}`.
 
   Each entry is a `GroundItem.drop_entry/0`, `{nameid, amount, item_x, item_y,
-  identified}` with the item's random options as an optional sixth element, as
+  identified}` with the item's other attributes (or just its random options) as
+  an optional sixth element, as
   produced by `DropCalculator` (scatter already resolved). The coordinator is the single
   writer of the ground-item store, so placement routes through here. Pass an
   `ownership:` option to stamp pickup rights onto every item in the call.
@@ -282,8 +283,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     stamp = ownership_stamp(opts)
 
     Enum.each(items, fn entry ->
-      {nameid, amount, item_x, item_y, identified, options} = with_options(entry)
-      item_opts = Keyword.put(stamp, :random_options, options)
+      {nameid, amount, item_x, item_y, identified, extras} = with_extras(entry)
+      item_opts = Keyword.merge(stamp, Map.to_list(extras))
       item = GroundItem.new(nameid, amount, item_x, item_y, identified, item_opts)
       GroundItemStore.put(state.map_name, item)
 
@@ -348,10 +349,14 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     %{state | respawn_timers: new_timers}
   end
 
-  defp with_options({nameid, amount, x, y, identified}),
-    do: {nameid, amount, x, y, identified, []}
+  defp with_extras({nameid, amount, x, y, identified}),
+    do: {nameid, amount, x, y, identified, %{}}
 
-  defp with_options({_nameid, _amount, _x, _y, _identified, _options} = entry), do: entry
+  defp with_extras({_nameid, _amount, _x, _y, _identified, extras} = entry) when is_map(extras),
+    do: entry
+
+  defp with_extras({nameid, amount, x, y, identified, options}),
+    do: {nameid, amount, x, y, identified, %{random_options: options}}
 
   defp ownership_stamp(opts) do
     case Keyword.fetch(opts, :ownership) do

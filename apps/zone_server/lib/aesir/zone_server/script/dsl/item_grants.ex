@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
   @moduledoc """
   The attribute-carrying item grant buildins for the script DSL: `getitem2`,
-  `getitem3`, `getitembound2`, `getitembound3`, `rentitem2` and `rentitem3`.
+  `getitem3`, `getitembound2`, `getitembound3`, `rentitem2` and `rentitem3`,
+  and the floor item buildins `makeitem2` and `makeitem3`.
 
   Each grants an item with an identify flag, a refine level, an element
   attribute and four card values, and the `3` variants random options too.
@@ -20,6 +21,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.ItemOptions
+  alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.ItemDrop.FloorCell
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Script.Ctx
@@ -191,6 +196,111 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
   def rentitem3(ctx, item, seconds, iden, ref, attr, c1, c2, c3, c4, options, account_id \\ nil) do
     extra = %{expire_seconds: seconds, random_options: options}
     grant(ctx, item, 1, {iden, ref, attr, c1, c2, c3, c4}, extra, account_id, :rentitem)
+  end
+
+  @doc """
+  Puts `amount` of `item` with explicit attributes on the floor of `map`
+  (`"this"` is the attached player's map) next to `{x, y}` (rAthena
+  `makeitem2`), owned by nobody. The trailing drop-effect flag is accepted;
+  the floor item message has no effect field.
+  """
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  @spec makeitem2(
+          Ctx.t(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer()
+        ) :: Ctx.t()
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def makeitem2(ctx, item, amount, map, x, y, iden, ref, attr, c1, c2, c3, c4, _effect \\ 0),
+    do: make(ctx, item, amount, map, {x, y}, {iden, ref, attr, c1, c2, c3, c4}, [])
+
+  @doc "`makeitem2` with random options (rAthena `makeitem3`)."
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  @spec makeitem3(
+          Ctx.t(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          ItemOptions.t(),
+          integer()
+        ) :: Ctx.t()
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def makeitem3(
+        ctx,
+        item,
+        amount,
+        map,
+        x,
+        y,
+        iden,
+        ref,
+        attr,
+        c1,
+        c2,
+        c3,
+        c4,
+        options,
+        _effect \\ 0
+      ),
+      do: make(ctx, item, amount, map, {x, y}, {iden, ref, attr, c1, c2, c3, c4}, options)
+
+  defp make(%Ctx{status: {:error, _}} = ctx, _item, _amount, _map, _cell, _fixed, _options),
+    do: ctx
+
+  defp make(ctx, item, amount, map, {x, y}, fixed, options) do
+    with {:ok, definition} <- Items.by_id(item),
+         {:ok, map_name} <- floor_map(ctx, map) do
+      attrs = attributes(definition, fixed)
+      {cx, cy} = FloorCell.around(map_name, x, y)
+
+      extras = %{
+        refine: attrs.refine,
+        attribute: attrs.attribute,
+        cards: [attrs.card0, attrs.card1, attrs.card2, attrs.card3],
+        random_options: options
+      }
+
+      if amount > 0 do
+        entry = GroundItem.entry(item, amount, cx, cy, attrs.identify != 0, extras)
+        Coordinator.drop_items(map_name, [entry], cx, cy)
+      end
+
+      ctx
+    else
+      :error -> Ctx.halt(ctx, :unknown_item)
+      :no_player -> Ctx.halt(ctx, :no_player)
+      :unknown_map -> ctx
+    end
+  end
+
+  defp floor_map(%Ctx{game_state: nil}, "this"), do: :no_player
+  defp floor_map(%Ctx{game_state: game_state}, "this"), do: {:ok, game_state.map_name}
+
+  defp floor_map(_ctx, map) do
+    case MapCache.get(map) do
+      {:ok, _map} -> {:ok, String.replace_suffix(map, ".gat", "")}
+      _ -> :unknown_map
+    end
   end
 
   defp bound_grant(ctx, item, qty, fixed, bound, extra, account_id) when bound in 0..4,
