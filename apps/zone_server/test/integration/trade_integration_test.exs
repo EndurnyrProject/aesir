@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.StorageDepositRequest
   alias Aesir.Net.StorageWithdrawRequest
+  alias Aesir.Net.SystemNotice
   alias Aesir.Net.TradeAddItem
   alias Aesir.Net.TradeCancel
   alias Aesir.Net.TradeCancelled
@@ -568,6 +569,8 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
 
     simulate_incoming_message(trader.pid, %UseItem{index: client_index(trader.pid, potion.id)})
     assert inventory_item(trader.pid, potion.id).amount == 1
+    # An item use while trading answers with the busy notice and uses nothing.
+    assert_receive {:packet_sent, %SystemNotice{id: :SYSTEM_NOTICE_ID_BUSY}, _}, 1_000
 
     simulate_incoming_message(trader.pid, %EquipItem{
       index: client_index(trader.pid, sword.id),

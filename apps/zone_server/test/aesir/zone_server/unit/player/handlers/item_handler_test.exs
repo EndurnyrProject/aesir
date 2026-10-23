@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ItemSkillReady
   alias Aesir.Net.ItemUseResult
+  alias Aesir.Net.ProgressBarAbort
   alias Aesir.Net.SystemNotice
   alias Aesir.Net.UseItem
   alias Aesir.StatusActionFixture
@@ -559,6 +560,84 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       refute_received {:send, :gameplay, {:item_removed, _}}
     end
   end
+
+  describe "handle_use_item/2 while busy" do
+    for {label, busy} <- [
+          {"trading", %{trade: %{pid: nil}}},
+          {"vending", %{action_state: :vending}},
+          {"in a chat room", %{waiting_room: 7}}
+        ] do
+      @busy busy
+      test "a player #{label} gets the busy notice and no result" do
+        reject(&InventoryOps.remove/4)
+        state = busy(state_with_potion(), @busy)
+
+        assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+        assert_received {:send, :gameplay,
+                         {:system_notice, %SystemNotice{id: :SYSTEM_NOTICE_ID_BUSY}}}
+
+        refute_received {:send, _, {:item_use_result, _}}
+      end
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a trade inside an NPC dialog is left to the dialog's checks" do
+      stub_potion()
+      expect_potion_consumed()
+
+      state =
+        state_with_potion()
+        |> busy(%{trade: %{pid: nil}})
+        |> Map.put(:interaction_lock, {self(), make_ref(), 0x5000_0001})
+
+      assert {:noreply, committed} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+      refute_received {:send, :gameplay, {:system_notice, _}}
+    end
+  end
+
+  describe "handle_use_item/2 during a progress bar" do
+    for mode <- [:renewal, :pre_renewal] do
+      @tag game_mode: mode
+      test "#{mode}: cancels the bar, uses nothing and sends no busy notice" do
+        reject(&InventoryOps.remove/4)
+
+        state =
+          state_with_potion()
+          |> Map.merge(%{
+            interaction_lock: {self(), make_ref(), 0x5000_0001},
+            npc_item_flag: true
+          })
+          |> SessionState.hold_progress_bar(0x5000_0001, 5)
+
+        assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+        assert_received {:send, :world,
+                         {:progress_bar_abort, %ProgressBarAbort{npc_id: 0x5000_0001}}}
+
+        assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
+        refute_received {:send, :gameplay, {:system_notice, _}}
+      end
+    end
+
+    @tag game_mode: :renewal
+    test "an empty slot in a refusing dialog still gets the busy notice first" do
+      state = Map.put(state_with_potion(), :interaction_lock, {self(), make_ref(), 0x5000_0001})
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index + 1, state)
+
+      assert_received {:send, :gameplay,
+                       {:system_notice, %SystemNotice{id: :SYSTEM_NOTICE_ID_BUSY}}}
+
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false, reason: 4}}}
+    end
+  end
+
+  defp busy(state, %{trade: trade}), do: Map.put(state, :trade, trade)
+
+  defp busy(state, fields),
+    do: Map.update!(state, :game_state, &Map.merge(&1, fields))
 
   describe "handle_use_item/2 in an NPC dialog" do
     @describetag game_mode: :renewal

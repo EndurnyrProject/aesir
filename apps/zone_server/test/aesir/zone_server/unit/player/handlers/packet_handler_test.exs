@@ -119,13 +119,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
       assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1000, x: 5, y: 6}}}
     end
 
-    test "a member's item use, pickup, and attacks are dropped", %{state: state} do
-      reject(ItemHandler, :handle_use_item, 2)
+    test "a member's pickup and attacks are dropped", %{state: state} do
       reject(CombatActionHandler, :handle_attack_request, 3)
       reject(PickupHandler, :handle_pickup, 2)
 
       for message <- [
-            %UseItem{index: 2},
             %PickupItemRequest{ground_id: 77},
             %ActionRequest{target_id: 9, action: 0},
             %ActionRequest{target_id: 9, action: 7}
@@ -134,6 +132,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
       end
 
       refute_received {:send, _, _}
+    end
+
+    test "a member's item use reaches the item handler, which refuses it", %{state: state} do
+      expect(ItemHandler, :handle_use_item, fn 2, s -> {:noreply, s} end)
+      assert {:noreply, ^state} = PacketHandler.handle_message(%UseItem{index: 2}, state)
     end
 
     test "a member can still sit and trade", %{state: state} do

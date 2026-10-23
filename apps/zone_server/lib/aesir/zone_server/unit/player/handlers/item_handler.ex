@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
   alias Aesir.Commons.GameMode
   alias Aesir.Net.ItemUseResult
+  alias Aesir.Net.ProgressBarAbort
   alias Aesir.Net.SystemNotice
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
@@ -46,19 +47,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   Processes a use-item request for the player session.
 
   `client_index` is the client-side inventory index (server index + 2).
+
+  A player trading or vending outside an NPC dialog, or in a chat room, is
+  refused with the busy notice and no result. Inside an NPC dialog, a running
+  progress bar is cancelled instead of using the item; otherwise the dialog
+  refuses the item unless its script allows item use and no work is in
+  progress (renewal shows the busy notice). Both send a failed result.
   """
   @spec handle_use_item(non_neg_integer(), map()) :: {:noreply, map()}
   def handle_use_item(client_index, %{game_state: game_state} = state) do
     server_index = PlayerState.server_index(client_index)
 
-    with {:ok, item} <- fetch_item(game_state.inventory, server_index),
-         {:ok, definition} <- fetch_definition(item.nameid),
+    with :ok <- not_busy(state),
          :ok <- item_use_enabled?(state),
+         {:ok, item} <- fetch_item(game_state.inventory, server_index),
+         {:ok, definition} <- fetch_definition(item.nameid),
          :ok <- item_use_allowed?(game_state) do
       use_definition(definition, client_index, server_index, state)
     else
-      {:error, reason} -> reject(client_index, reason, state)
+      :busy ->
+        MessageRouter.send_to(state.connection_pid, %SystemNotice{id: :SYSTEM_NOTICE_ID_BUSY})
+        {:noreply, state}
+
+      {:error, reason} ->
+        reject(client_index, reason, state)
     end
+  end
+
+  defp not_busy(%{game_state: game_state} = state) do
+    trading? = Map.get(state, :trade) != nil or game_state.action_state == :vending
+
+    if (trading? and not SessionState.npc_dialog?(state)) or game_state.waiting_room != nil,
+      do: :busy,
+      else: :ok
   end
 
   defp use_definition(%{type: :card}, _client_index, server_index, state) do
@@ -290,14 +311,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
       else: :ok
   end
 
-  # While an NPC dialog holds the player, item use needs the script's item-use
-  # flag and no held work flag.
-  @spec item_use_enabled?(map()) :: :ok | {:error, :disabled}
+  # While an NPC dialog holds the player, the first item use cancels a running
+  # progress bar; otherwise item use needs the script's item-use flag and no
+  # held work flag.
+  @spec item_use_enabled?(map()) :: :ok | {:error, :disabled | :progress_bar}
   defp item_use_enabled?(state) do
-    if SessionState.npc_dialog?(state) and
-         (SessionState.work_in_progress?(state) or not SessionState.npc_item_flag?(state)),
-       do: {:error, :disabled},
-       else: :ok
+    cond do
+      not SessionState.npc_dialog?(state) ->
+        :ok
+
+      Map.get(state, :progress_bar) != nil ->
+        MessageRouter.send_to(state.connection_pid, %ProgressBarAbort{
+          npc_id: state.progress_bar.npc_gid
+        })
+
+        {:error, :progress_bar}
+
+      SessionState.work_in_progress?(state) or not SessionState.npc_item_flag?(state) ->
+        {:error, :disabled}
+
+      true ->
+        :ok
+    end
   end
 
   @spec item_use_allowed?(PlayerState.t()) :: :ok | {:error, :status_blocked}
@@ -313,6 +348,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   defp code(:not_found), do: 1
   defp code(:not_usable), do: 2
   defp code(:disabled), do: 4
+  defp code(:progress_bar), do: 4
   defp code(:restricted_area), do: 5
   defp code(:status_blocked), do: 3
   defp code(_reason), do: 3

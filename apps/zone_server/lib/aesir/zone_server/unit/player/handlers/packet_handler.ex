@@ -135,15 +135,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
             when is_struct(state.game_state, PlayerState) and
                    state.game_state.waiting_room != nil
 
-  # Chat-room members cannot walk, use or pick up items, or attack (the move and
+  # Chat-room members cannot walk, pick up items, or attack (the move and
   # attack clauses are separate below); sitting, trading, and room operations
-  # still work. Skill requests settle the chat room and a trade themselves.
-  @room_frozen [UseItem, PickupItemRequest]
+  # still work. Skill requests and item use settle the chat
+  # room and a trade themselves.
+  @room_frozen [PickupItemRequest]
 
   @trade_frozen [
     MoveRequest,
     ActionRequest,
-    UseItem,
     CardComposeRequest,
     EquipItem,
     UnequipItem,
