@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -42,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
     caster = caster(1401)
     stub_weapon(1401, :one_handed_spear)
-    assert :ok = LkSpiralpierce.validate(caster, {:unit, 6_160}, 5, definition)
+    assert :ok = PlayerCaster.check_weapon(caster, definition)
 
     stub(Combat, :resolve_combatant, fn 6_160 ->
       {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_160, size: :medium)}
@@ -75,7 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     }
 
     stub_weapon(1401, :one_handed_spear)
-    assert :ok = LkSpiralpierce.validate(caster, {:unit, 6_160}, 5, definition)
+    assert :ok = PlayerCaster.check_weapon(caster, definition)
 
     stub(Combat, :resolve_combatant, fn 6_160 ->
       {:ok, CombatTestHelper.create_mob_combatant(unit_id: 6_160, size: :small)}
@@ -101,15 +102,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
     stub_weapon(1101, :one_handed_sword)
 
-    assert {:error, :wrong_weapon} =
-             LkSpiralpierce.validate(caster(1101), {:unit, 6_160}, 1, definition)
+    assert {:error, :wrong_weapon} = PlayerCaster.check_weapon(caster(1101), definition)
   end
 
   @tag game_mode: :renewal
   test "Renewal admits a sword wielder" do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)
     stub_weapon(1101, :one_handed_sword)
-    assert :ok = LkSpiralpierce.validate(caster(1101), {:unit, 6_160}, 1, definition)
+    assert :ok = PlayerCaster.check_weapon(caster(1101), definition)
   end
 
   @tag game_mode: :renewal

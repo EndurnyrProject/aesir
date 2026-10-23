@@ -58,17 +58,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
   @ankle_ms 1_000
 
   @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :wrong_weapon}
-  def validate(%PlayerState{stats: %{equipment: equipment}}, _target, _level, definition) do
-    if Stats.weapon_type(equipment) in definition.require_weapon,
-      do: :ok,
-      else: {:error, :wrong_weapon}
-  end
-
-  def validate(%MobState{}, _target, _level, _definition), do: :ok
-
-  @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, atom()}
   def cast(%PlayerState{} = caster, {:unit, target_id}, level, definition) do
