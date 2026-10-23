@@ -175,61 +175,61 @@
   script: bonus(ctx, {:addele, :undead}, random_option(ctx, :value))
 - id: 56
   name: MDAMAGE_PROPERTY_NOTHING_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :neutral}, random_option(ctx, :value))
 - id: 57
   name: MDAMAGE_PROPERTY_NOTHING_TARGET
   script: bonus(ctx, {:magic_addele, :neutral}, random_option(ctx, :value))
 - id: 58
   name: MDAMAGE_PROPERTY_WATER_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :water}, random_option(ctx, :value))
 - id: 59
   name: MDAMAGE_PROPERTY_WATER_TARGET
   script: bonus(ctx, {:magic_addele, :water}, random_option(ctx, :value))
 - id: 60
   name: MDAMAGE_PROPERTY_GROUND_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :earth}, random_option(ctx, :value))
 - id: 61
   name: MDAMAGE_PROPERTY_GROUND_TARGET
   script: bonus(ctx, {:magic_addele, :earth}, random_option(ctx, :value))
 - id: 62
   name: MDAMAGE_PROPERTY_FIRE_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :fire}, random_option(ctx, :value))
 - id: 63
   name: MDAMAGE_PROPERTY_FIRE_TARGET
   script: bonus(ctx, {:magic_addele, :fire}, random_option(ctx, :value))
 - id: 64
   name: MDAMAGE_PROPERTY_WIND_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :wind}, random_option(ctx, :value))
 - id: 65
   name: MDAMAGE_PROPERTY_WIND_TARGET
   script: bonus(ctx, {:magic_addele, :wind}, random_option(ctx, :value))
 - id: 66
   name: MDAMAGE_PROPERTY_POISON_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :poison}, random_option(ctx, :value))
 - id: 67
   name: MDAMAGE_PROPERTY_POISON_TARGET
   script: bonus(ctx, {:magic_addele, :poison}, random_option(ctx, :value))
 - id: 68
   name: MDAMAGE_PROPERTY_SAINT_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :holy}, random_option(ctx, :value))
 - id: 69
   name: MDAMAGE_PROPERTY_SAINT_TARGET
   script: bonus(ctx, {:magic_addele, :holy}, random_option(ctx, :value))
 - id: 70
   name: MDAMAGE_PROPERTY_DARKNESS_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :shadow}, random_option(ctx, :value))
 - id: 71
   name: MDAMAGE_PROPERTY_DARKNESS_TARGET
   script: bonus(ctx, {:magic_addele, :shadow}, random_option(ctx, :value))
 - id: 72
   name: MDAMAGE_PROPERTY_TELEKINESIS_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :ghost}, random_option(ctx, :value))
 - id: 73
   name: MDAMAGE_PROPERTY_TELEKINESIS_TARGET
   script: bonus(ctx, {:magic_addele, :ghost}, random_option(ctx, :value))
 - id: 74
   name: MDAMAGE_PROPERTY_UNDEAD_USER
-  script:
+  script: bonus(ctx, {:magic_sub_def_ele, :undead}, random_option(ctx, :value))
 - id: 75
   name: MDAMAGE_PROPERTY_UNDEAD_TARGET
   script: bonus(ctx, {:magic_addele, :undead}, random_option(ctx, :value))
@@ -499,7 +499,7 @@
   script: bonus(ctx, :crit_atk_rate, random_option(ctx, :value))
 - id: 165
   name: DAMAGE_CRI_USER
-  script:
+  script: bonus(ctx, :crit_def_rate, random_option(ctx, :value))
 - id: 166
   name: RANGE_ATTACK_DAMAGE_TARGET
   script: bonus(ctx, :long_atk_rate, random_option(ctx, :value))
@@ -568,13 +568,13 @@
   script: bonus(ctx, {:magic_addsize, :large}, random_option(ctx, :value))
 - id: 190
   name: MDAMAGE_SIZE_SMALL_USER
-  script:
+  script: bonus(ctx, {:magic_subsize, :small}, random_option(ctx, :value))
 - id: 191
   name: MDAMAGE_SIZE_MIDIUM_USER
-  script:
+  script: bonus(ctx, {:magic_subsize, :medium}, random_option(ctx, :value))
 - id: 192
   name: MDAMAGE_SIZE_LARGE_USER
-  script:
+  script: bonus(ctx, {:magic_subsize, :large}, random_option(ctx, :value))
 - id: 193
   name: ATTR_TOLERACE_ALL
   script: bonus(ctx, {:subele, :all}, random_option(ctx, :value))
@@ -646,7 +646,7 @@
   script: bonus(ctx, {:ignore_mdef_race, :player_doram}, random_option(ctx, :value))
 - id: 218
   name: REFLECT_DAMAGE_PERCENT
-  script:
+  script: bonus(ctx, :reduce_damage_return, random_option(ctx, :value))
 - id: 219
   name: MELEE_ATTACK_DAMAGE_TARGET
   script: bonus(ctx, :short_atk_rate, random_option(ctx, :value))
@@ -751,7 +751,7 @@
   script: bonus(ctx, :mres, random_option(ctx, :value))
 - id: 253
   name: VAR_HEAL_PLUS
-  script:
+  script: bonus(ctx, :hplus, random_option(ctx, :value))
 - id: 254
   name: VAR_CRITICAL_RATE
   script: bonus(ctx, :crit_rate, random_option(ctx, :value))

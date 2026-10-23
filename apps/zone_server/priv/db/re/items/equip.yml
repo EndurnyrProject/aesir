@@ -144284,6 +144284,25 @@
   id: 24768
   locations:
     - shadow_weapon
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = bonus(ctx, :crt, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :crit_rate, 2)
+      ctx = bonus(ctx, :hplus, 2)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :crit_rate, 2)
+        ctx = bonus(ctx, :hplus, 2)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   name: Mega Blitz Shadow Weapon
   on_equip: |-
     ctx = bonus(ctx, :atk, refine(ctx))
@@ -144291,6 +144310,24 @@
     ctx = bonus(ctx, :aspd_rate, 5)
     ctx = bonus(ctx, :delay_rate, (0 - div(refine(ctx), 2)))
     ctx = if (refine(ctx) >= 7) do
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :crt, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :crit_rate, 2)
+      ctx = bonus(ctx, :hplus, 2)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :crit_rate, 2)
+        ctx = bonus(ctx, :hplus, 2)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
       ctx = bonus(ctx, :aspd_rate, 5)
       ctx = bonus(ctx, :aspd, 1)
       ctx = if (refine(ctx) >= 9) do
@@ -171053,6 +171090,34 @@
   slots: 1
   type: armor
   view: 547
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 2)
+    ctx = bonus(ctx, {:subrace, :all}, 3)
+    ctx = bonus(ctx, :max_sp_rate, -10)
+    ctx = bonus(ctx, {:subrace, :demi_human}, min(10, refine(ctx)))
+    ctx = bonus(ctx, {:subrace, :player_human}, min(10, refine(ctx)))
+    ctx = bonus(ctx, {:subrace, :player_doram}, min(10, refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :max_hp_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :short_weapon_damage_return, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, :aspd, 1)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 13) do
+      autobonus(ctx, %{primary: [{:bonus, {:magic_sub_def_ele, :all}, 40}, {:bonus, {:magic_sub_def_ele, :neutral}, -40}], trigger: :when_hit, secondary: [], battle_flag: 338}, 50, 3000)
+    else
+      ctx
+    end
+    ctx
   weight: 100
 - aegis_name: Fallen_Angel_feather
   armor_level: 1
@@ -181651,6 +181716,21 @@
   id: 401303
   locations:
     - costume_head_top
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 8)
+    ctx = bonus(ctx, :near_atk_def, 5)
+    ctx = bonus(ctx, :long_atk_def, 5)
+    ctx = bonus(ctx, {:magic_sub_def_ele, :all}, 5)
+    ctx = bonus(ctx, :short_atk_rate, -10)
+    ctx = bonus(ctx, :long_atk_rate, -10)
+    ctx = bonus(ctx, {:magic_atk_ele, :all}, -10)
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 10)
+    ctx = bonus(ctx, {:addrace, :player_human}, -10)
+    ctx = bonus(ctx, {:addrace, :player_doram}, -10)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, -10)
+    ctx = bonus(ctx, {:magic_addrace, :player_doram}, -10)
+    ctx
   name: Costume Ruck Keeper
   type: armor
   view: 2822
@@ -215008,6 +215088,10 @@
     - both_accessory
   name: Heroic Token (Arch Mage)
   on_equip: |-
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -7)
+    ctx = bonus(ctx, :hplus, 2)
+    ctx
     ctx = bonus(ctx, :matk_rate, 10)
     ctx = bonus(ctx, :atk_rate, 10)
     ctx = bonus(ctx, :varcast_rate, -10)
@@ -227835,6 +227919,10 @@
   attack: 170
   classes:
     - fourth
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 10)
+    ctx = bonus(ctx, :reduce_damage_return, (10 * refine(ctx)))
+    ctx
   equip_level_min: 210
   id: 540025
   jobs:

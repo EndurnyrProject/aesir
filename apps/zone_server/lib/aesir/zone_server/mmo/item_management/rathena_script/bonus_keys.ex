@@ -175,7 +175,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bnocastcancel" => :no_cast_cancel,
     "bnocastcancel2" => :no_cast_cancel2,
     "bnogemstone" => :no_gemstone,
-    "baddstealrate" => :add_steal_rate
+    "baddstealrate" => :add_steal_rate,
+    "bhplus" => :hplus,
+    "bcritdefrate" => :crit_def_rate,
+    "breducedamagereturn" => :reduce_damage_return
   }
 
   @max_destinations MapSet.new([:movement_speed, :perfect_hit_rate, :splash_range, :no_gemstone])
@@ -185,6 +188,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @ammunition_excluded_destinations MapSet.new([
                                       :add_steal_rate,
                                       :class_change,
+                                      :crit_def_rate,
+                                      :hplus,
+                                      :reduce_damage_return,
                                       :no_gemstone,
                                       :non_crit_atk_rate,
                                       :short_atk_rate,
@@ -198,6 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     :subrace,
     :subclass,
     :subsize,
+    :magic_subsize,
     :subrace2,
     :add_def_monster
   ]
@@ -277,7 +284,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bspdrainvaluerace" => %{family: :sp_drain_race, param: :race, unit: :sp},
     "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent},
     "bsubskill" => %{family: :sub_skill, param: :skill, unit: :percent},
-    "bsubdefele" => %{family: :sub_def_ele, param: :element, unit: :percent}
+    "bsubdefele" => %{family: :sub_def_ele, param: :element, unit: :percent},
+    "bmagicsubsize" => %{family: :magic_subsize, param: :size, unit: :percent},
+    "bmagicsubdefele" => %{family: :magic_sub_def_ele, param: :element, unit: :percent}
   }
 
   @value_keys %{

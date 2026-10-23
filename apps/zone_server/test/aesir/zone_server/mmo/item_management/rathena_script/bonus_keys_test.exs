@@ -98,6 +98,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :no_cast_cancel2,
     :no_gemstone,
     :add_steal_rate,
+    :hplus,
+    :crit_def_rate,
+    :reduce_damage_return,
     :sp_drain_rate,
     :sp_drain_percent
   ]
@@ -320,6 +323,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
   end
 
+  describe "random option keys on ammunition" do
+    test "only the magic defense-element resist accumulates from an ammunition script" do
+      assert BonusKeys.slot_destination({:magic_sub_def_ele, :fire}, :arrow) ==
+               {:magic_sub_def_ele, :fire}
+
+      assert BonusKeys.slot_destination({:magic_subsize, :large}, :arrow) == nil
+      assert BonusKeys.slot_destination(:crit_def_rate, :arrow) == nil
+      assert BonusKeys.slot_destination(:hplus, :arrow) == nil
+      assert BonusKeys.slot_destination(:reduce_damage_return, :arrow) == nil
+
+      assert BonusKeys.slot_destination({:magic_subsize, :large}, :shield) ==
+               {:magic_subsize, :large}
+    end
+  end
+
   describe "ammunition on-hit statuses" do
     test "bAddEff and bAddEff2 count for ranged attacks only; the rest are not armed" do
       assert BonusKeys.slot_destination({:add_eff, :sc_stun}, :arrow) ==
@@ -407,7 +425,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bspdrainvaluerace" => %{family: :sp_drain_race, param: :race, unit: :sp},
     "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent},
     "bsubskill" => %{family: :sub_skill, param: :skill, unit: :percent},
-    "bsubdefele" => %{family: :sub_def_ele, param: :element, unit: :percent}
+    "bsubdefele" => %{family: :sub_def_ele, param: :element, unit: :percent},
+    "bmagicsubsize" => %{family: :magic_subsize, param: :size, unit: :percent},
+    "bmagicsubdefele" => %{family: :magic_sub_def_ele, param: :element, unit: :percent}
   }
 
   # Families reachable only through the single-argument flag-param keys

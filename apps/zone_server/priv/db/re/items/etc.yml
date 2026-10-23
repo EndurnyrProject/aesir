@@ -40229,6 +40229,21 @@
   name: Grote Card
   type: card
   weight: 10
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, (5 - refine(ctx)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_subsize, :small}, 1)
+      ctx = bonus(ctx, :mdef, 8)
+      ctx = if (refine(ctx) >= 11) do
+        bonus(ctx, {:magic_subsize, :small}, 2)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Pierrotzoist_Card
   id: 300247
   locations:
@@ -45591,11 +45606,31 @@
   name: Automatic Modification Orb(Mirror Counter)
   subtype: enchant
   type: card
+  on_equip: |-
+    if (refine(ctx) >= 11) do
+      bonus(ctx, :reduce_damage_return, 7)
+    else
+      if (refine(ctx) >= 9) do
+        bonus(ctx, :reduce_damage_return, 4)
+      else
+        bonus(ctx, :reduce_damage_return, 2)
+      end
+    end
 - aegis_name: Automatic_Orb98
   id: 310179
   name: Automatic Modification Orb(Reflection Reject)
   subtype: enchant
   type: card
+  on_equip: |-
+    if (refine(ctx) >= 11) do
+      bonus(ctx, :reduce_damage_return, 9)
+    else
+      if (refine(ctx) >= 9) do
+        bonus(ctx, :reduce_damage_return, 5)
+      else
+        bonus(ctx, :reduce_damage_return, 3)
+      end
+    end
 - aegis_name: Warlock_Robe2
   id: 310180
   name: Warlock Stone II (Garment)
@@ -48307,16 +48342,76 @@
   name: Wolf Orb (Reflection Reject) Level 1
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :reduce_damage_return, 2)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :reduce_damage_return, 2)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :reduce_damage_return, 2)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :reduce_damage_return, 2)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Wolf_Orb_R_Reject_2
   id: 310512
   name: Wolf Orb (Reflection Reject) Level 2
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :reduce_damage_return, 3)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :reduce_damage_return, 3)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :reduce_damage_return, 3)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :reduce_damage_return, 3)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Wolf_Orb_R_Reject_3
   id: 310513
   name: Wolf Orb (Reflection Reject) Level 3
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :reduce_damage_return, 4)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :reduce_damage_return, 4)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :reduce_damage_return, 4)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :reduce_damage_return, 4)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Wolf_Orb_Force
   id: 310514
   name: Wolf Orb (Power Force)
@@ -49167,16 +49262,76 @@
   name: Wolf Orb (Mirror Counter) Level 1
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :reduce_damage_return, 2)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :reduce_damage_return, 2)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :reduce_damage_return, 3)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :reduce_damage_return, 3)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Wolf_Orb_M_Counter_2
   id: 310586
   name: Wolf Orb (Mirror Counter) Level 2
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :reduce_damage_return, 3)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :reduce_damage_return, 3)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :reduce_damage_return, 4)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :reduce_damage_return, 4)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Wolf_Orb_M_Counter_3
   id: 310587
   name: Wolf Orb (Mirror Counter) Level 3
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :reduce_damage_return, 4)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :reduce_damage_return, 4)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :reduce_damage_return, 5)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :reduce_damage_return, 5)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Wolf_Orb_Hp_1
   id: 310588
   name: Wolf Orb (Vital) Level 1
@@ -50566,16 +50721,34 @@
   name: Star of Spirit Lv3
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, 10)
+    ctx = bonus(ctx, :max_sp_rate, 5)
+    ctx = bonus(ctx, :hplus, 1)
+    ctx = bonus(ctx, :sp_regen, 15)
+    ctx
 - aegis_name: Star_Of_Spirit4
   id: 310725
   name: Star of Spirit Lv4
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, 10)
+    ctx = bonus(ctx, :max_sp_rate, 7)
+    ctx = bonus(ctx, :hplus, 3)
+    ctx = bonus(ctx, :sp_regen, 15)
+    ctx
 - aegis_name: Star_Of_Spirit5
   id: 310726
   name: Star of Spirit Lv5
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, 15)
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, :hplus, 5)
+    ctx = bonus(ctx, :sp_regen, 20)
+    ctx
 - aegis_name: Nebula_Of_FS1
   id: 310727
   name: Nebula of Fighting Spirit Lv1
@@ -53086,11 +53259,13 @@
   name: H.PLUS Lv1
   subtype: enchant
   type: card
+  on_equip: bonus(ctx, :hplus, 1)
 - aegis_name: HPLUS_Lv2
   id: 311091
   name: H.PLUS Lv2
   subtype: enchant
   type: card
+  on_equip: bonus(ctx, :hplus, 2)
 - aegis_name: Ice_F_Orb_Str
   id: 311092
   name: Ice Magic Orb (STR)
@@ -53396,6 +53571,26 @@
   name: Ice Magic Orb (Reject Reflection)
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :reduce_damage_return, 4)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :reduce_damage_return, 4)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :reduce_damage_return, 4)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :reduce_damage_return, 4)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Ice_F_Orb_Force
   id: 311104
   name: Ice Magic Orb (Power Force)
@@ -53620,6 +53815,26 @@
   name: Ice Magic Orb (Mirror Counter)
   subtype: enchant
   type: card
+  on_equip: |-
+    ctx = bonus(ctx, :reduce_damage_return, 4)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :reduce_damage_return, 4)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :reduce_damage_return, 5)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :reduce_damage_return, 5)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
 - aegis_name: Ice_F_Orb_Hp
   id: 311113
   name: Ice Magic Orb (Stamina)
