@@ -1326,8 +1326,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert moving_gs.action_state == :skill_moving
     end
 
-    test "reaching casting range re-dispatches the pending skill from context" do
+    test "the walk's end leaves the player idle; the remembered use is tried by its step timer" do
       test_pid = self()
+
+      stub(Interpreter, :walking_attempt, fn _gs, 29, 1, {:unit, 2000} -> :in_range end)
 
       stub(Interpreter, :begin_cast, fn _gs, skill_id, level, target ->
         send(test_pid, {:redispatch, skill_id, level, target})
@@ -1341,12 +1343,64 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
           %{skill_id: 29, skill_level: 1, target: {:unit, 2000}}
         )
 
-      state = %SessionState{connection_pid: self(), game_state: moving}
+      timer = make_ref()
 
-      assert {:noreply, new_state} = SkillHandler.handle_reached_skill_position(state)
+      state = %SessionState{
+        connection_pid: self(),
+        game_state: moving,
+        step_action: step_action(timer, nil)
+      }
 
+      assert {:noreply, arrived} = SkillHandler.handle_reached_skill_position(state)
+      assert arrived.game_state.action_state == :idle
+      refute_received {:redispatch, _skill_id, _level, _target}
+
+      assert {:noreply, retried} = SkillHandler.handle_step_action(arrived, make_ref())
+      refute_received {:redispatch, _skill_id, _level, _target}
+
+      assert {:noreply, retried} = SkillHandler.handle_step_action(retried, timer)
       assert_received {:redispatch, 29, 1, {:unit, 2000}}
-      assert new_state.game_state.action_state == :idle
+      assert retried.step_action == nil
+    end
+
+    test "a request made while walking toward a target out of reach is remembered" do
+      stub(Interpreter, :walking_attempt, fn gs, 29, 1, {:unit, 2000} -> {:step, gs} end)
+      reject(&Interpreter.begin_cast/4)
+      stub_commit()
+
+      walking = %{
+        casting_state(45).game_state
+        | action_state: :moving,
+          movement_state: :moving,
+          walk_path: [{151, 150}]
+      }
+
+      state = knowing(%{casting_state(45) | game_state: walking}, 29, 1)
+
+      assert {:noreply, remembered} = SkillHandler.handle_use_skill(state, 29, 1, 2000)
+      assert remembered.game_state.movement_state == :moving
+      assert %{skill_id: 29, level: 1, target: {:unit, 2000}} = remembered.step_action
+
+      half_stepped = SkillHandler.schedule_step_action(remembered, 0)
+      timer = half_stepped.step_action.timer
+      assert_receive {:skill, {:step_action, ^timer}}
+    end
+
+    test "a remembered use out of range after the walk is dropped without a reply" do
+      stub(Interpreter, :walking_attempt, fn gs, 29, 1, {:unit, 2000} ->
+        {:error, :out_of_range, gs}
+      end)
+
+      reject(&Interpreter.begin_cast/4)
+      reject(&MovementHandler.handle_request_move/4)
+      stub_commit()
+      stub(Broadcast, :to_player, fn _id, packet -> flunk("unexpected #{inspect(packet)}") end)
+
+      timer = make_ref()
+      state = %{casting_state(45) | step_action: step_action(timer, nil)}
+
+      assert {:noreply, dropped} = SkillHandler.handle_step_action(state, timer)
+      assert dropped.step_action == nil
     end
 
     test "gives up (no move, stays idle) when no path reaches the target" do
@@ -2222,21 +2276,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
 
     test "a locked skill that walked into range resumes auto-attack after casting" do
+      stub(Interpreter, :walking_attempt, fn _gs, 29, 1, {:unit, 2000} -> :in_range end)
       stub(Interpreter, :begin_cast, fn gs, 29, 1, {:unit, 2000} -> {:instant, gs} end)
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [], cooldown: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, _id, _sc, _ -> :ok end)
       stub_commit()
 
-      {:ok, moving} =
-        PlayerState.transition_to(
-          casting_state(45).game_state,
-          :skill_moving,
-          %{skill_id: 29, skill_level: 1, target: {:unit, 2000}, combat_target_id: 2000}
-        )
+      timer = make_ref()
 
-      state = %SessionState{connection_pid: self(), game_state: moving}
+      state = %SessionState{
+        connection_pid: self(),
+        game_state: casting_state(45).game_state,
+        step_action: step_action(timer, 2000)
+      }
 
-      assert {:noreply, new_state} = SkillHandler.handle_reached_skill_position(state)
+      assert {:noreply, new_state} = SkillHandler.handle_step_action(state, timer)
 
       assert new_state.game_state.combat_target_id == 2000
       assert is_reference(new_state.game_state.continuous_attack_timer)
@@ -2269,6 +2323,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert result.game_state.combat_target_id == nil
       refute_receive {:combat, {:auto_attack, _}}
     end
+  end
+
+  defp step_action(timer, combat_target_id) do
+    %{
+      skill_id: 29,
+      level: 1,
+      target: {:unit, 2000},
+      combat_target_id: combat_target_id,
+      map_name: "prontera",
+      timer: timer
+    }
   end
 
   defp locked_attacking_state(sp) do

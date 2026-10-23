@@ -20,6 +20,18 @@ defmodule Aesir.ZoneServer.GeometryTest do
     end
   end
 
+  describe "client_distance/4" do
+    test "counts a straight line of n cells as n - 1 and truncates diagonals" do
+      assert Geometry.client_distance(0, 0, 0, 0) == 0
+      assert Geometry.client_distance(0, 0, 1, 0) == 0
+      assert Geometry.client_distance(0, 0, 10, 0) == 9
+      assert Geometry.client_distance(0, 0, 0, -10) == 9
+      # sqrt(2) - 0.1 = 1.31; sqrt(200) - 0.1 = 14.04
+      assert Geometry.client_distance(0, 0, 1, 1) == 1
+      assert Geometry.client_distance(5, 5, 15, 15) == 14
+    end
+  end
+
   describe "chebyshev_distance/4" do
     test "calculates correct distance for adjacent cells" do
       # Horizontal distance

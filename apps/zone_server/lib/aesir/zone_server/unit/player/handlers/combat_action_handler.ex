@@ -48,7 +48,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   """
   @spec handle_attack_request(map(), integer(), integer()) :: {:noreply, map()}
   def handle_attack_request(state, target_id, action_type) do
-    state = cancel_combo_for_target_change(state, target_id)
+    # An attack request ends any skill use remembered during a walk.
+    state = state |> Map.put(:step_action, nil) |> cancel_combo_for_target_change(target_id)
     game_state = state.game_state
 
     if Interpreter.can_attack?(:player, game_state.character_id) do

@@ -962,6 +962,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:skill, {:step_action, timer}}, state) do
+    SkillHandler.handle_step_action(state, timer)
+  end
+
+  @impl true
   def handle_info({:skill, {:deferred, module, payload}}, %{game_state: game_state} = state) do
     if function_exported?(module, :deferred, 2) do
       _ = module.deferred(payload, game_state)

@@ -5,7 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -28,6 +30,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
   setup :verify_on_exit!
   setup :set_mimic_from_context
   setup :setup_ets_tables
+
+  # An open map, so a player's reach has a line of sight to check.
+  setup do
+    :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 400, 400)})
+    :ok
+  end
 
   setup do
     Catalog.reload()
@@ -146,7 +154,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     assert_uncommitted(no_ammo)
 
     out_of_range = player_state()
-    stub_target_at(20, 10)
+    # The client's circular distance reaches ten straight cells at range 9.
+    stub_target_at(21, 10)
     assert {:error, :out_of_range} = Interpreter.cast(out_of_range, 316, 3, {:unit, @target_id})
     assert_uncommitted(out_of_range)
   end

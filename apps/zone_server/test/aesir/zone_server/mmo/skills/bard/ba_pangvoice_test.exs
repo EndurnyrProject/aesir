@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
@@ -24,6 +26,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
   setup :verify_on_exit!
   setup :set_mimic_from_context
   setup :setup_ets_tables
+
+  # An open map, so a player's reach has a line of sight to check.
+  setup do
+    :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 400, 400)})
+    :ok
+  end
 
   setup do
     Catalog.reload()
@@ -95,8 +103,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
     assert caster.act_delay_until == 0
   end
 
-  test "range validation rejects a target ten cells away before either status application" do
-    target = register_mob([], 20, 10)
+  # The client's circular distance reaches ten straight cells at range 9.
+  test "range validation rejects a target eleven cells away before either status application" do
+    target = register_mob([], 21, 10)
     caster = player_state()
 
     reject(&StatusInterpreter.apply_status/4)

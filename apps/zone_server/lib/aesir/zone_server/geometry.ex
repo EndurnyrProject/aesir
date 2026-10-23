@@ -145,6 +145,18 @@ defmodule Aesir.ZoneServer.Geometry do
   end
 
   @doc """
+  The circular distance the client measures a player's reach with: the
+  straight-line length less a tenth of a cell, truncated (so a straight line of
+  `n` cells counts `n - 1`). Never negative.
+  """
+  @spec client_distance(integer(), integer(), integer(), integer()) :: non_neg_integer()
+  def client_distance(x1, y1, x2, y2) do
+    dx = x2 - x1
+    dy = y2 - y1
+    trunc(max(:math.sqrt(dx * dx + dy * dy) - 0.1, 0.0))
+  end
+
+  @doc """
   Checks if a point is within tile-based range using Chebyshev distance.
   This is the correct range check for Ragnarok Online tile-based movement.
   """

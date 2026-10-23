@@ -56,6 +56,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   setup :setup_ets_tables
   setup :verify_on_exit!
 
+  # An open map, so a player's reach has a line of sight to check. Tests that
+  # need walls or a smaller map insert their own.
+  setup do
+    :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 400, 400)})
+    :ok
+  end
+
   defp mode_value(renewal, pre_renewal) do
     %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
@@ -741,15 +748,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert caster.act_delay_until == gs.act_delay_until
     end
 
-    test "a blocked walk path keeps the requirement and its items, without pacing" do
+    # A wall already in the way stops the cast before it starts; one that rises
+    # during a timed cast fails its end after the requirement.
+    test "a walk path blocked during the cast keeps the requirement and its items, without pacing" do
       Mimic.copy(Cell)
-      stub(Cell, :blocks_projectiles?, fn "prontera", x, y -> {x, y} == {12, 10} end)
+      stub(Cell, :blocks_projectiles?, fn "prontera", _x, _y -> false end)
 
       stub(Catalog, :by_id, fn 6 ->
         {:ok,
          %{
            enemy_definition(9)
            | damage_type: nil,
+             cast_time: [1_000],
              cooldown: [10_000],
              after_cast_delay: [1_000],
              item_cost: [%{id: 717, amount: 1}]
@@ -761,8 +771,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         | inventory: %{0 => %InventoryItem{nameid: 717, amount: 2, equip: 0}}
       }
 
+      assert {:casting, casting, _info} = Interpreter.begin_cast(gs, 6, 1, {:unit, 7001})
+      stub(Cell, :blocks_projectiles?, fn "prontera", x, y -> {x, y} == {12, 10} end)
+
       assert {:failed, caster, :projectile_blocked, :requirements_only} =
-               Interpreter.cast(gs, 6, 1, {:unit, 7001})
+               Interpreter.complete_cast(casting, 6, 1, {:unit, 7001})
 
       assert caster.stats.current_state.sp == 91
       assert Inventory.held_amount(caster.inventory, 717) == 1
@@ -1247,12 +1260,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     assert {:ok, _} = Interpreter.cast(gs, 6, 3, {:unit, 9999})
   end
 
+  # A player's reach is the client's circular distance, which counts a straight
+  # line of n cells as n - 1: range 7 reaches 8 cells and stops at 9.
   test "a per-level range list rejects a cast one cell beyond the cast level's range" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition([3, 5, 7, 9, 11])} end)
 
     stub(SpatialIndex, :get_unit_position, fn
       :player, 9999 -> {:error, :not_found}
-      :mob, 9999 -> {:ok, {18, 10, "prontera"}}
+      :mob, 9999 -> {:ok, {19, 10, "prontera"}}
     end)
 
     gs = game_state(100, %{6 => 3})
@@ -1264,7 +1279,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     stub(SpatialIndex, :get_unit_position, fn
       :player, 9999 -> {:error, :not_found}
-      :mob, 9999 -> {:ok, {14, 10, "prontera"}}
+      :mob, 9999 -> {:ok, {15, 10, "prontera"}}
     end)
 
     gs = game_state(100, %{6 => 1})
@@ -2611,8 +2626,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.stats.current_state.sp == 100 - 9
     end
 
-    test "fizzles with :out_of_range and spends no SP when the target moved away" do
+    test "does not check the range again when the target moved away" do
       stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
+      stub_provoke_target(9999)
+      stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
 
       stub(SpatialIndex, :get_unit_position, fn
         :player, 9999 -> {:error, :not_found}
@@ -2621,7 +2638,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       gs = game_state(100, %{6 => 1})
 
-      assert {:error, :out_of_range} = Interpreter.complete_cast(gs, 6, 1, {:unit, 9999})
+      assert {:ok, updated} = Interpreter.complete_cast(gs, 6, 1, {:unit, 9999})
+      assert updated.stats.current_state.sp == 91
     end
 
     test "fizzles with :target_not_found and spends no SP when the target is gone" do

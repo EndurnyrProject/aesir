@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
   import Mimic
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -14,6 +16,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
 
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  # An open map, so a player's reach has a line of sight to check.
+  setup do
+    :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 400, 400)})
+    :ok
+  end
 
   setup do
     Mimic.copy(MagicAttack)

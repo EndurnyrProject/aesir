@@ -191,6 +191,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
           %{state | game_state: updated_game_state}
           |> maybe_trigger_touch()
           |> NavigationHandler.on_moved()
+          |> SkillHandler.schedule_step_action(half_step(updated_game_state, {next_x, next_y}))
 
         continue_walk(touched_state, {next_x, next_y})
     end
@@ -208,6 +209,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       true -> schedule_next_step(state, from)
     end
   end
+
+  # A remembered skill use is tried half a step after the cell is entered: half
+  # the next step's time, or half a straight step at the end of the walk.
+  defp half_step(%{walk_path: [next | _]} = game_state, cell),
+    do: div(step_delay(game_state, cell, next), 2)
+
+  defp half_step(game_state, {x, y}), do: div(step_delay(game_state, {x, y}, {x + 1, y}), 2)
 
   defp schedule_next_step(%{game_state: game_state} = state, from) do
     interval = step_delay(game_state, from, hd(game_state.walk_path))
@@ -691,7 +699,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   def publish_force_stop_movement(%SessionState{}), do: :ok
 
-  @doc "Rejects offensive knockback on current castle ground before displacement commit."
+  @doc """
+  Rejects offensive knockback on current castle ground before displacement
+  commit. A knockback that lands ends any skill use the player remembered.
+  """
   @spec handle_knockback(
           integer(),
           integer(),
@@ -704,7 +715,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     if Rules.ground?(state.game_state.map_name) do
       {:noreply, state}
     else
-      handle_displacement(state, expected_x, expected_y, map_name, x, y)
+      handle_displacement(%{state | step_action: nil}, expected_x, expected_y, map_name, x, y)
     end
   end
 

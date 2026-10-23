@@ -5,7 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -22,6 +24,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
   setup :verify_on_exit!
   setup :set_mimic_from_context
   setup :setup_ets_tables
+
+  # An open map, so a player's reach has a line of sight to check.
+  setup do
+    :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 400, 400)})
+    :ok
+  end
 
   setup do
     Mimic.copy(SkillAttack)

@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             pending_skill_menu: nil,
             pending_item_skill: nil,
             deferred_skill_result: nil,
+            step_action: nil,
             pending_party_invite: nil,
             pending_trade_invite: nil,
             trade: nil,
@@ -91,6 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             }
             | nil,
           deferred_skill_result: map() | nil,
+          step_action: step_action() | nil,
           pending_party_invite: map() | nil,
           pending_trade_invite:
             %{
@@ -120,6 +122,20 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           homunculus: HomunculusState.t() | nil,
           homunculus_runtime: Runtime.t(),
           navigation: NavigationSession.t() | nil
+        }
+
+  @typedoc """
+  A skill use remembered while the player walks, tried again half a step after
+  each cell the walk enters: the skill, its level, the target it was aimed at,
+  the attack target to resume, the map it was made on and the pending retry.
+  """
+  @type step_action :: %{
+          skill_id: integer(),
+          level: pos_integer(),
+          target: term(),
+          combat_target_id: integer() | nil,
+          map_name: String.t(),
+          timer: reference() | nil
         }
 
   @spec interaction_blocked?(map()) :: boolean()

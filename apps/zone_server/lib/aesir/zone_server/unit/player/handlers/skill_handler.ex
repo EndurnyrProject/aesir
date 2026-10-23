@@ -554,31 +554,135 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     )
   end
 
-  # A cast may only begin from idle, so an instant skill can't slip past the cast
-  # lock while a timed cast is in flight, nor stack on any other busy action.
-  # Once idle is guaranteed, branch on the interpreter's two-phase result: instant
-  # casts commit now, timed casts schedule a cast-complete timer and a cast bar.
-  defp drive_cast(%{game_state: game_state} = state, skill_id, level, target) do
-    # Capture the lock before ensure_idle_for_cast/1 drops through :idle, which
-    # clears combat intent. A lock present here means the player was engaged
-    # (auto-attacking or approaching), so the loop is resumed after the cast.
-    locked = game_state.combat_target_id
-
-    case cast_gate(state, skill_id) do
-      {:ok, ready_state} ->
-        drive_cast_after_gate(ready_state, skill_id, level, target, locked)
-
-      {:error, reason} ->
-        reject_cast_gate(state, skill_id, reason)
-    end
-  end
-
   defp drive_cast_after_gate(state, skill_id, level, target, locked, opts \\ []) do
-    case ensure_idle_for_cast(state, opts) do
-      {:ok, ready_state} -> dispatch_cast(ready_state, skill_id, level, target, locked)
-      :busy -> reject_cast_gate(state, skill_id, :busy)
+    cond do
+      not cast_ready?(state, opts) -> reject_cast_gate(state, skill_id, :busy)
+      state.deferred_skill_result -> reject_cast_gate(state, skill_id, :busy)
+      true -> attempt_use(state, skill_id, level, target, locked, opts)
     end
   end
+
+  # A standing player's request begins the cast; out of range, it starts a walk
+  # toward the target on the client's behalf and is remembered
+  # (`handle_begin_error/7`). A walking player's use, and a remembered use tried
+  # again (`approach?: false`), is first checked as far as its range on the
+  # player as they are (`Interpreter.walking_attempt/4`): one that would start
+  # stops the walk and begins for real; one the walking player does not reach
+  # yet is remembered; one out of range after the walk is dropped. Every other
+  # refusal answers as the cast would and leaves the walk alone.
+  defp attempt_use(%{game_state: game_state} = state, skill_id, level, target, locked, opts) do
+    aimed = use_target(game_state, skill_id, level, target, locked)
+
+    checked? = game_state.movement_state == :moving or not Keyword.get(opts, :approach?, true)
+
+    case LifecycleSkillHandler.preflight(state, skill_id, level) do
+      :ok when checked? -> checked_use(state, skill_id, level, aimed, locked, opts)
+      :ok -> start_use(state, skill_id, level, aimed, locked, opts)
+      {:error, reason} -> reject_preflighted_cast(state, skill_id, reason)
+    end
+  end
+
+  defp checked_use(%{game_state: game_state} = state, skill_id, level, aimed, locked, opts) do
+    case Interpreter.walking_attempt(game_state, skill_id, level, aimed) do
+      :in_range ->
+        start_use(state, skill_id, level, aimed, locked, opts)
+
+      {:step, refreshed} ->
+        state
+        |> commit_failed_attempt(game_state, refreshed, skill_id, :step_action)
+        |> remember_step(skill_id, level, aimed, locked)
+        |> then(&{:noreply, &1})
+
+      {:error, reason, refreshed} ->
+        {:noreply, commit_failed_attempt(state, game_state, refreshed, skill_id, reason)}
+    end
+  end
+
+  defp start_use(state, skill_id, level, target, locked, opts) do
+    state = %{state | step_action: nil}
+
+    case ensure_idle_for_cast(state, opts) do
+      {:ok, ready} ->
+        begin_preflighted_cast(ready, ready.game_state, skill_id, level, target, locked)
+
+      :busy ->
+        reject_cast_gate(state, skill_id, :busy)
+    end
+  end
+
+  defp remember_step(state, skill_id, level, target, locked) do
+    step = %{
+      skill_id: skill_id,
+      level: level,
+      target: target,
+      combat_target_id: locked,
+      map_name: state.game_state.map_name,
+      timer: nil
+    }
+
+    %{state | step_action: step}
+  end
+
+  # The busy states `ensure_idle_for_cast/2` refuses, checked without changing
+  # anything.
+  defp cast_ready?(%{game_state: %{casting: casting}}, _opts) when not is_nil(casting),
+    do: false
+
+  defp cast_ready?(%{game_state: %{action_state: action_state}}, opts) do
+    cond do
+      action_state in [:idle, :moving, :combat_moving, :skill_moving, :moving_to_item, :attacking] ->
+        true
+
+      action_state in @overlaid_states ->
+        Keyword.get(opts, :overlay?, false)
+
+      true ->
+        false
+    end
+  end
+
+  @doc """
+  Schedules the next try of a remembered skill use half a step after the
+  player entered a cell: half the time the walk's next step takes, or half a
+  straight step at the end of the walk. A newer schedule replaces the last.
+  """
+  @spec schedule_step_action(SessionState.t(), non_neg_integer()) :: SessionState.t()
+  def schedule_step_action(%{step_action: %{} = step} = state, half_step) do
+    timer = make_ref()
+    Process.send_after(self(), {:skill, {:step_action, timer}}, half_step)
+    %{state | step_action: %{step | timer: timer}}
+  end
+
+  def schedule_step_action(state, _half_step), do: state
+
+  @doc """
+  Tries a remembered skill use again, as the source's step action does: the
+  cast's own checks run without the client request stage, a target reached
+  starts the cast, one still out of reach while walking stays remembered, and
+  one out of range after the walk is dropped silently. A use remembered on
+  another map, or replaced by a newer one, does nothing.
+  """
+  @spec handle_step_action(SessionState.t(), reference()) :: {:noreply, SessionState.t()}
+  def handle_step_action(%{step_action: %{timer: timer} = step} = state, timer) do
+    state = %{state | step_action: nil}
+
+    with true <- step.map_name == state.game_state.map_name,
+         {:ok, ready} <- cast_gate(state, step.skill_id, :request) do
+      drive_cast_after_gate(
+        ready,
+        step.skill_id,
+        step.level,
+        step.target,
+        step.combat_target_id,
+        approach?: false,
+        overlay?: match?({:ground, _x, _y}, step.target)
+      )
+    else
+      _dropped -> {:noreply, state}
+    end
+  end
+
+  def handle_step_action(state, _timer), do: {:noreply, state}
 
   defp reject_cast_gate(%{game_state: game_state} = state, skill_id, :busy) do
     report_cast_failure(skill_id, game_state.character_id, :busy)
@@ -588,24 +692,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp reject_cast_gate(%{game_state: game_state} = state, _skill_id, _reason) do
     broadcast_cast_cancel(game_state)
     {:noreply, state}
-  end
-
-  defp dispatch_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
-    if state.deferred_skill_result do
-      report_cast_failure(skill_id, game_state.character_id, :busy)
-      {:noreply, state}
-    else
-      dispatch_resolved_cast(state, skill_id, level, target, locked)
-    end
-  end
-
-  defp dispatch_resolved_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
-    target = use_target(game_state, skill_id, level, target, locked)
-
-    case LifecycleSkillHandler.preflight(state, skill_id, level) do
-      :ok -> begin_preflighted_cast(state, game_state, skill_id, level, target, locked)
-      {:error, reason} -> reject_preflighted_cast(state, skill_id, reason)
-    end
   end
 
   # A pending item skill the request let through: the cast's own gate refuses
@@ -775,17 +861,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       {:error, :out_of_range, refreshed} ->
         committed = commit_failed_attempt(state, game_state, refreshed, skill_id, :out_of_range)
-        initiate_skill_movement(committed, skill_id, level, target, locked)
+        approach(committed, skill_id, level, target, locked)
 
       {:error, reason, refreshed} ->
         {:noreply, commit_failed_attempt(state, game_state, refreshed, skill_id, reason)}
 
-      # Out of range: walk into range instead of fizzling (mirrors attack-move).
-      # The approach re-dispatches this same cast on arrival, so a moving target
-      # is chased and a genuinely in-range recast just casts. The lock rides along
-      # in the skill_moving context so it survives the walk-in and resumes after.
       {:error, :out_of_range} ->
-        initiate_skill_movement(state, skill_id, level, target, locked)
+        approach(state, skill_id, level, target, locked)
 
       {:error, reason} ->
         report_cast_failure(skill_id, game_state.character_id, reason)
@@ -810,7 +892,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     sync_cast_start_stats(state, before, refreshed)
     committed = StateCommit.commit(state, refreshed)
 
-    if reason != :out_of_range,
+    if reason not in [:out_of_range, :step_action],
       do: report_cast_failure(skill_id, refreshed.character_id, reason)
 
     committed
@@ -1245,34 +1327,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   @doc """
-  Re-dispatches the pending skill after the move-to-range approach completes.
-
-  The skill (id, level, target) is carried in `state_context` while walking. We
-  drop back to idle and run the normal cast dispatch: if the target is now in
-  range it casts, if it drifted further it re-approaches, and if it vanished the
-  cast quietly fails.
+  Ends the walk toward a skill target: the player stands idle. The remembered
+  use (`step_action`) is tried one last time half a step after the last cell.
   """
   @spec handle_reached_skill_position(SessionState.t()) :: {:noreply, SessionState.t()}
-  def handle_reached_skill_position(
-        %{
-          game_state:
-            %{state_context: %{skill_id: skill_id, skill_level: level, target: target} = ctx} =
-              game_state
-        } = state
-      ) do
-    # Restore the pre-walk lock onto the freshly-idled state so drive_cast's
-    # capture carries it forward and the auto-attack loop resumes after the cast.
-    idled = %{to_idle(game_state) | combat_target_id: Map.get(ctx, :combat_target_id)}
-    drive_cast(%{state | game_state: idled}, skill_id, level, target)
-  end
-
   def handle_reached_skill_position(%{game_state: game_state} = state) do
     {:noreply, %{state | game_state: to_idle(game_state)}}
   end
 
-  # Starts walking the caster to within skill range of the target. Gives up
-  # (leaving the player idle) when the target is gone, no closer cell exists, or
-  # no path reaches it — never loops.
+  # A standing player's request out of range is walked into range on the
+  # client's behalf. An item skill is not: its item was spent when the cast
+  # began, and a remembered item use would only fail when tried again, so it
+  # ends here without a reply.
+  defp approach(state, skill_id, level, target, locked) do
+    if match?(%{skill_id: ^skill_id}, Map.get(state, :pending_item_skill)),
+      do: {:noreply, state},
+      else: initiate_skill_movement(state, skill_id, level, target, locked)
+  end
+
+  # Walks the caster toward a target out of range, standing in for the client
+  # that walks before it asks, and remembers the use so each step tries it
+  # again. Nothing happens, and nothing is said, when the target is gone, no
+  # closer cell exists or no path reaches it.
   defp initiate_skill_movement(%{game_state: game_state} = state, skill_id, level, target, locked) do
     with :ok <- ensure_living_target(target),
          {:ok, target_pos} <- skill_target_position(target),
@@ -1284,27 +1360,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       move_toward_skill_target(state, skill_id, level, target, current, optimal, map_data, locked)
     else
-      _ ->
-        report_cast_failure(skill_id, game_state.character_id, :out_of_range)
-        {:noreply, state}
+      _ -> {:noreply, state}
     end
   end
 
-  # Optimal cell equals the current cell: no closer approach exists, so stop
-  # rather than re-issue a zero-length move and spin.
+  # Optimal cell equals the current cell: no closer approach exists.
   defp move_toward_skill_target(
          state,
-         skill_id,
+         _skill_id,
          _level,
          _target,
          current,
          current,
          _map_data,
          _locked
-       ) do
-    report_cast_failure(skill_id, state.game_state.character_id, :out_of_range)
-    {:noreply, state}
-  end
+       ),
+       do: {:noreply, state}
 
   defp move_toward_skill_target(
          state,
@@ -1320,8 +1391,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:ok, [_ | _]} ->
         start_skill_approach(state, skill_id, level, target, optimal, locked)
 
-      _ ->
-        report_cast_failure(skill_id, state.game_state.character_id, :no_path)
+      _no_path ->
         {:noreply, state}
     end
   end
@@ -1338,12 +1408,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     case PlayerState.transition_to(game_state, :skill_moving, context) do
       {:ok, moving_state} ->
-        MovementHandler.handle_request_move(
-          %{state | game_state: moving_state},
-          x,
-          y,
-          skill_initiated: true
-        )
+        %{state | game_state: moving_state}
+        |> remember_step(skill_id, level, target, locked)
+        |> MovementHandler.handle_request_move(x, y, skill_initiated: true)
 
       {:error, _reason} ->
         {:noreply, state}

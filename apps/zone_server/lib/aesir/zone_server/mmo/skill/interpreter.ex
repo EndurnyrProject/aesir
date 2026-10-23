@@ -277,6 +277,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def preflight_cast(_caster, _skill_id, _level, _target), do: {:error, :invalid_level}
 
   @doc """
+  A walking player's attempt to use `skill_id`: every check up to the range,
+  where a target the player does not reach at one cell less than the skill's
+  range is remembered rather than refused.
+
+  Returns `:in_range` when the cast would start now (the caller stops the walk
+  and begins it with `begin_cast/4`, which runs the attempt for real),
+  `{:step, caster}` when it is remembered, or `{:error, reason, caster}` when
+  a check refuses it. The attempt's early cast-time reactions (Memorize,
+  Suffragium) are spent in the last two cases, as a real attempt would.
+  """
+  @spec walking_attempt(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          :in_range | {:step, PlayerState.t()} | {:error, term(), PlayerState.t()}
+  def walking_attempt(%PlayerState{} = caster, skill_id, level, target) do
+    case validate_player_cast(caster, skill_id, level, target, :cast_begin) do
+      {:ok, _context} -> :in_range
+      {:error, :step_action} -> {:step, spend_early_reactions(caster, skill_id, level)}
+      {:error, reason} -> {:error, reason, spend_early_reactions(caster, skill_id, level)}
+    end
+  end
+
+  defp spend_early_reactions(caster, skill_id, level) do
+    case fetch_definition(skill_id) do
+      {:ok, definition} ->
+        early = CastTime.early(definition, level, Caster.Player.cast_stats(caster, skill_id))
+        Caster.apply_cast_reactions(caster, early.reactions)
+
+      {:error, _reason} ->
+        caster
+    end
+  end
+
+  @doc """
   Whether a player's cast of `skill_id` would pass its cast-begin conditions
   now (`castbegin`), without casting anything. A combo skill's use is aimed by
   its combo only when they pass.
@@ -1603,7 +1635,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, prepared} <- castbegin(context, phase == :cast_begin),
          :ok <- check_start_placement(prepared.caster, definition, target, phase),
          :ok <- check_end_placement(caster, definition, target, phase),
-         :ok <- check_range(caster, target, definition, level),
+         :ok <- check_use_range(caster, target, definition, level),
          :ok <- optional_check(prepared, :after_range_check),
          :ok <- check_input_castend(prepared, phase) do
       {:ok, record_spheres_old(prepared, phase)}
@@ -1621,6 +1653,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with :ok <- check_target(caster, target, definition), do: validate_module(context)
   end
 
+  # A player reaches a target when the client's circular distance is within the
+  # skill's range and, beyond the adjacent cells, within sight (14 cells) with
+  # no wall between them. While the player walks, a target not reached at one
+  # cell less is remembered instead (`:step_action`), to be tried again as the
+  # walk goes on. A ground cell must also hold a unit placement.
+  defp check_use_range(_caster, :self, _definition, _level), do: :ok
+
+  defp check_use_range(caster, target, definition, level) do
+    if self_target?(caster, target),
+      do: :ok,
+      else: check_reach(caster, target, effective_range(definition, caster, level))
+  end
+
+  defp check_reach(caster, target, range) do
+    with {:ok, cell} <- use_target_cell(target) do
+      cond do
+        walking?(caster) and not reaches?(caster, cell, range - 1) -> {:error, :step_action}
+        not reaches?(caster, cell, range) -> {:error, :out_of_range}
+        true -> check_use_cell(caster, target)
+      end
+    end
+  end
+
+  defp use_target_cell({:ground, x, y}), do: {:ok, {x, y}}
+
+  defp use_target_cell({:unit, target_id}) do
+    case resolve_unit_position(target_id) do
+      {:ok, {x, y, _map}} -> {:ok, {x, y}}
+      {:error, _reason} -> {:error, :target_not_found}
+    end
+  end
+
+  defp check_use_cell(caster, {:ground, x, y}), do: check_ground_walkable(caster.map_name, x, y)
+  defp check_use_cell(_caster, _target), do: :ok
+
+  defp walking?(%PlayerState{movement_state: :moving}), do: true
+  defp walking?(_caster), do: false
+
+  @sight_cells 14
+
+  defp reaches?(%PlayerState{map_name: map_name, x: x, y: y}, {tx, ty}, range) do
+    distance = Geometry.chebyshev_distance(x, y, tx, ty)
+
+    Geometry.client_distance(x, y, tx, ty) <= max(range, 0) and
+      (distance < 2 or
+         (distance <= @sight_cells and LineOfSight.clear?(map_name, {x, y}, {tx, ty})))
+  end
+
   # The unit a player aims at must still be on the caster's map, and a skill
   # that may not target its user refuses the player themselves; all silently.
   defp check_use_target(caster, {:unit, target_id} = target, definition) do
@@ -1633,11 +1713,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     do: check_self_target(caster, target, definition)
 
   defp check_unit_target(caster, target_id, definition) do
-    case resolve_unit_position(target_id) do
-      {:ok, {_x, _y, map_name}} when map_name != caster.map_name -> {:error, :different_map}
-      {:ok, _position} -> check_self_target(caster, {:unit, target_id}, definition)
-      {:error, _reason} -> {:error, :target_not_found}
-    end
+    with :ok <- check_unit_target_map(caster, target_id),
+         do: check_self_target(caster, {:unit, target_id}, definition)
   end
 
   defp check_self_target(caster, target, %{no_target_self: true}) do
@@ -1734,13 +1811,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, _module} <- fetch_active_module(definition),
          context = CastContext.build(caster, definition, level, target, :completion),
          :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
+         :ok <- check_castend_presence(caster, target),
          :ok <- check_target(caster, target, definition),
          :ok <- check_placement(caster, definition, target),
          :ok <- check_cast_end(caster, target, definition, false),
-         :ok <- check_range(caster, target, definition, level),
          :ok <- check_castend_target(caster, target, definition),
          :ok <- check_context_cooldown(context, now) do
       validate_and_prepare(context, false)
+    end
+  end
+
+  # A player's cast end does not check the range again; a unit target gone from
+  # the caster's map fails it silently.
+  defp check_castend_presence(caster, {:unit, target_id} = target) do
+    if self_target?(caster, target), do: :ok, else: check_unit_target_map(caster, target_id)
+  end
+
+  defp check_castend_presence(_caster, _target), do: :ok
+
+  defp check_unit_target_map(caster, target_id) do
+    case resolve_unit_position(target_id) do
+      {:ok, {_x, _y, map_name}} when map_name != caster.map_name -> {:error, :different_map}
+      {:ok, _position} -> :ok
+      {:error, _reason} -> {:error, :target_not_found}
     end
   end
 

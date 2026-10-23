@@ -42,7 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
       {3, player_state(3, party_id: 0), 51, 50},
       {4, player_state(4, party_id: 8), 51, 50},
       {5, player_state(5, party_id: 7, map_name: "geffen"), 51, 50},
-      {6, player_state(6, party_id: 7), 52, 50}
+      # The client's circular distance reaches two cells at range 1, not three.
+      {6, player_state(6, party_id: 7), 53, 50}
     ]
 
     for {id, target, x, y} <- targets do
