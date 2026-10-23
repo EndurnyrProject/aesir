@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding do
     name: :tf_hiding,
     requires: [],
     status: :sc_hiding,
+    toggleable: true,
     display_name: "Hiding",
     max_level: 10,
     target_type: :self,

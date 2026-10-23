@@ -135,6 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
   test "range, weapon, and ammo gates are atomic and never execute the attack" do
     reject(&Combat.execute_skill_attack/3)
 
+    stub_target_at(18, 10)
     wrong_weapon = put_in(player_state().stats.equipment, %Equipment{})
     assert {:error, :wrong_weapon} = Interpreter.cast(wrong_weapon, 316, 3, {:unit, @target_id})
     assert_uncommitted(wrong_weapon)

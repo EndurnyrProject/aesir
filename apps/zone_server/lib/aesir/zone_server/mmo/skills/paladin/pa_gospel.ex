@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
     name: :pa_gospel,
     requires: [],
     status: :sc_gospel,
+    toggleable: true,
     display_name: "Battle Chant",
     max_level: 10,
     ignore_flee: true,

@@ -676,6 +676,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
        }}
     end)
 
+    :ok = SpatialIndex.add_unit(:player, 2000, 11, 10, "prontera")
+
     assert {:error, :invalid_target} =
              Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, {:unit, 2000})
   end
@@ -799,6 +801,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     Mimic.copy(TargetResolver)
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living, :player} end)
     stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_corpse, 5)} end)
+    :ok = SpatialIndex.add_unit(:player, 2_000, 11, 10, "prontera")
 
     assert {:error, :invalid_target} =
              Interpreter.cast(game_state(100, %{6 => 1}), 6, 1, {:unit, 2_000})
@@ -3011,26 +3014,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.act_delay_until <= System.monotonic_time(:millisecond)
     end
 
-    test "begin_cast is blocked with :act_delayed while act-delayed" do
-      reject(&StatusInterpreter.apply_status/4)
-
+    # The act delay refuses a player's request; a cast that request let through
+    # (or one restarted after walking into range) does not check it again.
+    test "begin_cast leaves a player's act delay to the request" do
       gs = %{
         game_state(100, %{29 => 1})
         | act_delay_until: System.monotonic_time(:millisecond) + 60_000
       }
 
-      assert {:error, :act_delayed} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert {:casting, _caster, _info} = Interpreter.begin_cast(gs, 29, 1, :self)
     end
 
-    test "cast is blocked with :act_delayed while act-delayed" do
-      reject(&StatusInterpreter.apply_status/4)
+    test "cast leaves a player's act delay to the request" do
+      stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _params -> :ok end)
 
       gs = %{
         game_state(100, %{29 => 1})
         | act_delay_until: System.monotonic_time(:millisecond) + 60_000
       }
 
-      assert {:error, :act_delayed} = Interpreter.cast(gs, 29, 1, :self)
+      assert {:ok, _caster} = Interpreter.cast(gs, 29, 1, :self)
     end
 
     test "begin_cast succeeds when no act delay is pending" do
@@ -3957,6 +3960,59 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:casting, _caster, %{total: 10_000}} =
                Interpreter.begin_cast(leaper, 10_013, 1, :self)
+    end
+  end
+
+  describe "a player's cast-begin order" do
+    test "a unit target gone from the map is refused silently before any requirement" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_enemy, 9)} end)
+
+      assert {:error, :target_not_found} =
+               Interpreter.preflight_cast(game_state(0, %{6 => 1}), 6, 1, {:unit, 9_999})
+    end
+
+    test "a unit target on another map is refused silently before any requirement" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_enemy, 9)} end)
+      :ok = SpatialIndex.add_unit(:player, 2_000, 11, 10, "geffen")
+
+      assert {:error, :different_map} =
+               Interpreter.preflight_cast(game_state(0, %{6 => 1}), 6, 1, {:unit, 2_000})
+    end
+
+    test "a skill that may not target its user refuses the player silently" do
+      stub(Catalog, :by_id, fn 6 ->
+        {:ok, %{unit_definition(:target_ally, 9) | no_target_self: true}}
+      end)
+
+      gs = game_state(0, %{6 => 1})
+
+      assert {:error, :no_target_self} = Interpreter.preflight_cast(gs, 6, 1, :self)
+      assert {:error, :no_target_self} = Interpreter.preflight_cast(gs, 6, 1, {:unit, 1000})
+    end
+
+    test "a chat room member's cast is refused silently before the weight limit" do
+      gs = %{game_state(0, %{6 => 1}) | waiting_room: 5}
+      stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:self, 9)} end)
+
+      assert {:error, :in_chat_room} = Interpreter.preflight_cast(gs, 6, 1, :self)
+    end
+
+    test "too few spirit spheres report how many the skill needs" do
+      assert {:error, {:spirits, 5}} =
+               Interpreter.preflight_cast(game_state(100, %{270 => 5}), 270, 5, :self)
+    end
+
+    test "ending an active toggle skips the rest of its cast-begin conditions and its SP" do
+      gs = game_state(0, %{135 => 1})
+
+      assert {:error, :insufficient_sp} = Interpreter.preflight_cast(gs, 135, 1, :self)
+
+      stub(StatusStorage, :has_status?, fn
+        :player, 1000, :sc_cloaking -> true
+        _type, _id, _status -> false
+      end)
+
+      assert :ok = Interpreter.preflight_cast(gs, 135, 1, :self)
     end
   end
 end

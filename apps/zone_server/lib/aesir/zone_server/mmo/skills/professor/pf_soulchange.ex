@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 374,
+    no_target_self: true,
     name: :pf_soulchange,
     display_name: "Soul Exhale",
     max_level: 1,

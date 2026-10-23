@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSuffragium do
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 67,
+    no_target_self: [renewal: false, pre_renewal: true],
     name: :pr_suffragium,
     status: :sc_suffragium,
     display_name: "Suffragium",

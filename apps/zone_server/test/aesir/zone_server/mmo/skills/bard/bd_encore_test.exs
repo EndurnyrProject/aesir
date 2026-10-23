@@ -153,7 +153,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
                :self
              )
 
-    assert {:error, :act_delayed} =
+    # The act delay is the request's check, not the cast's.
+    assert {:ok, _encore} =
              Interpreter.cast(%{caster | act_delay_until: future}, @encore_id, 1, :self)
   end
 

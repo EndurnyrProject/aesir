@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender do
     # `cast/4`, so a mob casts it fine (shield check is player-only). Not denylisted.
     requires: [],
     status: :sc_defender,
+    toggleable: [renewal: true, pre_renewal: false],
     display_name: "Defending Aura",
     max_level: 5,
     target_type: :self,

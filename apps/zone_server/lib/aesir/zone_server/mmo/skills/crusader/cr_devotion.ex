@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   # A dead party target is skipped by the interpreter before the effect runs.
   use Aesir.ZoneServer.Mmo.Skill,
     id: 255,
+    no_target_self: true,
     name: :cr_devotion,
     requires: [:party],
     status: :sc_devotion,

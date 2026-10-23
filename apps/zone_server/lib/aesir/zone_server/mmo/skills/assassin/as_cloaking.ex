@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloaking do
     name: :as_cloaking,
     requires: [],
     status: :sc_cloaking,
+    toggleable: true,
     display_name: "Cloaking",
     max_level: 10,
     target_type: :self,

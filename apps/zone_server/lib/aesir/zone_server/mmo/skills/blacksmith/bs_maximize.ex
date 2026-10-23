@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsMaximize do
     target_type: :self,
     sp_cost: [10],
     duration: [1_000, 2_000, 3_000, 4_000, 5_000],
-    status: :sc_maximizepower
+    status: :sc_maximizepower,
+    toggleable: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

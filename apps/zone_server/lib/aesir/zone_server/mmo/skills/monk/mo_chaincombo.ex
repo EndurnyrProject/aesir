@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 272,
+    no_target_self: true,
     name: :mo_chaincombo,
     display_name: "Raging Quadruple Blow",
     max_level: 5,

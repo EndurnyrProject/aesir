@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidence do
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 256,
+    no_target_self: true,
     name: :cr_providence,
     status: :sc_providence,
     display_name: "Resistant Souls",

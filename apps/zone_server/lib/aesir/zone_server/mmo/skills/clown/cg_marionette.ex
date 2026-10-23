@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 396,
+    no_target_self: true,
     name: :cg_marionette,
     display_name: "Marionette Control",
     max_level: 1,

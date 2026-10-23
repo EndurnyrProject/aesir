@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvTrickdead do
     id: 143,
     name: :nv_trickdead,
     status: :sc_trickdead,
+    toggleable: true,
     display_name: "Play Dead",
     max_level: 1,
     target_type: :self,

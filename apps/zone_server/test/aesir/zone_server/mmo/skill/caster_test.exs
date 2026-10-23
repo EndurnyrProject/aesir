@@ -329,7 +329,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
       at_limit = potion_caster(203)
       at_limit_cost = Cost.from_definition(at_limit, definition, 1, sp: 0)
 
-      assert {:error, :overweight} =
+      assert {:error, :overweight_rate} =
                Caster.Player.prepare_begin_cost(
                  at_limit,
                  __MODULE__,
@@ -360,7 +360,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
       at_limit = potion_caster(145)
       at_limit_cost = Cost.from_definition(at_limit, definition, 1, sp: 0)
 
-      assert {:error, :overweight} =
+      assert {:error, :overweight_rate} =
                Caster.Player.prepare_begin_cost(
                  at_limit,
                  __MODULE__,

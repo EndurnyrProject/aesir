@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 372,
+    no_target_self: true,
     name: :ch_chaincrush,
     display_name: "Chain Crush Combo",
     max_level: 10,

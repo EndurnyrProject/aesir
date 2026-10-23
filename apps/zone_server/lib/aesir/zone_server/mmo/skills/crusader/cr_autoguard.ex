@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguard do
     name: :cr_autoguard,
     requires: [],
     status: :sc_autoguard,
+    toggleable: true,
     display_name: "Guard",
     max_level: 10,
     target_type: :self,

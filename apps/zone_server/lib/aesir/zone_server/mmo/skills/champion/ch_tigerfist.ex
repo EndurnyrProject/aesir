@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 371,
+    no_target_self: true,
     name: :ch_tigerfist,
     display_name: "Glacier Fist",
     max_level: 5,

@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   # Guild skills (GD_*) are learned by the guild, not the character: their rank
   # resolves against the guild entry, never against the caster's progression.
   @guild_skill_range 10_000..10_019
+  @no_cost %Cost{sp_requirement: 0}
   @charge_shout_beating 10_018
 
   # Renewal requires one extra ammunition unit for these casts (2016-10-26 kRO
@@ -154,6 +155,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   def castable_state(%PlayerState{}, _skill_id, :completion), do: :ok
 
+  @doc """
+  Whether using `definition` now only ends its own toggle: the skill is
+  toggleable and its status is active on the player.
+  """
+  @spec toggle_off?(PlayerState.t(), map()) :: boolean()
+  def toggle_off?(%PlayerState{character_id: id}, %{toggleable: true, status: status})
+      when is_atom(status) and not is_nil(status),
+      do: StatusStorage.has_status?(:player, id, status)
+
+  def toggle_off?(_caster, _definition), do: false
+
   @impl true
   def castable_status(%PlayerState{}, _skill_id), do: :ok
 
@@ -203,7 +215,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     end
   end
 
+  # A toggle skill ending its own active status requires nothing at all.
   defp resolve_requirement(caster, module, target, definition, level) do
+    if toggle_off?(caster, definition),
+      do: {:ok, %{definition | item_cost: [], require_weapon: [], require_ammo: []}, @no_cost, 0},
+      else: resolve_active_requirement(caster, module, target, definition, level)
+  end
+
+  defp resolve_active_requirement(caster, module, target, definition, level) do
     definition = item_cost_definition(caster, module, target, level, definition)
 
     with {:ok, cost} <- resolve_cost(caster, module, target, level, definition) do
@@ -214,8 +233,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   @doc """
   Checks a resolved cost's cast-begin requirements in order: the 90% weight
-  limit, SP, zeny, then spirit spheres. HP, ammo and items wait for the cast
-  end.
+  limit, the recovered-weight state, SP, zeny, then spirit spheres (too few
+  report `{:spirits, required}`). HP, ammo and items wait for the cast end.
   """
   @spec prepare_begin_cost(
           PlayerState.t(),
@@ -224,13 +243,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
           Cost.t(),
           non_neg_integer(),
           pos_integer()
-        ) :: {:ok, map()} | {:error, atom()}
+        ) :: {:ok, map()} | {:error, term()}
   def prepare_begin_cost(caster, module, definition, cost, zeny, level) do
     with :ok <- check_weight(caster),
          :ok <- check_recovered_weight(caster, definition),
          :ok <- Cost.check_sp(caster, cost),
          :ok <- check_zeny(caster, zeny),
-         :ok <- Cost.check_spheres(caster, cost) do
+         :ok <- check_spheres(caster, cost) do
       {:ok, prepared(caster, module, definition, cost, zeny, ammo_qty(definition, level))}
     end
   end
@@ -612,17 +631,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     div(cost * (100 - reduction), 100)
   end
 
+  # Too few spheres reports how many the skill needs.
+  defp check_spheres(caster, cost) do
+    case Cost.check_spheres(caster, cost) do
+      :ok -> :ok
+      {:error, :insufficient_spirit_spheres} -> {:error, {:spirits, cost.spheres}}
+    end
+  end
+
   defp check_zeny(_caster, 0), do: :ok
 
   defp check_zeny(caster, cost) do
     if caster.zeny >= cost, do: :ok, else: {:error, :insufficient_zeny}
   end
 
-  defp check_weight(%PlayerState{
-         stats: %PlayerStats{progression: %{job_id: job_id}} = stats,
-         inventory: inventory
-       })
-       when is_map(inventory) and is_integer(job_id) do
+  @doc "Refuses a player carrying at least 90% of their weight limit."
+  @spec check_weight(PlayerState.t()) :: :ok | {:error, :overweight}
+  def check_weight(%PlayerState{
+        stats: %PlayerStats{progression: %{job_id: job_id}} = stats,
+        inventory: inventory
+      })
+      when is_map(inventory) and is_integer(job_id) do
     maximum = Weight.max_weight(stats)
 
     if maximum > 0 and Weight.current_weight(inventory) * 10 >= maximum * 9,
@@ -630,23 +659,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       else: :ok
   end
 
-  defp check_weight(_caster), do: :ok
+  def check_weight(_caster), do: :ok
 
-  # `Requires: State: Recover_Weight_Rate` (the skill DB gate, not the global
-  # 90% refusal above): the caster must be under the natural-heal weight rate.
-  defp check_recovered_weight(
-         %PlayerState{stats: stats, inventory: inventory},
-         %Definition{require_recovered_weight: true}
-       )
-       when is_map(inventory) do
+  @doc """
+  The `Recover_Weight_Rate` state some skills require (not the 90% refusal
+  every skill has): the player must be under the natural-heal weight rate, or
+  the cast fails with the generic reply.
+  """
+  @spec check_recovered_weight(PlayerState.t(), map()) :: :ok | {:error, :overweight_rate}
+  def check_recovered_weight(
+        %PlayerState{stats: stats, inventory: inventory},
+        %Definition{require_recovered_weight: true}
+      )
+      when is_map(inventory) do
     maximum = Weight.max_weight(stats)
 
     if maximum > 0 and Weight.current_weight(inventory) * 100 >= maximum * recover_weight_rate(),
-      do: {:error, :overweight},
+      do: {:error, :overweight_rate},
       else: :ok
   end
 
-  defp check_recovered_weight(_caster, _definition), do: :ok
+  def check_recovered_weight(_caster, _definition), do: :ok
 
   defp recover_weight_rate do
     case GameMode.mode() do

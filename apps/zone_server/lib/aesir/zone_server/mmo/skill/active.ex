@@ -127,13 +127,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
               {:ok, caster()} | :none
 
   @doc """
-  Optional cast-begin condition, run after `validate/4` and before the cost
-  check when an ordinary or Encore attempt begins (and by preflight). It returns
-  the caster carrying whatever the attempt's completion reads. Completion never
-  runs it again.
+  Optional cast-begin condition: the skill's own cast-begin rows (its specific
+  checks, then its required state and statuses). A player's cast runs it after
+  the weight limit and before the weapon and the SP, zeny and sphere checks;
+  an Encore attempt and other casters run it before the cost check (and
+  preflight runs it too). It returns the caster carrying whatever the attempt's
+  completion reads. Completion never runs it again.
   """
   @callback begin_attempt(caster(), target(), pos_integer(), Definition.t()) ::
-              {:ok, caster()} | {:error, atom()}
+              {:ok, caster()} | {:error, term()}
+
+  @doc """
+  Optional check a player's skill use makes before its cast-begin conditions,
+  once the target is known to be on the caster's map and usable (the boss
+  refusal of the charm songs, a full Devotion, an Encore with nothing to
+  replay). A refusal carries the reason to report.
+  """
+  @callback skilluse_check(caster(), target(), pos_integer(), Definition.t()) ::
+              :ok | {:error, term()}
+
+  @doc """
+  Optional check a player's skill use makes once its target is in range,
+  before the cast starts (Resurrection on a living target).
+  """
+  @callback after_range_check(caster(), target(), pos_integer(), Definition.t()) ::
+              :ok | {:error, term()}
 
   @doc """
   Optional deferred effect, run later inside the caster's session process.
@@ -233,6 +251,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
                       castend_requirement: 4,
                       castend_failed: 4,
                       begin_attempt: 4,
+                      skilluse_check: 4,
+                      after_range_check: 4,
                       deferred: 2,
                       mob_cast: 5,
                       dynamic_cost: 4,

@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 273,
+    no_target_self: true,
     name: :mo_combofinish,
     display_name: "Raging Thrust",
     max_level: 5,

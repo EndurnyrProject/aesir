@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 289,
+    no_target_self: true,
     name: :sa_dispell,
     requires: [],
     display_name: "Dispell",

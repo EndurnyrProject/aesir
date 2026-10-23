@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrink do
     id: 1002,
     name: :cr_shrink,
     status: :sc_shrink,
+    toggleable: true,
     display_name: "Shrink",
     max_level: 1,
     target_type: :self,

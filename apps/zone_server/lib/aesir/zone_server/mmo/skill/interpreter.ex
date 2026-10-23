@@ -1531,6 +1531,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
+  defp validate_owned_cast(%PlayerState{} = caster, skill_id, level, target, _now, phase),
+    do: validate_player_cast(caster, skill_id, level, target, phase)
+
   defp validate_owned_cast(caster, skill_id, level, target, now, phase) do
     with {:ok, adapter} <- lifecycle_adapter(caster),
          :ok <- :erlang.apply(adapter, :castable_state, [caster, skill_id, :begin]),
@@ -1554,6 +1557,106 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:ok, record_spheres_old(prepared, phase)}
     end
   end
+
+  # A player's skill use, in the order the reference checks it: the map and
+  # cooldown restrictions again, the target (gone or on another map, or the
+  # player themselves for a skill that may not target its user, refused
+  # silently), the statuses that forbid this use (silent), the skill's own use
+  # checks, the cast-begin conditions, then the range and the skill's checks
+  # on a target in range. A ground cast checks the placement of its unit after
+  # its cast-begin conditions. The catalog guards (level, learned rank,
+  # behavior) never fail a request the client stage let through.
+  defp validate_player_cast(caster, skill_id, level, target, phase) do
+    adapter = Caster.Player
+
+    with :ok <- adapter.castable_state(caster, skill_id, :begin),
+         {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_max_level(definition, level),
+         :ok <- check_castable(definition),
+         :ok <- check_learned(caster, adapter, definition, level, :begin),
+         {:ok, _module} <- fetch_active_module(definition),
+         :ok <- check_use_target(caster, target, definition),
+         :ok <- check_support_status(caster, definition),
+         :ok <- check_concealment(caster, target, definition, phase),
+         context = CastContext.build(caster, definition, level, target, :begin),
+         :ok <- optional_check(context, :skilluse_check),
+         {:ok, prepared} <- castbegin(context, phase == :cast_begin),
+         :ok <- check_start_placement(prepared.caster, definition, target, phase),
+         :ok <- check_end_placement(caster, definition, target, phase),
+         :ok <- check_range(caster, target, definition, level),
+         :ok <- optional_check(prepared, :after_range_check) do
+      {:ok, record_spheres_old(prepared, phase)}
+    end
+  end
+
+  # The unit a player aims at must still be on the caster's map, and a skill
+  # that may not target its user refuses the player themselves; all silently.
+  defp check_use_target(caster, {:unit, target_id} = target, definition) do
+    if self_target?(caster, target),
+      do: check_self_target(caster, target, definition),
+      else: check_unit_target(caster, target_id, definition)
+  end
+
+  defp check_use_target(caster, target, definition),
+    do: check_self_target(caster, target, definition)
+
+  defp check_unit_target(caster, target_id, definition) do
+    case resolve_unit_position(target_id) do
+      {:ok, {_x, _y, map_name}} when map_name != caster.map_name -> {:error, :different_map}
+      {:ok, _position} -> check_self_target(caster, {:unit, target_id}, definition)
+      {:error, _reason} -> {:error, :target_not_found}
+    end
+  end
+
+  defp check_self_target(caster, target, %{no_target_self: true}) do
+    if self_target?(caster, target), do: {:error, :no_target_self}, else: :ok
+  end
+
+  defp check_self_target(_caster, _target, _definition), do: :ok
+
+  defp self_target?(_caster, :self), do: true
+  defp self_target?(%PlayerState{character_id: id}, {:unit, id}), do: true
+  defp self_target?(%PlayerState{character_id: id}, {:unit, {:player, id}}), do: true
+  defp self_target?(_caster, _target), do: false
+
+  defp optional_check(%CastContext{module: module} = context, callback) do
+    if function_exported?(module, callback, 4),
+      do:
+        apply(module, callback, [
+          context.caster,
+          context.target,
+          context.level,
+          context.definition
+        ]),
+      else: :ok
+  end
+
+  # The cast-begin conditions of a player's cast: a chat room refuses silently,
+  # then the weight limit; a toggle skill whose status is active only ends it
+  # and checks nothing more; otherwise the skill's own rows, its target and
+  # validation, the recovered-weight state, the weapon, then SP, zeny and
+  # spheres.
+  defp castbegin(%CastContext{caster: caster, definition: definition} = context, begin?) do
+    with :ok <- check_chat_room(caster),
+         :ok <- Caster.Player.check_weight(caster) do
+      if Caster.Player.toggle_off?(caster, definition),
+        do: prepare_cast(context),
+        else: castbegin_conditions(context, begin?)
+    end
+  end
+
+  defp castbegin_conditions(%CastContext{definition: definition} = context, begin?) do
+    with {:ok, context} <- begin_context(context, begin?),
+         :ok <- check_target(context.caster, context.target, definition),
+         :ok <- validate_module(context),
+         :ok <- Caster.Player.check_recovered_weight(context.caster, definition),
+         :ok <- check_weapon(context.caster, definition) do
+      prepare_cast(context)
+    end
+  end
+
+  defp check_chat_room(%PlayerState{waiting_room: nil}), do: :ok
+  defp check_chat_room(_caster), do: {:error, :in_chat_room}
 
   # The cast-begin requirement check records the sphere count a skill reads for
   # its own damage; the cast end does not record it again.

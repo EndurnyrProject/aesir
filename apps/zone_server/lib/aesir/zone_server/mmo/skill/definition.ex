@@ -75,6 +75,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   or Ganbantein removes the whole field only when it covers the field's centre
   cell, and leaves every other cell standing. It is mode-keyable.
 
+  `toggleable` mirrors the source's Toggleable flag: while the skill's own
+  `status` is active, using the skill again only ends it, so its cast-begin
+  checks after the weight limit and its whole requirement are skipped.
+  `no_target_self` mirrors the NoTargetSelf flag: a player cannot aim the skill
+  at themselves. Both are mode-keyable.
+
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
   declared range for a player caster. It is mode-invariant.
@@ -207,6 +213,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             require_recovered_weight: false,
             vulture_range: false,
             status: nil,
+            toggleable: false,
+            no_target_self: false,
             quest_skill: false,
             quest_owner_job: nil
 
@@ -264,6 +272,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           require_recovered_weight: boolean(),
           vulture_range: boolean(),
           status: atom() | nil,
+          toggleable: boolean(),
+          no_target_self: boolean(),
           quest_skill: boolean(),
           quest_owner_job: atom() | nil
         }
@@ -334,6 +344,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     require_recovered_weight: :boolean,
     vulture_range: :boolean,
     status: :atom,
+    toggleable: :boolean,
+    no_target_self: :boolean,
     quest_skill: :boolean,
     quest_owner_job: :atom
   }
@@ -388,6 +400,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     require_recovered_weight: false,
     vulture_range: false,
     status: nil,
+    toggleable: false,
+    no_target_self: false,
     quest_skill: false,
     quest_owner_job: nil
   }
@@ -434,6 +448,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     :item_cost,
     :require_weapon,
     :require_recovered_weight,
+    :toggleable,
+    :no_target_self,
     :require_ammo,
     :ammo_qty,
     :max_level

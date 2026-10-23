@@ -1974,19 +1974,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
              :target_concealed,
              :target_restricted,
              :caster_restricted,
-             :guild_skill_unavailable
+             :guild_skill_unavailable,
+             :target_not_found,
+             :different_map,
+             :no_target_self,
+             :status_blocked,
+             :in_chat_room
            ] do
     Logger.debug("Skill #{skill_id} cast by #{character_id} silently refused: #{reason}")
   end
 
   def report_cast_failure(skill_id, character_id, reason) do
     Logger.debug("Skill #{skill_id} cast failed for #{character_id}: #{inspect(reason)}")
+    {reason, detail} = failure_detail(reason)
 
     Broadcast.to_player(character_id, %SkillCastFailed{
       skill_id: skill_id,
-      reason: failure_reason(reason)
+      reason: failure_reason(reason),
+      detail: detail
     })
   end
+
+  # Spheres required and the missing equipment carry their number to the client.
+  defp failure_detail({:spirits, count}), do: {:spirits, count}
+  defp failure_detail({:need_equipment, item_id}), do: {:need_equipment, item_id}
+  defp failure_detail(reason), do: {reason, 0}
 
   defp failure_reason(:missing_catalyst), do: :SKILL_CAST_FAILURE_REASON_MISSING_CATALYST
   defp failure_reason(:insufficient_sp), do: :SKILL_CAST_FAILURE_REASON_INSUFFICIENT_SP
@@ -2009,6 +2021,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:wrong_weapon), do: :SKILL_CAST_FAILURE_REASON_WRONG_WEAPON
   defp failure_reason(:versus_map_only), do: :SKILL_CAST_FAILURE_REASON_VERSUS_MAP_ONLY
   defp failure_reason(:npc_nearby), do: :SKILL_CAST_FAILURE_REASON_NPC_NEARBY
+  defp failure_reason(:to_target), do: :SKILL_CAST_FAILURE_REASON_TO_TARGET
+  defp failure_reason(:hp_insufficient), do: :SKILL_CAST_FAILURE_REASON_HP_INSUFFICIENT
+  defp failure_reason(:spirits), do: :SKILL_CAST_FAILURE_REASON_SPIRITS
+  defp failure_reason(:cart), do: :SKILL_CAST_FAILURE_REASON_CART
+  defp failure_reason(:need_equipment), do: :SKILL_CAST_FAILURE_REASON_NEED_EQUIPMENT
   defp failure_reason(_reason), do: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
 
   defp resolve_target(%{character_id: caster_id}, target_id) when target_id == caster_id,
