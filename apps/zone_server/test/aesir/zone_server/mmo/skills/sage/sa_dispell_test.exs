@@ -2,7 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispellTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -39,6 +41,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispellTest do
       assert definition.cast_time == List.duplicate(2_000, 5)
       assert definition.fixed_cast_time == []
       assert definition.item_cost == [%{id: 715, amount: 1}]
+    end
+  end
+
+  describe "validate/4" do
+    test "a player in an allied guild passes the relation check" do
+      Mimic.copy(Relations)
+
+      caster = %PlayerState{character_id: 1000, party_id: 0, guild_id: 5}
+      target = %PlayerState{character_id: @target_id, party_id: 0, guild_id: 7}
+
+      stub(UnitRegistry, :get_unit, fn :player, @target_id -> {:ok, {nil, target, self()}} end)
+      stub(Relations, :friendly?, fn 5, 7 -> true end)
+
+      assert :ok = SaDispell.validate(caster, {:unit, @target_id}, 1, definition())
+    end
+
+    test "a player who is neither a comrade nor an enemy fails" do
+      Mimic.copy(Relations)
+
+      caster = %PlayerState{character_id: 1000, party_id: 0, guild_id: 5}
+      target = %PlayerState{character_id: @target_id, party_id: 0, guild_id: 7}
+
+      stub(UnitRegistry, :get_unit, fn :player, @target_id -> {:ok, {nil, target, self()}} end)
+      stub(Relations, :friendly?, fn _caster_guild, _target_guild -> false end)
+
+      stub(Targeting, :validate_enemy_relation_allow_dead, fn _caster, _target ->
+        {:error, :invalid_target}
+      end)
+
+      assert {:error, :invalid_target} =
+               SaDispell.validate(caster, {:unit, @target_id}, 1, definition())
     end
   end
 

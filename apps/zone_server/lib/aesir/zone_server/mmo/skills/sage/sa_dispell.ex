@@ -3,9 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
   Dispell (SA_DISPELL). Strips every dispellable status from one target at 9 cells
   with a 50% plus 10% per level chance, for 1 SP and a Yellow Gemstone spent either
   way. The removal itself lives in the shared dispel routine. A player or
-  Homunculus target must be the caster's own, a party or guild member (or
-  theirs), or an enemy; another fails when the cast ends, before anything is
-  spent. No Soul Link gate is modelled yet.
+  Homunculus target must be the caster's own, a party or guild member (an
+  allied guild counts) or an enemy; another fails when the cast ends, before
+  anything is spent. No Soul Link gate is modelled yet.
 
   Renewal casts in 1.6 s plus 0.4 s fixed; pre-renewal in 2 s.
   """
@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
     item_cost: [%{id: 715, amount: 1}],
     target_hidden: true
 
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -76,11 +77,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
   end
 
   # A player passes as a party or guild member of the caster (by itself or as
-  # a Homunculus's master), or as an enemy.
+  # a Homunculus's master), or as an enemy. An allied guild counts as the
+  # caster's own guild.
   defp relation(caster, player, target) do
-    if shared?(caster.party_id, player.party_id) or shared?(caster.guild_id, player.guild_id),
-      do: :ok,
-      else: enemy(caster, target)
+    if shared?(caster.party_id, player.party_id) or
+         Relations.friendly?(caster.guild_id, player.guild_id),
+       do: :ok,
+       else: enemy(caster, target)
   end
 
   defp enemy(caster, target) do

@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
   @moduledoc """
-  Soul Exhale (PF_SOULCHANGE). Exchanges SP with a party or guild member, or
-  draws SP from a monster.
+  Soul Exhale (PF_SOULCHANGE). Exchanges SP with a party or guild member (an
+  allied guild counts), or draws SP from a monster.
 
   On a player, the Professor and the target swap their SP. Renewal halves both
   pools first, and a target readied for Asura Strike receives its own SP back
@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
     damage_kind: :none
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -112,8 +113,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Professor.PfSoulchange do
       else: {div(caster_sp, 2), div(target_sp, 2)}
   end
 
+  # A party member, or a guild member: an allied guild counts as the caster's
+  # own guild.
   defp comrade?(caster, target) do
-    shared?(caster.party_id, target.party_id) or shared?(caster.guild_id, target.guild_id)
+    shared?(caster.party_id, target.party_id) or
+      Relations.friendly?(caster.guild_id, target.guild_id)
   end
 
   defp shared?(id, id) when is_integer(id) and id > 0, do: true
