@@ -3,36 +3,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
 
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
 
-  test "opens a generation-tagged window for one target" do
+  test "opens a generation-tagged window that names no required target" do
     combo = Combo.open(Combo.new(), :quadruple, {:mob, 10}, 1_500)
 
     assert combo.stage == :quadruple
     assert combo.target == {:mob, 10}
     assert combo.deadline == 1_500
     assert combo.generation == 1
-    assert Combo.current?(combo, :quadruple, {:mob, 10}, 1_499)
-    refute Combo.current?(combo, :quadruple, {:mob, 11}, 1_499)
-    refute Combo.current?(combo, :quadruple, {:mob, 10}, 1_500)
-  end
-
-  test "advance requires the current stage, target, and deadline" do
-    combo = Combo.open(Combo.new(), :quadruple, {:player, 20}, 2_000)
-
-    assert {:ok, advanced} =
-             Combo.advance(combo, :quadruple, :thrust, {:player, 20}, 2_500, 1_999)
-
-    assert advanced.stage == :thrust
-    assert advanced.target == {:player, 20}
-    assert advanced.generation == 2
-
-    assert {:error, :invalid_combo} =
-             Combo.advance(combo, :thrust, :quadruple, {:player, 20}, 2_500, 1_999)
-
-    assert {:error, :invalid_combo} =
-             Combo.advance(combo, :quadruple, :thrust, {:player, 21}, 2_500, 1_999)
-
-    assert {:error, :invalid_combo} =
-             Combo.advance(combo, :quadruple, :thrust, {:player, 20}, 2_500, 2_000)
+    assert Combo.open?(combo, :quadruple, 1_499)
+    refute Combo.open?(combo, :thrust, 1_499)
+    refute Combo.open?(combo, :quadruple, 1_500)
   end
 
   test "matching expiry and explicit cancellation invalidate stale generations" do
@@ -54,34 +34,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
     assert Combo.cancel(cancelled) == cancelled
   end
 
-  test "validate returns the retained typed target only for the current stage and id" do
-    now = 1_000
-    combo = Combo.open(Combo.new(), :quadruple, {:mob, 42}, now + 500)
-
-    assert {:ok, {:mob, 42}} = Combo.validate(combo, :quadruple, 42, now)
-    assert {:error, :invalid_combo} = Combo.validate(combo, :thrust, 42, now)
-    assert {:error, :invalid_combo} = Combo.validate(combo, :quadruple, 43, now)
-    assert {:error, :invalid_combo} = Combo.validate(combo, :quadruple, 42, now + 500)
-  end
-
-  test "typed validation rejects a reused id owned by another unit type" do
-    now = 1_000
-    combo = Combo.open(Combo.new(), :quadruple, {:mob, 42}, now + 500)
-
-    assert {:ok, {:mob, 42}} = Combo.validate(combo, :quadruple, {:mob, 42}, now)
-    assert {:error, :invalid_combo} = Combo.validate(combo, :quadruple, {:player, 42}, now)
-  end
-
-  test "validate and advance accept any stage from a list" do
+  test "check refuses silently outside the listed stages or after the deadline" do
     now = 1_000
     combo = Combo.open(Combo.new(), :chain_crush, {:mob, 42}, now + 500)
 
-    assert {:ok, {:mob, 42}} = Combo.validate(combo, [:extremity, :chain_crush], 42, now)
-    assert {:error, :invalid_combo} = Combo.validate(combo, [:extremity, :tiger_fist], 42, now)
-    assert Combo.current?(combo, [:extremity, :chain_crush], {:mob, 42}, now)
+    assert :ok = Combo.check(combo, [:extremity, :chain_crush], now)
+    assert {:error, :invalid_combo} = Combo.check(combo, [:extremity, :tiger_fist], now)
+    assert {:error, :invalid_combo} = Combo.check(combo, :chain_crush, now + 500)
+    assert {:error, :invalid_combo} = Combo.check(Combo.new(), :chain_crush, now)
+  end
 
-    assert {:ok, %Combo{stage: :tiger_fist}} =
-             Combo.advance(combo, [:extremity, :chain_crush], :tiger_fist, {:mob, 42}, 2_000, now)
+  describe "use_target/5" do
+    setup do
+      now = System.monotonic_time(:millisecond)
+      open = Combo.open(Combo.new(), :quadruple, {:mob, 42}, now + 60_000)
+      %{caster: %{character_id: 1, combo: open}}
+    end
+
+    test "aims a follow-up at the attack target while its window opens and its conditions pass",
+         %{caster: caster} do
+      assert Combo.use_target(caster, 272, {:unit, 7}, 9, fn -> true end) == {:unit, 9}
+      assert Combo.use_target(caster, 271, {:unit, 7}, 9, fn -> true end) == {:unit, 9}
+    end
+
+    test "without an attack target a self-aimed use has no target and a named unit stays",
+         %{caster: caster} do
+      assert Combo.use_target(caster, 272, :self, nil, fn -> true end) == {:unit, 0}
+      assert Combo.use_target(caster, 272, {:unit, 7}, nil, fn -> true end) == {:unit, 7}
+    end
+
+    test "outside a passing window only a self-aimed follow-up takes the attack target",
+         %{caster: caster} do
+      assert Combo.use_target(caster, 273, :self, 9, fn -> false end) == {:unit, 9}
+      assert Combo.use_target(caster, 273, {:unit, 7}, 9, fn -> false end) == {:unit, 7}
+      assert Combo.use_target(caster, 271, :self, 9, fn -> false end) == :self
+    end
+
+    test "leaves other skills alone", %{caster: caster} do
+      assert Combo.use_target(caster, 5, :self, 9, fn -> true end) == :self
+    end
   end
 
   describe "follow_up_stage/2" do

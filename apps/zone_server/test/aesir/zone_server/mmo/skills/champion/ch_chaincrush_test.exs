@@ -77,8 +77,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrushTest do
       StatusStorage.apply_status(:player, @caster_id, :sc_explosionspirits, duration: 180_000)
   end
 
-  defp validate(caster),
-    do: ChChaincrush.validate(caster, {:unit, @target_id}, 1, ChChaincrush.definition())
+  defp validate(caster) do
+    case ChChaincrush.begin_attempt(caster, {:unit, @target_id}, 1, ChChaincrush.definition()) do
+      {:ok, _caster} -> :ok
+      error -> error
+    end
+  end
 
   defp cast(caster, level),
     do: ChChaincrush.cast(caster, {:unit, @target_id}, level, ChChaincrush.definition())

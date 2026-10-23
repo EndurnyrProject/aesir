@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -599,6 +600,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp dispatch_resolved_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
+    target = use_target(game_state, skill_id, level, target, locked)
+
     case LifecycleSkillHandler.preflight(state, skill_id, level) do
       :ok -> begin_preflighted_cast(state, game_state, skill_id, level, target, locked)
       {:error, reason} -> reject_preflighted_cast(state, skill_id, reason)
@@ -1979,7 +1982,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
              :different_map,
              :no_target_self,
              :status_blocked,
-             :in_chat_room
+             :in_chat_room,
+             :invalid_combo
            ] do
     Logger.debug("Skill #{skill_id} cast by #{character_id} silently refused: #{reason}")
   end
@@ -2026,6 +2030,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:skill_failed), do: :SKILL_CAST_FAILURE_REASON_FAILED
   defp failure_reason(_reason), do: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
 
+  # A combo skill's use is aimed at the unit the player was attacking when the
+  # request came (captured before the cast cleared the attack).
+  defp use_target(game_state, skill_id, level, target, attack_target) do
+    Combo.use_target(game_state, skill_id, target, attack_target, fn ->
+      Interpreter.castbegin_passes?(game_state, skill_id, level, target)
+    end)
+  end
+
   defp resolve_target(%{character_id: caster_id}, target_id) when target_id == caster_id,
     do: :self
 
@@ -2035,18 +2047,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       else: {:unit, target_id}
   end
 
-  defp maybe_cancel_combo(
-         %{game_state: %{combo: %{target: {_type, retained_target_id}}}} = state,
-         skill_id,
-         target_id
-       )
-       when skill_id in @combo_followup_ids and retained_target_id == target_id,
-       do: state
-
-  defp maybe_cancel_combo(%{game_state: game_state} = state, skill_id, _target_id)
-       when skill_id in @combo_followup_ids do
-    %{state | game_state: PlayerState.cancel_combo(game_state)}
-  end
+  # A combo follow-up keeps the window whatever unit the player named: its
+  # use is aimed by the combo itself (`use_target/5`).
+  defp maybe_cancel_combo(state, skill_id, _target_id) when skill_id in @combo_followup_ids,
+    do: state
 
   defp maybe_cancel_combo(%{game_state: game_state} = state, _skill_id, _target_id) do
     %{state | game_state: PlayerState.cancel_combo(game_state)}

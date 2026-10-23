@@ -264,18 +264,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       end
     end
 
-    test "Asura on another target cancels the open window" do
+    test "Asura aimed at another unit keeps the open window" do
       stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
+      stub(Interpreter, :castbegin_passes?, fn _game_state, 271, 1, _target -> true end)
       state = instant_state(100)
       combo = Combo.open(Combo.new(), :extremity, {:mob, 2000}, 9_999_999_999)
       state = %{state | game_state: %{state.game_state | combo: combo}}
 
       expect(Interpreter, :begin_cast, fn game_state, 271, 1, {:unit, 2001} ->
-        assert game_state.combo.stage == :idle
+        assert game_state.combo.stage == :extremity
         {:error, :invalid_target}
       end)
 
       SkillHandler.handle_use_skill(knowing(state, 271, 1), 271, 1, 2001)
+    end
+
+    test "a combo follow-up is aimed at the unit the player is attacking" do
+      stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
+      stub(Interpreter, :castbegin_passes?, fn _game_state, 272, 1, _target -> true end)
+      state = instant_state(100)
+      combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)
+
+      state = %{
+        state
+        | game_state: %{state.game_state | combo: combo, combat_target_id: 2002}
+      }
+
+      expect(Interpreter, :begin_cast, fn _game_state, 272, 1, {:unit, 2002} ->
+        {:error, :invalid_target}
+      end)
+
+      SkillHandler.handle_use_skill(knowing(state, 272, 1), 272, 1, 1000)
     end
 
     test "successful named skill use dispatches its equipment autobonus" do

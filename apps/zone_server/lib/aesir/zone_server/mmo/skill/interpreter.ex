@@ -276,6 +276,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   def preflight_cast(_caster, _skill_id, _level, _target), do: {:error, :invalid_level}
 
+  @doc """
+  Whether a player's cast of `skill_id` would pass its cast-begin conditions
+  now (`castbegin`), without casting anything. A combo skill's use is aimed by
+  its combo only when they pass.
+  """
+  @spec castbegin_passes?(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          boolean()
+  def castbegin_passes?(%PlayerState{} = caster, skill_id, level, target) do
+    with {:ok, definition} <- fetch_definition(skill_id),
+         {:ok, _module} <- fetch_active_module(definition) do
+      context = CastContext.build(caster, definition, level, target, :begin)
+      match?({:ok, _context}, castbegin(context, true))
+    else
+      _missing -> false
+    end
+  end
+
   @doc "Validates catalog identity and learned rank without mutable cast checks."
   @spec preflight_skill(Caster.state(), integer(), pos_integer()) :: :ok | {:error, atom()}
   def preflight_skill(caster, skill_id, level) when is_integer(level) and level > 0 do

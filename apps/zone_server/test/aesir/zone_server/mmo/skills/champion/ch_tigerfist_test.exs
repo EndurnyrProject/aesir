@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfistTest do
     :ok
   end
 
-  test "follows Raging Thrust on the retained target only" do
+  test "follows Raging Thrust, whatever unit its window last hit" do
     assert :ok = validate(caster(:extremity))
     assert {:error, :invalid_combo} = validate(caster(:tiger_fist))
 
@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfistTest do
       | combo: Combo.open(Combo.new(), :extremity, {:mob, 1}, future())
     }
 
-    assert {:error, :invalid_combo} = validate(other)
+    assert :ok = validate(other)
   end
 
   @tag game_mode: :renewal
@@ -105,8 +105,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfistTest do
     end)
   end
 
-  defp validate(caster),
-    do: ChTigerfist.validate(caster, {:unit, @target_id}, 1, ChTigerfist.definition())
+  defp validate(caster) do
+    case ChTigerfist.begin_attempt(caster, {:unit, @target_id}, 1, ChTigerfist.definition()) do
+      {:ok, _caster} -> :ok
+      error -> error
+    end
+  end
 
   defp cast(caster, level),
     do: ChTigerfist.cast(caster, {:unit, @target_id}, level, ChTigerfist.definition())

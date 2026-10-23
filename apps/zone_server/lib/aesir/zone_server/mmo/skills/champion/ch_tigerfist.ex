@@ -42,35 +42,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
 
   @behaviour Active
 
+  @doc """
+  Starts only while the window after Raging Thrust (or, in pre-renewal, after
+  Chain Crush Combo) is open; otherwise refused silently.
+  """
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :invalid_combo}
-  def validate(caster, {:unit, target_id}, _level, _definition) do
-    case Combo.validate(caster.combo, accepted_stages(), target_id, now()) do
-      {:ok, _target} -> :ok
-      {:error, _reason} = error -> error
-    end
-  end
-
-  def validate(_caster, _target, _level, _definition), do: {:error, :invalid_combo}
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :invalid_combo}
+  def begin_attempt(caster, _target, _level, _definition),
+    do: with(:ok <- Combo.check(caster.combo, accepted_stages(), now()), do: {:ok, caster})
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(caster, {:unit, target_id}, level, definition) do
     now = now()
-    stages = accepted_stages()
     duration = Enum.at(definition.after_cast_delay, level - 1, 0)
 
     with :ok <- Root.check_cast(:player, caster.character_id, definition.id),
-         {:ok, _target} <- Combo.validate(caster.combo, stages, target_id, now),
          {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
-         {:ok, target} <- Combo.validate(caster.combo, stages, {target_type, target_id}, now),
+         target = {target_type, target_id},
          {:ok, %{hit?: hit?}} <-
            Combat.execute_skill_attack(caster, target_id, attack_options(caster, level)),
          :ok <- if(hit?, do: maybe_immobilise(caster, target, level), else: :ok),
          {:ok, combo} <-
-           Combo.open_follow_up(caster, :tiger_fist, stages, target, now, duration) do
+           Combo.open_follow_up(caster, :tiger_fist, target, now, duration) do
       {:ok, %{caster | combo: combo}}
     end
   end

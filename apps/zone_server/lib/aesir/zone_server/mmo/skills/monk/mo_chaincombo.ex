@@ -11,6 +11,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
     id: 272,
     no_target_self: true,
     name: :mo_chaincombo,
+    # Every weapon but a bow or a two-handed staff.
+    require_weapon: [
+      :fist,
+      :dagger,
+      :one_handed_sword,
+      :two_handed_sword,
+      :one_handed_spear,
+      :two_handed_spear,
+      :one_handed_axe,
+      :two_handed_axe,
+      :mace,
+      :two_handed_mace,
+      :staff,
+      :knuckle,
+      :musical,
+      :whip,
+      :book,
+      :katar,
+      :revolver,
+      :rifle,
+      :gatling,
+      :shotgun,
+      :grenade,
+      :huuma
+    ],
     display_name: "Raging Quadruple Blow",
     max_level: 5,
     target_type: :target_enemy,
@@ -31,17 +56,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
 
   @behaviour Active
 
+  @doc """
+  Starts only while Root holds the Monk or a Triple Attack window is open;
+  otherwise it is refused silently.
+  """
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :invalid_combo}
-  def validate(caster, {:unit, target_id}, _level, _definition) do
-    case Combo.validate(caster.combo, :quadruple, target_id, now()) do
-      {:ok, _target} -> :ok
-      {:error, _reason} = error -> error
-    end
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :invalid_combo}
+  def begin_attempt(%PlayerState{character_id: id} = caster, _target, _level, _definition) do
+    if Root.rooted?(:player, id),
+      do: {:ok, caster},
+      else: with(:ok <- Combo.check(caster.combo, :quadruple, now()), do: {:ok, caster})
   end
-
-  def validate(_caster, _target, _level, _definition), do: {:error, :invalid_combo}
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -59,14 +85,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
     ]
 
     with :ok <- Root.check_cast(:player, caster.character_id, definition.id),
-         :ok <- validate(caster, {:unit, target_id}, level, definition),
-         {:ok, target} <- Combo.validate(caster.combo, :quadruple, target_id, now),
          {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
-         {:ok, ^target} <- Combo.validate(caster.combo, :quadruple, {target_type, target_id}, now),
          :ok <- Combat.execute_skill_attack(caster, target_id, opts),
          delay <- Enum.at(definition.after_cast_delay, level - 1, 0),
          {:ok, combo} <-
-           Combo.open_follow_up(caster, :quadruple, :quadruple, target, now, delay) do
+           Combo.open_follow_up(caster, :quadruple, {target_type, target_id}, now, delay) do
       {:ok, %{caster | combo: combo}}
     end
   end

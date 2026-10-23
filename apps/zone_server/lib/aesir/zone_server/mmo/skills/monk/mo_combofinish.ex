@@ -21,6 +21,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
     id: 273,
     no_target_self: true,
     name: :mo_combofinish,
+    # Every weapon but a bow or a two-handed staff.
+    require_weapon: [
+      :fist,
+      :dagger,
+      :one_handed_sword,
+      :two_handed_sword,
+      :one_handed_spear,
+      :two_handed_spear,
+      :one_handed_axe,
+      :two_handed_axe,
+      :mace,
+      :two_handed_mace,
+      :staff,
+      :knuckle,
+      :musical,
+      :whip,
+      :book,
+      :katar,
+      :revolver,
+      :rifle,
+      :gatling,
+      :shotgun,
+      :grenade,
+      :huuma
+    ],
     display_name: "Raging Thrust",
     max_level: 5,
     target_type: :target_enemy,
@@ -41,17 +66,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
 
   @behaviour Active
 
+  @doc "Starts only while a Raging Quadruple Blow window is open; otherwise refused silently."
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :invalid_combo}
-  def validate(caster, {:unit, target_id}, _level, _definition) do
-    case Combo.validate(caster.combo, :thrust, target_id, now()) do
-      {:ok, _target} -> :ok
-      {:error, _reason} = error -> error
-    end
-  end
-
-  def validate(_caster, _target, _level, _definition), do: {:error, :invalid_combo}
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :invalid_combo}
+  def begin_attempt(caster, _target, _level, _definition),
+    do: with(:ok <- Combo.check(caster.combo, :thrust, now()), do: {:ok, caster})
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -59,9 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
   def cast(caster, {:unit, target_id}, level, definition) do
     now = now()
 
-    with {:ok, target} <- Combo.validate(caster.combo, :thrust, target_id, now),
-         {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
-         {:ok, ^target} <- Combo.validate(caster.combo, :thrust, {target_type, target_id}, now),
+    with {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
          :ok <-
            Combat.execute_skill_attack(
              caster,
@@ -70,14 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
            ),
          duration <- Enum.at(definition.after_cast_delay, level - 1, 0),
          {:ok, combo} <-
-           Combo.open_follow_up(
-             caster,
-             :thrust,
-             :thrust,
-             target,
-             now,
-             duration
-           ) do
+           Combo.open_follow_up(caster, :thrust, {target_type, target_id}, now, duration) do
       {:ok, %{caster | combo: combo}}
     else
       {:error, _reason} = error -> error

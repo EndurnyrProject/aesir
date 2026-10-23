@@ -102,27 +102,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
                MoExtremityfist.validate(caster(sp: 100), {:ground, 5, 5}, 5, definition())
     end
 
-    test "requires Fury to be active" do
+    test "requires Fury to be active when the cast begins" do
       assert {:error, :requires_explosion_spirits} =
-               MoExtremityfist.validate(caster(sp: 100), {:unit, @target_id}, 5, definition())
+               MoExtremityfist.begin_attempt(
+                 caster(sp: 100),
+                 {:unit, @target_id},
+                 5,
+                 definition()
+               )
     end
 
-    test "requires at least one spirit point" do
-      apply_fury(@caster_id)
-
-      assert {:error, :insufficient_sp} =
-               MoExtremityfist.validate(caster(sp: 0), {:unit, @target_id}, 5, definition())
+    test "requires one spirit point, the SP the cast begin checks" do
+      assert %{sp_requirement: 1} =
+               MoExtremityfist.dynamic_cost(caster(sp: 0), {:unit, @target_id}, 5, definition())
     end
 
     test "passes with Fury active and spirit points to spend" do
       apply_fury(@caster_id)
 
+      assert {:ok, _caster} =
+               MoExtremityfist.begin_attempt(caster(sp: 1), {:unit, @target_id}, 5, definition())
+
       assert :ok = MoExtremityfist.validate(caster(sp: 1), {:unit, @target_id}, 5, definition())
     end
 
-    test "a rooted caster below Root level five is rejected outright" do
+    test "a rooted caster below Root level five is refused silently and at the cast end" do
       apply_fury(@caster_id)
       link_pair(@caster_id, {:mob, @target_id}, 4)
+
+      assert {:error, :caster_restricted} =
+               MoExtremityfist.skilluse_check(
+                 caster(sp: 100),
+                 {:unit, @target_id},
+                 5,
+                 definition()
+               )
 
       assert {:error, :insufficient_root_level} =
                MoExtremityfist.validate(caster(sp: 100), {:unit, @target_id}, 5, definition())

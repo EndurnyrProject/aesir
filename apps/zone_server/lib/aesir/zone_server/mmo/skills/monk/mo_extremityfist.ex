@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   reached; the caster must hold Fury in every one:
 
     * a normal cast spends five spheres;
-    * a Root follow-up against the caught peer spends four;
+    * under Root it spends four;
     * a combo follow-up off Raging Thrust's window casts instantly and spends
       every held sphere (at least one) in renewal, four in pre-renewal;
     * a Champion follow-up off Chain Crush Combo's window casts instantly and
@@ -44,6 +44,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 271,
     name: :mo_extremityfist,
+    # Every weapon but a bow or a two-handed staff.
+    require_weapon: [
+      :fist,
+      :dagger,
+      :one_handed_sword,
+      :two_handed_sword,
+      :one_handed_spear,
+      :two_handed_spear,
+      :one_handed_axe,
+      :two_handed_axe,
+      :mace,
+      :two_handed_mace,
+      :staff,
+      :knuckle,
+      :musical,
+      :whip,
+      :book,
+      :katar,
+      :revolver,
+      :rifle,
+      :gatling,
+      :shotgun,
+      :grenade,
+      :huuma
+    ],
     # Player-coupled at runtime (character_id + spirit spheres), but not on the pre-migration
     # previous mob refusal set. Kept mob-selectable with [] to preserve exact pre-migration behaviour; a
     # mob caster falls through to the {:error, :invalid_target} clause as it does today.
@@ -91,26 +116,65 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   @fury :sc_explosionspirits
   @recovery :sc_extremityfist
 
+  @doc "A Root too weak for Asura Strike refuses the use silently."
+  @impl Active
+  @spec skilluse_check(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :caster_restricted}
+  def skilluse_check(%PlayerState{character_id: caster_id}, _target, _level, definition) do
+    case Root.check_cast(:player, caster_id, definition.id) do
+      :ok -> :ok
+      {:error, :insufficient_root_level} -> {:error, :caster_restricted}
+    end
+  end
+
+  @doc """
+  Starts under Root; otherwise a combo window must be the one after Raging
+  Thrust or Chain Crush Combo (any other is refused silently), and without a
+  window the Monk must be able to move. Fury is required in every case.
+  """
+  @impl Active
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def begin_attempt(%PlayerState{character_id: caster_id} = caster, _target, _level, _def) do
+    with :ok <- check_start(caster) do
+      if Fury.active?(caster_id),
+        do: {:ok, caster},
+        else: {:error, :requires_explosion_spirits}
+    end
+  end
+
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
+
+  defp check_start(%PlayerState{character_id: caster_id, combo: combo} = caster) do
+    now = now()
+
+    cond do
+      Root.rooted?(:player, caster_id) -> :ok
+      Combo.open?(combo, now) -> Combo.check(combo, [:extremity, :chain_crush], now)
+      can_move?(caster, now) -> :ok
+      true -> {:error, :cannot_move}
+    end
+  end
+
+  defp can_move?(%PlayerState{character_id: caster_id, action_state: action_state} = caster, now) do
+    action_state not in [:sitting, :vending] and StatusInterpreter.can_move?(:player, caster_id) and
+      not PlayerState.walk_delayed?(caster, now)
+  end
+
+  @doc "A Root too weak for Asura Strike fails the cast when its cast ends."
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(%{character_id: caster_id} = caster, {:unit, _target_id}, _level, definition) do
-    with :ok <- Root.check_cast(:player, caster_id, definition.id) do
-      cond do
-        not Fury.active?(caster_id) -> {:error, :requires_explosion_spirits}
-        caster.stats.current_state.sp < Formulas.asura_sp_cost() -> {:error, :insufficient_sp}
-        true -> :ok
-      end
-    end
-  end
+  def validate(%{character_id: caster_id}, {:unit, _target_id}, _level, definition),
+    do: Root.check_cast(:player, caster_id, definition.id)
 
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
   @impl Active
   @spec dynamic_cost(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
-  def dynamic_cost(%{spirit_spheres: spheres} = caster, {:unit, target_id}, level, definition) do
+  def dynamic_cost(%{spirit_spheres: spheres} = caster, {:unit, _target_id}, level, definition) do
     held = SpiritSpheres.count(spheres)
-    context = context(caster, target_id)
+    context = context(caster)
     sp = Cost.resolve_sp(caster, definition, level)
 
     %Cost{
@@ -124,16 +188,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   @impl Active
   @spec dynamic_cast_time(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
-  def dynamic_cast_time(caster, {:unit, target_id}, level, definition) do
-    case context(caster, target_id) do
-      combo when combo in [:combo, :chain_crush_combo] ->
-        %{cast_time: 0, fixed_cast_time: 0}
-
-      _context ->
-        %{
-          cast_time: Enum.at(definition.cast_time, level - 1, 0),
-          fixed_cast_time: Enum.at(definition.fixed_cast_time, level - 1, 0)
-        }
+  def dynamic_cast_time(caster, {:unit, _target_id}, level, definition) do
+    if Combo.open?(caster.combo, [:extremity, :chain_crush], now()) do
+      %{cast_time: 0, fixed_cast_time: 0}
+    else
+      %{
+        cast_time: Enum.at(definition.cast_time, level - 1, 0),
+        fixed_cast_time: Enum.at(definition.fixed_cast_time, level - 1, 0)
+      }
     end
   end
 
@@ -266,22 +328,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
     )
   end
 
-  # Root outranks the combo window, matching Renewal: a caught Monk resolves as a
-  # Root follow-up before any lingering combo state is consulted.
-  defp context(%{character_id: caster_id, combo: combo}, target_id) do
-    case Combat.resolve_target_position(target_id) do
-      {:ok, type, _position} ->
-        target = {type, target_id}
+  # The sphere price follows the caster's state, not the target: Root first,
+  # then the open combo window's opener.
+  defp context(%{character_id: caster_id, combo: combo}) do
+    now = now()
 
-        cond do
-          Root.follow_up_allowed?(:player, caster_id, @skill_id, target) -> :root
-          Combo.current?(combo, :extremity, target, now()) -> :combo
-          Combo.current?(combo, :chain_crush, target, now()) -> :chain_crush_combo
-          true -> :normal
-        end
-
-      {:error, _reason} ->
-        :normal
+    cond do
+      Root.rooted?(:player, caster_id) -> :root
+      Combo.open?(combo, :extremity, now) -> :combo
+      Combo.open?(combo, :chain_crush, now) -> :chain_crush_combo
+      true -> :normal
     end
   end
 

@@ -30,15 +30,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
     assert definition.after_cast_delay == [1_000, 1_000, 1_000, 1_000, 1_000]
   end
 
-  test "only the live Quadruple window for the retained target validates" do
+  test "starts from a live Quadruple window whatever unit it last hit, or under Root" do
     caster = caster(:quadruple, @target_id)
 
-    assert :ok = MoChaincombo.validate(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
+    assert :ok = begin(caster)
 
-    wrong_target = %{
+    other_target = %{
       caster
       | combo: Combo.open(caster.combo, :quadruple, {:mob, 3_000}, future())
     }
+
+    assert :ok = begin(other_target)
 
     wrong_stage = %{
       caster
@@ -47,10 +49,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
 
     expired = %{caster | combo: Combo.open(caster.combo, :quadruple, {:mob, @target_id}, 0)}
 
-    for state <- [wrong_target, wrong_stage, expired] do
-      assert {:error, :invalid_combo} =
-               MoChaincombo.validate(state, {:unit, @target_id}, 3, MoChaincombo.definition())
+    for state <- [wrong_stage, expired] do
+      assert {:error, :invalid_combo} = begin(state)
     end
+
+    stub(StatusStorage, :has_status?, fn
+      :player, @caster_id, :sc_bladestop -> true
+      _type, _id, _status -> false
+    end)
+
+    assert :ok = begin(expired)
   end
 
   @tag game_mode: :renewal
@@ -124,16 +132,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
     assert caster.combo.stage == :quadruple
   end
 
-  test "an expired predecessor is rejected before the weapon hit" do
+  test "an expired predecessor refuses the cast before it starts" do
     caster = %{
       caster(:quadruple, @target_id)
       | combo: Combo.open(Combo.new(), :quadruple, {:mob, @target_id}, 0)
     }
 
-    reject(&Combat.execute_skill_attack/3)
-
-    assert {:error, :invalid_combo} =
-             MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
+    assert {:error, :invalid_combo} = begin(caster)
   end
 
   test "the chain requires learned Thrust and one held sphere" do
@@ -145,16 +150,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
       | progression: %{caster.stats.progression | learned_skills: %{272 => 5}}
     }
 
-    assert :ok =
-             MoChaincombo.validate(empty, {:unit, @target_id}, 3, MoChaincombo.definition())
-
-    assert :ok =
-             MoChaincombo.validate(
-               %{caster | stats: unlearned},
-               {:unit, @target_id},
-               3,
-               MoChaincombo.definition()
-             )
+    assert :ok = begin(empty)
+    assert :ok = begin(%{caster | stats: unlearned})
 
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
     expect(Combat, :execute_skill_attack, fn ^empty, @target_id, _opts -> :ok end)
@@ -185,17 +182,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
              MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
   end
 
-  test "a reused id with another unit type cannot complete the chain" do
-    caster = caster(:quadruple, @target_id)
+  test "lands on the unit it is cast at and opens the next window there" do
+    caster = %{
+      caster(:quadruple, @target_id)
+      | combo: Combo.open(Combo.new(), :quadruple, {:mob, 3_000}, future())
+    }
 
     stub(Combat, :resolve_target_position, fn @target_id ->
       {:ok, :player, {10, 10, "prontera"}}
     end)
 
-    reject(&Combat.execute_skill_attack/3)
+    expect(Combat, :execute_skill_attack, fn _caster, @target_id, _opts -> :ok end)
 
-    assert {:error, :invalid_combo} =
+    assert {:ok, %{combo: %{target: {:player, @target_id}}}} =
              MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
+  end
+
+  defp begin(caster) do
+    case MoChaincombo.begin_attempt(caster, {:unit, @target_id}, 3, MoChaincombo.definition()) do
+      {:ok, _caster} -> :ok
+      error -> error
+    end
   end
 
   defp caster(stage, target_id, opts \\ []) do

@@ -7,6 +7,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   Generations make delayed timeout messages harmless after a window advances or
   is cancelled. Deadlines use monotonic milliseconds supplied by the caller.
 
+  A window is not tied to a unit: a follow-up is aimed at the caster's current
+  attack target when it starts (see `SkillHandler`). The target a window keeps
+  is only the unit the chain last hit.
+
   Stages: `:quadruple` and `:thrust` name the skill the window allows;
   `:extremity` is the window after Raging Thrust; `:tiger_fist` and
   `:chain_crush` are the windows after Glacier Fist and Chain Crush Combo.
@@ -31,14 +35,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Fury
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Root
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @asura 271
+  @chain_combo 272
   @thrust 273
   @grace_ms 300
   @tiger_fist 371
   @chain_crush 372
+  @combo_skills [@asura, @chain_combo, @thrust, @tiger_fist, @chain_crush]
+  @self_aimed [@chain_combo, @thrust, @tiger_fist, @chain_crush]
 
   @type stage :: :idle | :quadruple | :thrust | :extremity | :tiger_fist | :chain_crush
   @type follow_up_ctx :: %{
@@ -57,6 +65,49 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
           generation: non_neg_integer()
         }
 
+  @doc """
+  The target a combo skill's use is aimed at, given the target the player
+  named and the unit they are attacking (`nil` when none).
+
+  While a window is open and the skill's cast-begin conditions pass
+  (`castbegin_ok`, evaluated only then), the use is aimed at the attack target;
+  without one, a use aimed at the player themselves has no target. A
+  self-aimed follow-up outside a window is aimed the same way. Raging
+  Quadruple Blow under Root is then aimed at the caught unit. Any other skill
+  keeps its target. `{:unit, 0}` names no unit.
+  """
+  @spec use_target(map(), integer(), term(), integer() | nil, (-> boolean())) :: term()
+  def use_target(%{combo: combo} = caster, skill_id, target, attack_target, castbegin_ok)
+      when skill_id in @combo_skills do
+    now = System.monotonic_time(:millisecond)
+
+    target =
+      cond do
+        open?(combo, now) and castbegin_ok.() -> attack_target(target, attack_target)
+        skill_id in @self_aimed and target == :self -> attack_target(target, attack_target)
+        true -> target
+      end
+
+    root_target(caster, skill_id, target)
+  end
+
+  def use_target(_caster, _skill_id, target, _attack_target, _castbegin_ok), do: target
+
+  defp attack_target(_target, attack_target) when is_integer(attack_target) and attack_target > 0,
+    do: {:unit, attack_target}
+
+  defp attack_target(:self, _attack_target), do: {:unit, 0}
+  defp attack_target(target, _attack_target), do: target
+
+  defp root_target(%{character_id: caster_id}, @chain_combo, target) do
+    case Root.linked_peer(:player, caster_id) do
+      {_type, peer_id} -> {:unit, peer_id}
+      nil -> target
+    end
+  end
+
+  defp root_target(_caster, _skill_id, target), do: target
+
   @doc "Returns an idle combo state."
   @spec new() :: t()
   def new, do: %__MODULE__{}
@@ -72,51 +123,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
     }
   end
 
-  @doc "Advances a current window (any of `expected`) for the retained target."
-  @spec advance(t(), stage() | [stage()], stage(), target(), integer(), integer()) ::
-          {:ok, t()} | {:error, :invalid_combo}
-  def advance(combo, expected, next, target, deadline, now) do
-    if current?(combo, expected, target, now) do
-      {:ok, open(combo, next, target, deadline)}
-    else
-      {:error, :invalid_combo}
-    end
-  end
+  @doc "Whether a window is open at `now` (any stage)."
+  @spec open?(t(), integer()) :: boolean()
+  def open?(%__MODULE__{stage: stage, deadline: deadline}, now),
+    do: stage != :idle and is_integer(deadline) and deadline != 0 and now < deadline
 
-  @doc "Whether the given stage (or any of a list) and target own a still-open window."
-  @spec current?(t(), stage() | [stage()], target(), integer()) :: boolean()
-  def current?(%__MODULE__{} = combo, stages, target, now) when is_list(stages) do
-    combo.stage in stages and combo.target == target and is_integer(combo.deadline) and
-      now < combo.deadline
-  end
+  @doc "Whether the open window is one of `stages` at `now`."
+  @spec open?(t(), stage() | [stage()], integer()) :: boolean()
+  def open?(%__MODULE__{} = combo, stages, now) when is_list(stages),
+    do: open?(combo, now) and combo.stage in stages
 
-  def current?(combo, stage, target, now), do: current?(combo, [stage], target, now)
+  def open?(combo, stage, now), do: open?(combo, [stage], now)
 
-  @doc "Validates a stage (or any of a list) and target id, returning the retained typed target."
-  @spec validate(t(), stage() | [stage()], non_neg_integer() | target(), integer()) ::
-          {:ok, target()} | {:error, :invalid_combo}
-  def validate(%__MODULE__{} = combo, stage, {target_type, target_id}, now)
-      when stage != :idle and target_type in [:player, :mob, :skill_unit] and
-             is_integer(target_id) and is_integer(now) do
-    if combo.deadline != 0 and current?(combo, stage, {target_type, target_id}, now),
-      do: {:ok, {target_type, target_id}},
-      else: {:error, :invalid_combo}
-  end
-
-  def validate(%__MODULE__{} = combo, stage, target_id, now)
-      when stage != :idle and is_integer(target_id) and is_integer(now) do
-    case combo.target do
-      {_, ^target_id} = target ->
-        if combo.deadline != 0 and current?(combo, stage, target, now),
-          do: {:ok, target},
-          else: {:error, :invalid_combo}
-
-      _ ->
-        {:error, :invalid_combo}
-    end
-  end
-
-  def validate(_combo, _stage, _target_id, _now), do: {:error, :invalid_combo}
+  @doc """
+  The cast-begin condition of a combo follow-up: the window must be one of
+  `stages`, or the skill is refused silently.
+  """
+  @spec check(t(), stage() | [stage()], integer()) :: :ok | {:error, :invalid_combo}
+  def check(combo, stages, now),
+    do: if(open?(combo, stages, now), do: :ok, else: {:error, :invalid_combo})
 
   @doc """
   Returns the window a landed combo skill opens, or `:idle` when the chain
@@ -146,20 +171,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   end
 
   @doc """
-  Opens the window a landed `opener` earns, advancing from any `expected`
-  stage on `target`, or closes the chain. `caster` has already paid the
-  opener's spheres. The window lasts `delay` plus the grace and schedules
+  Opens the window a landed `opener` earns on `target`, replacing any open
+  one, or closes the chain. `caster` has already paid the opener's spheres.
+  The window lasts `delay` plus the grace and schedules
   `{:combo_timeout, generation}` to the calling session.
   """
   @spec open_follow_up(
           map(),
           :quadruple | :thrust | :tiger_fist | :chain_crush,
-          stage() | [stage()],
           target(),
           integer(),
           non_neg_integer()
-        ) :: {:ok, t()} | {:error, :invalid_combo}
-  def open_follow_up(caster, opener, expected, target, now, delay) do
+        ) :: {:ok, t()}
+  def open_follow_up(caster, opener, target, now, delay) do
     ctx = %{
       learned: PlayerStats.effective_skills(caster.stats),
       spheres: SpiritSpheres.count(caster.spirit_spheres),
@@ -173,10 +197,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
       stage ->
         window = delay + @grace_ms
 
-        with {:ok, combo} <- advance(caster.combo, expected, stage, target, now + window, now) do
-          Process.send_after(self(), {:combo_timeout, combo.generation}, window)
-          {:ok, combo}
-        end
+        combo = open(caster.combo, stage, target, now + window)
+        Process.send_after(self(), {:combo_timeout, combo.generation}, window)
+        {:ok, combo}
     end
   end
 
