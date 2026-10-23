@@ -10,6 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
   confused and hallucinating for 10 s outright. Pre-renewal: a 1 s cast, no
   cooldown, and players are confused for 30 s at a 10 percent chance, gaining the
   10 s charm only when the confusion lands.
+
+  Both modes: a boss target is refused before the cast begins; the target's
+  race and enemy relation are checked when the cast ends.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -47,20 +50,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
   # A charmed monster takes a zero-damage normal ranged weapon hit.
   @charm_hit_flag BattleFlags.build(:weapon, :long, false)
 
+  @doc """
+  A player's use on a boss is refused before the cast begins, replying that
+  the target cannot be affected.
+  """
+  @impl Active
+  def skilluse_check(%PlayerState{}, {:unit, target_id}, _level, _definition) do
+    case TargetResolver.resolve(target_id) do
+      {:ok, _pid, target, _unit_type} -> reject_boss(target)
+      {:error, _reason} -> {:error, :target_not_found}
+    end
+  end
+
+  def skilluse_check(_caster, _target, _level, _definition), do: :ok
+
+  @doc """
+  When the cast ends the target must be a demon, demi-human, angel or player,
+  then an enemy; a dead target passes here and the effect is skipped once the
+  cost is paid.
+  """
   @impl Active
   def validate(caster, {:unit, target_id}, _level, _definition) do
     with {:ok, _pid, target, _unit_type} <- TargetResolver.resolve(target_id),
-         :ok <- reject_boss(target),
          {:ok, combatant} <- Combat.resolve_combatant(target_id),
          :ok <- validate_race(combatant.race) do
-      Targeting.validate_enemy_relation(caster, target)
+      Targeting.validate_enemy_relation_allow_dead(caster, target)
     end
   end
 
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
   defp reject_boss(target) do
-    if target.__struct__.is_boss?(target), do: {:error, :boss_immune}, else: :ok
+    if target.__struct__.is_boss?(target), do: {:error, :to_target}, else: :ok
   end
 
   defp validate_race(race) when race in @eligible_races, do: :ok

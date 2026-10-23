@@ -58,12 +58,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
     assert platinum_source =~ "skill(ctx, 1011, 1, :permanent)"
   end
 
-  test "a Demihuman boss is rejected by the separate boss gate before race resolution" do
+  test "a player's use on a Demihuman boss is refused before the cast begins with TOTARGET" do
     target = register_mob([:detector, :status_immune, :knockback_immune], :demi_human)
     reject(&Combat.resolve_combatant/1)
 
-    assert {:error, :boss_immune} =
-             DcWinkcharm.validate(
+    assert {:error, :to_target} =
+             DcWinkcharm.skilluse_check(
+               %PlayerState{character_id: @caster_id},
+               {:unit, target.instance_id},
+               1,
+               nil
+             )
+  end
+
+  test "a player's use on a non-boss passes the use check" do
+    target = register_mob([], :formless)
+
+    assert :ok =
+             DcWinkcharm.skilluse_check(
                %PlayerState{character_id: @caster_id},
                {:unit, target.instance_id},
                1,
