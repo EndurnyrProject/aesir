@@ -385,10 +385,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @doc """
   Pays a prepared cost's HP, SP, spirit spheres and zeny before the effect.
 
-  Item Appraisal's HP and SP and Ki Translation's spheres are not part of it:
-  the appraisal pays them once the effect has run and the transfer spends its
-  sphere itself. The returned prepared cost keeps only what is left, so a
-  deferred cast settles it without paying the primary part twice.
+  Item Appraisal's HP and SP are not part of it: the appraisal pays them once
+  the effect has run. Ki Translation's sphere is never paid here, because the
+  reference moves it inside the effect (giving it away, or refreshing the
+  caster's own), so it stays a cast-begin check only. The returned prepared
+  cost keeps only what is left, so a deferred cast settles it without paying
+  the primary part twice.
   """
   @impl true
   def commit_primary(caster, %{commitment: commitment, zeny: zeny, cost: cost} = prepared) do
@@ -408,7 +410,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     do: {%{commitment | hp: 0, sp: 0}, %{commitment | write_spheres?: false}}
 
   defp split_commitment(commitment, %{id: @ki_translation}),
-    do: {%{commitment | write_spheres?: false}, %{commitment | hp: 0, sp: 0}}
+    do:
+      {%{commitment | write_spheres?: false}, %{commitment | hp: 0, sp: 0, write_spheres?: false}}
 
   defp split_commitment(commitment, _definition),
     do: {commitment, %{commitment | hp: 0, sp: 0, write_spheres?: false}}
@@ -416,7 +419,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   defp remaining_cost(cost, %{id: @identify}), do: %{cost | spheres: 0}
 
   defp remaining_cost(cost, %{id: @ki_translation}),
-    do: %{cost | hp: 0, sp: 0, sp_requirement: 0}
+    do: %{cost | hp: 0, sp: 0, sp_requirement: 0, spheres: 0}
 
   defp remaining_cost(cost, _definition),
     do: %{cost | hp: 0, sp: 0, sp_requirement: 0, spheres: 0}

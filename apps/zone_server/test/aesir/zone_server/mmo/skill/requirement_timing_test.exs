@@ -262,7 +262,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.RequirementTimingTest do
       assert unpaid.stats.current_state.sp == 50
     end
 
-    test "Ki Translation pays its SP first and leaves the sphere to the transfer" do
+    test "Ki Translation pays its SP first and leaves its sphere to the effect" do
       stub_probe_as(
         1_015,
         definition(
@@ -277,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.RequirementTimingTest do
 
       Process.put(:probe_result, :deferred)
 
-      assert {:deferred, paid, %Interpreter.Deferred{cost: %Cost{sp: 0, spheres: 1}} = deferred} =
+      assert {:deferred, paid, %Interpreter.Deferred{cost: %Cost{sp: 0, spheres: 0}} = deferred} =
                Interpreter.cast(caster(%{stats: learned(1_015)}), 1_015, 1, :self)
 
       assert_received {:effect_saw, %CurrentState{sp: 10}, _zeny, 3, _gems, _old}
@@ -285,7 +285,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.RequirementTimingTest do
 
       assert {:ok, settled} = Interpreter.settle_deferred(paid, deferred)
       assert settled.stats.current_state.sp == 10
-      assert SpiritSpheres.count(settled.spirit_spheres) == 2
+      assert SpiritSpheres.count(settled.spirit_spheres) == 3
     end
   end
 

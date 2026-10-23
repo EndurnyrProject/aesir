@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     assert definition.after_cast_delay == [1_000]
   end
 
-  test "an eligible party target pays its SP and leaves the sphere to the transfer descriptor" do
+  test "an eligible party target pays its SP and moves its sphere in the effect" do
     source = player_state(1, party_id: 10) |> with_sphere()
     target = player_state(2, party_id: 10)
     :ok = UnitRegistry.register_player(target, self())
@@ -54,12 +54,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     assert {:deferred, paid,
             %Interpreter.Deferred{
               effect: {:transfer_sphere, 2},
-              cost: %Cost{sp: 0, spheres: 1},
+              cost: %Cost{sp: 0, spheres: 0},
               skill_id: 1_015
             }} = Interpreter.cast(source, 1_015, 1, {:unit, 2})
 
     assert paid.stats.current_state.sp == source.stats.current_state.sp - 40
-    assert paid.spirit_spheres == source.spirit_spheres
+    assert SpiritSpheres.count(paid.spirit_spheres) == 0
   end
 
   test "the session commits Ki costs before sending its single delivery" do
@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
              MoKitranslation.validate(source, {:unit, 2}, 1, MoKitranslation.definition())
   end
 
-  test "full targets and coin-user jobs fail the paid effect" do
+  test "full targets and coin-user jobs fail the paid effect and keep the cast's sphere" do
     source = player_state(1, party_id: 10) |> with_sphere()
 
     targets = [
@@ -107,12 +107,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
 
     for target <- targets do
       :ok = UnitRegistry.register_player(target, self())
+      :ok = SpatialIndex.add_unit(:player, 2, 50, 50, "prontera")
 
       assert :ok = MoKitranslation.validate(source, {:unit, 2}, 1, MoKitranslation.definition())
 
-      assert {:failed, ^source, :invalid_target, :spare_items} =
-               MoKitranslation.cast(source, {:unit, 2}, 1, MoKitranslation.definition())
+      assert {:failed, paid, :invalid_target} = Interpreter.cast(source, 1_015, 1, {:unit, 2})
+      assert paid.stats.current_state.sp == source.stats.current_state.sp - 40
+      assert SpiritSpheres.count(paid.spirit_spheres) == 1
     end
+  end
+
+  test "a self cast pays its SP and keeps one sphere with a fresh lifetime" do
+    source = player_state(1, party_id: 0) |> with_sphere()
+    now = System.monotonic_time(:millisecond)
+
+    assert :ok = MoKitranslation.validate(source, :self, 1, MoKitranslation.definition())
+
+    assert {:ok, paid} = Interpreter.cast(source, 1_015, 1, :self)
+
+    assert paid.stats.current_state.sp == source.stats.current_state.sp - 40
+    assert SpiritSpheres.count(paid.spirit_spheres) == 1
+    [%SpiritSpheres.Entry{expires_at: fresh_expiry}] = SpiritSpheres.entries(paid.spirit_spheres)
+    assert fresh_expiry >= now + 599_000
+  end
+
+  test "a self cast at the five-sphere cap fails the paid effect and keeps the sphere" do
+    source = player_state(1, party_id: 0) |> with_spheres(5)
+
+    assert :ok = MoKitranslation.validate(source, :self, 1, MoKitranslation.definition())
+
+    assert {:failed, paid, :invalid_target} = Interpreter.cast(source, 1_015, 1, :self)
+    assert paid.stats.current_state.sp == source.stats.current_state.sp - 40
+    assert SpiritSpheres.count(paid.spirit_spheres) == 5
   end
 
   defp player_state(id, opts) do
