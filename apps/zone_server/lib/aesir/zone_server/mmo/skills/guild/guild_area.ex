@@ -3,19 +3,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
   Shared helpers for master-cast guild area skills (Battle Orders,
   Regeneration, Restore, Emergency Move).
 
-  `validate_master/1` is the cast-begin check: GvG ground first, which fails
-  the cast, then the caster being his guild's master, which drops it silently.
+  `validate_master/1` is the cast-begin check: GvG ground (a GvG map or castle
+  of either kind, War of Emperium TE included, whether or not the siege runs)
+  first, which fails the cast, then the caster being his guild's master, which
+  drops it silently.
   The effect needs only the caster's guild: `guildmates_in_range/2` resolves
   the same-guild players (caster included) in the square around the caster's
   current cell. `rearm_cooldowns/4` arms the cooldowns the effect sets.
   """
 
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildCooldown
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -30,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
   @spec validate_master(PlayerState.t()) ::
           :ok | {:error, :not_gvg_ground | :guild_skill_unavailable}
   def validate_master(%PlayerState{map_name: map_name} = caster) do
-    if Rules.ground?(map_name), do: master(caster), else: {:error, :not_gvg_ground}
+    if MapFlags.gvg2?(map_name), do: master(caster), else: {:error, :not_gvg_ground}
   end
 
   defp master(%PlayerState{guild_id: guild_id}) when guild_id in [nil, 0],

@@ -68,12 +68,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
     end)
   end
 
-  describe "validate/4" do
+  describe "begin_attempt/4" do
     setup do
       stub(MapFlags, :get, fn
         "castle", :gvg_castle -> true
         _map, _flag -> false
       end)
+
+      stub(MapFlags, :gvg2?, fn map_name -> map_name == "castle" end)
 
       {:ok, definition} = Catalog.by_id(10_010)
       %{definition: definition}
@@ -85,7 +87,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
 
       for caster <- [master, guildless] do
         assert {:error, :not_gvg_ground} =
-                 GdBattleorder.validate(%{caster | map_name: "prontera"}, :self, 1, definition)
+                 GdBattleorder.begin_attempt(
+                   %{caster | map_name: "prontera"},
+                   :self,
+                   1,
+                   definition
+                 )
       end
     end
 
@@ -103,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
 
       for caster <- [non_master, guildless] do
         assert {:error, :guild_skill_unavailable} =
-                 GdBattleorder.validate(caster, :self, 1, definition)
+                 GdBattleorder.begin_attempt(caster, :self, 1, definition)
       end
     end
 
@@ -115,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.AreaActivesTest do
         map_name: "castle"
       }
 
-      assert :ok = GdBattleorder.validate(master, :self, 1, definition)
+      assert {:ok, ^master} = GdBattleorder.begin_attempt(master, :self, 1, definition)
     end
   end
 

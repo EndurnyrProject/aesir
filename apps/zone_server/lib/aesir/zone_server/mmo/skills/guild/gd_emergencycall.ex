@@ -37,7 +37,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencycall do
   @lope 5_023
 
   @impl Active
-  def validate(caster, _target, _level, _definition), do: Recall.validate_master(caster)
+  def begin_attempt(caster, _target, _level, _definition) do
+    with :ok <- Recall.validate_master(caster), do: {:ok, caster}
+  end
 
   @impl Active
   def scale_cast_time(caster, _target, _level, time) do

@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuildGroundRulesTest do
 
   defp assert_valid(skill, skill_id, caster) do
     {:ok, definition} = Catalog.by_id(skill_id)
-    assert :ok = skill.validate(caster, :self, 1, definition)
+    assert {:ok, ^caster} = skill.begin_attempt(caster, :self, 1, definition)
   end
 
   test "area actives allow off-hours castle ground" do
@@ -95,11 +95,22 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuildGroundRulesTest do
   test "area actives reject ordinary ground and allow active GvG ground" do
     for {skill, skill_id} <- @area_skills do
       {:ok, definition} = Catalog.by_id(skill_id)
-      assert {:error, :not_gvg_ground} = skill.validate(caster("ordinary"), :self, 1, definition)
+
+      assert {:error, :not_gvg_ground} =
+               skill.begin_attempt(caster("ordinary"), :self, 1, definition)
     end
 
     :ok = MapFlags.set_runtime("active", :gvg, true)
     for {skill, skill_id} <- @area_skills, do: assert_valid(skill, skill_id, caster("active"))
+  end
+
+  test "area actives allow War of Emperium TE ground" do
+    :ok = MapFlags.set_runtime("te_castle", :gvg_te_castle, true)
+    :ok = MapFlags.set_runtime("te_field", :gvg_te, true)
+
+    for {skill, skill_id} <- @area_skills,
+        map_name <- ["te_castle", "te_field"],
+        do: assert_valid(skill, skill_id, caster(map_name))
   end
 
   test "both Urgent Calls are refused off GvG ground before the cast begins, never at its end" do

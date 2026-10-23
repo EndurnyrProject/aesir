@@ -26,7 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GdBattleorder do
   @behaviour Active
 
   @impl Active
-  def validate(caster, _target, _level, _definition), do: GuildArea.validate_master(caster)
+  def begin_attempt(caster, _target, _level, _definition) do
+    with :ok <- GuildArea.validate_master(caster), do: {:ok, caster}
+  end
 
   @impl Active
   def rearm_cooldowns(caster, level, definition, now),

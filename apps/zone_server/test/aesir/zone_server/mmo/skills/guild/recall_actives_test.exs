@@ -132,10 +132,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
     guildless = %PlayerState{character_id: 99, account_id: 99, guild_id: 0}
 
     assert {:error, :guild_skill_unavailable} =
-             GdEmergencycall.validate(non_master, :self, 1, nil)
+             GdEmergencycall.begin_attempt(non_master, :self, 1, nil)
 
     assert {:error, :guild_skill_unavailable} =
-             GdItememergencycall.validate(guildless, :self, 1, nil)
+             GdItememergencycall.begin_attempt(guildless, :self, 1, nil)
   end
 
   test "Leap, or Lope at level 3, doubles Urgent Call's cast time after its early stage" do
