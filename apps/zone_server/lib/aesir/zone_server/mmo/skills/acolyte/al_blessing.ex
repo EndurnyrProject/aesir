@@ -52,6 +52,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
 
   @behaviour Active
 
+  @doc """
+  A player's use on a Homunculus other than their own is refused silently
+  before anything else is checked.
+  """
+  @impl Active
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def skilluse_check(caster, target, level, definition),
+    do: validate(caster, target, level, definition)
+
   @impl Active
   def validate(%{character_id: caster_id}, {:unit, {:homunculus, gid}}, _level, _definition) do
     with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
@@ -59,12 +69,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
          true <- Targeting.direct_support?(caster_combatant, target_combatant) do
       :ok
     else
-      _ -> {:error, :invalid_target}
+      _ -> {:error, :target_restricted}
     end
   end
 
   def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
-    do: {:error, :invalid_target}
+    do: {:error, :target_restricted}
 
   def validate(_caster, _target, _level, _definition), do: :ok
 

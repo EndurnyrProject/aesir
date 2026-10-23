@@ -35,21 +35,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidence do
 
   @crusader_jobs [:crusader, :crusader2, :paladin, :paladin2, :baby_crusader, :baby_crusader2]
 
+  @doc """
+  A player's use on a Homunculus other than their own is refused silently
+  before anything else is checked; the cast end checks it again.
+  """
+  @impl Active
+  @spec skilluse_check(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def skilluse_check(caster, target, level, definition),
+    do: validate(caster, target, level, definition)
+
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :cannot_target_crusader}
+          :ok | {:error, :target_restricted}
   def validate(%{character_id: caster_id}, {:unit, {:homunculus, gid}}, _level, _definition) do
     with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
          {:ok, target_combatant} <- TargetResolver.resolve_combatant(:homunculus, gid),
          true <- Targeting.direct_support?(caster_combatant, target_combatant) do
       :ok
     else
-      _ -> {:error, :invalid_target}
+      _ -> {:error, :target_restricted}
     end
   end
 
   def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
-    do: {:error, :invalid_target}
+    do: {:error, :target_restricted}
 
   def validate(_caster, _target, _level, _definition), do: :ok
 

@@ -50,9 +50,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
 
   # NOTE: Normal-PvE only until Aesir has WoE, BG, PvP-score, Hell Power, and
   # resurrection-config concepts; add their rAthena gates/options here then.
+  @doc """
+  Once the target is in range, a player's cast on a target that is neither
+  undead nor dead is refused silently.
+  """
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+  @spec after_range_check(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
+  def after_range_check(_caster, {:unit, target_id}, _level, _definition) do
+    with {:ok, _target_pid, target_state, _unit_type} <- TargetResolver.resolve(target_id) do
+      if Unit.living?(target_state) and not undead?(target_state),
+        do: {:error, :target_restricted},
+        else: :ok
+    end
+  end
+
+  def after_range_check(_caster, _target, _level, _definition), do: :ok
+
+  @doc """
+  A player's cast checks its target once, in range (`after_range_check/4`); a
+  target revived meanwhile ends the paid use without effect. Other casters
+  accept only a player corpse or a living undead target.
+  """
+  @impl Active
+  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, atom()}
+  def validate(%PlayerState{}, _target, _level, _definition), do: :ok
+
   def validate(_caster, {:unit, target_id}, _level, _definition) do
     with {:ok, _target_pid, target_state, unit_type} <- TargetResolver.resolve(target_id) do
       cond do

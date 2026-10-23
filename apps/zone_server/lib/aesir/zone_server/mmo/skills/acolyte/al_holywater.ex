@@ -4,7 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
   Bottle into one Holy Water.
 
   The Empty Bottle is a material of the brew, not a requirement of the skill:
-  the skill has no item cost. The cast starts only while a bottle is held. When
+  the skill has no item cost. The cast starts only while a bottle is held, then
+  only on a water cell that is not under Land Protector, or while the caster
+  stands in Deluge. When
   it ends, the SP is spent first; the brew fails with nothing made only when no
   bottle is left, and otherwise takes the bottle and adds the Holy Water, which
   is lost (and reported to the client) if it cannot be carried.
@@ -34,6 +36,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -44,29 +48,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
 
   @behaviour Active
 
-  @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(caster, _target, _level, _definition) do
-    with {:ok, map_data} <- MapCache.get(caster.map_name),
-         true <- MapData.check_cell(map_data, caster.x, caster.y, :chk_water) do
-      :ok
-    else
-      _ -> {:error, :not_on_water}
-    end
-  end
-
   @doc """
-  The cast starts only while the caster holds an Empty Bottle, failing with a
-  generic reason otherwise.
+  The cast starts only while the caster holds an Empty Bottle, then only on a
+  water cell free of Land Protector or under Deluge; either refusal is the
+  generic failure.
   """
   @impl Active
   @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, :no_empty_bottle}
+          {:ok, PlayerState.t()} | {:error, :no_empty_bottle | :not_on_water}
   def begin_attempt(caster, _target, _level, _definition) do
-    if ItemContainer.held_amount(caster.inventory, @empty_bottle_id) > 0,
-      do: {:ok, caster},
-      else: {:error, :no_empty_bottle}
+    cond do
+      ItemContainer.held_amount(caster.inventory, @empty_bottle_id) == 0 ->
+        {:error, :no_empty_bottle}
+
+      on_water?(caster) ->
+        {:ok, caster}
+
+      true ->
+        {:error, :not_on_water}
+    end
+  end
+
+  # NOTE: Aesir has no NJ_SUITON. When SC_SUITON exists, let it pass the water
+  # state like Deluge and remove this note.
+  defp on_water?(%{character_id: id, map_name: map_name, x: x, y: y}) do
+    StatusStorage.has_status?(:player, id, :sc_deluge) or
+      (water_cell?(map_name, x, y) and not Storage.land_protected?(map_name, x, y))
+  end
+
+  defp water_cell?(map_name, x, y) do
+    case MapCache.get(map_name) do
+      {:ok, map_data} -> MapData.check_cell(map_data, x, y, :chk_water)
+      _missing -> false
+    end
   end
 
   @impl Active

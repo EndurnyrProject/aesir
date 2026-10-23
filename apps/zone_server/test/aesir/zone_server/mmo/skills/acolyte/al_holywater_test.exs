@@ -8,8 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater
   alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
 
   setup :verify_on_exit!
@@ -55,44 +57,66 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
     end
   end
 
-  describe "validate/4" do
-    test "returns :ok when standing on a water cell" do
-      {:ok, definition} = Catalog.by_id(31)
-      map_data = %{}
-
-      stub(MapCache, :get, fn "morocc" -> {:ok, map_data} end)
-      stub(MapData, :check_cell, fn ^map_data, 100, 100, :chk_water -> true end)
-
-      assert :ok = AlHolywater.validate(@caster, :self, 1, definition)
-    end
-
-    test "returns {:error, :not_on_water} when not standing on a water cell" do
-      {:ok, definition} = Catalog.by_id(31)
-      map_data = %{}
-
-      stub(MapCache, :get, fn "morocc" -> {:ok, map_data} end)
-      stub(MapData, :check_cell, fn ^map_data, 100, 100, :chk_water -> false end)
-
-      assert {:error, :not_on_water} = AlHolywater.validate(@caster, :self, 1, definition)
-    end
-
-    test "returns {:error, :not_on_water} when map is not found" do
-      {:ok, definition} = Catalog.by_id(31)
-
-      stub(MapCache, :get, fn "morocc" -> {:error, :not_found} end)
-
-      assert {:error, :not_on_water} = AlHolywater.validate(@caster, :self, 1, definition)
-    end
-  end
-
   describe "begin_attempt/4" do
-    test "starts only while the caster holds an Empty Bottle" do
+    setup do
+      stub(StatusStorage, :has_status?, fn :player, 1000, :sc_deluge -> false end)
+      stub(Storage, :land_protected?, fn "morocc", 100, 100 -> false end)
+      :ok
+    end
+
+    defp bottle_holder,
+      do: %{@caster | inventory: %{0 => %InventoryItem{nameid: 713, amount: 1}}}
+
+    defp water(on_water?) do
+      map_data = %{}
+      stub(MapCache, :get, fn "morocc" -> {:ok, map_data} end)
+      stub(MapData, :check_cell, fn ^map_data, 100, 100, :chk_water -> on_water? end)
+    end
+
+    test "starts on a water cell while the caster holds an Empty Bottle" do
       {:ok, definition} = Catalog.by_id(31)
+      water(true)
+      holder = bottle_holder()
+
+      assert {:ok, ^holder} = AlHolywater.begin_attempt(holder, :self, 1, definition)
+    end
+
+    test "checks the Empty Bottle before the water cell" do
+      {:ok, definition} = Catalog.by_id(31)
+      water(false)
 
       assert {:error, :no_empty_bottle} =
                AlHolywater.begin_attempt(@caster, :self, 1, definition)
+    end
 
-      holder = %{@caster | inventory: %{0 => %InventoryItem{nameid: 713, amount: 1}}}
+    test "refuses off water and when the map is not found" do
+      {:ok, definition} = Catalog.by_id(31)
+      water(false)
+
+      assert {:error, :not_on_water} =
+               AlHolywater.begin_attempt(bottle_holder(), :self, 1, definition)
+
+      stub(MapCache, :get, fn "morocc" -> {:error, :not_found} end)
+
+      assert {:error, :not_on_water} =
+               AlHolywater.begin_attempt(bottle_holder(), :self, 1, definition)
+    end
+
+    test "refuses a Land Protected water cell" do
+      {:ok, definition} = Catalog.by_id(31)
+      water(true)
+      stub(Storage, :land_protected?, fn "morocc", 100, 100 -> true end)
+
+      assert {:error, :not_on_water} =
+               AlHolywater.begin_attempt(bottle_holder(), :self, 1, definition)
+    end
+
+    test "Deluge lets the brew start away from water" do
+      {:ok, definition} = Catalog.by_id(31)
+      water(false)
+      stub(StatusStorage, :has_status?, fn :player, 1000, :sc_deluge -> true end)
+      holder = bottle_holder()
+
       assert {:ok, ^holder} = AlHolywater.begin_attempt(holder, :self, 1, definition)
     end
   end

@@ -87,14 +87,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     end
   end
 
-  test "rejects a living non-undead target before costs are charged" do
+  test "a living non-undead target is refused silently once in range" do
     living = living_mob()
 
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living, :mob} end)
     stub(MobState, :to_combatant, fn ^living -> %{race: :formless, element: {:neutral, 1}} end)
 
-    assert {:error, :invalid_target} =
-             AllResurrection.validate(%{character_id: 1_000}, {:unit, 2_000}, 1, %{})
+    assert {:error, :target_restricted} =
+             AllResurrection.after_range_check(
+               player(@caster_id, "Caster"),
+               {:unit, 2_000},
+               1,
+               %{}
+             )
   end
 
   test "a siege-ground corpse refusal is reported after the requirement is paid" do
@@ -270,8 +275,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living, :mob} end)
     stub(MobState, :to_combatant, fn ^living -> %{race: :undead, element: {:ghost, 1}} end)
 
-    assert {:error, :invalid_target} =
-             AllResurrection.validate(%{character_id: 1_000}, {:unit, 2_000}, 1, %{})
+    assert {:error, :target_restricted} =
+             AllResurrection.after_range_check(
+               player(@caster_id, "Caster"),
+               {:unit, 2_000},
+               1,
+               %{}
+             )
   end
 
   test "a successful undead roll feeds the target's current HP through existing magic combat" do

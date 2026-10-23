@@ -433,7 +433,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
       assert Enum.any?(inventory, fn {_index, item} -> item.nameid == @holy_water_id end)
     end
 
-    test "off a water cell the cast is rejected by validate/4" do
+    test "off a water cell the cast is refused when it begins" do
       holywater = catalog_id(:al_holywater)
       {:ok, definition} = Catalog.by_id(holywater)
 
@@ -442,10 +442,17 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
 
       state = get_player_state(caster.pid)
 
+      holder = %{
+        state
+        | inventory: %{
+            0 => %Aesir.Commons.Models.InventoryItem{nameid: @empty_bottle_id, amount: 1}
+          }
+      }
+
       stub(MapCache, :get, fn _map -> {:ok, %MapData{name: "prontera"}} end)
       stub(MapData, :check_cell, fn _map, _x, _y, :chk_water -> false end)
 
-      assert {:error, :not_on_water} = AlHolywater.validate(state, :self, 1, definition)
+      assert {:error, :not_on_water} = AlHolywater.begin_attempt(holder, :self, 1, definition)
     end
   end
 

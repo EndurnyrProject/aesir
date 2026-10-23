@@ -130,16 +130,19 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
       target_id: gid
     })
 
-    assert_receive {:packet_sent, %SkillCastFailed{skill_id: 28}, _}, 1_000
+    refute_receive {:packet_sent, %SkillCastFailed{skill_id: 28}, _}, 200
     foreign_after = PlayerSession.get_state(foreign.pid).game_state
     assert foreign_after.stats.current_state.sp == foreign_before.stats.current_state.sp
     assert foreign_after.skill_cooldowns == foreign_before.skill_cooldowns
     assert foreign_after.act_delay_until == foreign_before.act_delay_until
 
-    for {module, level} <- [{AlBlessing, 1}, {SaDispell, 5}, {CrProvidence, 1}] do
-      assert {:error, :invalid_target} =
-               module.validate(caster, target, level, module.definition())
+    for {module, level} <- [{AlBlessing, 1}, {CrProvidence, 1}] do
+      assert {:error, :target_restricted} =
+               module.skilluse_check(caster, target, level, module.definition())
     end
+
+    assert {:error, :invalid_target} =
+             SaDispell.validate(caster, target, 5, SaDispell.definition())
 
     assert PlayerSession.get_state(owner.pid).homunculus == before
     assert StatusStorage.get_unit_statuses(:homunculus, gid) == []
@@ -220,8 +223,11 @@ defmodule Aesir.ZoneServer.HomunculusInteractionMatrixTest do
         target_id: gid
       })
 
-      assert_receive {:packet_sent, %SkillCastFailed{skill_id: skill_id}, _}, 1_000
-      assert skill_id == module.definition().id
+      skill_id = module.definition().id
+
+      if module in [AlCure, AlIncagi],
+        do: refute_receive({:packet_sent, %SkillCastFailed{skill_id: ^skill_id}, _}, 200),
+        else: assert_receive({:packet_sent, %SkillCastFailed{skill_id: ^skill_id}, _}, 1_000)
 
       after_caster = PlayerSession.get_state(foreign.pid).game_state
       assert after_caster.stats.current_state.sp == before_caster.stats.current_state.sp
