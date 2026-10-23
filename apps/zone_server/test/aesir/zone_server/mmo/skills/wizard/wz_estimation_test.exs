@@ -160,10 +160,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
                WzEstimation.cast(caster(), {:unit, @target_id}, 1, WzEstimation.definition())
     end
 
-    test "a vanished target is refused before anything is spent" do
+    # skill.cpp:4916: a target gone at the cast end breaks out silently.
+    test "a vanished target is refused silently before anything is spent" do
       stub(UnitRegistry, :unit_id_exists?, fn _target_id -> false end)
 
-      assert {:error, :invalid_target} =
+      assert {:error, :target_not_found} =
                WzEstimation.validate(caster(), {:unit, @target_id}, 1, WzEstimation.definition())
     end
 

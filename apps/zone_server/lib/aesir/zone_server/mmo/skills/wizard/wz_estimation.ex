@@ -29,11 +29,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimation do
 
   @behaviour Active
 
+  @doc "A target gone when the cast ends fails silently, before anything is spent."
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :invalid_target}
+          :ok | {:error, :target_not_found}
   def validate(_caster, {:unit, target_id}, _level, _definition) do
-    if UnitRegistry.unit_id_exists?(target_id), do: :ok, else: {:error, :invalid_target}
+    if UnitRegistry.unit_id_exists?(target_id), do: :ok, else: {:error, :target_not_found}
   end
 
   @impl Active

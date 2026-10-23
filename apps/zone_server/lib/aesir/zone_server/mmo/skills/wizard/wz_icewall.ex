@@ -35,11 +35,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewall do
   @cell_decay 50
   @wall_half 2
 
-  @doc false
-  @spec validate(map(), term(), pos_integer(), struct()) :: :ok | {:error, :volcano_active}
-  def validate(%{character_id: caster_id}, _target, _level, _definition) do
+  @doc "A player standing under Volcano may not use Ice Wall; the refusal is silent."
+  @spec skilluse_check(map(), term(), pos_integer(), struct()) :: :ok | {:error, :status_blocked}
+  def skilluse_check(%{character_id: caster_id}, _target, _level, _definition) do
     if StatusStorage.has_status?(:player, caster_id, :sc_volcano),
-      do: {:error, :volcano_active},
+      do: {:error, :status_blocked},
       else: :ok
   end
 

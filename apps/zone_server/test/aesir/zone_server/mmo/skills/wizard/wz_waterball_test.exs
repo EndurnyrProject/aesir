@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaDeluge
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotector
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -189,6 +190,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
                1,
                %{}
              )
+  end
+
+  # skill.cpp:9083-9085: SC_DELUGE passes the ST_WATER row before the cell checks.
+  test "a player under Deluge begins the cast on a dry cell" do
+    stub(MapCell, :water_source, fn "prontera", 100, 100 -> nil end)
+    :ok = StatusStorage.apply_status(:player, 100, :sc_deluge)
+    caster = %{character_id: 100, map_name: "prontera", x: 100, y: 100}
+
+    assert {:ok, ^caster} = WzWaterball.begin_attempt(caster, {:unit, 200}, 1, %{})
   end
 
   test "does not treat a pending Water Ball token as a caster water state" do

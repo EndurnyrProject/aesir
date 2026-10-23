@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -48,15 +49,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
   @duration 10_000
 
   @doc """
-  The cast only starts on water: the reference checks the caster's cell for water
-  and against the Land Protector before it spends the cost.
+  The cast only starts on water: a player under Deluge always may; otherwise the
+  caster's cell must hold water and lie outside a Land Protector.
   """
   @impl Active
   @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, Active.caster()} | {:error, :water_required}
   def begin_attempt(%{map_name: map_name, x: x, y: y} = caster, _target, _level, _definition) do
-    with :ok <- require_water(map_name, x, y), do: {:ok, caster}
+    if deluge?(caster),
+      do: {:ok, caster},
+      else: with(:ok <- require_water(map_name, x, y), do: {:ok, caster})
   end
+
+  defp deluge?(%{character_id: id}), do: StatusStorage.has_status?(:player, id, :sc_deluge)
+  defp deluge?(_caster), do: false
 
   @impl Active
   def cast(

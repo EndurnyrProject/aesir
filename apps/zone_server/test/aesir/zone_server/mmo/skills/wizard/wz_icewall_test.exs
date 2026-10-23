@@ -57,25 +57,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewallTest do
     assert cells == [{148, 150}, {149, 150}, {150, 150}, {151, 150}, {152, 150}]
   end
 
-  test "validate rejects the cast while the caster is under Volcano" do
+  # status.cpp:2192-2198 via unit.cpp:2655: refused silently before the cast.
+  test "the skill use is refused silently while the caster is under Volcano" do
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_volcano, caster_id: @caster_id)
 
-    assert WzIcewall.validate(%{character_id: @caster_id}, {:ground, 150, 150}, 1, definition()) ==
-             {:error, :volcano_active}
+    assert WzIcewall.skilluse_check(
+             %{character_id: @caster_id},
+             {:ground, 150, 150},
+             1,
+             definition()
+           ) ==
+             {:error, :status_blocked}
   end
 
-  test "validate allows the cast when the caster is not under Volcano" do
-    assert WzIcewall.validate(%{character_id: @caster_id}, {:ground, 150, 150}, 1, definition()) ==
+  test "the skill use is allowed when the caster is not under Volcano" do
+    assert WzIcewall.skilluse_check(
+             %{character_id: @caster_id},
+             {:ground, 150, 150},
+             1,
+             definition()
+           ) ==
              :ok
   end
 
-  test "validate is keyed on the caster's own status, not a Volcano field elsewhere on the map" do
+  test "the Volcano refusal is keyed on the caster's own status, not a Volcano field elsewhere on the map" do
     :ok =
       StatusStorage.apply_status(:player, @other_caster_id, :sc_volcano,
         caster_id: @other_caster_id
       )
 
-    assert WzIcewall.validate(%{character_id: @caster_id}, {:ground, 150, 150}, 1, definition()) ==
+    assert WzIcewall.skilluse_check(
+             %{character_id: @caster_id},
+             {:ground, 150, 150},
+             1,
+             definition()
+           ) ==
              :ok
   end
 
