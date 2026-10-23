@@ -12,9 +12,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State, as: PartyState
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -53,6 +56,35 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
       item_pickup_share: false,
       members: members
     }
+  end
+
+  describe "kill/1" do
+    test "reads the runtime level and the calculated race, size and defence element" do
+      {:ok, poring} = Mobs.by_id(@mob_id)
+
+      spawn = %MobSpawn{
+        mob: @mob_id,
+        amount: 1,
+        respawn_time: 5_000,
+        spawn_area: %MobSpawn.SpawnArea{x: 150, y: 150}
+      }
+
+      mob = MobState.new(1, poring, spawn, @mob_map, 150, 150)
+
+      mob = %{
+        mob
+        | level: 77,
+          calculated: %{mob.calculated | race: :demon, size: :large, def_ele: :shadow}
+      }
+
+      assert QuestHuntCredit.kill(mob) == %{
+               mob_id: @mob_id,
+               level: 77,
+               race: :demon,
+               size: :large,
+               element: :shadow
+             }
+    end
   end
 
   describe "credit/4" do

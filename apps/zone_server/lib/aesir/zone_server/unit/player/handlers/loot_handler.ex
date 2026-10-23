@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   @moduledoc """
   Kill-reward glue for a player session: drop rolling for the killing blow's
-  reward owner (`{:mob_killed, ...}`) and hunting-quest kill credit
-  (`{:quest_kill, ...}`).
+  reward owner (`{:mob_killed, ...}`) and quest kill credit with its extra
+  quest drops (`{:quest_kill, ...}`).
   """
 
   alias Aesir.ZoneServer.Map.Coordinator
@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.QuestInfoView
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
@@ -32,7 +34,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   @spec info(term(), map()) :: {:noreply, map()}
   def info({:mob_killed, payload}, state), do: mob_killed(payload, state)
   def info({:kill_gain, payload}, state), do: kill_gain_reward(payload, state)
-  def info({:quest_kill, mob_id}, state), do: quest_kill(mob_id, state)
+  def info({:quest_kill, kill}, state), do: quest_kill(kill, state)
 
   @doc """
   EXP for the kill is granted separately, per eligible typed contributor, via
@@ -131,24 +133,78 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   end
 
   @doc """
-  Credits a mob kill against this session's hunting quests
-  (`Unit.Mob.QuestHuntCredit`): the pure `QuestLog.tick_kill/2` clamps the
-  matching objectives, we write each moved quest through to
-  `character_quests`, and push one `QuestHuntProgress` per moved objective.
-  A kill matching no active quest leaves the log untouched and no-ops.
+  Credits a monster kill against this session's not-complete quests
+  (`Unit.Mob.QuestHuntCredit`), one quest at a time in walk order.
+
+  For each quest the matching objectives move (`QuestLog.tick_quest/3`, judged
+  on this player's map), the moved quest is written through to
+  `character_quests` with one `QuestHuntProgress` per moved objective, and
+  then each of the quest's drop rows for this monster is granted: a row below
+  10000 is rolled out of 10000, an unknown item is skipped, and one item is
+  added whatever the row's count, identified as the item's obtain rule says,
+  with a refused add reported as an `ItemAddFailed`. With any not-complete
+  quest the map's quest icons are re-evaluated afterwards. A player with none
+  is untouched.
   """
-  @spec quest_kill(QuestLog.mob_id(), map()) :: {:noreply, map()}
-  def quest_kill(mob_id, %{game_state: game_state} = state) do
-    case QuestLog.tick_kill(game_state.quest_log, mob_id) do
-      {_quest_log, []} ->
+  @spec quest_kill(map(), map()) :: {:noreply, map()}
+  def quest_kill(kill, state), do: quest_kill(kill, state, &:rand.uniform/1)
+
+  @doc false
+  @spec quest_kill(map(), map(), (pos_integer() -> pos_integer())) :: {:noreply, map()}
+  def quest_kill(kill, %{game_state: game_state} = state, rng) do
+    case QuestLog.available(game_state.quest_log) do
+      [] ->
         {:noreply, state}
 
-      {quest_log, changes} ->
-        persist_quest_changes(game_state.character_id, quest_log, changes)
-        push_quest_progress(state.connection_pid, changes)
-        {:noreply, StateCommit.commit(state, %{game_state | quest_log: quest_log})}
+      quests ->
+        kill = Map.put(kill, :map, game_state.map_name)
+
+        state =
+          Enum.reduce(quests, state, fn {quest_id, _entry}, state ->
+            state
+            |> credit_quest_objectives(quest_id, kill)
+            |> grant_quest_drops(quest_id, kill.mob_id, rng)
+          end)
+
+        QuestInfoView.request_refresh()
+        {:noreply, state}
     end
   end
+
+  defp credit_quest_objectives(%{game_state: game_state} = state, quest_id, kill) do
+    case QuestLog.tick_quest(game_state.quest_log, quest_id, kill) do
+      {_quest_log, []} ->
+        state
+
+      {quest_log, changes} ->
+        QuestPersistence.upsert(
+          game_state.character_id,
+          {quest_id, Map.fetch!(quest_log, quest_id)}
+        )
+
+        push_quest_progress(state.connection_pid, changes)
+        StateCommit.commit(state, %{game_state | quest_log: quest_log})
+    end
+  end
+
+  defp grant_quest_drops(state, quest_id, mob_id, rng) do
+    quest_id
+    |> QuestLog.drops_for_kill(mob_id)
+    |> Enum.reduce(state, &grant_quest_drop(&1, &2, rng))
+  end
+
+  defp grant_quest_drop(%{item_id: item_id, rate: rate}, state, rng) do
+    with true <- rate >= 10_000 or rng.(10_000) <= rate,
+         {:ok, item} <- ItemManagement.get_item_by_id(item_id) do
+      identify = if ItemDefinition.identified_on_obtain?(item), do: 1, else: 0
+      settle_quest_drop(InventoryManager.handle_give_item(item, 1, state, %{identify: identify}))
+    else
+      _skipped -> state
+    end
+  end
+
+  defp settle_quest_drop({:ok, state}), do: state
+  defp settle_quest_drop({:error, _reason, state}), do: state
 
   # Rolls the slain mob's drop table from the reward owner's session (the only
   # place holding both the table and the reward owner's stats) and places results as
@@ -245,15 +301,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
       {:ok, item} -> ItemDefinition.identified_on_obtain?(item)
       {:error, _reason} -> true
     end
-  end
-
-  defp persist_quest_changes(char_id, quest_log, changes) do
-    changes
-    |> Enum.map(& &1.quest_id)
-    |> Enum.uniq()
-    |> Enum.each(fn quest_id ->
-      QuestPersistence.upsert(char_id, {quest_id, Map.fetch!(quest_log, quest_id)})
-    end)
   end
 
   defp push_quest_progress(connection_pid, changes) do

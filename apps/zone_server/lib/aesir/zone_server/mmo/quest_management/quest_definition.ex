@@ -2,14 +2,15 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
   @moduledoc """
   Static quest definition (the rAthena `quest_db` record).
 
-  Loaded as data from `priv/db/re/quests/*.yml` into `:persistent_term`; never a
-  per-quest module. `time_limit`, the target filter fields beyond `mob_id`/
-  `count`, and `drops` are carried through unused this iteration - only exact-mob
-  hunt counters are interpreted so far.
+  Loaded as data from `priv/db/<mode>/quests/*.yml` into `:persistent_term`;
+  never a per-quest module. `time_limit` is carried through unused this
+  iteration. Objectives and drops are read on every monster kill
+  (`Unit.Player.QuestLog`).
   """
 
   @typedoc """
-  A single hunt objective: exact mob kill count, plus dormant filters
+  A single hunt objective. With `mob_id` it counts kills of that monster only.
+  Without it, a kill counts when it passes every present filter
   (`min_level`/`max_level`/`race`/`size`/`element`/`map`/`mobs_allowed`).
   """
   @type target :: %{
@@ -24,7 +25,11 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
           mobs_allowed: [integer()] | nil
         }
 
-  @typedoc "A dormant bonus item drop tied to a quest kill."
+  @typedoc """
+  An extra item a kill grants while the quest is not complete. `mob_id` `0`
+  means any monster; `rate` is out of 10000; `count` is data only, since the
+  grant is always one item.
+  """
   @type drop :: %{
           mob_id: integer(),
           item_id: integer(),

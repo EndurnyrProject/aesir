@@ -65,8 +65,19 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistenceTest do
       state = %{game_state: %{character_id: character.id, quest_log: %{}}}
 
       assert QuestPersistence.load_on_spawn(state).game_state.quest_log == %{
-               1100 => %Entry{state: :active, counts: [3, 0, 0], deadline: nil}
+               1100 => %Entry{state: :active, counts: [3, 0, 0], deadline: nil, position: 0}
              }
+    end
+
+    test "loads the walk order in quest-id order", %{character: character} do
+      :ok = QuestPersistence.upsert(character.id, {1300, %Entry{state: :active, counts: [1]}})
+      :ok = QuestPersistence.upsert(character.id, {1100, %Entry{state: :complete, counts: [2]}})
+      :ok = QuestPersistence.upsert(character.id, {1200, %Entry{state: :inactive, counts: [3]}})
+
+      state = %{game_state: %{character_id: character.id, quest_log: %{}}}
+      log = QuestPersistence.load_on_spawn(state).game_state.quest_log
+
+      assert %{1100 => %{position: 0}, 1200 => %{position: 1}, 1300 => %{position: 2}} = log
     end
   end
 
@@ -77,7 +88,10 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistenceTest do
       :ok = QuestPersistence.upsert(character.id, {1100, entry})
 
       state = %{game_state: %{character_id: character.id, quest_log: %{}}}
-      assert QuestPersistence.load_on_spawn(state).game_state.quest_log == %{1100 => entry}
+
+      assert QuestPersistence.load_on_spawn(state).game_state.quest_log == %{
+               1100 => %{entry | position: 0}
+             }
     end
 
     test "a second upsert updates the row in place instead of duplicating it", %{

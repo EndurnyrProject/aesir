@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   1. Accept hunting quest `1100` through an NPC dialog and real
      `Script.Interaction`, routing `{:npc, {:script_apply, op}}` to a real
      `PlayerSession` and asserting the `QuestAdded` push.
-  2. Hunt: `{:quest_kill, 1178}` ticks the session's `QuestLog`, pushing one
+  2. Hunt: a `{:quest_kill, kill}` of monster 1178 ticks the session's `QuestLog`, pushing one
      `QuestHuntProgress` per moved objective and clamping at the target of 20.
   3. A partied kill through the real `QuestHuntCredit.credit/4` fan-out credits a
      nearby party member's own session.
@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
      `1100 -> 2290` (asserting `QuestRemoved` + `QuestAdded`) and grants `getexp`.
   5. Relog: `QuestPersistence.load_on_spawn/1` restores the cooldown quest and the
      map-load flow re-sends it in the `QuestList` dump.
+  6. A real monster death credits an objective without a monster and grants the
+     quest's extra drop into the killer's inventory.
 
   Persistence runs inline (`IntegrationCase`), and the `character_quests` FK to
   `characters` is why every quest-holding player is a real inserted row.
@@ -28,6 +30,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.ItemAdded
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.ParamChange
@@ -37,12 +40,15 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   alias Aesir.Net.QuestList
   alias Aesir.Net.QuestRemoved
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
+  alias Aesir.ZoneServer.Mmo.QuestManagement.Quests
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
@@ -53,6 +59,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   @hunt_quest 1100
   @cooldown_quest 2290
   @target 20
+  @hunt_kill %{mob_id: @hunt_mob, level: 1, race: :formless, size: :small, element: :neutral}
 
   defmodule QuestFixtureNpc do
     use Aesir.ZoneServer.Npc,
@@ -104,7 +111,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       # 2. Hunt: exact-mob kill ticks push progress and clamp at the target.
       flush_packets()
 
-      Enum.each(1..(@target + 2), fn _ -> send(player.pid, {:loot, {:quest_kill, @hunt_mob}}) end)
+      Enum.each(1..(@target + 2), fn _ -> send(player.pid, {:loot, {:quest_kill, @hunt_kill}}) end)
 
       # get_state is a serialized GenServer.call, so it only returns once every
       # queued {:quest_kill} handle_info has run -- a barrier, no sleep needed.
@@ -197,13 +204,63 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
 
       flush_packets()
 
-      QuestHuntCredit.credit(killer_id, @hunt_mob, "prontera", {150, 150})
+      QuestHuntCredit.credit(killer_id, @hunt_kill, "prontera", {150, 150})
 
       assert_receive {:packet_sent,
                       %QuestHuntProgress{quest_id: @hunt_quest, count: 1, needed: @target}, _},
                      500
 
       assert get_player_state(member.pid).quest_log[@hunt_quest].counts == [1]
+    end
+  end
+
+  describe "quest drops on a real kill" do
+    @drop_quest %QuestDefinition{
+      id: 990_101,
+      title: "Formless Collector",
+      targets: [%{count: 3, race: "Formless", map: "prontera", min_level: 5}],
+      drops: [%{mob_id: 1002, item_id: 909, count: 2, rate: 10_000}]
+    }
+
+    setup do
+      {:ok, _hunt} = Quests.by_id(@hunt_quest)
+      index = :persistent_term.get(Quests)
+
+      :persistent_term.put(Quests, %{
+        index
+        | all: [@drop_quest | index.all],
+          by_id: Map.put(index.by_id, @drop_quest.id, @drop_quest)
+      })
+
+      on_exit(fn -> :persistent_term.put(Quests, index) end)
+      :ok
+    end
+
+    test "a monster death ticks a filtered objective and grants one drop item" do
+      char = insert_character("Collector")
+      player = start_player_session(character: char, position: {150, 150}, map_name: "prontera")
+      {:ok, _gs} = PlayerSession.script_apply(player.pid, {:setquest, @drop_quest.id})
+      mob = start_mob_session(mob_id: 1002, level: 10, max_hp: 10, position: {152, 150})
+      flush_packets()
+
+      MobSession.apply_damage(mob.pid, 1_000, char.id)
+
+      assert_receive {:packet_sent, %QuestHuntProgress{quest_id: 990_101, count: 1, needed: 3},
+                      _},
+                     1_000
+
+      assert_receive {:packet_sent, %ItemAdded{}, _}, 1_000
+
+      assert_eventually(fn ->
+        jellopy =
+          player.pid
+          |> get_player_state()
+          |> Map.fetch!(:inventory)
+          |> Map.values()
+          |> Enum.filter(&(&1.nameid == 909))
+
+        match?([%{amount: 1}], jellopy)
+      end)
     end
   end
 

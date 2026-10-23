@@ -182,7 +182,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     refute_receive {:loot, {:mob_killed, _payload}}
     assert_receive {:floor, "prontera", [{501, 3, _x, _y, true}], 100, 100, _opts}
     # The gate covers the drop pools only: kill credit still reaches the killer.
-    assert_receive {:loot, {:quest_kill, 1001}}
+    assert_receive {:loot, {:quest_kill, %{mob_id: 1001}}}
   end
 
   test "a mob death with no killer broadcasts nothing" do

@@ -12,33 +12,63 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCredit do
   naturally included exactly once via the same range scan, never double-counted.
 
   This module never touches quest state itself: each recipient gets a
-  `{:loot, {:quest_kill, mob_id}}` message on its own `player:<char_id>` topic
+  `{:loot, {:quest_kill, kill}}` message on its own `player:<char_id>` topic
   and its `PlayerSession` decides whether any of its quests care.
   """
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
   @area_size 14
 
+  @typedoc """
+  What a quest objective reads from the killed monster: its id, runtime level,
+  and current race, size and defence element.
+  """
+  @type kill :: %{
+          mob_id: non_neg_integer(),
+          level: non_neg_integer(),
+          race: atom(),
+          size: atom(),
+          element: atom()
+        }
+
   @doc """
-  Broadcasts `{:loot, {:quest_kill, mob_id}}` to every session eligible to
-  credit the kill of `mob_id` at `{mob_x, mob_y}` on `mob_map`.
+  Builds the `kill` a dead monster credits, from its live calculated status.
+  """
+  @spec kill(MobState.t()) :: kill()
+  def kill(%MobState{mob_data: mob_data} = mob) do
+    {element, _level} = MobState.get_element(mob)
+    calculated = mob.calculated || %{race: mob_data.race, size: mob_data.size}
+
+    %{
+      mob_id: mob_data.id,
+      level: MobState.get_level(mob),
+      race: calculated.race,
+      size: calculated.size,
+      element: element
+    }
+  end
+
+  @doc """
+  Broadcasts `{:loot, {:quest_kill, kill}}` to every session eligible to
+  credit `kill` at `{mob_x, mob_y}` on `mob_map`.
 
   With no party (or a reward owner no longer in the registry) only that owner
   is credited; otherwise the owner's live party co-members in range on the map
   are, with the owner among them. `attacker_id` is never `nil` because the mob
   death handler calls this module only for an integer reward owner.
   """
-  @spec credit(non_neg_integer(), non_neg_integer(), String.t(), {integer(), integer()}) :: :ok
-  def credit(attacker_id, mob_id, mob_map, {mob_x, mob_y}) do
+  @spec credit(non_neg_integer(), kill(), String.t(), {integer(), integer()}) :: :ok
+  def credit(attacker_id, kill, mob_map, {mob_x, mob_y}) do
     attacker_id
     |> recipients(mob_map, {mob_x, mob_y})
     |> Enum.each(fn char_id ->
-      PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:loot, {:quest_kill, mob_id}})
+      PubSub.broadcast(Aesir.PubSub, "player:#{char_id}", {:loot, {:quest_kill, kill}})
     end)
   end
 

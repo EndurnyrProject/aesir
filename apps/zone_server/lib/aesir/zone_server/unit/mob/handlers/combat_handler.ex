@@ -459,7 +459,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     MvpReward.grant(aggro_list, mob_data, state.map_name, state.x, state.y, ownership)
 
     if is_integer(reward_owner_id) do
-      QuestHuntCredit.credit(reward_owner_id, mob_data.id, state.map_name, {state.x, state.y})
+      QuestHuntCredit.credit(
+        reward_owner_id,
+        QuestHuntCredit.kill(state),
+        state.map_name,
+        {state.x, state.y}
+      )
+
       announce_kill_gain(reward_owner_id, attacker_ref, mob_data, kill_blow)
 
       unless drops_suppressed? do

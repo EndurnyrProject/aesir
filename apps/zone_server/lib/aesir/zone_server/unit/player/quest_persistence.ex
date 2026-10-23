@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistence do
 
   Takes and returns the session `state` map; runs inside `PlayerSession.init/1`
   next to `StatusPersistence.restore_on_spawn/1`. Non-consuming: the table is
-  the source of truth for quest progress, so rows are only read here.
+  the source of truth for quest progress, so rows are only read here. The
+  loaded log's walk order is quest-id order.
   """
   @spec load_on_spawn(map()) :: map()
   def load_on_spawn(%{game_state: game_state} = state) do
@@ -35,7 +36,9 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistence do
       game_state.character_id
       |> quest_query()
       |> Repo.all()
-      |> Map.new(&{&1.quest_id, to_entry(&1)})
+      |> Enum.sort_by(& &1.quest_id)
+      |> Enum.with_index()
+      |> Map.new(fn {row, position} -> {row.quest_id, to_entry(row, position)} end)
 
     %{state | game_state: %{game_state | quest_log: quest_log}}
   end
@@ -89,11 +92,12 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestPersistence do
     end
   end
 
-  defp to_entry(%CharacterQuest{} = row) do
+  defp to_entry(%CharacterQuest{} = row, position) do
     %Entry{
       state: String.to_existing_atom(row.state),
       counts: [row.count1, row.count2, row.count3],
-      deadline: nil
+      deadline: nil,
+      position: position
     }
   end
 
