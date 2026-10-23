@@ -17,15 +17,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrushTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
 
-  test "a boss is refused before the attack spends SP" do
+  test "a player's strike at a boss passes the cast-end checks and fails in the effect" do
     boss = mob([:detector, :status_immune, :knockback_immune])
     caster = %PlayerState{character_id: 5_130}
     {:ok, definition} = Catalog.by_name(:lk_headcrush)
     stub(TargetResolver, :resolve, fn 6_130 -> {:ok, self(), boss, :mob} end)
     reject(&Combat.execute_skill_attack/3)
 
+    assert :ok = LkHeadcrush.validate(caster, {:unit, 6_130}, 5, definition)
+
+    assert {:failed, ^caster, :boss_immune} =
+             LkHeadcrush.cast(caster, {:unit, 6_130}, 5, definition)
+  end
+
+  test "a monster's cast at a boss is refused before it starts" do
+    boss = mob([:detector, :status_immune, :knockback_immune])
+    {:ok, definition} = Catalog.by_name(:lk_headcrush)
+    stub(TargetResolver, :resolve, fn 6_130 -> {:ok, self(), boss, :mob} end)
+
     assert {:error, :boss_immune} =
-             LkHeadcrush.validate(caster, {:unit, 6_130}, 5, definition)
+             LkHeadcrush.validate(mob([]), {:unit, 6_130}, 5, definition)
   end
 
   @tag game_mode: :renewal

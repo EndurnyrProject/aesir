@@ -3,6 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrush do
   Head Crush (LK_HEADCRUSH) delivers 100% plus 40% per level weapon damage.
   On a landed hit it may cause Bleeding, except against bosses, undead, and
   demons. Renewal Bleeding lasts 108 seconds; pre-renewal lasts 120 seconds.
+
+  Both modes: a player's strike at a boss fails in the effect, once the SP is
+  spent, with the plain skill failure; a monster's cast at a boss is refused
+  before it starts.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 398,
@@ -21,22 +25,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkHeadcrush do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @behaviour Active
 
+  @doc "A monster's cast at a boss is refused before it starts."
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(_caster, {:unit, target_id}, _level, _definition) do
+  def validate(%PlayerState{}, _target, _level, _definition), do: :ok
+  def validate(_caster, {:unit, target_id}, _level, _definition), do: check_boss(target_id)
+
+  @impl Active
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:failed, Active.caster(), :boss_immune} | {:error, atom()}
+  def cast(%PlayerState{} = caster, {:unit, target_id} = target, level, definition) do
+    if boss?(target_id),
+      do: {:failed, caster, :boss_immune},
+      else: strike(caster, target, level, definition)
+  end
+
+  def cast(caster, target, level, definition), do: strike(caster, target, level, definition)
+
+  defp check_boss(target_id) do
     with {:ok, _pid, target, _type} <- TargetResolver.resolve(target_id) do
       if target.__struct__.is_boss?(target), do: {:error, :boss_immune}, else: :ok
     end
   end
 
-  @impl Active
-  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, Active.caster()} | {:error, atom()}
-  def cast(caster, {:unit, target_id}, level, definition) do
+  defp boss?(target_id), do: check_boss(target_id) == {:error, :boss_immune}
+
+  defp strike(caster, {:unit, target_id}, level, definition) do
     case Combat.execute_skill_attack(caster, target_id,
            skill_id: definition.id,
            skill_level: level,

@@ -91,6 +91,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
     assert KnChargeatk.charge_distance(3, 0) == 3
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic cast time grows by its own length per three cells beyond the first, up to three times" do
+    for {target_x, expected} <- [
+          {100, 500},
+          {103, 500},
+          {104, 1_000},
+          {106, 1_000},
+          {107, 1_500},
+          {114, 1_500}
+        ] do
+      stub_target_at(target_x, 100)
+
+      assert KnChargeatk.scale_cast_time(caster(100, 100), {:unit, @target_id}, 1, 500) ==
+               expected
+    end
+  end
+
+  @tag game_mode: :renewal
+  test "renewal keeps the cast time whatever the distance" do
+    stub_target_at(110, 100)
+    assert KnChargeatk.scale_cast_time(caster(100, 100), {:unit, @target_id}, 1, 500) == 500
+  end
+
   @tag game_mode: :renewal
   test "ordinary executor :ok preserves the prepared caster movement" do
     stub_clear_terrain()

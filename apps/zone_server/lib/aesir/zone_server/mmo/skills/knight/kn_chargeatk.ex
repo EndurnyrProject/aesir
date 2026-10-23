@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   This module ships without a skill-tree entry or grant mechanism: it is a
   quest skill wired up separately.
 
-  Renewal: 700% weapon damage, 2 cells of knockback, and a 0.5 s cooldown. Pre-renewal: 100% plus 100% per three cells charged (capped at 500%), the target is pushed the charged distance, and the skill has a 0.5 s variable cast instead of a cooldown.
+  Renewal: 700% weapon damage, 2 cells of knockback, and a 0.5 s cooldown. Pre-renewal: 100% plus 100% per three cells charged (capped at 500%), the target is pushed the charged distance, and the skill has a 0.5 s variable cast instead of a cooldown, lengthened by distance to 1 s from 4 cells and 1.5 s from 7.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -59,6 +59,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   end
 
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
+
+  @doc """
+  Pre-renewal: the cast time grows with the distance to the target once its
+  DEX stage is applied, by its own length for every three cells beyond the
+  first, up to three times (0.5 s within 3 cells, 1 s within 6, 1.5 s
+  beyond). Renewal keeps it.
+  """
+  @impl Active
+  @spec scale_cast_time(Active.caster(), Active.target(), pos_integer(), number()) :: number()
+  def scale_cast_time(%PlayerState{} = caster, {:unit, target_id}, _level, time) do
+    with :pre_renewal <- GameMode.mode(),
+         {:ok, {tx, ty, _map}} <- resolve_target_position(caster, target_id) do
+      steps = (charge_distance(caster.x - tx, caster.y - ty) - 1) |> div(3) |> max(0) |> min(2)
+      time + time * steps
+    else
+      _renewal_or_gone -> time
+    end
+  end
+
+  def scale_cast_time(_caster, _target, _level, time), do: time
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
