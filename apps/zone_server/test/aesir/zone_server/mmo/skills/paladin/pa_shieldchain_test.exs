@@ -83,21 +83,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchainTest do
     assert {:ok, ^caster} = PaShieldchain.cast(caster, {:unit, @target_id}, 2, definition())
   end
 
-  test "validate refuses a shieldless player and lets a mob through" do
+  test "the cast begin refuses a shieldless player and lets a mob through" do
     stub_guard(300)
+    caster = shield_caster(refine: 0, base_level: 50)
 
-    assert :ok =
-             PaShieldchain.validate(
-               shield_caster(refine: 0, base_level: 50),
-               {:unit, 1},
-               1,
-               definition()
-             )
+    assert {:ok, ^caster} = PaShieldchain.begin_attempt(caster, {:unit, 1}, 1, definition())
 
     assert {:error, :requires_shield} =
-             PaShieldchain.validate(player(0, 50, []), {:unit, 1}, 1, definition())
+             PaShieldchain.begin_attempt(player(0, 50, []), {:unit, 1}, 1, definition())
 
-    assert :ok = PaShieldchain.validate(mob_caster(), {:unit, 1}, 1, definition())
+    mob = mob_caster()
+    assert {:ok, ^mob} = PaShieldchain.begin_attempt(mob, {:unit, 1}, 1, definition())
   end
 
   defp stub_guard(weight) do
