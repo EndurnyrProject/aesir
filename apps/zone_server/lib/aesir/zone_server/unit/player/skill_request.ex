@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   @spec ground(SessionState.t(), integer(), non_neg_integer(), term(), integer()) :: decision()
   def ground(state, skill_id, requested, cell, now) do
     with :ok <- check(inf(skill_id) == :ground, :silent),
-         :ok <- check(not SessionState.menu_work_in_progress?(state), busy_notice()),
+         :ok <- check(not SessionState.work_in_progress?(state), busy_notice()),
          :ok <- not_ok(state, skill_id, now),
          :ok <- check(not seated_input?(state, skill_id), {:fail, :failed}),
          :ok <- check_ready(state, skill_id, now, []),
@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
     allowed =
       not SessionState.npc_dialog?(state) or
         (inf == :self and SessionState.npc_item_flag?(state) and
-           not SessionState.menu_work_in_progress?(state))
+           not SessionState.work_in_progress?(state))
 
     check(allowed, busy_notice())
   end

@@ -55,6 +55,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             applied_card_unequip_effects: %{},
             interaction_lock: nil,
             npc_item_flag: nil,
+            work_in_progress: false,
+            progress_bar: nil,
+            npc_shop: nil,
             pending_skill_text_input: nil,
             pending_skill_menu: nil,
             pending_item_skill: nil,
@@ -81,6 +84,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           applied_card_unequip_effects: %{Stats.card_source_key() => Stats.card_cleanup()},
           interaction_lock: interaction_lock() | nil,
           npc_item_flag: boolean() | nil,
+          work_in_progress: boolean(),
+          progress_bar: progress_bar() | nil,
+          npc_shop: non_neg_integer() | nil,
           pending_skill_text_input: PendingSkillTextInput.t() | nil,
           pending_skill_menu: map() | nil,
           pending_item_skill:
@@ -140,6 +146,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           timer: reference() | nil
         }
 
+  @typedoc "A script's progress bar over the player: its NPC and when it fills (monotonic ms)."
+  @type progress_bar :: %{npc_gid: non_neg_integer(), deadline: integer()}
+
   @spec interaction_blocked?(map()) :: boolean()
   def interaction_blocked?(state) do
     not is_nil(Map.get(state, :interaction_lock)) or
@@ -191,6 +200,34 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
       flag -> flag
     end
   end
+
+  @doc """
+  Whether a work in progress blocks the player's skill, item and NPC requests:
+  a script's progress bar or a labelled skill menu still awaiting its answer.
+  """
+  @spec work_in_progress?(map()) :: boolean()
+  def work_in_progress?(state),
+    do: Map.get(state, :work_in_progress, false) or menu_work_in_progress?(state)
+
+  @doc "Starts a script's progress bar for `npc_gid`, filling `seconds` from now, and holds the work flag."
+  @spec hold_progress_bar(map(), non_neg_integer(), non_neg_integer()) :: map()
+  def hold_progress_bar(state, npc_gid, seconds) do
+    deadline = System.monotonic_time(:millisecond) + seconds * 1000
+
+    Map.merge(state, %{
+      progress_bar: %{npc_gid: npc_gid, deadline: deadline},
+      work_in_progress: true
+    })
+  end
+
+  @doc "Ends the progress bar and releases the work flag."
+  @spec release_progress_bar(map()) :: map()
+  def release_progress_bar(state),
+    do: Map.merge(state, %{progress_bar: nil, work_in_progress: false})
+
+  @doc "Whether an NPC shop window is open (its synthetic gid is held)."
+  @spec npc_shop_open?(map()) :: boolean()
+  def npc_shop_open?(state), do: Map.get(state, :npc_shop) != nil
 
   @doc "Whether a labelled menu's client skill/NPC work flag remains held."
   @spec menu_work_in_progress?(map()) :: boolean()

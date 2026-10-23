@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       inventory = seed_inventory(ctx.seller.id, 10)
 
       assert {:noreply, new_state} =
-               NpcShopHandler.sell(
+               open_sell(
                  seller_state(ctx.seller, inventory, 1_000, 150, 60),
                  request(shop, [{0, 4}])
                )
@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       inventory = seed_inventory(ctx.seller.id, 3)
 
       assert {:noreply, new_state} =
-               NpcShopHandler.sell(
+               open_sell(
                  seller_state(ctx.seller, inventory, 1_000, 150, 60),
                  request(shop, [{0, 3}])
                )
@@ -142,7 +142,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       register_shop(shop)
 
       {:noreply, _} =
-        NpcShopHandler.sell(
+        open_sell(
           seller_state(ctx.seller, %{}, 1_000, 150, 60),
           request(shop, [{7, 1}])
         )
@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       inventory = seed_inventory(ctx.seller.id, 2)
 
       {:noreply, _} =
-        NpcShopHandler.sell(
+        open_sell(
           seller_state(ctx.seller, inventory, 1_000, 150, 60),
           request(shop, [{0, 5}])
         )
@@ -178,7 +178,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       inventory = seed_inventory(ctx.seller.id, 3)
 
       {:noreply, _} =
-        NpcShopHandler.sell(
+        open_sell(
           seller_state(ctx.seller, inventory, 1_000, 150, 60),
           request(shop, [{0, 1}])
         )
@@ -197,7 +197,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       inventory = seed_inventory(ctx.seller.id, 1)
 
       {:noreply, new_state} =
-        NpcShopHandler.sell(
+        open_sell(
           seller_state(ctx.seller, inventory, 1_000, 150, 60),
           request(shop, [{0, 1}])
         )
@@ -218,7 +218,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       refute Enum.any?(shop.items, &(&1.nameid == @potion))
 
       {:noreply, _} =
-        NpcShopHandler.sell(
+        open_sell(
           seller_state(ctx.seller, inventory, 1_000, 150, 60),
           request(shop, [{0, 1}])
         )
@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       inventory = seed_inventory(ctx.seller.id, 3)
 
       {:noreply, _} =
-        NpcShopHandler.sell(
+        open_sell(
           seller_state(ctx.seller, inventory, 1_000, 150, 60),
           request(shop, [{0, 1}])
         )
@@ -274,7 +274,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       stub(InventoryPersistence, :delete_item, fn _item -> {:error, :forced_failure} end)
 
       {:noreply, _} =
-        NpcShopHandler.sell(
+        open_sell(
           seller_state(ctx.seller, inventory, 1_000, 150, 60),
           request(shop, [{0, 2}, {1, 3}])
         )
@@ -291,7 +291,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
       inventory = seed_inventory(ctx.seller.id, 3)
 
       {:noreply, _} =
-        NpcShopHandler.sell(
+        open_sell(
           seller_state(ctx.seller, inventory, 1_000, 10, 10),
           request(shop, [{0, 1}])
         )
@@ -350,4 +350,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopSellTest do
   end
 
   defp reload_zeny(char_id), do: Repo.get!(Character, char_id).zeny
+
+  # The deal is made from the shop window the request names, as after a click.
+  defp open_sell(state, request),
+    do: NpcShopHandler.sell(Map.put(state, :npc_shop, request.unit_id), request)
 end

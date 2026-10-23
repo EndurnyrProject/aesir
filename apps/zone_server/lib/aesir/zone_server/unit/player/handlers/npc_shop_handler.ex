@@ -71,16 +71,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   def open_window(%{game_state: gs, connection_pid: connection_pid} = state, %ShopData{} = shop) do
     if in_talk_range?(gs, shop) do
       {buy_items, sell_items} = ShopCore.build_open(shop, gs)
+      unit_id = ShopRegistry.entity_id(shop)
 
       MessageRouter.send_to(connection_pid, %NpcShopOpen{
-        unit_id: ShopRegistry.entity_id(shop),
+        unit_id: unit_id,
         buy_items: Enum.map(buy_items, &to_buy_item/1),
         sell_items: Enum.map(sell_items, &to_sell_item/1)
       })
-    end
 
-    {:noreply, state}
+      {:noreply, Map.put(state, :npc_shop, unit_id)}
+    else
+      {:noreply, state}
+    end
   end
+
+  @doc "Closes the player's open shop window (`NpcShopClose`), whichever shop it is."
+  @spec close_window(state()) :: {:noreply, state()}
+  def close_window(state), do: {:noreply, Map.put(state, :npc_shop, nil)}
 
   @doc """
   Buys `request.items` from the shop identified by `request.unit_id`.
@@ -100,8 +107,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
         items: entries
       }) do
     requests = Enum.map(entries, fn %NpcBuyEntry{nameid: id, amount: a} -> {id, a} end)
+    open = Map.get(state, :npc_shop)
+    state = Map.put(state, :npc_shop, nil)
 
-    with {:ok, shop} <- fetch_in_range(gs, unit_id),
+    with :ok <- deal_open(state, open, unit_id, :not_enough_zeny),
+         {:ok, shop} <- fetch_in_range(gs, unit_id),
          {:ok, %{total_cost: total_cost, item_adds: item_adds}} <-
            ShopCore.compute_buy(shop, requests, gs),
          {:ok, inventory, changes} <-
@@ -138,7 +148,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
     requests =
       Enum.map(entries, fn %NpcSellEntry{inventory_index: index, amount: a} -> {index, a} end)
 
-    with {:ok, _shop} <- fetch_in_range(gs, unit_id),
+    open = Map.get(state, :npc_shop)
+    state = Map.put(state, :npc_shop, nil)
+
+    with :ok <- deal_open(state, open, unit_id, :invalid),
+         {:ok, _shop} <- fetch_in_range(gs, unit_id),
          {:ok, %{total_credit: total_credit, removals: removals}} <-
            ShopCore.compute_sell(requests, gs),
          {:ok, inventory} <-
@@ -152,6 +166,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
         reply(connection_pid, %NpcSellResult{result: sell_result_code(reason)})
         {:noreply, state}
     end
+  end
+
+  # A deal needs the window of the named shop open and no trade; a refused buy
+  # reads as too little zeny, a refused sell as the generic failure. Either
+  # request closes the window.
+  @spec deal_open(map(), non_neg_integer() | nil, non_neg_integer(), atom()) ::
+          :ok | {:error, atom()}
+  defp deal_open(state, open, unit_id, reason) do
+    if open == unit_id and Map.get(state, :trade) == nil, do: :ok, else: {:error, reason}
   end
 
   @spec fetch_in_range(PlayerState.t(), non_neg_integer()) ::

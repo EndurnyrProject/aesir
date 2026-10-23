@@ -101,7 +101,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         |> preserve_corpse(game_state)
         |> Map.put(:pending_map_load, pending_after_warp(game_state.pending_map_load))
 
-      state = state |> StateCommit.commit(new_game_state) |> SkillMenuHandler.clear()
+      state =
+        state
+        |> StateCommit.commit(new_game_state)
+        |> SkillMenuHandler.clear()
+        |> Map.merge(%{work_in_progress: false, npc_shop: nil})
 
       StatusInterpreter.remove_on_map_change(:player, game_state.character_id)
 

@@ -13,10 +13,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
-  alias Aesir.Net.ProgressBar
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
-  alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
 
   @typedoc "The dialog frame kind, mirroring the `NpcDialog.Expect` proto enum."
   @type expect :: :NEXT | :MENU | :INPUT_INT | :INPUT_STR | :CLOSE
@@ -194,25 +193,30 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   @doc """
   Displays a progress bar over the attached character's head for `seconds`
   then blocks until the client reports completion.
-  Blocks like the other dialog primitives: the interaction suspends on a
-  `receive` until the client signals completion (`NpcInteract.progress`); a
-  moving character makes the client cancel instead, ending the script (the same
-  cancel path `select`'s ESC uses). Halts `:no_player` on a detached ctx.
+  The player session starts the bar and holds the work flag that blocks the
+  player's skill, item and NPC requests until the client reports the bar full.
+  A report before the bar fills, an item use or a walk cancels it and ends the
+  script. Halts `:no_player` on a detached ctx.
   """
   @spec progressbar(Ctx.t(), String.t(), integer()) :: Ctx.t()
   def progressbar(%Ctx{status: {:error, _}} = ctx, _color, _seconds), do: ctx
   def progressbar(%Ctx{game_state: nil} = ctx, _color, _seconds), do: Ctx.halt(ctx, :no_player)
 
-  def progressbar(%Ctx{char_id: char_id} = ctx, color, seconds)
-      when is_integer(seconds) and seconds > 0 do
-    Broadcast.to_player(char_id, %ProgressBar{
-      seconds: seconds,
-      color: parse_color(color),
-      npc_id: ctx.npc_gid
-    })
+  def progressbar(%Ctx{session_pid: nil} = ctx, _color, seconds)
+      when is_integer(seconds) and seconds > 0,
+      do: Ctx.halt(ctx, :no_player)
 
-    await(ctx, :progress)
-    ctx
+  def progressbar(%Ctx{} = ctx, color, seconds) when is_integer(seconds) and seconds > 0 do
+    op = {:progressbar, ctx.npc_gid, parse_color(color), seconds}
+
+    case PlayerSession.script_apply(ctx.session_pid, op) do
+      {:ok, _game_state} ->
+        await(ctx, :progress)
+        ctx
+
+      {:error, reason} ->
+        Ctx.halt(ctx, reason)
+    end
   end
 
   def progressbar(%Ctx{} = ctx, _color, seconds) do

@@ -283,6 +283,10 @@ message Envelope {
     ItemAddFailed item_add_failed = 221;  // s2c zone gameplay
     // 222: a client string-table notice the reference sends for a refused request
     SystemNotice system_notice = 222;  // s2c zone gameplay
+    // 223: the player closed the NPC shop window without a deal
+    NpcShopClose npc_shop_close = 223;  // c2s zone
+    // 224: the server cancelled the player's running progress bar
+    ProgressBarAbort progress_bar_abort = 224;  // s2c zone world
   }
 }
 
@@ -707,6 +711,21 @@ message ProgressBar {
   // Owning NPC gid, so the client can address the Progress/Cancel ack to the
   // exact NPC even for a bare progressbar with no open dialog window.
   uint32 npc_id = 3;
+}
+
+// Server -> client, cancels the running ProgressBar (an item use or a walk
+// request during the bar). The client removes the bar and reports it with
+// NpcInteract.progress for `npc_id`; reported before the bar fills, the server
+// ends the script.
+message ProgressBarAbort {
+  uint32 npc_id = 1;
+}
+
+// Client -> server, the player closed the NPC shop window opened by
+// NpcShopOpen without buying or selling. A buy or sell also closes it; the
+// client must click the shop again to deal again.
+message NpcShopClose {
+  uint64 unit_id = 1;
 }
 
 // Server -> client, open the navigation window / update its server-authoritative

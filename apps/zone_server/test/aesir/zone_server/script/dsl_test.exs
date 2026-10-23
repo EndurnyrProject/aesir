@@ -445,26 +445,30 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   describe "progressbar/3" do
-    test "sends a ProgressBar and blocks until the client reports completion" do
+    test "starts the bar through the player session and blocks until the client reports completion" do
       test_pid = self()
       npc_gid = 42
 
-      expect(Broadcast, :to_player, fn 1,
-                                       %ProgressBar{seconds: 5, color: 0xFFFF00, npc_id: ^npc_gid} =
-                                         packet ->
-        send(test_pid, {:progress_bar, packet})
-
+      expect(PlayerSession, :script_apply, fn ^test_pid, {:progressbar, ^npc_gid, 0xFFFF00, 5} ->
         send(
           test_pid,
           {:npc_interact, %NpcInteract{npc_id: npc_gid, response: {:progress, true}}}
         )
 
-        :ok
+        {:ok, nil}
       end)
 
-      ctx = %{build_ctx() | npc_gid: npc_gid}
+      ctx = %{build_ctx() | npc_gid: npc_gid, session_pid: test_pid}
       assert Dsl.progressbar(ctx, "ffff00", 5) == ctx
-      assert_received {:progress_bar, %ProgressBar{seconds: 5, color: 0xFFFF00, npc_id: ^npc_gid}}
+    end
+
+    test "halts with the session's error when the bar cannot start" do
+      expect(PlayerSession, :script_apply, fn _pid, {:progressbar, _, _, _} ->
+        {:error, :no_player}
+      end)
+
+      ctx = %{build_ctx() | npc_gid: 42, session_pid: self()}
+      assert Dsl.progressbar(ctx, "ffff00", 5).status == {:error, :no_player}
     end
 
     test "halts :no_player on a detached ctx" do

@@ -295,7 +295,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   @spec item_use_enabled?(map()) :: :ok | {:error, :disabled}
   defp item_use_enabled?(state) do
     if SessionState.npc_dialog?(state) and
-         (SessionState.menu_work_in_progress?(state) or not SessionState.npc_item_flag?(state)),
+         (SessionState.work_in_progress?(state) or not SessionState.npc_item_flag?(state)),
        do: {:error, :disabled},
        else: :ok
   end

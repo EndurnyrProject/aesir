@@ -14,7 +14,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   the client sent just before the vanish packet arrived.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.NpcInteract
+  alias Aesir.Net.SystemNotice
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.Shop.Registry, as: ShopRegistry
@@ -26,19 +29,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   @doc """
   Processes an NPC click (protobuf analogue of CZ_CONTACTNPC 0x0090).
 
-  Ignored while an interaction lock or a labelled skill menu's work flag is
-  held. A gid that resolves to neither a shop nor an NPC module is ignored.
+  A click while the player cannot act answers with the busy notice in renewal
+  and is dropped silently in pre-renewal, as the reference does. A gid that
+  resolves to neither a shop nor an NPC module is ignored.
   """
   @spec handle_talk(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_talk(gid, %{game_state: game_state} = state) do
-    if SessionState.interaction_blocked?(state) or SessionState.menu_work_in_progress?(state) do
-      {:noreply, state}
+    if SessionState.interaction_blocked?(state) or SessionState.work_in_progress?(state) or
+         SessionState.npc_shop_open?(state) do
+      refuse_busy(state)
     else
       case ShopRegistry.fetch(gid) do
         {:ok, shop} -> NpcShopHandler.open_window(state, shop)
         :error -> talk_to_npc(gid, game_state, state)
       end
     end
+  end
+
+  defp refuse_busy(%{connection_pid: connection_pid} = state) do
+    if GameMode.mode() == :renewal do
+      MessageRouter.send_to(connection_pid, %SystemNotice{id: :SYSTEM_NOTICE_ID_BUSY})
+    end
+
+    {:noreply, state}
   end
 
   @doc """
@@ -76,17 +89,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
   Forwards the player's response to the pending NpcDialog to the locked
   interaction process. Dropped when no dialog is active or the response
   carries a different npc_id than the active interaction.
+
+  While a progress bar runs, the client's report (`progress`, or `cancel` for
+  a bar it cancelled) ends the bar and releases the work flag: reported before
+  the bar fills it ends the script, after it the script continues. Any other
+  response is dropped until the bar fills.
   """
   @spec handle_interact(NpcInteract.t(), SessionState.t()) :: {:noreply, SessionState.t()}
-  def handle_interact(
-        %NpcInteract{npc_id: gid} = msg,
-        %{interaction_lock: {pid, _ref, gid}} = state
-      ) do
+  def handle_interact(%NpcInteract{npc_id: gid, response: {kind, _}} = msg, state) do
+    case Map.get(state, :progress_bar) do
+      %{npc_gid: ^gid, deadline: deadline} ->
+        cond do
+          kind in [:progress, :cancel] and System.monotonic_time(:millisecond) >= deadline ->
+            forward(msg, SessionState.release_progress_bar(state))
+
+          kind in [:progress, :cancel] ->
+            cancel = %NpcInteract{npc_id: gid, response: {:cancel, true}}
+            forward(cancel, SessionState.release_progress_bar(state))
+
+          System.monotonic_time(:millisecond) >= deadline ->
+            forward(msg, state)
+
+          true ->
+            {:noreply, state}
+        end
+
+      _no_bar_for_this_npc ->
+        forward(msg, state)
+    end
+  end
+
+  defp forward(
+         %NpcInteract{npc_id: gid} = msg,
+         %{interaction_lock: {pid, _ref, gid}} = state
+       ) do
     send(pid, {:npc_interact, msg})
     {:noreply, state}
   end
 
-  def handle_interact(%NpcInteract{}, state) do
+  defp forward(%NpcInteract{}, state) do
     {:noreply, state}
   end
 end

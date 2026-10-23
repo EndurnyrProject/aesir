@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       register_shop(shop)
 
       assert {:noreply, new_state} =
-               NpcShopHandler.buy(
+               open_buy(
                  buyer_state(ctx.buyer, %{}, 1_000, 150, 60),
                  request(shop, [{@potion, 4}])
                )
@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
 
       # In-memory zeny 10 trips the gate; the persisted row (1_000) stays untouched.
       {:noreply, _} =
-        NpcShopHandler.buy(
+        open_buy(
           buyer_state(ctx.buyer, %{}, 10, 150, 60),
           request(shop, [{@potion, 4}])
         )
@@ -117,7 +117,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       inventory = load_inventory_map(ctx.buyer.id)
 
       {:noreply, _} =
-        NpcShopHandler.buy(
+        open_buy(
           buyer_state(ctx.buyer, inventory, 1_000, 150, 60),
           request(shop, [{@potion, 1}])
         )
@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       stub(ShopCore, :compute_buy, fn ^shop, _req, _gs -> {:error, :no_slots} end)
 
       {:noreply, _} =
-        NpcShopHandler.buy(
+        open_buy(
           buyer_state(ctx.buyer, %{}, 1_000, 150, 60),
           request(shop, [{@potion, 1}])
         )
@@ -150,7 +150,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       register_shop(shop)
 
       {:noreply, _} =
-        NpcShopHandler.buy(buyer_state(ctx.buyer, %{}, 1_000, 150, 60), request(shop, [{909, 1}]))
+        open_buy(buyer_state(ctx.buyer, %{}, 1_000, 150, 60), request(shop, [{909, 1}]))
 
       assert [] = InventoryPersistence.load_inventory(ctx.buyer.id)
       assert reload_zeny(ctx.buyer.id) == 1_000
@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       stub(Shops, :all, fn -> %{} end)
 
       {:noreply, _} =
-        NpcShopHandler.buy(
+        open_buy(
           buyer_state(ctx.buyer, %{}, 1_000, 150, 60),
           request(shop, [{@potion, 1}])
         )
@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       register_shop(shop)
 
       {:noreply, _} =
-        NpcShopHandler.buy(
+        open_buy(
           buyer_state(ctx.buyer, %{}, 1_000, 10, 10),
           request(shop, [{@potion, 1}])
         )
@@ -196,7 +196,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       end)
 
       {:noreply, _} =
-        NpcShopHandler.buy(
+        open_buy(
           buyer_state(ctx.buyer, %{}, 1_000, 150, 60),
           request(shop, [{@potion, 4}])
         )
@@ -204,6 +204,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
       assert [] = InventoryPersistence.load_inventory(ctx.buyer.id)
       assert reload_zeny(ctx.buyer.id) == 1_000
       assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 4}}}
+    end
+  end
+
+  describe "the open shop window" do
+    test "a buy without the shop's window open fails as too little zeny and keeps the zeny",
+         ctx do
+      shop = shop()
+      register_shop(shop)
+      state = buyer_state(ctx.buyer, %{}, 1_000, 150, 60)
+
+      assert {:noreply, after_buy} = NpcShopHandler.buy(state, request(shop, [{909, 1}]))
+      assert after_buy.npc_shop == nil
+      assert reload_zeny(ctx.buyer.id) == 1_000
+      assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 1}}}
+    end
+
+    test "a buy closes the window it was made from", ctx do
+      register_shop(shop())
+      state = buyer_state(ctx.buyer, %{}, 1_000, 150, 60)
+      assert {:noreply, after_buy} = open_buy(state, request(shop(), [{909, 1}]))
+      assert after_buy.npc_shop == nil
+    end
+
+    test "a buy while trading fails", ctx do
+      register_shop(shop())
+      state = Map.put(buyer_state(ctx.buyer, %{}, 1_000, 150, 60), :trade, %{pid: self()})
+
+      assert {:noreply, _} = open_buy(state, request(shop(), [{@potion, 1}]))
+      assert reload_zeny(ctx.buyer.id) == 1_000
+      assert_receive {:send, _ch, {:npc_buy_result, %NpcBuyResult{result: 1}}}
     end
   end
 
@@ -257,4 +287,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopBuyTest do
   end
 
   defp reload_zeny(char_id), do: Repo.get!(Character, char_id).zeny
+
+  # The deal is made from the shop window the request names, as after a click.
+  defp open_buy(state, request),
+    do: NpcShopHandler.buy(Map.put(state, :npc_shop, request.unit_id), request)
 end

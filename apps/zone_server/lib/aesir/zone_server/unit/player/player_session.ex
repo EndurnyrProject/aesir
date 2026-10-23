@@ -1090,6 +1090,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         {:DOWN, ref, :process, _pid, _reason},
         %{interaction_lock: {_lock_pid, ref, _gid}} = state
       ) do
+    state =
+      if Map.get(state, :progress_bar), do: SessionState.release_progress_bar(state), else: state
+
     {:noreply, Map.merge(state, %{interaction_lock: nil, npc_item_flag: nil})}
   end
 

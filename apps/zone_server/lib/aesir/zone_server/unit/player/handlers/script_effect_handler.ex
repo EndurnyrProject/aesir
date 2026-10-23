@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.Commons.Models.ItemOptions
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.ItemSkillReady
+  alias Aesir.Net.ProgressBar
   alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
@@ -58,6 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Rental
@@ -80,6 +82,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:failedrefitem, non_neg_integer(), integer()}
           | {:disable_items}
           | {:enable_items}
+          | {:progressbar, non_neg_integer(), non_neg_integer(), pos_integer()}
           | {:nude}
           | {:getexp, non_neg_integer(), non_neg_integer()}
           | {:set_char_var, atom(), term()}
@@ -395,6 +398,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     do: {{:ok, state.game_state}, put_item_flag(state, false)}
 
   def apply_op({:enable_items}, state), do: {{:ok, state.game_state}, put_item_flag(state, true)}
+
+  # `progressbar`: the bar holds the work flag until the client reports it full.
+  def apply_op({:progressbar, npc_gid, color, seconds}, state) do
+    MessageRouter.send_to(state.connection_pid, %ProgressBar{
+      seconds: seconds,
+      color: color,
+      npc_id: npc_gid
+    })
+
+    {{:ok, state.game_state}, SessionState.hold_progress_bar(state, npc_gid, seconds)}
+  end
 
   def apply_op({:getexp, base_exp, job_exp}, state) do
     {:noreply, new_state} =

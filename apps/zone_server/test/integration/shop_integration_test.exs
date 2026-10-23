@@ -129,7 +129,12 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
 
       flush_packets()
 
-      # 3. Sell back the owned, sellable item -> items- / zeny+ atomically.
+      # 3. The deal closed the window: click again, then sell back the owned,
+      # sellable item -> items- / zeny+ atomically.
+      simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
+      assert_receive {:packet_sent, %NpcShopOpen{unit_id: ^gid}, _}, 1_000
+      flush_packets()
+
       simulate_incoming_message(session.pid, %NpcSellRequest{
         unit_id: gid,
         items: [%NpcSellEntry{inventory_index: sell_index, amount: @sell_amount}]

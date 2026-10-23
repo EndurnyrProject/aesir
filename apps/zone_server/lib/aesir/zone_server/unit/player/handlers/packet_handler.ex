@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.NpcBuyRequest
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.NpcSellRequest
+  alias Aesir.Net.NpcShopClose
   alias Aesir.Net.NpcTalk
   alias Aesir.Net.PartyCreateRequest
   alias Aesir.Net.PartyInviteRequest
@@ -648,6 +649,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # sole writer, so the handler runs the buy transaction inline in this session.
   def handle_message(%NpcBuyRequest{} = msg, state) do
     NpcShopHandler.buy(state, msg)
+  end
+
+  # NpcShopClose - Player closed the shop window without a deal.
+  def handle_message(%NpcShopClose{}, state) do
+    NpcShopHandler.close_window(state)
   end
 
   # NpcSellRequest - Player sells items back to a clicked NPC shop. The seller is

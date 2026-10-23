@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PortalMenuActionsTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Net.SystemNotice
   alias Aesir.ZoneServer.Npc.Registry
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
@@ -49,5 +50,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PortalMenuActionsTest do
     refute_received :touch_lookup
     assert {:noreply, ^state} = NpcInteractionHandler.talk_to_npc(123, state.game_state, state)
     assert_received :touch_lookup
+  end
+
+  @tag game_mode: :renewal
+  test "renewal answers a click while busy with the busy notice" do
+    state = %SessionState{
+      connection_pid: self(),
+      game_state: %PlayerState{character_id: 1},
+      work_in_progress: true
+    }
+
+    assert {:noreply, ^state} = NpcInteractionHandler.handle_talk(123, state)
+
+    assert_receive {:send, :gameplay, {:system_notice, %SystemNotice{id: :SYSTEM_NOTICE_ID_BUSY}}}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "pre-renewal drops a click while busy silently" do
+    state = %SessionState{
+      connection_pid: self(),
+      game_state: %PlayerState{character_id: 1},
+      work_in_progress: true
+    }
+
+    assert {:noreply, ^state} = NpcInteractionHandler.handle_talk(123, state)
+    refute_received {:send, :gameplay, {:system_notice, _}}
   end
 end
