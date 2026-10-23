@@ -27,21 +27,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDetoxify do
 
   @statuses_to_remove [:sc_poison, :sc_dpoison]
 
+  @doc "A player may support only their own Homunculus; any other is refused silently."
   @impl Active
-  def validate(%{character_id: caster_id}, {:unit, {:homunculus, gid}}, _level, _definition) do
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def skilluse_check(caster, target, _level, _definition), do: homunculus_support(caster, target)
+
+  @doc """
+  Checks the Homunculus ownership again when the cast ends; a caster that is
+  not a player may not support a Homunculus at all.
+  """
+  @impl Active
+  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def validate(caster, target, _level, _definition), do: homunculus_support(caster, target)
+
+  defp homunculus_support(%{character_id: caster_id}, {:unit, {:homunculus, gid}}) do
     with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
          {:ok, target_combatant} <- TargetResolver.resolve_combatant(:homunculus, gid),
          true <- Targeting.direct_support?(caster_combatant, target_combatant) do
       :ok
     else
-      _ -> {:error, :invalid_target}
+      _ -> {:error, :target_restricted}
     end
   end
 
-  def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
-    do: {:error, :invalid_target}
-
-  def validate(_caster, _target, _level, _definition), do: :ok
+  defp homunculus_support(_caster, {:unit, {:homunculus, _gid}}), do: {:error, :target_restricted}
+  defp homunculus_support(_caster, _target), do: :ok
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
