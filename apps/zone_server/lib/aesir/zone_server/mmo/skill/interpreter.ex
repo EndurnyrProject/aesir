@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.PlacementCheck
+  alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.SkillCaster
@@ -699,22 +700,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @doc """
   Checks whether an equipment proc may fire `skill_id` for the wearer.
 
-  The proc's usability check: the skill must exist, be off cooldown and be
-  allowed on the wearer's map. The learned level, range, resources and the
+  The proc's usability check: the skill must exist and pass the map and
+  cooldown restrictions of a skill use (`UseRestrictions.check/4`, given the
+  wearer's pending item skill), whose refusal carries its reply as
+  `{:not_ok, reply}`. The learned level, range, resources and the
   attack-motion gate are not checked. The wearer's autocast flag is set for the
   check and reset afterwards, which also clears a flag an enclosing invocation
   had set. Nothing is charged or cast.
   """
-  @spec check_proc_usable(Active.caster(), integer()) :: :ok | {:error, atom()}
-  def check_proc_usable(game_state, skill_id) do
+  @spec check_proc_usable(PlayerState.t(), integer(), UseRestrictions.item_skill() | nil) ::
+          :ok | {:error, :unknown_skill | {:not_ok, UseRestrictions.reply()}}
+  def check_proc_usable(%PlayerState{} = game_state, skill_id, pending_item) do
     ref = caster_ref(game_state)
     Origin.set_autocast_flag(ref, true)
 
     try do
-      with {:ok, _definition} <- fetch_definition(skill_id),
-           {:ok, adapter} <- lifecycle_adapter(game_state),
-           :ok <- check_cooldown_ready(game_state, adapter, skill_id) do
-        :erlang.apply(adapter, :castable_state, [game_state, skill_id, :begin])
+      with {:ok, _definition} <- fetch_definition(skill_id) do
+        now = System.monotonic_time(:millisecond)
+
+        case UseRestrictions.check(game_state, skill_id, pending_item, now) do
+          :ok -> :ok
+          {:refuse, reply} -> {:error, {:not_ok, reply}}
+        end
       end
     after
       Origin.set_autocast_flag(ref, false)
@@ -724,8 +731,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @doc """
   Runs an equipment-granted proc cast: the entry the autocast bonuses use.
 
-  Deliberately neither `complete_cast/4` nor `auto_cast/4`. After
-  `check_proc_usable/2`, the skill's requirement is consumed before its effect
+  Deliberately neither `complete_cast/4` nor `auto_cast/4`. The caller runs
+  `check_proc_usable/3` first; the skill's requirement is consumed before its effect
   the way an ordinary cast's is, except that the proc's autocast flag waives
   the SP (Holy Light keeps its explicit SP); the HP, spheres and zeny it owes
   are spent up to what the wearer has, with no affordability check, no cast
@@ -733,9 +740,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   charges itself on success (Tarot Card of Fate) still does. The proc never
   arms the skill's cooldown, only its after-cast delay.
 
-  A skill on cooldown or banned on the map, or a ground skill whose unit may not
-  be placed (`Skill.Unit.PlacementCheck`, checked as a player), returns
-  `{:error, reason}` and runs nothing. An effect that fails after the
+  A ground skill whose unit may not be placed (`Skill.Unit.PlacementCheck`,
+  checked as a player) returns `{:error, reason}` and runs nothing. An effect that fails after the
   requirement was spent returns `{:error, reason, charged}` so the owner
   commits the spent resources; both are dropped silently. The effect runs as an `:auto` invocation with the
   wearer's autocast flag set for exactly its execution.
@@ -761,7 +767,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          {:ok, module} <- fetch_active_module(definition),
-         :ok <- check_proc_usable(game_state, skill_id),
          {:ok, resolved} <- resolve_auto_cast_target(definition, target),
          :ok <- check_proc_placement(game_state, definition, resolved, opts),
          {:ok, charged} <-
@@ -1073,7 +1078,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp validate_item_target(caster, target, level, definition, keep?, phase) do
     with :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
-         :ok <- maybe_check_item_map(caster, definition.id, keep?),
+         :ok <- check_item_restrictions(caster, definition.id, level, keep?, phase),
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_target(caster, target, definition),
          :ok <- check_item_skill_use(caster, target, definition, phase) do
@@ -1087,10 +1092,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp check_item_skill_use(caster, target, definition, phase),
     do: check_concealment(caster, target, definition, phase)
 
-  defp maybe_check_item_map(caster, skill_id, true),
-    do: Caster.Player.castable_state(caster, skill_id, :begin)
+  # An item cast starting checks the map and cooldown restrictions again with
+  # its own item skill pending; its cast end does not.
+  defp check_item_restrictions(caster, skill_id, level, keep?, :cast_begin) do
+    item = %{skill_id: skill_id, level: level, keep_requirement?: keep?}
 
-  defp maybe_check_item_map(_caster, _skill_id, false), do: :ok
+    case UseRestrictions.check(caster, skill_id, item, System.monotonic_time(:millisecond)) do
+      :ok -> :ok
+      {:refuse, reply} -> {:error, {:not_ok, reply}}
+    end
+  end
+
+  defp check_item_restrictions(_caster, _skill_id, _level, _keep?, _phase), do: :ok
 
   defp item_requirement_ready(caster, module, target, level, definition, true) do
     with :ok <- check_weapon(caster, definition),
@@ -2248,14 +2261,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   catch
     :exit, _reason -> {:error, :target_not_found}
-  end
-
-  defp check_cooldown_ready(game_state, adapter, skill_id) do
-    now = System.monotonic_time(:millisecond)
-
-    if :erlang.apply(adapter, :cooldown_ready?, [game_state, skill_id, now, :begin]),
-      do: :ok,
-      else: {:error, :on_cooldown}
   end
 
   defp check_cooldown(game_state, skill_id, now) do

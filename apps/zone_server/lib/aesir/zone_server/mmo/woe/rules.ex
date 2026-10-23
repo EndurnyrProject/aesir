@@ -20,7 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
   @emperium_mob_id 1288
   @guild_approval_skill_id 10_000
   @triple_attack_skill_id 263
-  @shared_skill_bans [26, 27, 87, 150, 219]
 
   @doc "Returns whether a map uses siege-ground rules."
   @spec ground?(String.t()) :: boolean()
@@ -73,12 +72,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
   @spec damage_rate(map()) :: pos_integer()
   def damage_rate(%{skill_id: skill_id}) when is_integer(skill_id), do: 60
   def damage_rate(_hit_info), do: 80
-
-  @doc "Returns whether a skill may be cast on the map under siege-ground rules."
-  @spec skill_allowed?(pos_integer(), String.t()) :: boolean()
-  def skill_allowed?(skill_id, map_name) do
-    not ground?(map_name) or skill_id not in skill_bans(GameMode.mode())
-  end
 
   @doc "Returns whether a usable item has a modeled siege-ground use restriction."
   @spec item_allowed?(pos_integer(), String.t()) :: boolean()
@@ -152,7 +145,4 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
   defp allow_pre_renewal_only do
     if GameMode.mode() == :pre_renewal, do: :ok, else: {:error, :skill_not_allowed}
   end
-
-  defp skill_bans(:renewal), do: @shared_skill_bans
-  defp skill_bans(:pre_renewal), do: [1013 | @shared_skill_bans]
 end

@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.NoCast
   alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCannibalize
   alias Aesir.ZoneServer.Mmo.Skills.Alchemist.AmSpheremine
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -25,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
     :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 30, 30)})
     Catalog.reload()
+    # Prontera's town zone restricts both summons; these tests cast on open ground.
+    stub(NoCast, :refused?, fn _skill_id, _map_name -> false end)
     :ok
   end
 

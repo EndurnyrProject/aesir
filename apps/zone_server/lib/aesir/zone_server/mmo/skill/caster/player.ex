@@ -13,12 +13,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
+  alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
-  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Inventory.Weight
@@ -36,7 +36,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   # Guild skills (GD_*) are learned by the guild, not the character: their rank
   # resolves against the guild entry, never against the caster's progression.
   @guild_skill_range 10_000..10_019
-  @emergency_calls [10_013, 10_015]
   @charge_shout_beating 10_018
 
   # Renewal requires one extra ammunition unit for these casts (2016-10-26 kRO
@@ -142,19 +141,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     |> Map.get(skill_id, 0)
   end
 
+  # A cast starting checks the map and cooldown restrictions again, as the
+  # request did (no item skill rides an ordinary cast); its refusal carries the
+  # reply to send. Nothing is checked again when the cast ends.
   @impl true
-  def castable_state(%PlayerState{map_name: map_name}, skill_id, phase)
-      when phase in [:begin, :completion] do
-    cond do
-      not Rules.skill_allowed?(skill_id, map_name) -> {:error, :skill_not_allowed}
-      phase == :begin and emergency_call_refused?(skill_id, map_name) -> {:error, :not_gvg_ground}
-      true -> :ok
+  def castable_state(%PlayerState{} = caster, skill_id, :begin) do
+    case UseRestrictions.check(caster, skill_id, nil, System.monotonic_time(:millisecond)) do
+      :ok -> :ok
+      {:refuse, reply} -> {:error, {:not_ok, reply}}
     end
   end
 
-  # Urgent Call works in and out of War of Emperium, on GvG ground only.
-  defp emergency_call_refused?(skill_id, map_name),
-    do: skill_id in @emergency_calls and not Rules.ground?(map_name)
+  def castable_state(%PlayerState{}, _skill_id, :completion), do: :ok
 
   @impl true
   def castable_status(%PlayerState{}, _skill_id), do: :ok

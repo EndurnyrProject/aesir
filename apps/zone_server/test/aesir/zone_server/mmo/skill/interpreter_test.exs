@@ -639,7 +639,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         | skill_cooldowns: %{29 => System.monotonic_time(:millisecond) + 10_000}
       }
 
-      assert {:error, :on_cooldown} =
+      assert {:error, {:not_ok, :silent}} =
                Interpreter.complete_cast_with_input(blocked, 29, 1, :self, "hello")
 
       assert blocked.stats.current_state.sp == 50
@@ -1094,14 +1094,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     }
   end
 
-  test "second cast within the cooldown window returns :on_cooldown" do
+  test "second cast within the cooldown window is refused, silently without delay notices" do
     stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _params -> :ok end)
     stub(Catalog, :by_id, fn 29 -> {:ok, definition_with_cooldown([10_000])} end)
 
     gs = game_state(100, %{29 => 1})
 
     assert {:ok, updated} = Interpreter.cast(gs, 29, 1, :self)
-    assert {:error, :on_cooldown} = Interpreter.cast(updated, 29, 1, :self)
+    assert {:error, {:not_ok, :silent}} = Interpreter.cast(updated, 29, 1, :self)
   end
 
   test "casting a passive skill returns :passive_skill" do
@@ -3188,22 +3188,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       refute Map.has_key?(caster.stats, :equipment)
     end
 
-    test "a mismatched player weapon fails before cost and cooldown validation" do
+    test "a mismatched player weapon fails before cost validation, after a running cooldown" do
       stub(Catalog, :by_id, fn 6 -> {:ok, weapon_definition([:musical])} end)
       reject(&SmProvoke.cast/4)
 
       gs =
-        %{
-          equipped_game_state(%Equipment{right_hand: 90_202})
-          | skill_cooldowns: %{6 => System.monotonic_time(:millisecond) + 60_000}
-        }
-        |> put_in(
+        put_in(
+          equipped_game_state(%Equipment{right_hand: 90_202}),
           [Access.key!(:stats), Access.key!(:current_state), Access.key!(:sp)],
           0
         )
 
       assert {:error, :wrong_weapon} = Interpreter.cast(gs, 6, 1, :self)
       assert gs.stats.current_state.sp == 0
+
+      cooling = %{gs | skill_cooldowns: %{6 => System.monotonic_time(:millisecond) + 60_000}}
+      assert {:error, {:not_ok, :silent}} = Interpreter.cast(cooling, 6, 1, :self)
     end
   end
 
@@ -3367,26 +3367,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:ok, updated} = Interpreter.proc_cast(gs, 83, 1, {:unit, 2001})
       assert updated.skill_cooldowns == %{}
-    end
-
-    test "refuses to fire while the skill is still cooling down" do
-      reject(&Combat.execute_magic_attack/3)
-
-      cooling = %{
-        game_state(100, %{})
-        | skill_cooldowns: %{19 => System.monotonic_time(:millisecond) + 10_000}
-      }
-
-      assert {:error, :on_cooldown} = Interpreter.proc_cast(cooling, 19, 1, {:unit, 2001})
-    end
-
-    test "refuses a skill banned on the wearer's map" do
-      reject(&Combat.execute_magic_attack/3)
-      :ok = MapFlags.set_runtime("prontera", :gvg, true)
-      on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :gvg) end)
-
-      assert {:error, :skill_not_allowed} =
-               Interpreter.proc_cast(game_state(100, %{}), 87, 1, {:unit, 2001})
     end
 
     test "Holy Light keeps its explicit SP requirement, spent up to the SP held" do
@@ -3553,29 +3533,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
-  describe "check_proc_usable/2" do
+  describe "check_proc_usable/3" do
     test "passes an off-cooldown skill on an ordinary map without charging or casting" do
       reject(&Combat.execute_magic_attack/3)
-      assert :ok = Interpreter.check_proc_usable(game_state(0, %{}), 19)
+      assert :ok = Interpreter.check_proc_usable(game_state(0, %{}), 19, nil)
     end
 
     test "refuses an unknown or cooling skill" do
       assert {:error, :unknown_skill} =
-               Interpreter.check_proc_usable(game_state(100, %{}), 999_999)
+               Interpreter.check_proc_usable(game_state(100, %{}), 999_999, nil)
 
       cooling = %{
         game_state(100, %{})
         | skill_cooldowns: %{19 => System.monotonic_time(:millisecond) + 10_000}
       }
 
-      assert {:error, :on_cooldown} = Interpreter.check_proc_usable(cooling, 19)
+      assert {:error, {:not_ok, :silent}} = Interpreter.check_proc_usable(cooling, 19, nil)
+
+      assert {:error, {:not_ok, {:fail, :skill_interval}}} =
+               Interpreter.check_proc_usable(%{cooling | show_delay: true}, 19, nil)
+    end
+
+    test "refuses a skill the wearer's map restricts, with the area notice" do
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+      on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :gvg) end)
+
+      assert {:error, {:not_ok, {:notice, :SYSTEM_NOTICE_ID_IMPOSSIBLE_SKILL_AREA}}} =
+               Interpreter.check_proc_usable(game_state(100, %{}), 87, nil)
     end
 
     test "sets and resets the wearer's autocast flag, clearing an enclosing one" do
       scope = %{invocation: :auto, autocast_flag?: true}
 
       Origin.with_skill(:sm_bash, {:player, 1000}, scope, fn ->
-        assert :ok = Interpreter.check_proc_usable(game_state(100, %{}), 19)
+        assert :ok = Interpreter.check_proc_usable(game_state(100, %{}), 19, nil)
         refute Origin.autocast?({:player, 1000})
       end)
     end
@@ -3744,13 +3735,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:ok, _updated} = Interpreter.item_cast(gs, 6, 1, :self)
     end
 
-    test "casts while the skill is on cooldown" do
+    test "is refused while the skill is on cooldown" do
       gs = %{
         item_game_state()
         | skill_cooldowns: %{6 => System.monotonic_time(:millisecond) + 5000}
       }
 
-      assert {:ok, _updated} = Interpreter.item_cast(gs, 6, 1, :self)
+      assert {:error, {:not_ok, :silent}} = Interpreter.item_cast(gs, 6, 1, :self)
     end
 
     test "arms the skill's cooldown and aftercast delay" do
@@ -3907,6 +3898,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         _map, _flag -> false
       end)
 
+      stub(MapFlags, :gvg2?, fn map_name -> map_name == "prontera" end)
+
       guild = %GuildState{
         guild_id: 7,
         name: "G",
@@ -3951,7 +3944,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "Urgent Call off GvG ground fails before anything is spent" do
       master = %{guild_master() | map_name: "geffen"}
 
-      assert {:error, :not_gvg_ground} = Interpreter.begin_cast(master, 10_013, 1, :self)
+      assert {:error, {:not_ok, {:fail, :failed}}} =
+               Interpreter.begin_cast(master, 10_013, 1, :self)
     end
 
     @tag game_mode: :pre_renewal

@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle do
 
   @callback knows?(state(), Definition.t(), pos_integer(), phase()) ::
               :ok | {:error, atom()}
-  @callback castable_state(state(), integer(), phase()) :: :ok | {:error, atom()}
+  @callback castable_state(state(), integer(), phase()) :: :ok | {:error, term()}
   @callback castable_status(state(), integer()) :: :ok | {:error, atom()}
   @callback completion_revalidates_definition?() :: boolean()
   @callback valid_caster_result?(state()) :: boolean()

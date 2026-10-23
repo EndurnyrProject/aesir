@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.NoCast
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -122,6 +123,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
     }
 
     reject(&Combat.execute_magic_splash/4)
+    # Renewal Dissonance is restricted off versus maps; this test is about the weapon.
+    stub(NoCast, :refused?, fn _skill_id, _map_name -> false end)
 
     assert {:error, :wrong_weapon} = Interpreter.cast(caster, 317, 5, :self)
     assert caster.last_song == %{skill_id: 319, level: 3}

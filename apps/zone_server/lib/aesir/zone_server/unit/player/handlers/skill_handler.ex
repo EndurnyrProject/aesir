@@ -118,15 +118,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       else: state
   end
 
-  defp send_request_reply(state, _skill_id, :silent), do: {:noreply, state}
-
-  defp send_request_reply(state, skill_id, {:fail, reason}) do
-    report_cast_failure(skill_id, state.game_state.character_id, reason)
-    {:noreply, state}
-  end
-
-  defp send_request_reply(state, _skill_id, {:notice, id}) do
-    Broadcast.to_player(state.game_state.character_id, %SystemNotice{id: id})
+  defp send_request_reply(state, skill_id, reply) do
+    report_cast_failure(skill_id, state.game_state.character_id, {:not_ok, reply})
     {:noreply, state}
   end
 
@@ -1815,43 +1808,54 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   The equipment sibling of `handle_auto_cast/4`: it routes to the interpreter's
   proc entry, which consumes the skill's requirement with the SP waived and
-  honors its cooldown without arming it. A proc refused here is dropped
-  silently; an effect that fails after the requirement was spent commits the
+  never arms its cooldown. The map and cooldown restrictions are checked first
+  (`Interpreter.check_proc_usable/3`) and a refusal sends its reply; a proc
+  refused by the interpreter is dropped silently; an effect that fails after
+  the requirement was spent commits the
   spent resources just as silently. A requirement that took the player's last
   HP kills them. A completed proc arms the player's on-skill procs like any
   other skill use.
   """
   @spec handle_proc_cast(map(), integer(), pos_integer(), term()) :: {:noreply, map()}
-  def handle_proc_cast(state, skill_id, level, target),
-    do:
-      run_proc_cast(
-        state,
-        skill_id,
-        level,
-        target,
-        Interpreter.proc_cast(state.game_state, skill_id, level, target)
-      )
+  def handle_proc_cast(%{game_state: game_state} = state, skill_id, level, target) do
+    case Interpreter.check_proc_usable(game_state, skill_id, Map.get(state, :pending_item_skill)) do
+      :ok ->
+        cast_usable_proc(state, skill_id, level, target)
+
+      {:error, {:not_ok, _reply} = reason} ->
+        report_cast_failure(skill_id, game_state.character_id, reason)
+        {:noreply, state}
+
+      {:error, _unknown_skill} ->
+        {:noreply, state}
+    end
+  end
+
+  defp cast_usable_proc(state, skill_id, level, target) do
+    result = Interpreter.proc_cast(state.game_state, skill_id, level, target)
+    run_proc_cast(state, skill_id, level, target, result)
+  end
 
   @doc """
   Resolves one equipment proc selected for this player by a hit or a skill use.
 
   The usability check and the level and chance draws run here, in the wearer's
   own session, in the order of the proc's branch (`EquipAutocast.resolve/2`). A
-  proc refused because its skill is cooling down or banned on the map reports
-  that to the player before any roll, as an ordinary cast would. An on-skill
+  proc refused by the map and cooldown restrictions sends that refusal's reply
+  before any roll, as an ordinary skill use would. An on-skill
   proc arms no after-cast delay and, while it executes, cannot re-trigger the
   entry that cast it.
   """
   @spec handle_equip_proc(SessionState.t(), EquipAutocast.candidate()) ::
           {:noreply, SessionState.t()}
   def handle_equip_proc(%{game_state: game_state} = state, candidate) do
-    usable = &Interpreter.check_proc_usable(game_state, &1)
+    usable = &Interpreter.check_proc_usable(game_state, &1, Map.get(state, :pending_item_skill))
 
     case EquipAutocast.resolve(candidate, usable: usable) do
       {:cast, level} ->
         run_equip_proc(state, candidate, level)
 
-      {:unusable, reason} when reason in [:on_cooldown, :skill_not_allowed] ->
+      {:unusable, {:not_ok, _reply} = reason} ->
         report_cast_failure(candidate.skill_id, game_state.character_id, reason)
         {:noreply, state}
 
@@ -1873,7 +1877,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp run_equip_proc(state, candidate, level),
-    do: handle_proc_cast(state, candidate.skill_id, level, candidate.target)
+    do: cast_usable_proc(state, candidate.skill_id, level, candidate.target)
 
   defp run_proc_cast(state, skill_id, level, target, result) do
     case result do
@@ -1954,7 +1958,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     do: StateCommit.commit(state, %{game_state | show_delay: not game_state.show_delay})
 
   @doc false
-  @spec report_cast_failure(integer(), non_neg_integer(), atom()) :: :ok
+  @spec report_cast_failure(integer(), non_neg_integer(), term()) :: :ok
+  def report_cast_failure(_skill_id, _character_id, {:not_ok, :silent}), do: :ok
+
+  def report_cast_failure(skill_id, character_id, {:not_ok, {:fail, reason}}),
+    do: report_cast_failure(skill_id, character_id, reason)
+
+  def report_cast_failure(_skill_id, character_id, {:not_ok, {:notice, id}}) do
+    Broadcast.to_player(character_id, %SystemNotice{id: id})
+    :ok
+  end
+
   def report_cast_failure(skill_id, character_id, reason)
       when reason in [
              :target_concealed,

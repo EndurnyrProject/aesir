@@ -368,12 +368,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert_received {:"$gen_cast", {:equipment, {:autobonus_activate, ^key, {:host, 501}}}}
     end
 
-    test "an equipment proc refused for its cooldown tells the player before any roll" do
+    test "an equipment proc refused for its cooldown sends the refusal's reply before any roll" do
       state = casting_state(45)
       game_state = state.game_state
       parent = self()
 
-      stub(Interpreter, :check_proc_usable, fn ^game_state, 29 -> {:error, :on_cooldown} end)
+      stub(Interpreter, :check_proc_usable, fn ^game_state, 29, nil ->
+        {:error, {:not_ok, {:fail, :skill_interval}}}
+      end)
+
       reject(&Interpreter.proc_cast/4)
 
       stub(Broadcast, :to_player, fn 1000, packet ->
@@ -389,6 +392,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                          skill_id: 29,
                          reason: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
                        }}
+
+      stub(Interpreter, :check_proc_usable, fn ^game_state, 29, nil ->
+        {:error, {:not_ok, :silent}}
+      end)
+
+      assert {:noreply, ^state} =
+               SkillHandler.handle_equip_proc(state, equip_proc(:attack, rate: 0))
+
+      refute_received {:packet, _packet}
     end
 
     test "an on-skill proc casts without an after-cast delay and cannot re-trigger itself" do
@@ -414,7 +426,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       game_state = state.game_state
 
-      stub(Interpreter, :check_proc_usable, fn ^game_state, 29 -> :ok end)
+      stub(Interpreter, :check_proc_usable, fn ^game_state, 29, nil -> :ok end)
 
       expect(Interpreter, :proc_cast, fn ^game_state,
                                          29,
@@ -456,7 +468,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       game_state = state.game_state
 
-      stub(Interpreter, :check_proc_usable, fn ^game_state, 29 -> :ok end)
+      stub(Interpreter, :check_proc_usable, fn ^game_state, 29, nil -> :ok end)
 
       expect(Interpreter, :proc_cast, fn ^game_state,
                                          29,

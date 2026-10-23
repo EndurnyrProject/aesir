@@ -2,7 +2,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
   use ExUnit.Case, async: false
   use Mimic
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Relations
@@ -52,17 +51,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
              basic_attack?: true,
              from_caster?: true
            }) == 80
-  end
-
-  test "castle-ground skill restrictions use the boot-selected mode" do
-    for skill_id <- [26, 27, 87, 150, 219] do
-      refute Rules.skill_allowed?(skill_id, "aldeg_cas01")
-    end
-
-    assert Rules.skill_allowed?(1013, "aldeg_cas01") == (GameMode.mode() == :renewal)
-    assert Rules.skill_allowed?(5, "aldeg_cas01")
-    assert Rules.skill_allowed?(26, "prontera")
-    assert Rules.skill_allowed?(1013, "prontera")
   end
 
   test "unrestricted items remain usable while Endure status is blocked on castle ground" do

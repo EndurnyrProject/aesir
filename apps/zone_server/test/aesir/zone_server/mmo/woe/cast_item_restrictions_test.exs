@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastItemRestrictionsTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @castle "aldeg_cas01"
-  @shared_skill_bans [26, 27, 87, 150, 219]
+  @castle_restricted [26, 27, 87, 150, 219]
+  @area_notice {:not_ok, {:notice, :SYSTEM_NOTICE_ID_IMPOSSIBLE_SKILL_AREA}}
   @greed 1013
   @greed_scroll 14_529
   @anodyne 605
@@ -63,25 +64,21 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastItemRestrictionsTest do
     :ok
   end
 
-  test "ordinary cast bans apply at begin and completion on inactive castle ground" do
+  test "castle restrictions refuse an ordinary cast when it begins, with the area notice, never at its end" do
     caster = player(@castle)
 
-    for skill_id <- @shared_skill_bans do
-      assert {:error, :skill_not_allowed} =
-               Interpreter.begin_cast(caster, skill_id, 1, :self)
-
-      assert {:error, :skill_not_allowed} =
-               Interpreter.complete_cast(caster, skill_id, 1, :self)
+    for skill_id <- @castle_restricted do
+      assert {:error, @area_notice} = Interpreter.begin_cast(caster, skill_id, 1, :self)
+      assert :ok = Caster.Player.castable_state(caster, skill_id, :completion)
     end
   end
 
-  test "Greed ordinary-cast restriction is pre-renewal only in both phases" do
-    expected = if GameMode.mode() == :pre_renewal, do: {:error, :skill_not_allowed}, else: :ok
+  test "Greed is restricted on castle ground in pre-renewal only, when its cast begins" do
+    expected = if GameMode.mode() == :pre_renewal, do: {:error, @area_notice}, else: :ok
     caster = player(@castle)
 
-    for phase <- [:begin, :completion] do
-      assert Caster.Player.castable_state(caster, @greed, phase) == expected
-    end
+    assert Caster.Player.castable_state(caster, @greed, :begin) == expected
+    assert Caster.Player.castable_state(caster, @greed, :completion) == :ok
   end
 
   defp use_scrolls_on_castle_ground do

@@ -145,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert {:error, :on_cooldown} =
              Interpreter.begin_encore_replay(encore, encore.last_song, :self)
 
-    assert {:error, :on_cooldown} =
+    assert {:error, {:not_ok, :silent}} =
              Interpreter.cast(
                %{caster | skill_cooldowns: %{@encore_id => future}},
                @encore_id,

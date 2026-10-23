@@ -107,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuildGroundRulesTest do
     :ok = MapFlags.set_runtime("castle", :gvg_castle, true)
 
     for skill_id <- [10_013, 10_015] do
-      assert {:error, :not_gvg_ground} =
+      assert {:error, {:not_ok, {:fail, :failed}}} =
                PlayerCaster.castable_state(caster("ordinary"), skill_id, :begin)
 
       assert :ok = PlayerCaster.castable_state(caster("active"), skill_id, :begin)

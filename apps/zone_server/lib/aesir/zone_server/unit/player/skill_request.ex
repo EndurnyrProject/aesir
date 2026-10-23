@@ -10,7 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   user (renewal shows the busy notice, pre-renewal stays silent); while a
   trade, chat room, vending stall, storage window or a body state other than
   Burning holds the player, unless a storage window is open and the skill
-  targets the user; while sitting; by `not_ok/3`; while casting, unless the
+  targets the user; while sitting; by `not_ok/3` (`UseRestrictions.check/4`);
+  while casting, unless the
   skill is Cast Cancel; while the act delay runs, unless the skill comes from
   an item; in pre-renewal, while Basilica holds the player, unless the caster
   ends its own Basilica; and while a skill menu other than Autospell is open.
@@ -37,36 +38,25 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   """
 
   alias Aesir.Commons.GameMode
-  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Cooldown
-  alias Aesir.ZoneServer.Mmo.Skill.NoCast
+  alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
-  @teleport 26
-  @warp 27
-  @identify 40
   @vending 41
-  @ice_wall 87
   @cast_cancel 275
   @autospell 279
   @basilica 362
-  @emergency_calls [10_013, 10_015]
   @combo_skills [272, 273, 371, 372]
   @burning 7
 
-  @typedoc """
-  The reply a refusal sends: nothing, a skill failure with its reason, or a
-  client notice.
-  """
-  @type reply :: :silent | {:fail, atom()} | {:notice, atom()}
+  @typedoc "The reply a refusal sends (`UseRestrictions.reply/0`)."
+  @type reply :: UseRestrictions.reply()
 
   @typedoc """
   A request that passed: whether it comes from a pending item skill, the level
@@ -133,73 +123,11 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
     match?({:use, %{ends_invincibility?: true}}, decision)
   end
 
-  @doc """
-  The map and cooldown restrictions every request kind checks. A pending item
-  skill for Teleport above level 2 passes them all; the `noskill` map flag
-  refuses silently unless an item skill is pending; a running cooldown refuses
-  with the delay reply; an item skill that keeps no requirement passes the
-  rest; the skill's map restriction mask shows the area notice; then
-  Teleport, Warp Portal, Vending, Ice Wall and Urgent Call check their own
-  map rules.
-  """
+  @doc "The map and cooldown restrictions every request kind checks (`UseRestrictions.check/4`)."
   @spec not_ok(SessionState.t(), integer(), integer()) :: :ok | {:refuse, reply()}
-  def not_ok(state, skill_id, now) do
-    %PlayerState{map_name: map_name, skill_cooldowns: cooldowns} = state.game_state
-    item = item_skill(state, skill_id)
-
-    cond do
-      teleport_item?(skill_id, item) ->
-        :ok
-
-      noskill?(state, map_name) ->
-        {:refuse, :silent}
-
-      not Cooldown.ready?(cooldowns, skill_id, now) ->
-        {:refuse, delay_reply(state)}
-
-      requirement_free_item?(item) ->
-        :ok
-
-      NoCast.refused?(skill_id, map_name) ->
-        {:refuse, {:notice, :SYSTEM_NOTICE_ID_IMPOSSIBLE_SKILL_AREA}}
-
-      true ->
-        skill_not_ok(state.game_state, skill_id)
-    end
-  end
-
-  defp teleport_item?(@teleport, %{level: level}), do: level > 2
-  defp teleport_item?(_skill_id, _item), do: false
-
-  defp noskill?(state, map_name),
-    do: MapFlags.get(map_name, :noskill) and Map.get(state, :pending_item_skill) == nil
-
-  defp requirement_free_item?(%{keep_requirement?: keep?}), do: not keep?
-  defp requirement_free_item?(nil), do: false
-
-  defp skill_not_ok(%PlayerState{map_name: map_name}, @warp),
-    do: check(not MapFlags.get(map_name, :nowarp), {:notice, :SYSTEM_NOTICE_ID_MAP_CANT_TELEPORT})
-
-  defp skill_not_ok(%PlayerState{map_name: map_name}, @teleport),
+  def not_ok(state, skill_id, now),
     do:
-      check(
-        not MapFlags.get(map_name, :noteleport),
-        {:notice, :SYSTEM_NOTICE_ID_MAP_CANT_TELEPORT}
-      )
-
-  defp skill_not_ok(%PlayerState{map_name: map_name, x: x, y: y}, @vending),
-    do: check(not Proximity.npc_near?(map_name, x, y), {:fail, :npc_nearby})
-
-  defp skill_not_ok(_game_state, @identify), do: :ok
-
-  defp skill_not_ok(%PlayerState{map_name: map_name}, @ice_wall),
-    do: check(not MapFlags.get(map_name, :noicewall), {:fail, :failed})
-
-  defp skill_not_ok(%PlayerState{map_name: map_name}, skill_id)
-       when skill_id in @emergency_calls,
-       do: check(MapFlags.gvg2?(map_name), {:fail, :failed})
-
-  defp skill_not_ok(_game_state, _skill_id), do: :ok
+      UseRestrictions.check(state.game_state, skill_id, Map.get(state, :pending_item_skill), now)
 
   # An NPC dialog lets through only a skill aimed at the user, while its script
   # allows item use and no work flag is held.
@@ -252,8 +180,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
     check(ready, delay_reply(state))
   end
 
-  defp delay_reply(%{game_state: %PlayerState{show_delay: true}}), do: {:fail, :skill_interval}
-  defp delay_reply(_state), do: :silent
+  defp delay_reply(state), do: UseRestrictions.delay_reply(state.game_state)
 
   defp basilica_locked?(state, skill_id) do
     id = state.game_state.character_id
