@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdEmergencycall
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GdItememergencycall
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -24,12 +25,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
   @guild_id 5
 
   defp register_player(id, {x, y}, opts \\ []) do
+    map = Keyword.get(opts, :map, "prontera")
+
     player =
       %Character{
         id: id,
         account_id: id,
         name: "Player #{id}",
-        last_map: "prontera",
+        last_map: map,
         last_x: x,
         last_y: y,
         sex: "M",
@@ -47,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
       |> Map.merge(%{guild_id: @guild_id, action_state: Keyword.get(opts, :action_state, :idle)})
 
     :ok = UnitRegistry.register_player(player, self())
-    :ok = SpatialIndex.add_unit(:player, id, x, y, "prontera")
+    :ok = SpatialIndex.add_unit(:player, id, x, y, map)
     player
   end
 
@@ -100,6 +103,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
 
     # Slot 1 is ring {1, 0}, slot 5 is ring {1, -1}, slot 10 wraps to ring {1, 0}.
     assert warps() == [{11, 10}, {11, 9}, {11, 10}]
+  end
+
+  test "a member on nowarp ground is called out only when it is GvG ground, TE included" do
+    master = register_player(@master_id, {10, 10})
+    register_player(2, {40, 40}, map: "te_castle")
+    register_player(3, {40, 40}, map: "nowarp_field")
+    stub_guild(%{@master_id => 0, 2 => 1, 3 => 2})
+    capture_warps()
+
+    Mimic.copy(MapFlags)
+
+    stub(MapFlags, :get, fn
+      "te_castle", :nowarp -> true
+      "nowarp_field", :nowarp -> true
+      _map, _flag -> false
+    end)
+
+    stub(MapFlags, :gvg2?, fn
+      "te_castle" -> true
+      _map -> false
+    end)
+
+    assert {:ok, _} = GdEmergencycall.cast(master, :self, 1, nil)
+
+    assert warps() == [{11, 10}]
   end
 
   test "an unwalkable ring cell falls back to the master's own cell" do

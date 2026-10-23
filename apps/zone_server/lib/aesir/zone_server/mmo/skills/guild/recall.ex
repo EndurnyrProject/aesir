@@ -22,7 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.Recall do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Guild.GuildCooldown
-  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -116,8 +115,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.Recall do
 
   defp summonable?(%PlayerState{action_state: :dead}), do: false
 
+  # A member may be called out of a map that forbids warping only when it is
+  # GvG ground, War of Emperium TE included.
   defp summonable?(%PlayerState{map_name: map_name}),
-    do: not MapFlags.get(map_name, :nowarp) or Rules.ground?(map_name)
+    do: not MapFlags.get(map_name, :nowarp) or MapFlags.gvg2?(map_name)
 
   defp ring_cell(map_name, x, y, slot) do
     {dx, dy} = Enum.at(@ring, rem(slot, length(@ring)))
