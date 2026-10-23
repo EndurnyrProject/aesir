@@ -7,8 +7,10 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.SkillCast
+  alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillEffect
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence, as: HomunculusPersistence
@@ -81,12 +83,21 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     end
   end
 
+  # skill.cpp skill_check_condition_castend: a missing Embryo fails the cast
+  # end with the item reply and spends nothing.
   test "missing item and failed transaction leave first Call entirely unchanged" do
     missing = start_alchemist(nil)
     missing_before = PlayerSession.get_state(missing.pid)
+    clear_packet_inbox()
     cast(missing.pid, @call, 1)
-    Process.sleep(100)
-    assert PlayerSession.get_state(missing.pid) == missing_before
+
+    assert_packet_sent_with(SkillCastFailed, fn packet ->
+      assert packet.skill_id == @call
+      assert packet.reason == :SKILL_CAST_FAILURE_REASON_MISSING_CATALYST
+    end)
+
+    missing_after = PlayerSession.get_state(missing.pid)
+    assert_lifecycle_unchanged(missing_after, missing_before, nil)
     end_player_session(missing)
 
     failed = start_alchemist(@embryo)
@@ -103,7 +114,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     assert failed_after.game_state.inventory == failed_before.game_state.inventory
 
     assert failed_after.game_state.stats.current_state.sp ==
-             failed_before.game_state.stats.current_state.sp
+             failed_before.game_state.stats.current_state.sp - skill_sp_cost(@call, 1)
 
     assert failed_after.game_state.skill_cooldowns == failed_before.game_state.skill_cooldowns
     assert failed_after.homunculus == nil
@@ -111,7 +122,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     end_player_session(failed)
   end
 
-  test "activation reservation failures do not settle Call" do
+  test "activation reservation failures do not settle Call but keep its cost spent" do
     for reason <- [:exhausted, :duplicate_session] do
       session = start_alchemist(@embryo)
       before = PlayerSession.get_state(session.pid)
@@ -125,7 +136,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
       cast(session.pid, @call, 1)
       after_state = PlayerSession.get_state(session.pid)
 
-      assert_lifecycle_unchanged(after_state, before, row_before)
+      assert_settlement_paid(after_state, before, row_before, @call, 1)
       assert Inventory.held_amount(after_state.game_state.inventory, @embryo) == 1
       refute_packet_sent(SkillEffect)
       refute_packet_sent(ItemRemoved)
@@ -133,7 +144,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     end
   end
 
-  test "failed Resurrection reservation does not update its row or charge SP and cooldown" do
+  test "failed Resurrection reservation fails in its effect, keeping only its cost spent" do
     session = start_alchemist(nil, nil, insert_homunculus: :dead)
     before = PlayerSession.get_state(session.pid)
     row_before = Repo.get_by(Homunculus, character_id: before.game_state.character_id)
@@ -148,7 +159,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     send(session.pid, {:skill, {:cast_complete, casting.game_state.casting.token}})
     after_state = PlayerSession.get_state(session.pid)
 
-    assert_lifecycle_unchanged(after_state, before, row_before)
+    assert_settlement_paid(after_state, before, row_before, @resurrection, 1)
     refute_packet_sent(SkillEffect)
     refute_packet_sent(ItemRemoved)
     end_player_session(session)
@@ -235,13 +246,13 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
       StateCommit.commit(state, %{state.homunculus | hp: hp})
     end)
 
-    assert_real_flow_rejected(session, @rest, 1)
+    assert_real_flow_rejected(session, @rest, 1, :SKILL_CAST_FAILURE_REASON_UNSPECIFIED)
     end_player_session(session)
   end
 
   test "Call while active leaves the aggregate unchanged" do
     session = active_session()
-    assert_real_flow_rejected(session, @call, 1)
+    assert_real_flow_rejected(session, @call, 1, :SKILL_CAST_FAILURE_REASON_UNSPECIFIED)
     end_player_session(session)
   end
 
@@ -261,7 +272,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     send(session.pid, {:skill, {:cast_complete, token}})
     after_state = PlayerSession.get_state(session.pid)
 
-    assert_lifecycle_unchanged(after_state, before, row_before)
+    assert_settlement_paid(after_state, before, row_before, @resurrection, 1)
     refute_packet_sent(SkillEffect)
     refute_packet_sent(ItemRemoved)
     end_player_session(session)
@@ -352,7 +363,8 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     end)
 
     recalled = PlayerSession.get_state(session.pid)
-    assert Inventory.held_amount(recalled.game_state.inventory, @seed) == 0
+    seeds_left = if GameMode.mode() == :renewal, do: 0, else: 1
+    assert Inventory.held_amount(recalled.game_state.inventory, @seed) == seeds_left
 
     assert recalled.game_state.stats.current_state.sp ==
              rested.game_state.stats.current_state.sp - 10
@@ -408,7 +420,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     session
   end
 
-  defp assert_real_flow_rejected(session, skill_id, level) do
+  defp assert_real_flow_rejected(session, skill_id, level, reply \\ nil) do
     before = PlayerSession.get_state(session.pid)
     row_before = Repo.get_by(Homunculus, character_id: before.game_state.character_id)
     clear_packet_inbox()
@@ -419,6 +431,42 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     assert_lifecycle_unchanged(after_state, before, row_before)
     refute_packet_sent(SkillEffect)
     refute_packet_sent(ItemRemoved)
+
+    if reply do
+      assert_packet_sent_with(SkillCastFailed, fn packet ->
+        assert packet.skill_id == skill_id
+        assert packet.reason == reply
+      end)
+    end
+  end
+
+  # The reference has no cast-begin row for the effects that can fail here, so
+  # a settlement failure keeps its SP and (renewal) cooldown spent while the
+  # row, the inventory and the companion stay as they were.
+  defp assert_settlement_paid(after_state, before, row_before, skill_id, level) do
+    assert after_state.game_state.inventory == before.game_state.inventory
+
+    assert after_state.game_state.stats.current_state.sp ==
+             before.game_state.stats.current_state.sp - skill_sp_cost(skill_id, level)
+
+    if GameMode.mode() == :renewal and skill_cooldown?(skill_id, level) do
+      assert is_integer(Map.get(after_state.game_state.skill_cooldowns, skill_id))
+    else
+      assert after_state.game_state.skill_cooldowns == before.game_state.skill_cooldowns
+    end
+
+    assert after_state.homunculus == before.homunculus
+    assert Repo.get_by(Homunculus, character_id: before.game_state.character_id) == row_before
+  end
+
+  defp skill_sp_cost(skill_id, level) do
+    {:ok, definition} = Catalog.by_id(skill_id)
+    Enum.at(definition.sp_cost, level - 1)
+  end
+
+  defp skill_cooldown?(skill_id, level) do
+    {:ok, definition} = Catalog.by_id(skill_id)
+    Enum.at(definition.cooldown, level - 1, 0) > 0
   end
 
   defp assert_lifecycle_unchanged(after_state, before, row_before) do

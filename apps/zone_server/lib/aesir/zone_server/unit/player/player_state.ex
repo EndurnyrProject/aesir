@@ -48,6 +48,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           | :trading
           | :vending
 
+  @typedoc """
+  The owner's homunculus as the skill checks of a player's cast read it: its
+  lifecycle and HP, stamped by the skill handler before the cast is checked.
+  """
+  @type homunculus_summary :: %{
+          lifecycle: :active | :rested | :dead,
+          hp: non_neg_integer(),
+          max_hp: non_neg_integer()
+        }
+
   @type t :: %__MODULE__{
           character_id: integer(),
           character_name: String.t(),
@@ -89,6 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           visible_players: MapSet.t(),
           visible_mobs: MapSet.t(),
           visible_homunculi: MapSet.t(),
+          homunculus_summary: homunculus_summary() | nil,
           visible_warps: MapSet.t(),
           visible_npcs: MapSet.t(),
           visible_shops: MapSet.t(),
@@ -250,6 +261,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     :zeny,
     # Session-owned ordinary Monk combo window.
     visible_homunculi: MapSet.new(),
+    homunculus_summary: nil,
     combo: Combo.new(),
     spirit_spheres: SpiritSpheres.new(),
     # The sphere count a skill's cast-begin requirement check recorded for its

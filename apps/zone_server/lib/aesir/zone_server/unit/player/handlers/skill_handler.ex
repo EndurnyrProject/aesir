@@ -340,14 +340,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp complete_cast(state, game_state, ctx) do
     expected_id = Map.get(ctx, :homunculus_id)
+    game_state = stamp_homunculus(state, game_state)
 
-    case LifecycleSkillHandler.preflight(state, ctx.skill_id, ctx.skill_level, expected_id) do
-      :ok -> complete_preflighted_cast(state, game_state, ctx, expected_id)
-      {:error, reason} -> reject_completed_cast(state, game_state, ctx.skill_id, reason)
-    end
-  end
-
-  defp complete_preflighted_cast(state, game_state, ctx, expected_id) do
     result =
       case Map.get(ctx, :origin) do
         :item ->
@@ -578,15 +572,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     opts = Keyword.put(opts, :attack_reach, combo? and game_state.action_state == :attacking)
     checked? = game_state.movement_state == :moving or not Keyword.get(opts, :approach?, true)
 
-    case LifecycleSkillHandler.preflight(state, skill_id, level) do
-      :ok when checked? -> checked_use(state, skill_id, level, aimed, locked, opts)
-      :ok -> start_use(state, skill_id, level, aimed, locked, opts)
-      {:error, reason} -> reject_preflighted_cast(state, skill_id, reason)
+    if checked?,
+      do: checked_use(state, skill_id, level, aimed, locked, opts),
+      else: start_use(state, skill_id, level, aimed, locked, opts)
+  end
+
+  @doc """
+  Copies the owner's homunculus lifecycle and HP onto `game_state`, where the
+  homunculus skills' cast checks read it.
+  """
+  @spec stamp_homunculus(SessionState.t() | map(), PlayerState.t()) :: PlayerState.t()
+  def stamp_homunculus(state, game_state) do
+    case Map.get(state, :homunculus) do
+      nil ->
+        %{game_state | homunculus_summary: nil}
+
+      homunculus ->
+        summary = %{lifecycle: homunculus.lifecycle, hp: homunculus.hp, max_hp: homunculus.max_hp}
+        %{game_state | homunculus_summary: summary}
     end
   end
 
   defp checked_use(%{game_state: game_state} = state, skill_id, level, aimed, locked, opts) do
-    case walking_attempt(game_state, skill_id, level, aimed, opts) do
+    case walking_attempt(stamp_homunculus(state, game_state), skill_id, level, aimed, opts) do
       :in_range ->
         start_use(state, skill_id, level, aimed, locked, opts)
 
@@ -606,7 +614,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     case ensure_idle_for_cast(state, opts) do
       {:ok, ready} ->
-        result = begin_cast(ready.game_state, skill_id, level, target, opts)
+        result =
+          begin_cast(stamp_homunculus(ready, ready.game_state), skill_id, level, target, opts)
+
         handle_begin_result(ready, ready.game_state, skill_id, level, target, locked, result)
 
       :busy ->
@@ -936,11 +946,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  defp reject_preflighted_cast(%{game_state: game_state} = state, skill_id, reason) do
-    report_cast_failure(skill_id, game_state.character_id, reason)
-    {:noreply, state}
-  end
-
   @doc "Sets the Encore memory an ensemble partner receives from the caster's cast."
   @spec remember_song(SessionState.t(), integer(), pos_integer()) :: {:noreply, SessionState.t()}
   def remember_song(%{game_state: game_state} = state, skill_id, level) do
@@ -1164,9 +1169,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
              skill_id,
              ready_state.game_state.character_id
            ),
-         :ok <- LifecycleSkillHandler.preflight(ready_state, skill_id, level, expected_id),
          {:deferred, game_state, %Interpreter.Deferred{} = descriptor} <-
-           Interpreter.cast(ready_state.game_state, skill_id, level, :self),
+           Interpreter.cast(
+             stamp_homunculus(ready_state, ready_state.game_state),
+             skill_id,
+             level,
+             :self
+           ),
          {:ok, settled, item_change} <-
            settle_lifecycle_deferred(ready_state, game_state, descriptor, expected_id) do
       cancel_staged_action_timer(state)
@@ -1213,19 +1222,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          %Interpreter.Deferred{effect: {:homunculus_lifecycle, operation}} = descriptor,
          expected_id
        ) do
-    with {:ok, charged} <- Interpreter.settle_deferred(game_state, descriptor),
-         {:ok, settled, homunculus, runtime, item_change, activation_gid} <-
-           LifecycleSkillHandler.settle(state, charged, operation, expected_id) do
-      {state, sphere_cost_plan} = prepare_cast_commit(state, settled)
-      state = %{state | homunculus_runtime: runtime}
-      state = commit_homunculus_transition(state, operation, homunculus, activation_gid)
+    case Interpreter.settle_deferred(game_state, descriptor) do
+      {:ok, charged} ->
+        settle_charged_lifecycle(state, charged, descriptor, operation, expected_id)
 
-      committed =
-        publish_cast_commit(state, descriptor.skill_id, descriptor.level, true, sphere_cost_plan)
+      {:error, reason} ->
+        {:error, reason, %{state | game_state: game_state}}
+    end
+  end
 
-      {:ok, committed, item_change}
-    else
-      {:error, reason} -> {:error, reason, %{state | game_state: game_state}}
+  defp settle_charged_lifecycle(state, charged, descriptor, operation, expected_id) do
+    case LifecycleSkillHandler.settle(state, charged, operation, expected_id) do
+      {:ok, settled, homunculus, runtime, item_change, activation_gid} ->
+        {state, sphere_cost_plan} = prepare_cast_commit(state, settled)
+        state = %{state | homunculus_runtime: runtime}
+        state = commit_homunculus_transition(state, operation, homunculus, activation_gid)
+
+        committed =
+          publish_cast_commit(
+            state,
+            descriptor.skill_id,
+            descriptor.level,
+            true,
+            sphere_cost_plan
+          )
+
+        {:ok, committed, item_change}
+
+      # The reference arms the cast's cooldown and its after-cast delay at the
+      # cast end, before the effect that fails here, so only the failed
+      # lifecycle mutation is dropped.
+      {:error, reason} ->
+        {:error, reason, %{state | game_state: charged}}
     end
   end
 

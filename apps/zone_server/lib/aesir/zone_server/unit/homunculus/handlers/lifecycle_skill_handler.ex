@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
   @moduledoc "Atomic inventory and Homunculus settlement for owner lifecycle skills."
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog, as: HomunculusCatalog
@@ -34,16 +35,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
       end
     else
       _ -> nil
-    end
-  end
-
-  @doc "Validates the latest aggregate and required item without changing it."
-  @spec preflight(SessionState.t(), integer(), pos_integer(), integer() | nil) ::
-          :ok | {:error, atom()}
-  def preflight(session, skill_id, level, expected_id \\ nil) do
-    case operation(skill_id, level) do
-      nil -> :ok
-      operation -> preflight_operation(session, operation, expected_id)
     end
   end
 
@@ -165,13 +156,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
   defp preflight_operation(_session, {:resurrection, _level}, _id),
     do: {:error, :no_companion}
 
-  defp preflight_call_current(%{homunculus: nil, game_state: game_state}),
-    do: require_item(game_state.inventory, @embryo_id)
+  defp preflight_call_current(%{homunculus: nil}), do: :ok
 
-  defp preflight_call_current(session) do
-    with :ok <- LifecycleHandler.preflight_call(session.homunculus, session.homunculus_runtime),
-         do: require_item(session.game_state.inventory, @seed_of_life_id)
-  end
+  defp preflight_call_current(session),
+    do: LifecycleHandler.preflight_call(session.homunculus, session.homunculus_runtime)
 
   defp plan(%{homunculus: nil} = session, :call) do
     with {:ok, inventory, change} <- remove_item(session.game_state.inventory, @embryo_id),
@@ -188,14 +176,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
   end
 
   defp plan(session, :call) do
-    with {:ok, inventory, change} <- remove_item(session.game_state.inventory, @seed_of_life_id),
+    with {:ok, inventory, item_change} <- remove_recall_item(session.game_state.inventory),
          {:ok, planned, runtime} <-
            LifecycleHandler.call(
              session.homunculus,
              session.homunculus_runtime,
              planning_opts()
            ) do
-      {:ok, planned, runtime, inventory, {inventory, change}}
+      {:ok, planned, runtime, inventory, item_change}
     end
   end
 
@@ -375,8 +363,17 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
     end
   end
 
-  defp require_item(inventory, item_id) do
-    if Inventory.held_amount(inventory, item_id) > 0, do: :ok, else: {:error, :missing_item}
+  # Renewal recalls a resting homunculus with a Seed of Life; pre-renewal
+  # spends no item once the owner has a homunculus.
+  defp remove_recall_item(inventory) do
+    case GameMode.mode() do
+      :renewal ->
+        with {:ok, removed, change} <- remove_item(inventory, @seed_of_life_id),
+             do: {:ok, removed, {removed, change}}
+
+      :pre_renewal ->
+        {:ok, inventory, nil}
+    end
   end
 
   defp expected_identity(_homunculus, nil), do: :ok

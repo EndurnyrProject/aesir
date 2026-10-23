@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusLifecycleIntegrationTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
@@ -18,6 +19,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifecycleIntegrationTest do
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
   alias Aesir.ZoneServer.Unit.Inventory
@@ -203,8 +205,16 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifecycleIntegrationTest do
     refute_receive {:packet_sent, %HomunculusPrivateState{}, _}, 100
     assert Repo.get_by(Homunculus, character_id: character.id) == nil
     assert PlayerSession.get_state(session.pid).homunculus == nil
-    assert PlayerSession.get_state(session.pid).game_state.stats.current_state.sp == before_sp
-    assert PlayerSession.get_state(session.pid).game_state.skill_cooldowns[@resurrection] == nil
+
+    # The reference arms the cast's cooldown and pays its SP at the cast end,
+    # before the effect that finds the companion gone and fails.
+    after_state = PlayerSession.get_state(session.pid)
+    assert after_state.game_state.stats.current_state.sp == before_sp - resurrection_sp(5)
+
+    if GameMode.mode() == :renewal,
+      do: assert(is_integer(after_state.game_state.skill_cooldowns[@resurrection])),
+      else: assert(after_state.game_state.skill_cooldowns[@resurrection] == nil)
+
     assert UnitRegistry.count_units_by_type(:homunculus) == 0
   end
 
@@ -377,6 +387,11 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifecycleIntegrationTest do
       learned_skills: %{"8001" => 1}
     })
     |> Repo.insert!()
+  end
+
+  defp resurrection_sp(level) do
+    {:ok, definition} = Catalog.by_id(@resurrection)
+    Enum.at(definition.sp_cost, level - 1)
   end
 
   defp insert_dead_homunculus(character_id) do
