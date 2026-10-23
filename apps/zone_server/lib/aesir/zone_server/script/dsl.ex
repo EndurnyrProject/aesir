@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Script.Dsl.Castle
   alias Aesir.ZoneServer.Script.Dsl.Dialog
   alias Aesir.ZoneServer.Script.Dsl.Items
+  alias Aesir.ZoneServer.Script.Dsl.MonsterDrops
   alias Aesir.ZoneServer.Script.Dsl.Movement
   alias Aesir.ZoneServer.Script.Dsl.NpcControl
   alias Aesir.ZoneServer.Script.Dsl.PlayerEffects
@@ -160,6 +161,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate get_named_item(ctx, item_id, target), to: Items
   defdelegate random_options(ids, values, params), to: Items
   defdelegate getrandomoptinfo(ctx, type), to: RandomOptions
+  defdelegate addmonsterdrop(ctx, mob, item_id, rate), to: MonsterDrops
+  defdelegate addmonsterdrop(ctx, mob, item_id, rate, steal_protected), to: MonsterDrops
+  defdelegate addmonsterdrop(ctx, mob, item_id, rate, steal_protected, group), to: MonsterDrops
+  defdelegate delmonsterdrop(ctx, mob, item_id), to: MonsterDrops
   defdelegate getequiprandomoption(ctx, slot, index, type), to: RandomOptions
   defdelegate getequiprandomoption(ctx, slot, index, type, char_id), to: RandomOptions
   defdelegate randomoptgroup(ctx, id), to: RandomOptions

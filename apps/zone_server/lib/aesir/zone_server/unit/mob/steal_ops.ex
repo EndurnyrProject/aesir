@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
@@ -99,7 +100,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
     else
       scale = if mode == :renewal, do: 100, else: rate
 
-      case steal_drop(state.mob_data.drops, scale, rng) do
+      case steal_drop(Mobs.current_drops(state.mob_data), scale, rng) do
         {:ok, item_id} -> {:ok, item_id, MobState.mark_stolen(state)}
         :error -> {:error, :no_drop}
       end

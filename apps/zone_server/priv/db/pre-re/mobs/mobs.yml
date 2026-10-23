@@ -980,6 +980,7 @@
   element_level: 1
   hp: 471
   id: 1025
+  japanese_name: Snake
   job_exp: 48
   level: 15
   modes:
@@ -5174,6 +5175,7 @@
   element_level: 1
   hp: 164
   id: 1107
+  japanese_name: Desert Wolf Baby
   job_exp: 16
   level: 9
   modes:
@@ -9420,6 +9422,7 @@
   element_level: 2
   hp: 6075
   id: 1194
+  japanese_name: Arclouse
   job_exp: 1000
   level: 59
   mdef: 15
@@ -9750,6 +9753,7 @@
   element_level: 3
   hp: 18300
   id: 1200
+  japanese_name: Zherlthsh
   job_exp: 2304
   level: 63
   mdef: 15
@@ -9970,6 +9974,7 @@
   element_level: 3
   hp: 29900
   id: 1204
+  japanese_name: Tirfing
   job_exp: 4235
   level: 71
   mdef: 35
@@ -10201,6 +10206,7 @@
   element_level: 1
   hp: 8170
   id: 1208
+  japanese_name: Wander Man
   job_exp: 4730
   level: 74
   mdef: 5
@@ -10641,6 +10647,7 @@
   element_level: 4
   hp: 36140
   id: 1219
+  japanese_name: Knight of Abyss
   job_exp: 6268
   level: 79
   mdef: 50
@@ -11862,6 +11869,7 @@
   element_level: 4
   hp: 240000
   id: 1251
+  japanese_name: Knight of Windstorm
   job_exp: 21450
   level: 77
   mdef: 60
@@ -11929,6 +11937,7 @@
   element_level: 4
   hp: 197000
   id: 1252
+  japanese_name: Garm
   job_exp: 20020
   level: 73
   mdef: 45
@@ -12100,6 +12109,7 @@
   element_level: 1
   hp: 4120
   id: 1255
+  japanese_name: Neraid
   job_exp: 684
   level: 40
   mdef: 10
@@ -12479,6 +12489,7 @@
   element_level: 2
   hp: 62600
   id: 1262
+  japanese_name: Mutant Dragon
   job_exp: 3536
   level: 65
   mdef: 20
@@ -13438,6 +13449,7 @@
   element_level: 2
   hp: 2490
   id: 1280
+  japanese_name: Steam Goblin
   job_exp: 495
   level: 35
   mdef: 5
@@ -15398,6 +15410,7 @@
   element_level: 1
   hp: 9114
   id: 1317
+  japanese_name: Fur Seal
   job_exp: 1824
   level: 63
   mdef: 33
@@ -18008,6 +18021,7 @@
   element_level: 3
   hp: 16845
   id: 1371
+  japanese_name: Fake Angel
   job_exp: 1949
   level: 65
   mdef: 35
@@ -18115,6 +18129,7 @@
   element_level: 3
   hp: 603383
   id: 1373
+  japanese_name: Lord of Death
   job_exp: 43345
   level: 94
   mdef: 73
@@ -18895,6 +18910,7 @@
   element_level: 3
   hp: 79523
   id: 1388
+  japanese_name: Archangeling
   job_exp: 2173
   level: 60
   mdef: 58
@@ -19683,6 +19699,7 @@
   element_level: 2
   hp: 3852
   id: 1403
+  japanese_name: Antique Firelock
   job_exp: 1003
   level: 47
   mdef: 10
@@ -19735,6 +19752,7 @@
   element_level: 1
   hp: 6300
   id: 1404
+  japanese_name: Miyabi Ningyo
   job_exp: 453
   level: 33
   mdef: 20
@@ -19947,6 +19965,7 @@
   element_level: 1
   hp: 2098
   id: 1409
+  japanese_name: Rice Cake Boy
   job_exp: 149
   level: 27
   mdef: 12
@@ -19994,6 +20013,7 @@
   element_level: 2
   hp: 8905
   id: 1410
+  japanese_name: Live Peach Tree
   job_exp: 1799
   level: 53
   mdef: 38
@@ -20046,6 +20066,7 @@
   element_level: 2
   hp: 10392
   id: 1412
+  japanese_name: Evil Cloud Hermit
   job_exp: 2198
   level: 56
   mdef: 59
@@ -20098,6 +20119,7 @@
   element_level: 2
   hp: 6900
   id: 1413
+  japanese_name: Wild Ginseng
   job_exp: 692
   level: 46
   mdef: 20
@@ -20200,6 +20222,7 @@
   element_level: 3
   hp: 16029
   id: 1416
+  japanese_name: Wicked Nymph
   job_exp: 2599
   level: 63
   mdef: 75
@@ -21369,6 +21392,7 @@
   element_level: 2
   hp: 62600
   id: 1449
+  japanese_name: Mutant Dragon
   level: 65
   mdef: 20
   modes:
@@ -22322,6 +22346,7 @@
   element_level: 2
   hp: 6075
   id: 1477
+  japanese_name: Arclouse
   level: 59
   mdef: 15
   modes:
@@ -22492,6 +22517,7 @@
   element_level: 3
   hp: 18300
   id: 1482
+  japanese_name: Zherlthsh
   level: 63
   mdef: 15
   modes:
@@ -22634,6 +22660,7 @@
   element_level: 3
   hp: 29900
   id: 1486
+  japanese_name: Tirfing
   level: 71
   mdef: 35
   modes:
@@ -22777,6 +22804,7 @@
   element_level: 1
   hp: 8170
   id: 1490
+  japanese_name: Wander Man
   level: 74
   mdef: 5
   modes:
@@ -22866,6 +22894,7 @@
   element_level: 3
   hp: 218652
   id: 1492
+  japanese_name: Incantation Samurai
   job_exp: 18214
   level: 71
   mdef: 51
@@ -23303,6 +23332,7 @@
   element_level: 1
   hp: 95000000
   id: 1502
+  japanese_name: Pori Pori
   job_exp: 27895
   level: 99
   mdef: 10
@@ -23737,6 +23767,7 @@
   element_level: 2
   hp: 7186
   id: 1510
+  japanese_name: Hylozoist
   job_exp: 1297
   level: 51
   mdef: 51
@@ -23852,6 +23883,7 @@
   element_level: 2
   hp: 9981
   id: 1512
+  japanese_name: Hyegun
   job_exp: 1022
   level: 56
   mdef: 10
@@ -23902,6 +23934,7 @@
   element_level: 2
   hp: 14390
   id: 1513
+  japanese_name: Civil Servant
   job_exp: 2750
   level: 62
   mdef: 5
@@ -23952,6 +23985,7 @@
   element_level: 2
   hp: 9136
   id: 1514
+  japanese_name: Dancing Dragon
   job_exp: 769
   level: 54
   mdef: 10
@@ -23999,6 +24033,7 @@
   element_level: 2
   hp: 20199
   id: 1515
+  japanese_name: Garm Baby
   job_exp: 2980
   level: 61
   mdef: 13
@@ -24047,6 +24082,7 @@
   element_level: 3
   hp: 8230
   id: 1516
+  japanese_name: Increase Soil
   job_exp: 2110
   level: 51
   mdef: 12
@@ -24092,6 +24128,7 @@
   element_level: 3
   hp: 5920
   id: 1517
+  japanese_name: Li Me Mang Ryang
   job_exp: 1643
   level: 48
   mdef: 16
@@ -24145,6 +24182,7 @@
   element_level: 2
   hp: 56380
   id: 1518
+  japanese_name: Bacsojin
   job_exp: 1659
   level: 72
   mdef: 15
@@ -24199,6 +24237,7 @@
   element_level: 2
   hp: 23900
   id: 1519
+  japanese_name: Chung E
   job_exp: 993
   level: 49
   mdef: 15
@@ -24343,6 +24382,7 @@
   element_level: 2
   hp: 3852
   id: 1523
+  japanese_name: Antique Firelock
   level: 47
   mdef: 10
   modes:
@@ -24541,6 +24581,7 @@
   element_level: 3
   hp: 254993
   id: 1529
+  japanese_name: Dark Snake Lord
   level: 73
   mdef: 55
   modes:
@@ -24620,6 +24661,7 @@
   element_level: 2
   hp: 10392
   id: 1531
+  japanese_name: Evil Cloud Hermit
   level: 56
   mdef: 59
   modes:
@@ -24686,6 +24728,7 @@
   element_level: 1
   hp: 9114
   id: 1533
+  japanese_name: Fur Seal
   level: 63
   mdef: 33
   modes:
@@ -25264,6 +25307,7 @@
   element_level: 2
   hp: 8905
   id: 1550
+  japanese_name: Live Peach Tree
   level: 53
   mdef: 38
   modes:
@@ -25326,6 +25370,7 @@
   element_level: 1
   hp: 6300
   id: 1552
+  japanese_name: Miyabi Ningyo
   level: 33
   mdef: 20
   modes:
@@ -25458,6 +25503,7 @@
   element_level: 2
   hp: 6629
   id: 1556
+  japanese_name: Poison Toad
   level: 46
   mdef: 10
   modes:
@@ -25725,6 +25771,7 @@
   element_level: 3
   hp: 16029
   id: 1564
+  japanese_name: Wicked Nymph
   level: 63
   mdef: 75
   modes:
@@ -25762,6 +25809,7 @@
   element_level: 2
   hp: 6900
   id: 1565
+  japanese_name: Wild Ginseng
   level: 46
   mdef: 20
   modes:
@@ -27329,6 +27377,7 @@
   element_level: 2
   hp: 20199
   id: 1606
+  japanese_name: Garm Baby
   level: 61
   mdef: 13
   modes:
@@ -27450,6 +27499,7 @@
   element_level: 2
   hp: 9136
   id: 1609
+  japanese_name: Dancing Dragon
   job_exp: 769
   level: 54
   mdef: 10
@@ -27582,6 +27632,7 @@
   element_level: 4
   hp: 9981
   id: 1612
+  japanese_name: Hyegun
   level: 56
   mdef: 10
   modes:
@@ -27843,6 +27894,7 @@
   element_level: 1
   hp: 15895
   id: 1617
+  japanese_name: Waste Stove
   job_exp: 1135
   level: 68
   mdef: 10
@@ -28157,6 +28209,7 @@
   element_level: 3
   hp: 560733
   id: 1623
+  japanese_name: RSX 0806
   job_exp: 32011
   level: 86
   mdef: 41
@@ -28206,6 +28259,7 @@
   element_level: 1
   hp: 15895
   id: 1624
+  japanese_name: Waste Stove
   level: 68
   mdef: 10
   modes:
@@ -28387,6 +28441,7 @@
   element_level: 2
   hp: 2209
   id: 1628
+  japanese_name: Mole
   job_exp: 172
   level: 36
   mdef: 5
@@ -28484,6 +28539,7 @@
   element_level: 3
   hp: 253221
   id: 1630
+  japanese_name: Bacsojin
   job_exp: 16445
   level: 85
   mdef: 55
@@ -28548,6 +28604,7 @@
   element_level: 2
   hp: 23900
   id: 1631
+  japanese_name: Chung E
   job_exp: 920
   level: 59
   mdef: 15
@@ -28699,6 +28756,7 @@
   element_level: 3
   hp: 88402
   id: 1634
+  japanese_name: Seyren
   job_exp: 116460
   level: 91
   mdef: 12
@@ -28754,6 +28812,7 @@
   element_level: 4
   hp: 60199
   id: 1635
+  japanese_name: Eremes
   job_exp: 99800
   level: 87
   mdef: 12
@@ -28809,6 +28868,7 @@
   element_level: 4
   hp: 78690
   id: 1636
+  japanese_name: Harword
   job_exp: 112540
   level: 83
   mdef: 10
@@ -28863,6 +28923,7 @@
   element_level: 3
   hp: 61282
   id: 1637
+  japanese_name: Magaleta
   job_exp: 117800
   level: 90
   mdef: 60
@@ -28918,6 +28979,7 @@
   element_level: 3
   hp: 58900
   id: 1638
+  japanese_name: Shecil
   job_exp: 118260
   level: 82
   mdef: 15
@@ -28972,6 +29034,7 @@
   element_level: 3
   hp: 47280
   id: 1639
+  japanese_name: Katrinn
   job_exp: 116470
   level: 92
   mdef: 74
@@ -29106,6 +29169,7 @@
   element_level: 4
   hp: 310000
   id: 1642
+  japanese_name: Whitesmith Harword
   job_exp: 10000
   level: 99
   mdef: 36
@@ -29152,6 +29216,7 @@
   element_level: 4
   hp: 182910
   id: 1643
+  japanese_name: High Priest Magaleta
   job_exp: 10000
   level: 99
   mdef: 78
@@ -29198,6 +29263,7 @@
   element_level: 4
   hp: 209000
   id: 1644
+  japanese_name: Sniper Shecil
   job_exp: 10000
   level: 99
   mdef: 35
@@ -29244,6 +29310,7 @@
   element_level: 3
   hp: 189920
   id: 1645
+  japanese_name: High Wizard Katrinn
   job_exp: 10000
   level: 99
   mdef: 88
@@ -29442,6 +29509,7 @@
   element_level: 4
   hp: 1460000
   id: 1648
+  japanese_name: Whitesmith Harword
   job_exp: 1421000
   level: 99
   mdef: 36
@@ -29511,6 +29579,7 @@
   element_level: 4
   hp: 1092910
   id: 1649
+  japanese_name: High Priest Magaleta
   job_exp: 1318800
   level: 99
   mdef: 78
@@ -29580,6 +29649,7 @@
   element_level: 4
   hp: 1349000
   id: 1650
+  japanese_name: Sniper Shecil
   job_exp: 1526000
   level: 99
   mdef: 35
@@ -29649,6 +29719,7 @@
   element_level: 3
   hp: 1069920
   id: 1651
+  japanese_name: High Wizard Katrinn
   job_exp: 1636700
   level: 99
   mdef: 88
@@ -29717,6 +29788,7 @@
   element_level: 2
   hp: 11200
   id: 1652
+  japanese_name: Ygnizem
   job_exp: 98
   level: 58
   mdef: 8
@@ -29771,6 +29843,7 @@
   element_level: 3
   hp: 7320
   id: 1653
+  japanese_name: Whikebain
   job_exp: 21
   level: 62
   mdef: 8
@@ -29825,6 +29898,7 @@
   element_level: 3
   hp: 7110
   id: 1654
+  japanese_name: Armaia
   job_exp: 35
   level: 66
   mdef: 6
@@ -29879,6 +29953,7 @@
   element_level: 2
   hp: 6980
   id: 1655
+  japanese_name: Erend
   job_exp: 67
   level: 59
   mdef: 30
@@ -29933,6 +30008,7 @@
   element_level: 2
   hp: 7899
   id: 1656
+  japanese_name: Kavac
   job_exp: 86
   level: 60
   mdef: 5
@@ -29987,6 +30063,7 @@
   element_level: 2
   hp: 6168
   id: 1657
+  japanese_name: Rawrel
   job_exp: 30
   level: 61
   mdef: 48
@@ -30042,6 +30119,7 @@
   element_level: 2
   hp: 214200
   id: 1658
+  japanese_name: Ygnizem
   job_exp: 86000
   level: 79
   mdef: 25
@@ -30094,6 +30172,7 @@
   element_level: 3
   hp: 7320
   id: 1659
+  japanese_name: Whikebain
   level: 62
   mdef: 12
   modes:
@@ -30131,6 +30210,7 @@
   element_level: 3
   hp: 7110
   id: 1660
+  japanese_name: Armaia
   level: 66
   mdef: 6
   modes:
@@ -30168,6 +30248,7 @@
   element_level: 2
   hp: 6980
   id: 1661
+  japanese_name: Erend
   level: 59
   mdef: 30
   modes:
@@ -30205,6 +30286,7 @@
   element_level: 2
   hp: 7899
   id: 1662
+  japanese_name: Kavac
   level: 60
   mdef: 5
   modes:
@@ -30242,6 +30324,7 @@
   element_level: 2
   hp: 6168
   id: 1663
+  japanese_name: Rawrel
   level: 61
   mdef: 48
   modes:
@@ -31161,6 +31244,7 @@
   element_level: 2
   hp: 10289
   id: 1682
+  japanese_name: Removal
   job_exp: 1278
   level: 55
   mdef: 20
@@ -31403,6 +31487,7 @@
   element_level: 2
   hp: 6444
   id: 1687
+  japanese_name: Green Iguana
   job_exp: 2050
   level: 54
   mdef: 10
@@ -31500,6 +31585,7 @@
   element_level: 3
   hp: 253221
   id: 1689
+  japanese_name: Bacsojin
   job_exp: 16445
   level: 85
   mdef: 55
@@ -31949,6 +32035,7 @@
   element_level: 3
   hp: 18990
   id: 1698
+  japanese_name: Deathword
   job_exp: 4912
   level: 65
   mdef: 40
@@ -32060,6 +32147,7 @@
   element_level: 4
   hp: 65111
   id: 1700
+  japanese_name: Observation
   job_exp: 33120
   level: 81
   mdef: 55
@@ -32117,6 +32205,7 @@
   element_level: 3
   hp: 38000
   id: 1701
+  japanese_name: Shelter
   job_exp: 25110
   level: 80
   mdef: 63
@@ -32176,6 +32265,7 @@
   element_level: 3
   hp: 46666
   id: 1702
+  japanese_name: Retribution
   job_exp: 33120
   level: 79
   mdef: 35
@@ -32235,6 +32325,7 @@
   element_level: 3
   hp: 25252
   id: 1703
+  japanese_name: Solace
   job_exp: 25110
   level: 77
   mdef: 67
@@ -32292,6 +32383,7 @@
   element_level: 4
   hp: 72389
   id: 1704
+  japanese_name: Thanatos Odium
   job_exp: 63880
   level: 92
   mdef: 30
@@ -32350,6 +32442,7 @@
   element_level: 4
   hp: 86666
   id: 1705
+  japanese_name: Thanatos Despero
   job_exp: 51220
   level: 88
   mdef: 39
@@ -32408,6 +32501,7 @@
   element_level: 4
   hp: 62000
   id: 1706
+  japanese_name: Thanatos Maero
   job_exp: 63880
   level: 83
   mdef: 72
@@ -32466,6 +32560,7 @@
   element_level: 4
   hp: 59922
   id: 1707
+  japanese_name: Thanatos Dolor
   job_exp: 51220
   level: 83
   mdef: 80
@@ -32526,6 +32621,7 @@
   element_level: 4
   hp: 445660
   id: 1708
+  japanese_name: Thanatos
   job_exp: 2145060
   level: 99
   mdef: 35
@@ -32584,6 +32680,7 @@
   element_level: 4
   hp: 72389
   id: 1709
+  japanese_name: Thanatos Odium
   job_exp: 5000
   level: 92
   mdef: 30
@@ -32632,6 +32729,7 @@
   element_level: 4
   hp: 86666
   id: 1710
+  japanese_name: Thanatos Despero
   job_exp: 5000
   level: 88
   mdef: 39
@@ -32680,6 +32778,7 @@
   element_level: 4
   hp: 62000
   id: 1711
+  japanese_name: Thanatos Maero
   job_exp: 5000
   level: 83
   mdef: 72
@@ -32728,6 +32827,7 @@
   element_level: 4
   hp: 59922
   id: 1712
+  japanese_name: Thanatos Dolor
   job_exp: 5000
   level: 83
   mdef: 80
@@ -33093,6 +33193,7 @@
   element_level: 3
   hp: 960000
   id: 1719
+  japanese_name: Detale
   job_exp: 123304
   level: 90
   mdef: 59
@@ -33162,6 +33263,7 @@
   element_level: 2
   hp: 308230
   id: 1720
+  japanese_name: Hydro
   job_exp: 2480
   level: 89
   mdef: 62
@@ -33289,6 +33391,7 @@
   element_level: 3
   hp: 30000
   id: 1723
+  japanese_name: Shecil Damon
   level: 82
   mdef: 15
   modes:
@@ -33443,6 +33546,7 @@
   element_level: 1
   hp: 164
   id: 1728
+  japanese_name: Desert Wolf Baby
   level: 9
   modes:
     - can_move
@@ -33614,6 +33718,7 @@
   element_level: 2
   hp: 523000
   id: 1733
+  japanese_name: Kiel
   job_exp: 23405
   level: 90
   mdef: 32
@@ -34213,6 +34318,7 @@
   element_level: 1
   hp: 471
   id: 1747
+  japanese_name: Snake
   level: 15
   modes:
     - can_move
@@ -34643,6 +34749,7 @@
   element_level: 2
   hp: 308230
   id: 1756
+  japanese_name: Hydro
   level: 89
   mdef: 62
   modes:
@@ -36710,6 +36817,7 @@
   element_level: 4
   hp: 310000
   id: 1801
+  japanese_name: Whitesmith Harword
   job_exp: 10000
   level: 99
   mdef: 36
@@ -36755,6 +36863,7 @@
   element_level: 4
   hp: 182910
   id: 1802
+  japanese_name: High Priest Magaleta
   job_exp: 10000
   level: 99
   mdef: 78
@@ -36800,6 +36909,7 @@
   element_level: 4
   hp: 209000
   id: 1803
+  japanese_name: Sniper Shecil
   job_exp: 10000
   level: 99
   mdef: 35
@@ -36844,6 +36954,7 @@
   element_level: 3
   hp: 189920
   id: 1804
+  japanese_name: High Wizard Katrinn
   job_exp: 10000
   level: 99
   mdef: 88
@@ -36979,6 +37090,7 @@
   element_level: 4
   hp: 1460000
   id: 1807
+  japanese_name: Whitesmith Harword
   job_exp: 1421000
   level: 99
   mdef: 36
@@ -37024,6 +37136,7 @@
   element_level: 4
   hp: 1092910
   id: 1808
+  japanese_name: High Priest Magaleta
   job_exp: 1318800
   level: 99
   mdef: 78
@@ -37069,6 +37182,7 @@
   element_level: 4
   hp: 1349000
   id: 1809
+  japanese_name: Sniper Shecil
   job_exp: 1526000
   level: 99
   mdef: 35
@@ -37114,6 +37228,7 @@
   element_level: 3
   hp: 1069920
   id: 1810
+  japanese_name: High Wizard Katrinn
   job_exp: 1636700
   level: 99
   mdef: 88
@@ -37164,6 +37279,7 @@
   element_level: 1
   hp: 641
   id: 1811
+  japanese_name: Smokie
   level: 18
   mdef: 10
   modes:
@@ -37202,6 +37318,7 @@
   element_level: 1
   hp: 15
   id: 1812
+  japanese_name: Lude
   level: 99
   mdef: 99
   modes:
@@ -37252,6 +37369,7 @@
   element_level: 1
   hp: 1880000
   id: 1813
+  japanese_name: Hydro
   job_exp: 2000000
   level: 99
   mdef: 55
@@ -37440,6 +37558,7 @@
   element_level: 2
   hp: 8880000
   id: 1817
+  japanese_name: Detale
   job_exp: 2500000
   level: 99
   mdef: 65
@@ -37709,6 +37828,7 @@
   element_level: 2
   hp: 20199
   id: 1824
+  japanese_name: Garm Baby
   level: 61
   mdef: 13
   modes:
@@ -37923,6 +38043,7 @@
   element_level: 4
   hp: 152533
   id: 1829
+  japanese_name: Sword Guardian
   job_exp: 122604
   level: 86
   mdef: 33
@@ -37981,6 +38102,7 @@
   element_level: 4
   hp: 80404
   id: 1830
+  japanese_name: Bow Guardian
   job_exp: 23006
   level: 80
   mdef: 62
@@ -38350,6 +38472,7 @@
   element_level: 3
   hp: 46430
   id: 1837
+  japanese_name: Imp
   job_exp: 11077
   level: 76
   mdef: 50
@@ -40003,6 +40126,7 @@
   element_level: 2
   hp: 3333333
   id: 1871
+  japanese_name: Fallen Bishop
   job_exp: 1111111
   level: 80
   modes:
@@ -40207,6 +40331,7 @@
   element_level: 4
   hp: 43000
   id: 1875
+  japanese_name: Tristan III
   job_exp: 1
   level: 80
   mdef: 30
@@ -40371,6 +40496,7 @@
   element_level: 3
   hp: 1800
   id: 1879
+  japanese_name: Eclipse Pet
   level: 6
   mdef: 40
   modes:
@@ -40803,6 +40929,7 @@
   element_level: 2
   hp: 15199
   id: 1888
+  japanese_name: Garm Baby
   job_exp: 100
   level: 61
   mdef: 13
@@ -40997,6 +41124,7 @@
   element_level: 4
   hp: 36140
   id: 1893
+  japanese_name: Knight of the Abyss
   level: 79
   mdef: 50
   modes:
@@ -41073,6 +41201,7 @@
   element_level: 3
   hp: 88402
   id: 1895
+  japanese_name: Seyren
   level: 91
   mdef: 12
   modes:
@@ -41108,6 +41237,7 @@
   element_level: 3
   hp: 47280
   id: 1896
+  japanese_name: Katrinn
   level: 92
   mdef: 74
   modes:
@@ -43207,6 +43337,7 @@
   element_level: 2
   hp: 11200
   id: 1948
+  japanese_name: Ygnizem
   level: 58
   mdef: 8
   modes:
@@ -43979,6 +44110,7 @@
   element_level: 2
   hp: 7800
   id: 1967
+  japanese_name: Ygnizem
   level: 79
   mdef: 20
   modes:
@@ -44346,6 +44478,7 @@
   element_level: 2
   hp: 24150
   id: 1975
+  japanese_name: Beholder Master
   job_exp: 11400
   level: 70
   mdef: 30
@@ -44508,6 +44641,7 @@
   element_level: 3
   hp: 65433
   id: 1978
+  japanese_name: Hell Apocalips
   job_exp: 32000
   level: 86
   mdef: 23
@@ -44560,6 +44694,7 @@
   element_level: 3
   hp: 43699
   id: 1979
+  japanese_name: Zukadam
   job_exp: 16300
   level: 82
   mdef: 30
@@ -44610,6 +44745,7 @@
   element_level: 1
   hp: 1176000
   id: 1980
+  japanese_name: Kubkin
   job_exp: 100000
   level: 85
   mdef: 10
@@ -45131,6 +45267,7 @@
   element_level: 2
   hp: 3657330
   id: 1991
+  japanese_name: Tendrillion
   job_exp: 365733
   level: 113
   mdef: 30
@@ -47100,6 +47237,7 @@
   element_level: 2
   hp: 660
   id: 2081
+  japanese_name: Suspicious Hydra
   level: 14
   mdef: 100
   modes:

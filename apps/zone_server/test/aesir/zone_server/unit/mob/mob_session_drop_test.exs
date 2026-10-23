@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -73,6 +74,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
 
     assert :ok = MobSession.terminate(:normal, dead_state)
     refute_receive {:unit_lifecycle, ^event}
+  end
+
+  test "a dead mob drops from its kind's table as a script edited it after it spawned" do
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
+    :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
+    on_exit(&Mobs.reload/0)
+
+    spawned_with = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+    state = build_mob_state(id: 1002, hp: 1, max_hp: 1000, drops: spawned_with)
+    edited = [%MobDrop{item: "Jellopy", rate: 5000}]
+    :ok = Mobs.put_drops(1002, edited)
+
+    {:noreply, _dead_state} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
+
+    assert_receive {:loot, {:mob_killed, payload}}
+    assert payload.drops == edited
   end
 
   test "mob death ranks ownership from the pre-death damage log" do
@@ -220,7 +238,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
 
   defp build_mob_state(opts) do
     mob_data = %MobDefinition{
-      id: 1001,
+      id: Keyword.get(opts, :id, 1001),
       aegis_name: "test_mob",
       name: "Test Mob",
       level: 25,

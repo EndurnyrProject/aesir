@@ -116,6 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
          id: Map.fetch!(entry, "Id"),
          aegis_name: Map.fetch!(entry, "AegisName"),
          name: Map.fetch!(entry, "Name"),
+         japanese_name: Map.get(entry, "JapaneseName"),
          level: uint!(entry, "Level", 1, 16),
          hp: max(uint!(entry, "Hp", 1, 32), 1),
          sp: max(uint!(entry, "Sp", 1, 32), 1),

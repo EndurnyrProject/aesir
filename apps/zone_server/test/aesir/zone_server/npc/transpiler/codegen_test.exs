@@ -1745,6 +1745,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       setrandomoption EQI_HAND_R, 0, 3, 5, 0;
       if (setrandomoption(EQI_HAND_R, 1, 3, 5, 0)) .@ok = 1;
       randomoptgroup 7;
+      addmonsterdrop "PORING", Jellopy, 100;
+      if (delmonsterdrop(1002, 909)) .@gone = 1;
       close;
       """)
 
@@ -1754,6 +1756,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~r/\{ctx, _\} = .*setrandomoption\((ctx, )?9, 0, 3, 5, 0\)/
     assert src =~ ~r/\{ctx, \w+\} = setrandomoption\(ctx, 9, 1, 3, 5, 0\)/
     assert src =~ ~r/randomoptgroup\((ctx, )?7\)/
+    assert src =~ ~r/addmonsterdrop\((ctx, )?"PORING", 909, 100\)/
+    assert src =~ ~r/\{ctx, \w+\} = delmonsterdrop\(ctx, 1002, 909\)/
     refute src =~ "Todo."
   end
 

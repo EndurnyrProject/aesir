@@ -14,13 +14,14 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
   @type index :: %{
           all: [MobDefinition.t()],
           by_id: %{integer() => MobDefinition.t()},
-          by_name: %{String.t() => MobDefinition.t()}
+          by_name: %{String.t() => MobDefinition.t()},
+          edited_drops: MapSet.t(integer())
         }
 
   # Version-suffixed: the cache stores built structs, so a shape change (new
   # field, new convert/2 clause) must invalidate every existing cache. Freshness
   # is mtime-based and cannot detect that the cache was built by older code.
-  @cache_file "mobs_v6.etf"
+  @cache_file "mobs_v8.etf"
 
   @field_names MobDefinition
                |> struct(%{})
@@ -44,7 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
     %{
       all: defs,
       by_id: Map.new(defs, &{&1.id, &1}),
-      by_name: Map.new(defs, &{&1.aegis_name, &1})
+      by_name: Map.new(defs, &{&1.aegis_name, &1}),
+      edited_drops: MapSet.new()
     }
   end
 

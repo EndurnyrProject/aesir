@@ -1,4 +1,7 @@
 add_homunculus_intimacy/2
+addmonsterdrop/4
+addmonsterdrop/5
+addmonsterdrop/6
 announce/3
 announce/4
 areaannounce/8
@@ -37,6 +40,7 @@ cure/2
 cutin/3
 delequip/2
 delitem/3
+delmonsterdrop/3
 delwaitingroom/1
 delwaitingroom/2
 disable_items/1

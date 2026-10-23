@@ -476,7 +476,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
            {:mob_killed,
             %{
               mob_id: mob_data.id,
-              drops: mob_data.drops,
+              drops: Mobs.current_drops(mob_data),
               looted_items: state.looted_items,
               mob_level: mob_data.level,
               mob_race: mob_data.race,
