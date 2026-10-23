@@ -216,8 +216,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   Runs the rate roll, zeny roll, and `coin_stolen` flip inside the mob's own
   process so concurrent attempts cannot both succeed. Bosses and status-immune
-  mobs return `{:error, :immune}`; failed and repeated attempts return
-  `{:error, :no_coin}` without changing the state.
+  mobs return `{:error, :immune}`, an already mugged mob
+  `{:error, :already_mugged}` and a failed roll `{:error, :no_coin}`, without
+  changing the state.
   """
   @spec attempt_mug(pid(), StealOps.mug_caster(), pos_integer()) ::
           {:ok, pos_integer()} | {:error, StealOps.mug_reason()}

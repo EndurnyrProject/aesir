@@ -58,10 +58,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
     reject(&Combat.execute_zero_damage_hit/3)
 
     expect(MobSession, :attempt_mug, fn ^mob_pid, %{dex: 40, luk: 20, base_level: 50}, 6 ->
-      {:error, :no_coin}
+      {:error, :already_mugged}
     end)
 
     assert {:failed, ^mugged, :skill_failed} =
+             RgStealcoin.cast(mugged, {:unit, @target_id}, 6, RgStealcoin.definition())
+
+    expect(MobSession, :attempt_mug, fn ^mob_pid, _caster, 6 -> {:error, :no_coin} end)
+
+    assert {:failed, ^mugged, :no_coin} =
              RgStealcoin.cast(mugged, {:unit, @target_id}, 6, RgStealcoin.definition())
   end
 

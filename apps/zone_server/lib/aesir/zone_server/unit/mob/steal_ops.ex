@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
         }
 
   @typedoc "Why a zeny steal attempt failed."
-  @type mug_reason :: :no_coin | :immune
+  @type mug_reason :: :no_coin | :already_mugged | :immune
 
   @doc """
   Attempts one item steal inside the monster's owning process.
@@ -126,13 +126,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
         {:error, :immune}
 
       state.coin_stolen ->
-        {:error, :no_coin}
+        {:error, :already_mugged}
 
       :rand.uniform(1_000) > mug_rate(dex, luk, base_level, mob_level, skill_level) ->
         {:error, :no_coin}
 
       true ->
-        zeny = (:rand.uniform(3) + 7) * mob_level + div(skill_level * mob_level, 10)
+        zeny =
+          8 * mob_level + :rand.uniform(2 * mob_level + 1) - 1 + div(skill_level * mob_level, 10)
+
         {:ok, zeny, MobState.mark_coin_stolen(state)}
     end
   end

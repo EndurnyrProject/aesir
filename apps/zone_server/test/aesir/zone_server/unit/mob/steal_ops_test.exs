@@ -160,9 +160,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOpsTest do
 
     :rand.seed(:exsss, {3195, 3196, 3197})
 
-    assert {:ok, 270, mugged} = StealOps.attempt_mug(state, caster, 10)
+    # Any amount from 8 to 10 times the level, plus a tenth of level x skill level.
+    assert {:ok, zeny, mugged} = StealOps.attempt_mug(state, caster, 10)
+    assert zeny in (8 * 30 + 30)..(10 * 30 + 30)
     assert mugged.coin_stolen
-    assert {:error, :no_coin} = StealOps.attempt_mug(mugged, caster, 10)
+    assert {:error, :already_mugged} = StealOps.attempt_mug(mugged, caster, 10)
   end
 
   test "rejects boss and status-immune mobs" do

@@ -70,12 +70,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
           mugged = %{caster | zeny: min(caster.zeny + zeny, Zeny.max_zeny())}
           {:ok, Combat.execute_zero_damage_hit(mugged, target_id, @mug_hit_flag)}
 
-        {:error, reason} when reason in [:immune, :no_coin] ->
+        # A monster the cast end could not see as mugged or immune.
+        {:error, reason} when reason in [:immune, :already_mugged] ->
           {:failed, caster, :skill_failed}
 
-        # The reference reports the failed roll from inside the implementation.
-        {:error, reason} ->
-          {:failed, caster, reason}
+        # The failed roll, reported from inside the effect with the generic reply.
+        {:error, :no_coin} ->
+          {:failed, caster, :no_coin}
       end
     end
   end
