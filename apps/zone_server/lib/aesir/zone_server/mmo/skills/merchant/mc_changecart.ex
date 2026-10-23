@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart do
   Change Cart (MC_CHANGECART, id 154). Self skill that upgrades the visible cart
   sprite tier to the highest one the caster's base level permits.
 
-  Requires a cart mounted (else `{:error, :no_cart}`). The base-level gate and the
-  tier selection live in `CartHandler.change_cart_tier/2`, which uses the client's
+  Requires a cart mounted when the cast begins (else `{:error, :cart}`). The
+  base-level gate and the tier selection live in `CartHandler.change_cart_tier/2`, which uses the client's
   base-level thresholds; when the caster's base level grants no tier
   above the current one the cast fizzles without spending SP.
 
@@ -27,9 +27,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart do
 
   @behaviour Active
 
+  @doc "The cast begins only with a cart mounted; without one the reply names the cart."
   @impl Active
-  def cast(%{cart_type: 0}, :self, _level, _definition), do: {:error, :no_cart}
+  def begin_attempt(%{cart_type: 0}, _target, _level, _definition), do: {:error, :cart}
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
+  @impl Active
   def cast(caster, :self, _level, _definition) do
     case CartHandler.change_cart_tier(caster, base_level(caster)) do
       {:ok, updated} ->

@@ -16,8 +16,8 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
        updates the live `SC_PUSHCART` tier, and re-broadcasts the cart2 sprite;
        below the threshold (or unmounted) it changes nothing.
     4. Cart Revolution's skill ratio scales with cart weight (heavier -> higher),
-       a mounted cast splashes and knocks targets back, and an unmounted cast is
-       rejected with `{:error, :no_cart}`.
+       a mounted cast splashes and knocks targets back, and an unmounted cast
+       cannot begin (`{:error, :cart}`).
     5. Relog with `character.cart > 0` restores the cart contents, tier, and the
        `SC_PUSHCART` status from the database.
     6. Unmount is blocked while the cart holds items and succeeds once empty.
@@ -175,8 +175,13 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
       assert %StatusEntry{val2: 1} = StatusStorage.get_status(:player, char.id, @status_id)
       assert Repo.get(Character, char.id).cart == 1
 
-      assert {:error, :no_cart} =
-               McChangecart.cast(%{mounted | cart_type: 0}, :self, 1, skill_def(:mc_changecart))
+      assert {:error, :cart} =
+               McChangecart.begin_attempt(
+                 %{mounted | cart_type: 0},
+                 :self,
+                 1,
+                 skill_def(:mc_changecart)
+               )
     end
   end
 
@@ -230,15 +235,15 @@ defmodule Aesir.ZoneServer.Integration.CartIntegrationTest do
       assert_receive {:packet_sent, %Knockback{unit_id: ^edge_id}, _}, 1_000
     end
 
-    test "an unmounted cast is rejected with no_cart and deals no damage" do
+    test "an unmounted cast cannot begin and deals no damage" do
       %{pid: pid} = start_merchant(pushcart_level: 1)
       caster = get_player_state(pid)
 
       mob =
         start_mob_session(unit_id: 95_520, map_name: "prontera", position: {150, 151}, hp: 5000)
 
-      assert {:error, :no_cart} =
-               McCartrevolution.cast(
+      assert {:error, :cart} =
+               McCartrevolution.begin_attempt(
                  caster,
                  {:unit, mob.unit_id},
                  1,

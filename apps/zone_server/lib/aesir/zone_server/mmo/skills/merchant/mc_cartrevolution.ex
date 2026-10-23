@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
   @moduledoc """
   Cart Revolution (MC_CARTREVOLUTION, id 153). Physical splash attack with
-  knockback whose damage scales with the current cart weight; requires a mounted
-  cart, else `{:error, :no_cart}`.
+  knockback whose damage scales with the current cart weight; the cast begins
+  only with a mounted cart, else `{:error, :cart}`.
 
   Max level 1, 1-cell splash, 2 cells of knockback, 12 SP. The hit takes the
   weapon element and then a forced neutral attribute step after defense. Like Arrow
@@ -41,9 +41,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
 
   @base_ratio 150
 
+  @doc "The cast begins only with a cart mounted; without one the reply names the cart."
   @impl Active
-  def cast(%{cart_type: 0}, _target, _level, _definition), do: {:error, :no_cart}
+  def begin_attempt(%{cart_type: 0}, _target, _level, _definition), do: {:error, :cart}
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
+  @impl Active
   def cast(caster, {:unit, target_id}, level, definition) do
     with {:ok, %{position: {x, y}} = primary} <- Combat.resolve_combatant(target_id) do
       opts = [

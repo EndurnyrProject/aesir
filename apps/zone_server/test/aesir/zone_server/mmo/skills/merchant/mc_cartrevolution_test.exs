@@ -70,14 +70,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
       assert {:ok, ^caster} = McCartrevolution.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
-    test "without a mounted cart returns {:error, :no_cart} and deals no damage" do
+    # skill.cpp ST_CART castbegin row: USESKILL_FAIL_CART before anything is spent.
+    test "without a mounted cart the cast cannot begin and deals no damage" do
       reject(&Combat.execute_splash_attack/4)
       reject(&Combat.knockback/5)
 
       caster = %{cart_type: 0, cart: %{}}
 
-      assert {:error, :no_cart} =
-               McCartrevolution.cast(caster, {:unit, @target_id}, 1, definition())
+      assert {:error, :cart} =
+               McCartrevolution.begin_attempt(caster, {:unit, @target_id}, 1, definition())
     end
 
     test "passes target-centered mob-native and equipment blow with the cart-scaled splash" do

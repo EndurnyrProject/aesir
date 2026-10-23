@@ -17,11 +17,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecartTest do
   end
 
   describe "cast/4" do
-    test "rejects with :no_cart when no cart is mounted, without touching the handler" do
+    # skill.cpp ST_CART castbegin row: USESKILL_FAIL_CART before anything is spent.
+    test "cannot begin without a mounted cart, without touching the handler" do
       reject(&CartHandler.change_cart_tier/2)
 
-      assert {:error, :no_cart} =
-               McChangecart.cast(caster(cart_type: 0), :self, 1, McChangecart.definition())
+      assert {:error, :cart} =
+               McChangecart.begin_attempt(
+                 caster(cart_type: 0),
+                 :self,
+                 1,
+                 McChangecart.definition()
+               )
     end
 
     test "delegates to CartHandler.change_cart_tier with the caster's base level" do
