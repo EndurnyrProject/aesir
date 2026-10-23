@@ -1736,6 +1736,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.const!"
   end
 
+  test "count and delete buildins keep their exact attributes, options and target" do
+    src =
+      gen!("""
+      setarray .@i[0], 3; setarray .@v[0], 5; setarray .@p[0], 0;
+      if (countitem2(7049, 1, 0, 0, 254, 0, .@s1, .@s2)) .@has = 1;
+      .@n = countitem3(1101, 1, 0, 0, 0, 0, 0, 0, .@i, .@v, .@p);
+      .@all = countitem(501, 2000001);
+      delitem 501, 2, 2000001;
+      delitem2 7049, 1, 1, 0, 0, 254, 0, .@s1, .@s2;
+      delitem3 1101, 1, 1, 0, 0, 0, 0, 0, 0, .@i, .@v, .@p;
+      close;
+      """)
+
+    flat = String.replace(src, ~r/\s+/, " ")
+
+    assert flat =~
+             "countitem2(ctx, 7049, 1, 0, 0, 254, 0, get_local(ctx, :s1, 0), get_local(ctx, :s2, 0))"
+
+    assert flat =~ "countitem3( ctx, 1101, 1, 0, 0, 0, 0, 0, 0, random_options("
+    assert flat =~ "count_item(ctx, 501, 2_000_001)"
+    assert flat =~ ~r/delitem\((ctx, )?501, 2, 2_000_001\)/
+    assert flat =~ ~r/delitem2\((ctx, )?7049, 1, 1, 0, 0, 254, 0, get_local/
+    assert flat =~ ~r/delitem3\(( ctx,)? 1101, 1, 1, 0, 0, 0, 0, 0, 0, random_options\(/
+    refute src =~ "Todo."
+  end
+
   test "attribute-carrying item grants keep every argument and the account target" do
     src =
       gen!("""

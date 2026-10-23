@@ -644,6 +644,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:delitem, target, qty} search" do
+    setup do
+      stub(InventoryOps, :apply_change, fn 1000, _old, new, _change -> {:ok, new} end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+      stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+      stub(InventoryOps, :remove, fn 1000, inventory, index, amount ->
+        item = Map.fetch!(inventory, index)
+
+        if item.amount == amount,
+          do: {:ok, Map.delete(inventory, index), {:removed, index}},
+          else:
+            {:ok, Map.put(inventory, index, %{item | amount: item.amount - amount}),
+             {:reduced, index, amount}}
+      end)
+
+      :ok
+    end
+
+    test "takes a worn row off before deleting it" do
+      state = sword_state([])
+
+      assert {{:ok, game_state}, _state} =
+               ScriptEffectHandler.apply_op({:delitem, 1101, 1}, state)
+
+      assert game_state.inventory == %{}
+      assert_received {:send, :gameplay, {:unequip_result, _}}
+      assert_received {:send, _ch, {:item_removed, %ItemRemoved{index: 2, amount: 1}}}
+    end
+
+    test "a deleting run that falls short keeps what it deleted and refuses" do
+      plain = %InventoryItem{nameid: @sphmask_id, amount: 2, identify: 1}
+      refined = %InventoryItem{nameid: @sphmask_id, amount: 1, identify: 1, refine: 3}
+      state = base_state(inventory: %{0 => plain, 1 => refined})
+
+      assert {{:error, :not_enough_items}, new_state} =
+               ScriptEffectHandler.apply_op({:delitem, @sphmask_id, 4}, state)
+
+      assert new_state.game_state.inventory == %{}
+    end
+  end
+
   describe "{:give_item2, item_id, qty, attrs}" do
     test "adds via InventoryOps with the attribute map, emits ItemAdded, returns the new game_state" do
       definition = item_definition(@sphmask_id)

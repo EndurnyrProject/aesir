@@ -325,14 +325,6 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   defp bound_value(4), do: 4
 
   @doc """
-  Removes `qty` of item `item_id` through the session seam (persisting and
-  emitting `ItemRemoved`). Halts `:not_enough_items` when the player holds fewer.
-  """
-  @spec delitem(Ctx.t(), integer(), pos_integer()) :: Ctx.t()
-  def delitem(%Ctx{status: {:error, _}} = ctx, _item_id, _qty), do: ctx
-  def delitem(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:delitem, item_id, qty})
-
-  @doc """
   Removes the equipment worn in equip `slot` (rAthena `delequip`) through the
   session seam: the item is unequipped first (appearance broadcast, stats
   recompute), then its inventory row is deleted. An empty or unknown slot is a
@@ -451,15 +443,6 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   end
 
   def getbrokenid(%Ctx{}, _n), do: 0
-
-  @doc """
-  Total quantity of item `item_id` the player holds. Pure read over the snapshot.
-  """
-  @spec count_item(Ctx.t(), integer()) :: non_neg_integer()
-  def count_item(%Ctx{game_state: nil}, _item_id), do: no_player!("count_item/2")
-
-  def count_item(%Ctx{game_state: gs}, item_id),
-    do: Inventory.held_amount(gs.inventory, item_id)
 
   @doc """
   Lists every refinable equip in inventory with its current refine state. Pure

@@ -3,6 +3,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft do
   Models the identity metadata for signed and forged items.
   """
 
+  import Bitwise
+
+  alias Aesir.ZoneServer.Mmo.Element
+
+  @card0_forge 0x00FF
+  @card0_create 0x00FE
+
   @enforce_keys [:kind, :creator_char_id]
   defstruct [:kind, :creator_char_id, element: :neutral, star_crumbs: 0]
 
@@ -37,6 +44,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft do
   def star_damage(%__MODULE__{kind: :signed}), do: 0
   def star_damage(%__MODULE__{kind: :forged, star_crumbs: 3}), do: 40
   def star_damage(%__MODULE__{kind: :forged, star_crumbs: star_crumbs}), do: star_crumbs * 5
+
+  @doc """
+  The four card values the item carries in the reference's card slots: a
+  signed item `[254, 0, low, high]`, a forged one
+  `[255, star crumbs * 5 << 8 + element id, low, high]`, with the creator's
+  character id split into its low and high 16 bits. Scripts compare these.
+  """
+  @spec card_words(t()) :: [non_neg_integer()]
+  def card_words(%__MODULE__{kind: :signed, creator_char_id: id}),
+    do: [@card0_create, 0 | char_words(id)]
+
+  def card_words(%__MODULE__{kind: :forged, creator_char_id: id} = craft),
+    do: [
+      @card0_forge,
+      ((craft.star_crumbs * 5) <<< 8) + Element.id(craft.element) | char_words(id)
+    ]
+
+  defp char_words(id), do: [band(id, 0xFFFF), band(id >>> 16, 0xFFFF)]
 
   @doc "Serializes item craft metadata for storage."
   @spec to_map(t()) :: map()

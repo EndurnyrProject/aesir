@@ -55,9 +55,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     player and returns a value (`setrandomoption`): the DSL returns
     `{ctx, value}`, so a statement binds `{ctx, _} =` and an expression hoists
     `{ctx, tmp} =`.
-  - `%{shape: :item_grant, dsl: name, arrays: bool, args: types}` — an
-    attribute-carrying item grant (`getitem2/3`, `getitembound2/3`,
-    `rentitem2/3`): the fixed arguments by type, then with `arrays` the three
+  - `%{shape: :item_attrs, dsl: name, arrays: bool, args: types}` — an
+    item buildin with explicit attributes (`getitem2/3`, `getitembound2/3`,
+    `rentitem`, `rentitem2/3`, `delitem/2/3`, and `countitem3` as a read): the fixed arguments by type, then with `arrays` the three
     parallel option arrays read into the ordered option slots of
     `random_options/3`, then the optional account target as given; a call
     missing a fixed argument stays a stub.
@@ -125,37 +125,37 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     },
     "getnameditem" => %{dsl: "get_named_item", args: [:item, :string]},
     "rentitem" => %{
-      shape: :item_grant,
+      shape: :item_attrs,
       dsl: "give_item_rental",
       arrays: false,
       args: [:item, :int]
     },
     "rentitem2" => %{
-      shape: :item_grant,
+      shape: :item_attrs,
       dsl: "rentitem2",
       arrays: false,
       args: [:item, :int, :int, :int, :int, :item, :item, :item, :item]
     },
     "rentitem3" => %{
-      shape: :item_grant,
+      shape: :item_attrs,
       dsl: "rentitem3",
       arrays: true,
       args: [:item, :int, :int, :int, :int, :item, :item, :item, :item]
     },
     "getitem3" => %{
-      shape: :item_grant,
+      shape: :item_attrs,
       dsl: "getitem3",
       arrays: true,
       args: [:item, :int, :int, :int, :int, :item, :item, :item, :item]
     },
     "getitembound2" => %{
-      shape: :item_grant,
+      shape: :item_attrs,
       dsl: "getitembound2",
       arrays: false,
       args: [:item, :int, :int, :int, :int, :item, :item, :item, :item, :bound]
     },
     "getitembound3" => %{
-      shape: :item_grant,
+      shape: :item_attrs,
       dsl: "getitembound3",
       arrays: true,
       args: [:item, :int, :int, :int, :int, :item, :item, :item, :item, :bound]
@@ -170,12 +170,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "delmonsterdrop" => %{shape: :returning, dsl: "delmonsterdrop", args: [:int, :item]},
     "getitembound" => %{dsl: "give_item_bound", args: [:item, :int, :bound]},
     "getitem2" => %{
-      shape: :item_grant,
+      shape: :item_attrs,
       dsl: "getitem2",
       arrays: false,
       args: [:item, :int, :int, :int, :int, :item, :item, :item, :item]
     },
-    "delitem" => %{dsl: "delitem", args: [:item, :int]},
+    "delitem" => %{shape: :item_attrs, dsl: "delitem", arrays: false, args: [:item, :int]},
+    "delitem2" => %{
+      shape: :item_attrs,
+      dsl: "delitem2",
+      arrays: false,
+      args: [:item, :int, :int, :int, :int, :item, :item, :item, :item]
+    },
+    "delitem3" => %{
+      shape: :item_attrs,
+      dsl: "delitem3",
+      arrays: true,
+      args: [:item, :int, :int, :int, :int, :item, :item, :item, :item]
+    },
     "delequip" => %{dsl: "delequip", args: [:equip_slot]},
     "successrefitem" => %{dsl: "successrefitem", args: [:equip_slot, :int]},
     "failedrefitem" => %{dsl: "failedrefitem", args: [:equip_slot]},
@@ -300,6 +312,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @call_reads %{
     "countitem" => %{dsl: "count_item", args: [:item]},
+    "countitem2" => %{
+      dsl: "countitem2",
+      args: [:item, :int, :int, :int, :item, :item, :item, :item]
+    },
+    "countitem3" => %{
+      shape: :item_attrs,
+      dsl: "countitem3",
+      arrays: true,
+      args: [:item, :int, :int, :int, :item, :item, :item, :item]
+    },
     "groupranditem" => %{
       shape: :item_group_optional,
       dsl: "group_rand_item",

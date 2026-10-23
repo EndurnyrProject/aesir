@@ -287,7 +287,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
       bound: bound_value(grant.bound),
       unique_id: 0,
       expire_time: expire_time(grant.duration_min, now),
-      craft: craft(grant.named?, char_id),
+      craft: craft(grant.named?, item_def, char_id),
       random_options: if(refinable?(item_def), do: roll_options(grant, rng), else: [])
     }
   end
@@ -299,8 +299,15 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   defp expire_time(0, _now), do: nil
   defp expire_time(minutes, now), do: Rental.expire_at(minutes * 60, now)
 
-  defp craft(true, char_id), do: char_id |> ItemCraft.signed() |> ItemCraft.to_map()
-  defp craft(false, _char_id), do: nil
+  # A named entry marks equipment as forged (with no element or star crumbs)
+  # and anything else as signed, the card values the reference writes.
+  defp craft(false, _item_def, _char_id), do: nil
+
+  defp craft(true, item_def, char_id) do
+    if refinable?(item_def),
+      do: ItemCraft.forged(:neutral, 0, char_id) |> ItemCraft.to_map(),
+      else: char_id |> ItemCraft.signed() |> ItemCraft.to_map()
+  end
 
   @doc """
   Total quantity of item `nameid` held across all stackable slots.

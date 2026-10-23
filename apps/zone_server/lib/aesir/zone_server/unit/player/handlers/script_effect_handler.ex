@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Script.Dsl.Internal
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.ItemSearch
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
@@ -287,17 +288,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     end
   end
 
-  def apply_op({:delitem, item_id, qty}, %{game_state: gs} = state) do
-    with true <-
-           Inventory.held_amount(gs.inventory, item_id) >= qty || {:error, :not_enough_items},
-         index when is_integer(index) <- Inventory.stackable_index(gs.inventory, item_id),
-         {:ok, persisted, _change} <-
-           InventoryOps.remove(gs.character_id, gs.inventory, index, qty) do
-      MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, qty))
-      commit(state, %{gs | inventory: persisted})
-    else
-      {:error, reason} -> {{:error, reason}, state}
-      nil -> {{:error, :not_enough_items}, state}
+  # The `delitem` family: deletes the rows the reference's search takes for
+  # `target` (an item id, or exact attributes), taking a worn row off first.
+  # When the deleting run falls short after taking some rows, those stay
+  # deleted and the op still refuses.
+  def apply_op({:delitem, _target, qty}, %{game_state: gs} = state) when qty <= 0,
+    do: {{:ok, gs}, state}
+
+  def apply_op({:delitem, target, qty}, %{game_state: gs} = state) do
+    case ItemSearch.delete_plan(gs.inventory, target, qty) do
+      {:ok, plan} ->
+        delete_rows(state, plan)
+
+      {:error, []} ->
+        {{:error, :not_enough_items}, state}
+
+      {:error, plan} ->
+        {_reply, state} = delete_rows(state, plan)
+        {{:error, :not_enough_items}, state}
     end
   end
 
@@ -723,6 +731,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   end
 
   defp expiry(attrs), do: attrs
+
+  defp delete_rows(state, plan) do
+    Enum.reduce_while(plan, {{:ok, state.game_state}, state}, fn {index, amount},
+                                                                 {_reply, state} ->
+      state = take_off(state, index)
+      gs = state.game_state
+
+      case InventoryOps.remove(gs.character_id, gs.inventory, index, amount) do
+        {:ok, persisted, _change} ->
+          MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, amount))
+          {:cont, commit(state, %{gs | inventory: persisted})}
+
+        {:error, reason} ->
+          {:halt, {{:error, reason}, state}}
+      end
+    end)
+  end
+
+  defp take_off(%{game_state: gs} = state, index) do
+    case Map.get(gs.inventory, index) do
+      %InventoryItem{equip: equip} when equip != 0 ->
+        {:noreply, state} = EquipmentHandler.force_unequip(index, state)
+        state
+
+      _unworn ->
+        state
+    end
+  end
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}

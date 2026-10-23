@@ -1367,31 +1367,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx)"], :cont}
   end
 
-  # An attribute-carrying item grant: its fixed arguments by type, then (for
-  # the option variants) the three option arrays folded into one options
-  # list, then the optional target as given.
-  defp emit_mapped(name, %{shape: :item_grant, dsl: dsl, args: types} = rule, args, env) do
+  # An item buildin with explicit attributes: its fixed arguments by type,
+  # then (for the option variants) the three option arrays folded into one
+  # options list, then the optional target as given.
+  defp emit_mapped(name, %{shape: :item_attrs} = rule, args, env) do
     {pre, args} = hoist_all(args, env)
-    array_count = if rule.arrays, do: 3, else: 0
 
-    if length(args) < length(types) + array_count do
-      rendered = Enum.map_join(args, ", ", &render(&1, env))
-      {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
-    else
-      {fixed, rest} = Enum.split(args, length(types))
-      {arrays, target} = Enum.split(rest, array_count)
+    case item_attrs_args(rule, args, env) do
+      {:ok, rendered} ->
+        {pre ++ ["ctx = #{rule.dsl}(#{Enum.join(["ctx" | rendered], ", ")})"], :cont}
 
-      options =
-        case arrays do
-          [ids, values, params] -> [rental_random_options(ids, values, params, env)]
-          [] -> []
-        end
-
-      rendered =
-        Enum.zip_with(fixed, types, &typed_arg(&1, &2, env)) ++
-          options ++ Enum.map(target, &render(&1, env))
-
-      {pre ++ ["ctx = #{dsl}(#{Enum.join(["ctx" | rendered], ", ")})"], :cont}
+      :stub ->
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
     end
   end
 
@@ -2657,30 +2645,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp render({:call, name, args}, env) do
     case CommandMap.call_read(name) do
-      {:ok, %{shape: :strcharinfo, dsl: dsl}} ->
-        strcharinfo_call(dsl, name, args, env)
-
-      {:ok, %{shape: :nullary, dsl: dsl}} when args == [] ->
-        "#{dsl}(ctx)"
-
-      {:ok, %{shape: :nullary}} ->
-        flag(:todo_mod)
-        "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
-
-      {:ok, %{shape: :opt_read, dsl: dsl}} ->
-        opt_read_call(dsl, name, args, env)
-
-      {:ok, %{shape: :quest_check, dsl: dsl}} ->
-        quest_check_call(dsl, name, args, env)
-
-      {:ok, %{shape: :item_group_optional, dsl: dsl, args: types} = rule} ->
-        item_group_optional_call(dsl, name, args, types, Map.get(rule, :defaults, ["1"]), env)
-
-      {:ok, %{dsl: dsl, args: types}} ->
-        "#{dsl}(#{Enum.join(["ctx" | typed_args(args, types, env)], ", ")})"
-
-      :error ->
-        render_global_read(name, args, env)
+      {:ok, rule} -> render_call_read(name, rule, args, env)
+      :error -> render_global_read(name, args, env)
     end
   end
 
@@ -2689,6 +2655,71 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render(other, _env) do
     flag(:todo_mod)
     "Todo.call!(:expr, [#{inspect(inspect(other))}])"
+  end
+
+  defp render_call_read(name, %{shape: :strcharinfo, dsl: dsl}, args, env),
+    do: strcharinfo_call(dsl, name, args, env)
+
+  defp render_call_read(_name, %{shape: :nullary, dsl: dsl}, [], _env), do: "#{dsl}(ctx)"
+
+  defp render_call_read(name, %{shape: :nullary}, args, env) do
+    flag(:todo_mod)
+    "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+  end
+
+  defp render_call_read(name, %{shape: :opt_read, dsl: dsl}, args, env),
+    do: opt_read_call(dsl, name, args, env)
+
+  defp render_call_read(name, %{shape: :quest_check, dsl: dsl}, args, env),
+    do: quest_check_call(dsl, name, args, env)
+
+  defp render_call_read(name, %{shape: :item_attrs} = rule, args, env),
+    do: item_attrs_call(name, rule, args, env)
+
+  defp render_call_read(
+         name,
+         %{shape: :item_group_optional, dsl: dsl, args: types} = rule,
+         args,
+         env
+       ),
+       do: item_group_optional_call(dsl, name, args, types, Map.get(rule, :defaults, ["1"]), env)
+
+  defp render_call_read(_name, %{dsl: dsl, args: types}, args, env),
+    do: "#{dsl}(#{Enum.join(["ctx" | typed_args(args, types, env)], ", ")})"
+
+  defp item_attrs_call(name, rule, args, env) do
+    case item_attrs_args(rule, args, env) do
+      {:ok, rendered} ->
+        "#{rule.dsl}(#{Enum.join(["ctx" | rendered], ", ")})"
+
+      :stub ->
+        flag(:todo_mod)
+        "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+    end
+  end
+
+  # The fixed arguments by type, the three option arrays folded into one
+  # options list (for the option variants), then the optional target as given;
+  # `:stub` when a fixed argument is missing.
+  defp item_attrs_args(%{args: types} = rule, args, env) do
+    array_count = if rule.arrays, do: 3, else: 0
+
+    if length(args) < length(types) + array_count do
+      :stub
+    else
+      {fixed, rest} = Enum.split(args, length(types))
+      {arrays, target} = Enum.split(rest, array_count)
+
+      options =
+        case arrays do
+          [ids, values, params] -> [rental_random_options(ids, values, params, env)]
+          [] -> []
+        end
+
+      {:ok,
+       Enum.zip_with(fixed, types, &typed_arg(&1, &2, env)) ++
+         options ++ Enum.map(target, &render(&1, env))}
+    end
   end
 
   defp render_numeric({:name, name} = expr, env) when name in ["Class", "BaseJob", "BaseClass"],

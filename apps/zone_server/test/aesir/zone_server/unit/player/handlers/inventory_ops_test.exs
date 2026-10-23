@@ -141,7 +141,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
                  enchant_grade: 3,
                  bound: 1,
                  unique_id: 0,
-                 craft: %{"kind" => "signed", "creator_char_id" => creator},
+                 craft: %{
+                   "kind" => "forged",
+                   "element" => "neutral",
+                   "star_crumbs" => 0,
+                   "creator_char_id" => creator
+                 },
                  expire_time: expiry
                },
                %InventoryItem{nameid: @dagger, expire_time: nil}
