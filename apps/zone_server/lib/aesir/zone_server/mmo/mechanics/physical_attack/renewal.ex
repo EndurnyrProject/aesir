@@ -111,7 +111,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     |> max(1)
   end
 
-  @doc "Runs the critical tail after any post-defense attribute step."
+  @doc """
+  Runs the critical tail after any post-defense attribute step: the critical
+  multiplier, then the target's equipment critical reduction (`:crit_def_rate`).
+  """
   @spec finish_attack(integer(), PhysicalAttack.context()) :: integer()
   def finish_attack(damage, context), do: critical_damage(damage, context)
 
@@ -155,8 +158,11 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
   defp critical_equipment_bonus(damage, context),
     do: damage + div(damage * Map.get(context, :non_crit_atk_rate, 0), 100)
 
-  defp critical_damage(damage, %{critical?: true} = context),
-    do: Critical.multiply(damage, Map.get(context, :crate, 0))
+  defp critical_damage(damage, %{critical?: true} = context) do
+    damage
+    |> Critical.multiply(Map.get(context, :crate, 0))
+    |> PhysicalAttack.add_rate(-Map.get(context, :crit_def_rate, 0))
+  end
 
   defp critical_damage(damage, _context), do: damage
 

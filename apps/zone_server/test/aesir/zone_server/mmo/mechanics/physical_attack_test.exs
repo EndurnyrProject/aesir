@@ -363,6 +363,33 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     end
   end
 
+  describe "equipment critical reduction (bCritDefRate)" do
+    test "classic reduces a critical normal attack's base after the critical bonus only" do
+      context = %{size_rate: 50, crit_atk_rate: 20, crit_def_rate: 30, critical?: true}
+
+      # 88 base, + 20% = 105, - 30% (truncating the removed share) = 74.
+      assert PreRenewal.normal_base(parts(), context) == 74
+      assert PreRenewal.normal_base(parts(), %{context | critical?: false}) == 88
+
+      flat = %{size_rate: 100, critical?: true, crit_def_rate: 30, defense: %{}}
+      plain = %{parts() | weapon_atk: 100, status_atk: 0, flat_atk: 0, overrefine_atk: 0}
+      plain = %{plain | refine_atk: 0, mastery_atk: 0}
+
+      assert PreRenewal.pre_element(plain, flat) == 70
+      assert PreRenewal.pre_element(plain, Map.put(flat, :skill_id, 5)) == 100
+      assert PreRenewal.pre_element(plain, %{flat | crit_def_rate: -10}) == 110
+    end
+
+    test "renewal reduces any critical after the critical multiplier" do
+      context = %{critical?: true, crate: 0, crit_def_rate: 25}
+
+      # 100 * 1.4 = 140, - 25% = 105.
+      assert Renewal.finish_attack(100, context) == 105
+      assert Renewal.finish_attack(100, Map.put(context, :skill_id, 5)) == 105
+      assert Renewal.finish_attack(100, %{context | critical?: false}) == 100
+    end
+  end
+
   test "classic post-defense keeps the right hand at 1 and the left hand at 0" do
     parts = %{parts() | status_atk: 0, flat_atk: 0, weapon_atk: 10, refine_atk: 0}
     parts = %{parts | overrefine_atk: 0, mastery_atk: 0}

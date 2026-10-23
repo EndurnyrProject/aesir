@@ -431,6 +431,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {ratio, atk_percent} = scalar_ratio(skill_ratio, attacker, opts, modifiers)
 
     with {:ok, base_atk} <- calculate_base_attack(attacker, opts),
+         base_atk = classic_scalar_critical_defense(base_atk, defender, opts, critical?),
          patk_atk = apply_patk_multiplier(base_atk, attacker),
          skilled_atk = div(patk_atk * ratio, 100) + bonus_atk,
          modified_atk =
@@ -467,7 +468,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         |> renewal_skill_rates(hit)
         |> scalar_element(hit)
         |> classic_player_cards(hit, attack_path, classic_player?)
-        |> scalar_critical(attacker, critical?)
+        |> scalar_critical(hit, critical?)
         |> scalar_target_cards(hit, hit_element(attacker, modifiers, opts))
 
       {:ok, %{damage: taken, is_critical: critical?}}
@@ -548,15 +549,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       else: Map.get(modifiers, :post_defense_atk, 0)
   end
 
-  # Renewal multiplies a critical after the attribute step; classic has no
-  # critical multiplier on this recipe.
-  defp scalar_critical(damage, attacker, true) do
+  # Renewal multiplies a critical after the attribute step, then takes the
+  # target's equipment critical reduction; classic has no critical multiplier
+  # on this recipe.
+  defp scalar_critical(damage, hit, true) do
     if classic?(),
       do: damage,
-      else: Critical.multiply(damage, Map.get(attacker.combat_stats, :crate, 0))
+      else:
+        damage
+        |> Critical.multiply(Map.get(hit.attacker.combat_stats, :crate, 0))
+        |> PhysicalAttack.add_rate(-crit_def_rate(hit.defender))
   end
 
-  defp scalar_critical(damage, _attacker, false), do: damage
+  defp scalar_critical(damage, _hit, false), do: damage
+
+  # Classic takes the target's equipment critical reduction on a critical
+  # normal attack's base, before the ratio and every modifier.
+  defp classic_scalar_critical_defense(base_atk, defender, opts, true) do
+    if classic?() and is_nil(Keyword.get(opts, :skill_id)),
+      do: PhysicalAttack.add_rate(base_atk, -crit_def_rate(defender)),
+      else: base_atk
+  end
+
+  defp classic_scalar_critical_defense(base_atk, _defender, _opts, false), do: base_atk
+
+  # Only a player target's equipment reduces criticals.
+  defp crit_def_rate(%{unit_type: :player} = defender),
+    do: EquipmentBonuses.crit_def_rate(defender)
+
+  defp crit_def_rate(_defender), do: 0
 
   defp classic?, do: GameMode.mode() == :pre_renewal
 
@@ -1270,6 +1291,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       res: Map.get(defender.combat_stats, :res, 0),
       critical?: critical.is_critical,
       crate: Map.get(attacker.combat_stats, :crate, 0),
+      crit_def_rate: crit_def_rate(defender),
       crit_atk_rate:
         Map.get(attacker.equip_modifiers, :crit_atk_rate, 0) +
           Map.get(attacker_modifiers, :crit_atk_rate, 0),

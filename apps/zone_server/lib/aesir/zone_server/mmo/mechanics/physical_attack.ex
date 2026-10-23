@@ -84,6 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:res) => integer(),
           optional(:critical?) => boolean(),
           optional(:crit_atk_rate) => integer(),
+          optional(:crit_def_rate) => integer(),
           optional(:non_crit_atk_rate) => integer(),
           optional(:ignore_noncrit_atk_bonus) => boolean(),
           optional(:crate) => integer(),

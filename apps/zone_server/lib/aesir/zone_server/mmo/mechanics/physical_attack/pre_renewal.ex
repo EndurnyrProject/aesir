@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
 
   A hit is split at its single post-defense attribute step, which the
   coordinator owns: `pre_element/2` runs the base, its critical or positive
-  non-critical equipment bonus, skill ratio (with the status ratio adds), the
+  non-critical equipment bonus, the target's critical reduction on a normal
+  attack, skill ratio (with the status ratio adds), the
   equipment skill rates, the ATK percent, defense, refine and mastery stages;
   `post_element/2` runs the cards and final reduction. The non-critical bonus
   belongs to the weapon base only, never to the shield replacement. After
@@ -18,11 +19,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
 
   @doc """
   Returns the hand's normal-attack base damage: the weapon base with its
-  critical or non-critical equipment rate, as a normal attack rolls it.
+  critical or non-critical equipment rate, as a normal attack rolls it, and on
+  a critical the target's equipment critical reduction.
   """
   @spec normal_base(PhysicalAttack.parts(), PhysicalAttack.context()) :: integer()
   def normal_base(parts, context) do
-    attack_bonus(base(parts, context), %{parts | source: :weapon}, context)
+    parts
+    |> base(context)
+    |> attack_bonus(%{parts | source: :weapon}, context)
+    |> critical_defense(context)
   end
 
   @doc """
@@ -55,6 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
   @spec pre_element(PhysicalAttack.parts(), PhysicalAttack.context()) :: integer()
   def pre_element(parts, context) do
     base = attack_bonus(base(parts, context), parts, context)
+
+    base =
+      if is_nil(Map.get(context, :skill_id)), do: critical_defense(base, context), else: base
+
     base = if parts.source == :shield, do: defend(base, context), else: base
 
     skilled =
@@ -115,6 +124,17 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
   end
 
   defp attack_bonus(damage, _parts, _context), do: damage
+
+  @doc """
+  The target's equipment critical reduction (`:crit_def_rate`) on a critical
+  base. Classic takes it only on a normal attack's base, right after the
+  attacker's critical bonus; a skill's own base never takes it.
+  """
+  @spec critical_defense(integer(), PhysicalAttack.context()) :: integer()
+  def critical_defense(damage, %{critical?: true} = context),
+    do: PhysicalAttack.add_rate(damage, -Map.get(context, :crit_def_rate, 0))
+
+  def critical_defense(damage, _context), do: damage
 
   @doc """
   Adds a positive non-critical equipment rate's truncated share; a zero or
