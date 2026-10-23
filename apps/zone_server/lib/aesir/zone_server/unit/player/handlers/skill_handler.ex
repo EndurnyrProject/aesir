@@ -2009,9 +2009,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(reason) when reason in [:on_cooldown, :skill_interval],
     do: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
 
-  defp failure_reason(reason) when reason in [:invalid_target, :different_map, :target_not_found],
-    do: :SKILL_CAST_FAILURE_REASON_INVALID_TARGET
-
   defp failure_reason(:skill_not_learned), do: :SKILL_CAST_FAILURE_REASON_NOT_LEARNED
 
   defp failure_reason(reason) when reason in [:out_of_range, :no_path],

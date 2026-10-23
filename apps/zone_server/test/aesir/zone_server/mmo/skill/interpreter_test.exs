@@ -4002,6 +4002,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
                Interpreter.preflight_cast(game_state(100, %{270 => 5}), 270, 5, :self)
     end
 
+    test "a target the skill does not suit starts the cast and fails when it ends" do
+      stub(Catalog, :by_id, fn 6 ->
+        {:ok, %{unit_definition(:target_enemy, 9) | cast_time: List.duplicate(1_000, 10)}}
+      end)
+
+      register_player(2_000)
+      gs = game_state(100, %{6 => 1})
+
+      assert {:casting, caster, _info} = Interpreter.begin_cast(gs, 6, 1, {:unit, 2_000})
+      assert {:error, :invalid_target} = Interpreter.complete_cast(caster, 6, 1, {:unit, 2_000})
+    end
+
     test "ending an active toggle skips the rest of its cast-begin conditions and its SP" do
       gs = game_state(0, %{135 => 1})
 

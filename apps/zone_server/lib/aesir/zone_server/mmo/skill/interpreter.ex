@@ -1565,7 +1565,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # checks, the cast-begin conditions, then the range and the skill's checks
   # on a target in range. A ground cast checks the placement of its unit after
   # its cast-begin conditions. The catalog guards (level, learned rank,
-  # behavior) never fail a request the client stage let through.
+  # behavior) never fail a request the client stage let through. Whether the
+  # target suits the skill and the skill's own `validate/4` are cast-end
+  # checks (`check_player_castend/4`); a staged input cast, validated as it
+  # ends, runs them last.
   defp validate_player_cast(caster, skill_id, level, target, phase) do
     adapter = Caster.Player
 
@@ -1584,9 +1587,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_start_placement(prepared.caster, definition, target, phase),
          :ok <- check_end_placement(caster, definition, target, phase),
          :ok <- check_range(caster, target, definition, level),
-         :ok <- optional_check(prepared, :after_range_check) do
+         :ok <- optional_check(prepared, :after_range_check),
+         :ok <- check_input_castend(prepared, phase) do
       {:ok, record_spheres_old(prepared, phase)}
     end
+  end
+
+  defp check_input_castend(context, :cast_end),
+    do: check_player_castend(context.caster, context.target, context.definition, context)
+
+  defp check_input_castend(_context, _phase), do: :ok
+
+  # The cast-end checks of a player's cast that its cast begin leaves out:
+  # whether the target suits the skill, then the skill's own `validate/4`.
+  defp check_player_castend(caster, target, definition, context) do
+    with :ok <- check_target(caster, target, definition), do: validate_module(context)
   end
 
   # The unit a player aims at must still be on the caster's map, and a skill
@@ -1633,9 +1648,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   # The cast-begin conditions of a player's cast: a chat room refuses silently,
   # then the weight limit; a toggle skill whose status is active only ends it
-  # and checks nothing more; otherwise the skill's own rows, its target and
-  # validation, the recovered-weight state, the weapon, then SP, zeny and
-  # spheres.
+  # and checks nothing more; otherwise the skill's own rows (`begin_attempt/4`),
+  # the recovered-weight state, the weapon, then SP, zeny and spheres.
   defp castbegin(%CastContext{caster: caster, definition: definition} = context, begin?) do
     with :ok <- check_chat_room(caster),
          :ok <- Caster.Player.check_weight(caster) do
@@ -1647,8 +1661,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp castbegin_conditions(%CastContext{definition: definition} = context, begin?) do
     with {:ok, context} <- begin_context(context, begin?),
-         :ok <- check_target(context.caster, context.target, definition),
-         :ok <- validate_module(context),
          :ok <- Caster.Player.check_recovered_weight(context.caster, definition),
          :ok <- check_weapon(context.caster, definition) do
       prepare_cast(context)
@@ -2012,7 +2024,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # An instant cast reaches its cast end once its cast-start effects ran: the
   # unit placement, the cast-end target, then the cast-end requirements.
   defp complete_instant_cast(game_state, skill_id, level, target, now, prepared) do
-    with :ok <- check_placement(game_state, prepared.definition, target),
+    with :ok <- check_instant_castend(game_state, target, prepared),
+         :ok <- check_placement(game_state, prepared.definition, target),
          :ok <- check_castend_target(game_state, target, prepared.definition),
          {:ok, prepared} <- prepare_castend(prepared, game_state) do
       case complete_prepared_cast(
@@ -2037,6 +2050,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       {:error, reason} -> castend_failure(game_state, skill_id, level, target, reason)
     end
   end
+
+  # A player's instant cast reaches the cast-end checks its cast begin left out;
+  # other casters checked them when the cast began.
+  defp check_instant_castend(%PlayerState{} = caster, target, %CastContext{} = prepared),
+    do: check_player_castend(caster, target, prepared.definition, %{prepared | caster: caster})
+
+  defp check_instant_castend(_caster, _target, _prepared), do: :ok
 
   defp instant_result(caster, %{instant_effects: effects}), do: {:instant, caster, effects}
   defp instant_result(caster, _prepared_cost), do: {:instant, caster}
