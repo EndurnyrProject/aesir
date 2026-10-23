@@ -40,9 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
   @behaviour Active
 
   @impl Active
-  def validate(%PlayerState{stats: %{equipment: equipment}}, _target, _level, _definition) do
-    if Stats.weapon_type(equipment) == :katar, do: :ok, else: {:error, :wrong_weapon}
-  end
+  def validate(%PlayerState{}, _target, _level, _definition), do: :ok
 
   def validate(%MobState{}, _target, _level, _definition), do: :ok
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_caster}

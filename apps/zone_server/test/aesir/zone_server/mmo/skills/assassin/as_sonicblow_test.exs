@@ -95,13 +95,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     assert skill.require_weapon == [:katar]
   end
 
-  test "player validation requires a Katar while mobs bypass equipment" do
+  test "the katar is the engine's weapon requirement, not a skill check" do
     assert :ok = AsSonicblow.validate(player(), {:unit, @target_id}, 1, definition())
 
     dagger = player(%{}, @dagger_id, @right_hand)
 
-    assert {:error, :wrong_weapon} =
-             AsSonicblow.validate(dagger, {:unit, @target_id}, 1, definition())
+    assert :ok = AsSonicblow.validate(dagger, {:unit, @target_id}, 1, definition())
 
     assert :ok =
              AsSonicblow.validate(mob(@caster_id, 100, 100), {:unit, @target_id}, 1, definition())
