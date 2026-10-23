@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   # Chat-room members cannot walk, pick up items, or attack (the move and
   # attack clauses are separate below); sitting, trading, and room operations
-  # still work. Skill requests and item use settle the chat
+  # still work. Skill, item use and equip requests settle the chat
   # room and a trade themselves.
   @room_frozen [PickupItemRequest]
 
@@ -145,8 +145,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     MoveRequest,
     ActionRequest,
     CardComposeRequest,
-    EquipItem,
-    UnequipItem,
     PickupItemRequest,
     StorageDepositRequest,
     StorageWithdrawRequest,

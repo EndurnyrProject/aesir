@@ -149,6 +149,54 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     end
   end
 
+  describe "an equip request while the player cannot act" do
+    for {label, busy} <- [
+          {"trading", {:session, :trade, %{pid: nil}}},
+          {"vending", {:game, :action_state, :vending}},
+          {"with an NPC shop window open", {:session, :npc_shop, 0x5800_0001}}
+        ] do
+      @busy busy
+      test "#{label} is refused silently" do
+        state = busy(unidentified_sword_state(), @busy)
+
+        assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+        assert {:noreply, ^state} = EquipmentHandler.handle_unequip(0, state)
+        refute_received {:send, _, _}
+      end
+
+      test "#{label} with a storage window open reaches the equip checks" do
+        state =
+          unidentified_sword_state()
+          |> busy(@busy)
+          |> busy({:game, :storage, %{}})
+
+        assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+        assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
+      end
+    end
+
+    @tag game_mode: :renewal
+    test "a refusing NPC dialog's notice comes before a shop window's silent refusal" do
+      state = unidentified_sword_state() |> in_dialog() |> busy({:session, :npc_shop, 1})
+
+      assert {:noreply, ^state} = EquipmentHandler.handle_unequip(0, state)
+
+      assert_receive {:send, :gameplay,
+                      {:system_notice, %SystemNotice{id: :SYSTEM_NOTICE_ID_CAN_NOT_EQUIP_ITEM}}}
+    end
+
+    test "an index outside the inventory is dropped without a reply" do
+      state = unidentified_sword_state()
+      assert {:noreply, ^state} = EquipmentHandler.handle_equip(10_000, 2, state)
+      refute_received {:send, _, _}
+    end
+  end
+
+  defp busy(state, {:session, key, value}), do: Map.put(state, key, value)
+
+  defp busy(state, {:game, key, value}),
+    do: Map.update!(state, :game_state, &Map.put(&1, key, value))
+
   defp unidentified_sword_state do
     game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
     item = %InventoryItem{nameid: 1101, amount: 1, identify: 0}

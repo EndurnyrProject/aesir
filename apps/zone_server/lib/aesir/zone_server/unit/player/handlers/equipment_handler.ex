@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
+  alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -62,29 +63,51 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   @doc """
   Handles an equip request for the item at `server_index` into `position`.
+
+  Once the index is within the inventory, an NPC dialog whose script refuses
+  item use refuses it with a notice and no equip result. Otherwise, unless a
+  storage window is open or a body state holds the player, a trade, a vending
+  stall or an open NPC shop window refuses it silently.
   """
   @spec handle_equip(non_neg_integer(), non_neg_integer(), map()) :: {:noreply, map()}
   def handle_equip(server_index, position, state) do
-    if equip_refused_in_dialog?(server_index, state) do
-      send_packet(state, %SystemNotice{id: :SYSTEM_NOTICE_ID_CAN_NOT_EQUIP_ITEM})
-      {:noreply, state}
+    if server_index in 0..(Inventory.capacity() - 1)//1 do
+      with :ok <- request_gate(state), do: equip(server_index, position, state)
     else
-      equip(server_index, position, state)
+      {:noreply, state}
     end
   end
 
-  # An NPC dialog whose script refuses item use refuses equipping too, with a
-  # notice and no equip result, once the index is within the inventory.
   # An Arrow Vulcan cast holds equipment changes until it completes.
   defp equip_locked?(%{equip_lock_until: until}) when is_integer(until),
     do: System.monotonic_time(:millisecond) < until
 
   defp equip_locked?(_state), do: false
 
-  defp equip_refused_in_dialog?(server_index, state) do
-    server_index in 0..(Inventory.capacity() - 1)//1 and SessionState.npc_dialog?(state) and
-      not SessionState.npc_item_flag?(state)
+  # The checks an equip or unequip request passes before its item is looked at.
+  defp request_gate(state) do
+    cond do
+      SessionState.npc_dialog?(state) and not SessionState.npc_item_flag?(state) ->
+        send_packet(state, %SystemNotice{id: :SYSTEM_NOTICE_ID_CAN_NOT_EQUIP_ITEM})
+        {:noreply, state}
+
+      storage_open?(state) or body_state(state) != 0 ->
+        :ok
+
+      Map.get(state, :trade) != nil or state.game_state.action_state == :vending or
+          SessionState.npc_shop_open?(state) ->
+        {:noreply, state}
+
+      true ->
+        :ok
+    end
   end
+
+  defp storage_open?(state),
+    do: state.game_state.storage != nil or Map.get(state, :guild_storage_ctx) != nil
+
+  defp body_state(%{game_state: %PlayerState{character_id: id}}),
+    do: StatusDisplay.spawn_state(:player, id).body_state
 
   defp equip(server_index, position, %{game_state: game_state} = state) do
     ctx = %{
@@ -111,10 +134,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   end
 
   @doc """
-  Handles an unequip request for the item at `server_index`.
+  Handles an unequip request for the item at `server_index`, after the same
+  checks an equip request passes.
   """
   @spec handle_unequip(non_neg_integer(), map()) :: {:noreply, map()}
-  def handle_unequip(server_index, %{game_state: game_state} = state) do
+  def handle_unequip(server_index, state) do
+    with :ok <- request_gate(state), do: unequip(server_index, state)
+  end
+
+  defp unequip(server_index, %{game_state: game_state} = state) do
     case Inventory.unequip(game_state.inventory, server_index) do
       {:ok, new_inventory, {:unequipped, _index} = change} ->
         if StatusInterpreter.equip_change_blocked?(:player, game_state.character_id) do
