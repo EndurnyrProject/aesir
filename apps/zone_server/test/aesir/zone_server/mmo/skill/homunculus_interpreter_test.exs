@@ -182,6 +182,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
            ]
   end
 
+  # unit.cpp:2176-2185, 2204-2205, status.cpp:2240-2247 and unit.cpp:2353-2363
+  # (range 0 is nine cells for a non-player, skill.cpp:364): Healing Touch is
+  # aimed at the owner, who must be registered, on the same map, not concealed
+  # and within reach; every refusal is silent and spends nothing.
+  describe "Healing Touch aimed at its owner" do
+    test "refuses a missing owner, one on another map, a hidden one and one out of reach" do
+      caster = homunculus(%{learned_skills: %{8_001 => 1}})
+
+      assert {:error, :owner_not_found} = Interpreter.begin_cast(caster, 8_001, 1, :self)
+
+      register_active(caster, %{owner() | map_name: "other_map"})
+      assert {:error, :different_map} = Interpreter.begin_cast(caster, 8_001, 1, :self)
+
+      register_active(caster, %{owner() | x: 20})
+      assert {:error, :out_of_range} = Interpreter.begin_cast(caster, 8_001, 1, :self)
+
+      register_active(caster, %{owner() | x: 11})
+      assert {:instant, _updated, _effects} = Interpreter.begin_cast(caster, 8_001, 1, :self)
+
+      register_active(caster, owner())
+      :ok = StatusStorage.apply_status(:player, 100, :sc_hiding)
+      assert {:error, :target_concealed} = Interpreter.begin_cast(caster, 8_001, 1, :self)
+    end
+
+    test "a dead owner is the effect's concern: SP and potion are spent, nothing healed" do
+      caster = homunculus(%{learned_skills: %{8_001 => 1}})
+      dead = %{owner() | action_state: :dead}
+      dead = put_in(dead.stats.current_state.hp, 0)
+      register_active(caster, dead)
+
+      assert {:instant, updated, [{:owner_item_cost, 545, 1}]} =
+               Interpreter.begin_cast(caster, 8_001, 1, :self)
+
+      assert updated.sp == caster.sp - 13
+    end
+  end
+
   test "restricted begin rejects caster, species, rank, SP, cooldown, passive, and target errors" do
     now = System.monotonic_time(:millisecond)
     caster = homunculus()

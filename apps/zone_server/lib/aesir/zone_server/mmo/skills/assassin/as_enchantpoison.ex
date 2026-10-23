@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
   Enchant Poison (AS_ENCHANTPOISON). Endows the caster's or a nearby party ally's
   weapon with the poison element for 15 s plus 15 s per level and 20 SP; ordinary
   swings then poison 2.5% plus 0.5% per level of the time for 10 s per level.
+  The caster's own homunculus is a valid target; anyone else's is refused
+  silently when the use starts (the engine's support rule).
 
   Renewal and pre-renewal agree.
   """
@@ -22,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -31,6 +34,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
   def validate(_caster, :self, _level, _definition), do: :ok
+
+  def validate(caster, {:unit, {:homunculus, gid}}, _level, _definition) do
+    if own_homunculus?(caster, gid), do: :ok, else: {:error, :invalid_target}
+  end
 
   def validate(caster, {:unit, target_id}, _level, _definition) do
     case UnitRegistry.get_unit(:player, target_id) do
@@ -48,11 +55,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
-    apply_endow(caster, caster_id, caster_id, level, definition)
+    apply_endow(caster, caster_id, {:player, caster_id}, level, definition)
+  end
+
+  def cast(%{character_id: caster_id} = caster, {:unit, {:homunculus, gid}}, level, definition) do
+    apply_endow(caster, caster_id, {:homunculus, gid}, level, definition)
   end
 
   def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
-    apply_endow(caster, caster_id, target_id, level, definition)
+    apply_endow(caster, caster_id, {:player, target_id}, level, definition)
   end
 
   def cast(_caster, _target, _level, _definition), do: {:error, :invalid_target}
@@ -68,8 +79,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
       caster.party_id == target.party_id
   end
 
-  defp apply_endow(caster, caster_id, target_id, level, definition) do
-    case StatusInterpreter.apply_status(:player, target_id, :sc_encpoison,
+  defp own_homunculus?(%{character_id: caster_id}, gid) do
+    match?(
+      {:ok, {_module, %HomunculusState{owner_character_id: ^caster_id}, _pid}},
+      UnitRegistry.get_unit(:homunculus, gid)
+    )
+  end
+
+  defp own_homunculus?(_caster, _gid), do: false
+
+  defp apply_endow(caster, caster_id, {target_type, target_id}, level, definition) do
+    case StatusInterpreter.apply_status(target_type, target_id, :sc_encpoison,
            val1: level,
            caster_id: caster_id,
            source_type: :player,

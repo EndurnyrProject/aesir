@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
   Brain Surgery rank (and its MATK in renewal) and the owner's received-heal
   bonuses. The Homunculus is never healed by this skill.
 
-  Both modes: a missing owner refuses the cast; a dead owner does not, the
-  cast spends its SP and potion and heals nothing.
+  Both modes: the use checks its owner as `Shared.HomunculusMaster` does; a dead
+  owner does not refuse it, the cast spends its SP and potion and heals
+  nothing.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -24,14 +25,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
   alias Aesir.ZoneServer.Mmo.Combat.SkillHeal
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skills.Shared.HomunculusMaster
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
 
   @behaviour Active
 
   @impl Active
-  def validate(%HomunculusState{} = caster, :self, _level, _definition) do
-    with {:ok, _owner} <- resolve_owner(caster), do: :ok
+  def validate(%HomunculusState{} = caster, :self, level, definition) do
+    with {:ok, _owner} <- HomunculusMaster.check(caster, level, definition), do: :ok
   end
 
   @impl Active

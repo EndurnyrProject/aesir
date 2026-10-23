@@ -6,7 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -138,5 +140,61 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
       |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], %{138 => 10})
 
     %{base | stats: stats, party_id: Keyword.get(opts, :party_id, 0)}
+  end
+
+  # battle.cpp:8135-8140: the caster's own homunculus passes the cast-end
+  # relation check and receives the endow; status.cpp:2265-2266 refuses anyone
+  # else's silently at id2.
+  describe "homunculus targets" do
+    test "the caster's own homunculus is endowed and another player's refused" do
+      caster = player_state(1, party_id: 7)
+      register_homunculus(9_001, 1)
+      register_homunculus(9_002, 2)
+
+      assert :ok =
+               AsEnchantpoison.validate(
+                 caster,
+                 {:unit, {:homunculus, 9_001}},
+                 1,
+                 AsEnchantpoison.definition()
+               )
+
+      assert {:error, :invalid_target} =
+               AsEnchantpoison.validate(
+                 caster,
+                 {:unit, {:homunculus, 9_002}},
+                 1,
+                 AsEnchantpoison.definition()
+               )
+
+      assert {:ok, _caster} =
+               AsEnchantpoison.cast(
+                 caster,
+                 {:unit, {:homunculus, 9_001}},
+                 1,
+                 AsEnchantpoison.definition()
+               )
+
+      assert StatusStorage.has_status?(:homunculus, 9_001, :sc_encpoison)
+      refute StatusStorage.has_status?(:player, 9_001, :sc_encpoison)
+    end
+  end
+
+  defp register_homunculus(gid, owner_id) do
+    homunculus = %HomunculusState{
+      id: gid,
+      world_gid: gid,
+      owner_character_id: owner_id,
+      class_id: 6_001,
+      name: "Lif",
+      lifecycle: :active,
+      hp: 50,
+      max_hp: 100,
+      map_name: "prontera",
+      x: 50,
+      y: 50
+    }
+
+    :ok = UnitRegistry.register_unit(:homunculus, gid, HomunculusState, homunculus, self())
   end
 end

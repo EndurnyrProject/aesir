@@ -221,6 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Sage.Endow,
       Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView,
       Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea,
+      Aesir.ZoneServer.Mmo.Skills.Shared.HomunculusMaster,
       Aesir.ZoneServer.Mmo.Skills.Guild.GuildCooldown,
       Aesir.ZoneServer.Mmo.Skills.Guild.Recall,
       Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula,

@@ -227,6 +227,16 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def local_effect({:player, {:apply_damage, amount, source}}, %SessionState{} = session),
     do: HealthHandler.apply_damage(amount, source_id(source), session)
 
+  def local_effect({:player, {:skill_failed, skill_id}}, %SessionState{} = session) do
+    SkillHandler.report_cast_failure(
+      skill_id,
+      session.game_state.character_id,
+      :skill_failed_roll
+    )
+
+    {:noreply, session}
+  end
+
   def local_effect({:prepared_external_hit, prepared}, %SessionState{} = session) do
     :ok = SkillAttack.deliver_prepared_skill_hit(prepared)
     {:noreply, session}

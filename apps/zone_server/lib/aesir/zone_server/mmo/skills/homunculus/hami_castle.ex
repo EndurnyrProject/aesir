@@ -3,8 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
   Castling (HAMI_CASTLE). The homunculus swaps places with its owner at
   20 percent per level.
 
-  Both modes: a missing owner, or one on another map, refuses the cast; a
-  dead owner does not, the cast spends its SP and swaps nothing.
+  Both modes: the use checks its owner as `Shared.HomunculusMaster` does; a dead
+  owner does not refuse it, the cast spends its SP and swaps nothing. A missed
+  roll tells the owner the skill failed.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -19,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
     damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skills.Shared.HomunculusMaster
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Movement
@@ -28,12 +30,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
   @behaviour Active
 
   @impl Active
-  def validate(%HomunculusState{} = caster, :self, _level, _definition) do
+  def validate(%HomunculusState{} = caster, :self, level, definition) do
+    with {:ok, _owner} <- HomunculusMaster.check(caster, level, definition),
+         do: check_endpoints(caster)
+  end
+
+  defp check_endpoints(caster) do
     with true <- HomunculusState.living?(caster),
-         {:ok, {PlayerState, owner, owner_pid}} <-
+         {:ok, {PlayerState, _owner, owner_pid}} <-
            Movement.swap_ready(:player, caster.owner_character_id),
          true <- owner_pid == caster.owner_session_pid,
-         true <- owner.map_name == caster.map_name,
          {:ok, {HomunculusState, ^caster, ^owner_pid}} <-
            Movement.swap_ready(:homunculus, caster.world_gid) do
       :ok
@@ -45,11 +51,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HamiCastle do
   @impl Active
   @spec cast(HomunculusState.t(), :self, 1..5, map()) ::
           {:ok, HomunculusState.t()} | {:local_effects, HomunculusState.t(), [tuple()]}
-  def cast(%HomunculusState{} = caster, :self, level, _definition) do
-    if owner_living?(caster) and chance_success?(level, :rand.uniform(100)) do
-      {:local_effects, caster, [{:homunculus, {:castling_swap, caster.world_gid}}]}
-    else
-      {:ok, caster}
+  def cast(%HomunculusState{} = caster, :self, level, definition) do
+    cond do
+      not owner_living?(caster) ->
+        {:ok, caster}
+
+      chance_success?(level, :rand.uniform(100)) ->
+        {:local_effects, caster, [{:homunculus, {:castling_swap, caster.world_gid}}]}
+
+      true ->
+        {:local_effects, caster, [{:player, {:skill_failed, definition.id}}]}
     end
   end
 
