@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     display_name: "Heal",
     max_level: 10,
     target_type: :target_any,
+    support: true,
     damage_type: :no_damage,
     damage_kind: :magic,
     range: 9,

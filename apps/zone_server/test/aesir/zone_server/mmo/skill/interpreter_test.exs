@@ -4046,6 +4046,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
                Interpreter.walking_attempt(walking, 6, 1, {:unit, 2_000}, attack_reach: true)
     end
 
+    test "a support skill on another player's homunculus is refused silently" do
+      stub(Combat, :resolve_combatant, fn :player, 1000 -> {:ok, :caster} end)
+      stub(Combat, :resolve_combatant, fn {:homunculus, 77} -> {:ok, :homunculus} end)
+
+      stub(Combat, :resolve_target_position, fn {:homunculus, 77} ->
+        {:ok, :homunculus, {11, 10, "prontera"}}
+      end)
+
+      stub(Targeting, :direct_support?, fn :caster, :homunculus -> false end)
+      gs = game_state(100, %{73 => 1})
+
+      assert {:error, :target_restricted} =
+               Interpreter.preflight_cast(gs, 73, 1, {:unit, {:homunculus, 77}})
+
+      stub(Targeting, :direct_support?, fn :caster, :homunculus -> true end)
+
+      refute match?(
+               {:error, :target_restricted},
+               Interpreter.preflight_cast(gs, 73, 1, {:unit, {:homunculus, 77}})
+             )
+    end
+
     test "ending an active toggle skips the rest of its cast-begin conditions and its SP" do
       gs = game_state(0, %{135 => 1})
 

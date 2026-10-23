@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharm do
     display_name: "Wink of Charm",
     max_level: 1,
     target_type: :target_any,
+    support: true,
     damage_type: :no_damage,
     range: 9,
     sp_cost: [40],

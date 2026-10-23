@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
     display_name: "Absorb Spirit Sphere",
     max_level: 1,
     target_type: :target_any,
+    support: true,
     range: 9,
     sp_cost: [5],
     cast_time: [renewal: [], pre_renewal: [2_000]],

@@ -79,7 +79,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `status` is active, using the skill again only ends it, so its cast-begin
   checks after the weight limit and its whole requirement are skipped.
   `no_target_self` mirrors the NoTargetSelf flag: a player cannot aim the skill
-  at themselves. Both are mode-keyable.
+  at themselves. Both are mode-keyable. `support` marks a `:target_any` skill
+  whose DB TargetType is Support (every `:target_ally` skill is); see
+  `support?/1`.
 
   `vulture_range` marks a skill whose cast range grows with the caster's
   Vulture's Eye: the interpreter adds that skill's learned level to the
@@ -215,6 +217,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             status: nil,
             toggleable: false,
             no_target_self: false,
+            support: false,
             quest_skill: false,
             quest_owner_job: nil
 
@@ -274,6 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           status: atom() | nil,
           toggleable: boolean(),
           no_target_self: boolean(),
+          support: boolean(),
           quest_skill: boolean(),
           quest_owner_job: atom() | nil
         }
@@ -346,6 +350,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     status: :atom,
     toggleable: :boolean,
     no_target_self: :boolean,
+    support: :boolean,
     quest_skill: :boolean,
     quest_owner_job: :atom
   }
@@ -402,6 +407,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     status: nil,
     toggleable: false,
     no_target_self: false,
+    support: false,
     quest_skill: false,
     quest_owner_job: nil
   }
@@ -509,6 +515,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
         raise ArgumentError, "unknown quest_owner_job #{inspect(owner)} in #{inspect(module)}"
     end
   end
+
+  @doc "Whether the skill's DB TargetType is Support."
+  @spec support?(t()) :: boolean()
+  def support?(%__MODULE__{target_type: :target_ally}), do: true
+  def support?(%__MODULE__{support: support}), do: support
 
   @doc """
   The skill's cast type: a ground skill is `:ground`; a self or support skill,

@@ -1642,6 +1642,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_use_target(caster, target, definition),
          :ok <- check_support_status(caster, definition),
          :ok <- check_concealment(caster, target, definition, phase),
+         :ok <- check_homunculus_support(caster, target, definition),
          context = CastContext.build(caster, definition, level, target, :begin),
          :ok <- optional_check(context, :skilluse_check),
          {:ok, prepared} <- castbegin(context, phase == :cast_begin),
@@ -1833,9 +1834,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_target(caster, target, definition),
          :ok <- check_placement(caster, definition, target),
          :ok <- check_cast_end(caster, target, definition, false),
+         :ok <- check_homunculus_support(caster, target, definition),
          :ok <- check_castend_target(caster, target, definition),
          :ok <- check_context_cooldown(context, now) do
       validate_and_prepare(context, false)
+    end
+  end
+
+  # A support skill reaches a homunculus only from its owner: anyone else's is
+  # refused silently, when the use starts and again when a timed cast ends. A
+  # unit that cannot be resolved is left to the presence checks.
+  defp check_homunculus_support(
+         %PlayerState{} = caster,
+         {:unit, {:homunculus, _gid} = ref},
+         definition
+       ) do
+    if Definition.support?(definition) and foreign_homunculus?(caster, ref),
+      do: {:error, :target_restricted},
+      else: :ok
+  end
+
+  defp check_homunculus_support(_caster, _target, _definition), do: :ok
+
+  defp foreign_homunculus?(%PlayerState{character_id: caster_id}, ref) do
+    with {:ok, caster} <- Combat.resolve_combatant(:player, caster_id),
+         {:ok, homunculus} <- Combat.resolve_combatant(ref) do
+      not Targeting.direct_support?(caster, homunculus)
+    else
+      _unresolved -> false
     end
   end
 
