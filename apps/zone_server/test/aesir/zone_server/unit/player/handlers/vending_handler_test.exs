@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.ItemOption
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
@@ -91,7 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       identify: Keyword.get(opts, :identify, 1),
       bound: Keyword.get(opts, :bound, 0),
       craft: Keyword.get(opts, :craft),
-      random_options: %{}
+      random_options: Keyword.get(opts, :random_options, [])
     }
   end
 
@@ -357,6 +358,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert shop_item.creator_kind == :CREATOR_SIGNED
       assert shop_item.creator_id == 10
       assert shop_item.signer_name == "Signer"
+    end
+
+    test "includes the item's random options" do
+      mount_cart()
+      optioned = item(501, 10, random_options: [%{id: 3, value: 5, param: 0}])
+      base = state(learned_skills: learned(@vending_level), cart_map: %{0 => optioned})
+      {:ok, opened} = VendingHandler.open_shop(base, "Cheap Pots", [{0, 5, 100}])
+      UnitRegistry.register_player(opened.game_state, self())
+
+      assert {:ok, %VendingList{items: [shop_item]}} = VendingHandler.build_list(@char_id)
+      assert shop_item.options == [%ItemOption{id: 3, value: 5, param: 0}]
     end
 
     test "returns :error for a vendor with no open shop" do

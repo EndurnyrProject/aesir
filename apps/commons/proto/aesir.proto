@@ -1026,6 +1026,14 @@ message UnequipResult {
   uint32 result = 3;
 }
 
+// One random option slot of an item: the option id (an index into the
+// client's option table), its rolled value and its parameter.
+message ItemOption {
+  int32 id = 1;
+  int32 value = 2;
+  int32 param = 3;
+}
+
 // One inventory slot within an InventoryList.
 message InventoryItem {
   uint32 index = 1;
@@ -1046,6 +1054,9 @@ message InventoryItem {
   string signer_name = 15;
   uint32 creator_id = 16;
   CreatorKind creator_kind = 17;
+  // The item's random option slots in order; a slot with id 0 is empty and the
+  // slots after the last one listed are empty.
+  repeated ItemOption options = 18;
 }
 
 // Server -> client, the full inventory dump (collapses RO ZC_INVENTORY_START/
@@ -1074,6 +1085,9 @@ message ItemAdded {
   string signer_name = 14;
   uint32 creator_id = 15;
   CreatorKind creator_kind = 16;
+  // The item's random option slots in order; a slot with id 0 is empty and the
+  // slots after the last one listed are empty.
+  repeated ItemOption options = 17;
 }
 
 // Why an inventory add was refused. Mirrors the reference `e_additem_result`
@@ -1139,6 +1153,9 @@ message CartItemAdded {
   string signer_name = 14;
   uint32 creator_id = 15;
   CreatorKind creator_kind = 16;
+  // The item's random option slots in order; a slot with id 0 is empty and the
+  // slots after the last one listed are empty.
+  repeated ItemOption options = 17;
 }
 
 // Server -> client, an item was removed from the cart. Mirrors ItemRemoved.
@@ -1278,6 +1295,9 @@ message VendingShopItem {
   string signer_name = 10;
   uint32 creator_id = 11;
   CreatorKind creator_kind = 12;
+  // The item's random option slots in order; a slot with id 0 is empty and the
+  // slots after the last one listed are empty.
+  repeated ItemOption options = 13;
 }
 
 // Server -> client, the full item list of a vendor's shop (reply to VendingListRequest).
@@ -2043,6 +2063,9 @@ message StorageItemAdded {
   uint32 creator_id = 15;
   CreatorKind creator_kind = 16;
   StorageKind kind = 17;
+  // The item's random option slots in order; a slot with id 0 is empty and the
+  // slots after the last one listed are empty.
+  repeated ItemOption options = 18;
 }
 
 // Server -> client, an item was removed from storage. Mirrors CartItemRemoved.

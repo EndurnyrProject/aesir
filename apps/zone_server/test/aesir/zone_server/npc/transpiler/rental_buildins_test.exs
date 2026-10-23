@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.RentalBuildinsTest do
     assert src =~ "refine: 7"
     assert src =~ "card0: 4001"
     assert src =~ "random_options:"
-    assert src =~ "Map.new(\n          Enum.zip("
+    assert src =~ "random_options(\n"
 
     Code.compile_string(src)
     on_exit(fn -> :code.delete(module) end)
@@ -101,10 +101,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.RentalBuildinsTest do
              card1: 4002,
              card2: 4003,
              card3: 4004,
-             random_options: %{
-               "1" => %{val: 50, parm: 7},
-               "2" => %{val: 60, parm: 8}
-             }
+             random_options: [%{id: 1, value: 50, param: 7}, %{id: 2, value: 60, param: 8}]
            ]
 
     definition = %ItemDefinition{id: 2101, aegis_name: "Sword", name: "Sword", type: :weapon}
@@ -116,7 +113,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.RentalBuildinsTest do
       assert opts.card1 == 4002
       assert opts.card2 == 4003
       assert opts.card3 == 4004
-      assert opts.random_options == %{"1" => %{val: 50, parm: 7}, "2" => %{val: 60, parm: 8}}
+
+      assert opts.random_options == [
+               %{id: 1, value: 50, param: 7},
+               %{id: 2, value: 60, param: 8}
+             ]
+
       assert opts.expire_time != nil
 
       item = %InventoryItem{

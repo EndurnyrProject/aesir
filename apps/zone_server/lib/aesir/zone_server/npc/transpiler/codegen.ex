@@ -1587,8 +1587,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     values = read_var(option_values, "[]", env)
     params = read_var(option_params, "[]", env)
 
-    "Map.new(Enum.zip([#{ids}, #{values}, #{params}]), " <>
-      "fn {id, val, parm} -> {to_string(id), %{val: val, parm: parm}} end)"
+    "random_options(#{ids}, #{values}, #{params})"
   end
 
   defp monster_mob({:int, id}, _env), do: "mob_id: #{id}"

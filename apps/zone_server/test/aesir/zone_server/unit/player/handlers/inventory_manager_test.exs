@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManagerTest do
   test "persists item attributes supplied through opts", %{character: char, stats: stats} do
     {:ok, item_def} = ItemManagement.get_item_by_id(@sword)
     expire_time = ~N[2026-08-11 12:00:00]
-    random_options = %{"1" => %{val: 10, parm: 2}}
+    random_options = [%{id: 1, value: 10, param: 2}]
 
     assert {:ok, %{game_state: %{inventory: %{0 => item}}}} =
              InventoryManager.handle_give_item(item_def, 1, state(char.id, stats), %{

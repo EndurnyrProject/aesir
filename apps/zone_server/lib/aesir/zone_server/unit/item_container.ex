@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
       card1: Map.get(opts, :card1, 0),
       card2: Map.get(opts, :card2, 0),
       card3: Map.get(opts, :card3, 0),
-      random_options: Map.get(opts, :random_options, %{}),
+      random_options: Map.get(opts, :random_options, []),
       craft: Map.get(opts, :craft),
       bound: Map.get(opts, :bound, 0),
       favorite: Map.get(opts, :favorite, 0),
@@ -421,6 +421,6 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   defp plain_stack?(%InventoryItem{} = item, nameid) do
     item.nameid == nameid and item.equip == 0 and
       item.card0 == 0 and item.card1 == 0 and item.card2 == 0 and item.card3 == 0 and
-      is_nil(item.craft) and map_size(item.random_options) == 0
+      is_nil(item.craft) and item.random_options == []
   end
 end

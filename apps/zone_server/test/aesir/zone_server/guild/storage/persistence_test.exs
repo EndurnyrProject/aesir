@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Guild.Storage.PersistenceTest do
           card2: 4003,
           card3: 4004,
           craft: craft,
-          random_options: %{"1" => %{"val" => 5, "parm" => 0}},
+          random_options: [%{id: 1, value: 5, param: 0}],
           expire_time: expire_time,
           bound: 2,
           unique_id: 123_456_789,

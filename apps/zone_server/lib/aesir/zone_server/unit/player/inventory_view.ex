@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   """
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Commons.Models.ItemOptions
   alias Aesir.Net.CartInfo
   alias Aesir.Net.CartItemAdded
   alias Aesir.Net.CartItemRemoved
@@ -15,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemAddFailed
   alias Aesir.Net.ItemBound
+  alias Aesir.Net.ItemOption
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.StorageItemAdded
   alias Aesir.Net.StorageItemRemoved
@@ -283,8 +285,23 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       weight: item_weight(item.nameid),
       signer_name: signer_name,
       creator_id: creator_id,
-      creator_kind: creator_kind
+      creator_kind: creator_kind,
+      options: item_options(item.random_options)
     }
+  end
+
+  @doc """
+  Builds the wire option slots of an item's random options.
+
+  Slots keep their positions; a slot with id 0 is empty and goes out as zeros,
+  whatever value it holds.
+  """
+  @spec item_options(ItemOptions.t()) :: [ItemOption.t()]
+  def item_options(options) do
+    Enum.map(options, fn
+      %{id: 0} -> %ItemOption{id: 0, value: 0, param: 0}
+      %{id: id, value: value, param: param} -> %ItemOption{id: id, value: value, param: param}
+    end)
   end
 
   @spec item_weight(integer()) :: non_neg_integer()

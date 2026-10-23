@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Vending do
   """
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Rental
@@ -57,7 +58,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
           identify: integer(),
           attribute: integer(),
           enchant_grade: integer(),
-          craft: map() | nil
+          craft: map() | nil,
+          random_options: ItemOptions.t()
         }
 
   @typedoc "A computed purchase: total cost plus the cart/inventory deltas to apply."
@@ -213,7 +215,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
       identify: item.identify,
       attribute: item.attribute,
       enchant_grade: item.enchant_grade,
-      craft: item.craft
+      craft: item.craft,
+      random_options: item.random_options
     }
   end
 

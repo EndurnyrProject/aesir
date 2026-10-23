@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
     only: [apply_op: 2, no_player!: 1, equipped_index: 2]
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -262,6 +263,34 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
 
   def get_named_item(%Ctx{} = ctx, item_id, target),
     do: apply_op(ctx, {:get_named_item, item_id, target})
+
+  @doc """
+  Builds an item's random options from a script's three option arrays.
+
+  Slot `i` takes element `i` of each array, for as many slots as the id array
+  has elements and at most the item's five; a missing value or parameter is 0.
+  The id and value are cast to 16-bit and the parameter to 8-bit signed
+  integers, the widths of the item's option fields.
+  """
+  @spec random_options([integer()], [integer()], [integer()]) :: ItemOptions.t()
+  def random_options(ids, values, params) do
+    ids
+    |> Enum.take(ItemOptions.max_options())
+    |> Enum.with_index()
+    |> Enum.map(fn {id, i} ->
+      %{
+        id: signed(id, 16),
+        value: signed(Enum.at(values, i, 0), 16),
+        param: signed(Enum.at(params, i, 0), 8)
+      }
+    end)
+    |> ItemOptions.trim()
+  end
+
+  defp signed(value, bits) do
+    <<cast::signed-size(^bits)>> = <<value::size(bits)>>
+    cast
+  end
 
   @doc """
   Gives one time-limited rental item through the session seam.

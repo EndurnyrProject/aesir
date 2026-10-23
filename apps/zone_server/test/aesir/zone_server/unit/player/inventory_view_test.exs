@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryViewTest do
   use Mimic
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.ItemOption
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
@@ -62,6 +63,17 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryViewTest do
     assert InventoryView.item_add_failed(:persistence_failed) == nil
   end
 
+  test "sends the option slots in order, an empty slot as zeros" do
+    options = [%{id: 0, value: 9, param: 1}, %{id: 4, value: -3, param: 2}]
+
+    added = InventoryView.item_added(item(random_options: options), 0)
+
+    assert added.options == [
+             %ItemOption{id: 0, value: 0, param: 0},
+             %ItemOption{id: 4, value: -3, param: 2}
+           ]
+  end
+
   test "projects the bound type on the inventory dump" do
     %{normal: [unbound_view, account_view, char_view]} =
       InventoryView.inventory_list(%{0 => item(), 1 => item(bound: 1), 2 => item(bound: 4)})
@@ -74,7 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryViewTest do
   defp item(attrs \\ []) do
     struct(
       InventoryItem,
-      Map.merge(%{nameid: 501, amount: 1, identify: 1, random_options: %{}}, Map.new(attrs))
+      Map.merge(%{nameid: 501, amount: 1, identify: 1, random_options: []}, Map.new(attrs))
     )
   end
 

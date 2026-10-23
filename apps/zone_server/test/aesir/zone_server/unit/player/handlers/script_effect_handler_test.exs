@@ -454,7 +454,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       definition = item_definition(@sphmask_id, type: :armor)
       stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
 
-      random_options = %{"1" => %{val: 5, parm: 10}}
+      random_options = [%{id: 1, value: 5, param: 10}]
 
       expect(InventoryOps, :add, fn 1000,
                                     %{},

@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Trade.ExchangeTest do
         card0: 4001,
         card1: 4002,
         craft: %{"creator_id" => a.id, "stars" => 2},
-        random_options: %{"1" => %{"val" => 5, "parm" => 1}},
+        random_options: [%{id: 1, value: 5, param: 1}],
         unique_id: 12_345,
         enchant_grade: 2
       })
@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Trade.ExchangeTest do
                card0: 4001,
                card1: 4002,
                craft: %{"creator_id" => creator_id, "stars" => 2},
-               random_options: %{"1" => %{"val" => 5, "parm" => 1}},
+               random_options: [%{id: 1, value: 5, param: 1}],
                unique_id: 12_345,
                enchant_grade: 2
              }

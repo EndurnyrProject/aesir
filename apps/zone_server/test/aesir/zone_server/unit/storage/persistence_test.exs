@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Unit.Storage.PersistenceTest do
           card1: 4002,
           card2: 4003,
           card3: 4004,
-          random_options: %{"1" => %{"val" => 5, "parm" => 0}},
+          random_options: [%{id: 1, value: 5, param: 0}],
           expire_time: expire_time,
           bound: 1,
           unique_id: 123_456_789,

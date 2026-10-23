@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Unit.VendingTest do
       card1: 0,
       card2: 0,
       card3: 0,
-      random_options: %{},
+      random_options: [],
       enchant_grade: 0
     }
 

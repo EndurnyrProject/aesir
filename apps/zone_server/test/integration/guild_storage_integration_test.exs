@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Integration.GuildStorageIntegrationTest do
       guild_fixture(skill_level: 1, member_count: 0)
 
     craft = ItemCraft.to_map(ItemCraft.forged(:fire, 3, master.id))
-    random_options = %{"1" => %{"val" => 5, "parm" => 0}}
+    random_options = [%{id: 1, value: 5, param: 0}]
 
     seed_inventory(master.id, %{
       nameid: @sword,

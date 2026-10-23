@@ -446,7 +446,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
       price: row.price,
       signer_name: signer_name,
       creator_id: creator_id,
-      creator_kind: creator_kind
+      creator_kind: creator_kind,
+      options: InventoryView.item_options(row.random_options)
     }
   end
 

@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Unit.StorageTest do
       card1: 0,
       card2: 0,
       card3: 0,
-      random_options: %{},
+      random_options: [],
       bound: 0
     }
 

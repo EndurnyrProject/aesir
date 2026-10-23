@@ -52,8 +52,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     `0` dismounts, anything else mounts, matching rAthena); any longer form
     stays a stub.
   - `%{shape: :rentitem3}` — an extended rental grant: preserves its fixed
-    refine/card attributes and folds three parallel option arrays into the
-    DSL's `random_options` map; any other arity stays a stub.
+    refine/card attributes and reads three parallel option arrays into the
+    ordered option slots of `random_options/3`; any other arity stays a stub.
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
     → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
     the size/ai tail are dropped.

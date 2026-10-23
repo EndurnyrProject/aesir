@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandlerTest do
       card1: 0,
       card2: 0,
       card3: 0,
-      random_options: %{},
+      random_options: [],
       bound: 0,
       favorite: 0
     }
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandlerTest do
       card1: 0,
       card2: 0,
       card3: 0,
-      random_options: %{},
+      random_options: [],
       bound: 0,
       unique_id: 0,
       enchant_grade: 0

@@ -350,7 +350,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOpsTest do
         attribute: 1,
         card0: @poring_card,
         craft: craft,
-        random_options: %{"1" => %{"val" => 5, "parm" => 0}},
+        random_options: [%{id: 1, value: 5, param: 0}],
         bound: 2,
         unique_id: 123_456,
         enchant_grade: 2
@@ -376,7 +376,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOpsTest do
                attribute: 1,
                card0: @poring_card,
                craft: ^craft,
-               random_options: %{"1" => %{"val" => 5, "parm" => 0}},
+               random_options: [%{id: 1, value: 5, param: 0}],
                bound: 2,
                unique_id: 123_456,
                enchant_grade: 2

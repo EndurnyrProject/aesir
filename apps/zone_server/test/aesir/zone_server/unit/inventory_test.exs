@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
       card1: 0,
       card2: 0,
       card3: 0,
-      random_options: %{}
+      random_options: []
     }
 
     struct(InventoryItem, Map.merge(base, Map.new(attrs)))

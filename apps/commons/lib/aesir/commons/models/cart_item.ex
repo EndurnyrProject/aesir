@@ -11,6 +11,7 @@ defmodule Aesir.Commons.Models.CartItem do
   import Ecto.Changeset
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.ItemOptions
 
   @type t :: %__MODULE__{
           id: integer() | nil,
@@ -25,7 +26,7 @@ defmodule Aesir.Commons.Models.CartItem do
           card1: integer(),
           card2: integer(),
           card3: integer(),
-          random_options: map(),
+          random_options: ItemOptions.t(),
           craft: map() | nil,
           expire_time: NaiveDateTime.t() | nil,
           favorite: integer(),
@@ -51,7 +52,7 @@ defmodule Aesir.Commons.Models.CartItem do
     field :card1, :integer, default: 0
     field :card2, :integer, default: 0
     field :card3, :integer, default: 0
-    field :random_options, :map, default: %{}
+    field :random_options, ItemOptions, default: []
     field :craft, :map
     field :expire_time, :naive_datetime
     field :favorite, :integer, default: 0

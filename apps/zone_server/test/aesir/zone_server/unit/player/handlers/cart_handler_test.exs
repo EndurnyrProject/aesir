@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
       card1: 0,
       card2: 0,
       card3: 0,
-      random_options: %{},
+      random_options: [],
       bound: 0,
       favorite: 0
     }
@@ -378,7 +378,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
         card1: 0,
         card2: 0,
         card3: 0,
-        random_options: %{},
+        random_options: [],
         favorite: 0,
         bound: 0,
         unique_id: 0,
@@ -424,7 +424,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
         card2: 0,
         card3: 0,
         craft: craft,
-        random_options: %{},
+        random_options: [],
         favorite: 0,
         bound: 0,
         unique_id: 0,

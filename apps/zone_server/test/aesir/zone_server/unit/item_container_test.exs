@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
       card1: 0,
       card2: 0,
       card3: 0,
-      random_options: %{}
+      random_options: []
     }
 
     struct(InventoryItem, Map.merge(base, Map.new(attrs)))
@@ -242,7 +242,9 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
     test "random options are not part of a stack's identity" do
       def_ = def!(@red_potion)
       c = container([item(nameid: @red_potion, amount: 5)])
-      source = item(nameid: @red_potion, amount: 1, random_options: %{"1" => %{val: 5, parm: 0}})
+
+      source =
+        item(nameid: @red_potion, amount: 1, random_options: [%{id: 1, value: 5, param: 0}])
 
       assert {:ok, _c, {:stacked, 0, 6}} = move(c, :inventory, def_, 1, source)
       assert {:ok, _c, {:stacked, 0, 6}} = move(c, :storage, def_, 1, source, @storage_room)
