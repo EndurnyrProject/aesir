@@ -70,30 +70,38 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
-  defp register_owned_mob(instance_id, owner_player_id, mob_id, dead? \\ false) do
+  defp register_owned_mob(instance_id, owner_player_id, mob_id, opts \\ []) do
     state =
       struct(MobState,
         instance_id: instance_id,
         owner_player_id: owner_player_id,
         mob_id: mob_id,
-        is_dead: dead?
+        map_name: Keyword.get(opts, :map_name, "prontera"),
+        summon_kind: Keyword.get(opts, :summon_kind, :flora),
+        is_dead: Keyword.get(opts, :dead?, false)
       )
 
     UnitRegistry.register_unit(:mob, instance_id, MobState, state, nil)
   end
 
-  describe "count_living_owned_mobs/2" do
-    test "filters by owner and mob class and reflects unregistering" do
+  describe "count_owned_summons/4" do
+    test "counts one owner's living summons of a kind on one map, and its own class" do
       register_owned_mob(1, 42, 1002)
       register_owned_mob(2, 42, 1002)
       register_owned_mob(3, 43, 1002)
       register_owned_mob(4, 42, 1003)
-      register_owned_mob(5, 42, 1002, true)
+      register_owned_mob(5, 42, 1002, dead?: true)
 
-      assert UnitRegistry.count_living_owned_mobs(42, 1002) == 2
+      register_owned_mob(6, 42, 1002, map_name: "geffen")
+      register_owned_mob(7, 42, 1002, summon_kind: :sphere)
+
+      assert UnitRegistry.count_owned_summons(42, "prontera", :flora, 1002) == {3, 2}
+      assert UnitRegistry.count_owned_summons(42, "prontera", :flora, 1003) == {3, 1}
+      assert UnitRegistry.count_owned_summons(42, "geffen", :flora, 1002) == {1, 1}
+      assert UnitRegistry.count_owned_summons(42, "prontera", :sphere, 1002) == {1, 1}
 
       UnitRegistry.unregister_unit(:mob, 1)
-      assert UnitRegistry.count_living_owned_mobs(42, 1002) == 1
+      assert UnitRegistry.count_owned_summons(42, "prontera", :flora, 1002) == {2, 1}
     end
   end
 

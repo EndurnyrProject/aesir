@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmSpheremine do
   @moduledoc """
   Summons a Marine Sphere at the targeted map cell for thirty seconds.
 
-  The living per-owner cap is checked during skill validation so a rejected
-  cast spends neither SP nor its Marine Sphere Bottle.
+  At most three of the caster's own spheres may stand on the caster's map; the
+  cast is refused at its begin, so a rejected cast spends neither SP nor its
+  Marine Sphere Bottle.
 
   Renewal: a 1.6 s cast plus 0.4 s fixed. Pre-renewal: a 2 s cast. Costs, delay,
   and lifetimes are shared.
@@ -35,17 +36,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmSpheremine do
   @mob_id 1_142
   @cap 3
 
+  @doc "The cast-begin cap: fewer than three of the caster's spheres on its map."
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(%{character_id: owner_id}, {:ground, _x, _y}, _level, _definition) do
-    if UnitRegistry.count_living_owned_mobs(owner_id, @mob_id) < @cap do
-      :ok
-    else
-      {:error, :summon_cap_reached}
-    end
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :summon_cap_reached}
+  def begin_attempt(
+        %{character_id: owner_id, map_name: map_name} = caster,
+        {:ground, _x, _y},
+        _level,
+        _definition
+      ) do
+    {_spheres, mines} = UnitRegistry.count_owned_summons(owner_id, map_name, :sphere, @mob_id)
+
+    if mines < @cap, do: {:ok, caster}, else: {:error, :summon_cap_reached}
   end
 
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
+
+  @impl Active
+  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :invalid_target}
+  def validate(%PlayerState{}, {:ground, _x, _y}, _level, _definition), do: :ok
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
   @impl Active

@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
     caster = caster(%{232 => 5}, @plant_bottle)
     test_pid = self()
 
-    stub(UnitRegistry, :count_living_owned_mobs, fn @caster_id, _mob_id -> 0 end)
+    stub(UnitRegistry, :count_owned_summons, fn @caster_id, _map, _kind, _mob_id -> {0, 0} end)
 
     expect(Coordinator, :summon_mob, 5, fn map, mob_id, x, y, opts ->
       send(test_pid, {:summon, map, mob_id, x, y, opts})
@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
   test "Sphere Mine summons a Marine Sphere for 30 seconds with EXP disabled and drops allowed" do
     caster = caster(%{233 => 5}, @sphere_bottle)
 
-    stub(UnitRegistry, :count_living_owned_mobs, fn @caster_id, 1_142 -> 0 end)
+    stub(UnitRegistry, :count_owned_summons, fn @caster_id, _map, :sphere, 1_142 -> {0, 0} end)
 
     expect(Coordinator, :summon_mob, fn "prontera", 1_142, 11, 10, opts ->
       assert opts[:owner_player_id] == @caster_id
@@ -98,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
 
   test "a capped Cannibalize cast keeps its Plant Bottle and SP" do
     reject(&Coordinator.summon_mob/5)
-    stub(UnitRegistry, :count_living_owned_mobs, fn @caster_id, 1_589 -> 5 end)
+    stub(UnitRegistry, :count_owned_summons, fn @caster_id, _map, :flora, 1_589 -> {5, 5} end)
     caster = caster(%{232 => 1}, @plant_bottle)
 
     assert {:error, :summon_cap_reached} = Interpreter.cast(caster, 232, 1, {:ground, 11, 10})
@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
 
   test "a capped Sphere Mine cast keeps its bottle and SP" do
     reject(&Coordinator.summon_mob/5)
-    stub(UnitRegistry, :count_living_owned_mobs, fn @caster_id, 1_142 -> 3 end)
+    stub(UnitRegistry, :count_owned_summons, fn @caster_id, _map, :sphere, 1_142 -> {3, 3} end)
     caster = caster(%{233 => 1}, @sphere_bottle)
 
     assert {:error, :summon_cap_reached} = Interpreter.cast(caster, 233, 1, {:ground, 11, 10})
@@ -116,8 +116,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
     assert caster.inventory[0].amount == 1
   end
 
+  test "another plant type out refuses the Cannibalize cast while this level's count is free" do
+    reject(&Coordinator.summon_mob/5)
+
+    stub(UnitRegistry, :count_owned_summons, fn @caster_id, "prontera", :flora, 1_589 ->
+      {2, 1}
+    end)
+
+    caster = caster(%{232 => 1}, @plant_bottle)
+
+    assert {:error, :summon_cap_reached} = Interpreter.cast(caster, 232, 1, {:ground, 11, 10})
+    assert caster.stats.current_state.sp == 100
+    assert caster.inventory[0].amount == 1
+  end
+
+  test "Sphere Mine counts only the caster's spheres on its own map" do
+    reject(&Coordinator.summon_mob/5)
+
+    test_pid = self()
+
+    stub(UnitRegistry, :count_owned_summons, fn @caster_id, map, :sphere, 1_142 ->
+      send(test_pid, {:counted, map})
+      {3, 3}
+    end)
+
+    caster = caster(%{233 => 1}, @sphere_bottle)
+
+    assert {:error, :summon_cap_reached} = Interpreter.cast(caster, 233, 1, {:ground, 11, 10})
+    assert_received {:counted, "prontera"}
+  end
+
   test "successful casts consume the bottle and the correct SP" do
-    stub(UnitRegistry, :count_living_owned_mobs, fn @caster_id, _mob_id -> 0 end)
+    stub(UnitRegistry, :count_owned_summons, fn @caster_id, _map, _kind, _mob_id -> {0, 0} end)
     stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts -> {:ok, 9_001} end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
@@ -135,7 +165,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
   end
 
   test "a failed spawn summons nothing and still keeps the cast paid" do
-    stub(UnitRegistry, :count_living_owned_mobs, fn @caster_id, _mob_id -> 0 end)
+    stub(UnitRegistry, :count_owned_summons, fn @caster_id, _map, _kind, _mob_id -> {0, 0} end)
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
     stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->

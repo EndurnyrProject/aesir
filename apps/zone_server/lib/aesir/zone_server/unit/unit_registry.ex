@@ -261,20 +261,65 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     |> Enum.map(&List.first/1)
   end
 
-  @doc "Counts registered living mobs owned by a player and matching a mob class id."
-  @spec count_living_owned_mobs(integer(), integer()) :: non_neg_integer()
-  def count_living_owned_mobs(owner_player_id, mob_id) do
+  @doc """
+  Counts a player's living summons of one kind on one map, and how many of
+  them are the given mob class.
+
+  Returns `{kind_count, class_count}`. Only summons whose `summon_kind` is
+  `summon_kind` are counted, so another plant or another sphere class neither
+  fills nor fails the class cap.
+  """
+  @spec count_owned_summons(integer(), String.t(), atom(), integer()) ::
+          {non_neg_integer(), non_neg_integer()}
+  def count_owned_summons(owner_player_id, map_name, summon_kind, mob_id) do
     :mob
     |> list_units_by_type()
-    |> Enum.count(fn instance_id ->
-      match?(
-        {:ok,
-         {MobState, %MobState{owner_player_id: ^owner_player_id, mob_id: ^mob_id, is_dead: false},
-          _pid}},
-        get_unit(:mob, instance_id)
-      )
+    |> Enum.reduce({0, 0}, fn instance_id, counts ->
+      case get_unit(:mob, instance_id) do
+        {:ok, {_module, %MobState{} = mob, _pid}} ->
+          count_owned_summon(mob, counts, owner_player_id, map_name, summon_kind, mob_id)
+
+        {:ok, _other} ->
+          counts
+
+        {:error, _missing} ->
+          counts
+      end
     end)
   end
+
+  defp count_owned_summon(
+         %MobState{
+           owner_player_id: owner_player_id,
+           map_name: map_name,
+           summon_kind: summon_kind,
+           mob_id: mob_id,
+           is_dead: false
+         },
+         {kind_count, class_count},
+         owner_player_id,
+         map_name,
+         summon_kind,
+         mob_id
+       ),
+       do: {kind_count + 1, class_count + 1}
+
+  defp count_owned_summon(
+         %MobState{
+           owner_player_id: owner_player_id,
+           map_name: map_name,
+           summon_kind: summon_kind,
+           is_dead: false
+         },
+         {kind_count, class_count},
+         owner_player_id,
+         map_name,
+         summon_kind,
+         _mob_id
+       ),
+       do: {kind_count + 1, class_count}
+
+  defp count_owned_summon(_mob, counts, _owner, _map, _kind, _mob_id), do: counts
 
   @doc """
   Gets the total count of units by type.

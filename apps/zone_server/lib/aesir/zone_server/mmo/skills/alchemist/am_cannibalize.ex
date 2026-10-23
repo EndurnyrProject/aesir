@@ -2,8 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCannibalize do
   @moduledoc """
   Cultivates one level-selected plant at the targeted map cell.
 
-  Each plant class has its own living per-owner cap. The cap is checked during
-  skill validation so a rejected cast spends neither SP nor its Plant Bottle.
+  Each plant class has its own living per-owner cap, counted among the
+  caster's own flora summons standing on the caster's map only. The cast is
+  refused at its begin, so a rejected cast spends neither SP nor its Plant
+  Bottle. Another plant class out also refuses the cast: the reference's
+  shipped summon setting enables that rule in both modes.
 
   Renewal: a 1.6 s cast plus 0.4 s fixed. Pre-renewal: a 2 s cast. Costs, delay,
   and lifetimes are shared.
@@ -36,19 +39,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCannibalize do
   @mobs [1_589, 1_579, 1_575, 1_555, 1_590]
   @lifetimes [300_000, 240_000, 180_000, 120_000, 60_000]
 
+  @doc """
+  The cast-begin cap: at most `6 - level` of this level's plant may stand on
+  the caster's map, and no other plant class may be out beside this one.
+  """
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(%{character_id: owner_id}, {:ground, _x, _y}, level, _definition) do
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :summon_cap_reached}
+  def begin_attempt(
+        %{character_id: owner_id, map_name: map_name} = caster,
+        {:ground, _x, _y},
+        level,
+        _definition
+      ) do
     mob_id = Enum.fetch!(@mobs, level - 1)
+    {flora, plants} = UnitRegistry.count_owned_summons(owner_id, map_name, :flora, mob_id)
 
-    if UnitRegistry.count_living_owned_mobs(owner_id, mob_id) < 6 - level do
-      :ok
-    else
-      {:error, :summon_cap_reached}
-    end
+    if plants >= 6 - level or plants != flora,
+      do: {:error, :summon_cap_reached},
+      else: {:ok, caster}
   end
 
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
+
+  @impl Active
+  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :invalid_target}
+  def validate(%PlayerState{}, {:ground, _x, _y}, _level, _definition), do: :ok
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
   @impl Active
