@@ -48,12 +48,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
 
   @participant_sp_cost 10
 
+  @doc "The cast begins only with two eligible companions beside the caster."
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :insufficient_companions}
-  def validate(caster, {:ground, _x, _y}, _level, _definition) do
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :insufficient_companions}
+  def begin_attempt(caster, {:ground, _x, _y}, _level, _definition) do
     if length(companions(caster)) == 2,
-      do: :ok,
+      do: {:ok, caster},
       else: {:error, :insufficient_companions}
   end
 

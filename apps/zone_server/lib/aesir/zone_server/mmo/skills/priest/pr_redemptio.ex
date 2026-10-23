@@ -7,7 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   it counted.
 
   Renewal: 800 SP, a 3.2 s cast plus 0.8 s fixed (DEX does not shorten it), and no
-  further cost. Pre-renewal: a 4 s cast, the caster's whole SP (at least the listed
+  further cost. Pre-renewal: refused when the cast begins while the caster
+  holds less than 1% of the next level's base experience, a 4 s cast, the caster's whole SP (at least the listed
   400), and base experience charged 0.2% of the next level for every revive short of
   five (nothing when five or more are revived).
   """
@@ -122,6 +123,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   end
 
   @classic_revive_limit 5
+  @classic_exp_needed_percent 1
+
+  @doc """
+  Classic only: the cast begins only while the caster holds at least 1% of the
+  base experience the next level needs. Renewal has no such condition.
+  """
+  @impl Active
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :insufficient_exp}
+  def begin_attempt(%PlayerState{stats: %{progression: progression}} = caster, _target, _lv, _def) do
+    if GameMode.mode() == :pre_renewal and short_of_exp?(progression),
+      do: {:error, :insufficient_exp},
+      else: {:ok, caster}
+  end
+
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
+
+  defp short_of_exp?(progression) do
+    next = Leveling.next_base_exp(progression)
+    next > 0 and progression.base_exp * 100 < next * @classic_exp_needed_percent
+  end
 
   @doc "Classic empties the caster's SP: the cost is all of it, never below the listed 400."
   @impl Active

@@ -214,6 +214,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
     assert updated.stats.progression.job_exp == 65_432
   end
 
+  # skill.cpp:8582-8591 (#ifndef RENEWAL): get_percentage_exp(base_exp, next) < exp_cost_redemptio (1).
+  @tag game_mode: :pre_renewal
+  test "classic refuses the cast begin below 1% of the next level's experience" do
+    caster = caster(7)
+    next_level = Leveling.next_base_exp(caster.stats.progression)
+    short = put_in(caster.stats.progression.base_exp, div(next_level, 100) - 1)
+    enough = put_in(caster.stats.progression.base_exp, div(next_level + 99, 100))
+
+    assert {:error, :insufficient_exp} =
+             PrRedemptio.begin_attempt(short, :self, 1, PrRedemptio.definition())
+
+    assert {:ok, ^enough} = PrRedemptio.begin_attempt(enough, :self, 1, PrRedemptio.definition())
+  end
+
+  @tag game_mode: :renewal
+  test "renewal begins the cast with no experience" do
+    empty = put_in(caster(7).stats.progression.base_exp, 0)
+    assert {:ok, ^empty} = PrRedemptio.begin_attempt(empty, :self, 1, PrRedemptio.definition())
+  end
+
   @tag game_mode: :pre_renewal
   test "classic still needs the listed 400 SP" do
     assert %{sp: 1_000} = PrRedemptio.dynamic_cost(caster(7), :self, 1, PrRedemptio.definition())

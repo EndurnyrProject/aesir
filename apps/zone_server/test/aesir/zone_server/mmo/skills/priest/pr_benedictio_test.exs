@@ -161,12 +161,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     register_player(player(1_003, 151, 151, job_id: 4_027))
     register_player(player(1_004, 150, 149, job_id: 4))
 
-    assert :ok = PrBenedictio.validate(caster, {:ground, 160, 160}, 1, PrBenedictio.definition())
+    assert {:ok, _caster} =
+             PrBenedictio.begin_attempt(caster, {:ground, 160, 160}, 1, PrBenedictio.definition())
 
     UnitRegistry.unregister_unit(:player, 1_002)
 
     assert {:error, :insufficient_companions} =
-             PrBenedictio.validate(caster, {:ground, 160, 160}, 1, PrBenedictio.definition())
+             PrBenedictio.begin_attempt(caster, {:ground, 160, 160}, 1, PrBenedictio.definition())
   end
 
   test "any Acolyte-line class is an eligible companion, not only first-job Acolytes" do
@@ -174,24 +175,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     register_player(player(1_001, 149, 150, job_id: 8))
     register_player(player(1_002, 151, 150, job_id: 4_016))
 
-    assert :ok = PrBenedictio.validate(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
+    assert {:ok, _caster} =
+             PrBenedictio.begin_attempt(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
 
     UnitRegistry.unregister_unit(:player, 1_002)
     register_player(player(1_002, 151, 150, job_id: 5))
 
     assert {:error, :insufficient_companions} =
-             PrBenedictio.validate(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
+             PrBenedictio.begin_attempt(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
   end
 
   test "candidate eligibility checks caster SP rather than companion SP and does not require a party" do
     {caster, _west, _east} = register_formation(sp: 10)
 
-    assert :ok = PrBenedictio.validate(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
+    assert {:ok, _caster} =
+             PrBenedictio.begin_attempt(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
 
     caster = put_in(caster.stats.current_state.sp, 9)
 
     assert {:error, :insufficient_companions} =
-             PrBenedictio.validate(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
+             PrBenedictio.begin_attempt(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
   end
 
   test "dead, non-Acolyte, and skill-blocked neighbors are not eligible" do
@@ -207,7 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     end)
 
     assert {:error, :insufficient_companions} =
-             PrBenedictio.validate(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
+             PrBenedictio.begin_attempt(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
   end
 
   test "completion caps the participant set at two and ignores both companion charge failures" do
@@ -344,7 +347,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
   test "the caster's own SP gate is checked before payment, so the paid caster still blesses" do
     test_pid = self()
     {caster, _west, _east} = register_formation(sp: 25)
-    assert :ok = PrBenedictio.validate(caster, {:ground, 160, 160}, 1, PrBenedictio.definition())
+
+    assert {:ok, _caster} =
+             PrBenedictio.begin_attempt(caster, {:ground, 160, 160}, 1, PrBenedictio.definition())
 
     paid = put_in(caster.stats.current_state.sp, 5)
     register_player(real_player(2_001, 160, 160), test_pid)
