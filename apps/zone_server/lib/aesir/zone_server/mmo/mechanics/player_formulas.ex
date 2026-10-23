@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
           smatk: non_neg_integer(),
           res: non_neg_integer(),
           mres: non_neg_integer(),
-          hplus: non_neg_integer(),
+          hplus: integer(),
           crate: non_neg_integer()
         }
 

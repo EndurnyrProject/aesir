@@ -349,7 +349,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
              {1, 1}
   end
 
-  test "classic trait slots are always inert through stats and combat consumers" do
+  test "classic trait slots other than HPlus are always inert through stats and combat consumers" do
     stub(Mechanics, :player_formulas, fn -> PreRenewal end)
     stub(ModifierCalculator, :get_battle_modifiers, fn _, _ -> %{} end)
 
@@ -373,9 +373,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     }
 
     result = Calculator.calculate_combat_stats(stats)
-    zero_slots = Map.new([:patk, :smatk, :res, :mres, :hplus, :crate], &{&1, 0})
+    zero_slots = Map.new([:patk, :smatk, :res, :mres, :crate], &{&1, 0})
 
     assert Map.take(result.combat_stats, Map.keys(zero_slots)) === zero_slots
+    assert result.combat_stats.hplus === 29
 
     zero_crate = put_in(result.combat_stats.crate, 0)
     assert CriticalHits.apply_critical_damage(1_000, zero_crate) === 1_400
@@ -407,6 +408,17 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     assert MagicDamageCalculator.calculate_magic_damage(zero_smatk, defender) ===
              MagicDamageCalculator.calculate_magic_damage(zero_smatk, zero_mres)
+  end
+
+  test "HPlus is the item-script sum plus CRT in renewal and the clamped sum in classic" do
+    values = %{pow: 0, sta: 0, wis: 0, spl: 0, con: 0, crt: 12}
+    bonuses = %{patk: 0, smatk: 0, res: 0, mres: 0, hplus: 5, crate: 0}
+
+    assert Renewal.trait_slots(values, bonuses).hplus === 17
+    assert Renewal.trait_slots(values, %{bonuses | hplus: -20}).hplus === 0
+    assert PreRenewal.trait_slots(values, bonuses).hplus === 5
+    assert PreRenewal.trait_slots(values, %{bonuses | hplus: -20}).hplus === -20
+    assert PreRenewal.trait_slots(values, %{bonuses | hplus: 40_000}).hplus === 32_767
   end
 
   test "HP and SP retain each mode's rate, equipment-stat, and upper-job stages" do

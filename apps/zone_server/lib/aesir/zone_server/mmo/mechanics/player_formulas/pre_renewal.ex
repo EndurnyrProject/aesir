@@ -98,9 +98,15 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
     |> max(1)
   end
 
+  @doc """
+  Classic has no trait stats, so every trait slot is 0 except HPlus: an item
+  script's `bHPlus` still lands on the status (clamped to the signed 16-bit
+  range), and the classic potion-throwing skills read it.
+  """
   @impl true
-  def trait_slots(_values, _bonuses) do
-    %{patk: 0, smatk: 0, res: 0, mres: 0, hplus: 0, crate: 0}
+  def trait_slots(_values, bonuses) do
+    hplus = bonuses.hplus |> max(-32_768) |> min(32_767)
+    %{patk: 0, smatk: 0, res: 0, mres: 0, hplus: hplus, crate: 0}
   end
 
   defp apply_transcendent_bonus(value, true), do: value * 1.25
