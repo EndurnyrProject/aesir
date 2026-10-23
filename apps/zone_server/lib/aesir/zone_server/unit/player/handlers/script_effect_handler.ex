@@ -79,6 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_random_option, atom(), 0..4, ItemOptions.option()}
           | {:failedrefitem, non_neg_integer(), integer()}
           | {:disable_items}
+          | {:enable_items}
           | {:nude}
           | {:getexp, non_neg_integer(), non_neg_integer()}
           | {:set_char_var, atom(), term()}
@@ -386,12 +387,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     {{:ok, state.game_state}, state}
   end
 
-  # `disable_items` (disableitemuse): suppresses inventory item use for the
-  # player while the script runs; `ItemHandler` rejects use requests until the
-  # flag is cleared (a later script or a fresh session).
-  def apply_op({:disable_items}, %{game_state: gs} = state) do
-    commit(state, %{gs | disable_item_use: true})
-  end
+  # `disable_items` / `enable_items` (disableitemuse / enableitemuse): set the
+  # running script's item-use flag, which decides whether the player may use
+  # items, equip and use self skills while the dialog holds them. The flag ends
+  # with the dialog; the next script starts from the mode's default.
+  def apply_op({:disable_items}, state),
+    do: {{:ok, state.game_state}, put_item_flag(state, false)}
+
+  def apply_op({:enable_items}, state), do: {{:ok, state.game_state}, put_item_flag(state, true)}
 
   def apply_op({:getexp, base_exp, job_exp}, state) do
     {:noreply, new_state} =
@@ -762,6 +765,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}
+
+  defp put_item_flag(state, flag), do: Map.put(state, :npc_item_flag, flag)
 
   defp set_option_slot(%{game_state: gs} = state, server_index, position, index, option) do
     item = Map.fetch!(gs.inventory, server_index)

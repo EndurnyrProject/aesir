@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   Handlers set and clear optional slots with struct updates rather than dynamic map keys.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Navigation.Session, as: NavigationSession
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
@@ -39,6 +40,12 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   @typedoc "The pending NPC-dialog interaction lock: `{interaction_pid, monitor_ref, npc_gid}`."
   @type interaction_lock :: {pid(), reference(), non_neg_integer()}
 
+  # Synthetic gid stamped on skill-triggered dialogs (AC_MAKINGARROW's crafting
+  # menu). Outside every real unit-id range (warps 0x4000_0000.., NPCs
+  # 0x5000_0000..0x57FF_FFFF) so it can never collide with a spawned unit; the
+  # client only echoes it back on NpcInteract.
+  @system_dialog_gid 0x6000_0000
+
   @enforce_keys [:game_state, :connection_pid]
   defstruct game_state: nil,
             connection_pid: nil,
@@ -47,6 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             applied_equip_statuses: %{},
             applied_card_unequip_effects: %{},
             interaction_lock: nil,
+            npc_item_flag: nil,
             pending_skill_text_input: nil,
             pending_skill_menu: nil,
             pending_item_skill: nil,
@@ -70,6 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           applied_equip_statuses: %{atom() => Stats.equip_status()},
           applied_card_unequip_effects: %{Stats.card_source_key() => Stats.card_cleanup()},
           interaction_lock: interaction_lock() | nil,
+          npc_item_flag: boolean() | nil,
           pending_skill_text_input: PendingSkillTextInput.t() | nil,
           pending_skill_menu: map() | nil,
           pending_item_skill:
@@ -117,6 +126,52 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   def interaction_blocked?(state) do
     not is_nil(Map.get(state, :interaction_lock)) or
       not is_nil(Map.get(state, :pending_skill_text_input))
+  end
+
+  @doc """
+  The NPC gid of a skill-staged dialog (Arrow Crafting's list). Such a dialog
+  holds the interaction lock but is the skill's menu, not an NPC script.
+  """
+  @spec system_dialog_gid() :: non_neg_integer()
+  def system_dialog_gid, do: @system_dialog_gid
+
+  @doc """
+  Whether an NPC script holds the player in a dialog. A skill-staged dialog is
+  the skill's menu and does not count.
+  """
+  @spec npc_dialog?(map()) :: boolean()
+  def npc_dialog?(state) do
+    case Map.get(state, :interaction_lock) do
+      {_pid, _ref, @system_dialog_gid} -> false
+      nil -> false
+      _lock -> true
+    end
+  end
+
+  @doc """
+  Holds the player in the NPC script dialog `lock`. The script starts with the
+  mode's default item-use flag, whatever an earlier script set.
+  """
+  @spec hold_npc_dialog(map(), interaction_lock()) :: map()
+  def hold_npc_dialog(state, lock),
+    do: Map.merge(state, %{interaction_lock: lock, npc_item_flag: nil})
+
+  @doc "Whether a skill-staged dialog (the skill's own menu) is open."
+  @spec system_dialog?(map()) :: boolean()
+  def system_dialog?(state),
+    do: match?({_pid, _ref, @system_dialog_gid}, Map.get(state, :interaction_lock))
+
+  @doc """
+  Whether the NPC script holding the player lets it use items and self skills.
+  Each script starts with the mode's default, allowed in pre-renewal and
+  refused in renewal, until it enables or disables item use itself.
+  """
+  @spec npc_item_flag?(map()) :: boolean()
+  def npc_item_flag?(state) do
+    case Map.get(state, :npc_item_flag) do
+      nil -> GameMode.mode() == :pre_renewal
+      flag -> flag
+    end
   end
 
   @doc "Whether a labelled menu's client skill/NPC work flag remains held."

@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler do
       {:ok, pid} = Interaction.start(self(), module, base_ctx)
       ref = Process.monitor(pid)
 
-      {:noreply, %{state | interaction_lock: {pid, ref, gid}}}
+      {:noreply, SessionState.hold_npc_dialog(state, {pid, ref, gid})}
     else
       _not_visible_or_no_module -> {:noreply, state}
     end

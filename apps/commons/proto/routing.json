@@ -208,6 +208,7 @@
     {"field": 218, "tag": "skill_unit_move", "message": "SkillUnitMove", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 219, "tag": "item_skill_ready", "message": "ItemSkillReady", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
     {"field": 220, "tag": "memo_request", "message": "MemoRequest", "direction": "c2s", "servers": ["zone"]},
-    {"field": 221, "tag": "item_add_failed", "message": "ItemAddFailed", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
+    {"field": 221, "tag": "item_add_failed", "message": "ItemAddFailed", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 222, "tag": "system_notice", "message": "SystemNotice", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
   ]
 }

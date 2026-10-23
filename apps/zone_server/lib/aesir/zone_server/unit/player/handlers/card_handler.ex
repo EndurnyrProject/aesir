@@ -63,18 +63,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandler do
     card_index = PlayerState.server_index(request.card_index)
     equipment_index = PlayerState.server_index(request.equipment_index)
 
-    compose = CardCompounding.compound(game_state.inventory, card_index, equipment_index)
+    case CardCompounding.compound(game_state.inventory, card_index, equipment_index) do
+      {:ok, next_inventory, change} ->
+        persist_compose(request, card_index, equipment_index, next_inventory, change, state)
 
-    if game_state.disable_item_use do
-      send_compose_result(request, :CARD_COMPOSE_ITEM_USE_DISABLED, state)
-    else
-      case compose do
-        {:ok, next_inventory, change} ->
-          persist_compose(request, card_index, equipment_index, next_inventory, change, state)
-
-        {:error, reason} ->
-          send_compose_result(request, Map.fetch!(@result_codes, reason), state)
-      end
+      {:error, reason} ->
+        send_compose_result(request, Map.fetch!(@result_codes, reason), state)
     end
   end
 

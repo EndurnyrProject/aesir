@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
+  alias Aesir.Net.SystemNotice
   alias Aesir.Net.UnequipResult
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
@@ -63,7 +64,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   Handles an equip request for the item at `server_index` into `position`.
   """
   @spec handle_equip(non_neg_integer(), non_neg_integer(), map()) :: {:noreply, map()}
-  def handle_equip(server_index, position, %{game_state: game_state} = state) do
+  def handle_equip(server_index, position, state) do
+    if equip_refused_in_dialog?(server_index, state) do
+      send_packet(state, %SystemNotice{id: :SYSTEM_NOTICE_ID_CAN_NOT_EQUIP_ITEM})
+      {:noreply, state}
+    else
+      equip(server_index, position, state)
+    end
+  end
+
+  # An NPC dialog whose script refuses item use refuses equipping too, with a
+  # notice and no equip result, once the index is within the inventory.
+  defp equip_refused_in_dialog?(server_index, state) do
+    server_index in 0..(Inventory.capacity() - 1)//1 and SessionState.npc_dialog?(state) and
+      not SessionState.npc_item_flag?(state)
+  end
+
+  defp equip(server_index, position, %{game_state: game_state} = state) do
     ctx = %{
       job_id: game_state.stats.progression.job_id,
       base_level: game_state.stats.progression.base_level,

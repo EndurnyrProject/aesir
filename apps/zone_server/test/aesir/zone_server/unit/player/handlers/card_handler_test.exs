@@ -222,13 +222,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
     refute_received :inventory_changed
   end
 
-  test "compose is rejected while item use is disabled" do
+  test "compose ignores an NPC dialog that refuses item use" do
     stub(Items, :by_id, &item_lookup/1)
-    reject(&InventoryOps.apply_change/4)
 
     card = %InventoryItem{id: 1, nameid: 4001, amount: 1}
     target = %InventoryItem{id: 2, nameid: 1101, amount: 1, identify: 1}
-    state = state(%{7 => card, 3 => target}, %{disable_item_use: true})
+    inventory = %{7 => card, 3 => target}
+
+    state = %{
+      state(inventory)
+      | interaction_lock: {self(), make_ref(), 0x5000_0001},
+        npc_item_flag: false
+    }
+
     request = %CardComposeRequest{card_index: 9, equipment_index: 5}
 
     expect(PlayerState, :server_index, 2, fn
@@ -236,14 +242,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
       5 -> 3
     end)
 
-    assert {:noreply, ^state} = CardHandler.handle_compose(request, state)
+    expect(InventoryOps, :apply_change, fn
+      1000, ^inventory, %{3 => %InventoryItem{card0: 4001}}, {:card_compounded, 7, 3, :card0} ->
+        {:error, :persist_failed}
+    end)
+
+    capture_log(fn ->
+      assert {:noreply, ^state} = CardHandler.handle_compose(request, state)
+    end)
 
     assert_received {:send, :gameplay,
                      {:card_compose_result,
-                      %CardComposeResult{code: :CARD_COMPOSE_ITEM_USE_DISABLED, cards: []}}}
-
-    refute_received {:send, :gameplay, {:item_removed, _}}
-    refute_received {:send, :gameplay, {:param_change, _}}
+                      %CardComposeResult{code: :CARD_COMPOSE_PERSISTENCE_FAILED}}}
   end
 
   defp next_message do

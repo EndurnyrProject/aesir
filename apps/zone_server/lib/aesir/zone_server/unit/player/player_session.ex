@@ -1069,7 +1069,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   # The active NPC interaction ended (close / idle-timeout / crash). Clearing the
-  # lock frees the player to talk to NPCs again; the session always survives
+  # lock frees the player to talk to NPCs again, and the next script starts with
+  # the default item-use flag; the session always survives
   # (this monitor never propagates the interaction's exit). Matched ahead of the
   # connection :DOWN below so a finished dialog isn't mistaken for a dropped
   # connection.
@@ -1078,7 +1079,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
         {:DOWN, ref, :process, _pid, _reason},
         %{interaction_lock: {_lock_pid, ref, _gid}} = state
       ) do
-    {:noreply, %{state | interaction_lock: nil}}
+    {:noreply, Map.merge(state, %{interaction_lock: nil, npc_item_flag: nil})}
   end
 
   @impl true

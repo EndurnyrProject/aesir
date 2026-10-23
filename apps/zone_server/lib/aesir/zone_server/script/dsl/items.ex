@@ -382,15 +382,23 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   end
 
   @doc """
-  Suppresses inventory item use for the player through the session seam
-  (rAthena `disable_items` / `disableitemuse`): while active, item-use requests
-  are rejected until cleared by a later script or a fresh session. Used by
-  shop/item-exchange NPCs so the player cannot consume items mid-dialog. Haltst
-  `:no_player` on a detached ctx.
+  Refuses item use, equipping and self skills for the rest of this script's
+  dialog through the session seam (rAthena `disable_items` / `disableitemuse`).
+  Each script starts from the mode's default: allowed in pre-renewal, refused
+  in renewal. Halts `:no_player` on a detached ctx.
   """
   @spec disable_items(Ctx.t()) :: Ctx.t()
   def disable_items(%Ctx{status: {:error, _}} = ctx), do: ctx
   def disable_items(%Ctx{} = ctx), do: apply_op(ctx, {:disable_items})
+
+  @doc """
+  Allows item use, equipping and self skills for the rest of this script's
+  dialog through the session seam (rAthena `enable_items` / `enableitemuse`).
+  Halts `:no_player` on a detached ctx.
+  """
+  @spec enable_items(Ctx.t()) :: Ctx.t()
+  def enable_items(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def enable_items(%Ctx{} = ctx), do: apply_op(ctx, {:enable_items})
 
   @doc """
   Runs item `item_id`'s use script on the invoking player (rAthena

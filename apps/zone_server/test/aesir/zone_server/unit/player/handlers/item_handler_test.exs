@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ItemSkillReady
   alias Aesir.Net.ItemUseResult
+  alias Aesir.Net.SystemNotice
   alias Aesir.Net.UseItem
   alias Aesir.StatusActionFixture
   alias Aesir.ZoneServer.CharacterPersistence
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Client index 2 maps to server index 0 (the +2 offset).
@@ -558,6 +560,106 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     end
   end
 
+  describe "handle_use_item/2 in an NPC dialog" do
+    @describetag game_mode: :renewal
+    test "renewal refuses item use by default, with the busy notice before the result" do
+      reject(&InventoryOps.remove/4)
+      state = Map.put(state_with_potion(), :interaction_lock, {self(), make_ref(), 0x5000_0001})
+      stub_potion()
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, :gameplay,
+                       {:system_notice, %SystemNotice{id: :SYSTEM_NOTICE_ID_BUSY}}}
+
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false, reason: 4}}}
+    end
+
+    test "renewal allows item use once the script enables it" do
+      stub_potion()
+      expect_potion_consumed()
+
+      state =
+        Map.merge(state_with_potion(), %{
+          interaction_lock: {self(), make_ref(), 0x5000_0001},
+          npc_item_flag: true
+        })
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+    end
+
+    test "a new dialog starts from the default, whatever an earlier script set" do
+      reject(&InventoryOps.remove/4)
+      stub_potion()
+
+      state =
+        state_with_potion()
+        |> Map.put(:npc_item_flag, true)
+        |> SessionState.hold_npc_dialog({self(), make_ref(), 0x5000_0001})
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
+    end
+
+    test "a held work flag refuses item use even when the script enables it" do
+      reject(&InventoryOps.remove/4)
+      stub_potion()
+
+      state =
+        Map.merge(state_with_potion(), %{
+          interaction_lock: {self(), make_ref(), 0x5000_0001},
+          npc_item_flag: true,
+          pending_skill_menu: %{kind: :OPTIONS}
+        })
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
+    end
+
+    test "a skill-staged dialog is the skill's menu, not an NPC dialog" do
+      stub_potion()
+      expect_potion_consumed()
+
+      state =
+        Map.merge(state_with_potion(), %{
+          interaction_lock: {self(), make_ref(), 0x6000_0000},
+          npc_item_flag: false
+        })
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+    end
+  end
+
+  describe "handle_use_item/2 in a pre-renewal NPC dialog" do
+    @describetag game_mode: :pre_renewal
+    test "allows item use by default" do
+      stub_potion()
+      expect_potion_consumed()
+      state = Map.put(state_with_potion(), :interaction_lock, {self(), make_ref(), 0x5000_0001})
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
+    end
+
+    test "refuses item use the script disables, without a notice" do
+      reject(&InventoryOps.remove/4)
+      stub_potion()
+      state = in_item_refusing_dialog(state_with_potion())
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false}}}
+      refute_received {:send, :gameplay, {:system_notice, _}}
+    end
+  end
+
   describe "handle_use_item/2 with item use disabled (script disable_items)" do
     test "rejects card discovery with the existing disabled result and consumes nothing" do
       card = %InventoryItem{id: 1, nameid: 4001, amount: 1}
@@ -573,8 +675,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       stub(Items, :by_id, fn 4001 -> {:ok, definition} end)
       reject(&InventoryOps.remove/4)
 
-      game_state = %{base_state() | inventory: %{0 => card}, disable_item_use: true}
-      state = %{connection_pid: self(), game_state: game_state}
+      game_state = %{base_state() | inventory: %{0 => card}}
+      state = in_item_refusing_dialog(%{connection_pid: self(), game_state: game_state})
 
       assert {:noreply, ^state} = ItemHandler.handle_use_item(2, state)
 
@@ -590,7 +692,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
       reject(&InventoryOps.remove/4)
 
-      state = %{state_with_potion() | game_state: %{base_state() | disable_item_use: true}}
+      state = in_item_refusing_dialog(%{state_with_potion() | game_state: base_state()})
 
       assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
 
@@ -655,6 +757,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
                PacketHandler.handle_message(%UseItem{index: @red_potion_client_index}, state)
     end
   end
+
+  defp stub_potion do
+    ScriptCompiler.compile_all!([item_def(@red_potion_id, "heal(ctx, hp: 50)")])
+    definition = usable_definition(@red_potion_id, "heal(ctx, hp: 50)")
+    stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+  end
+
+  defp expect_potion_consumed do
+    expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+      {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+       {:reduced, @red_potion_slot, 4}}
+    end)
+  end
+
+  defp in_item_refusing_dialog(state),
+    do:
+      Map.merge(state, %{
+        interaction_lock: {self(), make_ref(), 0x5000_0001},
+        npc_item_flag: false
+      })
 
   defp state_with_potion(nameid \\ @red_potion_id) do
     item = %InventoryItem{id: 1, nameid: nameid, amount: 5}

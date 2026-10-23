@@ -198,6 +198,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate successrefitem(ctx, slot, up), to: Items
   defdelegate failedrefitem(ctx, slot), to: Items
   defdelegate disable_items(ctx), to: Items
+  defdelegate enable_items(ctx), to: Items
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   defdelegate getitem2(ctx, item, qty, identify, refine, attr, card1, card2, card3, card4),
     to: ItemGrants

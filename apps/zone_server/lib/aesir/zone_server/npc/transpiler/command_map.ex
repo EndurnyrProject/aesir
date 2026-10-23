@@ -205,6 +205,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "failedrefitem" => %{dsl: "failedrefitem", args: [:equip_slot]},
     "disable_items" => %{shape: :nullary, dsl: "disable_items"},
     "disableitemuse" => %{shape: :nullary, dsl: "disable_items"},
+    "enable_items" => %{shape: :nullary, dsl: "enable_items"},
+    "enableitemuse" => %{shape: :nullary, dsl: "enable_items"},
     "getexp" => %{dsl: "getexp", args: [:int, :int]},
     "resetlvl" => %{dsl: "resetlvl", args: [:int]},
     "resetskill" => %{shape: :nullary, dsl: "reset_skills"},

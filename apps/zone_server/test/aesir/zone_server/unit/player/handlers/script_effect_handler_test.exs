@@ -781,14 +781,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   end
 
   describe "{:disable_items}" do
-    test "sets the item-use suppression flag on the game_state" do
+    test "sets the item-use suppression flag on the session" do
       state = base_state()
 
       {reply, new_state} = ScriptEffectHandler.apply_op({:disable_items}, state)
 
-      assert {:ok, game_state} = reply
-      assert game_state.disable_item_use == true
-      assert new_state.game_state.disable_item_use == true
+      assert {:ok, _game_state} = reply
+      assert new_state.npc_item_flag == false
+    end
+
+    test "{:enable_items} sets the script's item-use flag" do
+      {_reply, new_state} = ScriptEffectHandler.apply_op({:enable_items}, base_state())
+      assert new_state.npc_item_flag == true
     end
   end
 

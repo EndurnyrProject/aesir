@@ -281,6 +281,8 @@ message Envelope {
     MemoRequest memo_request = 220;  // c2s zone
     // 221: an inventory add was refused, with the reference reason
     ItemAddFailed item_add_failed = 221;  // s2c zone gameplay
+    // 222: a client string-table notice the reference sends for a refused request
+    SystemNotice system_notice = 222;  // s2c zone gameplay
   }
 }
 
@@ -1108,6 +1110,30 @@ enum ItemAddResult {
 // "cannot carry" notice.
 message ItemAddFailed {
   ItemAddResult result = 1;
+}
+
+// A client string-table notice. Each value names the reference message the
+// client shows; the colour, where the reference sends one, follows the value.
+enum SystemNoticeId {
+  SYSTEM_NOTICE_ID_UNSPECIFIED = 0;
+  // MSI_BUSY: the player is busy (an NPC dialog refusing an item or skill).
+  SYSTEM_NOTICE_ID_BUSY = 1;
+  // MSI_IMPOSSIBLE_SKILL_AREA, shown cyan: the skill cannot be used in this area.
+  SYSTEM_NOTICE_ID_IMPOSSIBLE_SKILL_AREA = 2;
+  // MSI_CAN_NOT_EQUIP_ITEM, shown red: equipment cannot change right now.
+  SYSTEM_NOTICE_ID_CAN_NOT_EQUIP_ITEM = 3;
+  // NOTIFY_MAPINFO_CANT_TP: teleporting is not allowed on this map.
+  SYSTEM_NOTICE_ID_MAP_CANT_TELEPORT = 4;
+  // NOTIFY_MAPINFO_CANT_MEMO: memorizing is not allowed on this map.
+  SYSTEM_NOTICE_ID_MAP_CANT_MEMO = 5;
+  // NOTIFY_MAPINFO_CANT_USE_SKILL: the skill cannot be used on this map.
+  SYSTEM_NOTICE_ID_MAP_CANT_USE_SKILL = 6;
+}
+
+// Server -> client, caster-only: a client string-table notice the reference
+// sends with `clif_msg`, `clif_msg_color` or `clif_skill_teleportmessage`.
+message SystemNotice {
+  SystemNoticeId id = 1;
 }
 
 // Server -> client, an item was removed from the inventory (replaces RO ZC_DELETE_ITEM_FROM_BODY 0x07FA).

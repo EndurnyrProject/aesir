@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
   alias Aesir.Net.ItemBound
+  alias Aesir.Net.SystemNotice
   alias Aesir.Net.UnequipResult
   alias Aesir.StatusActionFixture
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -89,6 +90,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
 
     assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
   end
+
+  describe "an equip request in an NPC dialog" do
+    @tag game_mode: :renewal
+    test "renewal's default refuses it with the can't-equip notice and no equip result" do
+      state = in_dialog(unidentified_sword_state())
+
+      assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+
+      assert_receive {:send, :gameplay,
+                      {:system_notice, %SystemNotice{id: :SYSTEM_NOTICE_ID_CAN_NOT_EQUIP_ITEM}}}
+
+      refute_received {:send, :gameplay, {:equip_result, _}}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal's default lets it reach the equip checks" do
+      state = in_dialog(unidentified_sword_state())
+
+      assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+
+      assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
+      refute_received {:send, :gameplay, {:system_notice, _}}
+    end
+  end
+
+  defp unidentified_sword_state do
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+    item = %InventoryItem{nameid: 1101, amount: 1, identify: 0}
+    %{connection_pid: self(), game_state: %{game_state | inventory: %{0 => item}}}
+  end
+
+  defp in_dialog(state), do: Map.put(state, :interaction_lock, {self(), make_ref(), 0x5000_0001})
 
   test "rejects an equip while Divest Weapon blocks its slot" do
     game_state = PlayerState.new(%{character() | class: 1, base_level: 99})

@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
   require Logger
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.ItemUseResult
+  alias Aesir.Net.SystemNotice
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -246,6 +248,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   end
 
   defp reject(client_index, reason, %{connection_pid: connection_pid} = state) do
+    if reason == :disabled and GameMode.mode() == :renewal,
+      do: MessageRouter.send_to(connection_pid, %SystemNotice{id: :SYSTEM_NOTICE_ID_BUSY})
+
     MessageRouter.send_to(connection_pid, %ItemUseResult{
       index: client_index,
       ok: false,
@@ -285,15 +290,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
       else: :ok
   end
 
-  # The script `disable_items` buildin suppresses item use while active.
+  # While an NPC dialog holds the player, item use needs the script's item-use
+  # flag and no held work flag.
   @spec item_use_enabled?(map()) :: :ok | {:error, :disabled}
-  defp item_use_enabled?(%{game_state: %PlayerState{disable_item_use: true}}),
-    do: {:error, :disabled}
-
   defp item_use_enabled?(state) do
-    if Map.get(state, :interaction_lock) != nil and SessionState.menu_work_in_progress?(state),
-      do: {:error, :disabled},
-      else: :ok
+    if SessionState.npc_dialog?(state) and
+         (SessionState.menu_work_in_progress?(state) or not SessionState.npc_item_flag?(state)),
+       do: {:error, :disabled},
+       else: :ok
   end
 
   @spec item_use_allowed?(PlayerState.t()) :: :ok | {:error, :status_blocked}

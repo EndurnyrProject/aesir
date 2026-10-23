@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler do
     case NpcEvents.trigger_attached(gid, label, base_ctx, self()) do
       {:ok, pid} ->
         ref = Process.monitor(pid)
-        %{state | interaction_lock: {pid, ref, gid}}
+        SessionState.hold_npc_dialog(state, {pid, ref, gid})
 
       {:error, reason} ->
         Logger.warning("npc owner event: #{inspect(reason)} for #{inspect(label)} (gid #{gid})")

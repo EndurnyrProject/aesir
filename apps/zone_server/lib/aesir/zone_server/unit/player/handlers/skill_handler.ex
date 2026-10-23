@@ -1835,12 +1835,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  # Synthetic gid stamped on skill-triggered dialogs (AC_MAKINGARROW's crafting
-  # menu). Outside every real unit-id range (warps 0x4000_0000.., NPCs
-  # 0x5000_0000..0x57FF_FFFF) so it can never collide with a spawned unit; the
-  # client only echoes it back on NpcInteract.
-  @system_dialog_gid 0x6000_0000
-
   # Starts the Script.Interaction a skill staged on pending_interaction (the
   # same lock-and-monitor wiring as NpcInteractionHandler.talk_to_npc). Dropped
   # when a dialog is already active, mirroring the NPC-click guard.
@@ -1864,11 +1858,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:npc, module}
       )
 
-    base_ctx = %{base_ctx | npc_gid: @system_dialog_gid}
+    gid = SessionState.system_dialog_gid()
+    base_ctx = %{base_ctx | npc_gid: gid}
     {:ok, pid} = Interaction.start(self(), module, base_ctx)
     ref = Process.monitor(pid)
 
-    %{state | game_state: clean_game_state, interaction_lock: {pid, ref, @system_dialog_gid}}
+    %{state | game_state: clean_game_state, interaction_lock: {pid, ref, gid}}
   end
 
   @doc """
