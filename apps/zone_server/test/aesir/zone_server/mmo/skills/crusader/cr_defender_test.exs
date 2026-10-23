@@ -53,14 +53,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
     MobState.new(9003, mob_data, spawn_ref, "prontera", 100, 100)
   end
 
-  describe "validate/4 (player shield gate)" do
+  describe "begin_attempt/4 (player shield gate)" do
     test "rejects a cast without a shield equipped" do
-      assert {:error, :requires_shield} = CrDefender.validate(caster(), :self, 1, %{})
+      assert {:error, :requires_shield} = CrDefender.begin_attempt(caster(), :self, 1, %{})
     end
 
     test "allows a cast with a shield equipped" do
-      assert :ok =
-               CrDefender.validate(
+      assert {:ok, _caster} =
+               CrDefender.begin_attempt(
                  caster(%Equipment{left_hand: @shield_id}),
                  :self,
                  1,
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
 
     test "rejects a cast with a two-handed weapon occupying the left hand" do
       assert {:error, :requires_shield} =
-               CrDefender.validate(
+               CrDefender.begin_attempt(
                  caster(%Equipment{left_hand: @two_handed_spear_id}),
                  :self,
                  1,
@@ -79,9 +79,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
     end
   end
 
-  describe "validate/4 (mob caster bypass)" do
+  describe "begin_attempt/4 (mob caster bypass)" do
     test "always allows a mob caster regardless of equipment" do
-      assert :ok = CrDefender.validate(mob_caster(), :self, 1, %{})
+      assert {:ok, _caster} = CrDefender.begin_attempt(mob_caster(), :self, 1, %{})
     end
   end
 

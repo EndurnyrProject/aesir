@@ -115,16 +115,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       caster = register(player(@crusader_id, job_id: @crusader_class))
       register_homunculus(5001, @crusader_id)
 
+      assert :ok =
+               CrDevotion.skilluse_check(caster, {:unit, {:homunculus, 5001}}, 1, definition())
+
       assert :ok = CrDevotion.validate(caster, {:unit, {:homunculus, 5001}}, 1, definition())
 
       assert {:failed, ^caster, :invalid_target} =
                CrDevotion.cast(caster, {:unit, {:homunculus, 5001}}, 1, definition())
     end
 
-    test "a party member's homunculus passes the party gate through its owner" do
+    test "a party member's homunculus is refused silently before the cast begins" do
       caster = register(player(@crusader_id, job_id: @crusader_class, party_id: 1))
       register(player(4001, party_id: 1))
       register_homunculus(5002, 4001)
+
+      assert {:error, :target_restricted} =
+               CrDevotion.skilluse_check(caster, {:unit, {:homunculus, 5002}}, 1, definition())
 
       assert :ok = CrDevotion.validate(caster, {:unit, {:homunculus, 5002}}, 1, definition())
 
@@ -136,6 +142,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       caster = register(player(@crusader_id, job_id: @crusader_class, party_id: 1))
       register(player(4001, party_id: 2))
       register_homunculus(5003, 4001)
+
+      assert {:error, :target_restricted} =
+               CrDevotion.skilluse_check(caster, {:unit, {:homunculus, 5003}}, 1, definition())
 
       assert {:error, :not_same_party} =
                CrDevotion.validate(caster, {:unit, {:homunculus, 5003}}, 1, definition())
@@ -191,7 +200,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4001}, 2, definition())
       assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4002}, 2, definition())
 
-      # A full devotee set is refused after the requirement is paid.
+      # A full devotee set is refused before the cast begins, and again by the
+      # effect after the requirement is paid.
+      assert {:error, :devotion_slots_full} =
+               CrDevotion.skilluse_check(caster, {:unit, 4003}, 2, definition())
+
+      assert :ok = CrDevotion.skilluse_check(caster, {:unit, 4001}, 2, definition())
+
       assert {:failed, ^caster, :devotion_slots_full} =
                CrDevotion.cast(caster, {:unit, 4003}, 2, definition())
 

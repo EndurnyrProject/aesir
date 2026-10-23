@@ -96,14 +96,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
     end)
   end
 
-  describe "validate/4 (player shield gate)" do
+  describe "begin_attempt/4 (player shield gate)" do
     test "rejects a cast without a shield equipped" do
-      assert {:error, :requires_shield} = CrReflectshield.validate(caster(), :self, 1, %{})
+      assert {:error, :requires_shield} = CrReflectshield.begin_attempt(caster(), :self, 1, %{})
     end
 
     test "rejects a cast with only a weapon equipped" do
       assert {:error, :requires_shield} =
-               CrReflectshield.validate(
+               CrReflectshield.begin_attempt(
                  caster(%Equipment{right_hand: @sword_id}),
                  :self,
                  1,
@@ -112,8 +112,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
     end
 
     test "allows a cast with a shield equipped" do
-      assert :ok =
-               CrReflectshield.validate(
+      assert {:ok, _caster} =
+               CrReflectshield.begin_attempt(
                  caster(%Equipment{left_hand: @shield_id}),
                  :self,
                  1,
@@ -122,9 +122,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
     end
   end
 
-  describe "validate/4 (mob caster exemption)" do
+  describe "begin_attempt/4 (mob caster exemption)" do
     test "always allows a mob caster regardless of shield" do
-      assert :ok = CrReflectshield.validate(mob_caster(), :self, 1, %{})
+      assert {:ok, _caster} = CrReflectshield.begin_attempt(mob_caster(), :self, 1, %{})
     end
   end
 

@@ -62,6 +62,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
                       :baby_crusader2
                     ])
 
+  @doc """
+  Before anything else is checked, a player's Devotion on another player's
+  Homunculus is refused silently, and one on a player not yet devoted is
+  refused with the generic failure when no slot is free.
+  """
+  @impl Active
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, atom()}
+  def skilluse_check(
+        %PlayerState{character_id: crusader_id},
+        {:unit, {:homunculus, gid}},
+        _level,
+        _def
+      ) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {_module, %HomunculusState{owner_character_id: ^crusader_id}, _pid}} -> :ok
+      {:ok, _foreign} -> {:error, :target_restricted}
+      _gone -> {:error, :target_not_found}
+    end
+  end
+
+  def skilluse_check(%PlayerState{character_id: crusader_id}, {:unit, devotee_id}, level, _def)
+      when is_integer(devotee_id) do
+    case fetch_player(devotee_id) do
+      {:ok, _devotee} -> slot_available(crusader_id, devotee_id, level)
+      {:error, _reason} -> :ok
+    end
+  end
+
+  def skilluse_check(_caster, _target, _level, _def), do: :ok
+
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}

@@ -108,21 +108,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
     end
   end
 
-  describe "validate/4 shield gate" do
+  describe "begin_attempt/4 shield gate" do
     test "a player with a shield equipped may cast" do
       caster = player_with_shield()
 
-      assert :ok = CrAutoguard.validate(caster, :self, 1, definition())
+      assert {:ok, _caster} = CrAutoguard.begin_attempt(caster, :self, 1, definition())
     end
 
     test "a player without a shield is refused" do
       caster = player_without_shield()
 
-      assert {:error, :requires_shield} = CrAutoguard.validate(caster, :self, 1, definition())
+      assert {:error, :requires_shield} =
+               CrAutoguard.begin_attempt(caster, :self, 1, definition())
     end
 
     test "a mob caster skips the shield gate" do
-      assert :ok = CrAutoguard.validate(build_mob(9001), :self, 1, definition())
+      assert {:ok, _caster} = CrAutoguard.begin_attempt(build_mob(9001), :self, 1, definition())
     end
   end
 
