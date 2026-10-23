@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
@@ -1820,6 +1822,66 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert arrow[{:left_addrace2, :goblin}] == 100
       refute Map.has_key?(arrow, {:subele, :fire})
       refute Map.has_key?(arrow, :short_atk_rate)
+    end
+
+    test "random option scripts run after the cards with their own values, in the item's hand" do
+      options = %{
+        3 => %Option{id: 3, name: "STR", program: [{:bonus, :str, {:random_option, :value}}]},
+        5 => %Option{
+          id: 5,
+          name: "RACE",
+          program: [{:bonus, {:addrace, :brute}, {:random_option, :param}}]
+        },
+        6 => %Option{id: 6, name: "ELE", program: [{:set, :atk_ele, :water}]},
+        7 => %Option{id: 7, name: "UNSUPPORTED", program: nil}
+      }
+
+      stub(RandomOptions, :option, &Map.fetch(options, &1))
+
+      item = fn id, fields ->
+        struct!(ItemDefinition, [id: id, aegis_name: "opt_#{id}", name: "Opt #{id}"] ++ fields)
+      end
+
+      defs = %{
+        90_141 => item.(90_141, type: :weapon, subtype: :dagger, slots: 1),
+        90_142 => item.(90_142, type: :ammo),
+        90_143 => item.(90_143, type: :card, on_equip: [{:set, :atk_ele, :fire}])
+      }
+
+      stub(ItemManagement, :get_item_by_id, &Map.fetch(defs, &1))
+
+      worn = fn nameid, equip, options ->
+        %{equipped(nameid, equip) | card0: 90_143, random_options: options}
+      end
+
+      equipment = fn rows ->
+        Calculator.calculate_stats(swordman(%Equipment{}, %{}), nil, rows).modifiers.equipment
+      end
+
+      right =
+        equipment.([
+          worn.(90_141, @right_hand, [
+            %{id: 3, value: 5, param: 0},
+            %{id: 0, value: 9, param: 0},
+            %{id: 3, value: 2, param: 0},
+            %{id: 6, value: 0, param: 0},
+            %{id: 7, value: 1, param: 0}
+          ])
+        ])
+
+      assert right[:str] == 7
+      assert right[:atk_ele] == :water
+
+      left = equipment.([worn.(90_141, @left_hand, [%{id: 5, value: 0, param: 4}])])
+      assert left[{:left_addrace, :brute}] == 4
+      refute Map.has_key?(left, {:addrace, :brute})
+
+      arrow =
+        equipment.([
+          %{equipped(90_142, @ammo_pos) | random_options: [%{id: 3, value: 9, param: 0}]}
+        ])
+
+      refute Map.has_key?(arrow, :str)
     end
 
     test "Soul Staff contributes its mode-specific MATK band" do

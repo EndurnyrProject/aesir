@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
@@ -129,8 +130,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @typedoc "Stable identity of one autobonus registration within an inventory row."
   @type autobonus_key :: {pos_integer(), non_neg_integer()}
 
-  @typedoc "Identity of the host or socketed card source that owns an autobonus registration."
-  @type autobonus_source_identity :: {:host, pos_integer()} | {:card, 0..3, pos_integer()}
+  @typedoc """
+  Identity of the source that owns an autobonus registration: the host item,
+  a socketed card, or a random option slot (by slot index and option id; its
+  registration's `item_id` is the host's).
+  """
+  @type autobonus_source_identity ::
+          {:host, pos_integer()} | {:card, 0..3, pos_integer()} | {:option, 0..4, integer()}
 
   @typedoc "An evaluated autobonus registration derived from a worn item."
   @type autobonus_registration :: %{
@@ -175,7 +181,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           card1: integer(),
           card2: integer(),
           card3: integer(),
-          craft: map() | nil
+          craft: map() | nil,
+          random_options: ItemOptions.t()
         }
 
   defstruct base_stats: nil,

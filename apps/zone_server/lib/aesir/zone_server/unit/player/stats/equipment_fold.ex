@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
 
   Reduces the worn inventory rows into the equipment layer of a `Stats` struct:
   the flat item-DB and refine bonuses, each host and in-range card `on_equip`
-  program, the autobonus proc registrations, the direct statuses worn items
+  program, each worn item's random option programs, the autobonus proc
+  registrations, the direct statuses worn items
   desire, the card cleanup effects retained for unequip, and the resolved
   weapon hands. Each program runs with the `:lr_flag` of its slot: the
   ammunition's `:arrow` (it arms no autocast), a left-hand weapon's and every
@@ -25,6 +26,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions.Option
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -91,7 +94,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
           card1: &1.card1,
           card2: &1.card2,
           card3: &1.card3,
-          craft: &1.craft
+          craft: &1.craft,
+          random_options: &1.random_options
         }
       )
 
@@ -120,7 +124,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   # The scripts run in the order `status_calc_pc` runs them: the active
   # autobonus programs, then each worn item's own script by equipment slot (the
   # ammunition's after every other item), then every worn item's cards by
-  # equipment slot and card slot. Their bonuses merge in that order, and a
+  # equipment slot and card slot, then every worn item's random options by
+  # equipment slot and option slot (the ammunition's never run). Their bonuses merge in that order, and a
   # script's `skill_lv` reads see the learned levels joined with what the
   # scripts before it granted. An active autobonus that grants a skill makes
   # the worn scripts run again with that grant visible.
@@ -204,7 +209,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   # Autocasts register in the order the worn scripts run: the active autobonus
   # programs first (attack, then when-hit, then on-skill autobonuses), then each
   # worn item's own script by equipment slot, then every worn item's cards by
-  # equipment slot and card slot. That order decides which entry a duplicate
+  # equipment slot and card slot, then every worn item's random options by
+  # equipment slot and option slot. That order decides which entry a duplicate
   # merges into and which proc resolves first.
   defp register_auto_casts(bonuses, auto_casts) do
     auto_casts
@@ -217,7 +223,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
   # On-hit status bonuses register in the order `status_calc_pc` runs the
   # scripts: the active autobonus programs, each worn item's own script by
   # equipment slot, the ammunition's after every other item, then every worn
-  # item's cards by equipment slot and card slot.
+  # item's cards by equipment slot and card slot, then its random options.
   defp register_add_effs(bonuses, add_effs) do
     registered =
       add_effs
@@ -270,6 +276,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
 
   defp source_phase({:host, _item_id}), do: 1
   defp source_phase({:card, _slot, _item_id}), do: 3
+  defp source_phase({:option, _index, _option_id}), do: 4
 
   defp source_auto_casts([], _item, _card_slot, _source_id), do: []
 
@@ -442,9 +449,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         statuses: %{},
         card_cleanups: %{}
       },
-      &apply_equipment_source(&1, inputs, &2)
+      &apply_source(&1, inputs, &2)
     )
   end
+
+  defp apply_source(%{option: _option} = source, inputs, fold),
+    do: apply_option_source(source, inputs, fold)
+
+  defp apply_source(source, inputs, fold), do: apply_equipment_source(source, inputs, fold)
 
   # A worn item's script sources: its own script, then its in-range cards. The
   # autobonus statements are numbered per worn item across them in that order,
@@ -457,27 +469,104 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats.EquipmentFold do
         host_phase =
           if :ammo in EquipLocation.bitmask_to_location_atoms(item.equip), do: 2, else: 1
 
-        [{item_def, nil} | card_sources(item, item_def)]
-        |> Enum.map_reduce(0, fn {source_def, card_slot}, next_slot ->
-          {program, next_slot} = number_autobonuses(source_def.on_equip || [], next_slot)
+        {sources, next_slot} =
+          [{item_def, nil} | card_sources(item, item_def)]
+          |> Enum.map_reduce(0, fn {source_def, card_slot}, next_slot ->
+            {program, next_slot} = number_autobonuses(source_def.on_equip || [], next_slot)
 
-          source = %{
-            order: source_order(host_phase, slot, card_slot),
-            source_def: source_def,
-            host_def: item_def,
-            card_slot: card_slot,
-            item: item,
-            worn_ordinal: worn_ordinal,
-            program: program
-          }
+            source = %{
+              order: source_order(host_phase, slot, card_slot),
+              source_def: source_def,
+              host_def: item_def,
+              card_slot: card_slot,
+              item: item,
+              worn_ordinal: worn_ordinal,
+              program: program
+            }
 
-          {source, next_slot}
-        end)
-        |> elem(0)
+            {source, next_slot}
+          end)
+
+        sources ++ option_sources(item, host_phase, slot, worn_ordinal, next_slot)
 
       _ ->
         []
     end
+  end
+
+  # The worn item's random options, after every card, in option-slot order:
+  # an empty slot, an unknown option or one without a program runs nothing, and
+  # the ammunition's options never run. Their autobonus statements continue the
+  # item's numbering.
+  defp option_sources(_item, 2, _slot, _worn_ordinal, _next_slot), do: []
+
+  defp option_sources(item, _host_phase, slot, worn_ordinal, next_slot) do
+    item.random_options
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {option, index} -> option_program(option, index) end)
+    |> Enum.map_reduce(next_slot, fn {option, index, program}, next_slot ->
+      {program, next_slot} = number_autobonuses(program, next_slot)
+
+      source = %{
+        order: {4, {slot, index}},
+        option: {index, option},
+        item: item,
+        worn_ordinal: worn_ordinal,
+        program: program
+      }
+
+      {source, next_slot}
+    end)
+    |> elem(0)
+  end
+
+  defp option_program(%{id: 0}, _index), do: []
+
+  defp option_program(%{id: id} = option, index) do
+    case RandomOptions.option(id) do
+      {:ok, %Option{program: program}} when is_list(program) -> [{option, index, program}]
+      _ -> []
+    end
+  end
+
+  # An option script runs with the item's refine, sees the skills granted so
+  # far, reads its own id, value and param, and runs as `:weapon` in an item
+  # worn only in the left hand. Its autocasts carry no card.
+  defp apply_option_source(%{item: item, option: {index, option}} = source, inputs, fold) do
+    locations = EquipLocation.bitmask_to_location_atoms(item.equip)
+    left_only? = :left_hand in locations and :right_hand not in locations
+
+    source_inputs =
+      inputs
+      |> Map.put(:refine, item.refine)
+      |> Map.put(:learned_skills, fold.visible)
+      |> Map.put(:random_option, option)
+      |> put_lr_flag(if(left_only?, do: :weapon))
+
+    result = EquipScript.evaluate(source.program, source_inputs)
+
+    registrations =
+      install_autobonuses(
+        result.autobonuses,
+        fold.registrations,
+        {:option, index, option.id},
+        item.nameid,
+        item,
+        source_inputs,
+        source.worn_ordinal
+      )
+
+    add_effs = if result.add_effs == [], do: [], else: [{source.order, result.add_effs}]
+
+    %{
+      fold
+      | modifier_steps: [result.modifiers | fold.modifier_steps],
+        visible: with_grants(fold.visible, granted_by([{source, result}])),
+        auto_casts: fold.auto_casts ++ Enum.map(result.auto_casts, &{source.order, &1, 0}),
+        add_effs: fold.add_effs ++ add_effs,
+        registrations: registrations,
+        statuses: install_equip_statuses(fold.statuses, result.effects)
+    }
   end
 
   defp source_order(host_phase, slot, nil), do: {host_phase, {slot, -1}}
