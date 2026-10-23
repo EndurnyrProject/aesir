@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptio do
   Pre-renewal: 1 to 3 s cast with no fixed part, 1.1 to 1.5 s after-cast
   delay. The status halves incoming damage (two thirds on PvP and GvG maps).
 
-  In both modes a player cannot cast it on a monster. Monster rows cast it on
+  In both modes a player cannot cast it on a monster, nor on another
+  player's homunculus (refused silently before the cast begins). Monster rows cast it on
   themselves or on a friendly monster, boss allies included, through
   `mob_cast/5`.
   """
@@ -41,10 +42,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptio do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
+
+  @doc """
+  A player may not use it on another player's homunculus: the use is dropped
+  silently before the cast begins.
+  """
+  @impl Active
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def skilluse_check(%PlayerState{character_id: id}, {:unit, target_id}, _level, _definition) do
+    case UnitRegistry.get_unit(:homunculus, homunculus_id(target_id)) do
+      {:ok, {_module, %HomunculusState{owner_character_id: owner_id}, _pid}}
+      when owner_id != id ->
+        {:error, :target_restricted}
+
+      _own_or_not_a_homunculus ->
+        :ok
+    end
+  end
+
+  def skilluse_check(_caster, _target, _level, _definition), do: :ok
+
+  defp homunculus_id({:homunculus, id}), do: id
+  defp homunculus_id(id), do: id
 
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::

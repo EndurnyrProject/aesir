@@ -19,15 +19,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
   cell that ends takes the status from every unit standing on it. Song
   statuses are not granted on its cells. The caster carries `sc_basilica_caster`: rooted, shielded the same way, not knocked
   back by non-boss sources, and only able to recast Basilica, which ends the
-  field instantly with no SP or catalysts but with the after-cast delay
-  (creating it has none). Casting costs 80 to 120 SP plus a Yellow, Red, and
-  Blue Gemstone and a Holy Water, takes 5 to 9 s, and needs a 7x7 area free of
-  walls and of other players and monsters, off Land Protector. The field ends
-  on expiry, cancel, map change, or the caster's death.
-
-  Accepted deviation: the 7x7 checks also run at cast completion, so a monster
-  wandering in during the cast fizzles it (the reference checks only when the
-  cast begins).
+  field instantly with the after-cast delay (creating it has none): the recast
+  needs the SP and the catalysts, spends the SP and keeps the catalysts.
+  Casting costs 80 to 120 SP plus a Yellow, Red, and Blue Gemstone and a Holy
+  Water and takes 5 to 9 s. When the cast begins it needs a 7x7 area free of
+  walls and of other players and monsters, or it fails with the plain skill
+  failure; the area is not checked again when the cast ends. A Land Protector
+  centre fails the effect, sparing the catalysts. The field ends on expiry,
+  cancel, map change, or the caster's death.
 
   Player-only in both modes; no monster row casts it.
   """
@@ -73,7 +72,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -97,22 +95,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
   @field_radius 2
   @clear_radius 3
 
+  @doc """
+  Pre-renewal: a player's cast that raises a sanctuary begins only on a clear
+  7x7 area; ending one checks nothing here.
+  """
   @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :blocked_area | :land_protector}
-  def validate(%PlayerState{character_id: id} = caster, _target, _level, _definition) do
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :skill_failed}
+  def begin_attempt(%PlayerState{character_id: id} = caster, _target, _level, _definition) do
     cond do
-      GameMode.mode() == :renewal or anchored?(id) -> :ok
-      not clear_area?(caster) -> {:error, :blocked_area}
-      true -> :ok
+      GameMode.mode() == :renewal or anchored?(id) -> {:ok, caster}
+      not clear_area?(caster) -> {:error, :skill_failed}
+      true -> {:ok, caster}
     end
   end
 
-  def validate(_caster, _target, _level, _definition), do: :ok
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, Active.caster()} | {:error, atom()}
+          {:ok, Active.caster()}
+          | {:ok, Active.caster(), :no_consume}
+          | {:failed, Active.caster(), atom(), :spare_items}
+          | {:error, atom()}
   def cast(%MobState{}, _target, _level, _definition), do: {:error, :player_only}
 
   def cast(%PlayerState{character_id: id} = caster, _target, level, definition) do
@@ -123,27 +128,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilica do
       :pre_renewal ->
         if anchored?(id) do
           StatusInterpreter.remove_status(:player, id, :sc_basilica_caster)
-          {:ok, caster}
+          {:ok, caster, :no_consume}
         else
           raise_sanctuary(caster, level, definition)
         end
     end
   end
-
-  @doc "Recasting to end the sanctuary spends no SP; creating one costs the listed SP."
-  @impl Active
-  @spec dynamic_cost(Active.caster(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
-  def dynamic_cost(caster, _target, level, definition) do
-    sp = if pre_renewal_anchored?(caster), do: 0, else: Cost.resolve_sp(caster, definition, level)
-    Cost.from_definition(caster, definition, level, sp: sp)
-  end
-
-  @doc "Recasting to end the sanctuary needs no catalysts."
-  @impl Active
-  @spec dynamic_item_cost(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          [map()]
-  def dynamic_item_cost(caster, _target, _level, definition),
-    do: if(pre_renewal_anchored?(caster), do: [], else: definition.item_cost)
 
   @doc "Recasting to end the sanctuary is instant."
   @impl Active

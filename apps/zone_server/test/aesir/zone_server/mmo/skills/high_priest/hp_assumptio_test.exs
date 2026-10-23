@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptio
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -86,6 +87,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
              HpAssumptio.cast(caster, {:unit, @mob_id}, 5, definition())
   end
 
+  test "a player's use on another player's homunculus is dropped before the cast begins",
+       %{caster: caster} do
+    register_homunculus(36_205, @ally_id)
+    register_homunculus(36_206, @caster_id)
+
+    assert {:error, :target_restricted} =
+             HpAssumptio.skilluse_check(caster, {:unit, 36_205}, 1, definition())
+
+    assert :ok = HpAssumptio.skilluse_check(caster, {:unit, 36_206}, 1, definition())
+    assert :ok = HpAssumptio.skilluse_check(caster, {:unit, @ally_id}, 1, definition())
+  end
+
   test "a mob caster passes validation with the executor's adapted target" do
     mob = register_mob(@mob_id, [])
 
@@ -100,6 +113,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpAssumptioTest do
              HpAssumptio.mob_cast(mob, {:unit, :mob, @friend_mob_id}, 5, definition(), %{})
 
     assert StatusStorage.get_status(:mob, @friend_mob_id, :sc_assumptio).val1 == 5
+  end
+
+  defp register_homunculus(gid, owner_id) do
+    homunculus = %HomunculusState{
+      id: gid,
+      world_gid: gid,
+      owner_character_id: owner_id,
+      class_id: 6_001,
+      name: "Lif"
+    }
+
+    :ok = UnitRegistry.register_unit(:homunculus, gid, HomunculusState, homunculus, self())
   end
 
   defp register_mob(id, modes) do

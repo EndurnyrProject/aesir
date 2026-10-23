@@ -13,7 +13,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -117,14 +116,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
   describe "pre-renewal sanctuary" do
     @describetag game_mode: :pre_renewal
 
-    test "through the interpreter: creation spends SP and all four catalysts; the cancel needs none",
+    test "through the interpreter: creation spends SP and all four catalysts; the cancel spends SP and keeps them",
          %{caster: caster} do
+      catalysts =
+        Map.new(Enum.with_index([715, 716, 717, 523]), fn {id, index} ->
+          {index, %InventoryItem{nameid: id, amount: 1, equip: 0}}
+        end)
+
       caster = %{
         caster
-        | inventory:
-            Map.new(Enum.with_index([715, 716, 717, 523]), fn {id, index} ->
-              {index, %InventoryItem{nameid: id, amount: 1, equip: 0}}
-            end),
+        | inventory: catalysts,
           stats: %{
             caster.stats
             | current_state: %{caster.stats.current_state | sp: 500},
@@ -141,32 +142,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
       before = System.monotonic_time(:millisecond)
       anchored = %{anchored | act_delay_until: 0}
 
+      assert {:error, :missing_catalyst} = Interpreter.complete_cast(anchored, 362, 1, :self)
+
+      anchored = %{anchored | inventory: catalysts}
+
       assert {:ok, released} = Interpreter.complete_cast(anchored, 362, 1, :self)
-      assert released.stats.current_state.sp == 420
+      assert released.stats.current_state.sp == 340
+      assert Inventory.held_amount(released.inventory, 717) == 1
       assert released.act_delay_until >= before + 2_000
       refute StatusStorage.has_status?(:player, @caster_id, :sc_basilica_caster)
     end
 
-    test "refuses a wall inside the 7x7 area", %{caster: caster} do
+    test "refuses a wall inside the 7x7 area when the cast begins", %{caster: caster} do
       [{"prontera", map}] = :ets.lookup(EtsTable.table_for(:map_cache), "prontera")
       wall = MapData.set_cell(map, 23, 17, GatType.wall())
       :ets.insert(EtsTable.table_for(:map_cache), {"prontera", wall})
 
-      assert {:error, :blocked_area} = HpBasilica.validate(caster, :self, 1, definition())
+      assert {:error, :skill_failed} = HpBasilica.begin_attempt(caster, :self, 1, definition())
     end
 
-    test "refuses another player or mob within 3 cells", %{caster: caster} do
-      assert :ok = HpBasilica.validate(caster, :self, 1, definition())
+    test "refuses another player or mob within 3 cells when the cast begins", %{caster: caster} do
+      assert {:ok, ^caster} = HpBasilica.begin_attempt(caster, :self, 1, definition())
 
       register_mob(@mob_id, [], {23, 21})
 
-      assert {:error, :blocked_area} = HpBasilica.validate(caster, :self, 1, definition())
+      assert {:error, :skill_failed} = HpBasilica.begin_attempt(caster, :self, 1, definition())
     end
 
     test "a Land Protector centre fails the cast and spares its items", %{caster: caster} do
       :ok = Storage.insert(group(9_301, :sa_landprotector, [{20, 20}], %{land_protector: true}))
 
-      assert :ok = HpBasilica.validate(caster, :self, 1, definition())
+      assert {:ok, ^caster} = HpBasilica.begin_attempt(caster, :self, 1, definition())
 
       assert {:failed, ^caster, :land_protector, :spare_items} =
                HpBasilica.cast(caster, :self, 1, definition())
@@ -187,22 +193,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
       assert group_id == group.group_id
     end
 
-    test "recasting ends the sanctuary and needs no catalysts", %{caster: caster} do
+    test "recasting ends the sanctuary and spares its catalysts", %{caster: caster} do
       definition = definition()
-      assert length(HpBasilica.dynamic_item_cost(caster, :self, 1, definition)) == 4
 
       {:ok, _} = HpBasilica.cast(caster, :self, 1, definition)
 
-      assert HpBasilica.dynamic_item_cost(caster, :self, 1, definition) == []
-      assert {:ok, ^caster} = HpBasilica.cast(caster, :self, 1, definition)
+      assert {:ok, ^caster, :no_consume} = HpBasilica.cast(caster, :self, 1, definition)
       refute StatusStorage.has_status?(:player, @caster_id, :sc_basilica_caster)
     end
 
-    test "the cancel recast is instant, spends no SP, and keeps its delay",
+    test "the cancel recast is instant, keeps its delay, and checks no area",
          %{caster: caster} do
       definition = definition()
 
-      assert %Cost{sp: 100} = HpBasilica.dynamic_cost(caster, :self, 3, definition)
       assert HpBasilica.dynamic_after_cast_delay(caster, :self, 3, definition) == 0
 
       assert HpBasilica.dynamic_cast_time(caster, :self, 3, definition) ==
@@ -210,15 +213,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.HighPriest.HpBasilicaTest do
 
       {:ok, _} = HpBasilica.cast(caster, :self, 3, definition)
 
-      assert %Cost{sp: 0} = HpBasilica.dynamic_cost(caster, :self, 3, definition)
-
       assert HpBasilica.dynamic_after_cast_delay(caster, :self, 3, definition) == 4_000
 
       assert HpBasilica.dynamic_cast_time(caster, :self, 3, definition) ==
                %{cast_time: 0, fixed_cast_time: 0}
 
       register_mob(@mob_id, [], {21, 20})
-      assert :ok = HpBasilica.validate(caster, :self, 3, definition)
+      assert {:ok, ^caster} = HpBasilica.begin_attempt(caster, :self, 3, definition)
     end
 
     test "grants non-enemies on it the status for the sanctuary's full lifetime, never the caster",

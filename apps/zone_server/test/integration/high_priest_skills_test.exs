@@ -197,8 +197,8 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
       assert SkillUnitStorage.get(group_id)
     end
 
-    test "the caster can only recast, which ends the field for free with the after-cast delay" do
-      %{priest: priest, ally: ally} = party_pair(catalysts: true)
+    test "the caster can only recast, which ends the field for its SP, keeping the catalysts, with the after-cast delay" do
+      %{priest: priest, ally: ally} = party_pair(catalysts: 2)
       group_id = raise_sanctuary(priest)
       walk_in(ally, {151, 150})
       sp = current_sp(priest)
@@ -219,7 +219,8 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
              end)
 
       state = get_player_state(priest.pid)
-      assert state.stats.current_state.sp == sp
+      assert state.stats.current_state.sp == sp - 80
+      for id <- @catalysts, do: assert(holds?(priest, id))
       assert state.act_delay_until >= before + 2_000
     end
 
@@ -429,10 +430,12 @@ defmodule Aesir.ZoneServer.Integration.HighPriestSkillsTest do
 
   # With catalysts the ally waits outside the 7x7 the sanctuary needs clear.
   defp party_pair(opts \\ []) do
-    catalysts? = Keyword.get(opts, :catalysts, false)
+    catalysts = Keyword.get(opts, :catalysts, false)
+    catalysts? = catalysts != false
     priest_char = insert_character("priest", high_priest_attrs(%{}))
+    sets = if catalysts == true, do: 1, else: catalysts
 
-    if catalysts?, do: give_items(priest_char, @catalysts)
+    if catalysts?, do: give_items(priest_char, List.flatten(List.duplicate(@catalysts, sets)))
 
     {:ok, _state} = PartyManager.create("Saints#{priest_char.id}", priest_char)
     party_id = Repo.get(Character, priest_char.id).party_id
