@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
   defp check_health_reserve(%{stats: %{current_state: %{hp: hp}}}, level, definition) do
     if hp > Enum.at(definition.hp_cost, level - 1),
       do: :ok,
-      else: {:error, :insufficient_hp}
+      else: {:error, :hp_insufficient}
   end
 
   # Script- and NPC-driven casters carry no health pool to reserve against.

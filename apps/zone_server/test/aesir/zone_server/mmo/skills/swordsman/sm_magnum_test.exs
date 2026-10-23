@@ -102,12 +102,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
     assert SmMagnum.castend_requirement(caster_with_hp(21), :self, 1, definition()) == :ok
 
     assert SmMagnum.castend_requirement(caster_with_hp(20), :self, 1, definition()) ==
-             {:error, :insufficient_hp}
+             {:error, :hp_insufficient}
 
     assert SmMagnum.castend_requirement(caster_with_hp(17), :self, 10, definition()) == :ok
 
     assert SmMagnum.castend_requirement(caster_with_hp(16), :self, 10, definition()) ==
-             {:error, :insufficient_hp}
+             {:error, :hp_insufficient}
   end
 
   defp definition do
