@@ -34,12 +34,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaidTest do
       }
       |> Aesir.TestMob.publish(max_hp: 1, max_sp: 0)
 
-    assert {:error, :requires_hiding} = RgRaid.validate(player, :self, 1, RgRaid.definition())
+    assert {:error, :requires_hiding} =
+             RgRaid.begin_attempt(player, :self, 1, RgRaid.definition())
 
     :ok = StatusStorage.apply_status(:player, player.character_id, :sc_hiding)
 
-    assert :ok = RgRaid.validate(player, :self, 1, RgRaid.definition())
-    assert :ok = RgRaid.validate(mob, :self, 1, RgRaid.definition())
+    assert {:ok, ^player} = RgRaid.begin_attempt(player, :self, 1, RgRaid.definition())
+    assert {:ok, ^mob} = RgRaid.begin_attempt(mob, :self, 1, RgRaid.definition())
   end
 
   @tag game_mode: :renewal

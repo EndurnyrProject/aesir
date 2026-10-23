@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
 
   Both modes roll 10 times level plus DEX/2 plus LUK/2 plus twice the level gap
   per mille for 8 to 10 times the target level zeny, 15 SP, and a 0.5 s delay.
+  A target that is not a monster, or a status-immune monster, fails with the
+  plain skill failure when the cast ends, before anything is spent; a monster
+  already mugged fails the same way once the SP is spent.
   A success then deals the monster a zero-damage long weapon hit (aggro, coma,
   and the normal-attack additional effects such as Enchant Poison).
   """
@@ -25,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -34,14 +38,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
 
   @mug_hit_flag BattleFlags.build(:weapon, :long, false)
 
+  @doc """
+  The cast-end check: only a monster that is not status immune can be mugged;
+  anything else fails with the plain skill failure before anything is spent.
+  """
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :invalid_target}
+          :ok | {:error, :skill_failed}
   def validate(_caster, {:unit, target_id}, _level, _definition) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :ok, else: {:error, :invalid_target}
+    case UnitRegistry.get_unit(:mob, target_id) do
+      {:ok, {_module, %MobState{} = mob, _pid}} ->
+        if MobState.status_immune?(mob), do: {:error, :skill_failed}, else: :ok
+
+      {:ok, _unit} ->
+        :ok
+
+      {:error, _not_found} ->
+        {:error, :skill_failed}
+    end
   end
 
-  def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
+  def validate(_caster, _target, _level, _definition), do: {:error, :skill_failed}
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -52,6 +69,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
         {:ok, zeny} ->
           mugged = %{caster | zeny: min(caster.zeny + zeny, Zeny.max_zeny())}
           {:ok, Combat.execute_zero_damage_hit(mugged, target_id, @mug_hit_flag)}
+
+        {:error, reason} when reason in [:immune, :no_coin] ->
+          {:failed, caster, :skill_failed}
 
         # The reference reports the failed roll from inside the implementation.
         {:error, reason} ->

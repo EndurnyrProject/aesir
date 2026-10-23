@@ -1,13 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
   use ExUnit.Case, async: false
 
+  import Aesir.TestEtsSetup
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.MobManagement
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -17,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
   @target_id 2_000
 
   setup :verify_on_exit!
+  setup :setup_ets_tables
 
   setup do
     Catalog.reload()
@@ -55,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
       {:error, :no_coin}
     end)
 
-    assert {:failed, ^mugged, :no_coin} =
+    assert {:failed, ^mugged, :skill_failed} =
              RgStealcoin.cast(mugged, {:unit, @target_id}, 6, RgStealcoin.definition())
   end
 
@@ -76,11 +82,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
              RgStealcoin.cast(caster(), {:unit, @target_id}, 3, RgStealcoin.definition())
   end
 
-  test "rejects player targets without attempting to mug" do
-    stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> false end)
+  # skill.cpp:4664-4667: a non-monster target fails castend_id_check with USESKILL_FAIL.
+  test "rejects player targets with the plain skill failure without attempting to mug" do
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
     reject(&MobSession.attempt_mug/3)
 
-    assert {:error, :invalid_target} =
+    assert {:error, :skill_failed} =
+             RgStealcoin.validate(caster(), {:unit, @target_id}, 1, RgStealcoin.definition())
+  end
+
+  # skill.cpp:4664-4667: a status-immune monster fails castend_id_check with USESKILL_FAIL.
+  test "refuses a status-immune monster at the cast end without attempting to mug" do
+    {:ok, data} = MobManagement.get_mob_by_id(1002)
+    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5_000, spawn_area: nil}
+    mob = MobState.new(@target_id, data, spawn, "prontera", 1, 1)
+
+    immune = %{
+      mob
+      | calculated: %{
+          mob.calculated
+          | mode: Bitwise.bor(mob.calculated.mode, MobMode.mask([:status_immune]))
+        }
+    }
+
+    reject(&MobSession.attempt_mug/3)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:ok, {MobSession, mob, self()}} end)
+    assert :ok = RgStealcoin.validate(caster(), {:unit, @target_id}, 1, RgStealcoin.definition())
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:ok, {MobSession, immune, self()}} end)
+
+    assert {:error, :skill_failed} =
              RgStealcoin.validate(caster(), {:unit, @target_id}, 1, RgStealcoin.definition())
   end
 
@@ -96,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
 
     reject(&Combat.execute_zero_damage_hit/3)
 
-    assert {:failed, ^caster, :immune} =
+    assert {:failed, ^caster, :skill_failed} =
              RgStealcoin.cast(caster, {:unit, @target_id}, 1, RgStealcoin.definition())
 
     assert caster.zeny == 1_000

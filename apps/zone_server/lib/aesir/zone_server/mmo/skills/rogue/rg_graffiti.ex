@@ -25,11 +25,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGraffiti do
 
   @behaviour Ground
 
-  def validate(%{map_name: map_name}, {:ground, _x, _y}, _level, _definition) do
+  @doc "The cast begins only while no Graffiti stands anywhere on the caster's map."
+  @spec begin_attempt(map(), term(), pos_integer(), map()) ::
+          {:ok, map()} | {:error, :graffiti_already_placed}
+  def begin_attempt(%{map_name: map_name} = caster, {:ground, _x, _y}, _level, _definition) do
     if Enum.any?(Storage.all(), &(&1.map_name == map_name and &1.skill_name == :rg_graffiti)) do
       {:error, :graffiti_already_placed}
     else
-      :ok
+      {:ok, caster}
     end
   end
 

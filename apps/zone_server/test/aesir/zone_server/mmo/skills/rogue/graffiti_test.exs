@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.GraffitiTest do
     assert {:ok, definition} = Catalog.by_id(220)
 
     assert {:error, :graffiti_already_placed} =
-             RgGraffiti.validate(caster(), {:ground, 151, 151}, 1, definition)
+             RgGraffiti.begin_attempt(caster(), {:ground, 151, 151}, 1, definition)
 
     assert [_group] = Storage.all()
   end

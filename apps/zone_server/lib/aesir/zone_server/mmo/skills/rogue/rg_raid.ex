@@ -33,14 +33,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
 
   @behaviour Active
 
+  @doc "A player's cast begins only while hiding; a monster needs no hiding."
   @impl Active
-  def validate(%PlayerState{character_id: caster_id}, _target, _level, _definition) do
+  def begin_attempt(%PlayerState{character_id: caster_id} = caster, _target, _level, _def) do
     if StatusStorage.has_status?(:player, caster_id, :sc_hiding),
-      do: :ok,
+      do: {:ok, caster},
       else: {:error, :requires_hiding}
   end
 
-  def validate(%MobState{}, _target, _level, _definition), do: :ok
+  def begin_attempt(%MobState{} = caster, _target, _level, _definition), do: {:ok, caster}
 
   # Mobs cast RG_RAID via the mob-skill executor, which resolves the row target
   # to a concrete unit (`{:unit, id}`) rather than the `:self` atom the player
