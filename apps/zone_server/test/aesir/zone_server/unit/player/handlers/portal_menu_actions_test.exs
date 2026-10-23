@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PortalMenuActionsTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.SkillRequest
 
   setup :setup_ets_tables
   setup :set_mimic_private
@@ -20,9 +21,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PortalMenuActionsTest do
       pending_skill_menu: %{skill_id: 27, kind: :OPTIONS, work_in_progress?: false}
     }
 
-    for phase <- [:start, :item] do
-      assert {:error, :busy} = SkillHandler.cast_gate(state, 27, phase)
-    end
+    assert {:error, :busy} = SkillHandler.cast_gate(state, 27, :start)
+
+    item_request = %{
+      state
+      | pending_item_skill: %{skill_id: 27, level: 1, keep_requirement?: false}
+    }
+
+    assert SkillRequest.ground(item_request, 27, 1, {10, 10}, 0) == {:refuse, :silent}
   end
 
   test "a portal menu blocks an NPC click but not the OnTouch fallback" do

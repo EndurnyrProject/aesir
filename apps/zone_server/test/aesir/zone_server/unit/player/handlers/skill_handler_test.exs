@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.Net.SkillEffect
   alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
+  alias Aesir.Net.SystemNotice
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapFlags
@@ -39,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
@@ -100,6 +102,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   end
 
   # The player knows `skill_id` at `level`, as a request needs to reach its cast.
+  defp now, do: System.monotonic_time(:millisecond)
+
   defp knowing(%SessionState{} = state, skill_id, level),
     do: put_in(state.game_state.stats.progression.learned_skills[skill_id], level)
 
@@ -1085,7 +1089,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
-      stub(Catalog, :by_id, fn 89 -> {:ok, definition(id: 89, cooldown: [])} end)
+
+      stub(Catalog, :by_id, fn 89 ->
+        {:ok, definition(id: 89, cooldown: [], target_type: :ground)}
+      end)
+
       reject(&Broadcast.to_in_range/5)
       reject(&Broadcast.to_in_range/6)
       expect(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -1899,6 +1907,93 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
+  describe "player request decisions" do
+    setup do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
+      :ok
+    end
+
+    test "a refusal sends its notice and leaves the invincibility" do
+      stub(MapFlags, :get, fn _map, flag -> flag == :noteleport end)
+      reject(&Invincibility.stop/1)
+      reject(&Interpreter.begin_cast/4)
+
+      s = knowing(casting_state(45), 26, 1)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 26, 1, 1000)
+
+      assert_received {:to_player, %SystemNotice{id: :SYSTEM_NOTICE_ID_MAP_CANT_TELEPORT}}
+    end
+
+    test "a delay refusal is silent unless @showdelay is on, then reports the interval" do
+      reject(&Interpreter.begin_cast/4)
+      cooling = put_in(casting_state(45).game_state.skill_cooldowns, %{29 => now() + 60_000})
+
+      SkillHandler.handle_use_skill(cooling, 29, 1, 1000)
+      refute_received {:to_player, _packet}
+
+      SkillHandler.handle_use_skill(put_in(cooling.game_state.show_delay, true), 29, 1, 1000)
+
+      assert_received {:to_player,
+                       %SkillCastFailed{
+                         skill_id: 29,
+                         reason: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
+                       }}
+    end
+
+    test "a request that passes ends the invincibility even when it casts nothing" do
+      expect(Invincibility, :stop, fn state -> state end)
+      reject(&Interpreter.begin_cast/4)
+
+      s = casting_state(45)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 19, 1, 2000)
+    end
+
+    test "a request for another skill clears a pending item skill" do
+      expect(Interpreter, :begin_cast, fn gs, 29, 1, :self -> {:error, :invalid_target, gs} end)
+
+      pending = %{
+        casting_state(45)
+        | pending_item_skill: %{skill_id: 26, level: 1, keep_requirement?: false}
+      }
+
+      assert {:noreply, state} = SkillHandler.handle_use_skill(pending, 29, 1, 1000)
+      assert state.pending_item_skill == nil
+    end
+
+    test "a timed ground cast starts over a sitting player and leaves it seated" do
+      expect(Interpreter, :begin_cast, fn gs, 89, 1, {:ground, 12, 12} ->
+        {:casting, gs,
+         %{
+           skill_id: 89,
+           level: 1,
+           target: {:ground, 12, 12},
+           element: :water,
+           total: 5000,
+           fixed: 0
+         }}
+      end)
+
+      sitting = knowing(casting_state(45, :sitting), 89, 1)
+      assert {:noreply, state} = SkillHandler.handle_use_skill_ground(sitting, 89, 1, 12, 12)
+
+      assert state.game_state.action_state == :sitting
+      assert %{skill_id: 89, timer_ref: timer_ref} = state.game_state.casting
+      Process.cancel_timer(timer_ref)
+    end
+
+    test "a chat-room member's ground request ends the invincibility and casts nothing" do
+      expect(Invincibility, :stop, fn state -> state end)
+      reject(&Interpreter.begin_cast/4)
+
+      s = knowing(casting_state(45), 89, 1)
+      s = put_in(s.game_state.waiting_room, 7)
+      assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
+      refute_received {:to_player, _packet}
+    end
+  end
+
   describe "skill action-gating" do
     test "the reusable gate rechecks a status that lands between staging and resume" do
       state = casting_state(45)
@@ -1937,10 +2032,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                        }}
     end
 
-    test "a no_skill player calling handle_use_skill gets a CastCancel and no cast is driven" do
+    test "a no_skill player calling handle_use_skill is refused silently and no cast is driven" do
       stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, _skill -> false end)
       reject(&Interpreter.begin_cast/4)
-      reject(&Catalog.by_id/1)
 
       test_pid = self()
       stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
@@ -1950,23 +2044,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert {:noreply, ^s} = SkillHandler.handle_use_skill(s, 29, 1, 1000)
 
       assert s.game_state.action_state == :idle
-      assert_received {:to_player, %CastCancel{gid: 1000}}
+      refute_received {:to_player, _packet}
     end
 
-    test "a no_skill player calling handle_use_skill_ground gets a CastCancel and no cast is driven" do
+    test "a no_skill player calling handle_use_skill_ground is refused silently and no cast is driven" do
       stub(StatusInterpreter, :can_use_skill?, fn :player, 1000, _skill -> false end)
       reject(&Interpreter.begin_cast/4)
-      reject(&Catalog.by_id/1)
 
       test_pid = self()
       stub(Broadcast, :to_player, fn 1000, packet -> send(test_pid, {:to_player, packet}) end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
 
-      s = casting_state(45)
+      s = knowing(casting_state(45), 89, 1)
       assert {:noreply, ^s} = SkillHandler.handle_use_skill_ground(s, 89, 1, 12, 12)
 
       assert s.game_state.action_state == :idle
-      assert_received {:to_player, %CastCancel{gid: 1000}}
+      refute_received {:to_player, _packet}
     end
 
     test "an instant skill is rejected while a timed cast is in flight" do
@@ -2481,7 +2574,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
         name: :al_incagi,
         display_name: "Increase AGI",
         max_level: 10,
-        sp_cost: [18]
+        sp_cost: [18],
+        target_type: :target_ally
       },
       fields
     )

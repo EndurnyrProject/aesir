@@ -28,7 +28,8 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
     "repairall" => Aesir.ZoneServer.Gm.Commands.RepairAll,
     "mount" => Aesir.ZoneServer.Gm.Commands.Mount,
     "pvpon" => Aesir.ZoneServer.Gm.Commands.PvpOn,
-    "pvpoff" => Aesir.ZoneServer.Gm.Commands.PvpOff
+    "pvpoff" => Aesir.ZoneServer.Gm.Commands.PvpOff,
+    "showdelay" => Aesir.ZoneServer.Gm.Commands.ShowDelay
   }
 
   @spec dispatch(String.t(), Aesir.ZoneServer.Gm.Command.ctx()) :: :ok

@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
       cooling = put_in(started.game_state.skill_cooldowns, %{@fire_bolt => now() + 60_000})
       refute ended?(Invincibility.end_on_request(cooling, {:skill, @fire_bolt}))
 
-      stub(MapFlags, :get, fn "prontera", :noteleport -> true end)
+      stub(MapFlags, :get, fn "prontera", flag -> flag == :noteleport end)
       refute ended?(Invincibility.end_on_request(started, {:skill, @teleport}))
     end
 
@@ -192,7 +192,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
       storage = put_in(started.game_state.storage, %{})
 
       refute ended?(Invincibility.end_on_request(storage, {:skill, @fire_bolt}))
-      refute ended?(Invincibility.end_on_request(storage, {:ground_skill, @thunderstorm}))
+      assert ended?(Invincibility.end_on_request(storage, {:ground_skill, @thunderstorm}))
       assert ended?(Invincibility.end_on_request(storage, {:skill, @first_aid}))
     end
   end

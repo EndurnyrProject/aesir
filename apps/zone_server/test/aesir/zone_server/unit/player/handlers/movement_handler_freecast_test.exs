@@ -107,6 +107,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerFreecastTest do
     end
   end
 
+  describe "a player who stood up from a ground cast started while seated" do
+    test "is idle with the cast in flight and cancels it on move without Free Cast" do
+      test_pid = self()
+      stub(Broadcast, :to_player, fn 1, packet -> send(test_pid, {:to_player, packet}) end)
+
+      state = casting_state(freecast_level: 0)
+      stood = put_in(state.game_state.action_state, :idle)
+
+      {:noreply, moved} = MovementHandler.handle_request_move(stood, 51, 50)
+
+      assert moved.game_state.casting == nil
+      assert moved.game_state.movement_state == :moving
+      assert_received {:to_player, %CastCancel{gid: 1}}
+    end
+  end
+
   describe "step_delay/3 while a cast is in flight" do
     test "each step costs (175 - 5*lv) percent of its normal delay" do
       # walk_speed 150ms/cell, one straight step: 150 * 150/100 at Free Cast 5.

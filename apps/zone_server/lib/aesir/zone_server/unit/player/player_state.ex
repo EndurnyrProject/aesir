@@ -128,6 +128,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           temp_vars: %{String.t() => term()},
           zeny: integer(),
           quest_log: %{non_neg_integer() => QuestLog.Entry.t()},
+          show_delay: boolean(),
           inventory: %{non_neg_integer() => InventoryItem.t()},
           pending_inventory_persist: [
             {%{non_neg_integer() => InventoryItem.t()}, %{non_neg_integer() => InventoryItem.t()},
@@ -272,6 +273,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # touch rect currently contains the player's cell. Populated on every cell
     # change (never on standing still); cleared on warp/map change.
     inside_npc_areas: MapSet.new(),
+
+    # Whether act delay and cooldown refusals are reported to the player
+    # (`@showdelay`); off by default, ephemeral.
+    show_delay: false,
 
     # Inventory keyed by stable session index
     inventory: %{},

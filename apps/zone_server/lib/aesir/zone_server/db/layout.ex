@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Db.Layout do
     "refine/refine.yml" => {:file, false, "aesir.import.refine"},
     "mob_skills/mob_skills.yml" => {:file, false, "aesir.import.mob_skills"},
     "status_calc_flags.yml" => {:file, false, "aesir.import.status_calc_flags"},
+    "skill_nocast.yml" => {:file, false, "aesir.import.skill_nocast"},
     "arrows.yml" => {:file, true, "aesir.import.arrows"},
     "map_flags.yml" => {:file, true, nil},
     "map_flags/scripts.yml" => {:file, false, "aesir.import.map_flags"},

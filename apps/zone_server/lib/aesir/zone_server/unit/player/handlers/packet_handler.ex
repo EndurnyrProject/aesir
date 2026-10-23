@@ -134,16 +134,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
             when is_struct(state.game_state, PlayerState) and
                    state.game_state.waiting_room != nil
 
-  # Chat-room members cannot walk, use or pick up items, cast, or attack (the
-  # move and attack clauses are separate below); sitting, trading, and room
-  # operations still work.
-  @room_frozen [SkillCast, GroundSkillCast, UseItem, PickupItemRequest]
+  # Chat-room members cannot walk, use or pick up items, or attack (the move and
+  # attack clauses are separate below); sitting, trading, and room operations
+  # still work. Skill requests settle the chat room and a trade themselves.
+  @room_frozen [UseItem, PickupItemRequest]
 
   @trade_frozen [
     MoveRequest,
     ActionRequest,
-    SkillCast,
-    GroundSkillCast,
     UseItem,
     CardComposeRequest,
     EquipItem,
@@ -279,32 +277,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         %SkillCast{skill_id: skill_id, level: level, target_id: target_id},
         %{pending_item_skill: %{skill_id: skill_id}} = state
       ) do
-    state
-    |> Invincibility.end_on_request({:skill, skill_id})
-    |> SkillHandler.handle_use_skill(skill_id, level, target_id)
+    SkillHandler.handle_use_skill(state, skill_id, level, target_id)
   end
 
   # SkillCast - Player casts a targeted skill (protobuf analogue of CZ_USE_SKILL 0x0113)
   def handle_message(%SkillCast{skill_id: 231, level: level, target_id: target_id}, state) do
-    target = potion_pitcher_target(target_id)
-
-    state
-    |> Invincibility.end_on_request({:skill, 231})
-    |> SkillHandler.handle_use_skill(231, level, target)
+    SkillHandler.handle_use_skill(state, 231, level, potion_pitcher_target(target_id))
   end
 
   def handle_message(%SkillCast{skill_id: skill_id, level: level, target_id: target_id}, state) do
-    state
-    |> Invincibility.end_on_request({:skill, skill_id})
-    |> SkillHandler.handle_use_skill(skill_id, level, target_id)
+    SkillHandler.handle_use_skill(state, skill_id, level, target_id)
   end
 
   # GroundSkillCast - Player casts a ground-targeted skill (protobuf analogue of
   # CZ_USE_SKILL_TOGROUND 0x0AF4)
   def handle_message(%GroundSkillCast{skill_id: skill_id, level: level, x: x, y: y}, state) do
-    state
-    |> Invincibility.end_on_request({:ground_skill, skill_id})
-    |> SkillHandler.handle_use_skill_ground(skill_id, level, x, y)
+    SkillHandler.handle_use_skill_ground(state, skill_id, level, x, y)
   end
 
   # SkillTextInputReply - response to a capability-gated staged skill cast.

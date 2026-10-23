@@ -349,6 +349,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:mount, :gm_toggle})
   end
 
+  @doc "Turns the player's act delay and cooldown refusal notices on or off (`@showdelay`)."
+  @spec toggle_show_delay(pid()) :: :ok
+  def toggle_show_delay(pid) do
+    GenServer.cast(pid, {:skill, :toggle_show_delay})
+  end
+
   @doc """
   Applies a status effect to the player.
   Delegates to the StatusEffect.Interpreter and triggers stats recalculation.
@@ -1338,6 +1344,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:mount, :gm_toggle}, state) do
     MountHandler.gm_toggle(state)
+  end
+
+  @impl true
+  def handle_cast({:skill, :toggle_show_delay}, state) do
+    {:noreply, SkillHandler.toggle_show_delay(state)}
   end
 
   # Skill: the spirit-sphere write path (Monk). Summon/consume timed spheres

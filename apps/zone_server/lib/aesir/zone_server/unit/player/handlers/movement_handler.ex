@@ -426,13 +426,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   # skill fires mid-walk (`Mmo.Skills.Sage.SaFreecast`). Without it, moving is still a
   # hard cancel. An invalid transition can only mean the state machine and this
   # clause have drifted apart, so fall back to the cancel rather than walking with
-  # a cast nothing will ever resolve.
+  # a cast nothing will ever resolve. A player who stood up from a ground cast
+  # started while seated is idle with the cast in flight, and moves the same way.
   def handle_request_move(
-        %{game_state: %{action_state: :casting} = game_state} = state,
+        %{game_state: %{action_state: action_state, casting: casting} = game_state} = state,
         dest_x,
         dest_y,
         opts
-      ) do
+      )
+      when action_state == :casting or (action_state == :idle and casting != nil) do
     with true <- SaFreecast.known?(game_state),
          {:ok, moving_game_state} <- PlayerState.transition_to(game_state, :moving) do
       handle_request_move(%{state | game_state: moving_game_state}, dest_x, dest_y, opts)

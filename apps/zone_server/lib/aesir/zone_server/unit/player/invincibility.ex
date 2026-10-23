@@ -16,30 +16,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
   snapshot, so `active?/1` answers from any process.
   """
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.MapFlags
-  alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
-  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
-  alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Mmo.Woe.Rules
-  alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.SkillRequest
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @default_time 3000
-  @vending 41
-  @teleport 26
-  @warp 27
-  @cast_cancel 275
-  @emergency_calls [10_013, 10_015]
-  @autospell 279
-  @basilica 361
   @stone_wait 6
   @burning 7
 
@@ -189,49 +176,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
 
   defp ends_on?(state, :attack), do: alive?(state) and can_act?(state, [0, @burning])
 
-  defp ends_on?(state, {:skill, skill_id}) do
-    item? = item_skill?(state, skill_id)
+  defp ends_on?(state, {:skill, skill_id}),
+    do: SkillRequest.ends_invincibility?(state, :targeted, skill_id)
 
-    not forge_request?(skill_id) and
-      target_type(skill_id) not in [nil, :ground, :passive] and
-      skill_request_allowed?(state, skill_id, item?)
-  end
-
-  defp ends_on?(state, {:ground_skill, skill_id}) do
-    can_act?(state, [0, @burning]) and not sitting?(state) and
-      target_type(skill_id) == :ground and
-      not skill_not_ok?(state, skill_id) and
-      skill_ready?(state, skill_id, item_skill?(state, skill_id), []) and
-      not basilica_locked?(state, skill_id) and
-      not menu_open?(state)
-  end
-
-  # The cooldown and map restrictions that refuse a skill request outright; an
-  # item skill passes the map restrictions.
-  defp skill_not_ok?(state, skill_id) do
-    %PlayerState{map_name: map_name, skill_cooldowns: cooldowns} = state.game_state
-
-    cond do
-      not Cooldown.ready?(cooldowns, skill_id, System.monotonic_time(:millisecond)) -> true
-      item_skill_bypass?(state, skill_id) -> false
-      skill_id == @warp -> MapFlags.get(map_name, :nowarp)
-      skill_id == @teleport -> MapFlags.get(map_name, :noteleport)
-      skill_id in @emergency_calls -> not Rules.ground?(map_name)
-      skill_id == @vending -> npc_near?(state.game_state)
-      true -> false
-    end
-  end
-
-  defp item_skill_bypass?(%{pending_item_skill: %{skill_id: skill_id} = item}, skill_id),
-    do: not item.keep_requirement?
-
-  defp item_skill_bypass?(_state, _skill_id), do: false
+  defp ends_on?(state, {:ground_skill, skill_id}),
+    do: SkillRequest.ends_invincibility?(state, :ground, skill_id)
 
   # Any request but a walk is refused while a dialog, chat room, trade, vending
   # stall or storage window is open, or while a body state other than those
   # listed holds the player.
   defp can_act?(state, free_body_states),
-    do: not dialog_open?(state) and not busy?(state, free_body_states)
+    do: not SessionState.npc_dialog?(state) and not busy?(state, free_body_states)
 
   defp busy?(state, free_body_states) do
     state.trade != nil or state.game_state.waiting_room != nil or
@@ -239,73 +194,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Invincibility do
       body_state(state) not in free_body_states
   end
 
-  # A skill aimed at a unit gets past every busy state while a storage window
-  # is open, as long as it targets the caster itself. An open dialog lets
-  # nothing through that would end the invincibility.
-  defp skill_act_allowed?(state, skill_id) do
-    not dialog_open?(state) and
-      (not busy?(state, [0, @burning]) or (storage_open?(state) and self_skill?(skill_id)))
-  end
-
-  defp skill_ready?(state, skill_id, item?, cast_exceptions) do
-    if state.game_state.casting do
-      skill_id in cast_exceptions
-    else
-      item? or PlayerState.act_ready?(state.game_state, System.monotonic_time(:millisecond))
-    end
-  end
-
-  defp basilica_locked?(state, skill_id) do
-    id = state.game_state.character_id
-
-    GameMode.mode() == :pre_renewal and
-      (StatusStorage.has_status?(:player, id, :sc_basilica) or
-         (skill_id != @basilica and StatusStorage.has_status?(:player, id, :sc_basilica_caster)))
-  end
-
-  defp menu_open?(%{pending_skill_menu: %{skill_id: @autospell}}), do: false
-  defp menu_open?(%{pending_skill_menu: menu}), do: menu != nil
-
-  defp item_skill?(%{pending_item_skill: %{skill_id: skill_id}}, skill_id), do: true
-  defp item_skill?(_state, _skill_id), do: false
-
-  defp npc_near?(%PlayerState{map_name: map_name, x: x, y: y}),
-    do: Proximity.npc_near?(map_name, x, y)
-
-  # The request must be one the player could make right now: awake, standing,
-  # not map-restricted or on cooldown, not locked by Basilica, with no menu open
-  # and, for an item skill, not aimed at the player.
-  defp skill_request_allowed?(state, skill_id, item?) do
-    skill_act_allowed?(state, skill_id) and not sitting?(state) and
-      not skill_not_ok?(state, skill_id) and
-      skill_ready?(state, skill_id, item?, [@cast_cancel]) and
-      not basilica_locked?(state, skill_id) and
-      not menu_open?(state) and
-      not (item? and target_type(skill_id) == :self)
-  end
-
-  # A forge request only asks for the production menu: the reference refuses the
-  # skill-use packet outright, before its spawn protection would end.
-  defp forge_request?(skill_id), do: skill_id in ForgeSkill.skill_ids()
-
-  defp self_skill?(skill_id), do: target_type(skill_id) == :self
-
-  # Vending is a self skill whose use the shop-open request carries.
-  defp target_type(@vending), do: :self
-
-  defp target_type(skill_id) do
-    case Catalog.by_id(skill_id) do
-      {:ok, %{target_type: target_type}} -> target_type
-      :error -> nil
-    end
-  end
-
-  defp dialog_open?(state), do: state.interaction_lock != nil
-
   defp storage_open?(state),
     do: state.game_state.storage != nil or state.guild_storage_ctx != nil
 
-  defp sitting?(state), do: state.game_state.action_state == :sitting
   defp alive?(state), do: state.game_state.action_state != :dead
 
   defp body_state(state),

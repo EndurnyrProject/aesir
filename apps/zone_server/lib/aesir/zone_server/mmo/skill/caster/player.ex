@@ -528,10 +528,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       when skill_id in @guild_skill_range,
       do: guild_request_level(caster, skill_id)
 
-  def request_level(%PlayerState{} = caster, skill_id, requested) do
-    own_level = max(effective_skill_level(caster, skill_id), copied_level(caster, skill_id))
-    min(requested, own_level)
-  end
+  def request_level(%PlayerState{} = caster, skill_id, requested),
+    do: min(requested, own_level(caster, skill_id))
+
+  @doc """
+  The player's own level in a skill: the higher of its learned,
+  equipment-granted and Plagiarism-copied levels, or the guild's level for a
+  guild skill whatever the member's rank.
+  """
+  @spec own_level(PlayerState.t(), integer()) :: non_neg_integer()
+  def own_level(%PlayerState{} = caster, skill_id),
+    do: max(effective_skill_level(caster, skill_id), copied_level(caster, skill_id))
 
   defp guild_request_level(%PlayerState{guild_id: guild_id}, _skill_id)
        when guild_id in [nil, 0],

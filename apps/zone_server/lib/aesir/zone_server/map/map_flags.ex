@@ -228,6 +228,30 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   def gvg?(map_name), do: get(map_name, :gvg) or (agit?() and get(map_name, :gvg_castle))
 
   @doc """
+  Whether `map_name` is versus ground whether or not the agit runs: a PvP,
+  GvG, GvG dungeon, castle or battleground map.
+  """
+  @spec vs2?(map_name()) :: boolean()
+  def vs2?(map_name) do
+    Enum.any?(
+      [:pvp, :gvg_dungeon, :gvg, :gvg_castle, :gvg_te, :gvg_te_castle, :battleground],
+      &get(map_name, &1)
+    )
+  end
+
+  @doc "Whether `map_name` is a GvG map or castle, either kind, whether or not the agit runs."
+  @spec gvg2?(map_name()) :: boolean()
+  def gvg2?(map_name), do: gvg2_no_te?(map_name) or gvg2_te?(map_name)
+
+  @doc "Whether `map_name` is a War of Emperium TE map or castle."
+  @spec gvg2_te?(map_name()) :: boolean()
+  def gvg2_te?(map_name), do: get(map_name, :gvg_te) or get(map_name, :gvg_te_castle)
+
+  @doc "Whether `map_name` is a GvG map or castle outside War of Emperium TE."
+  @spec gvg2_no_te?(map_name()) :: boolean()
+  def gvg2_no_te?(map_name), do: get(map_name, :gvg) or get(map_name, :gvg_castle)
+
+  @doc """
   Merged view of a map's known flags: static flags overlaid by runtime values.
   """
   @spec flags(map_name()) :: %{flag() => boolean()}

@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.Net.SkillCasting
   alias Aesir.Net.SkillCooldown
   alias Aesir.Net.SkillEffect
+  alias Aesir.Net.SystemNotice
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.MapCache
@@ -24,7 +25,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
-  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -58,9 +58,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.SkillRequest
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -69,46 +71,71 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # SA_CASTCANCEL cancels the caster's own in-flight cast, so it is the one skill
-  # that must run while the player is busy in :casting. It is intercepted ahead of
-  # `drive_cast/4` (and therefore ahead of `ensure_idle_for_cast/1`, which would
-  # reject it) and never takes the ordinary cast path.
+  # a request may use while casting. It is intercepted ahead of `drive_cast/4`
+  # (and therefore ahead of `ensure_idle_for_cast/1`, which would reject it) and
+  # never takes the ordinary cast path.
   @cast_cancel_id 275
   @encore_id 305
   @brandish_spear 57
   @auto_counter 61
   @combo_followup_ids [271, 272, 273, 371, 372]
+  @overlaid_states [:sitting, :trading, :vending]
 
+  @doc """
+  Handles a player's request to use a skill on a unit. `SkillRequest.targeted/5`
+  decides it: a refusal sends its reply, and a request that passes ends the
+  invincibility where it should and runs at its decided level, from the
+  pending item skill when it names one. A request decided at level 0 casts
+  nothing. The cast's own gate then refuses silently a dead caster or one a
+  status forbids from using the skill.
+  """
   @spec handle_use_skill(SessionState.t(), integer(), non_neg_integer(), integer() | tuple()) ::
           {:noreply, SessionState.t()}
-  def handle_use_skill(
-        %{pending_item_skill: %{skill_id: skill_id, level: item_level}} = state,
-        skill_id,
-        _requested_level,
-        target_id
-      ) do
-    target = resolve_target(state.game_state, target_id)
-    drive_item_cast(state, skill_id, item_level, target)
+  def handle_use_skill(state, skill_id, level, target_id) do
+    now = System.monotonic_time(:millisecond)
+
+    case SkillRequest.targeted(state, skill_id, level, target_id, now) do
+      {:refuse, reply} -> send_request_reply(state, skill_id, reply)
+      {:use, request} -> state |> accept_request(request) |> run_targeted(skill_id, request)
+    end
   end
 
-  # A targeted request runs at its level (at least 1) capped by the player's
-  # own level in the skill, read once the request passes the session's cast
-  # gate; one that caps to 0 is dropped there without a reply.
-  def handle_use_skill(state, skill_id, level, target_id),
-    do: dispatch_use_skill(state, skill_id, max(level, 1), target_id)
+  defp run_targeted(state, _skill_id, %{level: 0}), do: {:noreply, state}
 
-  defp dispatch_use_skill(%{game_state: game_state} = state, @cast_cancel_id, level, target_id) do
+  defp run_targeted(state, skill_id, %{origin: :item, level: level, target: target_id}),
+    do: drive_item_cast(state, skill_id, level, resolve_target(state.game_state, target_id))
+
+  defp run_targeted(state, skill_id, %{level: level, target: target_id}),
+    do: dispatch_use_skill(state, skill_id, level, target_id)
+
+  # A request that passed ends the invincibility when it should and leaves a
+  # pending item skill behind only for an item skill.
+  defp accept_request(state, request) do
+    state = if request.ends_invincibility?, do: Invincibility.stop(state), else: state
+
+    if request.clears_item_skill? and Map.get(state, :pending_item_skill) != nil,
+      do: %{state | pending_item_skill: nil},
+      else: state
+  end
+
+  defp send_request_reply(state, _skill_id, :silent), do: {:noreply, state}
+
+  defp send_request_reply(state, skill_id, {:fail, reason}) do
+    report_cast_failure(skill_id, state.game_state.character_id, reason)
+    {:noreply, state}
+  end
+
+  defp send_request_reply(state, _skill_id, {:notice, id}) do
+    Broadcast.to_player(state.game_state.character_id, %SystemNotice{id: id})
+    {:noreply, state}
+  end
+
+  defp dispatch_use_skill(state, @cast_cancel_id, level, target_id) do
     case cast_gate(state, @cast_cancel_id, :restricted) do
       {:ok, ready_state} ->
-        case Caster.Player.request_level(game_state, @cast_cancel_id, level) do
-          0 ->
-            {:noreply, state}
-
-          level ->
-            ready_state |> maybe_cancel_combo(@cast_cancel_id, target_id) |> cast_cancel(level)
-        end
+        ready_state |> maybe_cancel_combo(@cast_cancel_id, target_id) |> cast_cancel(level)
 
       {:error, _reason} ->
-        broadcast_cast_cancel(game_state)
         {:noreply, state}
     end
   end
@@ -117,14 +144,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     target = resolve_target(game_state, target_id)
     locked = game_state.combat_target_id
 
-    with {:ok, ready_state} <- cast_gate(state, skill_id),
-         capped when capped > 0 <- Caster.Player.request_level(game_state, skill_id, level) do
-      ready_state
-      |> maybe_cancel_combo(skill_id, target_id)
-      |> drive_cast_after_gate(skill_id, capped, target, locked)
-    else
-      0 -> {:noreply, state}
-      {:error, reason} -> reject_cast_gate(state, skill_id, reason)
+    case cast_gate(state, skill_id, :request) do
+      {:ok, ready_state} ->
+        ready_state
+        |> maybe_cancel_combo(skill_id, target_id)
+        |> drive_cast_after_gate(skill_id, level, target, locked)
+
+      {:error, _reason} ->
+        {:noreply, state}
     end
   end
 
@@ -179,6 +206,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     %{game_state | stats: %{stats | current_state: current}}
   end
 
+  @doc """
+  Handles a player's request to use a ground skill on the cell `(x, y)`.
+  `SkillRequest.ground/5` decides it as `handle_use_skill/4` does. A ground
+  cast also starts while the player sits, trades or vends, overlaid on that
+  state, which it leaves untouched.
+  """
   @spec handle_use_skill_ground(
           SessionState.t(),
           integer(),
@@ -187,30 +220,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           integer()
         ) ::
           {:noreply, SessionState.t()}
-  def handle_use_skill_ground(
-        %{pending_item_skill: %{skill_id: skill_id, level: item_level}} = state,
-        skill_id,
-        _requested_level,
-        x,
-        y
-      ) do
-    drive_item_cast(state, skill_id, item_level, {:ground, x, y})
+  def handle_use_skill_ground(state, skill_id, level, x, y) do
+    now = System.monotonic_time(:millisecond)
+
+    case SkillRequest.ground(state, skill_id, level, {x, y}, now) do
+      {:refuse, reply} -> send_request_reply(state, skill_id, reply)
+      {:use, request} -> state |> accept_request(request) |> run_ground(skill_id, request)
+    end
   end
 
-  # A ground request that passes the session's cast gate runs at its level
-  # capped by the player's own level in the skill, and is dropped there without
-  # a reply when the player has none.
-  def handle_use_skill_ground(%{game_state: game_state} = state, skill_id, level, x, y) do
-    target = {:ground, x, y}
+  # The cast-begin check refuses a chat-room member silently, after the request
+  # has already ended the invincibility.
+  defp run_ground(state, _skill_id, %{level: 0}), do: {:noreply, state}
+
+  defp run_ground(%{game_state: %{waiting_room: room}} = state, _skill_id, _request)
+       when room != nil,
+       do: {:noreply, state}
+
+  defp run_ground(state, skill_id, %{origin: :item, level: level, target: {x, y}}),
+    do: drive_item_cast(state, skill_id, level, {:ground, x, y}, overlay?: true)
+
+  defp run_ground(%{game_state: game_state} = state, skill_id, %{level: level, target: {x, y}}) do
     locked = game_state.combat_target_id
 
-    with {:ok, ready_state} <- cast_gate(state, skill_id),
-         capped when capped > 0 <-
-           Caster.Player.request_level(game_state, skill_id, max(level, 1)) do
-      drive_ground_request(ready_state, skill_id, min(level, capped), target, locked)
-    else
-      0 -> {:noreply, state}
-      {:error, reason} -> reject_cast_gate(state, skill_id, reason)
+    case cast_gate(state, skill_id, :request) do
+      {:ok, ready_state} ->
+        drive_ground_request(ready_state, skill_id, level, {:ground, x, y}, locked)
+
+      {:error, _reason} ->
+        {:noreply, state}
     end
   end
 
@@ -219,7 +257,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       SkillTextInputHandler.stage(ready_state, skill_id, level, target)
     else
       ready_state = %{ready_state | game_state: PlayerState.cancel_combo(ready_state.game_state)}
-      drive_cast_after_gate(ready_state, skill_id, level, target, locked)
+      drive_cast_after_gate(ready_state, skill_id, level, target, locked, overlay?: true)
     end
   end
 
@@ -541,8 +579,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  defp drive_cast_after_gate(state, skill_id, level, target, locked) do
-    case ensure_idle_for_cast(state) do
+  defp drive_cast_after_gate(state, skill_id, level, target, locked, opts \\ []) do
+    case ensure_idle_for_cast(state, opts) do
       {:ok, ready_state} -> dispatch_cast(ready_state, skill_id, level, target, locked)
       :busy -> reject_cast_gate(state, skill_id, :busy)
     end
@@ -574,14 +612,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
-  defp drive_item_cast(%{game_state: game_state} = state, skill_id, level, target) do
+  # A pending item skill the request let through: the cast's own gate refuses
+  # silently, then the cast starts as the request's kind allows.
+  defp drive_item_cast(%{game_state: game_state} = state, skill_id, level, target, opts \\ []) do
     locked = game_state.combat_target_id
 
     with {:ok, state} <- cast_gate(state, skill_id, :item),
-         {:ok, state} <- ensure_idle_for_cast(state) do
+         {:ok, state} <- ensure_idle_for_cast(state, opts) do
       begin_ready_item_cast(state, skill_id, level, target, locked)
     else
-      {:error, reason} -> reject_cast_gate(state, skill_id, reason)
+      {:error, _reason} -> {:noreply, state}
       :busy -> reject_cast_gate(state, skill_id, :busy)
     end
   end
@@ -1352,14 +1392,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @doc """
   Applies the session-owned living, status, and action gate for a skill cast.
 
-  Staged and resumed input casts use the default start phase. A skill cast from
-  an item starts with `:item`, which casting locks and skill blocks do not stop.
+  Staged and resumed input casts use the default start phase. A player's
+  request that `SkillRequest` let through uses `:request`, or `:item` for a
+  pending item skill, which casting locks and skill blocks do not stop; the
+  request already settled the action checks, so neither repeats them.
   Timed casts use `:completion`, which requires the existing cast action to still
   be active and leaves the caster's statuses to the interpreter's completion
   check: a status that only forbids starting a cast does not stop one already
   under way.
   """
-  @spec cast_gate(SessionState.t(), integer(), :start | :item | :completion | :restricted) ::
+  @spec cast_gate(
+          SessionState.t(),
+          integer(),
+          :start | :request | :item | :completion | :restricted
+        ) ::
           {:ok, SessionState.t()} | {:error, :dead | :status_blocked | :busy}
   def cast_gate(state, skill_id, phase \\ :start)
 
@@ -1391,7 +1437,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp ensure_living_caster(_game_state), do: :ok
 
-  defp check_cast_action(state, :item), do: check_cast_action(state, :start)
+  defp check_cast_action(state, phase) when phase in [:request, :item], do: {:ok, state}
 
   defp check_cast_action(state, :start) do
     if SessionState.interaction_blocked?(state) or
@@ -1450,6 +1496,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp ensure_idle_for_cast(%{game_state: %{action_state: :attacking}} = state, opts),
     do: transition_to_cast_idle(state, opts)
 
+  # A ground request starts its cast over a sitting, trading or vending player
+  # and leaves that state as it is.
+  defp ensure_idle_for_cast(%{game_state: %{action_state: held}} = state, opts)
+       when held in @overlaid_states do
+    if Keyword.get(opts, :overlay?, false), do: {:ok, state}, else: :busy
+  end
+
   defp ensure_idle_for_cast(_state, _opts), do: :busy
 
   defp stop_movement_for_cast(state, true) do
@@ -1502,7 +1555,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       keep_requirement?: Map.get(info, :keep_requirement?, false)
     }
 
-    case PlayerState.transition_to(game_state, :casting, context) do
+    case start_casting(game_state, context) do
       {:ok, casting_state} ->
         broadcast_cast_bar(casting_state, info)
         {:noreply, StateCommit.commit(state, casting_state)}
@@ -1513,6 +1566,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, StateCommit.commit(state, game_state)}
     end
   end
+
+  defp start_casting(%{action_state: held} = game_state, context)
+       when held in @overlaid_states,
+       do: {:ok, %{game_state | casting: context}}
+
+  defp start_casting(game_state, context),
+    do: PlayerState.transition_to(game_state, :casting, context)
 
   defp broadcast_cast_bar(game_state, info) do
     {dst_id, x, y} = cast_bar_target(game_state, info.target)
@@ -1888,6 +1948,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  @doc "Turns the player's act delay and cooldown refusal notices on or off."
+  @spec toggle_show_delay(SessionState.t()) :: SessionState.t()
+  def toggle_show_delay(%{game_state: game_state} = state),
+    do: StateCommit.commit(state, %{game_state | show_delay: not game_state.show_delay})
+
   @doc false
   @spec report_cast_failure(integer(), non_neg_integer(), atom()) :: :ok
   def report_cast_failure(skill_id, character_id, reason)
@@ -1914,7 +1979,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp failure_reason(:insufficient_zeny), do: :SKILL_CAST_FAILURE_REASON_INSUFFICIENT_ZENY
   defp failure_reason(:no_ammo), do: :SKILL_CAST_FAILURE_REASON_NO_AMMO
   defp failure_reason(:overweight), do: :SKILL_CAST_FAILURE_REASON_OVERWEIGHT
-  defp failure_reason(:on_cooldown), do: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
+
+  defp failure_reason(reason) when reason in [:on_cooldown, :skill_interval],
+    do: :SKILL_CAST_FAILURE_REASON_ON_COOLDOWN
 
   defp failure_reason(reason) when reason in [:invalid_target, :different_map, :target_not_found],
     do: :SKILL_CAST_FAILURE_REASON_INVALID_TARGET

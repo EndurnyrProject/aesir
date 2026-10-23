@@ -8,12 +8,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
   alias Aesir.Net.CardComposeRequest
   alias Aesir.Net.CardComposeResult
   alias Aesir.Net.DamageDealt
-  alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.GuildSkillUpRequest
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.MoveStop
   alias Aesir.Net.PickupItemRequest
-  alias Aesir.Net.SkillCast
   alias Aesir.Net.TradeRequest
   alias Aesir.Net.UseItem
   alias Aesir.Net.WaitingRoomChangeOwnerRequest
@@ -28,7 +26,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SitHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -122,18 +119,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
       assert_received {:send, :gameplay, {:move_stop, %MoveStop{gid: 1000, x: 5, y: 6}}}
     end
 
-    test "a member's item use, pickup, skill casts, and attacks are dropped", %{state: state} do
+    test "a member's item use, pickup, and attacks are dropped", %{state: state} do
       reject(ItemHandler, :handle_use_item, 2)
-      reject(SkillHandler, :handle_use_skill, 4)
-      reject(SkillHandler, :handle_use_skill_ground, 5)
       reject(CombatActionHandler, :handle_attack_request, 3)
       reject(PickupHandler, :handle_pickup, 2)
 
       for message <- [
             %UseItem{index: 2},
             %PickupItemRequest{ground_id: 77},
-            %SkillCast{skill_id: 5, level: 1, target_id: 9},
-            %GroundSkillCast{skill_id: 12, level: 1, x: 7, y: 7},
             %ActionRequest{target_id: 9, action: 0},
             %ActionRequest{target_id: 9, action: 7}
           ] do
