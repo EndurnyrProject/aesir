@@ -6,7 +6,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   `Aesir.ZoneServer.Mmo.Woe.CastleDb` (every castle map carries
   `gvg_castle`, `nosave`, `noteleport`, `nowarp`, and `noreturn`) and
   `StaticFlags` (per-map PvP flags from `priv/db/map_flags.yml`, and the GvG,
-  castle, GvG dungeon and battleground flags imported from the mode's mapflag
+  castle, GvG dungeon, battleground and skill-restriction (`noskill`,
+  `noteleport`, `nowarp`, `noicewall`) flags imported from the mode's mapflag
   scripts, whose restricted zones `zone/1` reads) and
   `PortalAccess` (mode-scoped memo and job-entry flags), plus a
   small runtime ETS overlay (`:map_flag_overrides`) carries flags toggled at
@@ -25,8 +26,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   `nosave`, `noteleport`, `nowarp`, `noreturn`) drives behavior this phase;
   `pvp`, `pvp_noparty`, and `pvp_noguild` are consumed by the targeting layer to
   resolve player-versus-player hostility; `nomobloot` and `nomvploot` suppress a
-  dead monster's ordinary and MVP drop pools; and any other atom is rejected so
-  typos stay inert.
+  dead monster's ordinary and MVP drop pools; `noskill`, `noteleport`, `nowarp`
+  and `noicewall` refuse a player's skill request; and any other atom is
+  rejected so typos stay inert.
   """
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
@@ -67,6 +69,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
           | :nomvploot
           | :gvg_dungeon
           | :battleground
+          | :noskill
+          | :noicewall
   @type map_name :: String.t()
 
   @flags [
@@ -87,7 +91,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     :nomobloot,
     :nomvploot,
     :gvg_dungeon,
-    :battleground
+    :battleground,
+    :noskill,
+    :noicewall
   ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 

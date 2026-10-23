@@ -1,10 +1,11 @@
 defmodule Mix.Tasks.Aesir.Import.MapFlags do
-  @shortdoc "Imports the GvG, battleground and restricted-zone map flags of rAthena's mapflag scripts"
+  @shortdoc "Imports the GvG, battleground, skill-restriction and restricted-zone map flags of rAthena's mapflag scripts"
   @moduledoc """
   Replays the `mapflag` lines of the scripts rAthena loads for a mode
   (`npc/scripts_mapflags.conf`, then `npc/re/` or `npc/pre-re/scripts_mapflags.conf`)
   and writes the resulting `gvg`, `gvg_te`, `gvg_castle`, `gvg_te_castle`,
-  `gvg_dungeon`, `battleground` and `restricted` zone flags to
+  `gvg_dungeon`, `battleground`, `noskill`, `noteleport`, `nowarp`,
+  `noicewall` and `restricted` zone flags to
   `apps/zone_server/priv/db/<mode>/map_flags/scripts.yml`.
 
       mix aesir.import.map_flags [<rathena_root>] [--mode re|pre-re]
@@ -13,7 +14,8 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
   clears every GvG flag and `battleground`; `gvg`/`gvg_te` clear `pvp` and
   `battleground`; a castle flag clears the other castle flag and `pvp`;
   `gvg_dungeon` clears `pvp`; `battleground` clears `pvp`, `gvg`,
-  `gvg_dungeon` and `gvg_castle`. A value of `off` unsets the flag, and
+  `gvg_dungeon` and `gvg_castle`; the skill-restriction flags only set
+  themselves. A value of `off` unsets the flag, and
   `restricted off` clears every zone. `restricted <n>` adds zone bit
   `1 << (n + 4)`; a `restricted` line without a number is skipped. `pvp` takes
   part in the replay but is not written: the PvP maps are curated in
@@ -28,7 +30,18 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
   alias Aesir.ZoneServer.Map.CacheLoader
   alias Mix.Tasks.Aesir.Import
 
-  @written [:battleground, :gvg, :gvg_castle, :gvg_dungeon, :gvg_te, :gvg_te_castle]
+  @written [
+    :battleground,
+    :gvg,
+    :gvg_castle,
+    :gvg_dungeon,
+    :gvg_te,
+    :gvg_te_castle,
+    :noicewall,
+    :noskill,
+    :noteleport,
+    :nowarp
+  ]
   @gvg_flags [:gvg, :gvg_te, :gvg_dungeon, :gvg_castle, :gvg_te_castle]
 
   @impl Mix.Task
@@ -149,6 +162,8 @@ defmodule Mix.Tasks.Aesir.Import.MapFlags do
       flags |> drop([:pvp, :gvg, :gvg_dungeon, :gvg_castle]) |> MapSet.put(:battleground)
     end)
   end
+
+  defp apply_flag(state, flag, _value), do: update(state, &MapSet.put(&1, flag))
 
   defp update(state, fun), do: %{state | flags: fun.(state.flags)}
   defp drop(flags, names), do: Enum.reduce(names, flags, &MapSet.delete(&2, &1))

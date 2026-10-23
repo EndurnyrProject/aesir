@@ -27,6 +27,22 @@ defmodule Mix.Tasks.Aesir.Import.MapFlagsTest do
            ]
   end
 
+  test "the skill-restriction flags set only themselves and an off line clears them" do
+    lines = [
+      "arena\tmapflag\tpvp\n",
+      "arena\tmapflag\tnoteleport\n",
+      "arena\tmapflag\tnoskill\n",
+      "field\tmapflag\tnowarp\n",
+      "field\tmapflag\tnoicewall\n",
+      "field\tmapflag\tnoicewall\toff\n"
+    ]
+
+    assert rows(lines) == [
+             %{"map" => "arena", "flags" => ["noskill", "noteleport"]},
+             %{"map" => "field", "flags" => ["nowarp"]}
+           ]
+  end
+
   test "restricted zones add bit 1 << (n + 4), an off line clears them and a bare one is skipped" do
     lines = [
       "jail\tmapflag\trestricted\t1\n",

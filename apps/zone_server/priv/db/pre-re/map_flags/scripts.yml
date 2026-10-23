@@ -1,123 +1,261 @@
 ---
-- flags: []
+- flags:
+    - noteleport
   map: 1@cata
   zone: 512
-- flags: []
+- flags:
+    - noteleport
   map: 1@nyd
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 1@orcs
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 1@tower
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 2@cata
   zone: 512
-- flags: []
+- flags:
+    - noteleport
   map: 2@nyd
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 2@orcs
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 2@tower
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 3@tower
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 4@tower
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 5@tower
   zone: 1024
-- flags: []
+- flags:
+    - noteleport
   map: 6@tower
   zone: 1024
+- flags:
+    - noteleport
+  map: airplane
+- flags:
+    - noteleport
+  map: airport
+- flags:
+    - noteleport
+  map: alb_ship
 - flags: []
   map: alberta
   zone: 2048
+- flags:
+    - noteleport
+  map: alberta_in
+- flags:
+    - noteleport
+  map: alde_alche
 - flags: []
   map: alde_tt02
   zone: 32
+- flags:
+    - noteleport
+  map: aldeba_in
 - flags: []
   map: aldebaran
   zone: 2048
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: aldeg_cas01
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: aldeg_cas02
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: aldeg_cas03
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: aldeg_cas04
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: aldeg_cas05
+- flags:
+    - noteleport
+  map: ama_dun01
+- flags:
+    - noteleport
+  map: ama_in01
+- flags:
+    - noteleport
+  map: ama_in02
+- flags:
+    - noteleport
+    - nowarp
+  map: ama_test
 - flags: []
   map: amatsu
   zone: 2048
 - flags:
+    - noteleport
+  map: arena_room
+- flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: arug_cas01
   zone: 256
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: arug_cas02
   zone: 256
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: arug_cas03
   zone: 256
 - flags:
     - gvg_dungeon
   map: arug_dun01
+- flags:
+    - noteleport
+  map: arug_que01
+- flags:
+    - noteleport
+  map: auction_01
+- flags:
+    - noteleport
+  map: auction_02
+- flags:
+    - noteleport
+  map: ayo_in01
+- flags:
+    - noteleport
+  map: ayo_in02
 - flags: []
   map: ayothaya
   zone: 2048
 - flags:
     - battleground
+    - noteleport
+    - nowarp
   map: bat_a01
 - flags:
     - battleground
+    - noteleport
+    - nowarp
   map: bat_b01
 - flags:
     - battleground
+    - noteleport
+    - nowarp
   map: bat_c01
+- flags:
+    - noteleport
+  map: bat_room
+- flags:
+    - noteleport
+  map: bra_in01
 - flags: []
   map: brasilis
   zone: 2048
+- flags:
+    - noteleport
+  map: cave
+- flags:
+    - noteleport
+  map: cmd_in01
+- flags:
+    - noteleport
+  map: cmd_in02
 - flags: []
   map: comodo
   zone: 2048
-- flags: []
+- flags:
+    - noteleport
+  map: e_tower
+- flags:
+    - noteleport
+  map: ein_in01
+- flags:
+    - noteleport
   map: einbech
   zone: 2048
-- flags: []
+- flags:
+    - noteleport
   map: einbroch
   zone: 2048
+- flags:
+    - noteleport
+  map: gef_dun03
+- flags:
+    - noteleport
+  map: gef_tower
 - flags: []
   map: geffen
   zone: 2048
 - flags:
+    - noteleport
+  map: geffen_in
+- flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: gefg_cas01
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: gefg_cas02
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: gefg_cas03
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: gefg_cas04
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: gefg_cas05
 - flags:
     - gvg_dungeon
@@ -131,132 +269,542 @@
 - flags:
     - gvg_dungeon
   map: gld_dun04
+- flags:
+    - noteleport
+  map: gon_in
+- flags:
+    - noteleport
+    - nowarp
+  map: gon_test
 - flags: []
   map: gonryun
   zone: 2048
 - flags:
     - gvg
+    - noteleport
   map: guild_vs1
 - flags:
     - gvg
+    - noteleport
   map: guild_vs2
 - flags:
     - gvg
+    - noteleport
   map: guild_vs3
 - flags:
     - gvg
+    - noteleport
   map: guild_vs4
 - flags:
     - gvg
+    - noteleport
   map: guild_vs5
+- flags:
+    - noteleport
+  map: hu_in01
 - flags: []
   map: hugel
   zone: 2048
+- flags:
+    - noteleport
+  map: in_hunter
+- flags:
+    - noteleport
+  map: in_moc_16
+- flags:
+    - noteleport
+  map: in_orcs01
+- flags:
+    - noteleport
+  map: in_rogue
 - flags: []
   map: izlude
   zone: 2048
+- flags:
+    - noteleport
+  map: izlude_in
 - flags: []
   map: jawaii
   zone: 2048
-- flags: []
+- flags:
+    - noteleport
+  map: jawaii_in
+- flags:
+    - noteleport
+  map: job_cru
+- flags:
+    - noteleport
+  map: job_duncer
+- flags:
+    - noteleport
+  map: job_hunte
+- flags:
+    - noteleport
+  map: job_knt
+- flags:
+    - noteleport
+  map: job_monk
+- flags:
+    - noteleport
+  map: job_prist
+- flags:
+    - noteleport
+  map: job_sage
+- flags:
+    - noteleport
+  map: job_soul
+- flags:
+    - noteleport
+  map: job_star
+- flags:
+    - noteleport
+  map: job_sword1
+- flags:
+    - noteleport
+  map: job_thief1
+- flags:
+    - noteleport
+  map: job_wiz
+- flags:
+    - noteleport
+  map: jupe_area1
+- flags:
+    - noteleport
+  map: jupe_area2
+- flags:
+    - noteleport
+  map: jupe_ele
+- flags:
+    - noteleport
+  map: jupe_ele_r
+- flags:
+    - noteleport
+  map: jupe_gate
+- flags:
+    - noteleport
+  map: kh_dun01
+- flags:
+    - noteleport
+  map: kh_kiehl01
+- flags:
+    - noteleport
+  map: kh_kiehl02
+- flags:
+    - noteleport
+  map: kh_mansion
+- flags:
+    - noteleport
+  map: kh_rossi
+- flags:
+    - noteleport
+  map: kh_school
+- flags:
+    - noteleport
+  map: kh_vila
+- flags:
+    - noteleport
+  map: lhz_cube
+- flags:
+    - noteleport
+  map: lhz_in01
+- flags:
+    - noteleport
+  map: lhz_in02
+- flags:
+    - noteleport
+  map: lhz_in03
+- flags:
+    - noteleport
+  map: lhz_que01
+- flags:
+    - noteleport
   map: lighthalzen
   zone: 2048
+- flags:
+    - noteleport
+  map: lou_in01
+- flags:
+    - noteleport
+  map: lou_in02
 - flags: []
   map: louyang
   zone: 2048
+- flags:
+    - noteleport
+  map: man_in01
 - flags: []
   map: manuk
   zone: 2048
 - flags: []
   map: mid_camp
   zone: 2048
+- flags:
+    - noteleport
+  map: mid_campin
+- flags:
+    - noteleport
+  map: moc_castle
+- flags:
+    - noteleport
+  map: moc_fild22b
 - flags: []
   map: moc_ruins
   zone: 2048
+- flags:
+    - noteleport
+  map: monk_in
+- flags:
+    - noteleport
+  map: monk_test
 - flags: []
   map: morocc
   zone: 2048
+- flags:
+    - noteleport
+  map: morocc_in
 - flags: []
   map: moscovia
   zone: 2048
+- flags:
+    - noteleport
+  map: mosk_in
+- flags:
+    - nowarp
+  map: n_castle
+- flags:
+    - noteleport
+  map: new_zone01
+- flags:
+    - noteleport
+  map: new_zone02
+- flags:
+    - noteleport
+  map: new_zone03
+- flags:
+    - noteleport
+  map: new_zone04
+- flags:
+    - noteleport
+  map: nif_in
 - flags: []
   map: niflheim
   zone: 2048
+- flags:
+    - noteleport
+  map: nyd_dun02
+- flags:
+    - noskill
+    - noteleport
+    - nowarp
+  map: p_track01
 - flags: []
   map: pay_arche
   zone: 2048
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: payg_cas01
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: payg_cas02
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: payg_cas03
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: payg_cas04
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: payg_cas05
 - flags: []
   map: payon
   zone: 2048
+- flags:
+    - noteleport
+  map: payon_in01
+- flags:
+    - noteleport
+  map: payon_in02
+- flags:
+    - noteleport
+  map: payon_in03
+- flags:
+    - noicewall
+    - noteleport
+    - nowarp
+  map: poring_w01
+- flags:
+    - noicewall
+    - noteleport
+    - nowarp
+  map: poring_w02
 - flags: []
   map: prontera
   zone: 2048
-- flags: []
+- flags:
+    - noteleport
+  map: prt_are01
+- flags:
+    - noskill
+    - noteleport
   map: prt_are_in
   zone: 128
 - flags:
+    - noteleport
+  map: prt_castle
+- flags:
+    - noteleport
+  map: prt_church
+- flags:
+    - noteleport
+  map: prt_in
+- flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: prtg_cas01
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: prtg_cas02
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: prtg_cas03
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: prtg_cas04
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: prtg_cas05
+- flags:
+    - noteleport
+  map: pvp_2vs2
+- flags:
+    - noteleport
+  map: pvp_y_1-2
+- flags:
+    - noteleport
+  map: pvp_y_2-2
+- flags:
+    - noteleport
+  map: pvp_y_3-2
+- flags:
+    - noteleport
+  map: pvp_y_4-2
+- flags:
+    - noteleport
+  map: pvp_y_5-2
+- flags:
+    - noteleport
+  map: pvp_y_6-2
+- flags:
+    - noteleport
+  map: pvp_y_7-2
+- flags:
+    - noteleport
+  map: pvp_y_8-2
+- flags:
+    - noteleport
+    - nowarp
+  map: que_ba
+- flags:
+    - noskill
+    - noteleport
+  map: que_bingo
+- flags:
+    - noteleport
+  map: que_dan01
+- flags:
+    - noteleport
+  map: que_dan02
+- flags:
+    - noteleport
+  map: que_god01
+- flags:
+    - noteleport
+  map: que_god02
+- flags:
+    - noteleport
+  map: que_hugel
+- flags:
+    - noteleport
+  map: que_job01
+- flags:
+    - noteleport
+  map: que_job02
+- flags:
+    - noteleport
+  map: que_ng
+- flags:
+    - noteleport
+  map: que_qsch01
+- flags:
+    - noteleport
+  map: que_rachel
+- flags:
+    - noteleport
+  map: que_sign01
+- flags:
+    - noteleport
+  map: que_thor
+- flags:
+    - noskill
+  map: quiz_00
+- flags:
+    - noskill
+  map: quiz_01
+- flags:
+    - noskill
+  map: quiz_02
+- flags:
+    - noteleport
+  map: ra_in01
+- flags:
+    - noteleport
+  map: ra_temin
+- flags:
+    - noteleport
+  map: ra_temsky
 - flags: []
   map: rachel
   zone: 2048
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: schg_cas01
   zone: 256
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: schg_cas02
   zone: 256
 - flags:
     - gvg_castle
+    - noicewall
+    - noteleport
+    - nowarp
   map: schg_cas03
   zone: 256
 - flags:
     - gvg_dungeon
   map: schg_dun01
-- flags: []
+- flags:
+    - noteleport
+  map: sec_in01
+- flags:
+    - noteleport
+  map: sec_in02
+- flags:
+    - noteleport
+    - nowarp
   map: sec_pri
   zone: 64
+- flags:
+    - noteleport
+  map: spl_in01
+- flags:
+    - noteleport
+  map: spl_in02
 - flags: []
   map: splendide
   zone: 2048
+- flags:
+    - noteleport
+  map: tha_t07
+- flags:
+    - noteleport
+  map: tha_t08
+- flags:
+    - noteleport
+  map: tha_t09
+- flags:
+    - noteleport
+  map: tha_t10
+- flags:
+    - noteleport
+  map: tha_t11
+- flags:
+    - noteleport
+  map: tha_t12
+- flags:
+    - noteleport
+  map: thana_step
+- flags:
+    - noteleport
+  map: thor_camp
+- flags:
+    - noteleport
+  map: turbo_room
+- flags:
+    - noteleport
+  map: um_in
 - flags: []
   map: umbala
   zone: 2048
+- flags:
+    - noteleport
+  map: ve_in
+- flags:
+    - noteleport
+  map: ve_in02
 - flags: []
   map: veins
   zone: 2048
 - flags: []
   map: xmas
   zone: 2048
-- flags: []
+- flags:
+    - noteleport
+  map: xmas_in
+- flags:
+    - noteleport
   map: yuno
   zone: 2048
+- flags:
+    - noteleport
+  map: yuno_in01
+- flags:
+    - noteleport
+  map: yuno_in02
+- flags:
+    - noteleport
+  map: yuno_in03
+- flags:
+    - noteleport
+  map: yuno_in04
+- flags:
+    - noteleport
+  map: yuno_in05
+- flags:
+    - noteleport
+  map: yuno_pre
