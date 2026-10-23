@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   @magic_attack_flag BattleFlags.build(:magic, :long, true)
   @zero_equip_rates %{
     attack: %{race: 0, race2: 0, class: 0, element_target: 0, size: 0, atk_ele: 0, skill: 0},
-    taken: %{race: 0, race2: 0, class: 0, element: 0, size: 0, skill: 0},
+    taken: %{race: 0, race2: 0, class: 0, element: 0, size: 0, magic_size: 0, skill: 0},
     ignore_mdef: 0
   }
 
@@ -355,6 +355,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     taken = %{
       element: equip.taken.element,
       size: equip.taken.size,
+      magic_size: equip.taken.magic_size,
       race2: equip.taken.race2,
       race:
         equip.taken.race +

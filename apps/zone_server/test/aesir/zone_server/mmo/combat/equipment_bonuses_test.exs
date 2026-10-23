@@ -666,10 +666,39 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     flag = BattleFlags.build(:magic, :long, true)
 
     assert EquipmentBonuses.magic_defense_rates(defender, attacker, :fire, statuses, 14, flag) ==
-             %{race: 15, race2: 5, class: 20, element: 34, size: 7, skill: 9}
+             %{race: 15, race2: 5, class: 20, element: 34, size: 7, skill: 9, magic_size: 0}
 
     assert EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, statuses, 14, flag) ==
              %{race_class: 40, element: 34, size: 7, skill: 9}
+  end
+
+  test "magic defense reads its own defensive-element and size resists, never bSubDefEle" do
+    attacker = %{
+      CombatTestHelper.create_player_combatant()
+      | element: {:earth, 1},
+        size: :large
+    }
+
+    defender =
+      CombatTestHelper.create_player_combatant()
+      |> with_equip_modifiers(%{
+        {:sub_def_ele, :earth} => 40,
+        {:magic_sub_def_ele, :earth} => 12,
+        {:magic_sub_def_ele, :all} => 3,
+        {:magic_sub_def_ele, :fire} => 50,
+        {:subsize, :large} => 7,
+        {:magic_subsize, :large} => 10,
+        {:magic_subsize, :all} => 2,
+        {:magic_subsize, :small} => 30
+      })
+
+    flag = BattleFlags.build(:magic, :long, true)
+
+    assert %{element: 15, size: 7, magic_size: 12} =
+             EquipmentBonuses.magic_defense_rates(defender, attacker, :neutral, %{}, 14, flag)
+
+    assert %{element: 40, size: 7} =
+             EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil, 0)
   end
 
   describe "ignore_def_rate/2" do

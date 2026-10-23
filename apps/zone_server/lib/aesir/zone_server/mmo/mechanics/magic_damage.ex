@@ -11,10 +11,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage do
           class: integer()
         }
 
-  @typedoc "Independent defender card channels; positive rates reduce damage."
+  @typedoc """
+  Independent defender card channels; positive rates reduce damage. `magic_size`
+  is the magic-only size resist, applied right after the shared one.
+  """
   @type defense_rates :: %{
           element: integer(),
           size: integer(),
+          magic_size: integer(),
           race2: integer(),
           race: integer(),
           class: integer(),
@@ -75,6 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage do
       1000
       |> factor(-rates.element)
       |> factor(-rates.size)
+      |> factor(-rates.magic_size)
       |> factor(-rates.race2)
       |> factor(-rates.race)
       |> factor(-rates.class)

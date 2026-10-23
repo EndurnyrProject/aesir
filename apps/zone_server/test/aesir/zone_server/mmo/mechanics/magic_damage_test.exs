@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamageTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage.Renewal
 
@@ -26,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamageTest do
   end
 
   test "defender cardfix surrounds MDEF and compounds distinct resistance channels" do
-    taken = %{element: 0, size: 0, race2: 0, race: 20, class: 0, magic: 0}
+    taken = %{element: 0, size: 0, magic_size: 0, race2: 0, race: 20, class: 0, magic: 0}
     inputs = context(%{soft_mdef: 50, taken: taken})
 
     assert renewal(1000, inputs) == 750
@@ -39,6 +40,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamageTest do
     inputs = context(%{hard_mdef: 10, soft_mdef: 5, taken: %{taken | race: 0, magic: 50}})
     assert renewal(100, inputs) == 40
     assert classic(100, inputs) == 43
+  end
+
+  test "the magic size resist multiplies in after the shared size resist, not summed with it" do
+    taken = %{element: 0, size: 10, magic_size: 10, race2: 0, race: 0, class: 0, magic: 0}
+
+    assert MagicDamage.defender_cardfix(1000, taken) == 810
+    assert MagicDamage.defender_cardfix(1000, %{taken | size: 20, magic_size: 0}) == 800
   end
 
   test "skill rates retain their separate positions and flat MATK follows the ratio" do
@@ -118,7 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamageTest do
         skill_atk_rate: 0,
         skill_taken_rate: 0,
         attack: %{size: 0, race2: 0, element_target: 0, atk_ele: 0, race: 0, class: 0},
-        taken: %{element: 0, size: 0, race2: 0, race: 0, class: 0, magic: 0}
+        taken: %{element: 0, size: 0, magic_size: 0, race2: 0, race: 0, class: 0, magic: 0}
       },
       overrides
     )

@@ -126,7 +126,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     }
   end
 
-  @doc "Reads separate magic defense channels without merging race, class and secondary groups."
+  @doc """
+  Reads separate magic defense channels without merging race, class and
+  secondary groups.
+
+  Magic has its own resist against the attacker's defensive element
+  (`bMagicSubDefEle`), which replaces the weapon channel's `bSubDefEle` in the
+  element sum, and its own size resist (`bMagicSubSize`), returned as
+  `magic_size` because it multiplies in separately right after the shared size
+  resist.
+  """
   @spec magic_defense_rates(
           Combatant.t(),
           Combatant.t(),
@@ -140,13 +149,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
           class: rate(),
           element: rate(),
           size: rate(),
-          skill: rate()
+          skill: rate(),
+          magic_size: rate()
         }
   def magic_defense_rates(defender, attacker, element, status_modifiers, skill_id, attack_flag) do
-    defense_rates(defender, attacker, element, status_modifiers, skill_id, attack_flag)
+    defender
+    |> resist_rates(attacker, element, status_modifiers, {skill_id, attack_flag}, :magic)
+    |> Map.put(:magic_size, read(defender, :magic_subsize, attacker.size))
   end
 
-  defp defense_rates(defender, attacker, attack_element, status_modifiers, skill_id, attack_flag) do
+  defp defense_rates(defender, attacker, attack_element, status_modifiers, skill_id, attack_flag),
+    do:
+      resist_rates(
+        defender,
+        attacker,
+        attack_element,
+        status_modifiers,
+        {skill_id, attack_flag},
+        :weapon
+      )
+
+  defp resist_rates(defender, attacker, attack_element, status_modifiers, hit, attack_type) do
+    {skill_id, attack_flag} = hit
+    def_ele_family = if attack_type == :magic, do: :magic_sub_def_ele, else: :sub_def_ele
+
     %{
       race:
         read(defender, :subrace, attacker.race, attack_flag) +
@@ -155,7 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
       class: read(defender, :subclass, attacker.class, attack_flag),
       element:
         read(defender, :subele, attack_element, attack_flag) +
-          read(defender, :sub_def_ele, element_atom(attacker.element)) +
+          read(defender, def_ele_family, element_atom(attacker.element)) +
           status_subele(status_modifiers, attack_element) +
           faith_resist_rate(defender, attack_element) +
           skin_temper_resist_rate(defender, attack_element),

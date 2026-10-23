@@ -181,7 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.DamageTest do
         skill_atk_rate: 0,
         skill_taken_rate: 0,
         attack: %{size: 0, race2: 0, element_target: 0, atk_ele: 0, race: 0, class: 0},
-        taken: %{element: 0, size: 0, race2: 0, race: 0, class: 0, magic: 0}
+        taken: %{element: 0, size: 0, magic_size: 0, race2: 0, race: 0, class: 0, magic: 0}
       }
     }
   end
