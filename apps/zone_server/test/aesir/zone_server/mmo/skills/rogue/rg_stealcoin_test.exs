@@ -139,6 +139,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoinTest do
     assert caster.zeny == 1_000
   end
 
+  # skill.cpp:4664-4667: a monster already mugged fails castend_id_check with
+  # USESKILL_FAIL, before the SP is spent.
+  test "refuses a monster already mugged at the cast end without attempting to mug" do
+    {:ok, data} = MobManagement.get_mob_by_id(1002)
+    spawn = %MobSpawn{mob: 1002, amount: 1, respawn_time: 5_000, spawn_area: nil}
+    mugged = MobState.mark_coin_stolen(MobState.new(@target_id, data, spawn, "prontera", 1, 1))
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:ok, {MobSession, mugged, self()}} end)
+    reject(&MobSession.attempt_mug/3)
+
+    assert {:error, :skill_failed} =
+             RgStealcoin.validate(caster(), {:unit, @target_id}, 1, RgStealcoin.definition())
+  end
+
   defp caster do
     %PlayerState{
       character_id: @caster_id,

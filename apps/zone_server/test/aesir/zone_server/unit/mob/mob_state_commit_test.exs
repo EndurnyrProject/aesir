@@ -68,6 +68,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.StateCommitTest do
     assert StatusStorage.get_unit_statuses(:mob, 1) == []
   end
 
+  test "a successful mug republishes the coin-stolen flip" do
+    pid = start_registered_mob(hp: 500, sp: 50)
+
+    assert {:ok, zeny} =
+             MobSession.attempt_mug(pid, %{dex: 200, luk: 200, base_level: 500}, 10)
+
+    assert zeny > 0
+    assert registry_state().coin_stolen
+  end
+
+  test "a failed mug leaves the published state untouched" do
+    pid = start_registered_mob(hp: 500, sp: 50)
+
+    assert {:error, :no_coin} =
+             MobSession.attempt_mug(pid, %{dex: 0, luk: 0, base_level: 1}, 1)
+
+    refute registry_state().coin_stolen
+  end
+
   test "heal republishes" do
     pid = start_registered_mob(hp: 500, sp: 50)
 

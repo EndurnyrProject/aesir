@@ -4,9 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
 
   Both modes roll 10 times level plus DEX/2 plus LUK/2 plus twice the level gap
   per mille for 8 to 10 times the target level zeny, 15 SP, and a 0.5 s delay.
-  A target that is not a monster, or a status-immune monster, fails with the
-  plain skill failure when the cast ends, before anything is spent; a monster
-  already mugged fails the same way once the SP is spent.
+  A target that is not a monster, a status-immune monster, or a monster already
+  mugged fails with the plain skill failure when the cast ends, before anything
+  is spent.
   A success then deals the monster a zero-damage long weapon hit (aggro, coma,
   and the normal-attack additional effects such as Enchant Poison).
   """
@@ -39,8 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
   @mug_hit_flag BattleFlags.build(:weapon, :long, false)
 
   @doc """
-  The cast-end check: only a monster that is not status immune can be mugged;
-  anything else fails with the plain skill failure before anything is spent.
+  The cast-end check: only a monster that is neither status immune nor already
+  mugged can be mugged; anything else fails with the plain skill failure before
+  anything is spent.
   """
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -48,7 +49,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
   def validate(_caster, {:unit, target_id}, _level, _definition) do
     case UnitRegistry.get_unit(:mob, target_id) do
       {:ok, {_module, %MobState{} = mob, _pid}} ->
-        if MobState.status_immune?(mob), do: {:error, :skill_failed}, else: :ok
+        if MobState.status_immune?(mob) or mob.coin_stolen,
+          do: {:error, :skill_failed},
+          else: :ok
 
       {:ok, _unit} ->
         :ok
@@ -70,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
           mugged = %{caster | zeny: min(caster.zeny + zeny, Zeny.max_zeny())}
           {:ok, Combat.execute_zero_damage_hit(mugged, target_id, @mug_hit_flag)}
 
-        # A monster the cast end could not see as mugged or immune.
+        # A monster another cast mugged between this cast's end checks.
         {:error, reason} when reason in [:immune, :already_mugged] ->
           {:failed, caster, :skill_failed}
 

@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.Handlers.StatsHandler
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
+  alias Aesir.ZoneServer.Unit.Mob.StateCommit
   alias Aesir.ZoneServer.Unit.Mob.StealOps
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -218,7 +219,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   process so concurrent attempts cannot both succeed. Bosses and status-immune
   mobs return `{:error, :immune}`, an already mugged mob
   `{:error, :already_mugged}` and a failed roll `{:error, :no_coin}`, without
-  changing the state.
+  changing the state. A successful mug publishes the flip to the registry, so
+  a later cast's target check sees the mob as already mugged before it pays.
   """
   @spec attempt_mug(pid(), StealOps.mug_caster(), pos_integer()) ::
           {:ok, pos_integer()} | {:error, StealOps.mug_reason()}
@@ -362,7 +364,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_call({:steal, {:mug, caster_stats, skill_level}}, _from, state) do
     case StealOps.attempt_mug(state, caster_stats, skill_level) do
-      {:ok, zeny, new_state} -> {:reply, {:ok, zeny}, new_state}
+      {:ok, zeny, new_state} -> {:reply, {:ok, zeny}, StateCommit.commit(new_state)}
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end
