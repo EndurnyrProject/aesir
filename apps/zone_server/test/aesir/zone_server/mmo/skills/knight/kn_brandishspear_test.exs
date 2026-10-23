@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Skill.Caster.Player, as: PlayerCaster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -69,31 +70,49 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
     end
   end
 
-  describe "validate/4" do
+  describe "begin_attempt/4" do
     test "a mounted spear-wielding player passes" do
       caster = build_player(spear(), riding?: true)
 
-      assert :ok = KnBrandishspear.validate(caster, {:unit, @target_id}, 1, definition())
+      assert {:ok, ^caster} =
+               KnBrandishspear.begin_attempt(caster, {:unit, @target_id}, 1, definition())
+    end
+
+    test "a player riding a dragon passes" do
+      caster = %{build_player(spear(), riding?: false) | option: Option.id(:dragon1)}
+
+      assert {:ok, ^caster} =
+               KnBrandishspear.begin_attempt(caster, {:unit, @target_id}, 1, definition())
     end
 
     test "an unmounted spear-wielding player is rejected" do
       caster = build_player(spear(), riding?: false)
 
       assert {:error, :requires_riding} =
-               KnBrandishspear.validate(caster, {:unit, @target_id}, 1, definition())
+               KnBrandishspear.begin_attempt(caster, {:unit, @target_id}, 1, definition())
     end
 
-    test "a mounted player without a spear is rejected" do
+    test "an unmounted player without a spear is refused for the mount, not the weapon" do
+      caster = build_player(fist(), riding?: false)
+
+      assert {:error, :requires_riding} =
+               KnBrandishspear.begin_attempt(caster, {:unit, @target_id}, 1, definition())
+    end
+
+    test "a mounted player without a spear is refused by the engine weapon check" do
       caster = build_player(fist(), riding?: true)
 
-      assert {:error, :requires_spear} =
-               KnBrandishspear.validate(caster, {:unit, @target_id}, 1, definition())
+      assert {:ok, ^caster} =
+               KnBrandishspear.begin_attempt(caster, {:unit, @target_id}, 1, definition())
+
+      assert {:error, :wrong_weapon} = PlayerCaster.check_weapon(caster, definition())
     end
 
     test "a mob caster bypasses both the spear and riding gates" do
       caster = build_mob(@mob_caster_id, 10, 10)
 
-      assert :ok = KnBrandishspear.validate(caster, {:unit, @target_id}, 1, definition())
+      assert {:ok, ^caster} =
+               KnBrandishspear.begin_attempt(caster, {:unit, @target_id}, 1, definition())
     end
   end
 

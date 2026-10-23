@@ -97,10 +97,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       caster = player(falcon?: false)
 
       assert {:error, :falcon_not_equipped} =
-               HtBlitzbeat.validate(caster, {:unit, 2001}, 5, HtBlitzbeat.definition())
+               HtBlitzbeat.begin_attempt(caster, {:unit, 2001}, 5, HtBlitzbeat.definition())
 
-      assert :ok =
-               HtBlitzbeat.validate(player(), {:unit, 2001}, 5, HtBlitzbeat.definition())
+      assert {:ok, _caster} =
+               HtBlitzbeat.begin_attempt(player(), {:unit, 2001}, 5, HtBlitzbeat.definition())
     end
 
     @tag game_mode: :renewal

@@ -24,13 +24,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrap do
 
   @behaviour Active
 
+  @doc "A player's cast begins only with a falcon."
+  @impl Active
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :falcon_required}
+  def begin_attempt(%PlayerState{} = caster, _target, _level, _definition) do
+    if FalconHandler.falcon?(caster), do: {:ok, caster}, else: {:error, :falcon_required}
+  end
+
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
+
+  @doc "It springs a trap on the ground."
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(caster, {:ground, _x, _y}, _level, _definition) do
-    if FalconHandler.falcon?(caster), do: :ok, else: {:error, :falcon_required}
-  end
-
+  def validate(_caster, {:ground, _x, _y}, _level, _definition), do: :ok
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
   @impl Active

@@ -32,11 +32,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetecting do
 
   @hidden_statuses [:sc_hiding, :sc_cloaking]
 
+  @doc "A player's cast begins only with a falcon."
   @impl Active
-  def validate(%PlayerState{} = caster, {:ground, _x, _y}, _level, _definition) do
-    if FalconHandler.falcon?(caster), do: :ok, else: {:error, :falcon_required}
+  def begin_attempt(%PlayerState{} = caster, _target, _level, _definition) do
+    if FalconHandler.falcon?(caster), do: {:ok, caster}, else: {:error, :falcon_required}
   end
 
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
+
+  @doc "Only a player casts it, on the ground."
+  @impl Active
+  def validate(%PlayerState{}, {:ground, _x, _y}, _level, _definition), do: :ok
   def validate(_caster, _target, _level, _definition), do: {:error, :falcon_required}
 
   @impl Active

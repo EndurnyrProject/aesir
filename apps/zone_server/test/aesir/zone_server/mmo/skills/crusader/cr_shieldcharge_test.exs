@@ -68,14 +68,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
     |> Aesir.TestMob.publish(max_hp: 100, max_sp: 10)
   end
 
-  describe "validate/4" do
+  describe "begin_attempt/4" do
     test "ok with a shield equipped" do
-      assert CrShieldcharge.validate(caster_with_shield(), {:unit, @target_id}, 1, definition()) ==
-               :ok
+      caster = caster_with_shield()
+
+      assert CrShieldcharge.begin_attempt(caster, {:unit, @target_id}, 1, definition()) ==
+               {:ok, caster}
     end
 
     test "refused without a shield equipped" do
-      assert CrShieldcharge.validate(
+      assert CrShieldcharge.begin_attempt(
                caster_without_shield(),
                {:unit, @target_id},
                1,
@@ -84,7 +86,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
     end
 
     test "mob casters skip the shield gate" do
-      assert CrShieldcharge.validate(mob_caster(), {:unit, @target_id}, 1, definition()) == :ok
+      caster = mob_caster()
+
+      assert CrShieldcharge.begin_attempt(caster, {:unit, @target_id}, 1, definition()) ==
+               {:ok, caster}
     end
   end
 

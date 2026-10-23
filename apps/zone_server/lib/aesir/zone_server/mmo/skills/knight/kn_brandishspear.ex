@@ -10,9 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
   its own, and its hits arm no when-hit procs on the recipients. A player who
   casts it cannot change weapons for a second, unless already barred longer.
 
-  Only usable mounted with a spear (one or two-handed) equipped; a mob
-  caster bypasses both gates entirely, since mobs have no equipment or mount
-  state.
+  Only usable mounted (a Peco Peco or a dragon) with a spear (one or
+  two-handed) equipped; the mount is checked before the spear. A mob caster
+  bypasses both gates entirely, since mobs have no equipment or mount state.
 
   Renewal: the whole lane at 400% plus 100% per level plus 3 times STR, a
   long-range hit shown as three hits that split the damage, 24 SP, a 0.35 s
@@ -61,20 +61,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
 
   @behaviour Active
 
-  @spear_types [:one_handed_spear, :two_handed_spear]
   @lane_length 5
-  @riding_bit Option.id(:riding)
+  @mount_bits Enum.reduce(
+                [:riding, :dragon1, :dragon2, :dragon3, :dragon4, :dragon5],
+                0,
+                &(Option.id(&1) ||| &2)
+              )
 
+  @doc """
+  A player's cast begins only mounted, on a Peco Peco or a dragon; the spear is
+  checked after it.
+  """
   @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :requires_spear | :requires_riding}
-  def validate(%PlayerState{} = caster, _target, _level, _definition) do
-    with :ok <- check_weapon(caster) do
-      check_riding(caster)
-    end
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :requires_riding}
+  def begin_attempt(%PlayerState{option: option} = caster, _target, _level, _definition) do
+    if (option &&& @mount_bits) != 0, do: {:ok, caster}, else: {:error, :requires_riding}
   end
 
-  def validate(_caster, _target, _level, _definition), do: :ok
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
@@ -199,22 +204,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
 
   defp step(true, amount), do: amount
   defp step(false, _amount), do: 0
-
-  @spec check_weapon(PlayerState.t()) :: :ok | {:error, :requires_spear}
-  defp check_weapon(%PlayerState{stats: %{equipment: equipment}}) do
-    if PlayerStats.weapon_type(equipment) in @spear_types do
-      :ok
-    else
-      {:error, :requires_spear}
-    end
-  end
-
-  @spec check_riding(PlayerState.t()) :: :ok | {:error, :requires_riding}
-  defp check_riding(%PlayerState{option: option}) do
-    if (option &&& @riding_bit) != 0 do
-      :ok
-    else
-      {:error, :requires_riding}
-    end
-  end
 end

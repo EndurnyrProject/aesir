@@ -49,10 +49,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
 
   @steel_crow_id HtSteelcrow.definition(:renewal).id
 
+  @doc "A player's cast begins only with a falcon."
   @impl Active
-  def validate(%PlayerState{} = caster, _target, _level, _definition) do
-    if FalconHandler.falcon?(caster), do: :ok, else: {:error, :falcon_not_equipped}
+  def begin_attempt(%PlayerState{} = caster, _target, _level, _definition) do
+    if FalconHandler.falcon?(caster), do: {:ok, caster}, else: {:error, :falcon_not_equipped}
   end
+
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   def cast(caster, {:unit, target_id}, level, _definition) do

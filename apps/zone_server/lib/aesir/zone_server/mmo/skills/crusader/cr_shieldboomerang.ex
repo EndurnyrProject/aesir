@@ -34,10 +34,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerang do
 
   @behaviour Active
 
+  @doc "A player's cast begins only with a shield equipped."
   @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(caster, _target, _level, _definition), do: check_shield(caster)
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :requires_shield}
+  def begin_attempt(caster, _target, _level, _definition) do
+    with :ok <- check_shield(caster), do: {:ok, caster}
+  end
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::

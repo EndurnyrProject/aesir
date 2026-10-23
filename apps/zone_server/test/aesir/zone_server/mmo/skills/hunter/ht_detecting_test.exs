@@ -26,10 +26,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetectingTest do
     definition = HtDetecting.definition()
 
     assert {:error, :falcon_required} =
-             HtDetecting.validate(%PlayerState{option: 0}, {:ground, 100, 100}, 1, definition)
+             HtDetecting.begin_attempt(
+               %PlayerState{option: 0},
+               {:ground, 100, 100},
+               1,
+               definition
+             )
 
-    assert :ok =
-             HtDetecting.validate(
+    assert {:ok, _caster} =
+             HtDetecting.begin_attempt(
                %PlayerState{option: Option.id(:falcon)},
                {:ground, 100, 100},
                1,

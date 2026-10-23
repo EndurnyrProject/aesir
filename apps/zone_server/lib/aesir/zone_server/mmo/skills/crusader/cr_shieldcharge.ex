@@ -30,14 +30,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
 
   @behaviour Active
 
+  @doc "A player's cast begins only with a shield equipped."
   @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :requires_shield}
-  def validate(%PlayerState{stats: %{equipment: equipment}}, _target, _level, _definition) do
-    Stats.validate_shield(equipment)
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :requires_shield}
+  def begin_attempt(
+        %PlayerState{stats: %{equipment: equipment}} = caster,
+        _target,
+        _level,
+        _definition
+      ) do
+    with :ok <- Stats.validate_shield(equipment), do: {:ok, caster}
   end
 
-  def validate(_caster, _target, _level, _definition), do: :ok
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   def cast(caster, {:unit, target}, level, definition) do

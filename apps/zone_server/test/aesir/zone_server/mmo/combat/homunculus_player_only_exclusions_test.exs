@@ -30,8 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HomunculusPlayerOnlyExclusionsTest do
     mob = struct(MobState)
     definition = CrShieldcharge.definition()
 
-    assert {:error, :requires_shield} = CrShieldcharge.validate(player, :self, 1, definition)
-    assert :ok = CrShieldcharge.validate(mob, :self, 1, definition)
+    assert {:error, :requires_shield} = CrShieldcharge.begin_attempt(player, :self, 1, definition)
+    assert {:ok, _caster} = CrShieldcharge.begin_attempt(mob, :self, 1, definition)
   end
 
   test "shield equipment base fallback is the exact private non-player branch" do

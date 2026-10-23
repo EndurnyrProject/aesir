@@ -30,10 +30,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrapTest do
     definition = HtSpringtrap.definition()
 
     assert {:error, :falcon_required} =
-             HtSpringtrap.validate(caster(), {:ground, 51, 50}, 1, definition)
+             HtSpringtrap.begin_attempt(caster(), {:ground, 51, 50}, 1, definition)
 
-    assert :ok =
-             HtSpringtrap.validate(
+    assert {:ok, _caster} =
+             HtSpringtrap.begin_attempt(
                caster(Option.id(:falcon)),
                {:ground, 51, 50},
                1,

@@ -44,18 +44,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
     end
   end
 
-  describe "validate/4 shield gate" do
+  describe "begin_attempt/4 shield gate" do
     test "a player with a shield equipped may cast" do
-      assert :ok = CrShrink.validate(player_with_shield(), :self, 1, definition())
+      assert {:ok, _caster} = CrShrink.begin_attempt(player_with_shield(), :self, 1, definition())
     end
 
     test "a player without a shield is refused" do
       assert {:error, :requires_shield} =
-               CrShrink.validate(player_without_shield(), :self, 1, definition())
+               CrShrink.begin_attempt(player_without_shield(), :self, 1, definition())
     end
 
     test "a mob caster skips the shield gate" do
-      assert :ok = CrShrink.validate(build_mob(9001), :self, 1, definition())
+      assert {:ok, _caster} = CrShrink.begin_attempt(build_mob(9001), :self, 1, definition())
     end
   end
 

@@ -68,24 +68,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerangTest do
     end
   end
 
-  describe "validate/4 (shield gate only - range is enforced by the interpreter's built-in per-level range check, not this callback)" do
+  describe "begin_attempt/4 (shield gate)" do
     test "a shield-wielding player passes" do
       caster = shield_caster(x: 0, y: 0)
 
-      assert :ok = CrShieldboomerang.validate(caster, {:unit, @target_id}, 1, definition())
+      assert {:ok, _caster} =
+               CrShieldboomerang.begin_attempt(caster, {:unit, @target_id}, 1, definition())
     end
 
     test "a shieldless player is rejected" do
       caster = unarmed_caster(x: 0, y: 0)
 
       assert {:error, :requires_shield} =
-               CrShieldboomerang.validate(caster, {:unit, @target_id}, 1, definition())
+               CrShieldboomerang.begin_attempt(caster, {:unit, @target_id}, 1, definition())
     end
 
     test "a mob caster bypasses the shield gate entirely" do
       caster = mob_caster(x: 0, y: 0)
 
-      assert :ok = CrShieldboomerang.validate(caster, {:unit, @target_id}, 1, definition())
+      assert {:ok, _caster} =
+               CrShieldboomerang.begin_attempt(caster, {:unit, @target_id}, 1, definition())
     end
   end
 

@@ -30,14 +30,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrink do
 
   @behaviour Active
 
+  @doc "A player's cast begins only with a shield equipped; turning Shrink off checks nothing."
   @impl Active
-  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :requires_shield}
-  def validate(%PlayerState{} = caster, _target, _level, _definition) do
-    PlayerStats.validate_shield(caster.stats.equipment)
+  @spec begin_attempt(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :requires_shield}
+  def begin_attempt(%PlayerState{} = caster, _target, _level, _definition) do
+    with :ok <- PlayerStats.validate_shield(caster.stats.equipment), do: {:ok, caster}
   end
 
-  def validate(%MobState{}, _target, _level, _definition), do: :ok
+  def begin_attempt(%MobState{} = caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
