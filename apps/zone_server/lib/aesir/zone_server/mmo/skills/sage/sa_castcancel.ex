@@ -20,9 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCastcancel do
 
   @behaviour Active
 
+  @doc "The cast begins only while the caster is casting another skill."
   @impl Active
-  def validate(%{casting: nil}, _target, _level, _definition), do: {:error, :not_casting}
-  def validate(_caster, _target, _level, _definition), do: :ok
+  def begin_attempt(%{casting: nil}, _target, _level, _definition), do: {:error, :not_casting}
+  def begin_attempt(caster, _target, _level, _definition), do: {:ok, caster}
 
   @impl Active
   def cast(caster, :self, _level, _definition), do: {:ok, caster}

@@ -1921,14 +1921,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
                        }}
     end
 
-    test "SaCastcancel.validate/4 rejects :not_casting when no cast is in flight" do
+    test "SaCastcancel.begin_attempt/4 rejects :not_casting when no cast is in flight" do
       definition = SaCastcancel.definition()
 
-      assert SaCastcancel.validate(%PlayerState{casting: nil}, :self, 1, definition) ==
+      assert SaCastcancel.begin_attempt(%PlayerState{casting: nil}, :self, 1, definition) ==
                {:error, :not_casting}
 
-      assert SaCastcancel.validate(%PlayerState{casting: %{skill_id: 29}}, :self, 1, definition) ==
-               :ok
+      casting = %PlayerState{casting: %{skill_id: 29}}
+      assert SaCastcancel.begin_attempt(casting, :self, 1, definition) == {:ok, casting}
     end
 
     test "a higher Cast Cancel level zaps a smaller penalty, at every level" do

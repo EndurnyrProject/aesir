@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSeismicweapon do
   @moduledoc """
   Seismic Weapon (SA_SEISMICWEAPON). Endows an ally's weapon with the earth element; a bare-handed
-  target fails before any cost is charged.
+  target fails the cast after its cost is charged, and another player's
+  Homunculus is refused silently before the cast begins.
 
   Renewal: always succeeds, 10 minutes plus 5 per level, a 1 s cast plus 1 s fixed,
   and one elemental point catalyst. Pre-renewal: succeeds 60% plus 10% per level of
@@ -38,8 +39,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSeismicweapon do
   @behaviour Active
 
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) :: :ok
-  def validate(_caster, _target, _level, _definition), do: :ok
+  @spec skilluse_check(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def skilluse_check(caster, target, _level, _definition),
+    do: Endow.homunculus_support(caster, target)
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::

@@ -10,13 +10,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.Endow do
   """
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @doc """
+  A player may endow only their own Homunculus; any other is refused silently
+  before the cast begins.
+  """
+  @spec homunculus_support(Active.caster(), Active.target()) :: :ok | {:error, :target_restricted}
+  def homunculus_support(%{character_id: caster_id}, {:unit, {:homunculus, gid}}) do
+    with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
+         {:ok, target_combatant} <- TargetResolver.resolve_combatant(:homunculus, gid),
+         true <- Targeting.direct_support?(caster_combatant, target_combatant) do
+      :ok
+    else
+      _ -> {:error, :target_restricted}
+    end
+  end
+
+  def homunculus_support(_caster, _target), do: :ok
 
   @doc "Applies `status` to the resolved target for the level's duration unless the classic roll fails."
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t(), atom()) ::

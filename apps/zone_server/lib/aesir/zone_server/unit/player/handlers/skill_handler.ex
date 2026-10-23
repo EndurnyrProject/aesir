@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # `begin_cast/4` up front validates Cast Cancel (learned, cooldown, its own 2 SP)
   # and charges it against a state that still carries the descriptor, so a Cast
   # Cancel the player cannot afford aborts nothing. With no cast in flight,
-  # `SaCastcancel.validate/4` rejects `:not_casting` here and charges nothing.
+  # `SaCastcancel.begin_attempt/4` rejects `:not_casting` here and charges nothing.
   #
   # `begin_cast/4` only reads the cast descriptor, so it is safe to run before the
   # abort; the cancel then invalidates the token before the zap is applied, and a

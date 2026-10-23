@@ -255,4 +255,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
       end
     end
   end
+
+  # status.cpp:2265-2266 via unit.cpp:2217: a support skill on a Homunculus whose
+  # master is not the caster is refused silently before the cast begins.
+  describe "the Homunculus support gate" do
+    test "refuses a Homunculus the caster does not own and passes any other target" do
+      assert {:error, :target_restricted} =
+               SaFlamelauncher.skilluse_check(caster(), {:unit, {:homunculus, 9_999}}, 1, %{})
+
+      assert :ok = SaFlamelauncher.skilluse_check(caster(), :self, 1, %{})
+      assert :ok = SaFlamelauncher.skilluse_check(caster(), {:unit, 2000}, 1, %{})
+    end
+  end
 end
