@@ -60,6 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             pending_item_skill: nil,
             deferred_skill_result: nil,
             step_action: nil,
+            equip_lock_until: nil,
             pending_party_invite: nil,
             pending_trade_invite: nil,
             trade: nil,
@@ -93,6 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             | nil,
           deferred_skill_result: map() | nil,
           step_action: step_action() | nil,
+          equip_lock_until: integer() | nil,
           pending_party_invite: map() | nil,
           pending_trade_invite:
             %{

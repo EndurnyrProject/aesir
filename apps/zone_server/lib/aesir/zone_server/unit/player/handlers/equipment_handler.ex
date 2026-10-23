@@ -75,6 +75,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   # An NPC dialog whose script refuses item use refuses equipping too, with a
   # notice and no equip result, once the index is within the inventory.
+  # An Arrow Vulcan cast holds equipment changes until it completes.
+  defp equip_locked?(%{equip_lock_until: until}) when is_integer(until),
+    do: System.monotonic_time(:millisecond) < until
+
+  defp equip_locked?(_state), do: false
+
   defp equip_refused_in_dialog?(server_index, state) do
     server_index in 0..(Inventory.capacity() - 1)//1 and SessionState.npc_dialog?(state) and
       not SessionState.npc_item_flag?(state)
@@ -89,7 +95,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
     case Inventory.equip(game_state.inventory, server_index, position, ctx) do
       {:ok, new_inventory, {:equipped, _index, mask, _unequipped} = change} ->
-        if StatusInterpreter.equip_change_blocked?(:player, game_state.character_id) or
+        if equip_locked?(state) or
+             StatusInterpreter.equip_change_blocked?(:player, game_state.character_id) or
              any_slot_blocked?(game_state.character_id, mask) do
           send_packet(state, equip_failure_result(server_index, :fail))
           {:noreply, state}

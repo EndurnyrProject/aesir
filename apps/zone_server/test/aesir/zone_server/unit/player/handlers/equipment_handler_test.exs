@@ -91,6 +91,40 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
   end
 
+  test "refuses an equip change while an Arrow Vulcan cast holds it" do
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+    item = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+
+    state = %{
+      connection_pid: self(),
+      game_state: %{game_state | inventory: %{0 => item}},
+      equip_lock_until: System.monotonic_time(:millisecond) + 60_000
+    }
+
+    assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+
+    assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
+  end
+
+  test "an elapsed Arrow Vulcan lock lets the equip change through" do
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+    item = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+
+    state = %{
+      connection_pid: self(),
+      game_state: %{game_state | inventory: %{0 => item}},
+      equip_lock_until: System.monotonic_time(:millisecond) - 1
+    }
+
+    stub(InventoryOps, :apply_change, fn 1000, _old, new, _change -> {:ok, new} end)
+    stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _game_state -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    assert {:noreply, _equipped} = EquipmentHandler.handle_equip(0, 2, state)
+  end
+
   describe "an equip request in an NPC dialog" do
     @tag game_mode: :renewal
     test "renewal's default refuses it with the can't-equip notice and no equip result" do

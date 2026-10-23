@@ -81,6 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @auto_counter 61
   @combo_followup_ids [271, 272, 273, 371, 372]
   @overlaid_states [:sitting, :trading, :vending]
+  @arrow_vulcan_id 394
 
   @doc """
   Handles a player's request to use a skill on a unit. `SkillRequest.targeted/5`
@@ -1605,8 +1606,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  # Arrow Vulcan holds equipment changes for the rest of its cast.
+  defp lock_equip_change(state, %{skill_id: @arrow_vulcan_id, total: total}, now)
+       when total > 0,
+       do: %{state | equip_lock_until: now + total}
+
+  defp lock_equip_change(state, _info, _now), do: state
+
   defp schedule_cast(%{game_state: game_state} = state, info, locked) do
     now = System.monotonic_time(:millisecond)
+    state = lock_equip_change(state, info, now)
     token = make_ref()
     timer_ref = Process.send_after(self(), {:skill, {:cast_complete, token}}, info.total)
 

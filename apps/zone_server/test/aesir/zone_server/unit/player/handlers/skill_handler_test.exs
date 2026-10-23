@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Invincibility
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.SkillRequest
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -1491,6 +1492,52 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert is_reference(gs.state_context.token)
       # SP untouched until the cast completes.
       assert gs.stats.current_state.sp == 45
+    end
+
+    test "an Arrow Vulcan cast holds equipment changes until the cast ends" do
+      Mimic.copy(SkillRequest)
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      state = knowing(casting_state(45), 394, 1)
+      game_state = state.game_state
+
+      stub(SkillRequest, :targeted, fn _state, 394, 1, 2001, _now ->
+        {:use,
+         %{
+           level: 1,
+           target: 2001,
+           origin: :normal,
+           ends_invincibility?: false,
+           clears_item_skill?: false
+         }}
+      end)
+
+      stub(Interpreter, :begin_cast, fn ^game_state, 394, 1, {:unit, 2001} ->
+        {:casting, game_state,
+         %{
+           skill_id: 394,
+           level: 1,
+           target: {:unit, 2001},
+           element: :neutral,
+           fixed: 0,
+           total: 5_000
+         }}
+      end)
+
+      before = now()
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(state, 394, 1, 2001)
+      assert new_state.equip_lock_until >= before + 5_000
+      assert new_state.equip_lock_until <= now() + 5_000
+    end
+
+    test "a cast of another skill leaves equipment changes open" do
+      stub(Broadcast, :to_player, fn 1000, %SkillCasting{} -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+
+      assert {:noreply, new_state} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+      assert new_state.equip_lock_until == nil
     end
 
     test "a skill whose cast damage cannot cancel schedules a non-interruptible cast" do
