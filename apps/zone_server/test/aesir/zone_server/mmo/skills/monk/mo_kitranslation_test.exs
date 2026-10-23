@@ -89,11 +89,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
                     {:skill, {:receive_spirit_sphere, %{source_id: 1, target_id: 2}}}}
   end
 
-  test "changed party, full targets, and coin-user jobs are rejected" do
+  test "another party's member fails the cast-end relation check" do
+    source = player_state(1, party_id: 10) |> with_sphere()
+    :ok = UnitRegistry.register_player(player_state(2, party_id: 11), self())
+
+    assert {:error, :invalid_target} =
+             MoKitranslation.validate(source, {:unit, 2}, 1, MoKitranslation.definition())
+  end
+
+  test "full targets and coin-user jobs fail the paid effect" do
     source = player_state(1, party_id: 10) |> with_sphere()
 
     targets = [
-      player_state(2, party_id: 11),
       player_state(2, party_id: 10, job_id: 24),
       player_state(2, party_id: 10) |> with_spheres(5)
     ]

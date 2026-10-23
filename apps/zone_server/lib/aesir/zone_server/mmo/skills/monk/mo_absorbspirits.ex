@@ -3,7 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
   Absorb Spirit Sphere (MO_ABSORBSPIRITS).
 
   Self and monster targets settle locally. Player targets use the one-shot
-  exchange path and are gated by the server's current PvP policy.
+  exchange path and are gated by the server's current PvP policy. Every
+  target check is made by the effect, once the SP is spent: a coin class, a
+  player that is not an enemy, or any other kind of unit fails the cast with
+  the skill failure. Another player's Homunculus is refused silently before
+  the cast begins.
 
   A monster that is status-immune, or that fails the 20% roll, makes the
   completed cast fail: its SP is already spent and the caster sees the skill
@@ -29,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -38,18 +43,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
   @behaviour Active
   @coin_jobs [:gunslinger, :rebellion, :baby_gunslinger, :baby_rebellion]
 
+  @doc """
+  A player may not absorb from another player's Homunculus; the use is
+  refused silently.
+  """
   @impl Active
-  def validate(_caster, :self, _level, _definition), do: :ok
-
-  def validate(caster, {:unit, target_id}, _level, _definition) do
-    with {:ok, _pid, target, unit_type} <- TargetResolver.resolve(target_id),
-         :ok <- TargetResolver.ensure_targetable(target, unit_type) do
-      validate_target(caster, target, unit_type)
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :target_restricted}
+  def skilluse_check(%{character_id: caster_id}, {:unit, {:homunculus, gid}}, _level, _def) do
+    with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
+         {:ok, target_combatant} <- TargetResolver.resolve_combatant(:homunculus, gid),
+         true <- Targeting.direct_support?(caster_combatant, target_combatant) do
+      :ok
     else
-      _ -> {:error, :invalid_target}
+      _ -> {:error, :target_restricted}
     end
   end
 
+  def skilluse_check(_caster, _target, _level, _definition), do: :ok
+
+  @impl Active
+  def validate(_caster, :self, _level, _definition), do: :ok
+  def validate(_caster, {:unit, _target_id}, _level, _definition), do: :ok
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
   @impl Active
@@ -61,28 +76,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
 
   def cast(caster, {:unit, target_id}, _level, _definition) do
     case TargetResolver.resolve(target_id) do
-      {:ok, _pid, _target, :player} ->
-        {:deferred, caster, {:absorb_player, target_id}}
+      {:ok, _pid, target, :player} ->
+        absorb_from_player(caster, target_id, target)
 
       {:ok, pid, %MobState{} = target, :mob} ->
         absorb_from_monster(caster, pid, target)
+
+      {:ok, _pid, _target, _unit_type} ->
+        {:failed, caster, :invalid_target}
 
       _ ->
         {:error, :invalid_target}
     end
   end
 
-  defp validate_target(caster, target, :player) do
-    if coin_job?(target),
-      do: {:error, :invalid_target},
-      else: Targeting.validate_enemy_relation(caster, target)
+  # Coin classes and players that are neither the caster nor an enemy fail the
+  # paid effect with the skill failure.
+  defp absorb_from_player(caster, target_id, target) do
+    if not coin_job?(target) and Targeting.validate_enemy_relation(caster, target) == :ok,
+      do: {:deferred, caster, {:absorb_player, target_id}},
+      else: {:failed, caster, :invalid_target}
   end
-
-  # The reference decides at cast end, so the requirement is already spent when
-  # an immune or resisting monster refuses the skill.
-  defp validate_target(_caster, _target, :mob), do: :ok
-
-  defp validate_target(_caster, _target, _unit_type), do: {:error, :invalid_target}
 
   defp absorb_from_monster(caster, pid, %MobState{} = target) do
     if MobState.status_immune?(target) or

@@ -353,6 +353,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
     assert cost.spheres_old == cost.spheres
   end
 
+  # unit.cpp:2381-2386 (#ifndef RENEWAL): casttime += casttime * min(lv, spiritball).
+  @tag game_mode: :pre_renewal
+  test "classic cast time grows once per sphere held, up to the level" do
+    target = {:unit, @target_id}
+    assert MoFingeroffensive.scale_cast_time(with_spheres(caster(), 2), target, 5, 900) == 2_700
+    assert MoFingeroffensive.scale_cast_time(with_spheres(caster(), 5), target, 3, 900) == 3_600
+    assert MoFingeroffensive.scale_cast_time(caster(), target, 3, 900) == 900
+  end
+
+  @tag game_mode: :renewal
+  test "renewal cast time does not grow with the spheres held" do
+    assert MoFingeroffensive.scale_cast_time(
+             with_spheres(caster(), 5),
+             {:unit, @target_id},
+             5,
+             500
+           ) ==
+             500
+  end
+
   defp mode_value(renewal, pre_renewal),
     do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

@@ -12,7 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
   as one damage split into five hits for one sphere, 8 plus 4 per level SP, a
   0.5 s cast plus 0.5 s fixed, and a 1 s cooldown. Pre-renewal: 100 plus 50 per
   level percent repeated once per level, spending one sphere per level, 10 SP,
-  a 1 s cast, and no cooldown. A classic Monk holding fewer spheres than the
+  a 1 s cast lengthened by itself once per sphere held (up to the level), and
+  no cooldown. A classic Monk holding fewer spheres than the
   level still casts, spends every sphere held, and throws that many.
 
   The cast-begin check records the spheres the cast will spend; the strike's
@@ -84,6 +85,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
     spheres = if held > 0 and held < cost.spheres, do: held, else: cost.spheres
     %{cost | spheres: spheres, spheres_old: spheres}
   end
+
+  @doc """
+  Classic only: a player's cast time grows by itself once per sphere held, up
+  to the level, before the status stage. Renewal keeps the early time.
+  """
+  @impl Active
+  @spec scale_cast_time(Active.caster(), Active.target(), pos_integer(), number()) :: number()
+  def scale_cast_time(%PlayerState{} = caster, _target, level, time) do
+    if GameMode.mode() == :pre_renewal,
+      do: time + time * min(level, held_spheres(caster)),
+      else: time
+  end
+
+  def scale_cast_time(_caster, _target, _level, time), do: time
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::

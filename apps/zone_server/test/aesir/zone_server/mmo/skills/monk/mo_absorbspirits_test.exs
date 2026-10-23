@@ -171,7 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     end
   end
 
-  test "coin-class players are rejected before the PvP check" do
+  test "coin-class players fail the paid effect before the PvP check" do
     target =
       put_in(
         player_state(2, 20),
@@ -184,11 +184,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
       )
 
     stub(TargetResolver, :resolve, fn 2 -> {:ok, self(), target, :player} end)
-    stub(TargetResolver, :ensure_targetable, fn ^target, :player -> :ok end)
-    reject(&Targeting.validate_enemy/2)
+    reject(&Targeting.validate_enemy_relation/2)
 
-    assert {:error, :invalid_target} =
-             MoAbsorbspirits.validate(
+    assert {:failed, _state, :invalid_target} =
+             MoAbsorbspirits.cast(
                player_state(1, 20),
                {:unit, 2},
                1,

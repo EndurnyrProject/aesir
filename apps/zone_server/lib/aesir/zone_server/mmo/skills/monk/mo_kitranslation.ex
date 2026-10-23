@@ -3,6 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
   Ki Translation (MO_KITRANSLATION), a quest skill that gives one spirit sphere
   to a currently eligible party member after the caster's resources commit.
 
+  The party relation is checked when the cast ends, before anything is spent;
+  a coin class or a target already holding five spheres fails the paid effect
+  with the requirement's items spared.
+
   Renewal: a 1 s cast plus 1 s fixed. Pre-renewal: a 2 s cast. Both cost 40 SP,
   one sphere, and a 1 s delay.
   """
@@ -24,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -32,10 +37,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
   @coin_jobs [:gunslinger, :rebellion, :baby_gunslinger, :baby_rebellion]
   @sphere_cap 5
 
+  @doc """
+  The cast-end relation check: another player must be in the caster's party,
+  and any other unit fails. Nothing is spent when it fails.
+  """
   @impl Active
-  def validate(_caster, {:unit, target_id}, _level, _definition) do
+  @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :invalid_target}
+  def validate(caster, {:unit, target_id}, _level, _definition) do
     case UnitRegistry.get_unit(:player, target_id) do
-      {:ok, {_module, _target, pid}} when is_pid(pid) -> :ok
+      {:ok, {_module, target, pid}} when is_pid(pid) -> party_member(caster, target)
       _ -> {:error, :invalid_target}
     end
   end
@@ -65,13 +76,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
   defp eligible?(caster, target, pid) do
     Process.alive?(pid) and
       caster.character_id != target.character_id and
-      caster.map_name == target.map_name and
-      caster.party_id != 0 and
-      caster.party_id == target.party_id and
       Unit.living?(target) and
       not coin_job?(target) and
       SpiritSpheres.count(target.spirit_spheres) < @sphere_cap
   end
+
+  defp party_member(%{party_id: party_id}, %{party_id: party_id}) when party_id != 0, do: :ok
+  defp party_member(_caster, _target), do: {:error, :invalid_target}
 
   defp coin_job?(%{stats: %{progression: %{job_id: job_id}}}) do
     match?({:ok, job} when job in @coin_jobs, AvailableJobs.job_id_to_name(job_id))
