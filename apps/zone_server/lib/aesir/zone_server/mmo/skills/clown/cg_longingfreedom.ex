@@ -29,10 +29,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgLongingfreedom do
 
   @behaviour Active
 
+  @doc """
+  Frees the caster's ensemble lock. Outside a non-Moonlit ensemble, or with
+  Longing already active, the paid use ends without effect and without a
+  failure.
+  """
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  def validate(%PlayerState{character_id: id}, :self, _level, _definition) do
+  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:skipped, PlayerState.t(), atom()}
+  def cast(%PlayerState{character_id: id} = caster, :self, level, _definition) do
+    case longing_condition(id) do
+      :ok ->
+        StatusInterpreter.apply_status(:player, id, :sc_longing,
+          caster_id: id,
+          val1: level,
+          duration: 180_000,
+          owner_refresh: :defer
+        )
+
+        {:ok, caster}
+
+      {:error, reason} ->
+        {:skipped, caster, reason}
+    end
+  end
+
+  defp longing_condition(id) do
     with %StatusEntry{val1: skill, val4: partner, state: state} when skill != 395 <-
            StatusStorage.get_status(:player, id, :sc_dancing),
          root =
@@ -45,19 +67,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgLongingfreedom do
     else
       _ -> {:error, :not_in_ensemble}
     end
-  end
-
-  @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%PlayerState{character_id: id} = caster, :self, level, _definition) do
-    StatusInterpreter.apply_status(:player, id, :sc_longing,
-      caster_id: id,
-      val1: level,
-      duration: 180_000,
-      owner_refresh: :defer
-    )
-
-    {:ok, caster}
   end
 end

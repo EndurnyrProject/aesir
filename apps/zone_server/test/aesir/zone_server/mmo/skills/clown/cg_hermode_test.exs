@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermodeTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Proximity
+  alias Aesir.ZoneServer.Npc.Warp
+  alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -60,11 +62,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermodeTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic validation requires a nearby touch area", %{caster: caster} do
-    stub(Proximity, :touch_area_within?, fn "prontera", 10, 10, 1 -> false end)
-    assert {:error, :no_npc_nearby} = CgHermode.validate(caster, :self, 3, CgHermode.definition())
-    stub(Proximity, :touch_area_within?, fn "prontera", 10, 10, 1 -> true end)
-    assert :ok = CgHermode.validate(caster, :self, 3, CgHermode.definition())
+  test "classic cast begins only beside a warp portal's area", %{caster: caster} do
+    definition = CgHermode.definition()
+    stub(Warps, :for_map, fn "prontera" -> {:ok, [warp(1, 1)]} end)
+    assert {:error, :no_npc_nearby} = CgHermode.begin_attempt(caster, :self, 3, definition)
+
+    stub(Warps, :for_map, fn "prontera" -> {:ok, [warp(2, 0)]} end)
+    assert {:ok, ^caster} = CgHermode.begin_attempt(caster, :self, 3, definition)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "a script NPC's touch area does not let the cast begin", %{caster: caster} do
+    stub(Warps, :for_map, fn "prontera" -> :error end)
+    stub(Proximity, :touch_area_within?, fn _map, _x, _y, _range -> true end)
+
+    assert {:error, :no_npc_nearby} =
+             CgHermode.begin_attempt(caster, :self, 3, CgHermode.definition())
   end
 
   @tag game_mode: :pre_renewal
@@ -80,6 +93,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgHermodeTest do
              StatusStorage.get_status(:player, 17, :sc_dancing)
 
     refute Interpreter.can_move?(:player, 17)
+  end
+
+  defp warp(xs, ys) do
+    %Warp{
+      id: "test_warp",
+      map: "prontera",
+      x: 13,
+      y: 10,
+      xs: xs,
+      ys: ys,
+      to_map: "geffen",
+      to_x: 100,
+      to_y: 100
+    }
   end
 
   defp player(id, x, y) do

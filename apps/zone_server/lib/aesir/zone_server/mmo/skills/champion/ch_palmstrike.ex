@@ -50,11 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChPalmstrike do
   @typedoc "The target, map, and level captured for the delayed blow."
   @type impact :: %{target: {atom(), integer()}, map_name: String.t(), level: pos_integer()}
 
+  @doc "The cast starts only under Fury, with the generic failure otherwise."
   @impl Active
-  @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          :ok | {:error, :requires_explosion_spirits}
-  def validate(caster, _target, _level, _definition) do
-    if Fury.active?(caster.character_id), do: :ok, else: {:error, :requires_explosion_spirits}
+  @spec begin_attempt(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, PlayerState.t()} | {:error, :requires_explosion_spirits}
+  def begin_attempt(caster, _target, _level, _definition) do
+    if Fury.active?(caster.character_id),
+      do: {:ok, caster},
+      else: {:error, :requires_explosion_spirits}
   end
 
   @impl Active

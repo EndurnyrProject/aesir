@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
     refute StatusStorage.has_status?(:player, 18, :sc_marionette2)
   end
 
-  test "validation refuses self, another party and dead targets before the cost", %{
+  test "the cast end refuses self and another party but lets a dead member through", %{
     caster: caster
   } do
     assert {:error, :invalid_target} =
@@ -65,8 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
     :ok =
       UnitRegistry.update_unit_state(:player, 18, put_in(player(18).stats.current_state.hp, 0))
 
-    assert {:error, :invalid_target} =
-             CgMarionette.validate(caster, {:unit, 18}, 1, CgMarionette.definition())
+    assert :ok = CgMarionette.validate(caster, {:unit, 18}, 1, CgMarionette.definition())
   end
 
   test "a same-sex performer target is refused after the requirement is paid", %{caster: caster} do
@@ -110,9 +109,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
         state: %{peer: {:player, 19}, link_id: make_ref(), gains: %{}}
       )
 
-    # Wearing a puppet's half blocks the skill before the cost is spent.
-    assert {:error, :invalid_target} =
-             CgMarionette.validate(caster, {:unit, 18}, 1, CgMarionette.definition())
+    # Wearing a puppet's half blocks the skill silently before anything else.
+    assert {:error, :caster_restricted} =
+             CgMarionette.skilluse_check(caster, {:unit, 18}, 1, CgMarionette.definition())
 
     StatusStorage.remove_status(:player, 17, :sc_marionette2)
 

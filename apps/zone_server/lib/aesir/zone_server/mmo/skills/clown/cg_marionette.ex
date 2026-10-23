@@ -41,14 +41,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
 
   @behaviour Active
 
+  @doc "A caster holding a puppet's half is refused silently before anything else."
+  @impl Active
+  @spec skilluse_check(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          :ok | {:error, :caster_restricted}
+  def skilluse_check(%PlayerState{character_id: id}, _target, _level, _definition),
+    do: reject_puppet_caster(id)
+
+  def skilluse_check(_caster, _target, _level, _definition), do: :ok
+
+  @doc """
+  The cast end accepts only a party member; a dead one passes here and the
+  paid use ends without effect.
+  """
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(%PlayerState{character_id: id} = caster, {:unit, target_id}, _level, _definition) do
-    with {:ok, target} <- target_player(target_id),
-         :ok <- reject_puppet_caster(id) do
-      validate_target(caster, target)
-    end
+  def validate(%PlayerState{} = caster, {:unit, target_id}, _level, _definition) do
+    with {:ok, target} <- registered_player(target_id), do: validate_target(caster, target)
   end
 
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
@@ -78,12 +88,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
     end
   end
 
-  # A caster that holds a puppet's half cannot use Marionette at all; the
-  # reference blocks it before the cost is spent.
-  @spec reject_puppet_caster(non_neg_integer()) :: :ok | {:error, :invalid_target}
+  @spec reject_puppet_caster(non_neg_integer()) :: :ok | {:error, :caster_restricted}
   defp reject_puppet_caster(caster_id) do
     if StatusStorage.has_status?(:player, caster_id, :sc_marionette2),
-      do: {:error, :invalid_target},
+      do: {:error, :caster_restricted},
       else: :ok
   end
 
@@ -109,12 +117,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
   end
 
   defp target_player(id) do
-    case UnitRegistry.get_unit(:player, id) do
-      {:ok, {_module, %PlayerState{} = target, _pid}} ->
-        if Unit.living?(target), do: {:ok, target}, else: {:error, :invalid_target}
+    with {:ok, target} <- registered_player(id) do
+      if Unit.living?(target), do: {:ok, target}, else: {:error, :invalid_target}
+    end
+  end
 
-      _ ->
-        {:error, :invalid_target}
+  defp registered_player(id) do
+    case UnitRegistry.get_unit(:player, id) do
+      {:ok, {_module, %PlayerState{} = target, _pid}} -> {:ok, target}
+      _ -> {:error, :invalid_target}
     end
   end
 

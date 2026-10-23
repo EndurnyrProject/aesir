@@ -35,10 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChPalmstrikeTest do
 
   test "requires Fury" do
     caster = caster()
-    assert {:error, :requires_explosion_spirits} = validate(caster)
+    assert {:error, :requires_explosion_spirits} = begin_attempt(caster)
 
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_explosionspirits, duration: 60_000)
-    assert :ok = validate(caster)
+    assert {:ok, ^caster} = begin_attempt(caster)
   end
 
   test "the cast shows a zero-damage hit and schedules the blow after an attack motion" do
@@ -131,8 +131,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChPalmstrikeTest do
 
   defp payload, do: %{target: {:mob, @target_id}, map_name: "prontera", level: 3}
 
-  defp validate(caster),
-    do: ChPalmstrike.validate(caster, {:unit, @target_id}, 3, definition())
+  defp begin_attempt(caster),
+    do: ChPalmstrike.begin_attempt(caster, {:unit, @target_id}, 3, definition())
 
   defp definition, do: ChPalmstrike.definition()
 
