@@ -8,9 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   Cast gates before SP is charged: the target is a party member other than the
   caster. The guards the reference makes inside its implementation, after the
   requirement is paid, are paid here too: a Crusader-class target, a target more
-  than 10 base levels away, and a full devotee set (the Crusader holds at most
-  level devotees; a repeat cast refreshes rather than consumes a slot) all spend
-  the SP and report the failure. A devotion status the target refuses is not a
+  than 10 base levels away, and a full devotee set all spend the SP and report
+  the failure. A cast searches only the first level's slots: a devotee already
+  linked keeps its slot and a new one takes the first free slot among them, so
+  a repeat cast refreshes rather than consumes a slot. A devotion status the target refuses is not a
   cast failure at all: the Crusader records the link either way. The reach is 7
   to 11 cells by level and 25 SP. Renewal casts in 1.5 s plus 1.5 s fixed;
   pre-renewal in 3 s. Devotion is player-only.
@@ -185,6 +186,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
           Definition.t()
         ) :: {:ok, PlayerState.t()} | {:failed, PlayerState.t(), atom()}
   defp apply_devotion(caster, crusader_id, devotee_id, level, definition) do
+    case DevotedBy.place(crusader_id, devotee_id, level) do
+      {:ok, slot} -> link_devotee(caster, crusader_id, devotee_id, level, definition, slot)
+      :full -> {:failed, caster, :devotion_slots_full}
+    end
+  end
+
+  defp link_devotee(caster, crusader_id, devotee_id, level, definition, slot) do
     link_id = make_ref()
     range = Definition.range_at_level(definition, level)
     duration = Enum.at(definition.duration, level - 1)
@@ -197,7 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
 
     StatusInterpreter.apply_status(:player, devotee_id, :sc_devotion, params)
 
-    case DevotedBy.link(crusader_id, devotee_id, link_id) do
+    case DevotedBy.link(crusader_id, devotee_id, link_id, slot) do
       :ok ->
         DevotionMirror.copy_to_devotee(crusader_id, devotee_id)
         {:ok, caster}
@@ -271,8 +279,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   @spec slot_available(non_neg_integer(), non_neg_integer(), pos_integer()) ::
           :ok | {:error, :devotion_slots_full}
   defp slot_available(crusader_id, devotee_id, level) do
-    if DevotedBy.linked?(crusader_id, devotee_id) or DevotedBy.count(crusader_id) < level,
-      do: :ok,
-      else: {:error, :devotion_slots_full}
+    case DevotedBy.place(crusader_id, devotee_id, level) do
+      {:ok, _slot} -> :ok
+      :full -> {:error, :devotion_slots_full}
+    end
   end
 end

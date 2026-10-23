@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -213,6 +214,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4001}, 2, definition())
 
       assert devoted_by_count(@crusader_id) == 2
+    end
+
+    test "a slot freed by an ended devotion is reused inside the cast's slot range" do
+      caster = register(player(@crusader_id, job_id: @crusader_class))
+      register(player(4001))
+      register(player(4002))
+      register(player(4003))
+      register(player(4004))
+
+      for devotee <- [4001, 4002, 4003] do
+        assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, devotee}, 3, definition())
+      end
+
+      # 4002's devotion ends, freeing its slot although 4003 keeps the third.
+      StatusInterpreter.remove_status(:player, 4002, :sc_devotion)
+      assert devoted_by_count(@crusader_id) == 2
+
+      # The reference searches only the first level's slots: a level-2 cast
+      # refreshes its two links and reuses the freed one for a third devotee.
+      assert :ok = CrDevotion.skilluse_check(caster, {:unit, 4004}, 2, definition())
+      assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4004}, 2, definition())
+      assert devoted_by_count(@crusader_id) == 3
+      assert {:ok, _slot} = DevotedBy.place(@crusader_id, 4004, 2)
     end
   end
 

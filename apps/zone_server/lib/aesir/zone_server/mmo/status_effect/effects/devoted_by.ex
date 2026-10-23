@@ -6,13 +6,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
   Storage keeps one instance per status type per unit, so the whole devotee set
   lives in this one entry's state as a map keyed by devotee id:
 
-      %{links: %{devotee_id => %{peer: {:player, devotee_id}, link_id: ref}}}
+      %{links: %{devotee_id => %{peer: {:player, devotee_id}, link_id: ref, slot: 0}},
+        slots: %{0 => devotee_id}}
 
-  This deviates from the one-entry-per-devotee shape the task text sketched,
-  but keeps the same acceptance semantics: the slot cap is the map size, and
-  every teardown is per devotee. The paired record is the devotee's
-  `sc_devotion`; the two are matched by a shared `link_id` per devotee, the
-  Blade Stop / Root precedent.
+  `links` holds one record per devotee (the map keyed by devotee id), while
+  `slots` mirrors the reference's fixed five-slot array. A cast opens only the
+  first `min(level, 5)` slots: a devotee already holding one of them keeps it,
+  and a new one takes the first free slot among them, so a slot freed by a
+  devotion ending is reusable. This deviates from the one-entry-per-devotee
+  shape the task text sketched, but keeps the same acceptance semantics: every
+  teardown is per devotee. The paired record is the devotee's `sc_devotion`;
+  the two are matched by a shared `link_id` per devotee, the Blade Stop / Root
+  precedent.
 
   Teardown is edge-triggered plus convergent, with no coordinator:
 
@@ -49,26 +54,73 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @devotion :sc_devotion
+  @max_slots 5
+
+  @doc "The number of slots a cast of `level` opens."
+  @spec slots(pos_integer()) :: non_neg_integer()
+  def slots(level), do: min(level, @max_slots)
+
+  @doc """
+  The slot `devotee_id` holds within the ones a cast of `level` opens, the
+  first free one among them, or `:full` when every one of them is taken.
+
+  The slots behave as the reference's fixed array: only the first `min(level, 5)`
+  entries are searched, and an entry is free once the devotee holding it is no
+  longer linked.
+  """
+  @spec place(non_neg_integer(), non_neg_integer(), pos_integer()) ::
+          {:ok, non_neg_integer()} | :full
+  def place(crusader_id, devotee_id, level) do
+    occupied = current_slots(crusader_id)
+    open = 0..(slots(level) - 1)//1
+
+    case Enum.find(open, &(Map.get(occupied, &1) == devotee_id)) do
+      nil ->
+        case Enum.find(open, &(not Map.has_key?(occupied, &1))) do
+          nil -> :full
+          slot -> {:ok, slot}
+        end
+
+      slot ->
+        {:ok, slot}
+    end
+  end
 
   @doc """
   Adds or refreshes `devotee_id`'s link on the Crusader's entry, creating the
   entry on the first devotee. A repeat cast on an already-linked devotee
-  overwrites its link id, keeping the map a single entry per devotee.
+  overwrites its link id, keeping the map a single entry per devotee, and keeps
+  the slot it already held.
   """
   @spec link(non_neg_integer(), non_neg_integer(), reference()) :: :ok | {:error, atom()}
   def link(crusader_id, devotee_id, link_id) do
-    entry = %{peer: {:player, devotee_id}, link_id: link_id}
+    case place(crusader_id, devotee_id, @max_slots) do
+      {:ok, slot} -> link(crusader_id, devotee_id, link_id, slot)
+      :full -> {:error, :no_slot}
+    end
+  end
+
+  @doc "Adds or refreshes `devotee_id`'s link in `slot`."
+  @spec link(non_neg_integer(), non_neg_integer(), reference(), non_neg_integer()) ::
+          :ok | {:error, atom()}
+  def link(crusader_id, devotee_id, link_id, slot) do
+    entry = %{peer: {:player, devotee_id}, link_id: link_id, slot: slot}
 
     case StatusStorage.get_status(:player, crusader_id, :sc_devoted_by) do
-      %StatusEntry{state: %{links: links}} ->
+      %StatusEntry{} ->
         StatusStorage.update_status(:player, crusader_id, :sc_devoted_by, fn stored ->
-          %{stored | state: %{stored.state | links: Map.put(links, devotee_id, entry)}}
+          status_state =
+            stored.state
+            |> Map.put(:links, Map.put(current_links(crusader_id), devotee_id, entry))
+            |> Map.put(:slots, Map.put(current_slots(crusader_id), slot, devotee_id))
+
+          %{stored | state: status_state}
         end)
 
       _ ->
         Interpreter.apply_status(:player, crusader_id, :sc_devoted_by,
           caster_id: crusader_id,
-          state: %{links: %{devotee_id => entry}}
+          state: %{links: %{devotee_id => entry}, slots: %{slot => devotee_id}}
         )
     end
   end
@@ -82,11 +134,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
   @spec unlink(non_neg_integer(), non_neg_integer(), reference()) :: :ok
   def unlink(crusader_id, devotee_id, link_id) do
     case StatusStorage.get_status(:player, crusader_id, :sc_devoted_by) do
-      %StatusEntry{state: %{links: %{^devotee_id => %{link_id: ^link_id}} = links}} ->
+      %StatusEntry{state: %{links: %{^devotee_id => %{link_id: ^link_id} = link} = links}} ->
         remaining = Map.delete(links, devotee_id)
+        slots = release_slot(current_slots(crusader_id), Map.get(link, :slot), devotee_id)
 
         StatusStorage.update_status(:player, crusader_id, :sc_devoted_by, fn stored ->
-          %{stored | state: %{stored.state | links: remaining}}
+          status_state = stored.state |> Map.put(:links, remaining) |> Map.put(:slots, slots)
+          %{stored | state: status_state}
         end)
 
         if map_size(remaining) == 0 do
@@ -102,10 +156,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
 
   @doc "Current number of devotees the Crusader holds."
   @spec count(non_neg_integer()) :: non_neg_integer()
-  def count(crusader_id) do
+  def count(crusader_id), do: map_size(current_links(crusader_id))
+
+  defp current_links(crusader_id) do
     case StatusStorage.get_status(:player, crusader_id, :sc_devoted_by) do
-      %StatusEntry{state: %{links: links}} -> map_size(links)
-      _ -> 0
+      %StatusEntry{state: %{links: links}} -> links
+      _ -> %{}
+    end
+  end
+
+  defp current_slots(crusader_id) do
+    case StatusStorage.get_status(:player, crusader_id, :sc_devoted_by) do
+      %StatusEntry{state: %{slots: slots}} -> slots
+      _ -> %{}
+    end
+  end
+
+  # Ends the devotee's hold on its last slot only; an entry the devotee left in
+  # another slot by a later cast stays set, as the reference's array does.
+  defp release_slot(slots, slot, devotee_id) do
+    case Map.fetch(slots, slot) do
+      {:ok, ^devotee_id} -> Map.delete(slots, slot)
+      _other -> slots
     end
   end
 
