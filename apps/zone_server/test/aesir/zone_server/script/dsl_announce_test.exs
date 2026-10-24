@@ -88,20 +88,22 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
       assert opts.color == 0xFF0000
     end
 
-    test "detached ctx with self scope returns ctx unchanged and delivers nothing" do
+    test "detached ctx with self scope ends the script and delivers nothing" do
       ctx = detached_ctx()
 
-      assert Dsl.announce(ctx, "hi", flag("bc_self")) == ctx
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.announce(ctx, "hi", flag("bc_self")))
 
       refute_received {:to_self, _, _}
       refute_received {:to_map, _, _}
       refute_received {:to_area, _, _, _}
     end
 
-    test "detached ctx with area scope returns ctx unchanged and delivers nothing" do
+    test "detached ctx with area scope ends the script and delivers nothing" do
       ctx = detached_ctx()
 
-      assert Dsl.announce(ctx, "hi", flag("bc_area")) == ctx
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.announce(ctx, "hi", flag("bc_area")))
 
       refute_received {:to_area, _, _, _}
     end
@@ -115,7 +117,7 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(attached_ctx(150, 150), :boom)
+      ctx = %{attached_ctx(150, 150) | status: {:error, :boom}}
 
       assert Dsl.announce(ctx, "hi", flag("bc_all")) == ctx
 
@@ -145,7 +147,7 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
     end
 
     test "short-circuits on a halted ctx" do
-      ctx = Ctx.halt(detached_ctx(), :boom)
+      ctx = %{detached_ctx() | status: {:error, :boom}}
 
       assert Dsl.mapannounce(ctx, "prontera", "hi", 0) == ctx
 
@@ -185,7 +187,7 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
     end
 
     test "short-circuits on a halted ctx" do
-      ctx = Ctx.halt(detached_ctx(), :boom)
+      ctx = %{detached_ctx() | status: {:error, :boom}}
 
       assert Dsl.broadcast(ctx, "hi", 0) == ctx
 
@@ -213,10 +215,11 @@ defmodule Aesir.ZoneServer.Script.DslAnnounceTest do
       assert opts.color == 0xFF0000
     end
 
-    test "no-ops on a detached ctx" do
+    test "ends the script on a detached ctx" do
       ctx = detached_ctx()
 
-      assert Dsl.dispbottom(ctx, "hi") == ctx
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.dispbottom(ctx, "hi"))
 
       refute_received {:to_self, _, _}
     end

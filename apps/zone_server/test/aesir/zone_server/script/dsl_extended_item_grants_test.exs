@@ -103,9 +103,11 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
       refute_received {:script_apply, _pid, _op}
     end
 
-    test "an unknown item stops the script", %{session: s} do
-      assert %Ctx{status: {:error, :unknown_item}} =
+    test "an unknown item fails the command and the script goes on", %{session: s} do
+      assert %Ctx{status: :ok, failures: [{:getitem, :unknown_item}]} =
                Dsl.getitem2(ctx(s), 1, 1, 1, 0, 0, 0, 0, 0, 0)
+
+      refute_received {:script_apply, _pid, _op}
     end
   end
 
@@ -126,8 +128,10 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
       assert_received {:script_apply, ^s,
                        {:give_item2, @sword, 1, %{bound: 2, random_options: [_]}}}
 
-      assert %Ctx{status: {:error, :bad_bound}} =
+      assert %Ctx{status: :ok, failures: [{:getitembound, :bad_bound}]} =
                Dsl.getitembound2(ctx(s), @sword, 1, 1, 0, 0, 0, 0, 0, 0, 5)
+
+      refute_received {:script_apply, _pid, _op}
     end
   end
 
@@ -170,19 +174,22 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
                        ], 11, 10}
     end
 
-    test "an unknown map does nothing and an unknown item stops the script", %{session: s} do
+    test "an unknown map does nothing, an unknown item fails the command, a detached `this` ends the script",
+         %{session: s} do
       assert %Ctx{status: :ok} =
                Dsl.makeitem2(ctx(s), @sword, 1, "nowhere", 1, 1, 1, 0, 0, 0, 0, 0, 0)
 
       refute_received {:floor, _, _, _, _}
 
-      assert %Ctx{status: {:error, :unknown_item}} =
+      assert %Ctx{status: :ok, failures: [{:makeitem2, :unknown_item}]} =
                Dsl.makeitem2(ctx(s), 1, 1, "prontera", 1, 1, 1, 0, 0, 0, 0, 0, 0)
+
+      refute_received {:floor, _, _, _, _}
 
       detached = %{ctx(s) | game_state: nil}
 
-      assert %Ctx{status: {:error, :no_player}} =
-               Dsl.makeitem2(detached, @sword, 1, "this", 1, 1, 1, 0, 0, 0, 0, 0, 0)
+      assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+               catch_throw(Dsl.makeitem2(detached, @sword, 1, "this", 1, 1, 1, 0, 0, 0, 0, 0, 0))
     end
   end
 
@@ -203,7 +210,7 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
                         %{expire_seconds: 60, identify: 0, refine: 4, random_options: [_]}}}
     end
 
-    test "plain rentitem rents to an account id's player and stops for an offline one", %{
+    test "plain rentitem rents to an account id's player and goes on for an offline one", %{
       session: s
     } do
       {:ok, target} = StubSession.start_link(self())
@@ -220,7 +227,8 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
       assert %Ctx{status: :ok} = Dsl.give_item_rental(ctx(s), @potion, 30, 200)
       assert_received {:script_apply, ^target, {:give_item2, @potion, 1, %{expire_seconds: 30}}}
 
-      assert %Ctx{status: {:error, :no_player}} = Dsl.give_item_rental(ctx(s), @potion, 30, 300)
+      assert %Ctx{status: :ok} = Dsl.give_item_rental(ctx(s), @potion, 30, 300)
+      refute_received {:script_apply, _pid, _op}
     end
 
     test "an offline getitem target is skipped before the item is looked up", %{session: s} do
@@ -229,11 +237,18 @@ defmodule Aesir.ZoneServer.Script.DslExtendedItemGrantsTest do
       assert %Ctx{status: :ok} = Dsl.getitem2(ctx(s), 1, 1, 1, 0, 0, 0, 0, 0, 0, 300)
     end
 
-    test "an offline target stops the script", %{session: s} do
+    test "an offline target does nothing and the script goes on", %{session: s} do
       stub(UnitRegistry, :get_char_id_by_account, fn _ -> {:error, :not_found} end)
 
-      assert %Ctx{status: {:error, :no_player}} =
-               Dsl.rentitem2(ctx(s), @sword, 60, 1, 0, 0, 0, 0, 0, 0, 300)
+      assert %Ctx{status: :ok} = Dsl.rentitem2(ctx(s), @sword, 60, 1, 0, 0, 0, 0, 0, 0, 300)
+      refute_received {:script_apply, _pid, _op}
+    end
+
+    test "a detached ctx with no target account ends the script", %{session: s} do
+      detached = %{ctx(s) | game_state: nil, session_pid: nil}
+
+      assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+               catch_throw(Dsl.rentitem2(detached, @sword, 60, 1, 0, 0, 0, 0, 0, 0))
     end
   end
 end

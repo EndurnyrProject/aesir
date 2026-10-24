@@ -63,9 +63,8 @@ defmodule Aesir.ZoneServer.Script.DslRandomOptionBuildinsTest do
     end
 
     test "a detached script ends" do
-      assert_raise ArgumentError, fn ->
-        Dsl.getequiprandomoption(%{ctx() | game_state: nil}, @hand_r, 0, 0)
-      end
+      assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequiprandomoption(%{ctx() | game_state: nil}, @hand_r, 0, 0))
     end
   end
 
@@ -73,9 +72,8 @@ defmodule Aesir.ZoneServer.Script.DslRandomOptionBuildinsTest do
     test "reads 0 outside an option's script and ends a detached script" do
       assert Dsl.getrandomoptinfo(ctx(), 1) == 0
 
-      assert_raise ArgumentError, fn ->
-        Dsl.getrandomoptinfo(%{ctx() | game_state: nil}, 1)
-      end
+      assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getrandomoptinfo(%{ctx() | game_state: nil}, 1))
     end
   end
 
@@ -94,10 +92,15 @@ defmodule Aesir.ZoneServer.Script.DslRandomOptionBuildinsTest do
       assert rolled.vars[:opt_param] == []
     end
 
-    test "an unknown group stops the script" do
+    test "an unknown group fails the command and the script goes on" do
       stub(RandomOptions, :group, fn _id -> :error end)
+      ctx = ctx()
 
-      assert %Ctx{status: {:error, :unknown_random_option_group}} = Dsl.randomoptgroup(ctx(), 99)
+      result = Dsl.randomoptgroup(ctx, 99)
+
+      assert result.status == :ok
+      assert result.failures == [{:randomoptgroup, :unknown_random_option_group}]
+      assert result.vars == ctx.vars
     end
   end
 
@@ -138,14 +141,16 @@ defmodule Aesir.ZoneServer.Script.DslRandomOptionBuildinsTest do
     end
 
     test "a detached script ends" do
-      assert {%Ctx{status: {:error, :no_player}}, 0} =
-               Dsl.setrandomoption(
-                 %{ctx() | session_pid: nil, game_state: nil},
-                 @hand_r,
-                 0,
-                 3,
-                 1,
-                 0
+      assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+               catch_throw(
+                 Dsl.setrandomoption(
+                   %{ctx() | session_pid: nil, game_state: nil},
+                   @hand_r,
+                   0,
+                   3,
+                   1,
+                   0
+                 )
                )
     end
   end

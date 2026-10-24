@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Script.DslSkilleffectTest do
   end
 
   test "errored context short-circuits" do
-    ctx = Ctx.halt(register_player(), :boom)
+    ctx = %{register_player() | status: {:error, :boom}}
     assert Dsl.skilleffect(ctx, 173, 1) == ctx
     refute_received {:packet, _}
   end

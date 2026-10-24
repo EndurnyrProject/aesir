@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler do
   module.
 
   Every item whose `on_use` is non-nil contributes one
-  `def on_use(<id>, ctx)` clause whose body is the parsed source; a final noop
+  `def on_use(<id>, ctx)` clause whose body is the parsed source, catching the
+  script end a halting DSL command throws and returning its ctx; a final noop
   clause returns the context unchanged for any other id. All clauses live in the
   generated `Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts` module,
   which imports `Aesir.ZoneServer.Script.Dsl` so bare DSL calls resolve.
@@ -62,6 +63,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler do
     quote do
       def on_use(unquote(id), unquote(ctx_var)) do
         unquote(body)
+      catch
+        :throw, {:script_end, %Aesir.ZoneServer.Script.Ctx{} = ended} -> ended
       end
     end
   end

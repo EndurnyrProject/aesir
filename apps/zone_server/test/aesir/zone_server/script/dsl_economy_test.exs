@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
 
   use ExUnit.Case, async: true
 
+  @moduletag :capture_log
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
@@ -88,12 +90,13 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       assert_received {:script_apply, {:pay_zeny, 500}}
     end
 
-    test "halts :not_enough_zeny when the session rejects" do
+    test "fails the command and goes on when the session rejects" do
       ctx = build_ctx(session: error_session(:not_enough_zeny))
 
       result = Dsl.pay_zeny(ctx, 1_000_000)
 
-      assert result.status == {:error, :not_enough_zeny}
+      assert result.status == :ok
+      assert result.failures == [{:pay_zeny, :not_enough_zeny}]
       assert_received {:script_apply, {:pay_zeny, 1_000_000}}
     end
   end
@@ -110,17 +113,18 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       assert_received {:script_apply, {:give_item, 7114, 1}}
     end
 
-    test "halts :inventory_full when the session rejects" do
+    test "fails the command and goes on when the session rejects" do
       ctx = build_ctx(session: error_session(:inventory_full))
 
       result = Dsl.give_item(ctx, 7114, 1)
 
-      assert result.status == {:error, :inventory_full}
+      assert result.status == :ok
+      assert result.failures == [{:give_item, :inventory_full}]
     end
   end
 
   describe "give_item_bound/4" do
-    for {bound, value} <- [account: 1, char: 4] ++ [{1, 1}, {4, 4}] do
+    for {bound, value} <- [account: 1, char: 4] ++ for(n <- 0..4, do: {n, n}) do
       test "routes #{inspect(bound)}-bound items with value #{value}" do
         ctx = build_ctx(session: ok_session(build_game_state()))
 
@@ -131,10 +135,14 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       end
     end
 
-    test "rejects an unsupported bound value" do
+    test "fails the command and goes on for a bound outside 0..4" do
       ctx = build_ctx(session: ok_session(build_game_state()))
 
-      assert_raise FunctionClauseError, fn -> Dsl.give_item_bound(ctx, 7114, 1, 2) end
+      result = Dsl.give_item_bound(ctx, 7114, 1, 5)
+
+      assert result.status == :ok
+      assert result.failures == [{:getitembound, :bad_bound}]
+      refute_received {:script_apply, _}
     end
   end
 
@@ -154,12 +162,13 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       assert_received {:script_apply, {:change_job, 7}}
     end
 
-    test "halts :unknown_job when the session rejects" do
+    test "fails the command and goes on when the session rejects" do
       ctx = build_ctx(session: error_session(:unknown_job))
 
       result = Dsl.jobchange(ctx, 99_999)
 
-      assert result.status == {:error, :unknown_job}
+      assert result.status == :ok
+      assert result.failures == [{:change_job, :unknown_job}]
       assert_received {:script_apply, {:change_job, 99_999}}
     end
   end
@@ -173,10 +182,13 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       assert_received {:script_apply, {:reset_level, 1}}
     end
 
-    test "halts when the session rejects the reset type" do
+    test "fails the command and goes on when the session rejects the reset type" do
       ctx = build_ctx(session: error_session(:invalid_reset_type))
 
-      assert Dsl.resetlvl(ctx, 9).status == {:error, :invalid_reset_type}
+      result = Dsl.resetlvl(ctx, 9)
+
+      assert result.status == :ok
+      assert result.failures == [{:reset_level, :invalid_reset_type}]
       assert_received {:script_apply, {:reset_level, 9}}
     end
   end
@@ -251,12 +263,13 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       assert_received {:script_apply, {:set_riding, false}}
     end
 
-    test "halts :cannot_mount when the session rejects" do
+    test "fails the command and goes on when the session rejects" do
       ctx = build_ctx(session: error_session(:cannot_mount))
 
       result = Dsl.set_riding(ctx, true)
 
-      assert result.status == {:error, :cannot_mount}
+      assert result.status == :ok
+      assert result.failures == [{:set_riding, :cannot_mount}]
       assert_received {:script_apply, {:set_riding, true}}
     end
   end
@@ -273,18 +286,20 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       assert_received {:script_apply, {:delitem, 7114, 1}}
     end
 
-    test "halts :not_enough_items when the session rejects" do
+    test "ends the script with :not_enough_items when the session rejects" do
       ctx = build_ctx(session: error_session(:not_enough_items))
 
-      result = Dsl.delitem(ctx, 7114, 5)
+      assert {:script_end, result} = catch_throw(Dsl.delitem(ctx, 7114, 5))
 
       assert result.status == {:error, :not_enough_items}
     end
   end
 
   describe "short-circuit on a halted ctx" do
+    # A halted ctx never reaches another command in a running script (the end
+    # is a throw); the guard clauses stay as a defensive no-op.
     test "every mutation returns a halted ctx unchanged without touching the session" do
-      ctx = Ctx.halt(build_ctx(session: flunking_session()), :already_halted)
+      ctx = %{build_ctx(session: flunking_session()) | status: {:error, :already_halted}}
 
       assert Dsl.pay_zeny(ctx, 1) == ctx
       assert Dsl.give_item(ctx, 7114, 1) == ctx
@@ -298,7 +313,7 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
       refute_received {:script_apply, _}
     end
 
-    test "a failing op short-circuits the rest of a pipe" do
+    test "a failing op does not stop the rest of a pipe" do
       gs = %{build_game_state() | inventory: %{0 => item(7114, 1)}}
 
       ctx =
@@ -307,11 +322,24 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
         |> Dsl.give_item(7114, 1)
         |> Dsl.set_char_var(:k, 1)
 
-      assert ctx.status == {:error, :not_enough_zeny}
-      # give_item / set_char_var never routed through the seam after the halt.
+      assert ctx.status == :ok
+      assert ctx.failures == [{:pay_zeny, :not_enough_zeny}]
       assert_received {:script_apply, {:pay_zeny, 1_000_000}}
+      assert_received {:script_apply, {:give_item, 7114, 1}}
+      assert_received {:script_apply, {:set_char_var, :k, 1}}
+    end
+
+    test "an op that ends the script stops the rest of a pipe" do
+      ctx = build_ctx(session: error_session(:not_enough_items))
+
+      assert {:script_end, %{status: {:error, :not_enough_items}}} =
+               catch_throw(
+                 ctx
+                 |> Dsl.delitem(7114, 5)
+                 |> Dsl.give_item(7114, 1)
+               )
+
       refute_received {:script_apply, {:give_item, _, _}}
-      refute_received {:script_apply, {:set_char_var, _, _}}
     end
   end
 

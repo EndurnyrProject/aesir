@@ -99,8 +99,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   @doc """
   Flushes any remaining buffered page as a `CLOSE` frame and returns the context.
 
-  Does not block: the script returns and the interaction process exits `:normal`.
-  Halts `:no_player` on a detached ctx without flushing.
+  Does not block. The transpiler maps `close2`/`close3` (which keep the script
+  running) to this too, so ending the script after a `close` is the caller's
+  job: a transpiled `close` throws `{:script_end, ctx}` itself and a
+  hand-written script returns. Halts `:no_player` on a detached ctx without
+  flushing.
   """
   @spec close(Ctx.t()) :: Ctx.t()
   def close(%Ctx{game_state: nil} = ctx), do: Ctx.halt(ctx, :no_player)
@@ -169,11 +172,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   attached (rAthena `sleep2`), then resumes. Runs inside the interaction
   coroutine, so only this script waits - the player session is untouched. If
   the player session died while sleeping, halts `{:error, :no_player}` instead
-  of resuming. A non-positive duration warns and skips the pause.
+  of resuming. A non-positive duration, or no unit attached (a detached ctx),
+  fails the command and the script goes on without pausing.
   """
   @spec sleep2(Ctx.t(), integer()) :: Ctx.t()
   def sleep2(%Ctx{status: {:error, _}} = ctx, _ms), do: ctx
-  def sleep2(%Ctx{game_state: nil} = ctx, _ms), do: Ctx.halt(ctx, :no_player)
+  def sleep2(%Ctx{game_state: nil} = ctx, _ms), do: Ctx.fail(ctx, :sleep2, :no_player)
 
   def sleep2(%Ctx{} = ctx, ms) when is_integer(ms) and ms > 0 do
     Process.sleep(ms)
@@ -215,7 +219,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
         ctx
 
       {:error, reason} ->
-        Ctx.halt(ctx, reason)
+        Ctx.fail(ctx, :progressbar, reason)
     end
   end
 

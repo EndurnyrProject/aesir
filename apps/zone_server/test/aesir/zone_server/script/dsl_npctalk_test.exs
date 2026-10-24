@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
 
     test "short-circuits on an already-halted ctx", %{gid: gid} do
       register_player(1, x: 152, y: 150)
-      ctx = Ctx.halt(Ctx.detached(TalkerNpc, gid), :boom)
+      ctx = %{Ctx.detached(TalkerNpc, gid) | status: {:error, :boom}}
 
       assert Dsl.npctalk(ctx, "Hi") == ctx
       refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}

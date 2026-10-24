@@ -65,12 +65,13 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
       assert_received {:script_apply, {:setquest, 7393}}
     end
 
-    test "halts :already_started when the session rejects" do
+    test "fails the command and goes on when the session rejects (:already_started)" do
       ctx = build_ctx(session: error_session(:already_started))
 
       result = Dsl.setquest(ctx, 7393)
 
-      assert result.status == {:error, :already_started}
+      assert result.status == :ok
+      assert [{_op, :already_started}] = result.failures
       assert_received {:script_apply, {:setquest, 7393}}
     end
   end
@@ -87,12 +88,13 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
       assert_received {:script_apply, {:erasequest, 7393}}
     end
 
-    test "halts :not_started when the session rejects" do
+    test "fails the command and goes on when the session rejects (:not_started)" do
       ctx = build_ctx(session: error_session(:not_started))
 
       result = Dsl.erasequest(ctx, 7393)
 
-      assert result.status == {:error, :not_started}
+      assert result.status == :ok
+      assert [{_op, :not_started}] = result.failures
     end
   end
 
@@ -108,12 +110,13 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
       assert_received {:script_apply, {:completequest, 7393}}
     end
 
-    test "halts :not_started when the session rejects" do
+    test "fails the command and goes on when the session rejects (:not_started)" do
       ctx = build_ctx(session: error_session(:not_started))
 
       result = Dsl.completequest(ctx, 7393)
 
-      assert result.status == {:error, :not_started}
+      assert result.status == :ok
+      assert [{_op, :not_started}] = result.failures
     end
   end
 
@@ -129,12 +132,13 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
       assert_received {:script_apply, {:changequest, 7393, 7394}}
     end
 
-    test "halts :not_started when the session rejects" do
+    test "fails the command and goes on when the session rejects (:not_started)" do
       ctx = build_ctx(session: error_session(:not_started))
 
       result = Dsl.changequest(ctx, 7393, 7394)
 
-      assert result.status == {:error, :not_started}
+      assert result.status == :ok
+      assert [{_op, :not_started}] = result.failures
     end
   end
 
@@ -149,9 +153,22 @@ defmodule Aesir.ZoneServer.Script.DslQuestTest do
     end
   end
 
+  describe "getexp/3 failures" do
+    @describetag :capture_log
+
+    test "a negative amount, or both amounts zero, fails the command without a session call" do
+      ctx = build_ctx(session: flunking_session())
+
+      assert Dsl.getexp(ctx, -1, 10).failures == [{:getexp, :negative_exp}]
+      assert Dsl.getexp(ctx, 10, -1).failures == [{:getexp, :negative_exp}]
+      assert Dsl.getexp(ctx, 0, 0).failures == [{:getexp, :no_exp}]
+      refute_received {:script_apply, _}
+    end
+  end
+
   describe "short-circuit on a halted ctx" do
     test "every quest mutation returns a halted ctx unchanged without touching the session" do
-      ctx = Ctx.halt(build_ctx(session: flunking_session()), :already_halted)
+      ctx = %{build_ctx(session: flunking_session()) | status: {:error, :already_halted}}
 
       assert Dsl.setquest(ctx, 7393) == ctx
       assert Dsl.erasequest(ctx, 7393) == ctx

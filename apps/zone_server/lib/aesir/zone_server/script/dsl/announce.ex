@@ -23,9 +23,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Announce do
   The numeric `flag` is decoded (`Flags.decode/2`) into a scope, a color, and an
   area anchor source; `color` overrides the flag's color bits when non-zero.
   Delivery is a pure side-effect (no player-state mutation, no session
-  round-trip): global scope always fires, but map/area/self need the player (or,
-  for an NPC-anchored area, the `npc_gid`) — a detached ctx that cannot resolve
-  the anchor is a silent no-op returning ctx unchanged. `source_name` is always
+  round-trip): global scope always fires, but map/area/self need their source:
+  a player source halts `:no_player` on a detached ctx, and an NPC source
+  (anchored on the NPC's own placement) that cannot be resolved is a silent
+  no-op returning ctx unchanged. `source_name` is always
   blank; `announce` never auto-prefixes a name.
   """
   @spec announce(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Announce do
 
   def announce(%Ctx{} = ctx, text, flag, color) do
     %{scope: scope, color: resolved_color, source: source} = Flags.decode(flag, to_color(color))
+    if source == :pc and scope != :all and game_state_missing?(ctx), do: Ctx.halt(ctx, :no_player)
     opts = build_opts(text, resolved_color, scope)
     dispatch_announce(ctx, scope, source, opts)
     ctx
@@ -147,13 +149,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Announce do
   Shows `text` in the invoking player's chat box (rAthena `dispbottom`).
   `color` is a `0xRRGGBB` value, defaulting to rAthena's light green.
   Delivered through `Announcement.to_self/2` with the `:LOCAL` style — the
-  chat-box arm of the broadcast packet. Purely cosmetic, so a detached ctx
-  (no player to message) is a silent no-op rather than a halt.
+  chat-box arm of the broadcast packet. Halts `:no_player` on a detached ctx
+  (no player to message).
   """
   @spec dispbottom(Ctx.t(), String.t(), non_neg_integer() | String.t()) :: Ctx.t()
   def dispbottom(ctx, text, color \\ @dispbottom_color)
   def dispbottom(%Ctx{status: {:error, _}} = ctx, _text, _color), do: ctx
-  def dispbottom(%Ctx{char_id: nil} = ctx, _text, _color), do: ctx
+  def dispbottom(%Ctx{char_id: nil} = ctx, _text, _color), do: Ctx.halt(ctx, :no_player)
 
   def dispbottom(%Ctx{char_id: char_id} = ctx, text, color) do
     Announcement.to_self(char_id, %{
@@ -165,6 +167,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Announce do
 
     ctx
   end
+
+  defp game_state_missing?(%Ctx{game_state: nil}), do: true
+  defp game_state_missing?(%Ctx{}), do: false
 
   # rAthena announce/broadcast colors arrive either as an integer or, in the
   # airship/event scripts, as a `"0xRRGGBB"` hex string; `Flags.decode/2` and the
@@ -199,10 +204,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Announce do
 
   defp dispatch_announce(_ctx, :all, _source, opts), do: Announcement.to_all(opts)
 
-  defp dispatch_announce(%Ctx{game_state: nil}, :map, _source, _opts), do: :ok
-
-  defp dispatch_announce(%Ctx{game_state: game_state}, :map, _source, opts) do
-    Announcement.to_map(game_state.map_name, opts)
+  defp dispatch_announce(%Ctx{} = ctx, :map, source, opts) do
+    case area_anchor(ctx, source) do
+      {:ok, map, _cell} -> Announcement.to_map(map, opts)
+      :error -> :ok
+    end
   end
 
   defp dispatch_announce(%Ctx{game_state: nil}, :self, _source, _opts), do: :ok

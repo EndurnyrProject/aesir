@@ -1,13 +1,11 @@
 defmodule Aesir.ZoneServer.Script.DetachedCtxTest do
   @moduledoc """
   Covers `Ctx.detached/2` and `Ctx.attached?/1`, and the no-player guards Task 3
-  adds to the DSL: player-touching effects each independently re-check
-  `game_state: nil` and halt `{:error, :no_player}` on a detached ctx (they do
-  not rely on a prior op's `status`), so every op in a pipe halts on its own;
-  once any op halts, later ops in the same pipe additionally short-circuit via
-  the pre-existing `%Ctx{status: {:error, _}}` clause without re-checking
-  `game_state`. Player reads raise instead, since they have no `status` to
-  carry an error.
+  adds to the DSL: a command that needs the attached player ends the script on a
+  detached ctx (the reference's "player not attached" END), by throwing
+  `{:script_end, ctx}` with `ctx.status == {:error, :no_player}`, so the rest of
+  the pipe never runs. Reads end the script the same way. Commands that do not
+  need a player (`sc_start`, `sc_end`) do nothing and the script goes on.
 
   `summon_mob/2` and `summon_random_mob/2` are the exception: Task 11 makes
   them detached-capable off the calling NPC's own placement, so their
@@ -60,138 +58,123 @@ defmodule Aesir.ZoneServer.Script.DetachedCtxTest do
     end
   end
 
+  defp ended(fun) do
+    assert {:script_end, %Ctx{} = ctx} = catch_throw(fun.())
+    ctx
+  end
+
+  defp detached, do: Ctx.detached(DetachedTestNpc, @npc_gid)
+
   describe "player-touching effect ops on a detached ctx" do
-    test "warp/2 halts :no_player without relocating anything" do
-      result = Dsl.warp(Ctx.detached(DetachedTestNpc, @npc_gid), {"prontera", 150, 150})
+    test "warp/2 ends the script with :no_player without relocating anything" do
+      result = ended(fn -> Dsl.warp(detached(), {"prontera", 150, 150}) end)
 
       assert result.status == {:error, :no_player}
       assert result.game_state == nil
     end
 
-    test "give_item/3 halts :no_player without calling any session" do
-      result = Dsl.give_item(Ctx.detached(DetachedTestNpc, @npc_gid), 501, 1)
-
-      assert result.status == {:error, :no_player}
+    test "give_item/3 ends the script with :no_player without calling any session" do
+      assert ended(fn -> Dsl.give_item(detached(), 501, 1) end).status == {:error, :no_player}
     end
 
-    test "mes/2 halts :no_player without buffering the line" do
-      result = Dsl.mes(Ctx.detached(DetachedTestNpc, @npc_gid), "hello")
+    test "mes/2 ends the script with :no_player without buffering the line" do
+      result = ended(fn -> Dsl.mes(detached(), "hello") end)
 
       assert result.status == {:error, :no_player}
       assert result.page == []
     end
 
-    test "next/1 halts :no_player without flushing or blocking" do
-      result = Dsl.next(Ctx.detached(DetachedTestNpc, @npc_gid))
-
-      assert result.status == {:error, :no_player}
+    test "next/1 ends the script with :no_player without flushing or blocking" do
+      assert ended(fn -> Dsl.next(detached()) end).status == {:error, :no_player}
     end
 
-    test "close/1 halts :no_player without flushing" do
-      result = Dsl.close(Ctx.detached(DetachedTestNpc, @npc_gid))
-
-      assert result.status == {:error, :no_player}
+    test "close/1 ends the script with :no_player without flushing" do
+      assert ended(fn -> Dsl.close(detached()) end).status == {:error, :no_player}
     end
 
-    test "select/2 halts :no_player and returns a nil choice without blocking" do
-      {result, choice} = Dsl.select(Ctx.detached(DetachedTestNpc, @npc_gid), ["A", "B"])
-
-      assert result.status == {:error, :no_player}
-      assert choice == nil
+    test "select/2 ends the script with :no_player without blocking" do
+      assert ended(fn -> Dsl.select(detached(), ["A", "B"]) end).status == {:error, :no_player}
     end
 
-    test "input/2 halts :no_player and returns a nil value without blocking" do
-      {result, value} = Dsl.input(Ctx.detached(DetachedTestNpc, @npc_gid), :int)
-
-      assert result.status == {:error, :no_player}
-      assert value == nil
+    test "input/2 ends the script with :no_player without blocking" do
+      assert ended(fn -> Dsl.input(detached(), :int) end).status == {:error, :no_player}
     end
 
-    test "subsequent ops after the first halt short-circuit via the existing status clause" do
-      ctx =
-        Ctx.detached(DetachedTestNpc, @npc_gid)
-        |> Dsl.warp({"prontera", 150, 150})
-        |> Dsl.give_item(501, 1)
-        |> Dsl.mes("hello")
+    test "the first ending command stops the pipe, later ops never run" do
+      result =
+        ended(fn ->
+          detached()
+          |> Dsl.mes("before")
+          |> Dsl.warp({"prontera", 150, 150})
+          |> Dsl.give_item(501, 1)
+          |> Dsl.mes("hello")
+        end)
 
-      assert ctx.status == {:error, :no_player}
-      assert ctx.page == []
+      assert result.status == {:error, :no_player}
+      assert result.page == []
     end
   end
 
   describe "remaining player-touching effects on a detached ctx" do
-    test "heal/2 halts :no_player" do
-      result = Dsl.heal(Ctx.detached(DetachedTestNpc, @npc_gid), hp: 10)
-
-      assert result.status == {:error, :no_player}
+    test "heal/2 ends the script with :no_player" do
+      assert ended(fn -> Dsl.heal(detached(), hp: 10) end).status == {:error, :no_player}
     end
 
-    test "percent_heal/2 halts :no_player" do
-      result = Dsl.percent_heal(Ctx.detached(DetachedTestNpc, @npc_gid), hp: 10)
-
-      assert result.status == {:error, :no_player}
+    test "percent_heal/2 ends the script with :no_player" do
+      assert ended(fn -> Dsl.percent_heal(detached(), hp: 10) end).status ==
+               {:error, :no_player}
     end
 
-    test "sc_start/4 halts :no_player" do
-      result = Dsl.sc_start(Ctx.detached(DetachedTestNpc, @npc_gid), :sc_blessing, 1_000, 1)
-
-      assert result.status == {:error, :no_player}
+    test "sc_start/4 has no unit to start the status on, does nothing and the script goes on" do
+      assert Dsl.sc_start(detached(), :sc_blessing, 1_000, 1) == detached()
     end
 
-    test "sc_end/2 halts :no_player instead of silently succeeding" do
-      result = Dsl.sc_end(Ctx.detached(DetachedTestNpc, @npc_gid), :sc_poison)
-
-      assert result.status == {:error, :no_player}
+    test "sc_end/2 and cure/2 have no unit to end the status on, do nothing and the script goes on" do
+      assert Dsl.sc_end(detached(), :sc_poison) == detached()
+      assert Dsl.cure(detached(), :sc_poison) == detached()
     end
 
-    test "cure/2 halts :no_player (delegates to sc_end/2)" do
-      result = Dsl.cure(Ctx.detached(DetachedTestNpc, @npc_gid), :sc_poison)
-
-      assert result.status == {:error, :no_player}
-    end
-
-    test "itemskill/3 halts :no_player" do
-      result = Dsl.itemskill(Ctx.detached(DetachedTestNpc, @npc_gid), 14, [])
-
-      assert result.status == {:error, :no_player}
+    test "itemskill/3 ends the script with :no_player" do
+      assert ended(fn -> Dsl.itemskill(detached(), 14, []) end).status == {:error, :no_player}
     end
 
     test "refine/4 returns {:error, :no_player}, its tagged-result error shape" do
-      result = Dsl.refine(Ctx.detached(DetachedTestNpc, @npc_gid), 0, :normal)
+      result = Dsl.refine(detached(), 0, :normal)
 
       assert result == {:error, :no_player}
     end
   end
 
   describe "player reads on a detached ctx" do
-    test "zeny/1 raises ArgumentError naming the op" do
-      assert_raise ArgumentError, ~r/zeny\/1/, fn ->
-        Dsl.zeny(Ctx.detached(DetachedTestNpc, @npc_gid))
+    for {name, fun} <- [
+          {"zeny/1", quote(do: &Dsl.zeny/1)},
+          {"base_level/1", quote(do: &Dsl.base_level/1)},
+          {"position/1", quote(do: &Dsl.position/1)},
+          {"checkfalcon/1", quote(do: &Dsl.checkfalcon/1)},
+          {"ismounting/1", quote(do: &Dsl.ismounting/1)},
+          {"upper/1", quote(do: &Dsl.upper/1)},
+          {"skill_point/1", quote(do: &Dsl.skill_point/1)}
+        ] do
+      test "#{name} ends the script with :no_player" do
+        assert ended(fn -> unquote(fun).(detached()) end).status == {:error, :no_player}
       end
     end
 
-    test "base_level/1 raises ArgumentError naming the op" do
-      assert_raise ArgumentError, ~r/base_level\/1/, fn ->
-        Dsl.base_level(Ctx.detached(DetachedTestNpc, @npc_gid))
-      end
+    test "count_item/2 ends the script with :no_player" do
+      assert ended(fn -> Dsl.count_item(detached(), 501) end).status == {:error, :no_player}
     end
 
-    test "count_item/2 raises ArgumentError naming the op" do
-      assert_raise ArgumentError, ~r/count_item\/2/, fn ->
-        Dsl.count_item(Ctx.detached(DetachedTestNpc, @npc_gid), 501)
-      end
+    test "get_char_var/3 ends the script with :no_player" do
+      assert ended(fn -> Dsl.get_char_var(detached(), :some_var) end).status ==
+               {:error, :no_player}
     end
 
-    test "position/1 raises ArgumentError naming the op" do
-      assert_raise ArgumentError, ~r/position\/1/, fn ->
-        Dsl.position(Ctx.detached(DetachedTestNpc, @npc_gid))
-      end
-    end
+    test "account variables need the attached player too" do
+      assert ended(fn -> Dsl.get_account_var(detached(), "#acc") end).status ==
+               {:error, :no_player}
 
-    test "get_char_var/3 raises ArgumentError naming the op" do
-      assert_raise ArgumentError, ~r/get_char_var\/3/, fn ->
-        Dsl.get_char_var(Ctx.detached(DetachedTestNpc, @npc_gid), :some_var)
-      end
+      assert ended(fn -> Dsl.set_account_var(detached(), "#acc", 1) end).status ==
+               {:error, :no_player}
     end
   end
 end

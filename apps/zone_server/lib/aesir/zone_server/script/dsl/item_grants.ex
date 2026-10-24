@@ -80,7 +80,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
 
   @doc """
   `getitem2` with a binding (rAthena `getitembound2`): 0 none, 1 account,
-  2 guild, 3 party, 4 character; any other value stops the script.
+  2 guild, 3 party, 4 character; any other value fails the command and the
+  script goes on.
   """
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   @spec getitembound2(
@@ -161,7 +162,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
 
   @doc """
   Rents one `item` for `seconds` to the online player of `account_id`
-  (rAthena `rentitem` with its target); an offline target stops the script.
+  (rAthena `rentitem` with its target); an offline target fails the command and
+  the script goes on.
   """
   @spec rentitem(Ctx.t(), integer(), integer(), integer()) :: Ctx.t()
   def rentitem(ctx, item, seconds, account_id),
@@ -287,7 +289,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
 
       ctx
     else
-      :error -> Ctx.halt(ctx, :unknown_item)
+      :error -> Ctx.fail(ctx, :makeitem2, :unknown_item)
       :no_player -> Ctx.halt(ctx, :no_player)
       :unknown_map -> ctx
     end
@@ -310,14 +312,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
     do: ctx
 
   defp bound_grant(ctx, _item, _qty, _fixed, _bound, _extra, _account_id),
-    do: Ctx.halt(ctx, :bad_bound)
+    do: Ctx.fail(ctx, :getitembound, :bad_bound)
 
   defp grant(%Ctx{status: {:error, _}} = ctx, _item, _qty, _fixed, _extra, _account_id, _kind),
     do: ctx
 
   # The target is resolved before the item, as the reference does.
   defp grant(ctx, item, qty, fixed, extra, account_id, kind) do
-    with {:ok, target} <- target(ctx, account_id, kind),
+    with {:ok, target} <- target(ctx, account_id),
          {:ok, definition} <- Items.by_id(item) do
       deliver(
         ctx,
@@ -327,7 +329,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
     else
       :skip -> ctx
       :no_player -> Ctx.halt(ctx, :no_player)
-      :error -> Ctx.halt(ctx, :unknown_item)
+      :error -> Ctx.fail(ctx, kind, :unknown_item)
     end
   end
 
@@ -344,17 +346,18 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
 
   defp max_refine, do: if(GameMode.mode() == :pre_renewal, do: 10, else: 20)
 
-  defp target(_ctx, nil, _kind), do: {:ok, :self}
-  defp target(%Ctx{account_id: own}, own, _kind), do: {:ok, :self}
+  # No explicit account: the attached player, whose absence ends the script.
+  defp target(%Ctx{session_pid: nil}, nil), do: :no_player
+  defp target(_ctx, nil), do: {:ok, :self}
+  defp target(%Ctx{account_id: own}, own), do: {:ok, :self}
 
-  defp target(_ctx, account_id, kind) do
+  defp target(_ctx, account_id) do
     with {:ok, char_id} <- UnitRegistry.get_char_id_by_account(account_id),
          {:ok, {_module, _game_state, pid}} when is_pid(pid) <-
            UnitRegistry.get_unit(:player, char_id) do
       {:ok, pid}
     else
-      _offline when kind == :getitem -> :skip
-      _offline -> :no_player
+      _offline -> :skip
     end
   end
 
@@ -362,7 +365,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemGrants do
 
   defp deliver(ctx, pid, op) do
     case PlayerSession.script_apply(pid, op) do
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, elem(op, 0), reason)
       _ok -> ctx
     end
   end

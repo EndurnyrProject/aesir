@@ -40,6 +40,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
     end
   end
 
+  # Accepts the material's removal and refuses the arrows.
+  defmodule FullSession do
+    use GenServer
+
+    def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
+
+    @impl true
+    def init({game_state, test_pid}), do: {:ok, {game_state, test_pid}}
+
+    @impl true
+    def handle_call({:npc, {:script_apply, {:give_item, _id, _qty} = op}}, _from, state) do
+      send(elem(state, 1), {:script_op, op})
+      {:reply, {:error, :inventory_full}, state}
+    end
+
+    def handle_call({:npc, {:script_apply, op}}, _from, {game_state, test_pid} = state) do
+      send(test_pid, {:script_op, op})
+      {:reply, {:ok, game_state}, state}
+    end
+  end
+
   setup do
     game_state = %PlayerState{
       character_id: 9001,
@@ -92,6 +113,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrowTest do
       assert_receive {:script_op, {:give_item, @product_id, 40}}
       assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
       assert text =~ "40x"
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+    end
+
+    test "reports a failed craft when the arrows are refused",
+         %{game_state: game_state} do
+      {:ok, session_pid} = FullSession.start_link({game_state, self()})
+      {pid, ref} = start_dialog(game_state, session_pid)
+
+      assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :MENU}}}
+      interact(pid, {:choice, 1})
+
+      assert_receive {:script_op, {:give_item, @product_id, 40}}
+      assert_receive {:send, _, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
+      assert text =~ "fail to craft"
       assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
     end
 

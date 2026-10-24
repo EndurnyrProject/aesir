@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Integration.GetNamedItemIntegrationTest do
   test "adds nothing for an offline creator", %{creator: creator, session: session} do
     ctx = session |> ctx_for() |> Dsl.get_named_item(@jellopy, creator.name)
 
-    assert ctx.status == {:error, :not_online}
+    assert ctx.status == :ok
     assert ctx.game_state.inventory == %{}
   end
 

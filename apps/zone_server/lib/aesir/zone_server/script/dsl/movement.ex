@@ -18,12 +18,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
   @doc """
   Relocates the player.
 
-  - `{map, x, y}` — to an explicit cell. Halts on `:map_not_found`.
+  - `{map, x, y}` — to an explicit cell.
   - `:random` — to a random walkable cell on the current map (fly wing).
   - `:save_point` — to the player's save point (butterfly wing).
 
-  Halts on a resolution or warp error. Halts `:no_player` on a detached ctx
-  (there is no player to relocate).
+  A resolution or warp error (unknown map, no walkable cell) fails the command
+  and the script goes on. Halts `:no_player` on a detached ctx (there is no
+  player to relocate).
   """
   @spec warp(Ctx.t(), {String.t(), non_neg_integer(), non_neg_integer()} | :random | :save_point) ::
           Ctx.t()
@@ -35,7 +36,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
   def warp(%Ctx{game_state: game_state} = ctx, :random) do
     case Cell.random_traversable(game_state.map_name) do
       {:ok, {x, y}} -> warp(ctx, game_state.map_name, x, y)
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, :warp, reason)
     end
   end
 
@@ -74,7 +75,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
 
     case WarpHandler.warp(session, map, x, y) do
       {:ok, %{game_state: new_game_state}} -> %{ctx | game_state: new_game_state}
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, :warp, reason)
     end
   end
 

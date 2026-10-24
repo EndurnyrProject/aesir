@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.RandomOptions do
   """
 
   import Bitwise
-  import Aesir.ZoneServer.Script.Dsl.Internal, only: [no_player!: 1]
+  import Aesir.ZoneServer.Script.Dsl.Internal, only: [no_player!: 2]
 
   alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.RandomOptions
@@ -29,7 +29,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.RandomOptions do
   script.
   """
   @spec getrandomoptinfo(Ctx.t(), integer()) :: 0
-  def getrandomoptinfo(%Ctx{game_state: nil}, _type), do: no_player!("getrandomoptinfo/2")
+  def getrandomoptinfo(%Ctx{game_state: nil} = ctx, _type),
+    do: no_player!(ctx, "getrandomoptinfo/2")
+
   def getrandomoptinfo(%Ctx{}, _type), do: 0
 
   @doc """
@@ -42,8 +44,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.RandomOptions do
           integer()
   def getequiprandomoption(ctx, slot, index, type, char_id \\ nil)
 
-  def getequiprandomoption(%Ctx{game_state: nil}, _slot, _index, _type, nil),
-    do: no_player!("getequiprandomoption/4")
+  def getequiprandomoption(%Ctx{game_state: nil} = ctx, _slot, _index, _type, nil),
+    do: no_player!(ctx, "getequiprandomoption/4")
 
   def getequiprandomoption(%Ctx{game_state: game_state}, slot, index, type, nil),
     do: read_option(game_state, slot, index, type)
@@ -127,7 +129,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.RandomOptions do
   Rolls random option group `id` onto an empty item and writes its five
   option slots to the script arrays `.@opt_id`, `.@opt_value` and
   `.@opt_param`; an array's trailing zeros are left unset, as writing 0 to a
-  script array element unsets it. An unknown group stops the script.
+  script array element unsets it. An unknown group fails the command and the script goes on.
   """
   @spec randomoptgroup(Ctx.t(), integer()) :: Ctx.t()
   def randomoptgroup(%Ctx{status: {:error, _}} = ctx, _id), do: ctx
@@ -143,7 +145,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.RandomOptions do
         |> Variables.set_local(:opt_param, slots |> Enum.map(& &1.param) |> trim_zeros())
 
       :error ->
-        Ctx.halt(ctx, :unknown_random_option_group)
+        Ctx.fail(ctx, :randomoptgroup, :unknown_random_option_group)
     end
   end
 

@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
   Imported into scripts via the `Aesir.ZoneServer.Script.Dsl` facade.
   """
 
-  import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2, no_player!: 1]
+  import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2, no_player!: 2]
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Player.QuestLog
@@ -57,7 +57,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
   @spec checkquest(Ctx.t(), QuestLog.quest_id(), :havequest | :playtime | :hunting) ::
           -1 | 0 | 1 | 2
   def checkquest(ctx, quest_id, mode \\ :havequest)
-  def checkquest(%Ctx{game_state: nil}, _quest_id, _mode), do: no_player!("checkquest/3")
+
+  def checkquest(%Ctx{game_state: nil} = ctx, _quest_id, _mode),
+    do: no_player!(ctx, "checkquest/3")
 
   def checkquest(%Ctx{game_state: gs}, quest_id, mode),
     do: QuestLog.check(gs.quest_log, quest_id, mode)
@@ -76,6 +78,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Quest do
   complete (`isbegin_quest`, `QuestLog.is_begin/2`).
   """
   @spec isbegin_quest(Ctx.t(), QuestLog.quest_id()) :: 0 | 1 | 2
-  def isbegin_quest(%Ctx{game_state: nil}, _quest_id), do: no_player!("isbegin_quest/2")
+  def isbegin_quest(%Ctx{game_state: nil} = ctx, _quest_id),
+    do: no_player!(ctx, "isbegin_quest/2")
+
   def isbegin_quest(%Ctx{game_state: gs}, quest_id), do: QuestLog.is_begin(gs.quest_log, quest_id)
 end

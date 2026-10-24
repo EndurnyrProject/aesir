@@ -138,12 +138,13 @@ defmodule Aesir.ZoneServer.Script.DslNpcskillTest do
     refute_received {:packet, _}
   end
 
-  test "halts detached contexts and warns when no NPC is attached" do
+  test "ends the script on detached contexts and warns when no NPC is attached" do
     ctx = register_player()
     detached = %{ctx | game_state: nil}
     no_npc = %{ctx | npc_gid: nil}
 
-    assert Dsl.npcskill(detached, :al_heal, 10, 99, 60) == Ctx.halt(detached, :no_player)
+    assert {:script_end, ended} = catch_throw(Dsl.npcskill(detached, :al_heal, 10, 99, 60))
+    assert ended == %{detached | status: {:error, :no_player}}
 
     log = capture_log(fn -> assert Dsl.npcskill(no_npc, :al_heal, 10, 99, 60) == no_npc end)
     assert log =~ "npcskill"

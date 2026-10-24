@@ -120,10 +120,17 @@ defmodule Aesir.ZoneServer.Script.DslVarsTest do
       assert Dsl.get_account_var(ctx(account_id: account.id + 999), "#points", 0) == 0
     end
 
-    test "default/no-op without a player" do
+    test "end the script without a player" do
       detached = %{ctx() | account_id: nil}
-      assert Dsl.get_account_var(detached, "#points", 42) == 42
-      assert %Ctx{} = Dsl.set_account_var(detached, "#points", 5)
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.get_account_var(detached, "#points", 42))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.set_account_var(detached, "#points", 5))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getd(detached, "#points"))
     end
   end
 
@@ -228,18 +235,26 @@ defmodule Aesir.ZoneServer.Script.DslVarsTest do
       assert_received {:script_apply, {:set_char_var, :quest, 2}}
     end
 
-    test "char/temp getd raises no_player on a detached ctx; other scopes work" do
+    test "char/temp getd ends the script on a detached ctx; other scopes work" do
       detached = %{ctx() | game_state: nil, account_id: nil, session_pid: nil}
 
       assert Dsl.getd(detached, "$boot_count") == 0
-      assert_raise ArgumentError, fn -> Dsl.getd(detached, "@t") end
-      assert_raise ArgumentError, fn -> Dsl.getd(detached, "quest") end
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getd(detached, "@t"))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getd(detached, "quest"))
     end
 
-    test "char/temp setd halts :no_player on a detached ctx" do
+    test "char/temp setd ends the script with :no_player on a detached ctx" do
       detached = %{ctx() | game_state: nil, account_id: nil, session_pid: nil}
-      assert Dsl.setd(detached, "@t", 1).status == {:error, :no_player}
-      assert Dsl.setd(detached, "quest", 1).status == {:error, :no_player}
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.setd(detached, "@t", 1))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.setd(detached, "quest", 1))
     end
 
     test "instance scope (' ) raises via Todo" do
@@ -251,14 +266,14 @@ defmodule Aesir.ZoneServer.Script.DslVarsTest do
     end
 
     test "an errored ctx short-circuits setd" do
-      halted = Ctx.halt(ctx(), :boom)
+      halted = %{ctx() | status: {:error, :boom}}
       assert Dsl.setd(halted, "$x", 1) == halted
     end
   end
 
   describe "errored ctx short-circuits writes" do
     test "set ops return the halted ctx untouched" do
-      halted = Ctx.halt(ctx(), :boom)
+      halted = %{ctx() | status: {:error, :boom}}
       assert Dsl.set_server_var(halted, "x", 1) == halted
       assert Dsl.set_server_temp_var(halted, "x", 1) == halted
       assert Dsl.set_account_var(halted, "x", 1) == halted

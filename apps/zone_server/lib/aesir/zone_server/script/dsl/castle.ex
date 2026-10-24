@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   the castle economy engine.
   """
 
-  import Aesir.ZoneServer.Script.Dsl.Internal, only: [no_player!: 1]
+  import Aesir.ZoneServer.Script.Dsl.Internal, only: [no_player!: 2]
 
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   the map is not a castle. Raises on a detached ctx.
   """
   @spec castle_at(Ctx.t()) :: non_neg_integer() | nil
-  def castle_at(%Ctx{game_state: nil}), do: no_player!("castle_at/1")
+  def castle_at(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "castle_at/1")
 
   def castle_at(%Ctx{game_state: gs}) do
     case CastleDb.by_map(gs.map_name) do
@@ -113,8 +113,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   """
   @spec castle_guardian_hire_check(Ctx.t(), non_neg_integer(), 0..7) ::
           :ok | {:error, :not_owner | :research_required | :invalid_slot | :already_hired}
-  def castle_guardian_hire_check(%Ctx{game_state: nil}, _castle_id, _slot),
-    do: no_player!("castle_guardian_hire_check/3")
+  def castle_guardian_hire_check(%Ctx{game_state: nil} = ctx, _castle_id, _slot),
+    do: no_player!(ctx, "castle_guardian_hire_check/3")
 
   def castle_guardian_hire_check(%Ctx{game_state: gs}, castle_id, slot) do
     Guardians.hire_check(castle_id, slot, gs.guild_id)
@@ -148,8 +148,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   """
   @spec castle_kafra_hire_check(Ctx.t(), non_neg_integer()) ::
           :ok | {:error, :not_owner | :contract_required | :already_hired}
-  def castle_kafra_hire_check(%Ctx{game_state: nil}, _castle_id),
-    do: no_player!("castle_kafra_hire_check/2")
+  def castle_kafra_hire_check(%Ctx{game_state: nil} = ctx, _castle_id),
+    do: no_player!(ctx, "castle_kafra_hire_check/2")
 
   def castle_kafra_hire_check(%Ctx{game_state: gs}, castle_id) do
     Services.hire_check(castle_id, gs.guild_id)

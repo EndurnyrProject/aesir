@@ -172,9 +172,10 @@ defmodule Aesir.ZoneServer.Script.DslRefineTest do
     test "short-circuits an already-halted ctx without a session round-trip" do
       session = start_stub(fn _op, _from -> flunk("must not route a halted ctx") end)
 
-      ctx =
+      ctx = %{
         build_ctx(inventory: %{0 => %InventoryItem{nameid: @sword}}, session: session)
-        |> Ctx.halt(:already_dead)
+        | status: {:error, :already_dead}
+      }
 
       assert Dsl.refine(ctx, 0, :normal, false) == {:error, :already_dead}
       refute_received {:script_apply, _}

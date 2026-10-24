@@ -126,8 +126,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   (`SCSTART_NOAVOID`).
 
   The status lives in external storage, not in `game_state`, so the context is
-  returned unchanged. Halts `:no_player` on a detached ctx — there is no
-  `char_id` to key the status storage on.
+  returned unchanged. A detached ctx has no unit to start it on, so the command
+  does nothing and the script goes on.
   """
   @spec sc_start(
           Ctx.t(),
@@ -143,8 +143,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def sc_start(%Ctx{status: {:error, _}} = ctx, _status, _duration_ms, _val, _rate, _flag),
     do: ctx
 
-  def sc_start(%Ctx{game_state: nil} = ctx, _status, _duration_ms, _val, _rate, _flag),
-    do: Ctx.halt(ctx, :no_player)
+  def sc_start(%Ctx{game_state: nil} = ctx, _status, _duration_ms, _val, _rate, _flag), do: ctx
 
   def sc_start(%Ctx{} = ctx, status, duration_ms, val, rate, flag) do
     flag = flag || default_start_flag(ctx.source)
@@ -168,13 +167,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   @doc """
   Removes a status effect from the player. Returns the context unchanged.
 
-  Canonical status-removal op, pairing with `sc_start/4`. Halts `:no_player`
-  on a detached ctx (otherwise this would silently succeed: a `nil` `char_id`
-  looks up nothing in status storage and reports `:ok`).
+  Canonical status-removal op, pairing with `sc_start/4`. A detached ctx has no
+  unit to remove it from, so the command does nothing and the script goes on.
   """
   @spec sc_end(Ctx.t(), atom()) :: Ctx.t()
   def sc_end(%Ctx{status: {:error, _}} = ctx, _status), do: ctx
-  def sc_end(%Ctx{game_state: nil} = ctx, _status), do: Ctx.halt(ctx, :no_player)
+  def sc_end(%Ctx{game_state: nil} = ctx, _status), do: ctx
 
   def sc_end(%Ctx{} = ctx, status) do
     StatusInterpreter.remove_status(:player, ctx.char_id, status)
@@ -184,7 +182,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   @doc """
   Removes a status effect from the player. Alias for `sc_end/2`.
 
-  Inherits `sc_end/2`'s `:no_player` halt on a detached ctx (pure delegation).
+  Inherits `sc_end/2`'s no-op on a detached ctx (pure delegation).
   """
   @spec cure(Ctx.t(), atom()) :: Ctx.t()
   def cure(%Ctx{} = ctx, status), do: sc_end(ctx, status)
@@ -200,10 +198,16 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   @doc """
   Grants `base_exp` base experience and `job_exp` job experience through the
   session seam (rAthena `getexp`), leveling the player as the gain warrants and
-  pushing the refreshed experience/stat state to the client.
+  pushing the refreshed experience/stat state to the client. A negative amount,
+  or both amounts zero, fails the command and the script goes on.
   """
   @spec getexp(Ctx.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
   def getexp(%Ctx{status: {:error, _}} = ctx, _base_exp, _job_exp), do: ctx
+
+  def getexp(%Ctx{} = ctx, base_exp, job_exp) when base_exp < 0 or job_exp < 0,
+    do: Ctx.fail(ctx, :getexp, :negative_exp)
+
+  def getexp(%Ctx{} = ctx, 0, 0), do: Ctx.fail(ctx, :getexp, :no_exp)
   def getexp(%Ctx{} = ctx, base_exp, job_exp), do: apply_op(ctx, {:getexp, base_exp, job_exp})
 
   @doc """
@@ -214,7 +218,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   - `3` resets only base level and base experience.
   - `4` resets job level, job experience, and skills.
 
-  Invalid types halt the script with `:invalid_reset_type`.
+  An invalid type, or an active cart, fails the command and the script goes on.
   """
   @spec resetlvl(Ctx.t(), integer()) :: Ctx.t()
   def resetlvl(%Ctx{status: {:error, _}} = ctx, _type), do: ctx
@@ -223,8 +227,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   @doc """
   Changes the player's job through the session seam, recomputing job-dependent
   stats and refreshing the client's sprite/skill window. Accepts either a
-  numeric job id or a job name atom (as `Job_*` constants transpile to). Halts
-  `:unknown_job` when the job does not resolve to a known job.
+  numeric job id or a job name atom (as `Job_*` constants transpile to). A job
+  that does not resolve, or a change the player does not qualify for, fails the
+  command and the script goes on.
   """
   @spec jobchange(Ctx.t(), non_neg_integer() | atom()) :: Ctx.t()
   def jobchange(%Ctx{status: {:error, _}} = ctx, _job), do: ctx
@@ -235,7 +240,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def jobchange(%Ctx{} = ctx, job_name) when is_atom(job_name) do
     case AvailableJobs.job_name_to_id(job_name) do
       {:ok, job_id} -> apply_op(ctx, {:change_job, job_id})
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, :jobchange, reason)
     end
   end
 
@@ -267,8 +272,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   Gives the player a cart (rAthena `setcart`): mounts the pushcart through the
   session seam, or removes it when `type` is `0`. Mounting requires
   `MC_PUSHCART` learned; a rejected mount reports to the client as a
-  `CartMountResult` and never halts the script, matching rAthena's silent
-  failure. Cart sprite tiers are not modelled — any non-zero `type` mounts the
+  `CartMountResult` and the script goes on. Cart sprite tiers are not modelled — any non-zero `type` mounts the
   first tier, and mounting while already mounted is a no-op. Removal with a
   non-empty cart is also a no-op (Aesir never discards cart items). Halts
   `:no_player` on a detached ctx.
@@ -280,11 +284,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
 
   @doc """
   Mounts or dismounts the Peco-Peco through the session seam (rAthena
-  `setriding`). Mounting requires `KN_RIDING` learned; unlike `setcart/2`'s
-  silent failure, a rejected mount halts the script (mirrors `pay_zeny/2` on
-  insufficient zeny) since a script that keeps going assumes the mount
-  succeeded. Dismounting is always a no-op success, mounted or not. Halts
-  `:no_player` on a detached ctx.
+  `setriding`). Mounting requires `KN_RIDING` learned; a rejected mount fails
+  the command and the script goes on. Dismounting is always a no-op success,
+  mounted or not. Halts `:no_player` on a detached ctx.
   """
   @spec set_riding(Ctx.t(), boolean()) :: Ctx.t()
   def set_riding(%Ctx{status: {:error, _}} = ctx, _riding?), do: ctx

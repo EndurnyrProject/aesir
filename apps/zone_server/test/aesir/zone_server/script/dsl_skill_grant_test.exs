@@ -66,24 +66,26 @@ defmodule Aesir.ZoneServer.Script.DslSkillGrantTest do
       assert_received {:script_apply, {:grant_skill, :ht_phantasmic, 1}}
     end
 
-    test "halts with the handler failure and leaves the snapshot untouched" do
+    test "fails the command, goes on and leaves the snapshot untouched" do
       session = start_session(fn {:grant_skill, 9001, 1} -> {:error, :not_grantable} end)
 
       result = Dsl.skill(ctx(session_pid: session), 9001, 1, 0)
 
-      assert result.status == {:error, :not_grantable}
+      assert result.status == :ok
+      assert result.failures == [{:grant_skill, :not_grantable}]
       assert result.game_state == %PlayerState{character_id: 1}
       assert_received {:script_apply, {:grant_skill, 9001, 1}}
     end
 
-    test "halts :no_player without calling the session on a detached ctx" do
+    test "ends the script with :no_player without calling the session on a detached ctx" do
       detached = %{ctx() | game_state: nil}
 
-      assert Dsl.skill(detached, 9001, 1, 0) == Ctx.halt(detached, :no_player)
+      assert {:script_end, ended} = catch_throw(Dsl.skill(detached, 9001, 1, 0))
+      assert ended == %{detached | status: {:error, :no_player}}
     end
 
     test "short-circuits an already-errored ctx without calling the session" do
-      errored = Ctx.halt(ctx(), :previous_error)
+      errored = %{ctx() | status: {:error, :previous_error}}
 
       assert Dsl.skill(errored, 9001, 1, 0) == errored
     end

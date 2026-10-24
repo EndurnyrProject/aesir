@@ -171,11 +171,11 @@ defmodule Aesir.ZoneServer.Script.DslMonsterDropsTest do
       assert {_ctx, 0} = Dsl.delmonsterdrop(ctx(), @poring, @apple)
     end
 
-    test "an unknown item or monster stops the script" do
-      assert {%Ctx{status: {:error, :unknown_item}}, 0} =
+    test "an unknown item or monster fails the command, reads 0 and the script goes on" do
+      assert {%Ctx{status: :ok, failures: [{:delmonsterdrop, :unknown_item}]}, 0} =
                Dsl.delmonsterdrop(ctx(), @poring, 999_999)
 
-      assert {%Ctx{status: {:error, :unknown_mob}}, 0} =
+      assert {%Ctx{status: :ok, failures: [{:delmonsterdrop, :unknown_mob}]}, 0} =
                Dsl.delmonsterdrop(ctx(), 999_999, @apple)
     end
   end

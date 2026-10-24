@@ -145,7 +145,9 @@ defmodule Aesir.ZoneServer.Script.DslTest do
              ]
 
       refute_received {:send, _channel, _packet}
-      assert Dsl.heal(ctx, hp: 10).status == {:error, :not_throwable}
+
+      assert {:script_end, %{status: {:error, :not_throwable}}} =
+               catch_throw(Dsl.heal(ctx, hp: 10))
     end
   end
 
@@ -223,7 +225,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(%{build_ctx() | npc_gid: 42}, :boom)
+      ctx = %{%{build_ctx() | npc_gid: 42} | status: {:error, :boom}}
       assert Dsl.specialeffect(ctx, :hit1) == ctx
     end
   end
@@ -265,7 +267,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
     test "short-circuits on an already-halted ctx" do
       reject(&Broadcast.to_player/2)
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.viewpoint(ctx, 1, 10, 20, 1, 0) == ctx
     end
   end
@@ -292,8 +294,16 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.consumeitem(ctx, 0) == ctx
     end
 
+    test "an item script that ends the script does not end or latch the calling script" do
+      # Item 501's `item_heal` halts :no_player on a detached ctx, ending the
+      # item's own script; the script that consumed it carries on.
+      ctx = %{build_ctx() | game_state: nil, source: {:npc, __MODULE__}}
+
+      assert Dsl.consumeitem(ctx, 501) == ctx
+    end
+
     test "short-circuits on an already-halted ctx without running any script" do
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.consumeitem(ctx, 501) == ctx
     end
   end
@@ -327,7 +337,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
     test "short-circuits on an already-halted ctx" do
       reject(&MobSupervisor.kill_by_event/2)
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.killmonster(ctx, "prontera", "All") == ctx
     end
   end
@@ -348,7 +358,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
     test "short-circuits on an already-halted ctx" do
       reject(&MobSupervisor.kill_all/1)
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.killmonsterall(ctx, "job_wiz") == ctx
     end
   end
@@ -373,7 +383,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "is a passthrough on an already-halted ctx" do
       reject(&ScriptCells.set/5)
 
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.setcell(ctx, "iz_ac02", 58, 142, 63, 144, :icewall, 1) == ctx
     end
   end
@@ -407,10 +417,12 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.mobcount(build_ctx(), "nope", "all") == -1
     end
 
-    test "returns -1 for \"this\" on a detached ctx" do
+    test "ends the script for \"this\" on a detached ctx" do
       reject(&MobSupervisor.count_by_event/2)
       ctx = %{build_ctx() | game_state: nil}
-      assert Dsl.mobcount(ctx, "this", "all") == -1
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.mobcount(ctx, "this", "all"))
     end
   end
 
@@ -423,18 +435,24 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert System.monotonic_time(:millisecond) - started >= 20
     end
 
-    test "halts :no_player when the session died while sleeping" do
+    test "ends the script with :no_player when the session died while sleeping" do
       pid = spawn(fn -> :ok end)
       ref = Process.monitor(pid)
       assert_receive {:DOWN, ^ref, :process, ^pid, _}
 
       ctx = %{build_ctx() | session_pid: pid}
-      assert Dsl.sleep2(ctx, 1).status == {:error, :no_player}
+      assert {:script_end, %{status: {:error, :no_player}}} = catch_throw(Dsl.sleep2(ctx, 1))
     end
 
-    test "halts :no_player on a detached ctx" do
+    test "fails the command and goes on without pausing on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
-      assert Dsl.sleep2(ctx, 10).status == {:error, :no_player}
+      started = System.monotonic_time(:millisecond)
+
+      result = Dsl.sleep2(ctx, 50)
+
+      assert result.status == :ok
+      assert result.failures == [{:sleep2, :no_player}]
+      assert System.monotonic_time(:millisecond) - started < 50
     end
 
     test "a non-positive duration warns and skips the pause" do
@@ -445,7 +463,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.sleep2(ctx, 10) == ctx
     end
   end
@@ -468,18 +486,23 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.progressbar(ctx, "ffff00", 5) == ctx
     end
 
-    test "halts with the session's error when the bar cannot start" do
+    test "fails the command and goes on when the bar cannot start" do
       expect(PlayerSession, :script_apply, fn _pid, {:progressbar, _, _, _} ->
         {:error, :no_player}
       end)
 
       ctx = %{build_ctx() | npc_gid: 42, session_pid: self()}
-      assert Dsl.progressbar(ctx, "ffff00", 5).status == {:error, :no_player}
+      result = Dsl.progressbar(ctx, "ffff00", 5)
+
+      assert result.status == :ok
+      assert result.failures == [{:progressbar, :no_player}]
     end
 
-    test "halts :no_player on a detached ctx" do
+    test "ends the script with :no_player on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
-      assert Dsl.progressbar(ctx, "ffff00", 5).status == {:error, :no_player}
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.progressbar(ctx, "ffff00", 5))
     end
 
     test "a non-positive duration warns and skips" do
@@ -490,7 +513,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.progressbar(ctx, "ffff00", 5) == ctx
     end
   end
@@ -550,7 +573,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "short-circuits on an already-halted ctx" do
       reject(&Broadcast.to_player/2)
       reject(&PlayerSession.start_navigation/3)
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.navigateto(ctx, "einbroch", 267, 268, 0, true, 0) == ctx
     end
   end
@@ -578,9 +601,10 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.getbrokenid(ctx, -1) == 0
     end
 
-    test "raises on a detached ctx" do
+    test "ends the script on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
-      assert_raise ArgumentError, fn -> Dsl.getbrokenid(ctx, 1) end
+
+      assert {:script_end, %{status: {:error, :no_player}}} = catch_throw(Dsl.getbrokenid(ctx, 1))
     end
   end
 
@@ -647,11 +671,13 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.party_leader?(build_ctx()) == 0
     end
 
-    test "raises on a detached ctx" do
+    test "ends the script on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
 
-      assert_raise ArgumentError, fn -> Dsl.party_leader?(ctx) end
-      assert_raise ArgumentError, fn -> Dsl.party_leader?(ctx, 7) end
+      assert {:script_end, %{status: {:error, :no_player}}} = catch_throw(Dsl.party_leader?(ctx))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.party_leader?(ctx, 7))
     end
   end
 
@@ -679,8 +705,24 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
   describe "checkweight/2" do
     setup do
-      stub(ItemManagement, :get_item_by_id, fn _ -> {:error, :item_not_found} end)
+      stub(ItemManagement, :get_item_by_id, fn
+        501 ->
+          {:ok, struct(Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition, id: 501, weight: 0)}
+
+        _ ->
+          {:error, :item_not_found}
+      end)
+
       :ok
+    end
+
+    test "fails the command and reads 0 for an unknown item or an amount below 1" do
+      stub(Weight, :would_exceed?, fn _inv, _stats, _added -> false end)
+
+      unknown = Dsl.checkweight(build_ctx(), [{999_999, 1}])
+      assert unknown == 0
+
+      assert 0 == Dsl.checkweight(build_ctx(), [{501, 0}])
     end
 
     test "returns 1 when the items fit under weight and there is a free slot" do
@@ -776,13 +818,14 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.position(ctx) == {150, 100, "prontera"}
     end
 
-    test "halts and leaves position unchanged when the warp fails" do
+    test "fails the command, goes on and leaves position unchanged when the warp fails" do
       stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
 
       ctx = build_ctx()
       result = Dsl.warp(ctx, {"prontera", 150, 100})
 
-      assert result.status == {:error, :map_not_found}
+      assert result.status == :ok
+      assert result.failures == [{:warp, :map_not_found}]
       assert Dsl.position(result) == Dsl.position(ctx)
     end
   end
@@ -803,16 +846,17 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.position(ctx) == {33, 44, "prontera"}
     end
 
-    test "halts when no walkable cell can be resolved" do
+    test "fails the command and goes on when no walkable cell can be resolved" do
       stub(Cell, :random_traversable, fn _map -> {:error, :not_found} end)
 
       result = Dsl.warp(build_ctx(), :random)
 
-      assert result.status == {:error, :not_found}
+      assert result.status == :ok
+      assert result.failures == [{:warp, :not_found}]
     end
 
     test "halts immediately when already in an error state" do
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
 
       assert Dsl.warp(ctx, :random) == ctx
     end
@@ -833,7 +877,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.position(ctx) == {90, 105, "izlude"}
     end
 
-    test "halts and leaves position unchanged when the warp fails" do
+    test "fails the command, goes on and leaves position unchanged when the warp fails" do
       stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
 
       game_state = %{build_game_state() | save_map: "izlude", save_x: 90, save_y: 105}
@@ -841,12 +885,13 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       result = Dsl.warp(ctx, :save_point)
 
-      assert result.status == {:error, :map_not_found}
+      assert result.status == :ok
+      assert result.failures == [{:warp, :map_not_found}]
       assert Dsl.position(result) == Dsl.position(ctx)
     end
 
     test "halts immediately when already in an error state" do
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
 
       assert Dsl.warp(ctx, :save_point) == ctx
     end
@@ -926,7 +971,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
     test "short-circuits on an already-halted ctx" do
       reject(&SpatialIndex.get_players_in_area/5)
-      ctx = Ctx.halt(build_ctx(), :boom)
+      ctx = %{build_ctx() | status: {:error, :boom}}
       assert Dsl.areawarp(ctx, "m", 0, 0, 10, 10, "geffen", 1, 1) == ctx
     end
   end
@@ -1067,14 +1112,17 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert result.game_state == staged_state
     end
 
-    test "halts when the owner rejects staging" do
+    test "fails the command and goes on when the owner rejects staging" do
       ctx = %{build_ctx() | session_pid: self()}
 
       stub(PlayerSession, :script_apply, fn _pid, {:stage_item_skill, 14, 1, false} ->
         {:error, :invalid_level}
       end)
 
-      assert Dsl.itemskill(ctx, 14, []).status == {:error, :invalid_level}
+      result = Dsl.itemskill(ctx, 14, [])
+
+      assert result.status == :ok
+      assert result.failures == [{:stage_item_skill, :invalid_level}]
     end
 
     test "the third itemskill argument retains the skill's requirement recipe" do
@@ -1126,19 +1174,22 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert result.game_state == started
     end
 
-    test "halts when the owner rejects the cast" do
+    test "fails the command and goes on when the owner rejects the cast" do
       ctx = %{build_ctx() | session_pid: self()}
 
       stub(PlayerSession, :script_apply, fn _pid, {:unitskilluseid, 10_015, 1} ->
         {:error, :skill_not_learned}
       end)
 
-      assert Dsl.unitskilluseid(ctx, 10_015, []).status == {:error, :skill_not_learned}
+      result = Dsl.unitskilluseid(ctx, 10_015, [])
+
+      assert result.status == :ok
+      assert result.failures == [{:unitskilluseid, :skill_not_learned}]
     end
 
-    test "halts a detached context" do
-      assert Dsl.unitskilluseid(Ctx.detached(DetachedNpc, 1), 10_015, []).status ==
-               {:error, :no_player}
+    test "fails the command and goes on in a detached context" do
+      assert Dsl.unitskilluseid(Ctx.detached(DetachedNpc, 1), 10_015, []).failures ==
+               [{:unitskilluseid, :no_player}]
     end
   end
 
@@ -1335,34 +1386,36 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert_received {:summoned_at, {0, 0}}
     end
 
-    test "halts :map_not_found when the target map has no coordinator" do
+    test "spawns nothing and goes on when the target map has no coordinator" do
       stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
         {:error, :map_not_found}
       end)
 
       ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, map: "no_such_map")
 
-      assert ctx.status == {:error, :map_not_found}
+      assert ctx.status == :ok
+      assert ctx.failures == []
     end
 
-    test "halts on an unknown mob id without summoning" do
+    test "fails the command and goes on for an unknown mob id without summoning" do
       stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
         flunk("summon_mob should not be called for an unknown mob")
       end)
 
       ctx = Dsl.summon_mob(build_ctx(), mob_id: 9_999_999, at: {10, 10})
 
-      assert ctx.status == {:error, :mob_not_found}
+      assert ctx.status == :ok
+      assert ctx.failures == [{:monster, :mob_not_found}]
     end
 
-    test "halts when the spawn fails" do
+    test "goes on when the spawn fails" do
       stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
         {:error, :max_children}
       end)
 
       ctx = Dsl.summon_mob(build_ctx(), mob_id: @poring_id, at: {10, 10})
 
-      assert ctx.status == {:error, :max_children}
+      assert ctx.status == :ok
     end
 
     test "returns a halted ctx unchanged without summoning" do
@@ -1370,7 +1423,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         flunk("summon_mob should not be called on a halted ctx")
       end)
 
-      ctx = Ctx.halt(build_ctx(), :already_dead)
+      ctx = %{build_ctx() | status: {:error, :already_dead}}
 
       assert Dsl.summon_mob(ctx, mob_id: @poring_id, at: {10, 10}) == ctx
     end
@@ -1458,7 +1511,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert_received {:summoned, @poring_id}
     end
 
-    test "halts :map_not_found when the target map has no coordinator" do
+    test "spawns nothing and goes on when the target map has no coordinator" do
       stub(Coordinator, :summon_mob_area, fn _map, _mob_id, _area, _opts ->
         {:error, :map_not_found}
       end)
@@ -1470,17 +1523,19 @@ defmodule Aesir.ZoneServer.Script.DslTest do
           area: {1, 2, 3, 4}
         )
 
-      assert ctx.status == {:error, :map_not_found}
+      assert ctx.status == :ok
+      assert ctx.failures == []
     end
 
-    test "halts on an unknown mob id without summoning" do
+    test "fails the command and goes on for an unknown mob id without summoning" do
       stub(Coordinator, :summon_mob_area, fn _map, _mob_id, _area, _opts ->
         flunk("summon_mob_area should not be called for an unknown mob")
       end)
 
       ctx = Dsl.summon_mob_area(build_ctx(), mob_id: 9_999_999, area: {1, 2, 3, 4})
 
-      assert ctx.status == {:error, :mob_not_found}
+      assert ctx.status == :ok
+      assert ctx.failures == [{:areamonster, :mob_not_found}]
     end
 
     test "returns a halted ctx unchanged without summoning" do
@@ -1488,7 +1543,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
         flunk("summon_mob_area should not be called on a halted ctx")
       end)
 
-      ctx = Ctx.halt(build_ctx(), :already_dead)
+      ctx = %{build_ctx() | status: {:error, :already_dead}}
 
       assert Dsl.summon_mob_area(ctx, mob_id: @poring_id, area: {1, 2, 3, 4}) == ctx
     end
@@ -1533,7 +1588,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert MapSet.member?(valid_ids, mob_id)
     end
 
-    test "halts with :no_mobs when the catalog is empty" do
+    test "fails the command and goes on when the catalog is empty" do
       Mimic.copy(MobManagement)
       stub(MobManagement, :get_all_mobs, fn -> [] end)
 
@@ -1543,13 +1598,14 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       ctx = Dsl.summon_random_mob(build_ctx(), at: {50, 50})
 
-      assert ctx.status == {:error, :no_mobs}
+      assert ctx.status == :ok
+      assert ctx.failures == [{:monster, :no_mobs}]
     end
   end
 
   describe "short-circuit" do
     test "a mutation on a halted ctx returns it unchanged" do
-      ctx = Ctx.halt(build_ctx(), :already_dead)
+      ctx = %{build_ctx() | status: {:error, :already_dead}}
 
       assert Dsl.heal(ctx, hp: 100) == ctx
       assert Dsl.warp(ctx, {"prontera", 1, 1}) == ctx
@@ -1638,8 +1694,9 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.char_name(ctx, 2) == ""
     end
 
-    test "char_name/2 raises on a detached ctx" do
-      assert_raise ArgumentError, fn -> Dsl.char_name(%{build_ctx() | game_state: nil}, 0) end
+    test "char_name/2 ends the script on a detached ctx" do
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.char_name(%{build_ctx() | game_state: nil}, 0))
     end
 
     test "char_name/3 reads self from the active ctx rather than the registry" do
@@ -1670,9 +1727,11 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   describe "mapid job reads" do
-    test "eaclass/1 reads the player's job mapid, -1 when detached" do
+    test "eaclass/1 reads the player's job mapid, ending the script when detached" do
       assert Dsl.eaclass(build_ctx(job_id: 4054)) == 0x1101
-      assert Dsl.eaclass(%{build_ctx() | game_state: nil}) == -1
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.eaclass(%{build_ctx() | game_state: nil}))
     end
 
     test "eaclass/2 converts a job id or atom, -1 for unknown or mounted forms" do

@@ -157,7 +157,13 @@ External-store vars are read/written directly by the interaction Task, not via
 
 - `Npc.Events` is the only dispatch seam: `trigger` (donpcevent, detached), `trigger_all`,
   `trigger_gid`, `trigger_attached`, `run_on_init` (boot). Detached ctx has
-  `game_state: nil` — player effects halt `{:error, :no_player}`, player reads raise.
+  `game_state: nil` — a command that needs the player ends the script (`Ctx.halt/2`,
+  `{:error, :no_player}`), as do player reads.
+- Script commands follow the reference's failure model. A command that fails goes on
+  (`Ctx.fail/3`: logs, records `ctx.failures`, returns the ctx and the value the reference
+  pushed, if any); only a command whose reference ends the script halts (`Ctx.halt/2` throws
+  `{:script_end, ctx}`, caught by the interaction, the event runner and compiled item scripts).
+  Decide which a new buildin is from its reference body, per failure path, not by instinct.
 - `Npc.Session` (per-gid, on-demand GenServer) owns rAthena timers and enabled/hidden flags
   (mirrored to the `:npc_session_flags` ETS table; missing row = visible).
 - OnTouch: rect scan in `MovementHandler` (warp check wins); busy players skip-but-mark.

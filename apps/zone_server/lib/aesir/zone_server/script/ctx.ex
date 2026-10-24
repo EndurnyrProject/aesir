@@ -3,8 +3,9 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   Shared script execution context threaded through every item/NPC DSL call.
 
   Carries the player identity, live game state, the connection process, a source
-  tag identifying what triggered the script, and a `status` accumulator used by
-  pipeline helpers to short-circuit on error.
+  tag identifying what triggered the script, a `status` that is `{:error, reason}`
+  once a command ended the script (`halt/2`), and the `failures` of commands that
+  failed without ending it (`fail/3`).
 
   For NPC interactions it additionally carries the running interaction process
   (`interaction_pid`), the player session process (`session_pid` — the
@@ -19,14 +20,15 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   NPC event handlers (`OnInit`/`OnTimer`/`donpcevent`, rAthena semantics) run
   with no player attached: `detached/2` builds a `Ctx` for that case, with
   `session_pid`, `char_id`, `account_id`, `connection_pid`, and `game_state`
-  all `nil`. Every player-touching DSL effect guards on this — halting the ctx
-  with `{:error, :no_player}` (or, for `refine/4`, which returns a tagged
-  result rather than a `Ctx`, returning `{:error, :no_player}` directly) —
+  all `nil`. Every command that needs the player guards on this and ends the
+  script with `{:error, :no_player}` (or, for `refine/4`, which returns a
+  tagged result rather than a `Ctx`, returns `{:error, :no_player}` directly)
   instead of touching a nonexistent session or dereferencing a nonexistent
-  game state. Pure reads raise `ArgumentError` instead, since they return bare
-  values and have no `status` to carry an error. `attached?/1` tells the two
-  shapes apart.
+  game state; reads end it the same way. `attached?/1` tells the two shapes
+  apart.
   """
+
+  require Logger
 
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.ScriptVitals
@@ -39,6 +41,9 @@ defmodule Aesir.ZoneServer.Script.Ctx do
 
   @typedoc "Pipeline status: `:ok` until `halt/2` is called."
   @type status :: :ok | {:error, term()}
+
+  @typedoc "A command that failed without ending the script: its name and the reason."
+  @type failure :: {atom(), term()}
 
   @typedoc "A Homunculus item effect staged for atomic validation and persistence."
   @type homunculus_effect ::
@@ -69,7 +74,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
             page: [],
             session_ref: nil,
             vars: %{},
-            session_effects: []
+            session_effects: [],
+            failures: []
 
   @type t() :: %__MODULE__{
           char_id: integer() | nil,
@@ -84,7 +90,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           page: [String.t()],
           session_ref: reference() | nil,
           vars: map(),
-          session_effects: [session_effect()]
+          session_effects: [session_effect()],
+          failures: [failure()]
         }
 
   @doc """
@@ -109,14 +116,34 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   end
 
   @doc """
-  Marks the context as halted with the given error reason.
+  Ends the script: the command did what a buildin that sets the script state
+  to END does.
 
-  Further pipeline steps should check `ctx.status` and skip execution when it is
-  not `:ok`.
+  Throws `{:script_end, ctx}` with `ctx.status` set to `{:error, reason}`, the
+  same termination a script's own `close`/`end` uses, so everything after the
+  command is skipped. The script's entry point catches it (the NPC interaction,
+  the NPC event runner, the compiled item script) and takes the ctx as the
+  script's final state. Use `fail/3` for a command that merely failed.
   """
-  @spec halt(t(), term()) :: t()
+  @spec halt(t(), term()) :: no_return()
   def halt(%__MODULE__{} = ctx, reason) do
-    %{ctx | status: {:error, reason}}
+    throw({:script_end, %{ctx | status: {:error, reason}}})
+  end
+
+  @doc """
+  Reports that script command `buildin` failed and returns `ctx` untouched so
+  the script keeps running, as `run_func` does when a buildin returns failure
+  without ending the script.
+
+  Only a command that ends the script halts (`halt/2`); every other failure
+  logs a warning here and carries on. The failure is also recorded in
+  `failures` (newest first) for callers that need to know whether a command
+  they issued went through.
+  """
+  @spec fail(t(), atom(), term()) :: t()
+  def fail(%__MODULE__{} = ctx, buildin, reason) do
+    Logger.warning("script command #{buildin} returned failure: #{inspect(reason)}")
+    %{ctx | failures: [{buildin, reason} | ctx.failures]}
   end
 
   @doc """

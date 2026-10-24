@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Script.DslHomunculusTest do
   end
 
   test "staging short-circuits halted contexts and rejects invalid amounts" do
-    halted = Ctx.halt(ctx(), :stopped)
+    halted = %{ctx() | status: {:error, :stopped}}
 
     assert Dsl.homevolution(halted) == halted
     assert Dsl.add_homunculus_intimacy(halted, 100) == halted

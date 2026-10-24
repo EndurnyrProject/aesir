@@ -107,7 +107,9 @@ defmodule Aesir.ZoneServer.Script.Interaction do
   # page is already empty (the common `close/1` path) sends nothing more.
   @spec auto_close(any()) :: :ok
   defp auto_close(%Ctx{page: []}), do: :ok
+
   defp auto_close(%Ctx{} = ctx), do: _ = Dsl.close(ctx)
+
   defp auto_close({%Ctx{} = ctx, _value}), do: auto_close(ctx)
   defp auto_close(_other), do: :ok
 end

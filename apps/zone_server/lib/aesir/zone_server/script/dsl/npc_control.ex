@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   require Logger
 
+  import Aesir.ZoneServer.Script.Dsl.Internal, only: [no_player!: 2]
+
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Net.ChatMessage
   alias Aesir.Net.WaitingRoomInfo
@@ -41,19 +43,21 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   tuple or `:random` for a random walkable cell (defaults to the player's
   current position), `:map` to spawn on an explicit map instead of the
   player's (rAthena `monster "map",...`; with `:map`, `:at` defaults to
-  `:random` and an unknown map halts `:map_not_found`), `:amount` (spawn
+  `:random` and an unknown map fails the command), `:amount` (spawn
   count, default 1), `:aggressive` (accepted but deferred in Phase 1, kept
   for the Dead Branch interface), and `:event` (optional, a `"Name::OnLabel"`
   ref — rAthena OnMyMobDead — run with the killer attached if the mob is
   later killed by a player; a malformed ref logs a warning and is dropped,
-  the mob still spawns without it). Halts on an unknown mob or a spawn
-  failure; returns the context unchanged on success.
+  the mob still spawns without it). An unknown mob fails the command; a failed
+  spawn or no map to spawn on spawns nothing, and in every case the script goes
+  on (a failed instance is skipped and the next one is tried). Returns the
+  context unchanged.
 
   Detached-capable: on a detached ctx, `:map`/`:at` still apply, but the
   default map and position come from `ctx.npc_gid`'s own placement
   (`Npc.Registry.module_for_unit/1`) instead of a player. Without `:map`,
-  halts `:no_player` when `ctx.npc_gid` is `nil` or doesn't resolve — there
-  is nowhere to spawn.
+  nothing spawns (and the script goes on) when `ctx.npc_gid` is `nil` or
+  doesn't resolve — there is nowhere to spawn.
   """
   @spec summon_mob(Ctx.t(), keyword()) :: Ctx.t()
   def summon_mob(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
@@ -61,7 +65,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def summon_mob(%Ctx{} = ctx, opts) do
     case resolve_mob(opts) do
       {:ok, mob_data} -> spawn_mob_at(ctx, mob_data.id, opts)
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, :monster, reason)
     end
   end
 
@@ -69,7 +73,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   Spawns a random monster from the catalog, like `summon_mob/2` with a rolled id.
 
   `opts` accepts `:at`, `:map`, `:amount`, `:aggressive`, and `:event` (see
-  `summon_mob/2`). Halts with `:no_mobs` if the catalog is empty.
+  `summon_mob/2`). Fails the command if the catalog is empty.
   Detached-capable, same reasoning as `summon_mob/2`.
   """
   @spec summon_random_mob(Ctx.t(), keyword()) :: Ctx.t()
@@ -77,7 +81,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   def summon_random_mob(%Ctx{} = ctx, opts) do
     case MobManagement.get_all_mobs() do
-      [] -> Ctx.halt(ctx, :no_mobs)
+      [] -> Ctx.fail(ctx, :monster, :no_mobs)
       mobs -> spawn_mob_at(ctx, Enum.random(mobs).id, opts)
     end
   end
@@ -93,8 +97,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   meaning the player's map is handled by omitting `:map`), `:amount` (spawn
   count, default 1), `:aggressive` (accepted but deferred), and `:event`
   (optional OnMyMobDead ref, validated like `summon_mob/2`). Each instance
-  lands on its own random walkable cell inside the rectangle; an unknown mob,
-  map, or spawn failure halts the context.
+  lands on its own random walkable cell inside the rectangle; an unknown mob
+  fails the command; an unknown map or a failed spawn spawns nothing for that
+  instance. The script goes on in every case.
   """
   @spec summon_mob_area(Ctx.t(), keyword()) :: Ctx.t()
   def summon_mob_area(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
@@ -102,7 +107,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def summon_mob_area(%Ctx{} = ctx, opts) do
     case resolve_mob(opts) do
       {:ok, mob_data} -> spawn_mob_area(ctx, mob_data.id, opts)
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, :areamonster, reason)
     end
   end
 
@@ -176,11 +181,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   Number of living mobs on `map` that were summoned with the event label
   `event` (rAthena `mobcount`); the special label `"all"` counts every living
   mob on the map. The special map name `"this"` targets the attached player's
-  current map. Returns -1 for an unknown map, or for `"this"` on a detached
-  ctx. A known map without a running mob supervisor counts 0.
+  current map, which ends the script on a detached ctx. Returns -1 for an
+  unknown map. A known map without a running mob supervisor counts 0.
   """
   @spec mobcount(Ctx.t(), String.t(), String.t()) :: integer()
-  def mobcount(%Ctx{game_state: nil}, "this", _event), do: -1
+  def mobcount(%Ctx{game_state: nil} = ctx, "this", _event), do: no_player!(ctx, "mobcount/3")
   def mobcount(%Ctx{game_state: gs} = ctx, "this", event), do: mobcount(ctx, gs.map_name, event)
 
   def mobcount(%Ctx{}, map, event) do
@@ -233,14 +238,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   one (see `NpcInteractionHandler.handle_talk/2`).
 
   Halts `{:error, :no_player}` on a detached ctx: there is no live player
-  session for the new interaction to attach to. Also halts `{:error,
-  :no_player}` when `ctx.session_pid` is `nil` even with `game_state` present
+  session for the new interaction to attach to. When `ctx.session_pid` is `nil`
+  even with `game_state` present, the command fails and the script goes on
   — an item-script ctx's shape (`Ctx.from_session/2` runs inline on the
   session, never through a cross-process call) — since the new interaction
   needs a real session pid to monitor; starting one against `nil` would
   monitor nothing, never register as an interaction lock, and kill the
-  interaction on its first blocking dialog primitive. Mirrors `apply_op/2`'s
-  `session_pid` discriminator.
+  interaction on its first blocking dialog primitive.
 
   The spawned interaction is an independent coroutine from the one calling
   `doevent`, not a subroutine: content should call `doevent` as its final
@@ -251,8 +255,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def doevent(%Ctx{game_state: nil} = ctx, _ref), do: Ctx.halt(ctx, :no_player)
 
   def doevent(%Ctx{session_pid: nil} = ctx, _ref) do
-    Logger.warning("npc doevent: ctx has no session_pid, no-op")
-    Ctx.halt(ctx, :no_player)
+    Ctx.fail(ctx, :doevent, :no_session)
   end
 
   def doevent(%Ctx{} = ctx, ref) do
@@ -879,13 +882,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   @doc """
   Un-cloaks the calling NPC (rAthena `cloakoffnpcself` with no name). Targets
-  `ctx.npc_gid`; valid on both an attached and a detached ctx. A ctx with no
-  `npc_gid` logs a warning and no-ops. In rAthena `cloakoffnpcself` is a
+  `ctx.npc_gid`. The cloak is per player, so a detached ctx halts `:no_player`;
+  a ctx with no `npc_gid` logs a warning and no-ops. In rAthena `cloakoffnpcself` is a
   per-player cloak targeted at the attached player; Aesir's single global
   `hidden` flag collapses this to the same behaviour as `hideoffnpc/1`.
   """
   @spec cloakoffnpcself(Ctx.t()) :: Ctx.t()
   def cloakoffnpcself(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def cloakoffnpcself(%Ctx{game_state: nil} = ctx), do: Ctx.halt(ctx, :no_player)
   def cloakoffnpcself(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "cloakoffnpcself/1")
 
   def cloakoffnpcself(%Ctx{npc_gid: gid} = ctx) do
@@ -897,10 +901,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   Un-cloaks every placement registered under `name` (rAthena
   `cloakoffnpcself("Name")` — the per-player target is dropped and the concern is
   collapsed to the global `hidden` flag). An unresolved name logs a warning and
-  no-ops. Equivalent to `hideoffnpc/2`.
+  no-ops; a detached ctx halts `:no_player`. Equivalent to `hideoffnpc/2`.
   """
   @spec cloakoffnpcself(Ctx.t(), String.t()) :: Ctx.t()
   def cloakoffnpcself(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+  def cloakoffnpcself(%Ctx{game_state: nil} = ctx, _name), do: Ctx.halt(ctx, :no_player)
 
   def cloakoffnpcself(%Ctx{} = ctx, name) do
     each_named(ctx, name, "cloakoffnpcself/2", &NpcSession.set_hidden(&1, false))
@@ -1072,7 +1077,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
     do_summon(ctx, gs.map_name, Keyword.get(opts, :at, {gs.x, gs.y}), mob_id, opts)
   end
 
-  defp spawn_mob_here(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts), do: Ctx.halt(ctx, :no_player)
+  defp spawn_mob_here(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts),
+    do: ctx
 
   defp spawn_mob_here(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
     case NpcRegistry.module_for_unit(gid) do
@@ -1081,7 +1087,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
         do_summon(ctx, placement.map, at, mob_id, opts)
 
       :error ->
-        Ctx.halt(ctx, :no_player)
+        ctx
     end
   end
 
@@ -1089,11 +1095,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
     {x, y} = summon_coords(at)
     amount = Keyword.get(opts, :amount, 1)
 
-    Enum.reduce_while(1..amount//1, ctx, fn _n, acc ->
-      case Coordinator.summon_mob(map_name, mob_id, x, y, summon_opts(opts)) do
-        {:ok, _instance_id} -> {:cont, acc}
-        {:error, reason} -> {:halt, Ctx.halt(acc, reason)}
-      end
+    Enum.reduce(1..amount//1, ctx, fn _n, acc ->
+      _result = Coordinator.summon_mob(map_name, mob_id, x, y, summon_opts(opts))
+      acc
     end)
   end
 
@@ -1109,12 +1113,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   defp spawn_mob_area_here(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts),
-    do: Ctx.halt(ctx, :no_player)
+    do: ctx
 
   defp spawn_mob_area_here(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
     case NpcRegistry.module_for_unit(gid) do
       {:ok, {_module, placement}} -> do_summon_area(ctx, placement.map, mob_id, opts)
-      :error -> Ctx.halt(ctx, :no_player)
+      :error -> ctx
     end
   end
 
@@ -1122,11 +1126,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
     area = Keyword.fetch!(opts, :area)
     amount = Keyword.get(opts, :amount, 1)
 
-    Enum.reduce_while(1..amount//1, ctx, fn _n, acc ->
-      case Coordinator.summon_mob_area(map_name, mob_id, area, summon_opts(opts)) do
-        {:ok, _instance_id} -> {:cont, acc}
-        {:error, reason} -> {:halt, Ctx.halt(acc, reason)}
-      end
+    Enum.reduce(1..amount//1, ctx, fn _n, acc ->
+      _result = Coordinator.summon_mob_area(map_name, mob_id, area, summon_opts(opts))
+      acc
     end)
   end
 

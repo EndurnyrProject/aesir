@@ -47,6 +47,18 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
     def on_talk(ctx), do: next(ctx)
   end
 
+  defmodule EndNpc do
+    use Aesir.ZoneServer.Npc, spawn: []
+
+    # `delequip` on an empty slot ends the script, so nothing after it runs.
+    @impl true
+    def on_talk(ctx) do
+      ctx = ctx |> mes("before") |> delequip(0)
+      send(:interaction_test_probe, :ran_after_end)
+      mes(ctx, "after")
+    end
+  end
+
   defmodule CrashNpc do
     use Aesir.ZoneServer.Npc, spawn: []
 
@@ -96,6 +108,15 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
     assert_receive {:chose, 2}
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE}}}
     assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 500
+  end
+
+  test "a command that ends the script stops it cleanly and flushes the dangling page" do
+    {:ok, pid} = start_interaction(EndNpc)
+    ref = Process.monitor(pid)
+
+    assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: "before"}}}
+    refute_received :ran_after_end
+    assert_clean_exit(ref, pid)
   end
 
   test "auto-flushes a CLOSE for un-flushed page on normal return" do

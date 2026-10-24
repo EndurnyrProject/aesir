@@ -272,22 +272,35 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
   end
 
   describe "detached ctx" do
-    test "equip reads raise on a detached ctx" do
+    test "equip reads end the script on a detached ctx" do
       detached = detached_ctx()
 
-      assert_raise ArgumentError, fn -> Dsl.getequipisequiped(detached, @right_hand) end
-      assert_raise ArgumentError, fn -> Dsl.getequiprefinerycnt(detached, @right_hand) end
-      assert_raise ArgumentError, fn -> Dsl.getequipname(detached, @right_hand) end
-      assert_raise ArgumentError, fn -> Dsl.getequipweaponlv(detached, @right_hand) end
-      assert_raise ArgumentError, fn -> Dsl.getequiparmorlv(detached, @right_hand) end
-      assert_raise ArgumentError, fn -> Dsl.getequipisenableref(detached, @right_hand) end
-      assert_raise ArgumentError, fn -> Dsl.getequippercentrefinery(detached, @right_hand) end
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequipisequiped(detached, @right_hand))
 
-      assert_raise ArgumentError, fn ->
-        Dsl.getequiprefinecost(detached, @right_hand, :normal, :material_id)
-      end
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequiprefinerycnt(detached, @right_hand))
 
-      assert_raise ArgumentError, fn -> Dsl.isequippedcnt(detached, [@sword]) end
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequipname(detached, @right_hand))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequipweaponlv(detached, @right_hand))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequiparmorlv(detached, @right_hand))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequipisenableref(detached, @right_hand))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequippercentrefinery(detached, @right_hand))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getequiprefinecost(detached, @right_hand, :normal, :material_id))
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.isequippedcnt(detached, [@sword]))
     end
   end
 
@@ -350,11 +363,13 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
       assert_received {:script_apply, {:delequip, 0, @sword}}
     end
 
-    test "delequip routes nothing for an empty slot" do
+    test "delequip ends the script with :not_equipped for an empty slot, routing nothing" do
       session = start_stub(fn _op -> {:ok, %PlayerState{}} end)
       ctx = build_ctx(session: session, inventory: %{})
 
-      assert Dsl.delequip(ctx, @right_hand) == ctx
+      assert {:script_end, %{status: {:error, :not_equipped}}} =
+               catch_throw(Dsl.delequip(ctx, @right_hand))
+
       refute_received {:script_apply, _}
     end
 

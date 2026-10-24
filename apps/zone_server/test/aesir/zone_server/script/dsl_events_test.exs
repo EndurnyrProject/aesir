@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(Ctx.detached(TargetNpc, 1), :boom)
+      ctx = %{Ctx.detached(TargetNpc, 1) | status: {:error, :boom}}
 
       assert Dsl.donpcevent(ctx, "Target::OnStart") == ctx
       refute_received {:fired, _module, _gid}
@@ -138,17 +138,17 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
       assert_receive {:doevent_ran, 42, ^target_gid}
     end
 
-    test "halts {:error, :no_player} on a detached ctx" do
+    test "ends the script with {:error, :no_player} on a detached ctx" do
       NpcRegistry.reload([DoeventTargetNpc])
       ctx = Ctx.detached(DoeventTargetNpc, 1)
 
-      result = Dsl.doevent(ctx, "DoeventTarget::OnHit")
+      assert {:script_end, result} = catch_throw(Dsl.doevent(ctx, "DoeventTarget::OnHit"))
 
       assert result.status == {:error, :no_player}
       refute_received {:doevent_ran, _char_id, _gid}
     end
 
-    test "halts {:error, :no_player} on an item-script ctx (game_state set, session_pid nil)" do
+    test "fails the command and goes on in an item-script ctx (game_state set, session_pid nil)" do
       NpcRegistry.reload([DoeventTargetNpc])
 
       ctx =
@@ -159,10 +159,13 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
 
       log =
         capture_log(fn ->
-          assert Dsl.doevent(ctx, "DoeventTarget::OnHit").status == {:error, :no_player}
+          result = Dsl.doevent(ctx, "DoeventTarget::OnHit")
+
+          assert result.status == :ok
+          assert result.failures == [{:doevent, :no_session}]
         end)
 
-      assert log =~ "no session_pid"
+      assert log =~ "doevent returned failure"
       refute_received {:doevent_ran, _char_id, _gid}
     end
 
@@ -183,7 +186,7 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(attached_ctx(), :boom)
+      ctx = %{attached_ctx() | status: {:error, :boom}}
 
       assert Dsl.doevent(ctx, "DoeventTarget::OnHit") == ctx
     end
@@ -227,7 +230,7 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(npc_ctx(1), :boom)
+      ctx = %{npc_ctx(1) | status: {:error, :boom}}
 
       assert Dsl.initnpctimer(ctx) == ctx
       assert Dsl.stopnpctimer(ctx) == ctx
@@ -274,7 +277,7 @@ defmodule Aesir.ZoneServer.Script.DslEventsTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(npc_ctx(nil), :boom)
+      ctx = %{npc_ctx(nil) | status: {:error, :boom}}
 
       assert Dsl.initnpctimer(ctx, "TimerDup") == ctx
       assert Dsl.stopnpctimer(ctx, "TimerDup") == ctx

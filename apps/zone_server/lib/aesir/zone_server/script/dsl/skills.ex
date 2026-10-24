@@ -162,7 +162,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   Stages one item-granted skill in the owning player session. The client chooses
   its target using the ordinary skill intent; no cast or skill requirement is
   consumed while the script runs. `skill_id_or_name` is a catalog id or name;
-  `:level` defaults to 1. Unknown skills and detached contexts halt the script.
+  `:level` defaults to 1. An unknown skill fails the command and the script goes
+  on; a detached ctx halts `:no_player`.
   """
   @spec itemskill(Ctx.t(), integer() | atom(), keyword()) :: Ctx.t()
   def itemskill(%Ctx{status: {:error, _}} = ctx, _skill, _opts), do: ctx
@@ -174,7 +175,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
 
     case resolve_skill_id(skill_id_or_name) do
       {:ok, skill_id} -> stage_item_skill(ctx, skill_id, level, keep_requirement?)
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, :itemskill, reason)
     end
   end
 
@@ -191,18 +192,21 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   learned rank; every other cast-begin and cast-end condition applies (SP, HP,
   zeny, weight, weapon, items), and the cast starts at once - a timed cast
   opens the ordinary cast bar. `skill_id_or_name` is a catalog id or name;
-  `:level` defaults to 1. Unknown skills and detached contexts halt the script.
+  `:level` defaults to 1. An unknown skill, or a detached ctx with no unit to cast
+  from, fails the command and the script goes on.
   """
   @spec unitskilluseid(Ctx.t(), integer() | atom(), keyword()) :: Ctx.t()
   def unitskilluseid(%Ctx{status: {:error, _}} = ctx, _skill, _opts), do: ctx
-  def unitskilluseid(%Ctx{game_state: nil} = ctx, _skill, _opts), do: Ctx.halt(ctx, :no_player)
+
+  def unitskilluseid(%Ctx{game_state: nil} = ctx, _skill, _opts),
+    do: Ctx.fail(ctx, :unitskilluseid, :no_player)
 
   def unitskilluseid(%Ctx{} = ctx, skill_id_or_name, opts) do
     level = Keyword.get(opts, :level, 1)
 
     case resolve_skill_id(skill_id_or_name) do
       {:ok, skill_id} -> stage_unit_skill_use(ctx, skill_id, level)
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, :unitskilluseid, reason)
     end
   end
 
@@ -217,7 +221,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   Refunds the player's learned skills into skill points through the session seam
   (rAthena `resetskill`), recomputing stats, refreshing the skill window, and
   persisting. `NV_BASIC` is kept (not refunded) unless the player is a Novice.
-  Never fails.
+  An active cart refuses the reset: the command fails and the script goes on.
   """
   @spec reset_skills(Ctx.t()) :: Ctx.t()
   def reset_skills(%Ctx{status: {:error, _}} = ctx), do: ctx
@@ -235,9 +239,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   spends or refunds a skill point, so a repeat or lower-level grant is a
   no-op. A `level` of `0` removes the skill instead, which job-change scripts
   use to strip a platinum skill; removing an unlearned skill is a no-op.
-  Halts `:unknown_skill`, `:invalid_level`, or `:not_grantable` (a definition
-  without quest-grant metadata) without mutation; halts `:no_player` on a
-  detached ctx.
+  An unknown skill, an invalid level, or a definition without quest-grant
+  metadata fails the command and the script goes on, without mutation; a
+  detached ctx halts `:no_player`.
   """
   @spec skill(Ctx.t(), integer() | atom(), integer(), integer() | atom()) :: Ctx.t()
   def skill(%Ctx{status: {:error, _}} = ctx, _skill, _level, _flag), do: ctx

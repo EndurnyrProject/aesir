@@ -48,24 +48,40 @@ defmodule Aesir.ZoneServer.Script.CtxTest do
   end
 
   describe "halt/2" do
-    test "sets status to {:error, reason}" do
-      pid = self()
+    test "ends the script by throwing the ctx with status {:error, reason}" do
       ps = build_player_state()
-      ctx = Ctx.from_session(%{game_state: ps, connection_pid: pid}, {:item, 501})
+      ctx = Ctx.from_session(%{game_state: ps, connection_pid: self()}, {:item, 501})
 
-      halted = Ctx.halt(ctx, :blocked)
-
-      assert halted.status == {:error, :blocked}
+      assert {:script_end, %Ctx{status: {:error, :blocked}}} =
+               catch_throw(Ctx.halt(ctx, :blocked))
     end
 
     test "preserves all other fields" do
-      pid = self()
       ps = build_player_state(character_id: 10, account_id: 20)
-      ctx = Ctx.from_session(%{game_state: ps, connection_pid: pid}, {:item, 502})
+      ctx = Ctx.from_session(%{game_state: ps, connection_pid: self()}, {:item, 502})
 
-      halted = Ctx.halt(ctx, :out_of_stock)
-
+      assert {:script_end, halted} = catch_throw(Ctx.halt(ctx, :out_of_stock))
       assert halted == %{ctx | status: {:error, :out_of_stock}}
+    end
+  end
+
+  describe "fail/3" do
+    import ExUnit.CaptureLog
+
+    test "returns the ctx running, recording the failure newest first" do
+      ps = build_player_state()
+      ctx = Ctx.from_session(%{game_state: ps, connection_pid: self()}, {:item, 501})
+
+      log =
+        capture_log(fn ->
+          failed = ctx |> Ctx.fail(:getitem, :inventory_full) |> Ctx.fail(:warp, :map_not_found)
+
+          assert failed.status == :ok
+          assert failed.failures == [{:warp, :map_not_found}, {:getitem, :inventory_full}]
+          assert %{failed | failures: []} == ctx
+        end)
+
+      assert log =~ "script command getitem returned failure: :inventory_full"
     end
   end
 end

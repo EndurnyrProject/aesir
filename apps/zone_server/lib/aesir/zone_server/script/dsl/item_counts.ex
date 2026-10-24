@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemCounts do
   `Aesir.ZoneServer.Script.Dsl` facade.
   """
 
-  import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2, no_player!: 1]
+  import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 3, no_player!: 2]
 
   alias Aesir.Commons.Models.ItemOptions
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemCounts do
   @doc "How many of `item_id` the player holds, rentals aside (rAthena `countitem`)."
   @spec count_item(Ctx.t(), integer(), integer() | nil) :: non_neg_integer()
   def count_item(ctx, item_id, account_id \\ nil)
-  def count_item(%Ctx{game_state: nil}, _item_id, nil), do: no_player!("count_item/2")
+  def count_item(%Ctx{game_state: nil} = ctx, _item_id, nil), do: no_player!(ctx, "count_item/2")
   def count_item(ctx, item_id, account_id), do: count(ctx, item_id, account_id)
 
   @doc "How many of `item_id` with these exact attributes the player holds (rAthena `countitem2`)."
@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemCounts do
     }
   end
 
-  defp count(%Ctx{game_state: nil}, _target, nil), do: no_player!("countitem")
+  defp count(%Ctx{game_state: nil} = ctx, _target, nil), do: no_player!(ctx, "countitem")
 
   defp count(ctx, target, account_id) do
     with true <- match?({:ok, _}, Items.by_id(item_id(target))),
@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.ItemCounts do
          {:ok, _definition} <- Items.by_id(item) do
       cond do
         qty <= 0 -> ctx
-        session == :self -> apply_op(ctx, {:delitem, target, qty})
+        session == :self -> apply_op(ctx, {:delitem, target, qty}, :halt)
         true -> remote(ctx, session, {:delitem, target, qty})
       end
     else

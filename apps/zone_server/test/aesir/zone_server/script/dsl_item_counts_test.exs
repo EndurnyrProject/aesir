@@ -84,10 +84,13 @@ defmodule Aesir.ZoneServer.Script.DslItemCountsTest do
   test "an unknown item or an offline target ends the script, a zero amount does nothing", %{
     ctx: ctx
   } do
-    assert %Ctx{status: {:error, :unknown_item}} = Dsl.delitem(ctx, 1, 1)
+    assert {:script_end, %Ctx{status: {:error, :unknown_item}}} =
+             catch_throw(Dsl.delitem(ctx, 1, 1))
 
     stub(UnitRegistry, :get_char_id_by_account, fn _ -> {:error, :not_found} end)
-    assert %Ctx{status: {:error, :no_player}} = Dsl.delitem(ctx, @stone, 1, 300)
+
+    assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+             catch_throw(Dsl.delitem(ctx, @stone, 1, 300))
 
     assert %Ctx{status: :ok} = Dsl.delitem(ctx, @stone, 0)
     refute_received {:script_apply, _op}

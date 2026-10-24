@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   """
 
   import Aesir.ZoneServer.Script.Dsl.Internal,
-    only: [apply_op: 2, no_player!: 1, equipped_index: 2]
+    only: [apply_op: 2, no_player!: 2, equipped_index: 2]
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.ItemOptions
@@ -51,18 +51,19 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
         }
 
   @refine_ore_amount 1
+  @unknown_item_id 512
 
   @doc """
   The player's current zeny. Pure read over the ctx snapshot.
   """
   @spec zeny(Ctx.t()) :: non_neg_integer()
-  def zeny(%Ctx{game_state: nil}), do: no_player!("zeny/1")
+  def zeny(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "zeny/1")
   def zeny(%Ctx{game_state: gs}), do: gs.zeny
 
   @doc """
   Debits `amount` zeny through the session seam, pushing the change to the
-  client and persisting it. Halts `:not_enough_zeny` when the player is short
-  (debiting nothing).
+  client and persisting it. A player who is short pays nothing and the script
+  goes on.
   """
   @spec pay_zeny(Ctx.t(), non_neg_integer()) :: Ctx.t()
   def pay_zeny(%Ctx{status: {:error, _}} = ctx, _amount), do: ctx
@@ -78,7 +79,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
 
   @doc """
   Gives `qty` of item `item_id` through the session seam (persisting and
-  emitting `ItemAdded`). Halts on a full/overweight inventory.
+  emitting `ItemAdded`). A full or overweight inventory fails the command and
+  the script goes on.
   """
   @spec give_item(Ctx.t(), integer(), pos_integer()) :: Ctx.t()
   def give_item(%Ctx{status: {:error, _}} = ctx, _item_id, _qty), do: ctx
@@ -97,7 +99,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
         |> then(&commit_grants(ctx, &1, false))
 
       :error ->
-        Ctx.halt(ctx, :unknown_item_group)
+        Ctx.fail(ctx, :getgroupitem, :unknown_item_group)
     end
   end
 
@@ -108,7 +110,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   uniform, or one shared-pool copy depending on the subgroup algorithm), the
   grant is `qty` units of it (`0` takes the entry's own amount), and a grant
   that needs more blank slots than the inventory has is refused before any add.
-  The grant halts at the first refused unit.
+  A refused unit fails the command and the script goes on; units already added
+  stay.
   """
   @spec get_rand_group_item(Ctx.t(), atom(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
   def get_rand_group_item(ctx, group_key, qty, sub),
@@ -143,8 +146,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
       grant = Map.put(grant, :group_key, group_key)
       deliver_group(ctx, char_id, grant)
     else
-      :error -> Ctx.halt(ctx, :unknown_item_group)
-      nil -> Ctx.halt(ctx, :no_group_entry)
+      :error -> Ctx.fail(ctx, :getrandgroupitem, :unknown_item_group)
+      nil -> Ctx.fail(ctx, :getrandgroupitem, :no_group_entry)
     end
   end
 
@@ -153,13 +156,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
        when char_id in [nil, 0] do
     if blank_slots?(game_state.inventory, grant),
       do: commit_grants(ctx, [grant], true),
-      else: Ctx.halt(ctx, :inventory_full)
+      else: Ctx.fail(ctx, :getrandgroupitem, :inventory_full)
   end
 
   defp deliver_group(%Ctx{char_id: char_id} = ctx, char_id, grant) do
     if blank_slots?(ctx.game_state.inventory, grant),
       do: commit_grants(ctx, [grant], true),
-      else: Ctx.halt(ctx, :inventory_full)
+      else: Ctx.fail(ctx, :getrandgroupitem, :inventory_full)
   end
 
   defp deliver_group(ctx, char_id, grant) do
@@ -176,23 +179,28 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
     if blank_slots?(Map.get(target_state, :inventory, %{}), grant) do
       case PlayerSession.script_apply(pid, {:give_rand_group_items, [grant]}) do
         {:ok, _target_state} -> ctx
-        {:error, reason} -> Ctx.halt(ctx, reason)
+        {:error, reason} -> Ctx.fail(ctx, :getrandgroupitem, reason)
       end
     else
-      Ctx.halt(ctx, :inventory_full)
+      Ctx.fail(ctx, :getrandgroupitem, :inventory_full)
     end
   end
 
-  @doc "Returns one item id from a subgroup without depleting shared-pool state."
+  @doc """
+  Returns one item id from a subgroup without depleting shared-pool state.
+
+  An unknown group or subgroup fails the command and returns the unknown-item
+  id (`512`), as the script command does.
+  """
   @spec group_rand_item(Ctx.t(), atom(), non_neg_integer()) :: pos_integer()
-  def group_rand_item(%Ctx{}, group_key, sub) do
+  def group_rand_item(%Ctx{} = ctx, group_key, sub) do
     with {:ok, group} <- ItemGroups.fetch(group_key),
          {:ok, item_id} <- Roller.pick_id(group, sub) do
       item_id
     else
       :error ->
-        raise ArgumentError,
-              "group_rand_item/3 cannot resolve item group #{inspect(group_key)} subgroup #{sub}"
+        Ctx.fail(ctx, :grouprandomitem, {:unknown_item_group, group_key, sub})
+        @unknown_item_id
     end
   end
 
@@ -222,7 +230,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
     ctx = announce_successes(%{ctx | game_state: %{game_state | inventory: inventory}}, successes)
 
     case {halt?, failures} do
-      {true, [reason | _]} -> Ctx.halt(ctx, reason)
+      {true, [reason | _]} -> Ctx.fail(ctx, :getrandgroupitem, reason)
       _ -> ctx
     end
   end
@@ -257,7 +265,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
 
   @doc """
   Gives one identified item signed by an online character through the session seam.
-  Halts if the target is offline or unknown, or if the inventory cannot hold it.
+  An offline or unknown target, or an inventory that cannot hold it, fails the
+  command and the script goes on.
   """
   @spec get_named_item(Ctx.t(), integer(), String.t() | integer()) :: Ctx.t()
   def get_named_item(%Ctx{status: {:error, _}} = ctx, _item_id, _target), do: ctx
@@ -313,31 +322,37 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   Gives `qty` of item `item_id` through the session seam with an account or
   character binding.
   """
-  @spec give_item_bound(Ctx.t(), integer(), pos_integer(), :account | :char | 1 | 4) :: Ctx.t()
+  @spec give_item_bound(Ctx.t(), integer(), pos_integer(), :account | :char | integer()) ::
+          Ctx.t()
   def give_item_bound(%Ctx{status: {:error, _}} = ctx, _item_id, _qty, _bound), do: ctx
 
-  def give_item_bound(%Ctx{} = ctx, item_id, qty, bound),
-    do: apply_op(ctx, {:give_item_bound, item_id, qty, bound_value(bound)})
+  def give_item_bound(%Ctx{} = ctx, item_id, qty, bound) do
+    case bound_value(bound) do
+      {:ok, value} -> apply_op(ctx, {:give_item_bound, item_id, qty, value})
+      :error -> Ctx.fail(ctx, :getitembound, :bad_bound)
+    end
+  end
 
-  defp bound_value(:account), do: 1
-  defp bound_value(:char), do: 4
-  defp bound_value(1), do: 1
-  defp bound_value(4), do: 4
+  defp bound_value(:account), do: {:ok, 1}
+  defp bound_value(:char), do: {:ok, 4}
+  defp bound_value(bound) when bound in 0..4, do: {:ok, bound}
+  defp bound_value(_bound), do: :error
 
   @doc """
   Removes the equipment worn in equip `slot` (rAthena `delequip`) through the
   session seam: the item is unequipped first (appearance broadcast, stats
-  recompute), then its inventory row is deleted. An empty or unknown slot is a
-  no-op. Like the other granting/removing effects the value rAthena returns is
-  not exposed. Halts `:no_player` on a detached ctx.
+  recompute), then its inventory row is deleted. An empty or unknown slot ends
+  the script (`:not_equipped`). Like the other granting/removing effects the
+  value rAthena returns is not exposed. Halts `:no_player` on a detached ctx.
   """
   @spec delequip(Ctx.t(), integer()) :: Ctx.t()
   def delequip(%Ctx{status: {:error, _}} = ctx, _slot), do: ctx
+  def delequip(%Ctx{game_state: nil} = ctx, _slot), do: Ctx.halt(ctx, :no_player)
 
   def delequip(%Ctx{} = ctx, slot) do
     case equipped_index(ctx, slot) do
       {index, %InventoryItem{nameid: nameid}} -> apply_op(ctx, {:delequip, index, nameid})
-      nil -> ctx
+      nil -> Ctx.halt(ctx, :not_equipped)
     end
   end
 
@@ -410,7 +425,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   """
   @spec consumeitem(Ctx.t(), integer()) :: Ctx.t()
   def consumeitem(%Ctx{status: {:error, _}} = ctx, _item_id), do: ctx
-  def consumeitem(%Ctx{} = ctx, item_id), do: CompiledItemScripts.on_use(item_id, ctx)
+
+  def consumeitem(%Ctx{} = ctx, item_id) do
+    ended = CompiledItemScripts.on_use(item_id, ctx)
+    %{ended | status: ctx.status}
+  end
 
   @doc """
   Clears the broken flag on the equipment at inventory `index` through the
@@ -437,7 +456,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   broken. Pure read over the snapshot.
   """
   @spec getbrokenid(Ctx.t(), integer()) :: non_neg_integer()
-  def getbrokenid(%Ctx{game_state: nil}, _n), do: no_player!("getbrokenid/2")
+  def getbrokenid(%Ctx{game_state: nil} = ctx, _n), do: no_player!(ctx, "getbrokenid/2")
 
   def getbrokenid(%Ctx{game_state: gs}, n) when is_integer(n) and n >= 1 do
     gs.inventory
@@ -457,7 +476,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   read over `ctx.game_state` + `RefineDatabase`; no session round-trip.
   """
   @spec refine_targets(Ctx.t()) :: [refine_target()]
-  def refine_targets(%Ctx{game_state: nil}), do: no_player!("refine_targets/1")
+  def refine_targets(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "refine_targets/1")
 
   def refine_targets(%Ctx{game_state: gs}) do
     gs.inventory
@@ -489,7 +508,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   item type, below `MAX_REFINE`). Pure read; `false` for a missing index.
   """
   @spec refinable?(Ctx.t(), non_neg_integer()) :: boolean()
-  def refinable?(%Ctx{game_state: nil}, _index), do: no_player!("refinable?/2")
+  def refinable?(%Ctx{game_state: nil} = ctx, _index), do: no_player!(ctx, "refinable?/2")
 
   def refinable?(%Ctx{game_state: gs}, index) do
     case Map.get(gs.inventory, index) do
@@ -511,7 +530,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   refinable or `cost_type` has no entry at this level.
   """
   @spec refine_rate(Ctx.t(), non_neg_integer(), RefineDatabase.cost_type()) :: 0..100
-  def refine_rate(%Ctx{game_state: nil}, _index, _cost_type), do: no_player!("refine_rate/3")
+  def refine_rate(%Ctx{game_state: nil} = ctx, _index, _cost_type),
+    do: no_player!(ctx, "refine_rate/3")
 
   def refine_rate(%Ctx{} = ctx, index, cost_type) do
     case fetch_process(ctx, index, cost_type) do
@@ -526,7 +546,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
   all-zero cost with a `nil` ore.
   """
   @spec refine_cost(Ctx.t(), non_neg_integer(), RefineDatabase.cost_type()) :: refine_cost()
-  def refine_cost(%Ctx{game_state: nil}, _index, _cost_type), do: no_player!("refine_cost/3")
+  def refine_cost(%Ctx{game_state: nil} = ctx, _index, _cost_type),
+    do: no_player!(ctx, "refine_cost/3")
 
   def refine_cost(%Ctx{} = ctx, index, cost_type) do
     case fetch_process(ctx, index, cost_type) do
@@ -623,12 +644,27 @@ defmodule Aesir.ZoneServer.Script.Dsl.Items do
 
   The slot check is an approximation — it reserves one slot per distinct item
   type not already held — rather than rAthena's exact per-stack accounting;
-  the weight check is exact. Pure read over the ctx snapshot.
+  the weight check is exact. An unknown item or an amount below 1 fails the
+  command and reads `0`. Pure read over the ctx snapshot.
   """
   @spec checkweight(Ctx.t(), [{integer(), non_neg_integer()}]) :: 0 | 1
-  def checkweight(%Ctx{game_state: nil}, _items), do: no_player!("checkweight/2")
+  def checkweight(%Ctx{game_state: nil} = ctx, _items), do: no_player!(ctx, "checkweight/2")
 
-  def checkweight(%Ctx{game_state: gs}, items) do
+  def checkweight(%Ctx{} = ctx, items) do
+    if Enum.all?(items, &valid_weight_entry?/1) do
+      weigh(ctx, items)
+    else
+      Ctx.fail(ctx, :checkweight, :invalid_item_or_amount)
+      0
+    end
+  end
+
+  defp valid_weight_entry?({item_id, amount}) when amount >= 1,
+    do: match?({:ok, _item}, ItemManagement.get_item_by_id(item_id))
+
+  defp valid_weight_entry?(_entry), do: false
+
+  defp weigh(%Ctx{game_state: gs}, items) do
     added_weight =
       Enum.reduce(items, 0, fn {item_id, amount}, acc -> acc + item_weight(item_id) * amount end)
 

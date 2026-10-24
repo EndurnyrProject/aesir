@@ -54,8 +54,9 @@ defmodule Aesir.ZoneServer.Script.DslFalconTest do
       assert Dsl.checkfalcon(ctx()) == 0
     end
 
-    test "returns 0 without an attached player" do
-      assert Dsl.checkfalcon(%{ctx() | game_state: nil}) == 0
+    test "ends the script without an attached player" do
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.checkfalcon(%{ctx() | game_state: nil}))
     end
   end
 
@@ -84,19 +85,21 @@ defmodule Aesir.ZoneServer.Script.DslFalconTest do
       assert_received {:script_apply, {:set_falcon, true}}
     end
 
-    test "normalizes zero to dismissal and halts with the handler failure" do
+    test "normalizes zero to dismissal and fails the command on a handler failure" do
       session = start_session(fn {:set_falcon, false} -> {:error, :falcon_skill_not_learned} end)
 
       result = Dsl.setfalcon(ctx(session_pid: session), 0)
 
-      assert result.status == {:error, :falcon_skill_not_learned}
+      assert result.status == :ok
+      assert result.failures == [{:set_falcon, :falcon_skill_not_learned}]
       assert_received {:script_apply, {:set_falcon, false}}
     end
 
-    test "halts detached contexts without mutating their snapshots" do
+    test "ends the script on detached contexts without mutating their snapshots" do
       detached = %{ctx() | game_state: nil}
 
-      assert Dsl.setfalcon(detached, 1) == Ctx.halt(detached, :no_player)
+      assert {:script_end, ended} = catch_throw(Dsl.setfalcon(detached, 1))
+      assert ended == %{detached | status: {:error, :no_player}}
     end
   end
 end

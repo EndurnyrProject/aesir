@@ -91,7 +91,7 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     assert %{0 => %InventoryItem{nameid: 501, amount: 2}} = result.game_state.inventory
   end
 
-  test "get_rand_group_item sends one grant and halts on a refusal" do
+  test "get_rand_group_item sends one grant and fails the command on a refusal" do
     install_group(:rand_one, [
       %SubGroup{
         number: 1,
@@ -107,7 +107,8 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
 
     result = Dsl.get_rand_group_item(npc_ctx(session), :rand_one, 2, 1)
 
-    assert result.status == {:error, :overweight}
+    assert result.status == :ok
+    assert result.failures == [{:give_rand_group_items, :overweight}]
     assert_received {:script_apply, {:give_rand_group_items, [grant]}}
     assert grant.item_id in [501, 502]
     assert grant.amount == 2
@@ -125,7 +126,10 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
 
     ctx = %{npc_ctx(session) | game_state: %{item_ctx().game_state | inventory: full}}
 
-    assert Dsl.get_rand_group_item(ctx, :rand_full, 1, 1).status == {:error, :inventory_full}
+    result = Dsl.get_rand_group_item(ctx, :rand_full, 1, 1)
+
+    assert result.status == :ok
+    assert result.failures == [{:getrandgroupitem, :inventory_full}]
     refute_received {:script_apply, _op}
   end
 
@@ -157,7 +161,7 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     refute_received :speaker_called
   end
 
-  test "a target refusal halts the caller" do
+  test "a target refusal fails the command and the caller goes on" do
     install_group(:target_box, [
       %SubGroup{number: 1, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
     ])
@@ -165,8 +169,10 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     {:ok, target} = StubSession.start_link(fn _op -> {:error, :overweight} end)
     :ok = UnitRegistry.register_unit(:player, 4242, nil, %{inventory: %{}}, target)
 
-    assert Dsl.get_rand_group_item(npc_ctx(item_ctx()), :target_box, 1, 1, 0, 4242).status ==
-             {:error, :overweight}
+    result = Dsl.get_rand_group_item(npc_ctx(item_ctx()), :target_box, 1, 1, 0, 4242)
+
+    assert result.status == :ok
+    assert result.failures == [{:getrandgroupitem, :overweight}]
   end
 
   test "an unknown target silently succeeds without granting" do
@@ -180,7 +186,7 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     refute_received {:script_apply, _op}
   end
 
-  test "a target without a blank slot halts before the session call" do
+  test "a target without a blank slot fails the command before the session call" do
     install_group(:target_box, [
       %SubGroup{number: 1, algorithm: :random, entries: [%Entry{item_id: 501, rate: 1}]}
     ])
@@ -192,9 +198,10 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
 
     :ok = UnitRegistry.register_unit(:player, 4242, nil, %{inventory: full}, target)
 
-    assert Dsl.get_rand_group_item(npc_ctx(item_ctx()), :target_box, 1, 1, 0, 4242).status ==
-             {:error, :inventory_full}
+    result = Dsl.get_rand_group_item(npc_ctx(item_ctx()), :target_box, 1, 1, 0, 4242)
 
+    assert result.status == :ok
+    assert result.failures == [{:getrandgroupitem, :inventory_full}]
     refute_received {:script_apply, _op}
   end
 
@@ -245,7 +252,7 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     assert pool_counts(owner) != before_counts
   end
 
-  test "an NPC session error halts without rolling the shared-pool draw back" do
+  test "an NPC session error fails the command without rolling the shared-pool draw back" do
     install_pool_group(:npc_full, 501, 2, 1)
     owner = ItemGroupPool.ensure_pool(:npc_full)
     before_counts = pool_counts(owner)
@@ -254,7 +261,8 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
 
     result = Dsl.get_group_item(%{npc_ctx(session) | game_state: original}, :npc_full)
 
-    assert result.status == {:error, :insufficient_space}
+    assert result.status == :ok
+    assert result.failures == [{:give_group_items, :insufficient_space}]
     assert result.game_state.inventory == %{}
     assert pool_counts(owner) != before_counts
   end
@@ -288,15 +296,14 @@ defmodule Aesir.ZoneServer.Script.DslItemGroupsTest do
     assert pool_counts(owner) != before_counts
   end
 
-  test "unknown groups halt effects and raise for a read op" do
-    assert Dsl.get_group_item(item_ctx(), :missing).status == {:error, :unknown_item_group}
+  test "unknown groups fail the effects and read the unknown item id for a read op" do
+    assert %{status: :ok, failures: [{:getgroupitem, :unknown_item_group}]} =
+             Dsl.get_group_item(item_ctx(), :missing)
 
-    assert Dsl.get_rand_group_item(item_ctx(), :missing, 1, 0).status ==
-             {:error, :unknown_item_group}
+    assert %{status: :ok, failures: [{:getrandgroupitem, :unknown_item_group}]} =
+             Dsl.get_rand_group_item(item_ctx(), :missing, 1, 0)
 
-    assert_raise ArgumentError, ~r/cannot resolve item group/, fn ->
-      Dsl.group_rand_item(item_ctx(), :missing, 0)
-    end
+    assert Dsl.group_rand_item(item_ctx(), :missing, 0) == 512
   end
 
   defp install_group(key, subgroups) do

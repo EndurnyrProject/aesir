@@ -71,10 +71,11 @@ defmodule Aesir.ZoneServer.Script.DslSetlookTest do
       end
     end
 
-    test "raises on a detached context" do
+    test "ends the script on a detached context" do
       detached = %{register_player() | game_state: nil}
 
-      assert_raise ArgumentError, ~r/getlook\/2/, fn -> Dsl.getlook(detached, 1) end
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.getlook(detached, 1))
     end
   end
 
@@ -128,13 +129,15 @@ defmodule Aesir.ZoneServer.Script.DslSetlookTest do
       refute_received {:script_apply, _}
     end
 
-    test "halts on a detached context" do
+    test "ends the script on a detached context" do
       detached = %{register_player() | game_state: nil}
-      assert Dsl.setlook(detached, 1, 5).status == {:error, :no_player}
+
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.setlook(detached, 1, 5))
     end
 
     test "errored context short-circuits" do
-      ctx = Ctx.halt(register_player(), :boom)
+      ctx = %{register_player() | status: {:error, :boom}}
       assert Dsl.setlook(ctx, 1, 5) == ctx
       refute_received {:script_apply, _}
     end

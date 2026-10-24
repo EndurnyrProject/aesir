@@ -102,13 +102,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrow do
         give_item(acc, item_id, amount)
       end)
 
-    case ctx.status do
-      :ok ->
+    # A refused grant fails its command without halting the script, so a
+    # failure is read from the ctx as well as the status.
+    case ctx do
+      %Ctx{status: :ok, failures: []} ->
         ctx
         |> mes("You craft #{describe(makes)}.")
         |> close()
 
-      {:error, _reason} ->
+      %Ctx{} ->
         ctx
         |> mes("You fail to craft the arrows.")
         |> close()

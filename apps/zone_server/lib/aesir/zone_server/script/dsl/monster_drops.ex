@@ -55,7 +55,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.MonsterDrops do
   @doc """
   Removes every drop of item `item_id` from monster `mob`'s table. Returns 1
   when one was removed and 0 when the monster drops no such item; an unknown
-  item or monster stops the script.
+  item or monster fails the command, pushes nothing (read here as 0) and the
+  script goes on.
   """
   @spec delmonsterdrop(Ctx.t(), integer() | String.t(), integer()) :: {Ctx.t(), 0 | 1}
   def delmonsterdrop(%Ctx{status: {:error, _}} = ctx, _mob, _item_id), do: {ctx, 0}
@@ -68,8 +69,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.MonsterDrops do
         :none -> {ctx, 0}
       end
     else
-      {:item, :error} -> {Ctx.halt(ctx, :unknown_item), 0}
-      {:mob, :error} -> {Ctx.halt(ctx, :unknown_mob), 0}
+      {:item, :error} -> {Ctx.fail(ctx, :delmonsterdrop, :unknown_item), 0}
+      {:mob, :error} -> {Ctx.fail(ctx, :delmonsterdrop, :unknown_mob), 0}
     end
   end
 

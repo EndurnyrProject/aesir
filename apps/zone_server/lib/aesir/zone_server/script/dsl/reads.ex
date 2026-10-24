@@ -5,8 +5,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   refine inspection, item info, party leadership, NPC identity, time ticks,
   and string formatting helpers.
 
-  Reads return bare values (not a `Ctx`), so a detached ctx raises
-  `ArgumentError` via `no_player!/1` instead of halting — except the reads
+  Reads return bare values (not a `Ctx`), so a detached ctx ends the script
+  through `no_player!/2` (the `Ctx.halt/2` throw) — except the reads
   that document a detached default. Imported into scripts via the
   `Aesir.ZoneServer.Script.Dsl` facade.
   """
@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   import Bitwise
 
   import Aesir.ZoneServer.Script.Dsl.Internal,
-    only: [no_player!: 1]
+    only: [no_player!: 2]
 
   alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
@@ -45,10 +45,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
 
   @doc """
   Whether the attached player has a Falcon: `1` when the Falcon option bit is
-  set, otherwise `0`. Detached contexts report `0`.
+  set, otherwise `0`. Ends the script on a detached ctx.
   """
   @spec checkfalcon(Ctx.t()) :: 0 | 1
-  def checkfalcon(%Ctx{game_state: nil}), do: 0
+  def checkfalcon(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "checkfalcon/1")
 
   def checkfalcon(%Ctx{game_state: gs}) do
     if (gs.option &&& Option.id(:falcon)) != 0, do: 1, else: 0
@@ -58,10 +58,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   Whether the attached player is mounted (rAthena `ismounting`): `1` when the
   riding option bit is set, else `0`. Aesir models only the Peco-Peco mount
   (`set_riding/2`) and has no separate cash-mount concept, so this reads the
-  riding bit. Detached contexts report `0`.
+  riding bit. Ends the script on a detached ctx.
   """
   @spec ismounting(Ctx.t()) :: 0 | 1
-  def ismounting(%Ctx{game_state: nil}), do: 0
+  def ismounting(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "ismounting/1")
 
   def ismounting(%Ctx{game_state: gs}) do
     if (gs.option &&& Option.id(:riding)) != 0, do: 1, else: 0
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
 
   @doc "Returns `1` when any requested option bit is set, otherwise `0`."
   @spec checkoption(Ctx.t(), non_neg_integer()) :: 0 | 1
-  def checkoption(%Ctx{game_state: nil}, _mask), do: 0
+  def checkoption(%Ctx{game_state: nil} = ctx, _mask), do: no_player!(ctx, "checkoption/2")
 
   def checkoption(%Ctx{game_state: gs}, mask) when is_integer(mask) do
     if (gs.option &&& mask) != 0, do: 1, else: 0
@@ -80,21 +80,21 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   `cart_type` is set, else `0`. Pure read over the ctx snapshot.
   """
   @spec checkcart(Ctx.t()) :: 0 | 1
-  def checkcart(%Ctx{game_state: nil}), do: no_player!("checkcart/1")
+  def checkcart(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "checkcart/1")
   def checkcart(%Ctx{game_state: gs}), do: if(gs.cart_type > 0, do: 1, else: 0)
 
   @doc "The player's base level."
   @spec base_level(Ctx.t()) :: non_neg_integer()
-  def base_level(%Ctx{game_state: nil}), do: no_player!("base_level/1")
+  def base_level(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "base_level/1")
   def base_level(%Ctx{game_state: gs}), do: gs.stats.progression.base_level
 
   @doc """
   The player's transcendence tier (script parameter `Upper`): `1` for a
-  transcendent lineage, `2` for a baby lineage, `0` otherwise. Detached
-  contexts report `0`.
+  transcendent lineage, `2` for a baby lineage, `0` otherwise. Ends the script
+  on a detached ctx.
   """
   @spec upper(Ctx.t()) :: 0 | 1 | 2
-  def upper(%Ctx{game_state: nil}), do: 0
+  def upper(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "upper/1")
 
   def upper(%Ctx{game_state: gs}) do
     job_id = gs.stats.progression.job_id
@@ -107,21 +107,21 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   end
 
   @doc """
-  The player's unspent skill points (script parameter `SkillPoint`). Detached
-  contexts report `0`.
+  The player's unspent skill points (script parameter `SkillPoint`). Ends the
+  script on a detached ctx.
   """
   @spec skill_point(Ctx.t()) :: non_neg_integer()
-  def skill_point(%Ctx{game_state: nil}), do: 0
+  def skill_point(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "skill_point/1")
   def skill_point(%Ctx{game_state: gs}), do: gs.stats.progression.skill_point
 
   @doc "The player's job level."
   @spec job_level(Ctx.t()) :: non_neg_integer()
-  def job_level(%Ctx{game_state: nil}), do: no_player!("job_level/1")
+  def job_level(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "job_level/1")
   def job_level(%Ctx{game_state: gs}), do: gs.stats.progression.job_level
 
   @doc "The player's job as an atom."
   @spec class(Ctx.t()) :: atom()
-  def class(%Ctx{game_state: nil}), do: no_player!("class/1")
+  def class(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "class/1")
 
   def class(%Ctx{game_state: gs}) do
     {:ok, job} = JobManagement.get_job_by_id(gs.stats.progression.job_id)
@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   `:novice`.
   """
   @spec base_class(Ctx.t()) :: atom()
-  def base_class(%Ctx{game_state: nil}), do: no_player!("base_class/1")
+  def base_class(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "base_class/1")
   def base_class(%Ctx{} = ctx), do: ctx |> class() |> JobLineage.base_class()
 
   @doc """
@@ -143,7 +143,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   `:novice`.
   """
   @spec base_job(Ctx.t()) :: atom()
-  def base_job(%Ctx{game_state: nil}), do: no_player!("base_job/1")
+  def base_job(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "base_job/1")
   def base_job(%Ctx{} = ctx), do: ctx |> class() |> JobLineage.base_job()
 
   # NV_BASIC level a Novice must reach to change into a first job.
@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   `NV_BASIC` (learned or granted) at level #{@basic_skill_job_req} (rAthena `F_CanChangeJob`).
   """
   @spec can_change_job?(Ctx.t()) :: boolean()
-  def can_change_job?(%Ctx{game_state: nil}), do: no_player!("can_change_job?/1")
+  def can_change_job?(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "can_change_job?/1")
 
   def can_change_job?(%Ctx{game_state: gs}),
     do: Internal.skill_level(gs, :nv_basic) >= @basic_skill_job_req
@@ -166,13 +166,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   ctx snapshot.
   """
   @spec getskilllv(Ctx.t(), integer() | atom()) :: non_neg_integer()
-  def getskilllv(%Ctx{game_state: nil}, _skill), do: no_player!("getskilllv/2")
+  def getskilllv(%Ctx{game_state: nil} = ctx, _skill), do: no_player!(ctx, "getskilllv/2")
 
   def getskilllv(%Ctx{game_state: gs}, skill), do: Internal.skill_level(gs, skill)
 
   @doc "`strcharinfo(type)` for the attached character (see `Rathena.strcharinfo/2`)."
   @spec char_name(Ctx.t(), integer()) :: String.t()
-  def char_name(%Ctx{game_state: nil}, _type), do: no_player!("char_name/2")
+  def char_name(%Ctx{game_state: nil} = ctx, _type), do: no_player!(ctx, "char_name/2")
   def char_name(%Ctx{game_state: game_state}, type), do: Rathena.strcharinfo(game_state, type)
 
   @doc "`strcharinfo(type, char_id)`: the same read for any online character, `\"\"` when offline."
@@ -204,10 +204,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   @doc """
   The "eA job number" (mapid) for the attached player's class, or for an
   explicit job atom/id when one is given (rAthena `eaclass`). Returns `-1` for
-  an unknown job or a detached context with no class to read.
+  an unknown job; the attached-player form ends the script on a detached ctx.
   """
   @spec eaclass(Ctx.t()) :: integer()
-  def eaclass(%Ctx{game_state: nil}), do: -1
+  def eaclass(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "eaclass/1")
   def eaclass(%Ctx{game_state: gs}), do: JobMapid.from_job(gs.stats.progression.job_id)
 
   @spec eaclass(Ctx.t(), atom() | integer()) :: integer()
@@ -228,33 +228,33 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
 
   @doc "The player's sex as rAthena's `Sex`: `1` male, `0` female."
   @spec sex(Ctx.t()) :: 0 | 1
-  def sex(%Ctx{game_state: nil}), do: no_player!("sex/1")
+  def sex(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "sex/1")
   def sex(%Ctx{game_state: %{sex: "M"}}), do: 1
   def sex(%Ctx{game_state: %{}}), do: 0
 
   @doc "The player's current HP."
   @spec hp(Ctx.t()) :: non_neg_integer()
-  def hp(%Ctx{game_state: nil}), do: no_player!("hp/1")
+  def hp(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "hp/1")
   def hp(%Ctx{game_state: gs}), do: gs.stats.current_state.hp
 
   @doc "The player's current SP."
   @spec sp(Ctx.t()) :: non_neg_integer()
-  def sp(%Ctx{game_state: nil}), do: no_player!("sp/1")
+  def sp(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "sp/1")
   def sp(%Ctx{game_state: gs}), do: gs.stats.current_state.sp
 
   @doc "The player's maximum HP."
   @spec max_hp(Ctx.t()) :: non_neg_integer()
-  def max_hp(%Ctx{game_state: nil}), do: no_player!("max_hp/1")
+  def max_hp(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "max_hp/1")
   def max_hp(%Ctx{game_state: gs}), do: gs.stats.derived_stats.max_hp
 
   @doc "The player's current carried weight."
   @spec weight(Ctx.t()) :: non_neg_integer()
-  def weight(%Ctx{game_state: nil}), do: no_player!("weight/1")
+  def weight(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "weight/1")
   def weight(%Ctx{game_state: gs}), do: Weight.current_weight(gs.inventory)
 
   @doc "The player's position as `{x, y, map_name}`."
   @spec position(Ctx.t()) :: {integer(), integer(), String.t()}
-  def position(%Ctx{game_state: nil}), do: no_player!("position/1")
+  def position(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "position/1")
   def position(%Ctx{game_state: gs}), do: {gs.x, gs.y, gs.map_name}
 
   @doc """
@@ -264,7 +264,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   """
   @spec is_equipped(Ctx.t(), integer()) :: 0 | 1
   # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
-  def is_equipped(%Ctx{game_state: nil}, _item_id), do: no_player!("is_equipped/2")
+  def is_equipped(%Ctx{game_state: nil} = ctx, _item_id), do: no_player!(ctx, "is_equipped/2")
 
   # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
   def is_equipped(%Ctx{game_state: gs}, item_id) do
@@ -282,7 +282,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   rAthena `equip_index` ordinal. Pure read over the inventory snapshot.
   """
   @spec getequipid(Ctx.t(), integer()) :: integer()
-  def getequipid(%Ctx{game_state: nil}, _slot), do: no_player!("getequipid/2")
+  def getequipid(%Ctx{game_state: nil} = ctx, _slot), do: no_player!(ctx, "getequipid/2")
 
   def getequipid(%Ctx{game_state: gs}, slot) do
     with location when not is_nil(location) <- Internal.equip_slot_location(slot),
@@ -299,8 +299,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   slot is empty or unknown, or when the card slot is outside `0..3`.
   """
   @spec getequipcardid(Ctx.t(), integer(), integer()) :: integer()
-  def getequipcardid(%Ctx{game_state: nil}, _equip_slot, _card_slot),
-    do: no_player!("getequipcardid/3")
+  def getequipcardid(%Ctx{game_state: nil} = ctx, _equip_slot, _card_slot),
+    do: no_player!(ctx, "getequipcardid/3")
 
   def getequipcardid(%Ctx{}, _equip_slot, card_slot) when card_slot not in 0..3, do: 0
 
@@ -319,7 +319,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   Pure read over the inventory snapshot.
   """
   @spec getequipisequiped(Ctx.t(), integer()) :: 0 | 1
-  def getequipisequiped(%Ctx{game_state: nil}, _slot), do: no_player!("getequipisequiped/2")
+  def getequipisequiped(%Ctx{game_state: nil} = ctx, _slot),
+    do: no_player!(ctx, "getequipisequiped/2")
 
   def getequipisequiped(%Ctx{} = ctx, slot) do
     if Internal.fetch_equipped(ctx, slot), do: 1, else: 0
@@ -331,7 +332,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   over the inventory snapshot.
   """
   @spec getequiprefinerycnt(Ctx.t(), integer()) :: non_neg_integer()
-  def getequiprefinerycnt(%Ctx{game_state: nil}, _slot), do: no_player!("getequiprefinerycnt/2")
+  def getequiprefinerycnt(%Ctx{game_state: nil} = ctx, _slot),
+    do: no_player!(ctx, "getequiprefinerycnt/2")
 
   def getequiprefinerycnt(%Ctx{} = ctx, slot) do
     case Internal.fetch_equipped(ctx, slot) do
@@ -347,7 +349,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   inventory snapshot.
   """
   @spec getequipname(Ctx.t(), integer()) :: String.t()
-  def getequipname(%Ctx{game_state: nil}, _slot), do: no_player!("getequipname/2")
+  def getequipname(%Ctx{game_state: nil} = ctx, _slot), do: no_player!(ctx, "getequipname/2")
 
   def getequipname(%Ctx{} = ctx, slot) do
     case Internal.fetch_equipped(ctx, slot) do
@@ -394,7 +396,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   item is not a weapon. Pure read over the inventory snapshot.
   """
   @spec getequipweaponlv(Ctx.t(), integer()) :: non_neg_integer()
-  def getequipweaponlv(%Ctx{game_state: nil}, _slot), do: no_player!("getequipweaponlv/2")
+  def getequipweaponlv(%Ctx{game_state: nil} = ctx, _slot),
+    do: no_player!(ctx, "getequipweaponlv/2")
 
   def getequipweaponlv(%Ctx{} = ctx, slot) do
     case Internal.fetch_equipped(ctx, slot) do
@@ -409,7 +412,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   item is not an armor. Pure read over the inventory snapshot.
   """
   @spec getequiparmorlv(Ctx.t(), integer()) :: non_neg_integer()
-  def getequiparmorlv(%Ctx{game_state: nil}, _slot), do: no_player!("getequiparmorlv/2")
+  def getequiparmorlv(%Ctx{game_state: nil} = ctx, _slot),
+    do: no_player!(ctx, "getequiparmorlv/2")
 
   def getequiparmorlv(%Ctx{} = ctx, slot) do
     case Internal.fetch_equipped(ctx, slot) do
@@ -424,7 +428,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   else `0`. Pure read over the inventory snapshot.
   """
   @spec getequipisenableref(Ctx.t(), integer()) :: 0 | 1
-  def getequipisenableref(%Ctx{game_state: nil}, _slot), do: no_player!("getequipisenableref/2")
+  def getequipisenableref(%Ctx{game_state: nil} = ctx, _slot),
+    do: no_player!(ctx, "getequipisenableref/2")
 
   def getequipisenableref(%Ctx{} = ctx, slot) do
     case Internal.fetch_equipped(ctx, slot) do
@@ -443,8 +448,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   @spec getequippercentrefinery(Ctx.t(), integer(), 0 | 1) :: 0..100
   def getequippercentrefinery(ctx, slot, enriched \\ 0)
 
-  def getequippercentrefinery(%Ctx{game_state: nil}, _slot, _enriched),
-    do: no_player!("getequippercentrefinery/3")
+  def getequippercentrefinery(%Ctx{game_state: nil} = ctx, _slot, _enriched),
+    do: no_player!(ctx, "getequippercentrefinery/3")
 
   def getequippercentrefinery(%Ctx{} = ctx, slot, enriched) do
     cost_type = if enriched != 0, do: :enriched, else: :normal
@@ -468,8 +473,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   with no refine entry. Pure read over the inventory snapshot + refine tables.
   """
   @spec getequiprefinecost(Ctx.t(), integer(), atom(), :material_id | :zeny_cost) :: integer()
-  def getequiprefinecost(%Ctx{game_state: nil}, _slot, _type, _info),
-    do: no_player!("getequiprefinecost/4")
+  def getequiprefinecost(%Ctx{game_state: nil} = ctx, _slot, _type, _info),
+    do: no_player!(ctx, "getequiprefinecost/4")
 
   def getequiprefinecost(%Ctx{} = ctx, slot, type, info) do
     with {item, item_def} <- Internal.fetch_equipped(ctx, slot),
@@ -494,7 +499,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   inventory snapshot; player needed.
   """
   @spec isequippedcnt(Ctx.t(), [integer()]) :: non_neg_integer()
-  def isequippedcnt(%Ctx{game_state: nil}, _ids), do: no_player!("isequippedcnt/2")
+  def isequippedcnt(%Ctx{game_state: nil} = ctx, _ids), do: no_player!(ctx, "isequippedcnt/2")
 
   def isequippedcnt(%Ctx{game_state: gs}, ids) when is_list(ids) do
     equipped = gs.inventory |> Inventory.equipped_items() |> Map.values()
@@ -681,7 +686,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   the ctx snapshot.
   """
   @spec getpartnerid(Ctx.t()) :: non_neg_integer()
-  def getpartnerid(%Ctx{game_state: nil}), do: no_player!("getpartnerid/1")
+  def getpartnerid(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "getpartnerid/1")
   def getpartnerid(%Ctx{game_state: gs}), do: gs.partner_id
 
   @doc """
@@ -775,7 +780,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   rAthena. Pure read over the ctx snapshot.
   """
   @spec getcharid(Ctx.t(), integer()) :: non_neg_integer()
-  def getcharid(%Ctx{game_state: nil}, _type), do: no_player!("getcharid/2")
+  def getcharid(%Ctx{game_state: nil} = ctx, _type), do: no_player!(ctx, "getcharid/2")
   def getcharid(%Ctx{char_id: char_id}, 0), do: char_id
   def getcharid(%Ctx{game_state: gs}, 1), do: gs.party_id
   def getcharid(%Ctx{game_state: gs}, 2), do: gs.guild_id || 0
@@ -816,12 +821,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   consults the live party entry; a detached ctx raises.
   """
   @spec party_leader?(Ctx.t()) :: 0 | 1
-  def party_leader?(%Ctx{game_state: nil}), do: no_player!("party_leader?/1")
+  def party_leader?(%Ctx{game_state: nil} = ctx), do: no_player!(ctx, "party_leader?/1")
 
   def party_leader?(%Ctx{game_state: gs} = ctx), do: party_leader?(ctx, gs.party_id)
 
   @spec party_leader?(Ctx.t(), non_neg_integer()) :: 0 | 1
-  def party_leader?(%Ctx{game_state: nil}, _party_id), do: no_player!("party_leader?/2")
+  def party_leader?(%Ctx{game_state: nil} = ctx, _party_id),
+    do: no_player!(ctx, "party_leader?/2")
 
   def party_leader?(%Ctx{game_state: gs}, party_id) do
     case PartyManager.get(party_id) do

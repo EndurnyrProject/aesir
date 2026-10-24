@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   """
 
   import Aesir.ZoneServer.Script.Dsl.Internal,
-    only: [apply_op: 2, no_player!: 1, clamp: 2]
+    only: [apply_op: 2, no_player!: 2, clamp: 2]
 
   require Logger
 
@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   unhandled types.
   """
   @spec getlook(Ctx.t(), non_neg_integer()) :: integer()
-  def getlook(%Ctx{game_state: nil}, _type), do: no_player!("getlook/2")
+  def getlook(%Ctx{game_state: nil} = ctx, _type), do: no_player!(ctx, "getlook/2")
 
   def getlook(%Ctx{game_state: gs}, type) do
     case type do

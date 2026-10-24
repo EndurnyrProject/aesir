@@ -271,7 +271,7 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
       assert_received {:summoned, "gef_dun00", 1002, {5, 6}}
     end
 
-    test "summon_mob/2 still halts :no_player when npc_gid is nil" do
+    test "summon_mob/2 spawns nothing and the script goes on when npc_gid is nil" do
       ctx = %Ctx{
         char_id: nil,
         account_id: nil,
@@ -283,15 +283,15 @@ defmodule Aesir.ZoneServer.Integration.OnMyMobDeadTest do
 
       result = Dsl.summon_mob(ctx, mob_id: 1002, at: {10, 10})
 
-      assert result.status == {:error, :no_player}
+      assert result.status == :ok
     end
 
-    test "summon_mob/2 still halts :no_player when npc_gid doesn't resolve" do
+    test "summon_mob/2 spawns nothing and the script goes on when npc_gid doesn't resolve" do
       ctx = Ctx.detached(PlacementNpc, 0x5000_0000 - 1)
 
       result = Dsl.summon_mob(ctx, mob_id: 1002, at: {10, 10})
 
-      assert result.status == {:error, :no_player}
+      assert result.status == :ok
     end
   end
 

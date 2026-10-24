@@ -80,13 +80,14 @@ defmodule Aesir.ZoneServer.Script.DslNpcBuildinsTest do
       assert Dsl.get_npc_var(ctx(), "counter", 0) == 0
     end
 
-    test "returns the default for an unknown NPC" do
-      assert Dsl.get_npc_var_of(ctx(), "counter", "NoSuchNpc", 42) == 42
+    test "an unknown NPC ends the script" do
+      assert {:script_end, %Ctx{status: {:error, :unknown_npc}}} =
+               catch_throw(Dsl.get_npc_var_of(ctx(), "counter", "NoSuchNpc", 42))
     end
 
-    test "an unknown-NPC write no-ops and returns the ctx" do
-      assert %Ctx{} = Dsl.set_npc_var_of(ctx(), "counter", "NoSuchNpc", 9)
-      assert Dsl.get_npc_var_of(ctx(), "counter", "NoSuchNpc", 0) == 0
+    test "an unknown-NPC write ends the script" do
+      assert {:script_end, %Ctx{status: {:error, :unknown_npc}}} =
+               catch_throw(Dsl.set_npc_var_of(ctx(), "counter", "NoSuchNpc", 9))
     end
   end
 
@@ -97,8 +98,9 @@ defmodule Aesir.ZoneServer.Script.DslNpcBuildinsTest do
       assert Dsl.ismounting(ctx()) == 0
     end
 
-    test "reports 0 on a detached ctx" do
-      assert Dsl.ismounting(%{ctx() | game_state: nil}) == 0
+    test "ends the script on a detached ctx" do
+      assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+               catch_throw(Dsl.ismounting(%{ctx() | game_state: nil}))
     end
   end
 

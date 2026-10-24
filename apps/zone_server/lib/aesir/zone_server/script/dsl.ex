@@ -7,11 +7,12 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   generated module or called directly from an NPC module. They split into two
   groups:
 
-  - **Effects** (`(ctx, args) -> ctx`) short-circuit when `ctx.status` is
-    already an error, perform their subsystem side effect, and halt the
-    context with `Ctx.halt/2` on a subsystem error.
-  - **Reads** (`(ctx) -> value`) pull a value out of `ctx.game_state` and
-    ignore status.
+  - **Effects** (`(ctx, args) -> ctx`) perform their subsystem side effect. A
+    refusal is a failed command and the script goes on (`Ctx.fail/3`), as the
+    reference's `run_func` does; only a command whose reference ends the script
+    ends it (`Ctx.halt/2`, which throws `{:script_end, ctx}`).
+  - **Reads** (`(ctx) -> value`) pull a value out of `ctx.game_state`; with no
+    player attached they end the script.
 
   Implementations live in the domain modules under `Dsl.`:
 

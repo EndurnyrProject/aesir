@@ -9,8 +9,8 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
     1. Talking to the Job Master flips `progression.job_id` to the target job,
        persists `class:` on the character row, and pushes a fresh `SkillList`
        built from the new job's tree.
-    2. Talking to a Job Master targeting an unknown job id halts the script
-       with `:unknown_job` and leaves the runtime and persisted job untouched.
+    2. Talking to a Job Master targeting an unknown job id fails the command
+       with `:unknown_job` (the script goes on) and leaves the runtime and persisted job untouched.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -46,9 +46,9 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
     def on_talk(ctx) do
       ctx = jobchange(ctx, @target_job)
 
-      case ctx.status do
-        :ok -> ctx |> mes("You are now a #{class(ctx)}!") |> close()
-        {:error, reason} -> ctx |> mes("Job change failed: #{inspect(reason)}") |> close()
+      case ctx.failures do
+        [] -> ctx |> mes("You are now a #{class(ctx)}!") |> close()
+        [{_command, reason} | _] -> ctx |> mes("Job change failed: #{inspect(reason)}") |> close()
       end
     end
   end
@@ -63,9 +63,9 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
     def on_talk(ctx) do
       ctx = jobchange(ctx, @target_job)
 
-      case ctx.status do
-        :ok -> ctx |> mes("You are now a #{class(ctx)}!") |> close()
-        {:error, reason} -> ctx |> mes("Job change failed: #{inspect(reason)}") |> close()
+      case ctx.failures do
+        [] -> ctx |> mes("You are now a #{class(ctx)}!") |> close()
+        [{_command, reason} | _] -> ctx |> mes("Job change failed: #{inspect(reason)}") |> close()
       end
     end
   end
@@ -228,7 +228,7 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       end
     end
 
-    test "an invalid job id halts the script without mutating state" do
+    test "an invalid job id fails the command without mutating state" do
       character = insert_novice()
 
       session =

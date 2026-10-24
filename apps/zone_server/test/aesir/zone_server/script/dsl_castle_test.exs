@@ -67,8 +67,9 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
       assert Dsl.castle_at(ctx) == nil
     end
 
-    test "raises on a detached ctx" do
-      assert_raise ArgumentError, fn -> Dsl.castle_at(detached_ctx()) end
+    test "ends the script on a detached ctx" do
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.castle_at(detached_ctx()))
     end
   end
 
@@ -144,14 +145,13 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
   end
 
   describe "castle_invest/3" do
-    test "halts with :not_owner for a non-owner" do
+    test "ends the script with :not_owner for a non-owner" do
       castle = first_castle()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
       ctx = build_ctx(guild_id: 2)
 
-      result = Dsl.castle_invest(ctx, castle.id, :economy)
-
-      assert result.status == {:error, :not_owner}
+      assert {:script_end, %{status: {:error, :not_owner}}} =
+               catch_throw(Dsl.castle_invest(ctx, castle.id, :economy))
     end
 
     test "leaves the ctx status ok and increments the counter for the owner" do
@@ -165,12 +165,11 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
       assert CastleStore.economy(castle.id).invested_economy == 1
     end
 
-    test "halts :no_player on a detached ctx" do
+    test "ends the script with :no_player on a detached ctx" do
       castle = first_castle()
 
-      result = Dsl.castle_invest(detached_ctx(), castle.id, :economy)
-
-      assert result.status == {:error, :no_player}
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.castle_invest(detached_ctx(), castle.id, :economy))
     end
   end
 
@@ -189,12 +188,11 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
   end
 
   describe "castle_guardian_hire_check/3" do
-    test "raises on a detached ctx" do
+    test "ends the script on a detached ctx" do
       castle = first_castle()
 
-      assert_raise ArgumentError, fn ->
-        Dsl.castle_guardian_hire_check(detached_ctx(), castle.id, 0)
-      end
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.castle_guardian_hire_check(detached_ctx(), castle.id, 0))
     end
 
     test "returns :not_owner for a non-owner" do
@@ -207,14 +205,13 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
   end
 
   describe "castle_hire_guardian/3" do
-    test "halts with :not_owner for a non-owner" do
+    test "ends the script with :not_owner for a non-owner" do
       castle = first_castle()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
       ctx = build_ctx(guild_id: 2)
 
-      result = Dsl.castle_hire_guardian(ctx, castle.id, 0)
-
-      assert result.status == {:error, :not_owner}
+      assert {:script_end, %{status: {:error, :not_owner}}} =
+               catch_throw(Dsl.castle_hire_guardian(ctx, castle.id, 0))
     end
 
     test "leaves the ctx status ok and hires the slot for the owner" do
@@ -250,12 +247,11 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
   end
 
   describe "castle_kafra_hire_check/2" do
-    test "raises on a detached ctx" do
+    test "ends the script on a detached ctx" do
       castle = first_castle()
 
-      assert_raise ArgumentError, fn ->
-        Dsl.castle_kafra_hire_check(detached_ctx(), castle.id)
-      end
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.castle_kafra_hire_check(detached_ctx(), castle.id))
     end
 
     test "returns :not_owner for a non-owner" do
@@ -268,37 +264,34 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
   end
 
   describe "castle_hire_kafra/2" do
-    test "halts with :not_owner for a non-owner" do
+    test "ends the script with :not_owner for a non-owner" do
       castle = first_castle()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
       ctx = build_ctx(guild_id: 2)
 
-      result = Dsl.castle_hire_kafra(ctx, castle.id)
-
-      assert result.status == {:error, :not_owner}
+      assert {:script_end, %{status: {:error, :not_owner}}} =
+               catch_throw(Dsl.castle_hire_kafra(ctx, castle.id))
     end
 
-    test "halts with :contract_required without the Kafra Contract skill" do
+    test "ends the script with :contract_required without the Kafra Contract skill" do
       castle = first_castle()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
       stub(GuildManager, :get, fn 1 -> {:ok, researched_guild(1)} end)
       ctx = build_ctx(guild_id: 1)
 
-      result = Dsl.castle_hire_kafra(ctx, castle.id)
-
-      assert result.status == {:error, :contract_required}
+      assert {:script_end, %{status: {:error, :contract_required}}} =
+               catch_throw(Dsl.castle_hire_kafra(ctx, castle.id))
     end
 
-    test "halts with :already_hired when already hired" do
+    test "ends the script with :already_hired when already hired" do
       castle = first_castle()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
       stub(GuildManager, :get, fn 1 -> {:ok, contracted_guild(1)} end)
       :ok = CastleStore.put_kafra(castle.id, true)
       ctx = build_ctx(guild_id: 1)
 
-      result = Dsl.castle_hire_kafra(ctx, castle.id)
-
-      assert result.status == {:error, :already_hired}
+      assert {:script_end, %{status: {:error, :already_hired}}} =
+               catch_throw(Dsl.castle_hire_kafra(ctx, castle.id))
     end
 
     test "leaves the ctx status ok and hires the Kafra for the owner" do
@@ -313,12 +306,11 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
       assert CastleStore.kafra?(castle.id)
     end
 
-    test "halts :no_player on a detached ctx" do
+    test "ends the script with :no_player on a detached ctx" do
       castle = first_castle()
 
-      result = Dsl.castle_hire_kafra(detached_ctx(), castle.id)
-
-      assert result.status == {:error, :no_player}
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.castle_hire_kafra(detached_ctx(), castle.id))
     end
 
     test "passes a halted ctx through untouched" do
@@ -330,24 +322,22 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
   end
 
   describe "castle_fire_kafra/2" do
-    test "halts with :not_owner for a non-owner" do
+    test "ends the script with :not_owner for a non-owner" do
       castle = first_castle()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
       ctx = build_ctx(guild_id: 2)
 
-      result = Dsl.castle_fire_kafra(ctx, castle.id)
-
-      assert result.status == {:error, :not_owner}
+      assert {:script_end, %{status: {:error, :not_owner}}} =
+               catch_throw(Dsl.castle_fire_kafra(ctx, castle.id))
     end
 
-    test "halts with :not_hired when not hired" do
+    test "ends the script with :not_hired when not hired" do
       castle = first_castle()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
       ctx = build_ctx(guild_id: 1)
 
-      result = Dsl.castle_fire_kafra(ctx, castle.id)
-
-      assert result.status == {:error, :not_hired}
+      assert {:script_end, %{status: {:error, :not_hired}}} =
+               catch_throw(Dsl.castle_fire_kafra(ctx, castle.id))
     end
 
     test "leaves the ctx status ok and fires the Kafra for the owner" do
@@ -362,12 +352,11 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
       refute CastleStore.kafra?(castle.id)
     end
 
-    test "halts :no_player on a detached ctx" do
+    test "ends the script with :no_player on a detached ctx" do
       castle = first_castle()
 
-      result = Dsl.castle_fire_kafra(detached_ctx(), castle.id)
-
-      assert result.status == {:error, :no_player}
+      assert {:script_end, %{status: {:error, :no_player}}} =
+               catch_throw(Dsl.castle_fire_kafra(detached_ctx(), castle.id))
     end
 
     test "passes a halted ctx through untouched" do

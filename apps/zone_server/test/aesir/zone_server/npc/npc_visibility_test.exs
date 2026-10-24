@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(npc_ctx(gid_for(ToggleNpc)), :boom)
+      ctx = %{npc_ctx(gid_for(ToggleNpc)) | status: {:error, :boom}}
 
       assert Dsl.enablenpc(ctx) == ctx
       assert Dsl.disablenpc(ctx) == ctx
@@ -147,7 +147,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(npc_ctx(gid_for(ToggleNpc)), :boom)
+      ctx = %{npc_ctx(gid_for(ToggleNpc)) | status: {:error, :boom}}
 
       assert Dsl.hideonnpc(ctx) == ctx
       assert Dsl.hideoffnpc(ctx) == ctx
@@ -164,9 +164,20 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       assert NpcSession.enabled?(gid)
       refute NpcSession.visible?(gid)
 
-      assert Dsl.cloakoffnpcself(ctx) == ctx
+      attached = attached(ctx)
+      assert Dsl.cloakoffnpcself(attached) == attached
       refute NpcSession.hidden?(gid)
       assert NpcSession.visible?(gid)
+    end
+
+    test "cloakoffnpcself is a per-player cloak, so a detached ctx ends the script" do
+      ctx = npc_ctx(gid_for(ToggleNpc))
+
+      assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+               catch_throw(Dsl.cloakoffnpcself(ctx))
+
+      assert {:script_end, %Ctx{status: {:error, :no_player}}} =
+               catch_throw(Dsl.cloakoffnpcself(ctx, "ToggleDup"))
     end
 
     test "a nil npc_gid warns and no-ops" do
@@ -175,12 +186,13 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       log = capture_log(fn -> assert Dsl.cloakonnpc(ctx) == ctx end)
       assert log =~ "no npc_gid"
 
-      log = capture_log(fn -> assert Dsl.cloakoffnpcself(ctx) == ctx end)
+      attached = attached(ctx)
+      log = capture_log(fn -> assert Dsl.cloakoffnpcself(attached) == attached end)
       assert log =~ "no npc_gid"
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(npc_ctx(gid_for(ToggleNpc)), :boom)
+      ctx = %{npc_ctx(gid_for(ToggleNpc)) | status: {:error, :boom}}
 
       assert Dsl.cloakonnpc(ctx) == ctx
       assert Dsl.cloakoffnpcself(ctx) == ctx
@@ -225,7 +237,8 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       assert NpcSession.hidden?(gid_a)
       assert NpcSession.hidden?(gid_b)
 
-      assert Dsl.cloakoffnpcself(ctx, "ToggleDup") == ctx
+      attached = attached(ctx)
+      assert Dsl.cloakoffnpcself(attached, "ToggleDup") == attached
       refute NpcSession.hidden?(gid_a)
       refute NpcSession.hidden?(gid_b)
     end
@@ -234,13 +247,14 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       ctx = npc_ctx(nil)
 
       for op <- [:enablenpc, :disablenpc, :hideonnpc, :hideoffnpc, :cloakonnpc, :cloakoffnpcself] do
+        ctx = attached(ctx)
         log = capture_log(fn -> assert apply(Dsl, op, [ctx, "Nowhere"]) == ctx end)
         assert log =~ "unknown name"
       end
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(npc_ctx(nil), :boom)
+      ctx = %{npc_ctx(nil) | status: {:error, :boom}}
 
       assert Dsl.enablenpc(ctx, "ToggleDup") == ctx
       assert Dsl.disablenpc(ctx, "ToggleDup") == ctx
@@ -273,7 +287,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     end
 
     test "short-circuits on an already-halted ctx" do
-      ctx = Ctx.halt(npc_ctx(nil), :boom)
+      ctx = %{npc_ctx(nil) | status: {:error, :boom}}
 
       assert Dsl.set_npc_display(ctx, npc: "ToggleDup", sprite: 937) == ctx
     end
@@ -508,6 +522,8 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       npc_gid: gid
     }
   end
+
+  defp attached(%Ctx{} = ctx), do: %{ctx | game_state: %PlayerState{character_id: 1}}
 
   defp talk_state do
     game_state = %{PlayerState.new(character(1)) | map_name: @map}

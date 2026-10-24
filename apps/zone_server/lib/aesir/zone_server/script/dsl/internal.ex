@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   # only when two or more domains need it; single-domain helpers stay private
   # in their domain module.
 
+  require Logger
+
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
@@ -19,28 +21,34 @@ defmodule Aesir.ZoneServer.Script.Dsl.Internal do
   @doc """
   Routes a state-mutating op through the single-writer session (always a
   cross-process GenServer.call from the interaction, never a self-call), then
-  folds the authoritative game_state back into ctx or halts on error. A
-  detached ctx has no session to call, so it halts `:no_player` instead.
+  folds the authoritative game_state back into ctx. A refused op is a failed
+  command: the script goes on with the ctx unchanged (`Ctx.fail/3`), unless the
+  caller passes `:halt` for a command whose refusal ends the script. A
+  detached ctx has no session to call, so it halts `:no_player` (the script
+  ends) instead.
   """
-  @spec apply_op(Ctx.t(), tuple()) :: Ctx.t()
-  def apply_op(%Ctx{session_pid: nil} = ctx, _op), do: Ctx.halt(ctx, :no_player)
+  @spec apply_op(Ctx.t(), tuple(), :fail | :halt) :: Ctx.t()
+  def apply_op(ctx, op, on_error \\ :fail)
+  def apply_op(%Ctx{session_pid: nil} = ctx, _op, _on_error), do: Ctx.halt(ctx, :no_player)
 
-  def apply_op(%Ctx{session_pid: session_pid} = ctx, op) do
+  def apply_op(%Ctx{session_pid: session_pid} = ctx, op, on_error) do
     case PlayerSession.script_apply(session_pid, op) do
       {:ok, game_state} -> %{ctx | game_state: game_state}
-      {:error, reason} -> Ctx.halt(ctx, reason)
+      {:error, reason} when on_error == :halt -> Ctx.halt(ctx, reason)
+      {:error, reason} -> Ctx.fail(ctx, elem(op, 0), reason)
     end
   end
 
   @doc """
-  Raises for a read op called on a detached ctx (no player attached). Reads
-  return bare values, not a Ctx, so they cannot carry a `{:error, :no_player}`
-  status the way effect ops do; the raise crashes only the calling supervised
-  Task, mirroring the script engine's "player not attached" error.
+  Ends the script for a command that needs a player when none is attached,
+  logging the command as the reference does ("player not attached"). Reads
+  return bare values, not a `Ctx`, so the end is the `Ctx.halt/2` throw rather
+  than a returned status.
   """
-  @spec no_player!(String.t()) :: no_return()
-  def no_player!(op) do
-    raise ArgumentError, "#{op} requires a player attached to the ctx, but ctx is detached"
+  @spec no_player!(Ctx.t(), String.t()) :: no_return()
+  def no_player!(%Ctx{} = ctx, op) do
+    Logger.error("#{op}: player not attached")
+    Ctx.halt(ctx, :no_player)
   end
 
   @doc "Clamps `value` into `0..max` (look values, HP/SP deltas)."

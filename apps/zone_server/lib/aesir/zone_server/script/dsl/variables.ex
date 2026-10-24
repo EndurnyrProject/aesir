@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   `Aesir.ZoneServer.Script.Dsl` facade.
   """
 
-  import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2, no_player!: 1]
+  import Aesir.ZoneServer.Script.Dsl.Internal, only: [apply_op: 2, no_player!: 2]
 
   require Logger
 
@@ -26,7 +26,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   """
   @spec get_char_var(Ctx.t(), atom(), term()) :: term()
   def get_char_var(ctx, key, default \\ 0)
-  def get_char_var(%Ctx{game_state: nil}, _key, _default), do: no_player!("get_char_var/3")
+
+  def get_char_var(%Ctx{game_state: nil} = ctx, _key, _default),
+    do: no_player!(ctx, "get_char_var/3")
 
   def get_char_var(%Ctx{game_state: gs}, key, default) do
     Map.get(gs.vars, to_string(key), default)
@@ -48,7 +50,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   """
   @spec get_temp_var(Ctx.t(), atom(), term()) :: term()
   def get_temp_var(ctx, key, default \\ 0)
-  def get_temp_var(%Ctx{game_state: nil}, _key, _default), do: no_player!("get_temp_var/3")
+
+  def get_temp_var(%Ctx{game_state: nil} = ctx, _key, _default),
+    do: no_player!(ctx, "get_temp_var/3")
 
   def get_temp_var(%Ctx{game_state: gs}, key, default) do
     Map.get(gs.temp_vars, to_string(key), default)
@@ -101,23 +105,27 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
 
   @doc """
   Reads the account variable `name` (rAthena `#`/`##`, keyed by the attached
-  account), defaulting an unset var — or a player-less context — to `default`.
+  account), defaulting an unset var to `default`; a player-less context ends the script.
   The `name` carries its scope sigil so `#foo` and `##foo` stay distinct.
   """
   @spec get_account_var(Ctx.t(), String.t(), term()) :: term()
   def get_account_var(ctx, name, default \\ 0)
-  def get_account_var(%Ctx{account_id: nil}, _name, default), do: default
+
+  def get_account_var(%Ctx{account_id: nil} = ctx, _name, _default),
+    do: no_player!(ctx, "get_account_var/3")
 
   def get_account_var(%Ctx{account_id: account_id}, name, default),
     do: Vars.get_account(account_id, name, default)
 
   @doc """
   Sets the account variable `name` to `value`, persisted write-through against
-  the attached account. A no-op (never fails) when no player is attached.
+  the attached account. Halts `:no_player` when no player is attached.
   """
   @spec set_account_var(Ctx.t(), String.t(), term()) :: Ctx.t()
   def set_account_var(%Ctx{status: {:error, _}} = ctx, _name, _value), do: ctx
-  def set_account_var(%Ctx{account_id: nil} = ctx, _name, _value), do: ctx
+
+  def set_account_var(%Ctx{account_id: nil} = ctx, _name, _value),
+    do: Ctx.halt(ctx, :no_player)
 
   def set_account_var(%Ctx{account_id: account_id} = ctx, name, value) do
     Vars.put_account(account_id, name, value)
@@ -145,14 +153,18 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   @doc """
   Reads another NPC's `.` variable by NPC name (rAthena `getvariableofnpc`).
   Resolves `npc_name` through `Npc.Registry.by_name/1` (first placement) and
-  reads the variable keyed by that NPC's source tag; an unresolved name
-  returns `default`. Pure read, valid on both an attached and a detached ctx.
+  reads the variable keyed by that NPC's source tag; an unresolved name ends the
+  script. Valid on both an attached and a detached ctx.
   """
   @spec get_npc_var_of(Ctx.t(), String.t(), String.t(), term()) :: term()
-  def get_npc_var_of(%Ctx{}, name, npc_name, default \\ 0) do
+  def get_npc_var_of(%Ctx{} = ctx, name, npc_name, default \\ 0) do
     case NpcRegistry.by_name(npc_name) do
-      [{module, _placement} | _] -> Vars.get_npc({:npc, module.npc_id()}, name, default)
-      [] -> default
+      [{module, _placement} | _] ->
+        Vars.get_npc({:npc, module.npc_id()}, name, default)
+
+      [] ->
+        Logger.error("getvariableofnpc: can't find npc #{inspect(npc_name)}")
+        Ctx.halt(ctx, :unknown_npc)
     end
   end
 
@@ -160,15 +172,19 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   Writes another NPC's `.` variable by NPC name (rAthena `getvariableofnpc` as
   an assignment target). Resolves `npc_name` through `Npc.Registry.by_name/1`
   and writes the variable keyed by that NPC's source tag; an unresolved name
-  logs a warning and no-ops. Never persists.
+  ends the script. Never persists.
   """
   @spec set_npc_var_of(Ctx.t(), String.t(), String.t(), term()) :: Ctx.t()
   def set_npc_var_of(%Ctx{status: {:error, _}} = ctx, _name, _npc_name, _value), do: ctx
 
   def set_npc_var_of(%Ctx{} = ctx, name, npc_name, value) do
     case NpcRegistry.by_name(npc_name) do
-      [{module, _placement} | _] -> Vars.put_npc({:npc, module.npc_id()}, name, value)
-      [] -> Logger.warning("npc getvariableofnpc: unknown npc #{inspect(npc_name)}")
+      [{module, _placement} | _] ->
+        Vars.put_npc({:npc, module.npc_id()}, name, value)
+
+      [] ->
+        Logger.error("getvariableofnpc: can't find npc #{inspect(npc_name)}")
+        Ctx.halt(ctx, :unknown_npc)
     end
 
     ctx
@@ -285,14 +301,15 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
     Todo.call!(:instance_var, [key])
   end
 
-  defp read_account(%Ctx{account_id: nil}, key, index), do: dyn_default(key, index)
+  defp read_account(%Ctx{account_id: nil} = ctx, _key, _index), do: no_player!(ctx, "getd/2")
 
   defp read_account(%Ctx{account_id: account_id}, key, index),
     do: read_dyn(Vars.get_account(account_id, key, dyn_default(key, index)), index, key)
 
   # Player-scope reads (`@`/bare) raise without a player, like the static
   # `get_temp_var`/`get_char_var` reads they delegate to.
-  defp read_player_var(%Ctx{game_state: nil}, _key, _index, _fun), do: no_player!("getd/2")
+  defp read_player_var(%Ctx{game_state: nil} = ctx, _key, _index, _fun),
+    do: no_player!(ctx, "getd/2")
 
   # sobelow_skip ["DOS.StringToAtom"]
   defp read_player_var(%Ctx{} = ctx, key, index, fun),
@@ -346,7 +363,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
     end
   end
 
-  defp set_account(%Ctx{account_id: nil} = ctx, _key, _index, _value), do: ctx
+  defp set_account(%Ctx{account_id: nil} = ctx, _key, _index, _value),
+    do: Ctx.halt(ctx, :no_player)
 
   defp set_account(%Ctx{account_id: account_id} = ctx, key, index, value) do
     Vars.put_account(

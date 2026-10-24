@@ -894,14 +894,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     end
   end
 
-  describe "handle_use_item/2 with an effect that halts" do
+  describe "handle_use_item/2 with an effect that ends the script" do
     test "sends ItemUseResult{ok: false}, consumes nothing" do
-      warp_source = ~s|warp(ctx, "nowhere", 0, 0)|
-      ScriptCompiler.compile_all!([item_def(@warp_item_id, warp_source)])
+      source = "give_item(ctx, 501, 1)"
+      ScriptCompiler.compile_all!([item_def(@warp_item_id, source)])
 
-      definition = usable_definition(@warp_item_id, warp_source)
+      definition = usable_definition(@warp_item_id, source)
       stub(Items, :by_id, fn @warp_item_id -> {:ok, definition} end)
-      stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
       reject(&InventoryOps.remove/4)
 
       state = state_with_potion(@warp_item_id)
@@ -913,6 +912,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
                         %ItemUseResult{index: @red_potion_client_index, ok: false}}}
 
       refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+  end
+
+  describe "handle_use_item/2 with an effect that fails" do
+    @describetag :capture_log
+
+    test "the script goes on and the item is used and consumed" do
+      warp_source = ~s|warp(ctx, "nowhere", 0, 0)|
+      ScriptCompiler.compile_all!([item_def(@warp_item_id, warp_source)])
+
+      definition = usable_definition(@warp_item_id, warp_source)
+      stub(Items, :by_id, fn @warp_item_id -> {:ok, definition} end)
+      stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
+      expect_potion_consumed()
+
+      state = state_with_potion(@warp_item_id)
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
     end
   end
 
