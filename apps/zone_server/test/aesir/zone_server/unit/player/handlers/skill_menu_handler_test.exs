@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.ProductionResult
   alias Aesir.Net.SkillMenu
@@ -15,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   setup :verify_on_exit!
 
@@ -45,6 +47,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
       state = Map.put(build_state(), :pending_skill_text_input, pending)
 
       assert SkillMenuHandler.open(state, @src_skill, :SKILLS, @entry_ids, 3) == state
+      refute_receive {:send, _, {:skill_menu, _}}
+    end
+  end
+
+  describe "open_produce/2" do
+    test "offers the producible products under menu id 0 with the trigger as level" do
+      state = SkillMenuHandler.open_produce(produce_state([{998, 2}]), 1)
+
+      assert_receive {:send, :world,
+                      {:skill_menu, %SkillMenu{src_skill_id: 0, kind: :ITEMS, entry_ids: [1101]}}}
+
+      assert state.pending_skill_menu == %{skill_id: 0, kind: :ITEMS, entry_ids: [1101], level: 1}
+    end
+
+    test "an empty list is still sent and leaves the open menu in place" do
+      pending = %{skill_id: @src_skill, kind: :SKILLS, entry_ids: @entry_ids, level: 3}
+      state = %{produce_state([]) | pending_skill_menu: pending}
+
+      assert SkillMenuHandler.open_produce(state, 1) == state
+
+      assert_receive {:send, :world,
+                      {:skill_menu, %SkillMenu{src_skill_id: 0, kind: :ITEMS, entry_ids: []}}}
+    end
+
+    test "nothing is sent while a production list is open" do
+      pending = %{skill_id: 0, kind: :ITEMS, entry_ids: [1101], level: 1}
+      state = %{produce_state([{998, 2}]) | pending_skill_menu: pending}
+
+      assert SkillMenuHandler.open_produce(state, 2) == state
       refute_receive {:send, _, {:skill_menu, _}}
     end
   end
@@ -272,6 +303,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
           entry_ids: @entry_ids,
           level: 3
         }
+    }
+  end
+
+  defp produce_state(items) do
+    stats =
+      %Character{class: 10, base_level: 99, job_level: 70}
+      |> Stats.from_character()
+      |> put_in([Access.key!(:progression), Access.key!(:learned_skills)], %{99 => 1})
+
+    inventory =
+      items
+      |> Enum.with_index()
+      |> Map.new(fn {{id, amount}, index} ->
+        {index, %InventoryItem{nameid: id, amount: amount, identify: 1}}
+      end)
+
+    %{
+      build_state()
+      | game_state: %PlayerState{character_id: 1, stats: stats, inventory: inventory}
     }
   end
 

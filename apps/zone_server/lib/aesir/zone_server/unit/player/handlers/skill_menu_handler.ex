@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   alias Aesir.Net.ProductionResult
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -90,6 +91,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
             %{skill_id: skill_id, kind: kind, entry_ids: entry_ids, level: level}
             |> Map.merge(Map.new(Keyword.take(opts, [:context])))
       }
+    end
+  end
+
+  @doc """
+  Opens the production list an item's `produce` script asks for (see
+  `Produce`), parked with `trigger` as its level. An empty list is sent without
+  replacing the open menu, and nothing is sent while a production list is open.
+  """
+  @spec open_produce(map(), integer()) :: map()
+  def open_produce(%{pending_skill_menu: %{skill_id: menu_id}} = state, _trigger)
+      when menu_id == 0,
+      do: state
+
+  def open_produce(state, trigger) do
+    open_menu_skill_id =
+      case state.pending_skill_menu do
+        nil -> 0
+        %{skill_id: skill_id} -> skill_id
+      end
+
+    case Produce.offer(state.game_state, trigger, open_menu_skill_id) do
+      [] ->
+        state
+        |> open(Produce.menu_id(), :ITEMS, [], trigger)
+        |> Map.put(:pending_skill_menu, state.pending_skill_menu)
+
+      product_ids ->
+        open(state, Produce.menu_id(), :ITEMS, product_ids, trigger)
     end
   end
 
@@ -221,7 +250,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
     if function_exported?(module, :on_menu_reply, 4) do
       module.on_menu_reply(state.game_state, selection, level, %{
         homunculus: Map.get(state, :homunculus),
-        menu: state.pending_skill_menu
+        menu: state.pending_skill_menu,
+        trading?: Map.get(state, :trade) != nil
       })
     else
       module.on_menu_reply(state.game_state, selection, level)
@@ -254,6 +284,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
     MessageRouter.send_to(connection_pid, %ProductionResult{success: success, item_id: item_id})
     %{game_state | pending_production_result: nil}
   end
+
+  defp menu_module(0), do: Produce
 
   defp menu_module(skill_id) do
     with {:ok, definition} <- Catalog.by_id(skill_id),

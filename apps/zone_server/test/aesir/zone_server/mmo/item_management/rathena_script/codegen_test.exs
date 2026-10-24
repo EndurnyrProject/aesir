@@ -266,7 +266,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
 
   describe "generate/1 unsupported" do
     test "an unknown command is unsupported with its name" do
-      assert {:error, {:unsupported, "produce"}} = compile("produce 999,1;")
+      assert {:error, {:unsupported, "cooking"}} = compile("cooking 999,1;")
     end
 
     test "an NPC-only statement is unsupported, not a raise" do

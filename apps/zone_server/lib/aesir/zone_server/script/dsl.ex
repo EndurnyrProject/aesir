@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   - `Dsl.Dialog` — mes/next/select/input/close, sleep2, progressbar
   - `Dsl.PlayerEffects` — heal/sc_*, homunculus staging, exp, job, mounts,
     savepoint, storage, attachrid
-  - `Dsl.Skills` — npcskill, skilleffect, itemskill, skill grants/reset
+  - `Dsl.Skills` — npcskill, skilleffect, itemskill, produce, skill grants/reset
   - `Dsl.Visuals` — looks, effects, viewpoint, questinfo, cutin, sound,
     navigation, emotes, nude
   - `Dsl.Announce` — announce/broadcast family, dispbottom, logmes
@@ -101,6 +101,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate skilleffect(ctx, skill, level), to: Skills
   defdelegate itemskill(ctx, skill_id_or_name, opts), to: Skills
   defdelegate unitskilluseid(ctx, skill_id_or_name, opts), to: Skills
+  defdelegate produce(ctx, trigger), to: Skills
   defdelegate skill(ctx, skill_id_or_name, level, flag), to: Skills
   defdelegate reset_skills(ctx), to: Skills
   defdelegate basicskillcheck(ctx), to: Skills

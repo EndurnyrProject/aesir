@@ -859,24 +859,28 @@
   buy: 150
   id: 612
   name: Mini Furnace
+  on_use: 'produce(ctx, 21)'
   type: usable
   weight: 200
 - aegis_name: Iron_Hammer
   buy: 1000
   id: 613
   name: Iron Hammer
+  on_use: 'produce(ctx, 1)'
   type: usable
   weight: 200
 - aegis_name: Golden_Hammer
   buy: 3000
   id: 614
   name: Golden Hammer
+  on_use: 'produce(ctx, 2)'
   type: usable
   weight: 300
 - aegis_name: Oridecon_Hammer
   buy: 5000
   id: 615
   name: Oridecon Hammer
+  on_use: 'produce(ctx, 3)'
   type: usable
   weight: 400
 - aegis_name: Old_Card_Album

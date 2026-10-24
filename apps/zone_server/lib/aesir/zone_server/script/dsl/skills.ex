@@ -187,6 +187,20 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
     do: apply_op(ctx, {:stage_item_skill, skill_id, level, keep?})
 
   @doc """
+  Opens the production list for `trigger` (rAthena `produce`), the list a hammer
+  or furnace shows: see
+  `Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce`. Only an item script can open it;
+  any other source fails the command and the script goes on.
+  """
+  @spec produce(Ctx.t(), integer()) :: Ctx.t()
+  def produce(%Ctx{status: {:error, _}} = ctx, _trigger), do: ctx
+
+  def produce(%Ctx{session_pid: nil, source: {:item, _}} = ctx, trigger) when is_integer(trigger),
+    do: %{ctx | session_effects: ctx.session_effects ++ [{:produce, trigger}]}
+
+  def produce(%Ctx{} = ctx, _trigger), do: Ctx.fail(ctx, :produce, :unsupported_source)
+
+  @doc """
   Casts a skill from the player's own unit (rAthena `unitskilluseid`), the cast
   an Emergency Scroll or rune item starts from its script. The skill needs no
   learned rank; every other cast-begin and cast-end condition applies (SP, HP,

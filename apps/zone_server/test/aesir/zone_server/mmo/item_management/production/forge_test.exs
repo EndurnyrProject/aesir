@@ -180,6 +180,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
              Forge.run(%{caster | inventory: inventory([{998, 2}])}, recipe, [])
   end
 
+  test "a selected catalyst the player does not hold is skipped", %{caster: caster} do
+    Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+    caster = %{caster | inventory: inventory([{998, 2}, {1000, 1}])}
+
+    assert {:ok, forged} = Forge.run(caster, weapon_recipe(), [1000, 1000, 994])
+
+    assert ItemContainer.held_amount(forged.inventory, 1000) == 0
+    output = Enum.find_value(forged.inventory, fn {_i, item} -> item.nameid == 1101 && item end)
+
+    assert {:ok, %ItemCraft{element: :neutral, star_crumbs: 1}} =
+             ItemCraft.from_map(output.craft)
+  end
+
   defp pharmacy_recipe do
     %Recipe{
       id: 119,

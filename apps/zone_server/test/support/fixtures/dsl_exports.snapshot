@@ -190,6 +190,7 @@ pay_zeny/2
 percent_heal/2
 playerattached/1
 position/1
+produce/2
 progressbar/3
 questinfo/2
 questinfo/3

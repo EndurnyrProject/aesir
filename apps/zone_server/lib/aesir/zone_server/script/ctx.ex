@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           {:falcon, boolean()}
           | {:homunculus, homunculus_effect()}
           | {:item_skill, integer(), pos_integer(), boolean()}
+          | {:produce, integer()}
           | {:script_damage, ScriptVitals.damage()}
           | {:unit_skill_use, integer(), pos_integer()}
           | {:potion_pitch, :flat | :percent, integer(), integer()}

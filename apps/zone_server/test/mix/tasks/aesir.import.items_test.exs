@@ -48,7 +48,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
 
     test "keeps on_use nil and records an :on_use failure for an unsupported script" do
       assert {%ItemDefinition{on_use: nil}, {:on_use, 501, "Red Potion", {:unsupported, _}}} =
-               Items.apply_transpile(definition(%{type: :usable}), "produce 1;")
+               Items.apply_transpile(definition(%{type: :usable}), "cooking 1;")
     end
 
     test "skips usable items without a script" do

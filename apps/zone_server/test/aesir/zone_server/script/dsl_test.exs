@@ -1102,6 +1102,21 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "produce/2" do
+    test "an item script stages the production list for its session" do
+      ctx = %{build_ctx() | session_pid: nil, source: {:item, 613}}
+
+      assert Dsl.produce(ctx, 1).session_effects == [{:produce, 1}]
+    end
+
+    test "any other source fails the command and the script goes on" do
+      result = Dsl.produce(%{build_ctx() | session_pid: self()}, 1)
+
+      assert result.status == :ok
+      assert result.failures == [{:produce, :unsupported_source}]
+    end
+  end
+
   describe "itemskill/3" do
     test "stages a skill by id and folds the owner's current state" do
       staged_state = %{build_game_state() | action_state: :moving}

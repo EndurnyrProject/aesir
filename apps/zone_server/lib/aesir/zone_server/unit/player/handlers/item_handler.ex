@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
@@ -160,6 +161,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     effects = Enum.reject(effects, &match?({:item_skill, _, _, _}, &1))
     skill_cast = List.last(for {:unit_skill_use, id, level} <- effects, do: {id, level})
     effects = Enum.reject(effects, &match?({:unit_skill_use, _, _}, &1))
+    produce_triggers = for {:produce, trigger} <- effects, do: trigger
+    effects = Enum.reject(effects, &match?({:produce, _}, &1))
 
     with :ok <- validate_item_skill(pending),
          :ok <- reject_homunculus(effects),
@@ -178,7 +181,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
           )
         end
 
-      start_script_cast(consumed, skill_cast)
+      consumed
+      |> start_script_cast(skill_cast)
+      |> open_production_lists(produce_triggers)
     else
       {:error, :invalid_script} -> reject_invalid_script(client_index, item_id, state)
       {:error, reason} -> reject(client_index, reason, state)
@@ -191,6 +196,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
   defp start_script_cast({:noreply, state}, {skill_id, level}),
     do: {:noreply, SkillHandler.start_script_cast(state, skill_id, level)}
+
+  # A `produce` list opens after the item is spent, as the reference runs the
+  # item's script after removing it.
+  defp open_production_lists({:noreply, state}, triggers),
+    do: {:noreply, Enum.reduce(triggers, state, &SkillMenuHandler.open_produce(&2, &1))}
 
   # A delayed-consume item stays until the selected target is known; a
   # no-consume item is never removed (the reference's DELAYCONSUME_NOCONSUME).

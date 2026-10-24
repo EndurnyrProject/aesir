@@ -14,10 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill do
   list from the hammer and furnace items' `produce` script instead, with the
   trigger selecting the ore, stone or weapon tier, and these rows only gate the
   recipes (the learned smithing skill and its level) and feed the success
-  chance. Aesir has no production script yet, so this menu is the client's entry
-  point, the skills declare `target_type: :self` to receive the request, and the
-  requesting cast stays silent: `SkillHandler` sends no skill visual and arms no
-  on-skill proc for it, as the reference's absent cast produces neither.
+  chance. That list is `Production.Produce`, opened by the items' `produce`
+  script; the menu staged here is no longer reachable from the client.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge

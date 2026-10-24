@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   @moduledoc """
   Orchestrates a production attempt inside the caster's player session.
 
-  Possession is checked before materials are consumed. The product is added
+  Possession is checked before materials are consumed. A selected catalyst the
+  player does not hold is skipped rather than failing the attempt. The product is added
   afterwards, as the reference does: a refused add still leaves the materials
   and catalysts spent, reports the reason to the client, and does not undo the
   production result.
@@ -48,7 +49,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
         instruction_change_rank
       )
       when is_integer(instruction_change_rank) and instruction_change_rank >= 0 do
-    {crumb_count, element, catalyst_ids} = catalysts(recipe, chosen_catalyst_ids)
+    {crumb_count, element, catalyst_ids} =
+      catalysts(recipe, chosen_catalyst_ids, caster.inventory)
 
     with {:ok, item_def} <- ItemManagement.get_item_by_id(recipe.product_id),
          :ok <- check_materials(caster.inventory, recipe.materials, catalyst_ids) do
@@ -108,8 +110,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
     }
   end
 
-  defp catalysts(%Recipe{skill_id: @pharmacy_skill_id}, _chosen_catalyst_ids), do: {0, nil, []}
-  defp catalysts(_recipe, chosen_catalyst_ids), do: Catalysts.resolve(chosen_catalyst_ids)
+  defp catalysts(%Recipe{skill_id: @pharmacy_skill_id}, _chosen_catalyst_ids, _inventory),
+    do: {0, nil, []}
+
+  defp catalysts(_recipe, chosen_catalyst_ids, inventory) do
+    {held, _taken} =
+      chosen_catalyst_ids
+      |> Enum.take(3)
+      |> Enum.flat_map_reduce(%{}, fn id, taken ->
+        count = Map.get(taken, id, 0)
+
+        if ItemContainer.held_amount(inventory, id) > count,
+          do: {[id], Map.put(taken, id, count + 1)},
+          else: {[], taken}
+      end)
+
+    Catalysts.resolve(held)
+  end
 
   defp success_chance(
          caster,

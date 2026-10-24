@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Menu do
   @type selection :: %{id: non_neg_integer(), extras: [non_neg_integer()]}
 
   @typedoc "Session-owned context, including the original server-written menu."
-  @type context :: %{homunculus: struct() | nil, menu: map()}
+  @type context :: %{homunculus: struct() | nil, menu: map(), trading?: boolean()}
 
   @typedoc "A menu outcome; a failed outcome preserves already-spent resources."
   @type result ::

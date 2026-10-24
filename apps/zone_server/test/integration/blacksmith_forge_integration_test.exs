@@ -6,14 +6,15 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ProductionResult
-  alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
+  alias Aesir.Net.UseItem
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @craft_skills [94, 95, 96] ++ Enum.to_list(98..104)
 
@@ -29,19 +30,28 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
     :ok = Catalog.reload()
   end
 
+  # The production list an item's `produce` script opens is not a skill's menu:
+  # it carries src_skill_id 0 and the reply answers with the same id.
+  @menu 0
+  @furnace 612
+  @iron_hammer 613
+  @oridecon_hammer 615
+
   test "forges a selected family weapon with catalysts and stamps it" do
     Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
     character = insert_blacksmith(%{99 => 1, 97 => 5, 107 => 10})
-    insert_items(character.id, [{998, 2}, {994, 1}, {1000, 1}])
+    insert_items(character.id, [{998, 2}, {994, 1}, {1000, 1}, {@iron_hammer, 1}])
     session = start_session(character)
 
-    cast(session, 99, 1)
+    use_item(session, @iron_hammer)
 
     assert_receive {:packet_sent,
-                    %SkillMenu{src_skill_id: 99, kind: :ITEMS, entry_ids: [1101, 1104, 1107]}, _},
+                    %SkillMenu{src_skill_id: @menu, kind: :ITEMS, entry_ids: [1101]}, _},
                    1_000
 
-    reply(session, 99, 1101, [994, 1000])
+    assert Inventory.held_amount(get_player_state(session.pid).inventory, @iron_hammer) == 0
+
+    reply(session, 1101, [994, 1000])
     assert_receive {:packet_sent, %ProductionResult{success: true, item_id: 1101}, _}, 1_000
 
     state = get_player_state(session.pid)
@@ -70,14 +80,14 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
     end)
 
     character = insert_blacksmith(%{98 => 3}, dex: 1, luk: 1, job_level: 1)
-    insert_items(character.id, [{984, 4}, {999, 40}, {726, 1}, {1000, 3}])
+    insert_items(character.id, [{984, 4}, {999, 40}, {726, 1}, {1000, 3}, {@oridecon_hammer, 1}])
     session = start_session(character)
 
-    cast(session, 98, 3)
-    assert_receive {:packet_sent, %SkillMenu{src_skill_id: 98, entry_ids: entries}, _}, 1_000
+    use_item(session, @oridecon_hammer)
+    assert_receive {:packet_sent, %SkillMenu{src_skill_id: @menu, entry_ids: entries}, _}, 1_000
     assert 1219 in entries
 
-    reply(session, 98, 1219, [1000, 1000, 1000])
+    reply(session, 1219, [1000, 1000, 1000])
     assert_receive {:packet_sent, %ProductionResult{success: false, item_id: 1219}, _}, 1_000
 
     inventory = get_player_state(session.pid).inventory
@@ -88,36 +98,50 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
     assert Inventory.held_amount(inventory, 1219) == 0
   end
 
-  test "level one offers only tier-one weapons and drops an unoffered reply" do
-    character = insert_blacksmith(%{98 => 1})
+  test "the iron hammer offers only tier-one weapons and drops an unoffered reply" do
+    character = insert_blacksmith(%{98 => 3})
+
+    insert_items(character.id, [
+      {998, 50},
+      {909, 10},
+      {984, 4},
+      {999, 40},
+      {726, 1},
+      {@iron_hammer, 1}
+    ])
+
     session = start_session(character)
 
-    cast(session, 98, 1)
+    use_item(session, @iron_hammer)
 
-    assert_receive {:packet_sent, %SkillMenu{src_skill_id: 98, entry_ids: [1201, 1204, 1207]}, _},
+    assert_receive {:packet_sent, %SkillMenu{src_skill_id: @menu, entry_ids: [1201, 1204, 1207]},
+                    _},
                    1_000
 
-    reply(session, 98, 1219, [])
+    reply(session, 1219, [])
     refute_receive {:packet_sent, %ProductionResult{}, _}, 100
     assert Process.alive?(session.pid)
+    assert Inventory.held_amount(get_player_state(session.pid).inventory, 984) == 4
   end
 
-  test "mineral skills offer their recipes and Star Crumb always succeeds" do
+  test "the furnace offers the held mineral recipes and Star Crumb always succeeds" do
     Application.put_env(:zone_server, :forge_rng, fn upper -> upper end)
     character = insert_blacksmith(%{94 => 1, 95 => 1, 96 => 1})
-    insert_items(character.id, [{1001, 10}])
+    insert_items(character.id, [{1001, 10}, {1002, 1}, {990, 10}, {@furnace, 1}])
     session = start_session(character)
 
-    for {skill_id, products} <- [{94, [998]}, {95, [999]}, {96, [1000, 994, 995, 996, 997]}] do
-      cast(session, skill_id, 1)
+    use_item(session, @furnace)
 
-      assert_receive {:packet_sent, %SkillMenu{src_skill_id: ^skill_id, entry_ids: ^products}, _},
-                     1_000
-    end
+    assert_receive {:packet_sent, %SkillMenu{src_skill_id: @menu, entry_ids: [998, 1000, 994]},
+                    _},
+                   1_000
 
-    reply(session, 96, 1000, [])
+    reply(session, 1000, [])
     assert_receive {:packet_sent, %ProductionResult{success: true, item_id: 1000}, _}, 1_000
-    assert Inventory.held_amount(get_player_state(session.pid).inventory, 1000) == 1
+
+    inventory = get_player_state(session.pid).inventory
+    assert Inventory.held_amount(inventory, 1000) == 1
+    assert Inventory.held_amount(inventory, @furnace) == 0
   end
 
   # Regression guard for a silent item-loss bug in the shared inventory staging
@@ -131,13 +155,13 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
     Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
     character = insert_blacksmith(%{94 => 1})
     # An existing Iron stack the product will merge into, plus the ore to refine.
-    insert_items(character.id, [{998, 3}, {1002, 1}])
+    insert_items(character.id, [{998, 3}, {1002, 1}, {@furnace, 1}])
     session = start_session(character)
 
-    cast(session, 94, 1)
-    assert_receive {:packet_sent, %SkillMenu{src_skill_id: 94, entry_ids: [998]}, _}, 1_000
+    use_item(session, @furnace)
+    assert_receive {:packet_sent, %SkillMenu{src_skill_id: @menu, entry_ids: [998]}, _}, 1_000
 
-    reply(session, 94, 998, [])
+    reply(session, 998, [])
     assert_receive {:packet_sent, %ProductionResult{success: true, item_id: 998}, _}, 1_000
 
     in_memory = get_player_state(session.pid).inventory
@@ -150,6 +174,7 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
     assert persisted_iron == 4
     assert Inventory.held_amount(in_memory, 1002) == 0
     assert persisted_ore == 0
+    assert Map.get(persisted, @furnace, []) == []
   end
 
   test "all ten craft declarations expose the shared active and menu callbacks" do
@@ -162,17 +187,18 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
     end
   end
 
-  defp cast(session, skill_id, level) do
-    simulate_incoming_message(session.pid, %SkillCast{
-      skill_id: skill_id,
-      level: level,
-      target_id: session.character.id
-    })
+  defp use_item(session, nameid) do
+    {index, _item} =
+      Enum.find(get_player_state(session.pid).inventory, fn {_index, item} ->
+        item.nameid == nameid
+      end)
+
+    simulate_incoming_message(session.pid, %UseItem{index: PlayerState.client_index(index)})
   end
 
-  defp reply(session, skill_id, product_id, extras) do
+  defp reply(session, product_id, extras) do
     simulate_incoming_message(session.pid, %SkillMenuReply{
-      src_skill_id: skill_id,
+      src_skill_id: @menu,
       selected_id: product_id,
       extra_ids: extras
     })

@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
     end
 
     test "an unsupported command surfaces the codegen error unchanged" do
-      assert {:error, {:unsupported, "produce"}} = Transpiler.transpile("produce 999,1;")
+      assert {:error, {:unsupported, "cooking"}} = Transpiler.transpile("cooking 11;")
     end
 
     test "a truncated script surfaces the parse error unchanged" do
@@ -85,6 +85,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
 
       assert {:ok, "itemskill(ctx, 19, level: 1, keep_requirement: false)"} =
                Transpiler.transpile(~s(itemskill "MG_FIREBOLT",1,0;))
+    end
+
+    test "produce transpiles the production list trigger" do
+      assert {:ok, "produce(ctx, 21)"} = Transpiler.transpile("produce 21;")
     end
 
     test "unitskilluseid transpiles the script's own player cast" do
