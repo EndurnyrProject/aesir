@@ -2,10 +2,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
   @moduledoc """
   End-to-end lifecycle for a mob self-buff through the live MobSkill path:
   `Executor.execute/2` resolves an `NPC_AGIUP` row's self target, dispatches
-  through the skill catalog to `NpcAgiup`, which applies `:sc_increaseagi` to
+  through the skill catalog to `NpcAgiup`, which applies `:sc_agiup` to
   the mob via the real status interpreter/storage. Proves the status fold in
   `to_combatant/1` composes with the catalog-dispatched skill: the buff lands,
-  the buffed AGI shows up in the combatant, and removing the status reverts it.
+  the doubled FLEE shows up in the combatant, and removing the status reverts it.
   """
 
   use ExUnit.Case, async: true
@@ -79,22 +79,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSelfBuffIntegrationTest do
   test "NPC_AGIUP self-buffs the mob, recalculates into to_combatant, and reverts on removal" do
     state = build_mob_state()
     UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
-
-    assert MobState.to_combatant(state).base_stats.agi == @base_agi
+    flee = MobState.to_combatant(state).combat_stats.flee
 
     assert :ok = Executor.execute(state, self_buff_row())
 
-    assert StatusStorage.has_status?(:mob, state.instance_id, :sc_increaseagi)
+    assert StatusStorage.has_status?(:mob, state.instance_id, :sc_agiup)
 
     # The owning session reconciles the committed status: the buff reaches the
     # combat view through the recalculated snapshot, not by folding storage.
-    {:noreply, buffed} = StatsHandler.handle_status_changed(:sc_increaseagi, :apply, state)
-    assert MobState.to_combatant(buffed).base_stats.agi == @base_agi + 2 + @level
+    # SC_AGIUP leaves AGI alone and doubles FLEE.
+    {:noreply, buffed} = StatsHandler.handle_status_changed(:sc_agiup, :apply, state)
+    assert MobState.to_combatant(buffed).base_stats.agi == @base_agi
+    assert MobState.to_combatant(buffed).combat_stats.flee == flee * 2
 
-    :ok = StatusInterpreter.remove_status(:mob, state.instance_id, :sc_increaseagi)
+    :ok = StatusInterpreter.remove_status(:mob, state.instance_id, :sc_agiup)
 
-    refute StatusStorage.has_status?(:mob, state.instance_id, :sc_increaseagi)
-    {:noreply, reverted} = StatsHandler.handle_status_changed(:sc_increaseagi, :removed, buffed)
-    assert MobState.to_combatant(reverted).base_stats.agi == @base_agi
+    refute StatusStorage.has_status?(:mob, state.instance_id, :sc_agiup)
+    {:noreply, reverted} = StatsHandler.handle_status_changed(:sc_agiup, :removed, buffed)
+    assert MobState.to_combatant(reverted).combat_stats.flee == flee
   end
 end

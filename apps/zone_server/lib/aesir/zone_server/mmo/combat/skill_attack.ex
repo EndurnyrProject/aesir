@@ -1097,6 +1097,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       before target-specific damage processing (default `false`)
     - `:target_skill_units` - include only live targetable traps (default `false`)
     - `:shoot_range_los` - require projectile line of sight from the splash center
+    - `:authorize` - `(attacker, target -> boolean)` replacing the living-enemy
+      relation for selection and for each hit (default: enemies, and traps)
     - `:delivery` - how the splash reached each target (default `:direct`, see
       `execute_skill_attack/3`); the split divisor counts every selected target,
       refused or not
@@ -1114,10 +1116,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     element = Keyword.get(opts, :element, :neutral)
     target_skill_units? = Keyword.get(opts, :target_skill_units, false)
 
+    authorize = Keyword.get(opts, :authorize)
+
     targets =
       SplashTargets.select(attacker.map_name, center, radius, attacker, false,
         target_skill_units: target_skill_units?,
-        shoot_range_los: Keyword.get(opts, :shoot_range_los, false)
+        shoot_range_los: Keyword.get(opts, :shoot_range_los, false),
+        authorize: authorize
       )
 
     base_damage = split_base_damage(base_damage, targets, Keyword.get(opts, :split, false))
@@ -1132,7 +1137,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              base_damage,
              Keyword.get(opts, :hit_divisions, 1),
              %{
-               authorize_target: &validate_trap_splash_enemy/2,
+               authorize_target: hit_authorization(authorize),
                owner_derived_trap?: target_skill_units?,
                knockback_options: knockback_options(opts),
                delivery: Keyword.get(opts, :delivery, :direct)
@@ -1418,6 +1423,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp misc_target_combatant(target_state, _owner_derived_trap?),
     do: {:ok, target_state.__struct__.to_combatant(target_state)}
+
+  defp hit_authorization(nil), do: &validate_trap_splash_enemy/2
+
+  defp hit_authorization(authorize) when is_function(authorize, 2) do
+    fn attacker, target ->
+      if authorize.(attacker, target), do: :ok, else: {:error, :invalid_target}
+    end
+  end
 
   defp validate_trap_splash_enemy(_attacker, %{unit_type: :skill_unit}), do: :ok
 

@@ -224,7 +224,7 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
 
       assert :ok = Executor.execute(get_mob_state(boss.pid), self_buff_row())
 
-      assert StatusStorage.has_status?(:mob, boss.unit_id, :sc_increaseagi)
+      assert StatusStorage.has_status?(:mob, boss.unit_id, :sc_agiup)
       refute StatusStorage.has_status?(:mob, boss.unit_id, :sc_stun)
     end
   end
@@ -249,7 +249,7 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
         )
 
       assert :ok = Interpreter.apply_status(:player, char_id, :sc_hiding, duration: 60_000)
-      assert Interpreter.concealed?(:player, char_id)
+      assert StatusStorage.has_status?(:player, char_id, :sc_hiding)
 
       assert AIStateMachine.process_ai(idle(normal), System.system_time(:millisecond)).target_ref ==
                nil

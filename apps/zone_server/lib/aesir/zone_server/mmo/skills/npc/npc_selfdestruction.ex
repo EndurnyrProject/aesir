@@ -8,6 +8,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   cells, then routes lethal damage through the caster's normal mob death path.
   Player-owned casters use their owner's PvM faction and never damage players or
   other player-owned summons.
+
+  A player may cast it too (both modes). Off versus ground it strikes the
+  player's enemies and the player's own summons and Homunculus; on a versus map
+  it strikes every unit around, party members included. Each target in line of
+  sight takes the caster's current HP as Fire misc damage, a hidden one is
+  skipped, a trap is struck, and a survivor is knocked back three cells. The
+  caster then loses all of its HP without a hit (it dies with no killer).
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 173,
@@ -27,17 +34,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     is_npc: true,
     damage_splash: true
 
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -51,6 +64,61 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     kill_caster(caster)
     {:ok, caster}
   end
+
+  def cast(%PlayerState{} = caster, _target, level, definition) do
+    hp = caster.stats.current_state.hp
+
+    SkillAttack.execute_misc_splash(
+      caster,
+      {caster.x, caster.y},
+      definition.splash_radius,
+      skill_id: definition.id,
+      skill_level: level,
+      base_damage: hp,
+      element: definition.element,
+      target_skill_units: true,
+      shoot_range_los: true,
+      authorize: player_target_rule(caster),
+      base_distance: definition.knockback,
+      native_requires_survival: true
+    )
+
+    zap_player(caster, hp)
+    {:ok, caster}
+  end
+
+  # On versus ground the blast reaches every unit; elsewhere the player's
+  # enemies plus its own summons and Homunculus. A hidden unit is never struck.
+  defp player_target_rule(%PlayerState{character_id: owner_id, map_name: map_name}) do
+    versus? = MapFlags.versus?(map_name)
+
+    fn attacker, target ->
+      not hiding?(target) and
+        (versus? or target.unit_type == :skill_unit or
+           Targeting.validate_enemy(attacker, target) == :ok or own_slave?(target, owner_id))
+    end
+  end
+
+  defp hiding?(%{unit_type: :skill_unit}), do: false
+
+  defp hiding?(%{unit_type: unit_type, unit_id: unit_id}),
+    do: StatusStorage.has_status?(unit_type, unit_id, :sc_hiding)
+
+  defp own_slave?(%{unit_type: :homunculus, social_root: {:player, owner_id}}, owner_id),
+    do: true
+
+  defp own_slave?(%{unit_type: :mob, proc_owner_id: owner_id}, owner_id), do: true
+  defp own_slave?(_target, _owner_id), do: false
+
+  # The caster loses all its HP without a hit: passive loss, no attacker.
+  defp zap_player(%PlayerState{character_id: id}, hp) when hp > 0 do
+    case UnitRegistry.get_unit(:player, id) do
+      {:ok, {_module, _state, pid}} -> PlayerSession.apply_damage(pid, hp, nil, %{passive?: true})
+      {:error, :not_found} -> :ok
+    end
+  end
+
+  defp zap_player(_caster, _hp), do: :ok
 
   defp targets(caster, radius) do
     combatant = faction_combatant(caster)

@@ -166,6 +166,30 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobCalculatedCombatTest do
     end
   end
 
+  test "NPC Increase AGI's buff raises FLEE by its rate after Increase Flee Rate" do
+    {:ok, form} =
+      Importer.to_definition(%{
+        "Id" => 1002,
+        "AegisName" => "AGIUP",
+        "Name" => "Agiup",
+        "Level" => 10,
+        "Agi" => 19
+      })
+
+    spawn = %MobSpawn{mob: form.id, amount: 1, respawn_time: 0, spawn_area: nil}
+    state = MobState.new(304, form, spawn, "prontera", 100, 100)
+    rate = StatusEntry.new(:sc_incfleerate, 20, 0, 0, 0, 0, 0)
+    agiup = StatusEntry.new(:sc_agiup, 50, 100, 0, 0, 0, 0)
+
+    for formulas <- [Renewal, PreRenewal] do
+      base = formulas.base(state)
+      state = %{state | base: base, calculated: base}
+      flee = formulas.recalculate_combat(state, [rate], ~w(Flee)).flee
+      buffed = formulas.recalculate_combat(state, [rate, agiup], ~w(Flee)).flee
+      assert buffed == flee + div(flee * 100, 100)
+    end
+  end
+
   test "defenses apply source-ordered halves, poison OR, Angelus and separate Joint Beat truncation" do
     {:ok, form} =
       Importer.to_definition(%{

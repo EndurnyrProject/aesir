@@ -29,6 +29,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   the caster is not excluded from its own selection on the caster-identity
   check alone. `target_skill_units: true` additionally admits only live,
   targetable trap cells; all skill units remain excluded by default.
+  `authorize: fun` replaces the living-enemy relation with `fun.(caster,
+  target)` for a skill whose reference target set is not just the caster's
+  enemies (Self Destruction); geometry, liveness and line of sight still apply.
   """
   @spec select(
           String.t(),
@@ -48,9 +51,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
       caster,
       hits_caster,
       opts,
-      &splash_hittable?/4
+      selection_authorization(Keyword.get(opts, :authorize))
     )
   end
+
+  defp selection_authorization(nil), do: &splash_hittable?/4
+
+  defp selection_authorization(authorize) when is_function(authorize, 2),
+    do: fn caster, target, _target_ref, _caster_ref -> authorize.(caster, target) end
 
   @doc """
   Keeps the `refs` that `select/6` would accept regardless of where they stand:

@@ -2,14 +2,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestructionTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -192,6 +197,89 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestructionTest do
              NpcSelfdestruction.cast(caster, {:unit, caster.instance_id}, 1, definition())
 
     assert_received {:hit, :misc}
+  end
+
+  describe "a player caster" do
+    setup do
+      Mimic.copy(SkillAttack)
+
+      caster =
+        struct(PlayerState,
+          character_id: 20,
+          map_name: "test_map",
+          x: 50,
+          y: 60,
+          stats: %{current_state: %{hp: 777}}
+        )
+
+      test_pid = self()
+      caster_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+      stub(SkillAttack, :execute_misc_splash, fn ^caster, {50, 60}, 5, opts ->
+        send(test_pid, {:splash, opts})
+        []
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 20 -> {:ok, {PlayerState, caster, caster_pid}} end)
+
+      stub(PlayerSession, :apply_damage, fn pid, damage, attacker, metadata ->
+        send(test_pid, {:zapped, pid, damage, attacker, metadata})
+        :ok
+      end)
+
+      stub(StatusStorage, :has_status?, fn
+        :mob, 33, :sc_hiding -> true
+        _type, _id, _status -> false
+      end)
+
+      %{caster: caster, caster_pid: caster_pid}
+    end
+
+    test "strikes enemies, its own summons and traps off versus ground, then dies with no killer",
+         %{caster: caster, caster_pid: caster_pid} do
+      stub(MapFlags, :versus?, fn "test_map" -> false end)
+
+      stub(Targeting, :validate_enemy, fn _attacker, target ->
+        if target.unit_id == 30, do: :ok, else: {:error, :not_enemy}
+      end)
+
+      assert {:ok, ^caster} = NpcSelfdestruction.cast(caster, :self, 1, definition())
+
+      assert_received {:splash, opts}
+      assert opts[:base_damage] == 777
+      assert opts[:element] == :fire
+      assert opts[:target_skill_units] and opts[:shoot_range_los]
+      assert opts[:base_distance] == 3 and opts[:native_requires_survival]
+
+      authorize = opts[:authorize]
+      attacker = %{unit_type: :player, unit_id: 20}
+      assert authorize.(attacker, %{unit_type: :mob, unit_id: 30, proc_owner_id: nil})
+      assert authorize.(attacker, %{unit_type: :mob, unit_id: 31, proc_owner_id: 20})
+
+      assert authorize.(attacker, %{
+               unit_type: :homunculus,
+               unit_id: 32,
+               social_root: {:player, 20}
+             })
+
+      assert authorize.(attacker, %{unit_type: :skill_unit, unit_id: 40})
+      refute authorize.(attacker, %{unit_type: :player, unit_id: 21})
+      refute authorize.(attacker, %{unit_type: :mob, unit_id: 33, proc_owner_id: nil})
+
+      assert_received {:zapped, ^caster_pid, 777, nil, %{passive?: true}}
+    end
+
+    test "strikes every unit but a hidden one on versus ground", %{caster: caster} do
+      stub(MapFlags, :versus?, fn "test_map" -> true end)
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> {:error, :not_enemy} end)
+
+      assert {:ok, ^caster} = NpcSelfdestruction.cast(caster, :self, 1, definition())
+
+      assert_received {:splash, opts}
+      attacker = %{unit_type: :player, unit_id: 20}
+      assert opts[:authorize].(attacker, %{unit_type: :player, unit_id: 21})
+      refute opts[:authorize].(attacker, %{unit_type: :mob, unit_id: 33, proc_owner_id: nil})
+    end
   end
 
   defp definition do

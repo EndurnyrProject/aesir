@@ -320,6 +320,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Combat do
         else: flee
 
     flee = flee + div(flee * value(entries, :sc_incfleerate, :val1), 100)
+    flee = flee + div(flee * value(entries, :sc_agiup, :val2), 100)
     flee = flee - div(flee * fixed(entries, :sc_spiderweb, 50), 100)
     flee = flee - div(flee * fixed(entries, :sc_blind, 25), 100)
     min(max(flee, 1), 32_767)
