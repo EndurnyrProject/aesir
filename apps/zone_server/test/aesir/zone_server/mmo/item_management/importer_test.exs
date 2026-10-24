@@ -167,6 +167,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       assert {:ok, %ItemDefinition{bind_on_equip: true}} = Importer.to_definition(entry, :renewal)
     end
 
+    test "maps the no-consume flag" do
+      entry = %{
+        "Id" => 12887,
+        "AegisName" => "C_Wing_Of_Fly",
+        "Name" => "Infinite Flywing",
+        "Flags" => %{"NoConsume" => true}
+      }
+
+      assert {:ok, definition = %ItemDefinition{no_consume: true}} =
+               Importer.to_definition(entry, :renewal)
+
+      assert %{"no_consume" => true} = Importer.to_yaml_map(definition, :renewal)
+    end
+
     defp base_entry(id, jobs),
       do: %{"Id" => id, "AegisName" => "X#{id}", "Name" => "X#{id}", "Jobs" => jobs}
 

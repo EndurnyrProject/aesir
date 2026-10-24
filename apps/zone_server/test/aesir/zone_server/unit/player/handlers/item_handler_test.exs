@@ -223,6 +223,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert relocated.game_state.pending_warp == nil
       assert relocated.game_state.inventory[@red_potion_slot].amount == 4
     end
+
+    test "a no-consume item runs its effect, keeps the item and reports no removal" do
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, "heal(ctx, hp: 50)")])
+
+      state = state_with_potion()
+
+      definition =
+        %{usable_definition(@red_potion_id, "heal(ctx, hp: 50)") | no_consume: true}
+
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.stats.current_state.hp == 150
+      assert committed.game_state.inventory[@red_potion_slot].amount == 5
+      refute_received {:send, :gameplay, {:item_removed, %ItemRemoved{}}}
+
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: true, reason: 0}}}
+    end
+
+    test "a no-consume item stages its skill with its slot and is never removed" do
+      source = "itemskill(ctx, 26, level: 1)"
+      ScriptCompiler.compile_all!([item_def(@fly_wing_id, source)])
+
+      state = Map.put(state_with_potion(@fly_wing_id), :pending_item_skill, nil)
+      definition = %{usable_definition(@fly_wing_id, source) | type: :usable, no_consume: true}
+
+      stub(Items, :by_id, fn @fly_wing_id -> {:ok, definition} end)
+      stub(Broadcast, :to_player, fn 1000, %ItemSkillReady{} -> :ok end)
+      reject(&InventoryOps.remove/4)
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.pending_item_skill == %{
+               skill_id: 26,
+               level: 1,
+               item_index: @red_potion_slot,
+               item_nameid: @fly_wing_id,
+               keep_requirement?: false
+             }
+
+      assert committed.game_state.inventory[@red_potion_slot].amount == 5
+      refute_received {:send, :gameplay, {:item_removed, %ItemRemoved{}}}
+    end
   end
 
   describe "handle_use_item/2 with Falcon Flute" do

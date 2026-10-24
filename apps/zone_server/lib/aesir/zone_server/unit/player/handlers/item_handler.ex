@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   Cards open stateless target discovery without running or consuming anything.
   The existing consumable path validates other items, runs the effect
   synchronously inside the player session and commits the resulting state.
-  Ordinary items consume one unit on success; a `delay_consume` item that grants
-  a skill waits until the client selects a valid cast before consuming it.
+  Ordinary items consume one unit on success; a `delay_consume` item, or a
+  `no_consume` one, that grants a skill waits until the client selects a valid
+  cast, and a `no_consume` item is never consumed (`pc.cpp:6488-6545`).
   `ItemUseResult` acknowledges the item use and `ItemRemoved` reports the actual
   consumption. A failed item-use check leaves inventory unchanged.
   """
@@ -129,23 +130,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   defp apply_item_effects(
          ctx,
          effects,
-         %{id: item_id, type: type},
+         definition,
          client_index,
          server_index,
          state
        ) do
+    %{id: item_id} = definition
     pending = List.last(for {:item_skill, id, level, keep?} <- effects, do: {id, level, keep?})
     effects = Enum.reject(effects, &match?({:item_skill, _, _, _}, &1))
 
     with :ok <- validate_item_skill(pending),
          :ok <- reject_homunculus(effects),
          {:ok, updated} <- apply_session_effects(effects, %{state | game_state: ctx.game_state}) do
-      if type == :delay_consume and pending do
-        stage_delayed_item_skill(client_index, server_index, item_id, pending, updated)
+      if stage_before_target?(definition) and pending do
+        stage_pending_item_skill(client_index, server_index, item_id, pending, updated)
       else
         consume(
           client_index,
           server_index,
+          definition,
           %{ctx | game_state: updated.game_state},
           updated,
           pending
@@ -156,6 +159,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
       {:error, reason} -> reject(client_index, reason, state)
     end
   end
+
+  # A delayed-consume item stays until the selected target is known; a
+  # no-consume item is never removed (the reference's DELAYCONSUME_NOCONSUME).
+  defp stage_before_target?(%{type: :delay_consume}), do: true
+  defp stage_before_target?(definition), do: Map.get(definition, :no_consume, false)
 
   @spec apply_session_effects([Ctx.session_effect()], map()) :: {:ok, map()} | {:error, term()}
   defp apply_session_effects(effects, state) do
@@ -201,7 +209,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
   defp validate_item_skill({_id, _level, _invalid_flag}), do: {:error, :invalid_requirement}
 
-  defp stage_delayed_item_skill(
+  defp stage_pending_item_skill(
          client_index,
          server_index,
          item_id,
@@ -225,17 +233,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     {:noreply, staged}
   end
 
-  defp consume(client_index, server_index, ctx, state, pending) do
+  defp consume(client_index, server_index, definition, ctx, state, pending) do
+    if Map.get(definition, :no_consume, false) do
+      acknowledge_kept_item(client_index, ctx, state, pending)
+    else
+      remove_consumed_item(client_index, server_index, ctx, state, pending)
+    end
+  end
+
+  defp remove_consumed_item(client_index, server_index, ctx, state, pending) do
     char_id = state.game_state.character_id
 
     case InventoryOps.remove(char_id, ctx.game_state.inventory, server_index, 1) do
       {:ok, new_inventory, _change} ->
         final_gs = %{ctx.game_state | inventory: new_inventory}
-
-        recalced =
-          StatusManager.recalculate_after_status_change(%{state | game_state: final_gs})
-
-        committed = StateCommit.commit(recalced, recalced.game_state)
+        committed = commit_used_item(state, final_gs)
 
         MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(server_index, 1))
 
@@ -257,6 +269,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
         reject(client_index, reason, state)
     end
+  end
+
+  # A no-consume item stays in the inventory after its script ran.
+  defp acknowledge_kept_item(client_index, ctx, state, pending) do
+    committed = commit_used_item(state, ctx.game_state)
+
+    MessageRouter.send_to(state.connection_pid, %ItemUseResult{
+      index: client_index,
+      ok: true,
+      reason: 0
+    })
+
+    committed = SkillHandler.drain_warp(committed)
+    {:noreply, stage_consumed_item_skill(committed, pending)}
+  end
+
+  defp commit_used_item(state, game_state) do
+    recalced = StatusManager.recalculate_after_status_change(%{state | game_state: game_state})
+
+    StateCommit.commit(recalced, recalced.game_state)
   end
 
   defp stage_consumed_item_skill(state, nil), do: state

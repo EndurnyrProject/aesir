@@ -104,9 +104,22 @@ case-insensitive; `:item` params pass verbatim.
 
 ## itemskill and status-granting consumables
 
-- `itemskill` in an item script routes through `Skill.Interpreter.item_cast/4` — bypasses
-  learned/SP/catalyst/cooldown checks, still validates shape, still arms cooldown +
-  aftercast delay. Don't route item casts through `cast/4`.
+- `itemskill` in an item script stages a client-selected cast (`ItemSkillReady`), never a direct
+  effect. Only a `delay_consume` or a `no_consume` item can actually cast: the reference's
+  cast-begin item branch refuses any other item's pending cast silently
+  (`skill.cpp:8283-8300`), because an immediately consumed item no longer has a claimable slot.
+- The pending cast runs the player's cast stages; the item is claimed where the source claims it,
+  after the chat-room refusal and before the weight limit. A plain item cast then bypasses the
+  learned rank, weight, SP, zeny, spheres, HP, weapon, equipment and status requirements; with
+  `keep_requirement: true` they all run on the claimed caster.
+- `no_consume` (rAthena `Flags: NoConsume`) is modelled: the item is never removed, neither at
+  use nor at the cast claim, and it stages its item skill with its slot (`DELAYCONSUME_NOCONSUME`).
+  Items without it are consumed on use or claimed away at the cast begin.
+- An out-of-range item cast spends the item and casts nothing (the source never walks an item cast
+  into range, and its step-action retry fails because the item index is gone). There is no
+  server-side approach for item skills; the client must walk first.
+- `item_cast/4` remains the direct entry for tests and non-client paths; it runs the same stages
+  with no claim callback. Don't route player item casts through `cast/4`.
 - A consumable that starts an `SC_*` status needs the resolver `@statuses` entry AND the
   status effect module **in the same commit** (`resolver_completeness_test.exs` enforces
   this — see the `aesir-status-effects` skill).

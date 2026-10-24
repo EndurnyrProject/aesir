@@ -898,6 +898,10 @@ message Knockback {
 // selects a target and sends SkillCast or GroundSkillCast with this id and level;
 // SELF skills send SkillCast with the owner's unit id. This is not a learned
 // skill and must not be added to the skill window.
+// Client contract: the target must already be within the skill's range. The
+// server spends the item when the cast begins and, like the reference, never
+// walks the player into range for an item skill, so an out-of-range request
+// consumes the item and casts nothing.
 message ItemSkillReady {
   uint32 skill_id = 1;
   uint32 level = 2;

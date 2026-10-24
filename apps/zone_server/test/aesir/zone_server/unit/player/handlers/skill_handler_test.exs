@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -1187,12 +1188,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
-  describe "move-to-range on out-of-range cast" do
-    test "a delayed item already claimed for approach is not charged again on retry" do
-      state = casting_state(45)
-
+  describe "item skill casts" do
+    test "an out-of-range item cast ends silently, keeps the claim spent, and walks nowhere" do
       state = %{
-        state
+        casting_state(45)
         | pending_item_skill: %{
             skill_id: 29,
             level: 1,
@@ -1207,32 +1206,66 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       end)
 
       stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      reject(&MovementHandler.handle_request_move/4)
+      reject(&Broadcast.to_player/2)
 
-      stub(SpatialIndex, :get_unit_position, fn
-        :player, 2000 -> {:error, :not_found}
-        :mob, 2000 -> {:ok, {160, 150, "prontera"}}
-      end)
+      assert {:noreply, dropped} = SkillHandler.handle_use_skill(state, 29, 1, 2000)
 
-      stub(Catalog, :by_id, fn 29 -> {:ok, definition(range: 9)} end)
-      stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
-
-      stub(Pathfinding, :rewalk_path, fn :map_data, {150, 150}, {151, 150} ->
-        {:ok, [{151, 150}]}
-      end)
-
-      stub(MovementHandler, :handle_request_move, fn moving, 151, 150, _opts ->
-        {:noreply, moving}
-      end)
-
-      assert {:noreply, approaching} = SkillHandler.handle_use_skill(state, 29, 1, 2000)
-
-      assert approaching.pending_item_skill == %{
-               skill_id: 29,
-               level: 1,
-               keep_requirement?: false
-             }
+      # The item was spent, so the pending item skill loses its slot: a repeated
+      # request can only fail its claim.
+      assert dropped.pending_item_skill == %{skill_id: 29, level: 1, keep_requirement?: false}
     end
 
+    test "a pending item skill with no claimable item fails silently" do
+      state = %{
+        casting_state(45)
+        | pending_item_skill: %{skill_id: 29, level: 1, keep_requirement?: false}
+      }
+
+      stub(Interpreter, :begin_item_cast, fn gs, 29, 1, {:unit, 2000}, claim, false ->
+        assert {:error, :missing_item} = claim.(gs)
+        {:error, :missing_item}
+      end)
+
+      reject(&Broadcast.to_player/2)
+      reject(&MovementHandler.handle_request_move/4)
+
+      assert {:noreply, ^state} = SkillHandler.handle_use_skill(state, 29, 1, 2000)
+    end
+
+    test "a claimed no-consume item stays in the inventory" do
+      state =
+        %{
+          casting_state(45)
+          | pending_item_skill: %{
+              skill_id: 29,
+              level: 1,
+              keep_requirement?: false,
+              item_index: 0,
+              item_nameid: 601
+            }
+        }
+        |> put_in([Access.key!(:game_state), Access.key!(:inventory)], %{
+          0 => %InventoryItem{nameid: 601, amount: 1}
+        })
+
+      stub(ItemManagement, :get_item_by_id, fn 601 -> {:ok, %{no_consume: true}} end)
+      reject(&InventoryOps.remove/4)
+
+      stub(Interpreter, :begin_item_cast, fn gs, 29, 1, {:unit, 2000}, claim, false ->
+        assert {:ok, ^gs} = claim.(gs)
+        {:error, :invalid_target, gs, :before_start}
+      end)
+
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+
+      assert {:noreply, committed} = SkillHandler.handle_use_skill(state, 29, 1, 2000)
+      assert committed.game_state.inventory[0].amount == 1
+    end
+  end
+
+  describe "move-to-range on out-of-range cast" do
     test "an out-of-range unit skill walks the caster toward the target instead of fizzling" do
       stub(Interpreter, :begin_cast, fn _gs, 29, 1, {:unit, 2000} -> {:error, :out_of_range} end)
 

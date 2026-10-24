@@ -7972,6 +7972,7 @@
   id: 12622
   name: Reins Of Mount
   no_cart: true
+  no_consume: true
   no_guild_storage: true
   no_storage: true
   no_trade: true
@@ -9901,6 +9902,7 @@
   id: 12887
   name: Infinite Flywing
   no_cart: true
+  no_consume: true
   no_guild_storage: true
   no_storage: true
   no_trade: true
@@ -32139,6 +32141,7 @@
   id: 22508
   name: Eden Group Mark
   no_cart: true
+  no_consume: true
   no_guild_storage: true
   no_storage: true
   no_trade: true
@@ -34538,6 +34541,7 @@
   id: 23027
   name: Dandelion Ring
   no_cart: true
+  no_consume: true
   no_guild_storage: true
   no_trade: true
   on_use: warp(ctx, "rachel", 120, 125)
@@ -38638,42 +38642,52 @@
 - aegis_name: WL_MB_SG
   id: 100065
   name: Spell Book(Storm Gust)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_LOV
   id: 100066
   name: Spell Book(Lord of Vermilion)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_MS
   id: 100067
   name: Spell Book(Meteor Storm)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_DL
   id: 100068
   name: Spell Book(Drain Life)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_JF
   id: 100069
   name: Spell Book(Jack Frost)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_ES
   id: 100070
   name: Spell Book(Earth Strain)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_CR
   id: 100071
   name: Spell Book(Crimson Rock)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_CL
   id: 100072
   name: Spell Book(Chain Lightning)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_CM
   id: 100073
   name: Spell Book(Comet)
+  no_consume: true
   type: delay_consume
 - aegis_name: WL_MB_TV
   id: 100074
   name: Spell Book(Tetra Vortex)
+  no_consume: true
   type: delay_consume
 - aegis_name: DishSet05
   id: 100075

@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
           by_aegis: %{String.t() => ItemDefinition.t()}
         }
 
-  @cache_file "items_v7.etf"
+  @cache_file "items_v8.etf"
   @overrides_file "script_overrides.yml"
 
   @types ~w(healing usable etc armor weapon card pet_egg pet_armor ammo delay_consume shadow_gear cash)a

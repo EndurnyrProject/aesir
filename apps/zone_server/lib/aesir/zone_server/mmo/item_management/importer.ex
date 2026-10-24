@@ -329,6 +329,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
         equip_level_max: Map.get(entry, "EquipLevelMax", 0),
         refineable: Map.get(entry, "Refineable", false),
         bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
+        no_consume: get_in(entry, ["Flags", "NoConsume"]) || false,
         no_trade: get_in(entry, ["Trade", "NoTrade"]) || false,
         no_cart: get_in(entry, ["Trade", "NoCart"]) || false,
         no_storage: get_in(entry, ["Trade", "NoStorage"]) || false,

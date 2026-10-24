@@ -825,7 +825,9 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
       target_id: 99_999
     })
 
-    assert_receive {:packet_sent, %SkillCastFailed{skill_id: 1013}, _}, 1000
+    # A target that cannot be resolved is refused silently, before the item is
+    # claimed.
+    refute_packet_sent(SkillCastFailed)
     assert inventory_amount(player, 14_529) == 1
     assert :sys.get_state(player.pid).pending_item_skill.skill_id == 1013
 

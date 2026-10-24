@@ -290,6 +290,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  defmodule ItemCastStageSkill do
+    @moduledoc "Records the optional cast stages an item cast runs."
+
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition), do: {:ok, game_state}
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition) do
+      send(self(), :item_validate)
+      Process.get(:item_validate_result, :ok)
+    end
+
+    @impl true
+    def skilluse_check(_game_state, _target, _level, _definition) do
+      send(self(), :item_skilluse_check)
+      Process.get(:item_skilluse_check_result, :ok)
+    end
+
+    @impl true
+    def after_range_check(_game_state, _target, _level, _definition) do
+      send(self(), :item_after_range_check)
+      Process.get(:item_after_range_check_result, :ok)
+    end
+
+    @impl true
+    def begin_attempt(game_state, _target, _level, _definition) do
+      send(self(), :item_begin_attempt)
+
+      case Process.get(:item_begin_attempt_result, :ok) do
+        :ok -> {:ok, game_state}
+        error -> error
+      end
+    end
+  end
+
   defp game_state(sp, learned) do
     %PlayerState{
       character_id: 1000,
@@ -3762,27 +3799,188 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:ok, _updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
     end
 
-    test "a delayed item is claimed after target validation but before range failure" do
+    test "a unit target on another map fails before the item is claimed" do
+      definition = item_definition(%{target_type: :target_enemy, range: 9})
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :mob, {14, 10, "geffen"}} end)
+
+      assert {:error, :different_map} =
+               Interpreter.begin_item_cast(
+                 item_game_state(),
+                 6,
+                 1,
+                 {:unit, 2_000},
+                 &claim_probe/1,
+                 false
+               )
+
+      refute_received :item_claimed
+    end
+
+    test "an out-of-range target is refused after the item is claimed" do
       definition = item_definition(%{target_type: :ground, range: 3})
       stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
-      caster = item_game_state()
-      test_pid = self()
 
-      claim = fn state ->
-        send(test_pid, :claimed)
-        {:ok, state}
-      end
+      assert {:error, :out_of_range, _claimed, :after_start} =
+               Interpreter.begin_item_cast(
+                 item_game_state(),
+                 6,
+                 1,
+                 {:ground, 50, 50},
+                 &claim_probe/1,
+                 false
+               )
 
-      assert {:error, :invalid_target} =
-               Interpreter.begin_item_cast(caster, 6, 1, :self, claim, false)
+      assert_received :item_claimed
+      refute_received :item_claimed
+    end
 
-      refute_received :claimed
+    test "a walking caster's out-of-range item cast is not remembered for a retry" do
+      definition = item_definition(%{target_type: :ground, range: 3})
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      walking = %{item_game_state() | movement_state: :moving}
 
-      assert {:error, :out_of_range, _refreshed, :after_start} =
-               Interpreter.begin_item_cast(caster, 6, 1, {:ground, 50, 50}, claim, false)
+      assert {:error, :out_of_range, _claimed, :after_start} =
+               Interpreter.begin_item_cast(
+                 walking,
+                 6,
+                 1,
+                 {:ground, 50, 50},
+                 &claim_probe/1,
+                 false
+               )
+    end
 
-      assert_received :claimed
-      refute_received :claimed
+    test "a plain item cast passes the weight limit a keep_requirement cast refuses" do
+      stub(ItemManagement, :get_item_by_id, fn @gem_id -> {:ok, %{weight: 100_000}} end)
+
+      progression = %{
+        item_game_state().stats.progression
+        | job_id: 0,
+          job_level: 1,
+          base_level: 1
+      }
+
+      heavy = put_in(item_game_state().stats.progression, progression)
+
+      assert {:ok, _updated} = Interpreter.item_cast(heavy, 6, 1, :self)
+
+      assert {:error, :overweight, _claimed, :after_start} =
+               Interpreter.begin_item_cast(heavy, 6, 1, :self, &claim_probe/1, true)
+    end
+
+    test "skilluse_check runs before the item is claimed" do
+      stub_item_stage_module()
+      Process.put(:item_skilluse_check_result, {:error, :to_target})
+
+      assert {:error, :to_target} =
+               Interpreter.begin_item_cast(
+                 item_game_state(),
+                 6,
+                 1,
+                 :self,
+                 &claim_probe/1,
+                 false
+               )
+
+      assert_received :item_skilluse_check
+      refute_received :item_claimed
+      refute_received :item_after_range_check
+    end
+
+    test "after_range_check runs once the target is in range, after the item claim" do
+      stub_item_stage_module()
+      Process.put(:item_after_range_check_result, {:error, :target_alive})
+
+      assert {:error, :target_alive, _claimed, :after_start} =
+               Interpreter.begin_item_cast(
+                 item_game_state(),
+                 6,
+                 1,
+                 :self,
+                 &claim_probe/1,
+                 false
+               )
+
+      assert_received :item_claimed
+      assert_received :item_after_range_check
+    end
+
+    test "a keep_requirement item cast runs the skill's cast-begin rows after the claim" do
+      stub_item_stage_module()
+      Process.put(:item_begin_attempt_result, {:error, :not_casting})
+
+      assert {:error, :not_casting, _claimed, :after_start} =
+               Interpreter.begin_item_cast(
+                 item_game_state(),
+                 6,
+                 1,
+                 :self,
+                 &claim_probe/1,
+                 true
+               )
+
+      assert_received :item_claimed
+      assert_received :item_begin_attempt
+    end
+
+    test "the behavior's validate/4 is a cast-end check, not a cast-begin one" do
+      stub_item_stage_module()
+      stub(Catalog, :by_id, fn 6 -> {:ok, timed_item_definition()} end)
+
+      assert {:casting, _caster, %{origin: :item}} =
+               Interpreter.begin_item_cast(
+                 item_game_state(),
+                 6,
+                 1,
+                 :self,
+                 &claim_probe/1,
+                 false
+               )
+
+      assert_received :item_claimed
+      refute_received :item_validate
+    end
+
+    test "an item that can no longer be claimed fails before the cast is timed" do
+      stub(Catalog, :by_id, fn 6 -> {:ok, timed_item_definition()} end)
+
+      stub(Catalog, :active_module_for, fn
+        :item_cast_stage -> {:ok, ItemCastStageSkill}
+        name -> call_original(Catalog, :active_module_for, [name])
+      end)
+
+      assert {:error, :missing_item} =
+               Interpreter.begin_item_cast(
+                 item_game_state(),
+                 6,
+                 1,
+                 :self,
+                 fn _state -> {:error, :missing_item} end,
+                 false
+               )
+    end
+
+    defp timed_item_definition do
+      item_definition(%{
+        name: :item_cast_stage,
+        cast_time: List.duplicate(500, 10),
+        fixed_cast_time: List.duplicate(0, 10)
+      })
+    end
+
+    defp stub_item_stage_module do
+      stub(Catalog, :by_id, fn 6 -> {:ok, item_definition(%{name: :item_cast_stage})} end)
+
+      stub(Catalog, :active_module_for, fn
+        :item_cast_stage -> {:ok, ItemCastStageSkill}
+        name -> call_original(Catalog, :active_module_for, [name])
+      end)
+    end
+
+    defp claim_probe(state) do
+      send(self(), :item_claimed)
+      {:ok, state}
     end
 
     test "keep_requirement charges the skill's own SP after the delayed item claim" do

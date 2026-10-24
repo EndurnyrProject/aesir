@@ -76,9 +76,12 @@ Declared in `mmo/skill/`:
 
 - `cast/4` — player-initiated, full `validate_cast` chain (learned, SP, catalysts, cooldown).
 - `auto_cast/4` — status procs; keeps only the SP charge.
-- `item_cast/4` — `itemskill` from item scripts; bypasses every requirement but still
-  validates shape (definition, max level, target, range, module `validate/4`) and arms
-  cooldown + aftercast delay.
+- `item_cast/4` — `itemskill` from item scripts and the direct item-cast entry; runs the same
+  player stages with the source's cast-begin item branch: it bypasses the learned rank and, for a
+  plain item cast, every other requirement (weight, SP, zeny, spheres, HP, weapon, equipment,
+  statuses), while `keep_requirement` keeps them. The item is claimed inside the cast begin, so an
+  out-of-range or refused-after-claim cast loses it, and `validate/4`/`skilluse_check/4`/
+  `after_range_check/4` run where the player path runs them.
 
 A new restricted cast path = a new narrow entry point with a doc listing exactly what it
 skips. Non-consuming runs share `run_unconditional/5` (not `run_cast/5`, which eats

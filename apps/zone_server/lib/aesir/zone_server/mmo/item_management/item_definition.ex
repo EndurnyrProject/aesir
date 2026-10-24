@@ -5,9 +5,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   Loaded as data from `priv/db/re/items/*.yml` into `:persistent_term`; never a
   per-record module. Carries the loot/equip essentials only. The `NoTrade`,
   `NoCart`, `NoStorage` and `NoGuildStorage` restrictions are modelled
-  (`no_trade`, `no_cart`, `no_storage`, `no_guild_storage`), and the `Stack`
-  block as `stack_limit`, the per-container stack cap. The other nested
-  Trade/NoUse/Delay restrictions remain intentionally unmodelled.
+  (`no_trade`, `no_cart`, `no_storage`, `no_guild_storage`), the `NoConsume`
+  usable flag as `no_consume` (the item is never removed, and its item skill can
+  still cast), and the `Stack` block as `stack_limit`, the per-container stack
+  cap. The other nested Trade/NoUse/Delay restrictions remain intentionally
+  unmodelled.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
@@ -59,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
             equip_level_max: 0,
             refineable: false,
             bind_on_equip: false,
+            no_consume: false,
             no_trade: false,
             no_cart: false,
             no_storage: false,
@@ -94,6 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           equip_level_max: integer(),
           refineable: boolean(),
           bind_on_equip: boolean(),
+          no_consume: boolean(),
           no_trade: boolean(),
           no_cart: boolean(),
           no_storage: boolean(),

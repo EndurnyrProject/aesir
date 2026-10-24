@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastEnd
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -734,8 +735,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     case Interpreter.begin_item_cast(game_state, skill_id, level, target, on_ready, keep?) do
       {:error, reason, refreshed, :before_start} ->
-        state = if reason == :missing_item, do: %{state | pending_item_skill: nil}, else: state
-
         handle_begin_result(
           state,
           game_state,
@@ -746,22 +745,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           {:error, reason, refreshed}
         )
 
-      {:error, :out_of_range, refreshed, :after_start} ->
-        pending = Map.take(state.pending_item_skill, [:skill_id, :level, :keep_requirement?])
-
-        handle_begin_result(
-          %{state | pending_item_skill: pending},
-          game_state,
-          skill_id,
-          level,
-          target,
-          locked,
-          {:error, :out_of_range, refreshed}
-        )
-
       {:error, reason, refreshed, :after_start} ->
         handle_begin_result(
-          %{state | pending_item_skill: nil},
+          forget_item_claim(state),
           game_state,
           skill_id,
           level,
@@ -794,27 +780,52 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  # The item was claimed before the cast failed; its slot is empty now, as the
+  # reference leaves `itemindex` at -1, so a repeated request fails silently.
+  defp forget_item_claim(%{pending_item_skill: pending} = state) do
+    %{state | pending_item_skill: Map.take(pending, [:skill_id, :level, :keep_requirement?])}
+  end
+
   defp consume_pending_item(
          %{pending_item_skill: %{item_index: index, item_nameid: nameid}} = state,
          caster
        ) do
     case PlayerState.get_by_index(caster.inventory, index) do
       %{nameid: ^nameid, amount: amount} when amount > 0 ->
-        with {:ok, inventory, _change} <-
-               InventoryOps.remove(caster.character_id, caster.inventory, index, 1) do
-          refreshed = %{caster | inventory: inventory}
-          StateCommit.commit(state, refreshed)
-          MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, 1))
-          PlayerEvents.inventory_changed(caster.character_id)
-          {:ok, refreshed}
-        end
+        claim_item(state, caster, index, nameid)
 
       _missing ->
         {:error, :missing_item}
     end
   end
 
-  defp consume_pending_item(_state, caster), do: {:ok, caster}
+  # The pending item skill has no claimable item: the reference's cast-begin item
+  # branch fails it silently.
+  defp consume_pending_item(_state, _caster), do: {:error, :missing_item}
+
+  # A no-consume item is claimed for the cast and stays in the inventory (the
+  # reference's DELAYCONSUME_NOCONSUME); every other claimed item is removed.
+  defp claim_item(state, caster, index, nameid) do
+    if no_consume_item?(nameid) do
+      {:ok, caster}
+    else
+      with {:ok, inventory, _change} <-
+             InventoryOps.remove(caster.character_id, caster.inventory, index, 1) do
+        refreshed = %{caster | inventory: inventory}
+        StateCommit.commit(state, refreshed)
+        MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, 1))
+        PlayerEvents.inventory_changed(caster.character_id)
+        {:ok, refreshed}
+      end
+    end
+  end
+
+  defp no_consume_item?(nameid) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %{no_consume: true}} -> true
+      _not_found_or_consumed -> false
+    end
+  end
 
   defp handle_begin_result(state, game_state, skill_id, level, target, locked, result) do
     case result do
@@ -2089,6 +2100,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
              :no_target_self,
              :status_blocked,
              :in_chat_room,
+             :missing_item,
              :invalid_combo
            ] do
     Logger.debug("Skill #{skill_id} cast by #{character_id} silently refused: #{reason}")

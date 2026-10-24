@@ -889,10 +889,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @doc """
   Begins a client-selected item skill without learned or resource requirements.
 
-  Immediate-consume items were spent at staging; delayed-consume items pass a
-  single owner-local consumption callback that runs after target validation,
-  before late timing and the skill effect. A timed cast retains its origin so
-  completion keeps this restricted requirement contract.
+  The cast runs the player's cast stages; its cast-begin conditions are the
+  source's item branch, where the item itself is the cost. A delayed-consume
+  item passes one owner-local consumption callback, run where the source claims
+  it: after the chat-room refusal and before the weight limit. A timed cast
+  retains its origin so completion keeps this restricted requirement contract.
   """
   @spec begin_item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:instant, PlayerState.t()}
@@ -908,7 +909,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  @doc "Begins a staged item cast, claiming a delayed item after target and map checks but before range/path checks."
+  @doc "Begins a staged item cast; the callback claims the item inside the cast-begin conditions, before the rest of them and before the range check."
   @spec begin_item_cast(
           PlayerState.t(),
           integer(),
@@ -953,60 +954,74 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     with {:ok, definition} <- fetch_definition(skill_id) do
       early = CastTime.early(definition, level, Caster.Player.cast_stats(caster, skill_id))
       caster = Caster.apply_cast_reactions(caster, early.reactions)
-      begin_item_target(caster, definition, level, target, early, on_ready, keep?)
+      begin_item_stages(caster, definition, level, target, early, on_ready, keep?)
     end
   end
 
   def begin_item_cast(_caster, _skill_id, _level, _target, _on_ready, _keep?),
     do: {:error, :invalid_level}
 
-  defp begin_item_target(caster, definition, level, target, early, on_ready, keep?) do
-    case validate_item_target(caster, target, level, definition, keep?, :cast_begin) do
-      {:ok, module} ->
-        claim_item_for_attempt(caster, module, definition, level, target, early, on_ready, keep?)
+  # An item cast passes the player's use stages, then its own cast-begin
+  # conditions: the source's item branch replaces the learned rank and, for a
+  # plain item cast, every requirement after it. Its cast-end checks stay at the
+  # cast end (`complete_item_cast/5`).
+  defp begin_item_stages(caster, definition, level, target, early, on_ready, keep?) do
+    opts = [item_skill: item_skill(definition.id, level, keep?), walk_action: false]
 
-      {:error, reason} ->
-        if early.reactions == [],
-          do: {:error, reason},
-          else: {:error, reason, caster, :before_start}
-    end
-  end
-
-  defp claim_item_for_attempt(caster, module, definition, level, target, early, on_ready, keep?) do
-    case on_ready.(caster) do
-      {:ok, ready} ->
-        with :ok <- item_requirement_ready(ready, module, target, level, definition, keep?),
-             :ok <- check_begin_placement(ready, definition, target),
-             :ok <- validate_item_range(ready, module, target, level, definition) do
-          finish_item_attempt(ready, definition, level, target, early, keep?)
-        else
-          {:error, reason} -> {:error, reason, ready, :after_start}
+    case check_player_use(caster, definition.id, level, target, :cast_begin, opts) do
+      {:ok, context} ->
+        case item_castbegin(context, on_ready, keep?) do
+          {:ok, prepared} -> finish_item_stages(context, prepared, target, early, keep?, opts)
+          {:error, reason, claimed} -> {:error, reason, claimed, :after_start}
+          {:error, reason} -> item_begin_failure(reason, context.caster, caster)
         end
 
       {:error, reason} ->
-        {:error, reason, caster, :before_start}
+        item_begin_failure(reason, caster, caster)
     end
   end
 
-  defp finish_item_attempt(caster, definition, level, target, early, keep?) do
+  # A refusal before the item branch leaves the item unclaimed.
+  defp item_begin_failure(reason, refreshed, original) do
+    if refreshed == original,
+      do: {:error, reason},
+      else: {:error, reason, refreshed, :before_start}
+  end
+
+  defp finish_item_stages(context, prepared, target, early, keep?, opts) do
+    case check_player_after_begin(context.caster, prepared, :cast_begin, opts) do
+      {:ok, ready} -> finish_item_attempt(ready, target, early, keep?)
+      {:error, reason} -> {:error, reason, prepared.caster, :after_start}
+    end
+  end
+
+  defp finish_item_attempt(%CastContext{} = context, target, early, keep?) do
+    definition = context.definition
     skill_id = definition.id
+    caster = context.caster
 
     %{timing: timing, reactions: reactions} =
-      CastTime.late(definition, level, Caster.Player.cast_stats(caster, skill_id), early.time)
+      CastTime.late(
+        definition,
+        context.level,
+        Caster.Player.cast_stats(caster, skill_id),
+        early.time
+      )
 
     refreshed = Caster.apply_cast_reactions(caster, reactions)
+    notify_cast_targeted(refreshed, definition, target, timing.total > 0)
 
     if timing.total == 0 do
       started = cast_start(refreshed, Caster.Player, skill_id)
 
       started
-      |> complete_item_cast(skill_id, level, target, keep?)
+      |> complete_item_cast(skill_id, context.level, target, keep?)
       |> item_attempt_outcome(started)
     else
       {:casting, refreshed,
        %{
          skill_id: skill_id,
-         level: level,
+         level: context.level,
          target: target,
          element: definition.element,
          fixed: timing.fixed,
@@ -1016,6 +1031,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
        }}
     end
   end
+
+  defp item_skill(skill_id, level, keep?),
+    do: %{skill_id: skill_id, level: level, keep_requirement?: keep?}
 
   defp item_attempt_outcome({:ok, finished}, _started), do: {:instant, finished}
 
@@ -1052,7 +1070,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_placement(caster, definition, target),
-         {:ok, module} <- validate_item_cast(caster, target, level, definition, true),
+         {:ok, module} <- validate_item_cast(caster, target, level, definition),
          :ok <- check_castend_target(caster, target, definition),
          {:ok, cost} <- Caster.Player.castend_cost(caster, module, target, definition, level) do
       complete_resolved_cast(caster, module, target, level, definition, %{
@@ -1075,7 +1093,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_placement(caster, definition, target),
-         {:ok, module} <- validate_item_cast(caster, target, level, definition, false),
+         {:ok, module} <- validate_item_cast(caster, target, level, definition),
          :ok <- check_castend_target(caster, target, definition) do
       cond do
         dead_target_skip?(definition, target) ->
@@ -1128,51 +1146,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp retain_menu_requirements(result, _keep?), do: result
 
-  defp validate_item_cast(caster, target, level, definition, keep?) do
-    with {:ok, module} <-
-           validate_item_target(caster, target, level, definition, keep?, :cast_end),
+  defp validate_item_cast(caster, target, level, definition) do
+    with {:ok, module} <- validate_item_target(caster, target, level, definition),
          :ok <- validate_item_range(caster, module, target, level, definition) do
       {:ok, module}
     end
   end
 
-  defp validate_item_target(caster, target, level, definition, keep?, phase) do
+  # The cast end of an item skill, in the reference's order: its level and
+  # behavior, the target it may complete on, then the completion state of the
+  # caster and the target.
+  defp validate_item_target(caster, target, level, definition) do
     with :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
-         :ok <- check_item_restrictions(caster, definition.id, level, keep?, phase),
          {:ok, module} <- fetch_active_module(definition),
          :ok <- check_target(caster, target, definition),
-         :ok <- check_item_skill_use(caster, target, definition, phase) do
+         :ok <- check_cast_end(caster, target, definition, true) do
       {:ok, module}
     end
   end
-
-  defp check_item_skill_use(caster, target, definition, :cast_end),
-    do: check_cast_end(caster, target, definition, true)
-
-  defp check_item_skill_use(caster, target, definition, phase),
-    do: check_concealment(caster, target, definition, phase)
-
-  # An item cast starting checks the map and cooldown restrictions again with
-  # its own item skill pending; its cast end does not.
-  defp check_item_restrictions(caster, skill_id, level, keep?, :cast_begin) do
-    item = %{skill_id: skill_id, level: level, keep_requirement?: keep?}
-
-    case UseRestrictions.check(caster, skill_id, item, System.monotonic_time(:millisecond)) do
-      :ok -> :ok
-      {:refuse, reply} -> {:error, {:not_ok, reply}}
-    end
-  end
-
-  defp check_item_restrictions(_caster, _skill_id, _level, _keep?, _phase), do: :ok
-
-  defp item_requirement_ready(caster, module, target, level, definition, true) do
-    with :ok <- check_weapon(caster, definition),
-         {:ok, _prepared} <- Caster.Player.cost(caster, module, target, definition, level),
-         do: :ok
-  end
-
-  defp item_requirement_ready(_caster, _module, _target, _level, _definition, false), do: :ok
 
   defp validate_item_range(caster, module, target, level, definition) do
     with :ok <- check_range(caster, target, definition, level) do
@@ -1637,27 +1629,57 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # checks (`check_player_castend/4`); a staged input cast, validated as it
   # ends, runs them last.
   defp validate_player_cast(caster, skill_id, level, target, phase, opts) do
-    adapter = Caster.Player
+    with {:ok, context} <- check_player_use(caster, skill_id, level, target, phase, opts),
+         {:ok, context} <- castbegin(context, phase == :cast_begin) do
+      check_player_after_begin(caster, context, phase, opts)
+    end
+  end
 
-    with :ok <- adapter.castable_state(caster, skill_id, :begin),
+  # The stages before the cast-begin conditions. An item cast has no learned
+  # rank and passes the map and cooldown restrictions with its pending item.
+  defp check_player_use(caster, skill_id, level, target, phase, opts) do
+    adapter = Caster.Player
+    item = Keyword.get(opts, :item_skill)
+
+    with :ok <- check_player_restrictions(caster, adapter, skill_id, item),
          {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
-         :ok <- check_learned(caster, adapter, definition, level, :begin),
+         :ok <- check_learned(caster, adapter, definition, level, :begin, item),
          {:ok, _module} <- fetch_active_module(definition),
          :ok <- check_use_target(caster, target, definition),
          :ok <- check_support_status(caster, definition),
          :ok <- check_concealment(caster, target, definition, phase),
          :ok <- check_homunculus_support(caster, target, definition),
          context = CastContext.build(caster, definition, level, target, :begin),
-         :ok <- optional_check(context, :skilluse_check),
-         {:ok, prepared} <- castbegin(context, phase == :cast_begin),
-         :ok <- check_start_placement(prepared.caster, definition, target, phase),
-         :ok <- check_end_placement(caster, definition, target, phase),
-         :ok <- check_use_range(caster, target, definition, level, opts),
-         :ok <- optional_check(prepared, :after_range_check),
-         :ok <- check_input_castend(prepared, phase) do
-      {:ok, record_spheres_old(prepared, phase)}
+         :ok <- optional_check(context, :skilluse_check) do
+      {:ok, context}
+    end
+  end
+
+  defp check_player_restrictions(caster, adapter, skill_id, nil),
+    do: :erlang.apply(adapter, :castable_state, [caster, skill_id, :begin])
+
+  defp check_player_restrictions(caster, _adapter, skill_id, item) do
+    case UseRestrictions.check(caster, skill_id, item, System.monotonic_time(:millisecond)) do
+      :ok -> :ok
+      {:refuse, reply} -> {:error, {:not_ok, reply}}
+    end
+  end
+
+  # The stages after the cast-begin conditions: the placement a player's cast
+  # checks as it starts, the one a ground cast checks as it ends, the range, the
+  # skill's own check on a target in range, and the cast end a staged input
+  # cast validates last.
+  defp check_player_after_begin(caster, context, phase, opts) do
+    definition = context.definition
+
+    with :ok <- check_start_placement(context.caster, definition, context.target, phase),
+         :ok <- check_end_placement(caster, definition, context.target, phase),
+         :ok <- check_use_range(caster, context.target, definition, context.level, opts),
+         :ok <- optional_check(context, :after_range_check),
+         :ok <- check_input_castend(context, phase) do
+      {:ok, record_spheres_old(context, phase)}
     end
   end
 
@@ -1676,7 +1698,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # skill's range and, beyond the adjacent cells, within sight (14 cells) with
   # no wall between them. While the player walks, a target not reached at one
   # cell less is remembered instead (`:step_action`), to be tried again as the
-  # walk goes on. A ground cell must also hold a unit placement.
+  # walk goes on; a use that cannot retry that way (`walk_action: false`, an
+  # item cast whose item was already claimed) simply fails. A ground cell must
+  # also hold a unit placement.
   # A combo used while swinging at its target (`attack_reach: true`) has the
   # attack's reach: only the walking step rule applies.
   defp check_use_range(_caster, :self, _definition, _level, _opts), do: :ok
@@ -1686,20 +1710,37 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       :ok
     else
       range = effective_range(definition, caster, level)
-      check_reach(caster, target, range, Keyword.get(opts, :attack_reach, false))
+
+      check_reach(
+        caster,
+        target,
+        range,
+        Keyword.get(opts, :attack_reach, false),
+        Keyword.get(opts, :walk_action, true)
+      )
     end
   end
 
-  defp check_reach(caster, target, range, attack_reach?) do
+  defp check_reach(caster, target, range, attack_reach?, walk_action?) do
     with {:ok, cell} <- use_target_cell(target) do
       cond do
-        walking?(caster) and not reaches?(caster, cell, range - 1) -> {:error, :step_action}
-        attack_reach? -> :ok
-        not reaches?(caster, cell, range) -> {:error, :out_of_range}
-        true -> check_use_cell(caster, target)
+        walking?(caster) and not reaches?(caster, cell, range - 1) ->
+          out_of_reach(walk_action?)
+
+        attack_reach? ->
+          :ok
+
+        not reaches?(caster, cell, range) ->
+          {:error, :out_of_range}
+
+        true ->
+          check_use_cell(caster, target)
       end
     end
   end
+
+  defp out_of_reach(true), do: {:error, :step_action}
+  defp out_of_reach(_walk_action?), do: {:error, :out_of_range}
 
   defp use_target_cell({:ground, x, y}), do: {:ok, {x, y}}
 
@@ -1769,12 +1810,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # then the weight limit; a toggle skill whose status is active only ends it
   # and checks nothing more; otherwise the skill's own rows (`begin_attempt/4`),
   # the recovered-weight state, the weapon, then SP, zeny and spheres.
-  defp castbegin(%CastContext{caster: caster, definition: definition} = context, begin?) do
-    with :ok <- check_chat_room(caster),
-         :ok <- Caster.Player.check_weight(caster) do
+  defp castbegin(%CastContext{caster: caster} = context, begin?) do
+    with :ok <- check_chat_room(caster), do: castbegin_requirements(context, begin?)
+  end
+
+  defp castbegin_requirements(
+         %CastContext{caster: caster, definition: definition} = context,
+         begin?
+       ) do
+    with :ok <- Caster.Player.check_weight(caster) do
       if Caster.Player.toggle_off?(caster, definition),
         do: prepare_cast(context),
         else: castbegin_conditions(context, begin?)
+    end
+  end
+
+  # The source's cast-begin item branch: the item is claimed after the
+  # chat-room refusal and before the weight limit. A cast whose item can no
+  # longer be claimed (already spent, or the wrong item in its slot) fails
+  # silently; a plain item cast then passes every later condition, while
+  # `keep_requirement` runs them on the claimed caster.
+  defp item_castbegin(%CastContext{caster: caster} = context, on_ready, keep?) do
+    with :ok <- check_chat_room(caster),
+         {:ok, claimed} <- on_ready.(caster) do
+      if keep?,
+        do: item_keep_requirements(%{context | caster: claimed}),
+        else: {:ok, %{context | caster: claimed}}
+    end
+  end
+
+  defp item_keep_requirements(%CastContext{caster: caster} = context) do
+    case castbegin_requirements(context, true) do
+      {:ok, prepared} -> {:ok, prepared}
+      {:error, reason} -> {:error, reason, caster}
     end
   end
 
@@ -2293,6 +2361,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp check_learned(caster, adapter, definition, level, phase),
     do: :erlang.apply(adapter, :knows?, [caster, definition, level, phase])
+
+  defp check_learned(caster, adapter, definition, level, phase, nil),
+    do: check_learned(caster, adapter, definition, level, phase)
+
+  # An item cast has no learned rank: the item is its permission.
+  defp check_learned(_caster, _adapter, _definition, _level, _phase, _item), do: :ok
 
   defp check_target(caster, target, definition) do
     adapter = Caster.for(caster)
