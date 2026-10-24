@@ -541,6 +541,44 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       assert_received {:damage, 40}
     end
 
+    test "authorize and damage_source pick the struck units and the name they log" do
+      caster = build_caster()
+      test_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 1 ->
+        [{:mob, 2001}, {:mob, 2002}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 150, 150), self()}}
+        :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 151, 150), self()}}
+      end)
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn _m, _x, _y, _r, _packet -> :ok end)
+
+      stub(MobSession, :apply_damage, fn _pid, 40, source, _metadata ->
+        send(test_pid, {:source, source})
+        :ok
+      end)
+
+      hits =
+        Combat.execute_misc_splash(caster, @center, 1,
+          skill_id: 173,
+          skill_level: 1,
+          base_damage: 200,
+          authorize: fn _attacker, target -> target.unit_id == 2002 end,
+          damage_source: fn :mob -> {:mob, 77} end
+        )
+
+      assert hits == [2002]
+      assert_received {:source, {:mob, 77}}
+      refute_received {:source, _other}
+    end
+
     test "split damage divides one base across the selected living targets" do
       caster = build_caster()
       test_pid = self()

@@ -1099,6 +1099,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:shoot_range_los` - require projectile line of sight from the splash center
     - `:authorize` - `(attacker, target -> boolean)` replacing the living-enemy
       relation for selection and for each hit (default: enemies, and traps)
+    - `:damage_source` - `(target_type -> source)` naming the damage's source for
+      each target's damage log, for a caster that dies with its own blast
+      (default: the attacker)
     - `:delivery` - how the splash reached each target (default `:direct`, see
       `execute_skill_attack/3`); the split divisor counts every selected target,
       refused or not
@@ -1140,7 +1143,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
                authorize_target: hit_authorization(authorize),
                owner_derived_trap?: target_skill_units?,
                knockback_options: knockback_options(opts),
-               delivery: Keyword.get(opts, :delivery, :direct)
+               delivery: Keyword.get(opts, :delivery, :direct),
+               damage_source: Keyword.get(opts, :damage_source)
              }
            ) do
         :ok -> [target_id]
@@ -1282,7 +1286,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
               )
             )
 
-      source = damage_source(attacker, target_type)
+      source = misc_damage_source(misc_opts, attacker, target_type)
 
       if damage > 1 do
         EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
@@ -1423,6 +1427,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp misc_target_combatant(target_state, _owner_derived_trap?),
     do: {:ok, target_state.__struct__.to_combatant(target_state)}
+
+  defp misc_damage_source(%{damage_source: source_for}, _attacker, target_type)
+       when is_function(source_for, 1),
+       do: source_for.(target_type)
+
+  defp misc_damage_source(_misc_opts, attacker, target_type),
+    do: damage_source(attacker, target_type)
 
   defp hit_authorization(nil), do: &validate_trap_splash_enemy/2
 

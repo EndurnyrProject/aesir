@@ -2,26 +2,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   @moduledoc """
   NPC Self Destruction (NPC_SELFDESTRUCTION).
 
-  Deals the mob caster's current HP as Fire misc damage in a five-cell radius
-  (through the shared misc tail: no target cards, the skill rates and each
-  target's element; it never misses), knocks enemies back three
-  cells, then routes lethal damage through the caster's normal mob death path.
-  Player-owned casters use their owner's PvM faction and never damage players or
-  other player-owned summons.
+  The caster blows itself up: every unit and trap it can see within five cells
+  takes the caster's current HP as Fire misc damage (the shared misc tail: no
+  target cards, the skill rates and each target's element; it never misses), a
+  hidden one is skipped, and a survivor is knocked back three cells. The caster
+  then loses all of its HP without a hit, so it dies with no killer and a
+  monster still drops its items and grants its experience.
 
-  A player may cast it too (both modes). Off versus ground it strikes the
-  player's enemies and the player's own summons and Homunculus; on a versus map
-  it strikes every unit around, party members included. Each target in line of
-  sight takes the caster's current HP as Fire misc damage, a hidden one is
-  skipped, a trap is struck, and a survivor is knocked back three cells. The
-  caster then loses all of its HP without a hit (it dies with no killer).
+  Who is struck depends on the caster. A monster's blast reaches every unit,
+  other monsters included, except a Marine Sphere's off versus ground. A
+  Marine Sphere (off versus ground) and a player (off versus ground) strike the
+  player's enemies plus the player's own Homunculus and summons; another
+  player's summons are no enemies there. On a versus map both strike every unit.
+  A summon's damage counts for its owner.
+
+  Renewal and pre-renewal agree, at all ten levels.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 173,
     name: :npc_selfdestruction,
     requires: [],
     display_name: "NPC Self Destruction",
-    max_level: 1,
+    max_level: 10,
     target_type: :self,
     damage_type: :damage,
     ignore_def_card: true,
@@ -36,14 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
 
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
-  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
-  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
-  alias Aesir.ZoneServer.Mmo.Combat.EquipProcDispatch
-  alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
-  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
-  alias Aesir.ZoneServer.Mmo.Combat.SkillRange
-  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -56,17 +51,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   @behaviour Active
 
   @impl Active
-  def cast(%MobState{} = caster, _target, _level, definition) do
-    caster
-    |> targets(definition.splash_radius)
-    |> Enum.each(&damage_target(caster, definition, &1))
-
-    kill_caster(caster)
-    {:ok, caster}
-  end
-
-  def cast(%PlayerState{} = caster, _target, level, definition) do
-    hp = caster.stats.current_state.hp
+  def cast(caster, _target, level, definition)
+      when is_struct(caster, MobState) or is_struct(caster, PlayerState) do
+    hp = current_hp(caster)
 
     SkillAttack.execute_misc_splash(
       caster,
@@ -78,24 +65,52 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
       element: definition.element,
       target_skill_units: true,
       shoot_range_los: true,
-      authorize: player_target_rule(caster),
+      authorize: target_rule(caster),
+      damage_source: damage_source(caster),
       base_distance: definition.knockback,
       native_requires_survival: true
     )
 
-    zap_player(caster, hp)
+    zap(caster, hp)
     {:ok, caster}
   end
 
-  # On versus ground the blast reaches every unit; elsewhere the player's
-  # enemies plus its own summons and Homunculus. A hidden unit is never struck.
-  defp player_target_rule(%PlayerState{character_id: owner_id, map_name: map_name}) do
-    versus? = MapFlags.versus?(map_name)
+  defp current_hp(%MobState{hp: hp}), do: hp
+  defp current_hp(%PlayerState{stats: %{current_state: %{hp: hp}}}), do: hp
 
-    fn attacker, target ->
-      not hiding?(target) and
-        (versus? or target.unit_type == :skill_unit or
-           Targeting.validate_enemy(attacker, target) == :ok or own_slave?(target, owner_id))
+  # Everyone on versus ground; elsewhere a player or a Marine Sphere strikes the
+  # player's enemies and own summons, and any other monster strikes everyone.
+  defp target_rule(%PlayerState{character_id: owner_id, map_name: map_name}) do
+    if MapFlags.versus?(map_name),
+      do: &everyone/2,
+      else: fn attacker, target -> enemy_or_own_summon?(attacker, target, owner_id) end
+  end
+
+  defp target_rule(%MobState{summon_kind: :sphere, owner_player_id: owner_id} = caster)
+       when is_integer(owner_id) do
+    if MapFlags.versus?(caster.map_name) do
+      &everyone/2
+    else
+      owner = owner_combatant(owner_id)
+      fn _attacker, target -> enemy_or_own_summon?(owner, target, owner_id) end
+    end
+  end
+
+  defp target_rule(%MobState{}), do: &everyone/2
+
+  defp everyone(_attacker, target), do: not hiding?(target)
+
+  defp enemy_or_own_summon?(relation, target, owner_id) do
+    not hiding?(target) and
+      (target.unit_type == :skill_unit or own_summon?(target, owner_id) or
+         (Targeting.validate_enemy(relation, target) == :ok and
+            not foreign_summon?(target, owner_id)))
+  end
+
+  defp owner_combatant(owner_id) do
+    case Combat.resolve_combatant(:player, owner_id) do
+      {:ok, combatant} -> combatant
+      {:error, _reason} -> %{unit_type: :player, unit_id: owner_id}
     end
   end
 
@@ -104,138 +119,58 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   defp hiding?(%{unit_type: unit_type, unit_id: unit_id}),
     do: StatusStorage.has_status?(unit_type, unit_id, :sc_hiding)
 
-  defp own_slave?(%{unit_type: :homunculus, social_root: {:player, owner_id}}, owner_id),
+  defp own_summon?(%{unit_type: :homunculus, social_root: {:player, owner_id}}, owner_id),
     do: true
 
-  defp own_slave?(%{unit_type: :mob, proc_owner_id: owner_id}, owner_id), do: true
-  defp own_slave?(_target, _owner_id), do: false
+  defp own_summon?(%{unit_type: :mob, unit_id: mob_id}, owner_id),
+    do: mob_owner(mob_id) == owner_id
 
-  # The caster loses all its HP without a hit: passive loss, no attacker.
-  defp zap_player(%PlayerState{character_id: id}, hp) when hp > 0 do
-    case UnitRegistry.get_unit(:player, id) do
-      {:ok, {_module, _state, pid}} -> PlayerSession.apply_damage(pid, hp, nil, %{passive?: true})
+  defp own_summon?(_target, _owner_id), do: false
+
+  defp foreign_summon?(%{unit_type: :mob, unit_id: mob_id}, owner_id) do
+    case mob_owner(mob_id) do
+      nil -> false
+      ^owner_id -> false
+      _other -> true
+    end
+  end
+
+  defp foreign_summon?(_target, _owner_id), do: false
+
+  defp mob_owner(mob_id) do
+    case UnitRegistry.get_unit(:mob, mob_id) do
+      {:ok, {_module, %MobState{owner_player_id: owner_id}, _pid}} -> owner_id
+      _missing -> nil
+    end
+  end
+
+  # The caster is gone by the time its victims log the damage, so a monster
+  # names itself (or, as a summon, its owner) explicitly.
+  defp damage_source(%MobState{owner_player_id: owner_id}) when is_integer(owner_id) do
+    fn
+      :player -> {:player, owner_id}
+      _target_type -> owner_id
+    end
+  end
+
+  defp damage_source(%MobState{instance_id: id}), do: fn _target_type -> {:mob, id} end
+  defp damage_source(%PlayerState{}), do: nil
+
+  defp zap(caster, hp) when hp > 0 do
+    case UnitRegistry.get_unit(unit_type(caster), Active.caster_unit_id(caster)) do
+      {:ok, {_module, _state, pid}} -> zap_session(caster, pid, hp)
       {:error, :not_found} -> :ok
     end
   end
 
-  defp zap_player(_caster, _hp), do: :ok
+  defp zap(_caster, _hp), do: :ok
 
-  defp targets(caster, radius) do
-    combatant = faction_combatant(caster)
+  defp zap_session(%MobState{}, pid, hp),
+    do: MobSession.apply_damage(pid, hp, nil, %{passive?: true})
 
-    caster.map_name
-    |> Combat.splash_targets({caster.x, caster.y}, radius, combatant)
-    |> Enum.filter(&enemy_of_owned_caster?(caster, &1))
-  end
+  defp zap_session(%PlayerState{}, pid, hp),
+    do: PlayerSession.apply_damage(pid, hp, nil, %{passive?: true})
 
-  defp faction_combatant(%MobState{owner_player_id: nil} = caster) do
-    case Combat.resolve_combatant(:mob, caster.instance_id) do
-      {:ok, combatant} -> combatant
-      {:error, _reason} -> %{unit_type: :mob, unit_id: caster.instance_id}
-    end
-  end
-
-  defp faction_combatant(%MobState{owner_player_id: owner_player_id}) do
-    case Combat.resolve_combatant(:player, owner_player_id) do
-      {:ok, combatant} -> combatant
-      {:error, _reason} -> %{unit_type: :player, unit_id: owner_player_id}
-    end
-  end
-
-  defp enemy_of_owned_caster?(%MobState{owner_player_id: nil}, _target), do: true
-
-  defp enemy_of_owned_caster?(%MobState{}, {:player, _target_id}), do: false
-
-  defp enemy_of_owned_caster?(%MobState{}, {:mob, target_id}) do
-    case UnitRegistry.get_unit(:mob, target_id) do
-      {:ok, {_module, %MobState{owner_player_id: owner_player_id}, _pid}} ->
-        owner_player_id == nil
-
-      {:error, :not_found} ->
-        false
-    end
-  end
-
-  defp damage_target(caster, definition, {unit_type, target_id}) do
-    with {:ok, target_pid, target_state, ^unit_type} <-
-           TargetResolver.resolve(unit_type, target_id),
-         range = hit_range(caster, target_state, definition.id),
-         {:ok, %{damage: damage}} <- misc_damage(caster, target_state, definition, range),
-         hit_info = %{
-           dmg_type: :misc,
-           is_short: range == :short,
-           element: definition.element,
-           skill_id: definition.id,
-           skill_level: 1,
-           from_caster?: true,
-           div: 1,
-           proc: proc_spec(caster, {unit_type, target_id}, target_state, {definition.id, range})
-         },
-         :ok <-
-           DamageApplication.apply_unit_damage(
-             unit_type,
-             target_pid,
-             target_id,
-             damage,
-             hit_info,
-             damage_source(caster, unit_type)
-           ) do
-      OnHitEffects.counter_stage(hit_info, damage)
-      Combat.knockback(unit_type, target_id, caster.x, caster.y, definition.knockback)
-    end
-  end
-
-  defp misc_damage(caster, target_state, definition, range) do
-    MiscDamageCalculator.calculate_misc_damage(
-      MobState.to_combatant(caster),
-      target_state.__struct__.to_combatant(target_state),
-      base_damage: caster.hp,
-      element: definition.element,
-      skill_id: definition.id,
-      attack_flag: BattleFlags.build(:misc, range, true)
-    )
-  end
-
-  # The monster's distance to each victim decides the hit's range class.
-  defp hit_range(caster, target_state, skill_id) do
-    target = %{position: position(target_state)}
-    SkillRange.classify(%{unit_type: :mob, position: {caster.x, caster.y}}, target, skill_id, 1)
-  end
-
-  defp position(%{x: x, y: y}) when is_integer(x) and is_integer(y), do: {x, y}
-  defp position(_target_state), do: nil
-
-  # Self Destruction is a misc skill: its victims' when-hit procs see a misc hit.
-  # A monster wears nothing, so the hit's parties are needed only by identity.
-  defp proc_spec(caster, {unit_type, target_id}, target_state, {skill_id, range}) do
-    EquipProcDispatch.spec(
-      %{unit_type: :mob, unit_id: caster.instance_id},
-      %{unit_type: unit_type, unit_id: target_id},
-      target_state,
-      BattleFlags.build(:misc, range, true),
-      skill_id: skill_id
-    )
-  end
-
-  defp kill_caster(caster) do
-    case UnitRegistry.get_unit(:mob, caster.instance_id) do
-      {:ok, {_module, _state, pid}} ->
-        MobSession.apply_damage(pid, caster.hp, source_id(caster))
-
-      {:error, :not_found} ->
-        :ok
-    end
-  end
-
-  defp damage_source(%MobState{owner_player_id: nil, instance_id: instance_id}, _target_type),
-    do: {:mob, instance_id}
-
-  defp damage_source(%MobState{owner_player_id: owner_player_id}, :player),
-    do: {:player, owner_player_id}
-
-  defp damage_source(%MobState{owner_player_id: owner_player_id}, _target_type),
-    do: owner_player_id
-
-  defp source_id(%MobState{owner_player_id: nil, instance_id: instance_id}), do: instance_id
-  defp source_id(%MobState{owner_player_id: owner_player_id}), do: owner_player_id
+  defp unit_type(%MobState{}), do: :mob
+  defp unit_type(%PlayerState{}), do: :player
 end

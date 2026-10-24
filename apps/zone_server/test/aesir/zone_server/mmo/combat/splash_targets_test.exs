@@ -130,4 +130,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargetsTest do
     assert Enum.sort(SplashTargets.select(@map_name, @center, 2, @caster_id, true)) ==
              [{:mob, 2001}, {:player, @caster_id}]
   end
+
+  test "authorize: replaces the enemy relation, keeping the caster excluded" do
+    stub_ground_unit_footprint()
+    test_pid = self()
+
+    authorize = fn caster, target ->
+      send(test_pid, {:asked, caster.unit_id, target.unit_type})
+      false
+    end
+
+    assert SplashTargets.select(@map_name, @center, 2, @caster_id, false, authorize: authorize) ==
+             []
+
+    assert_received {:asked, @caster_id, :mob}
+    refute_received {:asked, @caster_id, :player}
+
+    assert SplashTargets.select(@map_name, @center, 2, @caster_id, false,
+             authorize: fn _caster, _target -> true end
+           ) == [{:mob, 2001}]
+  end
 end
