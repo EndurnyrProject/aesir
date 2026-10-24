@@ -4102,6 +4102,56 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  # rAthena's `unitskilluseid`: a script (an Emergency or Protection Scroll)
+  # starts a real cast of a skill the player need not have learned.
+  describe "script casts" do
+    defp script_definition(overrides \\ %{}) do
+      Map.merge(
+        %Definition{
+          id: 6,
+          name: :script_cast,
+          display_name: "Script Cast",
+          max_level: 5,
+          target_type: :self,
+          damage_type: :no_damage,
+          sp_cost: List.duplicate(7, 5),
+          cast_time: List.duplicate(500, 5),
+          fixed_cast_time: List.duplicate(0, 5),
+          after_cast_delay: List.duplicate(200, 5)
+        },
+        overrides
+      )
+    end
+
+    setup do
+      stub(Catalog, :by_id, fn
+        6 -> {:ok, script_definition()}
+        other -> call_original(Catalog, :by_id, [other])
+      end)
+
+      stub(Catalog, :active_module_for, fn :script_cast -> {:ok, ItemCastStageSkill} end)
+      :ok
+    end
+
+    test "begins without a learned rank and tags the cast for its completion" do
+      assert {:casting, _caster, %{origin: :script, total: _total}} =
+               Interpreter.begin_cast(game_state(100, %{}), 6, 1, :self,
+                 learned?: false,
+                 origin: :script
+               )
+    end
+
+    test "the ordinary begin still requires the learned rank" do
+      assert {:error, :skill_not_learned} =
+               Interpreter.begin_cast(game_state(100, %{}), 6, 1, :self)
+    end
+
+    test "completes a script cast of a skill the player never learned" do
+      assert {:ok, caster} = Interpreter.complete_script_cast(game_state(100, %{}), 6, 1, :self)
+      assert caster.stats.current_state.sp == 93
+    end
+  end
+
   describe "Encore replay seam" do
     @replay_definition %Definition{
       id: 319,

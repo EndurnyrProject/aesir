@@ -11,16 +11,19 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillCasting
+  alias Aesir.Net.UseItem
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @memorize :sc_memorize
   @suffragium :sc_suffragium
   @fire_scroll 691
+  @moon_cookie 11_702
 
   test "a preflight is inert, a failed attempt respects mode stage, and instant/timed attempts consume once" do
     player =
@@ -169,6 +172,31 @@ defmodule Aesir.ZoneServer.Integration.CastAttemptParityTest do
     assert %SkillCasting{skill_id: 19} = assert_packet_sent(SkillCasting)
     assert eventually(fn -> get_mob_state(mob.pid).hp < 100 end)
     assert eventually(fn -> inventory_amount(player.pid, @fire_scroll) == 1 end)
+  end
+
+  test "a script starts a real cast of a skill the player never learned" do
+    player = start_player_session(name: "ScriptCast", sp: 100, max_sp: 100)
+    id = player.character.id
+    on_exit(fn -> StatusStorage.clear_unit_statuses(:player, id) end)
+
+    assert {:ok, _state} = PlayerSession.script_apply(player.pid, {:unitskilluseid, 34, 7})
+
+    assert eventually(fn -> StatusStorage.has_status?(:player, id, :sc_blessing) end)
+    assert get_player_state(player.pid).stats.current_state.sp == 100 - 52
+  end
+
+  @tag game_mode: :renewal, integration_pre_re: false
+  test "a Moon Cookie's script casts Blessing on the player and is spent" do
+    player = start_item_player("MoonCookie", @moon_cookie, 1)
+    id = player.character.id
+    index = item_index(player, @moon_cookie)
+    on_exit(fn -> StatusStorage.clear_unit_statuses(:player, id) end)
+
+    simulate_incoming_message(player.pid, %UseItem{index: PlayerState.client_index(index)})
+
+    assert eventually(fn -> StatusStorage.has_status?(:player, id, :sc_blessing) end)
+    assert eventually(fn -> inventory_amount(player.pid, @moon_cookie) == 0 end)
+    assert get_player_state(player.pid).stats.current_state.sp == 100 - 52
   end
 
   # A character row of its own, because the consumed item's row is deleted

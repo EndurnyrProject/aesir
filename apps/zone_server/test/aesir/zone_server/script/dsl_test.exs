@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.ParamChange
-  alias Aesir.Net.ProgressBar
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
@@ -48,6 +47,13 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   @sp_hp 5
   @sp_sp 7
   @poring_id 1002
+
+  # An NPC module shape `Ctx.detached/2` accepts (it reads `npc_id/0`).
+  defmodule DetachedNpc do
+    @moduledoc false
+
+    def npc_id, do: 1
+  end
 
   setup :set_mimic_from_context
 
@@ -1091,6 +1097,48 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       end)
 
       assert %{status: :ok} = Dsl.itemskill(ctx, 14, [])
+    end
+  end
+
+  describe "unitskilluseid/3" do
+    test "an item script stages the cast for the item handler" do
+      ctx = build_ctx()
+
+      result = Dsl.unitskilluseid(ctx, 10_015, level: 2)
+
+      assert result.status == :ok
+      assert result.game_state == ctx.game_state
+      assert result.session_effects == [{:unit_skill_use, 10_015, 2}]
+    end
+
+    test "a live script routes the cast through the session" do
+      ctx = %{build_ctx() | session_pid: self()}
+      started = %{ctx.game_state | action_state: :casting}
+
+      expect(PlayerSession, :script_apply, fn pid, {:unitskilluseid, 10_015, 2} ->
+        assert pid == self()
+        {:ok, started}
+      end)
+
+      result = Dsl.unitskilluseid(ctx, 10_015, level: 2)
+
+      assert result.status == :ok
+      assert result.game_state == started
+    end
+
+    test "halts when the owner rejects the cast" do
+      ctx = %{build_ctx() | session_pid: self()}
+
+      stub(PlayerSession, :script_apply, fn _pid, {:unitskilluseid, 10_015, 1} ->
+        {:error, :skill_not_learned}
+      end)
+
+      assert Dsl.unitskilluseid(ctx, 10_015, []).status == {:error, :skill_not_learned}
+    end
+
+    test "halts a detached context" do
+      assert Dsl.unitskilluseid(Ctx.detached(DetachedNpc, 1), 10_015, []).status ==
+               {:error, :no_player}
     end
   end
 

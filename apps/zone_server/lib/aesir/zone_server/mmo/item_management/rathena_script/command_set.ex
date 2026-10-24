@@ -18,6 +18,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
   - `%{shape: :heal, dsl: name}` — the `itemheal`/`heal`/`percentheal` shape:
     `name(ctx, hp: …, sp: …)`, zero amounts omitted, `rand` rendered as a range.
   - `%{shape: :itemskill, dsl: name}` — `itemskill(ctx, skill, level: lv)`, with optional `keep_requirement: true`.
+  - `%{shape: :unit_skill_use, dsl: name}` — `unitskilluseid(ctx, skill, level: lv)`:
+    the cast a script starts on the running player (rAthena
+    `unitskilluseid getcharid(3),"SKILL",lv`).
   - `%{shape: :item_group_optional, dsl: name, args: types}` — an item-group
     command/read with one optional trailing subgroup; omitted subgroups emit
     the runtime default `0`.
@@ -37,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
           %{shape: :call, dsl: String.t(), args: [atom()]}
           | %{shape: :heal, dsl: String.t()}
           | %{shape: :itemskill, dsl: String.t()}
+          | %{shape: :unit_skill_use, dsl: String.t()}
           | %{shape: :item_group_optional, dsl: String.t(), args: [atom()]}
           | %{shape: :announce, dsl: String.t(), fixed: pos_integer()}
 
@@ -58,6 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
     "delitem" => %{shape: :call, dsl: "delitem", args: [:item, :int]},
     "warp" => %{shape: :call, dsl: "warp", args: [:string, :int, :int]},
     "itemskill" => %{shape: :itemskill, dsl: "itemskill"},
+    "unitskilluseid" => %{shape: :unit_skill_use, dsl: "unitskilluseid"},
     "specialeffect2" => %{shape: :call, dsl: "specialeffect2", args: [:effect]},
     "announce" => %{shape: :announce, dsl: "announce", fixed: 2},
     "broadcast" => %{shape: :announce, dsl: "broadcast", fixed: 2},

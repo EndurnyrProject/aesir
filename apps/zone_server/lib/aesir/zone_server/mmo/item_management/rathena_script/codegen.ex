@@ -219,7 +219,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     end
   end
 
+  # unitskilluseid <unit_id>,"<skill>",<level>{, ...}: the cast must be the
+  # running script's own player, so the unit id is only accepted as
+  # getcharid(3) (the player's block id). The optional target/casttime/cancel/
+  # msg/ignore-range tail has no DSL equivalent and no shipped item uses it.
+  defp render_rule(%{shape: :unit_skill_use, dsl: dsl}, [unit_expr, skill_expr, level_expr]) do
+    with :ok <- render_unit_self(unit_expr),
+         {:ok, skill} <- render_arg(:skill, skill_expr),
+         {:ok, level} <- render_arg(:int, level_expr) do
+      {:ok, "#{dsl}(ctx, #{skill}, level: #{level})"}
+    end
+  end
+
   defp render_rule(rule, args), do: unsupported({:arity, rule.dsl, args})
+
+  defp render_unit_self({:call, "getcharid", [{:int, 3}]}), do: :ok
+  defp render_unit_self(other), do: unsupported({:unit_skill_use_target, other})
 
   defp render_item_group_optional(args, types) when length(args) == length(types) do
     types

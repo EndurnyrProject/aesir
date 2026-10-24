@@ -172,7 +172,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @doc """
   `begin_cast/4` with options. `attack_reach: true` marks a player's combo used
   while swinging at its target: it has the attack's reach, so the skill's range
-  is not checked (the walking step rule still is).
+  is not checked (the walking step rule still is). `learned?: false` skips the
+  player's learned-rank check, for a cast a script starts (rAthena
+  `unitskilluseid`); `origin: :script` tags the resulting cast info so its cast
+  end skips the learned-rank re-check too.
   """
   @spec begin_cast(Active.caster(), integer(), pos_integer(), Active.target(), keyword()) ::
           term()
@@ -195,7 +198,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
     case validate_cast(refreshed, skill_id, level, target, now, :cast_begin, opts) do
       {:ok, context} ->
-        finish_attempt(context.caster, skill_id, level, target, context, early)
+        finish_attempt(context.caster, skill_id, level, target, context, early, opts)
 
       {:error, reason} ->
         if early.reactions == [],
@@ -204,7 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp finish_attempt(caster, skill_id, level, target, context, early) do
+  defp finish_attempt(caster, skill_id, level, target, context, early, opts) do
     timing_definition =
       cast_timing_definition(caster, context.module, target, level, context.definition)
 
@@ -221,7 +224,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     refreshed = Caster.apply_cast_reactions(caster, reactions)
     context = %{context | caster: refreshed}
 
-    case schedule(timing, refreshed, skill_id, level, target, context) do
+    case schedule(timing, refreshed, skill_id, level, target, context, opts) do
       {:error, reason} when early.reactions != [] or reactions != [] ->
         {:error, reason, refreshed}
 
@@ -579,13 +582,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def complete_cast_with_input(_game_state, _skill_id, _level, _target, _input),
     do: {:error, :invalid_level}
 
-  defp complete_validated_cast(game_state, skill_id, level, target, input) do
+  @doc """
+  Completes a cast a script started (rAthena `unitskilluseid`): the ordinary
+  cast end, without the player cast's learned-rank re-check, because the script
+  is the skill's permission. Every other cast-end condition still applies.
+  """
+  @spec complete_script_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
+          {:ok, PlayerState.t()}
+          | {:local_effects, PlayerState.t(), [Active.effect()]}
+          | {:deferred, PlayerState.t(), term()}
+          | {:failed, PlayerState.t(), atom()}
+          | {:failed, PlayerState.t(), atom(), :type1_only | :requirements_only}
+          | {:skipped, PlayerState.t(), atom()}
+          | {:castend_failed, PlayerState.t(), atom()}
+          | {:error, atom()}
+  def complete_script_cast(game_state, skill_id, level, target)
+      when is_integer(level) and level > 0,
+      do:
+        complete_validated_cast(game_state, skill_id, level, target, :without_input,
+          learned?: false
+        )
+
+  def complete_script_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  defp complete_validated_cast(game_state, skill_id, level, target, input, opts \\ []) do
     now = System.monotonic_time(:millisecond)
 
     validation =
       case input do
         :without_input ->
-          validate_completion(game_state, skill_id, level, target)
+          validate_completion(game_state, skill_id, level, target, opts)
 
         {:with_input, _value} ->
           with {:ok, context} <-
@@ -966,7 +992,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # plain item cast, every requirement after it. Its cast-end checks stay at the
   # cast end (`complete_item_cast/5`).
   defp begin_item_stages(caster, definition, level, target, early, on_ready, keep?) do
-    opts = [item_skill: item_skill(definition.id, level, keep?), walk_action: false]
+    opts = [
+      item_skill: item_skill(definition.id, level, keep?),
+      walk_action: false,
+      learned?: false
+    ]
 
     case check_player_use(caster, definition.id, level, target, :cast_begin, opts) do
       {:ok, context} ->
@@ -1645,7 +1675,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
-         :ok <- check_learned(caster, adapter, definition, level, :begin, item),
+         :ok <- check_player_learned(caster, adapter, definition, level, opts),
          {:ok, _module} <- fetch_active_module(definition),
          :ok <- check_use_target(caster, target, definition),
          :ok <- check_support_status(caster, definition),
@@ -1655,6 +1685,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- optional_check(context, :skilluse_check) do
       {:ok, context}
     end
+  end
+
+  # A script cast (rAthena `unitskilluseid`) and an item cast may use a skill the
+  # player never learned; every other cast still checks the learned rank.
+  defp check_player_learned(caster, adapter, definition, level, opts) do
+    if Keyword.get(opts, :learned?, true),
+      do: check_learned(caster, adapter, definition, level, :begin),
+      else: :ok
   end
 
   defp check_player_restrictions(caster, adapter, skill_id, nil),
@@ -1869,7 +1907,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp record_spheres_old(context, _phase), do: context
 
-  defp validate_completion(caster, skill_id, level, target) do
+  defp validate_completion(caster, skill_id, level, target, opts) do
     now = System.monotonic_time(:millisecond)
 
     with {:ok, adapter} <- lifecycle_adapter(caster),
@@ -1877,17 +1915,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_support_status(caster, definition) do
       if :erlang.apply(adapter, :completion_revalidates_definition?, []) do
-        validate_revalidated_completion(caster, level, target, now, adapter, definition)
+        validate_revalidated_completion(caster, level, target, now, adapter, definition, opts)
       else
-        validate_player_completion(caster, level, target, now, adapter, definition)
+        validate_player_completion(caster, level, target, now, adapter, definition, opts)
       end
     end
   end
 
-  defp validate_revalidated_completion(caster, level, target, now, adapter, definition) do
+  defp validate_revalidated_completion(caster, level, target, now, adapter, definition, opts) do
     with :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
-         :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
+         :ok <- check_completion_learned(caster, adapter, definition, level, opts),
          :ok <- check_target(caster, target, definition),
          :ok <- check_placement(caster, definition, target),
          :ok <- check_cast_end(caster, target, definition, false),
@@ -1900,10 +1938,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp validate_player_completion(caster, level, target, now, adapter, definition) do
+  defp validate_player_completion(caster, level, target, now, adapter, definition, opts) do
     with {:ok, _module} <- fetch_active_module(definition),
          context = CastContext.build(caster, definition, level, target, :completion),
-         :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
+         :ok <- check_completion_learned(caster, adapter, definition, level, opts),
          :ok <- check_castend_presence(caster, target),
          :ok <- check_target(caster, target, definition),
          :ok <- check_placement(caster, definition, target),
@@ -1913,6 +1951,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_context_cooldown(context, now) do
       validate_and_prepare(context, false)
     end
+  end
+
+  # A cast a script started skips the learned-rank re-check; no other cast does.
+  defp check_completion_learned(caster, adapter, definition, level, opts) do
+    if Keyword.get(opts, :learned?, true),
+      do: :erlang.apply(adapter, :knows?, [caster, definition, level, :completion]),
+      else: :ok
   end
 
   # A support skill reaches a homunculus only from its owner: anyone else's is
@@ -2159,14 +2204,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           integer(),
           pos_integer(),
           Active.target(),
-          CastContext.t()
+          CastContext.t(),
+          keyword()
         ) ::
           {:instant, Active.caster()}
           | {:instant, Active.caster(), [Active.effect()]}
           | {:deferred, Active.caster(), term()}
           | {:casting, Active.caster(), cast_info()}
           | {:error, atom()}
-  defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared) do
+  defp schedule(%{total: 0}, game_state, skill_id, level, target, prepared, _opts) do
     notify_cast_targeted(game_state, prepared.definition, target, false)
     now = System.monotonic_time(:millisecond)
     started = cast_start(game_state, prepared.adapter, skill_id)
@@ -2177,7 +2223,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp schedule(%{fixed: fixed, total: total}, game_state, skill_id, level, target, prepared) do
+  defp schedule(
+         %{fixed: fixed, total: total},
+         game_state,
+         skill_id,
+         level,
+         target,
+         prepared,
+         opts
+       ) do
     notify_cast_targeted(game_state, prepared.definition, target, true)
 
     info = %{
@@ -2186,7 +2240,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       target: target,
       element: prepared.definition.element,
       fixed: fixed,
-      total: total
+      total: total,
+      origin: Keyword.get(opts, :origin, :normal)
     }
 
     {:casting, game_state, info}
@@ -2361,12 +2416,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp check_learned(caster, adapter, definition, level, phase),
     do: :erlang.apply(adapter, :knows?, [caster, definition, level, phase])
-
-  defp check_learned(caster, adapter, definition, level, phase, nil),
-    do: check_learned(caster, adapter, definition, level, phase)
-
-  # An item cast has no learned rank: the item is its permission.
-  defp check_learned(_caster, _adapter, _definition, _level, _phase, _item), do: :ok
 
   defp check_target(caster, target, definition) do
     adapter = Caster.for(caster)

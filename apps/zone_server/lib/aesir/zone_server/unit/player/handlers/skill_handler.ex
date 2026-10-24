@@ -346,6 +346,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
             Map.get(ctx, :keep_requirement?, false)
           )
 
+        :script ->
+          Interpreter.complete_script_cast(
+            game_state,
+            ctx.skill_id,
+            ctx.skill_level,
+            ctx.target
+          )
+
         :encore ->
           Interpreter.complete_encore_replay(game_state, ctx.memory, ctx.target)
 
@@ -658,6 +666,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
       true ->
         false
+    end
+  end
+
+  @doc """
+  Starts a cast a script asked for (rAthena `unitskilluseid`) on the player's own
+  unit. The skill needs no learned rank; every other cast-begin and cast-end
+  condition applies. A gate refusal leaves the state unchanged, an instant cast
+  runs to its cast end here, and a timed one starts the ordinary cast bar.
+  """
+  @spec start_script_cast(SessionState.t(), integer(), pos_integer()) :: SessionState.t()
+  def start_script_cast(%{game_state: game_state} = state, skill_id, level) do
+    locked = game_state.combat_target_id
+
+    with {:ok, gated} <- cast_gate(state, skill_id, :restricted),
+         {:ok, ready} <- ensure_idle_for_cast(gated, overlay?: true) do
+      result =
+        Interpreter.begin_cast(ready.game_state, skill_id, level, :self,
+          learned?: false,
+          origin: :script
+        )
+
+      {:noreply, started} =
+        handle_begin_result(ready, ready.game_state, skill_id, level, :self, locked, result)
+
+      started
+    else
+      _refused -> state
     end
   end
 

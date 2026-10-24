@@ -2913,6 +2913,7 @@
 - aegis_name: Moon_Cookie
   id: 11702
   name: Moon Cookie
+  on_use: 'unitskilluseid(ctx, 34, level: 7)'
   type: healing
   weight: 300
 - aegis_name: Mysterious_Blood
@@ -10583,6 +10584,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 10015, level: 1)'
   type: usable
   weight: 10
 - aegis_name: Emergency_Scroll2
@@ -10592,6 +10594,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 10015, level: 2)'
   type: usable
   weight: 10
 - aegis_name: Emergency_Scroll3
@@ -10601,6 +10604,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 10015, level: 3)'
   type: usable
   weight: 10
 - aegis_name: Teleport_Box1
@@ -19902,6 +19906,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 237, level: 5)'
   type: usable
   weight: 10
 - aegis_name: CP_Shield_Scroll
@@ -19910,6 +19915,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 235, level: 5)'
   type: usable
   weight: 10
 - aegis_name: CP_Armor_Scroll
@@ -19918,6 +19924,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 236, level: 5)'
   type: usable
   weight: 10
 - aegis_name: CP_Weapon_Scroll
@@ -19926,6 +19933,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 234, level: 5)'
   type: usable
   weight: 10
 - aegis_name: Repair_Scroll
@@ -19934,6 +19942,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 108, level: 1)'
   type: usable
   weight: 10
 - aegis_name: Big_Bun

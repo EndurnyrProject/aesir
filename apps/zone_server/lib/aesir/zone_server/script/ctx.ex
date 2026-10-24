@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           | {:homunculus, homunculus_effect()}
           | {:item_skill, integer(), pos_integer(), boolean()}
           | {:script_damage, ScriptVitals.damage()}
+          | {:unit_skill_use, integer(), pos_integer()}
           | {:potion_pitch, :flat | :percent, integer(), integer()}
 
   @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]

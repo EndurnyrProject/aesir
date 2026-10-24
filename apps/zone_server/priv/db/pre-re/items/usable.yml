@@ -7220,18 +7220,21 @@
   buy: 2
   id: 12968
   name: Emergency Level 1 Scroll
+  on_use: 'unitskilluseid(ctx, 10015, level: 1)'
   type: usable
   weight: 10
 - aegis_name: Emergency_Scroll2
   buy: 2
   id: 12969
   name: Emergency Level 2 Scroll
+  on_use: 'unitskilluseid(ctx, 10015, level: 2)'
   type: usable
   weight: 10
 - aegis_name: Emergency_Scroll3
   buy: 2
   id: 12970
   name: Emergency Level 3 Scroll
+  on_use: 'unitskilluseid(ctx, 10015, level: 3)'
   type: usable
   weight: 10
 - aegis_name: Teleport_Box1
@@ -13498,21 +13501,25 @@
 - aegis_name: CP_Helm_Scroll
   id: 14517
   name: Chemical Protection Helm Scroll
+  on_use: 'unitskilluseid(ctx, 237, level: 5)'
   type: usable
   weight: 10
 - aegis_name: CP_Shield_Scroll
   id: 14518
   name: Chemical Protection Shield Scrol
+  on_use: 'unitskilluseid(ctx, 235, level: 5)'
   type: usable
   weight: 10
 - aegis_name: CP_Armor_Scroll
   id: 14519
   name: Chemical Protection Armor Scroll
+  on_use: 'unitskilluseid(ctx, 236, level: 5)'
   type: usable
   weight: 10
 - aegis_name: CP_Weapon_Scroll
   id: 14520
   name: Chemical Protection Weapon Scroll
+  on_use: 'unitskilluseid(ctx, 234, level: 5)'
   type: usable
   weight: 10
 - aegis_name: Repair_Scroll
@@ -13521,6 +13528,7 @@
   no_cart: true
   no_guild_storage: true
   no_trade: true
+  on_use: 'unitskilluseid(ctx, 108, level: 1)'
   type: usable
   weight: 10
 - aegis_name: Big_Bun

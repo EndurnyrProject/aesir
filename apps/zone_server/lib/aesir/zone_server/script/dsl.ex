@@ -99,6 +99,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate npcskill(ctx, skill, level, stat_point, npc_level), to: Skills
   defdelegate skilleffect(ctx, skill, level), to: Skills
   defdelegate itemskill(ctx, skill_id_or_name, opts), to: Skills
+  defdelegate unitskilluseid(ctx, skill_id_or_name, opts), to: Skills
   defdelegate skill(ctx, skill_id_or_name, level, flag), to: Skills
   defdelegate reset_skills(ctx), to: Skills
   defdelegate basicskillcheck(ctx), to: Skills

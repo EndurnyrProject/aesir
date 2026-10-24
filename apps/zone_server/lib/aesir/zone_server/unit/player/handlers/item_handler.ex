@@ -63,7 +63,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
          :ok <- item_use_enabled?(state),
          {:ok, item} <- fetch_item(game_state.inventory, server_index),
          {:ok, definition} <- fetch_definition(item.nameid),
-         :ok <- item_use_allowed?(game_state) do
+         :ok <- item_use_allowed?(game_state),
+         :ok <- delayed_item_use_allowed?(definition, game_state) do
       use_definition(definition, client_index, server_index, state)
     else
       :busy ->
@@ -82,6 +83,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
       do: :busy,
       else: :ok
   end
+
+  # A delayed-consume (or no-consume) item cannot be used while sitting, nor
+  # while a skill casts (`pc.cpp:6493-6503`). The reference also refuses one
+  # while `SC_ALL_RIDING` holds the player, which Aesir does not model: its
+  # `:riding` option is the Peco mount, which the reference allows.
+  defp delayed_item_use_allowed?(definition, game_state) do
+    if delayed_item?(definition) do
+      cond do
+        game_state.action_state == :sitting -> {:error, :sitting}
+        game_state.casting != nil -> {:error, :busy}
+        true -> :ok
+      end
+    else
+      :ok
+    end
+  end
+
+  defp delayed_item?(%{type: :delay_consume}), do: true
+  defp delayed_item?(definition), do: Map.get(definition, :no_consume, false)
 
   defp use_definition(%{type: :card}, _client_index, server_index, state) do
     CardHandler.open_picker(server_index, state)
@@ -138,27 +158,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     %{id: item_id} = definition
     pending = List.last(for {:item_skill, id, level, keep?} <- effects, do: {id, level, keep?})
     effects = Enum.reject(effects, &match?({:item_skill, _, _, _}, &1))
+    skill_cast = List.last(for {:unit_skill_use, id, level} <- effects, do: {id, level})
+    effects = Enum.reject(effects, &match?({:unit_skill_use, _, _}, &1))
 
     with :ok <- validate_item_skill(pending),
          :ok <- reject_homunculus(effects),
          {:ok, updated} <- apply_session_effects(effects, %{state | game_state: ctx.game_state}) do
-      if stage_before_target?(definition) and pending do
-        stage_pending_item_skill(client_index, server_index, item_id, pending, updated)
-      else
-        consume(
-          client_index,
-          server_index,
-          definition,
-          %{ctx | game_state: updated.game_state},
-          updated,
-          pending
-        )
-      end
+      consumed =
+        if stage_before_target?(definition) and pending do
+          stage_pending_item_skill(client_index, server_index, item_id, pending, updated)
+        else
+          consume(
+            client_index,
+            server_index,
+            definition,
+            %{ctx | game_state: updated.game_state},
+            updated,
+            pending
+          )
+        end
+
+      start_script_cast(consumed, skill_cast)
     else
       {:error, :invalid_script} -> reject_invalid_script(client_index, item_id, state)
       {:error, reason} -> reject(client_index, reason, state)
     end
   end
+
+  # A `unitskilluseid` script cast starts once the item is spent or claimed, as
+  # the reference runs the item's script after its own use acknowledgement.
+  defp start_script_cast({:noreply, state}, nil), do: {:noreply, state}
+
+  defp start_script_cast({:noreply, state}, {skill_id, level}),
+    do: {:noreply, SkillHandler.start_script_cast(state, skill_id, level)}
 
   # A delayed-consume item stays until the selected target is known; a
   # no-consume item is never removed (the reference's DELAYCONSUME_NOCONSUME).

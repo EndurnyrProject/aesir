@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -875,6 +876,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
 
       assert game_state == state.game_state
       assert staged.pending_item_skill == %{skill_id: 19, level: 3, keep_requirement?: false}
+    end
+  end
+
+  describe "{:unitskilluseid, skill_id, level}" do
+    test "starts the cast through the skill handler and replies with its game_state" do
+      state = base_state()
+      started = %{state | game_state: %{state.game_state | action_state: :casting}}
+
+      expect(SkillHandler, :start_script_cast, fn ^state, 10_015, 2 -> started end)
+
+      assert {{:ok, game_state}, new_state} =
+               ScriptEffectHandler.apply_op({:unitskilluseid, 10_015, 2}, state)
+
+      assert game_state == started.game_state
+      assert new_state == started
     end
   end
 

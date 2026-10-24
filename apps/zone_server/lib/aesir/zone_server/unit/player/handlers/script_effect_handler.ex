@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
@@ -96,6 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:stage_item_skill, integer(), pos_integer(), {non_neg_integer(), integer()}}
           | {:stage_item_skill, integer(), pos_integer(), {non_neg_integer(), integer()},
              boolean()}
+          | {:unitskilluseid, integer(), pos_integer()}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:warp, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
@@ -501,6 +503,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       when is_boolean(keep?),
       do:
         stage_item_skill(skill_id, level, %{item_index: index, item_nameid: nameid}, keep?, state)
+
+  def apply_op({:unitskilluseid, skill_id, level}, state) do
+    started = SkillHandler.start_script_cast(state, skill_id, level)
+    {{:ok, started.game_state}, started}
+  end
 
   def apply_op({:grant_skill, skill_id_or_name, level}, state) do
     case SkillLearningHandler.grant_skill(skill_id_or_name, level, state) do

@@ -1265,6 +1265,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     end
   end
 
+  describe "script casts" do
+    test "starts an unlearned-rank cast on the player's own unit, tagged for its completion" do
+      state = instant_state(100)
+      test_pid = self()
+
+      stub(Interpreter, :begin_cast, fn gs, 6, 1, :self, opts ->
+        send(test_pid, {:begin, gs, opts})
+        {:error, :invalid_target, gs}
+      end)
+
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(Broadcast, :to_player, fn 1000, _ -> :ok end)
+
+      assert %{game_state: %PlayerState{}} = SkillHandler.start_script_cast(state, 6, 1)
+      assert_received {:begin, _gs, opts}
+      assert opts[:learned?] == false
+      assert opts[:origin] == :script
+    end
+
+    test "a gate refusal leaves the state untouched" do
+      state = put_in(instant_state(100).game_state.action_state, :dead)
+      reject(&Interpreter.begin_cast/5)
+
+      assert ^state = SkillHandler.start_script_cast(state, 6, 1)
+    end
+  end
+
   describe "move-to-range on out-of-range cast" do
     test "an out-of-range unit skill walks the caster toward the target instead of fizzling" do
       stub(Interpreter, :begin_cast, fn _gs, 29, 1, {:unit, 2000} -> {:error, :out_of_range} end)
@@ -1637,6 +1664,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert gs.action_state == :idle
       assert gs.state_context == %{}
       assert gs.stats.current_state.sp == 45 - 18
+    end
+
+    test "a script-origin cast completes through the script entry" do
+      stub(Broadcast, :to_player, fn 1000, _packet -> :ok end)
+      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet, _opts -> :ok end)
+      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
+      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
+
+      assert {:noreply, casting} = SkillHandler.handle_use_skill(casting_state(45), 29, 1, 1000)
+      token = casting.game_state.state_context.token
+      casting = put_in(casting.game_state.casting.origin, :script)
+      test_pid = self()
+
+      expect(Interpreter, :complete_script_cast, fn gs, 29, 1, :self ->
+        send(test_pid, :script_completed)
+        {:ok, gs}
+      end)
+
+      reject(&Interpreter.complete_cast/4)
+
+      assert {:noreply, _completed} = SkillHandler.handle_cast_complete(casting, token)
+      assert_received :script_completed
     end
 
     test "a completion failing after its requirement commits the spend and reports the failure" do

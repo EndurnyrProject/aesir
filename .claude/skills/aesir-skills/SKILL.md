@@ -72,7 +72,7 @@ Declared in `mmo/skill/`:
 
 ## Interpreter entry points (never add bypass booleans)
 
-`Mmo.Skill.Interpreter` (`mmo/skill/interpreter.ex`) has three narrow entry points:
+`Mmo.Skill.Interpreter` (`mmo/skill/interpreter.ex`) has these narrow entry points:
 
 - `cast/4` — player-initiated, full `validate_cast` chain (learned, SP, catalysts, cooldown).
 - `auto_cast/4` — status procs; keeps only the SP charge.
@@ -82,6 +82,10 @@ Declared in `mmo/skill/`:
   statuses), while `keep_requirement` keeps them. The item is claimed inside the cast begin, so an
   out-of-range or refused-after-claim cast loses it, and `validate/4`/`skilluse_check/4`/
   `after_range_check/4` run where the player path runs them.
+- `begin_cast/5` with `learned?: false, origin: :script` plus `complete_script_cast/4` — a script's
+  `unitskilluseid` cast: the ordinary begin and cast end, with only the learned-rank check (begin)
+  and re-check (end) skipped. `SkillHandler.start_script_cast/3` starts it on the player's own unit
+  and the session routes `origin: :script` completions to `complete_script_cast/4`.
 
 A new restricted cast path = a new narrow entry point with a doc listing exactly what it
 skips. Non-consuming runs share `run_unconditional/5` (not `run_cast/5`, which eats

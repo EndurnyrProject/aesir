@@ -87,6 +87,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
                Transpiler.transpile(~s(itemskill "MG_FIREBOLT",1,0;))
     end
 
+    test "unitskilluseid transpiles the script's own player cast" do
+      assert {:ok, "unitskilluseid(ctx, 10015, level: 2)"} =
+               Transpiler.transpile(~s{unitskilluseid getcharid(3),"GD_ITEMEMERGENCYCALL",2;})
+
+      assert {:ok, "unitskilluseid(ctx, 34, level: 7)"} =
+               Transpiler.transpile(~s{unitskilluseid getcharid(3),"AL_BLESSING",7;})
+    end
+
+    test "unitskilluseid refuses a unit id that is not the script's player" do
+      assert {:error, {:unsupported, {:unit_skill_use_target, _expr}}} =
+               Transpiler.transpile(~s{unitskilluseid getcharid(0),"AL_BLESSING",7;})
+    end
+
     test "an SKF food passes a negative val1 through unchanged" do
       assert {:ok, "sc_start(ctx, :sc_skf_cast, 600000, -5)"} =
                Transpiler.transpile("sc_start SC_SKF_CAST,600000,-5;")

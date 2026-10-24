@@ -186,6 +186,34 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
     do: apply_op(ctx, {:stage_item_skill, skill_id, level, keep?})
 
   @doc """
+  Casts a skill from the player's own unit (rAthena `unitskilluseid`), the cast
+  an Emergency Scroll or rune item starts from its script. The skill needs no
+  learned rank; every other cast-begin and cast-end condition applies (SP, HP,
+  zeny, weight, weapon, items), and the cast starts at once - a timed cast
+  opens the ordinary cast bar. `skill_id_or_name` is a catalog id or name;
+  `:level` defaults to 1. Unknown skills and detached contexts halt the script.
+  """
+  @spec unitskilluseid(Ctx.t(), integer() | atom(), keyword()) :: Ctx.t()
+  def unitskilluseid(%Ctx{status: {:error, _}} = ctx, _skill, _opts), do: ctx
+  def unitskilluseid(%Ctx{game_state: nil} = ctx, _skill, _opts), do: Ctx.halt(ctx, :no_player)
+
+  def unitskilluseid(%Ctx{} = ctx, skill_id_or_name, opts) do
+    level = Keyword.get(opts, :level, 1)
+
+    case resolve_skill_id(skill_id_or_name) do
+      {:ok, skill_id} -> stage_unit_skill_use(ctx, skill_id, level)
+      {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
+
+  defp stage_unit_skill_use(%Ctx{session_pid: nil, source: {:item, _}} = ctx, skill_id, level) do
+    %{ctx | session_effects: ctx.session_effects ++ [{:unit_skill_use, skill_id, level}]}
+  end
+
+  defp stage_unit_skill_use(ctx, skill_id, level),
+    do: apply_op(ctx, {:unitskilluseid, skill_id, level})
+
+  @doc """
   Refunds the player's learned skills into skill points through the session seam
   (rAthena `resetskill`), recomputing stats, refreshing the skill window, and
   persisting. `NV_BASIC` is kept (not refunded) unless the player is a Novice.

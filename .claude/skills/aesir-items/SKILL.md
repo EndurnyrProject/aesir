@@ -120,6 +120,15 @@ case-insensitive; `:item` params pass verbatim.
   server-side approach for item skills; the client must walk first.
 - `item_cast/4` remains the direct entry for tests and non-client paths; it runs the same stages
   with no claim callback. Don't route player item casts through `cast/4`.
+- `unitskilluseid` (Emergency/Protection/Repair Scrolls, Moon Cookie) is a different command: it
+  starts a real cast at once, on the player's own unit, without a client target prompt and without
+  the learned rank, while every other cast condition (SP, HP, zeny, weight, weapon, items) applies.
+  It is `Dsl.unitskilluseid/2`; the item's script effect is applied after the item is spent. The
+  cast end is the ordinary one, minus its learned-rank re-check.
+- A `delay_consume`/`no_consume` item cannot be used while sitting or while a skill casts
+  (`pc.cpp:6493-6503`). The reference also refuses one under `SC_ALL_RIDING` (the new cash mounts);
+  Aesir's `:riding` option is the Peco mount, which the reference allows, so that clause is not
+  modelled until `SC_ALL_RIDING` exists.
 - A consumable that starts an `SC_*` status needs the resolver `@statuses` entry AND the
   status effect module **in the same commit** (`resolver_completeness_test.exs` enforces
   this — see the `aesir-status-effects` skill).

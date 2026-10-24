@@ -272,6 +272,70 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     end
   end
 
+  describe "handle_use_item/2 with a delayed item" do
+    test "a unitskilluseid script starts the cast once the item is spent" do
+      source = "unitskilluseid(ctx, 6, level: 1)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+
+      state = state_with_potion()
+
+      stub(Items, :by_id, fn @red_potion_id ->
+        {:ok, usable_definition(@red_potion_id, source)}
+      end)
+
+      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+        {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+         {:reduced, @red_potion_slot, 4}}
+      end)
+
+      test_pid = self()
+
+      expect(SkillHandler, :start_script_cast, fn state, 6, 1 ->
+        send(test_pid, {:script_cast, state.game_state.inventory[@red_potion_slot].amount})
+        state
+      end)
+
+      assert {:noreply, _committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:script_cast, 4}
+      assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
+    end
+
+    test "refuses a delayed item while the player sits" do
+      source = "unitskilluseid(ctx, 6, level: 1)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+
+      definition = %{usable_definition(@red_potion_id, source) | type: :delay_consume}
+      state = put_in(state_with_potion().game_state.action_state, :sitting)
+
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+      reject(&SkillHandler.start_script_cast/3)
+
+      assert {:noreply, _} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false, reason: 3}}}
+      refute_received {:send, :gameplay, {:item_removed, %ItemRemoved{}}}
+    end
+
+    test "refuses a delayed item while a skill casts" do
+      source = "unitskilluseid(ctx, 6, level: 1)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+
+      definition = %{usable_definition(@red_potion_id, source) | type: :delay_consume}
+      state = put_in(state_with_potion().game_state.casting, %{skill_id: 6})
+
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+      reject(&SkillHandler.start_script_cast/3)
+
+      assert {:noreply, _} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: false, reason: 3}}}
+    end
+  end
+
   describe "handle_use_item/2 with Falcon Flute" do
     test "equips the falcon and consumes the item from the player session" do
       {:ok, definition} = Items.by_id(12848)
