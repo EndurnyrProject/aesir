@@ -120,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrushTest do
       state
       | stats: stats,
         spirit_spheres: spheres,
-        combo: Combo.open(Combo.new(), stage, {:mob, @target_id}, future())
+        combo: Combo.open(Combo.new(), stage, future())
     }
   end
 

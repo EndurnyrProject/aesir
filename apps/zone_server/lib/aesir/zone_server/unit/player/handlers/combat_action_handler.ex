@@ -48,8 +48,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   """
   @spec handle_attack_request(map(), integer(), integer()) :: {:noreply, map()}
   def handle_attack_request(state, target_id, action_type) do
-    # An attack request ends any skill use remembered during a walk.
-    state = state |> Map.put(:step_action, nil) |> cancel_combo_for_target_change(target_id)
+    # An attack request ends any skill use remembered during a walk. It keeps an
+    # open combo window: only another skill attack ends one.
+    state = Map.put(state, :step_action, nil)
     game_state = state.game_state
 
     if Interpreter.can_attack?(:player, game_state.character_id) do
@@ -421,13 +422,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       :ok ->
         handle_successful_attack(state, target_id, transitioned_state, weapon_type, nil)
 
-      {:ok, {:combo, stage, target, duration}} ->
+      {:ok, {:combo, stage, duration}} ->
         handle_successful_attack(
           state,
           target_id,
           transitioned_state,
           weapon_type,
-          {stage, target, duration}
+          {stage, duration}
         )
 
       :intercepted ->
@@ -474,8 +475,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
 
   defp maybe_open_combo(game_state, nil, _now), do: game_state
 
-  defp maybe_open_combo(game_state, {stage, target, duration}, now) do
-    combo = Combo.open(game_state.combo, stage, target, now + duration)
+  defp maybe_open_combo(game_state, {stage, duration}, now) do
+    combo = Combo.open(game_state.combo, stage, now + duration)
     Process.send_after(self(), {:combo_timeout, combo.generation}, duration)
     %{game_state | combo: combo}
   end
@@ -775,14 +776,4 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
         {:noreply, state}
     end
   end
-
-  defp cancel_combo_for_target_change(
-         %{game_state: %{combo: %Combo{target: {_type, id}}}} = state,
-         target_id
-       )
-       when id != target_id do
-    %{state | game_state: PlayerState.cancel_combo(state.game_state)}
-  end
-
-  defp cancel_combo_for_target_change(state, _target_id), do: state
 end

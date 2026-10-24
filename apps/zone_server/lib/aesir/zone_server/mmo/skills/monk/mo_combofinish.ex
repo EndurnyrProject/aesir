@@ -79,16 +79,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
   def cast(caster, {:unit, target_id}, level, definition) do
     now = now()
 
-    with {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
-         :ok <-
+    with :ok <-
            Combat.execute_skill_attack(
              caster,
              target_id,
              skill_options(caster, level, definition)
            ),
          duration <- Enum.at(definition.after_cast_delay, level - 1, 0),
-         {:ok, combo} <-
-           Combo.open_follow_up(caster, :thrust, {target_type, target_id}, now, duration) do
+         {:ok, combo} <- Combo.open_follow_up(caster, :thrust, now, duration) do
       {:ok, %{caster | combo: combo}}
     else
       {:error, _reason} = error -> error

@@ -19,6 +19,48 @@ defmodule Aesir.ZoneServer.Mmo.Skill.OriginTest do
     refute Origin.autocast?({:player, 42})
   end
 
+  describe "collect_skill_attacks/1" do
+    test "reports whether the invocation executed a skill attack" do
+      assert {{:ok, :effect}, true} =
+               Origin.collect_skill_attacks(fn ->
+                 Origin.mark_skill_attack()
+                 {:ok, :effect}
+               end)
+
+      assert {{:ok, :buff}, false} = Origin.collect_skill_attacks(fn -> {:ok, :buff} end)
+    end
+
+    test "discards a mark made outside a collection" do
+      Origin.mark_skill_attack()
+
+      assert {:effect, false} = Origin.collect_skill_attacks(fn -> :effect end)
+    end
+
+    test "restores the enclosing collection for a nested invocation" do
+      assert {:outer, true} =
+               Origin.collect_skill_attacks(fn ->
+                 Origin.mark_skill_attack()
+
+                 {_inner, nested_attacked?} =
+                   Origin.collect_skill_attacks(fn -> :inner end)
+
+                 refute nested_attacked?
+                 :outer
+               end)
+    end
+
+    test "clears its observation when the invocation raises" do
+      assert_raise RuntimeError, "cast failed", fn ->
+        Origin.collect_skill_attacks(fn ->
+          Origin.mark_skill_attack()
+          raise "cast failed"
+        end)
+      end
+
+      assert {:after, false} = Origin.collect_skill_attacks(fn -> :after end)
+    end
+  end
+
   test "exposes the current skill and caster inside an invocation" do
     Origin.with_skill(:mg_firebolt, {:player, 42}, fn ->
       assert Origin.current() == @firebolt

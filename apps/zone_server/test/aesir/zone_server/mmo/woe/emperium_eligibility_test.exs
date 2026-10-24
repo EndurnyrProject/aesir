@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
           :ok
         end)
 
-        assert {{:ok, {:combo, :triple_attack, {:mob, @emperium_unit_id}, _delay}}, ^caster_state} =
+        assert {{:ok, {:combo, :triple_attack, _delay}}, ^caster_state} =
                  AutoAttack.execute_attack(
                    %{},
                    caster_state,

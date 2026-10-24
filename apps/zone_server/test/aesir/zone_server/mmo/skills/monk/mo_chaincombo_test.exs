@@ -37,17 +37,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
 
     other_target = %{
       caster
-      | combo: Combo.open(caster.combo, :quadruple, {:mob, 3_000}, future())
+      | combo: Combo.open(caster.combo, :quadruple, future())
     }
 
     assert :ok = begin(other_target)
 
     wrong_stage = %{
       caster
-      | combo: Combo.open(caster.combo, :thrust, {:mob, @target_id}, future())
+      | combo: Combo.open(caster.combo, :thrust, future())
     }
 
-    expired = %{caster | combo: Combo.open(caster.combo, :quadruple, {:mob, @target_id}, 0)}
+    expired = %{caster | combo: Combo.open(caster.combo, :quadruple, 0)}
 
     for state <- [wrong_stage, expired] do
       assert {:error, :invalid_combo} = begin(state)
@@ -80,7 +80,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
              MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
 
     assert updated.combo.stage == :thrust
-    assert updated.combo.target == {:mob, @target_id}
     assert updated.combo.generation == old_generation + 1
     assert updated.combo.deadline > System.monotonic_time(:millisecond)
   end
@@ -135,7 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
   test "an expired predecessor refuses the cast before it starts" do
     caster = %{
       caster(:quadruple, @target_id)
-      | combo: Combo.open(Combo.new(), :quadruple, {:mob, @target_id}, 0)
+      | combo: Combo.open(Combo.new(), :quadruple, 0)
     }
 
     assert {:error, :invalid_combo} = begin(caster)
@@ -182,10 +181,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
              MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
   end
 
-  test "lands on the unit it is cast at and opens the next window there" do
+  test "lands on the unit it is cast at and opens the next window" do
     caster = %{
       caster(:quadruple, @target_id)
-      | combo: Combo.open(Combo.new(), :quadruple, {:mob, 3_000}, future())
+      | combo: Combo.open(Combo.new(), :quadruple, future())
     }
 
     stub(Combat, :resolve_target_position, fn @target_id ->
@@ -194,7 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
 
     expect(Combat, :execute_skill_attack, fn _caster, @target_id, _opts -> :ok end)
 
-    assert {:ok, %{combo: %{target: {:player, @target_id}}}} =
+    assert {:ok, %{combo: %{stage: :thrust}}} =
              MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
   end
 
@@ -237,7 +236,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
         progression: %{base.stats.progression | learned_skills: %{272 => 5, 273 => 5}}
     }
 
-    combo = Combo.open(Combo.new(), stage, {:mob, target_id}, future())
+    combo = Combo.open(Combo.new(), stage, future())
     {spirit_spheres, _entry} = SpiritSpheres.summon(base.spirit_spheres, future(), 5)
     %{base | stats: stats, combo: combo, spirit_spheres: spirit_spheres}
   end

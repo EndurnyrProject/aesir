@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
 
       stub(HitCalculations, :calculate_hit_result, fn _a, _t -> :hit end)
 
-      assert {:ok, {:combo, :quadruple, {:mob, @target_id}, _delay}} =
+      assert {:ok, {:combo, :quadruple, _delay}} =
                Combat.execute_attack(attacker, player_state, @target_id)
     end
 
@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
 
       expect(MobSession, :apply_damage, fn _pid, 10, _attacker_id, _metadata -> :ok end)
 
-      assert {:ok, {:combo, :quadruple, {:mob, @target_id}, _delay}} =
+      assert {:ok, {:combo, :quadruple, _delay}} =
                Combat.execute_attack(attacker, player_state, @target_id)
     end
 
@@ -196,7 +196,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackStatusReplacementTest do
 
       reject(&MobSession.apply_damage/4)
 
-      assert {:ok, {:combo, :quadruple, {:mob, @target_id}, _delay}} =
+      assert {:ok, {:combo, :quadruple, _delay}} =
                Combat.execute_attack(attacker, player_state, @target_id)
 
       assert_received {:intercept_check, true}

@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SkillRange
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Woe.Rules
@@ -122,6 +123,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- Targeting.validate_enemy(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
+      mark_skill_attack(Keyword.get(opts, :delivery, :direct))
+
       damage =
         cond do
           Combatant.infinite_defense?(target, BattleFlags.type_bit(:magic)) -> 1
@@ -661,6 +664,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- AttackValidator.validate(attacker, target, opts),
          :ok <- validate_relation(relation, attacker, target, skill_id),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
+      mark_skill_attack(Keyword.get(opts, :delivery, :direct))
       range = SkillRange.classify(attacker, target, skill_id, skill_level)
 
       {:ok, %{damage: damage}} =
@@ -728,6 +732,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       error -> error
     end
   end
+
+  # The reference's `skill_combo` runs only when the caster is the damage's own
+  # source, so a field unit's hits never end the caster's combo window.
+  defp mark_skill_attack(:unit), do: :ok
+  defp mark_skill_attack(_delivery), do: Origin.mark_skill_attack()
 
   defp validate_relation(:self, _attacker, _target, _skill_id), do: :ok
 
@@ -1168,6 +1177,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
              matk_divisor: divisor,
              attack_flag: BattleFlags.build(:magic, range, true)
            ) do
+      mark_skill_attack(Map.get(splash, :delivery, :direct))
+
       {damage, packet_divisions} =
         DamageShared.normalize_damage_divisions(damage, hit_divisions)
 

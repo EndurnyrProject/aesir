@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfistTest do
 
     other = %{
       caster(:extremity)
-      | combo: Combo.open(Combo.new(), :extremity, {:mob, 1}, future())
+      | combo: Combo.open(Combo.new(), :extremity, future())
     }
 
     assert :ok = validate(other)
@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfistTest do
 
     ready = caster(:extremity, spheres: 2)
     expect_attack(ready, true)
-    assert {:ok, %{combo: %{stage: :tiger_fist, target: {:mob, @target_id}}}} = cast(ready, 1)
+    assert {:ok, %{combo: %{stage: :tiger_fist}}} = cast(ready, 1)
 
     short = caster(:extremity, spheres: 1)
     expect_attack(short, true)
@@ -148,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfistTest do
       state
       | stats: stats,
         spirit_spheres: spheres,
-        combo: Combo.open(Combo.new(), stage, {:mob, @target_id}, future())
+        combo: Combo.open(Combo.new(), stage, future())
     }
   end
 

@@ -501,7 +501,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     |> stop_walking()
     |> clear_combat_intent()
     |> clear_pickup_intent()
-    |> cancel_combo()
   end
 
   defp advance_deferred_epoch(%__MODULE__{deferred_epoch: epoch} = state) do
@@ -687,7 +686,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
       # Handle state-specific setup
       updated_state = handle_state_entry(updated_state, new_state)
-      updated_state = cancel_combo_on_entry(updated_state, new_state)
       {:ok, updated_state}
     else
       {:error, :invalid_transition}
@@ -971,9 +969,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   defp handle_state_entry(state, _new_state), do: state
-
-  defp cancel_combo_on_entry(state, :idle), do: state
-  defp cancel_combo_on_entry(state, _new_state), do: cancel_combo(state)
 
   @impl Aesir.ZoneServer.Unit
   def get_unit_id(%__MODULE__{character_id: character_id}), do: character_id

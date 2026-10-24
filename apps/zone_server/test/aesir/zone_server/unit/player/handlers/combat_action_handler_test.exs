@@ -740,7 +740,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert_receive {:combat, {:auto_attack, 2000}}, 500
     end
 
-    test "a Trifecta replacement opens and expires its retained-target window" do
+    test "a Trifecta replacement opens and expires its window" do
       stub(Stats, :weapon_type, fn _equipment -> :dagger end)
 
       stub(SpatialIndex, :get_unit_position, fn
@@ -749,12 +749,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       end)
 
       stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
-        {{:ok, {:combo, :quadruple, {:mob, 2000}, 20}}, game_state}
+        {{:ok, {:combo, :quadruple, 20}}, game_state}
       end)
 
       {:noreply, opened} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
 
-      assert %Combo{stage: :quadruple, target: {:mob, 2000}} = opened.game_state.combo
+      assert %Combo{stage: :quadruple} = opened.game_state.combo
       generation = opened.game_state.combo.generation
 
       assert_receive {:combo_timeout, ^generation}, 100
@@ -762,37 +762,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       assert expired.game_state.combo.stage == :idle
     end
 
-    test "movement, another attack, death, and warp cancel an open combo window" do
-      combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)
+    test "walking, swinging and warping keep an open combo window, which dies with its owner" do
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
       state = loop_state()
       game_state = %{state.game_state | combo: combo}
 
       assert {:ok, moving} = PlayerState.transition_to(game_state, :moving)
-      assert moving.combo.stage == :idle
+      assert moving.combo.stage == :quadruple
 
       assert {:ok, attacking} =
                PlayerState.transition_to(%{game_state | action_state: :idle}, :attacking)
 
-      assert attacking.combo.stage == :idle
+      assert attacking.combo.stage == :quadruple
 
       assert {:ok, dead} =
                PlayerState.transition_to(%{game_state | action_state: :idle}, :dead)
 
-      assert dead.combo.stage == :idle
+      assert dead.combo.stage == :quadruple
 
       warped = PlayerState.relocate(game_state, "morocc", 10, 10)
-      assert warped.combo.stage == :idle
+      assert warped.combo.stage == :quadruple
     end
 
-    test "changing targets cancels the retained combo even when the new attack is blocked" do
-      stub(Interpreter, :can_attack?, fn :player, 1000 -> false end)
+    test "a swing keeps the open combo window" do
+      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
 
-      combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {10, 11, "prontera"}}
+      end)
+
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
+        send(self(), :attacked)
+        {:ok, game_state}
+      end)
+
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
       state = loop_state()
-      state = %{state | game_state: %{state.game_state | combo: combo}}
+      state = %{state | game_state: %{state.game_state | combo: combo, combat_target_id: 2000}}
 
-      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 3000, 0)
-      assert returned.game_state.combo.stage == :idle
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+
+      assert_received :attacked
+      assert returned.game_state.combo.stage == :quadruple
     end
 
     test "a dead or missing target stops the loop and clears combat intent" do

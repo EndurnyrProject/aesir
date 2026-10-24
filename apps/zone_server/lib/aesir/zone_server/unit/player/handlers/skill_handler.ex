@@ -80,7 +80,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @encore_id 305
   @brandish_spear 57
   @auto_counter 61
-  @combo_followup_ids [271, 272, 273, 371, 372]
   @overlaid_states [:sitting, :trading, :vending]
   @arrow_vulcan_id 394
 
@@ -126,10 +125,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     {:noreply, state}
   end
 
-  defp dispatch_use_skill(state, @cast_cancel_id, level, target_id) do
+  defp dispatch_use_skill(state, @cast_cancel_id, level, _target_id) do
     case cast_gate(state, @cast_cancel_id, :restricted) do
       {:ok, ready_state} ->
-        ready_state |> maybe_cancel_combo(@cast_cancel_id, target_id) |> cast_cancel(level)
+        cast_cancel(ready_state, level)
 
       {:error, _reason} ->
         {:noreply, state}
@@ -142,9 +141,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
     case cast_gate(state, skill_id, :request) do
       {:ok, ready_state} ->
-        ready_state
-        |> maybe_cancel_combo(skill_id, target_id)
-        |> drive_cast_after_gate(skill_id, level, target, locked)
+        drive_cast_after_gate(ready_state, skill_id, level, target, locked)
 
       {:error, _reason} ->
         {:noreply, state}
@@ -252,7 +249,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     if SkillTextInputHandler.input_required?(skill_id) do
       SkillTextInputHandler.stage(ready_state, skill_id, level, target)
     else
-      ready_state = %{ready_state | game_state: PlayerState.cancel_combo(ready_state.game_state)}
       drive_cast_after_gate(ready_state, skill_id, level, target, locked, overlay?: true)
     end
   end
@@ -268,10 +264,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
           {:noreply, SessionState.t()}
   def complete_cast_with_input(state, skill_id, level, target, input) do
     with {:ok, gated_state} <- cast_gate(state, skill_id),
-         gated_state = %{
-           gated_state
-           | game_state: PlayerState.cancel_combo(gated_state.game_state)
-         },
          {:ok, ready_state} <- ensure_idle_for_cast(gated_state) do
       complete_input_cast(ready_state, skill_id, level, target, input)
     else
@@ -1163,12 +1155,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     with :ok <- ensure_no_deferred_skill(state),
          {:ok, gated_state} <- cast_gate(state, skill_id),
          {:ok, ready_state} <- ensure_idle_for_cast(gated_state, notify?: false),
-         ready_state =
-           maybe_cancel_combo(
-             ready_state,
-             skill_id,
-             ready_state.game_state.character_id
-           ),
          {:deferred, game_state, %Interpreter.Deferred{} = descriptor} <-
            Interpreter.cast(
              stamp_homunculus(ready_state, ready_state.game_state),
@@ -2168,15 +2154,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     if UnitRegistry.unit_exists?(:homunculus, target_id),
       do: {:unit, {:homunculus, target_id}},
       else: {:unit, target_id}
-  end
-
-  # A combo follow-up keeps the window whatever unit the player named: its
-  # use is aimed by the combo itself (`use_target/5`).
-  defp maybe_cancel_combo(state, skill_id, _target_id) when skill_id in @combo_followup_ids,
-    do: state
-
-  defp maybe_cancel_combo(%{game_state: game_state} = state, _skill_id, _target_id) do
-    %{state | game_state: PlayerState.cancel_combo(game_state)}
   end
 
   # Self-only cooldown feedback: the client shows the cooldown sweep on the

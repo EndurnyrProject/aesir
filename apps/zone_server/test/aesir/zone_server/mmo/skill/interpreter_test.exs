@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.Skills.Professor.PfHpconversion
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire
@@ -90,6 +91,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     def cast_with_origin(game_state, _target, _level, _definition, origin) do
       send(self(), {:cast_origin, origin})
       send(self(), {:skill_origin, Aesir.ZoneServer.Mmo.Skill.Origin.current()})
+      {:ok, game_state}
+    end
+
+    @impl true
+    def validate(_game_state, _target, _level, _definition), do: :ok
+  end
+
+  defmodule OriginAwareAttackSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(game_state, _target, _level, _definition) do
+      Aesir.ZoneServer.Mmo.Skill.Origin.mark_skill_attack()
       {:ok, game_state}
     end
 
@@ -781,6 +795,82 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert Inventory.held_amount(caster.inventory, 717) == 1
       assert caster.skill_cooldowns == %{}
       assert caster.act_delay_until == gs.act_delay_until
+    end
+  end
+
+  describe "the combo window a skill attack ends" do
+    setup do
+      stub(Catalog, :by_id, fn 6 ->
+        {:ok, %{enemy_definition(9) | sp_cost: List.duplicate(0, 10)}}
+      end)
+
+      stub_provoke_target(2_000)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2_000 -> {:error, :not_found}
+        :mob, 2_000 -> {:ok, {14, 10, "prontera"}}
+      end)
+
+      :ok
+    end
+
+    test "a skill effect that executed an attack ends the open window" do
+      stub(SmProvoke, :cast, fn caster, {:unit, 2_000}, 1, _definition ->
+        Origin.mark_skill_attack()
+        {:ok, caster}
+      end)
+
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+      gs = %{game_state(100, %{6 => 1}) | combo: combo}
+
+      assert {:ok, caster} = Interpreter.cast(gs, 6, 1, {:unit, 2_000})
+      assert caster.combo.stage == :idle
+      assert caster.combo.generation > combo.generation
+    end
+
+    test "a skill effect that executed no attack keeps the open window" do
+      stub(SmProvoke, :cast, fn caster, {:unit, 2_000}, 1, _definition -> {:ok, caster} end)
+
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+      gs = %{game_state(100, %{6 => 1}) | combo: combo}
+
+      assert {:ok, caster} = Interpreter.cast(gs, 6, 1, {:unit, 2_000})
+      assert caster.combo == combo
+    end
+
+    test "an auto cast that executed an attack ends the open window" do
+      definition = %{enemy_definition(9) | sp_cost: List.duplicate(0, 10)}
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :sm_provoke -> {:ok, OriginAwareAttackSkill} end)
+
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+      gs = %{game_state(100, %{6 => 1}) | combo: combo}
+
+      assert {:ok, caster} = Interpreter.auto_cast(gs, 6, 1, :self)
+      assert caster.combo.stage == :idle
+    end
+
+    test "an item cast that executed no attack keeps the open window" do
+      definition = %{enemy_definition(9) | sp_cost: List.duplicate(0, 10)}
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      stub(Catalog, :active_module_for, fn :sm_provoke -> {:ok, OriginAwareSkill} end)
+
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+      gs = %{game_state(100, %{6 => 1}) | combo: combo}
+
+      assert {:ok, caster} = Interpreter.item_cast(gs, 6, 1, :self)
+      assert caster.combo == combo
+    end
+
+    test "an attack executed outside the invocation never ends the window" do
+      stub(SmProvoke, :cast, fn caster, {:unit, 2_000}, 1, _definition -> {:ok, caster} end)
+      Origin.mark_skill_attack()
+
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+      gs = %{game_state(100, %{6 => 1}) | combo: combo}
+
+      assert {:ok, caster} = Interpreter.cast(gs, 6, 1, {:unit, 2_000})
+      assert caster.combo == combo
     end
   end
 

@@ -4,10 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
 
   test "opens a generation-tagged window that names no required target" do
-    combo = Combo.open(Combo.new(), :quadruple, {:mob, 10}, 1_500)
+    combo = Combo.open(Combo.new(), :quadruple, 1_500)
 
     assert combo.stage == :quadruple
-    assert combo.target == {:mob, 10}
     assert combo.deadline == 1_500
     assert combo.generation == 1
     assert Combo.open?(combo, :quadruple, 1_499)
@@ -16,27 +15,54 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
   end
 
   test "matching expiry and explicit cancellation invalidate stale generations" do
-    combo = Combo.open(Combo.new(), :quadruple, {:mob, 10}, 1_500)
+    combo = Combo.open(Combo.new(), :quadruple, 1_500)
 
     assert Combo.expire(combo, combo.generation + 1, 2_000) == combo
     assert Combo.expire(combo, combo.generation, 1_499) == combo
 
     expired = Combo.expire(combo, combo.generation, 1_500)
     assert expired.stage == :idle
-    assert expired.target == nil
     assert expired.deadline == nil
     assert expired.generation == 2
 
-    reopened = Combo.open(expired, :quadruple, {:mob, 11}, 3_000)
+    reopened = Combo.open(expired, :quadruple, 3_000)
     cancelled = Combo.cancel(reopened)
     assert cancelled.stage == :idle
     assert cancelled.generation == reopened.generation + 1
     assert Combo.cancel(cancelled) == cancelled
   end
 
+  describe "end_on_attack/2" do
+    test "ends the window the skill effect left untouched" do
+      before = Combo.open(Combo.new(), :quadruple, 1_500)
+
+      ended = Combo.end_on_attack(before, before)
+
+      assert ended.stage == :idle
+      refute Combo.open?(ended, 1_000)
+      assert ended.generation == before.generation + 1
+    end
+
+    test "keeps a window the effect opened or closed itself" do
+      before = Combo.open(Combo.new(), :quadruple, 1_500)
+      opened = Combo.open(before, :thrust, 3_000)
+      closed = Combo.cancel(before)
+
+      assert Combo.end_on_attack(before, opened) == opened
+      assert Combo.end_on_attack(before, closed) == closed
+    end
+
+    test "keeps a window when none was open and the effect opened one" do
+      opened = Combo.open(Combo.new(), :quadruple, 1_500)
+
+      assert Combo.end_on_attack(Combo.new(), opened) == opened
+      assert Combo.end_on_attack(Combo.new(), Combo.new()).stage == :idle
+    end
+  end
+
   test "check refuses silently outside the listed stages or after the deadline" do
     now = 1_000
-    combo = Combo.open(Combo.new(), :chain_crush, {:mob, 42}, now + 500)
+    combo = Combo.open(Combo.new(), :chain_crush, now + 500)
 
     assert :ok = Combo.check(combo, [:extremity, :chain_crush], now)
     assert {:error, :invalid_combo} = Combo.check(combo, [:extremity, :tiger_fist], now)
@@ -47,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.ComboTest do
   describe "use_target/5" do
     setup do
       now = System.monotonic_time(:millisecond)
-      open = Combo.open(Combo.new(), :quadruple, {:mob, 42}, now + 60_000)
+      open = Combo.open(Combo.new(), :quadruple, now + 60_000)
       %{caster: %{character_id: 1, combo: open}}
     end
 

@@ -721,6 +721,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       |> PlayerState.clear_combat_intent()
       |> PlayerState.clear_skill_intent()
       |> PlayerState.clear_pickup_intent()
+      |> PlayerState.cancel_combo()
 
     {:ok, dead_state} = PlayerState.transition_to(inactive_state, :dead)
     state = StateCommit.commit(state, dead_state)

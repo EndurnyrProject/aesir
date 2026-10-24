@@ -234,18 +234,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert unchanged.skill_cooldowns == %{}
     end
 
-    test "an incompatible skill request cancels an open Monk combo" do
+    test "a support skill request keeps an open Monk combo" do
       state = instant_state(100)
-      combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
       state = %{state | game_state: %{state.game_state | combo: combo}}
 
       expect(Interpreter, :begin_cast, fn game_state, 29, 1, :self ->
-        assert game_state.combo.stage == :idle
+        assert game_state.combo.stage == :quadruple
         {:error, :invalid_target}
       end)
 
       assert {:noreply, returned} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
-      assert returned.game_state.combo.stage == :idle
+      assert returned.game_state.combo.stage == :quadruple
+    end
+
+    test "a refused ground request keeps an open Monk combo" do
+      state = snap_state()
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
+      state = %{state | game_state: %{state.game_state | combo: combo}}
+
+      expect(Interpreter, :begin_cast, fn game_state, 264, 1, {:ground, 152, 150} ->
+        assert game_state.combo.stage == :quadruple
+        {:error, :invalid_target}
+      end)
+
+      assert {:noreply, returned} = SkillHandler.handle_use_skill_ground(state, 264, 1, 152, 150)
+      assert returned.game_state.combo.stage == :quadruple
     end
 
     test "Asura and the Champion combo skills keep the window on the retained target" do
@@ -253,7 +267,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       for skill_id <- [271, 371, 372] do
         state = instant_state(100)
-        combo = Combo.open(Combo.new(), :extremity, {:mob, 2000}, 9_999_999_999)
+        combo = Combo.open(Combo.new(), :extremity, 9_999_999_999)
         state = %{state | game_state: %{state.game_state | combo: combo}}
 
         expect(Interpreter, :begin_cast, fn game_state, ^skill_id, 1, {:unit, 2000} ->
@@ -269,7 +283,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
       stub(Interpreter, :castbegin_passes?, fn _game_state, 271, 1, _target -> true end)
       state = instant_state(100)
-      combo = Combo.open(Combo.new(), :extremity, {:mob, 2000}, 9_999_999_999)
+      combo = Combo.open(Combo.new(), :extremity, 9_999_999_999)
       state = %{state | game_state: %{state.game_state | combo: combo}}
 
       expect(Interpreter, :begin_cast, fn game_state, 271, 1, {:unit, 2001} ->
@@ -284,7 +298,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stub(UnitRegistry, :unit_exists?, fn :homunculus, _id -> false end)
       stub(Interpreter, :castbegin_passes?, fn _game_state, 272, 1, _target -> true end)
       state = instant_state(100)
-      combo = Combo.open(Combo.new(), :quadruple, {:mob, 2000}, 9_999_999_999)
+      combo = Combo.open(Combo.new(), :quadruple, 9_999_999_999)
 
       state = %{
         state

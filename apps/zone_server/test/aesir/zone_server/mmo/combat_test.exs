@@ -1045,7 +1045,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         :ok
       end)
 
-      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 1_000}} =
+      assert {:ok, {:combo, :quadruple, 1_000}} =
                Combat.execute_attack(stats, player_state, 2001)
 
       assert_received {:packet, %SkillDamage{skill_id: 263, div: 3, damage: 75}}
@@ -1088,7 +1088,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         :ok
       end)
 
-      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 1_000}} =
+      assert {:ok, {:combo, :quadruple, 1_000}} =
                Combat.execute_attack(stats, player_state, 2001)
 
       assert_received {:packet, %SkillDamage{skill_id: 263, div: 3, damage: 0}}

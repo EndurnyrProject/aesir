@@ -58,15 +58,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChChaincrush do
     duration = Enum.at(definition.after_cast_delay, level - 1, 0)
 
     with :ok <- Root.check_cast(:player, caster.character_id, definition.id),
-         {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
          :ok <-
            Combat.execute_skill_attack(
              caster,
              target_id,
              attack_options(caster, level, definition)
            ),
-         {:ok, combo} <-
-           Combo.open_follow_up(caster, :chain_crush, {target_type, target_id}, now, duration) do
+         {:ok, combo} <- Combo.open_follow_up(caster, :chain_crush, now, duration) do
       {:ok, %{caster | combo: combo}}
     end
   end

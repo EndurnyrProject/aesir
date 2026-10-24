@@ -56,6 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
@@ -375,6 +376,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- Targeting.validate_enemy(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
+      Origin.mark_skill_attack()
       interception = weapon_hit_intercepted?(attacker, target_type, target, %{})
 
       if interception == :blocked,
@@ -535,6 +537,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              Keyword.get(opts, :delivery, :direct)
            ),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
+      mark_skill_attack(Keyword.get(opts, :delivery, :direct))
+
       hit_opts = %{
         hit_divisions: Keyword.get(opts, :hit_divisions, 1),
         hit_rate_bonus_pct: hit_rate_bonus_pct,
@@ -921,6 +925,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              Map.get(result_opts, :delivery, :direct)
            ),
          :ok <- StatusInterpreter.authorize_skill_damage(attacker, skill_id) do
+      mark_skill_attack(Map.get(result_opts, :delivery, :direct))
+
       hit_opts = %{
         hit_divisions: Map.get(result_opts, :hit_divisions, 1),
         hit_rate_bonus_pct: hit_rate_bonus_pct,
@@ -1240,6 +1246,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              target,
              misc_damage_opts(base_damage, element, skill_id, attack_flag, misc_opts)
            ) do
+      mark_misc_attack(misc_opts)
       {damage, divisions} = DamageShared.normalize_damage_divisions(damage, hit_divisions)
       coma? = decide_coma(attacker, target, damage)
 
@@ -1388,6 +1395,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             {:error, reason}
         end
     end
+  end
+
+  # The reference's `skill_combo` runs only when the caster is the damage's own
+  # source, so a field unit's hits - which carry the unit as their source - never
+  # end the caster's combo window. `battle_fix_damage` is not a `skill_attack`
+  # either, so a fixed-damage misc hit does not end it.
+  defp mark_skill_attack(:unit), do: :ok
+  defp mark_skill_attack(_delivery), do: Origin.mark_skill_attack()
+
+  defp mark_misc_attack(misc_opts) do
+    if Map.get(misc_opts, :fix_damage?, false),
+      do: :ok,
+      else: mark_skill_attack(misc_opts.delivery)
   end
 
   defp misc_target_combatant(%SkillUnitCell{} = cell, true),

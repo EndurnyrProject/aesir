@@ -362,7 +362,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
       expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id, _metadata -> :ok end)
       reject(&Passives.after_normal_hit/2)
 
-      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 1_000}} =
+      assert {:ok, {:combo, :quadruple, 1_000}} =
                Combat.execute_attack(attacker, player_state, 2001)
     end
 

@@ -31,7 +31,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   """
   @callback on_cast_start(state(), integer()) :: state()
 
-  @optional_callbacks on_cast_start: 2
+  @doc """
+  Settles the caster's own state after a skill effect that executed a skill
+  attack, given the caster state the effect started from. Optional; a caster
+  with nothing to settle omits it.
+  """
+  @callback on_skill_attack(state(), state()) :: state()
+
+  @optional_callbacks on_cast_start: 2, on_skill_attack: 2
 
   @doc "Applies the returned cast-time reactions to the caster's own statuses once."
   @spec apply_cast_reactions(state(), [CastTime.reaction()]) :: state()

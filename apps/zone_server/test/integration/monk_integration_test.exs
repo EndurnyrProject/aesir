@@ -205,13 +205,13 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
       mob = spawn_target_mob(2_101, {151, 150}, hp: 200_000)
 
       # A normal swing is fully replaced by Trifecta and returns the Quadruple
-      # window directive for the retained mob.
-      assert {:ok, {:combo, :quadruple, {:mob, 2_101}, delay}} =
+      # window directive.
+      assert {:ok, {:combo, :quadruple, delay}} =
                Combat.execute_attack(monk.stats, monk, mob.unit_id)
 
       assert delay > 0
 
-      quad_state = %{monk | combo: Combo.open(Combo.new(), :quadruple, {:mob, 2_101}, future())}
+      quad_state = %{monk | combo: Combo.open(Combo.new(), :quadruple, future())}
 
       hp_before_quad = mob_hp(mob.pid)
 
@@ -230,14 +230,16 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
       assert mob_hp(mob.pid) < hp_before_thrust
     end
 
-    test "a Quadruple follow-up against a different target is rejected as an invalid combo" do
+    test "a Quadruple follow-up is not bound to the unit the chain last hit" do
       monk = monk_fixture(2_002, spheres: 5, sp: 300)
       other = spawn_target_mob(2_102, {151, 150}, hp: 10_000)
 
-      quad_state = %{monk | combo: Combo.open(Combo.new(), :quadruple, {:mob, 999_999}, future())}
+      quad_state = %{monk | combo: Combo.open(Combo.new(), :quadruple, future())}
+      hp_before = mob_hp(other.pid)
 
-      assert {:error, :invalid_combo} =
-               Interpreter.cast(quad_state, 272, 5, {:unit, other.unit_id})
+      assert {:ok, after_quad} = Interpreter.cast(quad_state, 272, 5, {:unit, other.unit_id})
+      assert mob_hp(other.pid) < hp_before
+      assert after_quad.combo.stage == :thrust
     end
   end
 

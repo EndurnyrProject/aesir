@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
   alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
+  alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -491,6 +492,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
       :unchanged ->
         caster
     end
+  end
+
+  @doc """
+  Applies the reference's combo-window ending to a player whose skill effect
+  executed a skill attack: the window the effect started with ends unless the
+  effect itself opened or closed one (see `Combo.end_on_attack/2`).
+  """
+  @impl true
+  @spec on_skill_attack(PlayerState.t(), PlayerState.t()) :: PlayerState.t()
+  def on_skill_attack(%PlayerState{combo: combo} = caster, %PlayerState{combo: before}) do
+    %{caster | combo: Combo.end_on_attack(before, combo)}
   end
 
   @doc "Refreshes the owning player's snapshot after cast-time status consumption."

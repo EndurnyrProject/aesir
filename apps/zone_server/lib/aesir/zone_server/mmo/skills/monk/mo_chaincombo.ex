@@ -85,11 +85,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
     ]
 
     with :ok <- Root.check_cast(:player, caster.character_id, definition.id),
-         {:ok, target_type, _position} <- Combat.resolve_target_position(target_id),
          :ok <- Combat.execute_skill_attack(caster, target_id, opts),
          delay <- Enum.at(definition.after_cast_delay, level - 1, 0),
-         {:ok, combo} <-
-           Combo.open_follow_up(caster, :quadruple, {target_type, target_id}, now, delay) do
+         {:ok, combo} <- Combo.open_follow_up(caster, :quadruple, now, delay) do
       {:ok, %{caster | combo: combo}}
     end
   end

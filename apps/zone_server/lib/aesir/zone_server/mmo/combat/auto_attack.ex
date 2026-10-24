@@ -73,8 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     - :ok if attack was successful
     - {:error, reason} if attack failed
   """
-  @type combo_result ::
-          {:ok, {:combo, atom(), {atom(), non_neg_integer()}, non_neg_integer()}}
+  @type combo_result :: {:ok, {:combo, atom(), non_neg_integer()}}
 
   @type attack_result :: :ok | :intercepted | combo_result() | {:error, atom()}
 
@@ -234,7 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
                  target_id,
                  opts
                ) do
-          {:ok, {:combo, next_stage, {target_type, target_id}, max(attacker.attack_delay_ms, 1)}}
+          {:ok, {:combo, next_stage, max(attacker.attack_delay_ms, 1)}}
         end
     end
   end

@@ -33,10 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
   test "a Thrust hit is a single Renewal strike and closes the chain" do
     caster = caster(:thrust)
 
-    expect(Combat, :resolve_target_position, fn @target_id ->
-      {:ok, :mob, {60, 50, "prontera"}}
-    end)
-
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_id] == 273
       assert opts[:skill_level] == 3
@@ -50,7 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
              MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
 
     assert updated.combo.stage == :idle
-    assert updated.combo.target == nil
   end
 
   test "a failed strike leaves the Thrust window open" do
@@ -78,7 +73,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
              MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
 
     assert updated.combo.stage == :extremity
-    assert updated.combo.target == {:mob, @target_id}
     assert updated.combo.generation == old_generation + 1
     assert updated.combo.deadline > System.monotonic_time(:millisecond)
   end
@@ -130,7 +124,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
              MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
 
     assert updated.combo.stage == :extremity
-    assert updated.combo.target == {:mob, @target_id}
   end
 
   defp asura_ready_caster(opts \\ []) do
@@ -179,7 +172,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
     }
 
     state = PlayerState.new(character)
-    %{state | combo: Combo.open(Combo.new(), stage, {:mob, @target_id}, future())}
+    %{state | combo: Combo.open(Combo.new(), stage, future())}
   end
 
   defp future, do: System.monotonic_time(:millisecond) + 10_000
@@ -193,10 +186,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
   @tag game_mode: :pre_renewal
   test "classic Thrust hit uses the flat ratio without STR" do
     caster = caster(:thrust)
-
-    expect(Combat, :resolve_target_position, fn @target_id ->
-      {:ok, :mob, {60, 50, "prontera"}}
-    end)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_ratio] == 420

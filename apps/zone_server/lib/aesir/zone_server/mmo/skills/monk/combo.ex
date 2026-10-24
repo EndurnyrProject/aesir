@@ -7,9 +7,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   Generations make delayed timeout messages harmless after a window advances or
   is cancelled. Deadlines use monotonic milliseconds supplied by the caller.
 
-  A window is not tied to a unit: a follow-up is aimed at the caster's current
-  attack target when it starts (see `SkillHandler`). The target a window keeps
-  is only the unit the chain last hit.
+  A window is not tied to a unit and holds no target: it only names the skill
+  the chain allows next. A follow-up is aimed at the caster's current attack
+  target when it starts (see `SkillHandler`).
+
+  A window ends at its deadline, when its owner dies (its statuses go with it),
+  and when its owner's other skill attack lands: `end_on_attack/2` applies that
+  last rule to the window a skill effect returned, keeping a window that effect
+  opened itself.
 
   Stages: `:quadruple` and `:thrust` name the skill the window allows;
   `:extremity` is the window after Raging Thrust; `:tiger_fist` and
@@ -54,13 +59,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
           spheres: non_neg_integer(),
           fury?: boolean()
         }
-  @type target :: {:player | :mob | :skill_unit, non_neg_integer()}
-
-  defstruct stage: :idle, target: nil, deadline: nil, generation: 0
+  defstruct stage: :idle, deadline: nil, generation: 0
 
   @type t() :: %__MODULE__{
           stage: stage(),
-          target: target() | nil,
           deadline: integer() | nil,
           generation: non_neg_integer()
         }
@@ -127,14 +129,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   def new, do: %__MODULE__{}
 
   @doc "Opens or replaces a combo window."
-  @spec open(t(), stage(), target(), integer()) :: t()
-  def open(%__MODULE__{} = combo, stage, target, deadline) when stage != :idle do
-    %__MODULE__{
-      stage: stage,
-      target: target,
-      deadline: deadline,
-      generation: combo.generation + 1
-    }
+  @spec open(t(), stage(), integer()) :: t()
+  def open(%__MODULE__{} = combo, stage, deadline) when stage != :idle do
+    %__MODULE__{stage: stage, deadline: deadline, generation: combo.generation + 1}
   end
 
   @doc "Whether a window is open at `now` (any stage)."
@@ -185,19 +182,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   end
 
   @doc """
-  Opens the window a landed `opener` earns on `target`, replacing any open
-  one, or closes the chain. `caster` has already paid the opener's spheres.
-  The window lasts `delay` plus the grace and schedules
-  `{:combo_timeout, generation}` to the calling session.
+  Opens the window a landed `opener` earns, replacing any open one, or closes
+  the chain. `caster` has already paid the opener's spheres. The window lasts
+  `delay` plus the grace and schedules `{:combo_timeout, generation}` to the
+  calling session.
   """
   @spec open_follow_up(
           map(),
           :quadruple | :thrust | :tiger_fist | :chain_crush,
-          target(),
           integer(),
           non_neg_integer()
         ) :: {:ok, t()}
-  def open_follow_up(caster, opener, target, now, delay) do
+  def open_follow_up(caster, opener, now, delay) do
     ctx = %{
       learned: PlayerStats.effective_skills(caster.stats),
       spheres: SpiritSpheres.count(caster.spirit_spheres),
@@ -211,7 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
       stage ->
         window = delay + @grace_ms
 
-        combo = open(caster.combo, stage, target, now + window)
+        combo = open(caster.combo, stage, now + window)
         Process.send_after(self(), {:combo_timeout, combo.generation}, window)
         {:ok, combo}
     end
@@ -223,6 +219,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
   defp knows?(%{learned: learned}, skill_id), do: Learned.learned_level(learned, skill_id) > 0
 
   defp pre_renewal?, do: GameMode.mode() == :pre_renewal
+
+  @doc """
+  Ends a window the window's owner ended by another skill attack.
+
+  `before` is the caster's combo state when its skill effect started and
+  `after_effect` the one that effect returned. The reference ends `SC_COMBO`
+  inside every skill attack its owner makes and then opens the window that
+  attack earns, so a window the effect left untouched is ended here and one the
+  effect opened or closed itself is kept.
+  """
+  @spec end_on_attack(t(), t()) :: t()
+  def end_on_attack(%__MODULE__{} = before, %__MODULE__{} = after_effect) do
+    if after_effect.generation == before.generation,
+      do: cancel(after_effect),
+      else: after_effect
+  end
 
   @doc "Expires a matching generation once its deadline has elapsed."
   @spec expire(t(), non_neg_integer(), integer()) :: t()

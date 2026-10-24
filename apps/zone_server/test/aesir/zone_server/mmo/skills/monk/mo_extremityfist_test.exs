@@ -331,12 +331,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
 
   defp window_caster(stage, opts) do
     caster = caster(opts)
-    %{caster | combo: Combo.open(Combo.new(), stage, {:mob, @target_id}, future())}
+    %{caster | combo: Combo.open(Combo.new(), stage, future())}
   end
 
   defp combo_caster(opts) do
     caster = caster(opts)
-    %{caster | combo: Combo.open(Combo.new(), :extremity, {:mob, @target_id}, future())}
+    %{caster | combo: Combo.open(Combo.new(), :extremity, future())}
   end
 
   defp spheres(0), do: SpiritSpheres.new()

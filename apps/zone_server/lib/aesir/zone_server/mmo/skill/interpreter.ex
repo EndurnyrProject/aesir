@@ -1270,8 +1270,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # today. `autocast_flag?` is set only by the equipment proc entry.
   defp run_unconditional(module, game_state, target, level, definition, origin, autocast_flag?) do
     scope = %{invocation: origin, autocast_flag?: autocast_flag?}
+    adapter = Caster.for(game_state)
 
-    case invoke_cast(module, game_state, target, level, definition, scope) do
+    {result, attacked?} =
+      Origin.collect_skill_attacks(fn ->
+        invoke_cast(module, game_state, target, level, definition, scope)
+      end)
+
+    case settle_skill_attack(result, game_state, adapter, attacked?) do
       {:ok, game_state} ->
         announce_ground_cast(module, game_state, target, level, definition)
         {:ok, game_state}
@@ -2574,21 +2580,55 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defdelegate effective_item_cost(game_state, definition), to: Caster.Player
 
   defp run_cast(module, caster, target, level, definition, origin, input, adapter) do
-    result =
-      case input do
-        {:with_input, value} ->
-          if function_exported?(module, :cast_with_input, 5) do
-            invoke_cast_with_input(module, caster, target, level, definition, value, origin)
-          else
-            invoke_cast(module, caster, target, level, definition, unflagged_scope(origin))
-          end
+    {result, attacked?} =
+      Origin.collect_skill_attacks(fn ->
+        invoke(module, caster, target, level, definition, origin, input)
+      end)
 
-        :without_input ->
-          invoke_cast(module, caster, target, level, definition, unflagged_scope(origin))
-      end
-
-    cast_outcome(result, module, target, level, definition, adapter)
+    result
+    |> settle_skill_attack(caster, adapter, attacked?)
+    |> cast_outcome(module, target, level, definition, adapter)
   end
+
+  defp invoke(module, caster, target, level, definition, origin, {:with_input, value}) do
+    if function_exported?(module, :cast_with_input, 5) do
+      invoke_cast_with_input(module, caster, target, level, definition, value, origin)
+    else
+      invoke_cast(module, caster, target, level, definition, unflagged_scope(origin))
+    end
+  end
+
+  defp invoke(module, caster, target, level, definition, origin, :without_input),
+    do: invoke_cast(module, caster, target, level, definition, unflagged_scope(origin))
+
+  # The reference's `skill_combo` runs inside every skill attack its owner makes,
+  # after the hit and before the window the attack itself earns. Applies that
+  # ending to the state the effect returned, through the caster's own adapter.
+  defp settle_skill_attack(result, caster, adapter, true) do
+    if function_exported?(adapter, :on_skill_attack, 2),
+      do: map_caster(result, &adapter.on_skill_attack(&1, caster)),
+      else: result
+  end
+
+  defp settle_skill_attack(result, _caster, _adapter, false), do: result
+
+  defp map_caster({:ok, caster}, fun), do: {:ok, fun.(caster)}
+  defp map_caster({:ok, caster, tag}, fun), do: {:ok, fun.(caster), tag}
+
+  defp map_caster({:local_effects, caster, effects}, fun),
+    do: {:local_effects, fun.(caster), effects}
+
+  defp map_caster({:deferred, caster, descriptor}, fun),
+    do: {:deferred, fun.(caster), descriptor}
+
+  defp map_caster({:failed, caster, reason}, fun), do: {:failed, fun.(caster), reason}
+
+  defp map_caster({:failed, caster, reason, variant}, fun),
+    do: {:failed, fun.(caster), reason, variant}
+
+  defp map_caster({:skipped, caster, reason}, fun), do: {:skipped, fun.(caster), reason}
+
+  defp map_caster(result, _fun), do: result
 
   defp cast_outcome(result, module, target, level, definition, adapter) do
     case result do

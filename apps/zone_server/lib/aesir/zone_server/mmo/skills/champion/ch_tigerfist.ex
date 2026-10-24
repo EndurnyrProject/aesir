@@ -65,8 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Champion.ChTigerfist do
          {:ok, %{hit?: hit?}} <-
            Combat.execute_skill_attack(caster, target_id, attack_options(caster, level)),
          :ok <- if(hit?, do: maybe_immobilise(caster, target, level), else: :ok),
-         {:ok, combo} <-
-           Combo.open_follow_up(caster, :tiger_fist, target, now, duration) do
+         {:ok, combo} <- Combo.open_follow_up(caster, :tiger_fist, now, duration) do
       {:ok, %{caster | combo: combo}}
     end
   end

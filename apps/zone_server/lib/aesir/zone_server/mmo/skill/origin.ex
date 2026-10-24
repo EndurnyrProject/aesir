@@ -13,6 +13,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Origin do
   The flag belongs to one caster: `autocast?/1` is true only for the caster
   whose proc set it, so an unrelated caster executing in the same process never
   inherits the exemption.
+
+  `collect_skill_attacks/1` observes whether the invocation it wraps executed a
+  skill attack (`mark_skill_attack/0`), which is how the reference's own
+  `skill_attack` reaches its post-hit rules. A mark is only recorded inside a
+  collection, so an attack executed outside a skill invocation - an ordinary
+  swing, a field unit's later tick - never reaches one.
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -20,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Origin do
 
   @identity {__MODULE__, :current}
   @flag {__MODULE__, :autocast_flag}
+  @attack {__MODULE__, :skill_attack}
 
   @typedoc "How an invocation entered the runtime and whether it sets the autocast flag."
   @type scope :: %{invocation: Active.cast_origin(), autocast_flag?: boolean()}
@@ -83,6 +90,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Origin do
   @spec autocast?(Ref.t() | nil) :: boolean()
   def autocast?(nil), do: false
   def autocast?(caster_ref), do: Process.get(@flag) == caster_ref
+
+  @doc """
+  Runs `fun` while collecting whether a skill attack executed in this process.
+
+  Returns `{result, attacked?}`. The previous collection, if any, is restored
+  when `fun` returns or raises, so a nested invocation never consumes its
+  caller's observation.
+  """
+  @spec collect_skill_attacks((-> result)) :: {result, boolean()} when result: term()
+  def collect_skill_attacks(fun) do
+    previous = Process.get(@attack)
+    Process.put(@attack, false)
+
+    try do
+      result = fun.()
+      {result, Process.get(@attack) == true}
+    after
+      if previous == nil,
+        do: Process.delete(@attack),
+        else: Process.put(@attack, previous)
+    end
+  end
+
+  @doc """
+  Records that a skill attack executed in the current collection.
+
+  A call outside a collection is discarded: the attack is not part of a skill
+  invocation, so the invocation-scoped rules never see it.
+  """
+  @spec mark_skill_attack() :: :ok
+  def mark_skill_attack do
+    if Process.get(@attack) != nil, do: Process.put(@attack, true)
+    :ok
+  end
 
   @doc """
   Sets or resets `caster_ref`'s autocast flag.
