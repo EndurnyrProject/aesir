@@ -1,18 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Shared.HomunculusMaster do
   @moduledoc """
-  The checks a homunculus skill aimed at its owner (Healing Touch, Castling)
-  makes on the owner when its use starts, both modes: the owner must be
+  The checks a homunculus skill aimed at its owner (Healing Touch, Urgent
+  Escape, Defence, Castling) makes on the owner when its use starts, both modes: the owner must be
   registered, on the homunculus's map, not concealed from it (Hiding, Cloaking
   and Chase Walk hide the owner from a homunculus, which detects nothing), and
   within reach, with no wall between them beyond the adjacent cells. Every
   refusal is silent; the owner's death is the effect's concern.
 
-  The reference declares no `Range` for the four skills that retarget their
-  master, so its retargeted range check resolves to the skill's own zero; that
-  would make these skills same-cell only, which the reference's own client and
-  the Castling swap contradict. Aesir keeps the homunculus's sight reach until
-  the reference behaviour is verified live; the reach is a known open question
-  rather than a ported rule.
+  The four skills that retarget their master declare no range, and the
+  reference hands a non-player caster whose skill declares none a reach of nine
+  cells, checked over the straight line to the owner. Beyond the adjacent cells
+  a wall between the two refuses the use.
   """
 
   alias Aesir.ZoneServer.Geometry
@@ -23,9 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.HomunculusMaster do
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  # The reference's own reach for these skills is unresolved (see the module
-  # documentation); this is the homunculus's skill reach used until it is
-  # verified against a live reference.
+  # The reference's reach for a non-player caster whose skill declares no range.
   @reach_cells 9
 
   @doc "Checks the owner `caster`'s skill is aimed at and returns the owner."

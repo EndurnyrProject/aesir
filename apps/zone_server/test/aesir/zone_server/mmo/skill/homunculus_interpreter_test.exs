@@ -219,6 +219,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     end
   end
 
+  # The same owner row applies to the other two skills aimed at the master:
+  # the owner must be registered, on the same map, not concealed and within
+  # reach; every refusal is silent and spends nothing.
+  describe "Urgent Escape and Defence aimed at their owner" do
+    test "both refuse a missing owner, one on another map, a hidden one and one out of reach" do
+      for {skill_id, class_id} <- [{8_002, 6_001}, {8_006, 6_002}] do
+        reset_homunculus_world()
+        caster = homunculus(%{class_id: class_id, name: "Hom", learned_skills: %{skill_id => 1}})
+
+        assert {:error, :owner_not_found} = Interpreter.begin_cast(caster, skill_id, 1, :self)
+
+        register_active(caster, %{owner() | map_name: "other_map"})
+        assert {:error, :different_map} = Interpreter.begin_cast(caster, skill_id, 1, :self)
+
+        register_active(caster, %{owner() | x: 20})
+        assert {:error, :out_of_range} = Interpreter.begin_cast(caster, skill_id, 1, :self)
+
+        register_active(caster, %{owner() | x: 11})
+        assert {:instant, _updated, _effects} = Interpreter.begin_cast(caster, skill_id, 1, :self)
+
+        register_active(caster, owner())
+        :ok = StatusStorage.apply_status(:player, 100, :sc_hiding)
+        assert {:error, :target_concealed} = Interpreter.begin_cast(caster, skill_id, 1, :self)
+      end
+    end
+  end
+
   test "restricted begin rejects caster, species, rank, SP, cooldown, passive, and target errors" do
     now = System.monotonic_time(:millisecond)
     caster = homunculus()
@@ -378,6 +405,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     assert cancelled.homunculus.action_state == :idle
     assert cancelled.homunculus.casting == nil
     assert cancelled.homunculus_runtime.cast_timer_ref == nil
+  end
+
+  defp reset_homunculus_world do
+    UnitRegistry.unregister_unit(:player, 100)
+    UnitRegistry.unregister_unit(:homunculus, 1_500_001)
+    StatusStorage.remove_status(:player, 100, :sc_hiding)
   end
 
   defp session do

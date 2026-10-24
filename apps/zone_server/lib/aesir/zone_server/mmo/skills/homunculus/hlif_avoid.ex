@@ -2,6 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifAvoid do
   @moduledoc """
   Urgent Escape (HLIF_AVOID). Increases movement speed for Lif and its owner,
   with the larger bonus applying to Lif.
+
+  Both modes: the use checks its owner as `Shared.HomunculusMaster` does; a dead
+  owner does not refuse it, the cast spends its SP and starts nothing on the
+  owner.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -18,10 +22,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifAvoid do
     damage_kind: :none
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skills.Shared.HomunculusMaster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
 
   @behaviour Active
+
+  @impl Active
+  def validate(%HomunculusState{} = caster, :self, level, definition) do
+    with {:ok, _owner} <- HomunculusMaster.check(caster, level, definition), do: :ok
+  end
 
   @impl Active
   def cast(%HomunculusState{} = caster, :self, level, definition) do
