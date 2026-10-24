@@ -14,15 +14,15 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
   (`min_level`/`max_level`/`race`/`size`/`element`/`map`/`mobs_allowed`).
   """
   @type target :: %{
-          mob_id: integer(),
-          count: integer(),
-          min_level: integer() | nil,
-          max_level: integer() | nil,
-          race: String.t() | nil,
-          size: String.t() | nil,
-          element: String.t() | nil,
-          map: String.t() | nil,
-          mobs_allowed: [integer()] | nil
+          optional(:mob_id) => integer(),
+          optional(:min_level) => integer() | nil,
+          optional(:max_level) => integer() | nil,
+          optional(:race) => String.t() | nil,
+          optional(:size) => String.t() | nil,
+          optional(:element) => String.t() | nil,
+          optional(:map) => String.t() | nil,
+          optional(:mobs_allowed) => [integer()] | nil,
+          required(:count) => integer()
         }
 
   @typedoc """

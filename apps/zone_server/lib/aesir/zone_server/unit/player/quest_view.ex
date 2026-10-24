@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.QuestView do
         |> Enum.with_index()
         |> Enum.map(fn {target, index} ->
           %QuestObjective{
-            mob_id: target.mob_id,
+            mob_id: Map.get(target, :mob_id) || 0,
             needed: target.count,
             current: Enum.at(counts, index, 0)
           }
