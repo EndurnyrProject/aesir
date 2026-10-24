@@ -1,18 +1,20 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
   @moduledoc """
-  Marionette Control links one party member within seven cells in both modes.
+  Marionette Control links one party member or the caster's own Homunculus
+  within seven cells in both modes.
 
   The master loses frozen halves of each base primary stat and one thousand
   MaxHP; the puppet gains those halves, capped against their total stats at
   ninety-nine. Both halves tick until removed or the pair separates. Recasting
   on the current puppet ends the link.
 
-  Self, non-party, and a caster already wearing a puppet's half are refused
-  before the cost. The same-sex performer, cursed and quagmired refusals happen
-  inside the implementation, after the requirement is paid, and spare the
-  skill's items, as does a cast onto a participant of another link. A refused
-  half of the pair is ignored; the applied half retires on its own tick when its
-  peer is missing.
+  Self, non-party, a foreign Homunculus and a caster already wearing a puppet's
+  half are refused before the cost. The same-sex performer, cursed and
+  quagmired refusals happen inside the implementation, after the requirement is
+  paid, and spare the skill's items, as does a cast onto a participant of
+  another link. A dead target ends the use before this implementation runs. A
+  refused half of the pair is ignored; the applied half retires on its own tick
+  when its peer is missing.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 396,
@@ -35,11 +37,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
+
+  @primary_stats [:str, :agi, :vit, :int, :dex, :luk]
+
+  @typedoc "A resolved link target: a registered player or the caster's live Homunculus."
+  @type target :: {:player, PlayerState.t()} | {:homunculus, HomunculusState.t()}
 
   @doc "A caster holding a puppet's half is refused silently before anything else."
   @impl Active
@@ -51,14 +59,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
   def skilluse_check(_caster, _target, _level, _definition), do: :ok
 
   @doc """
-  The cast end accepts only a party member; a dead one passes here and the
-  paid use ends without effect.
+  The cast end accepts a party member or the caster's own Homunculus; a dead
+  target passes here and the use ends before this implementation runs.
   """
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
-  def validate(%PlayerState{} = caster, {:unit, target_id}, _level, _definition) do
-    with {:ok, target} <- registered_player(target_id), do: validate_target(caster, target)
+  def validate(%PlayerState{} = caster, target, _level, _definition) do
+    case resolve_target(caster, target) do
+      {:ok, {:player, member}} -> validate_target(caster, member)
+      {:ok, {:homunculus, _own}} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
@@ -68,24 +80,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
           {:ok, PlayerState.t()}
           | {:failed, PlayerState.t(), atom(), :spare_items}
           | {:error, atom()}
-  def cast(%PlayerState{character_id: id} = caster, {:unit, target_id}, _level, _definition) do
-    with {:ok, target} <- target_player(target_id) do
-      case cast_gate(caster, target) do
-        :ok -> resolve_link(caster, target, id, target_id)
+  def cast(%PlayerState{character_id: id} = caster, target, _level, _definition) do
+    with {:ok, resolved} <- resolve_target(caster, target) do
+      case cast_gate(caster, resolved) do
+        :ok -> resolve_link(caster, resolved, id)
         {:error, reason} -> {:failed, caster, reason, :spare_items}
       end
     end
   end
 
   # The reference refuses these inside its implementation, after the requirement
-  # is paid, and clears SKILL_NOCONSUME_REQ's items on the way out.
-  @spec cast_gate(PlayerState.t(), PlayerState.t()) :: :ok | {:error, atom()}
-  defp cast_gate(caster, target) do
+  # is paid, and clears SKILL_NOCONSUME_REQ's items on the way out. The
+  # performer rule needs a player target; the Curse and Quagmire rule reads the
+  # target's own status container, whichever unit it is.
+  @spec cast_gate(PlayerState.t(), target()) :: :ok | {:error, atom()}
+  defp cast_gate(caster, {:player, target}) do
     cond do
       caster.sex == target.sex and performer?(target) -> {:error, :invalid_target}
-      blocked?(target) -> {:error, :target_blocked}
+      blocked?(:player, target.character_id) -> {:error, :target_blocked}
       true -> :ok
     end
+  end
+
+  defp cast_gate(_caster, {:homunculus, homunculus}) do
+    if blocked?(:homunculus, homunculus.world_gid), do: {:error, :target_blocked}, else: :ok
   end
 
   @spec reject_puppet_caster(non_neg_integer()) :: :ok | {:error, :caster_restricted}
@@ -95,15 +113,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
       else: :ok
   end
 
-  defp resolve_link(caster, target, caster_id, target_id) do
+  defp resolve_link(caster, resolved, caster_id) do
+    {unit_type, unit_id} = target_ref(resolved)
     master = StatusStorage.get_status(:player, caster_id, :sc_marionette)
-    puppet = StatusStorage.get_status(:player, target_id, :sc_marionette2)
+    puppet = StatusStorage.get_status(unit_type, unit_id, :sc_marionette2)
 
     cond do
       is_nil(master) and is_nil(puppet) ->
-        link(caster, target)
+        link(caster, resolved)
 
-      paired?(master, puppet, caster_id, target_id) ->
+      paired?(master, puppet, {:player, caster_id}, {unit_type, unit_id}) ->
         :ok =
           StatusInterpreter.remove_status(:player, caster_id, :sc_marionette,
             owner_refresh: :defer
@@ -116,18 +135,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
     end
   end
 
-  defp target_player(id) do
-    with {:ok, target} <- registered_player(id) do
-      if Unit.living?(target), do: {:ok, target}, else: {:error, :invalid_target}
+  defp resolve_target(%PlayerState{character_id: caster_id}, {:unit, {:homunculus, gid}}) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok,
+       {HomunculusState, %HomunculusState{owner_character_id: ^caster_id} = homunculus, _pid}} ->
+        if Unit.living?(homunculus),
+          do: {:ok, {:homunculus, homunculus}},
+          else: {:error, :target_restricted}
+
+      _foreign_or_gone ->
+        {:error, :target_restricted}
     end
   end
 
-  defp registered_player(id) do
-    case UnitRegistry.get_unit(:player, id) do
-      {:ok, {_module, %PlayerState{} = target, _pid}} -> {:ok, target}
+  defp resolve_target(_caster, {:unit, target_id}) do
+    case UnitRegistry.get_unit(:player, target_id) do
+      {:ok, {_module, %PlayerState{} = target, _pid}} -> {:ok, {:player, target}}
       _ -> {:error, :invalid_target}
     end
   end
+
+  defp resolve_target(_caster, _target), do: {:error, :invalid_target}
+
+  defp target_ref({:player, target}), do: {:player, target.character_id}
+  defp target_ref({:homunculus, homunculus}), do: {:homunculus, homunculus.world_gid}
 
   defp validate_target(caster, target) do
     cond do
@@ -137,10 +168,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
     end
   end
 
-  @spec blocked?(PlayerState.t()) :: boolean()
-  defp blocked?(%PlayerState{character_id: id}) do
-    StatusStorage.has_status?(:player, id, :sc_curse) or
-      StatusStorage.has_status?(:player, id, :sc_quagmire)
+  @spec blocked?(atom(), integer()) :: boolean()
+  defp blocked?(unit_type, unit_id) do
+    StatusStorage.has_status?(unit_type, unit_id, :sc_curse) or
+      StatusStorage.has_status?(unit_type, unit_id, :sc_quagmire)
   end
 
   defp same_party?(%PlayerState{party_id: party}, %PlayerState{party_id: party})
@@ -156,18 +187,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
   end
 
   defp paired?(
-         %StatusEntry{state: %{peer: {:player, target}, link_id: link}},
-         %StatusEntry{state: %{peer: {:player, caster}, link_id: link}},
-         caster,
-         target
+         %StatusEntry{state: %{peer: target_ref, link_id: link}},
+         %StatusEntry{state: %{peer: caster_ref, link_id: link}},
+         caster_ref,
+         target_ref
        ),
        do: true
 
   defp paired?(_master, _puppet, _caster, _target), do: false
 
-  defp link(caster, target) do
+  defp link(caster, {:player, target}) do
     halves = Formulas.marionette_halves(caster.stats.base_stats)
-    totals = Map.new(Map.keys(halves), &{&1, PlayerStats.get_effective_stat(target.stats, &1)})
+
+    totals =
+      Map.new(@primary_stats, &{&1, PlayerStats.get_effective_stat(target.stats, &1)})
+
+    apply_pair(caster, {:player, target.character_id}, halves, totals)
+  end
+
+  defp link(caster, {:homunculus, homunculus}) do
+    halves = Formulas.marionette_halves(caster.stats.base_stats)
+    totals = Map.new(@primary_stats, &{&1, Map.fetch!(homunculus, &1)})
+
+    apply_pair(caster, {:homunculus, homunculus.world_gid}, halves, totals)
+  end
+
+  defp apply_pair(caster, {puppet_type, puppet_id} = puppet_ref, halves, totals) do
     gains = Formulas.marionette_gains(halves, totals)
     link = make_ref()
     params = [caster_id: caster.character_id, duration: nil]
@@ -181,19 +226,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette do
       :sc_marionette,
       params ++
         [
-          state: %{peer: {:player, target.character_id}, link_id: link, halves: halves},
+          state: %{peer: puppet_ref, link_id: link, halves: halves},
           owner_refresh: :defer
         ]
     )
 
     StatusInterpreter.apply_status(
-      :player,
-      target.character_id,
+      puppet_type,
+      puppet_id,
       :sc_marionette2,
       params ++
         [
-          state: %{peer: {:player, caster.character_id}, link_id: link, gains: gains},
-          owner_refresh: :notify
+          state: %{peer: {:player, caster.character_id}, link_id: link, gains: gains}
         ]
     )
 

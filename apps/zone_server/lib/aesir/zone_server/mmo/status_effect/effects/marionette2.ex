@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Marionette2 do
 
   Frozen gains keep each total primary stat at or below ninety-nine at apply
   time. Each second the living master must still hold the matching link and
-  be within seven cells on the same map. Ending either half ends both.
+  be within seven cells on the same map. The puppet may be a player or a
+  Homunculus. Ending either half ends both.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_marionette2,
@@ -14,8 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Marionette2 do
     calc_flags: [:str, :agi, :vit, :int, :dex, :luk, :max_hp],
     permanent: true,
     no_save: true,
+    remove_on_death: true,
     remove_on_map_change: true,
-    target_types: [:player],
+    target_types: [:player, :homunculus],
     tick_interval: 1_000,
     icon: :marionette
 
@@ -31,13 +33,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Marionette2 do
   @spec on_tick(Definition.target(), StatusEntry.t(), Definition.context()) ::
           {:ok, StatusEntry.t()} | :remove
   def on_tick(
-        {:player, id},
-        %StatusEntry{state: %{peer: {:player, peer}, link_id: link}} = entry,
+        {unit_type, _id} = target,
+        %StatusEntry{state: %{peer: peer, link_id: link}} = entry,
         _context
-      ) do
-    if MarionetteLink.intact?(peer, :sc_marionette, link) and MarionetteLink.within?(id, peer, 7),
-      do: {:ok, entry},
-      else: :remove
+      )
+      when unit_type in [:player, :homunculus] do
+    if MarionetteLink.intact?(peer, :sc_marionette, link) and
+         MarionetteLink.within?(target, peer, 7),
+       do: {:ok, entry},
+       else: :remove
   end
 
   def on_tick(_target, _entry, _context), do: :remove

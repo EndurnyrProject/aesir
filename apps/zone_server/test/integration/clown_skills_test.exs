@@ -4,17 +4,22 @@ defmodule Aesir.ZoneServer.Integration.ClownSkillsTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.Homunculus
   alias Aesir.Net.ActionRequest
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillDamage
+  alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Proximity
   alias Aesir.ZoneServer.Npc.Warps
+  alias Aesir.ZoneServer.SessionHelpers
   alias Aesir.ZoneServer.TestSupport.ClownSessions
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -205,6 +210,69 @@ defmodule Aesir.ZoneServer.Integration.ClownSkillsTest do
              not has_status?(clown, :sc_dancing) and not has_status?(gypsy, :sc_dancing)
            end)
   end
+
+  test "Marionette Control links the caster's own Homunculus and recasting ends both" do
+    clown = ClownSessions.character(:clown, @map, {150, 150}, %{@marionette => 1}, %{str: 80})
+    insert_homunculus(clown.id)
+    character = Repo.preload(Repo.get!(Character, clown.id), :homunculus)
+
+    caster =
+      SessionHelpers.start_player_session(
+        character: character,
+        map_name: @map,
+        position: {150, 150}
+      )
+
+    on_exit(fn ->
+      if Process.alive?(caster.pid), do: SessionHelpers.end_player_session(caster)
+    end)
+
+    assert eventually(fn -> homunculus(caster) end)
+
+    gid = homunculus(caster).world_gid
+    master_str = effective_str(caster)
+
+    ClownSessions.cast(caster, @marionette, 1, gid)
+
+    assert eventually(fn ->
+             StatusStorage.has_status?(:homunculus, gid, :sc_marionette2) and
+               homunculus(caster).str == 99
+           end)
+
+    assert has_status?(caster, :sc_marionette)
+    assert effective_str(caster) == master_str - 40
+
+    ClownSessions.cast(caster, @marionette, 1, gid)
+
+    assert eventually(fn ->
+             not has_status?(caster, :sc_marionette) and
+               not StatusStorage.has_status?(:homunculus, gid, :sc_marionette2)
+           end)
+  end
+
+  defp insert_homunculus(character_id) do
+    %Homunculus{}
+    |> Homunculus.changeset(%{
+      character_id: character_id,
+      class_id: 6001,
+      name: "Lif",
+      lifecycle: "active",
+      hp: 1_000,
+      max_hp: 1_000,
+      sp: 40,
+      max_sp: 40,
+      str: 60,
+      agi: 10,
+      vit: 0,
+      int: 10,
+      dex: 10,
+      luk: 0,
+      active_remaining_ms: 1_800_000
+    })
+    |> Repo.insert!()
+  end
+
+  defp homunculus(session), do: PlayerSession.get_state(session.pid).homunculus
 
   defp start_pair(clown_skills) do
     clown =

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
   alias Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionette
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Calculator
@@ -23,7 +24,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
       :ok = SpatialIndex.add_player(p.character_id, p.x, p.y, p.map_name)
     end
 
-    %{caster: caster, target: target}
+    homunculus = homunculus(caster.character_id)
+
+    :ok =
+      UnitRegistry.register_unit(
+        :homunculus,
+        homunculus.world_gid,
+        HomunculusState,
+        homunculus,
+        self()
+      )
+
+    :ok =
+      SpatialIndex.add_unit(
+        :homunculus,
+        homunculus.world_gid,
+        homunculus.x,
+        homunculus.y,
+        homunculus.map_name
+      )
+
+    %{caster: caster, target: target, homunculus: homunculus}
   end
 
   test "link freezes halves and capped gains, then recasting ends both", %{
@@ -126,6 +147,94 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Clown.CgMarionetteTest do
              CgMarionette.cast(caster, {:unit, 18}, 1, CgMarionette.definition())
 
     assert StatusStorage.has_status?(:player, 17, :sc_marionette)
+  end
+
+  test "links the caster's own Homunculus as the puppet, then recasting ends both", %{
+    caster: caster,
+    homunculus: homunculus
+  } do
+    target = {:unit, {:homunculus, homunculus.world_gid}}
+
+    assert :ok = CgMarionette.validate(caster, target, 1, CgMarionette.definition())
+    assert {:ok, ^caster} = CgMarionette.cast(caster, target, 1, CgMarionette.definition())
+
+    master = StatusStorage.get_status(:player, 17, :sc_marionette)
+    puppet = StatusStorage.get_status(:homunculus, homunculus.world_gid, :sc_marionette2)
+
+    assert master.state.peer == {:homunculus, homunculus.world_gid}
+    assert puppet.state.peer == {:player, 17}
+    assert master.state.link_id == puppet.state.link_id
+    # The halves come from the caster's base STR and cap against the
+    # Homunculus' own STR at ninety-nine.
+    assert master.state.halves.str == 40
+    assert puppet.state.gains.str == 39
+
+    assert {:ok, ^caster} = CgMarionette.cast(caster, target, 1, CgMarionette.definition())
+    refute StatusStorage.has_status?(:player, 17, :sc_marionette)
+    refute StatusStorage.has_status?(:homunculus, homunculus.world_gid, :sc_marionette2)
+  end
+
+  test "refuses a Homunculus that is not the caster's own", %{
+    caster: caster,
+    homunculus: homunculus
+  } do
+    :ok =
+      UnitRegistry.update_unit_state(
+        :homunculus,
+        homunculus.world_gid,
+        %{homunculus | owner_character_id: 18}
+      )
+
+    target = {:unit, {:homunculus, homunculus.world_gid}}
+
+    assert {:error, :target_restricted} =
+             CgMarionette.validate(caster, target, 1, CgMarionette.definition())
+
+    assert {:error, :target_restricted} =
+             CgMarionette.cast(caster, target, 1, CgMarionette.definition())
+  end
+
+  test "Curse on the Homunculus blocks it after the requirement is paid", %{
+    caster: caster,
+    homunculus: homunculus
+  } do
+    :ok = StatusStorage.apply_status(:homunculus, homunculus.world_gid, :sc_curse)
+
+    assert {:failed, ^caster, :target_blocked, :spare_items} =
+             CgMarionette.cast(
+               caster,
+               {:unit, {:homunculus, homunculus.world_gid}},
+               1,
+               CgMarionette.definition()
+             )
+  end
+
+  defp homunculus(owner_id) do
+    %HomunculusState{
+      id: 1,
+      world_gid: 90_001,
+      owner_character_id: owner_id,
+      owner_session_pid: self(),
+      class_id: 6_001,
+      name: "Lif",
+      lifecycle: :active,
+      level: 50,
+      hp: 1_000,
+      max_hp: 1_000,
+      sp: 100,
+      max_sp: 100,
+      str: 60,
+      agi: 10,
+      vit: 0,
+      int: 10,
+      dex: 10,
+      luk: 0,
+      map_name: "prontera",
+      x: 100,
+      y: 100,
+      action_state: :idle,
+      movement_state: :standing
+    }
   end
 
   defp player(id, opts \\ []) do
