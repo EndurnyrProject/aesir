@@ -1,15 +1,17 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   @moduledoc """
   The generic "server offers a list of ids, client picks one" exchange behind the
-  skills that open a selection widget (`SA_AUTOSPELL`, `SA_CREATECON`, and the
-  future forging/brewing menus).
+  skills that open a selection widget (`SA_AUTOSPELL`, `SA_CREATECON`, Pharmacy)
+  and behind the production list item scripts open (`produce`, `src_skill_id` 0).
 
   `open/5` sends the `SkillMenu` offer and parks it on the session's
   `pending_skill_menu` — the equivalent of rAthena's `menuskill_id`/`menuskill_val`
   pair. `handle_reply/2` accepts exactly the reply that answers the parked offer
   and clears it; anything else (no pending menu, a different `src_skill_id`, an
   id outside the offered set) is dropped with a debug log rather than crashing
-  the session, since a reply is client input and may be stale or forged.
+  the session, since a reply is client input and may be stale or forged. A
+  production list is the exception to the offered set: its selection is
+  re-checked against the list's trigger instead (`Produce.on_menu_reply/4`).
 
   The menu is per-session, not persisted: it is cleared on death and on warp
   (`clear/1`), and disconnect discards it with the session process. A labelled
@@ -191,6 +193,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
 
   defp handle_selection(%SkillMenuReply{cancel: true}, state), do: {:noreply, clear(state)}
 
+  # A production list re-checks the selected product against its trigger
+  # instead of the listed ids, so any product the trigger allows is accepted.
+  defp handle_selection(
+         %SkillMenuReply{selected_id: selected_id} = reply,
+         %{pending_skill_menu: %{skill_id: 0}} = state
+       ) do
+    {:noreply, accept(state, %{id: selected_id, extras: reply.extra_ids})}
+  end
+
   defp handle_selection(
          %SkillMenuReply{selected_id: selected_id} = reply,
          %{pending_skill_menu: %{entry_ids: entry_ids}} = state
@@ -241,10 +252,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
             "#{state.game_state.character_id}: #{inspect(reason)}"
         )
 
-        SkillHandler.report_cast_failure(skill_id, state.game_state.character_id, reason)
+        SkillHandler.report_cast_failure(
+          failure_skill_id(skill_id, state.game_state),
+          state.game_state.character_id,
+          reason
+        )
+
         cleared
     end
   end
+
+  # A production list has no skill of its own: its failure names the skill the
+  # player is casting, if any.
+  defp failure_skill_id(0, %{casting: %{skill_id: skill_id}}), do: skill_id
+  defp failure_skill_id(0, _game_state), do: 0
+  defp failure_skill_id(skill_id, _game_state), do: skill_id
 
   defp menu_reply(module, state, selection, level) do
     if function_exported?(module, :on_menu_reply, 4) do

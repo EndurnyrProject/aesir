@@ -9,11 +9,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
   alias Aesir.Net.ProductionResult
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Produce
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -77,6 +79,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
       assert SkillMenuHandler.open_produce(state, 2) == state
       refute_receive {:send, _, {:skill_menu, _}}
+    end
+  end
+
+  describe "handle_reply/2 on a production list" do
+    test "re-checks a product outside the listed ids instead of dropping it" do
+      Mimic.copy(Produce)
+      pending = %{skill_id: 0, kind: :ITEMS, entry_ids: [], level: 1}
+      state = %{produce_state([{998, 2}]) | pending_skill_menu: pending}
+      game_state = state.game_state
+
+      expect(Produce, :on_menu_reply, fn ^game_state, %{id: 1101, extras: []}, 1, _context ->
+        {:silent, game_state}
+      end)
+
+      reply = %SkillMenuReply{src_skill_id: 0, selected_id: 1101, extra_ids: []}
+      assert {:noreply, %{pending_skill_menu: nil}} = SkillMenuHandler.handle_reply(reply, state)
+    end
+
+    test "a reply while trading fails with the skill being cast, else with no skill" do
+      pending = %{skill_id: 0, kind: :ITEMS, entry_ids: [1101], level: 1}
+      state = %{produce_state([{998, 2}]) | pending_skill_menu: pending} |> Map.put(:trade, %{})
+      reply = %SkillMenuReply{src_skill_id: 0, selected_id: 1101, extra_ids: []}
+      test_pid = self()
+
+      stub(SkillHandler, :report_cast_failure, fn skill_id, 1, reason ->
+        send(test_pid, {:failed, skill_id, reason})
+        :ok
+      end)
+
+      assert {:noreply, %{pending_skill_menu: nil}} = SkillMenuHandler.handle_reply(reply, state)
+      assert_received {:failed, 0, :skill_failed}
+
+      casting = put_in(state.game_state.casting, %{skill_id: 28})
+      assert {:noreply, _cleared} = SkillMenuHandler.handle_reply(reply, casting)
+      assert_received {:failed, 28, :skill_failed}
     end
   end
 

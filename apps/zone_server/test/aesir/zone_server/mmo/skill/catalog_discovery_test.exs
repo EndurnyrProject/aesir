@@ -205,7 +205,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
 
     @non_skill_modules [
       Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot,
-      Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill,
       Aesir.ZoneServer.Mmo.Skills.Champion.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Clown.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Clown.MarionetteLink,

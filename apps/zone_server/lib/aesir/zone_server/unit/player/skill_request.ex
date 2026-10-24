@@ -41,7 +41,6 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.UseRestrictions
-  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
@@ -249,15 +248,11 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillRequest do
   defp item_skill(_state, _skill_id), do: nil
 
   # The request kind a skill accepts: a ground skill, one aimed at the user,
-  # one aimed at a unit, or none for a passive or unknown skill. The forging
-  # skills only open their production menu, so they accept none; Vending and
+  # one aimed at a unit, or none for a passive or unknown skill. Vending and
   # the Monk combo follow-ups target the user.
   defp inf(@vending), do: :self
   defp inf(skill_id) when skill_id in @combo_skills, do: :self
-
-  defp inf(skill_id) do
-    if skill_id in ForgeSkill.skill_ids(), do: :none, else: catalog_inf(skill_id)
-  end
+  defp inf(skill_id), do: catalog_inf(skill_id)
 
   defp catalog_inf(skill_id) do
     case Catalog.by_id(skill_id) do

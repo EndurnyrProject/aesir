@@ -1,8 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsEnchantedstone do
   @moduledoc """
-  Enchanted Stone Craft (BS_ENCHANTEDSTONE). Crafts elemental stones through the
-  shared forge flow with a 15 to 35% base bonus by level, and Star Crumbs at a
-  sure rate.
+  Enchanted Stone Craft (BS_ENCHANTEDSTONE). Crafts elemental stones through the shared
+  forge flow with a 15 to 35% base bonus by level, and Star Crumbs at a sure rate.
+
+  The skill is never cast (it declares no target type): its level gates the
+  recipes and raises the success chance.
 
   Renewal and pre-renewal agree.
   """
@@ -12,18 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsEnchantedstone do
     name: :bs_enchantedstone,
     display_name: "Enchanted Stone Craft",
     max_level: 5,
-    target_type: :self,
+    target_type: :passive,
     damage_type: :damage
-
-  alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skill.Menu
-  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill
-
-  @behaviour Active
-  @behaviour Menu
-
-  @impl Active
-  defdelegate cast(caster, target, level, definition), to: ForgeSkill
-  @impl Menu
-  defdelegate on_menu_reply(caster, selection, level), to: ForgeSkill
 end

@@ -1,7 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsKnuckle do
   @moduledoc """
-  Smith Knucklebrace (BS_KNUCKLE). Forges knuckles through the shared forge flow, each
-  level unlocking the next weapon tier.
+  Smith Knucklebrace (BS_KNUCKLE). Forges knuckles from the production list the hammers
+  and the Mini Furnace open, each level unlocking the next weapon tier.
+
+  The skill is never cast (it declares no target type): its level gates the
+  recipes and raises the success chance.
 
   Renewal and pre-renewal agree.
   """
@@ -11,18 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsKnuckle do
     name: :bs_knuckle,
     display_name: "Smith Knucklebrace",
     max_level: 3,
-    target_type: :self,
+    target_type: :passive,
     damage_type: :damage
-
-  alias Aesir.ZoneServer.Mmo.Skill.Active
-  alias Aesir.ZoneServer.Mmo.Skill.Menu
-  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.ForgeSkill
-
-  @behaviour Active
-  @behaviour Menu
-
-  @impl Active
-  defdelegate cast(caster, target, level, definition), to: ForgeSkill
-  @impl Menu
-  defdelegate on_menu_reply(caster, selection, level), to: ForgeSkill
 end

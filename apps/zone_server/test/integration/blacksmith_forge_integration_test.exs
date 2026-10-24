@@ -16,8 +16,6 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  @craft_skills [94, 95, 96] ++ Enum.to_list(98..104)
-
   setup do
     previous = Application.get_env(:zone_server, :forge_rng)
 
@@ -175,16 +173,6 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
     assert Inventory.held_amount(in_memory, 1002) == 0
     assert persisted_ore == 0
     assert Map.get(persisted, @furnace, []) == []
-  end
-
-  test "all ten craft declarations expose the shared active and menu callbacks" do
-    for skill_id <- @craft_skills do
-      assert {:ok, definition} = Catalog.by_id(skill_id)
-      assert {:ok, module} = Catalog.active_module_for(definition.name)
-      assert {:ok, ^module} = Catalog.menu_module_for(definition.name)
-      assert function_exported?(module, :cast, 4)
-      assert function_exported?(module, :on_menu_reply, 3)
-    end
   end
 
   defp use_item(session, nameid) do

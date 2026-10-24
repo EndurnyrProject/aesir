@@ -169,7 +169,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InvincibilityTest do
       assert ended?(Invincibility.end_on_request(started, {:skill, @fire_bolt}))
     end
 
-    test "a forge request keeps it, since it only asks for the production menu", %{
+    test "a forging skill request keeps it: the skill is never cast", %{
       started: started
     } do
       refute ended?(Invincibility.end_on_request(started, {:skill, 98}))

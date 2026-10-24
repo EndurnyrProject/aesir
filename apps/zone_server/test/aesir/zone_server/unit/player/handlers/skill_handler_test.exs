@@ -2727,38 +2727,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       refute_received {:broadcast, %SkillEffect{}}
     end
 
-    test "a forge skill's menu cast shows no SkillEffect and arms no on-skill proc" do
-      stub(Catalog, :by_id, fn 98 ->
-        {:ok,
-         definition(
-           id: 98,
-           name: :bs_dagger,
-           target_type: :self,
-           damage_type: :damage,
-           cooldown: []
-         )}
-      end)
-
-      stub(Interpreter, :begin_cast, fn gs, 98, 1, :self -> {:instant, gs} end)
-      stub(Calculator, :calculate_stats, fn stats, 1000, _equipped -> stats end)
-      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
-      stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
-      stub(CharacterPersistence, :update_character, fn 1000, _attrs, _opts -> {:ok, %{}} end)
-      reject(&CastEnd.complete/3)
-
-      test_pid = self()
-
-      stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, packet ->
-        send(test_pid, {:broadcast, packet})
-        :ok
-      end)
-
-      assert {:noreply, _} =
-               SkillHandler.handle_use_skill(knowing(instant_state(30), 98, 1), 98, 1, 1000)
-
-      refute_received {:broadcast, %SkillEffect{}}
-    end
-
     test "PR_STRECOVERY broadcasts a SkillEffect on cast" do
       stub(Catalog, :by_id, fn 72 -> {:ok, definition(id: 72, cooldown: [])} end)
       stub(Interpreter, :begin_cast, fn gs, 72, 1, {:unit, 2000} -> {:instant, gs} end)
